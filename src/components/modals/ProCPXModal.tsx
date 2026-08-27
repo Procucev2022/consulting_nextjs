@@ -1,0 +1,206 @@
+'use client';
+import React, { useState } from 'react';
+import { Sparkles, Send, CheckCircle2, Shield, ArrowRight, X, AlertTriangle, Layers } from 'lucide-react';
+import { SavingsOpportunity } from '../../types';
+import confetti from 'canvas-confetti';
+
+interface ProCPXModalProps {
+  opportunity: SavingsOpportunity | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: (oppId: string) => void;
+}
+
+export const ProCPXModal: React.FC<ProCPXModalProps> = ({
+  opportunity,
+  isOpen,
+  onClose,
+  onSuccess
+}) => {
+  const [eventType, setEventType] = useState<'Reverse Auction' | 'Multi-Stage RFP' | 'Sealed Bid'>('Multi-Stage RFP');
+  const [targetBaseline, setTargetBaseline] = useState<number>(opportunity ? opportunity.est_savings : 1850000);
+  const [invitedSuppliers, setInvitedSuppliers] = useState<string[]>([
+    'Amcor Packaging Group',
+    'International Paper Co.',
+    'WestRock Packaging Corp',
+    'Smurfit Kappa Group',
+    'Packaging Corp of America'
+  ]);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployedSuccess, setDeployedSuccess] = useState(false);
+
+  if (!isOpen || !opportunity) return null;
+
+  const handleLaunch = () => {
+    setIsDeploying(true);
+    setTimeout(() => {
+      setIsDeploying(false);
+      setDeployedSuccess(true);
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      setTimeout(() => {
+        onSuccess(opportunity.opp_id);
+        setDeployedSuccess(false);
+        onClose();
+      }, 1800);
+    }, 1200);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/40">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/60">
+                  proCPX Integration
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">e-Sourcing Event Creator</span>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                Launch Sourcing Event
+              </h2>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-5">
+          {deployedSuccess ? (
+            <div className="py-8 text-center space-y-3">
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-300 dark:border-emerald-500/40 animate-bounce">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">e-Sourcing Event Launched to proCPX!</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
+                RFx event ID <span className="font-mono text-cyan-700 dark:text-cyan-400 font-bold">RFX-2026-{opportunity.opp_id}</span> has been created with {invitedSuppliers.length} suppliers invited and a target savings goal of <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">${opportunity.est_savings.toLocaleString()}</span>.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Opportunity Summary Card */}
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wide">
+                      {opportunity.category}
+                    </span>
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
+                      {opportunity.title}
+                    </h3>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Identified Savings</span>
+                    <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                      ${opportunity.est_savings.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-700/40">
+                  <span className="text-amber-700 dark:text-amber-400 font-medium">Root Cause:</span>
+                  <span>{opportunity.contract_leak_type}</span>
+                </div>
+              </div>
+
+              {/* Event Configuration */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Sourcing Mechanism
+                  </label>
+                  <select
+                    value={eventType}
+                    onChange={(e) => setEventType(e.target.value as any)}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="Multi-Stage RFP">Multi-Stage RFP & e-Bidding</option>
+                    <option value="Reverse Auction">Real-Time English Reverse Auction</option>
+                    <option value="Sealed Bid">Sealed Bid Benchmark Competition</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Target Savings Baseline (USD)
+                  </label>
+                  <input
+                    type="number"
+                    value={targetBaseline}
+                    onChange={(e) => setTargetBaseline(Number(e.target.value))}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+
+              {/* Supplier Roster */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex justify-between">
+                  <span>Pre-Qualified Supplier Cohort ({invitedSuppliers.length})</span>
+                  <span className="text-cyan-600 dark:text-cyan-400 text-[11px] cursor-pointer hover:underline font-semibold">+ Add Supplier</span>
+                </label>
+                <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                  {invitedSuppliers.map((supplier, idx) => (
+                    <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="font-medium text-slate-900 dark:text-white">{supplier}</span>
+                      <span className="text-[10px] text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/40">Verified Vendor</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                <Shield className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                <span>
+                  proCPX enforces automated multi-round price reduction with strict SLA compliance and multi-tier pricing brackets.
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        {!deployedSuccess && (
+          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleLaunch}
+              disabled={isDeploying}
+              className="flex items-center space-x-2 px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 disabled:opacity-50"
+            >
+              {isDeploying ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Deploying to proCPX...</span>
+                </>
+              ) : (
+                <>
+                  <span>Push to proCPX</span>
+                  <Send className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
