@@ -15,15 +15,12 @@ import {
   Filter,
   Check
 } from 'lucide-react';
-import { SavingsOpportunity } from '../types';
-import { UI_STRINGS } from '../constants/uiStrings';
-
-interface Module4SavingsEngineProps {
-  opportunities: SavingsOpportunity[];
-  onOpenProCPX: (opp: SavingsOpportunity) => void;
-  onOpenDPSNXT: (opp: SavingsOpportunity) => void;
-  onProceedToConversion: () => void;
-}
+import { SavingsOpportunity, Module4SavingsEngineProps } from '../types';
+import {
+  UI_STRINGS,
+  DEFAULT_SPEND_BASELINE_INR_CR,
+  DEFAULT_SAVINGS_TARGET_INR_CR
+} from '../constants';
 
 export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   opportunities,
@@ -34,8 +31,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterModule, setFilterModule] = useState<string>('ALL');
 
-  const totalEvaluatedSpendInrCr = 732.41; // ₹732.41 Cr
-  const totalSavingsInrCr = 119.67; // ₹119.67 Cr (16.4% Net Target)
+  const totalEvaluatedSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
+  const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr (16.4% Net Target)
+
 
   const categoryBreakdowns = [
     {

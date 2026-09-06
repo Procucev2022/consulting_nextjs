@@ -34,3 +34,18 @@
 - **Dynamic Placeholders**: Use template placeholders / parameterized functions for runtime variable substitutions to ensure full i18n readiness.
 - **Test Assertions**: All tests must assert against `UI_STRINGS` constants instead of hardcoded strings to ensure resilience against UI and translation changes.
 - **Strict 90% Coverage**: Every file created or updated must achieve >= 90% unit test coverage individually.
+
+## Mandatory Separate Constants File Configuration
+
+- **Rule**: All application constants (configuration defaults, mathematical constants, static rates, fallback values, KPI thresholds, palettes, lookup tables) MUST reside in dedicated constants files within `constants/` (`frontend/src/constants/` and `backend/src/constants/`).
+- **No Inline Constants**: Hardcoding or embedding constant configuration dictionaries, arrays, or magic numbers directly in components, services, controllers, or route handlers is strictly prohibited.
+- **Barrel Exports**: Group constants logically by domain and export them through `constants/index.ts`.
+- **Strict 90% Coverage**: All constant files and helper functions must maintain >= 90% unit test coverage.
+
+## Mandatory Separate Data Types & Interfaces Configuration
+
+- **Rule**: All TypeScript types, interfaces, enums, and type aliases (including domain models, component & modal props, API payloads, and service signatures) MUST reside in dedicated type definition files within `types/` (`frontend/src/types/` and `backend/src/types/`).
+- **No Inline Types/Interfaces**: Declaring `interface` or `type` definitions directly within component files (`.tsx`), controller files, route definitions, or utility files is strictly prohibited.
+- **Component Props Separation**: Component and modal prop interfaces must be extracted into dedicated type files (e.g., `types/components.ts`) and imported.
+- **Barrel Exports**: Re-export all types via `types/index.ts` for clean, modular imports.
+

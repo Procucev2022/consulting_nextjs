@@ -35,3 +35,18 @@
 3. **Template Placeholders**: Use parameterized formatter functions for dynamic runtime variables (e.g. counts, amounts, codes) to ensure i18n capability.
 4. **Test Resilience**: Tests must assert against `UI_STRINGS` constants instead of hardcoded strings to avoid fragile assertions.
 5. **Coverage Benchmark**: All i18n modules must meet the strict 90% per-file unit test coverage benchmark.
+
+## Separate Constants File Configuration
+
+1. **Dedicated Constants Modules**: Keep all application constants, configuration parameters, default financial values, thresholds, palettes, and static lookup tables in separate files under `constants/` (`frontend/src/constants/` and `backend/src/constants/`).
+2. **Zero Inline Constants**: Never inline magic numbers, configuration objects, or constant lookup tables directly in components, services, or controllers.
+3. **Domain Grouping & Exports**: Group constants logically by domain (`app.ts`, `currency.ts`, `pipeline.ts`, `logger.ts`) and export them through `constants/index.ts`.
+4. **Strict Coverage**: Maintain >= 90% unit test coverage for all constants files.
+
+## Separate Data Types & Interfaces Configuration
+
+1. **Dedicated Type Modules**: Keep all TypeScript data types, interfaces, enums, and type aliases in separate files under `types/` (`frontend/src/types/` and `backend/src/types/`).
+2. **Zero Inline Types**: Never declare `interface` or `type` definitions directly within component files (`.tsx`), controller files, route definitions, or utility files.
+3. **Component Props Separation**: Extract all component and modal prop interfaces into dedicated type files (e.g., `types/components.ts`) and import them into components.
+4. **Barrel Exports**: Re-export all types via `types/index.ts` for clean, modular imports.
+

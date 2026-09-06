@@ -1,15 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import { GitMerge, Check, X, Building2, Search, ArrowRight } from 'lucide-react';
-import { ValidationPreCheckRecord } from '../../types';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface MergeVendorModalProps {
-  record: ValidationPreCheckRecord | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onMerge: (recordId: string, masterVendorId: string, masterVendorName: string) => void;
-}
+import { ValidationPreCheckRecord, MergeVendorModalProps } from '../../types';
+import { UI_STRINGS, DEFAULT_MASTER_SUPPLIERS } from '../../constants';
 
 export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
   record,
@@ -17,13 +10,11 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
   onClose,
   onMerge
 }) => {
-  const masterSuppliers = [
-    { id: 'SUP-DHL-001', name: 'DHL Global Forwarding & Logistics SE', subsidiaries: ['DHL Express Inc', 'DHL Logistics GmbH', 'DHL Global Mail'] },
-    { id: 'SUP-AMCOR-001', name: 'Amcor Packaging Group Global', subsidiaries: ['Amcor Flexibles LLC', 'Amcor Rigid Plastics', 'Amcor Speciality'] },
-    { id: 'SUP-ACME-102', name: 'Acme Chemical Holdings Corp', subsidiaries: ['Acme Chem Co LLC', 'Acme Specialty Resins', 'Acme Industrial'] }
-  ];
+  const masterSuppliers = DEFAULT_MASTER_SUPPLIERS;
 
-  const [selectedMaster, setSelectedMaster] = useState(masterSuppliers[0].id);
+  const [selectedMaster, setSelectedMaster] = useState<string>(masterSuppliers[0].id);
+
+
 
   if (!isOpen || !record) return null;
 

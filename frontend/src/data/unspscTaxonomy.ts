@@ -1,16 +1,9 @@
 // Auto-generated from official UNSPSC English File (UNv260801) - Column L Commodity Taxonomy
 
-export interface UNSPSCCommodityRecord {
-  commodityCode: string; // Column L: 8-digit Commodity code
-  commodityTitle: string; // Column M: Commodity description
-  classCode: string;     // Column I: 6-digit Class code
-  classTitle: string;    // Column J: Class description
-  familyCode: string;    // Column F: 4-digit Family code
-  familyTitle: string;   // Column G: Family description
-  segmentCode: string;   // Column C: 2-digit Segment code
-  segmentTitle: string;  // Column D: Segment description
-  coreBucket: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
-}
+import { UNSPSCCommodityRecord } from '../types';
+
+export type { UNSPSCCommodityRecord };
+
 
 export const unspscOfficialDictionary: UNSPSCCommodityRecord[] = [
   {

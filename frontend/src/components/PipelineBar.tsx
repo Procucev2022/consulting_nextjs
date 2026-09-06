@@ -11,12 +11,9 @@ import {
   Database,
   ArrowRight
 } from 'lucide-react';
-import { UI_STRINGS } from '../constants/uiStrings';
+import { PipelineBarProps } from '../types';
+import { UI_STRINGS } from '../constants';
 
-interface PipelineBarProps {
-  activeTab: 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
-  onSelectTab: (tab: 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema') => void;
-}
 
 export const PipelineBar: React.FC<PipelineBarProps> = ({
   activeTab,

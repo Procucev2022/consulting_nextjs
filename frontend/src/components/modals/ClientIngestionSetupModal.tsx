@@ -16,25 +16,11 @@ import {
   FileText,
   TrendingUp
 } from 'lucide-react';
-import { TenantMaster } from '../../types';
+import { TenantMaster, DatasetType, ClientIngestionSetupModalProps } from '../../types';
 import { yahooFinanceFXRates } from '../../utils/currencyConverter';
-import { UI_STRINGS } from '../../constants/uiStrings';
+import { UI_STRINGS, DEFAULT_TENANT_ENTERPRISE_NAME } from '../../constants';
 
-export type DatasetType = 'Purchase History' | 'Invoice Data' | 'Trial Balance';
-
-interface ClientIngestionSetupModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentTenant: TenantMaster;
-  onConfirmAndUpload: (config: {
-    clientName: string;
-    datasetType: DatasetType;
-    spendPeriod: string;
-    currency: 'INR' | 'USD' | 'EUR' | 'GBP';
-    region: 'NA' | 'EU' | 'APAC' | 'GLOBAL';
-    estimatedSpend: number;
-  }) => void;
-}
+export type { DatasetType, ClientIngestionSetupModalProps };
 
 export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps> = ({
   isOpen,
@@ -42,7 +28,8 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
   currentTenant,
   onConfirmAndUpload
 }) => {
-  const [clientName, setClientName] = useState(currentTenant.enterprise_name || 'Apex Industrial Dynamics (Fortune 500)');
+  const [clientName, setClientName] = useState(currentTenant.enterprise_name || DEFAULT_TENANT_ENTERPRISE_NAME);
+
   const [datasetType, setDatasetType] = useState<DatasetType>('Purchase History');
   const [spendPeriod, setSpendPeriod] = useState<string>(UI_STRINGS.modals.clientSetup.spendPeriods.months36);
   const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>(currentTenant.base_currency || 'INR');

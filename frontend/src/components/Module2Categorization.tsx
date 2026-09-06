@@ -25,19 +25,11 @@ import {
   DollarSign,
   TrendingUp
 } from 'lucide-react';
-import { LineItemMapping, SpendCategorySummary, CategoryYearDetail } from '../types';
+import { LineItemMapping, SpendCategorySummary, CategoryYearDetail, Module2CategorizationProps } from '../types';
 import { searchUNSPSCTaxonomy, UNSPSCCommodityRecord, unspscOfficialDictionary } from '../data/unspscTaxonomy';
 import { categoryYearWiseDetails } from '../data/mockData';
 import { formatINRAmount } from '../utils/currencyConverter';
-import { UI_STRINGS } from '../constants/uiStrings';
-
-interface Module2CategorizationProps {
-  categories: SpendCategorySummary[];
-  lineItems: LineItemMapping[];
-  onConfirmMapping: (mappingId: string) => void;
-  onReassignMapping: (item: LineItemMapping) => void;
-  onProceedToTrend: () => void;
-}
+import { UI_STRINGS } from '../constants';
 
 export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   categories,

@@ -1,16 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import { FileCheck, ShieldCheck, CheckCircle2, ArrowRight, X, Lock, Sliders, Zap } from 'lucide-react';
-import { SavingsOpportunity } from '../../types';
+import { SavingsOpportunity, DPSNXTModalProps } from '../../types';
 import confetti from 'canvas-confetti';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface DPSNXTModalProps {
-  opportunity: SavingsOpportunity | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: (oppId: string) => void;
-}
+import {
+  UI_STRINGS,
+  DEFAULT_MAX_PRICE_CREEP_CAP,
+  DEFAULT_INDEX_PEGGING
+} from '../../constants';
 
 export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
   opportunity,
@@ -18,8 +15,9 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const [maxPriceCreepCap, setMaxPriceCreepCap] = useState<number>(3.0);
-  const [indexPegging, setIndexPegging] = useState<string>('LME & ICIS Official Benchmark');
+  const [maxPriceCreepCap, setMaxPriceCreepCap] = useState<number>(DEFAULT_MAX_PRICE_CREEP_CAP);
+  const [indexPegging, setIndexPegging] = useState<string>(DEFAULT_INDEX_PEGGING);
+
   const [autoRebateTier, setAutoRebateTier] = useState<boolean>(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executedSuccess, setExecutedSuccess] = useState(false);

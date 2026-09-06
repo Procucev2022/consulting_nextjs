@@ -2,56 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import { Request, Response, NextFunction } from 'express';
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+import {
+  LogLevel,
+  LogEntry,
+  LogFilter,
+  PurgeResult,
+  LoggerOptions
+} from '../types';
+import {
+  LEVEL_PRIORITY,
+  DEFAULT_SERVICE_NAME,
+  DEFAULT_RETENTION_DAYS,
+  DEFAULT_MIN_LEVEL
+} from '../constants';
 
-export interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  service: string;
-  environment: string;
-  message: string;
-  context?: Record<string, any>;
-  requestId?: string;
-  durationMs?: number;
-  error?: {
-    name: string;
-    message: string;
-    stack?: string;
-  };
-  [key: string]: any;
-}
-
-export interface LogFilter {
-  level?: LogLevel;
-  keyword?: string;
-  startDate?: string;
-  endDate?: string;
-  requestId?: string;
-  limit?: number;
-}
-
-export interface PurgeResult {
-  purgedFiles: string[];
-  bytesFreed: number;
-  retentionDays: number;
-}
-
-export interface LoggerOptions {
-  serviceName?: string;
-  logDir?: string;
-  minLevel?: LogLevel;
-  enableConsole?: boolean;
-  enableFilePersistence?: boolean;
-  retentionDays?: number;
-  autoPurge?: boolean;
-}
-
-const LEVEL_PRIORITY: Record<LogLevel, number> = {
-  debug: 0,
-  info: 1,
-  warn: 2,
-  error: 3
-};
+export type { LogLevel, LogEntry, LogFilter, PurgeResult, LoggerOptions };
+export { LEVEL_PRIORITY };
 
 export class Logger {
   private serviceName: string;

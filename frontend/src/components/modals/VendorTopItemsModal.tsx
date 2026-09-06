@@ -16,15 +16,8 @@ import {
   CheckCircle2,
   DollarSign
 } from 'lucide-react';
-import { VendorYearDetail, CategoryTopItem } from '../../types';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface VendorTopItemsModalProps {
-  vendor: VendorYearDetail | null;
-  isOpen: boolean;
-  onClose: () => void;
-  totalEvaluatedSpendInrCr: number;
-}
+import { VendorYearDetail, CategoryTopItem, VendorTopItemsModalProps } from '../../types';
+import { UI_STRINGS } from '../../constants';
 
 export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
   vendor,

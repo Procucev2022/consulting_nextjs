@@ -1,38 +1,27 @@
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+import { LogLevel, FrontendLogEntry, LogListener } from '../types';
+import {
+  LEVEL_PRIORITY,
+  DEFAULT_SERVICE_NAME,
+  DEFAULT_MIN_LEVEL,
+  DEFAULT_MAX_HISTORY
+} from '../constants';
 
-export interface FrontendLogEntry {
-  timestamp: string;
-  level: LogLevel;
-  service: string;
-  message: string;
-  context?: Record<string, any>;
-  error?: {
-    name: string;
-    message: string;
-    stack?: string;
-  };
-}
-
-export type LogListener = (entry: FrontendLogEntry) => void;
+export type { LogLevel, FrontendLogEntry, LogListener };
 
 export class FrontendLogger {
   private service: string;
   private minLevel: LogLevel;
   private listeners: LogListener[] = [];
   private history: FrontendLogEntry[] = [];
-  private maxHistory: number = 100;
+  private maxHistory: number = DEFAULT_MAX_HISTORY;
 
-  private static LEVEL_WEIGHT: Record<LogLevel, number> = {
-    debug: 0,
-    info: 1,
-    warn: 2,
-    error: 3
-  };
+  private static LEVEL_WEIGHT: Record<LogLevel, number> = LEVEL_PRIORITY;
 
-  constructor(service: string = 'consulting-frontend', minLevel: LogLevel = 'debug') {
+  constructor(service: string = DEFAULT_SERVICE_NAME, minLevel: LogLevel = DEFAULT_MIN_LEVEL) {
     this.service = service;
     this.minLevel = minLevel;
   }
+
 
   public addListener(listener: LogListener): () => void {
     this.listeners.push(listener);

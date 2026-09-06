@@ -15,9 +15,10 @@ import {
   Globe
 } from 'lucide-react';
 import { schemaEntities } from '../data/mockData';
-import { UI_STRINGS } from '../constants/uiStrings';
+import { DatabaseSchemaViewProps } from '../types';
+import { UI_STRINGS } from '../constants';
 
-export const DatabaseSchemaView: React.FC = () => {
+export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
   const [selectedEntity, setSelectedEntity] = useState<string>('Tenant_Master');
   const [queryConsoleMode, setQueryConsoleMode] = useState<'SCHEMA' | 'SAMPLE_DATA' | 'SQL_DDL'>('SCHEMA');
 

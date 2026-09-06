@@ -44,26 +44,21 @@ import {
   Maximize2,
   Zap
 } from 'lucide-react';
-import { RawDocumentIngestion, ValidationPreCheckRecord, CategoryYearDetail, VendorYearDetail, TenantMaster } from '../types';
+import {
+  RawDocumentIngestion,
+  ValidationPreCheckRecord,
+  CategoryYearDetail,
+  VendorYearDetail,
+  TenantMaster,
+  Module1IngestionProps,
+  DatasetType
+} from '../types';
 import { categoryYearWiseDetails, vendorYearWiseDetails } from '../data/mockData';
-import { ClientIngestionSetupModal, DatasetType } from './modals/ClientIngestionSetupModal';
+import { ClientIngestionSetupModal } from './modals/ClientIngestionSetupModal';
 import { CategoryTopItemsModal } from './modals/CategoryTopItemsModal';
 import { VendorTopItemsModal } from './modals/VendorTopItemsModal';
 import { yahooFinanceFXRates } from '../utils/currencyConverter';
-import { UI_STRINGS } from '../constants/uiStrings';
-
-interface Module1IngestionProps {
-  tenant: TenantMaster;
-  onUpdateTenant: (tenant: TenantMaster) => void;
-  ingestionQueue: RawDocumentIngestion[];
-  validationRecords: ValidationPreCheckRecord[];
-  onFixCurrency: (record: ValidationPreCheckRecord) => void;
-  onMergeVendor: (record: ValidationPreCheckRecord) => void;
-  onApplyBlanketFixes?: () => void;
-  onResetValidationRecords?: () => void;
-  onRunAICategorization: () => void;
-  onAddBatchUpload: (file: File, datasetType: DatasetType) => void;
-}
+import { UI_STRINGS } from '../constants';
 
 export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   tenant,

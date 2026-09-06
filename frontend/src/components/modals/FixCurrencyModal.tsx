@@ -1,16 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import { DollarSign, Check, X, RefreshCw, Globe, TrendingUp, Sparkles } from 'lucide-react';
-import { ValidationPreCheckRecord } from '../../types';
+import { ValidationPreCheckRecord, FixCurrencyModalProps } from '../../types';
 import { yahooFinanceFXRates, convertToINR, formatINRAmount } from '../../utils/currencyConverter';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface FixCurrencyModalProps {
-  record: ValidationPreCheckRecord | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onFix: (recordId: string, selectedCurrency: string, convertedAmountINR: number) => void;
-}
+import { UI_STRINGS, INR_CRORES_DIVISOR } from '../../constants';
 
 export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
   record,
@@ -28,7 +21,8 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
   const activeRate = customRate;
   const conversionResult = convertToINR(record.amount, selectedCurrency, year);
   const calculatedINR = Math.round(record.amount * activeRate);
-  const calculatedCrores = (calculatedINR / 10000000).toFixed(4);
+  const calculatedCrores = (calculatedINR / INR_CRORES_DIVISOR).toFixed(4);
+
 
   const handleCurrencyChange = (curr: string) => {
     setSelectedCurrency(curr);

@@ -15,8 +15,13 @@ import {
   Sparkles,
   Globe
 } from 'lucide-react';
-import { VendorPriceRank } from '../types';
-import { UI_STRINGS } from '../constants/uiStrings';
+import { VendorPriceRank, Module3TrendAnalyticsProps } from '../types';
+import {
+  UI_STRINGS,
+  TIMELINE_MONTHS,
+  MARKET_INDEX_DATA,
+  VENDOR_INVOICED_DATA
+} from '../constants';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -41,12 +46,6 @@ ChartJS.register(
   Filler
 );
 
-interface Module3TrendAnalyticsProps {
-  vendorRankings: VendorPriceRank[];
-  onProceedToSavings: () => void;
-  theme?: 'light' | 'dark';
-}
-
 export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   vendorRankings,
   onProceedToSavings,
@@ -57,23 +56,12 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
 
   const isDark = theme === 'dark';
 
-  // 36 Months Timeline Labels
-  const timelineMonths = [
-    'M1 (Q1-23)', 'M4', 'M8 (Q3-23)', 'M12 (Q4-23)',
-    'M16 (Q2-24)', 'M20', 'M24 (Q4-24)', 'M28 (Q2-25)',
-    'M32 (Q4-25)', 'M36 (Q2-26)'
-  ];
-
-  // Market Index vs Actual Invoiced Data
-  const marketIndexData = [100, 99.2, 98.4, 97.1, 96.5, 95.8, 96.2, 95.0, 96.1, 95.8]; // -4.2% Net
-  const vendorInvoicedData = [100, 101.5, 102.8, 104.2, 105.1, 106.0, 106.8, 107.5, 108.0, 108.5]; // +8.5% Net
-
   const chartData = {
-    labels: timelineMonths,
+    labels: TIMELINE_MONTHS as unknown as string[],
     datasets: [
       {
         label: UI_STRINGS.module3.invoicedDatasetLabel,
-        data: vendorInvoicedData,
+        data: VENDOR_INVOICED_DATA as unknown as number[],
         borderColor: '#e11d48', // Rose-600
         backgroundColor: isDark ? 'rgba(244, 63, 94, 0.1)' : 'rgba(225, 29, 72, 0.08)',
         borderWidth: 3,
@@ -84,7 +72,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
       },
       {
         label: UI_STRINGS.module3.marketDatasetLabel,
-        data: marketIndexData,
+        data: MARKET_INDEX_DATA as unknown as number[],
         borderColor: '#0284c7', // Sky-600
         backgroundColor: isDark ? 'rgba(6, 182, 212, 0.05)' : 'rgba(2, 132, 199, 0.05)',
         borderWidth: 3,
@@ -93,6 +81,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         tension: 0.35,
         fill: false
       }
+
     ]
   };
 

@@ -14,15 +14,14 @@ import {
   DollarSign,
   Percent
 } from 'lucide-react';
-import { ConversionFunnelPhase, TenantMaster } from '../types';
-import { UI_STRINGS } from '../constants/uiStrings';
+import { ConversionFunnelPhase, TenantMaster, Module5ConversionMatrixProps } from '../types';
+import {
+  UI_STRINGS,
+  DEFAULT_SPEND_BASELINE_INR_CR,
+  DEFAULT_SAVINGS_TARGET_PCT,
+  DEFAULT_SAAS_FEE_RATE
+} from '../constants';
 import confetti from 'canvas-confetti';
-
-interface Module5ConversionMatrixProps {
-  tenant: TenantMaster;
-  funnelStages: ConversionFunnelPhase[];
-  onOpenReport: () => void;
-}
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
   tenant,
@@ -30,9 +29,10 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
   onOpenReport
 }) => {
   // ROI Interactive Calculator State in INR in Crores (₹ Cr)
-  const [annualSpendCr, setAnnualSpendCr] = useState<number>(732.41); // ₹732.41 Cr
-  const [savingsRate, setSavingsRate] = useState<number>(16.4); // 16.4%
-  const [saasFeeRate, setSaasFeeRate] = useState<number>(0.85); // 0.85% of spend or platform fee
+  const [annualSpendCr, setAnnualSpendCr] = useState<number>(DEFAULT_SPEND_BASELINE_INR_CR); // ₹732.41 Cr
+  const [savingsRate, setSavingsRate] = useState<number>(DEFAULT_SAVINGS_TARGET_PCT); // 16.4%
+  const [saasFeeRate, setSaasFeeRate] = useState<number>(DEFAULT_SAAS_FEE_RATE); // 0.85% of spend or platform fee
+
 
   const calculatedGrossSavingsCr = (annualSpendCr * savingsRate) / 100;
   const calculatedPlatformFeeCr = (annualSpendCr * saasFeeRate) / 100;

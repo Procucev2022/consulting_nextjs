@@ -14,18 +14,8 @@ import {
   TrendingUp,
   DollarSign
 } from 'lucide-react';
-import { TenantMaster } from '../types';
-import { UI_STRINGS } from '../constants/uiStrings';
-
-interface HeaderProps {
-  tenant: TenantMaster;
-  onSelectTenant: (tenant: TenantMaster) => void;
-  currency: 'INR' | 'USD' | 'EUR' | 'GBP';
-  onSelectCurrency: (currency: 'INR' | 'USD' | 'EUR' | 'GBP') => void;
-  onOpenReport: () => void;
-  theme: 'light' | 'dark';
-  onSelectTheme: (theme: 'light' | 'dark') => void;
-}
+import { TenantMaster, HeaderProps } from '../types';
+import { UI_STRINGS, SUPPORTED_HEADER_CURRENCIES, DEFAULT_SPEND_BASELINE_INR_CR } from '../constants';
 
 export const Header: React.FC<HeaderProps> = ({
   tenant,
@@ -135,13 +125,13 @@ export const Header: React.FC<HeaderProps> = ({
               {tenant.enterprise_name}
             </span>
             <span className="text-[10px] font-mono bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-300 dark:border-emerald-800/40">
-              ₹{tenant.total_spend_evaluated_inr || 732.41} Cr
+              ₹{tenant.total_spend_evaluated_inr || DEFAULT_SPEND_BASELINE_INR_CR} Cr
             </span>
           </div>
 
           {/* Base Currency Switcher (Primary INR in Crores) */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/70 rounded-xl p-0.5 text-xs font-mono">
-            {(['INR', 'USD', 'EUR', 'GBP'] as const).map((curr) => (
+            {SUPPORTED_HEADER_CURRENCIES.map((curr) => (
               <button
                 key={curr}
                 onClick={() => onSelectCurrency(curr)}

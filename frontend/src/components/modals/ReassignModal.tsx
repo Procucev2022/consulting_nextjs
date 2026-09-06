@@ -1,16 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import { Tag, Check, X, Search, Sparkles, FileSpreadsheet } from 'lucide-react';
-import { LineItemMapping } from '../../types';
-import { searchUNSPSCTaxonomy, UNSPSCCommodityRecord } from '../../data/unspscTaxonomy';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface ReassignModalProps {
-  item: LineItemMapping | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (mappingId: string, newCode: string, newName: string, bucket: any) => void;
-}
+import { LineItemMapping, ReassignModalProps, UNSPSCCommodityRecord } from '../../types';
+import { searchUNSPSCTaxonomy } from '../../data/unspscTaxonomy';
+import { UI_STRINGS } from '../../constants';
 
 export const ReassignModal: React.FC<ReassignModalProps> = ({
   item,
@@ -32,7 +25,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
         item.mapping_id,
         selectedRecord.commodityCode,
         `${selectedRecord.coreBucket} (${selectedRecord.commodityTitle})`,
-        selectedRecord.coreBucket
+        selectedRecord.coreBucket || 'Direct Materials'
       );
     }
     onClose();

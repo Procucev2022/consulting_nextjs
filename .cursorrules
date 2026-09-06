@@ -37,3 +37,16 @@
 - Use template placeholders/functions for dynamic runtime substitution.
 - Update tests to assert against `UI_STRINGS` constants rather than literal strings.
 - Enforce >= 90% unit test coverage on all constants and helper modules.
+
+# Separate Constants File Rules
+- Keep all application constants, defaults, lookup tables, and palettes in separate files under `constants/`.
+- Never inline magic numbers or configuration dictionaries directly in components, services, or controllers.
+- Group constants logically by domain (`app.ts`, `currency.ts`, `pipeline.ts`, `logger.ts`) and export via `constants/index.ts`.
+- Enforce >= 90% unit test coverage on all constants files.
+
+# Separate Data Types & Interfaces Rules
+- Keep all data types, interfaces, enums, and type aliases in separate files under `types/`.
+- Never declare `interface` or `type` definitions directly in component (`.tsx`), controller, or service files.
+- Move all component & modal prop interfaces to dedicated type files (e.g. `types/components.ts`) and import them.
+- Re-export all types via `types/index.ts`.
+

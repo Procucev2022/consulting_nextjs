@@ -13,3 +13,6 @@
 - Maintain a workspace file `prompts.md` storing ONLY user-provided prompts. Never save AI-generated conversations or responses in `prompts.md`.
 - Move all user-facing literal strings into constants and access via `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`). No hardcoded UI strings.
 - Use template placeholders for dynamic substitution and assert against `UI_STRINGS` constants in all unit tests.
+- All constants (defaults, rates, thresholds, palettes, lookups) must reside in dedicated constants files under `constants/` (`frontend/src/constants/` and `backend/src/constants/`). No inline constants or magic numbers.
+- All TypeScript types, interfaces, enums, and component prop definitions must reside in dedicated files under `types/` (`frontend/src/types/` and `backend/src/types/`). No inline `interface` or `type` declarations in components, services, or controllers.
+

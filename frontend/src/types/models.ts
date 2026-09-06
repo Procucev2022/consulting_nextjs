@@ -1,6 +1,6 @@
-export * from './logger';
-export * from './currency';
-export * from './taxonomy';
+/**
+ * Domain Models Module (Frontend)
+ */
 
 export interface TenantMaster {
   tenant_id: string;
@@ -213,7 +213,6 @@ export interface ConversionFunnelPhase {
   status: 'Completed' | 'In Progress' | 'Upcoming';
 }
 
-// API Response Wrappers
 export interface ApiResponse<T> {
   success: boolean;
   data: T;

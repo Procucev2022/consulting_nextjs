@@ -1,16 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import { Sparkles, Send, CheckCircle2, Shield, ArrowRight, X, AlertTriangle, Layers } from 'lucide-react';
-import { SavingsOpportunity } from '../../types';
+import { SavingsOpportunity, ProCPXModalProps, ProCPXEventType } from '../../types';
 import confetti from 'canvas-confetti';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface ProCPXModalProps {
-  opportunity: SavingsOpportunity | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: (oppId: string) => void;
-}
+import {
+  UI_STRINGS,
+  DEFAULT_INVITED_SUPPLIERS,
+  DEFAULT_PROCPX_BASELINE
+} from '../../constants';
 
 export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   opportunity,
@@ -18,15 +15,10 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const [eventType, setEventType] = useState<'Reverse Auction' | 'Multi-Stage RFP' | 'Sealed Bid'>('Multi-Stage RFP');
-  const [targetBaseline, setTargetBaseline] = useState<number>(opportunity ? opportunity.est_savings : 1850000);
-  const [invitedSuppliers, setInvitedSuppliers] = useState<string[]>([
-    'Amcor Packaging Group',
-    'International Paper Co.',
-    'WestRock Packaging Corp',
-    'Smurfit Kappa Group',
-    'Packaging Corp of America'
-  ]);
+  const [eventType, setEventType] = useState<ProCPXEventType>('Multi-Stage RFP');
+  const [targetBaseline, setTargetBaseline] = useState<number>(opportunity ? opportunity.est_savings : DEFAULT_PROCPX_BASELINE);
+  const [invitedSuppliers, setInvitedSuppliers] = useState<string[]>([...DEFAULT_INVITED_SUPPLIERS]);
+
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedSuccess, setDeployedSuccess] = useState(false);
 

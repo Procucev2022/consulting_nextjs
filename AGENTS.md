@@ -79,3 +79,18 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Template Placeholders for Runtime Substitution**: For dynamic strings containing runtime variables (e.g., counts, IDs, amounts, currencies, user names), use template placeholders / parameterized formatter functions within `UI_STRINGS` (e.g., `(count: number) => \`\${count} items\``) to ensure the application is fully i18n-ready.
 - **Test Assertions Against Constants**: All unit tests MUST assert against `UI_STRINGS` constants instead of hardcoded literal strings. This prevents brittle test failures when UI text or localization translations change.
 - **Strict 90% Code Coverage**: Any new constants, helper functions, and components created for i18n must maintain >= 90% unit test code coverage individually.
+
+## 8. Separate Constants File Configuration
+
+- **Mandatory Isolation**: All application constants (including configuration defaults, numerical thresholds, KPI metrics, conversion rates, palettes, lookup tables, and environment fallbacks) MUST be stored in dedicated constants files within `constants/` (e.g., `frontend/src/constants/` or `backend/src/constants/`).
+- **No Inline Constants or Magic Numbers**: No constant objects, configuration arrays, or magic values may be declared directly inside components, services, controllers, or route handlers.
+- **Organization & Barrel Exports**: Group constants logically by domain (e.g., `app.ts`, `currency.ts`, `pipeline.ts`, `logger.ts`) and expose them via a unified barrel export (`constants/index.ts`).
+- **Strict 90% Code Coverage**: Any new constant definitions or helper utility functions created for constants must achieve >= 90% unit test code coverage individually.
+
+## 9. Separate Data Types & Interfaces Configuration
+
+- **Mandatory Isolation**: All TypeScript data types, interfaces, enums, and type aliases (including domain models, component and modal prop types, API request/response payloads, and service options) MUST be kept in dedicated files within `types/` (e.g., `frontend/src/types/` or `backend/src/types/`).
+- **No Inline Type or Interface Declarations**: Declaring `interface` or `type` definitions directly within component files (`.tsx`), controller files, route definitions, or utility files is strictly prohibited.
+- **Component & Modal Props Separation**: Component and modal prop interfaces (e.g., `HeaderProps`, `PipelineBarProps`, `ClientIngestionSetupModalProps`) must reside in dedicated type definition files (e.g., `types/components.ts` or `types/modals.ts`) and be imported where needed.
+- **Unified Barrel Exports**: Centralize and re-export all types via `types/index.ts` so imports remain clean and maintainable.
+

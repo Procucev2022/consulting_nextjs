@@ -1,15 +1,12 @@
 'use client';
 import React from 'react';
 import { FileText, Printer, Download, CheckCircle2, X, TrendingUp, DollarSign, ShieldAlert, Award } from 'lucide-react';
-import { TenantMaster, SavingsOpportunity } from '../../types';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface ExecutiveReportModalProps {
-  tenant: TenantMaster;
-  opportunities: SavingsOpportunity[];
-  isOpen: boolean;
-  onClose: () => void;
-}
+import { TenantMaster, SavingsOpportunity, ExecutiveReportModalProps } from '../../types';
+import {
+  UI_STRINGS,
+  DEFAULT_SPEND_BASELINE_INR_CR,
+  DEFAULT_SAVINGS_TARGET_INR_CR
+} from '../../constants';
 
 export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   tenant,
@@ -19,8 +16,9 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const totalSpendInrCr = 732.41; // ₹732.41 Cr
-  const totalSavingsInrCr = 119.67; // ₹119.67 Cr
+  const totalSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
+  const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr
+
 
   const handlePrint = () => {
     window.print();

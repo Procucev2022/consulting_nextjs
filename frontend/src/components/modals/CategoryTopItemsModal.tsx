@@ -18,15 +18,8 @@ import {
   Building2,
   Filter
 } from 'lucide-react';
-import { CategoryYearDetail, CategoryTopItem } from '../../types';
-import { UI_STRINGS } from '../../constants/uiStrings';
-
-interface CategoryTopItemsModalProps {
-  category: CategoryYearDetail | null;
-  isOpen: boolean;
-  onClose: () => void;
-  totalEvaluatedSpendInrCr: number;
-}
+import { CategoryYearDetail, CategoryTopItem, CategoryTopItemsModalProps } from '../../types';
+import { UI_STRINGS } from '../../constants';
 
 export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
   category,

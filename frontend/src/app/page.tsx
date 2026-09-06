@@ -9,12 +9,12 @@ import { Module3TrendAnalytics } from '@/components/Module3TrendAnalytics';
 import { Module4SavingsEngine } from '@/components/Module4SavingsEngine';
 import { Module5ConversionMatrix } from '@/components/Module5ConversionMatrix';
 import { DatabaseSchemaView } from '@/components/DatabaseSchemaView';
-import { DatasetType } from '@/components/modals/ClientIngestionSetupModal';
 import * as XLSX from 'xlsx';
+
 import { getYahooFinanceRateToINR } from '@/utils/currencyConverter';
 import { apiClient } from '@/utils/api';
 import { frontendLogger } from '@/utils/logger';
-import { UI_STRINGS } from '@/constants/uiStrings';
+import { UI_STRINGS } from '@/constants';
 
 // Modals
 import { ProCPXModal } from '@/components/modals/ProCPXModal';
@@ -41,7 +41,10 @@ import {
   RawDocumentIngestion,
   ValidationPreCheckRecord,
   LineItemMapping,
-  SavingsOpportunity
+  SavingsOpportunity,
+  DatasetType,
+  PipelineActiveTab,
+  HeaderCurrency
 } from '@/types';
 
 export default function Home() {
@@ -49,9 +52,10 @@ export default function Home() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema'>('module1');
+  const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
   const [tenant, setTenant] = useState<TenantMaster>(mockTenant);
-  const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>('USD');
+  const [currency, setCurrency] = useState<HeaderCurrency>('USD');
+
 
   // Application Data States
   const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>(initialIngestionQueue);
