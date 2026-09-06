@@ -130,4 +130,12 @@
 2. **Declarative State Management**: Ensure the framework view engine is the sole source of truth. All UI updates, styling, conditional renders, and modal/download workflows must be handled via declarative state and hooks.
 3. **Full Pipeline Validation**: Validate all declarative refactors with `npm run typecheck` (0 errors), `npm run lint` (0 errors), and unit tests (`npm run test:coverage`) maintaining >= 90% per-file coverage.
 
+## Performance Budget Enforcement Standards
+
+1. **Client-Side Bundle Budgets**: Strictly limit shared client JavaScript to <= 250 KB gzip and critical CSS to <= 50 KB gzip.
+2. **Automated Budget Gate**: Execute `npm run check:budget` in build and pre-commit checks; terminate with error on any budget overrun.
+3. **Continuous Splitting**: Dynamically import heavy libraries (e.g. `xlsx`) and off-screen components on demand.
+4. **Coverage Mandate**: Maintain >= 90% unit test coverage individually across all performance budget modules.
+
+
 

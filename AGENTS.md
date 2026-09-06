@@ -294,5 +294,26 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
   - All declarative UI components, custom hooks, and state managers must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines (`perFile: true`).
   - Unit tests must interact with components through framework-idiomatic testing utilities (`@testing-library/react` using `screen.getByRole`, `fireEvent`, etc.) rather than inspecting or querying the global `document` directly.
 
+## 20. Mandatory Performance Budget Enforcement Policy
+
+- **Strict Client-Side Performance Budgets**:
+  - Build tools and CI/CD pipelines MUST enforce strict performance budgets for all client-side bundle assets (JavaScript and critical CSS) to guarantee the application remains fast, lightweight, and responsive.
+  - **Shared Client JS Bundle Budget**: The total compressed (gzip) size of the critical client-side JavaScript bundle (shared framework runtime, vendor chunks, and main entrypoint) MUST NOT exceed **250 KB** (`MAX_JS_BUNDLE_KB`).
+  - **Individual Shared Chunk Budget**: No individual shared JavaScript vendor chunk may exceed **120 KB** gzip (`MAX_SHARED_JS_CHUNK_KB`).
+  - **Critical CSS Budget**: The cumulative size of all critical stylesheets loaded on the initial page MUST NOT exceed **50 KB** gzip (`MAX_CRITICAL_CSS_KB`).
+  - **Total Page JS Budget**: The combined transfer size of all initial route JavaScript chunks for the primary dashboard MUST NOT exceed **320 KB** gzip (`MAX_TOTAL_PAGE_JS_KB`).
+- **Build Tool Configuration & Webpack Hints**:
+  - Webpack client compiler configuration (`next.config.mjs`) must specify `performance` budget hints (`maxAssetSize: 350 KB`, `maxEntrypointSize: 450 KB`) to alert developers during development and bundling.
+- **Automated Quality Check Integration & Rejection on Failure**:
+  - An automated performance budget verification check (`npm run check:budget`) MUST be executed as part of the production build, pre-commit quality gate (`npm run pre-commit`), and pull request CI/CD pipeline (`.github/workflows/ci.yml`).
+  - If any client-side JavaScript chunk, total bundle, or critical stylesheet exceeds its configured budget, the budget check command MUST immediately terminate with exit code 1, failing the build and blocking commits/merges.
+- **Continuous Code-Splitting & Lazy Loading**:
+  - Heavy third-party libraries (such as file processing utilities like `xlsx` or charting packages) and off-screen modal components MUST be dynamically imported on demand (`await import(...)` or `next/dynamic`) to keep the initial client bundle within budget.
+- **Constants & Types Isolation**:
+  - All budget thresholds must reside in dedicated constants files (`frontend/src/constants/performance.ts`) and re-exported via `constants/index.ts`. All metric and budget check interfaces must reside in `frontend/src/types/performance.ts` and re-exported via `types/index.ts`.
+- **Strict 90% Per-File Unit Test Code Coverage**:
+  - All budget evaluation utilities, file inspection helpers, and report formatters must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines (`perFile: true`).
+
+
 
 

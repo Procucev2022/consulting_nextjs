@@ -9,7 +9,6 @@ import { Module3TrendAnalytics } from '@/components/Module3TrendAnalytics';
 import { Module4SavingsEngine } from '@/components/Module4SavingsEngine';
 import { Module5ConversionMatrix } from '@/components/Module5ConversionMatrix';
 import { DatabaseSchemaView } from '@/components/DatabaseSchemaView';
-import * as XLSX from 'xlsx';
 
 import { getYahooFinanceRateToINR } from '@/utils/currencyConverter';
 import { apiClient } from '@/utils/api';
@@ -266,6 +265,7 @@ export default function Home() {
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
       try {
         const buffer = await file.arrayBuffer();
+        const XLSX = await import('xlsx');
         const workbook = XLSX.read(buffer, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[firstSheetName];

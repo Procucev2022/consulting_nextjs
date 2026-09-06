@@ -42,7 +42,10 @@ jobs:
       - name: Quality Gate 3 - Production Build
         run: npm run build
 
-      - name: Quality Gate 4 - Unit Tests & 90% Per-File Coverage
+      - name: Quality Gate 4 - Client Performance Budget Check
+        run: npm run check:budget
+
+      - name: Quality Gate 5 - Unit Tests & 90% Per-File Coverage
         run: npm run test:ci
 
       - name: Generate PR Summary Report

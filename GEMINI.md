@@ -136,4 +136,12 @@
 - **Declarative Patterns**: Convert imperative elements (such as temporary anchor creation for file downloads) into declarative virtual DOM elements (`<a ref={...} download />`) controlled by framework state.
 - **Strict 90% Coverage**: All declarative components, hooks, and utilities must maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines.
 
+## Mandatory Performance Budget Enforcement
+
+- **Strict Client-Side Budgets**: Enforce strict performance budgets for client bundles: maximum 250 KB gzip for shared client JavaScript (`MAX_JS_BUNDLE_KB`) and maximum 50 KB gzip for critical CSS (`MAX_CRITICAL_CSS_KB`).
+- **Build Tool Hints & Verification**: Configure Webpack performance hints in `next.config.mjs` and execute automated budget check (`npm run check:budget`) in quality checks, builds, and CI.
+- **Fail-Fast Enforcement**: Any bundle exceeding configured budgets immediately fails with exit code 1, halting CI/CD pipelines and blocking pre-commit checks.
+- **Strict 90% Coverage**: All budget enforcement utilities and test suites must maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines.
+
+
 

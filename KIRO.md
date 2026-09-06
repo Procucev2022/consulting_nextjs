@@ -111,5 +111,11 @@
 - Ensure the framework view engine remains the single source of truth, avoiding reconciliation issues and optimizing performance.
 - Validate all declarative refactors with `npm run typecheck`, `npm run lint`, and unit tests with >= 90% per-file coverage.
 
+## Performance Budget Enforcement
+- Enforce strict client-side bundle performance budgets: maximum 250 KB gzip for shared client JavaScript (`MAX_JS_BUNDLE_KB`) and maximum 50 KB gzip for critical CSS (`MAX_CRITICAL_CSS_KB`).
+- Integrate automated budget check (`npm run check:budget`) into build tools and pre-commit checks, failing immediately on budget exceedance.
+- Maintain >= 90% unit test code coverage individually on all performance modules.
+
+
 
 

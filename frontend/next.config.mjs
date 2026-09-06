@@ -16,6 +16,16 @@ const nextConfig = {
       },
     ];
   },
+  webpack(config, { isServer }) {
+    if (!isServer) {
+      config.performance = {
+        hints: 'warning',
+        maxAssetSize: 350 * 1024,
+        maxEntrypointSize: 450 * 1024,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;

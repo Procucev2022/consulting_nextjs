@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   PERFORMANCE_BENCHMARKS,
-  RESOURCE_CACHE_STRATEGIES
+  RESOURCE_CACHE_STRATEGIES,
+  PERFORMANCE_BUDGETS
 } from '../../src/constants/performance';
 
 describe('Frontend Performance Constants', () => {
@@ -20,4 +21,12 @@ describe('Frontend Performance Constants', () => {
     expect(RESOURCE_CACHE_STRATEGIES.NETWORK_ONLY).toBe('NETWORK_ONLY');
     expect(RESOURCE_CACHE_STRATEGIES.CACHE_THEN_NETWORK).toBe('CACHE_THEN_NETWORK');
   });
+
+  it('should define strict client performance budgets', () => {
+    expect(PERFORMANCE_BUDGETS.MAX_JS_BUNDLE_KB).toBe(250);
+    expect(PERFORMANCE_BUDGETS.MAX_CRITICAL_CSS_KB).toBe(50);
+    expect(PERFORMANCE_BUDGETS.MAX_SHARED_JS_CHUNK_KB).toBe(120);
+    expect(PERFORMANCE_BUDGETS.MAX_TOTAL_PAGE_JS_KB).toBe(320);
+  });
 });
+

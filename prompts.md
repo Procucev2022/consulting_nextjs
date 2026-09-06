@@ -107,3 +107,11 @@ Pre-commits check: Add assistant instructions to run git pre-commit hooks that e
 
 ## Prompt 18
 DOM Manipulation: Add a comprehensive configuration in assistant instructions to strictly prohibit direct DOM manipulation using low-level libraries within the application framework. All UI updates must be handled through the framework's state management patterns. This ensures that the framework's view engine remains the single source of truth, preventing reconciliation issues and maintaining application performance. Refactor the complete application to ensure all existing direct DOM interactions are converted to declarative patterns.
+
+---
+
+## Prompt 19
+Performance Budget Enforcement: Configure build tools to enforce strict performance budgets for the client-side bundle.
+Budget: Set a limit on the total JavaScript bundle size (e.g., 250 KB) and critical CSS size.
+Check: Integrate the check into the quality check command to fail if the budgets are exceeded, ensuring the application remains fast and lightweight.
+

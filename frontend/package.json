@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile=test-results.json"
+    "test:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile=test-results.json",
+    "check:budget": "node scripts/check-budget.js"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
