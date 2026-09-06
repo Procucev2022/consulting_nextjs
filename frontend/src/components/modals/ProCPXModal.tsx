@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Sparkles, Send, CheckCircle2, Shield, ArrowRight, X, AlertTriangle, Layers } from 'lucide-react';
 import { SavingsOpportunity } from '../../types';
 import confetti from 'canvas-confetti';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface ProCPXModalProps {
   opportunity: SavingsOpportunity | null;
@@ -61,12 +62,12 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/60">
-                  proCPX Integration
+                  {UI_STRINGS.modals.proCPX.title}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">e-Sourcing Event Creator</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.proCPX.subtitle}</span>
               </div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                Launch Sourcing Event
+                {UI_STRINGS.modals.proCPX.heading}
               </h2>
             </div>
           </div>
@@ -85,9 +86,9 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-300 dark:border-emerald-500/40 animate-bounce">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">e-Sourcing Event Launched to proCPX!</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.proCPX.deployedSuccess}</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                RFx event ID <span className="font-mono text-cyan-700 dark:text-cyan-400 font-bold">RFX-2026-{opportunity.opp_id}</span> has been created with {invitedSuppliers.length} suppliers invited and a target savings goal of <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">${opportunity.est_savings.toLocaleString()}</span>.
+                {UI_STRINGS.modals.proCPX.deployedDesc(opportunity.opp_id, invitedSuppliers.length, `$${opportunity.est_savings.toLocaleString()}`)}
               </p>
             </div>
           ) : (
@@ -104,14 +105,14 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                     </h3>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Identified Savings</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.proCPX.identifiedSavings}</span>
                     <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
                       ${opportunity.est_savings.toLocaleString()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-700/40">
-                  <span className="text-amber-700 dark:text-amber-400 font-medium">Root Cause:</span>
+                  <span className="text-amber-700 dark:text-amber-400 font-medium">{UI_STRINGS.modals.proCPX.rootCause}</span>
                   <span>{opportunity.contract_leak_type}</span>
                 </div>
               </div>
@@ -120,21 +121,21 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Sourcing Mechanism
+                    {UI_STRINGS.modals.proCPX.sourcingMechanism}
                   </label>
                   <select
                     value={eventType}
                     onChange={(e) => setEventType(e.target.value as any)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   >
-                    <option value="Multi-Stage RFP">Multi-Stage RFP & e-Bidding</option>
-                    <option value="Reverse Auction">Real-Time English Reverse Auction</option>
-                    <option value="Sealed Bid">Sealed Bid Benchmark Competition</option>
+                    <option value="Multi-Stage RFP">{UI_STRINGS.modals.proCPX.mechanisms.multiStageRFP}</option>
+                    <option value="Reverse Auction">{UI_STRINGS.modals.proCPX.mechanisms.reverseAuction}</option>
+                    <option value="Sealed Bid">{UI_STRINGS.modals.proCPX.mechanisms.sealedBid}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Target Savings Baseline (USD)
+                    {UI_STRINGS.modals.proCPX.targetBaselineLabel}
                   </label>
                   <input
                     type="number"
@@ -148,14 +149,14 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               {/* Supplier Roster */}
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex justify-between">
-                  <span>Pre-Qualified Supplier Cohort ({invitedSuppliers.length})</span>
-                  <span className="text-cyan-600 dark:text-cyan-400 text-[11px] cursor-pointer hover:underline font-semibold">+ Add Supplier</span>
+                  <span>{UI_STRINGS.modals.proCPX.supplierCohortLabel(invitedSuppliers.length)}</span>
+                  <span className="text-cyan-600 dark:text-cyan-400 text-[11px] cursor-pointer hover:underline font-semibold">{UI_STRINGS.modals.proCPX.addSupplier}</span>
                 </label>
                 <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                   {invitedSuppliers.map((supplier, idx) => (
                     <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
                       <span className="font-medium text-slate-900 dark:text-white">{supplier}</span>
-                      <span className="text-[10px] text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/40">Verified Vendor</span>
+                      <span className="text-[10px] text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/40">{UI_STRINGS.modals.proCPX.verifiedVendor}</span>
                     </div>
                   ))}
                 </div>
@@ -165,7 +166,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
                 <Shield className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                 <span>
-                  proCPX enforces automated multi-round price reduction with strict SLA compliance and multi-tier pricing brackets.
+                  {UI_STRINGS.modals.proCPX.complianceNote}
                 </span>
               </div>
             </>
@@ -179,7 +180,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              {UI_STRINGS.modals.proCPX.cancel}
             </button>
             <button
               onClick={handleLaunch}
@@ -189,11 +190,11 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               {isDeploying ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Deploying to proCPX...</span>
+                  <span>{UI_STRINGS.modals.proCPX.deploying}</span>
                 </>
               ) : (
                 <>
-                  <span>Push to proCPX</span>
+                  <span>{UI_STRINGS.modals.proCPX.pushButton}</span>
                   <Send className="w-4 h-4" />
                 </>
               )}

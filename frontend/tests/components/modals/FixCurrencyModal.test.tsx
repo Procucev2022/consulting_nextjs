@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FixCurrencyModal } from '../../../src/components/modals/FixCurrencyModal';
 import { initialValidationRecords } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('FixCurrencyModal Component', () => {
   const sampleRec = initialValidationRecords[0];
@@ -32,14 +33,14 @@ describe('FixCurrencyModal Component', () => {
       />
     );
 
-    expect(screen.getByText('Multi-Currency FX Engine')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.fixCurrency.fxEngineBadge)).toBeInTheDocument();
 
     // Select EUR
     const eurBtn = screen.getByRole('button', { name: 'EUR' });
     fireEvent.click(eurBtn);
 
     // Submit
-    const applyBtn = screen.getByRole('button', { name: /Apply FX Conversion to INR/i });
+    const applyBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
     fireEvent.click(applyBtn);
 
     expect(onFix).toHaveBeenCalledWith(sampleRec.record_id, 'EUR', expect.any(Number));
@@ -57,7 +58,7 @@ describe('FixCurrencyModal Component', () => {
       />
     );
 
-    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.common.cancel });
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });

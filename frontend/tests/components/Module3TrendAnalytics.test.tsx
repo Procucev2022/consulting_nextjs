@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module3TrendAnalytics } from '../../src/components/Module3TrendAnalytics';
 import { mockVendorPriceRanks } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module3TrendAnalytics Component', () => {
   it('renders correctly with light and dark themes', () => {
@@ -14,8 +15,8 @@ describe('Module3TrendAnalytics Component', () => {
       />
     );
 
-    expect(screen.getByText('Historical Spend & Commodity Volatility Analytics')).toBeInTheDocument();
-    expect(screen.getByText('Identified Unjustified Price Creep Leakage')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.leakageBoxTitle)).toBeInTheDocument();
 
     rerender(
       <Module3TrendAnalytics
@@ -24,7 +25,7 @@ describe('Module3TrendAnalytics Component', () => {
         theme="dark"
       />
     );
-    expect(screen.getByText('Historical Spend & Commodity Volatility Analytics')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
   });
 
   it('handles changing commodity benchmark', () => {
@@ -38,10 +39,10 @@ describe('Module3TrendAnalytics Component', () => {
     const selects = screen.getAllByRole('combobox');
     const benchmarkSelect = selects[0];
 
-    fireEvent.change(benchmarkSelect, { target: { value: 'LME Industrial Metals' } });
-    fireEvent.change(benchmarkSelect, { target: { value: 'Cass Global Freight' } });
-    fireEvent.change(benchmarkSelect, { target: { value: 'Fastmarkets Paper & Pulp' } });
-    fireEvent.change(benchmarkSelect, { target: { value: 'ICIS Chemicals & Resins' } });
+    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.lme } });
+    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.cass } });
+    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.fastmarkets } });
+    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.icis } });
   });
 
   it('handles risk filtering', () => {
@@ -52,13 +53,13 @@ describe('Module3TrendAnalytics Component', () => {
       />
     );
 
-    const creepBtn = screen.getByRole('button', { name: />5% Creep Anomaly/i });
+    const creepBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterCreepAnomaly });
     fireEvent.click(creepBtn);
 
-    const alignedBtn = screen.getByRole('button', { name: /Aligned/i });
+    const alignedBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAligned });
     fireEvent.click(alignedBtn);
 
-    const allBtn = screen.getByRole('button', { name: /All Vendors/i });
+    const allBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAllVendors(mockVendorPriceRanks.length) });
     fireEvent.click(allBtn);
   });
 
@@ -88,10 +89,11 @@ describe('Module3TrendAnalytics Component', () => {
       />
     );
 
-    expect(screen.getByText('₹0 (Aligned)')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.alignedLeakageVal)).toBeInTheDocument();
 
-    const ctaBtn = screen.getByRole('button', { name: /Proceed to Real-Time Savings Engine/i });
+    const ctaBtn = screen.getByRole('button', { name: UI_STRINGS.module3.ctaProceedButton });
     fireEvent.click(ctaBtn);
     expect(onProceed).toHaveBeenCalled();
   });
 });
+

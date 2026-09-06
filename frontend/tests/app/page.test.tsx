@@ -11,6 +11,7 @@ import {
   vendorVolatilityRankings,
   initialSavingsOpportunities
 } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Home Page Component', () => {
   beforeEach(() => {
@@ -49,41 +50,41 @@ describe('Home Page Component', () => {
     render(<Home />);
 
     // Check header
-    expect(screen.getByText('PROCUCEV')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
 
     // Navigate to Module 2
-    const step2 = screen.getByText('AI Categorization');
+    const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
-    expect(screen.getByText(/AI Taxonomy Classification/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
 
     // Navigate to Module 3
-    const step3 = screen.getByText('Trend Analysis');
+    const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);
     fireEvent.click(step3);
-    expect(screen.getByText(/Historical Spend & Commodity Volatility/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
 
     // Navigate to Module 4
-    const step4 = screen.getByText('Savings Engine');
+    const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
     fireEvent.click(step4);
-    expect(screen.getByText(/Opportunity Pipeline & Suite Integration/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
 
     // Navigate to Module 5
-    const matrixBtn = screen.getByRole('button', { name: /5\. Conversion Matrix/i });
+    const matrixBtn = screen.getByRole('button', { name: UI_STRINGS.pipeline.conversionMatrixTab });
     fireEvent.click(matrixBtn);
-    expect(screen.getByText(/Executive ROI & SaaS Payback Calculator/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module5.heading)).toBeInTheDocument();
 
     // Navigate to Schema
-    const schemaBtn = screen.getByRole('button', { name: /Data Architecture/i });
+    const schemaBtn = screen.getByRole('button', { name: UI_STRINGS.pipeline.dataArchitectureTab });
     fireEvent.click(schemaBtn);
-    expect(screen.getByText(/Data Architecture & Security SLA/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.schema.bannerTitle)).toBeInTheDocument();
 
     // Return to Module 1
-    const step1 = screen.getByText('3-Year Upload');
+    const step1 = screen.getByText(UI_STRINGS.pipeline.steps.step1.title);
     fireEvent.click(step1);
-    expect(screen.getByText('Uploaded Procurement File Details')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.uploadedFileDetails)).toBeInTheDocument();
   });
 
   it('handles batch file upload with CSV and XLSX formats', async () => {
@@ -111,10 +112,10 @@ describe('Home Page Component', () => {
     render(<Home />);
 
     // Open fix currency
-    const fixBtns = screen.queryAllByRole('button', { name: /Fix Currency/i });
+    const fixBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module1.actions.fixCurrency, 'i') });
     if (fixBtns.length > 0) {
       fireEvent.click(fixBtns[0]);
-      const applyFxBtn = screen.getByRole('button', { name: /Apply FX Conversion to INR/i });
+      const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
       fireEvent.click(applyFxBtn);
       await waitFor(() => {
         expect(apiClient.updateValidationRecord).toHaveBeenCalled();
@@ -122,10 +123,10 @@ describe('Home Page Component', () => {
     }
 
     // Open merge vendor
-    const mergeBtns = screen.queryAllByRole('button', { name: /Merge Vendor/i });
+    const mergeBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module1.actions.mergeVendor, 'i') });
     if (mergeBtns.length > 0) {
       fireEvent.click(mergeBtns[0]);
-      const mapBtn = screen.getByRole('button', { name: /Map to Master Supplier/i });
+      const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
       fireEvent.click(mapBtn);
       await waitFor(() => {
         expect(apiClient.mergeVendor).toHaveBeenCalled();
@@ -136,7 +137,7 @@ describe('Home Page Component', () => {
   it('handles blanket fixes and reset validation records', async () => {
     render(<Home />);
 
-    const blanketBtn = screen.queryByRole('button', { name: /Auto-Remediate All/i });
+    const blanketBtn = screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     if (blanketBtn) {
       fireEvent.click(blanketBtn);
       await waitFor(() => {
@@ -144,7 +145,7 @@ describe('Home Page Component', () => {
       });
     }
 
-    const resetBtn = screen.queryByRole('button', { name: /Reset Validation Records/i });
+    const resetBtn = screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.resetAnomalyState, 'i') });
     if (resetBtn) {
       fireEvent.click(resetBtn);
       await waitFor(() => {
@@ -157,60 +158,60 @@ describe('Home Page Component', () => {
     render(<Home />);
 
     // Module 1 -> Module 2
-    const proceedToCat = screen.getByRole('button', { name: /Run AI Categorization Engine/i });
+    const proceedToCat = screen.getByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
     fireEvent.click(proceedToCat);
-    expect(screen.getByText(/AI Taxonomy Classification/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
 
     // Line item confirm and reassign in Module 2
-    const confirmBtns = screen.getAllByRole('button', { name: /^Confirm$/i });
+    const confirmBtns = screen.getAllByRole('button', { name: UI_STRINGS.module2.btnConfirm });
     if (confirmBtns.length > 0) {
       fireEvent.click(confirmBtns[0]);
     }
 
-    const reassignBtns = screen.getAllByRole('button', { name: /Re-Assign/i });
+    const reassignBtns = screen.getAllByRole('button', { name: UI_STRINGS.module2.btnReassign });
     if (reassignBtns.length > 0) {
       fireEvent.click(reassignBtns[0]);
-      const applyColL = screen.getByRole('button', { name: /Apply Column L Mapping/i });
+      const applyColL = screen.getByRole('button', { name: UI_STRINGS.modals.reassign.saveMapping });
       fireEvent.click(applyColL);
     }
 
     // Module 2 -> Module 3
-    const proceedToTrend = screen.getByRole('button', { name: /Proceed to 36-Month Volatility Analytics/i });
+    const proceedToTrend = screen.getByRole('button', { name: UI_STRINGS.module2.btnProceedToTrend });
     fireEvent.click(proceedToTrend);
-    expect(screen.getByText(/Historical Spend & Commodity Volatility/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
 
     // Module 3 -> Module 4
-    const proceedToSavings = screen.getByRole('button', { name: /Proceed to Real-Time Savings Engine/i });
+    const proceedToSavings = screen.getByRole('button', { name: UI_STRINGS.module3.ctaProceedButton });
     fireEvent.click(proceedToSavings);
-    expect(screen.getByText(/Opportunity Pipeline & Suite Integration/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
 
     // Module 4 suite dispatch
-    const proCPXBtns = screen.queryAllByRole('button', { name: /Push to proCPX/i });
+    const proCPXBtns = screen.queryAllByRole('button', { name: UI_STRINGS.modals.proCPX.launchButton });
     if (proCPXBtns.length > 0) {
       fireEvent.click(proCPXBtns[0]);
-      expect(screen.getByText('Launch Sourcing Event')).toBeInTheDocument();
-      const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
-      fireEvent.click(cancelBtn);
+      expect(screen.getByText(UI_STRINGS.modals.proCPX.heading)).toBeInTheDocument();
+      const cancelBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.proCPX.cancel });
+      fireEvent.click(cancelBtns[0]);
     }
 
-    const dpsNXTBtns = screen.queryAllByRole('button', { name: /Push to DPS NXT/i });
+    const dpsNXTBtns = screen.queryAllByRole('button', { name: UI_STRINGS.modals.dpsNXT.pushButton });
     if (dpsNXTBtns.length > 0) {
       fireEvent.click(dpsNXTBtns[0]);
-      expect(screen.getByText('Automate Rate Card & Contract Rules')).toBeInTheDocument();
-      const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
-      fireEvent.click(cancelBtn);
+      expect(screen.getByText(UI_STRINGS.modals.dpsNXT.heading)).toBeInTheDocument();
+      const cancelBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.dpsNXT.cancel });
+      fireEvent.click(cancelBtns[0]);
     }
 
     // Module 4 -> Module 5
-    const proceedToConversion = screen.getByRole('button', { name: /Proceed to Conversion Matrix & ROI Engine/i });
+    const proceedToConversion = screen.getByRole('button', { name: UI_STRINGS.module4.proceedToConversion });
     fireEvent.click(proceedToConversion);
-    expect(screen.getAllByText(/Commercial Realization & SaaS Lock-In Portal/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module5.heading)[0]).toBeInTheDocument();
 
     // Open Executive Report Modal
-    const reportBtn = screen.getByRole('button', { name: /Generate Executive Brief/i });
+    const reportBtn = screen.getByRole('button', { name: UI_STRINGS.module5.generateExecutiveReport });
     fireEvent.click(reportBtn);
-    expect(screen.getByText(/Executive Advisory Diagnostic & ROI Blueprint/i)).toBeInTheDocument();
-    const printBtn = screen.getByRole('button', { name: /Print \/ PDF/i });
+    expect(screen.getByText(UI_STRINGS.modals.report.title)).toBeInTheDocument();
+    const printBtn = screen.getByRole('button', { name: UI_STRINGS.modals.report.printPdf });
     const closeReportBtn = printBtn.nextElementSibling as HTMLButtonElement;
     fireEvent.click(closeReportBtn);
   });
@@ -225,12 +226,12 @@ describe('Home Page Component', () => {
     });
 
     // Switch theme to dark
-    const themeBtn = screen.getByTitle(/Switch to Dark Mode/i);
+    const themeBtn = screen.getByTitle(UI_STRINGS.header.themeSwitchDark);
     fireEvent.click(themeBtn);
     expect(document.documentElement.classList.contains('dark')).toBe(true);
 
     // Switch theme back to light
-    const lightBtn = screen.getByTitle(/Switch to Light Mode/i);
+    const lightBtn = screen.getByTitle(UI_STRINGS.header.themeSwitchLight);
     fireEvent.click(lightBtn);
     expect(document.documentElement.classList.contains('light')).toBe(true);
 
@@ -241,14 +242,14 @@ describe('Home Page Component', () => {
     const gbpBtn = screen.getByRole('button', { name: 'GBP' });
     fireEvent.click(gbpBtn);
 
-    const inrBtn = screen.getByRole('button', { name: /₹ INR/i });
+    const inrBtn = screen.getByRole('button', { name: UI_STRINGS.header.currencies.inr });
     fireEvent.click(inrBtn);
 
     // Open Executive Report from Header button
-    const headerReportBtn = screen.getByRole('button', { name: /Executive Brief/i });
+    const headerReportBtn = screen.getByRole('button', { name: UI_STRINGS.header.reportButton });
     fireEvent.click(headerReportBtn);
-    expect(screen.getByText(/Executive Advisory Diagnostic & ROI Blueprint/i)).toBeInTheDocument();
-    const printBtn2 = screen.getByRole('button', { name: /Print \/ PDF/i });
+    expect(screen.getByText(UI_STRINGS.modals.report.title)).toBeInTheDocument();
+    const printBtn2 = screen.getByRole('button', { name: UI_STRINGS.modals.report.printPdf });
     const closeReportBtn2 = printBtn2.nextElementSibling as HTMLButtonElement;
     fireEvent.click(closeReportBtn2);
     // Trigger onSelectTenant via tenant badge
@@ -268,21 +269,21 @@ describe('Home Page Component', () => {
     });
 
     // Navigate to Module 4
-    const step4 = screen.getByText('Savings Engine');
+    const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
     fireEvent.click(step4);
-    await screen.findByText(/Opportunity Pipeline & Suite Integration/i);
+    await screen.findByText(UI_STRINGS.module4.pipelineTitle);
 
     // Enable fake timers for countdowns
     vi.useFakeTimers();
 
     // Click ProCPX button in table
-    const proCPXBtns = screen.getAllByRole('button', { name: /Push to proCPX/i });
+    const proCPXBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.proCPX.launchButton });
     fireEvent.click(proCPXBtns[0]);
 
     // Find modal heading and submit button inside the modal
-    const modalHeading = screen.getByRole('heading', { name: /Launch Sourcing Event/i });
+    const modalHeading = screen.getByRole('heading', { name: UI_STRINGS.modals.proCPX.heading });
     const modal = modalHeading.closest('div.relative');
-    const modalLaunchBtn = within(modal as HTMLElement).getByRole('button', { name: /Push to proCPX/i });
+    const modalLaunchBtn = within(modal as HTMLElement).getByRole('button', { name: UI_STRINGS.modals.proCPX.launchButton });
     fireEvent.click(modalLaunchBtn);
 
     // Fast-forward countdown and completion timers (1200ms + 1800ms = 3000ms)
@@ -294,13 +295,13 @@ describe('Home Page Component', () => {
     expect(apiClient.deployOpportunity).toHaveBeenCalledWith(expect.any(String), 'proCPX');
 
     // Click DPS NXT button in table
-    const dpsNXTBtns = screen.getAllByRole('button', { name: /Push to DPS NXT/i });
+    const dpsNXTBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.dpsNXT.pushButton });
     fireEvent.click(dpsNXTBtns[0]);
 
     // Find DPS modal heading and submit button
-    const dpsHeading = screen.getByRole('heading', { name: /Automate Rate Card & Contract Rules/i });
+    const dpsHeading = screen.getByRole('heading', { name: UI_STRINGS.modals.dpsNXT.heading });
     const dpsModal = dpsHeading.closest('div.relative');
-    const modalDpsBtn = within(dpsModal as HTMLElement).getByRole('button', { name: /Push to DPS NXT/i });
+    const modalDpsBtn = within(dpsModal as HTMLElement).getByRole('button', { name: UI_STRINGS.modals.dpsNXT.pushButton });
     fireEvent.click(modalDpsBtn);
 
     // Fast-forward countdown and completion timers (1200ms + 1800ms = 3000ms)
@@ -331,27 +332,27 @@ describe('Home Page Component', () => {
     });
 
     // Currency fix with rejection
-    const fixInrBtns = screen.getAllByRole('button', { name: /Fix \(INR\)/i });
+    const fixInrBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.fixInr });
     if (fixInrBtns.length > 0) {
       fireEvent.click(fixInrBtns[0]);
-      const applyFxBtn = screen.getByRole('button', { name: /Apply FX Conversion to INR/i });
+      const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
       fireEvent.click(applyFxBtn);
     }
 
     // Merge vendor with rejection
-    const mergeBtns = screen.getAllByRole('button', { name: /Merge Vendor/i });
+    const mergeBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
     if (mergeBtns.length > 0) {
       fireEvent.click(mergeBtns[0]);
-      const mapBtn = screen.getByRole('button', { name: /Map to Master Supplier/i });
+      const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
       fireEvent.click(mapBtn);
     }
 
     // Blanket remediation with rejection
-    const autoRemediateBtn = screen.getByRole('button', { name: /Apply Blanket AI Fixes/i });
+    const autoRemediateBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     fireEvent.click(autoRemediateBtn);
 
     // Reset with rejection - wait for button to be available
-    const resetBtn = await screen.findByRole('button', { name: /Reset Anomaly State/i });
+    const resetBtn = await screen.findByRole('button', { name: new RegExp(UI_STRINGS.module1.resetAnomalyState, 'i') });
     fireEvent.click(resetBtn);
 
     await waitFor(() => {
@@ -408,7 +409,7 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'getSavingsOpportunities').mockResolvedValue(null as any);
 
     render(<Home />);
-    expect(screen.getByText('PROCUCEV')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
   });
 
   it('handles backend hydration failure gracefully on mount', async () => {
@@ -420,36 +421,36 @@ describe('Home Page Component', () => {
 
     render(<Home />);
 
-    expect(screen.getByText('PROCUCEV')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
   });
 
   it('handles closing modals without submitting', () => {
     render(<Home />);
 
     // Fix currency modal close
-    const fixInrBtns = screen.getAllByRole('button', { name: /Fix \(INR\)/i });
+    const fixInrBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.fixInr });
     if (fixInrBtns.length > 0) {
       fireEvent.click(fixInrBtns[0]);
-      const closeBtn = screen.getByRole('button', { name: 'Cancel' });
+      const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.fixCurrency.cancel });
       fireEvent.click(closeBtn);
     }
 
     // Merge vendor modal close
-    const mergeBtns = screen.getAllByRole('button', { name: /Merge Vendor/i });
+    const mergeBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
     if (mergeBtns.length > 0) {
       fireEvent.click(mergeBtns[0]);
-      const closeBtn = screen.getByRole('button', { name: 'Cancel' });
+      const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.mergeVendor.cancel });
       fireEvent.click(closeBtn);
     }
 
     // Navigate to Module 2 and close Reassign modal
-    const step2 = screen.getByText('AI Categorization');
+    const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
 
-    const reassignBtns = screen.getAllByRole('button', { name: /Re-Assign/i });
+    const reassignBtns = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module2.btnReassign, 'i') });
     if (reassignBtns.length > 0) {
       fireEvent.click(reassignBtns[0]);
-      const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+      const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.reassign.cancel });
       fireEvent.click(cancelBtn);
     }
   });

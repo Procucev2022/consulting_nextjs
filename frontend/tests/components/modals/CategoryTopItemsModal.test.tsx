@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoryTopItemsModal } from '../../../src/components/modals/CategoryTopItemsModal';
 import { mockCategoryYearDetails } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('CategoryTopItemsModal Component', () => {
   const sampleCategory = mockCategoryYearDetails[0];
@@ -30,7 +31,7 @@ describe('CategoryTopItemsModal Component', () => {
     );
 
     expect(screen.getAllByText(new RegExp(sampleCategory.category, 'i')).length).toBeGreaterThan(0);
-    expect(screen.getByText('Price Creep Risk Items')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.topItems.priceCreepRiskItems)).toBeInTheDocument();
   });
 
   it('handles search input and trend filtering', () => {
@@ -43,16 +44,16 @@ describe('CategoryTopItemsModal Component', () => {
       />
     );
 
-    const searchInput = screen.getByPlaceholderText(/Search items/i);
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.modals.topItems.searchPlaceholderCategory);
     fireEvent.change(searchInput, { target: { value: 'Polymer' } });
 
-    const highCreepBtn = screen.getByRole('button', { name: /High Creep/i });
+    const highCreepBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.filterHighCreep });
     fireEvent.click(highCreepBtn);
 
-    const steadyBtn = screen.getByRole('button', { name: /Steady/i });
+    const steadyBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.filterSteady });
     fireEvent.click(steadyBtn);
 
-    const allBtn = screen.getByRole('button', { name: /All Top 10/i });
+    const allBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.filterAllTop10 });
     fireEvent.click(allBtn);
   });
 
@@ -67,10 +68,10 @@ describe('CategoryTopItemsModal Component', () => {
       />
     );
 
-    const exportBtn = screen.getByRole('button', { name: /Export CSV/i });
+    const exportBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.exportCSV });
     fireEvent.click(exportBtn);
 
-    const closePopUpBtn = screen.getByRole('button', { name: /Close Pop-up/i });
+    const closePopUpBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.closePopUp });
     fireEvent.click(closePopUpBtn);
     expect(onClose).toHaveBeenCalled();
   });
@@ -108,11 +109,11 @@ describe('CategoryTopItemsModal Component', () => {
       />
     );
 
-    expect(screen.getByText('Standard')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.topItems.standardOpportunity)).toBeInTheDocument();
     expect(screen.getByText('+-10%')).toBeInTheDocument();
 
     // Search by PO number and column L
-    const searchInput = screen.getByPlaceholderText(/Search items/i);
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.modals.topItems.searchPlaceholderCategory);
     fireEvent.change(searchInput, { target: { value: 'PO-STEADY' } });
     expect(screen.getByText('Steady Corrugated Box')).toBeInTheDocument();
 
@@ -123,10 +124,10 @@ describe('CategoryTopItemsModal Component', () => {
     expect(screen.getByText('Steady Corrugated Box')).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: 'NON_EXISTENT' } });
-    expect(screen.getByText(/No line items match the filter criteria/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.topItems.noItemsMatch)).toBeInTheDocument();
 
     // Export CSV on customCategory (exercises opportunity_potential_inr_lakhs || 0 branch)
-    const exportBtn = screen.getByRole('button', { name: /Export CSV/i });
+    const exportBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.exportCSV });
     fireEvent.click(exportBtn);
 
     // Close via X button

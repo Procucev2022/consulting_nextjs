@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module4SavingsEngine } from '../../src/components/Module4SavingsEngine';
 import { mockSavingsOpportunities } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module4SavingsEngine Component', () => {
   it('renders summary cards, category breakdowns, and opportunities table', () => {
@@ -15,9 +16,9 @@ describe('Module4SavingsEngine Component', () => {
       />
     );
 
-    expect(screen.getAllByText('Direct Materials').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Packaging Materials').length).toBeGreaterThan(0);
-    expect(screen.getByText('Identified Opportunity Pipeline & Suite Integration Triggers')).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module4.categories.directMaterials).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module4.categories.packagingMaterials).length).toBeGreaterThan(0);
+    expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
   });
 
   it('filters opportunities by category and module', () => {
@@ -35,7 +36,7 @@ describe('Module4SavingsEngine Component', () => {
     const moduleSelect = selects[1];
 
     // Filter by Packaging Materials
-    fireEvent.change(categorySelect, { target: { value: 'Packaging Materials' } });
+    fireEvent.change(categorySelect, { target: { value: UI_STRINGS.module4.categories.packagingMaterials } });
 
     // Filter by proCPX
     fireEvent.change(moduleSelect, { target: { value: 'proCPX' } });
@@ -61,13 +62,13 @@ describe('Module4SavingsEngine Component', () => {
       />
     );
 
-    const proCPXBtns = screen.queryAllByRole('button', { name: /Push to proCPX/i });
+    const proCPXBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module4.pushToProCPX, 'i') });
     if (proCPXBtns.length > 0) {
       fireEvent.click(proCPXBtns[0]);
       expect(onOpenProCPX).toHaveBeenCalled();
     }
 
-    const dpsNXTBtns = screen.queryAllByRole('button', { name: /Push to DPS NXT/i });
+    const dpsNXTBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module4.pushToDPSNXT, 'i') });
     if (dpsNXTBtns.length > 0) {
       fireEvent.click(dpsNXTBtns[0]);
       expect(onOpenDPSNXT).toHaveBeenCalled();
@@ -99,7 +100,7 @@ describe('Module4SavingsEngine Component', () => {
       />
     );
 
-    const pushedBadges = screen.getAllByText('Pushed');
+    const pushedBadges = screen.getAllByText(UI_STRINGS.module4.pushedBadge);
     expect(pushedBadges.length).toBeGreaterThan(0);
   });
 
@@ -114,7 +115,7 @@ describe('Module4SavingsEngine Component', () => {
       />
     );
 
-    const ctaBtn = screen.getByRole('button', { name: /Proceed to Conversion Matrix & ROI Engine/i });
+    const ctaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module4.ctaProceedButton, 'i') });
     fireEvent.click(ctaBtn);
     expect(onProceed).toHaveBeenCalled();
   });

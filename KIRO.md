@@ -23,3 +23,10 @@
 1. Maintain `prompts.md` in the workspace root to log user-provided prompts.
 2. Log ONLY user-provided prompts in `prompts.md`. Do NOT include AI-generated conversation or answers.
 3. Append user prompts chronologically under designated headers.
+
+## Internationalization (i18n) & `UI_STRINGS` Standards
+1. Move all user-facing strings out of components into constants modules exposed through `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`).
+2. Avoid hardcoding literal strings and embedded text in JSX/TSX.
+3. Use template placeholders / parameterized functions for dynamic runtime values.
+4. Update unit tests to assert against `UI_STRINGS` constants instead of literal strings.
+5. Ensure >= 90% per-file unit test code coverage across all files.

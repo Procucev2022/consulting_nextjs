@@ -17,6 +17,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { VendorYearDetail, CategoryTopItem } from '../../types';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface VendorTopItemsModalProps {
   vendor: VendorYearDetail | null;
@@ -111,21 +112,21 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
             <div className="flex items-center space-x-2">
               <span className="text-[11px] font-mono font-black px-2.5 py-0.5 rounded-lg bg-slate-900 dark:bg-slate-800 text-amber-300 border border-slate-700 flex items-center space-x-1 shadow-xs">
                 <Award className="w-3.5 h-3.5 text-amber-400" />
-                <span>Rank #{vendor.rank || 1} Supplier</span>
+                <span>{UI_STRINGS.modals.topItems.vendorRank(vendor.rank || 1)}</span>
               </span>
               <span className="text-[11px] font-mono font-bold bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
-                Master ID: {vendor.master_vendor_id}
+                {UI_STRINGS.modals.topItems.masterVendorId(vendor.master_vendor_id)}
               </span>
               <span className="text-[11px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
-                {sharePct}% Spend Share
+                {UI_STRINGS.modals.topItems.spendShareVendor(sharePct)}
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center space-x-2">
               <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 inline" />
-              <span>{vendor.vendor_name} — Top Line Items & 3-Year Price Trends</span>
+              <span>{UI_STRINGS.modals.topItems.vendorTitle(vendor.vendor_name)}</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Primary Segment: <strong>{vendor.primary_category}</strong> (UNSPSC: {vendor.sample_column_l_code}) • Fiscal Years: <strong>FY24 / FY25 / FY26</strong> (1st Apr to 31st Mar).
+              {UI_STRINGS.modals.topItems.vendorFiscalYearNote(vendor.primary_category, vendor.sample_column_l_code)}
             </p>
           </div>
 
@@ -135,7 +136,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
               className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl border border-slate-300 dark:border-slate-700 transition-colors shadow-xs active:scale-95 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Export CSV</span>
+              <span>{UI_STRINGS.modals.topItems.exportCSV}</span>
             </button>
             <button
               onClick={onClose}
@@ -149,26 +150,26 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
         {/* KPI Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-3.5 bg-slate-100/70 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 shrink-0 font-mono text-xs">
           <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Total Vendor Spend</span>
+            <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.totalVendorSpend}</span>
             <p className="text-base font-black text-slate-900 dark:text-white">
               ₹{vendorSpendCr.toFixed(2)} Cr
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Contracted Items</span>
+            <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.contractedItems}</span>
             <p className="text-base font-black text-cyan-700 dark:text-cyan-400">
-              {vendor.line_items_count.toLocaleString()} Line Items
+              {UI_STRINGS.modals.topItems.lineItemsCount(vendor.line_items_count)}
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Price Creep Risk Items</span>
+            <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.priceCreepRiskItems}</span>
             <p className="text-base font-black text-rose-600 dark:text-rose-400 flex items-center space-x-1">
-              <span>{highCreepCount} Items</span>
-              <span className="text-[10px] font-normal text-rose-500">(▲ &gt;15%)</span>
+              <span>{UI_STRINGS.modals.topItems.itemsCount(highCreepCount)}</span>
+              <span className="text-[10px] font-normal text-rose-500">{UI_STRINGS.modals.topItems.highCreepBadge}</span>
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
-            <span className="text-[10px] text-slate-400 uppercase font-semibold">Negotiation Opportunity</span>
+            <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.negotiationOpportunity}</span>
             <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
               ₹{(totalPotentialLakhs / 100).toFixed(2)} Cr
             </p>
@@ -181,7 +182,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
             <input
               type="text"
-              placeholder="Search items, UNSPSC code, or PO..."
+              placeholder={UI_STRINGS.modals.topItems.searchPlaceholderVendor}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
@@ -189,7 +190,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
           </div>
 
           <div className="flex items-center space-x-1.5 text-xs font-mono">
-            <span className="text-slate-400 text-[11px] font-sans">Trend Filter:</span>
+            <span className="text-slate-400 text-[11px] font-sans">{UI_STRINGS.modals.topItems.trendFilter}</span>
             <button
               onClick={() => setTrendFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
@@ -198,7 +199,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              All Items
+              {UI_STRINGS.modals.topItems.filterAllItems}
             </button>
             <button
               onClick={() => setTrendFilter('HIGH_CREEP')}
@@ -208,7 +209,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              High Creep (▲ &gt;15%)
+              {UI_STRINGS.modals.topItems.filterHighCreep}
             </button>
             <button
               onClick={() => setTrendFilter('STEADY')}
@@ -218,7 +219,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
-              Steady (&lt;10%)
+              {UI_STRINGS.modals.topItems.filterSteady}
             </button>
           </div>
         </div>
@@ -230,23 +231,23 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
               <table className="w-full text-left text-xs font-mono">
                 <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th className="py-3 px-3"># Item ID</th>
-                    <th className="py-3 px-3">Item Description & UNSPSC Col L</th>
-                    <th className="py-3 px-3">PO Reference</th>
-                    <th className="py-3 px-3 text-right">Annual Qty</th>
-                    <th className="py-3 px-3 text-right" title="1st April 2023 – 31st March 2024">FY24 Price</th>
-                    <th className="py-3 px-3 text-right" title="1st April 2024 – 31st March 2025">FY25 Price</th>
-                    <th className="py-3 px-3 text-right" title="1st April 2025 – 31st March 2026">FY26 Price</th>
-                    <th className="py-3 px-3 text-center">3-Yr Price Trend</th>
-                    <th className="py-3 px-3 text-right font-bold text-emerald-700 dark:text-emerald-400">3-Yr Spend (₹ Cr)</th>
-                    <th className="py-3 px-3 text-right">Savings Opportunity</th>
+                    <th className="py-3 px-3">{UI_STRINGS.modals.topItems.tableHeaders.itemId}</th>
+                    <th className="py-3 px-3">{UI_STRINGS.modals.topItems.tableHeaders.description}</th>
+                    <th className="py-3 px-3">{UI_STRINGS.modals.topItems.tableHeaders.poRef}</th>
+                    <th className="py-3 px-3 text-right">{UI_STRINGS.modals.topItems.tableHeaders.annualQty}</th>
+                    <th className="py-3 px-3 text-right" title={UI_STRINGS.modals.topItems.tableHeaders.fy24Title}>{UI_STRINGS.modals.topItems.tableHeaders.fy24Price}</th>
+                    <th className="py-3 px-3 text-right" title={UI_STRINGS.modals.topItems.tableHeaders.fy25Title}>{UI_STRINGS.modals.topItems.tableHeaders.fy25Price}</th>
+                    <th className="py-3 px-3 text-right" title={UI_STRINGS.modals.topItems.tableHeaders.fy26Title}>{UI_STRINGS.modals.topItems.tableHeaders.fy26Price}</th>
+                    <th className="py-3 px-3 text-center">{UI_STRINGS.modals.topItems.tableHeaders.priceTrend3Yr}</th>
+                    <th className="py-3 px-3 text-right font-bold text-emerald-700 dark:text-emerald-400">{UI_STRINGS.modals.topItems.tableHeaders.spend3Yr}</th>
+                    <th className="py-3 px-3 text-right">{UI_STRINGS.modals.topItems.tableHeaders.savingsOpportunity}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 text-slate-700 dark:text-slate-300">
                   {filteredItems.length === 0 ? (
                     <tr>
                       <td colSpan={10} className="py-8 text-center text-slate-400 font-sans">
-                        No line items match the filter criteria.
+                        {UI_STRINGS.modals.topItems.noItemsMatch}
                       </td>
                     </tr>
                   ) : (
@@ -268,7 +269,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                               {item.item_desc}
                             </span>
                             <span className="font-mono text-[10px] font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-200 dark:border-cyan-800 inline-block mt-0.5">
-                              UNSPSC Col L: {item.column_l_code}
+                              {UI_STRINGS.modals.topItems.unspscColL(item.column_l_code)}
                             </span>
                           </td>
                           <td className="py-3 px-3 font-mono text-slate-600 dark:text-slate-300">
@@ -316,10 +317,10 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                           <td className="py-3 px-3 text-right">
                             {item.opportunity_potential_inr_lakhs ? (
                               <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold border border-emerald-300 dark:border-emerald-800 text-[10px]">
-                                ₹{item.opportunity_potential_inr_lakhs} Lakhs
+                                {UI_STRINGS.modals.topItems.lakhsVal(item.opportunity_potential_inr_lakhs)}
                               </span>
                             ) : (
-                              <span className="text-slate-400 text-[10px]">Standard</span>
+                              <span className="text-slate-400 text-[10px]">{UI_STRINGS.modals.topItems.standardOpportunity}</span>
                             )}
                           </td>
                         </tr>
@@ -334,11 +335,10 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
           {/* Mathematical Footnote */}
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-slate-600 dark:text-slate-400">
             <div>
-              <span className="font-bold text-slate-800 dark:text-slate-200">Vendor Spend Formula: </span>
-              <span>Line Item 3-Yr Spend = &sum; (Order Quantity &times; Net Price &times; Currency in INR).</span>
+              <span>{UI_STRINGS.modals.topItems.vendorSpendFormulaNote}</span>
             </div>
             <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-              Base Normalization: INR in Crores (₹ Cr)
+              {UI_STRINGS.modals.topItems.baseNormalizationNote}
             </span>
           </div>
         </div>
@@ -346,13 +346,13 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 shrink-0">
           <span className="text-xs text-slate-500 font-mono">
-            Showing {filteredItems.length} of {rawItems.length} items purchased from {vendor.vendor_name}
+            {UI_STRINGS.modals.topItems.showingVendorItems(filteredItems.length, rawItems.length, vendor.vendor_name)}
           </span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            Close Pop-up
+            {UI_STRINGS.modals.topItems.closePopUp}
           </button>
         </div>
       </div>

@@ -30,3 +30,10 @@
 - Maintain `prompts.md` in the workspace root for saving user-provided prompts.
 - Save ONLY user-provided prompts in `prompts.md`. Do NOT save AI-generated conversations, responses, or thoughts.
 - Append each user prompt in chronological sequence with clean headers.
+
+# Internationalization (i18n) & UI_STRINGS Rules
+- Never hardcode user-facing literal strings in components/JSX.
+- Move all literal strings to `frontend/src/constants/uiStrings.ts` accessible through `UI_STRINGS`.
+- Use template placeholders/functions for dynamic runtime substitution.
+- Update tests to assert against `UI_STRINGS` constants rather than literal strings.
+- Enforce >= 90% unit test coverage on all constants and helper modules.

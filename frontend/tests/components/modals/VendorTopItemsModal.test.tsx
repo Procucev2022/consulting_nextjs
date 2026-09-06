@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VendorTopItemsModal } from '../../../src/components/modals/VendorTopItemsModal';
 import { mockVendorYearDetails } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('VendorTopItemsModal Component', () => {
   const sampleVendor = mockVendorYearDetails[0];
@@ -32,28 +33,28 @@ describe('VendorTopItemsModal Component', () => {
     );
 
     expect(screen.getAllByText(new RegExp(sampleVendor.vendor_name, 'i')).length).toBeGreaterThan(0);
-    expect(screen.getByText('Price Creep Risk Items')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.topItems.priceCreepRiskItems)).toBeInTheDocument();
 
     // Search
-    const searchInput = screen.getByPlaceholderText(/Search items/i);
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.modals.topItems.searchPlaceholderVendor);
     fireEvent.change(searchInput, { target: { value: 'Packaging' } });
 
     // Filter
-    const highCreepBtn = screen.getByRole('button', { name: /High Creep/i });
+    const highCreepBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.filterHighCreep });
     fireEvent.click(highCreepBtn);
 
-    const steadyBtn = screen.getByRole('button', { name: /Steady/i });
+    const steadyBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.filterSteady });
     fireEvent.click(steadyBtn);
 
     fireEvent.change(searchInput, { target: { value: '' } });
-    const allBtn = screen.getByRole('button', { name: /All Items/i });
+    const allBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.filterAllItems });
     fireEvent.click(allBtn);
 
     // Export CSV
-    const exportBtn = screen.getByRole('button', { name: /Export CSV/i });
+    const exportBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.exportCSV });
     fireEvent.click(exportBtn);
 
-    const closeBtn = screen.getByRole('button', { name: /Close Pop-up/i });
+    const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.closePopUp });
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalled();
   });
@@ -92,11 +93,11 @@ describe('VendorTopItemsModal Component', () => {
       />
     );
 
-    expect(screen.getByText('Standard')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.topItems.standardOpportunity)).toBeInTheDocument();
     expect(screen.getByText('+-10%')).toBeInTheDocument();
 
     // Search by PO number and column L
-    const searchInput = screen.getByPlaceholderText(/Search items/i);
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.modals.topItems.searchPlaceholderVendor);
     fireEvent.change(searchInput, { target: { value: 'PO-STEADY-V' } });
     expect(screen.getByText('Steady Corrugated Box')).toBeInTheDocument();
 
@@ -107,10 +108,10 @@ describe('VendorTopItemsModal Component', () => {
     expect(screen.getByText('Steady Corrugated Box')).toBeInTheDocument();
 
     fireEvent.change(searchInput, { target: { value: 'NON_EXISTENT' } });
-    expect(screen.getByText(/No line items match the filter criteria/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.topItems.noItemsMatch)).toBeInTheDocument();
 
     // Export CSV on customVendor (exercises opportunity_potential_inr_lakhs || 0 branch)
-    const exportBtn = screen.getByRole('button', { name: /Export CSV/i });
+    const exportBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.exportCSV });
     fireEvent.click(exportBtn);
 
     // Close via X button

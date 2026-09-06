@@ -16,6 +16,7 @@ import {
   Globe
 } from 'lucide-react';
 import { VendorPriceRank } from '../types';
+import { UI_STRINGS } from '../constants/uiStrings';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -51,7 +52,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   onProceedToSavings,
   theme = 'light'
 }) => {
-  const [selectedCommodity, setSelectedCommodity] = useState<'ICIS Chemicals & Resins' | 'LME Industrial Metals' | 'Cass Global Freight' | 'Fastmarkets Paper & Pulp'>('ICIS Chemicals & Resins');
+  const [selectedCommodity, setSelectedCommodity] = useState<string>(UI_STRINGS.module3.commodities.icis);
   const [filterRisk, setFilterRisk] = useState<string>('ALL');
 
   const isDark = theme === 'dark';
@@ -71,7 +72,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
     labels: timelineMonths,
     datasets: [
       {
-        label: 'Actual Vendor Invoiced Price (+8.5%)',
+        label: UI_STRINGS.module3.invoicedDatasetLabel,
         data: vendorInvoicedData,
         borderColor: '#e11d48', // Rose-600
         backgroundColor: isDark ? 'rgba(244, 63, 94, 0.1)' : 'rgba(225, 29, 72, 0.08)',
@@ -82,7 +83,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         fill: '+1'
       },
       {
-        label: 'Market Index Movement (-4.2%) [LME / ICIS Baseline]',
+        label: UI_STRINGS.module3.marketDatasetLabel,
         data: marketIndexData,
         borderColor: '#0284c7', // Sky-600
         backgroundColor: isDark ? 'rgba(6, 182, 212, 0.05)' : 'rgba(2, 132, 199, 0.05)',
@@ -162,32 +163,32 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-rose-800 dark:text-cyan-400 bg-rose-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-rose-300 dark:border-cyan-800">
-              Module 3: 36-Month Trend & Material Volatility Analysis (FR-TRD-01, FR-TRD-02)
+              {UI_STRINGS.module3.badge}
             </span>
             <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
-              INR Crores Valuation
+              {UI_STRINGS.module3.valuationBadge}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            Historical Spend & Commodity Volatility Analytics
+            {UI_STRINGS.module3.heading}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-            Isolating true raw material market deflation from unapproved supplier price markups across a 36-month timeline in <strong>INR Crores (₹ Cr)</strong>.
+            {UI_STRINGS.module3.description}
           </p>
         </div>
 
         {/* Commodity Benchmark Dropdown */}
         <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-700/80 px-3 py-1.5 rounded-xl shrink-0">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Benchmark:</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module3.benchmarkLabel}</span>
           <select
             value={selectedCommodity}
             onChange={(e) => setSelectedCommodity(e.target.value as any)}
             className="bg-transparent text-xs font-bold text-cyan-700 dark:text-cyan-400 focus:outline-none cursor-pointer"
           >
-            <option value="ICIS Chemicals & Resins">ICIS Chemicals & Resins</option>
-            <option value="LME Industrial Metals">LME Industrial Metals</option>
-            <option value="Cass Global Freight">Cass Global Freight Index</option>
-            <option value="Fastmarkets Paper & Pulp">Fastmarkets Paper & Pulp</option>
+            <option value={UI_STRINGS.module3.commodities.icis}>{UI_STRINGS.module3.commodities.icis}</option>
+            <option value={UI_STRINGS.module3.commodities.lme}>{UI_STRINGS.module3.commodities.lme}</option>
+            <option value={UI_STRINGS.module3.commodities.cass}>{UI_STRINGS.module3.commodities.cassIndex}</option>
+            <option value={UI_STRINGS.module3.commodities.fastmarkets}>{UI_STRINGS.module3.commodities.fastmarkets}</option>
           </select>
         </div>
       </div>
@@ -200,20 +201,20 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
                 <LineChartIcon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-                <span>Raw Material Base Price Index vs Vendor Markup (36-Mo Horizon)</span>
+                <span>{UI_STRINGS.module3.chartHeading}</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Continuous 36-month timeline indexed to baseline (100.0) pegged to market indices
+                {UI_STRINGS.module3.chartSubheading}
               </p>
             </div>
             <div className="flex items-center space-x-3 text-xs font-mono">
               <span className="flex items-center space-x-1 text-cyan-700 dark:text-cyan-400 font-bold">
                 <TrendingDown className="w-3.5 h-3.5" />
-                <span>Market: -4.2%</span>
+                <span>{UI_STRINGS.module3.chartMarketLabel}</span>
               </span>
               <span className="flex items-center space-x-1 text-rose-600 dark:text-rose-400 font-bold">
                 <TrendingUp className="w-3.5 h-3.5" />
-                <span>Invoiced: +8.5%</span>
+                <span>{UI_STRINGS.module3.chartInvoicedLabel}</span>
               </span>
             </div>
           </div>
@@ -231,19 +232,19 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
               </div>
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
-                  Identified Unjustified Price Creep Leakage
+                  {UI_STRINGS.module3.leakageBoxTitle}
                 </span>
                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                  Vendor invoices escalated despite raw material commodity deflation over 36 months.
+                  {UI_STRINGS.module3.leakageBoxDesc}
                 </p>
               </div>
             </div>
             <div className="text-right sm:pl-4 shrink-0">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase">Variance Leakage</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase">{UI_STRINGS.module3.varianceLeakageLabel}</span>
               <p className="text-2xl font-black font-mono text-rose-600 dark:text-rose-400 tracking-tight">
-                ₹20.53 Cr Leakage
+                {UI_STRINGS.module3.leakageAmountVal}
               </p>
-              <span className="text-[10px] text-slate-400 font-mono">($2.45M USD converted @ FX rate)</span>
+              <span className="text-[10px] text-slate-400 font-mono">{UI_STRINGS.module3.leakageUsdNote}</span>
             </div>
           </div>
         </div>
@@ -254,33 +255,33 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
                 <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>Creep Anomaly Detector (FR-TRD-02)</span>
+                <span>{UI_STRINGS.module3.creepAnomalyTitle}</span>
               </h3>
               <span className="text-xs font-mono font-bold text-rose-800 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded border border-rose-300 dark:border-rose-800/60">
-                &gt; 5.0% Flag
+                {UI_STRINGS.module3.creepAnomalyBadge}
               </span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              Algorithms continuously monitor invoice price deltas against global benchmark indices and multi-currency FX trends.
+              {UI_STRINGS.module3.creepAnomalyDesc}
             </p>
 
             <div className="space-y-3 mt-4">
               <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Average Supplier Markup Spread</span>
-                <p className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">+12.7% Delta</p>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">Above market benchmark movement</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module3.avgMarkupLabel}</span>
+                <p className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">{UI_STRINGS.module3.avgMarkupVal}</p>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">{UI_STRINGS.module3.avgMarkupSub}</span>
               </div>
               <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-400">High Creep Vendors Detected</span>
-                <p className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">3 Key Suppliers</p>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">Accounting for ₹17.01 Cr of total variance</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module3.highCreepVendorsLabel}</span>
+                <p className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">{UI_STRINGS.module3.highCreepVendorsVal}</p>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500">{UI_STRINGS.module3.highCreepVendorsSub}</span>
               </div>
             </div>
           </div>
 
           <div className="p-3.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-900/40 text-xs text-slate-700 dark:text-slate-300">
-            <span className="text-cyan-800 dark:text-cyan-400 font-bold block mb-1">PROCUCEV Advisory Play:</span>
-            Deploy index-linked dynamic price caps in <strong>DPS NXT</strong> to automate retroactive supplier clawbacks in INR.
+            <span className="text-cyan-800 dark:text-cyan-400 font-bold block mb-1">{UI_STRINGS.module3.advisoryPlayLabel}</span>
+            {UI_STRINGS.module3.advisoryPlayDesc}
           </div>
         </div>
       </div>
@@ -291,43 +292,43 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Sliders className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Vendor Price Volatility & Inflation Rankings (INR Crores)</span>
+              <span>{UI_STRINGS.module3.rankingsTableTitle}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Ranked by price variance over time with automatic &gt;5% inflation anomaly flags converted via time-series FX rates.
+              {UI_STRINGS.module3.rankingsTableDesc}
             </p>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setFilterRisk('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 filterRisk === 'ALL'
                   ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40'
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
               }`}
             >
-              All Vendors ({vendorRankings.length})
+              {UI_STRINGS.module3.filterAllVendors(vendorRankings.length)}
             </button>
             <button
               onClick={() => setFilterRisk('CREEP_ANOMALY')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 filterRisk === 'CREEP_ANOMALY'
                   ? 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40'
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
               }`}
             >
-              &gt;5% Creep Anomaly (3)
+              {UI_STRINGS.module3.filterCreepAnomaly}
             </button>
             <button
               onClick={() => setFilterRisk('ALIGNED')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 filterRisk === 'ALIGNED'
                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
                   : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
               }`}
             >
-              Aligned (1)
+              {UI_STRINGS.module3.filterAligned}
             </button>
           </div>
         </div>
@@ -338,13 +339,13 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3 px-4">Vendor Name</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Total 36-Mo Spend (₹ Cr)</th>
-                  <th className="py-3 px-4">Commodity Benchmark</th>
-                  <th className="py-3 px-4">Price Creep %</th>
-                  <th className="py-3 px-4">Unjustified Leakage (₹ Cr)</th>
-                  <th className="py-3 px-4 text-right">Risk Status</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.vendorName}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.category}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.totalSpendInrCr}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.commodityBenchmark}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.priceCreepPct}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.unjustifiedLeakage}</th>
+                  <th className="py-3 px-4 text-right">{UI_STRINGS.module3.tableHeaders.riskStatus}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
@@ -382,7 +383,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                     <td className="py-3.5 px-4 font-bold text-rose-600 dark:text-rose-400">
                       {vendor.variance_leakage_usd > 0
                         ? `₹${(vendor.variance_leakage_inr_cr || (vendor.variance_leakage_usd * 83.8 / 10000000)).toFixed(2)} Cr`
-                        : '₹0 (Aligned)'}
+                        : UI_STRINGS.module3.alignedLeakageVal}
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <span
@@ -408,13 +409,13 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>36-Month Volatility & Price Creep Variance fully isolated in INR Crores</span>
+            <span>{UI_STRINGS.module3.ctaBadge}</span>
           </div>
           <button
             onClick={onProceedToSavings}
-            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group"
+            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
-            <span>Proceed to Real-Time Savings Engine</span>
+            <span>{UI_STRINGS.module3.ctaProceedButton}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

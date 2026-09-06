@@ -13,6 +13,8 @@ import { DatasetType } from '@/components/modals/ClientIngestionSetupModal';
 import * as XLSX from 'xlsx';
 import { getYahooFinanceRateToINR } from '@/utils/currencyConverter';
 import { apiClient } from '@/utils/api';
+import { frontendLogger } from '@/utils/logger';
+import { UI_STRINGS } from '@/constants/uiStrings';
 
 // Modals
 import { ProCPXModal } from '@/components/modals/ProCPXModal';
@@ -100,7 +102,7 @@ export default function Home() {
           setOpportunities(savingsData.value.opportunities);
         }
       } catch (err) {
-        console.warn('Backend API hydration warning, using local seed state:', err);
+        frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
       }
     }
     loadBackendData();
@@ -160,10 +162,10 @@ export default function Home() {
         inr_crores: inrCrores
       });
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for currency fix', { error: e });
     }
 
-    showToast(`Record ${recordId} normalized to base currency ${selectedCurrency} (Reconciled in Spend Analytics)`);
+    showToast(UI_STRINGS.toasts.recordNormalized(recordId, selectedCurrency));
   };
 
   const handleMergeVendor = (record: ValidationPreCheckRecord) => {
@@ -194,10 +196,10 @@ export default function Home() {
       });
       await apiClient.mergeVendor(masterVendorName, masterVendorId, masterVendorName);
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for vendor merge', { error: e });
     }
 
-    showToast(`Record ${recordId} mapped to Master Supplier: ${masterVendorId} (Reconciled in Spend Analytics)`);
+    showToast(UI_STRINGS.toasts.recordMapped(recordId, masterVendorId));
   };
 
   // Blanket AI Remediation for All Anomalies
@@ -237,10 +239,10 @@ export default function Home() {
     try {
       await apiClient.applyBlanketRemediation();
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for blanket fixes', { error: e });
     }
 
-    showToast('⚡ Blanket AI Fixes Applied: 100% of vendor entities & currency rates reconciled under INR Crores (₹732.41 Cr)');
+    showToast(UI_STRINGS.toasts.blanketFixesApplied);
   };
 
   const handleResetValidationRecords = async () => {
@@ -248,9 +250,9 @@ export default function Home() {
     try {
       await apiClient.resetValidationRecords();
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for reset validation records', { error: e });
     }
-    showToast('Validation records reset to initial pre-check state (2 pending anomalies).');
+    showToast(UI_STRINGS.toasts.validationReset);
   };
 
   const handleAddBatchUpload = async (file: File, datasetType: DatasetType = 'Purchase History') => {
@@ -324,7 +326,7 @@ export default function Home() {
           }
         }
       } catch (err) {
-        console.warn('Could not parse xlsx rows:', err);
+        frontendLogger.warn('Could not parse xlsx rows', { error: err });
         if (file.name.toLowerCase().includes('unspsc')) {
           recordsCount = 158467;
         } else {
@@ -360,10 +362,10 @@ export default function Home() {
     try {
       await apiClient.addIngestionFile(newDoc);
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for add ingestion file', { error: e });
     }
 
-    showToast(`Calculated total spend for "${file.name}": ₹${totalSpendInrCr.toFixed(2)} Cr across ${recordsCount.toLocaleString()} records [Order Qty × Net Price × FX].`);
+    showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, totalSpendInrCr, recordsCount));
   };
 
   // Handlers for Module 2
@@ -373,7 +375,7 @@ export default function Home() {
         item.mapping_id === mappingId ? { ...item, status: 'Confirmed' } : item
       )
     );
-    showToast(`UNSPSC mapping ${mappingId} confirmed and locked into QUA taxonomy.`);
+    showToast(UI_STRINGS.toasts.unspscConfirmed(mappingId));
   };
 
   const handleSaveReassign = (mappingId: string, newCode: string, newName: string, bucket: any) => {
@@ -391,7 +393,7 @@ export default function Home() {
           : item
       )
     );
-    showToast(`Taxonomy re-assigned to UNSPSC ${newCode} (${bucket}).`);
+    showToast(UI_STRINGS.toasts.taxonomyReassigned(newCode, bucket));
   };
 
   // Handlers for Module 4 Suite Integration
@@ -402,9 +404,9 @@ export default function Home() {
     try {
       await apiClient.deployOpportunity(oppId, 'proCPX');
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for proCPX deployment', { error: e });
     }
-    showToast(`Opportunity ${oppId} successfully pushed to proCPX Sourcing Engine.`);
+    showToast(UI_STRINGS.toasts.pushedToProCPX(oppId));
   };
 
   const handleDPSNXTSuccess = async (oppId: string) => {
@@ -414,9 +416,9 @@ export default function Home() {
     try {
       await apiClient.deployOpportunity(oppId, 'DPS NXT');
     } catch (e) {
-      console.warn('Backend sync warning:', e);
+      frontendLogger.warn('Backend sync warning for DPS NXT deployment', { error: e });
     }
-    showToast(`Rate cards & index pegging deployed to DPS NXT for Opportunity ${oppId}.`);
+    showToast(UI_STRINGS.toasts.deployedToDPSNXT(oppId));
   };
 
   return (
@@ -460,7 +462,7 @@ export default function Home() {
             onResetValidationRecords={handleResetValidationRecords}
             onRunAICategorization={() => {
               setActiveTab('module2');
-              showToast('Running Enterprise QUA AI Categorization & Taxonomy Mapping...');
+              showToast(UI_STRINGS.toasts.runningAiCat);
             }}
             onAddBatchUpload={handleAddBatchUpload}
           />
@@ -474,7 +476,7 @@ export default function Home() {
             onReassignMapping={(item) => setSelectedItemForReassign(item)}
             onProceedToTrend={() => {
               setActiveTab('module3');
-              showToast('Transitioning to 36-Month Volatility Analytics...');
+              showToast(UI_STRINGS.toasts.transitioningToVolatility);
             }}
           />
         )}
@@ -484,7 +486,7 @@ export default function Home() {
             vendorRankings={vendorRankings}
             onProceedToSavings={() => {
               setActiveTab('module4');
-              showToast('Launching Real-Time Savings Opportunity Engine...');
+              showToast(UI_STRINGS.toasts.launchingSavings);
             }}
             theme={theme}
           />
@@ -497,7 +499,7 @@ export default function Home() {
             onOpenDPSNXT={(opp) => setSelectedOppForDPSNXT(opp)}
             onProceedToConversion={() => {
               setActiveTab('module5');
-              showToast('Opening Commercial Realization & SaaS Lock-in Portal...');
+              showToast(UI_STRINGS.toasts.openingConversion);
             }}
           />
         )}

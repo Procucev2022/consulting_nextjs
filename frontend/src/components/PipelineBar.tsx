@@ -11,6 +11,7 @@ import {
   Database,
   ArrowRight
 } from 'lucide-react';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 interface PipelineBarProps {
   activeTab: 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
@@ -22,39 +23,39 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   onSelectTab
 }) => {
   const kpis = [
-    { label: 'Historical Ingestion', value: '3 Yrs', sub: '36-Month Full Horizon', color: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-500/30' },
-    { label: 'Real-Time Processing', value: '100%', sub: 'Sub-800ms Query Render', color: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/30' },
-    { label: 'Avg Identified Savings', value: '15%+', sub: 'Realized Benchmark', color: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/30' },
-    { label: 'Faster Conversion', value: '3x', sub: 'Advisory to SaaS Lock-in', color: 'text-purple-700 dark:text-purple-400', border: 'border-purple-500/30' }
+    { label: UI_STRINGS.pipeline.kpis.historicalIngestion.label, value: UI_STRINGS.pipeline.kpis.historicalIngestion.value, sub: UI_STRINGS.pipeline.kpis.historicalIngestion.sub, color: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-500/30' },
+    { label: UI_STRINGS.pipeline.kpis.realTimeProcessing.label, value: UI_STRINGS.pipeline.kpis.realTimeProcessing.value, sub: UI_STRINGS.pipeline.kpis.realTimeProcessing.sub, color: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/30' },
+    { label: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.label, value: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.value, sub: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.sub, color: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/30' },
+    { label: UI_STRINGS.pipeline.kpis.fasterConversion.label, value: UI_STRINGS.pipeline.kpis.fasterConversion.value, sub: UI_STRINGS.pipeline.kpis.fasterConversion.sub, color: 'text-purple-700 dark:text-purple-400', border: 'border-purple-500/30' }
   ];
 
   const stages = [
     {
       id: 'module1' as const,
       step: '1',
-      title: '3-Year Upload',
-      desc: 'Invoices, POs, receipts & multi-format contracts',
+      title: UI_STRINGS.pipeline.navStages.step1.title,
+      desc: UI_STRINGS.pipeline.navStages.step1.desc,
       icon: UploadCloud
     },
     {
       id: 'module2' as const,
       step: '2',
-      title: 'AI Categorization',
-      desc: 'Automated taxonomy & vendor disambiguation',
+      title: UI_STRINGS.pipeline.navStages.step2.title,
+      desc: UI_STRINGS.pipeline.navStages.step2.desc,
       icon: Cpu
     },
     {
       id: 'module3' as const,
       step: '3',
-      title: 'Trend Analysis',
-      desc: '36-month material base price & markup tracking',
+      title: UI_STRINGS.pipeline.navStages.step3.title,
+      desc: UI_STRINGS.pipeline.navStages.step3.desc,
       icon: LineChart
     },
     {
       id: 'module4' as const,
       step: '4',
-      title: 'Savings Engine',
-      desc: 'Real-time opportunity mapping & UI alerts',
+      title: UI_STRINGS.pipeline.navStages.step4.title,
+      desc: UI_STRINGS.pipeline.navStages.step4.desc,
       icon: Target
     }
   ];
@@ -90,7 +91,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
             <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              End-to-End Processing Pipeline & Architecture
+              {UI_STRINGS.pipeline.endToEndArchitecture}
             </h3>
           </div>
           <div className="flex items-center space-x-2">
@@ -102,7 +103,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                   : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
               }`}
             >
-              5. Conversion Matrix
+              {UI_STRINGS.pipeline.conversionMatrixTab}
             </button>
             <button
               onClick={() => onSelectTab('schema')}
@@ -113,7 +114,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               }`}
             >
               <Database className="w-3.5 h-3.5" />
-              <span>Data Architecture</span>
+              <span>{UI_STRINGS.pipeline.dataArchitectureTab}</span>
             </button>
           </div>
         </div>
@@ -166,7 +167,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                   <span
                     className={isActive ? 'text-cyan-700 dark:text-cyan-400 font-semibold' : 'text-slate-400 dark:text-slate-500'}
                   >
-                    {isActive ? 'Current Active View' : 'Explore Module'}
+                    {isActive ? UI_STRINGS.pipeline.currentActiveView : UI_STRINGS.pipeline.exploreModule}
                   </span>
                   <ArrowRight
                     className={`w-3 h-3 transition-transform ${

@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ProCPXModal } from '../../../src/components/modals/ProCPXModal';
 import { mockSavingsOpportunities } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('ProCPXModal Component', () => {
   const sampleOpp = mockSavingsOpportunities[0];
@@ -40,7 +41,8 @@ describe('ProCPXModal Component', () => {
       />
     );
 
-    expect(screen.getByText('Launch Sourcing Event')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.proCPX.heading)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.proCPX.title)).toBeInTheDocument();
 
     // Change event type
     const eventSelect = screen.getByRole('combobox');
@@ -51,7 +53,7 @@ describe('ProCPXModal Component', () => {
     fireEvent.change(baselineInput, { target: { value: '2000000' } });
 
     // Click launch
-    const launchBtn = screen.getByRole('button', { name: /Push to proCPX/i });
+    const launchBtn = screen.getByRole('button', { name: UI_STRINGS.modals.proCPX.pushButton });
     fireEvent.click(launchBtn);
 
     // Fast-forward first timer
@@ -59,7 +61,7 @@ describe('ProCPXModal Component', () => {
       vi.advanceTimersByTime(1200);
     });
 
-    expect(screen.getByText(/e-Sourcing Event Launched to proCPX/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.proCPX.deployedSuccess)).toBeInTheDocument();
 
     // Fast-forward second timer
     act(() => {
@@ -81,7 +83,7 @@ describe('ProCPXModal Component', () => {
       />
     );
 
-    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.proCPX.cancel });
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });

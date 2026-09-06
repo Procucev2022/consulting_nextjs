@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module5ConversionMatrix } from '../../src/components/Module5ConversionMatrix';
 import { mockTenant, mockConversionFunnel } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module5ConversionMatrix Component', () => {
   it('renders all funnel stages and conversion matrix cards', () => {
@@ -15,8 +16,8 @@ describe('Module5ConversionMatrix Component', () => {
       />
     );
 
-    expect(screen.getByText(/Executive Conversion Matrix & Commercial SaaS Portal/i)).toBeInTheDocument();
-    expect(screen.getByText(/Executive ROI & SaaS Payback Calculator/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module5.badge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module5.calculatorTitle)).toBeInTheDocument();
   });
 
   it('updates sliders and triggers simulate lock-in confetti', () => {
@@ -41,7 +42,7 @@ describe('Module5ConversionMatrix Component', () => {
     fireEvent.change(sliders[2], { target: { value: '1.2' } });
 
     // Click lock in button
-    const lockInBtn = screen.getByRole('button', { name: /Lock In Multi-Year SaaS Commercial Terms/i });
+    const lockInBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module5.lockInButton, 'i') });
     fireEvent.click(lockInBtn);
   });
 
@@ -55,7 +56,7 @@ describe('Module5ConversionMatrix Component', () => {
       />
     );
 
-    const openReportBtn = screen.getByRole('button', { name: /Generate Executive Brief/i });
+    const openReportBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module5.generateBrief, 'i') });
     fireEvent.click(openReportBtn);
     expect(onOpenReport).toHaveBeenCalled();
   });

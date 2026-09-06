@@ -29,6 +29,7 @@ import { LineItemMapping, SpendCategorySummary, CategoryYearDetail } from '../ty
 import { searchUNSPSCTaxonomy, UNSPSCCommodityRecord, unspscOfficialDictionary } from '../data/unspscTaxonomy';
 import { categoryYearWiseDetails } from '../data/mockData';
 import { formatINRAmount } from '../utils/currencyConverter';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 interface Module2CategorizationProps {
   categories: SpendCategorySummary[];
@@ -45,7 +46,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   onReassignMapping,
   onProceedToTrend
 }) => {
-  const [selectedModel, setSelectedModel] = useState<'Enterprise QUA AI' | 'Public QUA AI'>('Enterprise QUA AI');
+  const [selectedModel, setSelectedModel] = useState<string>(UI_STRINGS.module2.models.enterprise);
   const [selectedBucket, setSelectedBucket] = useState<string>('ALL');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -85,43 +86,43 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
-              Module 2: AI Categorization & Taxonomy Mapping (FR-CAT-01, FR-CAT-02)
+              {UI_STRINGS.module2.badge}
             </span>
             <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
-              INR in Crores (₹ Cr) & Column L Taxonomy
+              {UI_STRINGS.module2.valuationBadge}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            AI Taxonomy Classification & Spend Year Valuation (INR Crores)
+            {UI_STRINGS.module2.heading}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-            Multi-year spend categorization by value based on <strong>Column L (Commodity Codes)</strong> from official UNSPSC English file v260801.1 normalized via time-series FX conversion rates.
+            {UI_STRINGS.module2.descriptionPrefix}<strong>{UI_STRINGS.module2.descriptionHighlight}</strong>{UI_STRINGS.module2.descriptionSuffix}
           </p>
         </div>
 
         {/* Model Selector Pill */}
         <div className="flex items-center bg-slate-100 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-700/80 p-1 rounded-xl shrink-0">
           <button
-            onClick={() => setSelectedModel('Enterprise QUA AI')}
+            onClick={() => setSelectedModel(UI_STRINGS.module2.models.enterprise)}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedModel === 'Enterprise QUA AI'
+              selectedModel === UI_STRINGS.module2.models.enterprise
                 ? 'bg-cyan-600 dark:bg-cyan-500 text-white dark:text-slate-950 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Enterprise QUA AI</span>
+            <span>{UI_STRINGS.module2.models.enterprise}</span>
           </button>
           <button
-            onClick={() => setSelectedModel('Public QUA AI')}
+            onClick={() => setSelectedModel(UI_STRINGS.module2.models.public)}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              selectedModel === 'Public QUA AI'
+              selectedModel === UI_STRINGS.module2.models.public
                 ? 'bg-cyan-600 dark:bg-cyan-500 text-white dark:text-slate-950 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>Public QUA AI</span>
+            <span>{UI_STRINGS.module2.models.public}</span>
           </button>
         </div>
       </div>
@@ -135,15 +136,15 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                Year-Wise Category Spend Matrix & Column L Benchmarks (INR in Crores)
+                {UI_STRINGS.module2.matrixTitle}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Annual spend progression in INR Crores (Fiscal Year: 1st April to 31st March), line item counts, and target reduction % mapped to Column L taxonomy.
+                {UI_STRINGS.module2.matrixDesc}
               </p>
             </div>
           </div>
           <span className="text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800">
-            Total Evaluated: ₹{totalEvaluatedSpendInrCr.toFixed(2)} Cr
+            {UI_STRINGS.module2.totalEvaluated(totalEvaluatedSpendInrCr)}
           </span>
         </div>
 
@@ -152,14 +153,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-4">Procurement Category</th>
-                <th className="py-3 px-4">Column L Code Range</th>
-                <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">FY24 (₹ Cr)</th>
-                <th className="py-3 px-4 text-right" title="1st April 2024 – 31st March 2025">FY25 (₹ Cr)</th>
-                <th className="py-3 px-4 text-right" title="1st April 2025 – 31st March 2026">FY26 (₹ Cr)</th>
-                <th className="py-3 px-4 text-right font-bold text-emerald-700 dark:text-emerald-400">Total (FY24-FY26)</th>
-                <th className="py-3 px-4 text-center">YoY Trend</th>
-                <th className="py-3 px-4 text-right">Target Savings (₹ Cr)</th>
+                <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
+                <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
+                <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
+                <th className="py-3 px-4 text-right" title="1st April 2024 – 31st March 2025">{UI_STRINGS.module2.matrixHeaders.fy25}</th>
+                <th className="py-3 px-4 text-right" title="1st April 2025 – 31st March 2026">{UI_STRINGS.module2.matrixHeaders.fy26}</th>
+                <th className="py-3 px-4 text-right font-bold text-emerald-700 dark:text-emerald-400">{UI_STRINGS.module2.matrixHeaders.total}</th>
+                <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
+                <th className="py-3 px-4 text-right">{UI_STRINGS.module2.matrixHeaders.targetSavings}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
@@ -201,7 +202,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                     </td>
                     <td className="py-3.5 px-4">
                       <span className="font-mono text-[11px] font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800">
-                        Col L: {cat.sample_column_l_code.split(',')[0]}
+                        {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code.split(',')[0])}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
@@ -244,14 +245,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  UNSPSC Official File Catalog (Column L: Commodity Engine)
+                  {UI_STRINGS.module2.catalogTitle}
                 </h3>
                 <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-                  158,476 Catalog Records
+                  {UI_STRINGS.module2.catalogRecordsBadge}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Live lookup across 4-level taxonomy: Segment (Col C) ➔ Family (Col F) ➔ Class (Col I) ➔ <strong>Commodity (Column L)</strong>.
+                {UI_STRINGS.module2.catalogDescPrefix}<strong>{UI_STRINGS.module2.catalogDescHighlight}</strong>.
               </p>
             </div>
           </div>
@@ -262,7 +263,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="Search Column L code or commodity..."
+                placeholder={UI_STRINGS.module2.catalogSearchPlaceholder}
                 value={explorerSearch}
                 onChange={(e) => setExplorerSearch(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-48 sm:w-64"
@@ -273,11 +274,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               onChange={(e) => setExplorerBucketFilter(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
             >
-              <option value="ALL">All Categories</option>
-              <option value="Packaging Materials">Packaging</option>
-              <option value="Direct Materials">Direct Materials</option>
-              <option value="Indirect & MRO">Indirect & MRO</option>
-              <option value="Logistics & Freight">Logistics & Freight</option>
+              <option value="ALL">{UI_STRINGS.module2.categories.all}</option>
+              <option value="Packaging Materials">{UI_STRINGS.module2.categories.packaging}</option>
+              <option value="Direct Materials">{UI_STRINGS.module2.categories.direct}</option>
+              <option value="Indirect & MRO">{UI_STRINGS.module2.categories.indirect}</option>
+              <option value="Logistics & Freight">{UI_STRINGS.module2.categories.logistics}</option>
             </select>
           </div>
         </div>
@@ -291,7 +292,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
-                  Col L: {item.commodityCode}
+                  {UI_STRINGS.module2.colLPrefix(item.commodityCode)}
                 </span>
                 <span className="text-[10px] text-slate-500 font-sans font-semibold">
                   {item.coreBucket}
@@ -315,10 +316,10 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Cpu className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Machine Learning Line Item Review & Column L Validation</span>
+              <span>{UI_STRINGS.module2.workbenchTitle}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Review and confirm QUA AI 8-digit commodity taxonomy predictions converted to <strong>INR in Crores (₹ Cr)</strong>.
+              {UI_STRINGS.module2.workbenchDescPrefix}<strong>{UI_STRINGS.module2.workbenchDescHighlight}</strong>.
             </p>
           </div>
 
@@ -332,11 +333,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 onChange={(e) => setSelectedYearFilter(e.target.value)}
                 className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
               >
-                <option value="ALL">All Years</option>
-                <option value="2023">2023 (Yr 1)</option>
-                <option value="2024">2024 (Yr 2)</option>
-                <option value="2025">2025 (Yr 3)</option>
-                <option value="2026">2026 (Yr 3)</option>
+                <option value="ALL">{UI_STRINGS.module2.years.all}</option>
+                <option value="2023">{UI_STRINGS.module2.years.y2023}</option>
+                <option value="2024">{UI_STRINGS.module2.years.y2024}</option>
+                <option value="2025">{UI_STRINGS.module2.years.y2025}</option>
+                <option value="2026">{UI_STRINGS.module2.years.y2026}</option>
               </select>
             </div>
 
@@ -346,11 +347,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               onChange={(e) => setSelectedBucket(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
             >
-              <option value="ALL">All Categories</option>
-              <option value="Direct Materials">Direct Materials</option>
-              <option value="Packaging Materials">Packaging Materials</option>
-              <option value="Indirect & MRO">Indirect & MRO</option>
-              <option value="Logistics & Freight">Logistics & Freight</option>
+              <option value="ALL">{UI_STRINGS.module2.categories.all}</option>
+              <option value="Direct Materials">{UI_STRINGS.module2.categories.direct}</option>
+              <option value="Packaging Materials">{UI_STRINGS.module2.categories.packagingMaterials}</option>
+              <option value="Indirect & MRO">{UI_STRINGS.module2.categories.indirect}</option>
+              <option value="Logistics & Freight">{UI_STRINGS.module2.categories.logistics}</option>
             </select>
 
             {/* Search Input */}
@@ -358,7 +359,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
               <input
                 type="text"
-                placeholder="Search description, PO, Col L..."
+                placeholder={UI_STRINGS.module2.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-44 sm:w-56"
@@ -373,14 +374,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3 px-4">Line Item & Year</th>
-                  <th className="py-3 px-4">PO & Item Description</th>
-                  <th className="py-3 px-4">Vendor Entity</th>
-                  <th className="py-3 px-4">UNSPSC Col L Code & Commodity</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Spend Value (₹ Cr)</th>
-                  <th className="py-3 px-4">AI Confidence</th>
-                  <th className="py-3 px-4 text-right">Taxonomy Action</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.lineItemYear}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.poDesc}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.vendor}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.unspscColL}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.category}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.spendValue}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.aiConfidence}</th>
+                  <th className="py-3 px-4 text-right">{UI_STRINGS.module2.lineItemHeaders.action}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
@@ -409,7 +410,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-1.5">
                         <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800">
-                          Col L: {item.unspsc_code}
+                          {UI_STRINGS.module2.colLPrefix(item.unspsc_code)}
                         </span>
                       </div>
                       <span className="text-[11px] text-slate-600 dark:text-slate-300 font-sans block mt-0.5 line-clamp-1">
@@ -471,14 +472,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                         {item.status === 'Confirmed' ? (
                           <span className="inline-flex items-center space-x-1 text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/40 text-[10px] font-bold">
                             <Check className="w-3 h-3" />
-                            <span>Confirmed</span>
+                            <span>{UI_STRINGS.module2.statusConfirmed}</span>
                           </span>
                         ) : (
                           <button
                             onClick={() => onConfirmMapping(item.mapping_id)}
                             className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-all shadow-xs active:scale-95"
                           >
-                            Confirm
+                            {UI_STRINGS.module2.btnConfirm}
                           </button>
                         )}
                         <button
@@ -486,7 +487,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                           className="px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all border border-slate-300 dark:border-slate-700 flex items-center space-x-1"
                         >
                           <Edit3 className="w-3 h-3" />
-                          <span>Re-Assign</span>
+                          <span>{UI_STRINGS.module2.btnReassign}</span>
                         </button>
                       </div>
                     </td>
@@ -501,13 +502,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <CheckCircle2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-            <span>Multi-Year Spend Taxonomy verified against Column L UNSPSC catalog</span>
+            <span>{UI_STRINGS.module2.taxonomyVerifiedFooter}</span>
           </div>
           <button
             onClick={onProceedToTrend}
             className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group"
           >
-            <span>Proceed to 36-Month Volatility Analytics</span>
+            <span>{UI_STRINGS.module2.btnProceedToTrend}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

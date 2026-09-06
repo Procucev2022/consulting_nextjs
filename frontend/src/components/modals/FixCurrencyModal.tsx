@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { DollarSign, Check, X, RefreshCw, Globe, TrendingUp, Sparkles } from 'lucide-react';
 import { ValidationPreCheckRecord } from '../../types';
 import { yahooFinanceFXRates, convertToINR, formatINRAmount } from '../../utils/currencyConverter';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface FixCurrencyModalProps {
   record: ValidationPreCheckRecord | null;
@@ -50,13 +51,13 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-[11px] font-mono text-emerald-800 dark:text-emerald-400 font-bold uppercase tracking-wider">
-                  Multi-Currency FX Engine
+                  {UI_STRINGS.modals.fixCurrency.fxEngineBadge}
                 </span>
                 <span className="text-[10px] bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 px-1.5 py-0.2 rounded font-mono font-bold">
                   {selectedCurrency} / INR
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Normalize Multi-Currency to INR in Crores</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.fixCurrency.title}</h3>
             </div>
           </div>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg">
@@ -67,19 +68,19 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
         <div className="p-5 space-y-4">
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
             <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">Record ID & Year:</span>
+              <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.recordIdLabel}</span>
               <span className="font-mono text-cyan-700 dark:text-cyan-400 font-semibold">{record.record_id} ({year})</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">PO Number:</span>
+              <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.poNumberLabel}</span>
               <span className="font-mono text-slate-800 dark:text-slate-200">{record.po_number}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500 dark:text-slate-400">Vendor & Category:</span>
+              <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.vendorCategoryLabel}</span>
               <span className="text-slate-800 dark:text-slate-200 font-medium">{record.vendor_name} ({record.core_category || 'Direct'})</span>
             </div>
             <div className="flex justify-between border-t border-slate-200 dark:border-slate-800 pt-1.5">
-              <span className="text-slate-500 dark:text-slate-400">Raw Invoice Amount:</span>
+              <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.rawAmountLabel}</span>
               <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
                 {selectedCurrency} {record.amount.toLocaleString()}
               </span>
@@ -89,7 +90,7 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
           {/* Original Currency Selector */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Detected Invoice Currency
+              {UI_STRINGS.modals.fixCurrency.detectedCurrencyLabel}
             </label>
             <div className="grid grid-cols-6 gap-1.5">
               {(['USD', 'EUR', 'GBP', 'AED', 'JPY', 'SGD'] as const).map((curr) => (
@@ -114,7 +115,7 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
             <div className="flex items-center justify-between text-emerald-900 dark:text-emerald-300 font-medium">
               <span className="flex items-center space-x-1.5">
                 <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Conversion Rate:</span>
+                <span>{UI_STRINGS.modals.fixCurrency.conversionRateLabel}</span>
               </span>
               <span className="font-mono font-bold text-slate-900 dark:text-white">
                 1 {selectedCurrency} = ₹{activeRate.toFixed(2)} INR
@@ -122,7 +123,7 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
-              <span className="text-slate-600 dark:text-slate-300 font-medium">Converted Value in Crores:</span>
+              <span className="text-slate-600 dark:text-slate-300 font-medium">{UI_STRINGS.modals.fixCurrency.convertedValueLabel}</span>
               <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-base">
                 ₹{calculatedCrores} Cr
               </span>
@@ -138,14 +139,14 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"
           >
-            Cancel
+            {UI_STRINGS.common.cancel}
           </button>
           <button
             onClick={handleSubmit}
             className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-colors shadow-xs"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>Apply FX Conversion to INR</span>
+            <span>{UI_STRINGS.modals.fixCurrency.applyConversion}</span>
           </button>
         </div>
       </div>

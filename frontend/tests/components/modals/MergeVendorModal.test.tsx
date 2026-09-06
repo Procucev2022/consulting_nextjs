@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MergeVendorModal } from '../../../src/components/modals/MergeVendorModal';
 import { initialValidationRecords } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('MergeVendorModal Component', () => {
   const sampleRec = initialValidationRecords[0];
@@ -32,7 +33,7 @@ describe('MergeVendorModal Component', () => {
       />
     );
 
-    expect(screen.getByText('Merge Disparate Supplier Entities')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.mergeVendor.title)).toBeInTheDocument();
     expect(screen.getByText(sampleRec.vendor_name)).toBeInTheDocument();
 
     // Select second master supplier
@@ -40,7 +41,7 @@ describe('MergeVendorModal Component', () => {
     fireEvent.click(amcorBtn);
 
     // Confirm merge
-    const confirmBtn = screen.getByRole('button', { name: /Map to Master Supplier/i });
+    const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
     fireEvent.click(confirmBtn);
 
     expect(onMerge).toHaveBeenCalledWith(

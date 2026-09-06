@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DPSNXTModal } from '../../../src/components/modals/DPSNXTModal';
 import { mockSavingsOpportunities } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('DPSNXTModal Component', () => {
   const sampleOpp = mockSavingsOpportunities[0];
@@ -40,7 +41,8 @@ describe('DPSNXTModal Component', () => {
       />
     );
 
-    expect(screen.getByText('DPS NXT Integration')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.dpsNXT.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.dpsNXT.heading)).toBeInTheDocument();
 
     // Change sliders / inputs
     const creepInput = screen.getByRole('spinbutton');
@@ -48,16 +50,16 @@ describe('DPSNXTModal Component', () => {
 
     // Change index pegging
     const pegSelect = screen.getByRole('combobox');
-    fireEvent.change(pegSelect, { target: { value: 'Platts Petrochemical Index' } });
+    fireEvent.change(pegSelect, { target: { value: UI_STRINGS.modals.dpsNXT.benchmarks.platts } });
 
     // Toggle rebate tier
-    const rebateBtn = screen.getByRole('button', { name: 'ENFORCED' });
+    const rebateBtn = screen.getByRole('button', { name: UI_STRINGS.modals.dpsNXT.rules.statusEnforced });
     fireEvent.click(rebateBtn);
-    expect(screen.getByRole('button', { name: 'OFF' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'OFF' }));
+    expect(screen.getByRole('button', { name: UI_STRINGS.modals.dpsNXT.rules.statusOff })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.modals.dpsNXT.rules.statusOff }));
 
     // Click execute
-    const executeBtn = screen.getByRole('button', { name: /Push to DPS NXT/i });
+    const executeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.dpsNXT.pushButton });
     fireEvent.click(executeBtn);
 
     // Fast-forward first timeout
@@ -65,7 +67,7 @@ describe('DPSNXTModal Component', () => {
       vi.advanceTimersByTime(1200);
     });
 
-    expect(screen.getByText(/Rate-Card Enforcement Deployed to DPS NXT!/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.dpsNXT.deployedSuccess)).toBeInTheDocument();
 
     // Fast-forward second timeout
     act(() => {
@@ -87,7 +89,7 @@ describe('DPSNXTModal Component', () => {
       />
     );
 
-    const closeBtn = screen.getByRole('button', { name: 'Cancel' });
+    const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.dpsNXT.cancel });
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalled();
   });

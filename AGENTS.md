@@ -71,3 +71,11 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Requirement**: Maintain a file in the workspace root named `prompts.md` dedicated to recording user-provided prompts.
 - **Strict Scope**: Save ONLY user-provided prompts in `prompts.md`. Do NOT include AI-generated conversations, responses, explanations, reasoning, or model output.
 - **Workflow**: Whenever the user submits a new prompt, append the user's prompt text to `prompts.md` under chronological headers (e.g., `## Prompt <N>`). Preserve the exact text provided by the user.
+
+## 7. Mandatory Internationalization (i18n) & Centralized `UI_STRINGS` Policy
+
+- **Zero Hardcoded User-Facing Literals**: No user-facing strings, button labels, modal titles, error/alert messages, table headers, or static descriptions may be hardcoded or embedded directly in components or JSX/TSX.
+- **Centralized `UI_STRINGS` Object**: All user-facing strings must reside in dedicated constants modules and be exposed through a unified, strongly typed `UI_STRINGS` object (`frontend/src/constants/uiStrings.ts`).
+- **Template Placeholders for Runtime Substitution**: For dynamic strings containing runtime variables (e.g., counts, IDs, amounts, currencies, user names), use template placeholders / parameterized formatter functions within `UI_STRINGS` (e.g., `(count: number) => \`\${count} items\``) to ensure the application is fully i18n-ready.
+- **Test Assertions Against Constants**: All unit tests MUST assert against `UI_STRINGS` constants instead of hardcoded literal strings. This prevents brittle test failures when UI text or localization translations change.
+- **Strict 90% Code Coverage**: Any new constants, helper functions, and components created for i18n must maintain >= 90% unit test code coverage individually.

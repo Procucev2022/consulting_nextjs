@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { TenantMaster } from '../../types';
 import { yahooFinanceFXRates } from '../../utils/currencyConverter';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 export type DatasetType = 'Purchase History' | 'Invoice Data' | 'Trial Balance';
 
@@ -43,7 +44,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
 }) => {
   const [clientName, setClientName] = useState(currentTenant.enterprise_name || 'Apex Industrial Dynamics (Fortune 500)');
   const [datasetType, setDatasetType] = useState<DatasetType>('Purchase History');
-  const [spendPeriod, setSpendPeriod] = useState('36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)');
+  const [spendPeriod, setSpendPeriod] = useState<string>(UI_STRINGS.modals.clientSetup.spendPeriods.months36);
   const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>(currentTenant.base_currency || 'INR');
   const [region, setRegion] = useState<'NA' | 'EU' | 'APAC' | 'GLOBAL'>(currentTenant.region || 'GLOBAL');
   const [estimatedSpendCr, setEstimatedSpendCr] = useState<number>(
@@ -55,26 +56,26 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
   const datasetOptions = [
     {
       id: 'Purchase History' as DatasetType,
-      title: 'Purchase History',
+      title: UI_STRINGS.modals.clientSetup.datasetOptions.purchaseHistory.title,
       icon: FileSpreadsheet,
-      badge: 'PO Master & Line Items',
-      desc: 'Purchase orders, item descriptions, line quantities, supplier master IDs, and agreed unit rates across 36 months.',
+      badge: UI_STRINGS.modals.clientSetup.datasetOptions.purchaseHistory.badge,
+      desc: UI_STRINGS.modals.clientSetup.datasetOptions.purchaseHistory.desc,
       color: 'border-cyan-500 bg-cyan-50/60 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-400'
     },
     {
       id: 'Invoice Data' as DatasetType,
-      title: 'Invoice Data',
+      title: UI_STRINGS.modals.clientSetup.datasetOptions.invoiceData.title,
       icon: Receipt,
-      badge: 'AP Invoices & Scans',
-      desc: 'Accounts payable invoices, OCR scanned receipts, billed line items, tax breakdowns, and payment disbursement records.',
+      badge: UI_STRINGS.modals.clientSetup.datasetOptions.invoiceData.badge,
+      desc: UI_STRINGS.modals.clientSetup.datasetOptions.invoiceData.desc,
       color: 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400'
     },
     {
       id: 'Trial Balance' as DatasetType,
-      title: 'Trial Balance',
+      title: UI_STRINGS.modals.clientSetup.datasetOptions.trialBalance.title,
       icon: Scale,
-      badge: 'GL & Cost Centers',
-      desc: 'General ledger trial balance, chart of accounts, cost center allocations, and financial journal entries.',
+      badge: UI_STRINGS.modals.clientSetup.datasetOptions.trialBalance.badge,
+      desc: UI_STRINGS.modals.clientSetup.datasetOptions.trialBalance.desc,
       color: 'border-purple-500 bg-purple-50/60 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400'
     }
   ];
@@ -105,12 +106,12 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-[10px] font-mono text-emerald-800 dark:text-emerald-400 font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
-                  Step 1: Multi-Currency Setup (INR in Crores)
+                  {UI_STRINGS.modals.clientSetup.stepBadge}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">Module 1 (3-Year Intake)</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.clientSetup.moduleBadge}</span>
               </div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                Client & Dataset Ingestion Setup
+                {UI_STRINGS.modals.clientSetup.title}
               </h2>
             </div>
           </div>
@@ -128,18 +129,18 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center space-x-1.5">
               <Building2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Enterprise Client Name</span>
+              <span>{UI_STRINGS.modals.clientSetup.enterpriseClientName}</span>
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. Apex Industrial Dynamics (Fortune 500)"
+              placeholder={UI_STRINGS.modals.clientSetup.clientPlaceholder}
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500 transition-colors"
             />
             <div className="flex flex-wrap gap-1.5 mt-2">
-              <span className="text-[11px] text-slate-400">Quick Select:</span>
+              <span className="text-[11px] text-slate-400">{UI_STRINGS.modals.clientSetup.quickSelect}</span>
               {[
                 'Apex Industrial Dynamics',
                 'Vanguard Eurocorp AG',
@@ -162,7 +163,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center space-x-1.5">
               <FileText className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Select Ingestion Dataset Type</span>
+              <span>{UI_STRINGS.modals.clientSetup.selectDatasetType}</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {datasetOptions.map((opt) => {
@@ -184,7 +185,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                       </div>
                       {isSelected && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white dark:bg-slate-900 border border-current">
-                          SELECTED
+                          {UI_STRINGS.modals.clientSetup.selectedBadge}
                         </span>
                       )}
                     </div>
@@ -209,16 +210,16 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
                 <Calendar className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                <span>Historical Evaluation Window</span>
+                <span>{UI_STRINGS.modals.clientSetup.historicalEvaluationWindow}</span>
               </label>
               <select
                 value={spendPeriod}
                 onChange={(e) => setSpendPeriod(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500"
               >
-                <option value="36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)">36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)</option>
-                <option value="24 Months (FY25 - FY26: 1 Apr 2024 - 31 Mar 2026)">24 Months (FY25 - FY26: 1 Apr 2024 - 31 Mar 2026)</option>
-                <option value="12 Months (FY26: 1 Apr 2025 - 31 Mar 2026)">12 Months (FY26: 1 Apr 2025 - 31 Mar 2026)</option>
+                <option value={UI_STRINGS.modals.clientSetup.spendPeriods.months36}>{UI_STRINGS.modals.clientSetup.spendPeriods.months36}</option>
+                <option value={UI_STRINGS.modals.clientSetup.spendPeriods.months24}>{UI_STRINGS.modals.clientSetup.spendPeriods.months24}</option>
+                <option value={UI_STRINGS.modals.clientSetup.spendPeriods.months12}>{UI_STRINGS.modals.clientSetup.spendPeriods.months12}</option>
               </select>
             </div>
 
@@ -226,7 +227,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
                 <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Base Normalization Currency</span>
+                <span>{UI_STRINGS.modals.clientSetup.baseNormalizationCurrency}</span>
               </label>
               <div className="grid grid-cols-4 gap-1.5">
                 {(['INR', 'USD', 'EUR', 'GBP'] as const).map((curr) => (
@@ -240,7 +241,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                         : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
                     }`}
                   >
-                    {curr === 'INR' ? '₹ INR (Cr)' : curr}
+                    {curr === 'INR' ? UI_STRINGS.modals.clientSetup.inrButtonLabel : curr}
                   </button>
                 ))}
               </div>
@@ -250,17 +251,17 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
                 <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>Enterprise Operating Region</span>
+                <span>{UI_STRINGS.modals.clientSetup.operatingRegion}</span>
               </label>
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value as any)}
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500"
               >
-                <option value="GLOBAL">GLOBAL Multi-Region</option>
-                <option value="NA">North America (NA)</option>
-                <option value="EU">European Union (EU)</option>
-                <option value="APAC">Asia-Pacific (APAC)</option>
+                <option value="GLOBAL">{UI_STRINGS.modals.clientSetup.regions.global}</option>
+                <option value="NA">{UI_STRINGS.modals.clientSetup.regions.na}</option>
+                <option value="EU">{UI_STRINGS.modals.clientSetup.regions.eu}</option>
+                <option value="APAC">{UI_STRINGS.modals.clientSetup.regions.apac}</option>
               </select>
             </div>
 
@@ -268,7 +269,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
                 <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Estimated 3-Yr Spend (INR Crores)</span>
+                <span>{UI_STRINGS.modals.clientSetup.estimatedSpendLabel}</span>
               </label>
               <div className="relative">
                 <input
@@ -279,7 +280,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:border-emerald-500"
                 />
                 <span className="absolute right-3 top-2 text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                  ₹{estimatedSpendCr.toFixed(2)} Cr
+                  {UI_STRINGS.modals.clientSetup.spendFormatted(estimatedSpendCr)}
                 </span>
               </div>
             </div>
@@ -290,11 +291,11 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             <div className="flex items-center space-x-2">
               <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
-                AI uses <strong>time-series FX conversion rates</strong> (USD/INR @ ₹83.8, EUR/INR @ ₹91.4, GBP/INR @ ₹106.5) to normalize all line items into <strong>INR in Crores (₹ Cr)</strong>.
+                {UI_STRINGS.modals.clientSetup.fxGuaranteeNote}
               </span>
             </div>
             <span className="text-[10px] font-mono font-bold bg-emerald-200/60 dark:bg-emerald-900/80 px-2 py-0.5 rounded text-emerald-950 dark:text-emerald-200">
-              Live FX
+              {UI_STRINGS.modals.clientSetup.liveFxBadge}
             </span>
           </div>
 
@@ -305,14 +306,14 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
               onClick={onClose}
               className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
-              Cancel
+              {UI_STRINGS.modals.clientSetup.cancel}
             </button>
             <button
               type="submit"
               className="flex items-center space-x-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
             >
               <UploadCloud className="w-4 h-4" />
-              <span>Confirm & Proceed to Upload Data</span>
+              <span>{UI_STRINGS.modals.clientSetup.submitBtn}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

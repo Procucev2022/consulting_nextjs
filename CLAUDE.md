@@ -27,3 +27,11 @@
 1. **Workspace Prompts File**: Maintain `prompts.md` in the workspace root to log user-provided prompts.
 2. **Strict Filtering**: Record ONLY user-provided prompts in `prompts.md`. Never include AI-generated conversation, output, or assistant reasoning.
 3. **Append Workflow**: Record each incoming user prompt in chronological sequence under descriptive headers.
+
+## Internationalization (i18n) & `UI_STRINGS` Standards
+
+1. **Centralized UI Strings**: Move all user-facing strings out of components into constants modules exposed through `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`).
+2. **No Hardcoded Literals**: Forbid hardcoded literal strings and embedded text in JSX/TSX.
+3. **Template Placeholders**: Use parameterized formatter functions for dynamic runtime variables (e.g. counts, amounts, codes) to ensure i18n capability.
+4. **Test Resilience**: Tests must assert against `UI_STRINGS` constants instead of hardcoded strings to avoid fragile assertions.
+5. **Coverage Benchmark**: All i18n modules must meet the strict 90% per-file unit test coverage benchmark.

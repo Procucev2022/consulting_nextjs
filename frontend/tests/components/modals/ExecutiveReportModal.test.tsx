@@ -4,6 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ExecutiveReportModal } from '../../../src/components/modals/ExecutiveReportModal';
 import { mockTenant, mockSavingsOpportunities } from '../../../src/data/mockData';
 
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+
 describe('ExecutiveReportModal Component', () => {
   it('renders null when not open', () => {
     const { container } = render(
@@ -30,10 +32,10 @@ describe('ExecutiveReportModal Component', () => {
       />
     );
 
-    expect(screen.getByText(/Executive Advisory Diagnostic & ROI Blueprint/i)).toBeInTheDocument();
-    expect(screen.getByText(/Actionable Sourcing & Contract Execution Pipeline/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.report.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.report.section2Title)).toBeInTheDocument();
 
-    const printBtn = screen.getByRole('button', { name: /Print \/ PDF/i });
+    const printBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.report.printPdf, 'i') });
     fireEvent.click(printBtn);
     expect(printSpy).toHaveBeenCalled();
 

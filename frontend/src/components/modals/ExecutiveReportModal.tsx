@@ -2,6 +2,7 @@
 import React from 'react';
 import { FileText, Printer, Download, CheckCircle2, X, TrendingUp, DollarSign, ShieldAlert, Award } from 'lucide-react';
 import { TenantMaster, SavingsOpportunity } from '../../types';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface ExecutiveReportModalProps {
   tenant: TenantMaster;
@@ -36,10 +37,10 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             </div>
             <div>
               <span className="text-[10px] font-mono text-cyan-800 dark:text-cyan-400 font-bold uppercase tracking-wider">
-                Doc Reference: FRD-PRC-2026-V2 | Confidential
+                {UI_STRINGS.modals.report.docRef}
               </span>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Executive Advisory Diagnostic & ROI Blueprint (INR in Crores)
+                {UI_STRINGS.modals.report.title}
               </h2>
             </div>
           </div>
@@ -49,7 +50,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
               className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / PDF</span>
+              <span>{UI_STRINGS.modals.report.printPdf}</span>
             </button>
             <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg">
               <X className="w-5 h-5" />
@@ -64,35 +65,35 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                  PROCUCEV PLATFORM ENGINE
+                  {UI_STRINGS.modals.report.platformTitle}
                 </h1>
                 <p className="text-sm text-cyan-700 dark:text-cyan-400 font-semibold mt-1">
-                  Strategic Procurement Advisory & AI Savings Realization Deliverable
+                  {UI_STRINGS.modals.report.platformSubtitle}
                 </p>
               </div>
               <div className="text-right text-xs text-slate-500 dark:text-slate-400 font-mono">
-                <p>Date: August 12, 2026</p>
-                <p>Author: Srinivas Mukku (Co-Founder & CEO)</p>
-                <p>Base Currency: INR in Crores (₹ Cr)</p>
+                <p>{UI_STRINGS.modals.report.date}</p>
+                <p>{UI_STRINGS.modals.report.author}</p>
+                <p>{UI_STRINGS.modals.report.baseCurrency}</p>
               </div>
             </div>
 
             <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Enterprise Client:</span>
+                <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.report.enterpriseClient}</span>
                 <p className="font-bold text-slate-900 dark:text-white text-sm">{tenant.enterprise_name}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Evaluated Spend Window:</span>
-                <p className="font-bold text-cyan-700 dark:text-cyan-300">36 Months (Multi-Currency)</p>
+                <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.report.evaluatedSpendWindow}</span>
+                <p className="font-bold text-cyan-700 dark:text-cyan-300">{UI_STRINGS.modals.report.spendWindowVal}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Total Analyzed Spend:</span>
-                <p className="font-bold font-mono text-slate-900 dark:text-white text-sm">₹{totalSpendInrCr.toFixed(2)} Crores</p>
+                <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.report.totalAnalyzedSpend}</span>
+                <p className="font-bold font-mono text-slate-900 dark:text-white text-sm">{UI_STRINGS.modals.report.totalAnalyzedSpendVal(totalSpendInrCr)}</p>
               </div>
               <div>
-                <span className="text-slate-500 dark:text-slate-400">Overall Realization:</span>
-                <p className="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-sm">16.4% Net Target</p>
+                <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.report.overallRealization}</span>
+                <p className="font-bold font-mono text-emerald-600 dark:text-emerald-400 text-sm">{UI_STRINGS.modals.report.overallRealizationVal}</p>
               </div>
             </div>
           </div>
@@ -100,49 +101,49 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           {/* Section 1: Executive KPI Summary */}
           <div className="grid grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Total Savings</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.report.kpiTotalSavings}</span>
               <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1">
-                ₹{totalSavingsInrCr.toFixed(2)} Cr
+                {UI_STRINGS.modals.report.totalSavingsVal(totalSavingsInrCr)}
               </p>
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">16.4% of Total Spend</span>
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">{UI_STRINGS.modals.report.totalSavingsSub}</span>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Price Creep Leak</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.report.kpiPriceCreep}</span>
               <p className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono mt-1">
-                ₹20.53 Cr
+                {UI_STRINGS.modals.report.priceCreepVal}
               </p>
-              <span className="text-[10px] text-amber-700 dark:text-amber-300 font-medium">Unjustified vs Market Index</span>
+              <span className="text-[10px] text-amber-700 dark:text-amber-300 font-medium">{UI_STRINGS.modals.report.priceCreepSub}</span>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">Conversion Velocity</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.report.kpiConversionVelocity}</span>
               <p className="text-2xl font-black text-cyan-700 dark:text-cyan-400 font-mono mt-1">
-                3x
+                {UI_STRINGS.modals.report.conversionVelocityVal}
               </p>
-              <span className="text-[10px] text-cyan-800 dark:text-cyan-300 font-medium">Advisory to SaaS Lock-in</span>
+              <span className="text-[10px] text-cyan-800 dark:text-cyan-300 font-medium">{UI_STRINGS.modals.report.conversionVelocitySub}</span>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center">
-              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">AI Confidence</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.report.kpiAiConfidence}</span>
               <p className="text-2xl font-black text-purple-700 dark:text-purple-400 font-mono mt-1">
-                98.4%
+                {UI_STRINGS.modals.report.aiConfidenceVal}
               </p>
-              <span className="text-[10px] text-purple-800 dark:text-purple-300 font-medium">Enterprise QUA Model</span>
+              <span className="text-[10px] text-purple-800 dark:text-purple-300 font-medium">{UI_STRINGS.modals.report.aiConfidenceSub}</span>
             </div>
           </div>
 
           {/* Section 2: Category Breakdown in INR Crores */}
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-              1. Category Spend & Target Savings Distribution (INR in Crores)
+              {UI_STRINGS.modals.report.section1Title}
             </h3>
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                   <tr>
-                    <th className="py-2.5 px-4">Core Spend Category</th>
-                    <th className="py-2.5 px-4">Baseline Spend (₹ Cr)</th>
-                    <th className="py-2.5 px-4">Benchmark Target %</th>
-                    <th className="py-2.5 px-4">Quantified Savings (₹ Cr)</th>
-                    <th className="py-2.5 px-4">Execution Engine</th>
+                    <th className="py-2.5 px-4">{UI_STRINGS.modals.report.tableHeaders.category}</th>
+                    <th className="py-2.5 px-4">{UI_STRINGS.modals.report.tableHeaders.baseline}</th>
+                    <th className="py-2.5 px-4">{UI_STRINGS.modals.report.tableHeaders.targetPct}</th>
+                    <th className="py-2.5 px-4">{UI_STRINGS.modals.report.tableHeaders.savings}</th>
+                    <th className="py-2.5 px-4">{UI_STRINGS.modals.report.tableHeaders.engine}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-slate-700 dark:text-slate-300">
@@ -182,7 +183,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           {/* Section 3: High-Priority Strategic Initiatives */}
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-              2. Actionable Sourcing & Contract Execution Pipeline (INR in Crores)
+              {UI_STRINGS.modals.report.section2Title}
             </h3>
             <div className="space-y-2.5">
               {opportunities.slice(0, 4).map((opp) => (
@@ -195,13 +196,13 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
                       <span className="font-bold text-slate-900 dark:text-white">{opp.title}</span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                      Recommended: <span className="text-slate-800 dark:text-slate-200">{opp.recommended_action}</span> | Leak Type: {opp.contract_leak_type}
+                      {UI_STRINGS.modals.report.recommendedPrefix}<span className="text-slate-800 dark:text-slate-200">{opp.recommended_action}</span>{UI_STRINGS.modals.report.leakTypePrefix}{opp.contract_leak_type}
                     </p>
                   </div>
                   <div className="text-right pl-4 shrink-0">
-                    <span className="text-[10px] text-slate-400 uppercase">Savings Target</span>
+                    <span className="text-[10px] text-slate-400 uppercase">{UI_STRINGS.modals.report.savingsTarget}</span>
                     <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                      ₹{(opp.est_savings_inr_cr || (opp.est_savings * 83.8 / 10000000)).toFixed(2)} Cr
+                      {UI_STRINGS.modals.report.savingsTargetVal(opp.est_savings_inr_cr || (opp.est_savings * 83.8 / 10000000))}
                     </p>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
                       opp.push_to_module === 'proCPX' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800/40' : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-400 border border-purple-300 dark:border-purple-800/40'
@@ -217,13 +218,13 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           {/* Executive Sign-off Footer */}
           <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex justify-between items-end text-xs text-slate-500 dark:text-slate-400">
             <div>
-              <p className="font-semibold text-slate-900 dark:text-white">PROCUCEV Advisory Leadership</p>
-              <p className="font-mono text-cyan-700 dark:text-cyan-400">Srinivas Mukku, Co-Founder & CEO</p>
-              <p className="text-[11px] text-slate-400">Document generated via PROCUCEV Platform Engine</p>
+              <p className="font-semibold text-slate-900 dark:text-white">{UI_STRINGS.modals.report.advisoryLeadership}</p>
+              <p className="font-mono text-cyan-700 dark:text-cyan-400">{UI_STRINGS.modals.report.ceoName}</p>
+              <p className="text-[11px] text-slate-400">{UI_STRINGS.modals.report.documentGenerated}</p>
             </div>
             <div className="text-right">
               <span className="px-3 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/40 rounded-full font-semibold text-[11px]">
-                Diagnostic Engagement: 100% Validated
+                {UI_STRINGS.modals.report.diagnosticValidated}
               </span>
             </div>
           </div>

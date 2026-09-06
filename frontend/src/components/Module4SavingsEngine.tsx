@@ -16,6 +16,7 @@ import {
   Check
 } from 'lucide-react';
 import { SavingsOpportunity } from '../types';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 interface Module4SavingsEngineProps {
   opportunities: SavingsOpportunity[];
@@ -38,33 +39,33 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
 
   const categoryBreakdowns = [
     {
-      name: 'Direct Materials',
-      targetPct: '18.5%',
-      savingsFound: '₹53.80 Cr',
+      name: UI_STRINGS.module4.categories.directMaterials,
+      targetPct: UI_STRINGS.module4.categoryTargets.directMaterials,
+      savingsFound: UI_STRINGS.module4.categorySavingsFound.directMaterials,
       color: 'from-cyan-500 to-blue-500',
       textColor: 'text-cyan-700 dark:text-cyan-400',
       progressPct: 100
     },
     {
-      name: 'Packaging Materials',
-      targetPct: '16.1%',
-      savingsFound: '₹25.98 Cr',
+      name: UI_STRINGS.module4.categories.packagingMaterials,
+      targetPct: UI_STRINGS.module4.categoryTargets.packagingMaterials,
+      savingsFound: UI_STRINGS.module4.categorySavingsFound.packagingMaterials,
       color: 'from-blue-500 to-indigo-500',
       textColor: 'text-blue-700 dark:text-blue-400',
       progressPct: 106
     },
     {
-      name: 'Indirect & MRO',
-      targetPct: '14.2%',
-      savingsFound: '₹23.88 Cr',
+      name: UI_STRINGS.module4.categories.indirectMRO,
+      targetPct: UI_STRINGS.module4.categoryTargets.indirectMRO,
+      savingsFound: UI_STRINGS.module4.categorySavingsFound.indirectMRO,
       color: 'from-purple-500 to-violet-500',
       textColor: 'text-purple-700 dark:text-purple-400',
       progressPct: 96
     },
     {
-      name: 'Logistics & Freight',
-      targetPct: '12.0%',
-      savingsFound: '₹16.01 Cr',
+      name: UI_STRINGS.module4.categories.logisticsFreight,
+      targetPct: UI_STRINGS.module4.categoryTargets.logisticsFreight,
+      savingsFound: UI_STRINGS.module4.categorySavingsFound.logisticsFreight,
       color: 'from-emerald-500 to-teal-500',
       textColor: 'text-emerald-700 dark:text-emerald-400',
       progressPct: 102
@@ -84,22 +85,22 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-              Module 4: Real-Time Savings Engine & Optimization Targets
+              {UI_STRINGS.module4.badge}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">FR-SAV-01, FR-SAV-02</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module4.frRef}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            Savings Engine Dashboard & Suite Integration (INR in Crores)
+            {UI_STRINGS.module4.heading}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-            Real-time opportunity quantification denominated in <strong>INR Crores (₹ Cr)</strong> with native execution export into proCPX (e-sourcing) and DPS NXT (contract rate cards).
+            {UI_STRINGS.module4.description}
           </p>
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">
           <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-400 text-xs font-bold font-mono">
             <Award className="w-4 h-4" />
-            <span>16.4% Realization Target</span>
+            <span>{UI_STRINGS.module4.realizationTargetBadge}</span>
           </span>
         </div>
       </div>
@@ -111,32 +112,32 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
-                Total Quantified Savings Target
+                {UI_STRINGS.module4.heroBadge}
               </span>
               <span className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
-                16.4% Net Spend
+                {UI_STRINGS.module4.netSpendBadge}
               </span>
             </div>
 
             <div className="mt-4">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Enterprise Potential Realization</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{UI_STRINGS.module4.enterprisePotential}</span>
               <div className="text-4xl sm:text-5xl font-black font-mono text-emerald-600 dark:text-emerald-400 tracking-tight mt-1">
                 ₹{totalSavingsInrCr.toFixed(2)} Cr
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
-                Across <strong>₹{totalEvaluatedSpendInrCr.toFixed(2)} Cr</strong> evaluated historical procurement spend (multi-currency FX normalized).
+                {UI_STRINGS.module4.historicalProcurementNote(totalEvaluatedSpendInrCr)}
               </p>
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-emerald-200/60 dark:border-emerald-500/20 flex items-center justify-between text-xs font-mono">
             <div>
-              <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase">Direct Sourcing (proCPX)</span>
-              <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm">₹64.71 Cr</span>
+              <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase">{UI_STRINGS.module4.directSourcingLabel}</span>
+              <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm">{UI_STRINGS.module4.directSourcingVal}</span>
             </div>
             <div className="text-right">
-              <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase">Contract Rules (DPS NXT)</span>
-              <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">₹54.96 Cr</span>
+              <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase">{UI_STRINGS.module4.contractRulesLabel}</span>
+              <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">{UI_STRINGS.module4.contractRulesVal}</span>
             </div>
           </div>
         </div>
@@ -146,9 +147,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Target className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Target vs Realized Savings Distribution (INR in Crores)</span>
+              <span>{UI_STRINGS.module4.distributionTitle}</span>
             </h3>
-            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">All 4 Core Buckets Active</span>
+            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">{UI_STRINGS.module4.distributionSubtitle}</span>
           </div>
 
           <div className="space-y-3.5 pt-1">
@@ -157,7 +158,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-slate-800 dark:text-slate-200">{cat.name}</span>
                   <div className="flex items-center space-x-3 font-mono">
-                    <span className="text-slate-500 dark:text-slate-400">Target: {cat.targetPct}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.module4.targetPrefix(cat.targetPct)}</span>
                     <span className={`font-black ${cat.textColor}`}>{cat.savingsFound}</span>
                   </div>
                 </div>
@@ -180,10 +181,10 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Identified Opportunity Pipeline & Suite Integration Triggers</span>
+              <span>{UI_STRINGS.module4.pipelineTitle}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Interactive launchers to push validated savings initiatives directly to <strong>proCPX</strong> (e-Sourcing) and <strong>DPS NXT</strong> (Rate-Card Contracts).
+              {UI_STRINGS.module4.pipelineSubtitle}
             </p>
           </div>
 
@@ -194,11 +195,11 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
             >
-              <option value="ALL">All Categories</option>
-              <option value="Direct Materials">Direct Materials</option>
-              <option value="Packaging Materials">Packaging Materials</option>
-              <option value="Indirect & MRO">Indirect & MRO</option>
-              <option value="Logistics & Freight">Logistics & Freight</option>
+              <option value="ALL">{UI_STRINGS.module4.filterCategories.all}</option>
+              <option value={UI_STRINGS.module4.categories.directMaterials}>{UI_STRINGS.module4.filterCategories.direct}</option>
+              <option value={UI_STRINGS.module4.categories.packagingMaterials}>{UI_STRINGS.module4.filterCategories.packaging}</option>
+              <option value={UI_STRINGS.module4.categories.indirectMRO}>{UI_STRINGS.module4.filterCategories.indirect}</option>
+              <option value={UI_STRINGS.module4.categories.logisticsFreight}>{UI_STRINGS.module4.filterCategories.logistics}</option>
             </select>
 
             <select
@@ -206,9 +207,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
               onChange={(e) => setFilterModule(e.target.value)}
               className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
             >
-              <option value="ALL">All Execution Engines</option>
-              <option value="proCPX">proCPX Sourcing Engine</option>
-              <option value="DPS NXT">DPS NXT Rate Enforcement</option>
+              <option value="ALL">{UI_STRINGS.module4.filterEngines.all}</option>
+              <option value="proCPX">{UI_STRINGS.module4.filterEngines.proCPX}</option>
+              <option value="DPS NXT">{UI_STRINGS.module4.filterEngines.dpsNXT}</option>
             </select>
           </div>
         </div>
@@ -219,13 +220,13 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3 px-4">Opportunity ID & Category</th>
-                  <th className="py-3 px-4">Title & Contract Leakage Mechanism</th>
-                  <th className="py-3 px-4">Current Spend (₹ Cr)</th>
-                  <th className="py-3 px-4">Target %</th>
-                  <th className="py-3 px-4">Est. Savings (₹ Cr)</th>
-                  <th className="py-3 px-4 text-center">Suite Integration</th>
-                  <th className="py-3 px-4 text-right">Execution Action</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module4.tableHeaders.oppIdAndCategory}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module4.tableHeaders.titleAndLeakage}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module4.tableHeaders.currentSpendInrCr}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module4.tableHeaders.targetPct}</th>
+                  <th className="py-3 px-4">{UI_STRINGS.module4.tableHeaders.estSavingsInrCr}</th>
+                  <th className="py-3 px-4 text-center">{UI_STRINGS.module4.tableHeaders.suiteIntegration}</th>
+                  <th className="py-3 px-4 text-right">{UI_STRINGS.module4.tableHeaders.executionAction}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
@@ -243,7 +244,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                     <td className="py-3.5 px-4 font-sans">
                       <div className="font-bold text-slate-900 dark:text-white text-xs">{opp.title}</div>
                       <span className="text-[10px] text-rose-600 dark:text-rose-400 block mt-0.5">
-                        Leak: {opp.contract_leak_type}
+                        {UI_STRINGS.module4.leakPrefix(opp.contract_leak_type)}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-800 dark:text-slate-200">
@@ -270,23 +271,23 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                       {opp.status === 'Pushed to proCPX' || opp.status === 'Pushed to DPS NXT' ? (
                         <span className="inline-flex items-center space-x-1 text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800/50 text-xs font-bold">
                           <Check className="w-3.5 h-3.5" />
-                          <span>Pushed</span>
+                          <span>{UI_STRINGS.module4.pushedBadge}</span>
                         </span>
                       ) : opp.push_to_module === 'proCPX' ? (
                         <button
                           onClick={() => onOpenProCPX(opp)}
-                          className="px-3 py-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-all shadow-xs active:scale-95 flex items-center space-x-1 ml-auto"
+                          className="px-3 py-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-all shadow-xs active:scale-95 flex items-center space-x-1 ml-auto cursor-pointer"
                         >
                           <Send className="w-3 h-3" />
-                          <span>Push to proCPX</span>
+                          <span>{UI_STRINGS.module4.pushToProCPX}</span>
                         </button>
                       ) : (
                         <button
                           onClick={() => onOpenDPSNXT(opp)}
-                          className="px-3 py-1.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition-all shadow-xs active:scale-95 flex items-center space-x-1 ml-auto"
+                          className="px-3 py-1.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition-all shadow-xs active:scale-95 flex items-center space-x-1 ml-auto cursor-pointer"
                         >
                           <FileCheck className="w-3 h-3" />
-                          <span>Push to DPS NXT</span>
+                          <span>{UI_STRINGS.module4.pushToDPSNXT}</span>
                         </button>
                       )}
                     </td>
@@ -301,13 +302,13 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
             <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>Ready to calculate Client ROI and Transition to Commercial Lock-in Funnel</span>
+            <span>{UI_STRINGS.module4.ctaSubtitle}</span>
           </div>
           <button
             onClick={onProceedToConversion}
-            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-95 group"
+            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
-            <span>Proceed to Conversion Matrix & ROI Engine</span>
+            <span>{UI_STRINGS.module4.ctaProceedButton}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { GitMerge, Check, X, Building2, Search, ArrowRight } from 'lucide-react';
 import { ValidationPreCheckRecord } from '../../types';
+import { UI_STRINGS } from '../../constants/uiStrings';
 
 interface MergeVendorModalProps {
   record: ValidationPreCheckRecord | null;
@@ -42,9 +43,9 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
             </div>
             <div>
               <span className="text-[11px] font-mono text-cyan-800 dark:text-cyan-400 font-bold uppercase tracking-wider">
-                Entity Disambiguation
+                {UI_STRINGS.modals.mergeVendor.entityDisambiguationBadge}
               </span>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">Merge Disparate Supplier Entities</h3>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.mergeVendor.title}</h3>
             </div>
           </div>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg">
@@ -54,14 +55,14 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
 
         <div className="p-5 space-y-4">
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
-            <span className="text-slate-500 dark:text-slate-400">Incoming Unmapped Entity:</span>
+            <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.mergeVendor.incomingEntityLabel}</span>
             <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm">{record.vendor_name}</p>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">Transaction: {record.raw_desc}</p>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Select Target Master Supplier ID
+              {UI_STRINGS.modals.mergeVendor.selectTargetLabel}
             </label>
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
               {masterSuppliers.map((master) => (
@@ -98,14 +99,14 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"
           >
-            Cancel
+            {UI_STRINGS.common.cancel}
           </button>
           <button
             onClick={handleConfirm}
             className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-colors shadow-xs"
           >
             <Check className="w-3.5 h-3.5" />
-            <span>Map to Master Supplier</span>
+            <span>{UI_STRINGS.modals.mergeVendor.confirmMerge}</span>
           </button>
         </div>
       </div>

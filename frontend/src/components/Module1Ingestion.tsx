@@ -50,6 +50,7 @@ import { ClientIngestionSetupModal, DatasetType } from './modals/ClientIngestion
 import { CategoryTopItemsModal } from './modals/CategoryTopItemsModal';
 import { VendorTopItemsModal } from './modals/VendorTopItemsModal';
 import { yahooFinanceFXRates } from '../utils/currencyConverter';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 interface Module1IngestionProps {
   tenant: TenantMaster;
@@ -235,18 +236,18 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
-              Module 1: Document Ingestion & Multi-Currency ETL
+              {UI_STRINGS.module1.badge}
             </span>
             <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60 flex items-center space-x-1">
               <TrendingUp className="w-3 h-3 inline" />
-              <span>Multi-Currency FX Engine Active</span>
+              <span>{UI_STRINGS.module1.fxEngineActive}</span>
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            3-Year Multi-Currency Ingestion & FX Normalization
+            {UI_STRINGS.module1.heading}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-            Ingests multiple foreign currencies (USD, EUR, GBP, AED, JPY, SGD), applies historical <strong>time-series FX conversion rates</strong>, and normalizes all spend into <strong>INR in Crores (₹ Cr)</strong>.
+            {UI_STRINGS.module1.description}
           </p>
         </div>
         <div className="flex items-center space-x-3 shrink-0">
@@ -255,7 +256,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             className="flex items-center space-x-1.5 px-4 py-2.5 text-xs font-bold text-cyan-950 dark:text-white bg-cyan-100 dark:bg-cyan-950 hover:bg-cyan-200 dark:hover:bg-cyan-900 border border-cyan-300 dark:border-cyan-700/80 rounded-xl transition-all shadow-xs active:scale-95"
           >
             <Settings className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
-            <span>Configure Client & Dataset</span>
+            <span>{UI_STRINGS.module1.configureClientDataset}</span>
           </button>
         </div>
       </div>
@@ -328,7 +329,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
               onClick={handleOpenSetupModal}
               className="text-xs text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 font-bold underline"
             >
-              Change Details
+              {UI_STRINGS.module1.changeDetails}
             </button>
           </div>
         </div>
@@ -391,7 +392,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                     }}
                     className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors"
                   >
-                    Setup Details
+                    {UI_STRINGS.module1.setupDetails}
                   </button>
                   <button
                     type="button"
@@ -401,7 +402,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                     }}
                     className="px-4 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg shadow-sm transition-all"
                   >
-                    Select File
+                    {UI_STRINGS.module1.selectFile}
                   </button>
                 </div>
               </div>
@@ -431,7 +432,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
                 <FileCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Uploaded Procurement File Details</span>
+                <span>{UI_STRINGS.module1.uploadedFileDetails}</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Verified dataset with record count strictly excluding header row
@@ -445,7 +446,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           <div className="space-y-3 pt-1">
             {ingestionQueue.length === 0 ? (
               <div className="p-8 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 text-center text-xs text-slate-500">
-                No file uploaded yet. Click &quot;Select File&quot; or drop your dataset to begin ingestion.
+                {UI_STRINGS.module1.noFileUploaded}. Click &quot;{UI_STRINGS.module1.selectFile}&quot; or drop your dataset to begin ingestion.
               </div>
             ) : (
               ingestionQueue.map((doc) => (
@@ -579,7 +580,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>By Categories</span>
+                <span>{UI_STRINGS.module1.byCategories}</span>
               </button>
               <button
                 onClick={() => setBreakdownMode('VENDOR')}
@@ -590,7 +591,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                <span>By Vendors</span>
+                <span>{UI_STRINGS.module1.byVendors}</span>
               </button>
             </div>
 
@@ -1144,7 +1145,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                All Records ({totalValidationCount})
+                {UI_STRINGS.module1.allRecords} ({totalValidationCount})
               </button>
               <button
                 onClick={() => setFilterIssue('NEEDS_ACTION')}
@@ -1154,7 +1155,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                     : 'text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300'
                 }`}
               >
-                <span>Needs Action ({pendingActionsCount})</span>
+                <span>{UI_STRINGS.module1.needsAction} ({pendingActionsCount})</span>
                 {pendingIssuesSpendCr > 0 && (
                   <span className="text-[10px] px-1 py-0.2 rounded bg-amber-900/40 text-amber-200 font-mono">
                     -₹{pendingIssuesSpendCr.toFixed(2)} Cr
@@ -1169,7 +1170,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                     : 'text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300'
                 }`}
               >
-                Ready & Cleared ({allResolvedCount})
+                {UI_STRINGS.module1.readyAndCleared} ({allResolvedCount})
               </button>
             </div>
 
@@ -1181,7 +1182,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                 title="Automatically normalize vendor entities, resolve currency/tax discrepancies, and include all items in spend"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>⚡ Apply Blanket AI Fixes (Auto-Resolve All)</span>
+                <span>⚡ {UI_STRINGS.module1.applyBlanketFixes} (Auto-Resolve All)</span>
               </button>
             )}
 
@@ -1192,7 +1193,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                 className="flex items-center space-x-1.5 px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200 dark:border-slate-700"
                 title="Reset pre-check records back to initial state with 2 anomalies for testing"
               >
-                <span>↺ Reset Anomaly State</span>
+                <span>↺ {UI_STRINGS.module1.resetAnomalyState}</span>
               </button>
             )}
           </div>
@@ -1450,7 +1451,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                             onClick={() => onFixCurrency(record)}
                             className="px-2.5 py-1.5 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
                           >
-                            Fix (INR)
+                            {UI_STRINGS.module1.fixInr}
                           </button>
                         )}
                         {record.issue_flag === 'Unmapped Supplier Name' && !record.resolved && (
@@ -1458,7 +1459,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                             onClick={() => onMergeVendor(record)}
                             className="px-2.5 py-1.5 text-xs font-bold text-cyan-900 dark:text-cyan-950 bg-cyan-400 hover:bg-cyan-300 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
                           >
-                            Merge Vendor
+                            {UI_STRINGS.module1.mergeVendor}
                           </button>
                         )}
                         {isClean && (
@@ -1471,7 +1472,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                             onClick={() => onFixCurrency(record)}
                             className="px-2.5 py-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg transition-all border border-slate-300 dark:border-slate-600 cursor-pointer"
                           >
-                            Recalc FX
+                            {UI_STRINGS.module1.recalcFx}
                           </button>
                         )}
                       </td>
@@ -1493,7 +1494,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             onClick={onRunAICategorization}
             className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
-            <span>Run AI Categorization Engine</span>
+            <span>{UI_STRINGS.module1.runAiCategorization}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

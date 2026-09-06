@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module2Categorization } from '../../src/components/Module2Categorization';
 import { mockSpendCategories, mockCategoryYearDetails } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module2Categorization Component', () => {
   const sampleLineItems = [
@@ -79,12 +80,12 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    expect(screen.getByText('Year-Wise Category Spend Matrix & Column L Benchmarks (INR in Crores)')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.matrixTitle)).toBeInTheDocument();
 
-    const publicAiBtn = screen.getByRole('button', { name: /Public QUA AI/i });
+    const publicAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.public });
     fireEvent.click(publicAiBtn);
 
-    const enterpriseAiBtn = screen.getByRole('button', { name: /Enterprise QUA AI/i });
+    const enterpriseAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.enterprise });
     fireEvent.click(enterpriseAiBtn);
   });
 
@@ -150,15 +151,15 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    const confirmBtns = screen.getAllByRole('button', { name: /^Confirm$/i });
+    const confirmBtns = screen.getAllByRole('button', { name: new RegExp(`^${UI_STRINGS.module2.btnConfirm}$`, 'i') });
     fireEvent.click(confirmBtns[0]);
     expect(onConfirmMapping).toHaveBeenCalledWith(sampleLineItems[0].mapping_id);
 
-    const reassignBtns = screen.getAllByRole('button', { name: /Re-Assign/i });
+    const reassignBtns = screen.getAllByRole('button', { name: UI_STRINGS.module2.btnReassign });
     fireEvent.click(reassignBtns[0]);
     expect(onReassignMapping).toHaveBeenCalledWith(sampleLineItems[0]);
 
-    const proceedBtn = screen.getByRole('button', { name: /Proceed to 36-Month Volatility Analytics/i });
+    const proceedBtn = screen.getByRole('button', { name: UI_STRINGS.module2.btnProceedToTrend });
     fireEvent.click(proceedBtn);
     expect(onProceedToTrend).toHaveBeenCalled();
   });
@@ -219,9 +220,9 @@ describe('Module2Categorization Component', () => {
     );
 
     // AI Model switcher
-    const publicAiBtn = screen.getByRole('button', { name: /Public QUA AI/i });
+    const publicAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.public });
     fireEvent.click(publicAiBtn);
-    const enterpriseAiBtn = screen.getByRole('button', { name: /Enterprise QUA AI/i });
+    const enterpriseAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.enterprise });
     fireEvent.click(enterpriseAiBtn);
 
     // Year filters
@@ -233,7 +234,7 @@ describe('Module2Categorization Component', () => {
     fireEvent.change(yearSelect, { target: { value: 'ALL' } });
 
     // Verify confirmed badge rendered
-    expect(screen.getByText('Confirmed')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.statusConfirmed)).toBeInTheDocument();
     // Verify default spend_year 2024 rendered
     expect(screen.getByText('2024')).toBeInTheDocument();
   });

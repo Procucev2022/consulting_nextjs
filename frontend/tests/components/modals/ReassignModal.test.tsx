@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReassignModal } from '../../../src/components/modals/ReassignModal';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('ReassignModal Component', () => {
   const sampleItem = {
@@ -47,7 +48,7 @@ describe('ReassignModal Component', () => {
       />
     );
 
-    expect(screen.getByText('Modify Column L Commodity Code')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.reassign.title)).toBeInTheDocument();
     expect(screen.getByText(sampleItem.raw_desc)).toBeInTheDocument();
 
     // Filter bucket
@@ -55,7 +56,7 @@ describe('ReassignModal Component', () => {
     fireEvent.change(bucketSelect, { target: { value: 'ALL' } });
 
     // Search query
-    const searchInput = screen.getByPlaceholderText(/Search Column L code/i);
+    const searchInput = screen.getByPlaceholderText(new RegExp(UI_STRINGS.modals.reassign.searchPlaceholder.slice(0, 15), 'i'));
     fireEvent.change(searchInput, { target: { value: 'boxwood' } });
 
     // Select first commodity result
@@ -63,7 +64,7 @@ describe('ReassignModal Component', () => {
     fireEvent.click(firstResult);
 
     // Apply mapping
-    const applyBtn = screen.getByRole('button', { name: /Apply Column L Mapping/i });
+    const applyBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.reassign.saveMapping, 'i') });
     fireEvent.click(applyBtn);
 
     expect(onSave).toHaveBeenCalledWith(

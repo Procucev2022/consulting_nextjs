@@ -2,34 +2,35 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PipelineBar } from '../../src/components/PipelineBar';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('PipelineBar Component', () => {
   it('renders all KPI cards correctly', () => {
     render(<PipelineBar activeTab="module1" onSelectTab={vi.fn()} />);
 
-    expect(screen.getByText('Historical Ingestion')).toBeInTheDocument();
-    expect(screen.getByText('Real-Time Processing')).toBeInTheDocument();
-    expect(screen.getByText('Avg Identified Savings')).toBeInTheDocument();
-    expect(screen.getByText('Faster Conversion')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pipeline.kpis.historicalIngestion.label)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pipeline.kpis.realTimeProcessing.label)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.label)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pipeline.kpis.fasterConversion.label)).toBeInTheDocument();
   });
 
   it('renders all 4 stages and triggers onSelectTab when clicking a stage', () => {
     const onSelectTab = vi.fn();
     render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} />);
 
-    const step2 = screen.getByText('AI Categorization');
+    const step2 = screen.getByText(UI_STRINGS.pipeline.navStages.step2.title);
     fireEvent.click(step2);
     expect(onSelectTab).toHaveBeenCalledWith('module2');
 
-    const step3 = screen.getByText('Trend Analysis');
+    const step3 = screen.getByText(UI_STRINGS.pipeline.navStages.step3.title);
     fireEvent.click(step3);
     expect(onSelectTab).toHaveBeenCalledWith('module3');
 
-    const step4 = screen.getByText('Savings Engine');
+    const step4 = screen.getByText(UI_STRINGS.pipeline.navStages.step4.title);
     fireEvent.click(step4);
     expect(onSelectTab).toHaveBeenCalledWith('module4');
 
-    const step1 = screen.getByText('3-Year Upload');
+    const step1 = screen.getByText(UI_STRINGS.pipeline.navStages.step1.title);
     fireEvent.click(step1);
     expect(onSelectTab).toHaveBeenCalledWith('module1');
   });
@@ -38,11 +39,11 @@ describe('PipelineBar Component', () => {
     const onSelectTab = vi.fn();
     const { rerender } = render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} />);
 
-    const matrixBtn = screen.getByRole('button', { name: /5\. Conversion Matrix/i });
+    const matrixBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.pipeline.conversionMatrixTab, 'i') });
     fireEvent.click(matrixBtn);
     expect(onSelectTab).toHaveBeenCalledWith('module5');
 
-    const schemaBtn = screen.getByRole('button', { name: /Data Architecture/i });
+    const schemaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.pipeline.dataArchitectureTab, 'i') });
     fireEvent.click(schemaBtn);
     expect(onSelectTab).toHaveBeenCalledWith('schema');
 

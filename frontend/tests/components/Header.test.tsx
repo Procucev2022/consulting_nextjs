@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
 import { mockTenant } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Header Component', () => {
   const defaultProps = {
@@ -18,28 +19,28 @@ describe('Header Component', () => {
   it('renders correctly with light theme and default props', () => {
     render(<Header {...defaultProps} />);
 
-    expect(screen.getByText('PROCUCEV')).toBeInTheDocument();
-    expect(screen.getByText('ENGINE 2.0')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.brand)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.engineVersion)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
-    expect(screen.getByText('₹732.41 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.evaluatedSpendFallback)).toBeInTheDocument();
   });
 
   it('renders fallback spend if total_spend_evaluated_inr is undefined', () => {
     const tenantWithoutINR = { ...mockTenant, total_spend_evaluated_inr: undefined as any };
     render(<Header {...defaultProps} tenant={tenantWithoutINR} />);
-    expect(screen.getByText('₹732.41 Cr')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.evaluatedSpendFallback)).toBeInTheDocument();
   });
 
   it('handles theme switching between light and dark', () => {
     const onSelectTheme = vi.fn();
     const { rerender } = render(<Header {...defaultProps} onSelectTheme={onSelectTheme} />);
 
-    const darkBtn = screen.getByTitle('Switch to Dark Mode');
+    const darkBtn = screen.getByTitle(UI_STRINGS.header.themeToggleDark);
     fireEvent.click(darkBtn);
     expect(onSelectTheme).toHaveBeenCalledWith('dark');
 
     rerender(<Header {...defaultProps} theme="dark" onSelectTheme={onSelectTheme} />);
-    const lightBtn = screen.getByTitle('Switch to Light Mode');
+    const lightBtn = screen.getByTitle(UI_STRINGS.header.themeToggleLight);
     fireEvent.click(lightBtn);
     expect(onSelectTheme).toHaveBeenCalledWith('light');
   });
@@ -48,19 +49,19 @@ describe('Header Component', () => {
     const onSelectCurrency = vi.fn();
     render(<Header {...defaultProps} onSelectCurrency={onSelectCurrency} />);
 
-    const usdBtn = screen.getByTitle('USD Base');
+    const usdBtn = screen.getByTitle(UI_STRINGS.header.currencyTitle('USD'));
     fireEvent.click(usdBtn);
     expect(onSelectCurrency).toHaveBeenCalledWith('USD');
 
-    const eurBtn = screen.getByTitle('EUR Base');
+    const eurBtn = screen.getByTitle(UI_STRINGS.header.currencyTitle('EUR'));
     fireEvent.click(eurBtn);
     expect(onSelectCurrency).toHaveBeenCalledWith('EUR');
 
-    const gbpBtn = screen.getByTitle('GBP Base');
+    const gbpBtn = screen.getByTitle(UI_STRINGS.header.currencyTitle('GBP'));
     fireEvent.click(gbpBtn);
     expect(onSelectCurrency).toHaveBeenCalledWith('GBP');
 
-    const inrBtn = screen.getByTitle('Indian Rupee in Crores (₹ Cr)');
+    const inrBtn = screen.getByTitle(UI_STRINGS.header.inrCurrencyTitle);
     fireEvent.click(inrBtn);
     expect(onSelectCurrency).toHaveBeenCalledWith('INR');
   });
@@ -69,7 +70,7 @@ describe('Header Component', () => {
     const onOpenReport = vi.fn();
     render(<Header {...defaultProps} onOpenReport={onOpenReport} />);
 
-    const reportBtn = screen.getByRole('button', { name: /Executive Brief/i });
+    const reportBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.header.executiveBrief, 'i') });
     fireEvent.click(reportBtn);
     expect(onOpenReport).toHaveBeenCalledTimes(1);
   });

@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ClientIngestionSetupModal } from '../../../src/components/modals/ClientIngestionSetupModal';
 import { mockTenant } from '../../../src/data/mockData';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('ClientIngestionSetupModal Component', () => {
   it('renders null when isOpen is false', () => {
@@ -31,13 +32,13 @@ describe('ClientIngestionSetupModal Component', () => {
     );
 
     // Check header
-    expect(screen.getByText('Client & Dataset Ingestion Setup')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
 
     // Select different dataset type
-    const invoiceBtn = screen.getByText('Invoice Data');
+    const invoiceBtn = screen.getByText(UI_STRINGS.modals.clientSetup.datasetOptions.invoiceData.title);
     fireEvent.click(invoiceBtn);
 
-    const trialBtn = screen.getByText('Trial Balance');
+    const trialBtn = screen.getByText(UI_STRINGS.modals.clientSetup.datasetOptions.trialBalance.title);
     fireEvent.click(trialBtn);
 
     // Change client name
@@ -49,7 +50,7 @@ describe('ClientIngestionSetupModal Component', () => {
     fireEvent.click(usdBtn);
 
     // Change region
-    const regionSelect = screen.getByDisplayValue('GLOBAL Multi-Region');
+    const regionSelect = screen.getByDisplayValue(UI_STRINGS.modals.clientSetup.regions.global);
     fireEvent.change(regionSelect, { target: { value: 'EU' } });
 
     // Change spend
@@ -57,7 +58,7 @@ describe('ClientIngestionSetupModal Component', () => {
     fireEvent.change(spendInput, { target: { value: '800' } });
 
     // Submit form
-    const submitBtn = screen.getByRole('button', { name: /Confirm & Proceed to Upload Data/i });
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn });
     fireEvent.click(submitBtn);
 
     expect(onConfirmAndUpload).toHaveBeenCalledWith(
@@ -82,7 +83,7 @@ describe('ClientIngestionSetupModal Component', () => {
       />
     );
 
-    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.cancel });
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });
@@ -111,7 +112,7 @@ describe('ClientIngestionSetupModal Component', () => {
     // Empty name submit should return early
     const nameInput = screen.getByPlaceholderText(/Fortune 500/i);
     fireEvent.change(nameInput, { target: { value: '   ' } });
-    const submitBtn = screen.getByRole('button', { name: /Confirm & Proceed to Upload Data/i });
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn });
     fireEvent.click(submitBtn);
     expect(onConfirmAndUpload).not.toHaveBeenCalled();
 
@@ -122,11 +123,11 @@ describe('ClientIngestionSetupModal Component', () => {
     // Select EUR and GBP
     fireEvent.click(screen.getByRole('button', { name: 'EUR' }));
     fireEvent.click(screen.getByRole('button', { name: 'GBP' }));
-    fireEvent.click(screen.getByRole('button', { name: '₹ INR (Cr)' }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.inrButtonLabel }));
 
     // Change spend period
     const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[0], { target: { value: '24 Months (FY25 - FY26: 1 Apr 2024 - 31 Mar 2026)' } });
+    fireEvent.change(selects[0], { target: { value: UI_STRINGS.modals.clientSetup.spendPeriods.months24 } });
 
     // Close via X button
     const allBtns = screen.getAllByRole('button');

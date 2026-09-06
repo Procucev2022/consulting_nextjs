@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module1Ingestion } from '../../src/components/Module1Ingestion';
 import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../../src/data/mockData';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module1Ingestion Component', () => {
   const defaultProps = {
@@ -21,8 +22,8 @@ describe('Module1Ingestion Component', () => {
   it('renders correctly with ingestion queue and validation tables', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
-    expect(screen.getByText(/Module 1: Document Ingestion & Multi-Currency ETL/i)).toBeInTheDocument();
-    expect(screen.getByText('Uploaded Procurement File Details')).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(UI_STRINGS.module1.badge, 'i'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.uploadedFileDetails)).toBeInTheDocument();
   });
 
   it('handles drag, drop, and file input changes', () => {
@@ -55,11 +56,11 @@ describe('Module1Ingestion Component', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
     // Switch breakdown mode to VENDOR
-    const vendorTab = screen.getByRole('button', { name: /By Vendors/i });
+    const vendorTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byVendors, 'i') });
     fireEvent.click(vendorTab);
 
     // Switch back to Category
-    const catTab = screen.getByRole('button', { name: /By Categories/i });
+    const catTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byCategories, 'i') });
     fireEvent.click(catTab);
   });
 
@@ -75,15 +76,15 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    const fixInrBtn = screen.getByRole('button', { name: /Fix \(INR\)/i });
+    const fixInrBtn = screen.getByRole('button', { name: UI_STRINGS.module1.fixInr });
     fireEvent.click(fixInrBtn);
     expect(onFixCurrency).toHaveBeenCalled();
 
-    const recalcBtn = screen.getByRole('button', { name: /Recalc FX/i });
+    const recalcBtn = screen.getByRole('button', { name: UI_STRINGS.module1.recalcFx });
     fireEvent.click(recalcBtn);
     expect(onFixCurrency).toHaveBeenCalledTimes(2);
 
-    const mergeBtn = screen.getByRole('button', { name: /Merge Vendor/i });
+    const mergeBtn = screen.getByRole('button', { name: UI_STRINGS.module1.mergeVendor });
     fireEvent.click(mergeBtn);
     expect(onMergeVendor).toHaveBeenCalled();
   });
@@ -102,11 +103,11 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    const autoRemediateBtn = screen.getByRole('button', { name: /Apply Blanket AI Fixes/i });
+    const autoRemediateBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     fireEvent.click(autoRemediateBtn);
     expect(onApplyBlanketFixes).toHaveBeenCalled();
 
-    const proceedBtn = screen.getByRole('button', { name: /Run AI Categorization Engine/i });
+    const proceedBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.runAiCategorization, 'i') });
     fireEvent.click(proceedBtn);
     expect(onRunAICategorization).toHaveBeenCalled();
   });
@@ -118,7 +119,7 @@ describe('Module1Ingestion Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: /All FY/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
 
     // Click a category card to open CategoryTopItemsModal
     const categoryButtons = screen.getAllByRole('button');
@@ -126,20 +127,20 @@ describe('Module1Ingestion Component', () => {
     if (catCard) {
       fireEvent.click(catCard);
       // Close modal
-      const closeCatModal = screen.getByRole('button', { name: /Close Pop-up/i });
+      const closeCatModal = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
       fireEvent.click(closeCatModal);
     }
 
     // Toggle balance categories
-    const viewBalBtn = screen.getByRole('button', { name: /View 7 Balance Categories/i });
+    const viewBalBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.viewBalanceCategories(7), 'i') });
     fireEvent.click(viewBalBtn);
-    expect(screen.getByRole('button', { name: /Hide 7 Balance Categories/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Hide 7 Balance Categories/i }));
+    expect(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceCategories(7), 'i') })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceCategories(7), 'i') }));
 
     // Click Pop-up button for balance category
     const catPopupBtn = screen.getByTitle('Open Top Balance Line Items in Pop-up');
     fireEvent.click(catPopupBtn);
-    const closeCatModal2 = screen.getByRole('button', { name: /Close Pop-up/i });
+    const closeCatModal2 = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
     fireEvent.click(closeCatModal2);
   });
 
@@ -147,33 +148,33 @@ describe('Module1Ingestion Component', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
     // Switch to By Vendors
-    fireEvent.click(screen.getByRole('button', { name: /By Vendors/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byVendors, 'i') }));
 
     // Click year filters in vendor view
     fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: /All FY/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
 
     // Click a vendor card
     const vendorButtons = screen.getAllByRole('button');
     const vndCard = vendorButtons.find(b => b.textContent && b.textContent.includes('Rank #1 Vendor'));
     if (vndCard) {
       fireEvent.click(vndCard);
-      const closeVndModal = screen.getByRole('button', { name: /Close Pop-up/i });
+      const closeVndModal = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
       fireEvent.click(closeVndModal);
     }
 
     // Toggle vendor balance
-    const viewVendorBal = screen.getByRole('button', { name: /View 7 Balance Suppliers/i });
+    const viewVendorBal = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.viewBalanceSuppliers(7), 'i') });
     fireEvent.click(viewVendorBal);
-    expect(screen.getByRole('button', { name: /Hide 7 Balance Suppliers/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /Hide 7 Balance Suppliers/i }));
+    expect(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceSuppliers(7), 'i') })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceSuppliers(7), 'i') }));
 
     // Click Pop-up for vendor
     const vndPopupBtn = screen.getByTitle('Open Top Balance Vendor Items in Pop-up');
     fireEvent.click(vndPopupBtn);
-    const closeVndModal2 = screen.getByRole('button', { name: /Close Pop-up/i });
+    const closeVndModal2 = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
     fireEvent.click(closeVndModal2);
   });
 
@@ -182,13 +183,13 @@ describe('Module1Ingestion Component', () => {
     render(<Module1Ingestion {...defaultProps} onUpdateTenant={onUpdateTenant} />);
 
     // Open setup modal
-    const setupBtn = screen.getByRole('button', { name: /Configure Client & Dataset/i });
+    const setupBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.configureClientDataset, 'i') });
     fireEvent.click(setupBtn);
 
-    expect(screen.getByText('Client & Dataset Ingestion Setup')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
 
     // Confirm setup
-    const confirmBtn = screen.getByRole('button', { name: /Confirm & Proceed to Upload Data/i });
+    const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
     fireEvent.click(confirmBtn);
 
     expect(onUpdateTenant).toHaveBeenCalled();
@@ -207,17 +208,17 @@ describe('Module1Ingestion Component', () => {
     );
 
     // Filter issue tabs
-    const needsActionBtn = screen.getByRole('button', { name: /Needs Action/i });
+    const needsActionBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.needsAction, 'i') });
     fireEvent.click(needsActionBtn);
 
-    const readyClearedBtn = screen.getByRole('button', { name: /Ready & Cleared/i });
+    const readyClearedBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.readyAndCleared, 'i') });
     fireEvent.click(readyClearedBtn);
 
-    const allRecordsBtn = screen.getByRole('button', { name: /All Records/i });
+    const allRecordsBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allRecords, 'i') });
     fireEvent.click(allRecordsBtn);
 
     // Click blanket fix button
-    const blanketBtn = screen.getByRole('button', { name: /Apply Blanket AI Fixes/i });
+    const blanketBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     fireEvent.click(blanketBtn);
     expect(onApplyBlanketFixes).toHaveBeenCalled();
 
@@ -232,7 +233,7 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    const resetAnomalyBtn = screen.getByRole('button', { name: /Reset Anomaly State/i });
+    const resetAnomalyBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.resetAnomalyState, 'i') });
     fireEvent.click(resetAnomalyBtn);
     expect(onResetValidationRecords).toHaveBeenCalled();
 
@@ -245,7 +246,7 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    expect(screen.getByText(/No file uploaded yet/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(UI_STRINGS.module1.noFileUploaded, 'i'))).toBeInTheDocument();
   });
 
   it('handles processing doc in ingestion queue with fallbacks', () => {
@@ -271,7 +272,7 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    expect(screen.getByText(/45% Processing/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(UI_STRINGS.module1.processingStatus(45), 'i'))).toBeInTheDocument();
   });
 
   it('handles Select File, Setup Details, Change Details, and dataset types with timer', () => {
@@ -285,15 +286,15 @@ describe('Module1Ingestion Component', () => {
     );
 
     // Click Setup Details button in dropzone
-    const setupDetailsBtn = screen.getByRole('button', { name: 'Setup Details' });
+    const setupDetailsBtn = screen.getByRole('button', { name: UI_STRINGS.module1.setupDetails });
     fireEvent.click(setupDetailsBtn);
-    expect(screen.getByText('Client & Dataset Ingestion Setup')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
 
     // Change dataset to Invoice Data in setup modal by clicking option card
-    const invoiceDataCard = screen.getByText('AP Invoices & Scans');
+    const invoiceDataCard = screen.getByText(UI_STRINGS.modals.clientSetup.datasetOptions.invoiceData.badge);
     fireEvent.click(invoiceDataCard);
 
-    const confirmBtn = screen.getByRole('button', { name: /Confirm & Proceed to Upload Data/i });
+    const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
     fireEvent.click(confirmBtn);
 
     // Fast-forward the 250ms timer in handleConfirmSetup
@@ -301,17 +302,17 @@ describe('Module1Ingestion Component', () => {
     expect(onUpdateTenant).toHaveBeenCalled();
 
     // Click Select File button
-    const selectFileBtn = screen.getByRole('button', { name: 'Select File' });
+    const selectFileBtn = screen.getByRole('button', { name: UI_STRINGS.module1.selectFile });
     fireEvent.click(selectFileBtn);
 
     // Click Change Details button
-    const changeDetailsBtn = screen.getByRole('button', { name: 'Change Details' });
+    const changeDetailsBtn = screen.getByRole('button', { name: UI_STRINGS.module1.changeDetails });
     fireEvent.click(changeDetailsBtn);
 
     // Change dataset to Trial Balance
-    const trialBalanceCard = screen.getByText('GL & Cost Centers');
+    const trialBalanceCard = screen.getByText(UI_STRINGS.modals.clientSetup.datasetOptions.trialBalance.badge);
     fireEvent.click(trialBalanceCard);
-    const confirmBtn2 = screen.getByRole('button', { name: /Confirm & Proceed to Upload Data/i });
+    const confirmBtn2 = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
     fireEvent.click(confirmBtn2);
     vi.advanceTimersByTime(300);
 
@@ -322,7 +323,7 @@ describe('Module1Ingestion Component', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
     // Switch to By Vendors mode
-    fireEvent.click(screen.getByRole('button', { name: /By Vendors/i }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byVendors, 'i') }));
 
     // Find vendor card with Rank #1
     const vendorButtons = screen.getAllByRole('button');
@@ -331,9 +332,9 @@ describe('Module1Ingestion Component', () => {
     if (rank1Btn) {
       fireEvent.click(rank1Btn);
       // VendorTopItemsModal should open
-      expect(screen.getByText(/Top Line Items & 3-Year Price Trends/i)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(UI_STRINGS.modals.topItems.vendorTitle('').replace(/.*— /, ''), 'i'))).toBeInTheDocument();
       // Close modal
-      const closeBtn = screen.getByRole('button', { name: /Close Pop-up/i });
+      const closeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
       fireEvent.click(closeBtn);
     }
 
@@ -341,7 +342,7 @@ describe('Module1Ingestion Component', () => {
     const rank2Btn = screen.getAllByRole('button').find(b => b.textContent && b.textContent.includes('Rank #2'));
     if (rank2Btn) {
       fireEvent.click(rank2Btn);
-      const closeBtn = screen.getByRole('button', { name: /Close Pop-up/i });
+      const closeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
       fireEvent.click(closeBtn);
     }
   });
@@ -393,6 +394,6 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    expect(screen.getByText(/Module 1: Document Ingestion/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(UI_STRINGS.module1.badge, 'i'))).toBeInTheDocument();
   });
 });

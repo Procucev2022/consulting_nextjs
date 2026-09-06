@@ -15,6 +15,7 @@ import {
   Percent
 } from 'lucide-react';
 import { ConversionFunnelPhase, TenantMaster } from '../types';
+import { UI_STRINGS } from '../constants/uiStrings';
 import confetti from 'canvas-confetti';
 
 interface Module5ConversionMatrixProps {
@@ -53,25 +54,25 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-purple-800 dark:text-purple-400 bg-purple-100 dark:bg-purple-950 px-2.5 py-0.5 rounded border border-purple-300 dark:border-purple-800">
-              Screen 5: Executive Conversion Matrix & Commercial SaaS Portal
+              {UI_STRINGS.module5.badge}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Advisory-to-SaaS Value Lifecycle</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module5.badgeSubtitle}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            Commercial Realization & SaaS Lock-In Portal (INR in Crores)
+            {UI_STRINGS.module5.heading}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-            Bridging high-impact diagnostic consulting engagements into sticky, multi-year recurring enterprise SaaS contracts in <strong>INR Crores (₹ Cr)</strong>.
+            {UI_STRINGS.module5.description}
           </p>
         </div>
 
         <div className="flex items-center space-x-3 shrink-0">
           <button
             onClick={onOpenReport}
-            className="flex items-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-xl shadow-md shadow-purple-600/20 border border-purple-400/40 transition-all active:scale-95"
+            className="flex items-center space-x-2 px-4 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-xl shadow-md shadow-purple-600/20 border border-purple-400/40 transition-all active:scale-95 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
-            <span>Generate Executive Brief</span>
+            <span>{UI_STRINGS.module5.generateBrief}</span>
           </button>
         </div>
       </div>
@@ -82,14 +83,14 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Client Conversion Funnel & SaaS Value Lifecycle</span>
+              <span>{UI_STRINGS.module5.funnelTitle}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              The 3-phase strategic roadmap driving 3x faster conversion from diagnostic advisory to long-term SaaS ARR across ₹732.41 Cr evaluated spend.
+              {UI_STRINGS.module5.funnelSubtitle}
             </p>
           </div>
           <span className="text-xs font-mono text-purple-800 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-2.5 py-1 rounded-lg border border-purple-300 dark:border-purple-800/50">
-            Conversion View
+            {UI_STRINGS.module5.conversionViewBadge}
           </span>
         </div>
 
@@ -99,10 +100,10 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
-                  <th className="py-3.5 px-5">Funnel Phase</th>
-                  <th className="py-3.5 px-5">Platform Actionable Focus</th>
-                  <th className="py-3.5 px-5">Value Outcome Delivered</th>
-                  <th className="py-3.5 px-5 text-right">Commercial Lock-In Metric</th>
+                  <th className="py-3.5 px-5">{UI_STRINGS.module5.funnelHeaders.funnelPhase}</th>
+                  <th className="py-3.5 px-5">{UI_STRINGS.module5.funnelHeaders.actionableFocus}</th>
+                  <th className="py-3.5 px-5">{UI_STRINGS.module5.funnelHeaders.valueOutcome}</th>
+                  <th className="py-3.5 px-5 text-right">{UI_STRINGS.module5.funnelHeaders.commercialMetric}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 text-slate-700 dark:text-slate-300">
@@ -160,17 +161,17 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Calculator className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>Executive ROI & SaaS Payback Calculator (INR in Crores)</span>
+              <span>{UI_STRINGS.module5.calculatorTitle}</span>
             </h3>
-            <span className="text-xs font-mono text-cyan-700 dark:text-cyan-400 font-semibold">Interactive Model</span>
+            <span className="text-xs font-mono text-cyan-700 dark:text-cyan-400 font-semibold">{UI_STRINGS.module5.interactiveModelBadge}</span>
           </div>
 
           {/* Spend Slider */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Evaluated Annual Spend (INR)</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">{UI_STRINGS.module5.annualSpendLabel}</span>
               <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
-                ₹{annualSpendCr.toFixed(2)} Crores
+                {UI_STRINGS.module5.annualSpendVal(annualSpendCr)}
               </span>
             </div>
             <input
@@ -183,18 +184,18 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
               className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-600 dark:accent-cyan-400"
             />
             <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-              <span>₹100 Cr</span>
-              <span>₹1,250 Cr</span>
-              <span>₹2,500 Cr</span>
+              <span>{UI_STRINGS.module5.minSpend}</span>
+              <span>{UI_STRINGS.module5.midSpend}</span>
+              <span>{UI_STRINGS.module5.maxSpend}</span>
             </div>
           </div>
 
           {/* Savings Rate Slider */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 dark:text-slate-400 font-medium">Target Savings Rate Identified</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">{UI_STRINGS.module5.targetSavingsRateLabel}</span>
               <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm">
-                {savingsRate.toFixed(1)}%
+                {UI_STRINGS.module5.savingsRateVal(savingsRate)}
               </span>
             </div>
             <input
@@ -207,18 +208,18 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
               className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-600 dark:accent-emerald-400"
             />
             <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-              <span>8.0% (Conservative)</span>
-              <span>16.4% (FRD Benchmark)</span>
-              <span>25.0% (Aggressive)</span>
+              <span>{UI_STRINGS.module5.conservativeLabel}</span>
+              <span>{UI_STRINGS.module5.frdBenchmarkLabel}</span>
+              <span>{UI_STRINGS.module5.aggressiveLabel}</span>
             </div>
           </div>
 
           {/* SaaS Fee Rate Slider */}
           <div className="space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600 dark:text-slate-400 font-medium">PROCUCEV Platform Engine Fee</span>
+              <span className="text-slate-600 dark:text-slate-400 font-medium">{UI_STRINGS.module5.platformFeeLabel}</span>
               <span className="font-mono font-bold text-purple-700 dark:text-purple-400 text-sm">
-                {saasFeeRate.toFixed(2)}% of spend (₹{calculatedPlatformFeeCr.toFixed(2)} Cr/yr)
+                {UI_STRINGS.module5.platformFeeVal(saasFeeRate, calculatedPlatformFeeCr)}
               </span>
             </div>
             <input
@@ -237,36 +238,36 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
         <div className="lg:col-span-6 p-6 rounded-2xl bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-purple-950/50 dark:via-slate-900 dark:to-slate-950 border border-purple-200 dark:border-purple-500/30 shadow-md dark:shadow-2xl glass-panel flex flex-col justify-between space-y-4">
           <div>
             <span className="text-xs text-purple-800 dark:text-purple-400 uppercase font-bold tracking-wider">
-              Projected Commercial Realization (INR in Crores)
+              {UI_STRINGS.module5.projectedCommercialRealization}
             </span>
             <div className="mt-3 grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-xs">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Gross Annualized Savings</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">{UI_STRINGS.module5.grossAnnualizedSavings}</span>
                 <p className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-400 mt-1">
-                  ₹{calculatedGrossSavingsCr.toFixed(2)} Cr
+                  {UI_STRINGS.module5.grossSavingsCrVal(calculatedGrossSavingsCr)}
                 </p>
-                <span className="text-[10px] text-slate-400">Across 4 core buckets</span>
+                <span className="text-[10px] text-slate-400">{UI_STRINGS.module5.acrossCoreBuckets}</span>
               </div>
               <div className="p-4 rounded-xl bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-xs">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Net Client Benefit</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">{UI_STRINGS.module5.netClientBenefit}</span>
                 <p className="text-2xl font-black font-mono text-cyan-700 dark:text-cyan-400 mt-1">
-                  ₹{netClientBenefitCr.toFixed(2)} Cr
+                  {UI_STRINGS.module5.netBenefitCrVal(netClientBenefitCr)}
                 </p>
-                <span className="text-[10px] text-slate-400">After platform SaaS fee</span>
+                <span className="text-[10px] text-slate-400">{UI_STRINGS.module5.afterPlatformFee}</span>
               </div>
             </div>
 
             <div className="mt-4 p-4 rounded-xl bg-purple-100/70 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/40 flex items-center justify-between">
               <div>
-                <span className="text-xs text-purple-900 dark:text-purple-300 font-semibold">Client ROI Multiple</span>
+                <span className="text-xs text-purple-900 dark:text-purple-300 font-semibold">{UI_STRINGS.module5.clientRoiMultiple}</span>
                 <p className="text-3xl font-black font-mono text-purple-950 dark:text-white mt-0.5">
-                  {roiMultiple.toFixed(1)}x
+                  {UI_STRINGS.module5.roiMultipleVal(roiMultiple)}
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-xs text-purple-900 dark:text-purple-300 font-semibold">Estimated Payback</span>
+                <span className="text-xs text-purple-900 dark:text-purple-300 font-semibold">{UI_STRINGS.module5.estimatedPayback}</span>
                 <p className="text-lg font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-0.5">
-                  ~{(12 / roiMultiple).toFixed(1)} Months
+                  {UI_STRINGS.module5.paybackMonthsVal(12 / roiMultiple)}
                 </p>
               </div>
             </div>
@@ -274,10 +275,10 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
 
           <button
             onClick={handleSimulateLockIn}
-            className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-98 flex items-center justify-center space-x-2"
+            className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-98 flex items-center justify-center space-x-2 cursor-pointer"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Lock In Multi-Year SaaS Commercial Terms</span>
+            <span>{UI_STRINGS.module5.lockInButton}</span>
           </button>
         </div>
       </div>

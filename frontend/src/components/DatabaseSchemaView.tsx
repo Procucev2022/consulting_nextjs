@@ -15,6 +15,7 @@ import {
   Globe
 } from 'lucide-react';
 import { schemaEntities } from '../data/mockData';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 export const DatabaseSchemaView: React.FC = () => {
   const [selectedEntity, setSelectedEntity] = useState<string>('Tenant_Master');
@@ -104,21 +105,21 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
-              FRD Section 5 & 6
+              {UI_STRINGS.schema.bannerBadge}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">PostgreSQL / Snowflake Database Schema & NFRs</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.schema.bannerSubtitle}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            Data Architecture & Security SLA Specifications
+            {UI_STRINGS.schema.bannerTitle}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
-            Core normalized relational database schema powering the high-performance ETL pipeline and real-time analytics engine.
+            {UI_STRINGS.schema.bannerDescription}
           </p>
         </div>
 
         <div className="flex items-center space-x-2 text-xs font-mono text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-3 py-1.5 rounded-xl border border-emerald-300 dark:border-emerald-800/50 shrink-0">
           <ShieldCheck className="w-4 h-4" />
-          <span>AES-256 / TLS 1.3 Active</span>
+          <span>{UI_STRINGS.schema.securityBadge}</span>
         </div>
       </div>
 
@@ -127,7 +128,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
         {/* Left Entity Navigator (4 cols) */}
         <div className="lg:col-span-4 space-y-2.5">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block px-1">
-            Database Core Entities (6)
+            {UI_STRINGS.schema.entitiesHeader}
           </span>
           {schemaEntities.map((entity) => (
             <button
@@ -172,7 +173,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
                   {currentEntity.entity_name}
                 </h3>
                 <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                  PostgreSQL / Snowflake Table
+                  {UI_STRINGS.schema.tableTypeBadge}
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">{currentEntity.system_usage}</p>
@@ -188,7 +189,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                Attributes
+                {UI_STRINGS.schema.tabs.attributes}
               </button>
               <button
                 onClick={() => setQueryConsoleMode('SQL_DDL')}
@@ -198,7 +199,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                SQL DDL
+                {UI_STRINGS.schema.tabs.sqlDdl}
               </button>
               <button
                 onClick={() => setQueryConsoleMode('SAMPLE_DATA')}
@@ -208,7 +209,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                JSON Preview
+                {UI_STRINGS.schema.tabs.sampleData}
               </button>
             </div>
           </div>
@@ -217,7 +218,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
           {queryConsoleMode === 'SCHEMA' && (
             <div className="space-y-3">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                Primary Attributes / Fields:
+                {UI_STRINGS.schema.primaryAttributesLabel}
               </span>
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-cyan-800 dark:text-cyan-300 leading-relaxed">
                 {currentEntity.primary_attributes.split(',').map((attr, idx) => (
@@ -258,7 +259,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-card space-y-2">
           <div className="flex items-center space-x-2 text-cyan-600 dark:text-cyan-400">
             <Zap className="w-5 h-5" />
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">System Performance SLA</h4>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">{UI_STRINGS.schema.slaCards.performanceTitle}</h4>
           </div>
           <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 pt-1">
             <li className="flex items-start space-x-2">
@@ -276,7 +277,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-card space-y-2">
           <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400">
             <Lock className="w-5 h-5" />
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Security & Global Compliance</h4>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">{UI_STRINGS.schema.slaCards.securityTitle}</h4>
           </div>
           <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 pt-1">
             <li className="flex items-start space-x-2">
@@ -294,7 +295,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-card space-y-2">
           <div className="flex items-center space-x-2 text-purple-600 dark:text-purple-400">
             <Server className="w-5 h-5" />
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">System Uptime & Failover</h4>
+            <h4 className="text-sm font-bold text-slate-900 dark:text-white">{UI_STRINGS.schema.slaCards.uptimeTitle}</h4>
           </div>
           <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1.5 pt-1">
             <li className="flex items-start space-x-2">

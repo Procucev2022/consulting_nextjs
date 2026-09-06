@@ -11,3 +11,5 @@
 - All CI/CD jobs must have an explicit timeout (`timeout-minutes: 15`).
 - The CI/CD workflow must post and update an executive summary PR comment detailing test success/failure counts and coverage metrics.
 - Maintain a workspace file `prompts.md` storing ONLY user-provided prompts. Never save AI-generated conversations or responses in `prompts.md`.
+- Move all user-facing literal strings into constants and access via `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`). No hardcoded UI strings.
+- Use template placeholders for dynamic substitution and assert against `UI_STRINGS` constants in all unit tests.

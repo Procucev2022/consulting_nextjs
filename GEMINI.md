@@ -26,3 +26,11 @@
 - **Rule**: Maintain `prompts.md` in the workspace root for saving user-provided prompts.
 - **Strict Scope**: Save ONLY user-provided prompts in `prompts.md`. Do NOT save AI-generated conversations, responses, or commentary.
 - **Workflow**: When a new prompt is provided by the user, append it to `prompts.md` in chronological sequence.
+
+## Mandatory Internationalization (i18n) & `UI_STRINGS` Policy
+
+- **Rule**: All user-facing strings and literals must be extracted from components into dedicated constants modules and exposed via a centralized `UI_STRINGS` object (`frontend/src/constants/uiStrings.ts`).
+- **No Hardcoded Literals**: Hardcoding user-facing strings or embedding literal text in components/JSX is strictly prohibited.
+- **Dynamic Placeholders**: Use template placeholders / parameterized functions for runtime variable substitutions to ensure full i18n readiness.
+- **Test Assertions**: All tests must assert against `UI_STRINGS` constants instead of hardcoded strings to ensure resilience against UI and translation changes.
+- **Strict 90% Coverage**: Every file created or updated must achieve >= 90% unit test coverage individually.
