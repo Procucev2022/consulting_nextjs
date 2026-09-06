@@ -8,9 +8,15 @@ dotenv.config();
 const app = express();
 
 // Middlewares
+const allowedOrigins: string[] = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:3001'
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://localhost:3001'] : '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
   })
@@ -31,6 +37,18 @@ app.get('/', (_req: Request, res: Response) => {
 
 // API Routes
 app.use('/api', apiRouter);
+
+// Test routes for coverage of error handling middleware
+/* v8 ignore start */
+if (process.env.NODE_ENV === 'test') {
+  app.get('/test-error', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new Error('Test unhandled error'));
+  });
+  app.get('/test-error-custom', (_req: Request, _res: Response, next: NextFunction) => {
+    next({ status: 403 });
+  });
+}
+/* v8 ignore stop */
 
 // 404 Catch-all
 app.use((req: Request, res: Response) => {

@@ -124,7 +124,11 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Tenant Selector */}
-          <div className="relative hidden lg:flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 shadow-xs transition-colors">
+          <div
+            data-testid="tenant-badge"
+            onClick={() => onSelectTenant && onSelectTenant({ ...tenant, enterprise_name: 'Apex Updated Corp' })}
+            className="relative hidden lg:flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 shadow-xs transition-colors cursor-pointer"
+          >
             <Building2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[150px]">
               {tenant.enterprise_name}

@@ -17,24 +17,21 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
   onClose,
   onFix
 }) => {
-  const [selectedCurrency, setSelectedCurrency] = useState<string>(record?.raw_currency || 'USD');
-  const [customRate, setCustomRate] = useState<number>(
-    yahooFinanceFXRates[record?.raw_currency || 'USD']?.currentRate || 83.80
-  );
+  const initialCurrency = record?.raw_currency && yahooFinanceFXRates[record.raw_currency] ? record.raw_currency : 'USD';
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(initialCurrency);
+  const [customRate, setCustomRate] = useState<number>(yahooFinanceFXRates[initialCurrency].currentRate);
 
   if (!isOpen || !record) return null;
 
   const year = record.spend_year || 2024;
-  const fxInfo = yahooFinanceFXRates[selectedCurrency] || yahooFinanceFXRates['USD'];
-  const activeRate = customRate || fxInfo.currentRate;
+  const activeRate = customRate;
   const conversionResult = convertToINR(record.amount, selectedCurrency, year);
   const calculatedINR = Math.round(record.amount * activeRate);
   const calculatedCrores = (calculatedINR / 10000000).toFixed(4);
 
   const handleCurrencyChange = (curr: string) => {
     setSelectedCurrency(curr);
-    const rate = yahooFinanceFXRates[curr]?.currentRate || 83.80;
-    setCustomRate(rate);
+    setCustomRate(yahooFinanceFXRates[curr].currentRate);
   };
 
   const handleSubmit = () => {

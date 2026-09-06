@@ -1,25 +1,35 @@
 import app from './app';
 
-const PORT = process.env.PORT || 5000;
+export const startServer = (port: number | string = 5000) => {
+  return new Promise<{ server: any; shutdown: () => Promise<void> }>((resolve) => {
+    const server = app.listen(port, () => {
+      console.log(`=======================================================`);
+      console.log(`🚀 Consulting Backend Server running on port ${port}`);
+      console.log(`🌐 Base URL: http://localhost:${port}`);
+      console.log(`🩺 Health check: http://localhost:${port}/api/health`);
+      console.log(`=======================================================`);
+      resolve({ server, shutdown });
+    });
 
-const server = app.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🚀 Consulting Backend Server running on port ${PORT}`);
-  console.log(`🌐 Base URL: http://localhost:${PORT}`);
-  console.log(`🩺 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`=======================================================`);
-});
+    const shutdown = () => {
+      return new Promise<void>((res) => {
+        console.log('Received kill signal, closing server gracefully...');
+        server.close(() => {
+          console.log('Closed remaining connections.');
+          res();
+        });
+      });
+    };
 
-// Graceful shutdown handling
-const shutdown = () => {
-  console.log('Received kill signal, closing server gracefully...');
-  server.close(() => {
-    console.log('Closed remaining connections.');
-    process.exit(0);
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   });
 };
 
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+/* v8 ignore start */
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
+/* v8 ignore stop */
 
-export default server;
+export default startServer;

@@ -4758,3 +4758,10 @@ export const vendorYearWiseDetails: VendorYearDetail[] = [
     ]
   }
 ];
+
+export const mockSpendCategories = spendCategoriesData;
+export const mockCategoryYearDetails = categoryYearWiseDetails;
+export const mockVendorYearDetails = vendorYearWiseDetails;
+export const mockVendorPriceRanks = vendorVolatilityRankings;
+export const mockSavingsOpportunities = initialSavingsOpportunities;
+export const mockConversionFunnel = conversionFunnelStages;

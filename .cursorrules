@@ -1,0 +1,14 @@
+# Cursor AI Coding Rules - 90% Per-File Unit Test Coverage
+
+- Whenever you modify, refactor, or add code to any file, ALWAYS add/update unit tests.
+- Every single file must reach >= 90% unit test coverage across all 4 parameters:
+  - Statements >= 90%
+  - Branches >= 90%
+  - Functions >= 90%
+  - Lines >= 90%
+- Never skip any file.
+- The test configuration enforces `perFile: true` and will throw an error if coverage on any file is below 90%.
+- A global timeout of 10000ms is enforced for all unit tests.
+- After any code change, verify coverage by running:
+  `npm run test:coverage`
+- Do not stop until all tests pass and >= 90% per-file coverage is achieved.
