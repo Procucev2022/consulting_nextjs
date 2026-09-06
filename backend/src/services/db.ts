@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import {
   mockTenant,
   initialIngestionQueue,
@@ -26,7 +27,12 @@ import {
 
 import { convertToINR } from '../utils/currencyConverter';
 
+export const prisma = new PrismaClient({
+  log: ['warn', 'error']
+});
+
 export class DatabaseStore {
+  private isPostgresConnected: boolean = false;
   private tenant: TenantMaster = JSON.parse(JSON.stringify(mockTenant));
   private ingestionQueue: RawDocumentIngestion[] = JSON.parse(JSON.stringify(initialIngestionQueue));
   private validationRecords: ValidationPreCheckRecord[] = JSON.parse(JSON.stringify(initialValidationRecords));
@@ -38,6 +44,40 @@ export class DatabaseStore {
   private opportunities: SavingsOpportunity[] = JSON.parse(JSON.stringify(initialSavingsOpportunities));
   private funnelStages: ConversionFunnelPhase[] = JSON.parse(JSON.stringify(conversionFunnelStages));
 
+  constructor() {
+    this.initPostgres();
+  }
+
+  private async initPostgres() {
+    try {
+      await prisma.$connect();
+      this.isPostgresConnected = true;
+      console.log('🐘 PostgreSQL connected successfully via Prisma.');
+      
+      // Optionally hydrate from PostgreSQL if data exists
+      const dbTenant = await prisma.tenantMaster.findFirst();
+      if (dbTenant) {
+        this.tenant = {
+          tenant_id: dbTenant.tenant_id,
+          enterprise_name: dbTenant.enterprise_name,
+          region: dbTenant.region as any,
+          base_currency: dbTenant.base_currency as any,
+          status: dbTenant.status as any,
+          total_spend_evaluated: dbTenant.total_spend_evaluated,
+          total_spend_evaluated_inr: dbTenant.total_spend_evaluated_inr || undefined
+        };
+      }
+    } catch (err: any) {
+      this.isPostgresConnected = false;
+      console.warn('⚠️  PostgreSQL not reachable, running with resilient in-memory datastore.');
+      console.warn('💡 Tip: Start PostgreSQL using "docker compose up -d" or "npm run db:up", then run "npm run db:setup".');
+    }
+  }
+
+  public isConnectedToPostgres(): boolean {
+    return this.isPostgresConnected;
+  }
+
   // Tenant
   public getTenant(): TenantMaster {
     return { ...this.tenant };
@@ -45,6 +85,17 @@ export class DatabaseStore {
 
   public updateTenant(updates: Partial<TenantMaster>): TenantMaster {
     this.tenant = { ...this.tenant, ...updates };
+    if (this.isPostgresConnected) {
+      prisma.tenantMaster.updateMany({
+        where: { tenant_id: this.tenant.tenant_id },
+        data: {
+          ...updates,
+          region: updates.region as any,
+          base_currency: updates.base_currency as any,
+          status: updates.status as any
+        }
+      }).catch((e) => console.error('Error syncing tenant to PostgreSQL:', e.message));
+    }
     return { ...this.tenant };
   }
 
@@ -55,6 +106,23 @@ export class DatabaseStore {
 
   public addIngestionItem(item: RawDocumentIngestion): RawDocumentIngestion[] {
     this.ingestionQueue = [item, ...this.ingestionQueue];
+    if (this.isPostgresConnected) {
+      prisma.rawDocumentIngestion.create({
+        data: {
+          doc_id: item.doc_id,
+          tenant_id: item.tenant_id,
+          file_name: item.file_name,
+          file_type: item.file_type,
+          file_size_mb: item.file_size_mb,
+          ocr_status: item.ocr_status,
+          progress: item.progress,
+          uploaded_at: new Date(item.uploaded_at),
+          records_count: item.records_count,
+          detected_currencies: item.detected_currencies || [],
+          converted_inr_crores: item.converted_inr_crores
+        }
+      }).catch((e) => console.error('Error syncing ingestion to PostgreSQL:', e.message));
+    }
     return [...this.ingestionQueue];
   }
 
@@ -72,6 +140,13 @@ export class DatabaseStore {
       }
       return rec;
     });
+
+    if (this.isPostgresConnected && updated) {
+      prisma.validationPreCheckRecord.update({
+        where: { record_id: recordId },
+        data: { ...updates }
+      }).catch((e) => console.error('Error syncing validation record to PostgreSQL:', e.message));
+    }
     return updated;
   }
 

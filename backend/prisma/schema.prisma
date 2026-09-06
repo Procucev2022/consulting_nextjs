@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TenantMaster {
+  tenant_id                 String   @id
+  enterprise_name           String
+  region                    String   @default("GLOBAL")
+  base_currency             String   @default("INR")
+  status                    String   @default("ACTIVE")
+  total_spend_evaluated     Float    @default(0)
+  total_spend_evaluated_inr Float?
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
+}
+
+model RawDocumentIngestion {
+  doc_id               String   @id
+  tenant_id            String
+  file_name            String
+  file_type            String
+  file_size_mb         Float
+  ocr_status           String   @default("Pending")
+  progress             Int      @default(0)
+  uploaded_at          DateTime @default(now())
+  records_count        Int      @default(0)
+  detected_currencies  String[] @default([])
+  converted_inr_crores Float?
+}
+
+model ValidationPreCheckRecord {
+  record_id        String   @id
+  po_number        String
+  vendor_name      String
+  raw_desc         String
+  order_quantity   Float?
+  net_price        Float?
+  subtotal_raw     Float?
+  amount           Float
+  raw_currency     String?
+  amount_inr       Float?
+  inr_crores       Float?
+  fx_rate_applied  Float?
+  yahoo_ticker     String?
+  spend_year       Int?
+  column_l_code    String?
+  core_category    String?
+  issue_flag       String
+  action_status    String
+  resolved         Boolean  @default(false)
+  created_at       DateTime @default(now())
+}
+
+model SpendCategorySummary {
+  id                 String   @id
+  name               String
+  spend              Float
+  spend_inr          Float?
+  spend_inr_crores   Float?
+  targetReductionPct Float
+  lineItemsCount     Int
+  color              String
+  column_l_code      String?
+  spend_2023         Float?
+  spend_2024         Float?
+  spend_2025_26      Float?
+  spend_inr_2023     Float?
+  spend_inr_2024     Float?
+  spend_inr_2025_26  Float?
+}
+
+model CategoryYearDetail {
+  id                     String   @id
+  rank                   Int?
+  category               String
+  core_bucket            String?
+  sample_column_l_code   String
+  sample_column_l_title  String
+  spend_2023             Float?
+  spend_2024             Float?
+  spend_2025_26          Float?
+  total_3yr_spend        Float?
+  spend_inr_2023_cr      Float
+  spend_inr_2024_cr      Float
+  spend_inr_2025_26_cr   Float
+  spend_fy24_cr          Float?
+  spend_fy25_cr          Float?
+  spend_fy26_cr          Float?
+  total_3yr_spend_inr_cr Float
+  yoy_growth_pct         Float
+  line_items_count       Int
+  color                  String
+  is_balance_category    Boolean  @default(false)
+  balance_items          Json?
+  top_items              Json?
+}
+
+model VendorYearDetail {
+  id                     String   @id
+  rank                   Int?
+  vendor_name            String
+  master_vendor_id       String
+  primary_category       String
+  sample_column_l_code   String
+  sample_column_l_title  String
+  spend_fy24_cr          Float
+  spend_fy25_cr          Float
+  spend_fy26_cr          Float
+  total_3yr_spend_inr_cr Float
+  yoy_growth_pct         Float
+  line_items_count       Int
+  color                  String
+  is_balance_vendor      Boolean  @default(false)
+  balance_vendors        Json?
+  top_items              Json?
+}
+
+model VendorPriceRank {
+  rank                   Int      @id
+  vendor_name            String
+  category               String
+  total_spend_inr_cr     Float
+  price_creep_pct        Float
+  variance_leakage_inr_cr Float
+  risk_status            String
+}
+
+model LineItemMapping {
+  mapping_id            String   @id
+  raw_line_text         String
+  mapped_unspsc_code    String
+  unspsc_title          String
+  confidence_score      Float
+  suggested_bucket      String
+  human_verified        Boolean  @default(false)
+  vendor_identified     String
+  master_supplier_id    String?
+}
+
+model SavingsOpportunity {
+  opp_id                 String   @id
+  category               String
+  current_spend_inr_cr   Float
+  target_savings_pct     Float
+  est_savings_inr_cr     Float
+  benchmark_source       String
+  risk_level             String
+  status                 String
+}
+
+model ConversionFunnelPhase {
+  stage                  String   @id
+  title                  String
+  spend_reach_inr_cr     Float
+  conversion_rate        Float
+  status                 String
+  action_item            String
+}
