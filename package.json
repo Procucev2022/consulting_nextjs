@@ -23,7 +23,9 @@
     "test:frontend": "npm --prefix frontend run test:coverage",
     "test:ci": "npm --prefix backend run test:ci && npm --prefix frontend run test:ci",
     "lint": "npm --prefix frontend run lint && npm --prefix backend run lint",
-    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck"
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
+    "deps:check": "npm --prefix backend outdated || exit 0 && npm --prefix frontend outdated || exit 0",
+    "deps:audit": "npm --prefix backend audit && npm --prefix frontend audit"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

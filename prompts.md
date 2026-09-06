@@ -81,4 +81,7 @@ Additionally, implement optimizations to minimize database compute hours, reduce
 ## Prompt 13
 AES Encryption: Incorporate AES encryption algorithms to guarantee the protection and secure processing of data.
 
+---
 
+## Prompt 14
+Auto upgrade tech stack & libraries: Configure assistant instructions to automatically identify, upgrade, and maintain all core tech stack components, runtime environments, framework dependencies, and third-party libraries to their latest Long-Term Support (LTS) or stable versions. Ensure that breaking changes, deprecation notices, and updated library APIs are systematically refactored across the entire codebase. Validate every upgrade through the complete quality check pipeline—including build execution, typechecking, linting, and running unit tests—to prevent regressions and maintain stability.

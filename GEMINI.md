@@ -88,6 +88,13 @@
 - **Key Safety & Structured Logging**: Plaintext keys, passphrases, and raw secrets must NEVER be logged.
 - **Strict 90% Coverage**: All cryptographic utilities, serialization helpers, and endpoints must achieve >= 90% unit test coverage individually.
 
+## Mandatory Automated Tech Stack & Libraries Upgrade Policy
 
-
-
+- **Active LTS & Stable Version Tracking**: Automatically identify, audit, upgrade, and maintain all core tech stack components, runtime environments, framework dependencies, and third-party libraries to their latest LTS or stable versions. Run regular dependency audits (`npm outdated`, `npm audit`).
+- **Systematic Refactoring of Breaking Changes**: Actively refactor breaking changes, updated library interfaces, and runtime deprecation notices across the entire codebase. Never bypass or suppress deprecation notices.
+- **End-to-End Quality Validation**: Validate all upgrades against the complete quality pipeline:
+  1. *Production Build*: Successful builds (`npm run build`, `npm run build:frontend`, `npm run build:backend`).
+  2. *Typecheck*: 0 TypeScript errors (`npm run typecheck`).
+  3. *Linting*: 0 ESLint violations (`npm run lint`).
+  4. *Unit Tests & 90% Per-File Coverage*: 100% test passes with >= 90% per-file coverage across statements, branches, functions, and lines (`npm run test:coverage`).
+- **Zero Regressions**: Any regressions or coverage drops caused by dependency upgrades must be resolved immediately before finalizing.

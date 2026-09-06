@@ -188,4 +188,27 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Strict 90% Unit Test Code Coverage**:
   - Every cryptographic utility function, encryption/decryption helper, serialization routine, constant definition, and controller endpoint MUST maintain at least **90% unit test code coverage** individually across statements, branches, functions, and lines.
 
+## 14. Mandatory Automated Tech Stack, Runtime & Dependency Upgrade Policy
+
+- **Proactive LTS & Stable Version Maintenance**:
+  - Automatically identify, audit, upgrade, and maintain all core tech stack components, runtime environments, framework dependencies, and third-party libraries to their latest Long-Term Support (LTS) or active stable releases.
+  - Target Node.js active LTS, modern framework versions (Next.js, Express, React), database tools (Prisma ORM), testing frameworks (Vitest, Testing Library), and cryptographic/utility dependencies.
+  - Regularly execute dependency audits (`npm outdated`, `npm audit`, Dependabot/Renovate configurations) to eliminate unmaintained packages, outdated APIs, and security vulnerabilities.
+- **Systematic Refactoring of Breaking Changes & Deprecations**:
+  - Whenever dependencies, runtimes, or frameworks are upgraded, systematically inspect, address, and refactor all breaking changes, updated library APIs, and deprecation notices across the entire codebase:
+    - Framework routing, data-fetching, and compiler configurations (e.g., Next.js App Router patterns, ESLint CLI migrations).
+    - React component lifecycle, hook dependencies, and concurrent rendering paradigms.
+    - Database ORM schema definitions, migration hooks, and connection management.
+    - Upstream library interface updates and cryptographic algorithm standardizations.
+  - Suppressing deprecation notices with ad-hoc workarounds or ignoring compiler diagnostics is strictly prohibited. All call sites must be modernized to adhere to current library standards.
+- **Rigorous Quality Gate Validation Pipeline**:
+  - Every upgrade—whether a major framework bump, runtime upgrade, or minor patch update—must be rigorously validated through the complete end-to-end quality check pipeline before acceptance:
+    1. **Production Build**: Execute clean production builds (`npm run build`, `npm run build:frontend`, `npm run build:backend`) without fatal compiler or bundling errors.
+    2. **Strict Typechecking**: Complete TypeScript compilation (`npm run typecheck` / `tsc --noEmit`) with 0 type errors across both backend and frontend services.
+    3. **Linting & Code Style**: Zero ESLint or code style violations (`npm run lint`).
+    4. **Unit Tests & 90% Per-File Code Coverage**: Execute the full test suite (`npm run test:coverage`) ensuring that 100% of test suites pass and every single source file maintains >= 90% code coverage individually across statements, branches, functions, and lines (`perFile: true`).
+- **Zero Regression Principle**:
+  - If any library upgrade introduces regressions, test failures, or coverage drops, the assistant must systematically resolve the discrepancies through code refactoring, test suite updates, and type adjustments until all automated quality gates pass.
+
+
 

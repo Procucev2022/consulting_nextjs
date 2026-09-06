@@ -82,3 +82,15 @@
 3. **Key Derivation & Secrets Safety**: Use 256-bit keys from secure environment variables (`APP_ENCRYPTION_KEY`) or derived via PBKDF2 with SHA-256 (min 100,000 iterations). Never log plaintext keys or secrets.
 4. **Constants & Types Isolation**: Store cryptographic constants in `constants/crypto.ts` and types in `types/crypto.ts`, exported via index barrels.
 5. **Strict 90% Coverage**: All cryptographic helpers, serializers, and routes must maintain >= 90% unit test coverage individually.
+
+## Automated Tech Stack & Libraries Upgrade Standards
+
+1. **LTS & Stable Maintenance**: Automatically identify, upgrade, and maintain runtimes, frameworks, and third-party dependencies to current LTS or active stable releases.
+2. **Systematic Breaking Change Refactoring**: Thoroughly inspect and refactor breaking API changes, compiler warnings, and deprecations across all call sites. Never suppress deprecation warnings.
+3. **End-to-End Quality Validation**: Every upgrade must pass the full verification pipeline:
+   - Production build (`npm run build`)
+   - Strict typechecking (`npm run typecheck`) with 0 errors
+   - Linting (`npm run lint`) with 0 errors
+   - Unit tests & 90% per-file code coverage (`npm run test:coverage`) across all parameters.
+4. **Zero Regressions**: Proactively resolve regressions, test failures, or coverage dips before committing upgrades.
+

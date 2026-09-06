@@ -74,7 +74,7 @@
 - Keep GraphQL SDL and query strings in `constants/graphql.ts` and `constants/db.ts`, and types in `types/graphql.ts` and `types/db.ts`.
 - Enforce >= 90% unit test coverage on all database and GraphQL utilities.
 
-## 12. AES Encryption & Data Protection Policy
+## 13. AES Encryption & Data Protection Policy
 - Protect all sensitive data at rest and in transit using authenticated AES-256-GCM.
 - Use a cryptographically secure 12-byte initialization vector (IV) generated fresh for every operation. Nonce reuse is forbidden.
 - Verify the 16-byte authentication tag upon every decryption.
@@ -82,6 +82,9 @@
 - Isolate constants in `constants/crypto.ts` and types in `types/crypto.ts`. Never log plaintext keys or secrets.
 - Enforce >= 90% unit test code coverage on all cryptographic utilities.
 
-
-
+## 14. Automated Tech Stack & Libraries Upgrade Policy
+- Automatically identify, audit, upgrade, and maintain core stack components, runtime environments, and third-party libraries to latest LTS or stable releases.
+- Systematically refactor breaking changes, API migrations, and deprecation notices across the codebase without suppressing warnings.
+- Validate every upgrade via the mandatory quality pipeline: build (`npm run build`), typecheck (`npm run typecheck`), lint (`npm run lint`), and unit tests with >= 90% per-file coverage (`npm run test:coverage`).
+- Guarantee zero regressions before finalizing updates.
 

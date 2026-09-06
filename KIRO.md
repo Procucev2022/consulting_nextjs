@@ -74,6 +74,13 @@
 - Isolate constants in `constants/crypto.ts` and types in `types/crypto.ts`. Never log plaintext keys.
 - Enforce >= 90% per-file unit test code coverage across all cryptographic modules.
 
-
-
+## Automated Tech Stack & Libraries Upgrade Policy
+- Automatically identify, audit, upgrade, and maintain core tech stack components, runtime environments, framework dependencies, and third-party libraries to latest LTS or stable versions.
+- Systematically refactor breaking changes, deprecation notices, and updated library APIs across the codebase.
+- Validate all upgrades through the complete quality check pipeline:
+  1. Production build (`npm run build`).
+  2. Typechecking with 0 errors (`npm run typecheck`).
+  3. Linting with 0 errors (`npm run lint`).
+  4. Unit tests and >= 90% per-file code coverage (`npm run test:coverage`).
+- Prevent regressions by ensuring all quality gates and test suites pass completely.
 
