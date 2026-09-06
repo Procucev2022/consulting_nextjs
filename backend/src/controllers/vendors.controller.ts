@@ -1,10 +1,14 @@
 import { Request, Response } from 'express';
 import { db } from '../services/db';
+import logger from '../utils/logger';
 
 export const getVendors = async (_req: Request, res: Response) => {
   try {
     const vendorRankings = db.getVendorRankings();
     const vendorDetails = db.getVendorDetails();
+    logger.debug('Fetched vendor rankings and details', {
+      vendorCount: vendorRankings.length
+    });
     return res.json({
       success: true,
       data: {
@@ -15,6 +19,7 @@ export const getVendors = async (_req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
+    logger.error('Failed to fetch vendor analytics', {}, error);
     return res.status(500).json({
       success: false,
       message: error.message || 'Failed to fetch vendor analytics'
@@ -26,9 +31,16 @@ export const mergeVendor = async (req: Request, res: Response) => {
   try {
     const { targetName, masterId, canonicalName } = req.body;
     if (!targetName || !masterId || !canonicalName) {
+      logger.warn('Vendor merge rejected: Missing parameters', { body: req.body });
       return res.status(400).json({ success: false, message: 'Missing vendor merge parameters' });
     }
     const result = db.mergeVendor(targetName, masterId, canonicalName);
+    logger.info('Vendor merged into master supplier', {
+      targetName,
+      masterId,
+      canonicalName,
+      affectedRecords: result.affected
+    });
     return res.json({
       success: true,
       data: result,
@@ -36,9 +48,11 @@ export const mergeVendor = async (req: Request, res: Response) => {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
+    logger.error('Failed to merge vendor', { body: req.body }, error);
     return res.status(400).json({
       success: false,
       message: error.message || 'Failed to merge vendor'
     });
   }
 };
+

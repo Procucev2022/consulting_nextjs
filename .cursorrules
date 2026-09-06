@@ -12,3 +12,12 @@
 - After any code change, verify coverage by running:
   `npm run test:coverage`
 - Do not stop until all tests pass and >= 90% per-file coverage is achieved.
+
+# Centralized Structured Logging Rules
+- No raw `console.log` / `console.error` calls.
+- Use `logger` from `backend/src/utils/logger.ts` or `frontendLogger` from `frontend/src/utils/logger.ts`.
+- Include structured context: `timestamp`, `level`, `service`, `message`, `requestId`, `context`, `durationMs`, and serialized `error` stack.
+- Local persistence: All logs persist to the file system (`logs/app.log`, `logs/error.log`, `logs/app-YYYY-MM-DD.log`) when running locally.
+- Compliance: Automatically purge logs older than the retention window (14 days default).
+- Apply detailed logs across all controllers, services, database queries, and middleware.
+

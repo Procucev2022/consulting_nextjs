@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes';
+import logger, { requestLogger } from './utils/logger';
 
 dotenv.config();
 
@@ -24,8 +25,10 @@ app.use(
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(requestLogger);
 
 // Root welcome endpoint
+
 app.get('/', (_req: Request, res: Response) => {
   res.json({
     message: 'Consulting & Procurement Intelligence Platform - Node.js Backend API',
@@ -59,12 +62,14 @@ app.use((req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Unhandled server error:', err);
+app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+  logger.error('Unhandled server error', { path: req.originalUrl, method: req.method }, err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error'
   });
 });
 
+
 export default app;
+

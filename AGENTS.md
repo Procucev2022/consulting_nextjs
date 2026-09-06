@@ -31,3 +31,27 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 
 - A global timeout of **10,000 ms** (`10s`) is enforced across all unit test configurations (`testTimeout: 10000`).
 - Ensure all mocks, timers, and async calls complete quickly and clean up properly in teardown hooks (`afterEach`, `afterAll`).
+
+## 4. Mandatory Structured & Centralized Logging System
+
+- **Zero Raw Console Calls**: Never use `console.log`, `console.warn`, or `console.error` in production code. Always use the centralized logger (`backend/src/utils/logger.ts` or `frontend/src/utils/logger.ts`).
+- **Structured JSON Schema**: All log records must follow a structured schema:
+  - `timestamp`: ISO-8601 UTC timestamp.
+  - `level`: `debug`, `info`, `warn`, `error`.
+  - `service`: Identifies the originating service (`consulting-backend`, `consulting-frontend`).
+  - `message`: Concise human-readable message.
+  - `context`: Structured key-value object containing contextual details (e.g., `tenantId`, `action`, `method`, `path`, `statusCode`, `durationMs`).
+  - `requestId`: Correlation ID propagated from `x-request-id` header to track requests end-to-end.
+  - `error`: Serialized error object (`name`, `message`, `stack`) for any caught or uncaught exceptions.
+- **Log Levels**:
+  - `DEBUG`: Fine-grained diagnostic information for troubleshooting.
+  - `INFO`: State changes, lifecycle events, successful operations, transactions.
+  - `WARN`: Recoverable degradation, fallback activations, deprecated usage.
+  - `ERROR`: Unhandled exceptions, failed requests, database connection failures, critical issues with full stack trace.
+- **Local File System Persistence**:
+  - In local environments (`NODE_ENV !== 'production'` or when local storage is configured), all logs must be persisted to the local file system (`logs/app.log`, `logs/error.log`, and daily rotated `logs/app-YYYY-MM-DD.log`).
+- **Storage Management & Automatic Purging (Compliance)**:
+  - An automated purging engine must run at startup and periodic intervals to delete log files older than the retention threshold (`LOG_RETENTION_DAYS`, default 14 days) to prevent disk exhaustion and ensure compliance.
+- **Application-Wide Application**:
+  - Every new or modified API route, controller, service, database transaction, and error handler MUST include detailed structured logging with appropriate context.
+

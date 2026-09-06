@@ -7,3 +7,12 @@
 3. **No File Exclusions**: Every logic file must be tested without skipping.
 4. **Global Timeout**: 10,000ms global timeout applies to all tests.
 5. **Continuous Verification**: Run `npm run test:coverage` whenever modifying any file and verify all thresholds pass before completing work.
+
+## Detailed Structured Logging Guidelines
+
+1. **Centralized Logging Only**: Use `backend/src/utils/logger.ts` or `frontend/src/utils/logger.ts`. Raw `console.log` / `console.error` are prohibited in production code.
+2. **Structured Format**: Provide structured JSON logs including timestamp, level, message, context, error stacks, durationMs, and correlation ID (`requestId`).
+3. **Local File System Persistence**: Logs must be persisted to the local file system (`logs/app.log`, `logs/error.log`, `logs/app-YYYY-MM-DD.log`) during local development.
+4. **Automatic Purging**: Retain log files for storage compliance by automatically purging files older than `LOG_RETENTION_DAYS` (default: 14 days).
+5. **Application-Wide Adoption**: Incorporate structured logs into all routes, controllers, services, database operations, and middlewares.
+

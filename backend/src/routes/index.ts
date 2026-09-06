@@ -8,6 +8,7 @@ import conversionRoutes from './conversion.routes';
 import reportRoutes from './report.routes';
 import currencyRoutes from './currency.routes';
 import taxonomyRoutes from './taxonomy.routes';
+import logsRoutes from './logs.routes';
 
 const router = Router();
 
@@ -30,5 +31,7 @@ router.use('/conversion', conversionRoutes);
 router.use('/report', reportRoutes);
 router.use('/currency', currencyRoutes);
 router.use('/taxonomy', taxonomyRoutes);
+router.use('/logs', logsRoutes);
 
 export default router;
+

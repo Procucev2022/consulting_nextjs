@@ -26,6 +26,7 @@ import {
 } from '../types';
 
 import { convertToINR } from '../utils/currencyConverter';
+import logger from '../utils/logger';
 
 export const prisma = new PrismaClient({
   log: ['warn', 'error']
@@ -52,7 +53,7 @@ export class DatabaseStore {
     try {
       await prisma.$connect();
       this.isPostgresConnected = true;
-      console.log('🐘 PostgreSQL connected successfully via Prisma.');
+      logger.info('🐘 PostgreSQL connected successfully via Prisma', { source: 'DatabaseStore' });
       
       // Optionally hydrate from PostgreSQL if data exists
       const dbTenant = await prisma.tenantMaster.findFirst();
@@ -69,8 +70,10 @@ export class DatabaseStore {
       }
     } catch (err: any) {
       this.isPostgresConnected = false;
-      console.warn('⚠️  PostgreSQL not reachable, running with resilient in-memory datastore.');
-      console.warn('💡 Tip: Start PostgreSQL using "docker compose up -d" or "npm run db:up", then run "npm run db:setup".');
+      logger.warn('⚠️  PostgreSQL not reachable, running with resilient in-memory datastore', {
+        source: 'DatabaseStore',
+        tip: 'Start PostgreSQL using "docker compose up -d" or "npm run db:up", then run "npm run db:setup"'
+      }, err);
     }
   }
 
@@ -94,7 +97,7 @@ export class DatabaseStore {
           base_currency: updates.base_currency as any,
           status: updates.status as any
         }
-      }).catch((e) => console.error('Error syncing tenant to PostgreSQL:', e.message));
+      }).catch((e: any) => logger.error('Error syncing tenant to PostgreSQL', { source: 'DatabaseStore' }, e));
     }
     return { ...this.tenant };
   }
@@ -121,7 +124,7 @@ export class DatabaseStore {
           detected_currencies: item.detected_currencies || [],
           converted_inr_crores: item.converted_inr_crores
         }
-      }).catch((e) => console.error('Error syncing ingestion to PostgreSQL:', e.message));
+      }).catch((e: any) => logger.error('Error syncing ingestion to PostgreSQL', { source: 'DatabaseStore' }, e));
     }
     return [...this.ingestionQueue];
   }
@@ -145,10 +148,11 @@ export class DatabaseStore {
       prisma.validationPreCheckRecord.update({
         where: { record_id: recordId },
         data: { ...updates }
-      }).catch((e) => console.error('Error syncing validation record to PostgreSQL:', e.message));
+      }).catch((e: any) => logger.error('Error syncing validation record to PostgreSQL', { source: 'DatabaseStore' }, e));
     }
     return updated;
   }
+
 
   public applyBlanketRemediation(): { updatedCount: number; records: ValidationPreCheckRecord[] } {
     let updatedCount = 0;
