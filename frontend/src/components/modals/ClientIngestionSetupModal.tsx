@@ -11,13 +11,11 @@ import {
   ArrowRight,
   X,
   Sparkles,
-  CheckCircle2,
   UploadCloud,
   FileText,
   TrendingUp
 } from 'lucide-react';
-import { TenantMaster, DatasetType, ClientIngestionSetupModalProps } from '../../types';
-import { yahooFinanceFXRates } from '../../utils/currencyConverter';
+import type { DatasetType, ClientIngestionSetupModalProps } from '../../types';
 import { UI_STRINGS, DEFAULT_TENANT_ENTERPRISE_NAME, clientIngestionSetupFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
 

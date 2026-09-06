@@ -1,8 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import { DollarSign, Check, X, RefreshCw, Globe, TrendingUp, Sparkles } from 'lucide-react';
-import { ValidationPreCheckRecord, FixCurrencyModalProps } from '../../types';
-import { yahooFinanceFXRates, convertToINR, formatINRAmount } from '../../utils/currencyConverter';
+import { Check, X, Globe, TrendingUp } from 'lucide-react';
+import type { FixCurrencyModalProps, FixCurrencyFormInput } from '../../types';
+import { yahooFinanceFXRates, formatINRAmount } from '../../utils/currencyConverter';
 import { UI_STRINGS, INR_CRORES_DIVISOR, fixCurrencyFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
 
@@ -20,19 +20,18 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
 
   const year = record.spend_year || 2024;
   const activeRate = customRate;
-  const conversionResult = convertToINR(record.amount, selectedCurrency, year);
   const calculatedINR = Math.round(record.amount * activeRate);
   const calculatedCrores = (calculatedINR / INR_CRORES_DIVISOR).toFixed(4);
 
-  const handleCurrencyChange = (curr: string) => {
+  const handleCurrencyChange = (curr: string): void => {
     setSelectedCurrency(curr);
     setCustomRate(yahooFinanceFXRates[curr].currentRate);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (): void => {
     const validation = validateInput(fixCurrencyFormSchema, {
       recordId: record.record_id,
-      selectedCurrency: selectedCurrency as any,
+      selectedCurrency: selectedCurrency as FixCurrencyFormInput['selectedCurrency'],
       convertedAmountINR: calculatedINR
     });
     if (!validation.success) return;
@@ -40,7 +39,6 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
     onFix(validation.data.recordId, validation.data.selectedCurrency, validation.data.convertedAmountINR);
     onClose();
   };
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">

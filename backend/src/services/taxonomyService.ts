@@ -1,4 +1,5 @@
-import { searchUNSPSCTaxonomy, lookupUNSPSCByDescription, UNSPSCCommodityRecord, unspscOfficialDictionary } from '../data/unspscTaxonomy';
+import type { UNSPSCCommodityRecord} from '../data/unspscTaxonomy';
+import { searchUNSPSCTaxonomy, lookupUNSPSCByDescription, unspscOfficialDictionary } from '../data/unspscTaxonomy';
 
 export function searchTaxonomy(query: string, category?: string): UNSPSCCommodityRecord[] {
   return searchUNSPSCTaxonomy(query, category);

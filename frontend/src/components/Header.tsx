@@ -3,18 +3,12 @@ import React from 'react';
 import {
   ShieldCheck,
   Zap,
-  Globe,
-  Database,
   Building2,
   FileText,
-  Clock,
-  Sparkles,
   Sun,
-  Moon,
-  TrendingUp,
-  DollarSign
+  Moon
 } from 'lucide-react';
-import { TenantMaster, HeaderProps } from '../types';
+import type { HeaderProps } from '../types';
 import { UI_STRINGS, SUPPORTED_HEADER_CURRENCIES, DEFAULT_SPEND_BASELINE_INR_CR, headerCurrencySchema } from '../constants';
 import { validateInput } from '../utils/validation';
 
@@ -119,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Tenant Selector */}
           <div
             data-testid="tenant-badge"
-            onClick={() => onSelectTenant && onSelectTenant({ ...tenant, enterprise_name: 'Apex Updated Corp' })}
+            onClick={() => onSelectTenant?.({ ...tenant, enterprise_name: 'Apex Updated Corp' })}
             className="relative hidden lg:flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 shadow-xs transition-colors cursor-pointer"
           >
             <Building2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />

@@ -151,5 +151,15 @@
 3. **Global Multi-Project Command**: Use root command `npm run quality` (or `npm run check:all`) to validate all workspace projects in one command.
 4. **Fast Differential Checks**: Use `npm run quality:fast` (or `npm run check:fast`) to rapidly check only changed files via git status during iterative development.
 
+## Strictest Linter Configuration & Code Style Standards
+
+1. **Strict Typing & Error Prevention**: Zero `any` (`@typescript-eslint/no-explicit-any`), explicit return types for functions/methods (`@typescript-eslint/explicit-function-return-type`), disallow non-null assertions `!` (`@typescript-eslint/no-non-null-assertion`), enforce type-only imports (`import type`), enforce optional chaining (`?.`), zero unused variables/imports (`@typescript-eslint/no-unused-vars` with `^_` ignore pattern), and strict naming conventions (PascalCase for types, camelCase for variables/functions).
+2. **React & Next.js Rules**: Functional components, hook dependency rules, zero unsafe rendering (`react/no-danger`), consistent boolean properties (`react/jsx-boolean-value: ['error', 'never']`), and strict accessibility (`jsx-a11y/alt-text`, `jsx-a11y/no-redundant-roles`, `jsx-a11y/anchor-is-valid`).
+3. **Code Quality & Formatting**: Max cyclomatic complexity 10, max file length 300 lines, max line length 120 chars, single quotes, semicolons, no trailing commas, prefer-const, no-var, and object-shorthand.
+4. **Zero Warnings Tolerance**: Zero ESLint errors and zero ESLint warnings across backend and frontend (`npm run lint`).
+5. **Build & CI/CD Integration**: Integrated into primary build command (`npm run build`), Git pre-commit hooks (`npm run pre-commit`), and PR CI/CD workflows (`.github/workflows/ci.yml`).
+6. **Strict 90% Unit Test Coverage**: Every refactored file and helper function must maintain >= 90% unit test coverage individually across statements, branches, functions, and lines.
+
+
 
 

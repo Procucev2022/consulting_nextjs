@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
-import logger, { LogLevel } from '../utils/logger';
+import type { Request, Response } from 'express';
+import type { LogLevel } from '../utils/logger';
+import logger from '../utils/logger';
 
-export const searchLogsHandler = (req: Request, res: Response) => {
+export const searchLogsHandler = (req: Request, res: Response): Response | void => {
   try {
     const { level, keyword, startDate, endDate, requestId, limit } = req.query;
 
@@ -16,22 +17,23 @@ export const searchLogsHandler = (req: Request, res: Response) => {
 
     const logs = logger.searchLogs(filter);
 
-    res.json({
+    return res.json({
       success: true,
       count: logs.length,
       data: logs
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errObj = error as { message: string };
     logger.error('Failed to search logs', { query: req.query }, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to search logs',
-      error: error.message
+      error: errObj.message
     });
   }
 };
 
-export const purgeLogsHandler = (req: Request, res: Response) => {
+export const purgeLogsHandler = (req: Request, res: Response): Response | void => {
   try {
     const retentionDays =
       typeof req.body?.retentionDays === 'number'
@@ -48,34 +50,36 @@ export const purgeLogsHandler = (req: Request, res: Response) => {
       bytesFreed: result.bytesFreed
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: `Purge completed: ${result.purgedFiles.length} files removed, ${result.bytesFreed} bytes freed.`,
       data: result
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errObj = error as { message: string };
     logger.error('Failed to purge logs', { body: req.body }, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to purge logs',
-      error: error.message
+      error: errObj.message
     });
   }
 };
 
-export const getLogStatsHandler = (_req: Request, res: Response) => {
+export const getLogStatsHandler = (_req: Request, res: Response): Response | void => {
   try {
     const stats = logger.getLogStats();
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errObj = error as { message: string };
     logger.error('Failed to retrieve log stats', {}, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to retrieve log stats',
-      error: error.message
+      error: errObj.message
     });
   }
 };

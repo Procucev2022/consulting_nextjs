@@ -4,21 +4,10 @@ import {
   X,
   Award,
   TrendingUp,
-  TrendingDown,
-  Minus,
   Search,
-  Download,
-  Printer,
-  FileSpreadsheet,
-  AlertTriangle,
-  CheckCircle2,
-  DollarSign,
-  Tag,
-  Boxes,
-  Building2,
-  Filter
+  Download
 } from 'lucide-react';
-import { CategoryYearDetail, CategoryTopItem, CategoryTopItemsModalProps, DeclarativeDownloadPayload } from '../../types';
+import type { CategoryTopItemsModalProps, DeclarativeDownloadPayload } from '../../types';
 import { UI_STRINGS } from '../../constants';
 
 export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({

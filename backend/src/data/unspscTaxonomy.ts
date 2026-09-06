@@ -1,6 +1,6 @@
 // Auto-generated from official UNSPSC English File (UNv260801) - Column L Commodity Taxonomy
 
-import { UNSPSCCommodityRecord } from '../types';
+import type { UNSPSCCommodityRecord } from '../types';
 
 export type { UNSPSCCommodityRecord };
 

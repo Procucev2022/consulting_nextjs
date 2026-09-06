@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { db } from '../services/db';
 
-export const getConversionStages = async (_req: Request, res: Response) => {
+export const getConversionStages = async (_req: Request, res: Response): Promise<Response | void> => {
   try {
     const funnelStages = db.getFunnelStages();
     return res.json({
@@ -9,15 +9,16 @@ export const getConversionStages = async (_req: Request, res: Response) => {
       data: funnelStages,
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch conversion stages';
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch conversion stages'
+      message
     });
   }
 };
 
-export const calculateConversionMetrics = async (req: Request, res: Response) => {
+export const calculateConversionMetrics = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { annualSpendCr = 428.5, savingsRate = 9.4, saasFeeRate = 0.85 } = req.body;
 
@@ -40,10 +41,11 @@ export const calculateConversionMetrics = async (req: Request, res: Response) =>
       message: 'Commercial SaaS realization metrics calculated successfully',
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to calculate commercial metrics';
     return res.status(400).json({
       success: false,
-      message: error.message || 'Failed to calculate commercial metrics'
+      message
     });
   }
 };

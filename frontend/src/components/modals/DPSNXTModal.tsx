@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { FileCheck, ShieldCheck, CheckCircle2, ArrowRight, X, Lock, Sliders, Zap } from 'lucide-react';
-import { SavingsOpportunity, DPSNXTModalProps } from '../../types';
+import { FileCheck, CheckCircle2, X, Lock, Sliders, Zap } from 'lucide-react';
+import type { DPSNXTModalProps } from '../../types';
 import confetti from 'canvas-confetti';
 import {
   UI_STRINGS,
@@ -26,7 +26,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
 
   if (!isOpen || !opportunity) return null;
 
-  const handleExecute = () => {
+  const handleExecute = (): void => {
     const validation = validateInput(dpsnxtFormSchema, {
       oppId: opportunity.opp_id,
       indexPegging,
@@ -52,7 +52,6 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
       }, 1800);
     }, 1200);
   };
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">

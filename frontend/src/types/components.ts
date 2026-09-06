@@ -2,7 +2,7 @@
  * Component and Modal Types & Interfaces Module (Frontend)
  */
 
-import {
+import type {
   TenantMaster,
   RawDocumentIngestion,
   ValidationPreCheckRecord,
@@ -14,8 +14,8 @@ import {
   CategoryYearDetail,
   VendorYearDetail
 } from './models';
-import { HeaderCurrency } from './currency';
-import { CoreBucket } from './taxonomy';
+import type { HeaderCurrency } from './currency';
+import type { CoreBucket } from './taxonomy';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -35,7 +35,7 @@ export interface PipelineBarProps {
   onSelectTab: (tab: PipelineActiveTab) => void;
 }
 
-export interface DatabaseSchemaViewProps {}
+export type DatabaseSchemaViewProps = Record<string, never>;
 
 // Core Pipeline Module Props
 export interface Module1IngestionProps {

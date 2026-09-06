@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
-import { FileText, Printer, Download, CheckCircle2, X, TrendingUp, DollarSign, ShieldAlert, Award } from 'lucide-react';
-import { TenantMaster, SavingsOpportunity, ExecutiveReportModalProps } from '../../types';
+import { FileText, Printer, X } from 'lucide-react';
+import type { ExecutiveReportModalProps } from '../../types';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,

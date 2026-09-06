@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import logger from '../utils/logger';
 
-export const getVendors = async (_req: Request, res: Response) => {
+export const getVendors = async (_req: Request, res: Response): Promise<Response | void> => {
   try {
     const vendorRankings = db.getVendorRankings();
     const vendorDetails = db.getVendorDetails();
@@ -18,16 +18,17 @@ export const getVendors = async (_req: Request, res: Response) => {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch vendor analytics';
     logger.error('Failed to fetch vendor analytics', {}, error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch vendor analytics'
+      message
     });
   }
 };
 
-export const mergeVendor = async (req: Request, res: Response) => {
+export const mergeVendor = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { targetName, masterId, canonicalName } = req.body;
     if (!targetName || !masterId || !canonicalName) {
@@ -47,12 +48,12 @@ export const mergeVendor = async (req: Request, res: Response) => {
       message: `Merged ${result.affected} records to master supplier ${canonicalName} (${masterId})`,
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to merge vendor';
     logger.error('Failed to merge vendor', { body: req.body }, error);
     return res.status(400).json({
       success: false,
-      message: error.message || 'Failed to merge vendor'
+      message
     });
   }
 };
-

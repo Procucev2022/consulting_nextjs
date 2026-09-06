@@ -8,13 +8,13 @@
 import fs from 'fs';
 import {
   AUTO_RESOLVE_ACTIONS,
-  DEFAULT_MAX_PARSE_LINES,
+  DEFAULT_MAX_PARSE_LINES
 } from '../constants/logDiagnostics';
-import {
+import type {
   DiagnosticLogEntry,
   ErrorCluster,
   LogDiagnosticReport,
-  AutoResolveRecommendation,
+  AutoResolveRecommendation
 } from '../types/logDiagnostics';
 import backendLogger from './logger';
 
@@ -34,7 +34,7 @@ export function parseLogLine(line: string): DiagnosticLogEntry | null {
         message: parsed.message,
         requestId: parsed.requestId,
         context: parsed.context,
-        error: parsed.error,
+        error: parsed.error
       };
     }
   } catch {
@@ -44,6 +44,16 @@ export function parseLogLine(line: string): DiagnosticLogEntry | null {
   return null;
 }
 
+const VALIDATION_MATCHERS = ['validation', 'invalid input', 'zod'];
+const DB_MATCHERS = ['prisma', 'database', 'query', 'pool'];
+const NETWORK_MATCHERS = ['network', 'econnrefused', 'timeout', 'econnreset'];
+const AUTH_MATCHERS = ['unauthorized', 'forbidden', 'auth'];
+const INTERNAL_MATCHERS = ['internal server error', 'unhandled'];
+
+function hasAnyMatcher(text: string, matchers: string[]): boolean {
+  return matchers.some((m) => text.includes(m));
+}
+
 export function classifyErrorCategory(
   message: string,
   stack?: string,
@@ -51,19 +61,19 @@ export function classifyErrorCategory(
 ): string {
   const lowerMsg = (message + ' ' + (stack || '')).toLowerCase();
 
-  if (statusCode === 400 || lowerMsg.includes('validation') || lowerMsg.includes('invalid input') || lowerMsg.includes('zod')) {
+  if (statusCode === 400 || hasAnyMatcher(lowerMsg, VALIDATION_MATCHERS)) {
     return 'VALIDATION_ERROR';
   }
-  if (lowerMsg.includes('prisma') || lowerMsg.includes('database') || lowerMsg.includes('query') || lowerMsg.includes('pool')) {
+  if (hasAnyMatcher(lowerMsg, DB_MATCHERS)) {
     return 'DATABASE_ERROR';
   }
-  if (lowerMsg.includes('network') || lowerMsg.includes('econnrefused') || lowerMsg.includes('timeout') || lowerMsg.includes('econnreset')) {
+  if (hasAnyMatcher(lowerMsg, NETWORK_MATCHERS)) {
     return 'NETWORK_ERROR';
   }
-  if (statusCode === 401 || statusCode === 403 || lowerMsg.includes('unauthorized') || lowerMsg.includes('forbidden') || lowerMsg.includes('auth')) {
+  if (statusCode === 401 || statusCode === 403 || hasAnyMatcher(lowerMsg, AUTH_MATCHERS)) {
     return 'AUTH_ERROR';
   }
-  if (statusCode === 500 || lowerMsg.includes('internal server error') || lowerMsg.includes('unhandled')) {
+  if (statusCode === 500 || hasAnyMatcher(lowerMsg, INTERNAL_MATCHERS)) {
     return 'INTERNAL_ERROR';
   }
 
@@ -81,7 +91,7 @@ function getRecommendationForCategory(
         fingerprint,
         action: AUTO_RESOLVE_ACTIONS.VALIDATE_INPUT,
         recommendation: 'Verify and align incoming request payload against Zod schema in constants/validation.ts',
-        urgency: 'MEDIUM',
+        urgency: 'MEDIUM'
       };
     case 'DATABASE_ERROR':
       return {
@@ -89,7 +99,7 @@ function getRecommendationForCategory(
         fingerprint,
         action: AUTO_RESOLVE_ACTIONS.CHECK_DB_CONNECTION,
         recommendation: 'Inspect connection pool capacity, Prisma query structure, and database health metrics',
-        urgency: 'HIGH',
+        urgency: 'HIGH'
       };
     case 'NETWORK_ERROR':
       return {
@@ -97,7 +107,7 @@ function getRecommendationForCategory(
         fingerprint,
         action: AUTO_RESOLVE_ACTIONS.RETRY,
         recommendation: 'Activate exponential backoff retry handler and verify remote network availability',
-        urgency: 'HIGH',
+        urgency: 'HIGH'
       };
     case 'AUTH_ERROR':
       return {
@@ -105,7 +115,7 @@ function getRecommendationForCategory(
         fingerprint,
         action: AUTO_RESOLVE_ACTIONS.CHECK_CREDENTIALS,
         recommendation: 'Verify tenant access scopes, credential expiration, and authentication headers',
-        urgency: 'HIGH',
+        urgency: 'HIGH'
       };
     case 'INTERNAL_ERROR':
       return {
@@ -113,7 +123,7 @@ function getRecommendationForCategory(
         fingerprint,
         action: AUTO_RESOLVE_ACTIONS.INVESTIGATE_UNHANDLED,
         recommendation: 'Review stack trace in logs/error.log and add defensive boundary error handlers',
-        urgency: 'HIGH',
+        urgency: 'HIGH'
       };
     default:
       return {
@@ -121,7 +131,7 @@ function getRecommendationForCategory(
         fingerprint,
         action: AUTO_RESOLVE_ACTIONS.INVESTIGATE_UNHANDLED,
         recommendation: 'Investigate raw log diagnostics and establish designated error classification',
-        urgency: 'LOW',
+        urgency: 'LOW'
       };
   }
 }
@@ -148,7 +158,8 @@ export function analyzeLogEntries(entries: DiagnosticLogEntry[]): LogDiagnosticR
         : 'unknown';
       const fingerprint = `${category}:${entry.message.substring(0, 60)}`;
 
-      if (!clusterMap.has(fingerprint)) {
+      const existing = clusterMap.get(fingerprint);
+      if (!existing) {
         clusterMap.set(fingerprint, {
           category,
           fingerprint,
@@ -156,14 +167,13 @@ export function analyzeLogEntries(entries: DiagnosticLogEntry[]): LogDiagnosticR
           sampleMessage: entry.message,
           affectedEndpoints: [endpoint],
           firstSeen: entry.timestamp,
-          lastSeen: entry.timestamp,
+          lastSeen: entry.timestamp
         });
       } else {
-        const cluster = clusterMap.get(fingerprint)!;
-        cluster.count++;
-        cluster.lastSeen = entry.timestamp;
-        if (!cluster.affectedEndpoints.includes(endpoint)) {
-          cluster.affectedEndpoints.push(endpoint);
+        existing.count++;
+        existing.lastSeen = entry.timestamp;
+        if (!existing.affectedEndpoints.includes(endpoint)) {
+          existing.affectedEndpoints.push(endpoint);
         }
       }
     }
@@ -178,7 +188,7 @@ export function analyzeLogEntries(entries: DiagnosticLogEntry[]): LogDiagnosticR
     warnCount,
     clusters,
     recommendations,
-    generatedAt: new Date().toISOString(),
+    generatedAt: new Date().toISOString()
   };
 }
 
@@ -209,13 +219,14 @@ export async function diagnoseLogFile(
     backendLogger.debug('Log diagnostics executed successfully', {
       filePath,
       errorsFound: report.errorCount,
-      clustersCount: report.clusters.length,
+      clustersCount: report.clusters.length
     });
     return report;
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const reason = err instanceof Error ? err.message : String(err);
     backendLogger.warn('Unable to read log file for diagnosis', {
       filePath,
-      reason: err.message,
+      reason
     });
     return {
       totalLinesParsed: 0,
@@ -223,7 +234,7 @@ export async function diagnoseLogFile(
       warnCount: 0,
       clusters: [],
       recommendations: [],
-      generatedAt: new Date().toISOString(),
+      generatedAt: new Date().toISOString()
     };
   }
 }

@@ -1,20 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import {
-  TrendingUp,
-  Award,
   CheckCircle2,
   FileText,
   Calculator,
   Layers,
-  ArrowRight,
-  ShieldCheck,
-  Building,
-  Sparkles,
-  DollarSign,
-  Percent
+  Sparkles
 } from 'lucide-react';
-import { ConversionFunnelPhase, TenantMaster, Module5ConversionMatrixProps } from '../types';
+import type { Module5ConversionMatrixProps } from '../types';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,
@@ -26,7 +19,7 @@ import { validateInput } from '../utils/validation';
 import confetti from 'canvas-confetti';
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
-  tenant,
+  tenant: _tenant,
   funnelStages,
   onOpenReport
 }) => {

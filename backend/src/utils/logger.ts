@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
-import {
+import type {
   LogLevel,
   LogEntry,
   LogFilter,
@@ -15,9 +15,15 @@ import {
   DEFAULT_RETENTION_DAYS,
   DEFAULT_MIN_LEVEL
 } from '../constants';
+import {
+  resolveLoggerConfig,
+  purgeOldLogFiles,
+  computeLogStats,
+  searchAndFilterLogs
+} from './loggerHelpers';
 
 export type { LogLevel, LogEntry, LogFilter, PurgeResult, LoggerOptions };
-export { LEVEL_PRIORITY };
+export { LEVEL_PRIORITY, DEFAULT_SERVICE_NAME, DEFAULT_RETENTION_DAYS, DEFAULT_MIN_LEVEL };
 
 export class Logger {
   private serviceName: string;
@@ -30,16 +36,13 @@ export class Logger {
   private maxMemoryLogs: number = 200;
 
   constructor(options: LoggerOptions = {}) {
-    this.serviceName = options.serviceName || process.env.SERVICE_NAME || 'consulting-backend';
-    this.logDir = options.logDir || process.env.LOG_DIR || path.resolve(process.cwd(), 'logs');
-    this.minLevel = options.minLevel || (process.env.LOG_LEVEL as LogLevel) || 'debug';
-    this.enableConsole = options.enableConsole ?? (process.env.LOG_CONSOLE !== 'false');
-    this.enableFilePersistence =
-      options.enableFilePersistence ??
-      (process.env.LOG_PERSISTENCE === 'true' || process.env.NODE_ENV !== 'production');
-    this.retentionDays =
-      options.retentionDays ??
-      (process.env.LOG_RETENTION_DAYS ? parseInt(process.env.LOG_RETENTION_DAYS, 10) : 14);
+    const config = resolveLoggerConfig(options);
+    this.serviceName = config.serviceName;
+    this.logDir = config.logDir;
+    this.minLevel = config.minLevel;
+    this.enableConsole = config.enableConsole;
+    this.enableFilePersistence = config.enableFilePersistence;
+    this.retentionDays = config.retentionDays;
 
     if (this.enableFilePersistence) {
       this.ensureLogDir();
@@ -55,7 +58,7 @@ export class Logger {
         fs.mkdirSync(this.logDir, { recursive: true });
       }
     } catch {
-      // Graceful fallback if filesystem access is restricted
+      // Graceful fallback
     }
   }
 
@@ -66,7 +69,7 @@ export class Logger {
   public formatEntry(
     level: LogLevel,
     message: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     error?: Error | unknown
   ): LogEntry {
     const entry: LogEntry = {
@@ -78,7 +81,7 @@ export class Logger {
     };
 
     if (context) {
-      if (context.requestId) {
+      if (context.requestId && typeof context.requestId === 'string') {
         entry.requestId = context.requestId;
       }
       if (typeof context.durationMs === 'number') {
@@ -113,21 +116,12 @@ export class Logger {
       const line = JSON.stringify(entry) + '\n';
       const dateStr = entry.timestamp.split('T')[0];
 
-      // Primary combined log
-      const appLogPath = path.join(this.logDir, 'app.log');
-      fs.appendFileSync(appLogPath, line);
+      fs.appendFileSync(path.join(this.logDir, 'app.log'), line);
+      fs.appendFileSync(path.join(this.logDir, `app-${dateStr}.log`), line);
 
-      // Dated partitioned app log
-      const datedAppLogPath = path.join(this.logDir, `app-${dateStr}.log`);
-      fs.appendFileSync(datedAppLogPath, line);
-
-      // Error log partition
       if (entry.level === 'error') {
-        const errorLogPath = path.join(this.logDir, 'error.log');
-        fs.appendFileSync(errorLogPath, line);
-
-        const datedErrorLogPath = path.join(this.logDir, `error-${dateStr}.log`);
-        fs.appendFileSync(datedErrorLogPath, line);
+        fs.appendFileSync(path.join(this.logDir, 'error.log'), line);
+        fs.appendFileSync(path.join(this.logDir, `error-${dateStr}.log`), line);
       }
     } catch {
       // Fail silently to avoid breaking execution
@@ -137,12 +131,11 @@ export class Logger {
   public log(
     level: LogLevel,
     message: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     error?: Error | unknown
   ): LogEntry {
     const entry = this.formatEntry(level, message, context, error);
 
-    // Keep in recent memory buffer
     this.recentLogs.push(entry);
     if (this.recentLogs.length > this.maxMemoryLogs) {
       this.recentLogs.shift();
@@ -166,173 +159,37 @@ export class Logger {
     return entry;
   }
 
-  public debug(message: string, context?: Record<string, any>): LogEntry {
+  public debug(message: string, context?: Record<string, unknown>): LogEntry {
     return this.log('debug', message, context);
   }
 
-  public info(message: string, context?: Record<string, any>): LogEntry {
+  public info(message: string, context?: Record<string, unknown>): LogEntry {
     return this.log('info', message, context);
   }
 
-  public warn(message: string, context?: Record<string, any>, error?: Error | unknown): LogEntry {
+  public warn(message: string, context?: Record<string, unknown>, error?: Error | unknown): LogEntry {
     return this.log('warn', message, context, error);
   }
 
-  public error(message: string, context?: Record<string, any>, error?: Error | unknown): LogEntry {
+  public error(message: string, context?: Record<string, unknown>, error?: Error | unknown): LogEntry {
     return this.log('error', message, context, error);
   }
 
   public searchLogs(filter: LogFilter = {}): LogEntry[] {
-    const matchedEntries: LogEntry[] = [];
-    const seenTimestamps = new Set<string>();
-
-    const checkAndAdd = (entry: LogEntry) => {
-      const uniqueKey = `${entry.timestamp}-${entry.message}-${entry.level}`;
-      if (seenTimestamps.has(uniqueKey)) return;
-
-      if (filter.level && entry.level !== filter.level) {
-        return;
-      }
-      if (filter.requestId && entry.requestId !== filter.requestId) {
-        return;
-      }
-      if (filter.startDate && new Date(entry.timestamp) < new Date(filter.startDate)) {
-        return;
-      }
-      if (filter.endDate && new Date(entry.timestamp) > new Date(filter.endDate)) {
-        return;
-      }
-      if (filter.keyword) {
-        const kw = filter.keyword.toLowerCase();
-        const msgMatch = entry.message.toLowerCase().includes(kw);
-        const ctxMatch = entry.context ? JSON.stringify(entry.context).toLowerCase().includes(kw) : false;
-        const errMatch = entry.error ? JSON.stringify(entry.error).toLowerCase().includes(kw) : false;
-        if (!msgMatch && !ctxMatch && !errMatch) {
-          return;
-        }
-      }
-
-      seenTimestamps.add(uniqueKey);
-      matchedEntries.push(entry);
-    };
-
-    // Read persistent logs from filesystem if available
-    if (this.enableFilePersistence && fs.existsSync(this.logDir)) {
-      try {
-        const appLogPath = path.join(this.logDir, 'app.log');
-        if (fs.existsSync(appLogPath)) {
-          const content = fs.readFileSync(appLogPath, 'utf8');
-          const lines = content.split('\n');
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            try {
-              const entry = JSON.parse(line) as LogEntry;
-              checkAndAdd(entry);
-            } catch {
-              // Ignore corrupted lines
-            }
-          }
-        }
-      } catch {
-        // Fallback to in-memory logs
-      }
-    }
-
-    // Also scan recent memory logs
-    for (const entry of this.recentLogs) {
-      checkAndAdd(entry);
-    }
-
-    // Sort descending by timestamp (newest first)
-    matchedEntries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-    const limit = filter.limit && filter.limit > 0 ? filter.limit : 100;
-    return matchedEntries.slice(0, limit);
+    return searchAndFilterLogs(this.recentLogs, this.logDir, this.enableFilePersistence, filter);
   }
 
   public purgeOldLogs(retentionDays?: number): PurgeResult {
     const daysToRetain = retentionDays ?? this.retentionDays;
-    const result: PurgeResult = {
-      purgedFiles: [],
-      bytesFreed: 0,
-      retentionDays: daysToRetain
-    };
-
-    if (!fs.existsSync(this.logDir)) {
-      return result;
-    }
-
-    try {
-      const files = fs.readdirSync(this.logDir);
-      const now = Date.now();
-      const cutoffTime = now - daysToRetain * 24 * 60 * 60 * 1000;
-
-      for (const file of files) {
-        const filePath = path.join(this.logDir, file);
-        try {
-          const stats = fs.statSync(filePath);
-          let fileTime = stats.mtimeMs;
-
-          // Check if file has dated format like app-YYYY-MM-DD.log or error-YYYY-MM-DD.log
-          const match = file.match(/\d{4}-\d{2}-\d{2}/);
-          if (match) {
-            const parsedDate = Date.parse(match[0]);
-            if (!isNaN(parsedDate)) {
-              fileTime = parsedDate;
-            }
-          }
-
-          if (fileTime < cutoffTime) {
-            const fileSize = stats.size;
-            fs.unlinkSync(filePath);
-            result.purgedFiles.push(file);
-            result.bytesFreed += fileSize;
-          }
-        } catch {
-          // Continue with next file
-        }
-      }
-    } catch {
-      // Handled gracefully
-    }
-
-    return result;
+    return purgeOldLogFiles(this.logDir, daysToRetain);
   }
 
   public getLogStats(): { totalFiles: number; totalSizeBytes: number; retentionDays: number; logDir: string } {
-    let totalFiles = 0;
-    let totalSizeBytes = 0;
-
-    if (fs.existsSync(this.logDir)) {
-      try {
-        const files = fs.readdirSync(this.logDir);
-        for (const file of files) {
-          const filePath = path.join(this.logDir, file);
-          try {
-            const stats = fs.statSync(filePath);
-            if (stats.isFile()) {
-              totalFiles++;
-              totalSizeBytes += stats.size;
-            }
-          } catch {
-            // Ignore stat failures
-          }
-        }
-      } catch {
-        // Handled gracefully
-      }
-    }
-
-    return {
-      totalFiles,
-      totalSizeBytes,
-      retentionDays: this.retentionDays,
-      logDir: this.logDir
-    };
+    return computeLogStats(this.logDir, this.retentionDays);
   }
 
-  public createRequestLogger() {
-    return (req: Request, res: Response, next: NextFunction) => {
+  public createRequestLogger(): (req: Request, res: Response, next: NextFunction) => void {
+    return (req: Request, res: Response, next: NextFunction): void => {
       const start = Date.now();
       const rawHeader = req.headers['x-request-id'];
       const requestId = (typeof rawHeader === 'string' && rawHeader.trim())
@@ -346,21 +203,21 @@ export class Logger {
         const durationMs = Date.now() - start;
         const statusCode = res.statusCode;
         const method = req.method;
-        const path = req.originalUrl || req.url;
+        const reqPath = req.originalUrl || req.url;
         const ip = req.ip || req.socket.remoteAddress || 'unknown';
         const userAgent = req.get('user-agent') || 'unknown';
 
         const context = {
           requestId,
           method,
-          path,
+          path: reqPath,
           statusCode,
           durationMs,
           ip,
           userAgent
         };
 
-        const message = `HTTP ${method} ${path} [${statusCode}] ${durationMs}ms`;
+        const message = `HTTP ${method} ${reqPath} [${statusCode}] ${durationMs}ms`;
 
         if (statusCode >= 500) {
           this.error(message, context);

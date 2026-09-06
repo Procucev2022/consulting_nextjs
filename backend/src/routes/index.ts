@@ -1,4 +1,5 @@
-import { Router, Request, Response } from 'express';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
 import tenantRoutes from './tenant.routes';
 import ingestionRoutes from './ingestion.routes';
 import categoriesRoutes from './categories.routes';

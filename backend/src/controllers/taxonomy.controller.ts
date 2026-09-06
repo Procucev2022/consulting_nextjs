@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { searchTaxonomy, lookupTaxonomy, getAllTaxonomyRecords } from '../services/taxonomyService';
 
-export const getTaxonomyData = async (req: Request, res: Response) => {
+export const getTaxonomyData = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const query = (req.query.q as string) || '';
     const category = (req.query.category as string) || undefined;
@@ -33,10 +33,11 @@ export const getTaxonomyData = async (req: Request, res: Response) => {
       total: results.length,
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to search taxonomy';
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to search taxonomy'
+      message
     });
   }
 };

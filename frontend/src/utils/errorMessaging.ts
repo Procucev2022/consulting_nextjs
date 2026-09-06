@@ -7,7 +7,7 @@
 
 import { UI_STRINGS } from '../constants/uiStrings';
 import { ERROR_CATEGORIES, ERROR_SEVERITIES } from '../constants/errors';
-import { DescriptiveError, CreateDescriptiveErrorOptions, ErrorCategory, ErrorSeverity } from '../types/errors';
+import type { DescriptiveError, CreateDescriptiveErrorOptions, ErrorCategory } from '../types/errors';
 import { frontendLogger } from './logger';
 
 /**

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { GitMerge, Check, X, Building2, Search, ArrowRight } from 'lucide-react';
-import { ValidationPreCheckRecord, MergeVendorModalProps } from '../../types';
+import { GitMerge, Check, X } from 'lucide-react';
+import type { MergeVendorModalProps } from '../../types';
 import { UI_STRINGS, DEFAULT_MASTER_SUPPLIERS, mergeVendorFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
 
@@ -17,8 +17,8 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
 
   if (!isOpen || !record) return null;
 
-  const handleConfirm = () => {
-    const chosen = masterSuppliers.find(s => s.id === selectedMaster) || masterSuppliers[0];
+  const handleConfirm = (): void => {
+    const chosen = masterSuppliers.find((s) => s.id === selectedMaster) || masterSuppliers[0];
     const validation = validateInput(mergeVendorFormSchema, {
       recordId: record.record_id,
       masterVendorId: chosen.id,
@@ -29,7 +29,6 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
     onMerge(validation.data.recordId, validation.data.masterVendorId, validation.data.masterVendorName);
     onClose();
   };
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">

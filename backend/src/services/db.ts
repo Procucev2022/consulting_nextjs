@@ -12,7 +12,7 @@ import {
   conversionFunnelStages
 } from '../data/mockData';
 
-import {
+import type {
   TenantMaster,
   RawDocumentIngestion,
   ValidationPreCheckRecord,
@@ -25,7 +25,6 @@ import {
   ConversionFunnelPhase
 } from '../types';
 
-import { convertToINR } from '../utils/currencyConverter';
 import logger from '../utils/logger';
 import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';

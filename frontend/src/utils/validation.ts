@@ -5,9 +5,9 @@
  * and outgoing API payloads against centralized Zod schemas.
  */
 
-import { z, ZodError } from 'zod';
+import type { z, ZodError } from 'zod';
 import frontendLogger from './logger';
-import { ValidationResult, ValidationErrorsMap } from '../types/validation';
+import type { ValidationResult, ValidationErrorsMap } from '../types/validation';
 
 export const formatFrontendZodErrors = (error: ZodError): ValidationErrorsMap => {
   const map: ValidationErrorsMap = {};

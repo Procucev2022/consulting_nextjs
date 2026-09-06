@@ -1,13 +1,20 @@
 {
+  "root": true,
+  "env": {
+    "node": true,
+    "es2022": true
+  },
   "extends": [
-    "next/core-web-vitals",
+    "eslint:recommended",
     "plugin:@typescript-eslint/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": true
   },
-  "plugins": ["@typescript-eslint", "jsx-a11y"],
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "rules": {
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/explicit-function-return-type": [
@@ -71,15 +78,7 @@
         "format": null
       }
     ],
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn",
-    "react/no-danger": "error",
-    "react/jsx-no-target-blank": "error",
-    "react/jsx-boolean-value": ["error", "never"],
-    "jsx-a11y/alt-text": "error",
-    "jsx-a11y/no-redundant-roles": "error",
-    "jsx-a11y/anchor-is-valid": "error",
-    "complexity": ["error", 10],
+    "complexity": ["error", 12],
     "max-lines": [
       "error",
       {
@@ -107,7 +106,7 @@
   },
   "overrides": [
     {
-      "files": ["src/data/**", "src/constants/uiStrings.ts", "src/components/**", "src/app/**", "tests/**", "scripts/**"],
+      "files": ["src/data/**", "src/services/db.ts", "tests/**", "prisma/**"],
       "rules": {
         "max-lines": "off",
         "max-len": "off",

@@ -9,7 +9,7 @@ export interface FrontendLogEntry {
   level: LogLevel;
   service: string;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   error?: {
     name: string;
     message: string;

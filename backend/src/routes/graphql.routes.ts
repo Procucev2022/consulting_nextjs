@@ -5,7 +5,8 @@
  * through the `graphql` execution engine with audit tracking and structured logging.
  */
 
-import { Router, Request, Response } from 'express';
+import type { Request, Response } from 'express';
+import { Router } from 'express';
 import { buildSchema, graphql } from 'graphql';
 import { GRAPHQL_SCHEMA_SDL } from '../constants/graphql';
 import { graphQLRequestSchema } from '../constants/validation';
@@ -53,15 +54,16 @@ router.post('/', validateBody(graphQLRequestSchema), async (req: Request, res: R
     }
 
     return res.status(200).json(result);
-  } catch (err: any) {
+  } catch (err: unknown) {
     const durationMs = Date.now() - start;
+    const errMsg = err instanceof Error ? err.message : 'Internal GraphQL execution error';
     logger.error('Unhandled error during GraphQL query execution', {
       requestId,
       operationName,
       durationMs
     }, err);
     return res.status(500).json({
-      errors: [{ message: err.message || 'Internal GraphQL execution error' }]
+      errors: [{ message: errMsg }]
     });
   }
 });
@@ -90,9 +92,10 @@ router.get('/', async (req: Request, res: Response) => {
     const durationMs = Date.now() - start;
     logger.info('GraphQL GET query executed', { requestId, durationMs });
     return res.status(200).json(result);
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : 'Internal GraphQL execution error';
     return res.status(500).json({
-      errors: [{ message: err.message || 'Internal GraphQL execution error' }]
+      errors: [{ message: errMsg }]
     });
   }
 });

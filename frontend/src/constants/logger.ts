@@ -2,7 +2,7 @@
  * Logger Constants Module (Frontend)
  */
 
-import { LogLevel } from '../types';
+import type { LogLevel } from '../types';
 
 export const LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,

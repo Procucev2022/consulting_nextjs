@@ -4,7 +4,7 @@
  * Centralized TypeScript types for GraphQL requests, contexts, resolver arguments, and payloads.
  */
 
-import { TenantMaster } from './models';
+import type { TenantMaster } from './models';
 
 export interface GraphQLContext {
   requestId: string;
@@ -14,7 +14,7 @@ export interface GraphQLContext {
 
 export interface GraphQLRequestPayload {
   query: string;
-  variables?: Record<string, any> | null;
+  variables?: Record<string, unknown> | null;
   operationName?: string | null;
 }
 

@@ -10,7 +10,7 @@ export interface LogEntry {
   service: string;
   environment: string;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   requestId?: string;
   durationMs?: number;
   error?: {
@@ -18,7 +18,7 @@ export interface LogEntry {
     message: string;
     stack?: string;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface LogFilter {

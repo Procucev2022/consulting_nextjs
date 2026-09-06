@@ -4,8 +4,8 @@
  * Inferred TypeScript types derived from centralized validation schemas.
  */
 
-import { z } from 'zod';
-import {
+import type { z } from 'zod';
+import type {
   requestHeadersSchema,
   tenantUpdateSchema,
   addIngestionFileSchema,

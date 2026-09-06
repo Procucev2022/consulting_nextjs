@@ -1,21 +1,15 @@
 'use client';
 import React, { useState } from 'react';
 import {
-  Database,
   Table,
   ShieldCheck,
   Zap,
   Server,
   Lock,
-  RefreshCw,
-  Code2,
-  CheckCircle2,
-  Layers,
-  ArrowRight,
-  Globe
+  ArrowRight
 } from 'lucide-react';
 import { schemaEntities } from '../data/mockData';
-import { DatabaseSchemaViewProps } from '../types';
+import type { DatabaseSchemaViewProps } from '../types';
 import { UI_STRINGS } from '../constants';
 
 export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
@@ -24,7 +18,7 @@ export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
 
   const currentEntity = schemaEntities.find((e) => e.entity_name === selectedEntity) || schemaEntities[0];
 
-  const getDdlForEntity = (entityName: string) => {
+  const getDdlForEntity = (entityName: string): string => {
     switch (entityName) {
       case 'Tenant_Master':
         return `CREATE TABLE Tenant_Master (
@@ -95,7 +89,7 @@ CREATE INDEX idx_commodity_date ON Market_Indices(index_code, price_date);`;
 );
 CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
       default:
-        return `-- DDL Schema Definition`;
+        return '-- DDL Schema Definition';
     }
   };
 

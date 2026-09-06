@@ -1,4 +1,4 @@
-import {
+import type {
   TenantMaster,
   RawDocumentIngestion,
   ValidationPreCheckRecord,
@@ -7,7 +7,6 @@ import {
   VendorYearDetail,
   VendorPriceRank,
   SavingsOpportunity,
-  ConversionFunnelPhase,
   DashboardOverviewData
 } from '../types';
 import frontendLogger from './logger';
@@ -52,7 +51,10 @@ export const apiClient = {
   },
 
   // Ingestion
-  async getIngestionData(): Promise<{ queue: RawDocumentIngestion[]; validationRecords: ValidationPreCheckRecord[] }> {
+  async getIngestionData(): Promise<{
+    queue: RawDocumentIngestion[];
+    validationRecords: ValidationPreCheckRecord[];
+  }> {
     frontendLogger.debug('Fetching ingestion queue and validation records');
     const res = await fetch(`${API_BASE}/api/ingestion`);
     const json = await res.json();
@@ -75,9 +77,15 @@ export const apiClient = {
     return json.data;
   },
 
-  async updateValidationRecord(record_id: string, updates: Partial<ValidationPreCheckRecord>): Promise<ValidationPreCheckRecord> {
-    frontendLogger.info('Updating validation pre-check record', { record_id, updates });
-    const validation = validateInput(apiUpdateValidationRecordPayloadSchema, { record_id, ...updates });
+  async updateValidationRecord(
+    recordId: string,
+    updates: Partial<ValidationPreCheckRecord>
+  ): Promise<ValidationPreCheckRecord> {
+    frontendLogger.info('Updating validation pre-check record', { record_id: recordId, updates });
+    const validation = validateInput(apiUpdateValidationRecordPayloadSchema, {
+      record_id: recordId,
+      ...updates
+    });
     if (!validation.success) {
       throw new Error(`Invalid record update: ${JSON.stringify(validation.errors)}`);
     }

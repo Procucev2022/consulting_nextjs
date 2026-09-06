@@ -7,16 +7,16 @@
 
 import frontendLogger from './logger';
 import { GRAPHQL_ENDPOINT, DASHBOARD_OVERVIEW_QUERY } from '../constants/graphql';
-import { GraphQLClientOptions, GraphQLResponse, DashboardOverviewData } from '../types/graphql';
+import type { GraphQLClientOptions, GraphQLResponse, DashboardOverviewData } from '../types/graphql';
 
 const BACKEND_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 /**
  * Executes a GraphQL query or mutation against the backend endpoint.
  */
-export async function executeGraphQL<T = any>(
+export async function executeGraphQL<T = unknown>(
   query: string,
-  variables?: Record<string, any>,
+  variables?: Record<string, unknown>,
   options?: GraphQLClientOptions
 ): Promise<T> {
   const endpoint = options?.endpoint || `${BACKEND_BASE}${GRAPHQL_ENDPOINT}`;
@@ -70,7 +70,7 @@ export async function executeGraphQL<T = any>(
 
     frontendLogger.info('GraphQL query executed successfully', { durationMs });
     return payload.data;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const durationMs = Date.now() - start;
     frontendLogger.error('GraphQL request failed', { durationMs }, err);
     throw err;

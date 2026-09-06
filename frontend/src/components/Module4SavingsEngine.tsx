@@ -2,20 +2,15 @@
 import React, { useState } from 'react';
 import {
   Target,
-  DollarSign,
-  TrendingUp,
-  Layers,
   FileCheck,
-  CheckCircle2,
   ArrowRight,
   Send,
   Zap,
   Sparkles,
   Award,
-  Filter,
   Check
 } from 'lucide-react';
-import { SavingsOpportunity, Module4SavingsEngineProps } from '../types';
+import type { Module4SavingsEngineProps } from '../types';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,

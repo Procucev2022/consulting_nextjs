@@ -2,7 +2,7 @@
  * Error Types & Interfaces (Frontend)
  */
 
-import { ERROR_CATEGORIES, ERROR_SEVERITIES } from '../constants/errors';
+import type { ERROR_CATEGORIES, ERROR_SEVERITIES } from '../constants/errors';
 
 export type ErrorCategory = (typeof ERROR_CATEGORIES)[keyof typeof ERROR_CATEGORIES];
 

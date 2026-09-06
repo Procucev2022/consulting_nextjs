@@ -6,10 +6,10 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsc",
+    "build": "node scripts/generate-client.js && tsc",
     "start": "node dist/server.js",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
+    "db:push": "prisma db push --skip-generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:view": "prisma studio",
     "db:setup": "prisma generate && prisma db push && tsx prisma/seed.ts",
@@ -17,7 +17,7 @@
     "test:fast": "vitest run --changed --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile=test-results.json",
-    "lint": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -33,7 +33,10 @@
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.0",
     "@types/supertest": "^6.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.69.0",
+    "@typescript-eslint/parser": "^8.69.0",
     "@vitest/coverage-v8": "^3.0.7",
+    "eslint": "^8.57.1",
     "prisma": "^5.22.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.3",
@@ -44,4 +47,3 @@
     "qs": "^6.16.0"
   }
 }
-

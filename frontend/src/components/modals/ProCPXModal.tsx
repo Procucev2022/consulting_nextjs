@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { Sparkles, Send, CheckCircle2, Shield, ArrowRight, X, AlertTriangle, Layers } from 'lucide-react';
-import { SavingsOpportunity, ProCPXModalProps, ProCPXEventType } from '../../types';
+import { Send, CheckCircle2, Shield, X, Layers } from 'lucide-react';
+import type { ProCPXModalProps, ProCPXEventType } from '../../types';
 import confetti from 'canvas-confetti';
 import {
   UI_STRINGS,
@@ -19,14 +19,14 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
 }) => {
   const [eventType, setEventType] = useState<ProCPXEventType>('Multi-Stage RFP');
   const [targetBaseline, setTargetBaseline] = useState<number>(opportunity ? opportunity.est_savings : DEFAULT_PROCPX_BASELINE);
-  const [invitedSuppliers, setInvitedSuppliers] = useState<string[]>([...DEFAULT_INVITED_SUPPLIERS]);
+  const [invitedSuppliers] = useState<string[]>([...DEFAULT_INVITED_SUPPLIERS]);
 
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedSuccess, setDeployedSuccess] = useState(false);
 
   if (!isOpen || !opportunity) return null;
 
-  const handleLaunch = () => {
+  const handleLaunch = (): void => {
     const validation = validateInput(proCPXFormSchema, {
       oppId: opportunity.opp_id,
       eventType,
@@ -53,7 +53,6 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
       }, 1800);
     }, 1200);
   };
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
@@ -130,7 +129,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                   </label>
                   <select
                     value={eventType}
-                    onChange={(e) => setEventType(e.target.value as any)}
+                    onChange={(e) => setEventType(e.target.value as ProCPXEventType)}
                     className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   >
                     <option value="Multi-Stage RFP">{UI_STRINGS.modals.proCPX.mechanisms.multiStageRFP}</option>

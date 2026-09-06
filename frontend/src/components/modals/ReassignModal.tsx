@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { Tag, Check, X, Search, Sparkles, FileSpreadsheet } from 'lucide-react';
-import { LineItemMapping, ReassignModalProps, UNSPSCCommodityRecord } from '../../types';
+import { Check, X, Search, FileSpreadsheet } from 'lucide-react';
+import type { ReassignModalProps, UNSPSCCommodityRecord } from '../../types';
 import { searchUNSPSCTaxonomy } from '../../data/unspscTaxonomy';
 import { UI_STRINGS, reassignTaxonomyFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
@@ -20,7 +20,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
 
   const searchResults = searchUNSPSCTaxonomy(search, selectedBucketFilter).slice(0, 15);
 
-  const handleConfirm = () => {
+  const handleConfirm = (): void => {
     if (!selectedRecord) return;
 
     const validation = validateInput(reassignTaxonomyFormSchema, {
@@ -39,8 +39,6 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
     );
     onClose();
   };
-
-
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">

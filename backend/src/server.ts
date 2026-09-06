@@ -1,8 +1,11 @@
+import type { Server } from 'http';
 import app from './app';
 import logger from './utils/logger';
 
-export const startServer = (port: number | string = 5000) => {
-  return new Promise<{ server: any; shutdown: () => Promise<void> }>((resolve) => {
+export const startServer = (
+  port: number | string = 5000
+): Promise<{ server: Server; shutdown: () => Promise<void> }> => {
+  return new Promise<{ server: Server; shutdown: () => Promise<void> }>((resolve) => {
     const server = app.listen(port, () => {
       logger.info(`🚀 Consulting Backend Server running on port ${port}`, {
         port,
@@ -12,7 +15,7 @@ export const startServer = (port: number | string = 5000) => {
       resolve({ server, shutdown });
     });
 
-    const shutdown = () => {
+    const shutdown = (): Promise<void> => {
       return new Promise<void>((res) => {
         logger.info('Received kill signal, closing server gracefully...');
         server.close(() => {
@@ -26,7 +29,6 @@ export const startServer = (port: number | string = 5000) => {
     process.on('SIGINT', shutdown);
   });
 };
-
 
 /* v8 ignore start */
 if (process.env.NODE_ENV !== 'test') {

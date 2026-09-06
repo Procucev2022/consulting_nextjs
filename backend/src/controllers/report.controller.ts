@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { db } from '../services/db';
 
-export const getExecutiveReport = async (_req: Request, res: Response) => {
+export const getExecutiveReport = async (_req: Request, res: Response): Promise<Response | void> => {
   try {
     const tenant = db.getTenant();
     const categories = db.getCategories();
@@ -47,10 +47,11 @@ export const getExecutiveReport = async (_req: Request, res: Response) => {
       data: report,
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to generate report';
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to generate report'
+      message
     });
   }
 };

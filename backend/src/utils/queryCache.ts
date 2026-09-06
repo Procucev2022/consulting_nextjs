@@ -5,10 +5,10 @@
  */
 
 import { DEFAULT_CACHE_TTL_MS } from '../constants/db';
-import { CacheEntry } from '../types/db';
+import type { CacheEntry } from '../types/db';
 
 class QueryCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
 
   public getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);

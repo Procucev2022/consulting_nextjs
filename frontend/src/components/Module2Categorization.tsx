@@ -2,37 +2,24 @@
 import React, { useState } from 'react';
 import {
   Cpu,
-  Boxes,
-  Package,
-  Wrench,
-  Truck,
   CheckCircle2,
   Edit3,
   Search,
-  SlidersHorizontal,
   ArrowRight,
   Sparkles,
-  GitBranch,
-  ShieldCheck,
-  Zap,
-  Info,
-  BookOpen,
   FileSpreadsheet,
-  Layers,
   Check,
-  Filter,
   Calendar,
-  DollarSign,
   TrendingUp
 } from 'lucide-react';
-import { LineItemMapping, SpendCategorySummary, CategoryYearDetail, Module2CategorizationProps } from '../types';
-import { searchUNSPSCTaxonomy, UNSPSCCommodityRecord, unspscOfficialDictionary } from '../data/unspscTaxonomy';
+import type { Module2CategorizationProps } from '../types';
+import { searchUNSPSCTaxonomy } from '../data/unspscTaxonomy';
 import { categoryYearWiseDetails } from '../data/mockData';
 import { formatINRAmount } from '../utils/currencyConverter';
 import { UI_STRINGS } from '../constants';
 
 export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
-  categories,
+  categories: _categories,
   lineItems,
   onConfirmMapping,
   onReassignMapping,
@@ -42,7 +29,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const [selectedBucket, setSelectedBucket] = useState<string>('ALL');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [minConfidence, setMinConfidence] = useState<number>(0);
+  const [minConfidence] = useState<number>(0);
 
   // UNSPSC Column L Live Explorer State
   const [explorerSearch, setExplorerSearch] = useState<string>('');

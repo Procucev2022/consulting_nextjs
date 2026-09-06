@@ -7,15 +7,10 @@ import {
   AlertOctagon,
   ShieldAlert,
   ArrowRight,
-  Filter,
   CheckCircle2,
-  Sliders,
-  DollarSign,
-  Layers,
-  Sparkles,
-  Globe
+  Sliders
 } from 'lucide-react';
-import { VendorPriceRank, Module3TrendAnalyticsProps } from '../types';
+import type { Module3TrendAnalyticsProps } from '../types';
 import {
   UI_STRINGS,
   TIMELINE_MONTHS,

@@ -5,7 +5,7 @@
  * decryption, and key management.
  */
 
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import {
   encryptData,
   decryptData,
@@ -18,7 +18,7 @@ import logger from '../utils/logger';
 /**
  * Handles data encryption requests.
  */
-export const encryptHandler = (req: Request, res: Response) => {
+export const encryptHandler = (req: Request, res: Response): Response | void => {
   const { data, passphrase, associatedData } = req.body;
   const requestId = req.headers['x-request-id'] as string;
 
@@ -42,12 +42,13 @@ export const encryptHandler = (req: Request, res: Response) => {
       serialized,
       algorithm: AES_ALGORITHM
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errPayload = err as { message: string };
     logger.error('Encryption handler failed', { requestId }, err);
     return res.status(500).json({
       success: false,
       message: 'Failed to encrypt data',
-      error: err.message
+      error: errPayload.message
     });
   }
 };
@@ -55,7 +56,7 @@ export const encryptHandler = (req: Request, res: Response) => {
 /**
  * Handles data decryption requests.
  */
-export const decryptHandler = (req: Request, res: Response) => {
+export const decryptHandler = (req: Request, res: Response): Response | void => {
   const { payload, passphrase, associatedData } = req.body;
   const requestId = req.headers['x-request-id'] as string;
 
@@ -72,12 +73,13 @@ export const decryptHandler = (req: Request, res: Response) => {
       success: true,
       plaintext
     });
-  } catch (err: any) {
-    logger.warn('Decryption handler failed', { requestId, error: err.message });
+  } catch (err: unknown) {
+    const errPayload = err as { message: string };
+    logger.warn('Decryption handler failed', { requestId, error: errPayload.message });
     return res.status(400).json({
       success: false,
       message: 'Failed to decrypt data',
-      error: err.message
+      error: errPayload.message
     });
   }
 };
@@ -85,7 +87,7 @@ export const decryptHandler = (req: Request, res: Response) => {
 /**
  * Generates a new cryptographically secure 256-bit encryption key.
  */
-export const generateKeyHandler = (_req: Request, res: Response) => {
+export const generateKeyHandler = (_req: Request, res: Response): Response | void => {
   const key = generateEncryptionKey();
   return res.status(200).json({
     success: true,

@@ -8,14 +8,16 @@
 import { db } from '../services/db';
 import { queryAuditor } from '../utils/queryAuditor';
 import logger from '../utils/logger';
-import {
+import type {
   CategoryDetailsArgs,
   UpdateTenantArgs,
   IngestionInputArgs,
   ValidationRecordArgs,
   MergeVendorArgs,
   DeployOpportunityArgs,
-  GraphQLContext
+  GraphQLContext,
+  RawDocumentIngestion,
+  ValidationPreCheckRecord
 } from '../types';
 
 export const rootResolvers = {
@@ -128,7 +130,7 @@ export const rootResolvers = {
       doc_id: `DOC-${Date.now()}`,
       tenant_id: 'tenant_default',
       file_name: args.input.file_name,
-      file_type: args.input.file_type as any,
+      file_type: args.input.file_type as RawDocumentIngestion['file_type'],
       file_size_mb: args.input.file_size_mb,
       records_count: args.input.records_count || 0,
       ocr_status: 'Completed' as const,
@@ -144,7 +146,7 @@ export const rootResolvers = {
       requestId: context?.requestId,
       recordId: args.input.record_id
     });
-    return db.updateValidationRecord(args.input.record_id, args.input as any);
+    return db.updateValidationRecord(args.input.record_id, args.input as unknown as Partial<ValidationPreCheckRecord>);
   },
 
   mergeVendor: async (args: MergeVendorArgs, context?: GraphQLContext) => {

@@ -1,11 +1,10 @@
-import {
+import type {
   TenantMaster,
   RawDocumentIngestion,
   ValidationPreCheckRecord,
   SpendCategorySummary,
   CategoryYearDetail,
   VendorYearDetail,
-  BalanceVendorItem,
   LineItemMapping,
   VendorPriceRank,
   SavingsOpportunity,

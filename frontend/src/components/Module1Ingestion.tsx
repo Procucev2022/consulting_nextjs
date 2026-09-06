@@ -5,51 +5,29 @@ import {
   FileCheck,
   AlertTriangle,
   CheckCircle2,
-  RefreshCw,
   ArrowRight,
   Database,
-  Search,
-  Filter,
   Layers,
   Sparkles,
   FileSpreadsheet,
   FileCode,
   FileArchive,
-  DollarSign,
-  GitMerge,
-  Calendar,
   TrendingUp,
-  Tag,
-  Boxes,
-  Package,
-  Wrench,
-  Truck,
   Building2,
   Receipt,
   Scale,
   Settings,
-  PlusCircle,
-  FileText,
   Globe,
   ChevronDown,
   ChevronUp,
   Award,
   ListOrdered,
-  TrendingDown,
-  Minus,
-  Eye,
-  ArrowUpRight,
-  X,
-  BarChart3,
   Maximize2,
   Zap
 } from 'lucide-react';
-import {
-  RawDocumentIngestion,
-  ValidationPreCheckRecord,
+import type {
   CategoryYearDetail,
   VendorYearDetail,
-  TenantMaster,
   Module1IngestionProps,
   DatasetType
 } from '../types';
@@ -104,13 +82,13 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       onAddBatchUpload(e.dataTransfer.files[0], activeDatasetType);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       onAddBatchUpload(e.target.files[0], activeDatasetType);
     }
   };

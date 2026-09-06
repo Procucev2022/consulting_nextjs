@@ -5,13 +5,10 @@ import {
   Cpu,
   LineChart,
   Target,
-  Sparkles,
-  Layers,
-  CheckCircle2,
   Database,
   ArrowRight
 } from 'lucide-react';
-import { PipelineBarProps } from '../types';
+import type { PipelineBarProps } from '../types';
 import { UI_STRINGS } from '../constants';
 
 

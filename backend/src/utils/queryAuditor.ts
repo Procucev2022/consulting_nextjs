@@ -6,7 +6,7 @@
  */
 
 import { SLOW_QUERY_THRESHOLD_MS } from '../constants/db';
-import { QueryAuditLog, QueryMetrics } from '../types/db';
+import type { QueryAuditLog, QueryMetrics } from '../types/db';
 import logger from './logger';
 
 class QueryAuditor {

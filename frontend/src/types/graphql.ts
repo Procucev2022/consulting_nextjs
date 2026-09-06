@@ -4,7 +4,7 @@
  * Centralized TypeScript types for GraphQL client requests, responses, and composite payloads.
  */
 
-import {
+import type {
   TenantMaster,
   RawDocumentIngestion,
   ValidationPreCheckRecord,

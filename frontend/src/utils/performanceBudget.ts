@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { PERFORMANCE_BUDGETS } from '../constants';
-import {
+import type {
   PerformanceBudgetLimits,
   AssetSizeMetric,
   PerformanceBudgetCheckResult
@@ -47,10 +47,128 @@ export function inspectAssetFile(filePath: string, baseDir: string = process.cwd
   }
 }
 
+interface BuildManifest {
+  pages?: Record<string, string[]>;
+}
+
+function resolveManifest(baseDir: string, override?: unknown): BuildManifest | null {
+  if (override && typeof override === 'object') {
+    return override as BuildManifest;
+  }
+  const manifestPath = path.resolve(baseDir, '.next/app-build-manifest.json');
+  if (fs.existsSync(manifestPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as BuildManifest;
+    } catch (err) {
+      frontendLogger.warn('Unable to parse app-build-manifest.json', { error: err });
+    }
+  }
+  return null;
+}
+
+function checkCriticalCss(
+  manifest: BuildManifest,
+  baseDir: string,
+  limitKb: number,
+  assetMetrics: AssetSizeMetric[],
+  violations: string[]
+): number {
+  const layoutFiles: string[] = manifest.pages?.['/layout'] || [];
+  const cssFiles = layoutFiles.filter((f: string) => f.endsWith('.css'));
+
+  if (cssFiles.length === 0) {
+    const cssDir = path.resolve(baseDir, '.next/static/css');
+    if (fs.existsSync(cssDir)) {
+      const dirFiles = fs.readdirSync(cssDir).filter((f) => f.endsWith('.css'));
+      dirFiles.forEach((f) => cssFiles.push(`static/css/${f}`));
+    }
+  }
+
+  let totalBytes = 0;
+  for (const cssFile of cssFiles) {
+    const metric = inspectAssetFile(path.join('.next', cssFile), baseDir);
+    if (metric) {
+      totalBytes += metric.gzipBytes;
+      assetMetrics.push(metric);
+    }
+  }
+
+  const criticalCssGzipKb = Number((totalBytes / 1024).toFixed(2));
+  if (criticalCssGzipKb > limitKb) {
+    violations.push(
+      `Critical CSS budget exceeded: ${criticalCssGzipKb} KB (Limit: ${limitKb} KB)`
+    );
+  }
+  return criticalCssGzipKb;
+}
+
+function checkSharedJs(
+  manifest: BuildManifest,
+  baseDir: string,
+  limits: PerformanceBudgetLimits,
+  assetMetrics: AssetSizeMetric[],
+  violations: string[]
+): number {
+  const notFoundFiles: string[] = manifest.pages?.['/_not-found/page'] || [];
+  const sharedJsFiles = notFoundFiles.filter((f: string) => f.endsWith('.js') && !f.includes('_not-found'));
+
+  let totalBytes = 0;
+  for (const jsFile of sharedJsFiles) {
+    const metric = inspectAssetFile(path.join('.next', jsFile), baseDir);
+    if (metric) {
+      totalBytes += metric.gzipBytes;
+      assetMetrics.push(metric);
+      if (metric.gzipKb > limits.maxSharedJsChunkKb) {
+        violations.push(
+          `Shared chunk ${jsFile} exceeded limit: ${metric.gzipKb} KB (Limit: ${limits.maxSharedJsChunkKb} KB)`
+        );
+      }
+    }
+  }
+
+  const totalSharedJsGzipKb = Number((totalBytes / 1024).toFixed(2));
+  if (totalSharedJsGzipKb > limits.maxJsBundleKb) {
+    violations.push(
+      `Shared JS bundle budget exceeded: ${totalSharedJsGzipKb} KB (Limit: ${limits.maxJsBundleKb} KB)`
+    );
+  }
+  return totalSharedJsGzipKb;
+}
+
+function checkPageJs(
+  manifest: BuildManifest,
+  baseDir: string,
+  limitKb: number,
+  assetMetrics: AssetSizeMetric[],
+  violations: string[]
+): number {
+  const pageFiles: string[] = manifest.pages?.['/page'] || [];
+  const pageJsFiles = pageFiles.filter((f: string) => f.endsWith('.js'));
+
+  let totalBytes = 0;
+  for (const jsFile of pageJsFiles) {
+    const metric = inspectAssetFile(path.join('.next', jsFile), baseDir);
+    if (metric) {
+      totalBytes += metric.gzipBytes;
+      if (!assetMetrics.some((m) => m.filePath === metric.filePath)) {
+        assetMetrics.push(metric);
+      }
+    }
+  }
+
+  const totalPageJsGzipKb = Number((totalBytes / 1024).toFixed(2));
+  if (totalPageJsGzipKb > limitKb) {
+    violations.push(
+      `Total primary route JS budget exceeded: ${totalPageJsGzipKb} KB (Limit: ${limitKb} KB)`
+    );
+  }
+  return totalPageJsGzipKb;
+}
+
 export function evaluatePerformanceBudgets(options?: {
   baseDir?: string;
   limits?: Partial<PerformanceBudgetLimits>;
-  manifestOverride?: any;
+  manifestOverride?: unknown;
 }): PerformanceBudgetCheckResult {
   const baseDir = options?.baseDir || process.cwd();
   const limits: PerformanceBudgetLimits = {
@@ -62,22 +180,7 @@ export function evaluatePerformanceBudgets(options?: {
 
   const violations: string[] = [];
   const assetMetrics: AssetSizeMetric[] = [];
-
-  let totalSharedJsGzipBytes = 0;
-  let criticalCssGzipBytes = 0;
-  let totalPageJsGzipBytes = 0;
-
-  let manifest: any = options?.manifestOverride;
-  if (!manifest) {
-    const manifestPath = path.resolve(baseDir, '.next/app-build-manifest.json');
-    if (fs.existsSync(manifestPath)) {
-      try {
-        manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-      } catch (err) {
-        frontendLogger.warn('Unable to parse app-build-manifest.json', { error: err });
-      }
-    }
-  }
+  const manifest = resolveManifest(baseDir, options?.manifestOverride);
 
   if (!manifest) {
     violations.push('Build manifest (.next/app-build-manifest.json) not found. Run production build first.');
@@ -92,77 +195,9 @@ export function evaluatePerformanceBudgets(options?: {
     };
   }
 
-  // 1. Check critical CSS (from /layout or .next/static/css)
-  const layoutFiles: string[] = manifest.pages?.['/layout'] || [];
-  const cssFiles = layoutFiles.filter((f: string) => f.endsWith('.css'));
-
-  if (cssFiles.length === 0) {
-    const cssDir = path.resolve(baseDir, '.next/static/css');
-    if (fs.existsSync(cssDir)) {
-      const dirFiles = fs.readdirSync(cssDir).filter((f) => f.endsWith('.css'));
-      dirFiles.forEach((f) => cssFiles.push(`static/css/${f}`));
-    }
-  }
-
-  for (const cssFile of cssFiles) {
-    const metric = inspectAssetFile(path.join('.next', cssFile), baseDir);
-    if (metric) {
-      criticalCssGzipBytes += metric.gzipBytes;
-      assetMetrics.push(metric);
-    }
-  }
-
-  const criticalCssGzipKb = Number((criticalCssGzipBytes / 1024).toFixed(2));
-  if (criticalCssGzipKb > limits.maxCriticalCssKb) {
-    violations.push(
-      `Critical CSS budget exceeded: ${criticalCssGzipKb} KB (Limit: ${limits.maxCriticalCssKb} KB)`
-    );
-  }
-
-  // 2. Check shared JS chunks (common to all routes from /_not-found or shared)
-  const notFoundFiles: string[] = manifest.pages?.['/_not-found/page'] || [];
-  const sharedJsFiles = notFoundFiles.filter((f: string) => f.endsWith('.js') && !f.includes('_not-found'));
-
-  for (const jsFile of sharedJsFiles) {
-    const metric = inspectAssetFile(path.join('.next', jsFile), baseDir);
-    if (metric) {
-      totalSharedJsGzipBytes += metric.gzipBytes;
-      assetMetrics.push(metric);
-      if (metric.gzipKb > limits.maxSharedJsChunkKb) {
-        violations.push(
-          `Shared chunk ${jsFile} exceeded limit: ${metric.gzipKb} KB (Limit: ${limits.maxSharedJsChunkKb} KB)`
-        );
-      }
-    }
-  }
-
-  const totalSharedJsGzipKb = Number((totalSharedJsGzipBytes / 1024).toFixed(2));
-  if (totalSharedJsGzipKb > limits.maxJsBundleKb) {
-    violations.push(
-      `Shared JS bundle budget exceeded: ${totalSharedJsGzipKb} KB (Limit: ${limits.maxJsBundleKb} KB)`
-    );
-  }
-
-  // 3. Check total page JS for primary route (/page)
-  const pageFiles: string[] = manifest.pages?.['/page'] || [];
-  const pageJsFiles = pageFiles.filter((f: string) => f.endsWith('.js'));
-
-  for (const jsFile of pageJsFiles) {
-    const metric = inspectAssetFile(path.join('.next', jsFile), baseDir);
-    if (metric) {
-      totalPageJsGzipBytes += metric.gzipBytes;
-      if (!assetMetrics.some((m) => m.filePath === metric.filePath)) {
-        assetMetrics.push(metric);
-      }
-    }
-  }
-
-  const totalPageJsGzipKb = Number((totalPageJsGzipBytes / 1024).toFixed(2));
-  if (totalPageJsGzipKb > limits.maxTotalPageJsKb) {
-    violations.push(
-      `Total primary route JS budget exceeded: ${totalPageJsGzipKb} KB (Limit: ${limits.maxTotalPageJsKb} KB)`
-    );
-  }
+  const criticalCssGzipKb = checkCriticalCss(manifest, baseDir, limits.maxCriticalCssKb, assetMetrics, violations);
+  const totalSharedJsGzipKb = checkSharedJs(manifest, baseDir, limits, assetMetrics, violations);
+  const totalPageJsGzipKb = checkPageJs(manifest, baseDir, limits.maxTotalPageJsKb, assetMetrics, violations);
 
   const success = violations.length === 0;
   const summary = success

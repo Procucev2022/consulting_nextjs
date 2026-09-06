@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
 import { Module1Ingestion } from '@/components/Module1Ingestion';
@@ -35,7 +35,7 @@ import {
   conversionFunnelStages
 } from '@/data/mockData';
 
-import {
+import type {
   TenantMaster,
   RawDocumentIngestion,
   ValidationPreCheckRecord,
@@ -63,7 +63,7 @@ export default function Home() {
   const [lineItems, setLineItems] = useState<LineItemMapping[]>(initialLineItemMappings);
   const [vendorRankings, setVendorRankings] = useState(vendorVolatilityRankings);
   const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>(initialSavingsOpportunities);
-  const [funnelStages, setFunnelStages] = useState(conversionFunnelStages);
+  const [funnelStages] = useState(conversionFunnelStages);
 
   // Modal States
   const [selectedOppForProCPX, setSelectedOppForProCPX] = useState<SavingsOpportunity | null>(null);
@@ -122,10 +122,25 @@ export default function Home() {
     }
   }, [theme]);
 
-  const showToast = (msg: string) => {
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showToast = (msg: string): void => {
     setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    toastTimerRef.current = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        setToastMessage(null);
+      }
     }, 3500);
   };
 
@@ -258,7 +273,7 @@ export default function Home() {
     showToast(UI_STRINGS.toasts.validationReset);
   };
 
-  const handleAddBatchUpload = async (file: File, datasetType: DatasetType = 'Purchase History') => {
+  const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
     let recordsCount = 44530;
     let totalSpendInrCr = 732.41;
 
@@ -342,7 +357,7 @@ export default function Home() {
         const text = await file.text();
         const lines = text.split(/\r\n|\n/).filter((l) => l.trim().length > 0);
         recordsCount = Math.max(1, lines.length - 1);
-      } catch (e) {
+      } catch {
         recordsCount = 14200;
       }
     }
@@ -434,14 +449,14 @@ export default function Home() {
           setTenant(t);
           try {
             await apiClient.updateTenant(t);
-          } catch (e) {}
+          } catch {}
         }}
         currency={currency}
         onSelectCurrency={async (c) => {
           setCurrency(c);
           try {
             await apiClient.updateTenant({ base_currency: c });
-          } catch (e) {}
+          } catch {}
         }}
         onOpenReport={() => setIsReportModalOpen(true)}
         theme={theme}

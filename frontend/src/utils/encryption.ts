@@ -13,7 +13,7 @@ import {
   DEFAULT_CLIENT_CRYPTO_PREFIX,
   CLIENT_CRYPTO_ERRORS
 } from '../constants/crypto';
-import {
+import type {
   ClientEncryptedPayload,
   ClientEncryptionOptions
 } from '../types/crypto';
@@ -24,9 +24,9 @@ const DEFAULT_DEV_CLIENT_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef
 function getSubtleCrypto(): SubtleCrypto {
   const cryptoObj = typeof window !== 'undefined'
     ? window.crypto
-    : (globalThis as any).crypto;
+    : (globalThis as unknown as { crypto?: Crypto }).crypto;
 
-  if (!cryptoObj || !cryptoObj.subtle) {
+  if (!cryptoObj?.subtle) {
     throw new Error(CLIENT_CRYPTO_ERRORS.UNSUPPORTED_ENVIRONMENT);
   }
   return cryptoObj.subtle;
@@ -103,7 +103,11 @@ export async function encryptDataClient(
       ? await importHexKey(key)
       : key || await importHexKey(DEFAULT_DEV_CLIENT_KEY);
 
-    const iv = (typeof window !== 'undefined' ? window.crypto : (globalThis as any).crypto).getRandomValues(
+    const cryptoInstance = typeof window !== 'undefined'
+      ? window.crypto
+      : (globalThis as unknown as { crypto: Crypto }).crypto;
+
+    const iv = cryptoInstance.getRandomValues(
       new Uint8Array(CLIENT_AES_IV_LENGTH_BYTES)
     );
 
@@ -134,7 +138,7 @@ export async function encryptDataClient(
       tag: bytesToHex(tagBytes),
       ciphertext: bytesToHex(ciphertextBytes)
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     frontendLogger.error('Client encryption failed', {}, err);
     throw err;
   }
@@ -173,11 +177,15 @@ export async function decryptDataClient(
     combined.set(ciphertextBytes, 0);
     combined.set(tagBytes, ciphertextBytes.length);
 
+    const additionalData = options?.associatedData
+      ? (new TextEncoder().encode(options.associatedData) as unknown as BufferSource)
+      : undefined;
+
     const algorithm: AesGcmParams = {
       name: CLIENT_AES_ALGORITHM,
       iv: ivBytes as unknown as BufferSource,
       tagLength: CLIENT_AES_TAG_LENGTH_BITS,
-      additionalData: options?.associatedData ? (new TextEncoder().encode(options.associatedData) as unknown as BufferSource) : undefined
+      additionalData
     };
 
     const decryptedBuffer = await subtle.decrypt(algorithm, cryptoKey, combined as unknown as BufferSource);
@@ -187,9 +195,10 @@ export async function decryptDataClient(
     frontendLogger.debug('Client-side AES-GCM decryption succeeded', { durationMs });
 
     return plaintext;
-  } catch (err: any) {
-    frontendLogger.warn('Client decryption verification failed', { error: err.message });
-    if (Object.values(CLIENT_CRYPTO_ERRORS).includes(err.message)) {
+  } catch (err: unknown) {
+    const errorObj = err as { message: string };
+    frontendLogger.warn('Client decryption verification failed', { error: errorObj.message });
+    if ((Object.values(CLIENT_CRYPTO_ERRORS) as string[]).includes(errorObj.message)) {
       throw err;
     }
     throw new Error(CLIENT_CRYPTO_ERRORS.DECRYPTION_FAILED);

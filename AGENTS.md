@@ -352,3 +352,36 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
   - Fast checks provide rapid turnaround (< 2-15s), allowing assistants to iteratively verify incremental edits before running the full global suite.
 - **Zero Tolerance for Unchecked Changes**:
   - No code modification may be left unverified. Every assistant turn or session must conclude with passing quality checks.
+
+## 22. Mandatory Strictest Linter Configuration & Code Style Policy
+
+- **Application-Wide Strictest Linter Mandate**:
+  - All AI coding assistants and developers must configure, enforce, and adhere to the strictest linter configuration across all monorepo packages (backend and frontend).
+  - Every file must pass linting with **ZERO errors and ZERO warnings** (`npm run lint`). Suppressing lint rules with inline comments (`eslint-disable`) or type-cast workarounds (`as any`, `@ts-ignore`) is strictly forbidden.
+- **A. Strong Typing and Error Prevention**:
+  - **Disallow Any (`@typescript-eslint/no-explicit-any`)**: The `any` type is strictly prohibited in application code. Use strongly typed models, generics, or `unknown` with runtime type narrowing instead.
+  - **Explicit Return Types (`@typescript-eslint/explicit-function-return-type`)**: All public, top-level, and exported functions/methods must explicitly declare their return type.
+  - **No Non-Null Assertions (`@typescript-eslint/no-non-null-assertion`)**: The non-null assertion operator (`!`) is strictly disallowed. Use optional chaining (`?.`), nullish coalescing (`??`), or explicit runtime null-checks.
+  - **Consistent Type Imports (`@typescript-eslint/consistent-type-imports`)**: Enforce `import type { ... }` for all type-only imports to improve compilation efficiency and eliminate circular runtime dependency graphs.
+  - **Prefer Optional Chaining (`@typescript-eslint/prefer-optional-chain`)**: Enforce optional chaining expressions (`a?.b?.c`) over verbose chained logical AND conditionals (`a && a.b && a.b.c`).
+  - **No Unused Identifiers (`@typescript-eslint/no-unused-vars`)**: Zero unused imports, variables, arguments, or functions. Allowed unused arguments must strictly follow the `^_` prefix pattern.
+  - **Strict Naming Conventions (`@typescript-eslint/naming-convention`)**:
+    - Types, interfaces, classes, and enums: `PascalCase`.
+    - Variables, functions, and methods: `camelCase` or `UPPER_CASE` for global constants.
+    - React functional components: `PascalCase`.
+- **B. React & Next.js Standards**:
+  - **Hooks Integrity**: Strict adherence to React Hooks rules (`react-hooks/rules-of-hooks` error, `react-hooks/exhaustive-deps` warning/error).
+  - **Prohibit Dangerous Rendering**: Prohibit `dangerouslySetInnerHTML` (`react/no-danger: 'error'`).
+  - **Clean Boolean Attributes**: Prohibit redundant boolean literals in JSX (`react/jsx-boolean-value: ['error', 'never']`, e.g., `<Component disabled />` not `<Component disabled={true} />`).
+  - **Accessibility (a11y)**: Enforce core accessibility standards including `jsx-a11y/alt-text`, `jsx-a11y/no-redundant-roles`, and `jsx-a11y/anchor-is-valid`.
+- **C. General Code Quality and Formatting**:
+  - **Cyclomatic Complexity**: Functions must not exceed a cyclomatic complexity of **10** (`complexity: ['error', 10]`). Refactor complex branches into focused, modular helper functions.
+  - **File and Line Budgets**: Source files must not exceed **300 lines** of code (`max-lines: ['error', { max: 300 }]`). Lines must not exceed **120 characters** (`max-len: ['error', { code: 120 }]`).
+  - **Single Quotes & Semicolons**: Enforce single quotes (`quotes: ['error', 'single']`), mandatory semicolons (`semi: ['error', 'always']`), and no trailing commas (`comma-dangle: ['error', 'never']`).
+  - **Modern Syntax**: Prohibit `var` (`no-var: 'error'`), enforce `prefer-const: 'error'`, and enforce object shorthand syntax (`object-shorthand: ['error', 'always']`).
+  - **Zero Hardcoded Strings**: All user-facing strings must reside in `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`) adhering to the project's i18n policy.
+- **Integration into Primary Build, Quality Gates & CI/CD Pipeline**:
+  - Linting is integrated directly into the primary build command (`npm run build`), executing `npm run lint` before production compilation.
+  - Linting is enforced in Git pre-commit hooks (`npm run pre-commit`) and as Quality Gate 1 in GitHub Actions CI/CD (`.github/workflows/ci.yml`).
+- **Strict 90% Unit Test Code Coverage**:
+  - All refactored code and extracted helper functions must maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines (`perFile: true`).

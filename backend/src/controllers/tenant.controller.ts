@@ -1,26 +1,27 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import logger from '../utils/logger';
 
-export const getTenant = async (_req: Request, res: Response) => {
+export const getTenant = async (_req: Request, res: Response): Promise<Response | void> => {
   try {
     const tenant = db.getTenant();
     logger.debug('Fetched tenant master details', { tenantId: tenant.tenant_id });
-    res.json({
+    return res.json({
       success: true,
       data: tenant,
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch tenant';
     logger.error('Failed to fetch tenant', {}, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch tenant'
+      message
     });
   }
 };
 
-export const updateTenant = async (req: Request, res: Response) => {
+export const updateTenant = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const body = req.body;
     const updated = db.updateTenant(body);
@@ -29,18 +30,18 @@ export const updateTenant = async (req: Request, res: Response) => {
       region: updated.region,
       baseCurrency: updated.base_currency
     });
-    res.json({
+    return res.json({
       success: true,
       data: updated,
       message: 'Tenant settings updated successfully',
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update tenant';
     logger.error('Failed to update tenant', { body: req.body }, error);
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
-      message: error.message || 'Failed to update tenant'
+      message
     });
   }
 };
-

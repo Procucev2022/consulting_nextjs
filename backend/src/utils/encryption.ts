@@ -18,7 +18,7 @@ import {
   SERIALIZED_PAYLOAD_PREFIX,
   CRYPTO_ERRORS
 } from '../constants/crypto';
-import {
+import type {
   EncryptedDataPayload,
   EncryptionOptions,
   DecryptionOptions
@@ -127,10 +127,57 @@ export function encryptData(
       ciphertext: ciphertext.toString(encoding),
       salt: saltHex
     };
-  } catch (err: any) {
-    logger.error('AES encryption error', { error: err.message });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error('AES encryption error', { error: message });
     throw err;
   }
+}
+
+function validateAndExtractBuffers(
+  payload: EncryptedDataPayload,
+  encoding: BufferEncoding
+): { iv: Buffer; tag: Buffer; ciphertext: Buffer } {
+  if (!payload.iv || !payload.tag || !payload.ciphertext) {
+    throw new Error(CRYPTO_ERRORS.INVALID_PAYLOAD);
+  }
+
+  const iv = Buffer.from(payload.iv, encoding);
+  const tag = Buffer.from(payload.tag, encoding);
+  const ciphertext = Buffer.from(payload.ciphertext, encoding);
+
+  if (iv.length !== AES_IV_LENGTH_BYTES) {
+    throw new Error(CRYPTO_ERRORS.INVALID_IV);
+  }
+  if (tag.length !== AES_TAG_LENGTH_BYTES) {
+    throw new Error(CRYPTO_ERRORS.INVALID_TAG);
+  }
+
+  return { iv, tag, ciphertext };
+}
+
+function resolveDecryptionKey(key: string | Buffer | undefined, salt?: string): Buffer {
+  if (salt) {
+    const basePassphrase = typeof key === 'string'
+      ? key
+      : key?.toString('utf8') || process.env.APP_ENCRYPTION_KEY || DEFAULT_DEV_ENCRYPTION_KEY;
+    return deriveKeyFromPassphrase(basePassphrase, salt);
+  }
+  return resolveEncryptionKey(key);
+}
+
+function handleDecryptionError(err: unknown): never {
+  const errMsg = err instanceof Error ? err.message : String(err);
+  logger.warn('AES decryption verification failed', { error: errMsg });
+
+  const knownErrors = Object.values(CRYPTO_ERRORS) as string[];
+  if (knownErrors.includes(errMsg)) {
+    throw err;
+  }
+  if (errMsg.includes('auth') || errMsg.includes('tag') || errMsg.includes('Unsupported state')) {
+    throw new Error(CRYPTO_ERRORS.DECRYPTION_FAILED);
+  }
+  throw err;
 }
 
 /**
@@ -147,29 +194,9 @@ export function decryptData(
       ? deserializeEncryptedPayload(encrypted)
       : encrypted;
 
-    if (!payload.iv || !payload.tag || !payload.ciphertext) {
-      throw new Error(CRYPTO_ERRORS.INVALID_PAYLOAD);
-    }
-
     const encoding = options?.encoding || DEFAULT_ENCRYPTION_ENCODING;
-    const iv = Buffer.from(payload.iv, encoding);
-    const tag = Buffer.from(payload.tag, encoding);
-    const ciphertext = Buffer.from(payload.ciphertext, encoding);
-
-    if (iv.length !== AES_IV_LENGTH_BYTES) {
-      throw new Error(CRYPTO_ERRORS.INVALID_IV);
-    }
-    if (tag.length !== AES_TAG_LENGTH_BYTES) {
-      throw new Error(CRYPTO_ERRORS.INVALID_TAG);
-    }
-
-    let resolvedKey: Buffer;
-    if (payload.salt) {
-      const basePassphrase = typeof key === 'string' ? key : key?.toString('utf8') || process.env.APP_ENCRYPTION_KEY || DEFAULT_DEV_ENCRYPTION_KEY;
-      resolvedKey = deriveKeyFromPassphrase(basePassphrase, payload.salt);
-    } else {
-      resolvedKey = resolveEncryptionKey(key);
-    }
+    const { iv, tag, ciphertext } = validateAndExtractBuffers(payload, encoding);
+    const resolvedKey = resolveDecryptionKey(key, payload.salt);
 
     const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
     decipher.setAuthTag(tag);
@@ -187,15 +214,8 @@ export function decryptData(
     });
 
     return decrypted.toString('utf8');
-  } catch (err: any) {
-    logger.warn('AES decryption verification failed', { error: err.message });
-    if (Object.values(CRYPTO_ERRORS).includes(err.message)) {
-      throw err;
-    }
-    if (err.message.includes('auth') || err.message.includes('tag') || err.message.includes('Unsupported state')) {
-      throw new Error(CRYPTO_ERRORS.DECRYPTION_FAILED);
-    }
-    throw err;
+  } catch (err: unknown) {
+    handleDecryptionError(err);
   }
 }
 
@@ -212,19 +232,18 @@ export function serializeEncryptedPayload(payload: EncryptedDataPayload): string
 }
 
 /**
- * Deserializes a compact string representation into an EncryptedDataPayload.
+ * Deserializes a compact string payload back into an EncryptedDataPayload structure.
  */
 export function deserializeEncryptedPayload(serialized: string): EncryptedDataPayload {
   if (!serialized || typeof serialized !== 'string') {
     throw new Error(CRYPTO_ERRORS.INVALID_PAYLOAD);
   }
 
-  // Handle JSON serialization
   if (serialized.trim().startsWith('{')) {
     try {
       const parsed = JSON.parse(serialized);
       if (parsed.iv && parsed.tag && parsed.ciphertext) {
-        return parsed;
+        return parsed as EncryptedDataPayload;
       }
     } catch {
       // Fall through to delimiter parsing
@@ -248,7 +267,7 @@ export function deserializeEncryptedPayload(serialized: string): EncryptedDataPa
 /**
  * Encrypts an arbitrary object or primitive into a compact serialized string.
  */
-export function encryptField<T = any>(value: T, key?: string | Buffer): string {
+export function encryptField<T = unknown>(value: T, key?: string | Buffer): string {
   const payload = encryptData(typeof value === 'string' ? value : JSON.stringify(value), key);
   return serializeEncryptedPayload(payload);
 }
@@ -256,7 +275,7 @@ export function encryptField<T = any>(value: T, key?: string | Buffer): string {
 /**
  * Decrypts a compact serialized string into the original typed object or primitive.
  */
-export function decryptField<T = any>(serialized: string, key?: string | Buffer): T {
+export function decryptField<T = unknown>(serialized: string, key?: string | Buffer): T {
   const decrypted = decryptData(serialized, key);
   try {
     return JSON.parse(decrypted) as T;

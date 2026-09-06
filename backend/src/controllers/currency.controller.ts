@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { getAllFXRates, convertAmount } from '../services/currencyService';
 import logger from '../utils/logger';
 
-export const getCurrencyData = async (req: Request, res: Response) => {
+export const getCurrencyData = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const from = req.query.from as string | undefined;
     const amountStr = req.query.amount as string | undefined;
@@ -21,18 +21,18 @@ export const getCurrencyData = async (req: Request, res: Response) => {
     }
 
     const rates = getAllFXRates();
-    logger.debug('Fetched all FX rates', { count: rates.length });
+    logger.debug('Fetched all FX rates', { count: Object.keys(rates).length });
     return res.json({
       success: true,
       data: rates,
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch currency rates';
     logger.error('Failed to fetch currency rates', { query: req.query }, error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch currency rates'
+      message
     });
   }
 };
-

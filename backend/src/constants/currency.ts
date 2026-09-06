@@ -3,7 +3,7 @@
  * Yahoo Finance Multi-Currency Historical FX Conversion Rates to INR in Crores (₹ Cr)
  */
 
-import { YahooFinanceFXRate } from '../types';
+import type { YahooFinanceFXRate } from '../types';
 
 export const yahooFinanceFXRates: Record<string, YahooFinanceFXRate> = {
   USD: {
