@@ -14,3 +14,9 @@
 3. Store logs locally in the file system (`logs/`) when running in local environments.
 4. Enforce automatic log purging based on `LOG_RETENTION_DAYS` (default 14 days) to maintain compliance and avoid disk exhaustion.
 
+## CI/CD Pipeline & Pull Request Standards
+1. Pull request workflow (`.github/workflows/ci.yml`) validates linting, typechecking, building, and unit tests with 90% per-file code coverage.
+2. All CI/CD pipelines must configure explicit job timeouts (`timeout-minutes: 15`).
+3. PR summary comments must be posted/updated on pull requests detailing test pass/fail counts and coverage metrics.
+
+

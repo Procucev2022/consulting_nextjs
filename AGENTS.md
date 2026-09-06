@@ -55,3 +55,15 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Application-Wide Application**:
   - Every new or modified API route, controller, service, database transaction, and error handler MUST include detailed structured logging with appropriate context.
 
+## 5. CI/CD Pipeline & Pull Request Quality Standards
+
+- **Pull Request Automation**: A dedicated CI/CD workflow (`.github/workflows/ci.yml`) must run on every pull request against `main`, `master`, and `develop` branches.
+- **Mandatory Quality Gates**: The PR pipeline must strictly validate:
+  1. **Linting**: No ESLint or code style violations across frontend or backend.
+  2. **Typechecking**: Strict TypeScript compilation (`tsc --noEmit`) with 0 type errors.
+  3. **Building**: Clean production builds for both services (`backend` and `frontend`).
+  4. **Unit Tests & 90% Per-File Coverage**: All unit tests must pass with >= 90% coverage across statements, branches, functions, and lines individually.
+- **Mandatory Pipeline Timeout**: Every GitHub Actions CI/CD job must enforce an explicit timeout (e.g., `timeout-minutes: 15`) to prevent runaway resource consumption.
+- **Automated PR Summary Comments**: The pipeline must generate and post/update an executive summary comment on the PR detailing test passes/failures, execution duration, and per-file/overall code coverage metrics.
+
+

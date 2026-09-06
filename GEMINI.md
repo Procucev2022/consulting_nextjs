@@ -15,3 +15,10 @@
 - **Automatic Purging**: Automatic log retention engine must purge log files older than the retention window (`LOG_RETENTION_DAYS`, default 14 days) to manage storage and ensure compliance.
 - **Full Coverage**: Apply detailed structured logging across all routes, controllers, services, database queries, and middleware.
 
+## Mandatory CI/CD Pipeline & Quality Standards
+
+- **PR Workflow**: Automated CI/CD workflow (`.github/workflows/ci.yml`) runs on all pull requests to validate linting, typechecking, building, and 90% per-file unit test coverage.
+- **Pipeline Timeouts**: Every GitHub Actions CI/CD job must specify an explicit timeout (e.g., `timeout-minutes: 15`).
+- **PR Comments**: The workflow must automatically publish an executive summary PR comment detailing test success/failure counts, execution duration, and overall code coverage.
+
+

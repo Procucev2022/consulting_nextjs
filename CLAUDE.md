@@ -16,3 +16,10 @@
 4. **Automatic Purging**: Retain log files for storage compliance by automatically purging files older than `LOG_RETENTION_DAYS` (default: 14 days).
 5. **Application-Wide Adoption**: Incorporate structured logs into all routes, controllers, services, database operations, and middlewares.
 
+## CI/CD Pipeline & Pull Request Standards
+
+1. **Pull Request Quality Gates**: Every PR runs automated checks for linting, typechecking, building, and unit tests with 90% per-file code coverage.
+2. **Mandatory Pipeline Timeout**: Each CI/CD workflow job must have a specified timeout (e.g., `timeout-minutes: 15`).
+3. **Automated PR Comments**: The workflow generates and posts/updates an executive summary comment on the PR detailing unit test results and coverage percentages.
+
+

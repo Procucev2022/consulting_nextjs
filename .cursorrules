@@ -21,3 +21,9 @@
 - Compliance: Automatically purge logs older than the retention window (14 days default).
 - Apply detailed logs across all controllers, services, database queries, and middleware.
 
+# CI/CD Pipeline & Pull Request Rules
+- CI/CD workflow `.github/workflows/ci.yml` runs on pull requests to validate linting, typechecking, building, and 90% per-file unit test coverage.
+- All CI/CD workflows and jobs must enforce an explicit timeout (`timeout-minutes: 15`).
+- The workflow must post and update an executive summary PR comment with unit test pass/fail counts, execution duration, and overall code coverage.
+
+

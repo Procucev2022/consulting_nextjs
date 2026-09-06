@@ -1,0 +1,95 @@
+name: CI Quality Gate
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  pr-quality-check:
+    name: Lint, Typecheck, Build & 90% Unit Test Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install All Dependencies
+        run: npm run install:all
+
+      - name: Quality Gate 1 - Linting
+        run: npm run lint
+
+      - name: Quality Gate 2 - Typechecking
+        run: npm run typecheck
+
+      - name: Quality Gate 3 - Production Build
+        run: npm run build
+
+      - name: Quality Gate 4 - Unit Tests & 90% Per-File Coverage
+        run: npm run test:ci
+
+      - name: Generate PR Summary Report
+        if: always()
+        run: node scripts/generate-pr-summary.mjs
+
+      - name: Post or Update PR Summary Comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const summaryPath = path.resolve('pr-summary.md');
+            if (!fs.existsSync(summaryPath)) {
+              console.log('No pr-summary.md found to post.');
+              return;
+            }
+
+            const body = fs.readFileSync(summaryPath, 'utf8');
+            const headerIdentifier = '## 📊 Pull Request Quality & Unit Test Summary';
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes(headerIdentifier)
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+              console.log(`Updated existing PR summary comment (ID: ${existingComment.id})`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+              console.log('Created new PR summary comment on pull request.');
+            }

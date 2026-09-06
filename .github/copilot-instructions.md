@@ -7,4 +7,8 @@
 - Always use the centralized structured logger (`backend/src/utils/logger.ts` or `frontend/src/utils/logger.ts`). No raw `console.log`/`console.error`.
 - In local mode, persist logs to `logs/` on the file system and ensure automatic purging of expired logs for compliance.
 - Include structured context (timestamp, level, service, message, context, requestId, durationMs, error details) in all log calls.
+- PR CI/CD workflow `.github/workflows/ci.yml` validates linting, typechecking, building, and 90% per-file code coverage.
+- All CI/CD jobs must have an explicit timeout (`timeout-minutes: 15`).
+- The CI/CD workflow must post and update an executive summary PR comment detailing test success/failure counts and coverage metrics.
+
 

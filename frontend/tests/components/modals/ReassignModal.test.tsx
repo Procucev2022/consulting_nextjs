@@ -11,10 +11,16 @@ describe('ReassignModal Component', () => {
     vendor_identified: 'Amcor Packaging',
     total_spend: 54000,
     unspsc_code: '14111500',
-    core_category: 'Packaging Materials',
-    confidence_score: 95,
-    verified_by_user: false
+    unspsc_category_name: 'Corrugated Paper/Cartons',
+    core_bucket: 'Packaging Materials' as const,
+    ai_confidence: 95,
+    status: 'Pending Review' as const,
+    unit_price: 54,
+    qty: 1000,
+    invoice_date: '2024-05-10',
+    po_number: 'PO-991'
   };
+
 
   it('renders null when not open or item is null', () => {
     const { container } = render(

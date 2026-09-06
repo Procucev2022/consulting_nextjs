@@ -36,3 +36,9 @@ logs/
 **/logs/
 *.log
 
+# CI/CD & Test Artifacts
+test-results.json
+**/test-results.json
+pr-summary.md
+
+
