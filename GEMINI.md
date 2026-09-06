@@ -5,7 +5,7 @@
 - **Rule**: Every modified or created file must have unit tests with >= 90% coverage for statements, branches, functions, and lines individually.
 - **Enforcement**: Vitest throws an error if any single file is below 90%.
 - **Global Timeout**: 10000ms global timeout for all unit tests.
-- **Workflow**: Whenever any change is made, run `npm run test:coverage` to verify. Do not stop until all tests pass with >= 90% per-file coverage.
+- **Workflow**: Whenever any change is made, execute `npm run quality:fast` for fast differential checks on changed files, and execute `npm run quality` before completing tasks to verify all quality gates with Build & Unit Test Coverage checked first. Do not stop until all tests pass with >= 90% per-file coverage.
 
 ## Mandatory Structured & Centralized Logging System
 
@@ -122,11 +122,13 @@
 ## Mandatory Git Pre-Commit Quality Checks & Hook Enforcement
 
 - **Hook Execution Mandate**: Always execute git pre-commit hooks (`npm run pre-commit`) before allowing any commit to occur. Bypassing pre-commit hooks is strictly prohibited.
-- **Pre-Commit Checks Sequence**: The hook must execute and pass the complete quality check sequence:
-  1. *Linting*: `npm run lint` (0 errors/warnings).
-  2. *Typechecking*: `npm run typecheck` (0 type errors).
-  3. *Unit Tests & 90% Per-File Coverage*: `npm run test:coverage` (100% test pass rate, >= 90% coverage per-file across statements, branches, functions, and lines).
-  4. *Production Build*: `npm run build` (Clean build for frontend and backend).
+- **Pre-Commit Checks Sequence**: The hook executes `npm run quality`, strictly running the required pipeline sequence across all workspace projects:
+  1. *Production Build*: `npm run build` (Clean build for backend and frontend).
+  2. *Unit Tests & 90% Per-File Coverage*: `npm run test:coverage` (100% test pass rate, >= 90% coverage per-file across statements, branches, functions, and lines).
+  3. *Typechecking*: `npm run typecheck` (0 type errors).
+  4. *Linting*: `npm run lint` (0 errors/warnings).
+  5. *Database Schema Sync*: `npm run db:push` (Prisma schema sync).
+  6. *Performance Budget*: `npm run check:budget` (Bundle size limit checks).
 - **Abort on Failure**: Immediately reject and block commits if any check fails until issues are diagnosed and resolved.
 
 ## Mandatory Declarative UI & Zero Direct DOM Manipulation
@@ -143,5 +145,18 @@
 - **Fail-Fast Enforcement**: Any bundle exceeding configured budgets immediately fails with exit code 1, halting CI/CD pipelines and blocking pre-commit checks.
 - **Strict 90% Coverage**: All budget enforcement utilities and test suites must maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines.
 
+## Mandatory Quality Check Configuration: Build & Unit Test Coverage First
 
-
+- **Post-Change Quality Verification Mandate**: After EVERY change to the codebase, Antigravity/Gemini must run the appropriate quality check commands to verify zero build issues, zero typecheck errors, zero lint violations, 100% unit test pass rate with >= 90% per-file coverage, applied database migrations, and bundle budget compliance.
+- **Strict Execution Sequence (Build & Test Coverage FIRST)**:
+  - The pipeline must execute in the exact order:
+    1. `npm run build` (Build backend and frontend first)
+    2. `npm run test:coverage` (Unit tests with strict 90% per-file threshold)
+    3. `npm run typecheck` (TypeScript compiler checks)
+    4. `npm run lint` (ESLint style and code quality)
+    5. `npm run db:push` (Apply pending database schema migrations)
+    6. `npm run check:budget` (Validate JS/CSS performance budgets)
+- **Global Commands for All Projects**:
+  - Run `npm run quality` (or alias `npm run check:all`) from the root workspace to validate all projects simultaneously.
+- **Fast Differential Checks**:
+  - Run `npm run quality:fast` (or alias `npm run check:fast`) during rapid iteration to quickly inspect only changed files via git status, executing targeted typechecks, fast tests (`vitest run --changed --passWithNoTests`), and schema pushes in < 2-15 seconds.

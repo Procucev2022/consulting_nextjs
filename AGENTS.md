@@ -16,16 +16,17 @@ This document applies to all AI coding assistants (including Antigravity, Cursor
 
 Whenever you make any change to the codebase (feature, fix, refactor, or optimization):
 1. **Write or Update Corresponding Unit Tests**: Ensure all execution branches, happy paths, and edge/error cases are exercised.
-2. **Execute Coverage Check**:
-   ```bash
-   npm run test:coverage
-   ```
-   Or for specific services:
-   ```bash
-   npm --prefix backend run test:coverage
-   npm --prefix frontend run test:coverage
-   ```
-3. **Verify the Per-File Output**: Confirm that every file satisfies the >= 90% requirement. Do not terminate your response until all tests pass and coverage benchmarks are satisfied.
+2. **Execute Full Quality Check or Fast Differential Check**:
+   - For rapid iterative development on changed files, execute:
+     ```bash
+     npm run quality:fast
+     ```
+   - Before completing any task, committing code, or creating pull requests, execute the global multi-project quality check across all workspace packages:
+     ```bash
+     npm run quality
+     ```
+     This strictly executes: **Build & Unit Test Coverage FIRST**, followed by Typechecking, Linting, Database Schema Synchronization, and Performance Budgets.
+3. **Verify the Per-File Output**: Confirm that every file satisfies the >= 90% requirement individually across statements, branches, functions, and lines (`perFile: true`). Do not terminate your response until all quality checks pass cleanly.
 
 ## 3. Global Test Timeout
 
@@ -314,6 +315,40 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Strict 90% Per-File Unit Test Code Coverage**:
   - All budget evaluation utilities, file inspection helpers, and report formatters must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines (`perFile: true`).
 
+## 21. Mandatory Quality Check Execution Policy: Build & Test Coverage First, Global Multi-Project Commands, and Fast Differential Checks
 
-
-
+- **Mandatory Quality Check Execution After Every Change**:
+  - All AI coding assistants (including Antigravity, Kiro, GitHub Copilot / OpenAI Codex, Claude Code, Cursor, and others) working in this repository MUST execute the appropriate quality check commands after every single code change.
+  - Assistants must verify and resolve:
+    1. **Production Build Issues**: Zero compiler or bundling errors across all workspace packages (`npm run build`).
+    2. **Unit Test Code Coverage Issues**: 100% test pass rate with >= 90% code coverage per-file individually across statements, branches, functions, and lines (`npm run test:coverage`).
+    3. **Typecheck Issues**: Strict TypeScript compilation with 0 type errors across all packages (`npm run typecheck`).
+    4. **Lint Issues**: 0 ESLint errors and 0 warnings across all packages (`npm run lint`).
+    5. **Database Schema Synchronization**: Synchronize and apply any pending Prisma database migrations/schema updates (`npm run db:push`).
+    6. **Performance Budgets**: Enforce client-side bundle limits (<=250 KB JS, <=50 KB CSS via `npm run check:budget`).
+- **Strict Execution Priority: Build & Unit Test Coverage Checked FIRST**:
+  - In every quality check run, **Build and Unit Test Code Coverage MUST be evaluated first** before typecheck, linting, database migrations, or performance budgets.
+  - If a build breaks or unit test coverage drops below 90% on any file, the pipeline must immediately fail without proceeding further, alerting the assistant to address core build and test integrity upfront.
+- **Global Commands for Multi-Project Workspaces**:
+  - In workspaces containing multiple projects (such as `backend` and `frontend`), coding assistants MUST use unified global commands in root `package.json` to inspect all projects simultaneously rather than executing siloed commands:
+    ```bash
+    npm run quality
+    # or alias:
+    npm run check:all
+    ```
+  - Running `npm run quality` executes all checks across all projects in the mandatory priority order:
+    `npm run build && npm run test:coverage && npm run typecheck && npm run lint && npm run db:push && npm run check:budget`
+- **Fast Differential Checks for Rapid Iteration**:
+  - Coding assistants must leverage the fast differential check command to validate only modified and uncommitted files quickly during development:
+    ```bash
+    npm run quality:fast
+    # or alias:
+    npm run check:fast
+    ```
+  - The fast check command (`scripts/fast-check.js`) queries `git status --porcelain` to target only affected packages:
+    - If database schema changed (`backend/prisma/`): applies Prisma schema migrations immediately.
+    - If backend changed: executes backend typecheck and Vitest targeted to changed files (`npm run test:fast`).
+    - If frontend changed: executes frontend typecheck and Vitest targeted to changed files (`npm run test:fast`).
+  - Fast checks provide rapid turnaround (< 2-15s), allowing assistants to iteratively verify incremental edits before running the full global suite.
+- **Zero Tolerance for Unchecked Changes**:
+  - No code modification may be left unverified. Every assistant turn or session must conclude with passing quality checks.

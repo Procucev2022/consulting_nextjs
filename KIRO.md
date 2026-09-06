@@ -116,6 +116,13 @@
 - Integrate automated budget check (`npm run check:budget`) into build tools and pre-commit checks, failing immediately on budget exceedance.
 - Maintain >= 90% unit test code coverage individually on all performance modules.
 
+## Quality Check Execution Policy: Build & Unit Test Coverage First
+- Ensure that after every change the system executes the appropriate quality check commands where AI coding agents will check for build issues, typecheck issues, lint issues, unit test code coverage, apply pending database schema migrations, and evaluate performance budgets.
+- Build and unit test code coverage MUST be evaluated first before subsequent checks: `npm run build && npm run test:coverage && npm run typecheck && npm run lint && npm run db:push && npm run check:budget`.
+- In multi-project workspaces, use global commands in root `package.json`: `npm run quality` (or `npm run check:all`).
+- Use fast differential checks for rapid iteration on changed files: `npm run quality:fast` (or `npm run check:fast`).
+
+
 
 
 

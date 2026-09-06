@@ -121,6 +121,13 @@
 - Integrate automated budget checks (`npm run check:budget`) into build commands and pre-commit checks to fail builds immediately on budget violations.
 - Proactively code-split heavy dependencies (e.g. `xlsx`) and maintain >= 90% unit test coverage individually.
 
+## 21. Quality Check Execution: Build & Unit Test Coverage First & Fast Checks
+- After every change, run appropriate quality check commands to verify zero build issues, zero type errors, zero lint violations, 100% unit test pass rate with >= 90% per-file coverage, applied database migrations, and bundle budget compliance.
+- Build & unit test coverage MUST be checked first before other checks: `npm run build && npm run test:coverage && npm run typecheck && npm run lint && npm run db:push && npm run check:budget`.
+- In multi-project workspaces, use global commands in root `package.json`: `npm run quality` (or `npm run check:all`).
+- Use fast differential checks for rapid iteration on changed files: `npm run quality:fast` (or `npm run check:fast`).
+
+
 
 
 

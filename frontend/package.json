@@ -9,6 +9,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:fast": "vitest run --changed --passWithNoTests",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=default --reporter=json --outputFile=test-results.json",
     "check:budget": "node scripts/check-budget.js"

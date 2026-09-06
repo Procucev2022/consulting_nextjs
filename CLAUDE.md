@@ -137,5 +137,19 @@
 3. **Continuous Splitting**: Dynamically import heavy libraries (e.g. `xlsx`) and off-screen components on demand.
 4. **Coverage Mandate**: Maintain >= 90% unit test coverage individually across all performance budget modules.
 
+## Quality Check Standards & Fast Differential Verification
+
+1. **Mandatory Quality Execution**: After every change, Claude Code must run the appropriate quality check commands to verify zero build errors, zero typecheck errors, zero lint violations, 100% test pass rate with >= 90% per-file unit test coverage, applied database migrations, and bundle budget compliance.
+2. **Build & Unit Test Coverage FIRST**:
+   - The quality check pipeline strictly evaluates Build and Unit Test Coverage before typechecking, linting, or database migrations:
+     1. `npm run build`
+     2. `npm run test:coverage` (>= 90% per-file coverage)
+     3. `npm run typecheck`
+     4. `npm run lint`
+     5. `npm run db:push`
+     6. `npm run check:budget`
+3. **Global Multi-Project Command**: Use root command `npm run quality` (or `npm run check:all`) to validate all workspace projects in one command.
+4. **Fast Differential Checks**: Use `npm run quality:fast` (or `npm run check:fast`) to rapidly check only changed files via git status during iterative development.
+
 
 
