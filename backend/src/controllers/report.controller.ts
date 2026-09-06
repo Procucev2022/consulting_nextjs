@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { Request, Response } from 'express';
+import { db } from '../services/db';
 
-export async function GET() {
+export const getExecutiveReport = async (_req: Request, res: Response) => {
   try {
     const tenant = db.getTenant();
     const categories = db.getCategories();
@@ -42,15 +42,15 @@ export async function GET() {
       topActionableOpportunities: opportunities.slice(0, 5)
     };
 
-    return NextResponse.json({
+    return res.json({
       success: true,
       data: report,
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to generate report' },
-      { status: 500 }
-    );
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate report'
+    });
   }
-}
+};

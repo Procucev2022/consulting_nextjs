@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { Request, Response } from 'express';
+import { db } from '../services/db';
 
-export async function GET() {
+export const getVendors = async (_req: Request, res: Response) => {
   try {
     const vendorRankings = db.getVendorRankings();
     const vendorDetails = db.getVendorDetails();
-    return NextResponse.json({
+    return res.json({
       success: true,
       data: {
         vendorRankings,
@@ -15,31 +15,30 @@ export async function GET() {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch vendor analytics' },
-      { status: 500 }
-    );
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch vendor analytics'
+    });
   }
-}
+};
 
-export async function POST(request: Request) {
+export const mergeVendor = async (req: Request, res: Response) => {
   try {
-    const body = await request.json();
-    const { targetName, masterId, canonicalName } = body;
+    const { targetName, masterId, canonicalName } = req.body;
     if (!targetName || !masterId || !canonicalName) {
-      return NextResponse.json({ success: false, message: 'Missing vendor merge parameters' }, { status: 400 });
+      return res.status(400).json({ success: false, message: 'Missing vendor merge parameters' });
     }
     const result = db.mergeVendor(targetName, masterId, canonicalName);
-    return NextResponse.json({
+    return res.json({
       success: true,
       data: result,
       message: `Merged ${result.affected} records to master supplier ${canonicalName} (${masterId})`,
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to merge vendor' },
-      { status: 400 }
-    );
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to merge vendor'
+    });
   }
-}
+};

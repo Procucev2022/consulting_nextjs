@@ -1,33 +1,32 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { Request, Response } from 'express';
+import { db } from '../services/db';
 
-export async function GET() {
+export const getConversionStages = async (_req: Request, res: Response) => {
   try {
     const funnelStages = db.getFunnelStages();
-    return NextResponse.json({
+    return res.json({
       success: true,
       data: funnelStages,
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to fetch conversion stages' },
-      { status: 500 }
-    );
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch conversion stages'
+    });
   }
-}
+};
 
-export async function POST(request: Request) {
+export const calculateConversionMetrics = async (req: Request, res: Response) => {
   try {
-    const body = await request.json();
-    const { annualSpendCr = 428.5, savingsRate = 9.4, saasFeeRate = 0.85 } = body;
+    const { annualSpendCr = 428.5, savingsRate = 9.4, saasFeeRate = 0.85 } = req.body;
 
     const grossSavingsCr = (annualSpendCr * savingsRate) / 100;
     const platformFeeCr = (annualSpendCr * saasFeeRate) / 100;
     const netClientBenefitCr = grossSavingsCr - platformFeeCr;
     const roiMultiple = grossSavingsCr / (platformFeeCr || 1);
 
-    return NextResponse.json({
+    return res.json({
       success: true,
       data: {
         annualSpendCr,
@@ -42,9 +41,9 @@ export async function POST(request: Request) {
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, message: error.message || 'Failed to calculate commercial metrics' },
-      { status: 400 }
-    );
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to calculate commercial metrics'
+    });
   }
-}
+};
