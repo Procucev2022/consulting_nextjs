@@ -12,7 +12,9 @@ import {
   taxonomyQuerySchema,
   logsSearchQuerySchema,
   logsPurgeSchema,
-  graphQLRequestSchema
+  graphQLRequestSchema,
+  encryptRequestSchema,
+  decryptRequestSchema
 } from '../../src/constants/validation';
 
 describe('Backend Validation Schemas (constants/validation.ts)', () => {
@@ -217,6 +219,40 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
     it('should reject missing or empty query strings', () => {
       expect(graphQLRequestSchema.safeParse({}).success).toBe(false);
       expect(graphQLRequestSchema.safeParse({ query: '' }).success).toBe(false);
+    });
+  });
+
+  describe('encryptRequestSchema', () => {
+    it('should validate valid encryption requests', () => {
+      expect(encryptRequestSchema.safeParse({ data: 'Confidential' }).success).toBe(true);
+      expect(encryptRequestSchema.safeParse({ data: 'Confidential', passphrase: 'pass', associatedData: 'aad' }).success).toBe(true);
+    });
+
+    it('should reject empty or missing data', () => {
+      expect(encryptRequestSchema.safeParse({}).success).toBe(false);
+      expect(encryptRequestSchema.safeParse({ data: '' }).success).toBe(false);
+    });
+  });
+
+  describe('decryptRequestSchema', () => {
+    it('should validate valid decryption requests with string payload', () => {
+      expect(decryptRequestSchema.safeParse({ payload: 'aes256gcm:iv:tag:cipher' }).success).toBe(true);
+      expect(decryptRequestSchema.safeParse({ payload: 'aes256gcm:iv:tag:cipher', passphrase: 'pass' }).success).toBe(true);
+    });
+
+    it('should validate valid decryption requests with object payload', () => {
+      const objPayload = {
+        algorithm: 'aes-256-gcm',
+        iv: 'iv123',
+        tag: 'tag123',
+        ciphertext: 'cipher123'
+      };
+      expect(decryptRequestSchema.safeParse({ payload: objPayload }).success).toBe(true);
+    });
+
+    it('should reject empty or missing payload', () => {
+      expect(decryptRequestSchema.safeParse({}).success).toBe(false);
+      expect(decryptRequestSchema.safeParse({ payload: '' }).success).toBe(false);
     });
   });
 });

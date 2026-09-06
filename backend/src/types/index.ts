@@ -9,4 +9,5 @@ export * from './taxonomy';
 export * from './validation';
 export * from './db';
 export * from './graphql';
+export * from './crypto';
 

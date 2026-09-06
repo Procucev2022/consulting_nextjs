@@ -109,3 +109,26 @@ export const graphQLRequestSchema = z.object({
   variables: z.record(z.string(), z.any()).optional().nullable(),
   operationName: z.string().optional().nullable()
 });
+
+// Crypto Encrypt Request Schema
+export const encryptRequestSchema = z.object({
+  data: z.string().min(1, 'Data string to encrypt is required'),
+  passphrase: z.string().min(1).optional(),
+  associatedData: z.string().optional()
+});
+
+// Crypto Decrypt Request Schema
+export const decryptRequestSchema = z.object({
+  payload: z.union([
+    z.string().min(1, 'Encrypted payload string is required'),
+    z.object({
+      algorithm: z.string().min(1),
+      iv: z.string().min(1),
+      tag: z.string().min(1),
+      ciphertext: z.string().min(1),
+      salt: z.string().optional()
+    })
+  ]),
+  passphrase: z.string().min(1).optional(),
+  associatedData: z.string().optional()
+});

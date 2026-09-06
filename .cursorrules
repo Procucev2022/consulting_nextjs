@@ -74,6 +74,14 @@
 - Keep GraphQL SDL and query strings in `constants/graphql.ts` and `constants/db.ts`, and types in `types/graphql.ts` and `types/db.ts`.
 - Enforce >= 90% unit test coverage on all database and GraphQL utilities.
 
+## 12. AES Encryption & Data Protection Policy
+- Protect all sensitive data at rest and in transit using authenticated AES-256-GCM.
+- Use a cryptographically secure 12-byte initialization vector (IV) generated fresh for every operation. Nonce reuse is forbidden.
+- Verify the 16-byte authentication tag upon every decryption.
+- Manage 256-bit keys via secure configuration or PBKDF2/SHA-256 key derivation.
+- Isolate constants in `constants/crypto.ts` and types in `types/crypto.ts`. Never log plaintext keys or secrets.
+- Enforce >= 90% unit test code coverage on all cryptographic utilities.
+
 
 
 

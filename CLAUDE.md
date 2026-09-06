@@ -75,6 +75,10 @@
 4. **Constants & Types Isolation**: Schema definitions and query strings must live in `constants/graphql.ts` and `constants/db.ts`; models and contexts in `types/graphql.ts` and `types/db.ts`.
 5. **Strict 90% Coverage**: All database auditors, cache helpers, GraphQL resolvers, and route handlers must maintain >= 90% unit test coverage individually.
 
+## AES Encryption & Data Protection Standards
 
-
-
+1. **AES-256-GCM Primitive**: Protect all sensitive data at rest and in transit using authenticated AES-256-GCM.
+2. **Nonce/IV & Tag Integrity**: Always generate a cryptographically fresh 96-bit (12-byte) initialization vector per encryption operation. Verify the 128-bit authentication tag on decryption.
+3. **Key Derivation & Secrets Safety**: Use 256-bit keys from secure environment variables (`APP_ENCRYPTION_KEY`) or derived via PBKDF2 with SHA-256 (min 100,000 iterations). Never log plaintext keys or secrets.
+4. **Constants & Types Isolation**: Store cryptographic constants in `constants/crypto.ts` and types in `types/crypto.ts`, exported via index barrels.
+5. **Strict 90% Coverage**: All cryptographic helpers, serializers, and routes must maintain >= 90% unit test coverage individually.

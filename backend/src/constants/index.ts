@@ -8,4 +8,5 @@ export * from './logger';
 export * from './validation';
 export * from './db';
 export * from './graphql';
+export * from './crypto';
 

@@ -79,6 +79,15 @@
 - **Constants & Types Isolation**: Schema definitions and query strings must live in `constants/graphql.ts` and `constants/db.ts`; models and contexts in `types/graphql.ts` and `types/db.ts`.
 - **Strict 90% Coverage**: All database auditors, cache helpers, GraphQL resolvers, and route handlers must maintain >= 90% unit test coverage individually.
 
+## Mandatory AES Encryption & Data Protection Policy
+
+- **Standard Cryptographic Primitive (AES-256-GCM)**: All sensitive data at rest and in transit (financial metrics, supplier identifiers, banking information, credentials) must be encrypted using AES-256-GCM.
+- **Nonce/IV & Tag Mandates**: Each encryption operation must generate a fresh, cryptographically secure 96-bit (12-byte) initialization vector (`crypto.randomBytes(12)`). Decryption must strictly verify the 128-bit (16-byte) authentication tag. Nonce reuse is strictly forbidden.
+- **Key Derivation & Management**: Keys must be 256 bits (32 bytes), sourced securely from environment (`APP_ENCRYPTION_KEY`) or derived via PBKDF2 with SHA-256 (min 100,000 iterations).
+- **Constants & Types Isolation**: All cryptographic algorithm strings, key/IV/tag lengths, and encodings must reside in `constants/crypto.ts` and re-exported via `constants/index.ts`. All payload types and options must reside in `types/crypto.ts` and re-exported via `types/index.ts`.
+- **Key Safety & Structured Logging**: Plaintext keys, passphrases, and raw secrets must NEVER be logged.
+- **Strict 90% Coverage**: All cryptographic utilities, serialization helpers, and endpoints must achieve >= 90% unit test coverage individually.
+
 
 
 

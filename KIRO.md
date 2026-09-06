@@ -67,6 +67,13 @@
 - Isolate GraphQL schema SDL and queries in `constants/graphql.ts` and `constants/db.ts`, and types in `types/graphql.ts` and `types/db.ts`.
 - Ensure >= 90% per-file unit test coverage across all database and GraphQL modules.
 
+## AES Encryption & Data Protection
+- Protect sensitive data at rest and in transit using authenticated AES-256-GCM.
+- Generate cryptographically secure 12-byte IVs per operation and strictly verify 16-byte authentication tags on decryption.
+- Manage 256-bit keys via secure environment variables or PBKDF2/SHA-256 key derivation.
+- Isolate constants in `constants/crypto.ts` and types in `types/crypto.ts`. Never log plaintext keys.
+- Enforce >= 90% per-file unit test code coverage across all cryptographic modules.
+
 
 
 

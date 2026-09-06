@@ -10,6 +10,7 @@ import currencyRoutes from './currency.routes';
 import taxonomyRoutes from './taxonomy.routes';
 import logsRoutes from './logs.routes';
 import graphqlRoutes from './graphql.routes';
+import cryptoRoutes from './crypto.routes';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.use('/currency', currencyRoutes);
 router.use('/taxonomy', taxonomyRoutes);
 router.use('/logs', logsRoutes);
 router.use('/graphql', graphqlRoutes);
+router.use('/crypto', cryptoRoutes);
 
 export default router;
 

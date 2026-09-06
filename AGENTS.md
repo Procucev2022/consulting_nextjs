@@ -163,4 +163,29 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Strict 90% Unit Test Code Coverage**:
   - All database query auditors, cache managers, GraphQL resolvers, query constants, and GraphQL HTTP route handlers MUST maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines.
 
+## 13. Mandatory AES Encryption & Secure Data Processing Policy
+
+- **Standard Cryptographic Primitive (AES-256-GCM)**:
+  - All sensitive data at rest and in transit (including financial amounts, banking details, credentials, tax identifiers, and confidential procurement metadata) MUST be protected using the **AES-256-GCM** (Galois/Counter Mode) encryption algorithm.
+  - AES-GCM provides Authenticated Encryption with Associated Data (AEAD), guaranteeing both high-grade confidentiality and cryptographically verifiable authenticity and integrity.
+- **Cryptographic Parameter & Nonce/IV Mandates**:
+  - **Key Length**: 256 bits (32 bytes). Keys must be sourced securely from environment configuration (`APP_ENCRYPTION_KEY`) or derived using standard key derivation functions (PBKDF2 with SHA-256 or Scrypt, min 100,000 iterations).
+  - **Initialization Vector (IV)**: MUST be a cryptographically secure, randomly generated 96-bit (12-byte) nonce generated fresh for EVERY encryption operation (`crypto.randomBytes(12)` in Node.js or `crypto.getRandomValues` in browser). Nonce reuse with the same key is strictly prohibited.
+  - **Authentication Tag**: MUST be a 128-bit (16-byte) authentication tag verified upon every decryption operation. Any modification or tampering with the ciphertext or tag must result in immediate decryption failure and security logging.
+- **Structured Encrypted Payload Standard**:
+  - Encrypted records must use a standardized payload representation containing:
+    - `algorithm`: The encryption algorithm identifier (`aes-256-gcm`).
+    - `iv`: Hex or Base64 encoded 12-byte initialization vector.
+    - `tag`: Hex or Base64 encoded 16-byte authentication tag.
+    - `ciphertext`: Hex or Base64 encoded encrypted payload.
+    - `salt`: Optional hex or Base64 salt when key derivation is employed.
+  - Compact serialization follows the format: `aes256gcm:<iv>:<tag>:<ciphertext>`.
+- **Dedicated Constants & Data Types Isolation**:
+  - In accordance with Section 8 (Constants) and Section 9 (Types), all cryptographic algorithm names, key/IV/tag lengths, iterations, and encoding defaults MUST reside in dedicated constants files (`constants/crypto.ts`) and re-exported via `constants/index.ts`. Inline cryptographic parameters or magic numbers are strictly forbidden.
+  - All encrypted data interfaces, payload schemas, and crypto options MUST reside in dedicated type files (`types/crypto.ts`) and re-exported via `types/index.ts`.
+- **Structured Logging & Key Safety**:
+  - Plaintext encryption keys, passphrases, and raw secrets MUST NEVER be logged. Centralized logger records must capture operation duration, algorithm, and payload identifier without exposing sensitive plaintext data.
+- **Strict 90% Unit Test Code Coverage**:
+  - Every cryptographic utility function, encryption/decryption helper, serialization routine, constant definition, and controller endpoint MUST maintain at least **90% unit test code coverage** individually across statements, branches, functions, and lines.
+
 

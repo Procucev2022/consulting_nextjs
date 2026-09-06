@@ -18,7 +18,9 @@ import {
   taxonomyQuerySchema,
   logsSearchQuerySchema,
   logsPurgeSchema,
-  graphQLRequestSchema
+  graphQLRequestSchema,
+  encryptRequestSchema,
+  decryptRequestSchema
 } from '../constants/validation';
 
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
@@ -34,6 +36,8 @@ export type TaxonomyQueryInput = z.infer<typeof taxonomyQuerySchema>;
 export type LogsSearchQueryInput = z.infer<typeof logsSearchQuerySchema>;
 export type LogsPurgeInput = z.infer<typeof logsPurgeSchema>;
 export type GraphQLRequestInput = z.infer<typeof graphQLRequestSchema>;
+export type EncryptRequestInput = z.infer<typeof encryptRequestSchema>;
+export type DecryptRequestInput = z.infer<typeof decryptRequestSchema>;
 
 export interface ValidationErrorDetail {
   path: string;
