@@ -19,4 +19,7 @@
 2. All CI/CD pipelines must configure explicit job timeouts (`timeout-minutes: 15`).
 3. PR summary comments must be posted/updated on pull requests detailing test pass/fail counts and coverage metrics.
 
-
+## User Prompt History (`prompts.md`)
+1. Maintain `prompts.md` in the workspace root to log user-provided prompts.
+2. Log ONLY user-provided prompts in `prompts.md`. Do NOT include AI-generated conversation or answers.
+3. Append user prompts chronologically under designated headers.

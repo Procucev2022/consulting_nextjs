@@ -26,4 +26,7 @@
 - All CI/CD workflows and jobs must enforce an explicit timeout (`timeout-minutes: 15`).
 - The workflow must post and update an executive summary PR comment with unit test pass/fail counts, execution duration, and overall code coverage.
 
-
+# User Prompt History Rules
+- Maintain `prompts.md` in the workspace root for saving user-provided prompts.
+- Save ONLY user-provided prompts in `prompts.md`. Do NOT save AI-generated conversations, responses, or thoughts.
+- Append each user prompt in chronological sequence with clean headers.

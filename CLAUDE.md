@@ -22,4 +22,8 @@
 2. **Mandatory Pipeline Timeout**: Each CI/CD workflow job must have a specified timeout (e.g., `timeout-minutes: 15`).
 3. **Automated PR Comments**: The workflow generates and posts/updates an executive summary comment on the PR detailing unit test results and coverage percentages.
 
+## User Prompt History (`prompts.md`)
 
+1. **Workspace Prompts File**: Maintain `prompts.md` in the workspace root to log user-provided prompts.
+2. **Strict Filtering**: Record ONLY user-provided prompts in `prompts.md`. Never include AI-generated conversation, output, or assistant reasoning.
+3. **Append Workflow**: Record each incoming user prompt in chronological sequence under descriptive headers.

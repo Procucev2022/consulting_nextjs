@@ -66,4 +66,8 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Mandatory Pipeline Timeout**: Every GitHub Actions CI/CD job must enforce an explicit timeout (e.g., `timeout-minutes: 15`) to prevent runaway resource consumption.
 - **Automated PR Summary Comments**: The pipeline must generate and post/update an executive summary comment on the PR detailing test passes/failures, execution duration, and per-file/overall code coverage metrics.
 
+## 6. User Prompt History Maintenance (`prompts.md`)
 
+- **Requirement**: Maintain a file in the workspace root named `prompts.md` dedicated to recording user-provided prompts.
+- **Strict Scope**: Save ONLY user-provided prompts in `prompts.md`. Do NOT include AI-generated conversations, responses, explanations, reasoning, or model output.
+- **Workflow**: Whenever the user submits a new prompt, append the user's prompt text to `prompts.md` under chronological headers (e.g., `## Prompt <N>`). Preserve the exact text provided by the user.

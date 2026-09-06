@@ -21,4 +21,8 @@
 - **Pipeline Timeouts**: Every GitHub Actions CI/CD job must specify an explicit timeout (e.g., `timeout-minutes: 15`).
 - **PR Comments**: The workflow must automatically publish an executive summary PR comment detailing test success/failure counts, execution duration, and overall code coverage.
 
+## Mandatory User Prompt History (`prompts.md`)
 
+- **Rule**: Maintain `prompts.md` in the workspace root for saving user-provided prompts.
+- **Strict Scope**: Save ONLY user-provided prompts in `prompts.md`. Do NOT save AI-generated conversations, responses, or commentary.
+- **Workflow**: When a new prompt is provided by the user, append it to `prompts.md` in chronological sequence.

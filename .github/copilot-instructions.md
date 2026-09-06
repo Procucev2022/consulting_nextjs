@@ -10,5 +10,4 @@
 - PR CI/CD workflow `.github/workflows/ci.yml` validates linting, typechecking, building, and 90% per-file code coverage.
 - All CI/CD jobs must have an explicit timeout (`timeout-minutes: 15`).
 - The CI/CD workflow must post and update an executive summary PR comment detailing test success/failure counts and coverage metrics.
-
-
+- Maintain a workspace file `prompts.md` storing ONLY user-provided prompts. Never save AI-generated conversations or responses in `prompts.md`.
