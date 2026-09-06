@@ -10,4 +10,5 @@ export * from './validation';
 export * from './db';
 export * from './graphql';
 export * from './crypto';
-
+export * from './performance';
+export * from './logDiagnostics';

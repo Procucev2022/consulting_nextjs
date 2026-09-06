@@ -528,8 +528,8 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                   <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono pt-0.5">
                     <div className="flex items-center space-x-1.5">
                       <span>Detected Currencies:</span>
-                      {(doc.detected_currencies || ['USD', 'EUR', 'INR']).map((c) => (
-                        <span key={c} className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-cyan-800 dark:text-cyan-400 font-bold">
+                      {(doc.detected_currencies || ['USD', 'EUR', 'INR']).map((c, cIdx) => (
+                        <span key={`${c}-${cIdx}`} className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-cyan-800 dark:text-cyan-400 font-bold">
                           {c}
                         </span>
                       ))}
@@ -1317,7 +1317,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
-                {filteredRecords.map((record) => {
+                {filteredRecords.map((record, idx) => {
                   const qty = record.order_quantity || (record.amount > 10000 ? 1000 : 100);
                   const price = record.net_price || (record.amount / qty);
                   const curr = record.raw_currency || 'USD';
@@ -1327,7 +1327,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
 
                   return (
                     <tr
-                      key={record.record_id}
+                      key={record.record_id || (record as any).id || `rec-${idx}`}
                       className={`transition-colors ${
                         isClean
                           ? 'bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50'

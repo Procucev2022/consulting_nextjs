@@ -210,5 +210,54 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Zero Regression Principle**:
   - If any library upgrade introduces regressions, test failures, or coverage drops, the assistant must systematically resolve the discrepancies through code refactoring, test suite updates, and type adjustments until all automated quality gates pass.
 
+## 15. Mandatory Automated Performance Optimization Policy
 
+- **Continuous Performance Auditing**:
+  - Continuously audit, identify, and apply automated performance optimizations across the entire codebase (frontend and backend).
+  - Proactively identify bottlenecks in critical render paths, API execution latency, database round-trips, and memory consumption.
+- **Critical Paths, Code-Splitting & Lazy Loading**:
+  - Implement efficient route-level and component-level code-splitting with dynamic lazy-loading (`next/dynamic`, dynamic imports, or module chunking) for heavy modals, visualization libraries, and non-critical UI surfaces.
+  - Defer execution of heavy computation outside of critical rendering lifecycles; optimize React re-renders using memoization (`useMemo`, `useCallback`, `React.memo`) where beneficial.
+- **Resource Caching & Asset Delivery**:
+  - Implement robust resource and HTTP caching strategies, memory-backed LRU caching for high-frequency compute-heavy transformations, and query result caching.
+  - Optimize asset compression, modern image formatting, font display strategies, and bundle distribution.
+- **Validation Against Bundle Size & Latency Benchmarks**:
+  - All performance improvements must be measured and validated against established bundle size and latency benchmarks via the quality check pipeline (`npm run build`, bundle analysis, latency auditing).
+  - Production builds must maintain lean First Load JS bundle footprints (<120 kB shared chunks).
+- **Strict 90% Unit Test Code Coverage**:
+  - All performance utilities, caching layers, dynamic loaders, and optimization helpers must maintain at least **90% unit test code coverage** individually across statements, branches, functions, and lines (`perFile: true`).
+
+## 16. Mandatory Automated Log Error Monitoring & Resolution Policy
+
+- **Continuous Runtime Log Monitoring & Ingestion**:
+  - Continuously monitor, parse, and analyze application logs generated in local environments (`logs/app.log`, `logs/error.log`, `logs/app-YYYY-MM-DD.log`) and system outputs.
+  - Parse structured JSON log entries, error codes, HTTP status codes, correlation request IDs (`requestId`), and detailed exception stack traces.
+- **Root Cause Diagnosis & Automated Resolution**:
+  - Automatically classify and diagnose underlying bugs, uncaught rejections, broken data assumptions, schema mismatch errors, and degraded third-party calls.
+  - Proactively implement verified code fixes addressing root causes to eliminate repeat occurrences.
+  - Ensure fixes adhere to established project patterns: input schema validation, centralized constants, structured logging, and typed interfaces.
+- **Mandatory Quality Check & Zero Regression Pipeline**:
+  - Validate every bug fix through the complete quality check pipeline:
+    1. **Linting**: 0 ESLint violations (`npm run lint`).
+    2. **Typechecking**: 0 TypeScript compilation errors (`npm run typecheck`).
+    3. **Unit Tests & 90% Per-File Coverage**: All existing and newly authored regression unit tests must pass with >= 90% code coverage across statements, branches, functions, and lines individually (`npm run test:coverage`).
+    4. **Build Integrity**: Clean production builds (`npm run build`).
+
+## 17. Mandatory Automated Warning Resolution & Zero-Warning Policy
+
+- **Proactive Continuous Warning Auditing**:
+  - Automatically identify, analyze, and resolve all compiler, linter, runtime, framework, and dependency warnings across the entire repository (frontend and backend).
+  - Treat all warnings as actionable debt. Tolerate zero compiler diagnostics, zero linter warnings, zero React/Next.js runtime warnings, and zero unhandled deprecation notices.
+- **Systematic & Safe Refactoring Standards**:
+  - **Deprecation Notices**: Systematically refactor deprecated library APIs, lifecycle hooks, and framework options to current, recommended patterns rather than suppressing them with workarounds or comment directives (e.g., avoid arbitrary `eslint-disable` or `// @ts-ignore`).
+  - **Unused Imports & Dead Identifiers**: Automatically purge unused imports, dead variables, and unreachable code paths across all TypeScript/JavaScript files.
+  - **Type Mismatches & Ambiguities**: Resolve type coercions, `any` leaks, and loose signatures by authoring explicit, strongly-typed interfaces in `types/`.
+  - **Syntax & Markup Warnings**: Resolve React key prop omissions, DOM attribute mismatches, invalid nesting, and unescaped HTML entities in TSX/JSX components.
+  - **Preserve Core Functionality**: All warning refactoring must be strictly non-breaking and preserve existing business logic, validation rules, and performance characteristics.
+- **Mandatory Quality Check & Zero-Warning Validation Pipeline**:
+  - Every warning resolution must be verified through the complete quality check pipeline:
+    1. **Strict Typechecking**: `npm run typecheck` (0 type errors, 0 compiler warnings).
+    2. **Strict Linting**: `npm run lint` (0 ESLint errors, 0 ESLint warnings).
+    3. **Production Build**: `npm run build` (Clean production bundles without build-time warnings).
+    4. **Unit Tests & 90% Per-File Code Coverage**: `npm run test:coverage` (100% test pass rate, 0 runtime console/test warnings, and individual per-file coverage >= 90% across statements, branches, functions, and lines with `perFile: true`).
 

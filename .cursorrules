@@ -88,3 +88,20 @@
 - Validate every upgrade via the mandatory quality pipeline: build (`npm run build`), typecheck (`npm run typecheck`), lint (`npm run lint`), and unit tests with >= 90% per-file coverage (`npm run test:coverage`).
 - Guarantee zero regressions before finalizing updates.
 
+## 15. Automated Performance Optimization Policy
+- Proactively audit latency bottlenecks and critical render paths across services.
+- Implement code-splitting and lazy-loading (`next/dynamic`) for non-critical components.
+- Apply resource caching across API and database queries with TTL and automated invalidation.
+- Validate improvements against bundle size (<120 kB shared JS) and latency benchmarks.
+- Maintain >= 90% unit test coverage individually on all performance modules.
+
+## 16. Automated Log Error Monitoring & Resolution Policy
+- Continuously monitor structured log files (`logs/app.log`, `logs/error.log`) and runtime error traces.
+- Diagnose underlying bugs, uncaught rejections, and schema errors, implementing permanent verified fixes.
+- Validate all bug fixes through linting, typechecking, and full test suite execution with >= 90% per-file coverage.
+
+## 17. Automated Warning Resolution Policy
+- Automatically identify, analyze, and resolve compiler, linter, runtime, and dependency warnings across the repository.
+- Apply safe refactoring for deprecation notices, unused imports, type mismatches, and syntax warnings without suppressing warnings with comments.
+- Validate fixes via `npm run typecheck`, `npm run lint`, and unit tests with >= 90% per-file code coverage.
+

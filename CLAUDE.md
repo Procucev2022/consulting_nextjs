@@ -94,3 +94,23 @@
    - Unit tests & 90% per-file code coverage (`npm run test:coverage`) across all parameters.
 4. **Zero Regressions**: Proactively resolve regressions, test failures, or coverage dips before committing upgrades.
 
+## Automated Performance Optimization Standards
+
+1. **Continuous Auditing**: Proactively audit critical paths, rendering bottlenecks, and API execution latencies.
+2. **Code-Splitting & Lazy Loading**: Apply dynamic imports (`next/dynamic`) for non-critical surfaces and heavy modals.
+3. **Resource Caching**: Enforce caching across data transformations, HTTP endpoints, and database queries.
+4. **Benchmark Verification**: Validate improvements against bundle size and latency benchmarks via build and test pipelines.
+5. **Strict 90% Coverage**: Keep >= 90% coverage across all performance and caching utilities.
+
+## Automated Log Error Monitoring & Resolution Standards
+
+1. **Log Ingestion**: Monitor and parse structured logs (`logs/app.log`, `logs/error.log`), extracting error codes, request IDs, and stack traces.
+2. **Root Cause Diagnosis**: Diagnose root causes from runtime errors and implement permanent fixes.
+3. **Validation Pipeline**: Verify every bug fix through linting (`npm run lint`), typechecking (`npm run typecheck`), and unit tests (`npm run test:coverage`) with >= 90% per-file coverage.
+
+## Automated Warning Resolution Standards
+
+1. **Zero Warning Mandate**: Proactively detect and resolve all compiler, linter, runtime, and dependency warnings without suppressing them.
+2. **Safe Code Refactoring**: Fix deprecation warnings, unused imports, type mismatches, and component syntax warnings safely while preserving business logic.
+3. **Full Pipeline Validation**: Validate all warning fixes with `npm run typecheck` (0 errors), `npm run lint` (0 errors), and unit tests (`npm run test:coverage`) with >= 90% per-file coverage.
+

@@ -98,3 +98,24 @@
   3. *Linting*: 0 ESLint violations (`npm run lint`).
   4. *Unit Tests & 90% Per-File Coverage*: 100% test passes with >= 90% per-file coverage across statements, branches, functions, and lines (`npm run test:coverage`).
 - **Zero Regressions**: Any regressions or coverage drops caused by dependency upgrades must be resolved immediately before finalizing.
+
+## Mandatory Automated Performance Optimization Policy
+
+- **Continuous Codebase Auditing**: Continuously audit and identify latency bottlenecks, redundant computations, and excessive memory usage across backend services and frontend UI.
+- **Critical Paths & Code-Splitting**: Optimize critical rendering paths. Implement lazy loading (`next/dynamic`) for heavy components and modals. Optimize render cycles with memoization.
+- **Resource Caching**: Enforce caching across data transformations, HTTP endpoints, and database queries with TTL and automated invalidation.
+- **Quality Benchmark Validation**: Benchmark and validate bundle footprints and latency metrics against production thresholds (<120 kB shared JS chunks).
+- **Strict 90% Coverage**: Maintain >= 90% unit test coverage individually on all performance and caching utilities.
+
+## Mandatory Automated Log Error Monitoring & Resolution Policy
+
+- **Continuous Runtime Log Ingestion**: Continuously monitor and parse structured application log records (`logs/app.log`, `logs/error.log`), extracting error codes, request IDs, and stack traces.
+- **Automated Root Cause Diagnosis**: Analyze failure patterns, missing parameters, and runtime exceptions. Proactively implement verified code fixes preventing error recurrence.
+- **Quality Check Validation Pipeline**: Validate all bug fixes through linting (`npm run lint`), typechecking (`npm run typecheck`), and full unit test execution (`npm run test:coverage`) with >= 90% per-file code coverage to guarantee zero regressions.
+
+## Mandatory Automated Warning Resolution & Zero-Warning Policy
+
+- **Zero-Warning Tolerance**: Proactively identify, analyze, and resolve all compiler, linter, runtime, and dependency warnings across the monorepo.
+- **Safe Refactoring**: Systematically address deprecation notices, unused imports, type mismatches, and syntax warnings without suppressing with comments or breaking functionality.
+- **Quality Check Pipeline**: Validate warning resolutions via `npm run typecheck` (0 errors/warnings), `npm run lint` (0 errors/warnings), clean builds, and unit tests (`npm run test:coverage`) maintaining >= 90% per-file code coverage.
+

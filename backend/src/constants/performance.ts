@@ -1,0 +1,17 @@
+/**
+ * Backend Performance Optimization Constants & Latency Benchmarks
+ */
+
+export const BACKEND_PERFORMANCE_BENCHMARKS = {
+  SLOW_QUERY_THRESHOLD_MS: 100,
+  SLOW_HTTP_THRESHOLD_MS: 250,
+  HIGH_MEMORY_USAGE_MB: 512,
+  MAX_CACHE_ENTRIES: 1000,
+  DEFAULT_CACHE_TTL_MS: 60000,
+} as const;
+
+export const PERFORMANCE_AUDIT_STATUS = {
+  OPTIMAL: 'OPTIMAL',
+  DEGRADED: 'DEGRADED',
+  CRITICAL: 'CRITICAL',
+} as const;

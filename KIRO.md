@@ -84,3 +84,20 @@
   4. Unit tests and >= 90% per-file code coverage (`npm run test:coverage`).
 - Prevent regressions by ensuring all quality gates and test suites pass completely.
 
+## Automated Performance Optimization Policy
+- Proactively audit latency bottlenecks, memory usage, and critical paths across frontend and backend.
+- Implement code-splitting and dynamic imports (`next/dynamic`) for non-critical components.
+- Apply resource caching across API and database queries with TTL and automated invalidation.
+- Validate improvements against bundle size (<120 kB shared JS) and latency benchmarks.
+- Maintain >= 90% per-file unit test code coverage on all performance utilities.
+
+## Automated Log Error Monitoring & Resolution Policy
+- Continuously monitor structured log files (`logs/app.log`, `logs/error.log`) and runtime exception outputs.
+- Diagnose underlying bugs, uncaught rejections, and schema errors, implementing permanent verified fixes.
+- Validate all bug fixes through linting, typechecking, and full test suite execution with >= 90% per-file coverage.
+
+## Automated Warning Resolution Policy
+- Automatically detect, diagnose, and resolve all compiler, linter, runtime, and dependency warnings.
+- Apply safe refactoring for deprecation notices, unused imports, type mismatches, and syntax warnings without suppressing warnings with comments.
+- Validate fixes via `npm run typecheck` (0 errors), `npm run lint` (0 errors), clean builds, and unit tests with >= 90% per-file coverage.
+
