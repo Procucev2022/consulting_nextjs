@@ -276,4 +276,23 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
   - If any check fails (whether a lint warning, type error, broken test, coverage drop below 90%, or build error), the pre-commit hook must immediately abort the commit process with a non-zero exit code.
   - The assistant must diagnose and resolve the failure, re-run all checks, and ensure clean execution before attempting the commit again.
 
+## 19. Mandatory Declarative UI & Strict Prohibition of Direct DOM Manipulation Policy
+
+- **Strict Prohibition of Direct DOM Manipulation**:
+  - Direct manipulation of the Document Object Model (DOM) using low-level browser APIs or imperative manipulation libraries (e.g., `document.getElementById`, `document.querySelector`, `document.createElement`, `element.appendChild`, `element.removeChild`, `element.innerHTML`, `element.innerText`, jQuery, or manual `classList` manipulation) within the application framework is STRICTLY PROHIBITED.
+  - Imperative DOM manipulation bypasses the framework's reconciliation engine, creates state desynchronization, introduces subtle hydration errors, causes memory leaks, and degrades rendering performance.
+- **Framework View Engine as Single Source of Truth**:
+  - All user interface updates, conditional visibility, dynamic class assignments, DOM attributes, event attachments, list renderings, and animations MUST be handled exclusively through the framework's declarative state management patterns (React component state `useState`, `useReducer`, Context API, Zustand, or custom declarative hooks).
+  - All DOM elements, modal overlays, file download triggers, form controls, and portal containers must be declared within the framework's component render tree (JSX/TSX).
+  - Use declarative React refs (`useRef`) strictly for non-destructive DOM interactions (e.g., measuring dimensions, managing focus, or triggering declarative `<input type="file" />` / `<a download />` actions), never for mutating DOM nodes or injecting markup.
+- **Declarative Alternatives for Common Imperative Patterns**:
+  - *Dynamic Classes & Styles*: Use declarative conditional class mapping (`clsx`, `twMerge`, or template strings) based on component or theme state instead of `element.classList.add/remove`.
+  - *File Downloads*: Use declarative hidden `<a download href={...} />` elements bound to component state and refs, rather than creating, appending, and removing temporary anchor elements on `document.body`.
+  - *Dynamic Content & Text*: Bind state directly in JSX expressions (`{message}`) instead of imperatively updating `element.innerText` or `element.innerHTML`.
+  - *External Root Synchronization*: When synchronizing external root document metadata (such as `html` theme classes or page titles), encapsulate updates inside idempotent framework lifecycle effects (`useEffect`) that cleanly track framework state without conflicting with virtual DOM reconciliation.
+- **Strict Quality Check & 90% Per-File Unit Test Coverage**:
+  - All declarative UI components, custom hooks, and state managers must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines (`perFile: true`).
+  - Unit tests must interact with components through framework-idiomatic testing utilities (`@testing-library/react` using `screen.getByRole`, `fireEvent`, etc.) rather than inspecting or querying the global `document` directly.
+
+
 

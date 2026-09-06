@@ -124,3 +124,10 @@
    - Production Build: `npm run build`
 3. **Commit Blocking**: Abort the commit immediately upon any check failure.
 
+## Declarative UI & Zero Direct DOM Manipulation Standards
+
+1. **Zero Direct DOM Manipulation**: Strictly prohibit low-level DOM manipulation (`document.getElementById`, `document.querySelector`, `document.createElement`, `element.appendChild`, `element.removeChild`, `element.innerHTML`, manual `classList.add/remove`, or jQuery) within the application framework.
+2. **Declarative State Management**: Ensure the framework view engine is the sole source of truth. All UI updates, styling, conditional renders, and modal/download workflows must be handled via declarative state and hooks.
+3. **Full Pipeline Validation**: Validate all declarative refactors with `npm run typecheck` (0 errors), `npm run lint` (0 errors), and unit tests (`npm run test:coverage`) maintaining >= 90% per-file coverage.
+
+

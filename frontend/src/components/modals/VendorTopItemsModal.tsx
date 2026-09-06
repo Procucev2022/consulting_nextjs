@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Award,
@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   DollarSign
 } from 'lucide-react';
-import { VendorYearDetail, CategoryTopItem, VendorTopItemsModalProps } from '../../types';
+import { VendorYearDetail, CategoryTopItem, VendorTopItemsModalProps, DeclarativeDownloadPayload } from '../../types';
 import { UI_STRINGS } from '../../constants';
 
 export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
@@ -27,6 +27,15 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [trendFilter, setTrendFilter] = useState<'ALL' | 'HIGH_CREEP' | 'STEADY'>('ALL');
+  const [downloadPayload, setDownloadPayload] = useState<DeclarativeDownloadPayload | null>(null);
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (downloadPayload && downloadLinkRef.current) {
+      downloadLinkRef.current.click();
+      setDownloadPayload(null);
+    }
+  }, [downloadPayload]);
 
   if (!isOpen || !vendor) return null;
 
@@ -55,18 +64,18 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
     const headers = [
       'Rank',
       'Item ID',
-      'Item Description',
-      'UNSPSC Column L Code',
+      'Description',
+      'UNSPSC Column L',
       'PO Number',
-      'Annual Order Qty',
+      'Annual Qty',
       'UoM',
       'Currency',
-      'FY24 Price (1 Apr 2023 - 31 Mar 2024)',
-      'FY25 Price (1 Apr 2024 - 31 Mar 2025)',
-      'FY26 Price (1 Apr 2025 - 31 Mar 2026)',
+      'FY24 Price',
+      'FY25 Price',
+      'FY26 Price',
       'Price Variance %',
       '3-Yr Total Spend (INR Cr)',
-      'Savings Potential (INR Lakhs)'
+      'Savings Potential (Lakhs)'
     ];
 
     const rows = rawItems.map((item, idx) => [
@@ -88,16 +97,22 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${vendor.vendor_name.replace(/[^a-zA-Z0-9]/g, '_')}_Top_Items_3Yr_Price_Trend.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setDownloadPayload({
+      href: encodedUri,
+      filename: `${vendor.vendor_name.replace(/[^a-zA-Z0-9]/g, '_')}_Top_Items_3Yr_Price_Trend.csv`
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/70 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <a
+        ref={downloadLinkRef}
+        href={downloadPayload?.href || '#'}
+        download={downloadPayload?.filename || ''}
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <div className="relative w-full max-w-6xl max-h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-emerald-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col glass-panel">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 gap-3 shrink-0">

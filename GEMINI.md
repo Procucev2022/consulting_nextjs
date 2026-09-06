@@ -129,3 +129,11 @@
   4. *Production Build*: `npm run build` (Clean build for frontend and backend).
 - **Abort on Failure**: Immediately reject and block commits if any check fails until issues are diagnosed and resolved.
 
+## Mandatory Declarative UI & Zero Direct DOM Manipulation
+
+- **Prohibition of Direct DOM Manipulation**: Low-level direct DOM manipulation (`document.getElementById`, `document.querySelector`, `document.createElement`, `element.appendChild`, `element.removeChild`, `element.innerHTML`, manual `classList.add/remove`, or jQuery) within the application framework is strictly prohibited.
+- **Framework View Engine as Single Source of Truth**: All UI state, styling, conditional views, file downloads, and interactions must be driven through declarative framework state patterns (React state, hooks, context). The view engine must remain the single source of truth to avoid hydration/reconciliation conflicts.
+- **Declarative Patterns**: Convert imperative elements (such as temporary anchor creation for file downloads) into declarative virtual DOM elements (`<a ref={...} download />`) controlled by framework state.
+- **Strict 90% Coverage**: All declarative components, hooks, and utilities must maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines.
+
+

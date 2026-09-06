@@ -105,4 +105,11 @@
 - Enforce git pre-commit hooks (`npm run pre-commit`) executing linting, typechecking, 90% per-file unit test coverage, and builds before allowing commits.
 - Strictly block commits if any check in the quality pipeline fails.
 
+## Declarative UI & Zero Direct DOM Manipulation
+- Strictly prohibit direct DOM manipulation via low-level libraries or browser APIs (`document.getElementById`, `document.querySelector`, `document.createElement`, `element.appendChild`, `element.removeChild`, `element.innerHTML`, manual `classList.add/remove`, or jQuery) within the application framework.
+- Handle all UI updates, styling, conditional renders, and file downloads through declarative state management patterns (React state, hooks, context).
+- Ensure the framework view engine remains the single source of truth, avoiding reconciliation issues and optimizing performance.
+- Validate all declarative refactors with `npm run typecheck`, `npm run lint`, and unit tests with >= 90% per-file coverage.
+
+
 

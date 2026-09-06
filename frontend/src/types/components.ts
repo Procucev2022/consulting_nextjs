@@ -154,3 +154,9 @@ export interface ReassignModalProps {
   onClose: () => void;
   onSave: (mappingId: string, newCode: string, newName: string, bucket: CoreBucket | string) => void;
 }
+
+export interface DeclarativeDownloadPayload {
+  href: string;
+  filename: string;
+}
+

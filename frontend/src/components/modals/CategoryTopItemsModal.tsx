@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   X,
   Award,
@@ -18,7 +18,7 @@ import {
   Building2,
   Filter
 } from 'lucide-react';
-import { CategoryYearDetail, CategoryTopItem, CategoryTopItemsModalProps } from '../../types';
+import { CategoryYearDetail, CategoryTopItem, CategoryTopItemsModalProps, DeclarativeDownloadPayload } from '../../types';
 import { UI_STRINGS } from '../../constants';
 
 export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
@@ -29,6 +29,15 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [trendFilter, setTrendFilter] = useState<'ALL' | 'HIGH_CREEP' | 'STEADY'>('ALL');
+  const [downloadPayload, setDownloadPayload] = useState<DeclarativeDownloadPayload | null>(null);
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (downloadPayload && downloadLinkRef.current) {
+      downloadLinkRef.current.click();
+      setDownloadPayload(null);
+    }
+  }, [downloadPayload]);
 
   if (!isOpen || !category) return null;
 
@@ -38,14 +47,14 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
     const matchesSearch =
       item.item_desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.column_l_code.includes(searchQuery) ||
+      item.column_l_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.item_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.po_number.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 
-    if (trendFilter === 'HIGH_CREEP') return item.price_change_pct >= 15;
-    if (trendFilter === 'STEADY') return item.price_change_pct < 10;
+    if (trendFilter === 'HIGH_CREEP') return item.price_change_pct > 15;
+    if (trendFilter === 'STEADY') return item.price_change_pct <= 5;
     return true;
   });
 
@@ -56,26 +65,22 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
 
   const handleExportCSV = () => {
     const headers = [
-      'Rank',
-      'Item ID',
-      'Description',
-      'UNSPSC Column L',
-      'Vendor',
+      'Item Description',
+      'UNSPSC / Column L Code',
+      'Supplier / Vendor',
       'PO Number',
-      'Annual Qty',
-      'UoM',
-      'Currency',
-      'FY24 Price',
-      'FY25 Price',
-      'FY26 Price',
-      'Price Variance %',
-      '3-Yr Total Spend (INR Cr)',
-      'Savings Potential (Lakhs)'
+      'Annual Order Quantity',
+      'UOM',
+      'Invoice Currency',
+      'Unit Price FY24',
+      'Unit Price FY25',
+      'Unit Price FY26',
+      '3-Year Price Change %',
+      'Total 3-Year Spend (INR Cr)',
+      'Identified Savings Opportunity (INR Lakhs)'
     ];
 
-    const rows = rawItems.map((item, idx) => [
-      idx + 1,
-      item.item_id,
+    const rows = filteredItems.map((item) => [
       `"${item.item_desc}"`,
       item.column_l_code,
       `"${item.vendor_name}"`,
@@ -93,16 +98,22 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${category.category.replace(/[^a-zA-Z0-9]/g, '_')}_Top_10_Items_Price_Trend.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setDownloadPayload({
+      href: encodedUri,
+      filename: `${category.category.replace(/[^a-zA-Z0-9]/g, '_')}_Top_10_Items_Price_Trend.csv`
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/70 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+      <a
+        ref={downloadLinkRef}
+        href={downloadPayload?.href || '#'}
+        download={downloadPayload?.filename || ''}
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <div className="relative w-full max-w-6xl max-h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-emerald-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col glass-panel">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 gap-3 shrink-0">

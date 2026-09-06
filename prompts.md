@@ -103,5 +103,7 @@ Auto resolve warnings: Configure assistant instructions to automatically identif
 ## Prompt 17
 Pre-commits check: Add assistant instructions to run git pre-commit hooks that execute all quality checks—such as linting, typechecking, building, and running tests—before allowing any commit.
 
+---
 
-
+## Prompt 18
+DOM Manipulation: Add a comprehensive configuration in assistant instructions to strictly prohibit direct DOM manipulation using low-level libraries within the application framework. All UI updates must be handled through the framework's state management patterns. This ensures that the framework's view engine remains the single source of truth, preventing reconciliation issues and maintaining application performance. Refactor the complete application to ensure all existing direct DOM interactions are converted to declarative patterns.
