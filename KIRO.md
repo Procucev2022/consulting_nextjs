@@ -43,3 +43,12 @@
 - Extract all component and modal prop interfaces into dedicated type files (e.g., `types/components.ts`) and import them.
 - Re-export all types via `types/index.ts`.
 
+## Input Schema Validation Architecture
+- Enforce strict input validation across all user and system inputs (forms, modals, API routes, controller bodies, query parameters, headers).
+- Define all validation schemas in dedicated constants modules under `constants/` (`frontend/src/constants/validation.ts` and `backend/src/constants/validation.ts`).
+- Never declare validation schemas inline.
+- Maintain derived types in `types/validation.ts` re-exported via `types/index.ts`.
+- Reject invalid inputs immediately with HTTP 400 Bad Request.
+- Maintain >= 90% unit test coverage for all validation schemas and utilities.
+
+

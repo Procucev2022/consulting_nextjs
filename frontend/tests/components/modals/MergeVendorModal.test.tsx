@@ -67,4 +67,40 @@ describe('MergeVendorModal Component', () => {
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('handles default master supplier without clicking another option', () => {
+    const onMerge = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <MergeVendorModal
+        record={sampleRec}
+        isOpen={true}
+        onClose={onClose}
+        onMerge={onMerge}
+      />
+    );
+
+    const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
+    fireEvent.click(confirmBtn);
+    expect(onMerge).toHaveBeenCalledWith(sampleRec.record_id, 'SUP-DHL-001', 'DHL Global Forwarding & Logistics SE');
+  });
+
+  it('returns early when validation fails on invalid record', () => {
+    const onMerge = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <MergeVendorModal
+        record={{ ...sampleRec, record_id: '' }}
+        isOpen={true}
+        onClose={onClose}
+        onMerge={onMerge}
+      />
+    );
+
+    const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
+    fireEvent.click(confirmBtn);
+    expect(onMerge).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
+

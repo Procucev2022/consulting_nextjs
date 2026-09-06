@@ -19,8 +19,10 @@ import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,
   DEFAULT_SAVINGS_TARGET_PCT,
-  DEFAULT_SAAS_FEE_RATE
+  DEFAULT_SAAS_FEE_RATE,
+  conversionInputsSchema
 } from '../constants';
+import { validateInput } from '../utils/validation';
 import confetti from 'canvas-confetti';
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
@@ -33,19 +35,26 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
   const [savingsRate, setSavingsRate] = useState<number>(DEFAULT_SAVINGS_TARGET_PCT); // 16.4%
   const [saasFeeRate, setSaasFeeRate] = useState<number>(DEFAULT_SAAS_FEE_RATE); // 0.85% of spend or platform fee
 
-
   const calculatedGrossSavingsCr = (annualSpendCr * savingsRate) / 100;
   const calculatedPlatformFeeCr = (annualSpendCr * saasFeeRate) / 100;
   const netClientBenefitCr = calculatedGrossSavingsCr - calculatedPlatformFeeCr;
   const roiMultiple = calculatedGrossSavingsCr / (calculatedPlatformFeeCr || 1);
 
   const handleSimulateLockIn = () => {
+    const validation = validateInput(conversionInputsSchema, {
+      annualSpendCr,
+      savingsRate,
+      saasFeeRate
+    });
+    if (!validation.success) return;
+
     confetti({
       particleCount: 100,
       spread: 90,
       origin: { y: 0.5 }
     });
   };
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -176,7 +185,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
             </div>
             <input
               type="range"
-              min={100}
+              min={0}
               max={2500}
               step={25}
               value={annualSpendCr}
@@ -224,7 +233,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
             </div>
             <input
               type="range"
-              min={0.4}
+              min={0}
               max={2.0}
               step={0.05}
               value={saasFeeRate}

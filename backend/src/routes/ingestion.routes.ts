@@ -6,12 +6,14 @@ import {
   resetValidationRecords,
   applyBlanketRemediation
 } from '../controllers/ingestion.controller';
+import { validateBody } from '../utils/validation';
+import { addIngestionFileSchema, updateValidationRecordSchema } from '../constants/validation';
 
 const router = Router();
 
 router.get('/', getIngestionData);
-router.post('/', addIngestionFile);
-router.patch('/', updateValidationRecord);
+router.post('/', validateBody(addIngestionFileSchema), addIngestionFile);
+router.patch('/', validateBody(updateValidationRecordSchema), updateValidationRecord);
 router.delete('/', resetValidationRecords);
 router.post('/remediate', applyBlanketRemediation);
 

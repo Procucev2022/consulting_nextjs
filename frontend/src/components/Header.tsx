@@ -15,9 +15,11 @@ import {
   DollarSign
 } from 'lucide-react';
 import { TenantMaster, HeaderProps } from '../types';
-import { UI_STRINGS, SUPPORTED_HEADER_CURRENCIES, DEFAULT_SPEND_BASELINE_INR_CR } from '../constants';
+import { UI_STRINGS, SUPPORTED_HEADER_CURRENCIES, DEFAULT_SPEND_BASELINE_INR_CR, headerCurrencySchema } from '../constants';
+import { validateInput } from '../utils/validation';
 
 export const Header: React.FC<HeaderProps> = ({
+
   tenant,
   onSelectTenant,
   currency,
@@ -134,7 +136,12 @@ export const Header: React.FC<HeaderProps> = ({
             {SUPPORTED_HEADER_CURRENCIES.map((curr) => (
               <button
                 key={curr}
-                onClick={() => onSelectCurrency(curr)}
+                onClick={() => {
+                  const validation = validateInput(headerCurrencySchema, { currency: curr });
+                  if (validation.success) {
+                    onSelectCurrency(validation.data.currency);
+                  }
+                }}
                 className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                   currency === curr
                     ? 'bg-emerald-600 text-white shadow-xs'

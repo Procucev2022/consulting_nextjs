@@ -6,8 +6,10 @@ import confetti from 'canvas-confetti';
 import {
   UI_STRINGS,
   DEFAULT_INVITED_SUPPLIERS,
-  DEFAULT_PROCPX_BASELINE
+  DEFAULT_PROCPX_BASELINE,
+  proCPXFormSchema
 } from '../../constants';
+import { validateInput } from '../../utils/validation';
 
 export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   opportunity,
@@ -25,6 +27,16 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   if (!isOpen || !opportunity) return null;
 
   const handleLaunch = () => {
+    const validation = validateInput(proCPXFormSchema, {
+      oppId: opportunity.opp_id,
+      eventType,
+      baselineSpendCr: targetBaseline,
+      targetSavingsPct: opportunity.target_savings_pct,
+      invitedSuppliers,
+      auctionEndDate: new Date().toISOString()
+    });
+    if (!validation.success) return;
+
     setIsDeploying(true);
     setTimeout(() => {
       setIsDeploying(false);
@@ -41,6 +53,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
       }, 1800);
     }, 1200);
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">

@@ -10,6 +10,15 @@ import {
   ConversionFunnelPhase
 } from '../types';
 import frontendLogger from './logger';
+import { validateInput } from './validation';
+import {
+  apiUpdateTenantPayloadSchema,
+  apiAddIngestionFilePayloadSchema,
+  apiUpdateValidationRecordPayloadSchema,
+  apiMergeVendorPayloadSchema,
+  apiDeployOpportunityPayloadSchema,
+  apiCalculateConversionPayloadSchema
+} from '../constants/validation';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -25,17 +34,20 @@ export const apiClient = {
 
   async updateTenant(updates: Partial<TenantMaster>): Promise<TenantMaster> {
     frontendLogger.info('Updating tenant configuration', { updates });
+    const validation = validateInput(apiUpdateTenantPayloadSchema, updates);
+    if (!validation.success) {
+      throw new Error(`Invalid tenant updates: ${JSON.stringify(validation.errors)}`);
+    }
+
     const res = await fetch(`${API_BASE}/api/tenant`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(validation.data)
     });
     const json = await res.json();
     frontendLogger.info('Tenant updated successfully');
     return json.data;
   },
-
-
 
   // Ingestion
   async getIngestionData(): Promise<{ queue: RawDocumentIngestion[]; validationRecords: ValidationPreCheckRecord[] }> {
@@ -47,10 +59,15 @@ export const apiClient = {
 
   async addIngestionFile(fileData: Partial<RawDocumentIngestion>): Promise<RawDocumentIngestion[]> {
     frontendLogger.info('Submitting ingestion file', { fileName: fileData.file_name });
+    const validation = validateInput(apiAddIngestionFilePayloadSchema, fileData);
+    if (!validation.success) {
+      throw new Error(`Invalid file data: ${JSON.stringify(validation.errors)}`);
+    }
+
     const res = await fetch(`${API_BASE}/api/ingestion`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fileData)
+      body: JSON.stringify(validation.data)
     });
     const json = await res.json();
     return json.data;
@@ -58,10 +75,15 @@ export const apiClient = {
 
   async updateValidationRecord(record_id: string, updates: Partial<ValidationPreCheckRecord>): Promise<ValidationPreCheckRecord> {
     frontendLogger.info('Updating validation pre-check record', { record_id, updates });
+    const validation = validateInput(apiUpdateValidationRecordPayloadSchema, { record_id, ...updates });
+    if (!validation.success) {
+      throw new Error(`Invalid record update: ${JSON.stringify(validation.errors)}`);
+    }
+
     const res = await fetch(`${API_BASE}/api/ingestion`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ record_id, ...updates })
+      body: JSON.stringify(validation.data)
     });
     const json = await res.json();
     return json.data;
@@ -103,10 +125,15 @@ export const apiClient = {
 
   async mergeVendor(targetName: string, masterId: string, canonicalName: string) {
     frontendLogger.info('Executing vendor consolidation merge', { targetName, masterId, canonicalName });
+    const validation = validateInput(apiMergeVendorPayloadSchema, { targetName, masterId, canonicalName });
+    if (!validation.success) {
+      throw new Error(`Invalid vendor merge payload: ${JSON.stringify(validation.errors)}`);
+    }
+
     const res = await fetch(`${API_BASE}/api/vendors`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetName, masterId, canonicalName })
+      body: JSON.stringify(validation.data)
     });
     return await res.json();
   },
@@ -121,10 +148,15 @@ export const apiClient = {
 
   async deployOpportunity(opp_id: string, targetModule: 'proCPX' | 'DPS NXT'): Promise<SavingsOpportunity> {
     frontendLogger.info('Deploying opportunity to module', { opp_id, targetModule });
+    const validation = validateInput(apiDeployOpportunityPayloadSchema, { opp_id, targetModule });
+    if (!validation.success) {
+      throw new Error(`Invalid deploy payload: ${JSON.stringify(validation.errors)}`);
+    }
+
     const res = await fetch(`${API_BASE}/api/savings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ opp_id, targetModule })
+      body: JSON.stringify(validation.data)
     });
     const json = await res.json();
     return json.data;
@@ -133,10 +165,15 @@ export const apiClient = {
   // Conversion
   async calculateCommercialSaaS(annualSpendCr: number, savingsRate: number, saasFeeRate: number) {
     frontendLogger.debug('Calculating SaaS commercial projection', { annualSpendCr, savingsRate, saasFeeRate });
+    const validation = validateInput(apiCalculateConversionPayloadSchema, { annualSpendCr, savingsRate, saasFeeRate });
+    if (!validation.success) {
+      throw new Error(`Invalid commercial metrics calculation: ${JSON.stringify(validation.errors)}`);
+    }
+
     const res = await fetch(`${API_BASE}/api/conversion`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ annualSpendCr, savingsRate, saasFeeRate })
+      body: JSON.stringify(validation.data)
     });
     return await res.json();
   },
@@ -148,4 +185,3 @@ export const apiClient = {
     return await res.json();
   }
 };
-

@@ -213,4 +213,31 @@ describe('apiClient', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/report');
     expect(res).toEqual(mockData);
   });
+
+  describe('apiClient Input Validation Failures', () => {
+    it('should throw validation error when updateTenant receives invalid data', async () => {
+      await expect(apiClient.updateTenant({ enterprise_name: '' })).rejects.toThrow('Invalid tenant updates');
+    });
+
+    it('should throw validation error when addIngestionFile receives invalid data', async () => {
+      await expect(apiClient.addIngestionFile({ file_name: '' })).rejects.toThrow('Invalid file data');
+    });
+
+    it('should throw validation error when updateValidationRecord receives invalid data', async () => {
+      await expect(apiClient.updateValidationRecord('', { resolved: true })).rejects.toThrow('Invalid record update');
+    });
+
+    it('should throw validation error when mergeVendor receives invalid data', async () => {
+      await expect(apiClient.mergeVendor('', 'M1', 'Name')).rejects.toThrow('Invalid vendor merge payload');
+    });
+
+    it('should throw validation error when deployOpportunity receives invalid data', async () => {
+      await expect(apiClient.deployOpportunity('', 'proCPX')).rejects.toThrow('Invalid deploy payload');
+    });
+
+    it('should throw validation error when calculateCommercialSaaS receives invalid data', async () => {
+      await expect(apiClient.calculateCommercialSaaS(-100, 10, 1)).rejects.toThrow('Invalid commercial metrics calculation');
+    });
+  });
 });
+

@@ -1,0 +1,194 @@
+import { describe, it, expect } from 'vitest';
+import {
+  requestHeadersSchema,
+  tenantUpdateSchema,
+  addIngestionFileSchema,
+  updateValidationRecordSchema,
+  mergeVendorSchema,
+  deployOpportunitySchema,
+  calculateConversionMetricsSchema,
+  categoryQuerySchema,
+  currencyQuerySchema,
+  taxonomyQuerySchema,
+  logsSearchQuerySchema,
+  logsPurgeSchema
+} from '../../src/constants/validation';
+
+describe('Backend Validation Schemas (constants/validation.ts)', () => {
+  describe('requestHeadersSchema', () => {
+    it('should validate valid request headers', () => {
+      const valid = {
+        'x-request-id': 'req-12345',
+        'content-type': 'application/json',
+        authorization: 'Bearer token123',
+        'custom-header': 'passed'
+      };
+      const result = requestHeadersSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should pass with empty headers', () => {
+      const result = requestHeadersSchema.safeParse({});
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('tenantUpdateSchema', () => {
+    it('should validate valid tenant update payload', () => {
+      const valid = {
+        enterprise_name: 'Test Corp',
+        region: 'APAC',
+        base_currency: 'INR',
+        financial_year: 'FY25-26',
+        total_spend_evaluated_inr: 500,
+        target_savings_rate_pct: 10.5
+      };
+      const result = tenantUpdateSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject empty update object', () => {
+      const result = tenantUpdateSchema.safeParse({});
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject invalid types', () => {
+      const result = tenantUpdateSchema.safeParse({ total_spend_evaluated_inr: -10 });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('addIngestionFileSchema', () => {
+    it('should validate valid ingestion file', () => {
+      const valid = {
+        file_name: 'test_spend.xlsx',
+        file_type: 'Excel Spreadsheet',
+        file_size_mb: 4.5,
+        records_count: 1000
+      };
+      const result = addIngestionFileSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject missing or invalid fields', () => {
+      expect(addIngestionFileSchema.safeParse({}).success).toBe(false);
+      expect(addIngestionFileSchema.safeParse({ file_name: '', file_type: 'CSV', file_size_mb: 2, records_count: 10 }).success).toBe(false);
+      expect(addIngestionFileSchema.safeParse({ file_name: 'test.csv', file_type: 'CSV', file_size_mb: -1, records_count: 10 }).success).toBe(false);
+      expect(addIngestionFileSchema.safeParse({ file_name: 'test.csv', file_type: 'CSV', file_size_mb: 1, records_count: -5 }).success).toBe(false);
+    });
+  });
+
+  describe('updateValidationRecordSchema', () => {
+    it('should validate valid record update', () => {
+      const valid = {
+        record_id: 'REC-001',
+        resolved: true,
+        notes: 'Verified supplier details'
+      };
+      const result = updateValidationRecordSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject missing record_id', () => {
+      const result = updateValidationRecordSchema.safeParse({ resolved: true });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('mergeVendorSchema', () => {
+    it('should validate valid vendor merge input', () => {
+      const valid = {
+        targetName: 'Acme Corp Ltd',
+        masterId: 'VEND-ACME',
+        canonicalName: 'Acme Global Inc'
+      };
+      const result = mergeVendorSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject empty or missing fields', () => {
+      expect(mergeVendorSchema.safeParse({}).success).toBe(false);
+      expect(mergeVendorSchema.safeParse({ targetName: '', masterId: '1', canonicalName: '1' }).success).toBe(false);
+    });
+  });
+
+  describe('deployOpportunitySchema', () => {
+    it('should validate valid deployment targets', () => {
+      expect(deployOpportunitySchema.safeParse({ opp_id: 'OPP-1', targetModule: 'proCPX' }).success).toBe(true);
+      expect(deployOpportunitySchema.safeParse({ opp_id: 'OPP-2', targetModule: 'DPS NXT' }).success).toBe(true);
+    });
+
+    it('should reject invalid deployment targets or missing opp_id', () => {
+      expect(deployOpportunitySchema.safeParse({ opp_id: '', targetModule: 'proCPX' }).success).toBe(false);
+      expect(deployOpportunitySchema.safeParse({ opp_id: 'OPP-1', targetModule: 'OtherModule' }).success).toBe(false);
+    });
+  });
+
+  describe('calculateConversionMetricsSchema', () => {
+    it('should validate with defaults and custom numbers', () => {
+      const defaultResult = calculateConversionMetricsSchema.safeParse({});
+      expect(defaultResult.success).toBe(true);
+      if (defaultResult.success) {
+        expect(defaultResult.data.annualSpendCr).toBe(428.5);
+        expect(defaultResult.data.savingsRate).toBe(9.4);
+      }
+
+      const custom = {
+        annualSpendCr: 500,
+        savingsRate: 12.0,
+        saasFeeRate: 1.0
+      };
+      expect(calculateConversionMetricsSchema.safeParse(custom).success).toBe(true);
+    });
+
+    it('should reject non-positive annual spend or negative rates', () => {
+      expect(calculateConversionMetricsSchema.safeParse({ annualSpendCr: -10 }).success).toBe(false);
+      expect(calculateConversionMetricsSchema.safeParse({ savingsRate: -1 }).success).toBe(false);
+    });
+  });
+
+  describe('categoryQuerySchema', () => {
+    it('should validate category query', () => {
+      expect(categoryQuerySchema.safeParse({}).success).toBe(true);
+      expect(categoryQuerySchema.safeParse({ id: 'CAT-1' }).success).toBe(true);
+    });
+  });
+
+  describe('currencyQuerySchema', () => {
+    it('should validate currency query', () => {
+      expect(currencyQuerySchema.safeParse({}).success).toBe(true);
+      expect(currencyQuerySchema.safeParse({ from: 'USD', amount: '100', year: '2024' }).success).toBe(true);
+      expect(currencyQuerySchema.safeParse({ from: 'EUR', amount: 50, year: 2025 }).success).toBe(true);
+    });
+  });
+
+  describe('taxonomyQuerySchema', () => {
+    it('should validate taxonomy query', () => {
+      expect(taxonomyQuerySchema.safeParse({}).success).toBe(true);
+      expect(taxonomyQuerySchema.safeParse({ q: 'bearing', category: 'Direct', lookup: '41112400' }).success).toBe(true);
+    });
+  });
+
+  describe('logsSearchQuerySchema', () => {
+    it('should validate log search query', () => {
+      expect(logsSearchQuerySchema.safeParse({}).success).toBe(true);
+      expect(logsSearchQuerySchema.safeParse({ level: 'info', keyword: 'tenant', limit: '50' }).success).toBe(true);
+    });
+
+    it('should reject invalid log level', () => {
+      expect(logsSearchQuerySchema.safeParse({ level: 'critical' }).success).toBe(false);
+    });
+  });
+
+  describe('logsPurgeSchema', () => {
+    it('should validate log purge parameters', () => {
+      expect(logsPurgeSchema.safeParse({}).success).toBe(true);
+      expect(logsPurgeSchema.safeParse({ retentionDays: 30 }).success).toBe(true);
+    });
+
+    it('should reject negative or non-integer retention days', () => {
+      expect(logsPurgeSchema.safeParse({ retentionDays: -5 }).success).toBe(false);
+      expect(logsPurgeSchema.safeParse({ retentionDays: 2.5 }).success).toBe(false);
+    });
+  });
+});

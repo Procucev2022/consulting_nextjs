@@ -19,10 +19,11 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   const totalSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
   const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr
 
-
   const handlePrint = () => {
     window.print();
   };
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/85 backdrop-blur-md animate-in fade-in duration-200">

@@ -49,3 +49,12 @@
 - **Component Props Separation**: Component and modal prop interfaces must be extracted into dedicated type files (e.g., `types/components.ts`) and imported.
 - **Barrel Exports**: Re-export all types via `types/index.ts` for clean, modular imports.
 
+## Mandatory Input Schema Validation
+
+- **Rule**: Whenever any code change touches user or system inputs, comprehensive input schema validation is MANDATORY. This covers frontend forms, modals, API routes, controller bodies (`req.body`), query parameters (`req.query`), and headers (`req.headers`).
+- **Constants Isolation**: All validation schemas MUST be defined in dedicated constants modules under `constants/` (`frontend/src/constants/validation.ts` and `backend/src/constants/validation.ts`) and re-exported via `constants/index.ts`. Inline schemas are strictly prohibited.
+- **Dedicated Types**: Types derived from schemas (`z.infer<typeof schema>`) must be defined in `types/validation.ts` and re-exported via `types/index.ts`.
+- **Fail-Fast Error Handling**: Invalid requests must be rejected immediately with HTTP 400 and structured error details before running business logic.
+- **Strict 90% Coverage**: Every validation schema and utility must maintain >= 90% unit test coverage individually.
+
+

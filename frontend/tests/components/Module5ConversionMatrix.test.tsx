@@ -44,7 +44,16 @@ describe('Module5ConversionMatrix Component', () => {
     // Click lock in button
     const lockInBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module5.lockInButton, 'i') });
     fireEvent.click(lockInBtn);
+
+    // Test zero fee rate to exercise || 1 fallback
+    fireEvent.change(sliders[2], { target: { value: '0' } });
+    fireEvent.click(lockInBtn);
+
+    // Test non-positive annual spend to exercise validation return early
+    fireEvent.change(sliders[0], { target: { value: '0' } });
+    fireEvent.click(lockInBtn);
   });
+
 
   it('triggers onOpenReport when clicking Generate Executive Brief button', () => {
     const onOpenReport = vi.fn();

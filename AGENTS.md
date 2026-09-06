@@ -94,3 +94,21 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Component & Modal Props Separation**: Component and modal prop interfaces (e.g., `HeaderProps`, `PipelineBarProps`, `ClientIngestionSetupModalProps`) must reside in dedicated type definition files (e.g., `types/components.ts` or `types/modals.ts`) and be imported where needed.
 - **Unified Barrel Exports**: Centralize and re-export all types via `types/index.ts` so imports remain clean and maintainable.
 
+## 10. Mandatory Input Schema Validation Architecture
+
+- **Strict Input Validation Across All Boundaries**: Whenever any code change touches user or system inputs, comprehensive input schema validation is MANDATORY. This applies without exception to:
+  - Frontend forms, modals, inputs, and state manipulation triggers.
+  - Outgoing frontend API requests.
+  - Backend API routes and controllers: `req.body`, `req.query`, `req.params`, and `req.headers`.
+- **Single Source of Truth in Dedicated Constants**:
+  - All validation schemas MUST be defined in dedicated constants modules under `constants/` (`frontend/src/constants/validation.ts` and `backend/src/constants/validation.ts`).
+  - Validation schemas must NEVER be declared inline within route handlers, controller bodies, components, or modals.
+  - Re-export all validation schemas via the centralized barrel export (`constants/index.ts`).
+- **Separation of Types Inferred from Schemas**:
+  - TypeScript types derived from schemas (e.g., `z.infer<typeof schema>`) must reside in dedicated type files under `types/` (`types/validation.ts`) and re-exported via `types/index.ts`.
+- **Fail-Fast Error Handling & Standardized Responses**:
+  - Invalid backend inputs must immediately be rejected with HTTP 400 Bad Request containing structured validation errors (`{ success: false, message: 'Validation failed', errors }`) before reaching domain or database logic.
+  - Detailed error logs must be recorded with structured metadata using the centralized logger.
+- **Strict 90% Unit Test Code Coverage**:
+  - Every validation schema, validation middleware, and utility function must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines.
+

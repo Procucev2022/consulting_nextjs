@@ -6,8 +6,10 @@ import confetti from 'canvas-confetti';
 import {
   UI_STRINGS,
   DEFAULT_MAX_PRICE_CREEP_CAP,
-  DEFAULT_INDEX_PEGGING
+  DEFAULT_INDEX_PEGGING,
+  dpsnxtFormSchema
 } from '../../constants';
+import { validateInput } from '../../utils/validation';
 
 export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
   opportunity,
@@ -25,6 +27,15 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
   if (!isOpen || !opportunity) return null;
 
   const handleExecute = () => {
+    const validation = validateInput(dpsnxtFormSchema, {
+      oppId: opportunity.opp_id,
+      indexPegging,
+      contractTermMonths: 24,
+      maxPriceCreepCapPct: maxPriceCreepCap,
+      rateCardCurrency: 'INR'
+    });
+    if (!validation.success) return;
+
     setIsExecuting(true);
     setTimeout(() => {
       setIsExecuting(false);
@@ -41,6 +52,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
       }, 1800);
     }, 1200);
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">

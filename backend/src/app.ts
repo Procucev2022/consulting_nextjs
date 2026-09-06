@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import apiRouter from './routes';
 import logger, { requestLogger } from './utils/logger';
+import { validateHeaders } from './utils/validation';
+import { requestHeadersSchema } from './constants/validation';
 
 dotenv.config();
 
@@ -25,7 +27,10 @@ app.use(
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 app.use(requestLogger);
+app.use(validateHeaders(requestHeadersSchema));
+
 
 // Root welcome endpoint
 

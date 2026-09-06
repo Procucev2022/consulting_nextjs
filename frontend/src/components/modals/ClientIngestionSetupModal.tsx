@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { TenantMaster, DatasetType, ClientIngestionSetupModalProps } from '../../types';
 import { yahooFinanceFXRates } from '../../utils/currencyConverter';
-import { UI_STRINGS, DEFAULT_TENANT_ENTERPRISE_NAME } from '../../constants';
+import { UI_STRINGS, DEFAULT_TENANT_ENTERPRISE_NAME, clientIngestionSetupFormSchema } from '../../constants';
+import { validateInput } from '../../utils/validation';
 
 export type { DatasetType, ClientIngestionSetupModalProps };
 
@@ -69,17 +70,22 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientName.trim()) return;
-
-    onConfirmAndUpload({
+    const validation = validateInput(clientIngestionSetupFormSchema, {
       clientName: clientName.trim(),
       datasetType,
       spendPeriod,
       currency,
       region,
-      estimatedSpend: estimatedSpendCr * 10000000 / 83.8
+      estimatedSpend: (estimatedSpendCr * 10000000) / 83.8
     });
+
+    if (!validation.success) {
+      return;
+    }
+
+    onConfirmAndUpload(validation.data);
   };
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">

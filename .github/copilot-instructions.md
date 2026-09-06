@@ -15,4 +15,6 @@
 - Use template placeholders for dynamic substitution and assert against `UI_STRINGS` constants in all unit tests.
 - All constants (defaults, rates, thresholds, palettes, lookups) must reside in dedicated constants files under `constants/` (`frontend/src/constants/` and `backend/src/constants/`). No inline constants or magic numbers.
 - All TypeScript types, interfaces, enums, and component prop definitions must reside in dedicated files under `types/` (`frontend/src/types/` and `backend/src/types/`). No inline `interface` or `type` declarations in components, services, or controllers.
+- All user and system inputs (frontend forms, modals, API routes, controller bodies, query parameters, headers) must be strictly validated using schemas in `constants/validation.ts` and inferred types in `types/validation.ts`. No inline validation schemas.
+
 

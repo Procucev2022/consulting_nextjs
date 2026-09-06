@@ -91,4 +91,46 @@ describe('ReassignModal Component', () => {
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('handles apply click without selecting a record', () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <ReassignModal
+        item={sampleItem}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+      />
+    );
+
+    const applyBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.reassign.saveMapping, 'i') });
+    expect(applyBtn).toBeDisabled();
+    fireEvent.click(applyBtn);
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('returns early when validation fails on empty mapping_id', () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <ReassignModal
+        item={{ ...sampleItem, mapping_id: '' }}
+        isOpen={true}
+        onClose={onClose}
+        onSave={onSave}
+      />
+    );
+
+    const searchInput = screen.getByPlaceholderText(new RegExp(UI_STRINGS.modals.reassign.searchPlaceholder.slice(0, 15), 'i'));
+    fireEvent.change(searchInput, { target: { value: 'boxwood' } });
+    const firstResult = screen.getByText(/boxwood/i);
+    fireEvent.click(firstResult);
+
+    const applyBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.reassign.saveMapping, 'i') });
+    fireEvent.click(applyBtn);
+    expect(onSave).not.toHaveBeenCalled();
+  });
 });
+

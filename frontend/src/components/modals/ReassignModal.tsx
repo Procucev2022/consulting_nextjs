@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { Tag, Check, X, Search, Sparkles, FileSpreadsheet } from 'lucide-react';
 import { LineItemMapping, ReassignModalProps, UNSPSCCommodityRecord } from '../../types';
 import { searchUNSPSCTaxonomy } from '../../data/unspscTaxonomy';
-import { UI_STRINGS } from '../../constants';
+import { UI_STRINGS, reassignTaxonomyFormSchema } from '../../constants';
+import { validateInput } from '../../utils/validation';
 
 export const ReassignModal: React.FC<ReassignModalProps> = ({
   item,
@@ -20,16 +21,26 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
   const searchResults = searchUNSPSCTaxonomy(search, selectedBucketFilter).slice(0, 15);
 
   const handleConfirm = () => {
-    if (selectedRecord) {
-      onSave(
-        item.mapping_id,
-        selectedRecord.commodityCode,
-        `${selectedRecord.coreBucket} (${selectedRecord.commodityTitle})`,
-        selectedRecord.coreBucket || 'Direct Materials'
-      );
-    }
+    if (!selectedRecord) return;
+
+    const validation = validateInput(reassignTaxonomyFormSchema, {
+      mappingId: item.mapping_id,
+      newCode: selectedRecord.commodityCode,
+      newName: `${selectedRecord.coreBucket} (${selectedRecord.commodityTitle})`,
+      bucket: selectedRecord.coreBucket
+    });
+    if (!validation.success) return;
+
+    onSave(
+      validation.data.mappingId,
+      validation.data.newCode,
+      validation.data.newName,
+      validation.data.bucket
+    );
     onClose();
   };
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
