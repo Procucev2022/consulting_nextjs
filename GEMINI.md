@@ -119,3 +119,13 @@
 - **Safe Refactoring**: Systematically address deprecation notices, unused imports, type mismatches, and syntax warnings without suppressing with comments or breaking functionality.
 - **Quality Check Pipeline**: Validate warning resolutions via `npm run typecheck` (0 errors/warnings), `npm run lint` (0 errors/warnings), clean builds, and unit tests (`npm run test:coverage`) maintaining >= 90% per-file code coverage.
 
+## Mandatory Git Pre-Commit Quality Checks & Hook Enforcement
+
+- **Hook Execution Mandate**: Always execute git pre-commit hooks (`npm run pre-commit`) before allowing any commit to occur. Bypassing pre-commit hooks is strictly prohibited.
+- **Pre-Commit Checks Sequence**: The hook must execute and pass the complete quality check sequence:
+  1. *Linting*: `npm run lint` (0 errors/warnings).
+  2. *Typechecking*: `npm run typecheck` (0 type errors).
+  3. *Unit Tests & 90% Per-File Coverage*: `npm run test:coverage` (100% test pass rate, >= 90% coverage per-file across statements, branches, functions, and lines).
+  4. *Production Build*: `npm run build` (Clean build for frontend and backend).
+- **Abort on Failure**: Immediately reject and block commits if any check fails until issues are diagnosed and resolved.
+

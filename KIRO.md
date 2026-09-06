@@ -101,3 +101,8 @@
 - Apply safe refactoring for deprecation notices, unused imports, type mismatches, and syntax warnings without suppressing warnings with comments.
 - Validate fixes via `npm run typecheck` (0 errors), `npm run lint` (0 errors), clean builds, and unit tests with >= 90% per-file coverage.
 
+## Git Pre-Commit Quality Checks & Hook Enforcement
+- Enforce git pre-commit hooks (`npm run pre-commit`) executing linting, typechecking, 90% per-file unit test coverage, and builds before allowing commits.
+- Strictly block commits if any check in the quality pipeline fails.
+
+

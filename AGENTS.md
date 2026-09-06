@@ -261,3 +261,19 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
     3. **Production Build**: `npm run build` (Clean production bundles without build-time warnings).
     4. **Unit Tests & 90% Per-File Code Coverage**: `npm run test:coverage` (100% test pass rate, 0 runtime console/test warnings, and individual per-file coverage >= 90% across statements, branches, functions, and lines with `perFile: true`).
 
+## 18. Mandatory Git Pre-Commit Quality Checks & Hook Enforcement Policy
+
+- **Mandatory Pre-Commit Hook Execution**:
+  - Every AI assistant and developer working in this repository MUST configure and execute Git pre-commit hooks before allowing any `git commit` operation.
+  - Committing code without running the full pre-commit quality check pipeline or bypassing hooks (e.g., using `--no-verify`) is strictly prohibited.
+- **Pre-Commit Quality Gate Requirements**:
+  - The pre-commit hook (`npm run pre-commit` or `.husky/pre-commit`) MUST execute and pass the complete quality gate sequence before changes can be committed:
+    1. **Strict Linting**: `npm run lint` (Zero ESLint errors and zero ESLint warnings across frontend and backend).
+    2. **Strict Typechecking**: `npm run typecheck` / `tsc --noEmit` (Zero TypeScript compilation errors across all packages).
+    3. **Unit Tests & 90% Per-File Code Coverage**: `npm run test:coverage` (100% test pass rate with individual per-file code coverage >= 90% across statements, branches, functions, and lines with `perFile: true`).
+    4. **Production Build**: `npm run build` (Clean production builds for both services without compilation or bundling failures).
+- **Automated Rejection on Failure**:
+  - If any check fails (whether a lint warning, type error, broken test, coverage drop below 90%, or build error), the pre-commit hook must immediately abort the commit process with a non-zero exit code.
+  - The assistant must diagnose and resolve the failure, re-run all checks, and ensure clean execution before attempting the commit again.
+
+

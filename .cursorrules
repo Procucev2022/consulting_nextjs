@@ -105,3 +105,9 @@
 - Apply safe refactoring for deprecation notices, unused imports, type mismatches, and syntax warnings without suppressing warnings with comments.
 - Validate fixes via `npm run typecheck`, `npm run lint`, and unit tests with >= 90% per-file code coverage.
 
+## 18. Mandatory Git Pre-Commit Checks & Hook Enforcement
+- Enforce git pre-commit hook (`npm run pre-commit`) execution before allowing any code to be committed.
+- Validate all quality gates: linting (0 warnings), typechecking (0 errors), unit tests (100% pass, >= 90% per-file coverage), and production builds.
+- Abort commit attempts immediately on any check failure.
+
+

@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+echo "Running Pre-Commit Quality Checks..."
+npm run pre-commit

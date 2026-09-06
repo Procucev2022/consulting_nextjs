@@ -114,3 +114,13 @@
 2. **Safe Code Refactoring**: Fix deprecation warnings, unused imports, type mismatches, and component syntax warnings safely while preserving business logic.
 3. **Full Pipeline Validation**: Validate all warning fixes with `npm run typecheck` (0 errors), `npm run lint` (0 errors), and unit tests (`npm run test:coverage`) with >= 90% per-file coverage.
 
+## Git Pre-Commit Quality Checks & Hook Standards
+
+1. **Pre-Commit Hook Execution**: Enforce running the full pre-commit check (`npm run pre-commit`) before allowing any commit to proceed. Bypassing hooks is strictly disallowed.
+2. **Quality Gate Pipeline**: Ensure all 4 gates succeed:
+   - Linting: `npm run lint` (0 errors/warnings)
+   - Typechecking: `npm run typecheck` (0 errors)
+   - Unit Tests: `npm run test:coverage` (100% pass rate, >= 90% per-file coverage)
+   - Production Build: `npm run build`
+3. **Commit Blocking**: Abort the commit immediately upon any check failure.
+
