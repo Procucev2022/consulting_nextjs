@@ -69,3 +69,11 @@ Input Schema Validation: Add a comprehensive configuration in assistant instruct
 ## Prompt 11
 Comprehensive and Descriptive UI Error Messaging: Add a comprehensive configuration in assistant instructions to always Implement user-facing error messages that clearly present actionable context and specific failure details across different error categories.
 
+---
+
+## Prompt 12
+Database Optimization & GraphQL Integration: Configure assistant instructions to audit database queries for efficiency and integrate GraphQL to streamline data fetching across the application. 
+
+Additionally, implement optimizations to minimize database compute hours, reduce resource usage, and enhance overall infrastructure efficiency.
+
+

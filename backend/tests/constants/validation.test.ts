@@ -11,7 +11,8 @@ import {
   currencyQuerySchema,
   taxonomyQuerySchema,
   logsSearchQuerySchema,
-  logsPurgeSchema
+  logsPurgeSchema,
+  graphQLRequestSchema
 } from '../../src/constants/validation';
 
 describe('Backend Validation Schemas (constants/validation.ts)', () => {
@@ -189,6 +190,33 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
     it('should reject negative or non-integer retention days', () => {
       expect(logsPurgeSchema.safeParse({ retentionDays: -5 }).success).toBe(false);
       expect(logsPurgeSchema.safeParse({ retentionDays: 2.5 }).success).toBe(false);
+    });
+  });
+
+  describe('graphQLRequestSchema', () => {
+    it('should validate valid GraphQL query requests', () => {
+      const valid = {
+        query: 'query { tenant { enterprise_name } }',
+        variables: { id: '1' },
+        operationName: 'GetTenant'
+      };
+      const result = graphQLRequestSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should validate requests with null or undefined optional fields', () => {
+      const valid = {
+        query: 'query { tenant { enterprise_name } }',
+        variables: null,
+        operationName: null
+      };
+      const result = graphQLRequestSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject missing or empty query strings', () => {
+      expect(graphQLRequestSchema.safeParse({}).success).toBe(false);
+      expect(graphQLRequestSchema.safeParse({ query: '' }).success).toBe(false);
     });
   });
 });

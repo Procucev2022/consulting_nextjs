@@ -17,6 +17,8 @@
 - All TypeScript types, interfaces, enums, and component prop definitions must reside in dedicated files under `types/` (`frontend/src/types/` and `backend/src/types/`). No inline `interface` or `type` declarations in components, services, or controllers.
 - All user and system inputs (frontend forms, modals, API routes, controller bodies, query parameters, headers) must be strictly validated using schemas in `constants/validation.ts` and inferred types in `types/validation.ts`. No inline validation schemas.
 - Always implement user-facing error messages with actionable context and specific failure details across categories (`VALIDATION_ERROR`, `NETWORK_ERROR`, `AUTH_ERROR`, `NOT_FOUND_ERROR`, `CONFLICT_ERROR`, `SERVER_ERROR`, `RATE_LIMIT_ERROR`). Centralize all error text in `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`), keep error constants in `constants/`, types in `types/`, log errors via centralized logger, and maintain >= 90% unit test coverage.
+- Audit all database queries for efficiency and log warnings for slow queries (>100ms). Minimize database compute hours with TTL query caching, projection selection, and Prisma indexes. Integrate GraphQL (`/api/graphql`) for single round-trip data fetching. Keep GraphQL SDL/queries in `constants/` and types in `types/`. Maintain >= 90% unit test coverage.
+
 
 
 

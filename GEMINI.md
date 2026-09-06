@@ -70,5 +70,15 @@
 - **Dedicated Types**: All error models, category types, and banner/modal error props must reside in `types/` and be re-exported via `types/index.ts`.
 - **Strict 90% Coverage**: All error helpers, formatters, and UI error components must maintain >= 90% unit test coverage individually.
 
+## Mandatory Database Query Optimization & GraphQL Integration
+
+- **Rule**: Audit all database queries for execution efficiency and integrate GraphQL to streamline application-wide data fetching.
+- **Query Auditing & Slow Query Warnings**: Record query duration (`durationMs`), operation, and row count. Trigger structured warning logs for queries exceeding `SLOW_QUERY_THRESHOLD_MS` (100ms).
+- **Minimizing Compute Hours**: Implement query caching with TTL for stable reads (tenants, taxonomy, categories, rankings) with automatic write invalidation. Enforce projection selection and database indexing in Prisma schema to eliminate full-table scans and minimize database CPU/memory costs.
+- **GraphQL Integration**: Provide `/api/graphql` endpoint exposing application queries and mutations. Support composite queries (such as `dashboardOverview`) to fetch multiple domain models in a single network round-trip.
+- **Constants & Types Isolation**: Schema definitions and query strings must live in `constants/graphql.ts` and `constants/db.ts`; models and contexts in `types/graphql.ts` and `types/db.ts`.
+- **Strict 90% Coverage**: All database auditors, cache helpers, GraphQL resolvers, and route handlers must maintain >= 90% unit test coverage individually.
+
+
 
 

@@ -59,5 +59,14 @@
 - Log all UI errors with context and `requestId` via `frontend/src/utils/logger.ts`.
 - Ensure >= 90% per-file unit test coverage across all error components and utilities.
 
+## Database Optimization & GraphQL Integration
+- Audit database queries for execution duration and row count. Trigger warning logs for queries exceeding `SLOW_QUERY_THRESHOLD_MS` (100ms).
+- Minimize database compute hours by implementing query caching with TTL for stable reads with mutation-driven cache invalidation.
+- Optimize Prisma schema with database indexes to prevent full-table scans.
+- Integrate GraphQL (`/api/graphql`) to streamline data fetching, enabling single round-trip dashboard queries.
+- Isolate GraphQL schema SDL and queries in `constants/graphql.ts` and `constants/db.ts`, and types in `types/graphql.ts` and `types/db.ts`.
+- Ensure >= 90% per-file unit test coverage across all database and GraphQL modules.
+
+
 
 

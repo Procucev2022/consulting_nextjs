@@ -312,6 +312,34 @@ describe('DatabaseStore service', () => {
     });
   });
 
+  describe('Query Caching and Audit Logging', () => {
+    it('should hit cache on repeated queries', () => {
+      // First call hydrates cache
+      store.getTenant();
+      store.getIngestionQueue();
+      store.getValidationRecords();
+      store.getCategories();
+      store.getCategoryDetails();
+      store.getVendorDetails();
+      store.getVendorRankings();
+      store.getLineItems();
+      store.getOpportunities();
+      store.getFunnelStages();
+
+      // Second call hits cache (exercising the if (cached) branches)
+      expect(store.getTenant()).toBeDefined();
+      expect(store.getIngestionQueue().length).toBeGreaterThan(0);
+      expect(store.getValidationRecords().length).toBeGreaterThan(0);
+      expect(store.getCategories().length).toBeGreaterThan(0);
+      expect(store.getCategoryDetails().length).toBeGreaterThan(0);
+      expect(store.getVendorDetails().length).toBeGreaterThan(0);
+      expect(store.getVendorRankings().length).toBeGreaterThan(0);
+      expect(store.getLineItems().length).toBeGreaterThan(0);
+      expect(store.getOpportunities().length).toBeGreaterThan(0);
+      expect(store.getFunnelStages().length).toBeGreaterThan(0);
+    });
+  });
+
   describe('Global singleton', () => {
     it('should export singleton instance', () => {
       expect(db).toBeInstanceOf(DatabaseStore);

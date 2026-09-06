@@ -67,5 +67,14 @@
 5. **Structured Logging**: Log all UI errors with severity, user message, stack, context, and correlation `requestId` via `frontend/src/utils/logger.ts`.
 6. **Strict 90% Per-File Coverage**: All error formatters, banner components, and utilities must maintain >= 90% unit test coverage individually.
 
+## Database Optimization & GraphQL Integration Standards
+
+1. **Mandatory Query Auditing**: Track all database queries for execution time (`durationMs`), operation, and row count. Trigger structured warning logs for queries exceeding `SLOW_QUERY_THRESHOLD_MS` (100ms).
+2. **Compute Hour Reduction**: Implement query caching with TTL for stable reads (tenants, taxonomy, categories, rankings) with automatic write invalidation. Enforce projection selection and database indexing in Prisma schema to eliminate full-table scans and minimize database compute hours.
+3. **GraphQL Integration**: Provide `/api/graphql` endpoint exposing application queries and mutations. Support composite queries (such as `dashboardOverview`) to fetch multiple domain models in a single network round-trip.
+4. **Constants & Types Isolation**: Schema definitions and query strings must live in `constants/graphql.ts` and `constants/db.ts`; models and contexts in `types/graphql.ts` and `types/db.ts`.
+5. **Strict 90% Coverage**: All database auditors, cache helpers, GraphQL resolvers, and route handlers must maintain >= 90% unit test coverage individually.
+
+
 
 

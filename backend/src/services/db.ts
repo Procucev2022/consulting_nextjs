@@ -27,6 +27,9 @@ import {
 
 import { convertToINR } from '../utils/currencyConverter';
 import logger from '../utils/logger';
+import { queryCache } from '../utils/queryCache';
+import { queryAuditor } from '../utils/queryAuditor';
+import { CACHE_KEYS } from '../constants/db';
 
 export const prisma = new PrismaClient({
   log: ['warn', 'error']
@@ -83,11 +86,35 @@ export class DatabaseStore {
 
   // Tenant
   public getTenant(): TenantMaster {
-    return { ...this.tenant };
+    const start = Date.now();
+    const cached = queryCache.getCached<TenantMaster>(CACHE_KEYS.TENANT);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `tenant-${Date.now()}`,
+        operation: 'getTenant',
+        model: 'TenantMaster',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = { ...this.tenant };
+    queryCache.setCached(CACHE_KEYS.TENANT, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `tenant-${Date.now()}`,
+      operation: 'getTenant',
+      model: 'TenantMaster',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public updateTenant(updates: Partial<TenantMaster>): TenantMaster {
     this.tenant = { ...this.tenant, ...updates };
+    queryCache.invalidateCache(CACHE_KEYS.TENANT);
     if (this.isPostgresConnected) {
       prisma.tenantMaster.updateMany({
         where: { tenant_id: this.tenant.tenant_id },
@@ -104,11 +131,35 @@ export class DatabaseStore {
 
   // Ingestion
   public getIngestionQueue(): RawDocumentIngestion[] {
-    return [...this.ingestionQueue];
+    const start = Date.now();
+    const cached = queryCache.getCached<RawDocumentIngestion[]>(CACHE_KEYS.INGESTION_QUEUE);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `ingestion-${Date.now()}`,
+        operation: 'getIngestionQueue',
+        model: 'RawDocumentIngestion',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.ingestionQueue];
+    queryCache.setCached(CACHE_KEYS.INGESTION_QUEUE, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `ingestion-${Date.now()}`,
+      operation: 'getIngestionQueue',
+      model: 'RawDocumentIngestion',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public addIngestionItem(item: RawDocumentIngestion): RawDocumentIngestion[] {
     this.ingestionQueue = [item, ...this.ingestionQueue];
+    queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
     if (this.isPostgresConnected) {
       prisma.rawDocumentIngestion.create({
         data: {
@@ -131,7 +182,30 @@ export class DatabaseStore {
 
   // Validation Records
   public getValidationRecords(): ValidationPreCheckRecord[] {
-    return [...this.validationRecords];
+    const start = Date.now();
+    const cached = queryCache.getCached<ValidationPreCheckRecord[]>(CACHE_KEYS.VALIDATION_RECORDS);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `val-${Date.now()}`,
+        operation: 'getValidationRecords',
+        model: 'ValidationPreCheckRecord',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.validationRecords];
+    queryCache.setCached(CACHE_KEYS.VALIDATION_RECORDS, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `val-${Date.now()}`,
+      operation: 'getValidationRecords',
+      model: 'ValidationPreCheckRecord',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public updateValidationRecord(recordId: string, updates: Partial<ValidationPreCheckRecord>): ValidationPreCheckRecord | null {
@@ -144,6 +218,8 @@ export class DatabaseStore {
       return rec;
     });
 
+    queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
+
     if (this.isPostgresConnected && updated) {
       prisma.validationPreCheckRecord.update({
         where: { record_id: recordId },
@@ -152,7 +228,6 @@ export class DatabaseStore {
     }
     return updated;
   }
-
 
   public applyBlanketRemediation(): { updatedCount: number; records: ValidationPreCheckRecord[] } {
     let updatedCount = 0;
@@ -191,21 +266,69 @@ export class DatabaseStore {
       };
     });
 
+    queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
     return { updatedCount, records: [...this.validationRecords] };
   }
 
   public resetValidationRecords(): ValidationPreCheckRecord[] {
     this.validationRecords = JSON.parse(JSON.stringify(initialValidationRecords));
+    queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
     return [...this.validationRecords];
   }
 
   // Categories
   public getCategories(): SpendCategorySummary[] {
-    return [...this.categories];
+    const start = Date.now();
+    const cached = queryCache.getCached<SpendCategorySummary[]>(CACHE_KEYS.CATEGORIES_SUMMARY);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `cat-${Date.now()}`,
+        operation: 'getCategories',
+        model: 'SpendCategorySummary',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.categories];
+    queryCache.setCached(CACHE_KEYS.CATEGORIES_SUMMARY, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `cat-${Date.now()}`,
+      operation: 'getCategories',
+      model: 'SpendCategorySummary',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public getCategoryDetails(): CategoryYearDetail[] {
-    return [...this.categoryDetails];
+    const start = Date.now();
+    const cached = queryCache.getCached<CategoryYearDetail[]>(CACHE_KEYS.CATEGORY_DETAILS);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `catdet-${Date.now()}`,
+        operation: 'getCategoryDetails',
+        model: 'CategoryYearDetail',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.categoryDetails];
+    queryCache.setCached(CACHE_KEYS.CATEGORY_DETAILS, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `catdet-${Date.now()}`,
+      operation: 'getCategoryDetails',
+      model: 'CategoryYearDetail',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public getCategoryById(id: string): CategoryYearDetail | undefined {
@@ -214,11 +337,57 @@ export class DatabaseStore {
 
   // Vendors
   public getVendorDetails(): VendorYearDetail[] {
-    return [...this.vendorDetails];
+    const start = Date.now();
+    const cached = queryCache.getCached<VendorYearDetail[]>(CACHE_KEYS.VENDOR_DETAILS);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `vend-${Date.now()}`,
+        operation: 'getVendorDetails',
+        model: 'VendorYearDetail',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.vendorDetails];
+    queryCache.setCached(CACHE_KEYS.VENDOR_DETAILS, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `vend-${Date.now()}`,
+      operation: 'getVendorDetails',
+      model: 'VendorYearDetail',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public getVendorRankings(): VendorPriceRank[] {
-    return [...this.vendorRankings];
+    const start = Date.now();
+    const cached = queryCache.getCached<VendorPriceRank[]>(CACHE_KEYS.VENDOR_RANKINGS);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `rank-${Date.now()}`,
+        operation: 'getVendorRankings',
+        model: 'VendorPriceRank',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.vendorRankings];
+    queryCache.setCached(CACHE_KEYS.VENDOR_RANKINGS, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `rank-${Date.now()}`,
+      operation: 'getVendorRankings',
+      model: 'VendorPriceRank',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public mergeVendor(targetName: string, masterId: string, canonicalName: string): { success: boolean; affected: number } {
@@ -248,12 +417,37 @@ export class DatabaseStore {
       return li;
     });
 
+    queryCache.invalidateCache([CACHE_KEYS.VALIDATION_RECORDS, CACHE_KEYS.LINE_ITEMS]);
+
     return { success: true, affected };
   }
 
   // Line Items
   public getLineItems(): LineItemMapping[] {
-    return [...this.lineItems];
+    const start = Date.now();
+    const cached = queryCache.getCached<LineItemMapping[]>(CACHE_KEYS.LINE_ITEMS);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `li-${Date.now()}`,
+        operation: 'getLineItems',
+        model: 'LineItemMapping',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.lineItems];
+    queryCache.setCached(CACHE_KEYS.LINE_ITEMS, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `li-${Date.now()}`,
+      operation: 'getLineItems',
+      model: 'LineItemMapping',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public updateLineItem(mappingId: string, updates: Partial<LineItemMapping>): LineItemMapping | null {
@@ -265,12 +459,36 @@ export class DatabaseStore {
       }
       return item;
     });
+    queryCache.invalidateCache(CACHE_KEYS.LINE_ITEMS);
     return updated;
   }
 
   // Savings
   public getOpportunities(): SavingsOpportunity[] {
-    return [...this.opportunities];
+    const start = Date.now();
+    const cached = queryCache.getCached<SavingsOpportunity[]>(CACHE_KEYS.SAVINGS_OPPORTUNITIES);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `opp-${Date.now()}`,
+        operation: 'getOpportunities',
+        model: 'SavingsOpportunity',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.opportunities];
+    queryCache.setCached(CACHE_KEYS.SAVINGS_OPPORTUNITIES, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `opp-${Date.now()}`,
+      operation: 'getOpportunities',
+      model: 'SavingsOpportunity',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 
   public deployOpportunity(oppId: string, targetModule: 'proCPX' | 'DPS NXT'): SavingsOpportunity | null {
@@ -283,12 +501,36 @@ export class DatabaseStore {
       }
       return opp;
     });
+    queryCache.invalidateCache(CACHE_KEYS.SAVINGS_OPPORTUNITIES);
     return updated;
   }
 
   // Funnel & Realization
   public getFunnelStages(): ConversionFunnelPhase[] {
-    return [...this.funnelStages];
+    const start = Date.now();
+    const cached = queryCache.getCached<ConversionFunnelPhase[]>(CACHE_KEYS.CONVERSION_FUNNEL);
+    if (cached) {
+      queryAuditor.recordQueryAudit({
+        queryId: `funnel-${Date.now()}`,
+        operation: 'getFunnelStages',
+        model: 'ConversionFunnelPhase',
+        durationMs: Date.now() - start,
+        cached: true,
+        timestamp: new Date().toISOString()
+      });
+      return cached;
+    }
+    const result = [...this.funnelStages];
+    queryCache.setCached(CACHE_KEYS.CONVERSION_FUNNEL, result);
+    queryAuditor.recordQueryAudit({
+      queryId: `funnel-${Date.now()}`,
+      operation: 'getFunnelStages',
+      model: 'ConversionFunnelPhase',
+      durationMs: Date.now() - start,
+      cached: false,
+      timestamp: new Date().toISOString()
+    });
+    return result;
   }
 }
 

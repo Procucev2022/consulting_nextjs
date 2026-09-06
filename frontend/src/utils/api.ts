@@ -7,7 +7,8 @@ import {
   VendorYearDetail,
   VendorPriceRank,
   SavingsOpportunity,
-  ConversionFunnelPhase
+  ConversionFunnelPhase,
+  DashboardOverviewData
 } from '../types';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
@@ -19,6 +20,7 @@ import {
   apiDeployOpportunityPayloadSchema,
   apiCalculateConversionPayloadSchema
 } from '../constants/validation';
+import { fetchDashboardOverview } from './graphqlClient';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -183,5 +185,11 @@ export const apiClient = {
     frontendLogger.info('Generating executive intelligence summary report');
     const res = await fetch(`${API_BASE}/api/report`);
     return await res.json();
+  },
+
+  // GraphQL Streamlined Batch Fetching
+  async getDashboardOverviewGraphQL(): Promise<DashboardOverviewData> {
+    frontendLogger.info('Fetching aggregated dashboard overview via GraphQL apiClient wrapper');
+    return await fetchDashboardOverview();
   }
 };

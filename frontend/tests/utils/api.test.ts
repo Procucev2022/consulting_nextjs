@@ -214,6 +214,40 @@ describe('apiClient', () => {
     expect(res).toEqual(mockData);
   });
 
+  it('getDashboardOverviewGraphQL should perform batch GraphQL query and return dashboard overview data', async () => {
+    const mockOverview = {
+      tenant: { enterprise_name: 'Test Tenant' },
+      categories: [],
+      opportunities: [],
+      funnelStages: [],
+      ingestionQueue: [],
+      validationRecords: [],
+      queryMetrics: {
+        totalQueries: 5,
+        slowQueries: 0,
+        cacheHitRatio: 100,
+        averageDurationMs: 1.2
+      }
+    };
+
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: { dashboardOverview: mockOverview }
+      })
+    });
+
+    const res = await apiClient.getDashboardOverviewGraphQL();
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/graphql'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'Content-Type': 'application/json' })
+      })
+    );
+    expect(res).toEqual(mockOverview);
+  });
+
   describe('apiClient Input Validation Failures', () => {
     it('should throw validation error when updateTenant receives invalid data', async () => {
       await expect(apiClient.updateTenant({ enterprise_name: '' })).rejects.toThrow('Invalid tenant updates');

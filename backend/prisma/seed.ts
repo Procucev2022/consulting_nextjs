@@ -102,11 +102,27 @@ async function main() {
 
   // 7. Vendor Volatility Rankings
   console.log('Seeding Vendor Price Rankings...');
-  for (const v of vendorVolatilityRankings) {
+  for (const [idx, v] of vendorVolatilityRankings.entries()) {
+    const rank = (v as any).rank || idx + 1;
     await prisma.vendorPriceRank.upsert({
-      where: { rank: v.rank },
-      update: { ...v },
-      create: { ...v }
+      where: { rank },
+      update: {
+        vendor_name: v.vendor_name,
+        category: v.category,
+        total_spend_inr_cr: v.total_spend_inr_cr || 0,
+        price_creep_pct: v.price_creep_pct,
+        variance_leakage_inr_cr: v.variance_leakage_inr_cr || 0,
+        risk_status: v.risk_status
+      },
+      create: {
+        rank,
+        vendor_name: v.vendor_name,
+        category: v.category,
+        total_spend_inr_cr: v.total_spend_inr_cr || 0,
+        price_creep_pct: v.price_creep_pct,
+        variance_leakage_inr_cr: v.variance_leakage_inr_cr || 0,
+        risk_status: v.risk_status
+      }
     });
   }
 
@@ -133,10 +149,24 @@ async function main() {
   // 10. Funnel Stages
   console.log('Seeding Conversion Funnel Phases...');
   for (const f of conversionFunnelStages) {
+    const stage = (f as any).stage || `Phase ${f.phase_num}`;
     await prisma.conversionFunnelPhase.upsert({
-      where: { stage: f.stage },
-      update: { ...f },
-      create: { ...f }
+      where: { stage },
+      update: {
+        title: f.phase_name,
+        spend_reach_inr_cr: 100,
+        conversion_rate: f.completion_pct,
+        status: f.status,
+        action_item: f.platform_actionable_focus
+      },
+      create: {
+        stage,
+        title: f.phase_name,
+        spend_reach_inr_cr: 100,
+        conversion_rate: f.completion_pct,
+        status: f.status,
+        action_item: f.platform_actionable_focus
+      }
     });
   }
 

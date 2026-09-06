@@ -102,3 +102,10 @@ export const logsSearchQuerySchema = z.object({
 export const logsPurgeSchema = z.object({
   retentionDays: z.number().int().positive('retentionDays must be a positive integer').optional()
 });
+
+// GraphQL Request Schema
+export const graphQLRequestSchema = z.object({
+  query: z.string().min(1, 'GraphQL query or mutation string is required'),
+  variables: z.record(z.string(), z.any()).optional().nullable(),
+  operationName: z.string().optional().nullable()
+});

@@ -141,3 +141,26 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Strict 90% Unit Test Code Coverage**:
   - All error handling utilities, error formatters, error banner/toast components, and error constant mappings must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines.
 
+## 12. Database Optimization, Compute Hour Reduction & GraphQL Integration Policy
+
+- **Mandatory Database Query Auditing**:
+  - Every database query, ORM operation, and data retrieval routine MUST be audited for execution efficiency.
+  - Track query execution duration (`durationMs`), operation type, model name, cache status (hit/miss), and affected rows.
+  - Queries exceeding the configured execution threshold (`SLOW_QUERY_THRESHOLD_MS`, default 100ms) MUST trigger structured warning logs through the centralized logger, including query context and duration for diagnosis.
+  - Provide runtime query metrics aggregation (total queries, cache hit ratio, slow queries count, average duration) accessible for system observability.
+- **Minimizing Database Compute Hours & Resource Usage**:
+  - Implement query-level caching with TTL (`DEFAULT_CACHE_TTL_MS`) for read-heavy, low-churn datasets (e.g., tenant configurations, taxonomy trees, spend categories, benchmark profiles) to eliminate redundant database round trips and drastically minimize cloud database compute hours.
+  - Enforce automated cache invalidation upon write mutations (e.g., updates, file ingestions, record fixes, supplier merges, opportunity deployments).
+  - Use selective projection (`select`) rather than full entity scans, and ensure all high-frequency query filters, foreign keys, and status columns are backed by composite or single-column database indexes in Prisma schema to avoid costly table scans.
+  - Implement connection pooling controls and connection reuse to minimize connection handshake compute overhead.
+- **GraphQL Integration for Streamlined Data Fetching**:
+  - Integrate a unified GraphQL API (`/api/graphql`) exposing queries and mutations for application datasets.
+  - Provide composite queries (e.g., `dashboardOverview`) to fetch multiple domain datasets (tenants, ingestion queue, validation records, spend categories, supplier rankings, savings opportunities, conversion stages) in a SINGLE network round-trip, eliminating client-side HTTP request waterfalls and connection contention.
+  - Enforce strict input and query schema validation, structured error reporting, and performance profiling on all GraphQL operations.
+- **Dedicated Constants & Data Types Isolation**:
+  - In accordance with Section 8 (Constants) and Section 9 (Types), all GraphQL schema SDL definitions, query strings, threshold constants, and cache keys MUST reside in dedicated constants files (`constants/graphql.ts`, `constants/db.ts`).
+  - All GraphQL contexts, resolver types, audit log interfaces, and response types MUST reside in dedicated type files (`types/graphql.ts`, `types/db.ts`).
+- **Strict 90% Unit Test Code Coverage**:
+  - All database query auditors, cache managers, GraphQL resolvers, query constants, and GraphQL HTTP route handlers MUST maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines.
+
+

@@ -31,6 +31,8 @@ model RawDocumentIngestion {
   records_count        Int      @default(0)
   detected_currencies  String[] @default([])
   converted_inr_crores Float?
+
+  @@index([tenant_id])
 }
 
 model ValidationPreCheckRecord {
@@ -54,6 +56,10 @@ model ValidationPreCheckRecord {
   action_status    String
   resolved         Boolean  @default(false)
   created_at       DateTime @default(now())
+
+  @@index([vendor_name])
+  @@index([resolved])
+  @@index([spend_year])
 }
 
 model SpendCategorySummary {
@@ -118,6 +124,9 @@ model VendorYearDetail {
   is_balance_vendor      Boolean  @default(false)
   balance_vendors        Json?
   top_items              Json?
+
+  @@index([vendor_name])
+  @@index([master_vendor_id])
 }
 
 model VendorPriceRank {
@@ -128,6 +137,9 @@ model VendorPriceRank {
   price_creep_pct        Float
   variance_leakage_inr_cr Float
   risk_status            String
+
+  @@index([vendor_name])
+  @@index([category])
 }
 
 model LineItemMapping {
@@ -140,6 +152,9 @@ model LineItemMapping {
   human_verified        Boolean  @default(false)
   vendor_identified     String
   master_supplier_id    String?
+
+  @@index([mapped_unspsc_code])
+  @@index([vendor_identified])
 }
 
 model SavingsOpportunity {
@@ -151,6 +166,9 @@ model SavingsOpportunity {
   benchmark_source       String
   risk_level             String
   status                 String
+
+  @@index([category])
+  @@index([status])
 }
 
 model ConversionFunnelPhase {
@@ -160,4 +178,6 @@ model ConversionFunnelPhase {
   conversion_rate        Float
   status                 String
   action_item            String
+
+  @@index([status])
 }

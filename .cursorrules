@@ -66,5 +66,14 @@
 - Log all UI errors via centralized logger with context and `requestId`.
 - Enforce >= 90% unit test coverage on all error utilities and components.
 
+# Database Optimization & GraphQL Integration Rules
+- Audit all database queries for duration and rows affected. Emit warning logs for queries exceeding `SLOW_QUERY_THRESHOLD_MS` (100ms).
+- Implement query caching with TTL for stable reads with automatic mutation invalidation to minimize database compute hours and resource usage.
+- Add database indexes in Prisma schema to eliminate full-table scans.
+- Provide `/api/graphql` endpoint exposing application queries and mutations. Support composite queries (e.g. `dashboardOverview`) for single round-trip data fetching.
+- Keep GraphQL SDL and query strings in `constants/graphql.ts` and `constants/db.ts`, and types in `types/graphql.ts` and `types/db.ts`.
+- Enforce >= 90% unit test coverage on all database and GraphQL utilities.
+
+
 
 

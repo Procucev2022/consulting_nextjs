@@ -17,7 +17,8 @@ import {
   currencyQuerySchema,
   taxonomyQuerySchema,
   logsSearchQuerySchema,
-  logsPurgeSchema
+  logsPurgeSchema,
+  graphQLRequestSchema
 } from '../constants/validation';
 
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
@@ -32,6 +33,7 @@ export type CurrencyQueryInput = z.infer<typeof currencyQuerySchema>;
 export type TaxonomyQueryInput = z.infer<typeof taxonomyQuerySchema>;
 export type LogsSearchQueryInput = z.infer<typeof logsSearchQuerySchema>;
 export type LogsPurgeInput = z.infer<typeof logsPurgeSchema>;
+export type GraphQLRequestInput = z.infer<typeof graphQLRequestSchema>;
 
 export interface ValidationErrorDetail {
   path: string;
