@@ -58,4 +58,13 @@
 - Reject invalid inputs immediately with HTTP 400 Bad Request.
 - Maintain >= 90% unit test coverage for all validation schemas and utilities.
 
+# Comprehensive & Descriptive UI Error Messaging Rules
+- Always present user-facing error messages with actionable context and specific failure details across error categories (`VALIDATION_ERROR`, `NETWORK_ERROR`, `AUTH_ERROR`, `NOT_FOUND_ERROR`, `CONFLICT_ERROR`, `SERVER_ERROR`, `RATE_LIMIT_ERROR`).
+- Never use generic messages like "An error occurred".
+- Move all user-facing error strings to `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`).
+- Keep error constants in `constants/` and error types in `types/`.
+- Log all UI errors via centralized logger with context and `requestId`.
+- Enforce >= 90% unit test coverage on all error utilities and components.
+
+
 

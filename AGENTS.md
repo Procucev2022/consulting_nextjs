@@ -112,3 +112,32 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
 - **Strict 90% Unit Test Code Coverage**:
   - Every validation schema, validation middleware, and utility function must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines.
 
+## 11. Comprehensive and Descriptive UI Error Messaging Policy
+
+- **Mandatory Actionable Context & Specific Failure Details**:
+  - Generic, opaque, or unhelpful error messages (e.g., "An error occurred", "Something went wrong", "Request failed", "Operation error") are strictly prohibited in any user-facing interface, modal, alert banner, toast notification, or form helper.
+  - Every user-facing error message MUST provide three essential components:
+    1. **Clear Problem Description**: State precisely what user action or system operation failed.
+    2. **Specific Failure Details & Cause**: Specify why the operation failed, including violated constraints, missing parameters, rejected fields, HTTP status codes, or subsystem unavailability.
+    3. **Actionable Resolution / Next Steps**: Provide concrete, actionable instructions guiding the user or administrator on how to resolve the issue (e.g., verifying network connectivity, adjusting specific field inputs, checking file format, or quoting the Request Correlation ID for support).
+- **Categorized Error Architecture**:
+  - All errors must be classified into well-defined error categories with tailored user-facing messaging:
+    - `VALIDATION_ERROR`: Specific invalid input field(s), accepted formats/ranges, and concrete correction guidance.
+    - `NETWORK_ERROR`: Connection drops, offline state, or network timeouts, advising retry procedures.
+    - `AUTH_ERROR`: Expired sessions, insufficient role permissions, or tenant access denials with re-authentication options.
+    - `NOT_FOUND_ERROR`: Missing or deleted entities/records with navigation or refresh options.
+    - `CONFLICT_ERROR`: Duplicate identifier conflicts, concurrency lock issues, or invalid state transitions with remediation guidance.
+    - `SERVER_ERROR`: Upstream server/database failures with a customer-facing support reference (`x-request-id`) for traceability.
+    - `RATE_LIMIT_ERROR`: API rate throttling or request quota exhaustion with backoff duration or retry timing.
+- **Centralized in `UI_STRINGS` & Constants Isolation**:
+  - In accordance with Section 7 (i18n) and Section 8 (Constants), ZERO user-facing error messages may be hardcoded as string literals in components or JSX.
+  - All error titles, descriptive body messages, actionable next-step instructions, and field-level validation messages must be defined in the centralized `UI_STRINGS` object (`frontend/src/constants/uiStrings.ts`).
+  - Use parameterized template functions within `UI_STRINGS` for dynamic error details (e.g., `(field: string, reason: string) => ...`, `(statusCode: number, requestId: string) => ...`).
+  - Error category constants, error codes, and default severity levels must reside in dedicated constants files (`constants/errors.ts` or `constants/app.ts`) and re-exported via `constants/index.ts`.
+- **Structured Error Logging & Correlation**:
+  - Whenever an error is displayed to the user or handled in the UI, it must be recorded using the centralized logger (`frontend/src/utils/logger.ts`) with appropriate severity (`warn` or `error`), capturing the error category, human-readable user message, underlying error stack, and correlation `requestId`.
+- **Strict Data Types Isolation**:
+  - In accordance with Section 9 (Types & Interfaces), all error models, error state interfaces, category types, and UI error component props must reside in dedicated type definition files under `types/` (`types/errors.ts` or `types/components.ts`) and re-exported via `types/index.ts`.
+- **Strict 90% Unit Test Code Coverage**:
+  - All error handling utilities, error formatters, error banner/toast components, and error constant mappings must achieve >= 90% unit test code coverage individually across statements, branches, functions, and lines.
+

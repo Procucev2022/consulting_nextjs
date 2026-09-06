@@ -58,4 +58,14 @@
 4. **Fail-Fast Error Handling**: Backend endpoints must validate inputs immediately and return HTTP 400 Bad Request with structured error messages before executing any business logic.
 5. **Strict 90% Coverage**: All validation schemas, middleware, and helper utilities must achieve >= 90% unit test coverage individually.
 
+## Comprehensive & Descriptive UI Error Messaging Standards
+
+1. **Actionable Context & Specificity**: Always present user-facing error messages with clear problem context, specific failure causes, and actionable resolution steps. Vague, generic messages (e.g. "Something went wrong") are prohibited.
+2. **Error Categorization**: Classify errors into explicit categories: `VALIDATION_ERROR`, `NETWORK_ERROR`, `AUTH_ERROR`, `NOT_FOUND_ERROR`, `CONFLICT_ERROR`, `SERVER_ERROR`, and `RATE_LIMIT_ERROR`.
+3. **Centralized UI Strings**: All error text and templates must be defined in `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`). Zero hardcoded literals in JSX.
+4. **Separate Constants & Types**: Error categories and codes belong in `constants/` (`constants/errors.ts` or `constants/app.ts`), and error payload/state interfaces belong in `types/` (`types/errors.ts`).
+5. **Structured Logging**: Log all UI errors with severity, user message, stack, context, and correlation `requestId` via `frontend/src/utils/logger.ts`.
+6. **Strict 90% Per-File Coverage**: All error formatters, banner components, and utilities must maintain >= 90% unit test coverage individually.
+
+
 

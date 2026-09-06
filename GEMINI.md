@@ -57,4 +57,18 @@
 - **Fail-Fast Error Handling**: Invalid requests must be rejected immediately with HTTP 400 and structured error details before running business logic.
 - **Strict 90% Coverage**: Every validation schema and utility must maintain >= 90% unit test coverage individually.
 
+## Mandatory Comprehensive & Descriptive UI Error Messaging
+
+- **Rule**: All user-facing error messages must present actionable context and specific failure details across different error categories. Generic, vague messages (e.g. "Something went wrong", "Error occurred") are strictly prohibited.
+- **Three Pillars of Error Messaging**:
+  1. *Clear Problem Description*: Exactly what action failed.
+  2. *Specific Failure Cause*: Violated validation rule, rejected field, HTTP status, or subsystem failure.
+  3. *Actionable Resolution*: Clear next steps for the user to resolve the issue (e.g. check connection, correct field format, contact support with request ID).
+- **Error Categories**: Classify errors into `VALIDATION_ERROR`, `NETWORK_ERROR`, `AUTH_ERROR`, `NOT_FOUND_ERROR`, `CONFLICT_ERROR`, `SERVER_ERROR`, and `RATE_LIMIT_ERROR`.
+- **Constants & i18n Centralization**: All error messages and templates must reside in `UI_STRINGS` (`frontend/src/constants/uiStrings.ts`). Zero hardcoded error literals. Error codes and categories must reside in dedicated constants files (`constants/errors.ts` or `constants/app.ts`).
+- **Structured Error Logging**: Log all UI errors through the centralized logger (`frontend/src/utils/logger.ts`) with severity, context, error stacks, and `requestId`.
+- **Dedicated Types**: All error models, category types, and banner/modal error props must reside in `types/` and be re-exported via `types/index.ts`.
+- **Strict 90% Coverage**: All error helpers, formatters, and UI error components must maintain >= 90% unit test coverage individually.
+
+
 

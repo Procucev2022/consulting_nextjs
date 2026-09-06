@@ -921,6 +921,55 @@ export const UI_STRINGS = {
     batchUploadSpend: (fileName: string, spendCr: number, recordsCount: number) => `Calculated total spend for "${fileName}": ₹${spendCr.toFixed(2)} Cr across ${recordsCount.toLocaleString()} records [Order Qty × Net Price × FX].`,
     unspscConfirmed: (mappingId: string) => `UNSPSC mapping ${mappingId} confirmed and locked into QUA taxonomy.`,
     taxonomyReassigned: (code: string, bucket: string) => `Taxonomy re-assigned to UNSPSC ${code} (${bucket}).`
+  },
+
+  errors: {
+    titles: {
+      validation: 'Input Validation Failed',
+      network: 'Network Connection Interrupted',
+      auth: 'Authentication Required',
+      notFound: 'Resource Not Found',
+      conflict: 'Data Conflict Detected',
+      server: 'Internal System Failure',
+      rateLimit: 'Request Limit Exceeded',
+      generic: 'Operation Could Not Be Completed'
+    },
+    validation: {
+      requiredField: (fieldName: string) => `Field "${fieldName}" is required and cannot be left blank.`,
+      invalidFormat: (fieldName: string, expectedFormat: string) => `Field "${fieldName}" has an invalid format. Expected format: ${expectedFormat}.`,
+      outOfRange: (fieldName: string, min: number | string, max: number | string) => `Field "${fieldName}" must be between ${min} and ${max}.`,
+      actionableAdvice: 'Please review highlighted input fields, correct any invalid values, and re-submit the form.'
+    },
+    network: {
+      offline: 'You appear to be offline. Network requests cannot be dispatched until connectivity is restored.',
+      timeout: (operation: string, ms: number) => `The request for "${operation}" timed out after ${ms}ms due to poor latency.`,
+      unreachable: (service: string) => `Unable to establish connection to ${service}. The service may be temporarily down or undergoing maintenance.`,
+      actionableAdvice: 'Check your internet connection, verify that the backend server is running on the configured port, and click Retry.'
+    },
+    auth: {
+      sessionExpired: 'Your security session has expired or the token is invalid.',
+      insufficientPermissions: (role: string, requiredRole: string) => `Current role "${role}" lacks permission. Required privilege: "${requiredRole}".`,
+      tenantAccessDenied: (tenantId: string) => `Access denied to tenant workspace "${tenantId}". Please verify your organization credentials.`,
+      actionableAdvice: 'Please re-authenticate or contact your system administrator to request access credentials.'
+    },
+    notFound: {
+      entityNotFound: (entityType: string, id: string) => `The requested ${entityType} with identifier "${id}" could not be found in the database.`,
+      actionableAdvice: 'The item may have been recently deleted or reassigned. Please refresh your data view or select an existing record.'
+    },
+    conflict: {
+      duplicateEntity: (entityType: string, key: string) => `A ${entityType} with "${key}" already exists in the system.`,
+      concurrencyConflict: 'Another user or process has updated this record simultaneously.',
+      actionableAdvice: 'Reload the latest data before applying modifications, or specify a unique identifier to avoid collisions.'
+    },
+    server: {
+      internalError: (statusCode: number, requestId: string) => `Server returned HTTP ${statusCode}. Diagnostic tracking reference: ${requestId}.`,
+      databaseUnavailable: 'The primary database service failed to respond to the transaction query.',
+      actionableAdvice: 'Our engineering logs have captured this incident. Please quote the diagnostic tracking reference when contacting enterprise support.'
+    },
+    rateLimit: {
+      throttled: (retryAfterSec: number) => `API rate limit exceeded. Too many requests in a short interval. Please wait ${retryAfterSec}s before retrying.`,
+      actionableAdvice: 'Pause automated scripts or high-frequency clicks to allow quota replenishment.'
+    }
   }
 } as const;
 

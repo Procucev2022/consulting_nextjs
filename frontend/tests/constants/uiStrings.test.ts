@@ -51,4 +51,39 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.modals.topItems.vendorTitle('Amcor')).toBe('Amcor — Top Line Items & 3-Year Price Trends');
     expect(UI_STRINGS.modals.dpsNXT.qualifiedBiddersCount(6)).toBe('6 Qualified Bidders Invited');
   });
+
+  it('should correctly format descriptive error strings and templates', () => {
+    expect(UI_STRINGS.errors.titles.validation).toBe('Input Validation Failed');
+    expect(UI_STRINGS.errors.titles.network).toBe('Network Connection Interrupted');
+    expect(UI_STRINGS.errors.titles.auth).toBe('Authentication Required');
+    expect(UI_STRINGS.errors.titles.notFound).toBe('Resource Not Found');
+    expect(UI_STRINGS.errors.titles.conflict).toBe('Data Conflict Detected');
+    expect(UI_STRINGS.errors.titles.server).toBe('Internal System Failure');
+    expect(UI_STRINGS.errors.titles.rateLimit).toBe('Request Limit Exceeded');
+    expect(UI_STRINGS.errors.titles.generic).toBe('Operation Could Not Be Completed');
+
+    expect(UI_STRINGS.errors.validation.requiredField('email')).toBe('Field "email" is required and cannot be left blank.');
+    expect(UI_STRINGS.errors.validation.invalidFormat('phone', '+1-xxx-xxx-xxxx')).toBe('Field "phone" has an invalid format. Expected format: +1-xxx-xxx-xxxx.');
+    expect(UI_STRINGS.errors.validation.outOfRange('age', 18, 65)).toBe('Field "age" must be between 18 and 65.');
+    expect(UI_STRINGS.errors.validation.actionableAdvice).toContain('Please review highlighted input fields');
+
+    expect(UI_STRINGS.errors.network.offline).toContain('You appear to be offline');
+    expect(UI_STRINGS.errors.network.timeout('Upload', 5000)).toBe('The request for "Upload" timed out after 5000ms due to poor latency.');
+    expect(UI_STRINGS.errors.network.unreachable('FX API')).toBe('Unable to establish connection to FX API. The service may be temporarily down or undergoing maintenance.');
+
+    expect(UI_STRINGS.errors.auth.sessionExpired).toContain('session has expired');
+    expect(UI_STRINGS.errors.auth.insufficientPermissions('Viewer', 'Admin')).toBe('Current role "Viewer" lacks permission. Required privilege: "Admin".');
+    expect(UI_STRINGS.errors.auth.tenantAccessDenied('tenant-99')).toBe('Access denied to tenant workspace "tenant-99". Please verify your organization credentials.');
+
+    expect(UI_STRINGS.errors.notFound.entityNotFound('Supplier', 'SUP-999')).toBe('The requested Supplier with identifier "SUP-999" could not be found in the database.');
+
+    expect(UI_STRINGS.errors.conflict.duplicateEntity('Vendor', 'DHL')).toBe('A Vendor with "DHL" already exists in the system.');
+    expect(UI_STRINGS.errors.conflict.concurrencyConflict).toContain('simultaneously');
+
+    expect(UI_STRINGS.errors.server.internalError(500, 'req-abc-123')).toBe('Server returned HTTP 500. Diagnostic tracking reference: req-abc-123.');
+    expect(UI_STRINGS.errors.server.databaseUnavailable).toContain('database service failed to respond');
+
+    expect(UI_STRINGS.errors.rateLimit.throttled(30)).toBe('API rate limit exceeded. Too many requests in a short interval. Please wait 30s before retrying.');
+  });
 });
+
