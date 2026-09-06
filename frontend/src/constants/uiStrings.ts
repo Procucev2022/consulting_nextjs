@@ -924,4 +924,3 @@ export const UI_STRINGS = {
   }
 } as const;
 
-export type UIStringsType = typeof UI_STRINGS;
