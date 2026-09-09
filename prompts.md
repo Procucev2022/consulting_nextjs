@@ -134,5 +134,37 @@ C. General Code Quality and Style
 Maintainability: Limit complexity (max 10), max-lines (300 per file), and max-len (120 chars). Prohibit hardcoded strings via no-literal-strings to ensure UI_STRINGS usage.
 Formatting & ES6+: Enforce single quotes, semi (colons), and comma-dangle. Require prefer-const, no-var, and object-shorthand.
 
+---
 
+## Prompt 22
+Run locally
 
+---
+
+## Prompt 23
+deploy in cloudflare  with url name procucev consulting portal
+
+---
+
+## Prompt 24
+deplooy in cloudflare  with procucev Consulting portal
+
+---
+
+## Prompt 25
+Whenever you deploy these kinds of applications, please just any one backend related operation & one data base related operation & one file uploading operation
+
+---
+
+## Prompt 26
+Also, please setup CI/CD in github to automatically deploy these application in cloudflare
+
+---
+
+## Prompt 27
+this code is the latest code pull from the main and build this application?
+
+---
+
+## Prompt 28
+don't deploy this changes in main and git also just commit in this cloudflare branch only

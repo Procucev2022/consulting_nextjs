@@ -169,3 +169,12 @@
 - **Zero Warnings Tolerance**: Zero ESLint errors and zero ESLint warnings across backend and frontend (`npm run lint`).
 - **Build & CI/CD Integration**: Integrated into primary build command (`npm run build`), Git pre-commit hooks (`npm run pre-commit`), and PR CI/CD workflows (`.github/workflows/ci.yml`).
 - **Strict 90% Unit Test Coverage**: Every refactored file and helper function must maintain >= 90% unit test coverage individually across statements, branches, functions, and lines.
+
+## Mandatory Post-Deployment Verification Policy (Backend, Database & File Upload Operations)
+
+- **Mandatory 3-Pillar Verification on Every Deployment**: Whenever deploying the application (e.g. to Cloudflare Pages, edge networks, staging, or production), the deployment pipeline and AI assistants MUST execute and verify at least:
+  1. **One Backend-Related Operation**: Perform a live backend service/API operation (e.g., API health verification, tenant state retrieval) validating HTTP status codes, structured response headers, and latency.
+  2. **One Database-Related Operation**: Perform a database retrieval or store transaction (e.g., querying TenantMaster, categories, line items, or savings records) with query execution auditing and caching verification.
+  3. **One File-Uploading Operation**: Perform a file ingestion/upload operation (e.g., submitting multi-format procurement batches, Excel/CSV parsing, and queue registration) validating input schema integrity and data queue ingestion.
+- **Automated Integration**: Integrated into `node scripts/deploy-cloudflare.js` and callable independently via `npm run verify:operations` (`node scripts/verify-deployment-operations.js`).
+- **Strict 90% Unit Test Code Coverage**: All deployment verification utilities, constants, and runners must maintain >= 90% unit test coverage individually across statements, branches, functions, and lines.

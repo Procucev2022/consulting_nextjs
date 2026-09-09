@@ -1,21 +1,23 @@
+import os from 'os';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { parseJsonFile, generateSummaryReport } from '../../../scripts/generate-pr-summary.mjs';
 
 describe('generate-pr-summary script unit tests', () => {
-  const tempDir = path.resolve(__dirname, '../temp_summary_test');
+  let tempDir: string;
 
   beforeEach(() => {
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
-    }
-    fs.mkdirSync(tempDir, { recursive: true });
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr-summary-test-'));
   });
 
   afterEach(() => {
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+      }
+    } catch {
+      // ignore
     }
   });
 

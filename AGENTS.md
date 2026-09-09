@@ -385,3 +385,15 @@ Whenever you make any change to the codebase (feature, fix, refactor, or optimiz
   - Linting is enforced in Git pre-commit hooks (`npm run pre-commit`) and as Quality Gate 1 in GitHub Actions CI/CD (`.github/workflows/ci.yml`).
 - **Strict 90% Unit Test Code Coverage**:
   - All refactored code and extracted helper functions must maintain >= 90% unit test code coverage individually across statements, branches, functions, and lines (`perFile: true`).
+
+## 23. Mandatory Post-Deployment Operations Verification Policy
+
+- **Mandatory 3-Pillar Verification Standard**:
+  - Whenever deploying any application across environments (Cloudflare Pages, edge workers, cloud providers, staging, or production), AI coding assistants and automation workflows MUST execute and verify:
+    1. **At Least One Backend-Related Operation**: Perform a live backend service/API operation (e.g., API health verification, tenant state retrieval, or route payload audit) validating HTTP status codes, structured response headers, and latency.
+    2. **At Least One Database-Related Operation**: Perform a database retrieval or store transaction (e.g., querying TenantMaster, categories, line items, or savings records) with query execution auditing and caching verification.
+    3. **At Least One File-Uploading Operation**: Perform a file ingestion/upload operation (e.g., submitting multi-format procurement batches, Excel/CSV parsing, and queue registration) validating input schema integrity and data queue ingestion.
+- **Automated Pipeline Integration**:
+  - The verification suite is integrated into the deployment pipeline (`node scripts/deploy-cloudflare.js`) and available as an independent verification script via `npm run verify:operations` (`node scripts/verify-deployment-operations.js`).
+- **Strict 90% Unit Test Code Coverage Benchmark**:
+  - All deployment verification utilities, constants modules, types, and runner scripts must achieve and maintain at least **90% unit test code coverage** individually across statements, branches, functions, and lines (`perFile: true`).

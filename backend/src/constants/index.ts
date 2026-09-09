@@ -11,3 +11,4 @@ export * from './graphql';
 export * from './crypto';
 export * from './performance';
 export * from './logDiagnostics';
+export * from './deployment';

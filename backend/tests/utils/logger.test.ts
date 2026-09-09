@@ -7,8 +7,12 @@ describe('Logger Utility Suite', () => {
   const testLogDir = path.resolve(__dirname, '../temp_test_logs');
 
   const cleanDir = () => {
-    if (fs.existsSync(testLogDir)) {
-      fs.rmSync(testLogDir, { recursive: true, force: true });
+    try {
+      if (fs.existsSync(testLogDir)) {
+        fs.rmSync(testLogDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+      }
+    } catch {
+      // ignore Windows file locking
     }
   };
 

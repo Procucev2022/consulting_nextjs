@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { vi } from 'vitest';
+import { vi, afterEach } from 'vitest';
 
 // Mock canvas-confetti
 vi.mock('canvas-confetti', () => ({
@@ -54,3 +54,8 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock window.scrollTo
 window.scrollTo = vi.fn();
+
+afterEach(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
+});

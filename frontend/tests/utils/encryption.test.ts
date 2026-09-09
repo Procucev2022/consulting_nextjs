@@ -78,7 +78,7 @@ describe('Frontend Client-Side AES-GCM Encryption Utility', () => {
       const encrypted = await encryptDataClient('Authentic data');
       const tampered = {
         ...encrypted,
-        ciphertext: 'ff' + encrypted.ciphertext.substring(2)
+        ciphertext: (encrypted.ciphertext.startsWith('00') ? 'ff' : '00') + encrypted.ciphertext.substring(2)
       };
 
       await expect(decryptDataClient(tampered)).rejects.toThrow(
@@ -90,7 +90,7 @@ describe('Frontend Client-Side AES-GCM Encryption Utility', () => {
       const encrypted = await encryptDataClient('Authentic data');
       const tampered = {
         ...encrypted,
-        tag: '00' + encrypted.tag.substring(2)
+        tag: (encrypted.tag.startsWith('00') ? 'ff' : '00') + encrypted.tag.substring(2)
       };
 
       await expect(decryptDataClient(tampered)).rejects.toThrow(
