@@ -63,8 +63,50 @@ describe('MergeVendorModal Component', () => {
       />
     );
 
-    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    const cancelBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.common.cancel, 'i') });
     fireEvent.click(cancelBtn);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders issue description and handles ignore button click', () => {
+    const onIgnore = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <MergeVendorModal
+        record={sampleRec}
+        isOpen={true}
+        onClose={onClose}
+        onMerge={vi.fn()}
+        onIgnore={onIgnore}
+      />
+    );
+
+    expect(screen.getByText(new RegExp(UI_STRINGS.modals.mergeVendor.issueLabel, 'i'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.mergeVendor.issueDescription)).toBeInTheDocument();
+
+    const ignoreBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.ignoreButton, 'i') });
+    expect(ignoreBtn).toBeInTheDocument();
+    fireEvent.click(ignoreBtn);
+
+    expect(onIgnore).toHaveBeenCalledWith(sampleRec.record_id);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('handles ignore button click when onIgnore is undefined without error', () => {
+    const onClose = vi.fn();
+
+    render(
+      <MergeVendorModal
+        record={sampleRec}
+        isOpen={true}
+        onClose={onClose}
+        onMerge={vi.fn()}
+      />
+    );
+
+    const ignoreBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.ignoreButton, 'i') });
+    fireEvent.click(ignoreBtn);
     expect(onClose).toHaveBeenCalled();
   });
 

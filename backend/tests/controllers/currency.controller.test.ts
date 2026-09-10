@@ -32,6 +32,18 @@ describe('currency.controller', () => {
     expect(body.data.amountINR).toBe(8350);
   });
 
+  it('should convert amount when from and amount are provided with transaction date', async () => {
+    const req: any = { query: { from: 'EUR', amount: '100', date: '2024-05-18' } };
+    const res = mockResponse();
+
+    await getCurrencyData(req, res);
+    expect(res.json).toHaveBeenCalled();
+    const body = res.json.mock.calls[0][0];
+    expect(body.success).toBe(true);
+    expect(body.data.amountINR).toBe(9080);
+    expect(body.data.fxRateUsed).toBe(90.80);
+  });
+
   it('should fallback to 0 when amountStr is invalid', async () => {
     const req: any = { query: { from: 'USD', amount: 'not_a_number' } };
     const res = mockResponse();

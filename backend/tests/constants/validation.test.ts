@@ -73,6 +73,28 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should validate valid ingestion file with optional extended fields', () => {
+      const valid = {
+        doc_id: 'DOC-1234',
+        tenant_id: 'TNT-001',
+        file_name: 'test_spend.xlsx',
+        file_type: 'XLSX',
+        file_size_mb: 4.5,
+        ocr_status: 'Completed',
+        progress: 100,
+        uploaded_at: '2026-09-09 12:00:00',
+        records_count: 1000,
+        detected_currencies: ['INR', 'USD'],
+        converted_inr_crores: 120.5,
+        unique_items_count: 150,
+        unique_vendors_count: 40,
+        material_groups_count: 12,
+        plants_count: 4
+      };
+      const result = addIngestionFileSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
     it('should reject missing or invalid fields', () => {
       expect(addIngestionFileSchema.safeParse({}).success).toBe(false);
       expect(addIngestionFileSchema.safeParse({ file_name: '', file_type: 'CSV', file_size_mb: 2, records_count: 10 }).success).toBe(false);

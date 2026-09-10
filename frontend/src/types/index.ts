@@ -13,5 +13,7 @@ export * from './errors';
 export * from './graphql';
 export * from './crypto';
 export * from './performance';
-
-
+export * from './pareto';
+export * from './vendorSupply';
+export * from './loader';
+export * from './industry';

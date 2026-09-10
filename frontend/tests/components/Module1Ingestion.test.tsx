@@ -52,16 +52,25 @@ describe('Module1Ingestion Component', () => {
     }
   });
 
-  it('handles year filters and breakdown mode switching', () => {
+  it('renders document summary view and switches dimensions', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
-    // Switch breakdown mode to VENDOR
-    const vendorTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byVendors, 'i') });
-    fireEvent.click(vendorTab);
+    expect(screen.getByText(UI_STRINGS.documentSummary.heading)).toBeInTheDocument();
 
-    // Switch back to Category
-    const catTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byCategories, 'i') });
-    fireEvent.click(catTab);
+    // Switch to Plant Wise
+    const plantTab = screen.getByRole('button', { name: UI_STRINGS.documentSummary.dimensionTabs.plant });
+    fireEvent.click(plantTab);
+    expect(screen.getByText(UI_STRINGS.documentSummary.plant.headers.name)).toBeInTheDocument();
+
+    // Switch to Month Wise
+    const monthTab = screen.getByRole('button', { name: UI_STRINGS.documentSummary.dimensionTabs.month });
+    fireEvent.click(monthTab);
+    expect(screen.getByText(UI_STRINGS.documentSummary.month.headers.month)).toBeInTheDocument();
+
+    // Switch back to Material Group
+    const matGroupTab = screen.getByRole('button', { name: UI_STRINGS.documentSummary.dimensionTabs.materialGroup });
+    fireEvent.click(matGroupTab);
+    expect(screen.getByText(UI_STRINGS.documentSummary.materialGroup.headers.name)).toBeInTheDocument();
   });
 
   it('triggers onFixCurrency and onMergeVendor from validation records table', () => {
@@ -76,17 +85,27 @@ describe('Module1Ingestion Component', () => {
       />
     );
 
-    const fixInrBtn = screen.getByRole('button', { name: UI_STRINGS.module1.fixInr });
-    fireEvent.click(fixInrBtn);
+    const fixInrBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.fixInr });
+    fireEvent.click(fixInrBtns[0]);
     expect(onFixCurrency).toHaveBeenCalled();
-
-    const recalcBtn = screen.getByRole('button', { name: UI_STRINGS.module1.recalcFx });
-    fireEvent.click(recalcBtn);
-    expect(onFixCurrency).toHaveBeenCalledTimes(2);
 
     const mergeBtn = screen.getByRole('button', { name: UI_STRINGS.module1.mergeVendor });
     fireEvent.click(mergeBtn);
     expect(onMergeVendor).toHaveBeenCalled();
+  });
+
+  it('triggers onMergeItem from validation table', () => {
+    const onMergeItem = vi.fn();
+    render(
+      <Module1Ingestion
+        {...defaultProps}
+        onMergeItem={onMergeItem}
+      />
+    );
+
+    const mergeItemBtn = screen.getByRole('button', { name: UI_STRINGS.module1.mergeItem });
+    fireEvent.click(mergeItemBtn);
+    expect(onMergeItem).toHaveBeenCalled();
   });
 
   it('triggers blanket fixes, reset, and proceed to categorization', () => {
@@ -112,73 +131,25 @@ describe('Module1Ingestion Component', () => {
     expect(onRunAICategorization).toHaveBeenCalled();
   });
 
-  it('handles year filter pills, category selection, and category balance expansion and popup', () => {
+  it('handles currency toggle and search filtering within document summary', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
-    // Click year filter buttons
-    fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
-    fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
-    fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
+    // Switch to USD
+    const usdBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.currencies.usd });
+    fireEvent.click(usdBtn);
 
-    // Click a category card to open CategoryTopItemsModal
-    const categoryButtons = screen.getAllByRole('button');
-    const catCard = categoryButtons.find(b => b.textContent && b.textContent.includes('Col L:'));
-    if (catCard) {
-      fireEvent.click(catCard);
-      // Close modal
-      const closeCatModal = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
-      fireEvent.click(closeCatModal);
-    }
+    // Filter search
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.documentSummary.materialGroup.searchPlaceholder);
+    fireEvent.change(searchInput, { target: { value: 'FERRO' } });
+    expect(screen.getByText('Ferro Alloys & Noble Metals (FERRO)')).toBeInTheDocument();
 
-    // Toggle balance categories
-    const viewBalBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.viewBalanceCategories(7), 'i') });
-    fireEvent.click(viewBalBtn);
-    expect(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceCategories(7), 'i') })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceCategories(7), 'i') }));
-
-    // Click Pop-up button for balance category
-    const catPopupBtn = screen.getByTitle('Open Top Balance Line Items in Pop-up');
-    fireEvent.click(catPopupBtn);
-    const closeCatModal2 = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
-    fireEvent.click(closeCatModal2);
+    // Switch back to INR
+    const inrBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.currencies.inr });
+    fireEvent.click(inrBtn);
   });
 
-  it('handles vendor breakdown view, vendor balance expansion, vendor card selection, and popup', () => {
-    render(<Module1Ingestion {...defaultProps} />);
-
-    // Switch to By Vendors
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byVendors, 'i') }));
-
-    // Click year filters in vendor view
-    fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
-    fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
-    fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
-
-    // Click a vendor card
-    const vendorButtons = screen.getAllByRole('button');
-    const vndCard = vendorButtons.find(b => b.textContent && b.textContent.includes('Rank #1 Vendor'));
-    if (vndCard) {
-      fireEvent.click(vndCard);
-      const closeVndModal = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
-      fireEvent.click(closeVndModal);
-    }
-
-    // Toggle vendor balance
-    const viewVendorBal = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.viewBalanceSuppliers(7), 'i') });
-    fireEvent.click(viewVendorBal);
-    expect(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceSuppliers(7), 'i') })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.hideBalanceSuppliers(7), 'i') }));
-
-    // Click Pop-up for vendor
-    const vndPopupBtn = screen.getByTitle('Open Top Balance Vendor Items in Pop-up');
-    fireEvent.click(vndPopupBtn);
-    const closeVndModal2 = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
-    fireEvent.click(closeVndModal2);
-  });
-
-  it('handles client setup modal opening and confirmation', () => {
+  it('handles client setup modal opening, closing, and confirmation with timer', () => {
+    vi.useFakeTimers();
     const onUpdateTenant = vi.fn();
     render(<Module1Ingestion {...defaultProps} onUpdateTenant={onUpdateTenant} />);
 
@@ -188,11 +159,20 @@ describe('Module1Ingestion Component', () => {
 
     expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
 
-    // Confirm setup
+    // Close setup modal
+    const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.common.cancel });
+    fireEvent.click(cancelBtn);
+
+    // Reopen and confirm setup
+    fireEvent.click(setupBtn);
     const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
     fireEvent.click(confirmBtn);
 
     expect(onUpdateTenant).toHaveBeenCalled();
+
+    // Advance timer for file picker trigger
+    vi.advanceTimersByTime(300);
+    vi.useRealTimers();
   });
 
   it('handles validation issue filtering tabs and blanket fixes / reset states', () => {
@@ -319,32 +299,13 @@ describe('Module1Ingestion Component', () => {
     vi.useRealTimers();
   });
 
-  it('handles clicking vendor card and switching selected vendor', () => {
-    render(<Module1Ingestion {...defaultProps} />);
+  it('navigates to categorization from document summary CTA', () => {
+    const onRunAICategorization = vi.fn();
+    render(<Module1Ingestion {...defaultProps} onRunAICategorization={onRunAICategorization} />);
 
-    // Switch to By Vendors mode
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byVendors, 'i') }));
-
-    // Find vendor card with Rank #1
-    const vendorButtons = screen.getAllByRole('button');
-    const rank1Btn = vendorButtons.find(b => b.textContent && b.textContent.includes('Rank #1'));
-    expect(rank1Btn).toBeDefined();
-    if (rank1Btn) {
-      fireEvent.click(rank1Btn);
-      // VendorTopItemsModal should open
-      expect(screen.getByText(new RegExp(UI_STRINGS.modals.topItems.vendorTitle('').replace(/.*— /, ''), 'i'))).toBeInTheDocument();
-      // Close modal
-      const closeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
-      fireEvent.click(closeBtn);
-    }
-
-    // Click Rank #2 vendor card
-    const rank2Btn = screen.getAllByRole('button').find(b => b.textContent && b.textContent.includes('Rank #2'));
-    if (rank2Btn) {
-      fireEvent.click(rank2Btn);
-      const closeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.closePopup, 'i') });
-      fireEvent.click(closeBtn);
-    }
+    const ctaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') });
+    fireEvent.click(ctaBtn);
+    expect(onRunAICategorization).toHaveBeenCalled();
   });
 
   it('handles calculations with missing fields and fallback calculations', () => {
@@ -395,5 +356,22 @@ describe('Module1Ingestion Component', () => {
     );
 
     expect(screen.getByText(new RegExp(UI_STRINGS.module1.badge, 'i'))).toBeInTheDocument();
+  });
+
+  it('renders ParetoSpendHierarchySection before validation pre-check', () => {
+    render(<Module1Ingestion {...defaultProps} />);
+
+    expect(screen.getByText(UI_STRINGS.module1.paretoHierarchy.sectionTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.paretoHierarchy.badge)).toBeInTheDocument();
+  });
+
+  it('passes through onRefreshWithFixes to ValidationPreCheckSection and triggers on click', () => {
+    const onRefreshWithFixes = vi.fn();
+    render(<Module1Ingestion {...defaultProps} onRefreshWithFixes={onRefreshWithFixes} />);
+
+    const refreshButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') });
+    expect(refreshButtons.length).toBeGreaterThan(0);
+    fireEvent.click(refreshButtons[0]);
+    expect(onRefreshWithFixes).toHaveBeenCalled();
   });
 });

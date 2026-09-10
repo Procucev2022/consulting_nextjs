@@ -13,10 +13,23 @@ import {
   Sparkles,
   UploadCloud,
   FileText,
-  TrendingUp
+  TrendingUp,
+  Factory,
+  Layers,
+  Package
 } from 'lucide-react';
 import type { DatasetType, ClientIngestionSetupModalProps } from '../../types';
-import { UI_STRINGS, DEFAULT_TENANT_ENTERPRISE_NAME, clientIngestionSetupFormSchema } from '../../constants';
+import {
+  UI_STRINGS,
+  DEFAULT_TENANT_ENTERPRISE_NAME,
+  clientIngestionSetupFormSchema,
+  DEFAULT_INDUSTRY_MAJOR_SECTOR,
+  DEFAULT_INDUSTRY_MINOR_SECTOR,
+  ENTERPRISE_INDUSTRY_PRESETS,
+  getDistinctMajorSectors,
+  getMinorSectorsForMajor,
+  getIndustryMaterialProfile
+} from '../../constants';
 import { validateInput } from '../../utils/validation';
 
 export type { DatasetType, ClientIngestionSetupModalProps };
@@ -37,7 +50,35 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
     currentTenant.total_spend_evaluated_inr || 732.41
   );
 
+  const [majorSector, setMajorSector] = useState<string>(
+    currentTenant.major_sector || DEFAULT_INDUSTRY_MAJOR_SECTOR
+  );
+  const [minorSector, setMinorSector] = useState<string>(
+    currentTenant.minor_sector || DEFAULT_INDUSTRY_MINOR_SECTOR
+  );
+
   if (!isOpen) return null;
+
+  const distinctMajorSectors = getDistinctMajorSectors();
+  const availableMinorSectors = getMinorSectorsForMajor(majorSector);
+  const activeMaterialProfile = getIndustryMaterialProfile(majorSector, minorSector);
+
+  const handleSelectPreset = (name: string) => {
+    setClientName(name);
+    const preset = ENTERPRISE_INDUSTRY_PRESETS[name];
+    if (preset) {
+      setMajorSector(preset.major);
+      setMinorSector(preset.minor);
+    }
+  };
+
+  const handleMajorSectorChange = (newMajor: string) => {
+    setMajorSector(newMajor);
+    const minors = getMinorSectorsForMajor(newMajor);
+    if (minors.length > 0) {
+      setMinorSector(minors[0]);
+    }
+  };
 
   const datasetOptions = [
     {
@@ -74,14 +115,20 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
       spendPeriod,
       currency,
       region,
-      estimatedSpend: (estimatedSpendCr * 10000000) / 83.8
+      estimatedSpend: (estimatedSpendCr * 10000000) / 83.8,
+      majorSector,
+      minorSector
     });
 
     if (!validation.success) {
       return;
     }
 
-    onConfirmAndUpload(validation.data);
+    onConfirmAndUpload({
+      ...validation.data,
+      majorSector,
+      minorSector
+    });
   };
 
 
@@ -141,7 +188,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                 <button
                   key={name}
                   type="button"
-                  onClick={() => setClientName(name)}
+                  onClick={() => handleSelectPreset(name)}
                   className="text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 transition-colors"
                 >
                   {name}
@@ -273,6 +320,136 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                 <span className="absolute right-3 top-2 text-[11px] font-mono font-bold text-emerald-700 dark:text-emerald-400">
                   {UI_STRINGS.modals.clientSetup.spendFormatted(estimatedSpendCr)}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Industry by Major & Minor Sector Selection (Material Categorization Driver) */}
+          <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/70 border border-slate-200 dark:border-cyan-500/30 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="p-1.5 rounded-lg bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800">
+                  <Factory className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                    {UI_STRINGS.modals.clientSetup.industrySector.title}
+                  </h4>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {activeMaterialProfile.tagline}
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono font-bold bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+                {UI_STRINGS.modals.clientSetup.industrySector.badge}
+              </span>
+            </div>
+
+            {/* Dropdowns for Major Sector and Minor Sector */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
+                  <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                  <span>{UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel}</span>
+                </label>
+                <select
+                  aria-label={UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel}
+                  value={majorSector}
+                  onChange={(e) => handleMajorSectorChange(e.target.value)}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500"
+                >
+                  {distinctMajorSectors.map((sec) => (
+                    <option key={sec} value={sec}>
+                      {sec}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
+                  <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel}</span>
+                </label>
+                <select
+                  aria-label={UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel}
+                  value={minorSector}
+                  onChange={(e) => setMinorSector(e.target.value)}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500"
+                >
+                  {availableMinorSectors.map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Pictorial Sector Material Profile & Guidance Card */}
+            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {UI_STRINGS.modals.clientSetup.industrySector.materialsProfileTitle}
+                </span>
+                {/* Benchmark Split Pills */}
+                <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    {UI_STRINGS.modals.clientSetup.industrySector.directSplit(activeMaterialProfile.benchmarkSpendSplit.directPct)}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                    {UI_STRINGS.modals.clientSetup.industrySector.packagingSplit(activeMaterialProfile.benchmarkSpendSplit.packagingPct)}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
+                    {UI_STRINGS.modals.clientSetup.industrySector.logisticsSplit(activeMaterialProfile.benchmarkSpendSplit.logisticsPct)}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                    {UI_STRINGS.modals.clientSetup.industrySector.mroSplit(activeMaterialProfile.benchmarkSpendSplit.mroPct)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Material Chips Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div>
+                  <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1 mb-1">
+                    <Package className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>{UI_STRINGS.modals.clientSetup.industrySector.directMaterialsLabel}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {activeMaterialProfile.typicalDirectMaterials.slice(0, 3).map((mat) => (
+                      <span
+                        key={mat}
+                        className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 truncate max-w-[200px]"
+                      >
+                        {mat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center space-x-1 mb-1">
+                    <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                    <span>{UI_STRINGS.modals.clientSetup.industrySector.packagingMaterialsLabel}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {activeMaterialProfile.typicalPackagingMaterials.slice(0, 3).map((pkg) => (
+                      <span
+                        key={pkg}
+                        className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 truncate max-w-[200px]"
+                      >
+                        {pkg}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Categorization Rule Guidance */}
+              <div className="text-[10px] text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/60 p-2 rounded border border-slate-100 dark:border-slate-800 flex items-start space-x-1.5">
+                <Sparkles className="w-3 h-3 text-cyan-500 mt-0.5 shrink-0" />
+                <span>{activeMaterialProfile.categorizationGuidance}</span>
               </div>
             </div>
           </div>

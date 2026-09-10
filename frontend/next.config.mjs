@@ -8,7 +8,7 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:5000';
+    const backendUrl = process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:5001';
     return [
       {
         source: '/api/:path*',

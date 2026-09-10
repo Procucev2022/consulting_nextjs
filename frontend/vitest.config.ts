@@ -14,6 +14,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     testTimeout: 10000,
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html'],

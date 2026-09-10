@@ -23,7 +23,9 @@ export const clientIngestionSetupFormSchema = z.object({
   spendPeriod: z.string().min(1, 'Spend period is required'),
   currency: z.enum(['INR', 'USD', 'EUR', 'GBP']),
   region: z.enum(['NA', 'EU', 'APAC', 'GLOBAL']),
-  estimatedSpend: z.number().positive('Estimated spend must be positive')
+  estimatedSpend: z.number().positive('Estimated spend must be positive'),
+  majorSector: z.string().min(1, 'Major sector is required').optional().default('Chemical & Petrochemicals'),
+  minorSector: z.string().min(1, 'Minor sector is required').optional().default('Specialty Chemicals')
 });
 
 
@@ -39,6 +41,13 @@ export const mergeVendorFormSchema = z.object({
   recordId: z.string().min(1, 'Record ID is required'),
   masterVendorId: z.string().min(1, 'Master supplier ID is required'),
   masterVendorName: z.string().min(1, 'Master supplier name is required')
+});
+
+// Merge Item Form Schema
+export const mergeItemFormSchema = z.object({
+  recordId: z.string().min(1, 'Record ID is required'),
+  masterItemCode: z.string().min(1, 'Master item code is required'),
+  masterItemName: z.string().min(1, 'Master item name is required')
 });
 
 // Reassign Taxonomy Form Schema

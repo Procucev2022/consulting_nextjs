@@ -31,6 +31,7 @@ describe('PipelineBar Component', () => {
     expect(onSelectTab).toHaveBeenCalledWith('module4');
 
     const step1 = screen.getByText(UI_STRINGS.pipeline.navStages.step1.title);
+    expect(screen.getByText(UI_STRINGS.pipeline.navStages.step1.desc)).toBeInTheDocument();
     fireEvent.click(step1);
     expect(onSelectTab).toHaveBeenCalledWith('module1');
   });

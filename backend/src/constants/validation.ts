@@ -23,17 +23,30 @@ export const tenantUpdateSchema = z.object({
   total_spend_evaluated_inr: z.number().positive().optional(),
   target_savings_rate_pct: z.number().nonnegative().optional(),
   erp_source: z.string().optional(),
-  refresh_cycle: z.string().optional()
+  refresh_cycle: z.string().optional(),
+  major_sector: z.string().min(1).optional(),
+  minor_sector: z.string().min(1).optional()
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'At least one field to update must be provided'
 });
 
 // Ingestion Add File Body Schema
 export const addIngestionFileSchema = z.object({
+  doc_id: z.string().optional(),
+  tenant_id: z.string().optional(),
   file_name: z.string().min(1, 'File name is required'),
   file_type: z.string().min(1, 'File type is required'),
   file_size_mb: z.number().positive('File size must be positive'),
-  records_count: z.number().int().nonnegative('Records count must be non-negative').optional().default(0)
+  ocr_status: z.enum(['Completed', 'Parsing OCR', 'Pending', 'Error']).optional().default('Completed'),
+  progress: z.number().min(0).max(100).optional().default(100),
+  uploaded_at: z.string().optional(),
+  records_count: z.number().int().nonnegative('Records count must be non-negative').optional().default(0),
+  detected_currencies: z.array(z.string()).optional().default(['INR']),
+  converted_inr_crores: z.number().nonnegative().optional().default(0),
+  unique_items_count: z.number().int().nonnegative().optional(),
+  unique_vendors_count: z.number().int().nonnegative().optional(),
+  material_groups_count: z.number().int().nonnegative().optional(),
+  plants_count: z.number().int().nonnegative().optional()
 });
 
 
@@ -78,7 +91,8 @@ export const categoryQuerySchema = z.object({
 export const currencyQuerySchema = z.object({
   from: z.string().optional(),
   amount: z.string().or(z.number()).optional(),
-  year: z.string().or(z.number()).optional()
+  year: z.string().or(z.number()).optional(),
+  date: z.string().optional()
 });
 
 // Taxonomy Query Schema

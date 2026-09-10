@@ -8,7 +8,11 @@ describe('Logger Utility Suite', () => {
 
   const cleanDir = () => {
     if (fs.existsSync(testLogDir)) {
-      fs.rmSync(testLogDir, { recursive: true, force: true });
+      try {
+        fs.rmSync(testLogDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      } catch {
+        // Retry or ignore if Windows file handle delay
+      }
     }
   };
 

@@ -70,6 +70,20 @@ describe('Frontend Constants Modules', () => {
     });
   });
 
+  describe('Vendor Supply Constants', () => {
+    it('should define correct thresholds and badge styles', () => {
+      expect(ConstantsIndex.VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR).toBe(15.0);
+      expect(ConstantsIndex.VENDOR_SUPPLY_THRESHOLDS.MID_SPEND_THRESHOLD_CR).toBe(5.0);
+      expect(ConstantsIndex.VENDOR_SUPPLY_THRESHOLDS.MULTI_CATEGORY_ALARM_SPEND_SHARE_THRESHOLD).toBe(0.50);
+      expect(ConstantsIndex.VENDOR_SUPPLY_TIERS.TIER_1_HIGH.id).toBe('TIER_1_HIGH');
+      expect(ConstantsIndex.VENDOR_SUPPLY_BADGE_STYLES.SINGLE_CATEGORY.badgeClass).toContain('bg-emerald');
+      expect(ConstantsIndex.VENDOR_SUPPLY_BADGE_STYLES.MULTI_CATEGORY.badgeClass).toContain('bg-amber');
+      expect(ConstantsIndex.VENDOR_SUPPLY_BADGE_STYLES.HIGH_RISK.badgeClass).toContain('bg-rose');
+      expect(ConstantsIndex.VENDOR_SUPPLY_BADGE_STYLES.MEDIUM_RISK.badgeClass).toContain('bg-amber');
+      expect(ConstantsIndex.VENDOR_SUPPLY_BADGE_STYLES.OPTIMAL.badgeClass).toContain('bg-emerald');
+    });
+  });
+
   describe('Unified Constants Barrel Export', () => {
     it('should re-export all constants across modules including UI_STRINGS', () => {
       expect(ConstantsIndex.DEFAULT_SPEND_BASELINE_INR_CR).toBe(AppConstants.DEFAULT_SPEND_BASELINE_INR_CR);
@@ -80,6 +94,7 @@ describe('Frontend Constants Modules', () => {
       expect(ConstantsIndex.DEFAULT_SERVICE_NAME).toBe(LoggerConstants.DEFAULT_SERVICE_NAME);
       expect(ConstantsIndex.TIMELINE_MONTHS).toBe(PipelineConstants.TIMELINE_MONTHS);
       expect(ConstantsIndex.DEFAULT_INVITED_SUPPLIERS).toBe(ModalsConstants.DEFAULT_INVITED_SUPPLIERS);
+      expect(ConstantsIndex.VENDOR_SUPPLY_THRESHOLDS).toBeDefined();
       expect(ConstantsIndex.UI_STRINGS).toBeDefined();
     });
   });

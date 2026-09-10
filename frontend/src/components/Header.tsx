@@ -6,21 +6,23 @@ import {
   Building2,
   FileText,
   Sun,
-  Moon
+  Moon,
+  Sparkles
 } from 'lucide-react';
 import type { HeaderProps } from '../types';
 import { UI_STRINGS, SUPPORTED_HEADER_CURRENCIES, DEFAULT_SPEND_BASELINE_INR_CR, headerCurrencySchema } from '../constants';
 import { validateInput } from '../utils/validation';
 
 export const Header: React.FC<HeaderProps> = ({
-
   tenant,
   onSelectTenant,
   currency,
   onSelectCurrency,
   onOpenReport,
   theme,
-  onSelectTheme
+  onSelectTheme,
+  onStartAnalysis,
+  isAnalyzing
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-lg dark:shadow-black/20 transition-colors duration-200">
@@ -147,6 +149,21 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Deep Spend Scan Trigger */}
+          <button
+            type="button"
+            onClick={onStartAnalysis}
+            title={UI_STRINGS.analyzingLoader.triggerTooltip}
+            className={`flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 border ${
+              isAnalyzing
+                ? 'bg-cyan-700 text-cyan-100 border-cyan-500 animate-pulse'
+                : 'bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-cyan-400/30 shadow-cyan-600/20'
+            }`}
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{UI_STRINGS.analyzingLoader.triggerButton}</span>
+          </button>
 
           {/* Executive Report Button */}
           <button

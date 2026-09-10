@@ -44,8 +44,26 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
   });
 
   describe('clientIngestionSetupFormSchema', () => {
-    it('should validate valid client setup form', () => {
+    it('should validate valid client setup form with or without sector overrides', () => {
       const valid = {
+        clientName: 'Apex Enterprise',
+        datasetType: 'Purchase History',
+        spendPeriod: '36 Months Historical (FY23 - FY26)',
+        currency: 'INR',
+        region: 'GLOBAL',
+        estimatedSpend: 1000000,
+        majorSector: 'Chemical & Petrochemicals',
+        minorSector: 'Specialty Chemicals'
+      };
+      const parsed = clientIngestionSetupFormSchema.safeParse(valid);
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.majorSector).toBe('Chemical & Petrochemicals');
+        expect(parsed.data.minorSector).toBe('Specialty Chemicals');
+      }
+
+      // Default fallback
+      const withoutSector = {
         clientName: 'Apex Enterprise',
         datasetType: 'Purchase History',
         spendPeriod: '36 Months Historical (FY23 - FY26)',
@@ -53,7 +71,12 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
         region: 'GLOBAL',
         estimatedSpend: 1000000
       };
-      expect(clientIngestionSetupFormSchema.safeParse(valid).success).toBe(true);
+      const parsedDefault = clientIngestionSetupFormSchema.safeParse(withoutSector);
+      expect(parsedDefault.success).toBe(true);
+      if (parsedDefault.success) {
+        expect(parsedDefault.data.majorSector).toBe('Chemical & Petrochemicals');
+        expect(parsedDefault.data.minorSector).toBe('Specialty Chemicals');
+      }
     });
 
     it('should reject missing or negative fields', () => {

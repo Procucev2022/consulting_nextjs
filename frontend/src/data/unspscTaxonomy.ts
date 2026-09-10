@@ -11039,3 +11039,29 @@ export function searchUNSPSCTaxonomy(query: string, category?: string): UNSPSCCo
     );
   });
 }
+
+export function lookupUNSPSCDetails(queryOrCode: string, fallbackCategory?: string): {
+  commodityTitle: string;
+  classTitle: string;
+} {
+  if (!queryOrCode) {
+    return {
+      commodityTitle: 'Industrial Material Commodity',
+      classTitle: fallbackCategory || 'Direct Materials'
+    };
+  }
+  const q = queryOrCode.toLowerCase();
+  const match = unspscOfficialDictionary.find(
+    (item) =>
+      item.commodityCode === queryOrCode ||
+      item.commodityTitle.toLowerCase().includes(q) ||
+      q.includes(item.commodityTitle.toLowerCase()) ||
+      item.classTitle.toLowerCase().includes(q)
+  );
+
+  return {
+    commodityTitle: match?.commodityTitle || queryOrCode,
+    classTitle: match?.classTitle || fallbackCategory || 'General Sourcing Class'
+  };
+}
+

@@ -14,7 +14,11 @@ describe('Logger Helpers Suite', () => {
 
   const cleanDir = (): void => {
     if (fs.existsSync(testDir)) {
-      fs.rmSync(testDir, { recursive: true, force: true });
+      try {
+        fs.rmSync(testDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      } catch {
+        // Fallback for Windows file locking race condition
+      }
     }
   };
 

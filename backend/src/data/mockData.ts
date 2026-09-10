@@ -18,7 +18,9 @@ export const mockTenant: TenantMaster = {
   base_currency: 'INR',
   status: 'ACTIVE',
   total_spend_evaluated: 87400000, // Equivalent in USD
-  total_spend_evaluated_inr: 732.41 // ₹732.41 Crores (Yahoo Finance FX Evaluated)
+  total_spend_evaluated_inr: 732.41, // ₹732.41 Crores (Yahoo Finance FX Evaluated)
+  major_sector: 'Chemical & Petrochemicals',
+  minor_sector: 'Specialty Chemicals'
 };
 
 export const initialIngestionQueue: RawDocumentIngestion[] = [
@@ -50,8 +52,9 @@ export const initialValidationRecords: ValidationPreCheckRecord[] = [
     raw_currency: 'EUR',
     amount_inr: 13166000,
     inr_crores: 1.32,
-    fx_rate_applied: 90.80, // EUR/INR 2024
+    fx_rate_applied: 90.80, // EUR/INR as on 18 May 2024
     spend_year: 2024,
+    transaction_date: '2024-05-18',
     column_l_code: '13101502',
     core_category: 'Direct Materials',
     issue_flag: 'Missing Currency Code',
@@ -70,8 +73,9 @@ export const initialValidationRecords: ValidationPreCheckRecord[] = [
     raw_currency: 'USD',
     amount_inr: 3256320,
     inr_crores: 0.33,
-    fx_rate_applied: 84.80, // USD/INR 2025
+    fx_rate_applied: 84.80, // USD/INR as on 14 Feb 2025
     spend_year: 2025,
+    transaction_date: '2025-02-14',
     column_l_code: '78101801',
     core_category: 'Logistics & Freight',
     issue_flag: 'Unmapped Supplier Name',
@@ -92,6 +96,7 @@ export const initialValidationRecords: ValidationPreCheckRecord[] = [
     inr_crores: 0.76,
     fx_rate_applied: 84.80,
     spend_year: 2025,
+    transaction_date: '2025-09-04',
     column_l_code: '14121506',
     core_category: 'Packaging Materials',
     issue_flag: 'Passed Clean',
@@ -110,8 +115,9 @@ export const initialValidationRecords: ValidationPreCheckRecord[] = [
     raw_currency: 'GBP',
     amount_inr: 20046000,
     inr_crores: 2.00,
-    fx_rate_applied: 102.80, // GBP/INR 2023
+    fx_rate_applied: 102.80, // GBP/INR as on 20 Nov 2023
     spend_year: 2023,
+    transaction_date: '2023-11-20',
     column_l_code: '12352204',
     core_category: 'Direct Materials',
     issue_flag: 'Tax Discrepancy',
@@ -130,8 +136,9 @@ export const initialValidationRecords: ValidationPreCheckRecord[] = [
     raw_currency: 'AED',
     amount_inr: 956250,
     inr_crores: 0.10,
-    fx_rate_applied: 22.50, // AED/INR 2023
+    fx_rate_applied: 22.50, // AED/INR as on 11 Aug 2023
     spend_year: 2023,
+    transaction_date: '2023-08-11',
     column_l_code: '40151501',
     core_category: 'Indirect & MRO',
     issue_flag: 'Passed Clean',
@@ -150,13 +157,35 @@ export const initialValidationRecords: ValidationPreCheckRecord[] = [
     raw_currency: 'USD',
     amount_inr: 5821450,
     inr_crores: 0.58,
-    fx_rate_applied: 86.50, // USD/INR 2026
+    fx_rate_applied: 86.50, // USD/INR as on 16 Jan 2026
     spend_year: 2026,
+    transaction_date: '2026-01-16',
     column_l_code: '14121506',
     core_category: 'Packaging Materials',
     issue_flag: 'Passed Clean',
     action_status: 'Ready',
     resolved: true
+  },
+  {
+    record_id: 'REC-8847',
+    po_number: 'PO-2024-55190',
+    vendor_name: 'Continental Polymer S.A.',
+    raw_desc: 'HDPE Granules Grade B - 25kg Pack',
+    order_quantity: 800,
+    net_price: 140.0,
+    subtotal_raw: 112000,
+    amount: 112000,
+    raw_currency: 'EUR',
+    amount_inr: 10236800,
+    inr_crores: 1.02,
+    fx_rate_applied: 91.40, // EUR/INR as on 22 Jul 2024
+    spend_year: 2024,
+    transaction_date: '2024-07-22',
+    column_l_code: '13101502',
+    core_category: 'Direct Materials',
+    issue_flag: 'Duplicate Item Description',
+    action_status: 'Merge Item',
+    resolved: false
   }
 ];
 
@@ -2411,11 +2440,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1001',
     line_item_id: 'LITM-7701',
+    material_code: 'MAT-BX-4040',
+    material_desc: 'Corrugated Shipping Boxes 40x40',
     raw_desc: 'Corrugated Shipping Boxes 40x40',
     vendor_identified: 'Amcor Packaging Group',
     master_supplier_id: 'SUP-AMCOR-001',
     unspsc_code: '14121506',
     unspsc_category_name: 'Packaging Materials (Corrugated fiberboard / boxes)',
+    unspsc_commodity_title: 'Corrugated fiberboard / boxes',
+    unspsc_class_title: 'Paperboard and packaging papers',
     core_bucket: 'Packaging Materials',
     ai_confidence: 98.4,
     status: 'Confirmed',
@@ -2433,11 +2466,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1002',
     line_item_id: 'LITM-7702',
+    material_code: 'MAT-PUMP-SEAL',
+    material_desc: 'Hydraulic Fluid Pump Seal Maintenance',
     raw_desc: 'Hydraulic Fluid Pump Seal Maintenance',
     vendor_identified: 'Flowserve Industrial Services',
     master_supplier_id: 'SUP-FLWS-009',
     unspsc_code: '40151501',
     unspsc_category_name: 'Indirect & MRO (Pumps & Compressors Machinery)',
+    unspsc_commodity_title: 'Pumps & Compressors Machinery',
+    unspsc_class_title: 'Fluid and gas flow equipment',
     core_bucket: 'Indirect & MRO',
     ai_confidence: 84.1,
     status: 'Pending Review',
@@ -2455,11 +2492,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1003',
     line_item_id: 'LITM-7703',
+    material_code: 'MAT-CAT-B79',
+    material_desc: 'Specialty Catalyst Grade B-79 Bulk',
     raw_desc: 'Specialty Catalyst Grade B-79 Bulk',
     vendor_identified: 'Acme Chemical Co.',
     master_supplier_id: 'SUP-ACME-102',
     unspsc_code: '12352204',
     unspsc_category_name: 'Direct Materials (Chemicals & Industrial Catalysts)',
+    unspsc_commodity_title: 'Chemicals & Industrial Catalysts',
+    unspsc_class_title: 'Compounds and mixtures',
     core_bucket: 'Direct Materials',
     ai_confidence: 95.8,
     status: 'Confirmed',
@@ -2477,11 +2518,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1004',
     line_item_id: 'LITM-7704',
+    material_code: 'MAT-FRT-TL01',
+    material_desc: 'Dedicated Full Truckload Freight (Midwest Corridor)',
     raw_desc: 'Dedicated Full Truckload Freight (Midwest Corridor)',
     vendor_identified: 'Global Logistics LLC',
     master_supplier_id: 'SUP-GLOB-552',
     unspsc_code: '78101801',
     unspsc_category_name: 'Logistics & Freight (Road Transport & Fleet Cargo)',
+    unspsc_commodity_title: 'Road Transport & Fleet Cargo',
+    unspsc_class_title: 'Mail and cargo transport',
     core_bucket: 'Logistics & Freight',
     ai_confidence: 91.2,
     status: 'Confirmed',
@@ -2499,11 +2544,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1005',
     line_item_id: 'LITM-7705',
+    material_code: 'MAT-TAPE-50',
+    material_desc: 'Thermal Adhesive Tape 50mm Industrial Grade',
     raw_desc: 'Thermal Adhesive Tape 50mm Industrial Grade',
     vendor_identified: 'Crown Paper Box / Packaging Div',
     master_supplier_id: 'SUP-CRWN-033',
     unspsc_code: '31201501',
     unspsc_category_name: 'Packaging Materials (Packaging Adhesives & Tapes)',
+    unspsc_commodity_title: 'Packaging Adhesives & Tapes',
+    unspsc_class_title: 'Packaging supplies',
     core_bucket: 'Packaging Materials',
     ai_confidence: 97.2,
     status: 'Confirmed',
@@ -2521,11 +2570,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1006',
     line_item_id: 'LITM-7706',
+    material_code: 'MAT-BRG-6204',
+    material_desc: 'High Precision Ceramic Ball Bearings (Series 6204)',
     raw_desc: 'High Precision Ceramic Ball Bearings (Series 6204)',
     vendor_identified: 'Apex Precision Bearings Corp',
     master_supplier_id: 'SUP-APEX-411',
     unspsc_code: '31171501',
     unspsc_category_name: 'Indirect & MRO (Bearings & Bushings Component)',
+    unspsc_commodity_title: 'Bearings & Bushings Component',
+    unspsc_class_title: 'Bearings and bushings and wheels and gears',
     core_bucket: 'Indirect & MRO',
     ai_confidence: 76.5,
     status: 'Pending Review',
@@ -2543,11 +2596,15 @@ export const initialLineItemMappings: LineItemMapping[] = [
   {
     mapping_id: 'MAP-1007',
     line_item_id: 'LITM-7707',
+    material_code: 'MAT-RES-HDPE',
+    material_desc: 'High Density Polyethylene Polymer Resin Pellet (HDPE)',
     raw_desc: 'High Density Polyethylene Polymer Resin Pellet (HDPE)',
     vendor_identified: 'Continental Polymer S.A.',
     master_supplier_id: 'SUP-POLY-901',
     unspsc_code: '13101502',
     unspsc_category_name: 'Direct Materials (Raw Resins & Synthetic Polymers)',
+    unspsc_commodity_title: 'Raw Resins & Synthetic Polymers',
+    unspsc_class_title: 'Resins and natural rubbers and elastomers',
     core_bucket: 'Direct Materials',
     ai_confidence: 98.9,
     status: 'Confirmed',

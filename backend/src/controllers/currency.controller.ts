@@ -7,12 +7,13 @@ export const getCurrencyData = async (req: Request, res: Response): Promise<Resp
     const from = req.query.from as string | undefined;
     const amountStr = req.query.amount as string | undefined;
     const yearStr = req.query.year as string | undefined;
+    const dateStr = req.query.date as string | undefined;
 
     if (from && amountStr) {
       const amount = parseFloat(amountStr) || 0;
-      const year = yearStr ? parseInt(yearStr, 10) : undefined;
-      const conversion = convertAmount(amount, from, year);
-      logger.debug('Currency converted', { from, amount, year, inr: conversion.amountINR });
+      const dateOrYear = dateStr || (yearStr ? parseInt(yearStr, 10) : undefined);
+      const conversion = convertAmount(amount, from, dateOrYear);
+      logger.debug('Currency converted as of transaction date', { from, amount, dateOrYear, inr: conversion.amountINR });
       return res.json({
         success: true,
         data: conversion,

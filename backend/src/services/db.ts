@@ -128,6 +128,26 @@ export class DatabaseStore {
     return { ...this.tenant };
   }
 
+  private sanitizeIngestionItem(item: Partial<RawDocumentIngestion>, index: number): RawDocumentIngestion {
+    return {
+      doc_id: item.doc_id || `DOC-INGEST-${8800 + index}`,
+      tenant_id: item.tenant_id || this.tenant?.tenant_id || 'TNT-GLOBAL-8902',
+      file_name: item.file_name || 'Uploaded_Document.xlsx',
+      file_type: (item.file_type as any) || 'XLSX',
+      file_size_mb: item.file_size_mb || 1.0,
+      ocr_status: (item.ocr_status as any) || 'Completed',
+      progress: item.progress ?? 100,
+      uploaded_at: item.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
+      records_count: item.records_count ?? 0,
+      detected_currencies: Array.isArray(item.detected_currencies) && item.detected_currencies.length > 0 ? item.detected_currencies : ['INR'],
+      converted_inr_crores: item.converted_inr_crores ?? 732.41,
+      unique_items_count: item.unique_items_count,
+      unique_vendors_count: item.unique_vendors_count,
+      material_groups_count: item.material_groups_count,
+      plants_count: item.plants_count
+    };
+  }
+
   // Ingestion
   public getIngestionQueue(): RawDocumentIngestion[] {
     const start = Date.now();
@@ -141,9 +161,9 @@ export class DatabaseStore {
         cached: true,
         timestamp: new Date().toISOString()
       });
-      return cached;
+      return cached.map((item, idx) => this.sanitizeIngestionItem(item, idx));
     }
-    const result = [...this.ingestionQueue];
+    const result = this.ingestionQueue.map((item, idx) => this.sanitizeIngestionItem(item, idx));
     queryCache.setCached(CACHE_KEYS.INGESTION_QUEUE, result);
     queryAuditor.recordQueryAudit({
       queryId: `ingestion-${Date.now()}`,
@@ -156,27 +176,45 @@ export class DatabaseStore {
     return result;
   }
 
-  public addIngestionItem(item: RawDocumentIngestion): RawDocumentIngestion[] {
-    this.ingestionQueue = [item, ...this.ingestionQueue];
+  public addIngestionItem(item: Partial<RawDocumentIngestion> & { file_name: string; file_type: any; file_size_mb: number }): RawDocumentIngestion[] {
+    const fullItem: RawDocumentIngestion = {
+      doc_id: item.doc_id || `DOC-INGEST-${Math.floor(1000 + Math.random() * 9000)}`,
+      tenant_id: item.tenant_id || this.tenant.tenant_id,
+      file_name: item.file_name,
+      file_type: (item.file_type as any) || 'XLSX',
+      file_size_mb: item.file_size_mb,
+      ocr_status: (item.ocr_status as any) || 'Completed',
+      progress: item.progress ?? 100,
+      uploaded_at: item.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
+      records_count: item.records_count ?? 0,
+      detected_currencies: item.detected_currencies?.length ? item.detected_currencies : ['INR'],
+      converted_inr_crores: item.converted_inr_crores ?? 0,
+      unique_items_count: item.unique_items_count,
+      unique_vendors_count: item.unique_vendors_count,
+      material_groups_count: item.material_groups_count,
+      plants_count: item.plants_count
+    };
+    // Ingestion queue maintains the single active uploaded document
+    this.ingestionQueue = [fullItem];
     queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
     if (this.isPostgresConnected) {
       prisma.rawDocumentIngestion.create({
         data: {
-          doc_id: item.doc_id,
-          tenant_id: item.tenant_id,
-          file_name: item.file_name,
-          file_type: item.file_type,
-          file_size_mb: item.file_size_mb,
-          ocr_status: item.ocr_status,
-          progress: item.progress,
-          uploaded_at: new Date(item.uploaded_at),
-          records_count: item.records_count,
-          detected_currencies: item.detected_currencies || [],
-          converted_inr_crores: item.converted_inr_crores
+          doc_id: fullItem.doc_id,
+          tenant_id: fullItem.tenant_id,
+          file_name: fullItem.file_name,
+          file_type: fullItem.file_type,
+          file_size_mb: fullItem.file_size_mb,
+          ocr_status: fullItem.ocr_status,
+          progress: fullItem.progress,
+          uploaded_at: new Date(fullItem.uploaded_at),
+          records_count: fullItem.records_count,
+          detected_currencies: fullItem.detected_currencies,
+          converted_inr_crores: fullItem.converted_inr_crores
         }
       }).catch((e: any) => logger.error('Error syncing ingestion to PostgreSQL', { source: 'DatabaseStore' }, e));
     }
-    return [...this.ingestionQueue];
+    return this.getIngestionQueue();
   }
 
   // Validation Records
@@ -237,7 +275,7 @@ export class DatabaseStore {
 
       if (r.issue_flag === 'Missing Currency Code') {
         fxRate = 83.8;
-        const totalINR = (r.order_quantity || 1) * (r.net_price || r.amount) * fxRate;
+        const totalINR = (r.order_quantity || 1) * (r.net_price ?? 0) * fxRate;
         inrCrores = Number((totalINR / 10000000).toFixed(4));
         updatedCount++;
       } else if (r.issue_flag === 'Unmapped Supplier Name') {
@@ -271,8 +309,16 @@ export class DatabaseStore {
 
   public resetValidationRecords(): ValidationPreCheckRecord[] {
     this.validationRecords = JSON.parse(JSON.stringify(initialValidationRecords));
+    this.ingestionQueue = JSON.parse(JSON.stringify(initialIngestionQueue));
     queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
+    queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
     return [...this.validationRecords];
+  }
+
+  public resetIngestionQueue(): RawDocumentIngestion[] {
+    this.ingestionQueue = JSON.parse(JSON.stringify(initialIngestionQueue));
+    queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
+    return [...this.ingestionQueue];
   }
 
   // Categories

@@ -1,8 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { Module2Categorization } from '../../src/components/Module2Categorization';
-import { mockSpendCategories, mockCategoryYearDetails } from '../../src/data/mockData';
+import { mockSpendCategories, mockCategoryYearDetails, mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module2Categorization Component', () => {
@@ -66,10 +66,25 @@ describe('Module2Categorization Component', () => {
       amount_inr: 2100000,
       spend_year: 2024,
       status: 'Pending'
+    },
+    {
+      mapping_id: 'MAP-5',
+      line_item_id: 'LINE-5',
+      raw_desc: 'Office Executive Ergonomic Mesh Chair',
+      vendor_identified: 'Steelcase Office Solutions',
+      unspsc_code: '56112102',
+      unspsc_category_name: 'Workstation Seating',
+      core_bucket: 'Indirect & MRO' as const,
+      ai_confidence: 60,
+      total_spend: 15000,
+      inr_crores: 0.12,
+      amount_inr: 1200000,
+      spend_year: 2024,
+      status: 'Pending'
     }
   ];
 
-  it('renders correctly and switches AI models', () => {
+  it('renders correctly and switches AI models', async () => {
     render(
       <Module2Categorization
         categories={mockSpendCategories}
@@ -82,11 +97,18 @@ describe('Module2Categorization Component', () => {
 
     expect(screen.getByText(UI_STRINGS.module2.matrixTitle)).toBeInTheDocument();
 
-    const publicAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.public });
-    fireEvent.click(publicAiBtn);
+    const startAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.startAiCategorization });
+    expect(startAiBtn).toBeInTheDocument();
+    fireEvent.click(startAiBtn);
 
-    const enterpriseAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.enterprise });
-    fireEvent.click(enterpriseAiBtn);
+    // Verifies AnalyzingLoader is mounted in overlay mode
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    const cancelLoaderBtn = screen.getByRole('button', { name: UI_STRINGS.analyzingLoader.cancelButton });
+    fireEvent.click(cancelLoaderBtn);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
   });
 
   it('filters line items by bucket, year, confidence, and search query', () => {
@@ -100,14 +122,16 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    const searchInputs = screen.getAllByRole('textbox');
-    const tableSearch = searchInputs[0];
+    const tableSearch = screen.getByPlaceholderText(UI_STRINGS.module2.searchPlaceholder);
     fireEvent.change(tableSearch, { target: { value: 'Carton' } });
+    fireEvent.change(tableSearch, { target: { value: 'Acme Chemical' } });
+    fireEvent.change(tableSearch, { target: { value: '78101800' } });
+    fireEvent.change(tableSearch, { target: { value: 'Piping Valves' } });
     fireEvent.change(tableSearch, { target: { value: '' } });
 
     const selects = screen.getAllByRole('combobox');
-    const bucketSelect = selects[0];
-    const yearSelect = selects[1];
+    const yearSelect = selects[3];
+    const bucketSelect = selects[4];
 
     fireEvent.change(bucketSelect, { target: { value: 'Direct Materials' } });
     fireEvent.change(yearSelect, { target: { value: '2025' } });
@@ -127,8 +151,7 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    const searchInputs = screen.getAllByRole('textbox');
-    const explorerSearch = searchInputs[1];
+    const explorerSearch = screen.getByPlaceholderText(UI_STRINGS.module2.catalogSearchPlaceholder);
     fireEvent.change(explorerSearch, { target: { value: 'boxwood' } });
 
     const selects = screen.getAllByRole('combobox');
@@ -219,11 +242,9 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    // AI Model switcher
-    const publicAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.public });
-    fireEvent.click(publicAiBtn);
-    const enterpriseAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.models.enterprise });
-    fireEvent.click(enterpriseAiBtn);
+    // Start AI Categorization button
+    const startAiBtn = screen.getByRole('button', { name: UI_STRINGS.module2.startAiCategorization });
+    fireEvent.click(startAiBtn);
 
     // Year filters
     const selects = screen.getAllByRole('combobox');
@@ -238,4 +259,254 @@ describe('Module2Categorization Component', () => {
     // Verify default spend_year 2024 rendered
     expect(screen.getByText('2024')).toBeInTheDocument();
   });
+
+  it('renders CategoryVendorBreakdownView with tenant prop inside categorization module', () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        tenant={mockTenant}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.module2.breakdown.inrValuation)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.breakdown.categorySpendBreakdown)).toBeInTheDocument();
+    expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
+  });
+
+  it('triggers onStartAICategorization and transitions to completed state after timer', async () => {
+    const handleStartMock = vi.fn();
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        onStartAICategorization={handleStartMock}
+        speedMultiplier={50}
+      />
+    );
+
+    const startBtn = screen.getByRole('button', { name: UI_STRINGS.module2.startAiCategorization });
+    fireEvent.click(startBtn);
+    expect(handleStartMock).toHaveBeenCalledTimes(1);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('button', { name: UI_STRINGS.module2.aiCategorizationCompleted })).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
+  });
+
+  it('toggles between Top 50 Vendor Supply view and Category Spend Matrix view', async () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    // By default, Top 50 Vendor Supply categorization is active
+    expect(screen.getByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
+    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.alarmBadge)).toBeInTheDocument();
+
+    // Switch to Category Spend Matrix tab
+    const categoryMatrixTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.matrixTitle });
+    fireEvent.click(categoryMatrixTabBtn);
+
+    // Verify Category Spend Matrix table headers are shown
+    expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.category)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.colLRange)).toBeInTheDocument();
+
+    // Switch back to Top 50 Vendors tab
+    const vendorSupplyTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.tabVendorSupply });
+    fireEvent.click(vendorSupplyTabBtn);
+    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
+  });
+
+  it('renders Industry Sector Lens card, allows switching sector, and filters by sector relevance', () => {
+    const handleUpdateTenantMock = vi.fn();
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        tenant={mockTenant}
+        onUpdateTenant={handleUpdateTenantMock}
+      />
+    );
+
+    // Verify Sector Lens Badge is rendered
+    expect(screen.getAllByText(UI_STRINGS.module2.industryContext.badge).length).toBeGreaterThan(0);
+
+    // Switch Major Sector
+    const majorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel);
+    fireEvent.change(majorSelect, { target: { value: 'Manufacturing & Industrial' } });
+    expect(handleUpdateTenantMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        major_sector: 'Manufacturing & Industrial'
+      })
+    );
+
+    // Switch Minor Sector
+    const minorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel);
+    fireEvent.change(minorSelect, { target: { value: 'Precision Engineering & Tooling' } });
+    expect(handleUpdateTenantMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        minor_sector: 'Precision Engineering & Tooling'
+      })
+    );
+
+    // Filter by Sector Relevance
+    const sectorRelevanceFilter = screen.getByLabelText(UI_STRINGS.module2.industryContext.badge);
+    fireEvent.change(sectorRelevanceFilter, { target: { value: 'CORE_DIRECT' } });
+    fireEvent.change(sectorRelevanceFilter, { target: { value: 'CRITICAL_PACKAGING' } });
+    fireEvent.change(sectorRelevanceFilter, { target: { value: 'SECTOR_LOGISTICS' } });
+    fireEvent.change(sectorRelevanceFilter, { target: { value: 'GENERAL_MRO' } });
+    fireEvent.change(sectorRelevanceFilter, { target: { value: 'CROSS_DOMAIN' } });
+    fireEvent.change(sectorRelevanceFilter, { target: { value: 'ALL' } });
+  });
+
+  it('renders Material code, description, PO number, vendor entity, and UNSPSC commodity/class titles in table', () => {
+    const detailedLineItems = [
+      {
+        mapping_id: 'MAP-DET-1',
+        line_item_id: 'LINE-DET-1',
+        material_code: 'MAT-9901-BOX',
+        material_desc: 'Heavy Duty Packaging Box 50x50',
+        raw_desc: 'Heavy Duty Packaging Box 50x50',
+        vendor_identified: 'Global Box Co.',
+        master_supplier_id: 'SUP-GBOX-100',
+        unspsc_code: '14121506',
+        unspsc_category_name: 'Packaging (Boxes)',
+        unspsc_commodity_title: 'Corrugated fiberboard boxes',
+        unspsc_class_title: 'Paperboard and packaging papers',
+        core_bucket: 'Packaging Materials' as const,
+        ai_confidence: 96,
+        total_spend: 60000,
+        inr_crores: 0.50,
+        amount_inr: 5000000,
+        spend_year: 2024,
+        po_number: 'PO-2024-998877',
+        status: 'Confirmed'
+      }
+    ];
+
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={detailedLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    // Verify Column Headers
+    expect(screen.getByText(UI_STRINGS.module2.lineItemHeaders.poNumber)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.lineItemHeaders.materialCodeDesc)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.lineItemHeaders.unspscColLCommodityClass)).toBeInTheDocument();
+
+    // Verify Item Cells
+    expect(screen.getByText('MAT-9901-BOX')).toBeInTheDocument();
+    expect(screen.getByText('Heavy Duty Packaging Box 50x50')).toBeInTheDocument();
+    expect(screen.getByText('PO-2024-998877')).toBeInTheDocument();
+    expect(screen.getByText('Global Box Co.')).toBeInTheDocument();
+    expect(screen.getByText('SUP-GBOX-100')).toBeInTheDocument();
+    expect(screen.getByText('Corrugated fiberboard boxes')).toBeInTheDocument();
+    expect(screen.getAllByText('Paperboard and packaging papers').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module2.commodityLabel).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module2.classLabel).length).toBeGreaterThan(0);
+
+    // Verify Search by material code and PO number
+    const tableSearch = screen.getByPlaceholderText(UI_STRINGS.module2.searchPlaceholder);
+    fireEvent.change(tableSearch, { target: { value: 'MAT-9901-BOX' } });
+    expect(screen.getByText('MAT-9901-BOX')).toBeInTheDocument();
+
+    fireEvent.change(tableSearch, { target: { value: 'PO-2024-998877' } });
+    expect(screen.getByText('PO-2024-998877')).toBeInTheDocument();
+
+    fireEvent.change(tableSearch, { target: { value: 'Corrugated fiberboard' } });
+    expect(screen.getByText('Corrugated fiberboard boxes')).toBeInTheDocument();
+  });
+
+  it('displays Commodity Title and Class Title on catalog cards and opens UNSPSCDetailModal pop-up on click', async () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    // Verify catalog title and labels
+    expect(screen.getByText(UI_STRINGS.module2.catalogTitle)).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module2.commodityTitleLabel).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module2.classTitleLabel).length).toBeGreaterThan(0);
+
+    // Click "More Details" button on the first card
+    const moreDetailsButtons = screen.getAllByText(UI_STRINGS.module2.moreDetailsBtn);
+    expect(moreDetailsButtons.length).toBeGreaterThan(0);
+    fireEvent.click(moreDetailsButtons[0]);
+
+    // Verify UNSPSCDetailModal opens
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.unspscDetail.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.unspscDetail.taxonomyTreeTitle)).toBeInTheDocument();
+
+    // Close the modal via first close button
+    const closeButtons = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
+    fireEvent.click(closeButtons[0]);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+  });
+
+  it('opens UNSPSCDetailModal pop-up via keyboard Enter or Space key on catalog card', async () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    const catalogCards = screen.getAllByTestId(/^unspsc-card-/);
+    expect(catalogCards.length).toBeGreaterThan(0);
+    const catalogCard = catalogCards[0];
+
+    // Enter key
+    fireEvent.keyDown(catalogCard, { key: 'Enter' });
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    const closeBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
+    fireEvent.click(closeBtns[0]);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    // Space key
+    fireEvent.keyDown(catalogCard, { key: ' ' });
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    const closeBtns2 = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
+    fireEvent.click(closeBtns2[0]);
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+  });
 });
+
+

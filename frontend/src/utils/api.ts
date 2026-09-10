@@ -199,5 +199,18 @@ export const apiClient = {
   async getDashboardOverviewGraphQL(): Promise<DashboardOverviewData> {
     frontendLogger.info('Fetching aggregated dashboard overview via GraphQL apiClient wrapper');
     return await fetchDashboardOverview();
+  },
+
+  // Currency
+  async getCurrencyConversion(from: string, amount: number, dateOrYear?: string | number) {
+    frontendLogger.debug('Calling currency conversion API', { from, amount, dateOrYear });
+    const query = new URLSearchParams({
+      from,
+      amount: String(amount),
+      ...(dateOrYear ? { date: String(dateOrYear) } : {})
+    });
+    const res = await fetch(`${API_BASE}/api/currency?${query.toString()}`);
+    const json = await res.json();
+    return json.data;
   }
 };
