@@ -150,7 +150,7 @@ describe('AES-256-GCM Encryption Utility', () => {
       const encrypted = encryptData('Original data');
       const tampered = {
         ...encrypted,
-        ciphertext: 'ff' + encrypted.ciphertext.substring(2)
+        ciphertext: (encrypted.ciphertext[0] === '0' ? '1' : '0') + encrypted.ciphertext.substring(1)
       };
 
       expect(() => decryptData(tampered)).toThrow(CRYPTO_ERRORS.DECRYPTION_FAILED);
@@ -160,7 +160,7 @@ describe('AES-256-GCM Encryption Utility', () => {
       const encrypted = encryptData('Original data');
       const tampered = {
         ...encrypted,
-        tag: 'ff' + encrypted.tag.substring(2)
+        tag: (encrypted.tag[0] === '0' ? '1' : '0') + encrypted.tag.substring(1)
       };
 
       expect(() => decryptData(tampered)).toThrow(CRYPTO_ERRORS.DECRYPTION_FAILED);

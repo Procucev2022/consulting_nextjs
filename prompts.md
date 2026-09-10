@@ -137,34 +137,194 @@ Formatting & ES6+: Enforce single quotes, semi (colons), and comma-dangle. Requi
 ---
 
 ## Prompt 22
-Run locally
+run local in chrome
 
 ---
 
 ## Prompt 23
-deploy in cloudflare  with url name procucev consulting portal
+let us refresh
 
 ---
 
 ## Prompt 24
-deplooy in cloudflare  with procucev Consulting portal
+In this area, let us show the document summary like Material group wise summary, plant wise summary and month wise summary and spends in INR/ USD etc. The existing analysis to be shown in the AI categorization page. First page should be summary of the data that is uploaded by the client
 
 ---
 
 ## Prompt 25
-Whenever you deploy these kinds of applications, please just any one backend related operation & one data base related operation & one file uploading operation
+check the data is not matching except total lines. He you should show unique items, unique vendors as well from the data uploaded
 
 ---
 
 ## Prompt 26
-Also, please setup CI/CD in github to automatically deploy these application in cloudflare
+For month wise, show it in a graphical form about the changes month wise for 3 years
 
 ---
 
 ## Prompt 27
-this code is the latest code pull from the main and build this application?
+Make it a line graph each line showing every year. X-axis Months and Y-Axis amounts
 
 ---
 
 ## Prompt 28
+here you need to highlight about the conversion related issues for fixing and then any duplication of vendors for merging and duplication of items for merging to be highlighted here. Once the user gives the fix or confirmation, please proceed and show the revised numbers from the start of the sheet after refreshing and updating the numbers
+
+---
+
+## Prompt 29
+Plz take the currency conversion as on the date of that particular transaction. Even in the entire technology, use the currency oncersions as on that date as per Yahoo finance dats integrated through APIs
+
+---
+
+## Prompt 30
+Before the multi currency validation, show data like this for 80% of the spend with first vendor and then item and sepnd. In another tab, first item and then vendor names and then spend. The second column should be created in a collapsible way, so I can see only the vendors and spend and another tab only the items and the spend.
+
+---
+
+## Prompt 31
+run local host on chrome
+
+---
+
+## Prompt 32
+change the description to Base Data Upload (Upto 3 years)
+
+---
+
+## Prompt 33
+change the text 3- year upload to Data Upload
+
+---
+
+## Prompt 34
+Both supplier name and short text i.e item names are coming wrongly. Review and update
+
+---
+
+## Prompt 35
+This is how I am getting the data analysis but you are giving wrongly. I have attached your image as well which is showing wrongly
+
+---
+
+## Prompt 36
+I am getting error in refreshing the page
+
+---
+
+## Prompt 37
+This is the error
+
+---
+
+## Prompt 38
+it is showing 2 lists here. plz check and correct
+
+---
+
+## Prompt 39
+In this area, plz give the description of the issue and also a button to ignore as well
+
+---
+
+## Prompt 40
+Keep an option to refresh with these fixes and see the final numbers again
+
+---
+
+## Prompt 41
+all numbers changed after refreshing it with fixes. Plz check ensure it is always correct. Plz keep some validations again after the fixes without going wrong
+
+---
+
+## Prompt 42
+Plz check the plants and material groups. Numbers are not matching. Plz align the numbers perfectly and show any deviations or gaps in a separate note. even if we show only the top 10 numbers, show that only these numbers considered etc.
+
+---
+
+## Prompt 43
+If a new file is uploaded, plz era se the old data and consider it as a completely new and revise the complete data. Erase the complete old data and consider only new file
+
+---
+
+## Prompt 44
+Let us give a button here to start AI Categorization as per UNSPSC. Remove Enterprise Qua and Public Qua buttons here
+
+---
+
+## Prompt 45
+show the categories here based on UNSPSC. First try to consider values based on Commodity Title and if the values are less, consider showing them as per Class Title. The objective is to understand major spend categories and their vendors in this segment. Don't clutter the UI too much
+
+---
+
+## Prompt 46
+In this area, let us categorise vendors based on their material supply categories. For example, if a vendor is supplying irrelavant categories of materials, mark them as a multi category vendor and if the vendor is supplying only single category of items, show them a single category vendor. Show this trend for top 50 vendors here based on spend value. If there are multiple category vendors are more for higher spends, raise an alarm for key observation here
+
+---
+
+## Prompt 47
+Show the loader with analyzing in a nice pictorial way across the application
+
+---
+
+## Prompt 48
+Let us give an option for industry by Major sector and minor sector to understand the type of materials and their categories easily. This should also be considered while categorizing the materials
+
+---
+
+## Prompt 49
+Here along with vendor entity, show the Material code and description, PO number  and UNSPSC commodity/class title
+
+---
+
+## Prompt 50
+Here also show the Commodity Title / Class Title and then show more details over a pop up
+
+---
+
+## Prompt 51
+broaden the major and minor sectors across various industries and add service sectors as well
+
+---
+
+## Prompt 52
+In this area, let us highlight that the spend increased (Year On Year)YOY with the vendor against his items and quantity also increased and prices also increased YOY to be highlighted here for all the 50 top vendors instead of year wise spend separately. Show increase in green colour with a red mark of observation and decrease in amber colour with a remark in blue colour
+
+---
+
+## Prompt 53
+plz start now
+
+---
+
+## Prompt 54
+deploy in cloudflare  with url name procucev consulting portal
+
+---
+
+## Prompt 55
+deplooy in cloudflare  with procucev Consulting portal
+
+---
+
+## Prompt 56
+Whenever you deploy these kinds of applications, please just any one backend related operation & one data base related operation & one file uploading operation
+
+---
+
+## Prompt 57
+Also, please setup CI/CD in github to automatically deploy these application in cloudflare
+
+---
+
+## Prompt 58
+this code is the latest code pull from the main and build this application?
+
+---
+
+## Prompt 59
 don't deploy this changes in main and git also just commit in this cloudflare branch only
+
+---
+
+## Prompt 60
+the latest code in git is not deploy at coludflare please and fix it

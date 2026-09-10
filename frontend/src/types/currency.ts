@@ -24,6 +24,8 @@ export interface CurrencyConversionResult {
   croresStr: string;
   fxRateUsed: number;
   yahooTicker: string;
+  transactionDate?: string;
+  effectiveDate?: string;
 }
 
 export interface LineItemSpendResult {
@@ -35,6 +37,8 @@ export interface LineItemSpendResult {
   amountINR: number;
   inrCrores: number;
   formattedCrores: string;
+  transactionDate?: string;
+  effectiveDate?: string;
 }
 
 export interface SpendLineItemInput {
@@ -43,6 +47,7 @@ export interface SpendLineItemInput {
   raw_currency?: string;
   amount?: number;
   spend_year?: number;
+  transaction_date?: string;
 }
 
 export interface TotalSpendResult {

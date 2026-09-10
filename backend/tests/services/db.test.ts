@@ -51,6 +51,15 @@ describe('DatabaseStore service', () => {
       connectSpy.mockRestore();
       findSpy.mockRestore();
     });
+
+    it('should cover error path in initPostgres when connect throws', async () => {
+      const mockStore = Object.create(DatabaseStore.prototype);
+      const connectSpy = vi.spyOn(prisma, '$connect').mockRejectedValueOnce(new Error('Connection refused'));
+
+      await (mockStore as any).initPostgres();
+      expect(mockStore.isPostgresConnected).toBe(false);
+      connectSpy.mockRestore();
+    });
   });
 
   describe('Tenant operations', () => {
@@ -88,6 +97,53 @@ describe('DatabaseStore service', () => {
       };
       const queue = store.addIngestionItem(item);
       expect(queue[0].doc_id).toBe('DOC-TEST-999');
+    });
+
+    it('should add item with partial properties and safely generate defaults without throwing', () => {
+      const partialItem: any = {
+        file_name: 'minimal_file.xlsx',
+        file_type: 'XLSX',
+        file_size_mb: 1.2
+      };
+      const queue = store.addIngestionItem(partialItem);
+      expect(queue[0].file_name).toBe('minimal_file.xlsx');
+      expect(queue[0].doc_id).toBeDefined();
+      expect(queue[0].ocr_status).toBe('Completed');
+      expect(queue[0].progress).toBe(100);
+      expect(queue[0].records_count).toBe(0);
+      expect(queue[0].detected_currencies).toEqual(['INR']);
+    });
+
+    it('should sanitize ingestion item with missing fields using default fallbacks', () => {
+      const sanitized = (store as any).sanitizeIngestionItem({
+        file_name: undefined,
+        file_type: undefined,
+        file_size_mb: undefined,
+        ocr_status: undefined,
+        progress: undefined,
+        uploaded_at: undefined,
+        records_count: undefined,
+        detected_currencies: undefined,
+        converted_inr_crores: undefined
+      }, 1);
+      expect(sanitized.file_name).toBe('Uploaded_Document.xlsx');
+      expect(sanitized.file_type).toBe('XLSX');
+      expect(sanitized.ocr_status).toBe('Completed');
+      expect(sanitized.progress).toBe(100);
+      expect(sanitized.converted_inr_crores).toBe(732.41);
+    });
+
+    it('should maintain single active item on addIngestionItem and allow resetIngestionQueue', () => {
+      const item1: any = { file_name: 'file1.xlsx', file_size_mb: 1.0 };
+      const item2: any = { file_name: 'file2.xlsx', file_size_mb: 2.0 };
+      store.addIngestionItem(item1);
+      const queueAfterSecond = store.addIngestionItem(item2);
+      expect(queueAfterSecond).toHaveLength(1);
+      expect(queueAfterSecond[0].file_name).toBe('file2.xlsx');
+
+      const resetQueue = store.resetIngestionQueue();
+      expect(resetQueue).toHaveLength(1);
+      expect(resetQueue[0].file_name).toBe('Purchase_History_2023_2026.xlsx');
     });
   });
 

@@ -15,6 +15,8 @@ model TenantMaster {
   status                    String   @default("ACTIVE")
   total_spend_evaluated     Float    @default(0)
   total_spend_evaluated_inr Float?
+  major_sector              String?  @default("Chemical & Petrochemicals")
+  minor_sector              String?  @default("Specialty Chemicals")
   created_at                DateTime @default(now())
   updated_at                DateTime @updatedAt
 }

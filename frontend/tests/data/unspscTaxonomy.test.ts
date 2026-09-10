@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   unspscOfficialDictionary,
   lookupUNSPSCByDescription,
-  searchUNSPSCTaxonomy
+  searchUNSPSCTaxonomy,
+  lookupUNSPSCDetails
 } from '../../src/data/unspscTaxonomy';
 
 describe('unspscTaxonomy data module', () => {
@@ -32,6 +33,37 @@ describe('unspscTaxonomy data module', () => {
     it('should fallback to first record if nothing matches', () => {
       const fallback = lookupUNSPSCByDescription('non_existent_super_random_item_123456');
       expect(fallback).toBe(unspscOfficialDictionary[0]);
+    });
+  });
+
+  describe('lookupUNSPSCDetails', () => {
+    it('should return default commodity and class when query is empty', () => {
+      const res = lookupUNSPSCDetails('', 'Packaging Materials');
+      expect(res.commodityTitle).toBe('Industrial Material Commodity');
+      expect(res.classTitle).toBe('Packaging Materials');
+    });
+
+    it('should return default class when query is empty and fallback is undefined', () => {
+      const res = lookupUNSPSCDetails('');
+      expect(res.classTitle).toBe('Direct Materials');
+    });
+
+    it('should resolve details by commodity code', () => {
+      const first = unspscOfficialDictionary[0];
+      const res = lookupUNSPSCDetails(first.commodityCode);
+      expect(res.commodityTitle).toBe(first.commodityTitle);
+      expect(res.classTitle).toBe(first.classTitle);
+    });
+
+    it('should resolve details by commodity title keyword', () => {
+      const res = lookupUNSPSCDetails('boxwood');
+      expect(res.commodityTitle.toLowerCase()).toContain('boxwood');
+    });
+
+    it('should fallback to query and fallback category if no match is found', () => {
+      const res = lookupUNSPSCDetails('non_existent_random_token_9999', 'Indirect & MRO');
+      expect(res.commodityTitle).toBe('non_existent_random_token_9999');
+      expect(res.classTitle).toBe('Indirect & MRO');
     });
   });
 

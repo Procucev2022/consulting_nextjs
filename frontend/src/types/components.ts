@@ -12,10 +12,16 @@ import type {
   SavingsOpportunity,
   ConversionFunnelPhase,
   CategoryYearDetail,
-  VendorYearDetail
+  VendorYearDetail,
+  MaterialGroupSummary,
+  PlantSummary,
+  MonthWiseSummary,
+  DocumentSpendCurrency,
+  MonthGraphViewMode
 } from './models';
 import type { HeaderCurrency } from './currency';
-import type { CoreBucket } from './taxonomy';
+import type { CoreBucket, UNSPSCCommodityRecord } from './taxonomy';
+import type { ParetoSpendData } from './pareto';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -26,6 +32,8 @@ export interface HeaderProps {
   onOpenReport: () => void;
   theme: 'light' | 'dark';
   onSelectTheme: (theme: 'light' | 'dark') => void;
+  onStartAnalysis?: () => void;
+  isAnalyzing?: boolean;
 }
 
 export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
@@ -45,18 +53,43 @@ export interface Module1IngestionProps {
   validationRecords: ValidationPreCheckRecord[];
   onFixCurrency: (record: ValidationPreCheckRecord) => void;
   onMergeVendor: (record: ValidationPreCheckRecord) => void;
+  onMergeItem?: (record: ValidationPreCheckRecord) => void;
   onApplyBlanketFixes?: () => void;
   onResetValidationRecords?: () => void;
   onRunAICategorization: () => void;
   onAddBatchUpload: (file: File, datasetType: DatasetType) => void;
+  materialGroupSummaries?: MaterialGroupSummary[];
+  plantSummaries?: PlantSummary[];
+  monthWiseSummaries?: MonthWiseSummary[];
+  uniqueItemsCount?: number;
+  uniqueVendorsCount?: number;
+  isDataRefreshed?: boolean;
+  paretoSpendData?: ParetoSpendData;
+  onRefreshWithFixes?: () => void;
+}
+
+export interface ValidationPreCheckSectionProps {
+  validationRecords: ValidationPreCheckRecord[];
+  onFixCurrency: (record: ValidationPreCheckRecord) => void;
+  onMergeVendor: (record: ValidationPreCheckRecord) => void;
+  onMergeItem?: (record: ValidationPreCheckRecord) => void;
+  onApplyBlanketFixes?: () => void;
+  onResetValidationRecords?: () => void;
+  onRunAICategorization: () => void;
+  isDataRefreshed?: boolean;
+  onRefreshWithFixes?: () => void;
 }
 
 export interface Module2CategorizationProps {
+  tenant?: TenantMaster;
   categories: SpendCategorySummary[];
   lineItems: LineItemMapping[];
   onConfirmMapping: (mappingId: string) => void;
   onReassignMapping: (item: LineItemMapping) => void;
   onProceedToTrend: () => void;
+  onStartAICategorization?: () => void;
+  speedMultiplier?: number;
+  onUpdateTenant?: (tenant: TenantMaster) => void;
 }
 
 export interface Module3TrendAnalyticsProps {
@@ -78,6 +111,64 @@ export interface Module5ConversionMatrixProps {
   onOpenReport: () => void;
 }
 
+export type SummaryScopeMode = 'TOP_10' | 'ALL';
+
+export interface DocumentSummaryViewProps {
+  tenant?: TenantMaster;
+  ingestionQueue?: RawDocumentIngestion[];
+  materialGroupSummaries?: MaterialGroupSummary[];
+  plantSummaries?: PlantSummary[];
+  monthWiseSummaries?: MonthWiseSummary[];
+  uniqueItemsCount?: number;
+  uniqueVendorsCount?: number;
+  isDataRefreshed?: boolean;
+  onNavigateToCategorization?: () => void;
+}
+
+export interface MonthWiseTrendChartProps {
+  months: MonthWiseSummary[];
+  spendCurrency: DocumentSpendCurrency;
+  selectedFy: 'ALL' | 'FY24' | 'FY25' | 'FY26';
+  onSelectFy: (fy: 'ALL' | 'FY24' | 'FY25' | 'FY26') => void;
+  viewMode: MonthGraphViewMode;
+  onChangeViewMode: (mode: MonthGraphViewMode) => void;
+  searchQuery?: string;
+}
+
+export interface MultiYearLineGraphProps {
+  months: MonthWiseSummary[];
+  spendCurrency: DocumentSpendCurrency;
+  visibleYears: { FY24: boolean; FY25: boolean; FY26: boolean };
+  onToggleYear: (fy: 'FY24' | 'FY25' | 'FY26') => void;
+  selectedMonthIndex: number;
+  onSelectMonthIndex: (index: number) => void;
+}
+
+export interface MultiYearComparisonCardProps {
+  selectedMonthDef: { key: string; label: string; fullName: string; index: number };
+  selectedFy24: MonthWiseSummary | null;
+  selectedFy25: MonthWiseSummary | null;
+  selectedFy26: MonthWiseSummary | null;
+  fy25YoY: number | null;
+  fy26YoY: number | null;
+  spendCurrency: DocumentSpendCurrency;
+}
+
+export interface MonthTimelineBarChartProps {
+  months: MonthWiseSummary[];
+  spendCurrency: DocumentSpendCurrency;
+  selectedFy: 'ALL' | 'FY24' | 'FY25' | 'FY26';
+  onSelectFy: (fy: 'ALL' | 'FY24' | 'FY25' | 'FY26') => void;
+  hoveredMonth: MonthWiseSummary | null;
+  onHoverMonth: (month: MonthWiseSummary | null) => void;
+  searchQuery?: string;
+}
+
+export interface CategoryVendorBreakdownViewProps {
+  tenant?: TenantMaster;
+  categories?: CategoryYearDetail[];
+}
+
 // Modal Props & Types
 export type DatasetType = 'Purchase History' | 'Invoice Data' | 'Trial Balance';
 
@@ -88,6 +179,8 @@ export interface ClientIngestionSetupConfig {
   currency: HeaderCurrency;
   region: 'NA' | 'EU' | 'APAC' | 'GLOBAL';
   estimatedSpend: number;
+  majorSector: string;
+  minorSector: string;
 }
 
 export interface ClientIngestionSetupModalProps {
@@ -123,6 +216,23 @@ export interface MergeVendorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onMerge: (recordId: string, masterVendorId: string, masterVendorName: string) => void;
+  onIgnore?: (recordId: string) => void;
+}
+
+export interface MasterItemDefinition {
+  code: string;
+  name: string;
+  category: string;
+  column_l_code: string;
+  aliases: string[];
+}
+
+export interface MergeItemModalProps {
+  record: ValidationPreCheckRecord | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onMerge: (recordId: string, masterItemCode: string, masterItemName: string) => void;
+  onIgnore?: (recordId: string) => void;
 }
 
 export type ProCPXEventType = 'Reverse Auction' | 'Multi-Stage RFP' | 'Sealed Bid';
@@ -155,8 +265,27 @@ export interface ReassignModalProps {
   onSave: (mappingId: string, newCode: string, newName: string, bucket: CoreBucket | string) => void;
 }
 
+export interface UNSPSCDetailModalProps {
+  record: UNSPSCCommodityRecord | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 export interface DeclarativeDownloadPayload {
   href: string;
   filename: string;
+}
+
+export interface IngestionUploadSectionProps {
+  tenant: TenantMaster;
+  activeDatasetType: DatasetType;
+  ingestionQueue: RawDocumentIngestion[];
+  dragActive: boolean;
+  onDrag: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  totalEvaluatedSpendInrCr: number;
+  onOpenSetupModal?: () => void;
 }
 

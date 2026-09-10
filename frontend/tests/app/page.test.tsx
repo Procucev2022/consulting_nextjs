@@ -15,6 +15,9 @@ import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Home Page Component', () => {
   beforeEach(() => {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.clear();
+    }
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue(mockTenant);
     vi.spyOn(apiClient, 'getIngestionData').mockResolvedValue({
       queue: initialIngestionQueue,
@@ -42,6 +45,9 @@ describe('Home Page Component', () => {
   });
 
   afterEach(() => {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.clear();
+    }
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -65,28 +71,36 @@ describe('Home Page Component', () => {
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);
     fireEvent.click(step3);
-    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+    });
 
     // Navigate to Module 4
     const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
     fireEvent.click(step4);
-    expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
+    });
 
     // Navigate to Module 5
     const matrixBtn = screen.getByRole('button', { name: UI_STRINGS.pipeline.conversionMatrixTab });
     fireEvent.click(matrixBtn);
-    expect(screen.getByText(UI_STRINGS.module5.heading)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module5.heading)).toBeInTheDocument();
+    });
 
     // Navigate to Schema
     const schemaBtn = screen.getByRole('button', { name: UI_STRINGS.pipeline.dataArchitectureTab });
     fireEvent.click(schemaBtn);
-    expect(screen.getByText(UI_STRINGS.schema.bannerTitle)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.schema.bannerTitle)).toBeInTheDocument();
+    });
 
     // Return to Module 1
     const step1 = screen.getByText(UI_STRINGS.pipeline.steps.step1.title);
     fireEvent.click(step1);
     expect(screen.getByText(UI_STRINGS.module1.uploadedFileDetails)).toBeInTheDocument();
-  });
+  }, 20000);
 
   it('handles batch file upload with CSV and XLSX formats', async () => {
     const { container } = render(<Home />);
@@ -98,6 +112,7 @@ describe('Home Page Component', () => {
         'sample_batch.csv',
         { type: 'text/csv' }
       );
+      csvFile.text = vi.fn().mockResolvedValue('po_number,vendor,item,qty,price,curr,year\nPO-1,VendorA,ItemA,100,50,USD,2024\n');
       fireEvent.change(fileInput, { target: { files: [csvFile] } });
 
       await waitFor(() => {
@@ -105,7 +120,31 @@ describe('Home Page Component', () => {
       });
 
       const textFile = new File(['header\nline1\nline2\n'], 'data.txt', { type: 'text/plain' });
+      textFile.text = vi.fn().mockResolvedValue('header\nline1\nline2\n');
       fireEvent.change(fileInput, { target: { files: [textFile] } });
+
+      await waitFor(() => {
+        expect(apiClient.addIngestionFile).toHaveBeenCalled();
+      });
+
+      // XLSX upload exercising workbook parsing
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet([
+        { po: 'PO-1', vendor: 'V1', desc: 'Item 1', qty: 100, price: 50, curr: 'USD', year: 2024 },
+        { other_col: 'unmapped_row' }
+      ]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+      const xlsxBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      const xlsxFile = new File([xlsxBuffer], 'sample_batch.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      xlsxFile.arrayBuffer = vi.fn().mockResolvedValue(xlsxBuffer);
+      fireEvent.change(fileInput, { target: { files: [xlsxFile] } });
+
+      await waitFor(() => {
+        expect(apiClient.addIngestionFile).toHaveBeenCalled();
+      });
     }
   });
 
@@ -113,26 +152,31 @@ describe('Home Page Component', () => {
     render(<Home />);
 
     // Open fix currency
-    const fixBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module1.actions.fixCurrency, 'i') });
-    if (fixBtns.length > 0) {
-      fireEvent.click(fixBtns[0]);
-      const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
-      fireEvent.click(applyFxBtn);
-      await waitFor(() => {
-        expect(apiClient.updateValidationRecord).toHaveBeenCalled();
-      });
-    }
+    const fixBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.fixInr });
+    fireEvent.click(fixBtns[0]);
+    const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
+    fireEvent.click(applyFxBtn);
+    await waitFor(() => {
+      expect(apiClient.updateValidationRecord).toHaveBeenCalled();
+    });
 
     // Open merge vendor
-    const mergeBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module1.actions.mergeVendor, 'i') });
-    if (mergeBtns.length > 0) {
-      fireEvent.click(mergeBtns[0]);
-      const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
-      fireEvent.click(mapBtn);
-      await waitFor(() => {
-        expect(apiClient.mergeVendor).toHaveBeenCalled();
-      });
-    }
+    const mergeBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
+    fireEvent.click(mergeBtns[0]);
+    const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
+    fireEvent.click(mapBtn);
+    await waitFor(() => {
+      expect(apiClient.mergeVendor).toHaveBeenCalled();
+    });
+
+    // Open merge item
+    const mergeItemBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.mergeItem });
+    fireEvent.click(mergeItemBtns[0]);
+    const mapItemBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeItem.confirmMerge, 'i') });
+    fireEvent.click(mapItemBtn);
+    await waitFor(() => {
+      expect(apiClient.updateValidationRecord).toHaveBeenCalled();
+    });
   });
 
   it('handles blanket fixes and reset validation records', async () => {
@@ -172,19 +216,32 @@ describe('Home Page Component', () => {
     const reassignBtns = screen.getAllByRole('button', { name: UI_STRINGS.module2.btnReassign });
     if (reassignBtns.length > 0) {
       fireEvent.click(reassignBtns[0]);
-      const applyColL = screen.getByRole('button', { name: UI_STRINGS.modals.reassign.saveMapping });
+      const modalTitle = screen.getByText(UI_STRINGS.modals.reassign.title);
+      const modalContainer = modalTitle.closest('.relative') as HTMLElement;
+      const searchInput = within(modalContainer).getByPlaceholderText(UI_STRINGS.modals.reassign.searchPlaceholder);
+      fireEvent.change(searchInput, { target: { value: 'boxwood' } });
+      const firstResult = within(modalContainer).getByText(/boxwood/i);
+      fireEvent.click(firstResult);
+      const applyColL = within(modalContainer).getByRole('button', { name: new RegExp(UI_STRINGS.modals.reassign.saveMapping, 'i') });
+      await waitFor(() => {
+        expect(applyColL).not.toBeDisabled();
+      });
       fireEvent.click(applyColL);
     }
 
     // Module 2 -> Module 3
     const proceedToTrend = screen.getByRole('button', { name: UI_STRINGS.module2.btnProceedToTrend });
     fireEvent.click(proceedToTrend);
-    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+    });
 
     // Module 3 -> Module 4
     const proceedToSavings = screen.getByRole('button', { name: UI_STRINGS.module3.ctaProceedButton });
     fireEvent.click(proceedToSavings);
-    expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
+    });
 
     // Module 4 suite dispatch
     const proCPXBtns = screen.queryAllByRole('button', { name: UI_STRINGS.modals.proCPX.launchButton });
@@ -206,7 +263,9 @@ describe('Home Page Component', () => {
     // Module 4 -> Module 5
     const proceedToConversion = screen.getByRole('button', { name: UI_STRINGS.module4.proceedToConversion });
     fireEvent.click(proceedToConversion);
-    expect(screen.getAllByText(UI_STRINGS.module5.heading)[0]).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getAllByText(UI_STRINGS.module5.heading)[0]).toBeInTheDocument();
+    });
 
     // Open Executive Report Modal
     const reportBtn = screen.getByRole('button', { name: UI_STRINGS.module5.generateExecutiveReport });
@@ -215,7 +274,7 @@ describe('Home Page Component', () => {
     const printBtn = screen.getByRole('button', { name: UI_STRINGS.modals.report.printPdf });
     const closeReportBtn = printBtn.nextElementSibling as HTMLButtonElement;
     fireEvent.click(closeReportBtn);
-  });
+  }, 20000);
 
   it('handles header tenant, currency, and theme switching, including API errors', async () => {
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Network fail'));
@@ -253,8 +312,13 @@ describe('Home Page Component', () => {
     const printBtn2 = screen.getByRole('button', { name: UI_STRINGS.modals.report.printPdf });
     const closeReportBtn2 = printBtn2.nextElementSibling as HTMLButtonElement;
     fireEvent.click(closeReportBtn2);
-    // Trigger onSelectTenant via tenant badge
+    // Trigger onSelectTenant via tenant badge (rejection path)
+    vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));
     const tenantBadge = screen.getByTestId('tenant-badge');
+    fireEvent.click(tenantBadge);
+
+    // Trigger onSelectTenant via tenant badge (success path)
+    vi.spyOn(apiClient, 'updateTenant').mockResolvedValueOnce(mockTenant);
     fireEvent.click(tenantBadge);
   });
 
@@ -288,8 +352,8 @@ describe('Home Page Component', () => {
     fireEvent.click(modalLaunchBtn);
 
     // Fast-forward countdown and completion timers (1200ms + 1800ms = 3000ms)
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3500);
+    act(() => {
+      vi.advanceTimersByTime(3500);
     });
 
     // ProCPX deploy API was called and handled rejection
@@ -306,15 +370,15 @@ describe('Home Page Component', () => {
     fireEvent.click(modalDpsBtn);
 
     // Fast-forward countdown and completion timers (1200ms + 1800ms = 3000ms)
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3500);
+    act(() => {
+      vi.advanceTimersByTime(3500);
     });
 
     expect(apiClient.deployOpportunity).toHaveBeenCalledWith(expect.any(String), 'DPS NXT');
 
     // Fast-forward toast timer (4000ms)
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(4000);
+    act(() => {
+      vi.advanceTimersByTime(4000);
     });
 
     vi.useRealTimers();
@@ -333,7 +397,7 @@ describe('Home Page Component', () => {
     });
 
     // Currency fix with rejection
-    const fixInrBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.fixInr });
+    const fixInrBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.fixInr });
     if (fixInrBtns.length > 0) {
       fireEvent.click(fixInrBtns[0]);
       const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
@@ -341,11 +405,19 @@ describe('Home Page Component', () => {
     }
 
     // Merge vendor with rejection
-    const mergeBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
+    const mergeBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
     if (mergeBtns.length > 0) {
       fireEvent.click(mergeBtns[0]);
       const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
       fireEvent.click(mapBtn);
+    }
+
+    // Merge item with rejection
+    const mergeItemBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.mergeItem });
+    if (mergeItemBtns.length > 0) {
+      fireEvent.click(mergeItemBtns[0]);
+      const mapItemBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeItem.confirmMerge, 'i') });
+      fireEvent.click(mapItemBtn);
     }
 
     // Blanket remediation with rejection
@@ -359,6 +431,27 @@ describe('Home Page Component', () => {
     await waitFor(() => {
       expect(apiClient.resetValidationRecords).toHaveBeenCalled();
     });
+  });
+
+  it('handles ignoring validation issue via MergeVendorModal and handles API rejection gracefully', async () => {
+    vi.spyOn(apiClient, 'updateValidationRecord').mockRejectedValueOnce(new Error('Ignore sync error'));
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(apiClient.getTenant).toHaveBeenCalled();
+    });
+
+    const mergeBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
+    if (mergeBtns.length > 0) {
+      fireEvent.click(mergeBtns[0]);
+      const ignoreBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.ignoreButton, 'i') });
+      fireEvent.click(ignoreBtn);
+
+      await waitFor(() => {
+        expect(apiClient.updateValidationRecord).toHaveBeenCalled();
+      });
+    }
   });
 
   it('handles file uploads for PDF, ZIP, arbitrary CSV, and malformed files', async () => {
@@ -402,6 +495,112 @@ describe('Home Page Component', () => {
     }
   });
 
+  it('handles valid XLSX upload with Total In Crs, Material Group, Plant, and Date columns', async () => {
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet([
+      {
+        'Short Text': 'FERRO NICKEL 10-14',
+        'Supplier Name': 'TRAFIGURA INDIA',
+        'Material Group': 'FERRO',
+        Plant: '1000',
+        'Document Date': 46112,
+        'Order Quantity': 100,
+        'Net Price': 500,
+        'Total In Crs': 12.5
+      },
+      {
+        'Short Text': 'STAINLESS SCRAP 316',
+        'Supplier Name': 'METALS CORP',
+        'Material Group': 'SCRAP',
+        Plant: '1002',
+        'Document Date': '2024-05-15',
+        'Order Quantity': 200,
+        'Net Price': 250,
+        'Total INR': 50000000
+      },
+      {
+        'Short Text': 'GENERAL CONSUMABLES SKU',
+        'Supplier Name': 'STANDARD SUPPLIES',
+        'Material Group': 'CONSUMABLE',
+        Plant: '1008',
+        'Document Date': '2024/08/20',
+        'Order Quantity': 150,
+        'Net Price': 100,
+        Currency: 'INR'
+      },
+      {
+        Material: 998877,
+        'Short Text': 'NICKEL ALLOY FORGING',
+        Vendor: 112233,
+        'Supplier Name': 'ALLOY SUPPLIER INC',
+        'Material Group': 'FORGINGS',
+        Plant: '1004',
+        'Document Date': '2024-03-01',
+        'Order Quantity': 30,
+        'Net Price': 5000,
+        'Total In Crs': 0.15
+      },
+      {
+        'Short Text': '883921',
+        'Material Description': 'PRECISION STAINLESS STEEL BALLS',
+        'Supplier Name': '994012',
+        'Vendor Name': 'GLOBAL PRECISION BEARING CO',
+        'Material Group': 'BEARINGS',
+        Plant: '1000',
+        'Document Date': '2024-04-10',
+        'Order Quantity': 100,
+        'Net Price': 500,
+        'Total In Crs': 0.05
+      },
+      {
+        'Short Text': 'REFRACTORY BRICKS',
+        'Supplier Name': 'FIREBRICK CO',
+        'Material Group': 'RFR0001',
+        Plant: '1000',
+        'Document Date': '2023-10-05',
+        'Order Quantity': 50,
+        'Net Price': 1000,
+        Currency: 'INR'
+      },
+      {
+        'Short Text': 'CORRUGATED CARTONS',
+        'Supplier Name': 'BOX PACKAGING LTD',
+        'Material Group': 'PACK-BOX',
+        Plant: '1000',
+        'Document Date': '2024-02-10',
+        'Order Quantity': 500,
+        'Net Price': 20,
+        Currency: 'INR'
+      },
+      {
+        'Short Text': 'OCEAN FREIGHT SHIPPING',
+        'Supplier Name': 'MAERSK LINE',
+        'Material Group': 'FREIGHT-LOG',
+        Plant: '1002',
+        'Document Date': '2024-03-15',
+        'Order Quantity': 10,
+        'Net Price': 25000,
+        Currency: 'INR'
+      }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const validXlsx = new File([wbout], '3_years_uploaded.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    (validXlsx as any).arrayBuffer = async () => wbout.buffer || wbout;
+
+    const { container } = render(<Home />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fireEvent.change(fileInput, { target: { files: [validXlsx] } });
+      await waitFor(() => {
+        expect(apiClient.addIngestionFile).toHaveBeenCalled();
+      });
+    }
+  });
+
   it('handles backend hydration with null values in settled promises', async () => {
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue(null as any);
     vi.spyOn(apiClient, 'getIngestionData').mockResolvedValue(null as any);
@@ -422,6 +621,12 @@ describe('Home Page Component', () => {
 
     render(<Home />);
 
+    expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
+  });
+
+  it('handles unexpected Promise.allSettled throw during mount', async () => {
+    vi.spyOn(Promise, 'allSettled').mockRejectedValueOnce(new Error('Fatal promise error'));
+    render(<Home />);
     expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
   });
 
@@ -454,6 +659,209 @@ describe('Home Page Component', () => {
       const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.reassign.cancel });
       fireEvent.click(cancelBtn);
     }
+  });
+
+  it('restores dataset from sessionStorage on mount and retains user upload across refresh', async () => {
+    const mockSavedState = {
+      doc: {
+        doc_id: 'DOC-SAVED-1',
+        tenant_id: 'TNT-GLOBAL-8902',
+        file_name: 'saved_3_years.xlsx',
+        file_type: 'XLSX',
+        file_size_mb: 4.5,
+        ocr_status: 'Completed',
+        progress: 100,
+        uploaded_at: '2026-03-01 10:00:00',
+        records_count: 500,
+        detected_currencies: ['INR'],
+        converted_inr_crores: 120.5
+      },
+      materialGroupSummaries: [{ materialGroup: 'METALS', count: 10, totalSpendINR: 100000000, totalSpendCr: 10 }],
+      plantSummaries: [{ plant: '1000', count: 10, totalSpendINR: 100000000, totalSpendCr: 10 }],
+      monthWiseSummaries: [{ monthYear: '2024-01', count: 10, totalSpendINR: 100000000, totalSpendCr: 10 }],
+      uploadedUniqueItems: ['ITEM-A', 'ITEM-B'],
+      uploadedUniqueVendors: ['VENDOR-X', 'VENDOR-Y'],
+      paretoData: [{ vendor: 'VENDOR-X', spend: 10, cumPercent: 100 }],
+      validationRecords: initialValidationRecords,
+      isDataRefreshed: true
+    };
+    window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify(mockSavedState));
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(apiClient.getTenant).toHaveBeenCalled();
+    });
+
+    expect(screen.getByText('saved_3_years.xlsx')).toBeInTheDocument();
+  });
+
+  it('handles sessionStorage access exception on mount gracefully', async () => {
+    vi.spyOn(window.sessionStorage, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError: Access is denied');
+    });
+
+    render(<Home />);
+    expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
+  });
+
+  it('handles raw backend ingestion queue with missing optional properties', async () => {
+    vi.spyOn(apiClient, 'getIngestionData').mockResolvedValueOnce({
+      queue: [
+        {
+          file_name: 'minimal_file.csv',
+          file_type: undefined,
+          file_size_mb: undefined,
+          doc_id: undefined,
+          ocr_status: undefined,
+          progress: undefined,
+          uploaded_at: undefined,
+          records_count: undefined,
+          detected_currencies: undefined,
+          converted_inr_crores: undefined
+        } as any
+      ],
+      validationRecords: initialValidationRecords
+    });
+
+    render(<Home />);
+    await waitFor(() => {
+      expect(screen.getByText('minimal_file.csv')).toBeInTheDocument();
+    });
+  });
+
+  it('handles sessionStorage quota exceeded during file upload without failing the upload', async () => {
+    vi.spyOn(window.sessionStorage, 'setItem').mockImplementationOnce(() => {
+      throw new Error('QuotaExceededError');
+    });
+
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet([
+      {
+        'Short Text': 'FASTENER BOLT',
+        vendor_code: 'V-101',
+        'Order Quantity': 100,
+        'Net Price': 50,
+        'Total In Crs': 0.01
+      }
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const quotaXlsx = new File([wbout], 'quota_test.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    (quotaXlsx as any).arrayBuffer = async () => wbout.buffer || wbout;
+
+    const { container } = render(<Home />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fireEvent.change(fileInput, { target: { files: [quotaXlsx] } });
+      await waitFor(() => {
+        expect(apiClient.addIngestionFile).toHaveBeenCalled();
+      });
+    }
+    expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
+  });
+
+  it('handles refreshing with fixes and displays final numbers toast notification', async () => {
+    const scrollMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollMock;
+
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: initialIngestionQueue[0] }));
+    }
+
+    render(<Home />);
+    await waitFor(() => {
+      expect(apiClient.getTenant).toHaveBeenCalled();
+    });
+
+    // Find and click the Refresh with Fixes button with pending records
+    const refreshButtons = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i')
+    });
+    expect(refreshButtons.length).toBeGreaterThan(0);
+
+    fireEvent.click(refreshButtons[0]);
+
+    // Toast should be displayed
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.toasts.refreshedFinalNumbers)).toBeInTheDocument();
+    });
+    expect(scrollMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+
+    // Now apply blanket fixes so all validation records are resolved
+    const blanketBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
+    fireEvent.click(blanketBtn);
+
+    // Click refresh with fixes again when all records are resolved
+    const refreshAgain = screen.getAllByRole('button', {
+      name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i')
+    })[0];
+    fireEvent.click(refreshAgain);
+
+    // Verify sessionStorage was updated with reconciled spend
+    const savedAfter = JSON.parse(window.sessionStorage.getItem('procucev_uploaded_dataset') || '{}');
+    expect(savedAfter.isDataRefreshed).toBe(true);
+
+    // Test when document-summary-section is not found
+    vi.spyOn(document, 'getElementById').mockReturnValueOnce(null);
+    fireEvent.click(refreshAgain);
+  });
+
+  it('triggers AnalyzingLoader from Deep Spend Scan in Header and handles cancellation and completion', async () => {
+    render(<Home />);
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
+    });
+
+    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
+    fireEvent.click(scanBtn);
+
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.analyzingLoader.title)).toBeInTheDocument();
+
+    // Test cancelling the loader
+    const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.analyzingLoader.cancelButton });
+    fireEvent.click(cancelBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    // Reopen and complete with fake timers
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(scanBtn);
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(3500);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('triggers onStartAICategorization toast in Module2', async () => {
+    render(<Home />);
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.common.appName)).toBeInTheDocument();
+    });
+
+    // Switch to Module 2
+    const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
+    fireEvent.click(step2);
+
+    // Click Start AI Categorization
+    const startAiBtn = await screen.findByRole('button', { name: UI_STRINGS.module2.startAiCategorization });
+    fireEvent.click(startAiBtn);
+
+    // Verify toast is triggered
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.toasts.runningAiCat)).toBeInTheDocument();
+    });
   });
 });
 

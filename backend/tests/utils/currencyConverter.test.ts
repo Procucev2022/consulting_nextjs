@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   yahooFinanceFXRates,
   getYahooFinanceRateToINR,
+  getYahooFinanceRateAsOfDate,
+  parseDateOrYear,
   convertToINR,
   formatINRInCrores,
   formatINRAmount,
@@ -19,11 +21,42 @@ describe('currencyConverter utility', () => {
     expect(yahooFinanceFXRates.INR.currentRate).toBe(1.0);
   });
 
+  describe('parseDateOrYear and getYahooFinanceRateAsOfDate', () => {
+    it('should parse ISO and DMY date strings', () => {
+      expect(parseDateOrYear('2024-05-18').year).toBe(2024);
+      expect(parseDateOrYear('18/05/2024').monthKey).toBe('2024-05');
+      expect(parseDateOrYear('2024').year).toBe(2024);
+      expect(parseDateOrYear('May 18, 2024').year).toBe(2024);
+      expect(parseDateOrYear(new Date('2024-05-18T00:00:00Z')).year).toBe(2024);
+      expect(parseDateOrYear(45430).year).toBe(2024);
+      expect(parseDateOrYear(undefined)).toEqual({});
+      expect(parseDateOrYear('not-a-date')).toEqual({});
+    });
+
+    it('should return rate as of transaction date with ticker', () => {
+      const res = getYahooFinanceRateAsOfDate('USD', '2024-05-18');
+      expect(res.rate).toBe(83.50);
+      expect(res.ticker).toBe('USDINR=X');
+      expect(res.isHistorical).toBe(true);
+    });
+
+    it('should return live quote when date is omitted', () => {
+      const res = getYahooFinanceRateAsOfDate('USD');
+      expect(res.rate).toBe(83.80);
+      expect(res.isHistorical).toBe(false);
+    });
+  });
+
   describe('getYahooFinanceRateToINR', () => {
     it('should return 1 for INR for any year', () => {
       expect(getYahooFinanceRateToINR('INR')).toBe(1.0);
       expect(getYahooFinanceRateToINR('INR', 2023)).toBe(1.0);
       expect(getYahooFinanceRateToINR('inr', 2024)).toBe(1.0);
+    });
+
+    it('should return correct rate for transaction date', () => {
+      expect(getYahooFinanceRateToINR('EUR', '2024-05-18')).toBe(90.80);
+      expect(getYahooFinanceRateToINR('USD', '2025-02-14')).toBe(84.80);
     });
 
     it('should return correct historical rates for USD', () => {

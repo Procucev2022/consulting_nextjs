@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   yahooFinanceFXRates,
   getYahooFinanceRateToINR,
+  getYahooFinanceRateAsOfDate,
+  parseDateOrYear,
   convertToINR,
   formatINRInCrores,
   formatINRAmount,
@@ -20,12 +22,73 @@ describe('currencyConverter utility', () => {
     expect(yahooFinanceFXRates.INR).toBeDefined();
   });
 
+  describe('parseDateOrYear and getYahooFinanceRateAsOfDate', () => {
+    it('should parse ISO date strings', () => {
+      const parsed = parseDateOrYear('2024-05-18');
+      expect(parsed.year).toBe(2024);
+      expect(parsed.monthKey).toBe('2024-05');
+      expect(parsed.formattedDate).toBe('2024-05-18');
+    });
+
+    it('should parse DD/MM/YYYY date strings', () => {
+      const parsed = parseDateOrYear('18/05/2024');
+      expect(parsed.year).toBe(2024);
+      expect(parsed.monthKey).toBe('2024-05');
+      expect(parsed.formattedDate).toBe('2024-05-18');
+    });
+
+    it('should parse 4-digit year string or number', () => {
+      expect(parseDateOrYear('2024').year).toBe(2024);
+      expect(parseDateOrYear(2024).year).toBe(2024);
+    });
+
+    it('should parse Excel serial numbers', () => {
+      const parsed = parseDateOrYear(45430);
+      expect(parsed.year).toBe(2024);
+      expect(parsed.monthKey).toBe('2024-05');
+    });
+
+    it('should parse Date instances and handle invalid inputs gracefully', () => {
+      const d = new Date('2024-05-18T00:00:00Z');
+      expect(parseDateOrYear(d).year).toBe(2024);
+      expect(parseDateOrYear(undefined)).toEqual({});
+      expect(parseDateOrYear('invalid-date')).toEqual({});
+    });
+
+    it('should retrieve accurate rate details as on transaction date', () => {
+      const info = getYahooFinanceRateAsOfDate('USD', '2024-05-18');
+      expect(info.rate).toBe(83.50);
+      expect(info.dateStr).toBe('2024-05-18');
+      expect(info.ticker).toBe('USDINR=X');
+      expect(info.isHistorical).toBe(true);
+    });
+
+    it('should retrieve EUR rate as on transaction date', () => {
+      const info = getYahooFinanceRateAsOfDate('EUR', '2024-05-18');
+      expect(info.rate).toBe(90.80);
+      expect(info.ticker).toBe('EURINR=X');
+    });
+
+    it('should fallback to live quote info when no date or year is provided', () => {
+      const info = getYahooFinanceRateAsOfDate('USD');
+      expect(info.rate).toBe(83.80);
+      expect(info.ticker).toBe('USDINR=X');
+      expect(info.isHistorical).toBe(false);
+    });
+  });
+
   describe('getYahooFinanceRateToINR', () => {
     it('should return historical rates for specific years', () => {
       expect(getYahooFinanceRateToINR('USD', 2023)).toBe(82.60);
       expect(getYahooFinanceRateToINR('USD', 2024)).toBe(83.50);
       expect(getYahooFinanceRateToINR('USD', 2025)).toBe(84.80);
       expect(getYahooFinanceRateToINR('USD', 2026)).toBe(86.50);
+    });
+
+    it('should return rates based on specific transaction date strings', () => {
+      expect(getYahooFinanceRateToINR('EUR', '2024-05-18')).toBe(90.80);
+      expect(getYahooFinanceRateToINR('USD', '2025-02-14')).toBe(84.80);
+      expect(getYahooFinanceRateToINR('GBP', '2023-11-20')).toBe(102.80);
     });
 
     it('should return currentRate if year is undefined or not 2023-2026', () => {

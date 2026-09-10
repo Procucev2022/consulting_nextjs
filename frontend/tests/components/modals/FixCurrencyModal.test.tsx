@@ -34,6 +34,10 @@ describe('FixCurrencyModal Component', () => {
     );
 
     expect(screen.getByText(UI_STRINGS.modals.fixCurrency.fxEngineBadge)).toBeInTheDocument();
+    if (sampleRec.transaction_date) {
+      expect(screen.getByText(sampleRec.transaction_date)).toBeInTheDocument();
+    }
+    expect(screen.getByText(new RegExp('Yahoo Finance API', 'i'))).toBeInTheDocument();
 
     // Select EUR
     const eurBtn = screen.getByRole('button', { name: 'EUR' });

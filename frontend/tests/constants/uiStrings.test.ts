@@ -32,8 +32,19 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.module1.summaryCards.remediatedPct(95)).toBe('95% Remediation Rate');
   });
 
-  it('should correctly format module2 confidence scores', () => {
+  it('should correctly format module2 confidence scores and vendorSupply templates', () => {
     expect(UI_STRINGS.module2.confidenceScore(92)).toBe('92% Confidence');
+    expect(UI_STRINGS.module2.tabVendorSupply).toContain('Top 50 Vendors');
+    expect(UI_STRINGS.module2.vendorSupply.alarmObservation(65.2, 284.6, 15)).toContain('65.2%');
+    expect(UI_STRINGS.module2.vendorSupply.statAffectedVendorsValue(9, 14)).toBe('9 of 14 Tier 1 Vendors');
+    expect(UI_STRINGS.module2.vendorSupply.statHighSpendShareValue(69.1)).toBe('69.1% of Tier Spend');
+    expect(UI_STRINGS.module2.vendorSupply.statImpactSpendValue(444.1)).toBe('₹444.10 Cr');
+    expect(UI_STRINGS.module2.vendorSupply.statPotentialSavingsValue(37.75)).toContain('₹37.75 Cr');
+    expect(UI_STRINGS.module2.vendorSupply.multiShareLabel(60, 100)).toBe('Multi: 60.0% (₹100.0 Cr)');
+    expect(UI_STRINGS.module2.vendorSupply.singleShareLabel(40, 50)).toBe('Single: 40.0% (₹50.0 Cr)');
+    expect(UI_STRINGS.module2.vendorSupply.badgeCategoryCount(3)).toBe('3 Categories');
+    expect(UI_STRINGS.module2.vendorSupply.badgeDisparateSupplies(2)).toBe('+2 Disparate Categories');
+    expect(UI_STRINGS.module2.vendorSupply.showingVendorsSummary(20, 50)).toBe('Showing 20 of 50 evaluated suppliers');
   });
 
   it('should correctly format module3 volatility and creep templates', () => {
@@ -50,6 +61,18 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.modals.topItems.categoryTitle('Packaging')).toBe('Packaging — Top 10 Line Items & 3-Year Price Trends');
     expect(UI_STRINGS.modals.topItems.vendorTitle('Amcor')).toBe('Amcor — Top Line Items & 3-Year Price Trends');
     expect(UI_STRINGS.modals.dpsNXT.qualifiedBiddersCount(6)).toBe('6 Qualified Bidders Invited');
+    expect(UI_STRINGS.modals.mergeVendor.issueLabel).toBe('Issue Description');
+    expect(UI_STRINGS.modals.mergeVendor.ignoreButton).toBe('Ignore Issue');
+    expect(UI_STRINGS.modals.mergeItem.issueLabel).toBe('Issue Description');
+    expect(UI_STRINGS.modals.mergeItem.ignoreButton).toBe('Ignore Issue');
+    expect(UI_STRINGS.toasts.issueIgnored('REC-8841')).toBe('Validation anomaly for Record REC-8841 ignored and retained as reviewed.');
+    expect(UI_STRINGS.module1.refreshWithFixes).toBe('Refresh with Fixes & See Final Numbers');
+    expect(UI_STRINGS.module1.quickRefreshTooltip).toContain('Recalculate spend');
+    expect(UI_STRINGS.toasts.refreshedFinalNumbers).toContain('Dataset refreshed with fixes');
+    expect(UI_STRINGS.module1.postFixValidation.integrityBadge).toBe('Post-Fix Validations Active');
+    expect(UI_STRINGS.module1.postFixValidation.spendReconciliationVerified).toBe('Ground Truth Spend Reconciled');
+    expect(UI_STRINGS.module1.postFixValidation.governanceChecksActive(2)).toBe('2 Governance Checks Maintained');
+    expect(UI_STRINGS.module1.postFixValidation.zeroDrift).toBe('0 Mathematical Drift');
   });
 
   it('should correctly format descriptive error strings and templates', () => {
@@ -84,6 +107,32 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.errors.server.databaseUnavailable).toContain('database service failed to respond');
 
     expect(UI_STRINGS.errors.rateLimit.throttled(30)).toBe('API rate limit exceeded. Too many requests in a short interval. Please wait 30s before retrying.');
+  });
+
+  it('should format all analyzingLoader strings and parameter functions correctly', () => {
+    expect(UI_STRINGS.analyzingLoader.title).toContain('AI Spend Diagnostic');
+    expect(UI_STRINGS.analyzingLoader.subtitle).toContain('Autonomous deep inspection');
+    expect(UI_STRINGS.analyzingLoader.badge).toBe('Neural Pipeline Active');
+    expect(UI_STRINGS.analyzingLoader.dismissButton).toBe('Dismiss');
+    expect(UI_STRINGS.analyzingLoader.cancelButton).toBe('Cancel Analysis');
+    expect(UI_STRINGS.analyzingLoader.completedBadge).toBe('Analysis Complete');
+    expect(UI_STRINGS.analyzingLoader.triggerButton).toBe('Deep Spend Scan');
+
+    // Metrics formatters
+    expect(UI_STRINGS.analyzingLoader.metrics.recordsValue(7357)).toBe('7,357 Lines');
+    expect(UI_STRINGS.analyzingLoader.metrics.spendValue(8066.86)).toBe('₹8066.86 Cr');
+    expect(UI_STRINGS.analyzingLoader.metrics.vendorsValue(1073)).toBe('1,073 Vendors');
+    expect(UI_STRINGS.analyzingLoader.metrics.categoriesValue(48)).toBe('48 Categories');
+    expect(UI_STRINGS.analyzingLoader.metrics.confidenceValue(99.4)).toBe('99.4%');
+
+    // Progress formatters
+    expect(UI_STRINGS.analyzingLoader.overallProgress(75)).toBe('75% Complete');
+
+    // Phases
+    expect(UI_STRINGS.analyzingLoader.phases.ingestionTitle).toBeTruthy();
+    expect(UI_STRINGS.analyzingLoader.phases.taxonomyTitle).toBeTruthy();
+    expect(UI_STRINGS.analyzingLoader.phases.vendorSupplyTitle).toBeTruthy();
+    expect(UI_STRINGS.analyzingLoader.phases.anomalyTitle).toBeTruthy();
   });
 });
 

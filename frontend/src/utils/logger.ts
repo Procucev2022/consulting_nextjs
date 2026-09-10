@@ -139,4 +139,5 @@ export class FrontendLogger {
 }
 
 export const frontendLogger = new FrontendLogger();
+export const logger = frontendLogger;
 export default frontendLogger;

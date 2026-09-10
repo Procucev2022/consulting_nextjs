@@ -156,11 +156,15 @@ export const GRAPHQL_SCHEMA_SDL = `
   type LineItemMapping {
     mapping_id: String!
     line_item_id: String!
+    material_code: String
+    material_desc: String
     raw_desc: String!
     vendor_identified: String!
     master_supplier_id: String
     unspsc_code: String!
     unspsc_category_name: String!
+    unspsc_commodity_title: String
+    unspsc_class_title: String
     core_bucket: String!
     ai_confidence: Float!
     status: String!

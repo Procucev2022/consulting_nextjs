@@ -12,3 +12,4 @@ export * from './crypto';
 export * from './performance';
 export * from './logDiagnostics';
 export * from './deployment';
+export * from './industry';

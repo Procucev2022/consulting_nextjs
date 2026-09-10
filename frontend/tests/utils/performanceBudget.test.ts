@@ -20,8 +20,12 @@ describe('Performance Budget Utility (utils/performanceBudget.ts)', () => {
   });
 
   afterEach(() => {
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+    try {
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      }
+    } catch {
+      // Ignore cleanup lock on Windows
     }
     vi.restoreAllMocks();
   });

@@ -22,7 +22,7 @@ describe('Header Component', () => {
     expect(screen.getByText(UI_STRINGS.header.brand)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.header.engineVersion)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.header.evaluatedSpendFallback)).toBeInTheDocument();
+    expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
   });
 
   it('renders fallback spend if total_spend_evaluated_inr is undefined', () => {
@@ -82,6 +82,21 @@ describe('Header Component', () => {
     const tenantBadge = screen.getByTestId('tenant-badge');
     fireEvent.click(tenantBadge);
     expect(onSelectTenant).toHaveBeenCalled();
+  });
+
+  it('triggers onStartAnalysis when clicking Deep Spend Scan', () => {
+    const onStartAnalysis = vi.fn();
+    render(<Header {...defaultProps} onStartAnalysis={onStartAnalysis} />);
+
+    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
+    fireEvent.click(scanBtn);
+    expect(onStartAnalysis).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders active analyzing state on scan button when isAnalyzing is true', () => {
+    render(<Header {...defaultProps} isAnalyzing={true} />);
+    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
+    expect(scanBtn).toHaveClass('animate-pulse');
   });
 });
 

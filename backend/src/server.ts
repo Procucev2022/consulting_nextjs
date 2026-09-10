@@ -3,7 +3,7 @@ import app from './app';
 import logger from './utils/logger';
 
 export const startServer = (
-  port: number | string = 5000
+  port: number | string = process.env.PORT || 5001
 ): Promise<{ server: Server; shutdown: () => Promise<void> }> => {
   return new Promise<{ server: Server; shutdown: () => Promise<void> }>((resolve) => {
     const server = app.listen(port, () => {
@@ -12,6 +12,11 @@ export const startServer = (
         baseUrl: `http://localhost:${port}`,
         healthCheck: `http://localhost:${port}/api/health`
       });
+      resolve({ server, shutdown });
+    });
+
+    server.on('error', (err: Error) => {
+      logger.warn('Server listen encountered error', { error: err });
       resolve({ server, shutdown });
     });
 

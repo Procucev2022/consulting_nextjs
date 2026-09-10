@@ -10,6 +10,8 @@ export interface TenantMaster {
   status: 'ACTIVE' | 'ONBOARDING' | 'DIAGNOSTIC';
   total_spend_evaluated: number;
   total_spend_evaluated_inr?: number; // In INR Crores
+  major_sector?: string;
+  minor_sector?: string;
 }
 
 export interface RawDocumentIngestion {
@@ -24,7 +26,21 @@ export interface RawDocumentIngestion {
   records_count: number;
   detected_currencies?: string[];
   converted_inr_crores?: number;
+  unique_items_count?: number;
+  unique_vendors_count?: number;
+  material_groups_count?: number;
+  plants_count?: number;
 }
+
+export type ValidationIssueCategory = 'CONVERSION' | 'VENDOR_DUPLICATION' | 'ITEM_DUPLICATION' | 'CLEAN';
+
+export type ValidationIssueCategoryFilter =
+  | 'ALL'
+  | 'NEEDS_ACTION'
+  | 'CONVERSION'
+  | 'VENDOR_DUPLICATION'
+  | 'ITEM_DUPLICATION'
+  | 'CLEAN';
 
 export interface ValidationPreCheckRecord {
   record_id: string;
@@ -41,11 +57,20 @@ export interface ValidationPreCheckRecord {
   fx_rate_applied?: number;
   yahoo_ticker?: string;
   spend_year?: number;
+  transaction_date?: string;
   column_l_code?: string;
   core_category?: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
-  issue_flag: 'Missing Currency Code' | 'Unmapped Supplier Name' | 'Passed Clean' | 'Duplicate PO' | 'Tax Discrepancy';
-  action_status: 'Fix (INR)' | 'Merge Vendor' | 'Ready' | 'Resolved' | 'Reviewed';
+  issue_flag:
+    | 'Missing Currency Code'
+    | 'Unmapped Supplier Name'
+    | 'Duplicate Item Description'
+    | 'Passed Clean'
+    | 'Duplicate PO'
+    | 'Tax Discrepancy';
+  issue_category?: ValidationIssueCategory;
+  action_status: 'Fix (INR)' | 'Merge Vendor' | 'Merge Item' | 'Ready' | 'Resolved' | 'Reviewed';
   resolved: boolean;
+  duplicate_target_id?: string;
 }
 
 export interface SpendCategorySummary {
@@ -100,6 +125,8 @@ export interface CategoryYearDetail {
   core_bucket?: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight' | 'Other Balance';
   sample_column_l_code: string;
   sample_column_l_title: string;
+  class_title?: string;
+  commodity_title?: string;
   spend_2023?: number;
   spend_2024?: number;
   spend_2025_26?: number;
@@ -153,11 +180,15 @@ export interface VendorYearDetail {
 export interface LineItemMapping {
   mapping_id: string;
   line_item_id: string;
+  material_code?: string;
+  material_desc?: string;
   raw_desc: string;
   vendor_identified: string;
   master_supplier_id?: string;
   unspsc_code: string; // Column L: 8-digit Commodity Code
   unspsc_category_name: string;
+  unspsc_commodity_title?: string;
+  unspsc_class_title?: string;
   core_bucket: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
   ai_confidence: number;
   status: 'Confirmed' | 'Pending Review' | 'Re-Assigned';
@@ -171,6 +202,9 @@ export interface LineItemMapping {
   invoice_date: string;
   spend_year?: number;
   po_number: string;
+  industry_sector?: string;
+  sector_relevance?: 'CORE_DIRECT' | 'CRITICAL_PACKAGING' | 'SECTOR_LOGISTICS' | 'GENERAL_MRO' | 'CROSS_DOMAIN';
+  sector_alignment_score?: number;
 }
 
 export interface VendorPriceRank {
@@ -213,9 +247,64 @@ export interface ConversionFunnelPhase {
   status: 'Completed' | 'In Progress' | 'Upcoming';
 }
 
+export interface MaterialGroupSummary {
+  group_code: string;
+  group_name: string;
+  records_count: number;
+  po_count: number;
+  spend_inr_cr: number;
+  spend_usd_m: number;
+  share_pct: number;
+  primary_segment: string;
+  sample_item?: string;
+  unique_items_count?: number;
+  unique_vendors_count?: number;
+  fy24_spend_inr_cr: number;
+  fy25_spend_inr_cr: number;
+  fy26_spend_inr_cr: number;
+  color: string;
+}
+
+export interface PlantSummary {
+  plant_code: string;
+  plant_name: string;
+  region: 'North' | 'South' | 'West' | 'East' | 'Central';
+  location: string;
+  po_count: number;
+  records_count: number;
+  spend_inr_cr: number;
+  spend_usd_m: number;
+  share_pct: number;
+  active_vendors_count: number;
+  unique_items_count?: number;
+  unique_vendors_count?: number;
+  primary_material_group: string;
+}
+
+export interface MonthWiseSummary {
+  month_key: string; // e.g. '2023-04'
+  month_label: string; // e.g. 'Apr 2023'
+  fiscal_year: 'FY24' | 'FY25' | 'FY26';
+  spend_inr_cr: number;
+  spend_usd_m: number;
+  records_count: number;
+  po_count: number;
+  unique_items_count?: number;
+  unique_vendors_count?: number;
+  top_material_group: string;
+  top_plant: string;
+  mom_change_pct: number;
+}
+
+export type DocumentSummaryDimension = 'MATERIAL_GROUP' | 'PLANT' | 'MONTH';
+export type DocumentSpendCurrency = 'INR' | 'USD';
+export type MonthGraphViewMode = 'CHART_AND_TABLE' | 'CHART_ONLY' | 'TABLE_ONLY';
+export type MonthChartDisplayType = 'LINE_GRAPH' | 'BAR_TIMELINE';
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
   timestamp: string;
 }
+

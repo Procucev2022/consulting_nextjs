@@ -54,7 +54,7 @@ describe('ClientIngestionSetupModal Component', () => {
     fireEvent.change(regionSelect, { target: { value: 'EU' } });
 
     // Change spend
-    const spendInput = screen.getByDisplayValue('732.41');
+    const spendInput = screen.getByDisplayValue(String(mockTenant.total_spend_evaluated_inr));
     fireEvent.change(spendInput, { target: { value: '800' } });
 
     // Submit form
@@ -137,4 +137,47 @@ describe('ClientIngestionSetupModal Component', () => {
       expect(onClose).toHaveBeenCalled();
     }
   });
+
+  it('handles Industry Major and Minor sector selection and preset synchronization', () => {
+    const onConfirmAndUpload = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <ClientIngestionSetupModal
+        isOpen={true}
+        onClose={onClose}
+        currentTenant={mockTenant}
+        onConfirmAndUpload={onConfirmAndUpload}
+      />
+    );
+
+    // Verify Industry Sector section is rendered
+    expect(screen.getByText(UI_STRINGS.modals.clientSetup.industrySector.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.modals.clientSetup.industrySector.badge)).toBeInTheDocument();
+
+    // Select Major Sector
+    const majorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel);
+    fireEvent.change(majorSelect, { target: { value: 'Manufacturing & Industrial' } });
+
+    // Select Minor Sector
+    const minorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel);
+    fireEvent.change(minorSelect, { target: { value: 'Precision Engineering & Tooling' } });
+
+    // Click enterprise preset (Vanguard Eurocorp AG -> Automotive & Transportation)
+    const vanguardBtn = screen.getByText('Vanguard Eurocorp AG');
+    fireEvent.click(vanguardBtn);
+
+    // Submit form and ensure majorSector and minorSector are delivered
+    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn });
+    fireEvent.click(submitBtn);
+
+    expect(onConfirmAndUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientName: 'Vanguard Eurocorp AG',
+        majorSector: 'Automotive & Transportation',
+        minorSector: 'Auto Components & Tier-1 Assemblies'
+      })
+    );
+  });
 });
+

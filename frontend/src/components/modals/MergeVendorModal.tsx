@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { GitMerge, Check, X } from 'lucide-react';
+import { GitMerge, Check, X, AlertCircle, EyeOff } from 'lucide-react';
 import type { MergeVendorModalProps } from '../../types';
 import { UI_STRINGS, DEFAULT_MASTER_SUPPLIERS, mergeVendorFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
@@ -9,7 +9,8 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
   record,
   isOpen,
   onClose,
-  onMerge
+  onMerge,
+  onIgnore
 }) => {
   const masterSuppliers = DEFAULT_MASTER_SUPPLIERS;
 
@@ -30,6 +31,13 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
     onClose();
   };
 
+  const handleIgnore = (): void => {
+    if (onIgnore) {
+      onIgnore(record.record_id);
+    }
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
@@ -45,16 +53,49 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
               <h3 className="text-base font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.mergeVendor.title}</h3>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg">
+          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
-            <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.mergeVendor.incomingEntityLabel}</span>
-            <p className="font-semibold text-amber-800 dark:text-amber-300 text-sm">{record.vendor_name}</p>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Transaction: {record.raw_desc}</p>
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1">
+                <span className="text-slate-500 dark:text-slate-400 block font-medium">
+                  {UI_STRINGS.modals.mergeVendor.incomingEntityLabel}
+                </span>
+                <p className="font-bold text-amber-800 dark:text-amber-300 text-sm">
+                  {record.vendor_name}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                  Transaction: {record.raw_desc}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleIgnore}
+                title={UI_STRINGS.modals.mergeVendor.ignoreButtonTooltip}
+                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer shadow-2xs hover:shadow-xs"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                <span>{UI_STRINGS.modals.mergeVendor.ignoreButton}</span>
+              </button>
+            </div>
+
+            {/* Issue Description Area */}
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-start space-x-2 text-[11px]">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  {UI_STRINGS.modals.mergeVendor.issueLabel}: {record.issue_flag}
+                </span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {UI_STRINGS.modals.mergeVendor.issueDescription}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -94,13 +135,13 @@ export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
         <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
           <button
             onClick={onClose}
-            className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"
+            className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg cursor-pointer"
           >
             {UI_STRINGS.common.cancel}
           </button>
           <button
             onClick={handleConfirm}
-            className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-colors shadow-xs"
+            className="flex items-center space-x-1.5 px-4 py-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
             <span>{UI_STRINGS.modals.mergeVendor.confirmMerge}</span>

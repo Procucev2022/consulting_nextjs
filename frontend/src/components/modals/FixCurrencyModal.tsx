@@ -1,8 +1,7 @@
-'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X, Globe, TrendingUp } from 'lucide-react';
 import type { FixCurrencyModalProps, FixCurrencyFormInput } from '../../types';
-import { yahooFinanceFXRates, formatINRAmount } from '../../utils/currencyConverter';
+import { yahooFinanceFXRates, getYahooFinanceRateAsOfDate, formatINRAmount } from '../../utils/currencyConverter';
 import { UI_STRINGS, INR_CRORES_DIVISOR, fixCurrencyFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
 
@@ -14,18 +13,32 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
 }) => {
   const initialCurrency = record?.raw_currency && yahooFinanceFXRates[record.raw_currency] ? record.raw_currency : 'USD';
   const [selectedCurrency, setSelectedCurrency] = useState<string>(initialCurrency);
-  const [customRate, setCustomRate] = useState<number>(yahooFinanceFXRates[initialCurrency].currentRate);
+  const [customRate, setCustomRate] = useState<number>(() => {
+    const info = getYahooFinanceRateAsOfDate(initialCurrency, record?.transaction_date || record?.spend_year);
+    return info.rate;
+  });
+
+  useEffect(() => {
+    if (record) {
+      const curr = record.raw_currency && yahooFinanceFXRates[record.raw_currency] ? record.raw_currency : 'USD';
+      setSelectedCurrency(curr);
+      const info = getYahooFinanceRateAsOfDate(curr, record.transaction_date || record.spend_year);
+      setCustomRate(info.rate);
+    }
+  }, [record]);
 
   if (!isOpen || !record) return null;
 
   const year = record.spend_year || 2024;
-  const activeRate = customRate;
+  const rateInfo = getYahooFinanceRateAsOfDate(selectedCurrency, record.transaction_date || record.spend_year);
+  const activeRate = customRate > 0 ? customRate : rateInfo.rate;
   const calculatedINR = Math.round(record.amount * activeRate);
   const calculatedCrores = (calculatedINR / INR_CRORES_DIVISOR).toFixed(4);
 
   const handleCurrencyChange = (curr: string): void => {
     setSelectedCurrency(curr);
-    setCustomRate(yahooFinanceFXRates[curr].currentRate);
+    const updated = getYahooFinanceRateAsOfDate(curr, record.transaction_date || record.spend_year);
+    setCustomRate(updated.rate);
   };
 
   const handleSubmit = (): void => {
@@ -71,6 +84,12 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
               <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.recordIdLabel}</span>
               <span className="font-mono text-cyan-700 dark:text-cyan-400 font-semibold">{record.record_id} ({year})</span>
             </div>
+            {record.transaction_date && (
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.transactionDateLabel}</span>
+                <span className="font-mono text-emerald-700 dark:text-emerald-400 font-semibold">{record.transaction_date}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.poNumberLabel}</span>
               <span className="font-mono text-slate-800 dark:text-slate-200">{record.po_number}</span>
@@ -120,6 +139,9 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
               <span className="font-mono font-bold text-slate-900 dark:text-white">
                 1 {selectedCurrency} = ₹{activeRate.toFixed(2)} INR
               </span>
+            </div>
+            <div className="text-[11px] text-emerald-800 dark:text-emerald-300 font-mono">
+              {UI_STRINGS.modals.fixCurrency.asOnDateViaYahooFinance(rateInfo.dateStr, rateInfo.ticker)}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
