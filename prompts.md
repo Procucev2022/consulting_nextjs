@@ -344,3 +344,10 @@ not deploy my cloudflare code in git and main i want early 1 hr new code pull fr
 https://procucev-consulting-portal.pages.dev/
 
 Also, please setup CI/CD in github to automatically deploy these application in cloudflare
+
+---
+
+## Prompt 62
+
+if u want to  commit anything commint in cloudflare only just pull the latest code from the main that it
+
