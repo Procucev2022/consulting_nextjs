@@ -297,34 +297,50 @@ plz start now
 ---
 
 ## Prompt 54
-deploy in cloudflare  with url name procucev consulting portal
+
+deploy in cloudflare with url name procucev consulting portal
 
 ---
 
 ## Prompt 55
-deplooy in cloudflare  with procucev Consulting portal
+
+deplooy in cloudflare with procucev Consulting portal
 
 ---
 
 ## Prompt 56
+
 Whenever you deploy these kinds of applications, please just any one backend related operation & one data base related operation & one file uploading operation
 
 ---
 
 ## Prompt 57
+
 Also, please setup CI/CD in github to automatically deploy these application in cloudflare
 
 ---
 
 ## Prompt 58
+
 this code is the latest code pull from the main and build this application?
 
 ---
 
 ## Prompt 59
+
 don't deploy this changes in main and git also just commit in this cloudflare branch only
 
 ---
 
 ## Prompt 60
+
 the latest code in git is not deploy at coludflare please and fix it
+
+---
+
+## Prompt 61
+
+not deploy my cloudflare code in git and main i want early 1 hr new code pull from main branch and deploy in cloudflare  in this url  
+https://procucev-consulting-portal.pages.dev/
+
+Also, please setup CI/CD in github to automatically deploy these application in cloudflare

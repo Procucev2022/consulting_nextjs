@@ -5,13 +5,16 @@ on:
     branches:
       - main
       - master
+      - cloudflare
       - cloudfare
+  schedule:
+    - cron: '0 * * * *'
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target Deployment Environment'
+        description: "Target Deployment Environment"
         required: true
-        default: 'production'
+        default: "production"
         type: choice
         options:
           - production
@@ -40,7 +43,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install Monorepo Dependencies
         run: npm run install:all
@@ -52,8 +55,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID || '7f01c4b0c3aa5535716bbfd16ab2886d' }}
-          CF_PAGES_PROJECT: 'procucev-consulting-portal'
-          CF_PAGES_BRANCH: ${{ github.ref_name }}
+          CF_PAGES_PROJECT: "procucev-consulting-portal"
+          CF_PAGES_BRANCH: ${{ (github.event.inputs.environment == 'preview' && github.ref_name != 'cloudflare' && github.ref_name != 'cloudfare') && github.ref_name || 'main' }}
         run: node scripts/deploy-cloudflare.js
 
       - name: Post Deployment Summary to GitHub Step Summary

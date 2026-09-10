@@ -49,6 +49,7 @@ try {
     CLOUDFLARE_ACCOUNT_ID: accountId,
     NODE_OPTIONS: '--max-old-space-size=4096'
   };
+  const deployCmd = `${wranglerCmd} pages deploy out --project-name "${projectName}" --branch "${branch}" --commit-dirty=true`;
   const deployOutput = execSync(deployCmd, {
     cwd: frontendDir,
     encoding: 'utf8',

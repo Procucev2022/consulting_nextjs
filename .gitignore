@@ -41,4 +41,7 @@ test-results.json
 **/test-results.json
 pr-summary.md
 
+.history/
+
+
 
