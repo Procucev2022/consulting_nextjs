@@ -17,3 +17,7 @@ export * from './taxonomy';
 export * from './vendorSupply';
 export * from './loader';
 export * from './industry';
+export * from './strategicVendorRisk';
+export * from './presentation';
+export * from './vendorConsolidation';
+export * from './poConsolidation';

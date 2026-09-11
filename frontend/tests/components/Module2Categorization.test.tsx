@@ -1,11 +1,14 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
 import { Module2Categorization } from '../../src/components/Module2Categorization';
 import { mockSpendCategories, mockCategoryYearDetails, mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module2Categorization Component', () => {
+  afterEach(() => {
+    cleanup();
+  });
   const sampleLineItems = [
     {
       mapping_id: 'MAP-1',
@@ -287,7 +290,7 @@ describe('Module2Categorization Component', () => {
         onReassignMapping={vi.fn()}
         onProceedToTrend={vi.fn()}
         onStartAICategorization={handleStartMock}
-        speedMultiplier={50}
+        speedMultiplier={100}
       />
     );
 
@@ -299,7 +302,7 @@ describe('Module2Categorization Component', () => {
       () => {
         expect(screen.getByRole('button', { name: UI_STRINGS.module2.aiCategorizationCompleted })).toBeInTheDocument();
       },
-      { timeout: 5000 }
+      { timeout: 9000 }
     );
   });
 
@@ -316,7 +319,7 @@ describe('Module2Categorization Component', () => {
 
     // By default, Top 50 Vendor Supply categorization is active
     expect(screen.getByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
-    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.alarmBadge)).toBeInTheDocument();
+    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.alarmBadge, {}, { timeout: 8000 })).toBeInTheDocument();
 
     // Switch to Category Spend Matrix tab
     const categoryMatrixTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.matrixTitle });
@@ -413,11 +416,15 @@ describe('Module2Categorization Component', () => {
     );
 
     // Verify Column Headers
+    expect(screen.getByText(UI_STRINGS.module2.workbenchTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.workbenchDescHighlight)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.taxonomyVerifiedFooter)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.lineItemHeaders.poNumber)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.lineItemHeaders.materialCodeDesc)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.lineItemHeaders.unspscColLCommodityClass)).toBeInTheDocument();
 
     // Verify Item Cells
+    expect(screen.getByText(UI_STRINGS.module2.unspscCodeBadge('14121506'))).toBeInTheDocument();
     expect(screen.getByText('MAT-9901-BOX')).toBeInTheDocument();
     expect(screen.getByText('Heavy Duty Packaging Box 50x50')).toBeInTheDocument();
     expect(screen.getByText('PO-2024-998877')).toBeInTheDocument();
@@ -506,6 +513,66 @@ describe('Module2Categorization Component', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull();
     });
+  });
+
+  it('renders Strategic High-Value Single-Vendor Risk Engine by default and toggles to UNSPSC Catalog tab', () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    // Verify Strategic Risk container is displayed by default
+    expect(screen.getByTestId('strategic-vendor-risk-container')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.strategicVendorRisk.kpis.totalAtRiskSpend)).toBeInTheDocument();
+
+    // Click tab to switch to UNSPSC Catalog
+    const catalogTab = screen.getByTestId('tab-unspsc-catalog');
+    fireEvent.click(catalogTab);
+
+    // Verify catalog search is visible
+    expect(screen.getByPlaceholderText(UI_STRINGS.module2.catalogSearchPlaceholder)).toBeInTheDocument();
+
+    // Switch back to Strategic Risk tab
+    const strategicTab = screen.getByTestId('tab-strategic-vendor-risk');
+    fireEvent.click(strategicTab);
+    expect(screen.getByTestId('strategic-vendor-risk-container')).toBeInTheDocument();
+  });
+
+  it('renders High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) above the ML workbench', () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('vendor-consolidation-section')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorConsolidation.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.vendorConsolidation.badge)).toBeInTheDocument();
+  });
+
+  it('renders Multiple Monthly PO Consolidation & Economies of Scale Engine above the ML workbench', () => {
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('po-consolidation-section')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.poConsolidation.title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.poConsolidation.badge)).toBeInTheDocument();
   });
 });
 

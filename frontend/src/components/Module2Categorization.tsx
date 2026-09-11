@@ -17,7 +17,8 @@ import {
   Truck,
   Wrench,
   Tag,
-  ExternalLink
+  ExternalLink,
+  ShieldAlert
 } from 'lucide-react';
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
@@ -33,6 +34,9 @@ import {
   categorizeMaterialWithIndustryContext
 } from '../constants';
 import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
+import { StrategicSingleVendorRiskSection } from './strategicRisk';
+import { VendorConsolidationSection } from './vendorConsolidation';
+import { PoConsolidationSection } from './poConsolidation';
 import dynamic from 'next/dynamic';
 
 const VendorCategorySupplyMatrix = dynamic(
@@ -108,6 +112,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   // Matrix View Tab: Top 50 Vendor Material Supply Categorization vs Category Matrix
   const [matrixTab, setMatrixTab] = useState<'VENDOR_SUPPLY' | 'CATEGORY_MATRIX'>('VENDOR_SUPPLY');
+
+  // Column L Section Tab: Strategic Single/Dominant Vendor Risk Engine (Default) vs UNSPSC Catalog
+  const [columnLTab, setColumnLTab] = useState<'strategicRisk' | 'catalog'>('strategicRisk');
 
   const matchesSearchQuery = (item: LineItemMapping, q: string): boolean => {
     const query = q.toLowerCase();
@@ -529,116 +536,171 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         )}
       </div>
 
-      {/* Official UNSPSC English File Column L Live Taxonomy Engine & Search */}
+      {/* Column L Section: Strategic Single-Vendor Risk Engine (Default) & UNSPSC Catalog */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800">
-              <FileSpreadsheet className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  {UI_STRINGS.module2.catalogTitle}
-                </h3>
-                <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-                  {UI_STRINGS.module2.catalogRecordsBadge}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {UI_STRINGS.module2.catalogDescPrefix}<strong>{UI_STRINGS.module2.catalogDescHighlight}</strong>.
-              </p>
-            </div>
-          </div>
-
-          {/* Explorer Search & Filter */}
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-              <input
-                type="text"
-                placeholder={UI_STRINGS.module2.catalogSearchPlaceholder}
-                value={explorerSearch}
-                onChange={(e) => setExplorerSearch(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-48 sm:w-64"
-              />
-            </div>
-            <select
-              value={explorerBucketFilter}
-              onChange={(e) => setExplorerBucketFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
+        {/* Navigation Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid="tab-strategic-vendor-risk"
+              onClick={() => setColumnLTab('strategicRisk')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                columnLTab === 'strategicRisk'
+                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
             >
-              <option value="ALL">{UI_STRINGS.module2.categories.all}</option>
-              <option value="Packaging Materials">{UI_STRINGS.module2.categories.packaging}</option>
-              <option value="Direct Materials">{UI_STRINGS.module2.categories.direct}</option>
-              <option value="Indirect & MRO">{UI_STRINGS.module2.categories.indirect}</option>
-              <option value="Logistics & Freight">{UI_STRINGS.module2.categories.logistics}</option>
-            </select>
+              <ShieldAlert className="w-4 h-4" />
+              <span>{UI_STRINGS.module2.strategicVendorRisk.tabs.strategicRisk}</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20 text-white font-semibold">
+                {UI_STRINGS.module2.strategicVendorRisk.header.badgeImmediateAttention}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="tab-unspsc-catalog"
+              onClick={() => setColumnLTab('catalog')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                columnLTab === 'catalog'
+                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>{UI_STRINGS.module2.strategicVendorRisk.tabs.catalog}</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
+                {UI_STRINGS.module2.catalogRecordsBadge}
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* Live Search Results from Column L */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {explorerResults.map((item) => (
-            <div
-              key={item.commodityCode}
-              data-testid={`unspsc-card-${item.commodityCode}`}
-              onClick={() => setSelectedUNSPSCRecord(item)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSelectedUNSPSCRecord(item);
-                }
-              }}
-              className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2 hover:border-cyan-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-1">
-                  <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
-                    {UI_STRINGS.module2.colLPrefix(item.commodityCode)}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-sans font-semibold truncate">
-                    {item.coreBucket}
-                  </span>
-                </div>
+        {/* View 1: Strategic Single-Vendor & Dominant Supplier Risk Engine (Default) */}
+        {columnLTab === 'strategicRisk' && (
+          <div data-testid="strategic-vendor-risk-container">
+            <StrategicSingleVendorRiskSection />
+          </div>
+        )}
 
-                <div className="space-y-1">
-                  <span className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider block">
-                    {UI_STRINGS.module2.commodityTitleLabel}
-                  </span>
-                  <h5 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors" title={item.commodityTitle}>
-                    {item.commodityTitle}
-                  </h5>
-                </div>
-
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                    {UI_STRINGS.module2.classTitleLabel}
-                  </span>
-                  <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate" title={`${item.classTitle} (${item.classCode})`}>
-                    {item.classTitle} <span className="font-mono text-[10px] text-slate-400">({item.classCode})</span>
-                  </p>
-                  <p className="text-[10px] text-slate-500 font-mono truncate" title={`${item.familyTitle} (${item.familyCode})`}>
-                    {UI_STRINGS.module2.familyTitleLabel}: {item.familyTitle} ({item.familyCode})
-                  </p>
-                </div>
+        {/* View 2: Official UNSPSC English File Column L Live Taxonomy Engine & Search (Preserved in DOM) */}
+        <div className={columnLTab === 'catalog' ? 'space-y-4' : 'hidden'}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center space-x-2.5">
+              <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800">
+                <FileSpreadsheet className="w-5 h-5" />
               </div>
-
-              <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-[11px] mt-1">
-                <span className="font-mono text-[10px] text-slate-400">
-                  {UI_STRINGS.module2.segmentCodeLabel(item.segmentCode)}
-                </span>
-                <span className="inline-flex items-center space-x-1 font-semibold text-cyan-600 dark:text-cyan-400 group-hover:underline">
-                  <span>{UI_STRINGS.module2.moreDetailsBtn}</span>
-                  <ExternalLink className="w-3 h-3 ml-0.5" />
-                </span>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    {UI_STRINGS.module2.catalogTitle}
+                  </h3>
+                  <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
+                    {UI_STRINGS.module2.catalogRecordsBadge}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {UI_STRINGS.module2.catalogDescPrefix}<strong>{UI_STRINGS.module2.catalogDescHighlight}</strong>.
+                </p>
               </div>
             </div>
-          ))}
+
+            {/* Explorer Search & Filter */}
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                <input
+                  type="text"
+                  placeholder={UI_STRINGS.module2.catalogSearchPlaceholder}
+                  value={explorerSearch}
+                  onChange={(e) => setExplorerSearch(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-48 sm:w-64"
+                />
+              </div>
+              <select
+                value={explorerBucketFilter}
+                onChange={(e) => setExplorerBucketFilter(e.target.value)}
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
+              >
+                <option value="ALL">{UI_STRINGS.module2.categories.all}</option>
+                <option value="Packaging Materials">{UI_STRINGS.module2.categories.packaging}</option>
+                <option value="Direct Materials">{UI_STRINGS.module2.categories.direct}</option>
+                <option value="Indirect & MRO">{UI_STRINGS.module2.categories.indirect}</option>
+                <option value="Logistics & Freight">{UI_STRINGS.module2.categories.logistics}</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Live Search Results from Column L */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {explorerResults.map((item) => (
+              <div
+                key={item.commodityCode}
+                data-testid={`unspsc-card-${item.commodityCode}`}
+                onClick={() => setSelectedUNSPSCRecord(item)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedUNSPSCRecord(item);
+                  }
+                }}
+                className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2 hover:border-cyan-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+                      {UI_STRINGS.module2.colLPrefix(item.commodityCode)}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-sans font-semibold truncate">
+                      {item.coreBucket}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider block">
+                      {UI_STRINGS.module2.commodityTitleLabel}
+                    </span>
+                    <h5 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors" title={item.commodityTitle}>
+                      {item.commodityTitle}
+                    </h5>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                      {UI_STRINGS.module2.classTitleLabel}
+                    </span>
+                    <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate" title={`${item.classTitle} (${item.classCode})`}>
+                      {item.classTitle} <span className="font-mono text-[10px] text-slate-400">({item.classCode})</span>
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono truncate" title={`${item.familyTitle} (${item.familyCode})`}>
+                      {UI_STRINGS.module2.familyTitleLabel}: {item.familyTitle} ({item.familyCode})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-[11px] mt-1">
+                  <span className="font-mono text-[10px] text-slate-400">
+                    {UI_STRINGS.module2.segmentCodeLabel(item.segmentCode)}
+                  </span>
+                  <span className="inline-flex items-center space-x-1 font-semibold text-cyan-600 dark:text-cyan-400 group-hover:underline">
+                    <span>{UI_STRINGS.module2.moreDetailsBtn}</span>
+                    <ExternalLink className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) */}
+      <VendorConsolidationSection />
+
+      {/* Multiple Monthly PO Consolidation & Economies of Scale Engine */}
+      <PoConsolidationSection />
 
       {/* Machine Learning Line Item Review Workbench */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
@@ -649,7 +711,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               <span>{UI_STRINGS.module2.workbenchTitle}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {UI_STRINGS.module2.workbenchDescPrefix}<strong>{UI_STRINGS.module2.workbenchDescHighlight}</strong>.
+              {UI_STRINGS.module2.workbenchDescPrefix}<strong>{UI_STRINGS.module2.workbenchDescHighlight}</strong>{UI_STRINGS.module2.workbenchDescSuffix}.
             </p>
           </div>
 
@@ -786,7 +848,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                       <td className="py-3 px-4 max-w-xs">
                         <div className="flex items-center space-x-1.5 mb-1">
                           <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800">
-                            {UI_STRINGS.module2.colLPrefix(item.unspsc_code)}
+                            {UI_STRINGS.module2.unspscCodeBadge(item.unspsc_code)}
                           </span>
                         </div>
                         <div className="text-[11px] font-medium text-slate-900 dark:text-slate-100 leading-tight">
