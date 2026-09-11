@@ -270,9 +270,9 @@ describe('Home Page Component', () => {
     // Open Executive Report Modal
     const reportBtn = screen.getByRole('button', { name: UI_STRINGS.module5.generateExecutiveReport });
     fireEvent.click(reportBtn);
-    expect(screen.getByText(UI_STRINGS.modals.report.title)).toBeInTheDocument();
-    const printBtn = screen.getByRole('button', { name: UI_STRINGS.modals.report.printPdf });
-    const closeReportBtn = printBtn.nextElementSibling as HTMLButtonElement;
+    const deckTitles = await screen.findAllByText(UI_STRINGS.presentation.cover.deckTitle, {}, { timeout: 8000 });
+    expect(deckTitles[0]).toBeInTheDocument();
+    const closeReportBtn = screen.getByRole('button', { name: UI_STRINGS.presentation.closeModal });
     fireEvent.click(closeReportBtn);
   }, 20000);
 
@@ -308,9 +308,9 @@ describe('Home Page Component', () => {
     // Open Executive Report from Header button
     const headerReportBtn = screen.getByRole('button', { name: UI_STRINGS.header.reportButton });
     fireEvent.click(headerReportBtn);
-    expect(screen.getByText(UI_STRINGS.modals.report.title)).toBeInTheDocument();
-    const printBtn2 = screen.getByRole('button', { name: UI_STRINGS.modals.report.printPdf });
-    const closeReportBtn2 = printBtn2.nextElementSibling as HTMLButtonElement;
+    const headerDeckTitles = await screen.findAllByText(UI_STRINGS.presentation.cover.deckTitle, {}, { timeout: 8000 });
+    expect(headerDeckTitles[0]).toBeInTheDocument();
+    const closeReportBtn2 = screen.getByRole('button', { name: UI_STRINGS.presentation.closeModal });
     fireEvent.click(closeReportBtn2);
     // Trigger onSelectTenant via tenant badge (rejection path)
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));

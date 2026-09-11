@@ -45,6 +45,12 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.module2.vendorSupply.badgeCategoryCount(3)).toBe('3 Categories');
     expect(UI_STRINGS.module2.vendorSupply.badgeDisparateSupplies(2)).toBe('+2 Disparate Categories');
     expect(UI_STRINGS.module2.vendorSupply.showingVendorsSummary(20, 50)).toBe('Showing 20 of 50 evaluated suppliers');
+    expect(UI_STRINGS.module2.workbenchTitle).toBe('Machine Learning Line Item AI Categorization & Spend Review Workbench');
+    expect(UI_STRINGS.module2.unspscCodeBadge('11101234')).toBe('UNSPSC: 11101234');
+    expect(UI_STRINGS.module2.searchPlaceholder).toBe('Search description, PO, commodity, code...');
+    expect(UI_STRINGS.module2.lineItemHeaders.unspscColLCommodityClass).toBe('UNSPSC Commodity & Class Title');
+    expect(UI_STRINGS.module2.lineItemHeaders.unspscColL).toBe('UNSPSC Code & Commodity');
+    expect(UI_STRINGS.module2.taxonomyVerifiedFooter).toBe('Multi-Year Spend Taxonomy verified against UNSPSC official commodity catalog');
   });
 
   it('should correctly format module3 volatility and creep templates', () => {
@@ -133,6 +139,40 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.analyzingLoader.phases.taxonomyTitle).toBeTruthy();
     expect(UI_STRINGS.analyzingLoader.phases.vendorSupplyTitle).toBeTruthy();
     expect(UI_STRINGS.analyzingLoader.phases.anomalyTitle).toBeTruthy();
+  });
+
+  it('should correctly provide vendorConsolidation strings and formatters', () => {
+    const vc = UI_STRINGS.vendorConsolidation;
+    expect(vc.badge).toBe('RECURRING PROCUREMENT OPTIMIZATION & VENDOR CONSOLIDATION');
+    expect(vc.title).toContain('High-Value Recurring Spend');
+    expect(vc.kpiActiveVendorsSub(7.8)).toBe('Avg. 7.8 Suppliers / Category');
+    expect(vc.kpiVolumeSavingsSub(14.5)).toBe('14.5% Projected Addressable Savings');
+    expect(vc.showingItemsCount(6, 6)).toBe('Displaying 6 of 6 high-value recurring categories (> 5 vendors)');
+    expect(vc.vendorCountBadge(8)).toBe('8 Active Suppliers (Fragmented)');
+    expect(vc.monthlyPoBadge(42)).toBe('Avg. 42 POs / Mo');
+    expect(vc.priceVarianceValue(14.8)).toBe('+14.8% Variance');
+    expect(vc.targetConsolidationValue(2)).toBe('Consolidate to 2 Strategic Suppliers');
+    expect(vc.volumeBenefitValue(5.58, 14.5)).toBe('₹5.58 Cr (14.5%)');
+    expect(vc.auctionPlatformLabel('DPS NXT')).toBe('via DPS NXT Dynamic e-Auction');
+    expect(vc.modalTitle('Corrugated Boxes')).toBe('Vendor Consolidation & Volume Benefit Strategy: Corrugated Boxes');
+    expect(vc.fragmentationAlertBody(8, 14.8)).toContain('8 separate vendors');
+  });
+
+  it('should correctly provide poConsolidation strings and formatters', () => {
+    const pc = UI_STRINGS.poConsolidation;
+    expect(pc.badge).toBe('MULTIPLE PO CONSOLIDATION & ECONOMIES OF SCALE');
+    expect(pc.title).toContain('Multiple Monthly PO Consolidation');
+    expect(pc.kpiTotalCurrentPosSub(6)).toBe('Across 6 High-Frequency Accounts');
+    expect(pc.kpiTargetPosSub(94.2)).toBe('94.2% Transaction Reduction');
+    expect(pc.kpiEconomiesOfScaleSub(26.5)).toBe('Incl. ₹26.5L Administrative Savings');
+    expect(pc.showingItemsCount(6, 6)).toBe('Displaying 6 of 6 high-frequency PO supplier accounts');
+    expect(pc.monthlyPoBadge(12)).toBe('12 POs Released / Month');
+    expect(pc.annualPoBadge(144)).toBe('144 POs / Year');
+    expect(pc.avgPoValueVal(44.79)).toBe('₹44.79 Lakhs');
+    expect(pc.scaleSavingsValue(10.32, 16.0)).toBe('₹10.32 Cr (16.0%)');
+    expect(pc.adminSavingsValue(5.0)).toBe('₹5.0 Lakhs');
+    expect(pc.modalTitle('Jindal Stainless')).toBe('PO Consolidation & Rate Contracting: Jindal Stainless');
+    expect(pc.currentPoFrequencyVal(12, 144)).toBe('Avg 12 POs/month (144 POs/year)');
   });
 });
 

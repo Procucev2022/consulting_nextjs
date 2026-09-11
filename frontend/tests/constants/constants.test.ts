@@ -84,8 +84,30 @@ describe('Frontend Constants Modules', () => {
     });
   });
 
+  describe('Presentation Constants', () => {
+    it('should define correct presentation slide totals and metadata list', () => {
+      expect(ConstantsIndex.PRESENTATION_TOTAL_SLIDES).toBe(10);
+      expect(ConstantsIndex.PROCUCEV_LOGO_SRC).toBe('/images/procucev-logo.jpg');
+      expect(ConstantsIndex.PRESENTATION_SLIDES_LIST.length).toBe(10);
+      expect(ConstantsIndex.PRESENTATION_SLIDES_LIST[0].id).toBe('cover');
+      expect(ConstantsIndex.PRESENTATION_SLIDES_LIST[1].id).toBe('confidentiality');
+      expect(ConstantsIndex.PRESENTATION_SLIDES_LIST[2].id).toBe('about');
+    });
+  });
+
+  describe('Vendor Consolidation Constants', () => {
+    it('should define correct thresholds and category tabs', () => {
+      expect(ConstantsIndex.VENDOR_CONSOLIDATION_THRESHOLDS.MIN_VENDOR_COUNT_THRESHOLD).toBe(5);
+      expect(ConstantsIndex.VENDOR_CONSOLIDATION_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR).toBe(10.0);
+      expect(ConstantsIndex.VENDOR_CONSOLIDATION_THRESHOLDS.DEFAULT_EST_SAVINGS_PCT).toBe(14.5);
+      expect(ConstantsIndex.CONSOLIDATION_CATEGORY_TABS.length).toBe(5);
+      expect(ConstantsIndex.CONSOLIDATION_SORT_OPTIONS.length).toBe(3);
+      expect(ConstantsIndex.DEFAULT_AUCTION_PLATFORM).toBe('DPS NXT');
+    });
+  });
+
   describe('Unified Constants Barrel Export', () => {
-    it('should re-export all constants across modules including UI_STRINGS', () => {
+    it('should re-export all constants across modules including UI_STRINGS and presentation', () => {
       expect(ConstantsIndex.DEFAULT_SPEND_BASELINE_INR_CR).toBe(AppConstants.DEFAULT_SPEND_BASELINE_INR_CR);
       expect(ConstantsIndex.DEFAULT_BASE_CURRENCY).toBe(CurrencyConstants.DEFAULT_BASE_CURRENCY);
       expect(ConstantsIndex.INR_CRORES_DIVISOR).toBe(CurrencyConstants.INR_CRORES_DIVISOR);
@@ -95,6 +117,8 @@ describe('Frontend Constants Modules', () => {
       expect(ConstantsIndex.TIMELINE_MONTHS).toBe(PipelineConstants.TIMELINE_MONTHS);
       expect(ConstantsIndex.DEFAULT_INVITED_SUPPLIERS).toBe(ModalsConstants.DEFAULT_INVITED_SUPPLIERS);
       expect(ConstantsIndex.VENDOR_SUPPLY_THRESHOLDS).toBeDefined();
+      expect(ConstantsIndex.PRESENTATION_TOTAL_SLIDES).toBe(10);
+      expect(ConstantsIndex.VENDOR_CONSOLIDATION_THRESHOLDS).toBeDefined();
       expect(ConstantsIndex.UI_STRINGS).toBeDefined();
     });
   });

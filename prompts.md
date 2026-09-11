@@ -461,3 +461,32 @@ In this area, let us highlight that the spend increased (Year On Year)YOY with t
 ## Prompt 53
 plz start now
 
+---
+
+## Prompt 54
+In this area, let us show the high value items with single vendor through out the data base uploaded by them. Even if the second vendor is there but with a single digit percentage, let us highlight here. These are strategic items and needs an immediate attention to reduce the risk
+
+---
+
+## Prompt 55
+remove column L completely and give a new description to this area
+
+---
+
+## Prompt 56
+Make this executive brief into a very detailed Management presentation in PDF. Use Procucev Logo on the first slide and talk about confidentiality in the second slide and give a brief intro about Procucev as per the attached slide
+
+---
+
+## Prompt 57
+Let us add a section above this wherever there are more than 5 vendors in a category with high values and that category or items are procured every month recurringly, let us display here and ask for vendor consolidation and leveraging the volume benefit through e-auctions.
+
+---
+
+## Prompt 58
+Add a section here and display wherever multiple POs are being released every month to consolidate and get the economies of scale benefit. Also highligh to release single PO for monthly or quarterly or half yearly or annual POs
+
+---
+
+## Prompt 59
+name it as AI Categorization and Strategic Sourcing
