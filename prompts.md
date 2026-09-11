@@ -490,3 +490,13 @@ Add a section here and display wherever multiple POs are being released every mo
 
 ## Prompt 59
 name it as AI Categorization and Strategic Sourcing
+
+---
+
+## Prompt 60
+deploy this new code in clodflare same url ans change the time from 1 hour to 30 min  please setup CI/CD in github to automatically deploy these application in cloudflare
+
+---
+
+## Prompt 61
+i want to commit these chnages in  cloudflare branch only not in main or git don't pus these code  main and git only store at that cloudflare branch locally
