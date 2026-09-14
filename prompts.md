@@ -490,3 +490,28 @@ Add a section here and display wherever multiple POs are being released every mo
 
 ## Prompt 59
 name it as AI Categorization and Strategic Sourcing
+
+---
+
+## Prompt 60
+run local chrome
+
+---
+
+## Prompt 61
+change the description to data ingestion and deep dive analysis
+
+---
+
+## Prompt 62
+Replace this with the new aiCEV. reduce ai size compared to CEV
+
+---
+
+## Prompt 63
+check again
+
+---
+
+## Prompt 64
+I want this change on the UI screen as per the attached picture. This picture needs to be replaced with the new aiCEV logo

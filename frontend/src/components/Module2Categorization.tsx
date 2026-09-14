@@ -42,10 +42,7 @@ import dynamic from 'next/dynamic';
 const VendorCategorySupplyMatrix = dynamic(
   () => import('./VendorCategorySupplyMatrix').then((mod) => mod.VendorCategorySupplyMatrix)
 );
-const AnalyzingLoader = dynamic(
-  () => import('./AnalyzingLoader').then((mod) => mod.AnalyzingLoader),
-  { ssr: false }
-);
+import { AnalyzingLoader } from './AnalyzingLoader';
 const UNSPSCDetailModal = dynamic(
   () => import('./modals/UNSPSCDetailModal').then((mod) => mod.UNSPSCDetailModal),
   { ssr: false }

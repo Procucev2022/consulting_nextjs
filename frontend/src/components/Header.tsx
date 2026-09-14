@@ -67,8 +67,16 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white font-display">
-                {UI_STRINGS.header.brand}
+              <span className="inline-flex items-baseline">
+                <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white font-display">
+                  PROCU
+                </span>
+                <span className="text-[11px] font-black tracking-tight text-slate-700 dark:text-slate-300 font-display align-baseline">
+                  ai
+                </span>
+                <span className="text-xl font-black tracking-tight text-orange-600 dark:text-orange-400 font-display">
+                  CEV
+                </span>
               </span>
               <span className="text-xs font-mono font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-300 dark:border-cyan-800/60">
                 {UI_STRINGS.header.engineVersion}

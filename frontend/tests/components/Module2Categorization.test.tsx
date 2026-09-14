@@ -281,6 +281,7 @@ describe('Module2Categorization Component', () => {
   });
 
   it('triggers onStartAICategorization and transitions to completed state after timer', async () => {
+    vi.useFakeTimers();
     const handleStartMock = vi.fn();
     render(
       <Module2Categorization
@@ -298,12 +299,12 @@ describe('Module2Categorization Component', () => {
     fireEvent.click(startBtn);
     expect(handleStartMock).toHaveBeenCalledTimes(1);
 
-    await waitFor(
-      () => {
-        expect(screen.getByRole('button', { name: UI_STRINGS.module2.aiCategorizationCompleted })).toBeInTheDocument();
-      },
-      { timeout: 9000 }
-    );
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByRole('button', { name: UI_STRINGS.module2.aiCategorizationCompleted })).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('toggles between Top 50 Vendor Supply view and Category Spend Matrix view', async () => {

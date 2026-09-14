@@ -100,7 +100,7 @@ export const UI_STRINGS = {
     steps: {
       step1: {
         title: 'Data Upload',
-        desc: 'Base Data Upload (Upto 3 years)'
+        desc: 'Data Ingestion and Deep Dive Analysis'
       },
       step2: {
         title: 'AI Categorization and Strategic Sourcing',
@@ -140,7 +140,7 @@ export const UI_STRINGS = {
     navStages: {
       step1: {
         title: 'Data Upload',
-        desc: 'Base Data Upload (Upto 3 years)'
+        desc: 'Data Ingestion and Deep Dive Analysis'
       },
       step2: {
         title: 'AI Categorization and Strategic Sourcing',

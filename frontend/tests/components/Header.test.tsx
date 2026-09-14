@@ -19,7 +19,10 @@ describe('Header Component', () => {
   it('renders correctly with light theme and default props', () => {
     render(<Header {...defaultProps} />);
 
-    expect(screen.getByText(UI_STRINGS.header.brand)).toBeInTheDocument();
+    // Brand is now rendered as three styled spans: PROCU + ai + CEV
+    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    expect(screen.getByText('ai')).toBeInTheDocument();
+    expect(screen.getByText('CEV')).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.header.engineVersion)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
     expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
