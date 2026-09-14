@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { AICEV_LOGO_SRC } from '../../src/constants/app';
 
 describe('Header Component', () => {
   const defaultProps = {
@@ -19,11 +20,11 @@ describe('Header Component', () => {
   it('renders correctly with light theme and default props', () => {
     render(<Header {...defaultProps} />);
 
-    // Brand is now rendered as three styled spans: PROCU + ai + CEV
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
-    expect(screen.getByText('ai')).toBeInTheDocument();
-    expect(screen.getByText('CEV')).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.header.engineVersion)).toBeInTheDocument();
+    // Brand is now rendered as official aiCEV logo image
+    const logoImg = screen.getByAltText(UI_STRINGS.header.logoAlt);
+    expect(logoImg).toBeInTheDocument();
+    expect(logoImg).toHaveAttribute('src', AICEV_LOGO_SRC);
+    expect(screen.getByText(UI_STRINGS.header.subtitle)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
     expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
   });
@@ -101,5 +102,18 @@ describe('Header Component', () => {
     const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
     expect(scanBtn).toHaveClass('animate-pulse');
   });
+
+  it('renders Admin directory and Sign In navigation links', () => {
+    render(<Header {...defaultProps} />);
+
+    const adminLink = screen.getByTitle(UI_STRINGS.admin.pageTitle);
+    expect(adminLink).toBeInTheDocument();
+    expect(adminLink).toHaveAttribute('href', '/admin');
+
+    const loginLink = screen.getByTitle(UI_STRINGS.auth.pageTitle);
+    expect(loginLink).toBeInTheDocument();
+    expect(loginLink).toHaveAttribute('href', '/login');
+  });
 });
+
 

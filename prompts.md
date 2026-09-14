@@ -515,3 +515,33 @@ check again
 
 ## Prompt 64
 I want this change on the UI screen as per the attached picture. This picture needs to be replaced with the new aiCEV logo
+
+---
+
+## Prompt 65
+run locally in chrome
+
+---
+
+## Prompt 66
+replace the existing logo here with the aiCEV logo attached
+
+---
+
+## Prompt 67
+Let us create a login page for user and admin page for this software. New user creates their account with the name, mobile number, organization email id and company name and address. Admin can see all the users list in his login with complete details
+
+---
+
+## Prompt 68
+Use this logo on the login page for everyone. Talk about the technology benefits in terms of cost savings, strategic sourcing and road map for your procurement to increase your savings etc. Talk mainly about benefits on the login page and talk about every penny saved in procurement is a direct increase in profit. Ensure aiCEV logo is looking at the maximum optimum size
+
+---
+
+## Prompt 69
+Correct this
+
+---
+
+## Prompt 70
+Make logo in bigger size, remove engine 2.0. Write "Tech Enabled Strategic Sourcing Suite"

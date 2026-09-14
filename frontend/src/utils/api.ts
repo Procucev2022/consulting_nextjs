@@ -20,6 +20,7 @@ import {
   apiCalculateConversionPayloadSchema
 } from '../constants/validation';
 import { fetchDashboardOverview } from './graphqlClient';
+import { authApiClient } from './authApi';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -212,5 +213,18 @@ export const apiClient = {
     const res = await fetch(`${API_BASE}/api/currency?${query.toString()}`);
     const json = await res.json();
     return json.data;
-  }
+  },
+
+  // Auth & Admin Delegations
+  register: authApiClient.register.bind(authApiClient),
+  login: authApiClient.login.bind(authApiClient),
+  getMe: authApiClient.getMe.bind(authApiClient),
+  getAdminUsers: authApiClient.getAdminUsers.bind(authApiClient),
+  updateAdminUserStatus: authApiClient.updateAdminUserStatus.bind(authApiClient),
+  getStoredToken: authApiClient.getStoredToken.bind(authApiClient),
+  getStoredUser: authApiClient.getStoredUser.bind(authApiClient),
+  setStoredSession: authApiClient.setStoredSession.bind(authApiClient),
+  clearStoredSession: authApiClient.clearStoredSession.bind(authApiClient)
 };
+
+

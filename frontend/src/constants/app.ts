@@ -7,3 +7,6 @@ export const DEFAULT_SAVINGS_TARGET_INR_CR = 119.67;
 export const DEFAULT_SAVINGS_TARGET_PCT = 16.4;
 export const DEFAULT_SAAS_FEE_RATE = 0.85;
 export const DEFAULT_TENANT_ENTERPRISE_NAME = 'Apex Industrial Dynamics (Fortune 500)';
+export const AICEV_LOGO_SRC = '/images/aicev-logo.png';
+export const AICEV_LOGO_WHITE_SRC = '/images/aicev-logo-white.png';
+

@@ -56,8 +56,8 @@ describe('Home Page Component', () => {
   it('renders initial state, loads backend data, and navigates through all module tabs', async () => {
     render(<Home />);
 
-    // Check header — brand is now rendered as three styled spans: PROCU + ai + CEV
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    // Check header — brand is rendered as aiCEV logo image
+    expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -609,7 +609,7 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'getSavingsOpportunities').mockResolvedValue(null as any);
 
     render(<Home />);
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
   it('handles backend hydration failure gracefully on mount', async () => {
@@ -621,13 +621,13 @@ describe('Home Page Component', () => {
 
     render(<Home />);
 
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
   it('handles unexpected Promise.allSettled throw during mount', async () => {
     vi.spyOn(Promise, 'allSettled').mockRejectedValueOnce(new Error('Fatal promise error'));
     render(<Home />);
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
   it('handles closing modals without submitting', () => {
@@ -702,7 +702,7 @@ describe('Home Page Component', () => {
     });
 
     render(<Home />);
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
   it('handles raw backend ingestion queue with missing optional properties', async () => {
@@ -761,7 +761,7 @@ describe('Home Page Component', () => {
         expect(apiClient.addIngestionFile).toHaveBeenCalled();
       });
     }
-    expect(screen.getByText('PROCU')).toBeInTheDocument();
+    expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
   it('handles refreshing with fixes and displays final numbers toast notification', async () => {
@@ -813,7 +813,7 @@ describe('Home Page Component', () => {
   it('triggers AnalyzingLoader from Deep Spend Scan in Header and handles cancellation and completion', async () => {
     render(<Home />);
     await waitFor(() => {
-      expect(screen.getByText('PROCU')).toBeInTheDocument();
+      expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
     });
 
     const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
@@ -847,8 +847,8 @@ describe('Home Page Component', () => {
   it('triggers onStartAICategorization toast in Module2', async () => {
     render(<Home />);
     await waitFor(() => {
-      // Brand is now rendered as three styled spans: PROCU + ai + CEV
-      expect(screen.getByText('PROCU')).toBeInTheDocument();
+      // Brand is rendered as aiCEV logo image
+      expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
     });
 
 

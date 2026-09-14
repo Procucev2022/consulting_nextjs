@@ -137,3 +137,26 @@ export const apiCalculateConversionPayloadSchema = z.object({
   savingsRate: z.number().nonnegative(),
   saasFeeRate: z.number().nonnegative()
 });
+
+// User Registration Form Schema
+export const registerFormSchema = z.object({
+  name: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  mobile_number: z.string().min(8, 'Mobile number must be at least 8 digits').max(20),
+  email: z.string().email('Valid organization email is required').toLowerCase(),
+  company_name: z.string().min(2, 'Company name is required').max(150),
+  company_address: z.string().min(5, 'Company address is required').max(300),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(100)
+});
+
+// User Login Form Schema
+export const loginFormSchema = z.object({
+  email: z.string().email('Valid organization email is required').toLowerCase(),
+  password: z.string().min(1, 'Password is required')
+});
+
+// Admin User Query Schema
+export const adminUserQuerySchema = z.object({
+  search: z.string().optional(),
+  role: z.enum(['ALL', 'USER', 'ADMIN']).optional(),
+  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED', 'PENDING']).optional()
+});

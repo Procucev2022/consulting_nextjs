@@ -1,16 +1,23 @@
 'use client';
 import React from 'react';
+import Link from 'next/link';
 import {
   ShieldCheck,
-  Zap,
   Building2,
   FileText,
   Sun,
   Moon,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 import type { HeaderProps } from '../types';
-import { UI_STRINGS, SUPPORTED_HEADER_CURRENCIES, DEFAULT_SPEND_BASELINE_INR_CR, headerCurrencySchema } from '../constants';
+import {
+  UI_STRINGS,
+  SUPPORTED_HEADER_CURRENCIES,
+  DEFAULT_SPEND_BASELINE_INR_CR,
+  headerCurrencySchema,
+  AICEV_LOGO_SRC
+} from '../constants';
 import { validateInput } from '../utils/validation';
 
 export const Header: React.FC<HeaderProps> = ({
@@ -58,33 +65,19 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Main App Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
         {/* Logo & Brand */}
-        <div className="flex items-center space-x-3">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 p-0.5 shadow-md shadow-cyan-500/20">
-            <div className="w-full h-full bg-white dark:bg-[#080c16] rounded-[10px] flex items-center justify-center">
-              <Zap className="w-5 h-5 text-cyan-600 dark:text-cyan-400 fill-cyan-500/20" />
-            </div>
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full animate-pulse" />
+        <div className="flex items-center space-x-3.5">
+          <div className="flex items-center bg-white dark:bg-white/95 px-3 py-1.5 rounded-2xl shadow-xs border border-slate-200/80 dark:border-slate-700/60 transition-all">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={AICEV_LOGO_SRC}
+              alt={UI_STRINGS.header.logoAlt}
+              className="h-12 sm:h-14 w-auto object-contain transition-transform hover:scale-[1.02]"
+            />
           </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="inline-flex items-baseline">
-                <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white font-display">
-                  PROCU
-                </span>
-                <span className="text-[11px] font-black tracking-tight text-slate-700 dark:text-slate-300 font-display align-baseline">
-                  ai
-                </span>
-                <span className="text-xl font-black tracking-tight text-orange-600 dark:text-orange-400 font-display">
-                  CEV
-                </span>
-              </span>
-              <span className="text-xs font-mono font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded-full border border-cyan-300 dark:border-cyan-800/60">
-                {UI_STRINGS.header.engineVersion}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block font-medium">
+          <div className="flex flex-col justify-center">
+            <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 leading-tight">
               {UI_STRINGS.header.subtitle}
-            </p>
+            </span>
           </div>
         </div>
 
@@ -181,6 +174,26 @@ export const Header: React.FC<HeaderProps> = ({
             <FileText className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="hidden sm:inline">{UI_STRINGS.header.executiveBrief}</span>
           </button>
+
+          {/* Admin Directory Navigation */}
+          <Link
+            href="/admin"
+            title={UI_STRINGS.admin.pageTitle}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800/80 rounded-xl hover:bg-sky-100 dark:hover:bg-sky-900 transition-all shadow-xs"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-sky-500" />
+            <span className="hidden sm:inline">Admin</span>
+          </Link>
+
+          {/* User Sign In / Account Navigation */}
+          <Link
+            href="/login"
+            title={UI_STRINGS.auth.pageTitle}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-xs"
+          >
+            <User className="w-3.5 h-3.5 text-cyan-500" />
+            <span className="hidden sm:inline">{UI_STRINGS.auth.signInTab}</span>
+          </Link>
         </div>
       </div>
     </header>

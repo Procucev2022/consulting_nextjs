@@ -8,6 +8,7 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.common.save).toBe('Save Changes');
     expect(UI_STRINGS.common.cancel).toBe('Cancel');
     expect(UI_STRINGS.header.brand).toBe('PROCUCEV');
+    expect(UI_STRINGS.header.logoAlt).toBe('aiCEV by Procucev');
     expect(UI_STRINGS.header.themeToggleDark).toBe('Switch to Dark Mode');
     expect(UI_STRINGS.header.themeToggleLight).toBe('Switch to Light Mode');
   });
@@ -174,5 +175,25 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(pc.modalTitle('Jindal Stainless')).toBe('PO Consolidation & Rate Contracting: Jindal Stainless');
     expect(pc.currentPoFrequencyVal(12, 144)).toBe('Avg 12 POs/month (144 POs/year)');
   });
+
+  it('should correctly provide auth and admin strings and formatters', () => {
+    const auth = UI_STRINGS.auth;
+    expect(auth.signInTab).toBe('Sign In');
+    expect(auth.createAccountTab).toBe('Create Account');
+    expect(auth.profitHeadline).toBe('Every Penny Saved in Procurement is a Direct Increase in Profit');
+    expect(auth.profitMultiplierBadge).toBe('Bottom-Line Profit Multiplier');
+    expect(auth.benefitCostSavingsTitle).toBe('Cost Savings & Leakage Elimination');
+    expect(auth.benefitStrategicSourcingTitle).toBe('Strategic Sourcing & Category Intelligence');
+    expect(auth.benefitRoadmapTitle).toBe('Procurement Transformation Roadmap');
+    expect(auth.statDirectEbitda).toBe('100%');
+    expect(auth.statSavingsUnlocked).toBe('₹120+ Cr');
+    expect(auth.loggedInAs('Rajesh', 'USER')).toBe('Logged in as Rajesh (USER)');
+
+    const admin = UI_STRINGS.admin;
+    expect(admin.pageTitle).toBe('Admin Portal — User & Organization Directory');
+    expect(admin.userCountLabel(15)).toBe('15 Registered Users');
+    expect(admin.statusUpdateSuccess('Alice', 'SUSPENDED')).toBe('User "Alice" status updated to SUSPENDED.');
+  });
 });
+
 

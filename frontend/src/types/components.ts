@@ -289,3 +289,9 @@ export interface IngestionUploadSectionProps {
   onOpenSetupModal?: () => void;
 }
 
+export interface LoginBenefitsShowcaseProps {
+  className?: string;
+  showMetrics?: boolean;
+}
+
+

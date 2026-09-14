@@ -12,6 +12,8 @@ import taxonomyRoutes from './taxonomy.routes';
 import logsRoutes from './logs.routes';
 import graphqlRoutes from './graphql.routes';
 import cryptoRoutes from './crypto.routes';
+import authRoutes from './auth.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -37,6 +39,9 @@ router.use('/taxonomy', taxonomyRoutes);
 router.use('/logs', logsRoutes);
 router.use('/graphql', graphqlRoutes);
 router.use('/crypto', cryptoRoutes);
+router.use('/auth', authRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
+
 
