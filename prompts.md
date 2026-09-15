@@ -570,3 +570,9 @@ Make this area decongested. Move the low priority things to the right corner log
 
 ## Prompt 75
 Shift this entire area into the right side top corner. Create a login user details at this right corner and add all these details there. Show them only when we click on the name along with support button in the down
+
+---
+
+## Prompt 76
+run locally on chrome
+
