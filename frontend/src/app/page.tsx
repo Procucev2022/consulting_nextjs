@@ -1373,7 +1373,6 @@ export default function Home() {
         <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-cyan-500/40 shadow-xl text-xs font-semibold text-slate-900 dark:text-white animate-in slide-in-from-bottom duration-200">
           <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping" />
           <span>{toastMessage}</span>
-          <span>Just to Check</span>
         </div>
       )}
     </div>
