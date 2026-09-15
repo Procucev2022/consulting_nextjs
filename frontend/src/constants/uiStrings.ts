@@ -45,6 +45,7 @@ export const UI_STRINGS = {
   header: {
     brand: 'PROCUCEV',
     appName: 'PROCUCEV',
+    logoAlt: 'aiCEV by Procucev',
     engineVersion: 'ENGINE 2.0',
     docRefLabel: 'DOC REF:',
     docRefValue: 'FRD-PRC-2026-V2',
@@ -79,8 +80,26 @@ export const UI_STRINGS = {
     inrCurrencyTitle: 'Indian Rupee in Crores (₹ Cr)',
     multiCurrencyLiveFX: 'Multi-Currency Live FX',
     inrCroresSymbol: '₹ Cr',
-    subtitle: 'Tech-Enabled Procurement Advisory & Real-Time AI Optimization Suite',
-    securityBadge: 'SOC2 Type II / AES-256'
+    subtitle: 'Tech Enabled Strategic Sourcing Suite',
+    securityBadge: 'SOC2 Type II / AES-256',
+    userProfile: {
+      menuButtonTitle: 'User Profile & Settings Menu',
+      defaultName: 'Srinivas Mukku',
+      defaultRole: 'Co-Founder & CEO',
+      defaultEmail: 'srinivas.mukku@procucev.com',
+      userDetailsTitle: 'Account & Subscription',
+      switchTierTitle: 'Simulate Subscription Tier',
+      currencyTitle: 'Display Currency',
+      themeTitle: 'Theme Mode',
+      adminLinkTitle: 'Admin Directory & User Management',
+      adminLinkLabel: 'Admin Portal',
+      accountLinkTitle: 'Account Settings & Profile',
+      accountLinkLabel: 'Account Profile',
+      supportButtonTitle: 'Contact Enterprise Support & Help Desk',
+      supportButtonLabel: 'Help & Enterprise Support',
+      supportContactNote: '24/7 Priority Support: support@procucev.com',
+      closeMenu: 'Close Menu'
+    }
   },
 
   pipeline: {
@@ -100,7 +119,7 @@ export const UI_STRINGS = {
     steps: {
       step1: {
         title: 'Data Upload',
-        desc: 'Base Data Upload (Upto 3 years)'
+        desc: 'Data Ingestion and Deep Dive Analysis'
       },
       step2: {
         title: 'AI Categorization and Strategic Sourcing',
@@ -140,7 +159,7 @@ export const UI_STRINGS = {
     navStages: {
       step1: {
         title: 'Data Upload',
-        desc: 'Base Data Upload (Upto 3 years)'
+        desc: 'Data Ingestion and Deep Dive Analysis'
       },
       step2: {
         title: 'AI Categorization and Strategic Sourcing',
@@ -230,6 +249,10 @@ export const UI_STRINGS = {
     subtitle: 'SAP, Oracle & Infor Ingestion Pipeline with Pre-Categorization Remediation',
     badge: 'Module 1: Document Ingestion & Multi-Currency ETL',
     fxEngineActive: 'Multi-Currency FX Engine Active',
+    multiCurrencyActive: 'Multi-Currency FX Engine Active',
+    liveFxRatesLabel: 'Live FX Benchmark Conversion Rates to INR:',
+    activeTenant: 'Enterprise Client:',
+    industrySector: 'Industry Sector:',
     heading: '3-Year Multi-Currency Ingestion & FX Normalization',
     description: 'Ingests multiple foreign currencies (USD, EUR, GBP, AED, JPY, SGD), applies historical time-series FX conversion rates, and normalizes all spend into INR in Crores (₹ Cr).',
     uploadedFileDetails: 'Uploaded Procurement File Details',
@@ -1905,6 +1928,152 @@ export const UI_STRINGS = {
     overallProgress: (percent: number) => `${Math.round(percent)}% Complete`,
     triggerButton: 'Deep Spend Scan',
     triggerTooltip: 'Run comprehensive AI diagnostic inspection across all portfolio spend data'
+  },
+
+  auth: {
+    pageTitle: 'Account Access & Registration',
+    signInTab: 'Sign In',
+    createAccountTab: 'Create Account',
+    signInHeading: 'Enterprise Sign In',
+    signInSubheading: 'Access your procurement intelligence dashboard and savings opportunities',
+    registerHeading: 'Create New Enterprise Account',
+    registerSubheading: 'Register your organization to unlock AI-powered spend analytics and supplier optimization',
+    nameLabel: 'Full Name',
+    namePlaceholder: 'e.g., Rajesh Verma',
+    mobileLabel: 'Mobile Number',
+    mobilePlaceholder: 'e.g., +91 98234 56789',
+    emailLabel: 'Organization Email ID',
+    emailPlaceholder: 'e.g., rajesh.verma@company.com',
+    companyNameLabel: 'Company Name',
+    companyNamePlaceholder: 'e.g., Apex Industrial Dynamics Ltd.',
+    companyAddressLabel: 'Company Address',
+    companyAddressPlaceholder: 'e.g., Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India',
+    passwordLabel: 'Password',
+    passwordPlaceholder: '••••••••••••',
+    confirmPasswordLabel: 'Confirm Password',
+    confirmPasswordPlaceholder: '••••••••••••',
+    signInButton: 'Sign In to Workspace',
+    createAccountButton: 'Create Enterprise Account',
+    signingIn: 'Authenticating...',
+    registering: 'Creating Account...',
+    registrationSuccess: 'Account created successfully! Welcome to aiCEV.',
+    loginSuccess: 'Login successful. Redirecting...',
+    alreadyHaveAccount: 'Already have an account? Sign In',
+    dontHaveAccount: 'New user? Create your organization account',
+    quickTestLogins: 'Quick Test Accounts:',
+    quickAdmin: 'Admin: admin@procucev.com',
+    quickUser: 'User: srinivas@apexindustrial.com',
+    logout: 'Sign Out',
+    loggedInAs: (name: string, role: string) => `Logged in as ${name} (${role})`,
+    passwordMismatchError: 'Passwords do not match. Please re-enter identical passwords.',
+    // Technology Benefits & Direct Profit Multiplier
+    benefitsBadge: 'Strategic Procurement Intelligence',
+    profitMultiplierBadge: 'Bottom-Line Profit Multiplier',
+    profitHeadline: 'Every Penny Saved in Procurement is a Direct Increase in Profit',
+    profitSubtext:
+      'Unlike top-line revenue where each incremental rupee carries direct production, logistics, and selling overheads, 100% of procurement savings flows directly to EBITDA — delivering a powerful bottom-line multiplier.',
+    benefitsTitle: 'Autonomous Technology Advantages',
+    benefitsSubtitle: 'AI-driven spend diagnostics, real-time contract leakage prevention, and strategic wave execution',
+    benefitCostSavingsTitle: 'Cost Savings & Leakage Elimination',
+    benefitCostSavingsDesc:
+      'Autonomous algorithms detect pricing drift, invoice discrepancies, duplicate vendor payouts, and rogue off-contract spend across 36-month transaction histories.',
+    benefitStrategicSourcingTitle: 'Strategic Sourcing & Category Intelligence',
+    benefitStrategicSourcingDesc:
+      'Automated UNSPSC taxonomy mapping (98.7% accuracy), supplier base consolidation, and cross-facility volume aggregation for maximum negotiation leverage.',
+    benefitRoadmapTitle: 'Procurement Transformation Roadmap',
+    benefitRoadmapDesc:
+      'Structured multi-year savings waves, competitive benchmarking, continuous supplier scorecards, and verifiable executive governance.',
+    statSavingsUnlocked: '₹120+ Cr',
+    statSavingsLabel: 'Savings Potential Identified',
+    statAccuracyRate: '98.7%',
+    statAccuracyLabel: 'AI Taxonomy Accuracy',
+    statDirectEbitda: '100%',
+    statDirectEbitdaLabel: 'Direct EBITDA Conversion',
+    statTypicalRoi: '8% – 18%',
+    statTypicalRoiLabel: 'Typical Spend Reduction'
+  },
+
+  admin: {
+    pageTitle: 'Admin Portal — User & Organization Directory',
+    pageSubtitle: 'Complete registry of all registered organizational users with enterprise details and status controls',
+    totalUsers: 'Total Users',
+    activeUsers: 'Active Accounts',
+    suspendedUsers: 'Suspended Accounts',
+    adminAccounts: 'Administrators',
+    uniqueCompanies: 'Registered Companies',
+    searchPlaceholder: 'Search by user name, organization email, company name, or mobile number...',
+    filterTier: 'Subscription Tier',
+    allTiers: 'All Tiers',
+    colTier: 'Subscription Tier',
+    changeTier: 'Change Tier',
+    tierSelectPrompt: 'Select New Tier',
+    tierUpdateSuccess: (name: string, tier: string) => `Subscription tier for "${name}" updated to ${tier}.`,
+    filterRole: 'Role',
+    filterStatus: 'Status',
+    allRoles: 'All Roles',
+    allStatuses: 'All Statuses',
+    userTableTitle: 'Registered Enterprise Users & Organizational Details',
+    colName: 'User Details',
+    colMobile: 'Mobile Number',
+    colEmail: 'Organization Email',
+    colCompany: 'Company Name',
+    colAddress: 'Company Address',
+    colRole: 'Role',
+    colStatus: 'Status',
+    colJoined: 'Registration Date',
+    colActions: 'Action',
+    suspendButton: 'Suspend Account',
+    activateButton: 'Reactivate Account',
+    viewDetails: 'Full Details',
+    noUsersFound: 'No registered users match the search and filter criteria.',
+    userModalTitle: 'Complete User & Enterprise Profile',
+    statusUpdateSuccess: (name: string, status: string) => `User "${name}" status updated to ${status}.`,
+    backToDashboard: 'Back to Spend Dashboard',
+    accessDenied: 'Access Restricted: Administrator credentials required to view the user registry.',
+    signInAsAdmin: 'Sign In as Administrator',
+    userCountLabel: (count: number) => `${count} Registered Users`
+  },
+
+  subscription: {
+    tierBronze: 'Bronze Tier',
+    tierSilver: 'Silver Tier',
+    tierGold: 'Gold Tier',
+    tierBronzeBadge: 'BRONZE CUSTOMER',
+    tierSilverBadge: 'SILVER CUSTOMER',
+    tierGoldBadge: 'GOLD CUSTOMER',
+    tierBadge: (tier: string) => `${tier} CUSTOMER`,
+    bronzeNotice:
+      'You are currently on the Bronze Tier. Data upload and preliminary savings availability indication are active. Granular analytics, category insights, trend analysis, and execution engines are locked.',
+    silverNotice:
+      'You are on the Silver Tier. Summary levels and macro indicators are visible. Transactional SKU breakdowns, supplier details, and specific savings generation levers are locked.',
+    goldNotice:
+      'You are on the Gold Tier with full unrestricted access to all modules, SKU diagnostics, supplier scorecards, and savings execution engines.',
+    savingsAvailableHeading: 'Preliminary Savings Potential Detected',
+    savingsAvailableYes: 'Savings Available: YES',
+    savingsAvailableYesDesc:
+      'Our autonomous diagnostics have detected immediate EBITDA savings opportunities in your uploaded dataset. Upgrade to Silver or Gold to unlock the detailed breakdown.',
+    savingsAvailableSummaryOnly: 'High-Level Assessment Only (Bronze Tier)',
+    stageMaskedTitle: (stage: string) => `${stage} Locked`,
+    stageMaskedBronzeDesc:
+      'This analysis requires Silver or Gold customer tier access. Your current Bronze tier provides preliminary ingestion analysis only.',
+    stageMaskedSilverDesc:
+      'Granular SKU-level insights and specific generation targets are masked on Silver tier. Upgrade to Gold to access full strategic sourcing levers.',
+    upgradeToSilver: 'Upgrade to Silver',
+    upgradeToGold: 'Upgrade to Gold Customer',
+    upgradeCta: 'Unlock Full Savings Intelligence',
+    savingsTotalValueTitle: 'Total Addressable Savings Potential',
+    savingsWhereLockedTitle: 'Savings Generation Levers & Opportunity Targets Masked',
+    savingsWhereLockedNote:
+      'Savings Generation Locations & Opportunity Details Masked for Silver Tier. Upgrade to Gold to access specific suppliers, contracts, and deployment actions.',
+    demoSwitcherLabel: 'Tier Demo Switcher:',
+    switchToBronze: 'Switch to Bronze',
+    switchToSilver: 'Switch to Silver',
+    switchToGold: 'Switch to Gold',
+    simulationActive: (tier: string) => `Simulating ${tier} Tier`,
+    resetSimulation: 'Reset Simulation',
+    bronzeBadgeText: 'BRONZE',
+    silverBadgeText: 'SILVER',
+    goldBadgeText: 'GOLD'
   }
 } as const;
 

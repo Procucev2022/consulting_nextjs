@@ -96,6 +96,10 @@ describe('PoConsolidationSection Component', () => {
     expect(screen.getByText(UI_STRINGS.poConsolidation.scaleTierLadderTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.poConsolidation.strategyTitle)).toBeInTheDocument();
 
+    // Change cadence inside modal
+    const modalMonthlyBtn = screen.getByRole('button', { name: /Monthly Single PO/i });
+    fireEvent.click(modalMonthlyBtn);
+
     // Click Generate Master Blanket PO Draft
     const generateBtn = screen.getByRole('button', { name: UI_STRINGS.poConsolidation.applyConsolidationBtn });
     fireEvent.click(generateBtn);
@@ -129,6 +133,10 @@ describe('PoConsolidationSection Component', () => {
 
   it('should change cadence directly on an individual card and sort items', () => {
     render(<PoConsolidationSection />);
+
+    // Click individual card cadence button
+    const cardCadenceBtns = screen.getAllByRole('button', { name: /6-Month/i });
+    fireEvent.click(cardCadenceBtns[0]);
 
     // Change sort
     const select = screen.getByRole('combobox');

@@ -95,5 +95,41 @@ describe('Module3TrendAnalytics Component', () => {
     fireEvent.click(ctaBtn);
     expect(onProceed).toHaveBeenCalled();
   });
+
+  it('renders masked overlay for Bronze customer and handles upgrade to silver', () => {
+    const onUpgrade = vi.fn();
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={mockVendorPriceRanks}
+        onProceedToSavings={vi.fn()}
+        currentTier="BRONZE"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('SILVER');
+  });
+
+  it('renders macro trend chart for Silver customer and masks rankings table with Gold upgrade trigger', () => {
+    const onUpgrade = vi.fn();
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={mockVendorPriceRanks}
+        onProceedToSavings={vi.fn()}
+        currentTier="SILVER"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToGold, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('GOLD');
+  });
 });
+
 

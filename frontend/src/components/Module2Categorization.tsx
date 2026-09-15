@@ -37,15 +37,10 @@ import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
 import { VendorConsolidationSection } from './vendorConsolidation';
 import { PoConsolidationSection } from './poConsolidation';
+import { VendorCategorySupplyMatrix } from './VendorCategorySupplyMatrix';
 import dynamic from 'next/dynamic';
-
-const VendorCategorySupplyMatrix = dynamic(
-  () => import('./VendorCategorySupplyMatrix').then((mod) => mod.VendorCategorySupplyMatrix)
-);
-const AnalyzingLoader = dynamic(
-  () => import('./AnalyzingLoader').then((mod) => mod.AnalyzingLoader),
-  { ssr: false }
-);
+import { AnalyzingLoader } from './AnalyzingLoader';
+import { TierMaskOverlay } from './TierMaskOverlay';
 const UNSPSCDetailModal = dynamic(
   () => import('./modals/UNSPSCDetailModal').then((mod) => mod.UNSPSCDetailModal),
   { ssr: false }
@@ -60,7 +55,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   onProceedToTrend,
   onStartAICategorization,
   speedMultiplier,
-  onUpdateTenant
+  onUpdateTenant,
+  currentTier = 'GOLD',
+  onUpgrade
 }) => {
   const [isCategorizing, setIsCategorizing] = useState<boolean>(false);
   const [isCategorized, setIsCategorized] = useState<boolean>(false);
@@ -159,6 +156,27 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     (sum, item) => sum + item.total_3yr_spend_inr_cr,
     0
   );
+
+  const handleUpgradeSilver = () => {
+    onUpgrade?.('SILVER');
+  };
+
+  const handleUpgradeGold = () => {
+    onUpgrade?.('GOLD');
+  };
+
+  if (currentTier === 'BRONZE') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <TierMaskOverlay
+          requiredTier="SILVER"
+          title={UI_STRINGS.subscription.stageMaskedTitle('Module 2: UNSPSC Taxonomy & Categorization')}
+          description={UI_STRINGS.subscription.stageMaskedBronzeDesc}
+          onUpgrade={handleUpgradeSilver}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -389,8 +407,36 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       {/* Category & Vendor Spend Breakdown Analysis */}
       <CategoryVendorBreakdownView tenant={tenant} />
 
-      {/* Year-Wise Category Spend Valuation Matrix & Top 50 Vendor Supply Categorization */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+      {/* Silver Customer Detail Mask */}
+      {currentTier === 'SILVER' ? (
+        <div className="space-y-6">
+          <TierMaskOverlay
+            requiredTier="GOLD"
+            title={UI_STRINGS.subscription.stageMaskedTitle('Granular SKU Line Items & Reclassification')}
+            description={UI_STRINGS.subscription.stageMaskedSilverDesc}
+            onUpgrade={handleUpgradeGold}
+            isSummaryVisible
+          />
+          {/* CTA to Module 3 */}
+          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+              <CheckCircle2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <span>{UI_STRINGS.module2.taxonomyVerifiedFooter}</span>
+            </div>
+            <button
+              type="button"
+              onClick={onProceedToTrend}
+              className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
+            >
+              <span>{UI_STRINGS.module2.btnProceedToTrend}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Year-Wise Category Spend Valuation Matrix & Top 50 Vendor Supply Categorization */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
@@ -989,6 +1035,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           </button>
         </div>
       </div>
+      </>
+      )}
 
       {/* UNSPSC Taxonomy Detailed Specification Pop-up Modal */}
       {selectedUNSPSCRecord && (

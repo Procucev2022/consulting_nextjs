@@ -281,6 +281,7 @@ describe('Module2Categorization Component', () => {
   });
 
   it('triggers onStartAICategorization and transitions to completed state after timer', async () => {
+    vi.useFakeTimers();
     const handleStartMock = vi.fn();
     render(
       <Module2Categorization
@@ -298,12 +299,12 @@ describe('Module2Categorization Component', () => {
     fireEvent.click(startBtn);
     expect(handleStartMock).toHaveBeenCalledTimes(1);
 
-    await waitFor(
-      () => {
-        expect(screen.getByRole('button', { name: UI_STRINGS.module2.aiCategorizationCompleted })).toBeInTheDocument();
-      },
-      { timeout: 9000 }
-    );
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByRole('button', { name: UI_STRINGS.module2.aiCategorizationCompleted })).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('toggles between Top 50 Vendor Supply view and Category Spend Matrix view', async () => {
@@ -318,8 +319,8 @@ describe('Module2Categorization Component', () => {
     );
 
     // By default, Top 50 Vendor Supply categorization is active
+    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.alarmBadge)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
-    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.alarmBadge, {}, { timeout: 8000 })).toBeInTheDocument();
 
     // Switch to Category Spend Matrix tab
     const categoryMatrixTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.matrixTitle });
@@ -333,7 +334,7 @@ describe('Module2Categorization Component', () => {
     const vendorSupplyTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.tabVendorSupply });
     fireEvent.click(vendorSupplyTabBtn);
     expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('renders Industry Sector Lens card, allows switching sector, and filters by sector relevance', () => {
     const handleUpdateTenantMock = vi.fn();
@@ -574,6 +575,47 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText(UI_STRINGS.poConsolidation.title)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.poConsolidation.badge)).toBeInTheDocument();
   });
+
+  it('renders masked overlay for Bronze customer and handles upgrade trigger', () => {
+    const onUpgrade = vi.fn();
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        currentTier="BRONZE"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('SILVER');
+  });
+
+  it('renders summary breakdown for Silver customer and masks line items with Gold upgrade trigger', () => {
+    const onUpgrade = vi.fn();
+    render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        currentTier="SILVER"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToGold, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('GOLD');
+  });
 });
+
 
 

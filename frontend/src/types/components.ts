@@ -22,6 +22,7 @@ import type {
 import type { HeaderCurrency } from './currency';
 import type { CoreBucket, UNSPSCCommodityRecord } from './taxonomy';
 import type { ParetoSpendData } from './pareto';
+import type { SubscriptionTier, UserProfile } from './auth';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -34,6 +35,10 @@ export interface HeaderProps {
   onSelectTheme: (theme: 'light' | 'dark') => void;
   onStartAnalysis?: () => void;
   isAnalyzing?: boolean;
+  currentTier?: SubscriptionTier;
+  onSelectSimulatedTier?: (tier: SubscriptionTier | null) => void;
+  user?: UserProfile | null;
+  onContactSupport?: () => void;
 }
 
 export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
@@ -66,6 +71,8 @@ export interface Module1IngestionProps {
   isDataRefreshed?: boolean;
   paretoSpendData?: ParetoSpendData;
   onRefreshWithFixes?: () => void;
+  currentTier?: SubscriptionTier;
+  onUpgrade?: (tier: SubscriptionTier) => void;
 }
 
 export interface ValidationPreCheckSectionProps {
@@ -90,12 +97,16 @@ export interface Module2CategorizationProps {
   onStartAICategorization?: () => void;
   speedMultiplier?: number;
   onUpdateTenant?: (tenant: TenantMaster) => void;
+  currentTier?: SubscriptionTier;
+  onUpgrade?: (tier: SubscriptionTier) => void;
 }
 
 export interface Module3TrendAnalyticsProps {
   vendorRankings: VendorPriceRank[];
   onProceedToSavings: () => void;
   theme?: 'light' | 'dark';
+  currentTier?: SubscriptionTier;
+  onUpgrade?: (tier: SubscriptionTier) => void;
 }
 
 export interface Module4SavingsEngineProps {
@@ -103,12 +114,16 @@ export interface Module4SavingsEngineProps {
   onOpenProCPX: (opp: SavingsOpportunity) => void;
   onOpenDPSNXT: (opp: SavingsOpportunity) => void;
   onProceedToConversion: () => void;
+  currentTier?: SubscriptionTier;
+  onUpgrade?: (tier: SubscriptionTier) => void;
 }
 
 export interface Module5ConversionMatrixProps {
   tenant: TenantMaster;
   funnelStages: ConversionFunnelPhase[];
   onOpenReport: () => void;
+  currentTier?: SubscriptionTier;
+  onUpgrade?: (tier: SubscriptionTier) => void;
 }
 
 export type SummaryScopeMode = 'TOP_10' | 'ALL';
@@ -288,4 +303,10 @@ export interface IngestionUploadSectionProps {
   totalEvaluatedSpendInrCr: number;
   onOpenSetupModal?: () => void;
 }
+
+export interface LoginBenefitsShowcaseProps {
+  className?: string;
+  showMetrics?: boolean;
+}
+
 

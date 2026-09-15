@@ -8,7 +8,8 @@ import type {
   LineItemMapping,
   VendorPriceRank,
   SavingsOpportunity,
-  ConversionFunnelPhase
+  ConversionFunnelPhase,
+  UserRecord
 } from '../types';
 
 export const mockTenant: TenantMaster = {
@@ -4814,3 +4815,63 @@ export const vendorYearWiseDetails: VendorYearDetail[] = [
     ]
   }
 ];
+
+export const initialUsers: UserRecord[] = [
+  {
+    id: 'usr-admin-001',
+    name: 'System Administrator',
+    mobile_number: '+91 98765 43210',
+    email: 'admin@procucev.com',
+    company_name: 'aiCEV Procucev Enterprise Inc.',
+    company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
+    password_hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90:d94a65eb79041bf8bc35680693400ff3bc1cc9113000930f8d94cc61d6b7d842a152fcdc3d854e9daaf6d9789be1a09bdb6eb11750e63b605bf6f368085f7c3b',
+    role: 'ADMIN',
+    status: 'ACTIVE',
+    subscription_tier: 'GOLD',
+    created_at: new Date('2026-01-01T00:00:00Z'),
+    updated_at: new Date('2026-01-01T00:00:00Z')
+  },
+  {
+    id: 'usr-user-001',
+    name: 'Srinivas Mukku',
+    mobile_number: '+91 98450 12345',
+    email: 'srinivas@apexindustrial.com',
+    company_name: 'Apex Industrial Dynamics Ltd.',
+    company_address: 'Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India',
+    password_hash: 'b2c3d4e5f60718293a4b5c6d7e8f90a1:30ad14913a5d6652f98f32c1461a84ff793d18816c44eaa693f2828e2fe5a6de706fc18b8b1f437a570b665b153c49446dadd9c1803c9fc7184bfe0b618645a4',
+    role: 'USER',
+    status: 'ACTIVE',
+    subscription_tier: 'GOLD',
+    created_at: new Date('2026-02-15T09:30:00Z'),
+    updated_at: new Date('2026-02-15T09:30:00Z')
+  },
+  {
+    id: 'usr-user-002',
+    name: 'Priya Sharma',
+    mobile_number: '+91 97123 45678',
+    email: 'priya.sharma@tatasupply.com',
+    company_name: 'Tata Strategic Procurement Corp',
+    company_address: 'Bombay House, 24 Homi Mody Street, Fort, Mumbai 400001, Maharashtra, India',
+    password_hash: 'c3d4e5f60718293a4b5c6d7e8f90a1b2:30181637756c728c4c1a2f28843abb41508ed56f09cb2daa25d0fbc709fb6459b7ff3e8d420f3e9dc44f6cef6f77ea31eb844a25ce687aa660ee2426e7f99112',
+    role: 'USER',
+    status: 'ACTIVE',
+    subscription_tier: 'SILVER',
+    created_at: new Date('2026-03-01T11:15:00Z'),
+    updated_at: new Date('2026-03-01T11:15:00Z')
+  },
+  {
+    id: 'usr-user-003',
+    name: 'Rajesh Verma',
+    mobile_number: '+91 98234 56789',
+    email: 'rajesh.verma@reliancesupply.com',
+    company_name: 'Reliance Global Logistics & Procurement',
+    company_address: 'Maker Chambers IV, Nariman Point, Mumbai 400021, Maharashtra, India',
+    password_hash: 'd4e5f60718293a4b5c6d7e8f90a1b2c3:e2deaf8b886aa7bcba6374a040df1d149c2c858bb133a4719959a07ad63da9c450b5dfdbf2991a7a6deb314964240825f399b0b0012d2a3d917262aa776ffcd6',
+    role: 'USER',
+    status: 'ACTIVE',
+    subscription_tier: 'BRONZE',
+    created_at: new Date('2026-04-10T14:45:00Z'),
+    updated_at: new Date('2026-04-10T14:45:00Z')
+  }
+];
+

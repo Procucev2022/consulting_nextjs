@@ -34,14 +34,15 @@ export const ProcucevLogo: React.FC<ProcucevLogoProps> = ({
           onError={() => setImgError(true)}
         />
       ) : (
-        /* Vector Fallback matching the brand in image */
+        /* Vector Fallback — new aiCEV brand mark */
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 rounded-xl bg-[#0047b3] flex items-center justify-center p-1.5 shadow-md shadow-blue-900/30">
             <span className="text-white font-black text-2xl tracking-tighter">P</span>
           </div>
           <div>
-            <div className="flex items-baseline">
+            <div className="flex items-baseline leading-none">
               <span className="text-2xl font-black tracking-tight text-[#003d99]">PROCU</span>
+              <span className="text-[13px] font-black tracking-tight text-[#003d99] align-baseline pb-0.5">ai</span>
               <span className="text-2xl font-black tracking-tight text-[#ff5500]">CEV</span>
             </div>
             {showTagline && (

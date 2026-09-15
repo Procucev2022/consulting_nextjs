@@ -52,6 +52,7 @@ model ValidationPreCheckRecord {
   fx_rate_applied  Float?
   yahoo_ticker     String?
   spend_year       Int?
+  transaction_date String?
   column_l_code    String?
   core_category    String?
   issue_flag       String
@@ -124,6 +125,9 @@ model VendorYearDetail {
   line_items_count       Int
   color                  String
   is_balance_vendor      Boolean  @default(false)
+  risk_status            String?
+  price_creep_pct        Float?
+  variance_leakage_inr_cr Float?
   balance_vendors        Json?
   top_items              Json?
 
@@ -183,3 +187,23 @@ model ConversionFunnelPhase {
 
   @@index([status])
 }
+
+model User {
+  id               String   @id @default(uuid())
+  name             String
+  mobile_number    String
+  email            String   @unique
+  company_name     String
+  company_address  String
+  password_hash    String
+  role              String   @default("USER")
+  status            String   @default("ACTIVE")
+  subscription_tier String   @default("BRONZE")
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+  @@index([subscription_tier])
+}
+

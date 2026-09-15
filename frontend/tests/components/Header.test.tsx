@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { AICEV_LOGO_SRC } from '../../src/constants/app';
 
 describe('Header Component', () => {
   const defaultProps = {
@@ -19,8 +20,11 @@ describe('Header Component', () => {
   it('renders correctly with light theme and default props', () => {
     render(<Header {...defaultProps} />);
 
-    expect(screen.getByText(UI_STRINGS.header.brand)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.header.engineVersion)).toBeInTheDocument();
+    // Brand is now rendered as official aiCEV logo image
+    const logoImg = screen.getByAltText(UI_STRINGS.header.logoAlt);
+    expect(logoImg).toBeInTheDocument();
+    expect(logoImg).toHaveAttribute('src', AICEV_LOGO_SRC);
+    expect(screen.getByText(UI_STRINGS.header.subtitle)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
     expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
   });
@@ -98,5 +102,120 @@ describe('Header Component', () => {
     const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
     expect(scanBtn).toHaveClass('animate-pulse');
   });
+
+  it('renders Admin directory and Sign In navigation links', () => {
+    render(<Header {...defaultProps} />);
+
+    const adminLink = screen.getByTitle(UI_STRINGS.admin.pageTitle);
+    expect(adminLink).toBeInTheDocument();
+    expect(adminLink).toHaveAttribute('href', '/admin');
+
+    const loginLink = screen.getByTitle(UI_STRINGS.auth.pageTitle);
+    expect(loginLink).toBeInTheDocument();
+    expect(loginLink).toHaveAttribute('href', '/login');
+  });
+
+  it('renders subscription tier badge and interactive demo switcher', () => {
+    const onSelectSimulatedTier = vi.fn();
+    const { rerender } = render(
+      <Header
+        {...defaultProps}
+        currentTier="BRONZE"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+
+    expect(screen.getByTestId('subscription-tier-badge')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('BRONZE'))).toBeInTheDocument();
+
+    const silverBtn = screen.getByTestId('demo-tier-silver');
+    fireEvent.click(silverBtn);
+    expect(onSelectSimulatedTier).toHaveBeenCalledWith('SILVER');
+
+    rerender(
+      <Header
+        {...defaultProps}
+        currentTier="GOLD"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('GOLD'))).toBeInTheDocument();
+
+    rerender(
+      <Header
+        {...defaultProps}
+        currentTier="SILVER"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('SILVER'))).toBeInTheDocument();
+  });
+
+  it('renders logged in user first name when user is passed', () => {
+    const mockUser = {
+      id: 'usr-1',
+      name: 'Rohan Sharma',
+      mobile_number: '+91 99999 11111',
+      email: 'rohan@enterprise.com',
+      company_name: 'Enterprise Co',
+      company_address: '123 Tech Park',
+      role: 'USER' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'SILVER' as const,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z'
+    };
+
+    render(<Header {...defaultProps} user={mockUser} />);
+    expect(screen.getByText('Rohan')).toBeInTheDocument();
+  });
+
+  it('does not render author details or document reference in the header ribbon', () => {
+    render(<Header {...defaultProps} />);
+    expect(screen.queryByText(UI_STRINGS.header.docRefValue)).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.header.authorName)).not.toBeInTheDocument();
+  });
+
+  it('toggles user profile dropdown menu and handles outside clicks and escape key', () => {
+    render(<Header {...defaultProps} />);
+
+    const menuBtn = screen.getByTestId('user-profile-menu-button');
+    const dropdown = screen.getByTestId('user-profile-dropdown');
+
+    expect(dropdown).toHaveClass('hidden');
+
+    fireEvent.click(menuBtn);
+    expect(dropdown).toHaveClass('block');
+
+    // Press Escape to close
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(dropdown).toHaveClass('hidden');
+
+    // Re-open and test clicking outside
+    fireEvent.click(menuBtn);
+    expect(dropdown).toHaveClass('block');
+
+    fireEvent.mouseDown(document.body);
+    expect(dropdown).toHaveClass('hidden');
+  });
+
+  it('triggers onContactSupport when provided, or falls back to window.open', () => {
+    const onContactSupport = vi.fn();
+    const { rerender } = render(<Header {...defaultProps} onContactSupport={onContactSupport} />);
+
+    const supportBtn = screen.getByTestId('header-support-button');
+    fireEvent.click(supportBtn);
+    expect(onContactSupport).toHaveBeenCalledTimes(1);
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    rerender(<Header {...defaultProps} onContactSupport={undefined} />);
+    fireEvent.click(supportBtn);
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringContaining('mailto:support@procucev.com'),
+      '_blank'
+    );
+    openSpy.mockRestore();
+  });
 });
+
 

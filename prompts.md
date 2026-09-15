@@ -494,9 +494,115 @@ name it as AI Categorization and Strategic Sourcing
 ---
 
 ## Prompt 60
-deploy this new code in clodflare same url ans change the time from 1 hour to 30 min  please setup CI/CD in github to automatically deploy these application in cloudflare
+run local chrome
 
 ---
 
 ## Prompt 61
+change the description to data ingestion and deep dive analysis
+
+---
+
+## Prompt 62
+Replace this with the new aiCEV. reduce ai size compared to CEV
+
+---
+
+## Prompt 63
+check again
+
+---
+
+## Prompt 64
+I want this change on the UI screen as per the attached picture. This picture needs to be replaced with the new aiCEV logo
+
+---
+
+## Prompt 65
+run locally in chrome
+
+---
+
+## Prompt 66
+replace the existing logo here with the aiCEV logo attached
+
+---
+
+## Prompt 67
+Let us create a login page for user and admin page for this software. New user creates their account with the name, mobile number, organization email id and company name and address. Admin can see all the users list in his login with complete details
+
+---
+
+## Prompt 68
+Use this logo on the login page for everyone. Talk about the technology benefits in terms of cost savings, strategic sourcing and road map for your procurement to increase your savings etc. Talk mainly about benefits on the login page and talk about every penny saved in procurement is a direct increase in profit. Ensure aiCEV logo is looking at the maximum optimum size
+
+---
+
+## Prompt 69
+Correct this
+
+---
+
+## Prompt 70
+Make logo in bigger size, remove engine 2.0. Write "Tech Enabled Strategic Sourcing Suite"
+
+---
+
+## Prompt 71
+Let us create 3 types of subscription for the customer.i.e braonze, silver and gold. Any customer as soon as he registers, he will become bronze customer. He can upload the data and can see only the summary that whether savings available for them or not. He can't see any other information. It should show the first page of data upload and analysis and then details on all other pages to be masked. The second one is Silver customer. Here, he can see the complete first page, summary levels on the second page and trend analysis only at the summary level and final savings engine as well summary level. He can see what is total value of savings but can't see where he can generate savings. third one is Gold customer. He will be able to access everything in this software
+
+---
+
+## Prompt 72
+complete the task in progress and run locally
+
+---
+
+## Prompt 73
+In the Bronze package, let us show the complete Data ingestion and deep dive analysis along with savings available page. But from AI categorization, you can mask and proceed as per the current plan
+
+---
+
+## Prompt 74
+Make this area decongested. Move the low priority things to the right corner login page area. Show the aiCEV logo properly. make it look professionally. Remove authoru and document name.
+
+---
+
+## Prompt 75
+Shift this entire area into the right side top corner. Create a login user details at this right corner and add all these details there. Show them only when we click on the name along with support button in the down
+
+---
+
+## Prompt 76
+run locally on chrome
+
+---
+
+## Prompt 77
+deploy this new code in clodflare same url ans change the time from 1 hour to 30 min  please setup CI/CD in github to automatically deploy these application in cloudflare
+
+---
+
+## Prompt 78
 i want to commit these chnages in  cloudflare branch only not in main or git don't pus these code  main and git only store at that cloudflare branch locally
+
+---
+
+## Prompt 79
+connect  to my github account
+
+---
+
+## Prompt 80
+runlocally
+
+---
+
+## Prompt 81
+deploy this  latest code to cloudflare
+
+---
+
+## Prompt 82
+https://procucev-consulting-portal.pages.dev/
+Whenever you deploy these kinds of applications, please just any one backend related operation & one data base related operation & one file uploading operation

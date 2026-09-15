@@ -41,6 +41,11 @@ describe('Module1Ingestion Component', () => {
         dataTransfer: { files: [testFile] }
       });
       expect(onAddBatchUpload).toHaveBeenCalledWith(testFile, 'Purchase History');
+
+      // Test drop with empty files array
+      fireEvent.drop(dropZone, {
+        dataTransfer: { files: [] }
+      });
     }
 
     // Test file input change
@@ -49,6 +54,9 @@ describe('Module1Ingestion Component', () => {
       const testFile2 = new File(['dummy content 2'], 'test2.xlsx', { type: 'application/vnd.ms-excel' });
       fireEvent.change(fileInput, { target: { files: [testFile2] } });
       expect(onAddBatchUpload).toHaveBeenCalledWith(testFile2, 'Purchase History');
+
+      // Test file input change with empty files
+      fireEvent.change(fileInput, { target: { files: [] } });
     }
   });
 
@@ -374,4 +382,62 @@ describe('Module1Ingestion Component', () => {
     fireEvent.click(refreshButtons[0]);
     expect(onRefreshWithFixes).toHaveBeenCalled();
   });
+
+  it('renders bronze tier banner, complete deep dive analysis, and handles upgrade to silver', () => {
+    const onUpgrade = vi.fn();
+    render(<Module1Ingestion {...defaultProps} currentTier="BRONZE" onUpgrade={onUpgrade} />);
+
+    expect(screen.getByText(UI_STRINGS.subscription.savingsAvailableHeading)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.subscription.savingsAvailableYes)).toBeInTheDocument();
+
+    // Complete deep-dive analysis is visible for Bronze
+    expect(screen.getByText(UI_STRINGS.documentSummary.heading)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.paretoHierarchy.sectionTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.validationSectionTitle)).toBeInTheDocument();
+
+    const upgradeBtns = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
+    expect(upgradeBtns.length).toBeGreaterThan(0);
+    fireEvent.click(upgradeBtns[0]);
+    expect(onUpgrade).toHaveBeenCalledWith('SILVER');
+  });
+
+  it('handles upgrade click gracefully when onUpgrade is undefined', () => {
+    render(<Module1Ingestion {...defaultProps} currentTier="BRONZE" onUpgrade={undefined} />);
+    const upgradeBtns = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
+    expect(upgradeBtns.length).toBeGreaterThan(0);
+    fireEvent.click(upgradeBtns[0]);
+    expect(upgradeBtns[0]).toBeInTheDocument();
+  });
+
+  it('renders tenant fallback branches when enterprise_name or sector is missing', () => {
+    const sparseTenant = {
+      ...mockTenant,
+      enterprise_name: '',
+      major_sector: undefined as any,
+      minor_sector: undefined as any
+    };
+
+    render(<Module1Ingestion {...defaultProps} tenant={sparseTenant as any} />);
+    expect(screen.getByText('Global Chemicals Corp.')).toBeInTheDocument();
+    expect(screen.getByText('Chemical & Petrochemicals - Specialty Chemicals')).toBeInTheDocument();
+  });
+
+  it('handles client setup confirmation with custom major and minor sectors', () => {
+    vi.useFakeTimers();
+    const onUpdateTenant = vi.fn();
+    render(<Module1Ingestion {...defaultProps} onUpdateTenant={onUpdateTenant} />);
+
+    // Open setup modal
+    const configureBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.configureClientDataset, 'i') });
+    fireEvent.click(configureBtn);
+
+    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    fireEvent.click(submitBtn);
+
+    vi.advanceTimersByTime(300);
+    expect(onUpdateTenant).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
 });
+
+

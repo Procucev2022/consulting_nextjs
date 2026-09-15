@@ -91,12 +91,19 @@ import type {
   ParetoSpendData,
   ParetoRawRecord,
   SpendCategorySummary,
-  VendorPriceRank
+  VendorPriceRank,
+  UserProfile,
+  SubscriptionTier
 } from '@/types';
+import { getEffectiveUserTier } from '@/utils/tierAccess';
 
 export default function Home() {
   // Theme State: Default to Light Mode
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Authentication & Subscription Tier State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>(null);
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
@@ -159,6 +166,14 @@ export default function Home() {
           if (parsed.opportunities) setOpportunities(parsed.opportunities);
           if (parsed.isDataRefreshed) setIsDataRefreshed(true);
         }
+      }
+      const user = apiClient.getStoredUser();
+      if (user) {
+        setCurrentUser(user);
+      }
+      const simTier = apiClient.getSimulatedTier();
+      if (simTier) {
+        setSimulatedTier(simTier);
       }
     } catch {
       // Safe fallback if sessionStorage is inaccessible
@@ -254,6 +269,24 @@ export default function Home() {
     toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
     }, 3500);
+  };
+
+  // Subscription Tier Resolution & Simulation Handlers
+  const effectiveTier = getEffectiveUserTier(currentUser, simulatedTier);
+
+  const handleSelectSimulatedTier = (tier: SubscriptionTier | null) => {
+    setSimulatedTier(tier);
+    apiClient.setSimulatedTier(tier);
+    if (tier) {
+      showToast(UI_STRINGS.subscription.simulationActive(tier));
+    } else {
+      showToast(UI_STRINGS.subscription.resetSimulation);
+    }
+  };
+
+  const handleUpgradeTier = (targetTier: SubscriptionTier) => {
+    handleSelectSimulatedTier(targetTier);
+    showToast(`Upgraded to ${targetTier} Customer!`);
   };
 
   // Handlers for Module 1
@@ -1171,6 +1204,9 @@ export default function Home() {
           });
         }}
         isAnalyzing={!!analyzingLoaderState?.isOpen}
+        currentTier={effectiveTier}
+        onSelectSimulatedTier={handleSelectSimulatedTier}
+        user={currentUser}
       />
 
       {/* Main Container */}
@@ -1203,6 +1239,8 @@ export default function Home() {
             isDataRefreshed={isDataRefreshed}
             paretoSpendData={uploadedParetoData}
             onRefreshWithFixes={handleRefreshWithFixes}
+            currentTier={effectiveTier}
+            onUpgrade={handleUpgradeTier}
           />
         )}
 
@@ -1221,6 +1259,8 @@ export default function Home() {
               showToast(UI_STRINGS.toasts.runningAiCat);
             }}
             onUpdateTenant={setTenant}
+            currentTier={effectiveTier}
+            onUpgrade={handleUpgradeTier}
           />
         )}
 
@@ -1232,6 +1272,8 @@ export default function Home() {
               showToast(UI_STRINGS.toasts.launchingSavings);
             }}
             theme={theme}
+            currentTier={effectiveTier}
+            onUpgrade={handleUpgradeTier}
           />
         )}
 
@@ -1244,6 +1286,8 @@ export default function Home() {
               setActiveTab('module5');
               showToast(UI_STRINGS.toasts.openingConversion);
             }}
+            currentTier={effectiveTier}
+            onUpgrade={handleUpgradeTier}
           />
         )}
 
@@ -1252,6 +1296,8 @@ export default function Home() {
             tenant={tenant}
             funnelStages={funnelStages}
             onOpenReport={() => setIsReportModalOpen(true)}
+            currentTier={effectiveTier}
+            onUpgrade={handleUpgradeTier}
           />
         )}
 
