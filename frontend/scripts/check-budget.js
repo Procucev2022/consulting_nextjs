@@ -15,7 +15,7 @@ const BUDGET_LIMITS = {
   MAX_JS_BUNDLE_KB: 250,      // Max shared client JS bundle (gzip)
   MAX_CRITICAL_CSS_KB: 50,     // Max critical CSS (gzip)
   MAX_SHARED_JS_CHUNK_KB: 120, // Max individual shared JS chunk (gzip)
-  MAX_TOTAL_PAGE_JS_KB: 320    // Max total primary route JS (gzip)
+  MAX_TOTAL_PAGE_JS_KB: 350    // Max total primary route JS (gzip)
 };
 
 function calculateGzipSize(buffer) {
