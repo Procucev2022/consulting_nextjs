@@ -38,6 +38,7 @@ export interface HeaderProps {
   currentTier?: SubscriptionTier;
   onSelectSimulatedTier?: (tier: SubscriptionTier | null) => void;
   user?: UserProfile | null;
+  onContactSupport?: () => void;
 }
 
 export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';

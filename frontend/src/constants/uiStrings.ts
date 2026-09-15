@@ -81,7 +81,25 @@ export const UI_STRINGS = {
     multiCurrencyLiveFX: 'Multi-Currency Live FX',
     inrCroresSymbol: '₹ Cr',
     subtitle: 'Tech Enabled Strategic Sourcing Suite',
-    securityBadge: 'SOC2 Type II / AES-256'
+    securityBadge: 'SOC2 Type II / AES-256',
+    userProfile: {
+      menuButtonTitle: 'User Profile & Settings Menu',
+      defaultName: 'Srinivas Mukku',
+      defaultRole: 'Co-Founder & CEO',
+      defaultEmail: 'srinivas.mukku@procucev.com',
+      userDetailsTitle: 'Account & Subscription',
+      switchTierTitle: 'Simulate Subscription Tier',
+      currencyTitle: 'Display Currency',
+      themeTitle: 'Theme Mode',
+      adminLinkTitle: 'Admin Directory & User Management',
+      adminLinkLabel: 'Admin Portal',
+      accountLinkTitle: 'Account Settings & Profile',
+      accountLinkLabel: 'Account Profile',
+      supportButtonTitle: 'Contact Enterprise Support & Help Desk',
+      supportButtonLabel: 'Help & Enterprise Support',
+      supportContactNote: '24/7 Priority Support: support@procucev.com',
+      closeMenu: 'Close Menu'
+    }
   },
 
   pipeline: {
