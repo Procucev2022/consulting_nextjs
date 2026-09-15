@@ -23,3 +23,4 @@ export * from './vendorConsolidation';
 export * from './poConsolidation';
 export * from './auth';
 export * from './tierAccess';
+export * from './savingsInitiatives';

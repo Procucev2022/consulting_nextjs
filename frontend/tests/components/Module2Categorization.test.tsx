@@ -615,6 +615,64 @@ describe('Module2Categorization Component', () => {
     fireEvent.click(upgradeBtn);
     expect(onUpgrade).toHaveBeenCalledWith('GOLD');
   });
+
+  it('handles targetSection navigation to vendor-consolidation, po-consolidation, strategic-risk, and vendor-supply', () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    const { rerender } = render(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        targetSection="vendor-consolidation-section"
+      />
+    );
+
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+    expect(screen.getByTestId('vendor-consolidation-section-container')).toBeInTheDocument();
+
+    // Rerender with po-consolidation-section
+    rerender(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        targetSection="po-consolidation-section"
+      />
+    );
+    expect(screen.getByTestId('po-consolidation-section-container')).toBeInTheDocument();
+
+    // Rerender with strategic-risk-section
+    rerender(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        targetSection="strategic-risk-section"
+      />
+    );
+    expect(screen.getByTestId('strategic-vendor-risk-container')).toBeInTheDocument();
+
+    // Rerender with vendor-category-supply-section
+    rerender(
+      <Module2Categorization
+        categories={mockSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+        targetSection="vendor-category-supply-section"
+      />
+    );
+    expect(screen.getByTestId('vendor-category-supply-section')).toBeInTheDocument();
+  });
 });
 
 

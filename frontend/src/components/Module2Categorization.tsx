@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Cpu,
   CheckCircle2,
@@ -57,7 +57,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   speedMultiplier,
   onUpdateTenant,
   currentTier = 'GOLD',
-  onUpgrade
+  onUpgrade,
+  targetSection
 }) => {
   const [isCategorizing, setIsCategorizing] = useState<boolean>(false);
   const [isCategorized, setIsCategorized] = useState<boolean>(false);
@@ -66,6 +67,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const [selectedSectorRelevanceFilter, setSelectedSectorRelevanceFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [minConfidence] = useState<number>(0);
+
+  // Section Refs for smooth declarative navigation
+  const vendorConsolidationRef = useRef<HTMLDivElement>(null);
+  const poConsolidationRef = useRef<HTMLDivElement>(null);
+  const strategicRiskRef = useRef<HTMLDivElement>(null);
+  const vendorSupplyRef = useRef<HTMLDivElement>(null);
 
   // Industry Sector Lens State
   const [activeMajorSector, setActiveMajorSector] = useState<string>(
@@ -112,6 +119,22 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   // Column L Section Tab: Strategic Single/Dominant Vendor Risk Engine (Default) vs UNSPSC Catalog
   const [columnLTab, setColumnLTab] = useState<'strategicRisk' | 'catalog'>('strategicRisk');
+
+  useEffect(() => {
+    if (!targetSection) return;
+
+    if (targetSection === 'vendor-consolidation-section' && vendorConsolidationRef.current) {
+      vendorConsolidationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (targetSection === 'po-consolidation-section' && poConsolidationRef.current) {
+      poConsolidationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (targetSection === 'strategic-risk-section') {
+      setColumnLTab('strategicRisk');
+      strategicRiskRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (targetSection === 'vendor-category-supply-section') {
+      setMatrixTab('VENDOR_SUPPLY');
+      vendorSupplyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [targetSection]);
 
   const matchesSearchQuery = (item: LineItemMapping, q: string): boolean => {
     const query = q.toLowerCase();
@@ -436,7 +459,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       ) : (
         <>
           {/* Year-Wise Category Spend Valuation Matrix & Top 50 Vendor Supply Categorization */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+          <div
+            ref={vendorSupplyRef}
+            id="vendor-category-supply-section"
+            data-testid="vendor-category-supply-section"
+            className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4"
+          >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
@@ -625,7 +653,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
         {/* View 1: Strategic Single-Vendor & Dominant Supplier Risk Engine (Default) */}
         {columnLTab === 'strategicRisk' && (
-          <div data-testid="strategic-vendor-risk-container">
+          <div
+            ref={strategicRiskRef}
+            id="strategic-risk-section"
+            data-testid="strategic-vendor-risk-container"
+          >
             <StrategicSingleVendorRiskSection />
           </div>
         )}
@@ -743,10 +775,22 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       </div>
 
       {/* High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) */}
-      <VendorConsolidationSection />
+      <div
+        ref={vendorConsolidationRef}
+        id="vendor-consolidation-section"
+        data-testid="vendor-consolidation-section-container"
+      >
+        <VendorConsolidationSection />
+      </div>
 
       {/* Multiple Monthly PO Consolidation & Economies of Scale Engine */}
-      <PoConsolidationSection />
+      <div
+        ref={poConsolidationRef}
+        id="po-consolidation-section"
+        data-testid="po-consolidation-section-container"
+      >
+        <PoConsolidationSection />
+      </div>
 
       {/* Machine Learning Line Item Review Workbench */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">

@@ -576,3 +576,9 @@ Shift this entire area into the right side top corner. Create a login user detai
 ## Prompt 76
 run locally on chrome
 
+---
+
+## Prompt 77
+In this page, show the summary of savings from various initiatives discussed in AI Categorization & Strategic Sourcing as well along with a complete summary. Take the user to the respective area when he clicks on the respective summary number to review the detail
+
+
