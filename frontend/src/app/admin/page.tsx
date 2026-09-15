@@ -12,9 +12,11 @@ import { UI_STRINGS, AICEV_LOGO_SRC } from '../../constants';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
 import type { UserProfile, UserRole, UserStatus } from '../../types';
+import { DatabaseViewSection } from '../../components/DatabaseViewSection';
 
 export default function AdminPage(): React.ReactElement {
   const router = useRouter();
+  const [adminTab, setAdminTab] = useState<'USERS' | 'DATABASE_VIEW'>('USERS');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
@@ -154,40 +156,102 @@ export default function AdminPage(): React.ReactElement {
 
       {/* Main Content Area */}
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '28px 24px' }}>
-        {/* Page Title */}
-        <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 6px', color: '#f8fafc' }}>
-            {UI_STRINGS.admin.pageTitle}
-          </h1>
-          <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>
-            {UI_STRINGS.admin.pageSubtitle}
-          </p>
+        {/* Page Title & Navigation Tabs */}
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          marginBottom: '24px',
+          borderBottom: '1px solid rgba(148, 163, 184, 0.15)',
+          paddingBottom: '20px'
+        }}>
+          <div>
+            <h1 style={{ fontSize: '24px', fontWeight: 700, margin: '0 0 6px', color: '#f8fafc' }}>
+              {UI_STRINGS.admin.pageTitle}
+            </h1>
+            <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>
+              {adminTab === 'USERS'
+                ? UI_STRINGS.admin.pageSubtitle
+                : 'Live PostgreSQL database health, connection latency, schema inspector, and table records.'}
+            </p>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            backgroundColor: '#070c18',
+            padding: '4px',
+            borderRadius: '10px',
+            border: '1px solid rgba(148, 163, 184, 0.2)'
+          }}>
+            <button
+              type="button"
+              id="admin-tab-users"
+              onClick={() => setAdminTab('USERS')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: adminTab === 'USERS' ? '#0284c7' : 'transparent',
+                color: adminTab === 'USERS' ? '#ffffff' : '#94a3b8',
+                transition: 'all 0.2s'
+              }}
+            >
+              👥 Users & Organizations
+            </button>
+            <button
+              type="button"
+              id="admin-tab-db-view"
+              onClick={() => setAdminTab('DATABASE_VIEW')}
+              style={{
+                padding: '8px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: adminTab === 'DATABASE_VIEW' ? '#0284c7' : 'transparent',
+                color: adminTab === 'DATABASE_VIEW' ? '#ffffff' : '#94a3b8',
+                transition: 'all 0.2s'
+              }}
+            >
+              🗄️ Database View & Telemetry
+            </button>
+          </div>
         </div>
 
-        {/* Metric Cards Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-          marginBottom: '28px'
-        }}>
-          <div style={metricCardStyle('#38bdf8')}>
-            <span style={metricLabelStyle}>{UI_STRINGS.admin.totalUsers}</span>
-            <span style={metricValueStyle('#38bdf8')}>{total}</span>
-          </div>
-          <div style={metricCardStyle('#22c55e')}>
-            <span style={metricLabelStyle}>{UI_STRINGS.admin.activeUsers}</span>
-            <span style={metricValueStyle('#22c55e')}>{activeCount}</span>
-          </div>
-          <div style={metricCardStyle('#ef4444')}>
-            <span style={metricLabelStyle}>{UI_STRINGS.admin.suspendedUsers}</span>
-            <span style={metricValueStyle('#ef4444')}>{suspendedCount}</span>
-          </div>
-          <div style={metricCardStyle('#a855f7')}>
-            <span style={metricLabelStyle}>{UI_STRINGS.admin.uniqueCompanies}</span>
-            <span style={metricValueStyle('#a855f7')}>{companiesCount}</span>
-          </div>
-        </div>
+        {adminTab === 'DATABASE_VIEW' ? (
+          <DatabaseViewSection />
+        ) : (
+          <>
+            {/* Metric Cards Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px',
+              marginBottom: '28px'
+            }}>
+              <div style={metricCardStyle('#38bdf8')}>
+                <span style={metricLabelStyle}>{UI_STRINGS.admin.totalUsers}</span>
+                <span style={metricValueStyle('#38bdf8')}>{total}</span>
+              </div>
+              <div style={metricCardStyle('#22c55e')}>
+                <span style={metricLabelStyle}>{UI_STRINGS.admin.activeUsers}</span>
+                <span style={metricValueStyle('#22c55e')}>{activeCount}</span>
+              </div>
+              <div style={metricCardStyle('#ef4444')}>
+                <span style={metricLabelStyle}>{UI_STRINGS.admin.suspendedUsers}</span>
+                <span style={metricValueStyle('#ef4444')}>{suspendedCount}</span>
+              </div>
+              <div style={metricCardStyle('#a855f7')}>
+                <span style={metricLabelStyle}>{UI_STRINGS.admin.uniqueCompanies}</span>
+                <span style={metricValueStyle('#a855f7')}>{companiesCount}</span>
+              </div>
+            </div>
 
         {/* Action / Error Banners */}
         {actionSuccess && (
@@ -368,6 +432,8 @@ export default function AdminPage(): React.ReactElement {
             </table>
           </div>
         </div>
+        </>
+        )}
       </main>
 
       {/* User Details Modal */}

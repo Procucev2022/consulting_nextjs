@@ -37,6 +37,25 @@ export const buildAdminUserQueryParams = (query?: AdminUserQuery): URLSearchPara
   return params;
 };
 
+async function parseResponseJson<T>(res: Response, fallbackError: string): Promise<T> {
+  const text = await res.text();
+  let json: any = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    if (!res.ok) {
+      throw new Error(`Server error (${res.status}): Please ensure backend is running on port 5000`);
+    }
+    throw new Error('Invalid response received from server');
+  }
+
+  if (!res.ok) {
+    throw new Error(json.message || fallbackError);
+  }
+
+  return json as T;
+}
+
 export const authApiClient = {
   // Session Storage Helpers
   getStoredToken(): string | null {
@@ -81,10 +100,7 @@ export const authApiClient = {
       body: JSON.stringify(validation.data)
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Registration failed');
-    }
+    const json = await parseResponseJson<AuthSessionResponse>(res, 'Registration failed');
 
     if (json.token && json.user) {
       authApiClient.setStoredSession(json.token, json.user);
@@ -106,10 +122,7 @@ export const authApiClient = {
       body: JSON.stringify(validation.data)
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Authentication failed');
-    }
+    const json = await parseResponseJson<AuthSessionResponse>(res, 'Authentication failed');
 
     if (json.token && json.user) {
       authApiClient.setStoredSession(json.token, json.user);
@@ -128,11 +141,7 @@ export const authApiClient = {
       headers: { Authorization: `Bearer ${authToken}` }
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to fetch user profile');
-    }
-    return json;
+    return await parseResponseJson<{ success: boolean; user: UserProfile }>(res, 'Failed to fetch user profile');
   },
 
   // Admin: List All Users
@@ -148,11 +157,7 @@ export const authApiClient = {
     }
 
     const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.ADMIN_USERS}${queryString}`, { headers });
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to load user directory');
-    }
-    return json;
+    return await parseResponseJson<AdminUsersResponse>(res, 'Failed to load user directory');
   },
 
   // Admin: Update User Status
@@ -175,10 +180,6 @@ export const authApiClient = {
       body: JSON.stringify({ status })
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to update user status');
-    }
-    return json;
+    return await parseResponseJson<{ success: boolean; user: UserProfile }>(res, 'Failed to update user status');
   }
 };

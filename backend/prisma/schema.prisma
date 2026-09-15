@@ -198,6 +198,7 @@ model User {
   password_hash    String
   role             String   @default("USER")
   status           String   @default("ACTIVE")
+  subscription_tier String? @default("FREE")
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 

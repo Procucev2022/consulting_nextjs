@@ -97,12 +97,6 @@ export default function LoginPage(): React.ReactElement {
     }
   };
 
-  const setQuickLogin = (email: string, pass: string): void => {
-    setActiveTab('LOGIN');
-    setLoginForm({ email, password: pass });
-    setErrorMessage(null);
-  };
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -567,51 +561,6 @@ export default function LoginPage(): React.ReactElement {
             </button>
           </form>
         )}
-
-        {/* Quick Test Logins Section */}
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(148, 163, 184, 0.15)'
-        }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {UI_STRINGS.auth.quickTestLogins}
-          </p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              id="quick-login-admin"
-              onClick={() => setQuickLogin('admin@procucev.com', 'Admin@123456')}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '6px',
-                color: '#38bdf8',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              {UI_STRINGS.auth.quickAdmin}
-            </button>
-            <button
-              type="button"
-              id="quick-login-user"
-              onClick={() => setQuickLogin('srinivas@apexindustrial.com', 'User@123456')}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                borderRadius: '6px',
-                color: '#c084fc',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              {UI_STRINGS.auth.quickUser}
-            </button>
-          </div>
-        </div>
       </div>
       </div>
     </div>

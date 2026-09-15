@@ -224,7 +224,42 @@ export const apiClient = {
   getStoredToken: authApiClient.getStoredToken.bind(authApiClient),
   getStoredUser: authApiClient.getStoredUser.bind(authApiClient),
   setStoredSession: authApiClient.setStoredSession.bind(authApiClient),
-  clearStoredSession: authApiClient.clearStoredSession.bind(authApiClient)
+  clearStoredSession: authApiClient.clearStoredSession.bind(authApiClient),
+
+  // Database View & Telemetry
+  async getDBStatus(): Promise<any> {
+    frontendLogger.debug('Fetching database status & health telemetry');
+    const res = await fetch(`${API_BASE}/api/db/status`);
+    const json = await res.json();
+    return json.data;
+  },
+
+  async getDBMetrics(): Promise<any> {
+    frontendLogger.debug('Fetching database optimization metrics');
+    const res = await fetch(`${API_BASE}/api/db/metrics`);
+    const json = await res.json();
+    return json.data;
+  },
+
+  async getDBTableData(table: string, page = 1, limit = 20, search = ''): Promise<any> {
+    frontendLogger.debug('Fetching database table data', { table, page, limit, search });
+    const query = new URLSearchParams({
+      table,
+      page: String(page),
+      limit: String(limit),
+      ...(search ? { search } : {})
+    });
+    const res = await fetch(`${API_BASE}/api/db/tables?${query.toString()}`);
+    const json = await res.json();
+    return json.data;
+  },
+
+  async testDBConnection(): Promise<any> {
+    frontendLogger.info('Testing live database round-trip ping');
+    const res = await fetch(`${API_BASE}/api/db/test-connection`, { method: 'POST' });
+    return await res.json();
+  }
 };
+
 
 

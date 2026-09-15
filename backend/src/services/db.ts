@@ -9,8 +9,7 @@ import {
   initialLineItemMappings,
   vendorVolatilityRankings,
   initialSavingsOpportunities,
-  conversionFunnelStages,
-  initialUsers
+  conversionFunnelStages
 } from '../data/mockData';
 
 import type {
@@ -48,7 +47,6 @@ export class DatabaseStore {
   private vendorRankings: VendorPriceRank[] = JSON.parse(JSON.stringify(vendorVolatilityRankings));
   private opportunities: SavingsOpportunity[] = JSON.parse(JSON.stringify(initialSavingsOpportunities));
   private funnelStages: ConversionFunnelPhase[] = JSON.parse(JSON.stringify(conversionFunnelStages));
-  private users: UserRecord[] = JSON.parse(JSON.stringify(initialUsers));
 
   constructor() {
     this.initPostgres();
@@ -581,124 +579,92 @@ export class DatabaseStore {
     return result;
   }
 
-  // Users & Authentication
+  // Users & Authentication (Strict PostgreSQL via Prisma ORM)
   public async getUserByEmail(email: string): Promise<UserRecord | null> {
     const normalizedEmail = email.trim().toLowerCase();
-    if (this.isPostgresConnected) {
-      try {
-        const u = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-        if (u) return u as UserRecord;
-      } catch (err: any) {
-        logger.warn('Failed to fetch user by email from PostgreSQL, falling back to local memory', { email: normalizedEmail, error: err.message });
-      }
+    try {
+      const u = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
+      return u as UserRecord | null;
+    } catch (err: any) {
+      logger.error('Database query failed in getUserByEmail', { email: normalizedEmail, error: err.message });
+      throw err;
     }
-    const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
-    return found ? { ...found } : null;
   }
 
   public async getUserById(id: string): Promise<UserRecord | null> {
-    if (this.isPostgresConnected) {
-      try {
-        const u = await prisma.user.findUnique({ where: { id } });
-        if (u) return u as UserRecord;
-      } catch (err: any) {
-        logger.warn('Failed to fetch user by id from PostgreSQL, falling back to local memory', { id, error: err.message });
-      }
+    try {
+      const u = await (prisma as any).user.findUnique({ where: { id } });
+      return u as UserRecord | null;
+    } catch (err: any) {
+      logger.error('Database query failed in getUserById', { id, error: err.message });
+      throw err;
     }
-    const found = this.users.find((u) => u.id === id);
-    return found ? { ...found } : null;
   }
 
   public async createUser(data: Omit<UserRecord, 'created_at' | 'updated_at'>): Promise<UserRecord> {
-    const now = new Date();
-    const newRecord: UserRecord = {
-      ...data,
-      email: data.email.trim().toLowerCase(),
-      created_at: now,
-      updated_at: now
-    };
-
-    if (this.isPostgresConnected) {
-      try {
-        const created = await prisma.user.create({
-          data: {
-            id: newRecord.id,
-            name: newRecord.name,
-            mobile_number: newRecord.mobile_number,
-            email: newRecord.email,
-            company_name: newRecord.company_name,
-            company_address: newRecord.company_address,
-            password_hash: newRecord.password_hash,
-            role: newRecord.role,
-            status: newRecord.status
-          }
-        });
-        this.users.push({ ...created });
-        return created as UserRecord;
-      } catch (err: any) {
-        logger.warn('Failed to persist new user to PostgreSQL, falling back to local memory store', { error: err.message });
-      }
+    try {
+      const created = await (prisma as any).user.create({
+        data: {
+          id: data.id,
+          name: data.name,
+          mobile_number: data.mobile_number,
+          email: data.email.trim().toLowerCase(),
+          company_name: data.company_name,
+          company_address: data.company_address,
+          password_hash: data.password_hash,
+          role: data.role,
+          status: data.status
+        }
+      });
+      return created as UserRecord;
+    } catch (err: any) {
+      logger.error('Database query failed in createUser', { email: data.email, error: err.message });
+      throw err;
     }
-
-    this.users.push(newRecord);
-    return newRecord;
   }
 
   public async getAllUsers(query?: { search?: string; role?: string; status?: string }): Promise<UserRecord[]> {
-    let allUsers: UserRecord[] = [];
-    if (this.isPostgresConnected) {
-      try {
-        allUsers = (await prisma.user.findMany({ orderBy: { created_at: 'desc' } })) as UserRecord[];
-      } catch (err: any) {
-        logger.warn('Failed to query users from PostgreSQL, falling back to local memory store', { error: err.message });
-        allUsers = [...this.users];
+    try {
+      const whereClause: any = {};
+      if (query?.role && query.role !== 'ALL') {
+        whereClause.role = query.role.toUpperCase();
       }
-    } else {
-      allUsers = [...this.users];
-    }
+      if (query?.status && query.status !== 'ALL') {
+        whereClause.status = query.status.toUpperCase();
+      }
+      if (query?.search && query.search.trim() !== '') {
+        const q = query.search.trim();
+        whereClause.OR = [
+          { name: { contains: q, mode: 'insensitive' } },
+          { email: { contains: q, mode: 'insensitive' } },
+          { company_name: { contains: q, mode: 'insensitive' } },
+          { mobile_number: { contains: q } }
+        ];
+      }
 
-    if (!query) return allUsers;
-
-    let filtered = allUsers;
-    if (query.role && query.role !== 'ALL') {
-      filtered = filtered.filter((u) => u.role.toUpperCase() === query.role?.toUpperCase());
+      const users = await (prisma as any).user.findMany({
+        where: whereClause,
+        orderBy: { created_at: 'desc' }
+      });
+      return users as UserRecord[];
+    } catch (err: any) {
+      logger.error('Database query failed in getAllUsers', { query, error: err.message });
+      throw err;
     }
-    if (query.status && query.status !== 'ALL') {
-      filtered = filtered.filter((u) => u.status.toUpperCase() === query.status?.toUpperCase());
-    }
-    if (query.search) {
-      const q = query.search.trim().toLowerCase();
-      filtered = filtered.filter((u) =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.company_name.toLowerCase().includes(q) ||
-        u.mobile_number.includes(q)
-      );
-    }
-    return filtered;
   }
 
   public async updateUserStatus(id: string, status: string): Promise<UserRecord | null> {
     const validStatus = status.toUpperCase();
-    if (this.isPostgresConnected) {
-      try {
-        const updated = await prisma.user.update({
-          where: { id },
-          data: { status: validStatus }
-        });
-        const idx = this.users.findIndex((u) => u.id === id);
-        if (idx !== -1) this.users[idx] = { ...updated } as UserRecord;
-        return updated as UserRecord;
-      } catch (err: any) {
-        logger.warn('Failed to update user status in PostgreSQL, falling back to local memory store', { id, status: validStatus, error: err.message });
-      }
+    try {
+      const updated = await (prisma as any).user.update({
+        where: { id },
+        data: { status: validStatus }
+      });
+      return updated as UserRecord;
+    } catch (err: any) {
+      logger.error('Database query failed in updateUserStatus', { id, status: validStatus, error: err.message });
+      throw err;
     }
-
-    const found = this.users.find((u) => u.id === id);
-    if (!found) return null;
-    found.status = validStatus;
-    found.updated_at = new Date();
-    return { ...found };
   }
 }
 
