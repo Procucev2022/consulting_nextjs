@@ -5,7 +5,7 @@
 import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import { sanitizeUserProfile, verifyAuthToken } from '../utils/auth';
-import { adminUserQuerySchema, adminUpdateUserStatusSchema } from '../constants/validation';
+import { adminUserQuerySchema, adminUpdateUserStatusSchema, adminUpdateUserTierSchema } from '../constants/validation';
 import { AUTH_MESSAGES, AUTH_STATUS } from '../constants/auth';
 import logger from '../utils/logger';
 
@@ -47,8 +47,8 @@ export class AdminController {
       return;
     }
 
-    const { search, role, status } = parseResult.data;
-    const users = await db.getAllUsers({ search, role, status });
+    const { search, role, status, tier } = parseResult.data;
+    const users = await db.getAllUsers({ search, role, status, tier });
     const sanitized = users.map(sanitizeUserProfile);
 
     const activeCount = users.filter((u) => u.status === AUTH_STATUS.ACTIVE).length;
@@ -117,6 +117,56 @@ export class AdminController {
     res.json({
       success: true,
       message: AUTH_MESSAGES.STATUS_UPDATED,
+      user: sanitizeUserProfile(updated)
+    });
+  }
+
+  /**
+   * Update user subscription tier (e.g., BRONZE, SILVER, GOLD)
+   */
+  public async updateUserTier(req: Request, res: Response): Promise<void> {
+    const start = Date.now();
+    const requestId = req.headers['x-request-id'] as string | undefined;
+    const { id } = req.params;
+
+    if (!id || id.trim() === '') {
+      res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+      return;
+    }
+
+    const parseResult = adminUpdateUserTierSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: parseResult.error.issues
+      });
+      return;
+    }
+
+    const updated = await db.updateUserTier(id, parseResult.data.tier);
+    if (!updated) {
+      logger.warn('Failed to update user tier: user not found', { id, requestId });
+      res.status(404).json({
+        success: false,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      });
+      return;
+    }
+
+    logger.info('User subscription tier updated successfully by administrator', {
+      userId: updated.id,
+      newTier: updated.subscription_tier,
+      durationMs: Date.now() - start,
+      requestId
+    });
+
+    res.json({
+      success: true,
+      message: AUTH_MESSAGES.TIER_UPDATED,
       user: sanitizeUserProfile(updated)
     });
   }

@@ -9,18 +9,26 @@ import type {
   LoginFormData,
   AdminUserQuery,
   AdminUsersResponse,
-  UserStatus
+  UserStatus,
+  SubscriptionTier
 } from '../types';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
 import {
   registerFormSchema,
   loginFormSchema,
-  adminUserQuerySchema
+  adminUserQuerySchema,
+  adminUpdateUserTierSchema
 } from '../constants/validation';
 import { AUTH_STORAGE_KEYS, AUTH_API_ENDPOINTS } from '../constants/auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
+const setFilterParam = (params: URLSearchParams, key: string, value?: string): void => {
+  if (value && value !== 'ALL') {
+    params.set(key, value);
+  }
+};
 
 export const buildAdminUserQueryParams = (query?: AdminUserQuery): URLSearchParams => {
   const params = new URLSearchParams();
@@ -29,10 +37,11 @@ export const buildAdminUserQueryParams = (query?: AdminUserQuery): URLSearchPara
   const validation = validateInput(adminUserQuerySchema, query);
   if (!validation.success || !validation.data) return params;
 
-  const { search, role, status } = validation.data;
+  const { search, role, status, tier } = validation.data;
   if (search) params.set('search', search);
-  if (role && role !== 'ALL') params.set('role', role);
-  if (status && status !== 'ALL') params.set('status', status);
+  setFilterParam(params, 'role', role);
+  setFilterParam(params, 'status', status);
+  setFilterParam(params, 'tier', tier);
 
   return params;
 };
@@ -65,6 +74,25 @@ export const authApiClient = {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(AUTH_STORAGE_KEYS.CURRENT_USER);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+  },
+
+  getSimulatedTier(): SubscriptionTier | null {
+    if (typeof window === 'undefined') return null;
+    const val = localStorage.getItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+    if (val === 'BRONZE' || val === 'SILVER' || val === 'GOLD') {
+      return val;
+    }
+    return null;
+  },
+
+  setSimulatedTier(tier: SubscriptionTier | null): void {
+    if (typeof window === 'undefined') return;
+    if (tier) {
+      localStorage.setItem(AUTH_STORAGE_KEYS.SIMULATED_TIER, tier);
+    } else {
+      localStorage.removeItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+    }
   },
 
   // Register
@@ -180,5 +208,38 @@ export const authApiClient = {
       throw new Error(json.message || 'Failed to update user status');
     }
     return json;
+  },
+
+  // Admin: Update User Subscription Tier
+  async updateAdminUserTier(
+    id: string,
+    tier: SubscriptionTier,
+    token?: string
+  ): Promise<{ success: boolean; user: UserProfile }> {
+    frontendLogger.info('Updating user tier via admin portal', { id, tier });
+    const validation = validateInput(adminUpdateUserTierSchema, { tier });
+    if (!validation.success) {
+      throw new Error(`Validation failed: ${JSON.stringify(validation.errors)}`);
+    }
+
+    const authToken = token || authApiClient.getStoredToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+
+    const endpoint = AUTH_API_ENDPOINTS.ADMIN_USER_TIER(id);
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(validation.data)
+    });
+
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.message || 'Failed to update user subscription tier');
+    }
+    return json;
   }
 };
+

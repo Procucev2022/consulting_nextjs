@@ -8,7 +8,8 @@ import {
   Sun,
   Moon,
   Sparkles,
-  User
+  User,
+  Crown
 } from 'lucide-react';
 import type { HeaderProps } from '../types';
 import {
@@ -29,7 +30,10 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onSelectTheme,
   onStartAnalysis,
-  isAnalyzing
+  isAnalyzing,
+  currentTier = 'BRONZE',
+  onSelectSimulatedTier,
+  user
 }) => {
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-lg dark:shadow-black/20 transition-colors duration-200">
@@ -175,6 +179,48 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">{UI_STRINGS.header.executiveBrief}</span>
           </button>
 
+          {/* Subscription Tier Badge & Interactive Demo Switcher */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/70 rounded-xl p-0.5 text-xs">
+            <div
+              data-testid="subscription-tier-badge"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all ${
+                currentTier === 'GOLD'
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 font-black shadow-xs'
+                  : currentTier === 'SILVER'
+                  ? 'bg-gradient-to-r from-slate-200 to-slate-300 text-slate-900 font-bold shadow-xs'
+                  : 'bg-amber-900/40 text-amber-300 font-bold border border-amber-700/50'
+              }`}
+            >
+              {currentTier === 'GOLD' ? (
+                <Crown className="w-3.5 h-3.5 text-amber-950" />
+              ) : (
+                <Sparkles className="w-3.5 h-3.5" />
+              )}
+              <span>{UI_STRINGS.subscription.tierBadge(currentTier)}</span>
+            </div>
+
+            {onSelectSimulatedTier && (
+              <div className="flex items-center gap-0.5 ml-1">
+                {(['BRONZE', 'SILVER', 'GOLD'] as const).map((tier) => (
+                  <button
+                    key={tier}
+                    type="button"
+                    data-testid={`demo-tier-${tier.toLowerCase()}`}
+                    onClick={() => onSelectSimulatedTier(tier)}
+                    className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${
+                      currentTier === tier
+                        ? 'bg-cyan-600 text-white shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    }`}
+                    title={UI_STRINGS.subscription.simulationActive(tier)}
+                  >
+                    {tier[0] + tier.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Admin Directory Navigation */}
           <Link
             href="/admin"
@@ -188,11 +234,11 @@ export const Header: React.FC<HeaderProps> = ({
           {/* User Sign In / Account Navigation */}
           <Link
             href="/login"
-            title={UI_STRINGS.auth.pageTitle}
+            title={user ? user.name : UI_STRINGS.auth.pageTitle}
             className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-xs"
           >
             <User className="w-3.5 h-3.5 text-cyan-500" />
-            <span className="hidden sm:inline">{UI_STRINGS.auth.signInTab}</span>
+            <span className="hidden sm:inline">{user ? user.name.split(' ')[0] : UI_STRINGS.auth.signInTab}</span>
           </Link>
         </div>
       </div>

@@ -13,6 +13,12 @@ export const AUTH_STATUS = {
   PENDING: 'PENDING'
 } as const;
 
+export const SUBSCRIPTION_TIERS = {
+  BRONZE: 'BRONZE',
+  SILVER: 'SILVER',
+  GOLD: 'GOLD'
+} as const;
+
 export const AUTH_TOKEN_EXPIRY_SECONDS = 86400; // 24 hours
 
 export const AUTH_MESSAGES = {
@@ -24,5 +30,6 @@ export const AUTH_MESSAGES = {
   UNAUTHORIZED: 'Authentication required. Missing or invalid authorization token.',
   FORBIDDEN_ADMIN_ONLY: 'Access denied: Administrator privileges required',
   USER_NOT_FOUND: 'Requested user account not found',
-  STATUS_UPDATED: 'User status updated successfully'
+  STATUS_UPDATED: 'User status updated successfully',
+  TIER_UPDATED: 'User subscription tier updated successfully'
 } as const;

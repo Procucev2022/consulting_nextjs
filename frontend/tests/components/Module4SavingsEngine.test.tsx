@@ -119,4 +119,51 @@ describe('Module4SavingsEngine Component', () => {
     fireEvent.click(ctaBtn);
     expect(onProceed).toHaveBeenCalled();
   });
+
+  it('renders masked overlay for Bronze customer and handles upgrade to silver', () => {
+    const onUpgrade = vi.fn();
+    render(
+      <Module4SavingsEngine
+        opportunities={mockSavingsOpportunities}
+        onOpenProCPX={vi.fn()}
+        onOpenDPSNXT={vi.fn()}
+        onProceedToConversion={vi.fn()}
+        currentTier="BRONZE"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('SILVER');
+  });
+
+  it('renders total savings value for Silver customer and masks opportunity pipeline with Gold upgrade trigger', () => {
+    const onUpgrade = vi.fn();
+    const onProceed = vi.fn();
+    render(
+      <Module4SavingsEngine
+        opportunities={mockSavingsOpportunities}
+        onOpenProCPX={vi.fn()}
+        onOpenDPSNXT={vi.fn()}
+        onProceedToConversion={onProceed}
+        currentTier="SILVER"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.module4.heading)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.subscription.savingsWhereLockedTitle)).toBeInTheDocument();
+
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToGold, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('GOLD');
+
+    const ctaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module4.ctaProceedButton, 'i') });
+    fireEvent.click(ctaBtn);
+    expect(onProceed).toHaveBeenCalled();
+  });
 });
+

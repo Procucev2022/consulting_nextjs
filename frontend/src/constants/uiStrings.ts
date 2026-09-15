@@ -231,6 +231,10 @@ export const UI_STRINGS = {
     subtitle: 'SAP, Oracle & Infor Ingestion Pipeline with Pre-Categorization Remediation',
     badge: 'Module 1: Document Ingestion & Multi-Currency ETL',
     fxEngineActive: 'Multi-Currency FX Engine Active',
+    multiCurrencyActive: 'Multi-Currency FX Engine Active',
+    liveFxRatesLabel: 'Live FX Benchmark Conversion Rates to INR:',
+    activeTenant: 'Enterprise Client:',
+    industrySector: 'Industry Sector:',
     heading: '3-Year Multi-Currency Ingestion & FX Normalization',
     description: 'Ingests multiple foreign currencies (USD, EUR, GBP, AED, JPY, SGD), applies historical time-series FX conversion rates, and normalizes all spend into INR in Crores (₹ Cr).',
     uploadedFileDetails: 'Uploaded Procurement File Details',
@@ -1980,6 +1984,12 @@ export const UI_STRINGS = {
     adminAccounts: 'Administrators',
     uniqueCompanies: 'Registered Companies',
     searchPlaceholder: 'Search by user name, organization email, company name, or mobile number...',
+    filterTier: 'Subscription Tier',
+    allTiers: 'All Tiers',
+    colTier: 'Subscription Tier',
+    changeTier: 'Change Tier',
+    tierSelectPrompt: 'Select New Tier',
+    tierUpdateSuccess: (name: string, tier: string) => `Subscription tier for "${name}" updated to ${tier}.`,
     filterRole: 'Role',
     filterStatus: 'Status',
     allRoles: 'All Roles',
@@ -2004,6 +2014,48 @@ export const UI_STRINGS = {
     accessDenied: 'Access Restricted: Administrator credentials required to view the user registry.',
     signInAsAdmin: 'Sign In as Administrator',
     userCountLabel: (count: number) => `${count} Registered Users`
+  },
+
+  subscription: {
+    tierBronze: 'Bronze Tier',
+    tierSilver: 'Silver Tier',
+    tierGold: 'Gold Tier',
+    tierBronzeBadge: 'BRONZE CUSTOMER',
+    tierSilverBadge: 'SILVER CUSTOMER',
+    tierGoldBadge: 'GOLD CUSTOMER',
+    tierBadge: (tier: string) => `${tier} CUSTOMER`,
+    bronzeNotice:
+      'You are currently on the Bronze Tier. Data upload and preliminary savings availability indication are active. Granular analytics, category insights, trend analysis, and execution engines are locked.',
+    silverNotice:
+      'You are on the Silver Tier. Summary levels and macro indicators are visible. Transactional SKU breakdowns, supplier details, and specific savings generation levers are locked.',
+    goldNotice:
+      'You are on the Gold Tier with full unrestricted access to all modules, SKU diagnostics, supplier scorecards, and savings execution engines.',
+    savingsAvailableHeading: 'Preliminary Savings Potential Detected',
+    savingsAvailableYes: 'Savings Available: YES',
+    savingsAvailableYesDesc:
+      'Our autonomous diagnostics have detected immediate EBITDA savings opportunities in your uploaded dataset. Upgrade to Silver or Gold to unlock the detailed breakdown.',
+    savingsAvailableSummaryOnly: 'High-Level Assessment Only (Bronze Tier)',
+    stageMaskedTitle: (stage: string) => `${stage} Locked`,
+    stageMaskedBronzeDesc:
+      'This analysis requires Silver or Gold customer tier access. Your current Bronze tier provides preliminary ingestion analysis only.',
+    stageMaskedSilverDesc:
+      'Granular SKU-level insights and specific generation targets are masked on Silver tier. Upgrade to Gold to access full strategic sourcing levers.',
+    upgradeToSilver: 'Upgrade to Silver',
+    upgradeToGold: 'Upgrade to Gold Customer',
+    upgradeCta: 'Unlock Full Savings Intelligence',
+    savingsTotalValueTitle: 'Total Addressable Savings Potential',
+    savingsWhereLockedTitle: 'Savings Generation Levers & Opportunity Targets Masked',
+    savingsWhereLockedNote:
+      'Savings Generation Locations & Opportunity Details Masked for Silver Tier. Upgrade to Gold to access specific suppliers, contracts, and deployment actions.',
+    demoSwitcherLabel: 'Tier Demo Switcher:',
+    switchToBronze: 'Switch to Bronze',
+    switchToSilver: 'Switch to Silver',
+    switchToGold: 'Switch to Gold',
+    simulationActive: (tier: string) => `Simulating ${tier} Tier`,
+    resetSimulation: 'Reset Simulation',
+    bronzeBadgeText: 'BRONZE',
+    silverBadgeText: 'SILVER',
+    goldBadgeText: 'GOLD'
   }
 } as const;
 

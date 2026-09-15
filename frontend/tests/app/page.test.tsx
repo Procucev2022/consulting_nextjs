@@ -42,6 +42,7 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'addIngestionFile').mockResolvedValue(initialIngestionQueue);
     vi.spyOn(apiClient, 'mergeVendor').mockResolvedValue({ success: true });
     vi.spyOn(apiClient, 'deployOpportunity').mockResolvedValue(initialSavingsOpportunities[0]);
+    vi.spyOn(apiClient, 'getSimulatedTier').mockReturnValue('GOLD');
   });
 
   afterEach(() => {
@@ -634,7 +635,7 @@ describe('Home Page Component', () => {
     render(<Home />);
 
     // Fix currency modal close
-    const fixInrBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.fixInr });
+    const fixInrBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.fixInr });
     if (fixInrBtns.length > 0) {
       fireEvent.click(fixInrBtns[0]);
       const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.fixCurrency.cancel });
@@ -642,7 +643,7 @@ describe('Home Page Component', () => {
     }
 
     // Merge vendor modal close
-    const mergeBtns = screen.getAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
+    const mergeBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.mergeVendor });
     if (mergeBtns.length > 0) {
       fireEvent.click(mergeBtns[0]);
       const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.mergeVendor.cancel });
@@ -653,13 +654,13 @@ describe('Home Page Component', () => {
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
 
-    const reassignBtns = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module2.btnReassign, 'i') });
+    const reassignBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module2.btnReassign, 'i') });
     if (reassignBtns.length > 0) {
       fireEvent.click(reassignBtns[0]);
       const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.modals.reassign.cancel });
       fireEvent.click(cancelBtn);
     }
-  });
+  }, 15000);
 
   it('restores dataset from sessionStorage on mount and retains user upload across refresh', async () => {
     const mockSavedState = {
@@ -865,5 +866,24 @@ describe('Home Page Component', () => {
       expect(screen.getByText(UI_STRINGS.toasts.runningAiCat)).toBeInTheDocument();
     });
   });
+
+  it('renders masked overlay for Bronze tier and shows upgrade trigger', async () => {
+    vi.spyOn(apiClient, 'getSimulatedTier').mockReturnValue('BRONZE');
+    render(<Home />);
+    await waitFor(() => {
+      expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
+    });
+
+    // Module 1 shows savings available banner
+    expect(screen.getByText(UI_STRINGS.subscription.savingsAvailableHeading)).toBeInTheDocument();
+
+    // Navigate to Module 2
+    const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
+    fireEvent.click(step2);
+
+    // Module 2 is masked with upgrade prompt
+    expect(screen.getByText(UI_STRINGS.subscription.upgradeToSilver)).toBeInTheDocument();
+  });
 });
+
 

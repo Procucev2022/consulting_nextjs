@@ -114,6 +114,61 @@ describe('Header Component', () => {
     expect(loginLink).toBeInTheDocument();
     expect(loginLink).toHaveAttribute('href', '/login');
   });
+
+  it('renders subscription tier badge and interactive demo switcher', () => {
+    const onSelectSimulatedTier = vi.fn();
+    const { rerender } = render(
+      <Header
+        {...defaultProps}
+        currentTier="BRONZE"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+
+    expect(screen.getByTestId('subscription-tier-badge')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('BRONZE'))).toBeInTheDocument();
+
+    const silverBtn = screen.getByTestId('demo-tier-silver');
+    fireEvent.click(silverBtn);
+    expect(onSelectSimulatedTier).toHaveBeenCalledWith('SILVER');
+
+    rerender(
+      <Header
+        {...defaultProps}
+        currentTier="GOLD"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('GOLD'))).toBeInTheDocument();
+
+    rerender(
+      <Header
+        {...defaultProps}
+        currentTier="SILVER"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('SILVER'))).toBeInTheDocument();
+  });
+
+  it('renders logged in user first name when user is passed', () => {
+    const mockUser = {
+      id: 'usr-1',
+      name: 'Rohan Sharma',
+      mobile_number: '+91 99999 11111',
+      email: 'rohan@enterprise.com',
+      company_name: 'Enterprise Co',
+      company_address: '123 Tech Park',
+      role: 'USER' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'SILVER' as const,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z'
+    };
+
+    render(<Header {...defaultProps} user={mockUser} />);
+    expect(screen.getByText('Rohan')).toBeInTheDocument();
+  });
 });
 
 

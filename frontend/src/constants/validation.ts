@@ -158,5 +158,12 @@ export const loginFormSchema = z.object({
 export const adminUserQuerySchema = z.object({
   search: z.string().optional(),
   role: z.enum(['ALL', 'USER', 'ADMIN']).optional(),
-  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED', 'PENDING']).optional()
+  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED', 'PENDING']).optional(),
+  tier: z.enum(['ALL', 'BRONZE', 'SILVER', 'GOLD']).optional()
 });
+
+// Admin Update User Tier Schema
+export const adminUpdateUserTierSchema = z.object({
+  tier: z.enum(['BRONZE', 'SILVER', 'GOLD'])
+});
+

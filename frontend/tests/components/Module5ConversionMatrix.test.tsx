@@ -69,4 +69,23 @@ describe('Module5ConversionMatrix Component', () => {
     fireEvent.click(openReportBtn);
     expect(onOpenReport).toHaveBeenCalled();
   });
+
+  it('renders masked overlay for Bronze customer and handles upgrade to silver', () => {
+    const onUpgrade = vi.fn();
+    render(
+      <Module5ConversionMatrix
+        tenant={mockTenant}
+        funnelStages={mockConversionFunnel}
+        onOpenReport={vi.fn()}
+        currentTier="BRONZE"
+        onUpgrade={onUpgrade}
+      />
+    );
+
+    const upgradeBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
+    expect(upgradeBtn).toBeInTheDocument();
+    fireEvent.click(upgradeBtn);
+    expect(onUpgrade).toHaveBeenCalledWith('SILVER');
+  });
 });
+

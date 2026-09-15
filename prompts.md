@@ -545,3 +545,21 @@ Correct this
 
 ## Prompt 70
 Make logo in bigger size, remove engine 2.0. Write "Tech Enabled Strategic Sourcing Suite"
+
+---
+
+## Prompt 71
+Let us create 3 types of subscription for the customer.i.e braonze, silver and gold. Any customer as soon as he registers, he will become bronze customer. He can upload the data and can see only the summary that whether savings available for them or not. He can't see any other information. It should show the first page of data upload and analysis and then details on all other pages to be masked. The second one is Silver customer. Here, he can see the complete first page, summary levels on the second page and trend analysis only at the summary level and final savings engine as well summary level. He can see what is total value of savings but can't see where he can generate savings. third one is Gold customer. He will be able to access everything in this software
+
+---
+
+## Prompt 72
+complete the task in progress and run locally
+
+---
+
+## Prompt 73
+In the Bronze package, let us show the complete Data ingestion and deep dive analysis along with savings available page. But from AI categorization, you can mask and proceed as per the current plan
+
+
+

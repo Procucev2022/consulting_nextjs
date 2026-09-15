@@ -221,10 +221,13 @@ export const apiClient = {
   getMe: authApiClient.getMe.bind(authApiClient),
   getAdminUsers: authApiClient.getAdminUsers.bind(authApiClient),
   updateAdminUserStatus: authApiClient.updateAdminUserStatus.bind(authApiClient),
+  updateAdminUserTier: authApiClient.updateAdminUserTier.bind(authApiClient),
   getStoredToken: authApiClient.getStoredToken.bind(authApiClient),
   getStoredUser: authApiClient.getStoredUser.bind(authApiClient),
   setStoredSession: authApiClient.setStoredSession.bind(authApiClient),
-  clearStoredSession: authApiClient.clearStoredSession.bind(authApiClient)
+  clearStoredSession: authApiClient.clearStoredSession.bind(authApiClient),
+  getSimulatedTier: authApiClient.getSimulatedTier.bind(authApiClient),
+  setSimulatedTier: authApiClient.setSimulatedTier.bind(authApiClient)
 };
 
 

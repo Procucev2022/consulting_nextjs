@@ -4,6 +4,7 @@
 
 export type UserRole = 'USER' | 'ADMIN';
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING';
+export type SubscriptionTier = 'BRONZE' | 'SILVER' | 'GOLD';
 
 export interface UserProfile {
   id: string;
@@ -14,6 +15,7 @@ export interface UserProfile {
   company_address: string;
   role: UserRole;
   status: UserStatus;
+  subscription_tier: SubscriptionTier;
   created_at: string;
   updated_at: string;
 }
@@ -45,6 +47,7 @@ export interface AdminUserQuery {
   search?: string;
   role?: 'ALL' | UserRole;
   status?: 'ALL' | UserStatus;
+  tier?: 'ALL' | SubscriptionTier;
 }
 
 export interface AdminUsersResponse {
@@ -55,8 +58,13 @@ export interface AdminUsersResponse {
   suspendedCount: number;
   adminCount: number;
   companiesCount: number;
+  tierCounts?: Record<SubscriptionTier, number>;
 }
 
 export interface AdminUpdateStatusPayload {
   status: UserStatus;
+}
+
+export interface AdminUpdateTierPayload {
+  tier: SubscriptionTier;
 }

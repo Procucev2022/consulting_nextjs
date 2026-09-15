@@ -5,14 +5,7 @@
 import crypto from 'crypto';
 import { encryptField, decryptField } from './encryption';
 import { AUTH_TOKEN_EXPIRY_SECONDS } from '../constants/auth';
-import type { UserProfileResponse, UserRecord } from '../types/auth';
-
-export interface TokenPayload {
-  userId: string;
-  email: string;
-  role: string;
-  exp: number;
-}
+import type { UserProfileResponse, UserRecord, TokenPayload } from '../types/auth';
 
 /**
  * Hash a plaintext password with a random 16-byte salt using PBKDF2-SHA512.
@@ -47,11 +40,17 @@ export function verifyPassword(password: string, storedHash: string): boolean {
 /**
  * Generates an encrypted AES-256-GCM session token for authenticated users.
  */
-export function generateAuthToken(userId: string, email: string, role: string): string {
+export function generateAuthToken(
+  userId: string,
+  email: string,
+  role: string,
+  tier: string = 'BRONZE'
+): string {
   const payload: TokenPayload = {
     userId,
     email,
     role,
+    tier,
     exp: Date.now() + AUTH_TOKEN_EXPIRY_SECONDS * 1000
   };
   return encryptField(payload);
@@ -101,6 +100,7 @@ export function sanitizeUserProfile(user: UserRecord | Partial<UserRecord>): Use
     company_address: user.company_address || '',
     role: user.role || 'USER',
     status: user.status || 'ACTIVE',
+    subscription_tier: user.subscription_tier || 'BRONZE',
     created_at: formatTimestamp(user.created_at),
     updated_at: formatTimestamp(user.updated_at)
   };

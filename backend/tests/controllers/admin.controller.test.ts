@@ -150,4 +150,62 @@ describe('Admin Controller Integration Tests', () => {
 
     expect(res.status).toBe(404);
   });
+
+  it('should filter users by subscription tier', async () => {
+    const res = await request(app)
+      .get('/api/admin/users?tier=BRONZE')
+      .set('Authorization', `Bearer ${adminToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.users.every((u: any) => u.subscription_tier === 'BRONZE')).toBe(true);
+  });
+
+  it('should update user subscription tier to GOLD and BRONZE', async () => {
+    // 1. Upgrade user to GOLD
+    const res = await request(app)
+      .patch('/api/admin/users/usr-user-002/tier')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ tier: 'GOLD' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.user.subscription_tier).toBe('GOLD');
+
+    // 2. Downgrade back to SILVER
+    const resSilver = await request(app)
+      .patch('/api/admin/users/usr-user-002/tier')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ tier: 'SILVER' });
+
+    expect(resSilver.status).toBe(200);
+    expect(resSilver.body.user.subscription_tier).toBe('SILVER');
+  });
+
+  it('should return 400 if user tier update payload is invalid', async () => {
+    const res = await request(app)
+      .patch('/api/admin/users/usr-user-001/tier')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ tier: 'DIAMOND' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('should return 400 when updating tier with blank user id', async () => {
+    const res = await request(app)
+      .patch('/api/admin/users/%20/tier')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ tier: 'GOLD' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('should return 404 when updating tier of non-existent user', async () => {
+    const res = await request(app)
+      .patch('/api/admin/users/usr-does-not-exist/tier')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ tier: 'GOLD' });
+
+    expect(res.status).toBe(404);
+  });
 });

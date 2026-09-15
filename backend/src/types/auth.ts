@@ -4,6 +4,15 @@
 
 export type UserRole = 'USER' | 'ADMIN';
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'PENDING';
+export type SubscriptionTier = 'BRONZE' | 'SILVER' | 'GOLD';
+
+export interface TokenPayload {
+  userId: string;
+  email: string;
+  role: string;
+  tier?: string;
+  exp: number;
+}
 
 export interface UserRecord {
   id: string;
@@ -15,6 +24,7 @@ export interface UserRecord {
   password_hash: string;
   role: string;
   status: string;
+  subscription_tier: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -28,6 +38,7 @@ export interface UserProfileResponse {
   company_address: string;
   role: string;
   status: string;
+  subscription_tier: string;
   created_at: string;
   updated_at: string;
 }

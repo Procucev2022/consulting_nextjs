@@ -630,7 +630,8 @@ export class DatabaseStore {
             company_address: newRecord.company_address,
             password_hash: newRecord.password_hash,
             role: newRecord.role,
-            status: newRecord.status
+            status: newRecord.status,
+            subscription_tier: newRecord.subscription_tier || 'BRONZE'
           }
         });
         this.users.push({ ...created });
@@ -644,7 +645,9 @@ export class DatabaseStore {
     return newRecord;
   }
 
-  public async getAllUsers(query?: { search?: string; role?: string; status?: string }): Promise<UserRecord[]> {
+  public async getAllUsers(
+    query?: { search?: string; role?: string; status?: string; tier?: string }
+  ): Promise<UserRecord[]> {
     let allUsers: UserRecord[] = [];
     if (this.isPostgresConnected) {
       try {
@@ -658,13 +661,22 @@ export class DatabaseStore {
     }
 
     if (!query) return allUsers;
+    return this.filterUserList(allUsers, query);
+  }
 
-    let filtered = allUsers;
+  private filterUserList(
+    users: UserRecord[],
+    query: { search?: string; role?: string; status?: string; tier?: string }
+  ): UserRecord[] {
+    let filtered = users;
     if (query.role && query.role !== 'ALL') {
       filtered = filtered.filter((u) => u.role.toUpperCase() === query.role?.toUpperCase());
     }
     if (query.status && query.status !== 'ALL') {
       filtered = filtered.filter((u) => u.status.toUpperCase() === query.status?.toUpperCase());
+    }
+    if (query.tier && query.tier !== 'ALL') {
+      filtered = filtered.filter((u) => u.subscription_tier?.toUpperCase() === query.tier?.toUpperCase());
     }
     if (query.search) {
       const q = query.search.trim().toLowerCase();
@@ -697,6 +709,29 @@ export class DatabaseStore {
     const found = this.users.find((u) => u.id === id);
     if (!found) return null;
     found.status = validStatus;
+    found.updated_at = new Date();
+    return { ...found };
+  }
+
+  public async updateUserTier(id: string, tier: string): Promise<UserRecord | null> {
+    const validTier = tier.toUpperCase();
+    if (this.isPostgresConnected) {
+      try {
+        const updated = await prisma.user.update({
+          where: { id },
+          data: { subscription_tier: validTier }
+        });
+        const idx = this.users.findIndex((u) => u.id === id);
+        if (idx !== -1) this.users[idx] = { ...updated } as UserRecord;
+        return updated as UserRecord;
+      } catch (err: any) {
+        logger.warn('Failed to update user tier in PostgreSQL, falling back to local memory store', { id, tier: validTier, error: err.message });
+      }
+    }
+
+    const found = this.users.find((u) => u.id === id);
+    if (!found) return null;
+    found.subscription_tier = validTier;
     found.updated_at = new Date();
     return { ...found };
   }

@@ -1,12 +1,10 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import {
-  FileSpreadsheet,
   TrendingUp,
-  Receipt,
-  Scale,
   Settings,
-  Globe
+  Globe,
+  CheckCircle2
 } from 'lucide-react';
 import type {
   Module1IngestionProps,
@@ -39,7 +37,9 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   onMergeItem,
   isDataRefreshed,
   paretoSpendData,
-  onRefreshWithFixes
+  onRefreshWithFixes,
+  currentTier = 'GOLD',
+  onUpgrade
 }) => {
   const [dragActive, setDragActive] = useState(false);
 
@@ -110,6 +110,12 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
     }, 250);
   };
 
+  const handleUpgradeToSilver = () => {
+    if (onUpgrade) {
+      onUpgrade('SILVER');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Module Title Banner */}
@@ -121,16 +127,17 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             </span>
             <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60 flex items-center space-x-1">
               <TrendingUp className="w-3 h-3 inline" />
-              <span>{UI_STRINGS.module1.fxEngineActive}</span>
+              <span>{UI_STRINGS.module1.multiCurrencyActive}</span>
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-            {UI_STRINGS.module1.heading}
+            {UI_STRINGS.module1.title}
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
             {UI_STRINGS.module1.description}
           </p>
         </div>
+
         <div className="flex items-center space-x-3 shrink-0">
           <button
             onClick={handleOpenSetupModal}
@@ -142,11 +149,11 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         </div>
       </div>
 
-      {/* Multi-Currency FX Live Tickers & Normalization Ticker Bar */}
+      {/* Live FX Rates Bar */}
       <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 shrink-0">
           <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="font-bold text-slate-900 dark:text-white">Live FX Benchmark Conversion Rates to INR:</span>
+          <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxRatesLabel}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] overflow-x-auto">
           {Object.entries(yahooFinanceFXRates)
@@ -164,55 +171,50 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         </div>
       </div>
 
-      {/* Active Ingestion Session Metadata Card */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs glass-card">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-500 font-medium">Enterprise Client:</span>
-              <span className="font-bold text-slate-900 dark:text-white flex items-center space-x-1">
-                <Settings className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-                <span>{tenant.enterprise_name}</span>
-              </span>
-            </div>
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-500 font-medium">Dataset Type:</span>
-              <span className={`font-bold px-2 py-0.5 rounded border text-[11px] flex items-center space-x-1 ${
-                activeDatasetType === 'Purchase History'
-                  ? 'bg-cyan-100 text-cyan-800 border-cyan-300 dark:bg-cyan-950 dark:text-cyan-400 dark:border-cyan-800'
-                  : activeDatasetType === 'Invoice Data'
-                  ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-800'
-                  : 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800'
-              }`}>
-                {activeDatasetType === 'Purchase History' && <FileSpreadsheet className="w-3 h-3" />}
-                {activeDatasetType === 'Invoice Data' && <Receipt className="w-3 h-3" />}
-                {activeDatasetType === 'Trial Balance' && <Scale className="w-3 h-3" />}
-                <span>{activeDatasetType}</span>
-              </span>
-            </div>
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-500 font-medium">Evaluation Window:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{spendPeriod}</span>
-            </div>
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-            <div className="flex items-center space-x-2">
-              <span className="text-slate-500 font-medium">Reporting Base:</span>
-              <span className="font-mono font-black text-emerald-700 dark:text-emerald-400">
-                INR in Crores (₹ Cr)
-              </span>
-            </div>
+      {/* Ingestion Meta Dashboard Strip */}
+      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-500 font-medium">{UI_STRINGS.module1.activeTenant}</span>
+            <span className="font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800/60">
+              {tenant?.enterprise_name || 'Global Chemicals Corp.'}
+            </span>
           </div>
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-500 font-medium">{UI_STRINGS.module1.industrySector}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              {tenant?.major_sector || 'Chemical & Petrochemicals'} - {tenant?.minor_sector || 'Specialty Chemicals'}
+            </span>
+          </div>
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-500 font-medium">Dataset Type:</span>
+            <span className="font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/60">
+              {activeDatasetType}
+            </span>
+          </div>
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-500 font-medium">Evaluation Window:</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{spendPeriod}</span>
+          </div>
+          <span className="text-slate-300 dark:text-slate-700">|</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-500 font-medium">Reporting Base:</span>
+            <span className="font-mono font-black text-emerald-700 dark:text-emerald-400">
+              INR in Crores (₹ Cr)
+            </span>
+          </div>
+        </div>
 
-          <div className="flex items-center space-x-2 shrink-0">
-            <button
-              onClick={handleOpenSetupModal}
-              className="text-xs text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 font-bold underline"
-            >
-              {UI_STRINGS.module1.changeDetails}
-            </button>
-          </div>
+        <div className="flex items-center space-x-2 shrink-0">
+          <button
+            onClick={handleOpenSetupModal}
+            className="text-xs text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 font-bold underline"
+          >
+            {UI_STRINGS.module1.changeDetails}
+          </button>
         </div>
       </div>
 
@@ -229,6 +231,41 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         totalEvaluatedSpendInrCr={totalEvaluatedSpendInrCr}
         onOpenSetupModal={handleOpenSetupModal}
       />
+
+      {/* Bronze Tier Savings Availability Summary Card */}
+      {currentTier === 'BRONZE' && (
+        <div
+          data-testid="bronze-savings-availability-summary"
+          className="p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900/90 to-sky-950/40 border border-emerald-500/40 shadow-xl backdrop-blur-sm"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
+                  {UI_STRINGS.subscription.savingsAvailableHeading}
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                <span>{UI_STRINGS.subscription.savingsAvailableYes}</span>
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                {UI_STRINGS.subscription.savingsAvailableYesDesc}
+              </p>
+            </div>
+            <div className="shrink-0">
+              <button
+                type="button"
+                onClick={handleUpgradeToSilver}
+                className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 border border-cyan-300/40 transition-all active:scale-95 cursor-pointer"
+              >
+                {UI_STRINGS.subscription.upgradeToSilver}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Uploaded Document Summary Component */}
       <DocumentSummaryView
