@@ -612,3 +612,856 @@ Whenever you deploy these kinds of applications, please just any one backend rel
 ## Prompt 83
 Deploy in cloudflare and Also, please setup CI/CD in github to automatically deploy these application in cloudflare
 
+---
+
+## Prompt 84
+# GitHub CI/CD + Cloudflare Deployment Setup — Consulting Application
+
+## Project Information
+
+Repository:
+
+`https://github.com/Procucev2022/consulting_nextjs.git`
+
+Application:
+
+**Procucev Consulting Portal**
+
+Production URL:
+
+`https://procucev-consulting-portal.pages.dev/`
+
+Technology:
+
+* Next.js frontend
+* Node.js backend
+* PostgreSQL database
+* GitHub
+* Cloudflare Pages
+* Wrangler
+* GitHub Actions
+
+The repository is a monorepo:
+
+```text
+consulting_nextjs/
+├── frontend/
+├── backend/
+├── scripts/
+├── package.json
+├── docker-compose.yml
+└── ...
+```
+
+The root `package.json` already contains:
+
+```json
+"deploy:cloudflare": "node scripts/deploy-cloudflare.js",
+"deploy": "node scripts/deploy-cloudflare.js"
+```
+
+The existing deployment script is:
+
+```text
+scripts/deploy-cloudflare.js
+```
+
+It currently:
+
+1. Runs pre-flight checks.
+2. Builds the Next.js frontend in static export mode.
+3. Deploys `frontend/out` to Cloudflare Pages using Wrangler.
+4. Runs post-deployment operations verification.
+5. Displays the production URL.
+
+---
+
+# MAIN OBJECTIVE
+
+Implement a **production-ready GitHub CI/CD pipeline** for the Consulting application.
+
+The desired flow is:
+
+```text
+Feature Branch
+      ↓
+Pull Request
+      ↓
+GitHub Actions CI
+      ↓
+Install Dependencies
+      ↓
+Lint
+      ↓
+Typecheck
+      ↓
+Build Frontend
+      ↓
+Build Backend
+      ↓
+Tests
+      ↓
+Code Review
+      ↓
+Merge to develop
+      ↓
+Testing
+      ↓
+Pull Request to main
+      ↓
+Approval
+      ↓
+Merge to main
+      ↓
+GitHub Actions Production Deployment
+      ↓
+Cloudflare Pages
+      ↓
+https://procucev-consulting-portal.pages.dev/
+```
+
+Do NOT unnecessarily migrate the existing application from Cloudflare Pages to Cloudflare Workers.
+
+First inspect the current project and determine whether the existing static-export architecture is valid.
+
+---
+
+# IMPORTANT SAFETY REQUIREMENTS
+
+## 1. Do NOT break production
+
+The existing production application is:
+
+`https://procucev-consulting-portal.pages.dev/`
+
+Do not change Cloudflare project settings, production configuration, domains, routing, or deployment architecture unless absolutely required.
+
+Do not delete or recreate the Cloudflare project.
+
+Do not perform destructive database operations.
+
+Do not modify PostgreSQL production data.
+
+Do not automatically deploy experimental changes to production.
+
+---
+
+## 2. Inspect before modifying
+
+Before making changes, inspect:
+
+```text
+package.json
+frontend/package.json
+backend/package.json
+frontend/next.config.*
+scripts/deploy-cloudflare.js
+scripts/fast-check.js
+scripts/verify-deployment-operations.js
+docker-compose.yml
+.gitignore
+.github/
+```
+
+Also inspect:
+
+```bash
+git branch -a
+git status
+```
+
+Determine the current branch structure.
+
+Do not assume that `main` and `develop` already exist.
+
+---
+
+# 3. Verify Next.js configuration
+
+Inspect:
+
+```text
+frontend/next.config.js
+frontend/next.config.mjs
+frontend/next.config.ts
+```
+
+depending on which file exists.
+
+Determine whether the project uses:
+
+```js
+output: 'export'
+```
+
+or another static-export configuration.
+
+The existing Cloudflare deployment script expects:
+
+```text
+frontend/out
+```
+
+to exist after the frontend build.
+
+Verify that:
+
+```bash
+cd frontend
+npm run build
+```
+
+successfully generates:
+
+```text
+frontend/out/
+```
+
+Do not change the Next.js configuration just to make CI pass.
+
+If the current application uses dynamic Next.js features that are incompatible with static export, stop and clearly report the issue before making architectural changes.
+
+---
+
+# 4. Inspect the existing Cloudflare deployment script
+
+Read:
+
+```text
+scripts/deploy-cloudflare.js
+```
+
+The existing script uses:
+
+```text
+CF_PAGES_PROJECT
+CF_PAGES_BRANCH
+CLOUDFLARE_ACCOUNT_ID
+CLOUDFLARE_API_TOKEN
+```
+
+and executes Wrangler:
+
+```text
+wrangler pages deploy out
+```
+
+Reuse this existing deployment mechanism rather than creating a completely separate deployment implementation.
+
+---
+
+# SECURITY REQUIREMENT
+
+The current deployment script contains a hardcoded Cloudflare Account ID fallback similar to:
+
+```js
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '...';
+```
+
+Remove the hardcoded account ID fallback.
+
+Change it to require the environment variable:
+
+```js
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+
+if (!accountId) {
+  throw new Error('CLOUDFLARE_ACCOUNT_ID is not configured');
+}
+```
+
+Do NOT hardcode:
+
+```text
+CLOUDFLARE_API_TOKEN
+```
+
+or any other secret.
+
+Never commit API tokens, passwords, database credentials, JWT secrets, or `.env` secrets.
+
+---
+
+# GITHUB ACTIONS ARCHITECTURE
+
+Create:
+
+```text
+.github/
+└── workflows/
+    ├── ci.yml
+    └── deploy-production.yml
+```
+
+Do not create unnecessary duplicate workflows.
+
+---
+
+# CI WORKFLOW
+
+Create:
+
+```text
+.github/workflows/ci.yml
+```
+
+The CI workflow must run on:
+
+```text
+pull_request:
+  branches:
+    - main
+    - develop
+
+push:
+  branches:
+    - main
+    - develop
+```
+
+Use:
+
+```text
+ubuntu-latest
+```
+
+and Node.js 20 unless the existing project explicitly requires another supported version.
+
+CI should:
+
+1. Checkout repository.
+2. Setup Node.js.
+3. Install root dependencies.
+4. Install frontend dependencies.
+5. Install backend dependencies.
+6. Run lint.
+7. Run typecheck.
+8. Build frontend.
+9. Build backend.
+10. Run appropriate CI tests.
+
+Prefer existing npm scripts instead of inventing new scripts.
+
+Available root scripts include:
+
+```text
+npm run build
+npm run build:frontend
+npm run build:backend
+npm run test
+npm run test:coverage
+npm run test:ci
+npm run lint
+npm run typecheck
+npm run check:budget
+npm run quality
+npm run quality:fast
+```
+
+Inspect the frontend and backend package.json files before deciding exactly which scripts to run.
+
+Do not run database migrations or production database modifications from normal CI.
+
+---
+
+# PRODUCTION DEPLOYMENT WORKFLOW
+
+Create:
+
+```text
+.github/workflows/deploy-production.yml
+```
+
+It must run only when code is pushed/merged into:
+
+```text
+main
+```
+
+Also provide:
+
+```text
+workflow_dispatch
+```
+
+so an authorized maintainer can manually trigger production deployment.
+
+Production deployment should use GitHub Secrets:
+
+```text
+CLOUDFLARE_ACCOUNT_ID
+CLOUDFLARE_API_TOKEN
+```
+
+Use environment variables:
+
+```text
+CF_PAGES_PROJECT=procucev-consulting-portal
+CF_PAGES_BRANCH=main
+```
+
+The workflow should execute the existing deployment command:
+
+```bash
+npm run deploy:cloudflare
+```
+
+Do not duplicate the Wrangler deployment logic inside the workflow unless necessary.
+
+---
+
+# GITHUB SECRETS
+
+Document that the repository requires these GitHub Actions secrets:
+
+```text
+CLOUDFLARE_ACCOUNT_ID
+CLOUDFLARE_API_TOKEN
+```
+
+The secrets must be accessed like:
+
+```yaml
+env:
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+```
+
+Never print these values in logs.
+
+Never echo them.
+
+Never write them into files committed to Git.
+
+---
+
+# CLOUDFLARE CONFIGURATION
+
+Inspect the existing Cloudflare Pages project configuration.
+
+The existing project name is:
+
+```text
+procucev-consulting-portal
+```
+
+Production URL:
+
+```text
+https://procucev-consulting-portal.pages.dev/
+```
+
+Verify:
+
+```text
+Production branch = main
+```
+
+Do not change the production branch unless the repository's current deployment strategy clearly requires it.
+
+For static Next.js deployment, verify the expected output:
+
+```text
+frontend/out
+```
+
+Do not migrate to Cloudflare Workers unless the project is found to require server-side Next.js functionality incompatible with static export.
+
+---
+
+# BRANCH PROTECTION
+
+Recommend/configure the following GitHub workflow:
+
+```text
+feature/*
+    ↓
+Pull Request
+    ↓
+develop
+    ↓
+Testing
+    ↓
+Pull Request
+    ↓
+main
+    ↓
+Production
+```
+
+Production `main` should be protected.
+
+Recommended settings:
+
+* Require pull request before merging.
+* Require CI checks to pass.
+* Require approval before production merge.
+* Prevent direct pushes to main.
+* Prevent force pushes to main.
+* Require branches to be up to date before merging if appropriate.
+* Require status check:
+
+```text
+Consulting CI
+```
+
+Do not automatically change repository branch protection settings if the available permissions do not support it. Instead document the exact settings that an administrator must enable.
+
+---
+
+# ENVIRONMENT VARIABLES
+
+Inspect:
+
+```text
+frontend/.env*
+backend/.env*
+```
+
+and all code references to environment variables.
+
+Do not expose server-side secrets to the browser.
+
+For Next.js, only variables intentionally exposed to the browser should use:
+
+```text
+NEXT_PUBLIC_
+```
+
+Never move:
+
+```text
+DATABASE_URL
+JWT_SECRET
+API_SECRET
+CLOUDFLARE_API_TOKEN
+```
+
+into `NEXT_PUBLIC_*`.
+
+Do not commit `.env` files containing secrets.
+
+Verify `.gitignore` protects local environment files.
+
+---
+
+# BACKEND DEPLOYMENT
+
+The repository contains:
+
+```text
+frontend/
+backend/
+```
+
+The current Cloudflare deployment script deploys the frontend static output:
+
+```text
+frontend/out
+```
+
+It does NOT automatically deploy the Node.js backend.
+
+Therefore:
+
+1. Do not pretend the backend is deployed by the Cloudflare Pages workflow.
+2. Determine where the backend is currently hosted.
+3. Inspect backend configuration.
+4. Document the backend deployment separately if it is hosted outside Cloudflare.
+5. Do not migrate the backend without explicit approval.
+
+The final CI/CD documentation must clearly distinguish:
+
+```text
+Frontend → Cloudflare Pages
+Backend → Existing backend hosting
+Database → Existing PostgreSQL hosting
+```
+
+---
+
+# DATABASE SAFETY
+
+The root scripts include:
+
+```text
+db:push
+db:seed
+db:setup
+db:up
+```
+
+Do NOT automatically run:
+
+```bash
+npm run db:push
+npm run db:seed
+npm run db:setup
+```
+
+against production from GitHub Actions.
+
+Database changes must have a separate controlled migration/deployment process.
+
+CI should not modify production PostgreSQL data.
+
+---
+
+# TESTING REQUIREMENTS
+
+Before production deployment, verify:
+
+```text
+Lint
+Typecheck
+Frontend Build
+Backend Build
+Tests
+```
+
+If tests fail:
+
+```text
+DO NOT DEPLOY TO PRODUCTION
+```
+
+GitHub Actions must return a failed status.
+
+---
+
+# PRODUCTION DEPLOYMENT REQUIREMENTS
+
+Before deploying:
+
+```text
+CI must pass.
+```
+
+Then:
+
+```text
+main
+ ↓
+deploy-production.yml
+ ↓
+npm run deploy:cloudflare
+ ↓
+Cloudflare Pages
+```
+
+After deployment, use the existing:
+
+```text
+scripts/verify-deployment-operations.js
+```
+
+where appropriate.
+
+If post-deployment verification fails, mark the workflow as failed and clearly display the failure.
+
+Do not automatically perform destructive rollback operations.
+
+---
+
+# PREVIEW DEPLOYMENTS
+
+If Cloudflare's existing Git integration already provides preview deployments for pull requests, preserve that behavior.
+
+Do not create duplicate preview deployments without a reason.
+
+The desired behavior is:
+
+```text
+Pull Request
+     ↓
+Preview deployment
+     ↓
+Testing
+     ↓
+Approval
+```
+
+Production should remain:
+
+```text
+main
+ ↓
+production deployment
+```
+
+---
+
+# COMMIT AND IMPLEMENTATION PLAN
+
+First inspect the project.
+
+Then create a plan.
+
+Then implement only the required files.
+
+Expected changes should be approximately:
+
+```text
+.github/workflows/ci.yml
+.github/workflows/deploy-production.yml
+scripts/deploy-cloudflare.js
+```
+
+Potentially update documentation if needed:
+
+```text
+README.md
+docs/CI-CD.md
+```
+
+Do not modify unrelated application code.
+
+Do not modify business logic.
+
+Do not modify database schemas.
+
+Do not modify authentication.
+
+Do not modify production Cloudflare settings unless required.
+
+---
+
+# VALIDATION
+
+After implementation, run:
+
+```bash
+git status
+```
+
+Then:
+
+```bash
+npm ci
+```
+
+Then inspect:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build:frontend
+npm run build:backend
+```
+
+Run the appropriate tests based on the existing project configuration.
+
+Verify that:
+
+```text
+frontend/out
+```
+
+is generated successfully.
+
+Then validate the GitHub Actions YAML syntax and workflow configuration.
+
+Do not execute a production deployment automatically unless explicitly authorized.
+
+---
+
+# FINAL REPORT
+
+After implementation, provide a concise report containing:
+
+## 1. Files created
+
+Example:
+
+```text
+.github/workflows/ci.yml
+.github/workflows/deploy-production.yml
+```
+
+## 2. Files modified
+
+Example:
+
+```text
+scripts/deploy-cloudflare.js
+```
+
+## 3. CI workflow
+
+Explain exactly what runs on pull requests.
+
+## 4. Production workflow
+
+Explain exactly what happens after merging to main.
+
+## 5. GitHub Secrets required
+
+```text
+CLOUDFLARE_ACCOUNT_ID
+CLOUDFLARE_API_TOKEN
+```
+
+Do not display secret values.
+
+## 6. Cloudflare configuration
+
+Explain the required Pages project and production branch.
+
+## 7. Backend deployment
+
+Clearly explain whether the Node.js backend is included or remains on its existing hosting.
+
+## 8. Database
+
+Clearly state that production PostgreSQL is not modified by the CI workflow.
+
+## 9. Branch strategy
+
+Show:
+
+```text
+feature → develop → main → production
+```
+
+## 10. Validation results
+
+Report:
+
+```text
+Lint: PASS/FAIL
+Typecheck: PASS/FAIL
+Frontend build: PASS/FAIL
+Backend build: PASS/FAIL
+Tests: PASS/FAIL
+Cloudflare deployment: NOT RUN / PASS / FAIL
+```
+
+If something fails, show the exact reason and do not hide the failure.
+
+---
+
+# IMPORTANT FINAL RULE
+
+Do not guess.
+
+If the current repository configuration conflicts with this plan, inspect the actual code and configuration first.
+
+Do not replace working Cloudflare configuration merely to follow this prompt.
+
+Do not migrate Cloudflare Pages → Workers without explicit approval.
+
+Do not deploy to production during implementation unless explicitly instructed.
+
+The primary goal is:
+
+```text
+SAFE CI/CD
++
+AUTOMATED TESTING
++
+CONTROLLED PRODUCTION DEPLOYMENT
++
+NO PRODUCTION BREAKAGE
+```
+
+

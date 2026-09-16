@@ -18,7 +18,11 @@ const frontendDir = path.resolve(rootDir, 'frontend');
 
 const projectName = process.env.CF_PAGES_PROJECT || 'procucev-consulting-portal';
 const branch = process.env.CF_PAGES_BRANCH || process.env.GITHUB_REF_NAME || 'main';
-const accountId = process.env.CLOUDFLARE_ACCOUNT_ID || '7f01c4b0c3aa5535716bbfd16ab2886d';
+const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+
+if (!accountId) {
+  throw new Error('CLOUDFLARE_ACCOUNT_ID is not configured');
+}
 
 console.log('🚀 [CLOUDFLARE DEPLOY] Starting Procucev Consulting Portal deployment pipeline...\n');
 

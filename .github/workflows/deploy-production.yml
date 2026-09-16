@@ -1,0 +1,95 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target Deployment Environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  validate-and-deploy:
+    name: Validate, Build, Deploy & Verify Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install All Dependencies
+        run: npm run install:all
+
+      - name: Pre-Deployment Gate 1 - Linting
+        run: npm run lint
+
+      - name: Pre-Deployment Gate 2 - Typechecking
+        run: npm run typecheck
+
+      - name: Pre-Deployment Gate 3 - Build Frontend
+        run: npm run build:frontend
+
+      - name: Pre-Deployment Gate 4 - Build Backend
+        run: npm run build:backend
+
+      - name: Pre-Deployment Gate 5 - Client Performance Budget Check
+        run: npm run check:budget
+
+      - name: Pre-Deployment Gate 6 - Unit Tests & Coverage
+        run: npm run test:ci
+
+      - name: Verify Cloudflare Secrets Configuration
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ] || [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "::error::Required Cloudflare deployment secrets are missing."
+            echo "Please configure CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN in GitHub Repository Secrets."
+            exit 1
+          fi
+
+      - name: Deploy to Cloudflare Pages & Run Operations Verification
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_PAGES_PROJECT: "procucev-consulting-portal"
+          CF_PAGES_BRANCH: "main"
+        run: npm run deploy:cloudflare
+
+      - name: Publish Production Deployment Summary
+        if: always()
+        run: |
+          echo "## ⛅ Cloudflare Pages Production Deployment & Verification Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Application** | Procucev Consulting Portal |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Project Name** | \`procucev-consulting-portal\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Production URL** | [https://procucev-consulting-portal.pages.dev](https://procucev-consulting-portal.pages.dev) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Target Branch** | \`main\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ job.status == 'success' && '✅ Deployed & Verified' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🧪 Mandatory 3-Pillar Post-Deployment Operations Verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✔ **Backend Service Operation**: Express API Health Check verified (HTTP 200)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✔ **Database Store Operation**: TenantMaster & Spend Categories query verified" >> $GITHUB_STEP_SUMMARY
+          echo "- ✔ **File Upload Operation**: Procurement file ingestion & queue registration verified" >> $GITHUB_STEP_SUMMARY

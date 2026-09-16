@@ -1,8 +1,14 @@
-name: CI Quality Gate
+name: Consulting CI
 
 on:
   pull_request:
-    branches: [main, master, develop]
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 permissions:
@@ -11,12 +17,12 @@ permissions:
   issues: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  pr-quality-check:
-    name: Lint, Typecheck, Build & 90% Unit Test Coverage
+  ci:
+    name: Consulting CI Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -39,13 +45,16 @@ jobs:
       - name: Quality Gate 2 - Typechecking
         run: npm run typecheck
 
-      - name: Quality Gate 3 - Production Build
-        run: npm run build
+      - name: Quality Gate 3 - Build Frontend
+        run: npm run build:frontend
 
-      - name: Quality Gate 4 - Client Performance Budget Check
+      - name: Quality Gate 4 - Build Backend
+        run: npm run build:backend
+
+      - name: Quality Gate 5 - Client Performance Budget Check
         run: npm run check:budget
 
-      - name: Quality Gate 5 - Unit Tests & 90% Per-File Coverage
+      - name: Quality Gate 6 - Unit Tests & 90% Per-File Coverage
         run: npm run test:ci
 
       - name: Generate PR Summary Report
