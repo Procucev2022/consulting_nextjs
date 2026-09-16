@@ -1,6 +1,8 @@
 # Next.js
 .next/
 **/frontend/.next/
+.open-next/
+**/.open-next/
 out/
 build/
 dist/

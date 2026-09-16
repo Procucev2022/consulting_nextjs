@@ -14,6 +14,7 @@
     "build": "npm run lint && npm --prefix backend run build && npm --prefix frontend run build",
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
+    "deploy:frontend": "npm --prefix frontend run deploy",
     "start": "concurrently -n \"frontend,backend\" -c \"cyan,green\" \"npm --prefix frontend run start\" \"npm --prefix backend run start\"",
     "postinstall": "npm --prefix frontend install && npm --prefix backend install",
     "install:all": "npm install && npm --prefix frontend install && npm --prefix backend install",

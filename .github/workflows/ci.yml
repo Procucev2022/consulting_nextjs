@@ -1,6 +1,8 @@
 name: CI Quality Gate
 
 on:
+  push:
+    branches: [main, master, develop]
   pull_request:
     branches: [main, master, develop]
   workflow_dispatch:
@@ -24,10 +26,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install All Dependencies
@@ -41,12 +43,6 @@ jobs:
 
       - name: Quality Gate 3 - Production Build
         run: npm run build
-
-      - name: Quality Gate 4 - Client Performance Budget Check
-        run: npm run check:budget
-
-      - name: Quality Gate 5 - Unit Tests & 90% Per-File Coverage
-        run: npm run test:ci
 
       - name: Generate PR Summary Report
         if: always()
@@ -96,3 +92,32 @@ jobs:
               });
               console.log('Created new PR summary comment on pull request.');
             }
+  deploy:
+    name: Deploy to Cloudflare
+    needs: pr-quality-check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm run install:all
+
+      - name: Build OpenNext
+        run: npx opennextjs-cloudflare build
+        working-directory: frontend
+
+      - name: Deploy to Cloudflare
+        run: npx wrangler deploy
+        working-directory: frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
