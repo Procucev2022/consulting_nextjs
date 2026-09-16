@@ -169,6 +169,53 @@ describe('Header Component', () => {
     render(<Header {...defaultProps} user={mockUser} />);
     expect(screen.getByText('Rohan')).toBeInTheDocument();
   });
+
+  it('does not render author details or document reference in the header ribbon', () => {
+    render(<Header {...defaultProps} />);
+    expect(screen.queryByText(UI_STRINGS.header.docRefValue)).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.header.authorName)).not.toBeInTheDocument();
+  });
+
+  it('toggles user profile dropdown menu and handles outside clicks and escape key', () => {
+    render(<Header {...defaultProps} />);
+
+    const menuBtn = screen.getByTestId('user-profile-menu-button');
+    const dropdown = screen.getByTestId('user-profile-dropdown');
+
+    expect(dropdown).toHaveClass('hidden');
+
+    fireEvent.click(menuBtn);
+    expect(dropdown).toHaveClass('block');
+
+    // Press Escape to close
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(dropdown).toHaveClass('hidden');
+
+    // Re-open and test clicking outside
+    fireEvent.click(menuBtn);
+    expect(dropdown).toHaveClass('block');
+
+    fireEvent.mouseDown(document.body);
+    expect(dropdown).toHaveClass('hidden');
+  });
+
+  it('triggers onContactSupport when provided, or falls back to window.open', () => {
+    const onContactSupport = vi.fn();
+    const { rerender } = render(<Header {...defaultProps} onContactSupport={onContactSupport} />);
+
+    const supportBtn = screen.getByTestId('header-support-button');
+    fireEvent.click(supportBtn);
+    expect(onContactSupport).toHaveBeenCalledTimes(1);
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    rerender(<Header {...defaultProps} onContactSupport={undefined} />);
+    fireEvent.click(supportBtn);
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringContaining('mailto:support@procucev.com'),
+      '_blank'
+    );
+    openSpy.mockRestore();
+  });
 });
 
 

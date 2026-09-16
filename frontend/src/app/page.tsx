@@ -107,8 +107,15 @@ export default function Home() {
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
+  const [targetSection, setTargetSection] = useState<string | null>(null);
   const [tenant, setTenant] = useState<TenantMaster>(mockTenant);
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
+
+  const handleNavigateToSection = (targetModule: PipelineActiveTab, targetSectionId: string) => {
+    setActiveTab(targetModule);
+    setTargetSection(targetSectionId);
+    showToast(UI_STRINGS.toasts.navigatingToInitiativeSection(targetSectionId));
+  };
 
 
   // Application Data States
@@ -1261,6 +1268,7 @@ export default function Home() {
             onUpdateTenant={setTenant}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
+            targetSection={targetSection}
           />
         )}
 
@@ -1288,6 +1296,7 @@ export default function Home() {
             }}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
+            onNavigateToSection={handleNavigateToSection}
           />
         )}
 

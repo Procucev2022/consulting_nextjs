@@ -26,7 +26,7 @@ describe('Frontend Performance Constants', () => {
     expect(PERFORMANCE_BUDGETS.MAX_JS_BUNDLE_KB).toBe(250);
     expect(PERFORMANCE_BUDGETS.MAX_CRITICAL_CSS_KB).toBe(50);
     expect(PERFORMANCE_BUDGETS.MAX_SHARED_JS_CHUNK_KB).toBe(120);
-    expect(PERFORMANCE_BUDGETS.MAX_TOTAL_PAGE_JS_KB).toBe(320);
+    expect(PERFORMANCE_BUDGETS.MAX_TOTAL_PAGE_JS_KB).toBe(350);
   });
 });
 

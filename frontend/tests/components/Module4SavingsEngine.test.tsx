@@ -165,5 +165,34 @@ describe('Module4SavingsEngine Component', () => {
     fireEvent.click(ctaBtn);
     expect(onProceed).toHaveBeenCalled();
   });
+
+  it('renders StrategicSavingsSummaryBanner and handles click-to-detail navigation', () => {
+    const handleNavigate = vi.fn();
+    // Mock scrollIntoView
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    render(
+      <Module4SavingsEngine
+        opportunities={mockSavingsOpportunities}
+        onOpenProCPX={vi.fn()}
+        onOpenDPSNXT={vi.fn()}
+        onProceedToConversion={vi.fn()}
+        onNavigateToSection={handleNavigate}
+      />
+    );
+
+    // Verify Strategic Savings Banner is rendered
+    expect(screen.getByTestId('strategic-savings-summary-banner')).toBeInTheDocument();
+
+    // Click Vendor Consolidation savings number
+    fireEvent.click(screen.getByTestId('btn-savings-number-VENDOR_CONSOLIDATION'));
+    expect(handleNavigate).toHaveBeenCalledWith('module2', 'vendor-consolidation-section');
+
+    // Click Category Savings Pipeline savings number (internal to module4)
+    fireEvent.click(screen.getByTestId('btn-savings-number-CATEGORY_SAVINGS_PIPELINE'));
+    expect(handleNavigate).toHaveBeenCalledWith('module4', 'savings-pipeline-table-section');
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+  });
 });
 

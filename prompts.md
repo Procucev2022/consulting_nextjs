@@ -561,5 +561,30 @@ complete the task in progress and run locally
 ## Prompt 73
 In the Bronze package, let us show the complete Data ingestion and deep dive analysis along with savings available page. But from AI categorization, you can mask and proceed as per the current plan
 
+---
+
+## Prompt 74
+Make this area decongested. Move the low priority things to the right corner login page area. Show the aiCEV logo properly. make it look professionally. Remove authoru and document name.
+
+---
+
+## Prompt 75
+Shift this entire area into the right side top corner. Create a login user details at this right corner and add all these details there. Show them only when we click on the name along with support button in the down
+
+---
+
+## Prompt 76
+run locally on chrome
+
+---
+
+## Prompt 77
+In this page, show the summary of savings from various initiatives discussed in AI Categorization & Strategic Sourcing as well along with a complete summary. Take the user to the respective area when he clicks on the respective summary number to review the detail
+
+---
+
+## Prompt 78
+run locally on chrome
+
 
 
