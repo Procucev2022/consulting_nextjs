@@ -606,3 +606,9 @@ deploy this  latest code to cloudflare
 ## Prompt 82
 https://procucev-consulting-portal.pages.dev/
 Whenever you deploy these kinds of applications, please just any one backend related operation & one data base related operation & one file uploading operation
+
+---
+
+## Prompt 83
+Deploy in cloudflare and Also, please setup CI/CD in github to automatically deploy these application in cloudflare
+

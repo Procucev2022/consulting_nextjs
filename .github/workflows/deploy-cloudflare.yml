@@ -7,8 +7,6 @@ on:
       - master
       - cloudflare
       - cloudfare
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       environment:
@@ -39,10 +37,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: "npm"
 
       - name: Install Monorepo Dependencies
@@ -50,6 +48,16 @@ jobs:
 
       - name: Quality Gate 1 - Differential Checks & Test Verification
         run: npm run quality:fast
+
+      - name: Verify Cloudflare Secrets Configuration
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "⚠️ [WARNING] CLOUDFLARE_API_TOKEN is not set in GitHub Repository Secrets!"
+            echo "To enable automated Cloudflare deployments from GitHub Actions:"
+            echo "1. Create an API token at https://dash.cloudflare.com/profile/api-tokens with 'Edit Cloudflare Pages' template."
+            echo "2. Add it to GitHub repository secrets under CLOUDFLARE_API_TOKEN."
+            echo "   (Settings > Secrets and variables > Actions > New repository secret)"
+          fi
 
       - name: Deploy to Cloudflare Pages & Run 3-Pillar Verification
         env:
