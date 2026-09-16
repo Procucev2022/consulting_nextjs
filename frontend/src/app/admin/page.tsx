@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { UI_STRINGS, AICEV_LOGO_SRC } from '../../constants';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
-import type { UserProfile, UserRole, UserStatus } from '../../types';
+import type { UserProfile, UserRole, UserStatus, SubscriptionTier } from '../../types';
 import { DatabaseViewSection } from '../../components/DatabaseViewSection';
 
 export default function AdminPage(): React.ReactElement {
@@ -26,6 +26,7 @@ export default function AdminPage(): React.ReactElement {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | UserRole>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | UserStatus>('ALL');
+  const [tierFilter, setTierFilter] = useState<'ALL' | SubscriptionTier>('ALL');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -38,7 +39,8 @@ export default function AdminPage(): React.ReactElement {
       const res = await apiClient.getAdminUsers({
         search: searchTerm,
         role: roleFilter,
-        status: statusFilter
+        status: statusFilter,
+        tier: tierFilter
       });
       setUsers(res.users);
       setTotal(res.total);
@@ -52,7 +54,7 @@ export default function AdminPage(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, roleFilter, statusFilter]);
+  }, [searchTerm, roleFilter, statusFilter, tierFilter]);
 
   useEffect(() => {
     void loadUsers();
@@ -68,6 +70,19 @@ export default function AdminPage(): React.ReactElement {
       void loadUsers();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update status';
+      setErrorMessage(msg);
+    }
+  };
+
+  const handleTierChange = async (user: UserProfile, newTier: SubscriptionTier): Promise<void> => {
+    try {
+      frontendLogger.info('Admin updating user tier', { userId: user.id, newTier });
+      await apiClient.updateAdminUserTier(user.id, newTier);
+      setActionSuccess(UI_STRINGS.admin.tierUpdateSuccess(user.name, newTier));
+      setTimeout(() => setActionSuccess(null), 3000);
+      void loadUsers();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update subscription tier';
       setErrorMessage(msg);
     }
   };
@@ -320,6 +335,19 @@ export default function AdminPage(): React.ReactElement {
               <option value="ACTIVE">ACTIVE</option>
               <option value="SUSPENDED">SUSPENDED</option>
             </select>
+
+            <select
+              id="filter-tier"
+              data-testid="filter-tier"
+              value={tierFilter}
+              onChange={(e) => setTierFilter(e.target.value as 'ALL' | SubscriptionTier)}
+              style={selectStyle}
+            >
+              <option value="ALL">{UI_STRINGS.admin.allTiers}</option>
+              <option value="BRONZE">{UI_STRINGS.subscription.tierBronze}</option>
+              <option value="SILVER">{UI_STRINGS.subscription.tierSilver}</option>
+              <option value="GOLD">{UI_STRINGS.subscription.tierGold}</option>
+            </select>
           </div>
         </div>
 
@@ -355,6 +383,7 @@ export default function AdminPage(): React.ReactElement {
                   <th style={thStyle}>{UI_STRINGS.admin.colCompany}</th>
                   <th style={thStyle}>{UI_STRINGS.admin.colAddress}</th>
                   <th style={thStyle}>{UI_STRINGS.admin.colRole}</th>
+                  <th style={thStyle}>{UI_STRINGS.admin.colTier}</th>
                   <th style={thStyle}>{UI_STRINGS.admin.colStatus}</th>
                   <th style={thStyle}>{UI_STRINGS.admin.colJoined}</th>
                   <th style={thStyle}>{UI_STRINGS.admin.colActions}</th>
@@ -363,13 +392,13 @@ export default function AdminPage(): React.ReactElement {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                    <td colSpan={10} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                       {UI_STRINGS.common.loading}
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
+                    <td colSpan={10} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
                       {UI_STRINGS.admin.noUsersFound}
                     </td>
                   </tr>
@@ -394,6 +423,33 @@ export default function AdminPage(): React.ReactElement {
                       </td>
                       <td style={tdStyle}>
                         <span style={roleBadgeStyle(u.role)}>{u.role}</span>
+                      </td>
+                      <td style={tdStyle}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={tierBadgeStyle(u.subscription_tier || 'BRONZE')}>
+                            {u.subscription_tier || 'BRONZE'}
+                          </span>
+                          {u.role !== 'ADMIN' && (
+                            <select
+                              value={u.subscription_tier || 'BRONZE'}
+                              aria-label={UI_STRINGS.admin.changeTier}
+                              onChange={(e) => void handleTierChange(u, e.target.value as SubscriptionTier)}
+                              style={{
+                                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                                border: '1px solid rgba(148, 163, 184, 0.25)',
+                                borderRadius: '6px',
+                                color: '#f8fafc',
+                                fontSize: '11px',
+                                padding: '2px 4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <option value="BRONZE">{UI_STRINGS.subscription.bronzeBadgeText}</option>
+                              <option value="SILVER">{UI_STRINGS.subscription.silverBadgeText}</option>
+                              <option value="GOLD">{UI_STRINGS.subscription.goldBadgeText}</option>
+                            </select>
+                          )}
+                        </div>
                       </td>
                       <td style={tdStyle}>
                         <span style={statusBadgeStyle(u.status)}>{u.status}</span>
@@ -497,6 +553,38 @@ export default function AdminPage(): React.ReactElement {
               <div style={detailRowStyle}>
                 <span style={detailLabelStyle}>{UI_STRINGS.admin.colRole}:</span>
                 <span style={roleBadgeStyle(selectedUser.role)}>{selectedUser.role}</span>
+              </div>
+              <div style={detailRowStyle}>
+                <span style={detailLabelStyle}>{UI_STRINGS.admin.colTier}:</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={tierBadgeStyle(selectedUser.subscription_tier || 'BRONZE')}>
+                    {selectedUser.subscription_tier || 'BRONZE'}
+                  </span>
+                  {selectedUser.role !== 'ADMIN' && (
+                    <select
+                      value={selectedUser.subscription_tier || 'BRONZE'}
+                      aria-label={UI_STRINGS.admin.changeTier}
+                      onChange={(e) => {
+                        const newTier = e.target.value as SubscriptionTier;
+                        setSelectedUser({ ...selectedUser, subscription_tier: newTier });
+                        void handleTierChange(selectedUser, newTier);
+                      }}
+                      style={{
+                        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                        border: '1px solid rgba(148, 163, 184, 0.25)',
+                        borderRadius: '6px',
+                        color: '#f8fafc',
+                        fontSize: '11px',
+                        padding: '2px 6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="BRONZE">{UI_STRINGS.subscription.tierBronze}</option>
+                      <option value="SILVER">{UI_STRINGS.subscription.tierSilver}</option>
+                      <option value="GOLD">{UI_STRINGS.subscription.tierGold}</option>
+                    </select>
+                  )}
+                </span>
               </div>
               <div style={detailRowStyle}>
                 <span style={detailLabelStyle}>{UI_STRINGS.admin.colStatus}:</span>
@@ -644,3 +732,41 @@ const detailValueStyle: React.CSSProperties = {
   color: '#f8fafc',
   wordBreak: 'break-word'
 };
+
+const tierBadgeStyle = (tier: SubscriptionTier | string): React.CSSProperties => {
+  if (tier === 'GOLD') {
+    return {
+      display: 'inline-block',
+      padding: '3px 8px',
+      borderRadius: '9999px',
+      fontSize: '11px',
+      fontWeight: 700,
+      backgroundColor: 'rgba(245, 158, 11, 0.2)',
+      color: '#fbbf24',
+      border: '1px solid rgba(245, 158, 11, 0.5)'
+    };
+  }
+  if (tier === 'SILVER') {
+    return {
+      display: 'inline-block',
+      padding: '3px 8px',
+      borderRadius: '9999px',
+      fontSize: '11px',
+      fontWeight: 700,
+      backgroundColor: 'rgba(203, 213, 225, 0.2)',
+      color: '#e2e8f0',
+      border: '1px solid rgba(203, 213, 225, 0.4)'
+    };
+  }
+  return {
+    display: 'inline-block',
+    padding: '3px 8px',
+    borderRadius: '9999px',
+    fontSize: '11px',
+    fontWeight: 700,
+    backgroundColor: 'rgba(180, 83, 9, 0.2)',
+    color: '#d97706',
+    border: '1px solid rgba(180, 83, 9, 0.4)'
+  };
+};
+

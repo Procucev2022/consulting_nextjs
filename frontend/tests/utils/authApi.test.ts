@@ -13,6 +13,7 @@ describe('authApiClient and auth utilities', () => {
     company_address: 'Nariman Point, Mumbai',
     role: 'USER',
     status: 'ACTIVE',
+    subscription_tier: 'BRONZE',
     created_at: '2026-04-10T14:45:00.000Z',
     updated_at: '2026-04-10T14:45:00.000Z'
   };
@@ -428,6 +429,117 @@ describe('authApiClient and auth utilities', () => {
       await expect(
         authApiClient.updateAdminUserStatus(mockUser.id, 'ACTIVE', 'admin-token')
       ).rejects.toThrow('Failed to update user status');
+    });
+  });
+
+  describe('Simulated Tier Storage Helpers', () => {
+    it('should get and set simulated tier correctly', () => {
+      expect(authApiClient.getSimulatedTier()).toBeNull();
+
+      authApiClient.setSimulatedTier('SILVER');
+      expect(authApiClient.getSimulatedTier()).toBe('SILVER');
+
+      authApiClient.setSimulatedTier('GOLD');
+      expect(authApiClient.getSimulatedTier()).toBe('GOLD');
+
+      authApiClient.setSimulatedTier(null);
+      expect(authApiClient.getSimulatedTier()).toBeNull();
+    });
+
+    it('should ignore non-tier strings in localStorage', () => {
+      localStorage.setItem('procucev_simulated_tier', 'DIAMOND');
+      expect(authApiClient.getSimulatedTier()).toBeNull();
+    });
+  });
+
+  describe('updateAdminUserTier', () => {
+    it('should update user tier successfully with token', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: { ...mockUser, subscription_tier: 'GOLD' }
+        })
+      });
+
+      const res = await authApiClient.updateAdminUserTier(mockUser.id, 'GOLD', 'admin-token');
+      expect(res.success).toBe(true);
+      expect(res.user.subscription_tier).toBe('GOLD');
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/admin/users/${mockUser.id}/tier`),
+        expect.objectContaining({
+          method: 'PATCH',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer admin-token'
+          })
+        })
+      );
+    });
+
+    it('should update user tier without token parameter using stored token', async () => {
+      authApiClient.setStoredSession('stored-admin-token', mockUser);
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: { ...mockUser, subscription_tier: 'SILVER' }
+        })
+      });
+
+      const res = await authApiClient.updateAdminUserTier(mockUser.id, 'SILVER');
+      expect(res.success).toBe(true);
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(`/api/admin/users/${mockUser.id}/tier`),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Authorization: 'Bearer stored-admin-token'
+          })
+        })
+      );
+    });
+
+    it('should throw validation error on invalid tier input', async () => {
+      await expect(
+        authApiClient.updateAdminUserTier(mockUser.id, 'PLATINUM' as any)
+      ).rejects.toThrow('Validation failed');
+    });
+
+    it('should handle API error when updateAdminUserTier fails', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ message: 'Tier update rejected' })
+      });
+
+      await expect(
+        authApiClient.updateAdminUserTier(mockUser.id, 'GOLD', 'token')
+      ).rejects.toThrow('Tier update rejected');
+    });
+
+    it('should fallback to default error message if json has no message', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({})
+      });
+
+      await expect(
+        authApiClient.updateAdminUserTier(mockUser.id, 'GOLD')
+      ).rejects.toThrow('Failed to update user subscription tier');
+    });
+  });
+
+  describe('buildAdminUserQueryParams with tier', () => {
+    it('should append tier to query params when specified', () => {
+      const params = buildAdminUserQueryParams({
+        tier: 'SILVER'
+      });
+      expect(params.get('tier')).toBe('SILVER');
+    });
+
+    it('should ignore tier ALL in query params', () => {
+      const params = buildAdminUserQueryParams({
+        tier: 'ALL'
+      });
+      expect(params.get('tier')).toBeNull();
     });
   });
 });

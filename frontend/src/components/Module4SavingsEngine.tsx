@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Target,
   FileCheck,
@@ -10,7 +10,9 @@ import {
   Award,
   Check
 } from 'lucide-react';
-import type { Module4SavingsEngineProps } from '../types';
+import type { Module4SavingsEngineProps, PipelineActiveTab } from '../types';
+import { TierMaskOverlay } from './TierMaskOverlay';
+import { StrategicSavingsSummaryBanner } from './savings/StrategicSavingsSummaryBanner';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,
@@ -21,10 +23,21 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   opportunities,
   onOpenProCPX,
   onOpenDPSNXT,
-  onProceedToConversion
+  onProceedToConversion,
+  currentTier = 'GOLD',
+  onUpgrade,
+  onNavigateToSection
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterModule, setFilterModule] = useState<string>('ALL');
+  const pipelineTableRef = useRef<HTMLDivElement>(null);
+
+  const handleNavigate = (targetModule: PipelineActiveTab, targetSectionId: string) => {
+    if (targetModule === 'module4' && targetSectionId === 'savings-pipeline-table-section') {
+      pipelineTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    onNavigateToSection?.(targetModule, targetSectionId);
+  };
 
   const totalEvaluatedSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
   const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr (16.4% Net Target)
@@ -71,6 +84,27 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     return true;
   });
 
+  const handleUpgradeSilver = () => {
+    onUpgrade?.('SILVER');
+  };
+
+  const handleUpgradeGold = () => {
+    onUpgrade?.('GOLD');
+  };
+
+  if (currentTier === 'BRONZE') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <TierMaskOverlay
+          requiredTier="SILVER"
+          title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module4.heading)}
+          description={UI_STRINGS.subscription.stageMaskedBronzeDesc}
+          onUpgrade={handleUpgradeSilver}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Module Title Banner */}
@@ -97,6 +131,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Cross-Module Strategic Sourcing & AI Categorization Savings Summary Banner */}
+      <StrategicSavingsSummaryBanner onNavigateToSection={handleNavigate} />
 
       {/* Grid: 1. Hero Total Savings Highlight Card (5 cols) + 2. Target vs Realized Distribution (7 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -168,8 +205,40 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         </div>
       </div>
 
-      {/* Savings Opportunities Action Pipeline Table */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+      {/* Silver Customer Detail Mask: Where Savings are Generated is Masked */}
+      {currentTier === 'SILVER' ? (
+        <div className="space-y-6">
+          <TierMaskOverlay
+            requiredTier="GOLD"
+            title={UI_STRINGS.subscription.savingsWhereLockedTitle}
+            description={UI_STRINGS.subscription.savingsWhereLockedNote}
+            onUpgrade={handleUpgradeGold}
+            isSummaryVisible
+          />
+          {/* CTA to Module 5 */}
+          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>{UI_STRINGS.module4.ctaSubtitle}</span>
+            </div>
+            <button
+              type="button"
+              onClick={onProceedToConversion}
+              className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-95 group cursor-pointer"
+            >
+              <span>{UI_STRINGS.module4.ctaProceedButton}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Savings Opportunities Action Pipeline Table */
+        <div
+          ref={pipelineTableRef}
+          id="savings-pipeline-table-section"
+          data-testid="savings-pipeline-table-section"
+          className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4"
+        >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -306,6 +375,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 };

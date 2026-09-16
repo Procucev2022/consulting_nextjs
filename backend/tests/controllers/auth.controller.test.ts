@@ -31,6 +31,7 @@ describe('Auth Controller Integration Tests', () => {
     expect(res.body.user.name).toBe(user.name);
     expect(res.body.user.company_name).toBe(user.company_name);
     expect(res.body.user.role).toBe('USER');
+    expect(res.body.user.subscription_tier).toBe('BRONZE');
     expect(res.body.token).toBeDefined();
   });
 

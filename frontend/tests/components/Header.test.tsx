@@ -4,7 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
-import { AICEV_LOGO_SRC } from '../../src/constants/app';
+
+import { DEFAULT_SPEND_BASELINE_INR_CR } from '../../src/constants/app';
 
 describe('Header Component', () => {
   const defaultProps = {
@@ -32,12 +33,15 @@ describe('Header Component', () => {
   it('renders fallback spend if total_spend_evaluated_inr is undefined', () => {
     const tenantWithoutINR = { ...mockTenant, total_spend_evaluated_inr: undefined as any };
     render(<Header {...defaultProps} tenant={tenantWithoutINR} />);
-    expect(screen.getByText('₹0.00 Cr')).toBeInTheDocument();
+    expect(screen.getByText(`₹${DEFAULT_SPEND_BASELINE_INR_CR} Cr`)).toBeInTheDocument();
   });
 
   it('handles theme switching between light and dark', () => {
     const onSelectTheme = vi.fn();
     const { rerender } = render(<Header {...defaultProps} onSelectTheme={onSelectTheme} />);
+
+    // Open profile menu to access theme controls
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
 
     const darkBtn = screen.getByTitle(UI_STRINGS.header.themeToggleDark);
     fireEvent.click(darkBtn);
@@ -52,6 +56,9 @@ describe('Header Component', () => {
   it('handles currency selection', () => {
     const onSelectCurrency = vi.fn();
     render(<Header {...defaultProps} onSelectCurrency={onSelectCurrency} />);
+
+    // Open profile menu to access currency controls
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
 
     const usdBtn = screen.getByTitle(UI_STRINGS.header.currencyTitle('USD'));
     fireEvent.click(usdBtn);
@@ -104,9 +111,12 @@ describe('Header Component', () => {
   });
 
   it('renders Sign In navigation link when unauthenticated', () => {
-    render(<Header {...defaultProps} />);
+    render(<Header {...defaultProps} currentUser={null} />);
 
-    const loginLink = screen.getByTitle(UI_STRINGS.auth.pageTitle);
+    // Open profile menu to view auth action
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
+
+    const loginLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.auth.signInTab, 'i') });
     expect(loginLink).toBeInTheDocument();
     expect(loginLink).toHaveAttribute('href', '/login');
   });
@@ -122,29 +132,127 @@ describe('Header Component', () => {
       company_address: 'Industrial Area',
       role: 'ADMIN' as const,
       status: 'ACTIVE' as const,
+      subscription_tier: 'GOLD' as const,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
     render(<Header {...defaultProps} currentUser={mockUser} onLogout={onLogout} />);
 
-    const userBtn = screen.getByTitle('Account Profile & Settings');
+    const userBtn = screen.getByTestId('user-profile-menu-button');
     expect(userBtn).toBeInTheDocument();
-    expect(screen.getAllByText('Navin Kumar').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Navin').length).toBeGreaterThanOrEqual(1);
 
     // Click to open dropdown
     fireEvent.click(userBtn);
 
     expect(screen.getByText('Profile & Account Settings')).toBeInTheDocument();
-    expect(screen.getByText('Admin Directory')).toBeInTheDocument();
-    expect(screen.getByText('Buyer ID:')).toBeInTheDocument();
-    expect(screen.getByText('usr-navin-101')).toBeInTheDocument();
+    expect(screen.getByText('Admin User Directory')).toBeInTheDocument();
+    expect(screen.getByText('navin@enterprise.com')).toBeInTheDocument();
 
     // Logout action
     const logoutBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.auth.logout, 'i') });
     fireEvent.click(logoutBtn);
     expect(onLogout).toHaveBeenCalled();
   });
+
+  it('renders subscription tier badge and interactive demo switcher', () => {
+    const onSelectSimulatedTier = vi.fn();
+    const { rerender } = render(
+      <Header
+        {...defaultProps}
+        currentTier="BRONZE"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+
+    // Open profile menu
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
+
+    expect(screen.getByTestId('subscription-tier-badge')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('BRONZE'))).toBeInTheDocument();
+
+    const silverBtn = screen.getByTestId('demo-tier-silver');
+    fireEvent.click(silverBtn);
+    expect(onSelectSimulatedTier).toHaveBeenCalledWith('SILVER');
+
+    rerender(
+      <Header
+        {...defaultProps}
+        currentTier="GOLD"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('GOLD'))).toBeInTheDocument();
+
+    rerender(
+      <Header
+        {...defaultProps}
+        currentTier="SILVER"
+        onSelectSimulatedTier={onSelectSimulatedTier}
+      />
+    );
+    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('SILVER'))).toBeInTheDocument();
+  });
+
+  it('renders logged in user first name when user is passed', () => {
+    const mockUser = {
+      id: 'usr-1',
+      name: 'Rohan Sharma',
+      mobile_number: '+91 99999 11111',
+      email: 'rohan@enterprise.com',
+      company_name: 'Enterprise Co',
+      company_address: '123 Tech Park',
+      role: 'USER' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'SILVER' as const,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z'
+    };
+
+    render(<Header {...defaultProps} user={mockUser} />);
+    expect(screen.getByText('Rohan')).toBeInTheDocument();
+  });
+
+  it('toggles user profile dropdown menu and handles outside clicks and escape key', () => {
+    render(<Header {...defaultProps} />);
+
+    const menuBtn = screen.getByTestId('user-profile-menu-button');
+    expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
+
+    fireEvent.click(menuBtn);
+    expect(screen.getByTestId('user-profile-dropdown')).toBeInTheDocument();
+
+    // Press Escape to close
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
+
+    // Re-open and test clicking outside
+    fireEvent.click(menuBtn);
+    expect(screen.getByTestId('user-profile-dropdown')).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
+  });
+
+  it('triggers onContactSupport when provided, or falls back to window.open', () => {
+    const onContactSupport = vi.fn();
+    const { rerender } = render(<Header {...defaultProps} onContactSupport={onContactSupport} />);
+
+    // Open profile menu
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
+
+    const supportBtn = screen.getByTestId('header-support-button');
+    fireEvent.click(supportBtn);
+    expect(onContactSupport).toHaveBeenCalledTimes(1);
+
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    rerender(<Header {...defaultProps} onContactSupport={undefined} />);
+    fireEvent.click(screen.getByTestId('header-support-button'));
+    expect(openSpy).toHaveBeenCalledWith(
+      expect.stringContaining('mailto:support@procucev.com'),
+      '_blank'
+    );
+    openSpy.mockRestore();
+  });
 });
-
-

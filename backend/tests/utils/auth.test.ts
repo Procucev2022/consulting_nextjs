@@ -31,7 +31,7 @@ describe('Backend Auth Utilities', () => {
   });
 
   it('should generate and verify encrypted auth session tokens', () => {
-    const token = generateAuthToken('usr-100', 'user@company.com', 'USER');
+    const token = generateAuthToken('usr-100', 'user@company.com', 'USER', 'SILVER');
     expect(token).toBeDefined();
 
     const decoded = verifyAuthToken(token);
@@ -39,7 +39,13 @@ describe('Backend Auth Utilities', () => {
     expect(decoded?.userId).toBe('usr-100');
     expect(decoded?.email).toBe('user@company.com');
     expect(decoded?.role).toBe('USER');
+    expect(decoded?.tier).toBe('SILVER');
     expect(decoded?.exp).toBeGreaterThan(Date.now());
+
+    // Default tier fallback
+    const defaultToken = generateAuthToken('usr-101', 'u@c.com', 'USER');
+    const defaultDecoded = verifyAuthToken(defaultToken);
+    expect(defaultDecoded?.tier).toBe('BRONZE');
   });
 
   it('should return null for invalid or expired auth tokens', () => {
@@ -139,6 +145,7 @@ describe('Backend Auth Utilities', () => {
     expect(emptySanitized.company_address).toBe('');
     expect(emptySanitized.role).toBe('USER');
     expect(emptySanitized.status).toBe('ACTIVE');
+    expect(emptySanitized.subscription_tier).toBe('BRONZE');
     expect(emptySanitized.created_at).toBeDefined();
     expect(emptySanitized.updated_at).toBeDefined();
   });

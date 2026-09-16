@@ -4833,6 +4833,7 @@ export const initialSeedUsers: UserRecord[] = [
     password_hash: hashPw('Admin@123456', 'a1b2c3d4e5f60718293a4b5c6d7e8f90'),
     role: 'ADMIN',
     status: 'ACTIVE',
+    subscription_tier: 'GOLD',
     created_at: new Date('2026-01-01T00:00:00.000Z'),
     updated_at: new Date('2026-01-01T00:00:00.000Z')
   },
@@ -4846,8 +4847,9 @@ export const initialSeedUsers: UserRecord[] = [
     password_hash: hashPw('User@123456', 'b2c3d4e5f60718293a4b5c6d7e8f90a1'),
     role: 'USER',
     status: 'ACTIVE',
-    created_at: new Date('2026-01-02T00:00:00.000Z'),
-    updated_at: new Date('2026-01-02T00:00:00.000Z')
+    subscription_tier: 'GOLD',
+    created_at: new Date('2026-02-15T09:30:00.000Z'),
+    updated_at: new Date('2026-02-15T09:30:00.000Z')
   },
   {
     id: 'usr-user-002',
@@ -4859,8 +4861,9 @@ export const initialSeedUsers: UserRecord[] = [
     password_hash: hashPw('User@123456', 'c3d4e5f60718293a4b5c6d7e8f90a1b2'),
     role: 'USER',
     status: 'ACTIVE',
-    created_at: new Date('2026-01-03T00:00:00.000Z'),
-    updated_at: new Date('2026-01-03T00:00:00.000Z')
+    subscription_tier: 'SILVER',
+    created_at: new Date('2026-03-01T11:15:00.000Z'),
+    updated_at: new Date('2026-03-01T11:15:00.000Z')
   },
   {
     id: 'usr-user-003',
@@ -4872,8 +4875,9 @@ export const initialSeedUsers: UserRecord[] = [
     password_hash: hashPw('User@123456', 'd4e5f60718293a4b5c6d7e8f90a1b2c3'),
     role: 'USER',
     status: 'ACTIVE',
-    created_at: new Date('2026-01-04T00:00:00.000Z'),
-    updated_at: new Date('2026-01-04T00:00:00.000Z')
+    subscription_tier: 'BRONZE',
+    created_at: new Date('2026-04-10T14:45:00.000Z'),
+    updated_at: new Date('2026-04-10T14:45:00.000Z')
   }
 ];
 

@@ -11,6 +11,7 @@ import {
   Sliders
 } from 'lucide-react';
 import type { Module3TrendAnalyticsProps } from '../types';
+import { TierMaskOverlay } from './TierMaskOverlay';
 import {
   UI_STRINGS,
   TIMELINE_MONTHS,
@@ -44,7 +45,9 @@ ChartJS.register(
 export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   vendorRankings,
   onProceedToSavings,
-  theme = 'light'
+  theme = 'light',
+  currentTier = 'GOLD',
+  onUpgrade
 }) => {
   const [selectedCommodity, setSelectedCommodity] = useState<string>(UI_STRINGS.module3.commodities.icis);
   const [filterRisk, setFilterRisk] = useState<string>('ALL');
@@ -139,6 +142,27 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
     if (filterRisk === 'CREEP_ANOMALY') return v.price_creep_pct > 5;
     return v.risk_status === filterRisk;
   });
+
+  const handleUpgradeSilver = () => {
+    onUpgrade?.('SILVER');
+  };
+
+  const handleUpgradeGold = () => {
+    onUpgrade?.('GOLD');
+  };
+
+  if (currentTier === 'BRONZE') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <TierMaskOverlay
+          requiredTier="SILVER"
+          title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module3.heading)}
+          description={UI_STRINGS.subscription.stageMaskedBronzeDesc}
+          onUpgrade={handleUpgradeSilver}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -270,8 +294,35 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         </div>
       </div>
 
-      {/* Vendor Price Volatility & Inflation Rankings Table */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+      {/* Silver Customer Detail Mask */}
+      {currentTier === 'SILVER' ? (
+        <div className="space-y-6">
+          <TierMaskOverlay
+            requiredTier="GOLD"
+            title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module3.rankingsTableTitle)}
+            description={UI_STRINGS.subscription.stageMaskedSilverDesc}
+            onUpgrade={handleUpgradeGold}
+            isSummaryVisible
+          />
+          {/* CTA to Savings Engine */}
+          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>{UI_STRINGS.module3.ctaBadge}</span>
+            </div>
+            <button
+              type="button"
+              onClick={onProceedToSavings}
+              className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group cursor-pointer"
+            >
+              <span>{UI_STRINGS.module3.ctaProceedButton}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Vendor Price Volatility & Inflation Rankings Table */
+        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -404,6 +455,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 };

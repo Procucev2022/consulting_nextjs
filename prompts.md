@@ -549,6 +549,46 @@ Make logo in bigger size, remove engine 2.0. Write "Tech Enabled Strategic Sourc
 ---
 
 ## Prompt 71
+Let us create 3 types of subscription for the customer.i.e braonze, silver and gold. Any customer as soon as he registers, he will become bronze customer. He can upload the data and can see only the summary that whether savings available for them or not. He can't see any other information. It should show the first page of data upload and analysis and then details on all other pages to be masked. The second one is Silver customer. Here, he can see the complete first page, summary levels on the second page and trend analysis only at the summary level and final savings engine as well summary level. He can see what is total value of savings but can't see where he can generate savings. third one is Gold customer. He will be able to access everything in this software
+
+---
+
+## Prompt 72
+complete the task in progress and run locally
+
+---
+
+## Prompt 73
+In the Bronze package, let us show the complete Data ingestion and deep dive analysis along with savings available page. But from AI categorization, you can mask and proceed as per the current plan
+
+---
+
+## Prompt 74
+Make this area decongested. Move the low priority things to the right corner login page area. Show the aiCEV logo properly. make it look professionally. Remove authoru and document name.
+
+---
+
+## Prompt 75
+Shift this entire area into the right side top corner. Create a login user details at this right corner and add all these details there. Show them only when we click on the name along with support button in the down
+
+---
+
+## Prompt 76
+run locally on chrome
+
+---
+
+## Prompt 77
+In this page, show the summary of savings from various initiatives discussed in AI Categorization & Strategic Sourcing as well along with a complete summary. Take the user to the respective area when he clicks on the respective summary number to review the detail
+
+---
+
+## Prompt 78
+run locally on chrome
+
+---
+
+## Prompt 79
 I want you to make the `consulting_nextjs` project fully functional and production-ready.
 
 Main project to implement: `C:\Users\navin\OneDrive\Desktop\procucev\consulting_nextjs`
@@ -563,4 +603,5 @@ Requirements:
 6. Use Enterprise_qua_nextjs as reference
 7. End-to-end testing
 8. Fix all issues found, connect disconnected components, adjust database schema carefully.
+
 

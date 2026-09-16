@@ -81,7 +81,25 @@ export const UI_STRINGS = {
     multiCurrencyLiveFX: 'Multi-Currency Live FX',
     inrCroresSymbol: '₹ Cr',
     subtitle: 'Tech Enabled Strategic Sourcing Suite',
-    securityBadge: 'SOC2 Type II / AES-256'
+    securityBadge: 'SOC2 Type II / AES-256',
+    userProfile: {
+      menuButtonTitle: 'User Profile & Settings Menu',
+      defaultName: 'Srinivas Mukku',
+      defaultRole: 'Co-Founder & CEO',
+      defaultEmail: 'srinivas.mukku@procucev.com',
+      userDetailsTitle: 'Account & Subscription',
+      switchTierTitle: 'Simulate Subscription Tier',
+      currencyTitle: 'Display Currency',
+      themeTitle: 'Theme Mode',
+      adminLinkTitle: 'Admin Directory & User Management',
+      adminLinkLabel: 'Admin Portal',
+      accountLinkTitle: 'Account Settings & Profile',
+      accountLinkLabel: 'Account Profile',
+      supportButtonTitle: 'Contact Enterprise Support & Help Desk',
+      supportButtonLabel: 'Help & Enterprise Support',
+      supportContactNote: '24/7 Priority Support: support@procucev.com',
+      closeMenu: 'Close Menu'
+    }
   },
 
   pipeline: {
@@ -231,6 +249,10 @@ export const UI_STRINGS = {
     subtitle: 'SAP, Oracle & Infor Ingestion Pipeline with Pre-Categorization Remediation',
     badge: 'Module 1: Document Ingestion & Multi-Currency ETL',
     fxEngineActive: 'Multi-Currency FX Engine Active',
+    multiCurrencyActive: 'Multi-Currency FX Engine Active',
+    liveFxRatesLabel: 'Live FX Benchmark Conversion Rates to INR:',
+    activeTenant: 'Enterprise Client:',
+    industrySector: 'Industry Sector:',
     heading: '3-Year Multi-Currency Ingestion & FX Normalization',
     description: 'Ingests multiple foreign currencies (USD, EUR, GBP, AED, JPY, SGD), applies historical time-series FX conversion rates, and normalizes all spend into INR in Crores (₹ Cr).',
     uploadedFileDetails: 'Uploaded Procurement File Details',
@@ -1068,6 +1090,79 @@ export const UI_STRINGS = {
     ctaProceedButton: 'Proceed to Conversion Matrix & ROI Engine'
   },
 
+  savingsInitiativesSummary: {
+    badge: 'Cross-Module Value Capture Summary',
+    heading: 'Strategic Sourcing & AI Categorization Savings Summary',
+    subheading: 'Consolidated value realization across AI Categorization, Sourcing Initiatives, and Real-Time Savings Engine pipeline (INR in Crores). Click any summary number to review details.',
+    grandTotalTitle: 'Grand Total Enterprise Savings Identified',
+    grandTotalBadge: 'Consolidated Value Impact',
+    grandTotalSpendNote: (spend: number | string) => `Across ₹${spend} Cr evaluated operational baseline`,
+    overallSavingsPctLabel: (pct: number | string) => `${pct}% Net Realization Target`,
+    strategicSourcingSubtotalLabel: 'AI Categorization & Sourcing Initiatives',
+    savingsEngineSubtotalLabel: 'Real-Time Savings Engine Pipeline',
+    initiativesTrackedBadge: (count: number) => `${count} High-Impact Strategic Levers`,
+    clickToReviewTooltip: 'Click to review detail & strategy',
+    reviewDetailAction: 'Review Detail & Strategy →',
+    activeAreaIndicator: 'Active in Current View',
+    tableTitle: 'Consolidated Strategic Value Stream Breakdown',
+    tableSubtitle: 'Cross-functional initiatives spanning vendor consolidation, multiple PO rationalization, dual-sourcing, and category specifications',
+    tableHeaders: {
+      initiative: 'Strategic Initiative & Source Module',
+      targetArea: 'Review Area & Navigation',
+      evaluatedSpend: 'Evaluated Spend (₹ Cr)',
+      targetPct: 'Target %',
+      savingsPotential: 'Identified Savings (₹ Cr)',
+      executionLever: 'Execution Strategy & Platform',
+      action: 'Action'
+    },
+    sources: {
+      module2: 'Stage 2: AI Categorization & Strategic Sourcing',
+      module4: 'Stage 4: Real-Time Savings Engine'
+    },
+    initiatives: {
+      vendorConsolidation: {
+        title: 'High-Value Vendor Consolidation & Reverse e-Auctions',
+        subtitle: 'Recurring monthly spend categories with > 5 fragmented suppliers',
+        badge: '> 5 Vendors / Recurring',
+        lever: 'Volume Aggregation via Dynamic Multi-Round Reverse e-Auctions',
+        executionPlatform: 'DPS NXT Sourcing Hub',
+        navLabel: 'Module 2: Vendor Consolidation'
+      },
+      poConsolidation: {
+        title: 'Multiple Monthly PO Consolidation & Economies of Scale',
+        subtitle: 'Fragmented spot purchase orders consolidated to master blanket contracts',
+        badge: 'Multi-PO / Spot Consolidation',
+        lever: 'Annual Master Blanket Agreements (SAP ME31K) & Bulk Rolling',
+        executionPlatform: 'proCPX Rate Contracts',
+        navLabel: 'Module 2: PO Consolidation'
+      },
+      strategicSingleVendor: {
+        title: 'Strategic Single/Dominant Vendor Risk & Dual-Sourcing',
+        subtitle: 'Sole-source & dominant suppliers with single-digit secondary share',
+        badge: 'Sole-Source & Dominant (>90%)',
+        lever: 'Competitive Dual-Sourcing Quota Allocation & LME Collar Mechanism',
+        executionPlatform: 'proCPX Sourcing RFP',
+        navLabel: 'Module 2: Strategic Vendor Risk'
+      },
+      vendorSupplyRationalization: {
+        title: 'Vendor Material Supply Rationalization & Tail Cleanup',
+        subtitle: 'Multi-category distributor markup elimination & core OEM direct allocation',
+        badge: 'Multi vs Single Category',
+        lever: 'Non-Core Tail Exclusion & Direct OEM Sourcing Alignment',
+        executionPlatform: 'Supplier Segmentation',
+        navLabel: 'Module 2: Vendor Supply Matrix'
+      },
+      categorySavingsPipeline: {
+        title: 'UNSPSC Category Specification & Price Creep Pipeline',
+        subtitle: 'Cross-category direct sourcing, lightweighting & logistics route optimization',
+        badge: 'Category Optimization',
+        lever: 'Dynamic Index Pegging, Master Catalogs & Route Standardization',
+        executionPlatform: 'proCPX & DPS NXT Suite',
+        navLabel: 'Module 4: Savings Pipeline Table'
+      }
+    }
+  },
+
   module5: {
     title: 'Client Sign-Off & EBITDA Savings Conversion Matrix',
     subtitle: 'Adjust realization probability sliders, simulate lock-in, and generate final client deliverable',
@@ -1499,7 +1594,8 @@ export const UI_STRINGS = {
     unspscConfirmed: (mappingId: string) => `UNSPSC mapping ${mappingId} confirmed and locked into QUA taxonomy.`,
     taxonomyReassigned: (code: string, bucket: string) => `Taxonomy re-assigned to UNSPSC ${code} (${bucket}).`,
     issueIgnored: (recordId: string) => `Validation anomaly for Record ${recordId} ignored and retained as reviewed.`,
-    refreshedFinalNumbers: 'Dataset refreshed with fixes: All final spend totals, clean records, and multi-year summaries recalculated!'
+    refreshedFinalNumbers: 'Dataset refreshed with fixes: All final spend totals, clean records, and multi-year summaries recalculated!',
+    navigatingToInitiativeSection: (sectionName: string) => `Navigating to ${sectionName} detailed review area...`
   },
 
   errors: {
@@ -1986,6 +2082,12 @@ export const UI_STRINGS = {
     adminAccounts: 'Administrators',
     uniqueCompanies: 'Registered Companies',
     searchPlaceholder: 'Search by user name, organization email, company name, or mobile number...',
+    filterTier: 'Subscription Tier',
+    allTiers: 'All Tiers',
+    colTier: 'Subscription Tier',
+    changeTier: 'Change Tier',
+    tierSelectPrompt: 'Select New Tier',
+    tierUpdateSuccess: (name: string, tier: string) => `Subscription tier for "${name}" updated to ${tier}.`,
     filterRole: 'Role',
     filterStatus: 'Status',
     allRoles: 'All Roles',
@@ -2010,6 +2112,48 @@ export const UI_STRINGS = {
     accessDenied: 'Access Restricted: Administrator credentials required to view the user registry.',
     signInAsAdmin: 'Sign In as Administrator',
     userCountLabel: (count: number) => `${count} Registered Users`
+  },
+
+  subscription: {
+    tierBronze: 'Bronze Tier',
+    tierSilver: 'Silver Tier',
+    tierGold: 'Gold Tier',
+    tierBronzeBadge: 'BRONZE CUSTOMER',
+    tierSilverBadge: 'SILVER CUSTOMER',
+    tierGoldBadge: 'GOLD CUSTOMER',
+    tierBadge: (tier: string) => `${tier} CUSTOMER`,
+    bronzeNotice:
+      'You are currently on the Bronze Tier. Data upload and preliminary savings availability indication are active. Granular analytics, category insights, trend analysis, and execution engines are locked.',
+    silverNotice:
+      'You are on the Silver Tier. Summary levels and macro indicators are visible. Transactional SKU breakdowns, supplier details, and specific savings generation levers are locked.',
+    goldNotice:
+      'You are on the Gold Tier with full unrestricted access to all modules, SKU diagnostics, supplier scorecards, and savings execution engines.',
+    savingsAvailableHeading: 'Preliminary Savings Potential Detected',
+    savingsAvailableYes: 'Savings Available: YES',
+    savingsAvailableYesDesc:
+      'Our autonomous diagnostics have detected immediate EBITDA savings opportunities in your uploaded dataset. Upgrade to Silver or Gold to unlock the detailed breakdown.',
+    savingsAvailableSummaryOnly: 'High-Level Assessment Only (Bronze Tier)',
+    stageMaskedTitle: (stage: string) => `${stage} Locked`,
+    stageMaskedBronzeDesc:
+      'This analysis requires Silver or Gold customer tier access. Your current Bronze tier provides preliminary ingestion analysis only.',
+    stageMaskedSilverDesc:
+      'Granular SKU-level insights and specific generation targets are masked on Silver tier. Upgrade to Gold to access full strategic sourcing levers.',
+    upgradeToSilver: 'Upgrade to Silver',
+    upgradeToGold: 'Upgrade to Gold Customer',
+    upgradeCta: 'Unlock Full Savings Intelligence',
+    savingsTotalValueTitle: 'Total Addressable Savings Potential',
+    savingsWhereLockedTitle: 'Savings Generation Levers & Opportunity Targets Masked',
+    savingsWhereLockedNote:
+      'Savings Generation Locations & Opportunity Details Masked for Silver Tier. Upgrade to Gold to access specific suppliers, contracts, and deployment actions.',
+    demoSwitcherLabel: 'Tier Demo Switcher:',
+    switchToBronze: 'Switch to Bronze',
+    switchToSilver: 'Switch to Silver',
+    switchToGold: 'Switch to Gold',
+    simulationActive: (tier: string) => `Simulating ${tier} Tier`,
+    resetSimulation: 'Reset Simulation',
+    bronzeBadgeText: 'BRONZE',
+    silverBadgeText: 'SILVER',
+    goldBadgeText: 'GOLD'
   }
 } as const;
 

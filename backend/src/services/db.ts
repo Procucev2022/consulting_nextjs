@@ -698,15 +698,16 @@ export class DatabaseStore {
       try {
         const created = await (prisma as any).user.create({
           data: {
-            id: data.id,
-            name: data.name,
-            mobile_number: data.mobile_number,
-            email: data.email.trim().toLowerCase(),
-            company_name: data.company_name,
-            company_address: data.company_address,
-            password_hash: data.password_hash,
-            role: data.role,
-            status: data.status
+            id: newUser.id,
+            name: newUser.name,
+            mobile_number: newUser.mobile_number,
+            email: newUser.email,
+            company_name: newUser.company_name,
+            company_address: newUser.company_address,
+            password_hash: newUser.password_hash,
+            role: newUser.role,
+            status: newUser.status,
+            subscription_tier: newUser.subscription_tier || 'BRONZE'
           }
         });
         return created as UserRecord;
@@ -739,7 +740,9 @@ export class DatabaseStore {
     return false;
   }
 
-  public async getAllUsers(query?: { search?: string; role?: string; status?: string }): Promise<UserRecord[]> {
+  public async getAllUsers(
+    query?: { search?: string; role?: string; status?: string; tier?: string }
+  ): Promise<UserRecord[]> {
     if (this.isPostgresConnected) {
       try {
         const whereClause: any = {};
@@ -748,6 +751,9 @@ export class DatabaseStore {
         }
         if (query?.status && query.status !== 'ALL') {
           whereClause.status = query.status.toUpperCase();
+        }
+        if (query?.tier && query.tier !== 'ALL') {
+          whereClause.subscription_tier = query.tier.toUpperCase();
         }
         if (query?.search && query.search.trim() !== '') {
           const q = query.search.trim();
@@ -777,6 +783,9 @@ export class DatabaseStore {
     }
     if (query?.status && query.status !== 'ALL') {
       filtered = filtered.filter((u) => u.status.toUpperCase() === query.status?.toUpperCase());
+    }
+    if (query?.tier && query.tier !== 'ALL') {
+      filtered = filtered.filter((u) => u.subscription_tier?.toUpperCase() === query.tier?.toUpperCase());
     }
     if (query?.search && query.search.trim() !== '') {
       const q = query.search.trim().toLowerCase();
@@ -814,6 +823,28 @@ export class DatabaseStore {
     return { ...this.users[idx] };
   }
 
+  public async updateUserTier(id: string, tier: string): Promise<UserRecord | null> {
+    const validTier = tier.toUpperCase();
+    if (this.isPostgresConnected) {
+      try {
+        const updated = await (prisma as any).user.update({
+          where: { id },
+          data: { subscription_tier: validTier }
+        });
+        const idx = this.users.findIndex((u) => u.id === id);
+        if (idx !== -1) this.users[idx] = { ...updated } as UserRecord;
+        return updated as UserRecord;
+      } catch (err: any) {
+        logger.warn('Failed to update user tier in PostgreSQL, falling back to local memory store', { id, tier: validTier, error: err.message });
+      }
+    }
+
+    const found = this.users.find((u) => u.id === id);
+    if (!found) return null;
+    found.subscription_tier = validTier;
+    found.updated_at = new Date();
+    return { ...found };
+  }
 }
 
 // Server-wide Singleton

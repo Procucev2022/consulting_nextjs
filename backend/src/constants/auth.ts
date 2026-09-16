@@ -13,6 +13,12 @@ export const AUTH_STATUS = {
   PENDING: 'PENDING'
 } as const;
 
+export const SUBSCRIPTION_TIERS = {
+  BRONZE: 'BRONZE',
+  SILVER: 'SILVER',
+  GOLD: 'GOLD'
+} as const;
+
 export const AUTH_TOKEN_EXPIRY_SECONDS = 86400; // 24 hours
 
 export const AUTH_MESSAGES = {
@@ -26,5 +32,6 @@ export const AUTH_MESSAGES = {
   USER_NOT_FOUND: 'Requested user account not found',
   STATUS_UPDATED: 'User status updated successfully',
   PASSWORD_CHANGED: 'Password updated successfully',
-  CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect'
+  CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
+  TIER_UPDATED: 'User subscription tier updated successfully'
 } as const;

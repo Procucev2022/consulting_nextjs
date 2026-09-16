@@ -62,15 +62,17 @@ export class AuthController {
       company_address: companyAddress,
       password_hash: passwordHash,
       role: AUTH_ROLES.USER,
-      status: AUTH_STATUS.ACTIVE
+      status: AUTH_STATUS.ACTIVE,
+      subscription_tier: parseResult.data.subscription_tier || 'BRONZE'
     });
 
-    const token = generateAuthToken(user.id, user.email, user.role);
+    const token = generateAuthToken(user.id, user.email, user.role, user.subscription_tier);
 
     logger.info('User account registered successfully', {
       userId: user.id,
       email: user.email,
-      companyName: user.company_name,
+      role: user.role,
+      tier: user.subscription_tier,
       durationMs: Date.now() - start,
       requestId
     });
@@ -78,14 +80,14 @@ export class AuthController {
     res.status(201).json({
       success: true,
       message: AUTH_MESSAGES.REGISTER_SUCCESS,
-      user: sanitizeUserProfile(user),
       token,
+      user: sanitizeUserProfile(user),
       expires_in_seconds: AUTH_TOKEN_EXPIRY_SECONDS
     });
   }
 
   /**
-   * User / Admin Login
+   * Authenticate user and return session token
    */
   public async login(req: Request, res: Response): Promise<void> {
     const start = Date.now();
@@ -136,7 +138,7 @@ export class AuthController {
       return;
     }
 
-    const token = generateAuthToken(user.id, user.email, user.role);
+    const token = generateAuthToken(user.id, user.email, user.role, user.subscription_tier);
 
     logger.info('User authenticated successfully', {
       userId: user.id,

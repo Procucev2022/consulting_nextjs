@@ -156,7 +156,8 @@ export const registerUserSchema = z.object({
   email: z.string().email('Valid organization email is required').toLowerCase(),
   company_name: z.string().min(2, 'Company name is required').max(150),
   company_address: z.string().min(5, 'Company address is required').max(300),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(100)
+  password: z.string().min(6, 'Password must be at least 6 characters').max(100),
+  subscription_tier: z.enum(['BRONZE', 'SILVER', 'GOLD']).optional()
 });
 
 export const loginUserSchema = z.object({
@@ -172,7 +173,8 @@ export const changePasswordSchema = z.object({
 export const adminUserQuerySchema = z.object({
   search: z.string().optional(),
   role: z.enum(['ALL', 'USER', 'ADMIN']).optional(),
-  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED', 'PENDING']).optional()
+  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED', 'PENDING']).optional(),
+  tier: z.enum(['ALL', 'BRONZE', 'SILVER', 'GOLD']).optional()
 });
 
 export const adminUpdateUserStatusSchema = z.object({
@@ -232,5 +234,10 @@ export const aiAnalyzeAnomaliesSchema = z.object({
     })
   ).min(1, 'At least one record is required for anomaly analysis')
 });
+
+export const adminUpdateUserTierSchema = z.object({
+  tier: z.enum(['BRONZE', 'SILVER', 'GOLD'])
+});
+
 
 

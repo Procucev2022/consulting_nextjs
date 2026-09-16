@@ -14,7 +14,11 @@ import {
   logsPurgeSchema,
   graphQLRequestSchema,
   encryptRequestSchema,
-  decryptRequestSchema
+  decryptRequestSchema,
+  registerUserSchema,
+  loginUserSchema,
+  adminUserQuerySchema,
+  adminUpdateUserTierSchema
 } from '../../src/constants/validation';
 
 describe('Backend Validation Schemas (constants/validation.ts)', () => {
@@ -275,6 +279,45 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
     it('should reject empty or missing payload', () => {
       expect(decryptRequestSchema.safeParse({}).success).toBe(false);
       expect(decryptRequestSchema.safeParse({ payload: '' }).success).toBe(false);
+    });
+  });
+
+  describe('Auth & Tier Schemas', () => {
+    it('should validate registerUserSchema with and without tier', () => {
+      const valid = {
+        name: 'Jane Doe',
+        mobile_number: '+91 99999 88888',
+        email: 'jane@enterprise.com',
+        company_name: 'Enterprise Inc',
+        company_address: '123 Main St, Tech City',
+        password: 'Password@123',
+        subscription_tier: 'BRONZE'
+      };
+      expect(registerUserSchema.safeParse(valid).success).toBe(true);
+      const withoutTier = { ...valid };
+      delete (withoutTier as any).subscription_tier;
+      expect(registerUserSchema.safeParse(withoutTier).success).toBe(true);
+      expect(registerUserSchema.safeParse({ ...valid, subscription_tier: 'INVALID' }).success).toBe(false);
+    });
+
+    it('should validate loginUserSchema', () => {
+      expect(loginUserSchema.safeParse({ email: 'valid@test.com', password: 'pass' }).success).toBe(true);
+      expect(loginUserSchema.safeParse({ email: 'BUYER-101', password: 'pass' }).success).toBe(true);
+      expect(loginUserSchema.safeParse({ email: '', password: 'pass' }).success).toBe(false);
+      expect(loginUserSchema.safeParse({ email: 'valid@test.com', password: '' }).success).toBe(false);
+    });
+
+    it('should validate adminUserQuerySchema with and without tier filter', () => {
+      expect(adminUserQuerySchema.safeParse({ tier: 'SILVER', role: 'USER', status: 'ACTIVE' }).success).toBe(true);
+      expect(adminUserQuerySchema.safeParse({ tier: 'GOLD' }).success).toBe(true);
+      expect(adminUserQuerySchema.safeParse({ tier: 'INVALID' }).success).toBe(false);
+    });
+
+    it('should validate adminUpdateUserTierSchema', () => {
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'BRONZE' }).success).toBe(true);
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'SILVER' }).success).toBe(true);
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'GOLD' }).success).toBe(true);
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'PLATINUM' }).success).toBe(false);
     });
   });
 });

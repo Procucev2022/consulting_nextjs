@@ -8,6 +8,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import type { Module5ConversionMatrixProps } from '../types';
+import { TierMaskOverlay } from './TierMaskOverlay';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,
@@ -21,7 +22,9 @@ import confetti from 'canvas-confetti';
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
   tenant: _tenant,
   funnelStages,
-  onOpenReport
+  onOpenReport,
+  currentTier = 'GOLD',
+  onUpgrade
 }) => {
   // ROI Interactive Calculator State in INR in Crores (₹ Cr)
   const [annualSpendCr, setAnnualSpendCr] = useState<number>(DEFAULT_SPEND_BASELINE_INR_CR); // ₹732.41 Cr
@@ -48,6 +51,22 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
     });
   };
 
+  const handleUpgradeSilver = () => {
+    onUpgrade?.('SILVER');
+  };
+
+  if (currentTier === 'BRONZE') {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <TierMaskOverlay
+          requiredTier="SILVER"
+          title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module5.heading)}
+          description={UI_STRINGS.subscription.stageMaskedBronzeDesc}
+          onUpgrade={handleUpgradeSilver}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

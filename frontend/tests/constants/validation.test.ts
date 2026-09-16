@@ -15,7 +15,11 @@ import {
   apiUpdateValidationRecordPayloadSchema,
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
-  apiCalculateConversionPayloadSchema
+  apiCalculateConversionPayloadSchema,
+  registerFormSchema,
+  loginFormSchema,
+  adminUserQuerySchema,
+  adminUpdateUserTierSchema
 } from '../../src/constants/validation';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
@@ -268,6 +272,44 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
         savingsRate: 10,
         saasFeeRate: 1
       }).success).toBe(true);
+    });
+  });
+
+  describe('Auth & Subscription Tier Schemas', () => {
+    it('should validate registerFormSchema', () => {
+      const valid = {
+        name: 'John Enterprise',
+        mobile_number: '+91 99999 12345',
+        email: 'john@enterprise.com',
+        company_name: 'Enterprise Inc',
+        company_address: '100 Main St, Bangalore',
+        password: 'SecurePassword123'
+      };
+      expect(registerFormSchema.safeParse(valid).success).toBe(true);
+      expect(registerFormSchema.safeParse({ ...valid, email: 'invalid-email' }).success).toBe(false);
+      expect(registerFormSchema.safeParse({ ...valid, password: '123' }).success).toBe(false);
+    });
+
+    it('should validate loginFormSchema', () => {
+      expect(loginFormSchema.safeParse({ email: 'john@enterprise.com', password: 'password123' }).success).toBe(true);
+      expect(loginFormSchema.safeParse({ email: 'notanemail', password: 'pass' }).success).toBe(false);
+      expect(loginFormSchema.safeParse({ email: 'john@enterprise.com', password: '' }).success).toBe(false);
+    });
+
+    it('should validate adminUserQuerySchema with and without tier', () => {
+      expect(adminUserQuerySchema.safeParse({ search: 'john', role: 'USER', status: 'ACTIVE', tier: 'SILVER' }).success).toBe(true);
+      expect(adminUserQuerySchema.safeParse({ tier: 'ALL' }).success).toBe(true);
+      expect(adminUserQuerySchema.safeParse({ tier: 'GOLD' }).success).toBe(true);
+      expect(adminUserQuerySchema.safeParse({ tier: 'BRONZE' }).success).toBe(true);
+      expect(adminUserQuerySchema.safeParse({ tier: 'INVALID' }).success).toBe(false);
+    });
+
+    it('should validate adminUpdateUserTierSchema', () => {
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'BRONZE' }).success).toBe(true);
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'SILVER' }).success).toBe(true);
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'GOLD' }).success).toBe(true);
+      expect(adminUpdateUserTierSchema.safeParse({ tier: 'DIAMOND' }).success).toBe(false);
+      expect(adminUpdateUserTierSchema.safeParse({}).success).toBe(false);
     });
   });
 });
