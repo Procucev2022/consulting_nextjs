@@ -769,7 +769,7 @@ describe('Home Page Component', () => {
     window.HTMLElement.prototype.scrollIntoView = scrollMock;
 
     if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: initialIngestionQueue[0] }));
+      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: initialIngestionQueue[0], validationRecords: initialValidationRecords }));
     }
 
     render(<Home />);
@@ -777,37 +777,19 @@ describe('Home Page Component', () => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
 
-    // Find and click the Refresh with Fixes button with pending records
-    const refreshButtons = screen.getAllByRole('button', {
+    // Verify Refresh with Fixes buttons are hidden as requested
+    const refreshButtons = screen.queryAllByRole('button', {
       name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i')
     });
-    expect(refreshButtons.length).toBeGreaterThan(0);
+    expect(refreshButtons.length).toBe(0);
 
-    fireEvent.click(refreshButtons[0]);
-
-    // Toast should be displayed
-    await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.toasts.refreshedFinalNumbers)).toBeInTheDocument();
-    });
-    expect(scrollMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
-
-    // Now apply blanket fixes so all validation records are resolved
+    // Apply blanket fixes so all validation records are resolved
     const blanketBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     fireEvent.click(blanketBtn);
 
-    // Click refresh with fixes again when all records are resolved
-    const refreshAgain = screen.getAllByRole('button', {
-      name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i')
-    })[0];
-    fireEvent.click(refreshAgain);
-
-    // Verify sessionStorage was updated with reconciled spend
-    const savedAfter = JSON.parse(window.sessionStorage.getItem('procucev_uploaded_dataset') || '{}');
-    expect(savedAfter.isDataRefreshed).toBe(true);
-
-    // Test when document-summary-section is not found
-    vi.spyOn(document, 'getElementById').mockReturnValueOnce(null);
-    fireEvent.click(refreshAgain);
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.toasts.blanketFixesApplied)).toBeInTheDocument();
+    });
   });
 
   it('triggers AnalyzingLoader from Deep Spend Scan in Header and handles cancellation and completion', async () => {

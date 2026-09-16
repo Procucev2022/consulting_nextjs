@@ -130,7 +130,7 @@ describe('DatabaseStore service', () => {
       expect(sanitized.file_type).toBe('XLSX');
       expect(sanitized.ocr_status).toBe('Completed');
       expect(sanitized.progress).toBe(100);
-      expect(sanitized.converted_inr_crores).toBe(732.41);
+      expect(sanitized.converted_inr_crores).toBe(0);
     });
 
     it('should maintain single active item on addIngestionItem and allow resetIngestionQueue', () => {

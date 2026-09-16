@@ -124,14 +124,11 @@ describe('DocumentSummaryView Component', () => {
     expect(screen.getByText('Ferro Alloys & Noble Metals (FERRO)')).toBeInTheDocument();
   });
 
-  it('triggers onNavigateToCategorization when action button is clicked', () => {
+  it('does not render View Category & Vendor Spend Analysis button (hidden as requested)', () => {
     const onNavigate = vi.fn();
     render(<DocumentSummaryView {...defaultProps} onNavigateToCategorization={onNavigate} />);
 
-    const proceedBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') });
-    fireEvent.click(proceedBtn);
-
-    expect(onNavigate).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') })).not.toBeInTheDocument();
   });
 
   it('renders with custom dynamic summaries passed via props', () => {
@@ -232,7 +229,7 @@ describe('DocumentSummaryView Component', () => {
     render(<DocumentSummaryView tenant={undefined} />);
     const usdBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.currencies.usd });
     fireEvent.click(usdBtn);
-    expect(screen.getAllByText('$9626.32 M').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('$0.00 M').length).toBeGreaterThanOrEqual(1);
   });
 
   it('filters and displays USD currency in Plant view and handles empty plant search', () => {

@@ -1,12 +1,15 @@
 import type { Request, Response } from 'express';
 import { db } from '../services/db';
+import { objectStore } from '../services/objectStoreService';
 import logger from '../utils/logger';
 
-export const getIngestionData = async (_req: Request, res: Response): Promise<Response | void> => {
+export const getIngestionData = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const queue = db.getIngestionQueue();
+    const tenantId = (req?.query?.tenantId as string) || (req?.query?.buyerId as string) || (req?.headers?.['x-buyer-id'] as string) || (req?.headers?.['x-tenant-id'] as string);
+    const queue = db.getIngestionQueue(tenantId);
     const validationRecords = db.getValidationRecords();
     logger.debug('Fetched ingestion data', {
+      tenantId,
       queueCount: queue.length,
       recordsCount: validationRecords.length
     });
@@ -36,7 +39,7 @@ export const getIngestionData = async (_req: Request, res: Response): Promise<Re
 
 export const addIngestionFile = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const body = req.body;
+    const body = req?.body || {};
     const updatedQueue = db.addIngestionItem(body);
     logger.info('File ingested into queue', {
       fileName: body.file_name,
@@ -51,7 +54,7 @@ export const addIngestionFile = async (req: Request, res: Response): Promise<Res
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to add ingestion file';
-    logger.error('Failed to add ingestion file', { body: req.body }, error);
+    logger.error('Failed to add ingestion file', { body: req?.body }, error);
     return res.status(400).json({
       success: false,
       message
@@ -124,6 +127,130 @@ export const applyBlanketRemediation = async (_req: Request, res: Response): Pro
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to apply blanket remediation';
     logger.error('Failed to apply blanket remediation', {}, error);
+    return res.status(500).json({
+      success: false,
+      message
+    });
+  }
+};
+
+export const uploadDocumentToObjectStore = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const {
+      fileName,
+      fileType,
+      fileBase64,
+      fileSizeMb,
+      recordsCount,
+      convertedInrCrores,
+      detectedCurrencies,
+      datasetType,
+      tenant_id,
+      buyer_id
+    } = req.body;
+
+    if (!fileName) {
+      return res.status(400).json({ success: false, message: 'Missing fileName in upload payload' });
+    }
+
+    let buffer: Buffer;
+    if (fileBase64) {
+      const cleanBase64 = fileBase64.replace(/^data:[^;]+;base64,/, '');
+      buffer = Buffer.from(cleanBase64, 'base64');
+    } else {
+      buffer = Buffer.from(fileName, 'utf-8');
+    }
+
+    const calculatedSizeMb = fileSizeMb || Number((buffer.length / (1024 * 1024)).toFixed(2)) || 1.0;
+    const objectMeta = await objectStore.putObject(
+      buffer,
+      fileName,
+      fileType === 'XLSX' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
+      'procurement-datasets',
+      { datasetType: datasetType || 'Purchase History' }
+    );
+
+    const effectiveTenantId = tenant_id || buyer_id || (req.headers['x-buyer-id'] as string) || (req.headers['x-tenant-id'] as string);
+
+    const ingestionItem = {
+      tenant_id: effectiveTenantId,
+      file_name: fileName,
+      file_type: (fileType || 'XLSX') as any,
+      file_size_mb: calculatedSizeMb,
+      records_count: recordsCount || 0,
+      converted_inr_crores: convertedInrCrores || 0,
+      detected_currencies: detectedCurrencies || ['INR'],
+      ocr_status: 'Completed' as const,
+      progress: 100
+    };
+
+    const updatedQueue = db.addIngestionItem(ingestionItem);
+
+    logger.info('Dataset uploaded and registered in Object Store', {
+      key: objectMeta.key,
+      fileName,
+      recordsCount,
+      tenantId: effectiveTenantId
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        objectMeta,
+        ingestionQueue: updatedQueue
+      },
+      message: 'Dataset uploaded and persisted in Object Store successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to upload document to Object Store';
+    logger.error('Failed to upload document to Object Store', {}, error);
+    return res.status(500).json({
+      success: false,
+      message
+    });
+  }
+};
+
+export const getStoredObject = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const key = req.params.key;
+    if (!key) {
+      return res.status(400).json({ success: false, message: 'Missing object key' });
+    }
+    const decodedKey = decodeURIComponent(key);
+    const obj = await objectStore.getObject(decodedKey);
+    if (!obj) {
+      return res.status(404).json({ success: false, message: 'Object not found in Object Store' });
+    }
+    res.setHeader('Content-Type', obj.metadata.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${obj.metadata.filename}"`);
+    return res.send(obj.buffer);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to retrieve object';
+    logger.error('Failed to retrieve object', { params: req.params }, error);
+    return res.status(500).json({
+      success: false,
+      message
+    });
+  }
+};
+
+export const deleteIngestionDocument = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const docId = req?.params?.docId;
+    const tenantId = (req?.query?.tenantId as string) || (req?.query?.buyerId as string) || (req?.headers?.['x-buyer-id'] as string) || (req?.headers?.['x-tenant-id'] as string);
+    const updatedQueue = db.deleteIngestionItem(docId, tenantId);
+    logger.info('Ingestion document removed from database', { docId, tenantId });
+    return res.json({
+      success: true,
+      data: updatedQueue,
+      message: docId ? `Document ${docId} deleted from database` : 'All ingestion documents cleared',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to delete ingestion document';
+    logger.error('Failed to delete ingestion document', { params: req.params }, error);
     return res.status(500).json({
       success: false,
       message

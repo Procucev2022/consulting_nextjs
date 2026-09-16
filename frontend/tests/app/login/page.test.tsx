@@ -54,20 +54,6 @@ describe('Login & Registration Page Component', () => {
     expect(screen.getByText(UI_STRINGS.auth.signInHeading)).toBeDefined();
   });
 
-  it('should populate inputs when clicking quick test account buttons', () => {
-    render(<LoginPage />);
-
-    const quickAdminBtn = screen.getByText(UI_STRINGS.auth.quickAdmin);
-    fireEvent.click(quickAdminBtn);
-
-    const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel) as HTMLInputElement;
-    expect(emailInput.value).toBe('admin@procucev.com');
-
-    const quickUserBtn = screen.getByText(UI_STRINGS.auth.quickUser);
-    fireEvent.click(quickUserBtn);
-    expect(emailInput.value).toBe('srinivas@apexindustrial.com');
-  });
-
   it('should handle successful login and redirect user based on role', async () => {
     vi.spyOn(apiClient, 'login').mockResolvedValue({
       success: true,
@@ -304,6 +290,40 @@ describe('Login & Registration Page Component', () => {
     // Key metrics
     expect(screen.getByText(UI_STRINGS.auth.statDirectEbitda)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.statSavingsUnlocked)).toBeInTheDocument();
+  });
+
+  it('should toggle password visibility when clicking eye icons', () => {
+    render(<LoginPage />);
+
+    const loginPasswordInput = screen.getByLabelText(UI_STRINGS.auth.passwordLabel) as HTMLInputElement;
+    expect(loginPasswordInput.type).toBe('password');
+
+    // Click toggle button
+    const toggleLoginBtn = screen.getByLabelText('Show password');
+    fireEvent.click(toggleLoginBtn);
+    expect(loginPasswordInput.type).toBe('text');
+
+    fireEvent.click(screen.getByLabelText('Hide password'));
+    expect(loginPasswordInput.type).toBe('password');
+
+    // Switch to Register tab and test register password fields
+    fireEvent.click(screen.getByText(UI_STRINGS.auth.createAccountTab));
+
+    const regPasswordInput = screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`) as HTMLInputElement;
+    const regConfirmInput = screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`) as HTMLInputElement;
+
+    expect(regPasswordInput.type).toBe('password');
+    expect(regConfirmInput.type).toBe('password');
+
+    const showButtons = screen.getAllByLabelText('Show password');
+    expect(showButtons.length).toBe(2);
+
+    // Toggle both
+    fireEvent.click(showButtons[0]);
+    expect(regPasswordInput.type).toBe('text');
+
+    fireEvent.click(showButtons[1]);
+    expect(regConfirmInput.type).toBe('text');
   });
 });
 

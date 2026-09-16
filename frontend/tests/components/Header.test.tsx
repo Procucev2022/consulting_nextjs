@@ -23,7 +23,7 @@ describe('Header Component', () => {
     // Brand is now rendered as official aiCEV logo image
     const logoImg = screen.getByAltText(UI_STRINGS.header.logoAlt);
     expect(logoImg).toBeInTheDocument();
-    expect(logoImg).toHaveAttribute('src', AICEV_LOGO_SRC);
+    expect(logoImg.getAttribute('src')).toContain('aicev-logo.png');
     expect(screen.getByText(UI_STRINGS.header.subtitle)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
     expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
@@ -32,7 +32,7 @@ describe('Header Component', () => {
   it('renders fallback spend if total_spend_evaluated_inr is undefined', () => {
     const tenantWithoutINR = { ...mockTenant, total_spend_evaluated_inr: undefined as any };
     render(<Header {...defaultProps} tenant={tenantWithoutINR} />);
-    expect(screen.getByText(UI_STRINGS.header.evaluatedSpendFallback)).toBeInTheDocument();
+    expect(screen.getByText('₹0.00 Cr')).toBeInTheDocument();
   });
 
   it('handles theme switching between light and dark', () => {
@@ -103,16 +103,47 @@ describe('Header Component', () => {
     expect(scanBtn).toHaveClass('animate-pulse');
   });
 
-  it('renders Admin directory and Sign In navigation links', () => {
+  it('renders Sign In navigation link when unauthenticated', () => {
     render(<Header {...defaultProps} />);
-
-    const adminLink = screen.getByTitle(UI_STRINGS.admin.pageTitle);
-    expect(adminLink).toBeInTheDocument();
-    expect(adminLink).toHaveAttribute('href', '/admin');
 
     const loginLink = screen.getByTitle(UI_STRINGS.auth.pageTitle);
     expect(loginLink).toBeInTheDocument();
     expect(loginLink).toHaveAttribute('href', '/login');
+  });
+
+  it('renders user avatar and opens profile dropdown menu on click/hover for authenticated user', () => {
+    const onLogout = vi.fn();
+    const mockUser = {
+      id: 'usr-navin-101',
+      name: 'Navin Kumar',
+      email: 'navin@enterprise.com',
+      mobile_number: '+91 9876543210',
+      company_name: 'Apex Industrial Dynamics',
+      company_address: 'Industrial Area',
+      role: 'ADMIN' as const,
+      status: 'ACTIVE' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    render(<Header {...defaultProps} currentUser={mockUser} onLogout={onLogout} />);
+
+    const userBtn = screen.getByTitle('Account Profile & Settings');
+    expect(userBtn).toBeInTheDocument();
+    expect(screen.getAllByText('Navin Kumar').length).toBeGreaterThanOrEqual(1);
+
+    // Click to open dropdown
+    fireEvent.click(userBtn);
+
+    expect(screen.getByText('Profile & Account Settings')).toBeInTheDocument();
+    expect(screen.getByText('Admin Directory')).toBeInTheDocument();
+    expect(screen.getByText('Buyer ID:')).toBeInTheDocument();
+    expect(screen.getByText('usr-navin-101')).toBeInTheDocument();
+
+    // Logout action
+    const logoutBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.auth.logout, 'i') });
+    fireEvent.click(logoutBtn);
+    expect(onLogout).toHaveBeenCalled();
   });
 });
 

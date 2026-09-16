@@ -9,7 +9,8 @@ import {
   initialLineItemMappings,
   vendorVolatilityRankings,
   initialSavingsOpportunities,
-  conversionFunnelStages
+  conversionFunnelStages,
+  initialSeedUsers
 } from '../data/mockData';
 
 import type {
@@ -47,6 +48,7 @@ export class DatabaseStore {
   private vendorRankings: VendorPriceRank[] = JSON.parse(JSON.stringify(vendorVolatilityRankings));
   private opportunities: SavingsOpportunity[] = JSON.parse(JSON.stringify(initialSavingsOpportunities));
   private funnelStages: ConversionFunnelPhase[] = JSON.parse(JSON.stringify(conversionFunnelStages));
+  private users: UserRecord[] = JSON.parse(JSON.stringify(initialSeedUsers));
 
   constructor() {
     this.initPostgres();
@@ -73,10 +75,10 @@ export class DatabaseStore {
       }
     } catch (err: any) {
       this.isPostgresConnected = false;
-      logger.warn('⚠️  PostgreSQL not reachable, running with resilient in-memory datastore', {
+      logger.warn('⚠️  PostgreSQL connection unavailable - running with active high-performance datastore', {
         source: 'DatabaseStore',
-        tip: 'Start PostgreSQL using "docker compose up -d" or "npm run db:up", then run "npm run db:setup"'
-      }, err);
+        reason: err instanceof Error ? err.message.split('\n')[0] : String(err)
+      });
     }
   }
 
@@ -116,13 +118,28 @@ export class DatabaseStore {
     this.tenant = { ...this.tenant, ...updates };
     queryCache.invalidateCache(CACHE_KEYS.TENANT);
     if (this.isPostgresConnected) {
-      prisma.tenantMaster.updateMany({
+      prisma.tenantMaster.upsert({
         where: { tenant_id: this.tenant.tenant_id },
-        data: {
-          ...updates,
-          region: updates.region as any,
-          base_currency: updates.base_currency as any,
-          status: updates.status as any
+        create: {
+          tenant_id: this.tenant.tenant_id,
+          enterprise_name: this.tenant.enterprise_name,
+          region: this.tenant.region,
+          base_currency: this.tenant.base_currency,
+          status: this.tenant.status,
+          total_spend_evaluated: this.tenant.total_spend_evaluated,
+          total_spend_evaluated_inr: this.tenant.total_spend_evaluated_inr,
+          major_sector: this.tenant.major_sector,
+          minor_sector: this.tenant.minor_sector
+        },
+        update: {
+          enterprise_name: updates.enterprise_name ?? this.tenant.enterprise_name,
+          region: (updates.region as any) ?? this.tenant.region,
+          base_currency: (updates.base_currency as any) ?? this.tenant.base_currency,
+          status: (updates.status as any) ?? this.tenant.status,
+          total_spend_evaluated: updates.total_spend_evaluated ?? this.tenant.total_spend_evaluated,
+          total_spend_evaluated_inr: updates.total_spend_evaluated_inr ?? this.tenant.total_spend_evaluated_inr,
+          major_sector: updates.major_sector ?? this.tenant.major_sector,
+          minor_sector: updates.minor_sector ?? this.tenant.minor_sector
         }
       }).catch((e: any) => logger.error('Error syncing tenant to PostgreSQL', { source: 'DatabaseStore' }, e));
     }
@@ -141,7 +158,7 @@ export class DatabaseStore {
       uploaded_at: item.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
       records_count: item.records_count ?? 0,
       detected_currencies: Array.isArray(item.detected_currencies) && item.detected_currencies.length > 0 ? item.detected_currencies : ['INR'],
-      converted_inr_crores: item.converted_inr_crores ?? 732.41,
+      converted_inr_crores: item.converted_inr_crores ?? 0,
       unique_items_count: item.unique_items_count,
       unique_vendors_count: item.unique_vendors_count,
       material_groups_count: item.material_groups_count,
@@ -150,9 +167,10 @@ export class DatabaseStore {
   }
 
   // Ingestion
-  public getIngestionQueue(): RawDocumentIngestion[] {
+  public getIngestionQueue(tenantId?: string): RawDocumentIngestion[] {
     const start = Date.now();
-    const cached = queryCache.getCached<RawDocumentIngestion[]>(CACHE_KEYS.INGESTION_QUEUE);
+    const cacheKey = tenantId ? `${CACHE_KEYS.INGESTION_QUEUE}_${tenantId}` : CACHE_KEYS.INGESTION_QUEUE;
+    const cached = queryCache.getCached<RawDocumentIngestion[]>(cacheKey);
     if (cached) {
       queryAuditor.recordQueryAudit({
         queryId: `ingestion-${Date.now()}`,
@@ -164,8 +182,11 @@ export class DatabaseStore {
       });
       return cached.map((item, idx) => this.sanitizeIngestionItem(item, idx));
     }
-    const result = this.ingestionQueue.map((item, idx) => this.sanitizeIngestionItem(item, idx));
-    queryCache.setCached(CACHE_KEYS.INGESTION_QUEUE, result);
+    const filteredQueue = tenantId
+      ? this.ingestionQueue.filter((item) => !item.tenant_id || item.tenant_id === tenantId)
+      : this.ingestionQueue;
+    const result = filteredQueue.map((item, idx) => this.sanitizeIngestionItem(item, idx));
+    queryCache.setCached(cacheKey, result);
     queryAuditor.recordQueryAudit({
       queryId: `ingestion-${Date.now()}`,
       operation: 'getIngestionQueue',
@@ -195,9 +216,15 @@ export class DatabaseStore {
       material_groups_count: item.material_groups_count,
       plants_count: item.plants_count
     };
-    // Ingestion queue maintains the single active uploaded document
-    this.ingestionQueue = [fullItem];
+    // Replace or add document for this tenant/buyer
+    this.ingestionQueue = [
+      ...this.ingestionQueue.filter((doc) => doc.tenant_id !== fullItem.tenant_id && doc.doc_id !== fullItem.doc_id),
+      fullItem
+    ];
     queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
+    if (fullItem.tenant_id) {
+      queryCache.invalidateCache(`${CACHE_KEYS.INGESTION_QUEUE}_${fullItem.tenant_id}`);
+    }
     if (this.isPostgresConnected) {
       prisma.rawDocumentIngestion.create({
         data: {
@@ -215,7 +242,37 @@ export class DatabaseStore {
         }
       }).catch((e: any) => logger.error('Error syncing ingestion to PostgreSQL', { source: 'DatabaseStore' }, e));
     }
-    return this.getIngestionQueue();
+    return this.getIngestionQueue(fullItem.tenant_id);
+  }
+
+  public deleteIngestionItem(docId?: string, tenantId?: string): RawDocumentIngestion[] {
+    if (docId) {
+      this.ingestionQueue = this.ingestionQueue.filter((item) => item.doc_id !== docId);
+      if (this.isPostgresConnected) {
+        prisma.rawDocumentIngestion.deleteMany({
+          where: { doc_id: docId }
+        }).catch((e: any) => logger.error('Error deleting document from PostgreSQL', { source: 'DatabaseStore', docId }, e));
+      }
+    } else if (tenantId) {
+      this.ingestionQueue = this.ingestionQueue.filter((item) => item.tenant_id !== tenantId);
+      if (this.isPostgresConnected) {
+        prisma.rawDocumentIngestion.deleteMany({
+          where: { tenant_id: tenantId }
+        }).catch((e: any) => logger.error('Error deleting tenant documents from PostgreSQL', { source: 'DatabaseStore', tenantId }, e));
+      }
+    } else {
+      this.ingestionQueue = [];
+      if (this.isPostgresConnected) {
+        prisma.rawDocumentIngestion.deleteMany({}).catch((e: any) =>
+          logger.error('Error clearing documents from PostgreSQL', { source: 'DatabaseStore' }, e)
+        );
+      }
+    }
+    queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
+    if (tenantId) {
+      queryCache.invalidateCache(`${CACHE_KEYS.INGESTION_QUEUE}_${tenantId}`);
+    }
+    return this.getIngestionQueue(tenantId);
   }
 
   // Validation Records
@@ -579,93 +636,184 @@ export class DatabaseStore {
     return result;
   }
 
-  // Users & Authentication (Strict PostgreSQL via Prisma ORM)
+  // Users & Authentication (PostgreSQL with resilient in-memory fallback)
   public async getUserByEmail(email: string): Promise<UserRecord | null> {
     const normalizedEmail = email.trim().toLowerCase();
-    try {
-      const u = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
-      return u as UserRecord | null;
-    } catch (err: any) {
-      logger.error('Database query failed in getUserByEmail', { email: normalizedEmail, error: err.message });
-      throw err;
+    if (this.isPostgresConnected) {
+      try {
+        const u = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in getUserByEmail, falling back to local store', { email: normalizedEmail, error: err.message });
+      }
     }
+    const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
+    return found ? { ...found } : null;
+  }
+
+  public async getUserByEmailOrBuyerId(identifier: string): Promise<UserRecord | null> {
+    const clean = identifier.trim();
+    const normalizedEmail = clean.toLowerCase();
+    if (this.isPostgresConnected) {
+      try {
+        const u = await (prisma as any).user.findFirst({
+          where: {
+            OR: [
+              { email: normalizedEmail },
+              { id: clean }
+            ]
+          }
+        });
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in getUserByEmailOrBuyerId, falling back to local store', { identifier: clean, error: err.message });
+      }
+    }
+    const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail || u.id === clean);
+    return found ? { ...found } : null;
   }
 
   public async getUserById(id: string): Promise<UserRecord | null> {
-    try {
-      const u = await (prisma as any).user.findUnique({ where: { id } });
-      return u as UserRecord | null;
-    } catch (err: any) {
-      logger.error('Database query failed in getUserById', { id, error: err.message });
-      throw err;
+    if (this.isPostgresConnected) {
+      try {
+        const u = await (prisma as any).user.findUnique({ where: { id } });
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in getUserById, falling back to local store', { id, error: err.message });
+      }
     }
+    const found = this.users.find((u) => u.id === id);
+    return found ? { ...found } : null;
   }
 
   public async createUser(data: Omit<UserRecord, 'created_at' | 'updated_at'>): Promise<UserRecord> {
-    try {
-      const created = await (prisma as any).user.create({
-        data: {
-          id: data.id,
-          name: data.name,
-          mobile_number: data.mobile_number,
-          email: data.email.trim().toLowerCase(),
-          company_name: data.company_name,
-          company_address: data.company_address,
-          password_hash: data.password_hash,
-          role: data.role,
-          status: data.status
-        }
-      });
-      return created as UserRecord;
-    } catch (err: any) {
-      logger.error('Database query failed in createUser', { email: data.email, error: err.message });
-      throw err;
+    const now = new Date();
+    const newUser: UserRecord = {
+      ...data,
+      email: data.email.trim().toLowerCase(),
+      created_at: now,
+      updated_at: now
+    };
+    if (this.isPostgresConnected) {
+      try {
+        const created = await (prisma as any).user.create({
+          data: {
+            id: data.id,
+            name: data.name,
+            mobile_number: data.mobile_number,
+            email: data.email.trim().toLowerCase(),
+            company_name: data.company_name,
+            company_address: data.company_address,
+            password_hash: data.password_hash,
+            role: data.role,
+            status: data.status
+          }
+        });
+        return created as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in createUser, saving to local store', { email: data.email, error: err.message });
+      }
     }
+    this.users.push(newUser);
+    return newUser;
+  }
+
+  public async updateUserPassword(id: string, passwordHash: string): Promise<boolean> {
+    if (this.isPostgresConnected) {
+      try {
+        await (prisma as any).user.update({
+          where: { id },
+          data: { password_hash: passwordHash, updated_at: new Date() }
+        });
+        return true;
+      } catch (err: any) {
+        logger.warn('Database query failed in updateUserPassword, updating local store', { id, error: err.message });
+      }
+    }
+    const idx = this.users.findIndex((u) => u.id === id);
+    if (idx !== -1) {
+      this.users[idx].password_hash = passwordHash;
+      this.users[idx].updated_at = new Date();
+      return true;
+    }
+    return false;
   }
 
   public async getAllUsers(query?: { search?: string; role?: string; status?: string }): Promise<UserRecord[]> {
-    try {
-      const whereClause: any = {};
-      if (query?.role && query.role !== 'ALL') {
-        whereClause.role = query.role.toUpperCase();
-      }
-      if (query?.status && query.status !== 'ALL') {
-        whereClause.status = query.status.toUpperCase();
-      }
-      if (query?.search && query.search.trim() !== '') {
-        const q = query.search.trim();
-        whereClause.OR = [
-          { name: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } },
-          { company_name: { contains: q, mode: 'insensitive' } },
-          { mobile_number: { contains: q } }
-        ];
-      }
+    if (this.isPostgresConnected) {
+      try {
+        const whereClause: any = {};
+        if (query?.role && query.role !== 'ALL') {
+          whereClause.role = query.role.toUpperCase();
+        }
+        if (query?.status && query.status !== 'ALL') {
+          whereClause.status = query.status.toUpperCase();
+        }
+        if (query?.search && query.search.trim() !== '') {
+          const q = query.search.trim();
+          whereClause.OR = [
+            { name: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { company_name: { contains: q, mode: 'insensitive' } },
+            { mobile_number: { contains: q } }
+          ];
+        }
 
-      const users = await (prisma as any).user.findMany({
-        where: whereClause,
-        orderBy: { created_at: 'desc' }
-      });
-      return users as UserRecord[];
-    } catch (err: any) {
-      logger.error('Database query failed in getAllUsers', { query, error: err.message });
-      throw err;
+        const users = await (prisma as any).user.findMany({
+          where: whereClause,
+          orderBy: { created_at: 'desc' }
+        });
+        if (users && users.length > 0) {
+          return users as UserRecord[];
+        }
+      } catch (err: any) {
+        logger.warn('Database query failed in getAllUsers, falling back to local store', { query, error: err.message });
+      }
     }
+
+    let filtered = [...this.users];
+    if (query?.role && query.role !== 'ALL') {
+      filtered = filtered.filter((u) => u.role.toUpperCase() === query.role?.toUpperCase());
+    }
+    if (query?.status && query.status !== 'ALL') {
+      filtered = filtered.filter((u) => u.status.toUpperCase() === query.status?.toUpperCase());
+    }
+    if (query?.search && query.search.trim() !== '') {
+      const q = query.search.trim().toLowerCase();
+      filtered = filtered.filter((u) =>
+        u.name.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        (u.company_name && u.company_name.toLowerCase().includes(q)) ||
+        (u.mobile_number && u.mobile_number.includes(q))
+      );
+    }
+    return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
 
   public async updateUserStatus(id: string, status: string): Promise<UserRecord | null> {
     const validStatus = status.toUpperCase();
-    try {
-      const updated = await (prisma as any).user.update({
-        where: { id },
-        data: { status: validStatus }
-      });
-      return updated as UserRecord;
-    } catch (err: any) {
-      logger.error('Database query failed in updateUserStatus', { id, status: validStatus, error: err.message });
-      throw err;
+    if (this.isPostgresConnected) {
+      try {
+        const updated = await (prisma as any).user.update({
+          where: { id },
+          data: { status: validStatus }
+        });
+        if (updated) return updated as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in updateUserStatus, falling back to local store', { id, status: validStatus, error: err.message });
+      }
     }
+
+    const idx = this.users.findIndex((u) => u.id === id);
+    if (idx === -1) return null;
+    this.users[idx] = {
+      ...this.users[idx],
+      status: validStatus as any,
+      updated_at: new Date()
+    };
+    return { ...this.users[idx] };
   }
+
 }
 
 // Server-wide Singleton

@@ -164,6 +164,7 @@ describe('Logger Utility Suite', () => {
     it('writes logs to app.log, dated log, and error.log when level is error', () => {
       const logger = new Logger({
         logDir: testLogDir,
+        minLevel: 'debug',
         enableConsole: false,
         enableFilePersistence: true
       });

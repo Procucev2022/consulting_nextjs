@@ -9,11 +9,11 @@ export const ANALYZING_DEFAULT_DURATION_MS = 2800;
 export const ANALYZING_TICK_INTERVAL_MS = 40;
 
 export const DEFAULT_ANALYZING_METRICS: AnalyzingMetricsSummary = {
-  totalRecords: 7357,
-  spendCrores: 8066.86,
-  uniqueVendors: 1073,
-  categoriesIdentified: 48,
-  confidenceScore: 99.4
+  totalRecords: 0,
+  spendCrores: 0,
+  uniqueVendors: 0,
+  categoriesIdentified: 0,
+  confidenceScore: 100
 };
 
 export const DEFAULT_ANALYZING_PHASES: AnalyzingPhase[] = [

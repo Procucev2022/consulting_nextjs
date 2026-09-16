@@ -46,5 +46,6 @@ export interface AnalyzingLoaderState {
   currentPhaseIndex?: number;
   progress?: number;
   mode?: AnalyzingLoaderMode;
+  metrics?: AnalyzingMetricsSummary;
   onCompleteCallback?: () => void;
 }

@@ -61,14 +61,13 @@ describe('Frontend Constants Modules', () => {
   });
 
   describe('Modal Constants', () => {
-    it('should define correct modal defaults and supplier lists', () => {
-      expect(ModalsConstants.DEFAULT_INVITED_SUPPLIERS.length).toBe(5);
-      expect(ModalsConstants.DEFAULT_INVITED_SUPPLIERS[0]).toBe('Amcor Packaging Group');
-      expect(ModalsConstants.DEFAULT_PROCPX_BASELINE).toBe(1850000);
-      expect(ModalsConstants.DEFAULT_MASTER_SUPPLIERS.length).toBe(3);
-      expect(ModalsConstants.DEFAULT_MASTER_SUPPLIERS[0].id).toBe('SUP-DHL-001');
+    it('should define correct modal defaults and supplier lists without dummy data', () => {
+      expect(Array.isArray(ModalsConstants.DEFAULT_INVITED_SUPPLIERS)).toBe(true);
+      expect(ModalsConstants.DEFAULT_PROCPX_BASELINE).toBe(0);
+      expect(Array.isArray(ModalsConstants.DEFAULT_MASTER_SUPPLIERS)).toBe(true);
       expect(ModalsConstants.DEFAULT_MAX_PRICE_CREEP_CAP).toBe(3.0);
-      expect(ModalsConstants.DEFAULT_INDEX_PEGGING).toBe('LME & ICIS Official Benchmark');
+      expect(ModalsConstants.DEFAULT_INDEX_PEGGING).toBe('Official Market Benchmark Index');
+      expect(Array.isArray(ModalsConstants.DEFAULT_MASTER_ITEMS)).toBe(true);
     });
   });
 

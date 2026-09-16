@@ -5,7 +5,7 @@
 import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import { hashPassword, verifyPassword, generateAuthToken, verifyAuthToken, sanitizeUserProfile } from '../utils/auth';
-import { registerUserSchema, loginUserSchema } from '../constants/validation';
+import { registerUserSchema, loginUserSchema, changePasswordSchema } from '../constants/validation';
 import { AUTH_MESSAGES, AUTH_TOKEN_EXPIRY_SECONDS, AUTH_ROLES, AUTH_STATUS } from '../constants/auth';
 import logger from '../utils/logger';
 
@@ -106,10 +106,10 @@ export class AuthController {
     }
 
     const { email, password } = parseResult.data;
-    const user = await db.getUserByEmail(email);
+    const user = await db.getUserByEmailOrBuyerId(email);
 
     if (!user) {
-      logger.warn('Login failure: user not found', { email, requestId });
+      logger.warn('Login failure: user not found in database', { identifier: email, requestId });
       res.status(401).json({
         success: false,
         message: AUTH_MESSAGES.INVALID_CREDENTIALS
@@ -191,6 +191,70 @@ export class AuthController {
     res.json({
       success: true,
       user: sanitizeUserProfile(user)
+    });
+  }
+
+  /**
+   * Change authenticated user's password
+   */
+  public async changePassword(req: Request, res: Response): Promise<void> {
+    const authHeader = req.headers.authorization || (req.headers['x-auth-token'] as string);
+    if (!authHeader) {
+      res.status(401).json({
+        success: false,
+        message: AUTH_MESSAGES.UNAUTHORIZED
+      });
+      return;
+    }
+
+    const rawToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+    const decoded = verifyAuthToken(rawToken);
+
+    if (!decoded) {
+      res.status(401).json({
+        success: false,
+        message: AUTH_MESSAGES.UNAUTHORIZED
+      });
+      return;
+    }
+
+    const parseResult = changePasswordSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: parseResult.error.issues
+      });
+      return;
+    }
+
+    const { currentPassword, newPassword } = parseResult.data;
+    const user = await db.getUserById(decoded.userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: AUTH_MESSAGES.USER_NOT_FOUND
+      });
+      return;
+    }
+
+    const isValidCurrent = verifyPassword(currentPassword, user.password_hash);
+    if (!isValidCurrent) {
+      res.status(400).json({
+        success: false,
+        message: AUTH_MESSAGES.CURRENT_PASSWORD_INCORRECT
+      });
+      return;
+    }
+
+    const newHash = hashPassword(newPassword);
+    await db.updateUserPassword(user.id, newHash);
+
+    logger.info('User password updated successfully', { userId: user.id, email: user.email });
+
+    res.json({
+      success: true,
+      message: AUTH_MESSAGES.PASSWORD_CHANGED
     });
   }
 }

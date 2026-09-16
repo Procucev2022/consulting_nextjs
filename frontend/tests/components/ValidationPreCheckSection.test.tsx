@@ -148,21 +148,10 @@ describe('ValidationPreCheckSection Component', () => {
     expect(screen.getByText(UI_STRINGS.module1.dataRefreshedBanner)).toBeInTheDocument();
   });
 
-  it('triggers onRefreshWithFixes when clicking the refresh button in header or footer', () => {
+  it('does not render Refresh with Fixes buttons (hidden as requested)', () => {
     const onRefreshWithFixes = vi.fn();
     render(<ValidationPreCheckSection {...defaultProps} onRefreshWithFixes={onRefreshWithFixes} />);
 
-    const refreshButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') });
-    expect(refreshButtons.length).toBeGreaterThanOrEqual(1);
-
-    // Click the CTA refresh button (footer)
-    fireEvent.click(refreshButtons[refreshButtons.length - 1]);
-    expect(onRefreshWithFixes).toHaveBeenCalledTimes(1);
-
-    // Click header refresh button if present
-    if (refreshButtons.length > 1) {
-      fireEvent.click(refreshButtons[0]);
-      expect(onRefreshWithFixes).toHaveBeenCalledTimes(2);
-    }
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') })).not.toBeInTheDocument();
   });
 });

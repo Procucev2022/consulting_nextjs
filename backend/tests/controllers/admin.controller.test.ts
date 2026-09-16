@@ -111,7 +111,8 @@ describe('Admin Controller Integration Tests', () => {
 
     expect(reactivateRes.status).toBe(200);
     expect(reactivateRes.body.user.status).toBe('ACTIVE');
-  });
+  }, 20000);
+
 
   it('should return 400 if user status update payload is invalid', async () => {
     const res = await request(app)

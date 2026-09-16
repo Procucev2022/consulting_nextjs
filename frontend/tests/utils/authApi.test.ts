@@ -190,6 +190,26 @@ describe('authApiClient and auth utilities', () => {
       await expect(authApiClient.getMe('expired-token')).rejects.toThrow('Token expired');
     });
 
+    it('should change password successfully with valid token', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, message: 'Password updated successfully' })
+      });
+
+      const res = await authApiClient.changePassword(
+        { currentPassword: 'OldPassword@123', newPassword: 'NewPassword@456' },
+        'valid-token'
+      );
+      expect(res.success).toBe(true);
+      expect(res.message).toBe('Password updated successfully');
+    });
+
+    it('should throw error when changing password without auth token', async () => {
+      await expect(
+        authApiClient.changePassword({ currentPassword: 'OldPassword@123', newPassword: 'NewPassword@456' })
+      ).rejects.toThrow('Authentication required');
+    });
+
     it('should fetch admin user directory with filters', async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,

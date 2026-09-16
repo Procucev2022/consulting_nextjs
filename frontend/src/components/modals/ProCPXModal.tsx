@@ -18,8 +18,17 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   onSuccess
 }) => {
   const [eventType, setEventType] = useState<ProCPXEventType>('Multi-Stage RFP');
-  const [targetBaseline, setTargetBaseline] = useState<number>(opportunity ? opportunity.est_savings : DEFAULT_PROCPX_BASELINE);
-  const [invitedSuppliers] = useState<string[]>([...DEFAULT_INVITED_SUPPLIERS]);
+  const [targetBaseline, setTargetBaseline] = useState<number>(
+    (opportunity && opportunity.est_savings > 0)
+      ? opportunity.est_savings
+      : (DEFAULT_PROCPX_BASELINE > 0 ? DEFAULT_PROCPX_BASELINE : (opportunity?.current_spend || 1850000))
+  );
+  const [invitedSuppliers] = useState<string[]>(() => {
+    if (opportunity?.category) {
+      return [`${opportunity.category} Qualified Suppliers`];
+    }
+    return DEFAULT_INVITED_SUPPLIERS.length > 0 ? [...DEFAULT_INVITED_SUPPLIERS] : ['Enterprise Qualified Suppliers'];
+  });
 
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedSuccess, setDeployedSuccess] = useState(false);

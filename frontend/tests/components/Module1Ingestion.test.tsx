@@ -299,13 +299,11 @@ describe('Module1Ingestion Component', () => {
     vi.useRealTimers();
   });
 
-  it('navigates to categorization from document summary CTA', () => {
+  it('does not render View Category & Vendor Spend Analysis button in DocumentSummaryView', () => {
     const onRunAICategorization = vi.fn();
     render(<Module1Ingestion {...defaultProps} onRunAICategorization={onRunAICategorization} />);
 
-    const ctaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') });
-    fireEvent.click(ctaBtn);
-    expect(onRunAICategorization).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') })).not.toBeInTheDocument();
   });
 
   it('handles calculations with missing fields and fallback calculations', () => {
@@ -318,44 +316,15 @@ describe('Module1Ingestion Component', () => {
         line_item_description: 'Widget',
         raw_currency: 'USD',
         amount: 20000,
-        fx_rate_applied: undefined as any,
-        inr_crores: undefined as any,
-        order_quantity: undefined as any,
-        net_price: undefined as any,
-        issue_flag: 'Missing Currency Code' as const,
-        issue_details: 'Flagged',
-        remedy_action: 'Fix',
-        confidence_score: 80,
-        resolved: false
-      },
-      {
-        id: 'VAL-RAW-2',
-        file_name: 'test2.xlsx',
-        row_number: 11,
-        vendor_name: 'Vendor B',
-        line_item_description: 'Gadget',
-        raw_currency: 'EUR',
-        amount: 500,
-        fx_rate_applied: 90,
-        inr_crores: undefined as any,
-        order_quantity: undefined as any,
-        net_price: undefined as any,
-        issue_flag: 'Tax Discrepancy' as const,
-        issue_details: 'Tax issue',
-        remedy_action: 'Fix',
-        confidence_score: 75,
-        resolved: false
+        spend_inr_crores: 0.1676,
+        category: 'Packaging',
+        plant: 'Plant 1',
+        material_group: 'Group A',
+        issue_type: 'Currency'
       }
     ];
-
-    render(
-      <Module1Ingestion
-        {...defaultProps}
-        validationRecords={rawRecords as any}
-      />
-    );
-
-    expect(screen.getByText(new RegExp(UI_STRINGS.module1.badge, 'i'))).toBeInTheDocument();
+    render(<Module1Ingestion {...defaultProps} rawUploadRecords={rawRecords as any} isDataRefreshed={true} />);
+    expect(screen.getByText('3-Year Multi-Currency Ingestion & FX Normalization')).toBeInTheDocument();
   });
 
   it('renders ParetoSpendHierarchySection before validation pre-check', () => {
@@ -365,13 +334,10 @@ describe('Module1Ingestion Component', () => {
     expect(screen.getByText(UI_STRINGS.module1.paretoHierarchy.badge)).toBeInTheDocument();
   });
 
-  it('passes through onRefreshWithFixes to ValidationPreCheckSection and triggers on click', () => {
+  it('does not render Refresh with Fixes button (hidden as requested)', () => {
     const onRefreshWithFixes = vi.fn();
     render(<Module1Ingestion {...defaultProps} onRefreshWithFixes={onRefreshWithFixes} />);
 
-    const refreshButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') });
-    expect(refreshButtons.length).toBeGreaterThan(0);
-    fireEvent.click(refreshButtons[0]);
-    expect(onRefreshWithFixes).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') })).not.toBeInTheDocument();
   });
 });

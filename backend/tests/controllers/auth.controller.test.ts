@@ -80,6 +80,29 @@ describe('Auth Controller Integration Tests', () => {
     expect(res.body.user.email).toBe(user.email.toLowerCase());
   });
 
+  it('should log in successfully with Buyer ID', async () => {
+    const user = getTestUser();
+    // Fetch registered user id
+    const regRes = await request(app)
+      .post('/api/auth/register')
+      .send({
+        ...user,
+        email: `buyer.id.test.${Date.now()}@innovate.com`
+      });
+    const buyerId = regRes.body.user.id;
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: buyerId,
+        password: user.password
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.user.id).toBe(buyerId);
+  });
+
   it('should log in successfully with seeded admin account', async () => {
     const res = await request(app)
       .post('/api/auth/login')
@@ -128,12 +151,11 @@ describe('Auth Controller Integration Tests', () => {
   });
 
   it('should get current user profile with valid Bearer token', async () => {
-    const user = getTestUser();
     const loginRes = await request(app)
       .post('/api/auth/login')
       .send({
-        email: user.email,
-        password: user.password
+        email: 'admin@procucev.com',
+        password: 'Admin@123456'
       });
 
     const token = loginRes.body.token;
@@ -144,7 +166,7 @@ describe('Auth Controller Integration Tests', () => {
 
     expect(meRes.status).toBe(200);
     expect(meRes.body.success).toBe(true);
-    expect(meRes.body.user.email).toBe(user.email.toLowerCase());
+    expect(meRes.body.user.email).toBe('admin@procucev.com');
   });
 
   it('should reject /me request without auth header', async () => {
@@ -169,5 +191,63 @@ describe('Auth Controller Integration Tests', () => {
       .set('Authorization', `Bearer ${orphanToken}`);
 
     expect(res.status).toBe(404);
+  });
+
+  it('should change password successfully with valid current password', async () => {
+    const user = {
+      name: 'Password Test User',
+      mobile_number: '+91 91234 56788',
+      email: `pwd.test.${Date.now()}@innovate.com`,
+      company_name: 'Innovate Procurement Solutions',
+      company_address: 'Plot 10, HITEC City, Hyderabad',
+      password: 'OldPassword@123'
+    };
+
+    const regRes = await request(app).post('/api/auth/register').send(user);
+    const token = regRes.body.token;
+
+    const changeRes = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        currentPassword: 'OldPassword@123',
+        newPassword: 'NewPassword@456'
+      });
+
+    expect(changeRes.status).toBe(200);
+    expect(changeRes.body.success).toBe(true);
+
+    // Verify login with new password
+    const loginRes = await request(app).post('/api/auth/login').send({
+      email: user.email,
+      password: 'NewPassword@456'
+    });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.success).toBe(true);
+  });
+
+  it('should reject change password if current password is incorrect', async () => {
+    const user = {
+      name: 'Wrong Pwd Test User',
+      mobile_number: '+91 91234 56787',
+      email: `wrong.pwd.${Date.now()}@innovate.com`,
+      company_name: 'Innovate Procurement Solutions',
+      company_address: 'Plot 10, HITEC City, Hyderabad',
+      password: 'CorrectPassword@123'
+    };
+
+    const regRes = await request(app).post('/api/auth/register').send(user);
+    const token = regRes.body.token;
+
+    const changeRes = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        currentPassword: 'WrongCurrentPassword',
+        newPassword: 'NewPassword@456'
+      });
+
+    expect(changeRes.status).toBe(400);
+    expect(changeRes.body.success).toBe(false);
   });
 });

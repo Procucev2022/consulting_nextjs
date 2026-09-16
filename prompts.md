@@ -545,3 +545,22 @@ Correct this
 
 ## Prompt 70
 Make logo in bigger size, remove engine 2.0. Write "Tech Enabled Strategic Sourcing Suite"
+
+---
+
+## Prompt 71
+I want you to make the `consulting_nextjs` project fully functional and production-ready.
+
+Main project to implement: `C:\Users\navin\OneDrive\Desktop\procucev\consulting_nextjs`
+Reference project: `C:\Users\navin\OneDrive\Desktop\procucev\Enterprise_qua_nextjs`
+
+Requirements:
+1. First analyze both projects completely
+2. Remove all dummy data (remove hardcoded/mock/demo data wherever it is being used, all displayed data should come from actual database/API/backend)
+3. Implement real Google Gemini AI (reuse patterns, prompts, structure, error handling, config from Enterprise_qua_nextjs)
+4. Connect everything to real data (frontend -> API -> service -> database)
+5. Keep existing UI
+6. Use Enterprise_qua_nextjs as reference
+7. End-to-end testing
+8. Fix all issues found, connect disconnected components, adjust database schema carefully.
+

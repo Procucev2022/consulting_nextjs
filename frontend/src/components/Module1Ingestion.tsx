@@ -37,6 +37,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   uniqueItemsCount,
   uniqueVendorsCount,
   onMergeItem,
+  onDeleteDocument,
   isDataRefreshed,
   paretoSpendData,
   onRefreshWithFixes
@@ -49,7 +50,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   const [spendPeriod, setSpendPeriod] = useState<string>('36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores || 8066.86;
+  const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores ?? (tenant.total_spend_evaluated_inr ?? 0);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -228,40 +229,57 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         fileInputRef={fileInputRef}
         totalEvaluatedSpendInrCr={totalEvaluatedSpendInrCr}
         onOpenSetupModal={handleOpenSetupModal}
+        onDeleteDocument={onDeleteDocument}
       />
 
-      {/* Uploaded Document Summary Component */}
-      <DocumentSummaryView
-        tenant={tenant}
-        ingestionQueue={ingestionQueue}
-        materialGroupSummaries={materialGroupSummaries}
-        plantSummaries={plantSummaries}
-        monthWiseSummaries={monthWiseSummaries}
-        uniqueItemsCount={uniqueItemsCount}
-        uniqueVendorsCount={uniqueVendorsCount}
-        isDataRefreshed={isDataRefreshed}
-        onNavigateToCategorization={onRunAICategorization}
-      />
+      {ingestionQueue && ingestionQueue.length > 0 ? (
+        <>
+          {/* Uploaded Document Summary Component */}
+          <DocumentSummaryView
+            tenant={tenant}
+            ingestionQueue={ingestionQueue}
+            materialGroupSummaries={materialGroupSummaries}
+            plantSummaries={plantSummaries}
+            monthWiseSummaries={monthWiseSummaries}
+            uniqueItemsCount={uniqueItemsCount}
+            uniqueVendorsCount={uniqueVendorsCount}
+            isDataRefreshed={isDataRefreshed}
+            onNavigateToCategorization={onRunAICategorization}
+          />
 
-      {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}
-      <ParetoSpendHierarchySection
-        vendorHierarchy={paretoSpendData?.vendorHierarchy}
-        itemHierarchy={paretoSpendData?.itemHierarchy}
-        totalSpendCr={paretoSpendData?.totalSpendCr}
-      />
+          {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}
+          <ParetoSpendHierarchySection
+            vendorHierarchy={paretoSpendData?.vendorHierarchy}
+            itemHierarchy={paretoSpendData?.itemHierarchy}
+            totalSpendCr={paretoSpendData?.totalSpendCr}
+          />
 
-      {/* Ingestion Validation & Remediation Log (Extracted Pre-Check Component) */}
-      <ValidationPreCheckSection
-        validationRecords={validationRecords}
-        onFixCurrency={onFixCurrency}
-        onMergeVendor={onMergeVendor}
-        onMergeItem={onMergeItem}
-        onApplyBlanketFixes={onApplyBlanketFixes}
-        onResetValidationRecords={onResetValidationRecords}
-        onRunAICategorization={onRunAICategorization}
-        isDataRefreshed={isDataRefreshed}
-        onRefreshWithFixes={onRefreshWithFixes}
-      />
+          {/* Ingestion Validation & Remediation Log (Extracted Pre-Check Component) */}
+          <ValidationPreCheckSection
+            validationRecords={validationRecords}
+            onFixCurrency={onFixCurrency}
+            onMergeVendor={onMergeVendor}
+            onMergeItem={onMergeItem}
+            onApplyBlanketFixes={onApplyBlanketFixes}
+            onResetValidationRecords={onResetValidationRecords}
+            onRunAICategorization={onRunAICategorization}
+            isDataRefreshed={isDataRefreshed}
+            onRefreshWithFixes={onRefreshWithFixes}
+          />
+        </>
+      ) : (
+        <div className="p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-3 glass-card">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+            <FileSpreadsheet className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Awaiting Procurement Dataset Ingestion
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Upload your historical purchase orders, invoices, or ERP spend file (Excel/CSV) above to automatically generate real-time spend dimensions, 80/20 Pareto hierarchies, and multi-currency FX normalization.
+          </p>
+        </div>
+      )}
 
       {/* Pop-up Modal for Client & File Ingestion Setup */}
       <ClientIngestionSetupModal

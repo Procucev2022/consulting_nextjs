@@ -15,6 +15,7 @@ import cryptoRoutes from './crypto.routes';
 import authRoutes from './auth.routes';
 import adminRoutes from './admin.routes';
 import dbRoutes from './db.routes';
+import aiRoutes from './ai.routes';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.use('/crypto', cryptoRoutes);
 router.use('/auth', authRoutes);
 router.use('/admin', adminRoutes);
 router.use('/db', dbRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;
 

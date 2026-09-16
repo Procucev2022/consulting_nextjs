@@ -46,19 +46,19 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   const [mgScope, setMgScope] = useState<SummaryScopeMode>('TOP_10');
 
   const activeDoc = ingestionQueue?.[0] || {
-    file_name: '3 years data.xlsx',
-    records_count: 42765,
-    converted_inr_crores: 8066.86,
-    unique_items_count: 7357,
-    unique_vendors_count: 1073,
-    material_groups_count: 274,
-    plants_count: 24,
+    file_name: 'Uploaded Dataset',
+    records_count: 0,
+    converted_inr_crores: 0,
+    unique_items_count: 0,
+    unique_vendors_count: 0,
+    material_groups_count: 0,
+    plants_count: 0,
     detected_currencies: ['INR']
   };
 
-  const resolvedRecordsCount = activeDoc.records_count ?? 42765;
+  const resolvedRecordsCount = activeDoc.records_count ?? 0;
   const resolvedFileName = activeDoc.file_name || 'Uploaded Dataset';
-  const resolvedSpendCr = activeDoc.converted_inr_crores != null ? activeDoc.converted_inr_crores : 8066.86;
+  const resolvedSpendCr = activeDoc.converted_inr_crores != null ? activeDoc.converted_inr_crores : 0;
 
   const materialGroups = materialGroupSummaries !== undefined ? materialGroupSummaries : mockMaterialGroupSummaries;
   const plants = plantSummaries !== undefined ? plantSummaries : mockPlantSummaries;
@@ -66,8 +66,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
   const resolvedUniqueItems = uniqueItemsCount ?? activeDoc.unique_items_count ?? (activeDoc.records_count ? Math.round(activeDoc.records_count * 0.3) : 0);
   const resolvedUniqueVendors = uniqueVendorsCount ?? activeDoc.unique_vendors_count ?? (activeDoc.records_count ? Math.round(activeDoc.records_count * 0.08) : 0);
-  const resolvedMaterialGroupsCount = materialGroupSummaries !== undefined ? materialGroupSummaries.length : (activeDoc.material_groups_count ?? materialGroups.length);
-  const resolvedPlantsCount = plantSummaries !== undefined ? plantSummaries.length : (activeDoc.plants_count ?? plants.length);
+  const resolvedMaterialGroupsCount = materialGroups.length || (activeDoc.material_groups_count ?? 0);
+  const resolvedPlantsCount = plants.length || (activeDoc.plants_count ?? 0);
 
   const totalSpendFormatted =
     spendCurrency === 'INR'
@@ -986,13 +986,6 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>{UI_STRINGS.documentSummary.footerValidation(activeDoc.records_count)}</span>
           </div>
-          <button
-            onClick={onNavigateToCategorization}
-            className="flex items-center justify-center space-x-2 px-5 py-2.5 text-xs font-bold text-white bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-500 rounded-xl transition-all shadow-xs cursor-pointer group"
-          >
-            <span>{UI_STRINGS.documentSummary.viewAnalysisInAiCat}</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
         </div>
       )}
     </div>

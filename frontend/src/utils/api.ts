@@ -9,7 +9,9 @@ import type {
   SavingsOpportunity,
   DashboardOverviewData
 } from '../types';
+import type { DBHealthData, DBTableData, DBTestConnectionResponse } from '../types/dbView';
 import frontendLogger from './logger';
+import { aiApiClient } from './aiApi';
 import { validateInput } from './validation';
 import {
   apiUpdateTenantPayloadSchema,
@@ -52,12 +54,13 @@ export const apiClient = {
   },
 
   // Ingestion
-  async getIngestionData(): Promise<{
+  async getIngestionData(buyerId?: string): Promise<{
     queue: RawDocumentIngestion[];
     validationRecords: ValidationPreCheckRecord[];
   }> {
-    frontendLogger.debug('Fetching ingestion queue and validation records');
-    const res = await fetch(`${API_BASE}/api/ingestion`);
+    frontendLogger.debug('Fetching ingestion queue and validation records', { buyerId });
+    const query = buyerId ? `?buyerId=${encodeURIComponent(buyerId)}` : '';
+    const res = await fetch(`${API_BASE}/api/ingestion${query}`);
     const json = await res.json();
     return json.data;
   },
@@ -75,6 +78,32 @@ export const apiClient = {
       body: JSON.stringify(validation.data)
     });
     const json = await res.json();
+    return json.data;
+  },
+
+  async uploadDocumentToObjectStore(payload: {
+    fileName: string;
+    fileType: string;
+    fileBase64?: string;
+    fileSizeMb?: number;
+    recordsCount?: number;
+    convertedInrCrores?: number;
+    detectedCurrencies?: string[];
+    datasetType?: string;
+  }): Promise<{
+    objectMeta: any;
+    ingestionQueue: RawDocumentIngestion[];
+  }> {
+    frontendLogger.info('Uploading document to Object Store', { fileName: payload.fileName });
+    const res = await fetch(`${API_BASE}/api/ingestion/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!json.success) {
+      throw new Error(json.message || 'Failed to upload document to Object Store');
+    }
     return json.data;
   },
 
@@ -112,6 +141,19 @@ export const apiClient = {
   async resetValidationRecords(): Promise<ValidationPreCheckRecord[]> {
     frontendLogger.warn('Resetting validation records to baseline');
     const res = await fetch(`${API_BASE}/api/ingestion`, {
+      method: 'DELETE'
+    });
+    const json = await res.json();
+    return json.data;
+  },
+
+  async deleteIngestionDocument(docId?: string, buyerId?: string): Promise<RawDocumentIngestion[]> {
+    frontendLogger.info('Deleting ingestion document', { docId, buyerId });
+    let endpoint = docId ? `${API_BASE}/api/ingestion/document/${encodeURIComponent(docId)}` : `${API_BASE}/api/ingestion/document`;
+    if (buyerId) {
+      endpoint += `?buyerId=${encodeURIComponent(buyerId)}`;
+    }
+    const res = await fetch(endpoint, {
       method: 'DELETE'
     });
     const json = await res.json();
@@ -227,21 +269,21 @@ export const apiClient = {
   clearStoredSession: authApiClient.clearStoredSession.bind(authApiClient),
 
   // Database View & Telemetry
-  async getDBStatus(): Promise<any> {
+  async getDBStatus(): Promise<DBHealthData> {
     frontendLogger.debug('Fetching database status & health telemetry');
     const res = await fetch(`${API_BASE}/api/db/status`);
     const json = await res.json();
     return json.data;
   },
 
-  async getDBMetrics(): Promise<any> {
+  async getDBMetrics(): Promise<Record<string, unknown>> {
     frontendLogger.debug('Fetching database optimization metrics');
     const res = await fetch(`${API_BASE}/api/db/metrics`);
     const json = await res.json();
     return json.data;
   },
 
-  async getDBTableData(table: string, page = 1, limit = 20, search = ''): Promise<any> {
+  async getDBTableData(table: string, page = 1, limit = 20, search = ''): Promise<DBTableData> {
     frontendLogger.debug('Fetching database table data', { table, page, limit, search });
     const query = new URLSearchParams({
       table,
@@ -254,12 +296,22 @@ export const apiClient = {
     return json.data;
   },
 
-  async testDBConnection(): Promise<any> {
+  async testDBConnection(): Promise<DBTestConnectionResponse> {
     frontendLogger.info('Testing live database round-trip ping');
     const res = await fetch(`${API_BASE}/api/db/test-connection`, { method: 'POST' });
     return await res.json();
-  }
+  },
+
+  // Google Gemini AI Services
+  checkAiConfig: aiApiClient.checkConfig.bind(aiApiClient),
+  extractDocumentAi: aiApiClient.extractDocument.bind(aiApiClient),
+  categorizeItemsAi: aiApiClient.categorizeItems.bind(aiApiClient),
+  generateExecutiveSummaryAi: aiApiClient.generateExecutiveSummary.bind(aiApiClient),
+  analyzeAnomaliesAi: aiApiClient.analyzeAnomalies.bind(aiApiClient)
 };
+
+export { aiApiClient, authApiClient };
+
 
 
 

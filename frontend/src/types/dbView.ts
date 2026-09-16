@@ -43,7 +43,7 @@ export interface DBTableData {
   total: number;
   totalPages: number;
   columns: string[];
-  rows: Record<string, any>[];
+  rows: Record<string, unknown>[];
 }
 
 export interface DBTableDataResponse {

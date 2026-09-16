@@ -429,7 +429,7 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText('MAT-9901-BOX')).toBeInTheDocument();
     expect(screen.getByText('Heavy Duty Packaging Box 50x50')).toBeInTheDocument();
     expect(screen.getByText('PO-2024-998877')).toBeInTheDocument();
-    expect(screen.getByText('Global Box Co.')).toBeInTheDocument();
+    expect(screen.getAllByText('Global Box Co.').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('SUP-GBOX-100')).toBeInTheDocument();
     expect(screen.getByText('Corrugated fiberboard boxes')).toBeInTheDocument();
     expect(screen.getAllByText('Paperboard and packaging papers').length).toBeGreaterThan(0);

@@ -98,8 +98,12 @@ export const apiUpdateTenantPayloadSchema = z.object({
   region: z.string().min(1).optional(),
   base_currency: z.string().min(1).optional(),
   financial_year: z.string().min(1).optional(),
-  total_spend_evaluated_inr: z.number().positive().optional(),
-  target_savings_rate_pct: z.number().nonnegative().optional()
+  total_spend_evaluated: z.number().nonnegative().optional(),
+  total_spend_evaluated_inr: z.number().nonnegative().optional(),
+  target_savings_rate_pct: z.number().nonnegative().optional(),
+  major_sector: z.string().min(1).optional(),
+  minor_sector: z.string().min(1).optional(),
+  status: z.string().optional()
 });
 
 export const apiAddIngestionFilePayloadSchema = z.object({
@@ -152,6 +156,16 @@ export const registerFormSchema = z.object({
 export const loginFormSchema = z.object({
   email: z.string().email('Valid organization email is required').toLowerCase(),
   password: z.string().min(1, 'Password is required')
+});
+
+// Change Password Form Schema
+export const changePasswordFormSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters').max(100),
+  confirmPassword: z.string().min(6, 'Confirm password is required').max(100)
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'New passwords do not match',
+  path: ['confirmPassword']
 });
 
 // Admin User Query Schema

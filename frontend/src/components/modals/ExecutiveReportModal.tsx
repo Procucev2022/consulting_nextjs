@@ -31,8 +31,10 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 
   if (!isOpen) return null;
 
-  const totalSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
-  const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr
+  const totalSpendInrCr = tenant.total_spend_evaluated_inr || (tenant.total_spend_evaluated ? Number((tenant.total_spend_evaluated * 83.8 / 10000000).toFixed(2)) : DEFAULT_SPEND_BASELINE_INR_CR);
+  const totalSavingsInrCr = opportunities && opportunities.length > 0
+    ? Number(opportunities.reduce((sum, o) => sum + (o.est_savings_inr_cr || 0), 0).toFixed(2))
+    : DEFAULT_SAVINGS_TARGET_INR_CR;
   const totalSlides = PRESENTATION_TOTAL_SLIDES;
 
   const handlePrint = () => {

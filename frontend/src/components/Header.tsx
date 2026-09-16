@@ -1,6 +1,7 @@
 'use client';
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ShieldCheck,
   Building2,
@@ -8,7 +9,12 @@ import {
   Sun,
   Moon,
   Sparkles,
-  User
+  User,
+  ChevronDown,
+  LogOut,
+  Shield,
+  LayoutDashboard,
+  ExternalLink
 } from 'lucide-react';
 import type { HeaderProps } from '../types';
 import {
@@ -29,8 +35,43 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onSelectTheme,
   onStartAnalysis,
-  isAnalyzing
+  isAnalyzing,
+  currentUser,
+  onLogout,
+  onOpenClientSetup
 }) => {
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsUserMenuOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsUserMenuOpen(false);
+    }, 200);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const userInitials = currentUser?.name
+    ? currentUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
+
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-lg dark:shadow-black/20 transition-colors duration-200">
       {/* Top Advisory Document Banner */}
@@ -42,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
           <span className="hidden md:inline text-slate-300 dark:text-slate-500">|</span>
           <span className="hidden md:inline text-slate-700 dark:text-slate-300">
-            {UI_STRINGS.header.authorLabel} <strong className="text-slate-900 dark:text-white">{UI_STRINGS.header.authorName}</strong> ({UI_STRINGS.header.authorRole})
+            {UI_STRINGS.header.authorLabel} <strong className="text-slate-900 dark:text-white">{currentUser?.name || UI_STRINGS.header.authorName}</strong> ({currentUser?.role ? `${currentUser.role.charAt(0).toUpperCase()}${currentUser.role.slice(1)}` : UI_STRINGS.header.authorRole})
           </span>
           <span className="hidden lg:inline text-slate-300 dark:text-slate-500">|</span>
           <span className="hidden lg:inline text-emerald-700 dark:text-emerald-400 font-semibold">
@@ -55,35 +96,39 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
             <span className="font-semibold">{UI_STRINGS.header.slaText}</span>
           </span>
-          <span className="hidden md:flex items-center space-x-1 text-slate-600 dark:text-slate-400 bg-white/80 dark:bg-slate-800/60 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700/60 shadow-xs">
+          <div className="flex items-center space-x-1 text-slate-700 dark:text-slate-300">
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span>{UI_STRINGS.header.securityBadge}</span>
-          </span>
+            <span className="font-medium hidden sm:inline">{UI_STRINGS.header.dpsVerified}</span>
+          </div>
         </div>
       </div>
 
       {/* Main App Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-        {/* Logo & Brand */}
-        <div className="flex items-center space-x-3.5">
-          <div className="flex items-center bg-white dark:bg-white/95 px-3 py-1.5 rounded-2xl shadow-xs border border-slate-200/80 dark:border-slate-700/60 transition-all">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={AICEV_LOGO_SRC}
-              alt={UI_STRINGS.header.logoAlt}
-              className="h-12 sm:h-14 w-auto object-contain transition-transform hover:scale-[1.02]"
-            />
-          </div>
-          <div className="flex flex-col justify-center">
-            <span className="text-xs sm:text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 leading-tight">
-              {UI_STRINGS.header.subtitle}
-            </span>
-          </div>
+        {/* Brand / Logo */}
+        <div className="flex items-center space-x-4">
+          <Link href="/" className="flex items-center space-x-2.5 group">
+            <div className="bg-white px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-xs group-hover:border-cyan-500 transition-colors">
+              <Image
+                src={AICEV_LOGO_SRC}
+                alt={UI_STRINGS.header.logoAlt}
+                width={120}
+                height={32}
+                className="h-7 w-auto object-contain"
+                priority
+              />
+            </div>
+            <div className="hidden sm:block">
+              <p className="text-[10px] font-mono font-medium text-slate-600 dark:text-slate-300 tracking-wider">
+                {UI_STRINGS.header.subtitle}
+              </p>
+            </div>
+          </Link>
         </div>
 
-        {/* Global Controls & Actions */}
+        {/* Action Controls & Utilities */}
         <div className="flex items-center space-x-2.5 sm:space-x-3">
-          {/* Dedicated Light / Dark Mode Toggle Bar */}
+          {/* Theme Switcher */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-xl p-1 text-xs font-semibold shadow-xs">
             <button
               type="button"
@@ -116,15 +161,16 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Tenant Selector */}
           <div
             data-testid="tenant-badge"
-            onClick={() => onSelectTenant?.({ ...tenant, enterprise_name: 'Apex Updated Corp' })}
-            className="relative hidden lg:flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 shadow-xs transition-colors cursor-pointer"
+            onClick={() => (onOpenClientSetup ? onOpenClientSetup() : onSelectTenant?.(tenant))}
+            className="relative hidden lg:flex items-center space-x-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700/70 rounded-xl px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 shadow-xs transition-colors cursor-pointer hover:border-cyan-500"
+            title="Configure Enterprise Client & Baseline Spend"
           >
             <Building2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="font-semibold text-slate-900 dark:text-white truncate max-w-[150px]">
               {tenant.enterprise_name}
             </span>
             <span className="text-[10px] font-mono bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-300 dark:border-emerald-800/40">
-              ₹{tenant.total_spend_evaluated_inr || DEFAULT_SPEND_BASELINE_INR_CR} Cr
+              ₹{(tenant.total_spend_evaluated_inr ?? 0).toFixed(2)} Cr
             </span>
           </div>
 
@@ -175,25 +221,141 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">{UI_STRINGS.header.executiveBrief}</span>
           </button>
 
-          {/* Admin Directory Navigation */}
-          <Link
-            href="/admin"
-            title={UI_STRINGS.admin.pageTitle}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800/80 rounded-xl hover:bg-sky-100 dark:hover:bg-sky-900 transition-all shadow-xs"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-sky-500" />
-            <span className="hidden sm:inline">Admin</span>
-          </Link>
+          {/* User Profile Avatar with Hover & Click Dropdown Menu */}
+          {currentUser ? (
+            <div
+              ref={userMenuRef}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              className="relative"
+            >
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs shadow-xs transition-all cursor-pointer focus:outline-hidden"
+                aria-expanded={isUserMenuOpen}
+                aria-haspopup="true"
+                title="Account Profile & Settings"
+              >
+                {/* User Avatar Circle */}
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-cyan-600 to-sky-500 text-white font-bold flex items-center justify-center text-[10px] shadow-xs">
+                  {userInitials}
+                </div>
+                <div className="hidden sm:flex flex-col text-left">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 leading-tight truncate max-w-[100px]">
+                    {currentUser.name}
+                  </span>
+                  <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-medium truncate max-w-[100px]">
+                    {currentUser.role}
+                  </span>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-          {/* User Sign In / Account Navigation */}
-          <Link
-            href="/login"
-            title={UI_STRINGS.auth.pageTitle}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-xs"
-          >
-            <User className="w-3.5 h-3.5 text-cyan-500" />
-            <span className="hidden sm:inline">{UI_STRINGS.auth.signInTab}</span>
-          </Link>
+              {/* Hover Dropdown Menu */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-[#0c1322] border border-slate-200 dark:border-slate-700/80 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-slate-800 dark:text-slate-100">
+                  {/* Dropdown Header */}
+                  <div className="p-4 bg-gradient-to-br from-slate-50 via-sky-50/40 to-slate-100 dark:from-slate-900/90 dark:via-[#0e172a] dark:to-slate-900/90 border-b border-slate-200 dark:border-slate-800">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md">
+                        {userInitials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-sm truncate text-slate-900 dark:text-white">
+                            {currentUser.name}
+                          </p>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase ${
+                            currentUser.role === 'ADMIN'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                              : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800'
+                          }`}>
+                            {currentUser.role}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate">
+                          {currentUser.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Buyer Identifier */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500 dark:text-slate-400">Buyer ID:</span>
+                      <code className="font-mono font-bold text-cyan-700 dark:text-cyan-400 bg-white dark:bg-slate-950 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
+                        {currentUser.id}
+                      </code>
+                    </div>
+                  </div>
+
+                  {/* Dropdown Menu Links */}
+                  <div className="p-2 space-y-1 text-xs">
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium transition-colors"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <User className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                        <span>Profile & Account Settings</span>
+                      </div>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    </Link>
+
+                    {currentUser.role === 'ADMIN' && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-amber-700 dark:text-amber-300 font-medium transition-colors"
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                          <span>Admin Directory</span>
+                        </div>
+                        <span className="text-[10px] font-mono bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800">
+                          Admin
+                        </span>
+                      </Link>
+                    )}
+
+                    <Link
+                      href="/"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center space-x-2.5 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 font-medium transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Procurement Workspace</span>
+                    </Link>
+                  </div>
+
+                  {/* Dropdown Footer: Logout */}
+                  <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        onLogout?.();
+                      }}
+                      className="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>{UI_STRINGS.auth.logout}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              title={UI_STRINGS.auth.pageTitle}
+              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-xs"
+            >
+              <User className="w-3.5 h-3.5 text-cyan-500" />
+              <span className="hidden sm:inline">{UI_STRINGS.auth.signInTab}</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>

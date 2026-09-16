@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Cpu,
   CheckCircle2,
@@ -21,7 +21,9 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
+import type { VendorSupplyRecord } from '../types/vendorSupply';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
+import { mockTop50VendorsSupply } from '../data/mockVendorSupply';
 import { categoryYearWiseDetails } from '../data/mockData';
 import { formatINRAmount } from '../utils/currencyConverter';
 import {
@@ -50,7 +52,7 @@ const UNSPSCDetailModal = dynamic(
 
 export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   tenant,
-  categories: _categories,
+  categories = [],
   lineItems,
   onConfirmMapping,
   onReassignMapping,
@@ -152,10 +154,76 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   const explorerResults = searchUNSPSCTaxonomy(explorerSearch, explorerBucketFilter).slice(0, 8);
 
-  const totalEvaluatedSpendInrCr = categoryYearWiseDetails.reduce(
-    (sum, item) => sum + item.total_3yr_spend_inr_cr,
+  const categoriesList = categories && categories.length > 0 ? categories : categoryYearWiseDetails;
+
+  const totalEvaluatedSpendInrCr = tenant?.total_spend_evaluated_inr || categoriesList.reduce(
+    (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
     0
   );
+
+  const dynamicVendorSupply = useMemo<VendorSupplyRecord[]>(() => {
+    if (!lineItems || lineItems.length === 0) {
+      return mockTop50VendorsSupply;
+    }
+    const vendorMap = new Map<string, {
+      spend: number;
+      categories: Set<string>;
+      items: Array<{ item_name: string; category: string; spend_inr_cr: number; volume: number; unit: string }>;
+    }>();
+
+    lineItems.forEach((item) => {
+      const vName = item.vendor_identified || 'Unknown Vendor';
+      if (!vendorMap.has(vName)) {
+        vendorMap.set(vName, { spend: 0, categories: new Set(), items: [] });
+      }
+      const entry = vendorMap.get(vName)!;
+      const spendCr = item.inr_crores || (item.total_spend ? item.total_spend / 10000000 : 0.5);
+      entry.spend += spendCr;
+      entry.categories.add(item.core_bucket || item.unspsc_category_name || 'General Materials');
+      entry.items.push({
+        item_name: item.raw_desc || 'Material Line Item',
+        category: item.core_bucket || 'Direct Materials',
+        spend_inr_cr: Number(spendCr.toFixed(2)),
+        volume: 1000,
+        unit: 'Units'
+      });
+    });
+
+    const sortedVendors = Array.from(vendorMap.entries()).sort((a, b) => b[1].spend - a[1].spend);
+    if (sortedVendors.length < 5 || sortedVendors[0][1].spend < 15) {
+      return mockTop50VendorsSupply;
+    }
+    return sortedVendors.slice(0, 50).map(([vName, data], idx) => {
+      const suppliedCategories = Array.from(data.categories);
+      const isMulti = suppliedCategories.length > 1;
+      const spendFy24 = Number((data.spend * 0.28).toFixed(2));
+      const spendFy25 = Number((data.spend * 0.34).toFixed(2));
+      const spendFy26 = Number((data.spend * 0.38).toFixed(2));
+      const yoy = Number((((spendFy26 - spendFy25) / (spendFy25 || 1)) * 100).toFixed(1));
+
+      return {
+        rank: idx + 1,
+        master_vendor_id: `VND-M-${1000 + idx}`,
+        vendor_name: vName,
+        total_spend_inr_cr: Number(data.spend.toFixed(2)),
+        spend_share_pct: Number(((data.spend / (totalEvaluatedSpendInrCr || 1)) * 100).toFixed(1)),
+        primary_category: suppliedCategories[0] || 'Direct Materials',
+        category_type: isMulti ? ('MULTI_CATEGORY' as const) : ('SINGLE_CATEGORY' as const),
+        supplied_categories_count: suppliedCategories.length,
+        supplied_categories: suppliedCategories,
+        irrelevant_categories: isMulti ? suppliedCategories.slice(1) : [],
+        spend_fy24_cr: spendFy24,
+        spend_fy25_cr: spendFy25,
+        spend_fy26_cr: spendFy26,
+        yoy_growth_pct: yoy,
+        yoy_trend_direction: yoy > 5 ? ('INCREASING' as const) : yoy < -5 ? ('DECREASING' as const) : ('STABLE' as const),
+        risk_level: isMulti || data.spend > 10 ? ('HIGH_RISK' as const) : data.spend > 5 ? ('MEDIUM_RISK' as const) : ('LOW_RISK' as const),
+        leakage_type: isMulti ? 'Cross-Category Margin Leakage' : 'Standard Pricing Variance',
+        item_count: data.items.length,
+        items: data.items
+      };
+    });
+  }, [lineItems, totalEvaluatedSpendInrCr]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -166,6 +234,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           mode="overlay"
           title={UI_STRINGS.module2.industryContext.materialsDnaTitle}
           subtitle={UI_STRINGS.module2.industryContext.calibratedFor(activeMajorSector, activeMinorSector)}
+          metrics={{
+            totalRecords: lineItems.length,
+            spendCrores: Number(totalEvaluatedSpendInrCr.toFixed(2)),
+            uniqueVendors: new Set(lineItems.map((i) => i.vendor_identified).filter(Boolean)).size,
+            categoriesIdentified: categories.length,
+            confidenceScore: 99.4
+          }}
           onComplete={handleCategorizationComplete}
           onCancel={() => setIsCategorizing(false)}
           speedMultiplier={speedMultiplier}
@@ -384,7 +459,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       </div>
 
       {/* Category & Vendor Spend Breakdown Analysis */}
-      <CategoryVendorBreakdownView tenant={tenant} />
+      <CategoryVendorBreakdownView tenant={tenant} categories={categoriesList as any} />
 
       {/* Year-Wise Category Spend Valuation Matrix & Top 50 Vendor Supply Categorization */}
       <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
@@ -443,7 +518,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
         {/* Tab View: Top 50 Vendors Supply Categorization & Risk Alarm */}
         {matrixTab === 'VENDOR_SUPPLY' ? (
-          <VendorCategorySupplyMatrix />
+          <VendorCategorySupplyMatrix vendors={dynamicVendorSupply} />
         ) : (
           /* Year-Wise Table */
           <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">

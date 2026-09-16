@@ -19,7 +19,9 @@ export interface ResolvedLoggerConfig {
 export function resolveLoggerConfig(options: LoggerOptions = {}): ResolvedLoggerConfig {
   const serviceName = options.serviceName || process.env.SERVICE_NAME || DEFAULT_SERVICE_NAME;
   const logDir = options.logDir || process.env.LOG_DIR || path.resolve(process.cwd(), 'logs');
-  const minLevel = options.minLevel || (process.env.LOG_LEVEL as LogLevel) || DEFAULT_MIN_LEVEL;
+  const envLevel = process.env.LOG_LEVEL?.toLowerCase() as LogLevel | undefined;
+  const validLevels: LogLevel[] = ['debug', 'info', 'warn', 'error'];
+  const minLevel = options.minLevel || (envLevel && validLevels.includes(envLevel) ? envLevel : DEFAULT_MIN_LEVEL);
   const enableConsole = options.enableConsole ?? (process.env.LOG_CONSOLE !== 'false');
   const enableFilePersistence = options.enableFilePersistence ?? (
     process.env.LOG_PERSISTENCE === 'true' || process.env.NODE_ENV !== 'production'

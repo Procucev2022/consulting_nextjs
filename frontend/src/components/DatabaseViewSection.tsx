@@ -8,16 +8,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Database,
-  Server,
-  Activity,
   Zap,
   RefreshCw,
   Search,
-  CheckCircle2,
-  AlertCircle,
   HardDrive,
-  ShieldCheck,
-  Table,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -433,7 +427,7 @@ export const DatabaseViewSection: React.FC = () => {
               <tbody>
                 {tableData.rows.map((row, idx) => (
                   <tr
-                    key={row.id || row.doc_id || row.record_id || row.opp_id || idx}
+                    key={String(row.id || row.doc_id || row.record_id || row.opp_id || idx)}
                     style={{
                       borderBottom: '1px solid rgba(148, 163, 184, 0.08)',
                       backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.015)'
