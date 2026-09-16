@@ -99,6 +99,7 @@ export interface Module2CategorizationProps {
   onUpdateTenant?: (tenant: TenantMaster) => void;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
+  targetSection?: string | null;
 }
 
 export interface Module3TrendAnalyticsProps {
@@ -116,6 +117,7 @@ export interface Module4SavingsEngineProps {
   onProceedToConversion: () => void;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
+  onNavigateToSection?: (targetModule: PipelineActiveTab, targetSectionId: string) => void;
 }
 
 export interface Module5ConversionMatrixProps {

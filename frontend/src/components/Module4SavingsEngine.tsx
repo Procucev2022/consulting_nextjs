@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Target,
   FileCheck,
@@ -10,8 +10,9 @@ import {
   Award,
   Check
 } from 'lucide-react';
-import type { Module4SavingsEngineProps } from '../types';
+import type { Module4SavingsEngineProps, PipelineActiveTab } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
+import { StrategicSavingsSummaryBanner } from './savings/StrategicSavingsSummaryBanner';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,
@@ -24,10 +25,19 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   onOpenDPSNXT,
   onProceedToConversion,
   currentTier = 'GOLD',
-  onUpgrade
+  onUpgrade,
+  onNavigateToSection
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterModule, setFilterModule] = useState<string>('ALL');
+  const pipelineTableRef = useRef<HTMLDivElement>(null);
+
+  const handleNavigate = (targetModule: PipelineActiveTab, targetSectionId: string) => {
+    if (targetModule === 'module4' && targetSectionId === 'savings-pipeline-table-section') {
+      pipelineTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    onNavigateToSection?.(targetModule, targetSectionId);
+  };
 
   const totalEvaluatedSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
   const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr (16.4% Net Target)
@@ -121,6 +131,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Cross-Module Strategic Sourcing & AI Categorization Savings Summary Banner */}
+      <StrategicSavingsSummaryBanner onNavigateToSection={handleNavigate} />
 
       {/* Grid: 1. Hero Total Savings Highlight Card (5 cols) + 2. Target vs Realized Distribution (7 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -220,7 +233,12 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         </div>
       ) : (
         /* Savings Opportunities Action Pipeline Table */
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+        <div
+          ref={pipelineTableRef}
+          id="savings-pipeline-table-section"
+          data-testid="savings-pipeline-table-section"
+          className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4"
+        >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">

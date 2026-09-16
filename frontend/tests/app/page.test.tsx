@@ -884,6 +884,29 @@ describe('Home Page Component', () => {
     // Module 2 is masked with upgrade prompt
     expect(screen.getByText(UI_STRINGS.subscription.upgradeToSilver)).toBeInTheDocument();
   });
+
+  it('handles cross-module initiative navigation from Module 4 to Module 2 section', async () => {
+    render(<Home />);
+    await waitFor(() => {
+      expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
+    });
+
+    // Switch to Module 4 (Savings Engine)
+    const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
+    fireEvent.click(step4);
+
+    // Verify Strategic Savings Banner is rendered
+    expect(await screen.findByTestId('strategic-savings-summary-banner')).toBeInTheDocument();
+
+    // Click Vendor Consolidation savings number
+    const btnVendorConsol = screen.getByTestId('btn-savings-number-VENDOR_CONSOLIDATION');
+    fireEvent.click(btnVendorConsol);
+
+    // Verify activeTab switched to module2 and toast triggered
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.toasts.navigatingToInitiativeSection('vendor-consolidation-section'))).toBeInTheDocument();
+    });
+  });
 });
 
 
