@@ -41,6 +41,15 @@ jobs:
       - name: Quality Gate 2 - Typechecking
         run: npm run typecheck
 
+      - name: Quality Gate 3 - Production Build
+        run: npm run build
+
+      - name: Quality Gate 4 - Client Performance Budget Check
+        run: npm run check:budget
+
+      - name: Quality Gate 5 - Unit Tests & 90% Per-File Coverage
+        run: npm run test:ci
+
       - name: Generate PR Summary Report
         if: always()
         run: node scripts/generate-pr-summary.mjs
