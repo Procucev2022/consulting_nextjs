@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "consulting-backend-edge",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-15",
+  "compatibility_flags": ["global_fetch_strictly_public"],
+  "workers_dev": true
+}
