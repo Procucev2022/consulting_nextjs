@@ -5,9 +5,35 @@ import { VendorTopItemsModal } from '../../../src/components/modals/VendorTopIte
 import { mockVendorYearDetails } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
-describe('VendorTopItemsModal Component', () => {
-  const sampleVendor = mockVendorYearDetails[0];
+const sampleVendor: any = {
+  rank: 1,
+  vendor_name: 'Acme Chemical Global LLC',
+  master_vendor_id: 'VND-ACM-101',
+  total_3yr_spend_inr_cr: 120.5,
+  spend_share_pct: 16.5,
+  line_items_count: 50,
+  top_items: [
+    {
+      item_id: 'V-ITEM-TEST-1',
+      item_desc: 'Industrial Packaging Films',
+      column_l_code: '14121506',
+      vendor_name: 'Acme Chemical Global LLC',
+      po_number: 'PO-ACM-001',
+      order_qty_annual: 1000,
+      unit_of_measure: 'KG',
+      raw_currency: 'USD',
+      price_fy24: 10,
+      price_fy25: 11,
+      price_fy26: 12.5,
+      price_change_pct: 25,
+      total_spend_inr_cr: 5.5,
+      opportunity_potential_inr_lakhs: 15,
+      leakage_flag: 'High Creep'
+    }
+  ]
+};
 
+describe('VendorTopItemsModal Component', () => {
   it('renders null when not open or vendor is null', () => {
     const { container } = render(
       <VendorTopItemsModal

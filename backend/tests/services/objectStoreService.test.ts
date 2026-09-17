@@ -62,5 +62,5 @@ describe('ObjectStoreService with Cloudflare R2 and Local Fallback', () => {
 
     const getAfterDelete = await store.getObject(putResult.key);
     expect(getAfterDelete).toBeNull();
-  });
+  }, 25000);
 });

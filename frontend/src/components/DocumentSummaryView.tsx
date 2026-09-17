@@ -750,8 +750,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                         ? `₹${spendInrCr.toFixed(2)} Cr`
                         : `$${spendUsdM.toFixed(2)} M`;
                     const sharePct = p.share_pct ?? 0;
-                    const recordsCount = p.records_count ?? 0;
-                    const uniqueItems = p.unique_items_count ?? recordsCount;
+                    const recordsCount = p.records_count ?? (p as any).total_po_count ?? 0;
+                    const uniqueItems = p.unique_items_count ?? recordsCount ?? 0;
                     const uniqueVendors = p.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.05));
 
                     return (
@@ -909,18 +909,18 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     </tr>
                   ) : (
                     filteredMonths.map((m, mIdx) => {
-                      const spendInrCr = m.spend_inr_cr;
-                      const spendUsdM = m.spend_usd_m;
+                      const spendInrCr = m.spend_inr_cr ?? 0;
+                      const spendUsdM = m.spend_usd_m ?? ((spendInrCr * 10) / 83.8);
                       const spendVal =
                         spendCurrency === 'INR'
                           ? `₹${spendInrCr.toFixed(2)} Cr`
                           : `$${spendUsdM.toFixed(2)} M`;
 
-                      const momChange = m.mom_change_pct;
+                      const momChange = m.mom_change_pct ?? 0;
                       const isPositive = momChange > 0;
                       const isZero = momChange === 0;
-                      const recordsCount = m.records_count;
-                      const uniqueItems = m.unique_items_count ?? recordsCount;
+                      const recordsCount = m.records_count ?? m.line_items_count ?? 0;
+                      const uniqueItems = m.unique_items_count ?? recordsCount ?? 0;
                       const uniqueVendors = m.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.15));
 
                       return (

@@ -28,9 +28,10 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const apiClient = {
   // Tenant
-  async getTenant(): Promise<TenantMaster> {
-    frontendLogger.debug('Fetching tenant master data');
-    const res = await fetch(`${API_BASE}/api/tenant`);
+  async getTenant(buyerId?: string): Promise<TenantMaster> {
+    frontendLogger.debug('Fetching tenant master data', { buyerId });
+    const url = buyerId ? `${API_BASE}/api/tenant?buyerId=${encodeURIComponent(buyerId)}` : `${API_BASE}/api/tenant`;
+    const res = await fetch(url);
     const json = await res.json();
     frontendLogger.info('Tenant data fetched successfully');
     return json.data;
@@ -90,14 +91,20 @@ export const apiClient = {
     convertedInrCrores?: number;
     detectedCurrencies?: string[];
     datasetType?: string;
+    buyer_id?: string;
+    tenant_id?: string;
   }): Promise<{
     objectMeta: any;
     ingestionQueue: RawDocumentIngestion[];
   }> {
-    frontendLogger.info('Uploading document to Object Store', { fileName: payload.fileName });
+    frontendLogger.info('Uploading document to Object Store', { fileName: payload.fileName, buyerId: payload.buyer_id });
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (payload.buyer_id) headers['x-buyer-id'] = payload.buyer_id;
+    if (payload.tenant_id) headers['x-tenant-id'] = payload.tenant_id;
+
     const res = await fetch(`${API_BASE}/api/ingestion/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload)
     });
     const json = await res.json();

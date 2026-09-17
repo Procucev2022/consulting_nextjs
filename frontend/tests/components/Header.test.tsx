@@ -95,19 +95,10 @@ describe('Header Component', () => {
     expect(onSelectTenant).toHaveBeenCalled();
   });
 
-  it('triggers onStartAnalysis when clicking Deep Spend Scan', () => {
-    const onStartAnalysis = vi.fn();
-    render(<Header {...defaultProps} onStartAnalysis={onStartAnalysis} />);
-
-    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
-    fireEvent.click(scanBtn);
-    expect(onStartAnalysis).toHaveBeenCalledTimes(1);
-  });
-
-  it('renders active analyzing state on scan button when isAnalyzing is true', () => {
-    render(<Header {...defaultProps} isAnalyzing={true} />);
-    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
-    expect(scanBtn).toHaveClass('animate-pulse');
+  it('does not render Deep Spend Scan when commented out', () => {
+    render(<Header {...defaultProps} />);
+    const scanBtn = screen.queryByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
+    expect(scanBtn).not.toBeInTheDocument();
   });
 
   it('renders Sign In navigation link when unauthenticated', () => {

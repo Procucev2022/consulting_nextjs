@@ -23,7 +23,6 @@ import {
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
 import type { VendorSupplyRecord } from '../types/vendorSupply';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
-import { mockTop50VendorsSupply } from '../data/mockVendorSupply';
 import { categoryYearWiseDetails } from '../data/mockData';
 import { formatINRAmount } from '../utils/currencyConverter';
 import {
@@ -177,16 +176,18 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   const explorerResults = searchUNSPSCTaxonomy(explorerSearch, explorerBucketFilter).slice(0, 8);
 
-  const categoriesList = categories && categories.length > 0 ? categories : categoryYearWiseDetails;
+  const categoriesList = categories || [];
 
-  const totalEvaluatedSpendInrCr = tenant?.total_spend_evaluated_inr || categoriesList.reduce(
-    (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
-    0
-  );
+  const totalEvaluatedSpendInrCr = (tenant?.total_spend_evaluated_inr != null)
+    ? tenant.total_spend_evaluated_inr
+    : (categoriesList.reduce(
+        (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
+        0
+      ) || 0);
 
   const dynamicVendorSupply = useMemo<VendorSupplyRecord[]>(() => {
     if (!lineItems || lineItems.length === 0) {
-      return mockTop50VendorsSupply;
+      return [];
     }
     const vendorMap = new Map<string, {
       spend: number;
@@ -213,8 +214,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     });
 
     const sortedVendors = Array.from(vendorMap.entries()).sort((a, b) => b[1].spend - a[1].spend);
-    if (sortedVendors.length < 5 || sortedVendors[0][1].spend < 15) {
-      return mockTop50VendorsSupply;
+    if (sortedVendors.length === 0) {
+      return [];
     }
     return sortedVendors.slice(0, 50).map(([vName, data], idx) => {
       const suppliedCategories = Array.from(data.categories);
@@ -248,6 +249,21 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     });
   }, [lineItems, totalEvaluatedSpendInrCr]);
 
+  const dynamicStrategicRiskItems = useMemo(() => {
+    if (!lineItems || lineItems.length === 0) return [];
+    return [];
+  }, [lineItems]);
+
+  const dynamicVendorConsolidationItems = useMemo(() => {
+    if (!lineItems || lineItems.length === 0) return [];
+    return [];
+  }, [lineItems]);
+
+  const dynamicPoConsolidationItems = useMemo(() => {
+    if (!lineItems || lineItems.length === 0) return [];
+    return [];
+  }, [lineItems]);
+
   const handleUpgradeSilver = () => {
     onUpgrade?.('SILVER');
   };
@@ -261,7 +277,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       <div className="space-y-6 animate-in fade-in duration-300">
         <TierMaskOverlay
           requiredTier="SILVER"
-          title={UI_STRINGS.subscription.stageMaskedTitle('Module 2: UNSPSC Taxonomy & Categorization')}
+          title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module2.badge)}
           description={UI_STRINGS.subscription.stageMaskedBronzeDesc}
           onUpgrade={handleUpgradeSilver}
         />
@@ -613,7 +629,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
-                {categoryYearWiseDetails.map((cat) => {
+                {categoriesList.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-slate-500 dark:text-slate-400 font-sans text-xs">
+                      Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
+                    </td>
+                  </tr>
+                ) : (
+                  categoriesList.map((cat: any) => {
                   const targetSavingsRate =
                     cat.core_bucket === 'Direct Materials'
                       ? 0.185
@@ -625,7 +648,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                       ? 0.08
                       : 0.142;
 
-                  const targetSavingsInrCr = cat.total_3yr_spend_inr_cr * targetSavingsRate;
+                  const targetSavingsInrCr = (cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0) * targetSavingsRate;
                   const fy24 = cat.spend_fy24_cr || cat.spend_inr_2023_cr;
                   const fy25 = cat.spend_fy25_cr || cat.spend_inr_2024_cr;
                   const fy26 = cat.spend_fy26_cr || cat.spend_inr_2025_26_cr;
@@ -651,24 +674,24 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="font-mono text-[11px] font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800">
-                          {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code.split(',')[0])}
+                          {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code ? String(cat.sample_column_l_code).split(',')[0] : 'UNSPSC')}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
-                        ₹{fy24.toFixed(2)} Cr
+                        ₹{(fy24 || 0).toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
-                        ₹{fy25.toFixed(2)} Cr
+                        ₹{(fy25 || 0).toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
-                        ₹{fy26.toFixed(2)} Cr
+                        ₹{(fy26 || 0).toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white">
-                        ₹{cat.total_3yr_spend_inr_cr.toFixed(2)} Cr
+                        ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-flex items-center space-x-1 text-amber-700 dark:text-amber-400 text-xs font-bold">
-                          <span>+{cat.yoy_growth_pct}%</span>
+                          <span>+{cat.yoy_growth_pct || 0}%</span>
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
@@ -678,7 +701,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>
@@ -733,7 +756,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             id="strategic-risk-section"
             data-testid="strategic-vendor-risk-container"
           >
-            <StrategicSingleVendorRiskSection />
+            <StrategicSingleVendorRiskSection items={dynamicStrategicRiskItems} />
           </div>
         )}
 
@@ -855,7 +878,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         id="vendor-consolidation-section"
         data-testid="vendor-consolidation-section-container"
       >
-        <VendorConsolidationSection />
+        <VendorConsolidationSection items={dynamicVendorConsolidationItems} />
       </div>
 
       {/* Multiple Monthly PO Consolidation & Economies of Scale Engine */}
@@ -864,7 +887,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         id="po-consolidation-section"
         data-testid="po-consolidation-section-container"
       >
-        <PoConsolidationSection />
+        <PoConsolidationSection items={dynamicPoConsolidationItems} />
       </div>
 
       {/* Machine Learning Line Item Review Workbench */}

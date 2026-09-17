@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getIngestionData,
   addIngestionFile,
@@ -16,6 +16,25 @@ const mockResponse = () => {
 };
 
 describe('ingestion.controller', () => {
+  beforeEach(() => {
+    db.setValidationRecords([{
+      record_id: 'REC-INGEST-1',
+      po_number: 'PO-TEST',
+      vendor_name: 'Test Vendor',
+      raw_desc: 'Test Desc',
+      order_quantity: 10,
+      net_price: 100,
+      amount: 1000,
+      raw_currency: 'USD',
+      amount_inr: 83800,
+      inr_crores: 0.00838,
+      spend_year: 2024,
+      issue_flag: 'Passed Clean',
+      action_status: 'Ready',
+      resolved: true
+    } as any]);
+  });
+
   describe('getIngestionData', () => {
     it('should return ingestion data and summary', async () => {
       const req: any = {};

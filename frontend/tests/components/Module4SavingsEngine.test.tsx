@@ -2,14 +2,54 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module4SavingsEngine } from '../../src/components/Module4SavingsEngine';
-import { mockSavingsOpportunities } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
+const sampleSavingsOpportunities = [
+  {
+    opp_id: 'OPP-001',
+    category: 'Direct Materials',
+    current_spend_inr_cr: 45.0,
+    current_spend: 450000000,
+    est_savings_inr_cr: 4.5,
+    est_savings: 45000000,
+    savings_percentage: 10.0,
+    lever: 'Supplier Consolidation',
+    recommended_module: 'proCPX' as const,
+    complexity: 'Low' as const,
+    status: 'Ready to Deploy'
+  },
+  {
+    opp_id: 'OPP-002',
+    category: 'Packaging Materials',
+    current_spend_inr_cr: 20.0,
+    current_spend: 200000000,
+    est_savings_inr_cr: 2.4,
+    est_savings: 24000000,
+    savings_percentage: 12.0,
+    lever: 'Index-Linked Should-Costing',
+    recommended_module: 'DPS NXT' as const,
+    complexity: 'Medium' as const,
+    status: 'Ready to Deploy'
+  }
+];
+
 describe('Module4SavingsEngine Component', () => {
+  it('renders cold zero-data state when opportunities is empty', () => {
+    render(
+      <Module4SavingsEngine
+        opportunities={[]}
+        onOpenProCPX={vi.fn()}
+        onOpenDPSNXT={vi.fn()}
+        onProceedToConversion={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Awaiting dataset ingestion. Upload a procurement dataset in Module 1 to generate actionable savings pipelines.')).toBeInTheDocument();
+  });
+
   it('renders summary cards, category breakdowns, and opportunities table', () => {
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={vi.fn()}
         onOpenDPSNXT={vi.fn()}
         onProceedToConversion={vi.fn()}
@@ -24,7 +64,7 @@ describe('Module4SavingsEngine Component', () => {
   it('filters opportunities by category and module', () => {
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={vi.fn()}
         onOpenDPSNXT={vi.fn()}
         onProceedToConversion={vi.fn()}
@@ -55,7 +95,7 @@ describe('Module4SavingsEngine Component', () => {
 
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={onOpenProCPX}
         onOpenDPSNXT={onOpenDPSNXT}
         onProceedToConversion={vi.fn()}
@@ -78,13 +118,13 @@ describe('Module4SavingsEngine Component', () => {
   it('handles opportunities with already pushed status and fallback spend values', () => {
     const customOpps = [
       {
-        ...mockSavingsOpportunities[0],
+        ...sampleSavingsOpportunities[0],
         status: 'Pushed to proCPX',
         current_spend_inr_cr: undefined as any,
         est_savings_inr_cr: undefined as any
       },
       {
-        ...mockSavingsOpportunities[1],
+        ...sampleSavingsOpportunities[1],
         status: 'Pushed to DPS NXT',
         current_spend_inr_cr: undefined as any,
         est_savings_inr_cr: undefined as any
@@ -108,7 +148,7 @@ describe('Module4SavingsEngine Component', () => {
     const onProceed = vi.fn();
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={vi.fn()}
         onOpenDPSNXT={vi.fn()}
         onProceedToConversion={onProceed}
@@ -124,7 +164,7 @@ describe('Module4SavingsEngine Component', () => {
     const onUpgrade = vi.fn();
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={vi.fn()}
         onOpenDPSNXT={vi.fn()}
         onProceedToConversion={vi.fn()}
@@ -144,7 +184,7 @@ describe('Module4SavingsEngine Component', () => {
     const onProceed = vi.fn();
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={vi.fn()}
         onOpenDPSNXT={vi.fn()}
         onProceedToConversion={onProceed}
@@ -174,7 +214,7 @@ describe('Module4SavingsEngine Component', () => {
 
     render(
       <Module4SavingsEngine
-        opportunities={mockSavingsOpportunities}
+        opportunities={sampleSavingsOpportunities}
         onOpenProCPX={vi.fn()}
         onOpenDPSNXT={vi.fn()}
         onProceedToConversion={vi.fn()}

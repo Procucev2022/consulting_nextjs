@@ -13,7 +13,7 @@ describe('Frontend Constants Modules', () => {
       expect(AppConstants.DEFAULT_SAVINGS_TARGET_INR_CR).toBe(119.67);
       expect(AppConstants.DEFAULT_SAVINGS_TARGET_PCT).toBe(16.4);
       expect(AppConstants.DEFAULT_SAAS_FEE_RATE).toBe(0.85);
-      expect(AppConstants.DEFAULT_TENANT_ENTERPRISE_NAME).toBe('Apex Industrial Dynamics (Fortune 500)');
+      expect(AppConstants.DEFAULT_TENANT_ENTERPRISE_NAME).toBe('Enterprise Client');
       expect(AppConstants.AICEV_LOGO_SRC).toBe('/images/aicev-logo.png');
       expect(AppConstants.AICEV_LOGO_WHITE_SRC).toBe('/images/aicev-logo-white.png');
     });

@@ -5,9 +5,34 @@ import { CategoryTopItemsModal } from '../../../src/components/modals/CategoryTo
 import { mockCategoryYearDetails } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
-describe('CategoryTopItemsModal Component', () => {
-  const sampleCategory = mockCategoryYearDetails[0];
+const sampleCategory: any = {
+  rank: 1,
+  category: 'Direct Chemicals',
+  total_3yr_spend_inr_cr: 120.5,
+  spend_share_pct: 16.5,
+  line_items_count: 50,
+  top_items: [
+    {
+      item_id: 'ITEM-TEST-1',
+      item_desc: 'Polymer Additive X-50',
+      column_l_code: '12345678',
+      vendor_name: 'Acme Chemical Global LLC',
+      po_number: 'PO-99901',
+      order_qty_annual: 500,
+      unit_of_measure: 'KG',
+      raw_currency: 'USD',
+      price_fy24: 100,
+      price_fy25: 110,
+      price_fy26: 125,
+      price_change_pct: 25,
+      total_spend_inr_cr: 10.5,
+      opportunity_potential_inr_lakhs: 25,
+      leakage_flag: 'High Creep'
+    }
+  ]
+};
 
+describe('CategoryTopItemsModal Component', () => {
   it('renders null when not open or category is null', () => {
     const { container } = render(
       <CategoryTopItemsModal

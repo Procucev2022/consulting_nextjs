@@ -6,9 +6,72 @@ import { mockMonthWiseSummaries } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { MonthWiseSummary } from '../../src/types';
 
+const sampleMonths: MonthWiseSummary[] = [
+  {
+    month_key: '2023-04',
+    month_label: 'Apr 2023',
+    fiscal_year: 'FY24',
+    spend_inr_cr: 10,
+    spend_usd_m: 1.2,
+    records_count: 50,
+    po_count: 10,
+    top_material_group: 'SCRAP',
+    top_plant: 'Plant 1000',
+    mom_change_pct: 0
+  },
+  {
+    month_key: '2023-05',
+    month_label: 'May 2023',
+    fiscal_year: 'FY24',
+    spend_inr_cr: 9.2,
+    spend_usd_m: 1.1,
+    records_count: 45,
+    po_count: 9,
+    top_material_group: 'SCRAP',
+    top_plant: 'Plant 1000',
+    mom_change_pct: -7.8
+  },
+  {
+    month_key: '2023-06',
+    month_label: 'Jun 2023',
+    fiscal_year: 'FY24',
+    spend_inr_cr: 14.1,
+    spend_usd_m: 1.7,
+    records_count: 70,
+    po_count: 15,
+    top_material_group: 'SCRAP',
+    top_plant: 'Plant 1000',
+    mom_change_pct: 53
+  },
+  {
+    month_key: '2024-04',
+    month_label: 'Apr 2024',
+    fiscal_year: 'FY25',
+    spend_inr_cr: 12,
+    spend_usd_m: 1.4,
+    records_count: 60,
+    po_count: 12,
+    top_material_group: 'CHEMICALS',
+    top_plant: 'Plant 2000',
+    mom_change_pct: 5
+  },
+  {
+    month_key: '2025-04',
+    month_label: 'Apr 2025',
+    fiscal_year: 'FY26',
+    spend_inr_cr: 15,
+    spend_usd_m: 1.8,
+    records_count: 65,
+    po_count: 14,
+    top_material_group: 'PACKAGING',
+    top_plant: 'Plant 3000',
+    mom_change_pct: 3
+  }
+];
+
 describe('MonthTimelineBarChart Component', () => {
   const defaultProps = {
-    months: mockMonthWiseSummaries,
+    months: sampleMonths,
     spendCurrency: 'INR' as const,
     selectedFy: 'ALL' as const,
     onSelectFy: vi.fn(),
@@ -58,9 +121,9 @@ describe('MonthTimelineBarChart Component', () => {
 
   it('handles hovering and clicking on a bar, and displays active hoveredMonth', () => {
     const onHoverMonth = vi.fn();
-    const junMonth = mockMonthWiseSummaries[2]; // Jun 2023 has +53% MoM
-    const mayMonth = mockMonthWiseSummaries[1]; // May 2023 has -7.8% MoM
-    const aprMonth = mockMonthWiseSummaries[0]; // Apr 2023 has 0% MoM
+    const junMonth = sampleMonths[2]; // Jun 2023 has +53% MoM
+    const mayMonth = sampleMonths[1]; // May 2023 has -7.8% MoM
+    const aprMonth = sampleMonths[0]; // Apr 2023 has 0% MoM
 
     const { rerender } = render(
       <MonthTimelineBarChart {...defaultProps} onHoverMonth={onHoverMonth} />

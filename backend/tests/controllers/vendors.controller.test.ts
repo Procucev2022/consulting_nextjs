@@ -10,6 +10,35 @@ const mockResponse = () => {
 };
 
 describe('vendors.controller', () => {
+  beforeEach(() => {
+    db.setVendorRankings([{
+      vendor_name: 'Crown Paper Box Corp',
+      master_id: 'VEND-MST-004',
+      category: 'Packaging',
+      total_spend_inr_cr: 10.0,
+      total_spend: 100000,
+      price_creep_pct: 3.5,
+      risk_status: 'ALIGNED',
+      variance_leakage_usd: 1000,
+      variance_leakage_inr_cr: 0.1,
+      benchmark_index: 'ICIS',
+      last_36mo_trend: [10, 10, 10]
+    } as any]);
+    db.setVendorDetails([{
+      id: 'VEN-1',
+      vendor_name: 'Crown Paper Box Corp',
+      core_category: 'Packaging',
+      spend_fy24_cr: 3,
+      spend_fy25_cr: 3.5,
+      spend_fy26_cr: 3.5,
+      total_3yr_spend_inr_cr: 10,
+      spend_share_pct: 10,
+      yoy_growth_pct: 5,
+      material_count: 2,
+      top_materials: []
+    } as any]);
+  });
+
   describe('getVendors', () => {
     it('should return vendor rankings and details', async () => {
       const req: any = {};

@@ -10,6 +10,16 @@ const mockResponse = () => {
 };
 
 describe('categories.controller', () => {
+  beforeEach(() => {
+    db.setCategories([{ id: 'CAT-1', name: 'Direct Materials' } as any]);
+    db.setCategoryDetails([{
+      id: 'CAT-1',
+      category: 'Direct Materials',
+      core_bucket: 'Direct Materials',
+      total_3yr_spend_inr_cr: 10.5
+    } as any]);
+  });
+
   it('should return all categories when no ID is provided', async () => {
     const req: any = { query: {} };
     const res = mockResponse();

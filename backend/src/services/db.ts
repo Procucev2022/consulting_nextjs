@@ -69,8 +69,8 @@ export class DatabaseStore {
           region: dbTenant.region as any,
           base_currency: dbTenant.base_currency as any,
           status: dbTenant.status as any,
-          total_spend_evaluated: dbTenant.total_spend_evaluated,
-          total_spend_evaluated_inr: dbTenant.total_spend_evaluated_inr || undefined
+          total_spend_evaluated: 0,
+          total_spend_evaluated_inr: 0
         };
       }
     } catch (err: any) {
@@ -87,22 +87,15 @@ export class DatabaseStore {
   }
 
   // Tenant
-  public getTenant(): TenantMaster {
+  public getTenant(buyerId?: string): TenantMaster {
     const start = Date.now();
-    const cached = queryCache.getCached<TenantMaster>(CACHE_KEYS.TENANT);
-    if (cached) {
-      queryAuditor.recordQueryAudit({
-        queryId: `tenant-${Date.now()}`,
-        operation: 'getTenant',
-        model: 'TenantMaster',
-        durationMs: Date.now() - start,
-        cached: true,
-        timestamp: new Date().toISOString()
-      });
-      return cached;
-    }
-    const result = { ...this.tenant };
-    queryCache.setCached(CACHE_KEYS.TENANT, result);
+    const queue = this.getIngestionQueue(buyerId);
+    const totalSpendInrCr = queue.reduce((sum, doc) => sum + (doc.converted_inr_crores || 0), 0);
+    const result: TenantMaster = {
+      ...this.tenant,
+      total_spend_evaluated_inr: totalSpendInrCr,
+      total_spend_evaluated: Math.round(totalSpendInrCr * 10000000)
+    };
     queryAuditor.recordQueryAudit({
       queryId: `tenant-${Date.now()}`,
       operation: 'getTenant',
@@ -240,7 +233,10 @@ export class DatabaseStore {
           detected_currencies: fullItem.detected_currencies,
           converted_inr_crores: fullItem.converted_inr_crores
         }
-      }).catch((e: any) => logger.error('Error syncing ingestion to PostgreSQL', { source: 'DatabaseStore' }, e));
+      }).catch((e: any) => {
+        logger.warn('PostgreSQL sync skipped - running with active in-memory store', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
+        this.isPostgresConnected = false;
+      });
     }
     return this.getIngestionQueue(fullItem.tenant_id);
   }
@@ -251,21 +247,28 @@ export class DatabaseStore {
       if (this.isPostgresConnected) {
         prisma.rawDocumentIngestion.deleteMany({
           where: { doc_id: docId }
-        }).catch((e: any) => logger.error('Error deleting document from PostgreSQL', { source: 'DatabaseStore', docId }, e));
+        }).catch((e: any) => {
+          logger.warn('PostgreSQL delete skipped', { source: 'DatabaseStore', docId, reason: e?.message?.split('\n')[0] });
+          this.isPostgresConnected = false;
+        });
       }
     } else if (tenantId) {
       this.ingestionQueue = this.ingestionQueue.filter((item) => item.tenant_id !== tenantId);
       if (this.isPostgresConnected) {
         prisma.rawDocumentIngestion.deleteMany({
           where: { tenant_id: tenantId }
-        }).catch((e: any) => logger.error('Error deleting tenant documents from PostgreSQL', { source: 'DatabaseStore', tenantId }, e));
+        }).catch((e: any) => {
+          logger.warn('PostgreSQL delete skipped', { source: 'DatabaseStore', tenantId, reason: e?.message?.split('\n')[0] });
+          this.isPostgresConnected = false;
+        });
       }
     } else {
       this.ingestionQueue = [];
       if (this.isPostgresConnected) {
-        prisma.rawDocumentIngestion.deleteMany({}).catch((e: any) =>
-          logger.error('Error clearing documents from PostgreSQL', { source: 'DatabaseStore' }, e)
-        );
+        prisma.rawDocumentIngestion.deleteMany({}).catch((e: any) => {
+          logger.warn('PostgreSQL clear skipped', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
+          this.isPostgresConnected = false;
+        });
       }
     }
     queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
@@ -363,6 +366,41 @@ export class DatabaseStore {
 
     queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
     return { updatedCount, records: [...this.validationRecords] };
+  }
+
+  public setValidationRecords(records: ValidationPreCheckRecord[]): void {
+    this.validationRecords = [...records];
+    queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
+  }
+
+  public setCategories(categories: SpendCategorySummary[]): void {
+    this.categories = [...categories];
+    queryCache.invalidateCache(CACHE_KEYS.CATEGORIES_SUMMARY);
+  }
+
+  public setCategoryDetails(details: CategoryYearDetail[]): void {
+    this.categoryDetails = [...details];
+    queryCache.invalidateCache(CACHE_KEYS.CATEGORY_DETAILS);
+  }
+
+  public setVendorDetails(details: VendorYearDetail[]): void {
+    this.vendorDetails = [...details];
+    queryCache.invalidateCache(CACHE_KEYS.VENDOR_DETAILS);
+  }
+
+  public setVendorRankings(rankings: VendorPriceRank[]): void {
+    this.vendorRankings = [...rankings];
+    queryCache.invalidateCache(CACHE_KEYS.VENDOR_RANKINGS);
+  }
+
+  public setLineItems(items: LineItemMapping[]): void {
+    this.lineItems = [...items];
+    queryCache.invalidateCache(CACHE_KEYS.LINE_ITEMS);
+  }
+
+  public setOpportunities(opps: SavingsOpportunity[]): void {
+    this.opportunities = [...opps];
+    queryCache.invalidateCache(CACHE_KEYS.OPPORTUNITIES);
   }
 
   public resetValidationRecords(): ValidationPreCheckRecord[] {
@@ -496,7 +534,7 @@ export class DatabaseStore {
   public mergeVendor(targetName: string, masterId: string, canonicalName: string): { success: boolean; affected: number } {
     let affected = 0;
     this.validationRecords = this.validationRecords.map((r) => {
-      if (r.vendor_name.toLowerCase().includes(targetName.toLowerCase())) {
+      if (r.vendor_name && r.vendor_name.toLowerCase().includes(targetName.toLowerCase())) {
         affected++;
         return {
           ...r,
@@ -510,7 +548,7 @@ export class DatabaseStore {
     });
 
     this.lineItems = this.lineItems.map((li) => {
-      if (li.vendor_identified.toLowerCase().includes(targetName.toLowerCase())) {
+      if (li.vendor_identified && li.vendor_identified.toLowerCase().includes(targetName.toLowerCase())) {
         return {
           ...li,
           vendor_identified: `${canonicalName} (${masterId})`,

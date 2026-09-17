@@ -6,7 +6,6 @@ import type {
   VendorSupplyRecord
 } from '../types/vendorSupply';
 import {
-  mockTop50VendorsSupply,
   computeVendorSupplyOverview
 } from '../data/mockVendorSupply';
 import { VENDOR_SUPPLY_THRESHOLDS } from '../constants/vendorSupply';
@@ -19,7 +18,7 @@ import { VendorSupplyTable } from './vendorSupply/VendorSupplyTable';
 import { VendorSupplyItemDetailsModal } from './vendorSupply/VendorSupplyItemDetailsModal';
 
 export const VendorCategorySupplyMatrix: React.FC<VendorCategorySupplyMatrixProps> = ({
-  vendors = mockTop50VendorsSupply,
+  vendors = [],
   onSelectVendor
 }) => {
   const [searchQuery, setSearchQuery] = useState('');

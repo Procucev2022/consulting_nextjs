@@ -1,8 +1,52 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
+import { db } from '../src/services/db';
 
 describe('App & Route Integration Tests', () => {
+  beforeEach(() => {
+    db.setValidationRecords([{
+      record_id: 'REC-APP-1',
+      po_number: 'PO-1',
+      vendor_name: 'Linde Air Liquid',
+      raw_desc: 'Gas Cylinders',
+      order_quantity: 10,
+      net_price: 100,
+      subtotal_raw: 1000,
+      amount: 1000,
+      raw_currency: 'EUR',
+      amount_inr: 90000,
+      inr_crores: 0.009,
+      fx_rate_applied: 90.0,
+      spend_year: 2024,
+      transaction_date: '2024-05-18',
+      column_l_code: '13101502',
+      core_category: 'Direct Materials',
+      issue_flag: 'Passed Clean',
+      action_status: 'Ready',
+      resolved: true
+    } as any]);
+    db.setCategories([{ id: 'CAT-1', name: 'Direct Materials' } as any]);
+    db.setCategoryDetails([{
+      id: 'CAT-1',
+      category: 'Direct Materials',
+      core_bucket: 'Direct Materials',
+      total_3yr_spend_inr_cr: 10.5
+    } as any]);
+    db.setOpportunities([{
+      opp_id: 'OPP-1',
+      title: 'Resin Rebate',
+      category: 'Direct Materials',
+      est_savings_inr_cr: 1.5,
+      current_spend_inr_cr: 10.0,
+      target_savings_pct: 15.0,
+      push_to_module: 'proCPX',
+      status: 'Identified',
+      contract_leak_type: 'Rebate Leakage',
+      confidence_score: 95
+    } as any]);
+  });
+
   it('GET / should return online welcome message', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);

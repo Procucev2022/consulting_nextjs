@@ -6,8 +6,32 @@ import { initialValidationRecords } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('MergeVendorModal Component', () => {
-  const sampleRec = initialValidationRecords[0];
-  const secondRec = initialValidationRecords[1];
+  const sampleRec = {
+    record_id: 'REC-001',
+    column_l_code: '43211501',
+    raw_desc: 'Industrial Heat Exchanger Tube Bundle 304L',
+    core_category: 'Direct Materials',
+    vendor_name: 'Apex Industrial Piping Ltd',
+    order_quantity: 450,
+    unit_price: 12500,
+    spend_inr: 5625000,
+    issue_flag: 'VENDOR_NAME_ANOMALY' as const,
+    po_number: 'PO-2026-9001'
+  };
+
+  const secondRec = {
+    record_id: 'REC-002',
+    column_l_code: '43211502',
+    raw_desc: 'Stainless Steel Flange Class 150',
+    core_category: 'Piping & Valving',
+    vendor_name: 'Bharat Forge & Fittings',
+    order_quantity: 1200,
+    unit_price: 3400,
+    spend_inr: 4080000,
+    issue_flag: 'PRICE_ANOMALY' as const,
+    po_number: 'PO-2026-9002'
+  };
+
   const realMasterSuppliers = [
     {
       id: `VEN-${sampleRec.vendor_name.replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}-001`,
@@ -140,7 +164,7 @@ describe('MergeVendorModal Component', () => {
     fireEvent.click(confirmBtn);
     expect(onMerge).toHaveBeenCalledWith(
       sampleRec.record_id,
-      'VEN-CONTINEN-001',
+      realMasterSuppliers[0].id,
       sampleRec.vendor_name
     );
   });

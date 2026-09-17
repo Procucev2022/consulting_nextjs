@@ -10,6 +10,21 @@ const mockResponse = () => {
 };
 
 describe('savings.controller', () => {
+  beforeEach(() => {
+    db.setOpportunities([{
+      opp_id: 'OPP-1',
+      title: 'Resin Volume Rebate',
+      category: 'Direct Materials',
+      est_savings_inr_cr: 1.5,
+      current_spend_inr_cr: 10.0,
+      target_savings_pct: 15.0,
+      push_to_module: 'proCPX',
+      status: 'Identified',
+      contract_leak_type: 'Rebate Leakage',
+      confidence_score: 95
+    } as any]);
+  });
+
   describe('getSavings', () => {
     it('should return opportunities and total savings', async () => {
       const req: any = {};

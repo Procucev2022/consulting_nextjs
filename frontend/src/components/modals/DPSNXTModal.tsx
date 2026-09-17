@@ -110,7 +110,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                   <div className="text-right">
                     <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.dpsNXT.targetSavings}</span>
                     <p className="text-lg font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                      ${opportunity.est_savings.toLocaleString()}
+                      ${(opportunity.est_savings ?? ((opportunity.est_savings_inr_cr || 0) * 10000000 / 83.8)).toLocaleString()}
                     </p>
                   </div>
                 </div>

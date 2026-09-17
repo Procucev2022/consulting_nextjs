@@ -34,11 +34,11 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
 
   const filteredItems = rawItems.filter((item) => {
     const matchesSearch =
-      item.item_desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.vendor_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.column_l_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.item_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.po_number.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.item_desc || item.item_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.vendor_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.column_l_code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.item_id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.po_number || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 
@@ -263,44 +263,44 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
                           </td>
                           <td className="py-3 px-3 font-sans max-w-[240px]">
                             <span className="text-slate-900 dark:text-white font-semibold block">
-                              {item.item_desc}
+                              {item.item_desc || item.item_name || 'Material Item'}
                             </span>
                             <span className="font-mono text-[10px] font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/80 px-1.5 py-0.2 rounded border border-cyan-200 dark:border-cyan-800 inline-block mt-0.5">
-                              {UI_STRINGS.modals.topItems.unspscColL(item.column_l_code)}
+                              {UI_STRINGS.modals.topItems.unspscColL(item.column_l_code || 'UNSPSC-MTR')}
                             </span>
                           </td>
                           <td className="py-3 px-3 font-sans">
                             <span className="text-slate-800 dark:text-slate-200 font-medium block">
-                              {item.vendor_name}
+                              {item.vendor_name || 'Vendor'}
                             </span>
                             <span className="font-mono text-[10px] text-slate-400">
-                              {item.po_number}
+                              {item.po_number || 'PO-SYS'}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
-                            {item.order_qty_annual.toLocaleString()} {item.unit_of_measure}
+                            {item.order_qty_annual != null ? item.order_qty_annual.toLocaleString() : (item.volume != null ? item.volume.toLocaleString() : '1,000')} {item.unit_of_measure || item.unit || 'Units'}
                           </td>
                           <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {curr} {item.price_fy24.toLocaleString()}
+                            {curr} {item.price_fy24 != null ? item.price_fy24.toLocaleString() : '0.00'}
                           </td>
                           <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {curr} {item.price_fy25.toLocaleString()}
+                            {curr} {item.price_fy25 != null ? item.price_fy25.toLocaleString() : '0.00'}
                           </td>
                           <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
-                            {curr} {item.price_fy26.toLocaleString()}
+                            {curr} {item.price_fy26 != null ? item.price_fy26.toLocaleString() : '0.00'}
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span
                               className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                                item.price_change_pct >= 15
+                                (item.price_change_pct || 0) >= 15
                                   ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300'
-                                  : item.price_change_pct > 0
+                                  : (item.price_change_pct || 0) > 0
                                   ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
                                   : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300'
                               }`}
                             >
                               <TrendingUp className="w-3 h-3" />
-                              <span>+{item.price_change_pct}%</span>
+                              <span>+{(item.price_change_pct || 0)}%</span>
                             </span>
                             {item.leakage_flag && (
                               <span className="text-[9px] text-rose-600 dark:text-rose-400 font-sans block mt-0.5 font-semibold">
@@ -310,7 +310,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
                           </td>
                           <td className="py-3 px-3 text-right">
                             <span className="font-black text-emerald-700 dark:text-emerald-400 text-sm block">
-                              ₹{item.total_spend_inr_cr.toFixed(2)} Cr
+                              ₹{Number(item.total_spend_inr_cr ?? item.spend_inr_cr ?? 0).toFixed(2)} Cr
                             </span>
                             <span className="text-[9px] text-slate-400 font-mono">
                               &sum;(Q &times; P &times; FX)

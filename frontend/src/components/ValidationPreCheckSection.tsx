@@ -389,7 +389,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
                     </td>
 
                     <td className="py-3 px-3 text-right">
-                      {(record.issue_flag === 'Missing Currency Code' || record.issue_flag === 'Tax Discrepancy') && !record.resolved && (
+                      {(record.issue_flag === 'Missing Currency Code' || record.issue_flag === 'Missing Currency' || record.issue_flag === 'Tax Discrepancy') && !record.resolved && (
                         <button
                           onClick={() => onFixCurrency(record)}
                           className="px-2.5 py-1.5 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-lg transition-all shadow-xs cursor-pointer"
@@ -397,7 +397,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
                           {UI_STRINGS.module1.fixInr}
                         </button>
                       )}
-                      {record.issue_flag === 'Unmapped Supplier Name' && !record.resolved && (
+                      {(record.issue_flag === 'Unmapped Supplier Name' || record.issue_flag === 'Unmapped Vendor' || record.issue_flag === 'Unmapped Supplier') && !record.resolved && (
                         <button
                           onClick={() => onMergeVendor(record)}
                           className="px-2.5 py-1.5 text-xs font-bold text-sky-950 bg-sky-400 hover:bg-sky-300 rounded-lg transition-all shadow-xs cursor-pointer"
@@ -405,7 +405,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
                           {UI_STRINGS.module1.mergeVendor}
                         </button>
                       )}
-                      {record.issue_flag === 'Duplicate Item Description' && !record.resolved && onMergeItem && (
+                      {(record.issue_flag === 'Duplicate Item Description' || record.issue_flag === 'Duplicate Item') && !record.resolved && onMergeItem && (
                         <button
                           onClick={() => onMergeItem(record)}
                           className="px-2.5 py-1.5 text-xs font-bold text-indigo-950 bg-indigo-400 hover:bg-indigo-300 rounded-lg transition-all shadow-xs cursor-pointer"

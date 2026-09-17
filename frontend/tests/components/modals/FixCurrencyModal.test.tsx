@@ -5,9 +5,19 @@ import { FixCurrencyModal } from '../../../src/components/modals/FixCurrencyModa
 import { initialValidationRecords } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
-describe('FixCurrencyModal Component', () => {
-  const sampleRec = initialValidationRecords[0];
+const sampleRec: any = {
+  record_id: 'REC-TEST-001',
+  transaction_date: '2025-01-15',
+  po_number: 'PO-TEST-1001',
+  vendor_name: 'Acme Chemical Global LLC',
+  amount: 50000,
+  raw_currency: 'USD',
+  spend_year: 'FY25',
+  core_category: 'Direct Chemicals',
+  suggested_currency: 'USD'
+};
 
+describe('FixCurrencyModal Component', () => {
   it('renders null when not open or record is null', () => {
     const { container } = render(
       <FixCurrencyModal

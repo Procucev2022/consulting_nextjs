@@ -20,16 +20,22 @@ import { validateInput } from '../utils/validation';
 import confetti from 'canvas-confetti';
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
-  tenant: _tenant,
+  tenant,
   funnelStages,
   onOpenReport,
   currentTier = 'GOLD',
   onUpgrade
 }) => {
   // ROI Interactive Calculator State in INR in Crores (₹ Cr)
-  const [annualSpendCr, setAnnualSpendCr] = useState<number>(DEFAULT_SPEND_BASELINE_INR_CR); // ₹732.41 Cr
+  const [annualSpendCr, setAnnualSpendCr] = useState<number>(() => tenant?.total_spend_evaluated_inr || 0);
   const [savingsRate, setSavingsRate] = useState<number>(DEFAULT_SAVINGS_TARGET_PCT); // 16.4%
   const [saasFeeRate, setSaasFeeRate] = useState<number>(DEFAULT_SAAS_FEE_RATE); // 0.85% of spend or platform fee
+
+  React.useEffect(() => {
+    if (tenant?.total_spend_evaluated_inr !== undefined) {
+      setAnnualSpendCr(tenant.total_spend_evaluated_inr);
+    }
+  }, [tenant?.total_spend_evaluated_inr]);
 
   const calculatedGrossSavingsCr = (annualSpendCr * savingsRate) / 100;
   const calculatedPlatformFeeCr = (annualSpendCr * saasFeeRate) / 100;

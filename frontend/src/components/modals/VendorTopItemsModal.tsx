@@ -35,10 +35,10 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
 
   const filteredItems = rawItems.filter((item) => {
     const matchesSearch =
-      item.item_desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.column_l_code.includes(searchQuery) ||
-      item.item_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.po_number.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.item_desc || item.item_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.column_l_code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.item_id || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.po_number || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 

@@ -166,7 +166,7 @@ export const uploadDocumentToObjectStore = async (req: Request, res: Response): 
       buffer,
       fileName,
       fileType === 'XLSX' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
-      'procurement-datasets',
+      process.env.R2_BUCKET || 'consulting-doc',
       { datasetType: datasetType || 'Purchase History' }
     );
 

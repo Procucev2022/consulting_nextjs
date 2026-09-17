@@ -59,7 +59,7 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
           </div>
           <div>
             <div className="text-2xl font-bold font-mono text-slate-900 dark:text-white">
-              ₹{summary.totalFragmentedSpendCr.toFixed(2)} Cr
+              ₹{(summary.totalFragmentedSpendCr || 0).toFixed(2)} Cr
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               {UI_STRINGS.poConsolidation.kpiTotalSpendSub}
@@ -74,15 +74,15 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
               {UI_STRINGS.poConsolidation.kpiTotalCurrentPosLabel}
             </span>
             <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-              {summary.qualifiedSuppliersCount} Accounts
+              {summary.qualifiedSuppliersCount || 0} Accounts
             </span>
           </div>
           <div>
             <div className="text-2xl font-bold font-mono text-rose-600 dark:text-rose-400">
-              {summary.totalCurrentPos} POs/Yr
+              {summary.totalCurrentPos || 0} POs/Yr
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              {UI_STRINGS.poConsolidation.kpiTotalCurrentPosSub(summary.qualifiedSuppliersCount)}
+              {UI_STRINGS.poConsolidation.kpiTotalCurrentPosSub(summary.qualifiedSuppliersCount || 0)}
             </p>
           </div>
         </div>
@@ -97,14 +97,14 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
           </div>
           <div>
             <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 flex items-center space-x-1.5">
-              <span>{summary.totalTargetPos} POs/Yr</span>
+              <span>{summary.totalTargetPos || 0} POs/Yr</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                -{summary.avgPoReductionPct.toFixed(0)}%
+                -{(summary.avgPoReductionPct || 0).toFixed(0)}%
               </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              {UI_STRINGS.poConsolidation.kpiTargetPosSub(summary.avgPoReductionPct)}
+              {UI_STRINGS.poConsolidation.kpiTargetPosSub(summary.avgPoReductionPct || 0)}
             </p>
           </div>
         </div>
@@ -119,10 +119,10 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
           </div>
           <div>
             <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-300">
-              ₹{summary.totalScaleSavingsCr.toFixed(2)} Cr
+              ₹{(summary.totalScaleSavingsCr || 0).toFixed(2)} Cr
             </div>
             <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
-              {UI_STRINGS.poConsolidation.kpiEconomiesOfScaleSub(summary.totalAdminCostSavingsLakhs)}
+              {UI_STRINGS.poConsolidation.kpiEconomiesOfScaleSub(summary.totalAdminCostSavingsLakhs || 0)}
             </p>
           </div>
         </div>

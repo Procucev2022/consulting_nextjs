@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
 import { Module1Ingestion } from '@/components/Module1Ingestion';
@@ -30,9 +31,9 @@ const AnalyzingLoader = dynamic(
 import { getYahooFinanceRateToINR, parseDateOrYear } from '@/utils/currencyConverter';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { frontendLogger } from '@/utils/logger';
-import { UI_STRINGS } from '@/constants';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
-import { lookupUNSPSCDetails } from '@/data/unspscTaxonomy';
+import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '@/data/unspscTaxonomy';
+import { UI_STRINGS } from '@/constants/uiStrings';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -101,6 +102,19 @@ import type {
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
 export default function Home() {
+  let router: { push: (url: string) => void } | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    router = {
+      push: (url: string) => {
+        if (typeof window !== 'undefined') {
+          window.location.href = url;
+        }
+      }
+    };
+  }
   // Theme State: Default to Light Mode
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -139,48 +153,18 @@ export default function Home() {
 
 
   // Application Data States
-  const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>(() => {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const stored = window.sessionStorage.getItem('procucev_uploaded_dataset');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.doc) return [parsed.doc];
-        } catch {
-          // fallback
-        }
-      }
-      const user = authApiClient.getStoredUser();
-      if (user && !stored) return [];
-    }
-    return initialIngestionQueue;
-  });
+  const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
   const [uploadedMaterialGroups, setUploadedMaterialGroups] = useState<MaterialGroupSummary[] | undefined>(undefined);
   const [uploadedPlants, setUploadedPlants] = useState<PlantSummary[] | undefined>(undefined);
   const [uploadedMonths, setUploadedMonths] = useState<MonthWiseSummary[] | undefined>(undefined);
   const [uploadedUniqueItems, setUploadedUniqueItems] = useState<number | undefined>(undefined);
   const [uploadedUniqueVendors, setUploadedUniqueVendors] = useState<number | undefined>(undefined);
   const [uploadedParetoData, setUploadedParetoData] = useState<ParetoSpendData | undefined>(undefined);
-  const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>(() => {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const stored = window.sessionStorage.getItem('procucev_uploaded_dataset');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.validationRecords) return parsed.validationRecords;
-        } catch {
-          // fallback
-        }
-      }
-      const user = authApiClient.getStoredUser();
-      if (user && !stored) return [];
-    }
-    return initialValidationRecords;
-  });
-  const [categories, setCategories] = useState(spendCategoriesData);
-  const [lineItems, setLineItems] = useState<LineItemMapping[]>(initialLineItemMappings);
-  const [vendorRankings, setVendorRankings] = useState(vendorVolatilityRankings);
-  const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>(initialSavingsOpportunities);
+  const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
+  const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
+  const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
+  const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
+  const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>([]);
   const [funnelStages] = useState(conversionFunnelStages);
 
   // Modal States
@@ -204,53 +188,21 @@ export default function Home() {
 
   // Initial Sync with Backend API, Session Storage & Authenticated User
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        const storedUser = authApiClient.getStoredUser();
-        const saved = window.sessionStorage.getItem('procucev_uploaded_dataset');
-        const autofillRaw = window.sessionStorage.getItem('procucev_autofill_active_doc');
-        if (storedUser) {
-          setCurrentUser(storedUser);
-          setTenant((prev) => ({
-            ...prev,
-            enterprise_name: storedUser.company_name || prev.enterprise_name,
-            total_spend_evaluated_inr: saved || autofillRaw ? prev.total_spend_evaluated_inr : 0,
-            total_spend_evaluated: saved || autofillRaw ? prev.total_spend_evaluated : 0
-          }));
-        }
-
-        if (autofillRaw) {
-          try {
-            const autofillDoc = JSON.parse(autofillRaw);
-            window.sessionStorage.removeItem('procucev_autofill_active_doc');
-            setIngestionQueue([autofillDoc]);
-            if (autofillDoc.converted_inr_crores) {
-              setTenant((prev) => ({
-                ...prev,
-                total_spend_evaluated_inr: autofillDoc.converted_inr_crores,
-                total_spend_evaluated: autofillDoc.converted_inr_crores * 10000000
-              }));
-            }
-          } catch {
-            // Fallback
-          }
-        } else if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.doc) setIngestionQueue([parsed.doc]);
-          if (parsed.materialGroupSummaries) setUploadedMaterialGroups(parsed.materialGroupSummaries);
-          if (parsed.plantSummaries) setUploadedPlants(parsed.plantSummaries);
-          if (parsed.monthWiseSummaries) setUploadedMonths(parsed.monthWiseSummaries);
-          if (parsed.uploadedUniqueItems) setUploadedUniqueItems(parsed.uploadedUniqueItems);
-          if (parsed.uploadedUniqueVendors) setUploadedUniqueVendors(parsed.uploadedUniqueVendors);
-          if (parsed.paretoData) setUploadedParetoData(parsed.paretoData);
-          if (parsed.validationRecords) setValidationRecords(parsed.validationRecords);
-          if (parsed.categories) setCategories(parsed.categories);
-          if (parsed.lineItems) setLineItems(parsed.lineItems);
-          if (parsed.vendorRankings) setVendorRankings(parsed.vendorRankings);
-          if (parsed.opportunities) setOpportunities(parsed.opportunities);
-          if (parsed.isDataRefreshed) setIsDataRefreshed(true);
+    const handleHash = () => {
+      if (typeof window !== 'undefined') {
+        const rawHash = window.location.hash.replace('#', '');
+        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(rawHash)) {
+          setActiveTab(rawHash as PipelineActiveTab);
         }
       }
+    };
+
+    if (typeof window !== 'undefined') {
+      handleHash();
+      window.addEventListener('hashchange', handleHash);
+    }
+
+    try {
       const user = apiClient.getStoredUser();
       if (user) {
         setCurrentUser(user);
@@ -260,34 +212,27 @@ export default function Home() {
         setSimulatedTier(simTier);
       }
     } catch {
-      // Safe fallback if sessionStorage is inaccessible
+      // Safe fallback
     }
 
     async function loadBackendData() {
       try {
         const storedUser = authApiClient.getStoredUser();
         const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
-          apiClient.getTenant(),
+          apiClient.getTenant(storedUser?.id),
           apiClient.getIngestionData(storedUser?.id),
           apiClient.getCategories(),
           apiClient.getVendors(),
           apiClient.getSavingsOpportunities()
         ]);
 
-        let hasSessionDoc = false;
-        try {
-          hasSessionDoc = Boolean(typeof window !== 'undefined' && window.sessionStorage?.getItem('procucev_uploaded_dataset'));
-        } catch {
-          hasSessionDoc = false;
-        }
-
         if (tenantData.status === 'fulfilled' && tenantData.value) {
           if (storedUser) {
             setTenant((prev) => ({
               ...tenantData.value,
               enterprise_name: storedUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
-              total_spend_evaluated_inr: hasSessionDoc ? (tenantData.value.total_spend_evaluated_inr ?? prev.total_spend_evaluated_inr) : 0,
-              total_spend_evaluated: hasSessionDoc ? (tenantData.value.total_spend_evaluated ?? prev.total_spend_evaluated) : 0
+              total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
+              total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
             }));
           } else {
             setTenant({
@@ -296,18 +241,39 @@ export default function Home() {
             });
           }
         }
+
         if (ingestionData.status === 'fulfilled' && ingestionData.value) {
-          let hasSessionDoc = false;
-          try {
-            hasSessionDoc = Boolean(typeof window !== 'undefined' && window.sessionStorage?.getItem('procucev_uploaded_dataset'));
-          } catch {
-            hasSessionDoc = false;
-          }
-          if (!hasSessionDoc && !storedUser && ingestionData.value.queue && ingestionData.value.queue.length > 0) {
-            const rawQueue = ingestionData.value.queue || [];
-            const sanitizedQueue: RawDocumentIngestion[] = rawQueue.map((doc: any, idx: number) => ({
+          const backendQueue = ingestionData.value.queue || [];
+          const queueToHydrate = storedUser?.id
+            ? backendQueue.filter(
+                (d: any) => !d.tenant_id || d.tenant_id === storedUser.id || d.tenant_id === storedUser.email
+              )
+            : backendQueue;
+
+          if (queueToHydrate.length === 0) {
+            // Current buyer has NO uploaded documents!
+            setIngestionQueue([]);
+            setValidationRecords([]);
+            setUploadedMaterialGroups(undefined);
+            setUploadedPlants(undefined);
+            setUploadedMonths(undefined);
+            setUploadedUniqueItems(undefined);
+            setUploadedUniqueVendors(undefined);
+            setUploadedParetoData(undefined);
+            setCategories([]);
+            setLineItems([]);
+            setVendorRankings([]);
+            setOpportunities([]);
+            setIsDataRefreshed(false);
+            setTenant((prev) => ({
+              ...prev,
+              total_spend_evaluated_inr: 0,
+              total_spend_evaluated: 0
+            }));
+          } else {
+            const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
               doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
-              tenant_id: doc.tenant_id || 'TNT-GLOBAL-8902',
+              tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
               file_name: doc.file_name || 'Uploaded_Document.xlsx',
               file_type: doc.file_type || 'XLSX',
               file_size_mb: doc.file_size_mb || 1.0,
@@ -326,22 +292,28 @@ export default function Home() {
             if (ingestionData.value.validationRecords) {
               setValidationRecords(ingestionData.value.validationRecords);
             }
+            if (categoryData.status === 'fulfilled' && categoryData.value) {
+              setCategories(categoryData.value.categories || []);
+            }
+            if (vendorData.status === 'fulfilled' && vendorData.value) {
+              setVendorRankings(vendorData.value.vendorRankings || []);
+            }
+            if (savingsData.status === 'fulfilled' && savingsData.value) {
+              setOpportunities(savingsData.value.opportunities || []);
+            }
           }
-        }
-        if (categoryData.status === 'fulfilled' && categoryData.value) {
-          setCategories(categoryData.value.categories);
-        }
-        if (vendorData.status === 'fulfilled' && vendorData.value) {
-          setVendorRankings(vendorData.value.vendorRankings);
-        }
-        if (savingsData.status === 'fulfilled' && savingsData.value) {
-          setOpportunities(savingsData.value.opportunities);
         }
       } catch (err) {
         frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
       }
     }
     loadBackendData();
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('hashchange', handleHash);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -744,6 +716,13 @@ export default function Home() {
   };
 
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
+    const loggedUser = currentUser || authApiClient.getStoredUser();
+    if (!loggedUser) {
+      showToast('Please sign in to upload datasets');
+      router.push('/login');
+      return;
+    }
+
     setAnalyzingLoaderState({
       isOpen: true,
       title: `Analyzing Uploaded File "${file.name}"`,
@@ -878,29 +857,16 @@ export default function Home() {
           const plantMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
           const monthMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
 
-          const fallbackQuantities = [1000, 320, 2000, 650, 50, 10000];
-          const fallbackPrices = [145.0, 120.0, 44.6, 300.0, 850.0, 6.73];
-          const fallbackCurrencies = ['EUR', 'USD', 'USD', 'GBP', 'AED', 'USD'];
-          const fallbackYears = [2024, 2024, 2024, 2023, 2023, 2026];
-          const fallbackVendors = ['Continental Polymer S.A.', 'DHL Logistics GmbH', 'Amcor Packaging Group', 'Acme Chemical Co. LLC', 'Flowserve Industrial Services', 'Crown Paper Box Corp'];
-          const fallbackDescs = ['High Density Polyethylene Granules', 'Cross-Border Air Express Logistics', 'Double Wall Corrugated Pallet Box', 'Hydrochloric Acid Tech Grade Bulk', 'Emergency Centrifugal Pump Impeller', 'Reinforced Shipping Cartons Heavy Duty'];
-          const fallbackCodes = ['13101502', '78101801', '14121506', '12352204', '40151501', '14121506'];
-          const fallbackCategories: Array<ValidationPreCheckRecord['core_category']> = ['Direct Materials', 'Logistics & Freight', 'Packaging Materials', 'Direct Materials', 'Indirect & MRO', 'Packaging Materials'];
-          const fallbackFlags: Array<ValidationPreCheckRecord['issue_flag']> = ['Missing Currency Code', 'Unmapped Supplier Name', 'Passed Clean', 'Tax Discrepancy', 'Passed Clean', 'Passed Clean'];
-          const fallbackStatuses: Array<ValidationPreCheckRecord['action_status']> = ['Fix (INR)', 'Merge Vendor', 'Ready', 'Ready', 'Ready', 'Ready'];
-          const fallbackDates = ['2024-05-18', '2025-02-14', '2025-09-04', '2023-11-20', '2023-08-11', '2026-01-16'];
-
           rows.forEach((r, idx) => {
-            const rowIdx = idx % fallbackQuantities.length;
             const hasExplicitQty = qtyKey && r[qtyKey] != null && !isNaN(Number(r[qtyKey]));
-            const rawQty = hasExplicitQty ? Number(r[qtyKey]) : fallbackQuantities[rowIdx];
+            const rawQty = hasExplicitQty ? Math.max(0, Number(r[qtyKey])) : 1;
             const hasExplicitPrice = priceKey && r[priceKey] != null && !isNaN(Number(r[priceKey]));
-            const rawPrice = hasExplicitPrice ? Number(r[priceKey]) : fallbackPrices[rowIdx];
-            const rawCurr = (currKey ? String(r[currKey] || '').toUpperCase().trim() : '') || fallbackCurrencies[rowIdx];
-            const rawYear = (yearKey ? Number(String(r[yearKey]).match(/\d{4}/)?.[0]) : 0) || fallbackYears[rowIdx];
+            const rawPrice = hasExplicitPrice ? Math.max(0, Number(r[priceKey])) : 0;
+            const rawCurr = currKey && r[currKey] != null ? String(r[currKey]).trim().toUpperCase() : '';
             const rawDateVal = dateKey ? r[dateKey] : null;
-            const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || rawYear);
-            const fxRate = getYahooFinanceRateToINR(rawCurr, rawDateVal || rawYear);
+            const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || new Date().getFullYear());
+            const rawYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
+            const fxRate = getYahooFinanceRateToINR(rawCurr || 'INR', rawDateVal || rawYear);
 
             // Ground truth check: Use Total In Crs or Total INR if present, otherwise Qty * Price * FX
             const rawCr = totalCrKey && r[totalCrKey] != null ? Number(r[totalCrKey]) : NaN;
@@ -922,8 +888,8 @@ export default function Home() {
               ? rawDesc
               : rawMat && !/^\d{1,3}$/.test(rawMat)
                 ? rawMat
-                : 'DIRECT CONSUMABLES';
-            const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || 'SUPPLIER CORP';
+                : `Item-${idx + 1}`;
+            const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || '';
 
             const isValidVendor = Boolean(rowVendor && !/^\d+$/.test(rowVendor) && rowVendor.length > 2);
             const isValidItem = Boolean(rowItem && !/^\d+$/.test(rowItem) && rowItem.length > 1);
@@ -972,32 +938,56 @@ export default function Home() {
             if (lineTotalCr > 0 && isValidVendor) {
               dynamicParetoRecords.push({
                 vendorName: rowVendor,
-                shortText: isValidItem ? rowItem : 'DIRECT CONSUMABLES',
+                shortText: isValidItem ? rowItem : 'Direct Consumables',
                 spendCr: lineTotalCr
               });
             }
 
-            if (idx < 6) {
+            // Real anomaly pre-check classification
+            const unspscMatch = lookupUNSPSCByDescription(rowItem);
+            const columnLCode = unspscMatch?.commodityCode || '13101502';
+            const coreCategory = (unspscMatch?.coreBucket as ValidationPreCheckRecord['core_category']) || 'Direct Materials';
+
+            let issueFlag: ValidationPreCheckRecord['issue_flag'] = 'Passed Clean';
+            let actionStatus: ValidationPreCheckRecord['action_status'] = 'Ready';
+            let isResolved = true;
+
+            if (!rawCurr) {
+              issueFlag = 'Missing Currency Code';
+              actionStatus = 'Fix (INR)';
+              isResolved = false;
+            } else if (!isValidVendor) {
+              issueFlag = 'Unmapped Supplier Name';
+              actionStatus = 'Merge Vendor';
+              isResolved = false;
+            } else if (rawPrice <= 0 || lineTotalCr <= 0) {
+              issueFlag = 'Tax Discrepancy';
+              actionStatus = 'Ready';
+              isResolved = false;
+            }
+
+            // Collect rows for validation pre-check inspection (up to 30 sample rows from genuine dataset)
+            if (parsedValidationItems.length < 30) {
               parsedValidationItems.push({
-                record_id: `REC-${8841 + idx}`,
-                po_number: poKey && r[poKey] ? String(r[poKey]) : `PO-2024-9981${idx}`,
-                vendor_name: rowVendor || (vendorKey && r[vendorKey] ? String(r[vendorKey]) : fallbackVendors[rowIdx]),
-                raw_desc: rowItem || (descKey && r[descKey] ? String(r[descKey]) : fallbackDescs[rowIdx]),
+                record_id: `REC-${8800 + idx}`,
+                po_number: poKey && r[poKey] ? String(r[poKey]).trim() : `PO-${rawYear}-${1000 + idx}`,
+                vendor_name: rowVendor || 'Unmapped Supplier',
+                raw_desc: rowItem,
                 order_quantity: rawQty,
                 net_price: rawPrice,
                 subtotal_raw: rawQty * rawPrice,
                 amount: rawQty * rawPrice,
-                raw_currency: rawCurr,
+                raw_currency: rawCurr || 'INR',
                 amount_inr: lineTotalINR,
                 inr_crores: Number((lineTotalINR / 10000000).toFixed(2)),
                 fx_rate_applied: fxRate,
                 spend_year: rawYear,
-                transaction_date: parsedDateInfo.formattedDate || fallbackDates[rowIdx],
-                column_l_code: fallbackCodes[rowIdx],
-                core_category: fallbackCategories[rowIdx],
-                issue_flag: fallbackFlags[rowIdx],
-                action_status: fallbackStatuses[rowIdx],
-                resolved: idx === 2 || idx === 5
+                transaction_date: parsedDateInfo.formattedDate || `${rawYear}-01-01`,
+                column_l_code: columnLCode,
+                core_category: coreCategory,
+                issue_flag: issueFlag,
+                action_status: actionStatus,
+                resolved: isResolved
               });
             }
           });
@@ -1235,7 +1225,7 @@ export default function Home() {
 
     const newDoc: RawDocumentIngestion = {
       doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
-      tenant_id: tenant.tenant_id,
+      tenant_id: loggedUser.id || tenant.tenant_id,
       file_name: file.name,
       file_type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
       file_size_mb: Number((file.size / (1024 * 1024)).toFixed(2)),
@@ -1254,60 +1244,37 @@ export default function Home() {
     setIngestionQueue([newDoc]);
 
     try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({
-          doc: newDoc,
-          materialGroupSummaries: dynamicMgs,
-          plantSummaries: dynamicPlants,
-          monthWiseSummaries: dynamicMonths,
-          uploadedUniqueItems: dynamicUniqueItems,
-          uploadedUniqueVendors: dynamicUniqueVendors,
-          paretoData: paretoDataToStore,
-          validationRecords: parsedValidationItems,
-          categories: dynamicCategories,
-          lineItems: dynamicLineItems,
-          vendorRankings: dynamicVendorRankings,
-          opportunities: dynamicOpportunities,
-          totalSpendInrCr,
-          isDataRefreshed: false
-        }));
-      }
-    } catch {
-      // Safe fallback if sessionStorage is inaccessible
-    }
-
-    try {
       let fileBase64 = '';
       try {
-        const arrayBuf = await file.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuf);
-        let binary = '';
-        const limit = Math.min(bytes.byteLength, 512 * 1024);
-        for (let i = 0; i < limit; i++) {
-          binary += String.fromCharCode(bytes[i]);
+        if (typeof window !== 'undefined' && window.FileReader) {
+          fileBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const res = reader.result as string;
+              resolve(res.replace(/^data:[^;]+;base64,/, ''));
+            };
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+          });
         }
-        fileBase64 = btoa(binary);
       } catch {
         // Base64 conversion fallback
       }
 
       await apiClient.uploadDocumentToObjectStore({
         fileName: file.name,
-        fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : 'CSV',
+        fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
         fileBase64: fileBase64 || undefined,
         fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)) || 1.0,
         recordsCount,
         convertedInrCrores: totalSpendInrCr,
         detectedCurrencies: ['USD', 'EUR', 'INR'],
-        datasetType: _datasetType
+        datasetType: _datasetType,
+        buyer_id: loggedUser.id,
+        tenant_id: loggedUser.id
       });
     } catch (e) {
-      frontendLogger.warn('Backend sync warning for object store document upload', { error: e });
-      try {
-        await apiClient.addIngestionFile(newDoc);
-      } catch (addErr) {
-        frontendLogger.warn('Fallback backend add ingestion warning', { error: addErr });
-      }
+      frontendLogger.warn('Backend sync warning for document upload', { error: e });
     }
 
     showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, totalSpendInrCr, recordsCount));

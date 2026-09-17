@@ -13,6 +13,7 @@ import {
 import type { Module4SavingsEngineProps, PipelineActiveTab } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
 import { StrategicSavingsSummaryBanner } from './savings/StrategicSavingsSummaryBanner';
+import { buildStrategicSavingsSummary } from '../utils/strategicSavingsCalculator';
 import {
   UI_STRINGS,
   DEFAULT_SPEND_BASELINE_INR_CR,
@@ -39,42 +40,47 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     onNavigateToSection?.(targetModule, targetSectionId);
   };
 
-  const totalEvaluatedSpendInrCr = DEFAULT_SPEND_BASELINE_INR_CR; // ₹732.41 Cr
-  const totalSavingsInrCr = DEFAULT_SAVINGS_TARGET_INR_CR; // ₹119.67 Cr (16.4% Net Target)
-
+  const totalSavingsInrCr = opportunities.reduce(
+    (acc, opp) => acc + (opp.estimated_savings_inr_cr || (opp.estimated_savings_usd ? opp.estimated_savings_usd * 83.8 / 10000000 : 0) || 0),
+    0
+  );
+  const totalEvaluatedSpendInrCr = opportunities.reduce(
+    (acc, opp) => acc + (opp.baseline_spend_inr_cr || (opp.current_spend_usd ? opp.current_spend_usd * 83.8 / 10000000 : 0) || 0),
+    0
+  );
 
   const categoryBreakdowns = [
     {
       name: UI_STRINGS.module4.categories.directMaterials,
       targetPct: UI_STRINGS.module4.categoryTargets.directMaterials,
-      savingsFound: UI_STRINGS.module4.categorySavingsFound.directMaterials,
+      savingsFound: `₹${opportunities.filter(o => o.category === 'Direct Materials').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
       color: 'from-cyan-500 to-blue-500',
       textColor: 'text-cyan-700 dark:text-cyan-400',
-      progressPct: 100
+      progressPct: opportunities.length > 0 ? 100 : 0
     },
     {
       name: UI_STRINGS.module4.categories.packagingMaterials,
       targetPct: UI_STRINGS.module4.categoryTargets.packagingMaterials,
-      savingsFound: UI_STRINGS.module4.categorySavingsFound.packagingMaterials,
+      savingsFound: `₹${opportunities.filter(o => o.category === 'Packaging Materials').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
       color: 'from-blue-500 to-indigo-500',
       textColor: 'text-blue-700 dark:text-blue-400',
-      progressPct: 106
+      progressPct: opportunities.length > 0 ? 100 : 0
     },
     {
       name: UI_STRINGS.module4.categories.indirectMRO,
       targetPct: UI_STRINGS.module4.categoryTargets.indirectMRO,
-      savingsFound: UI_STRINGS.module4.categorySavingsFound.indirectMRO,
+      savingsFound: `₹${opportunities.filter(o => o.category === 'Indirect & MRO').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
       color: 'from-purple-500 to-violet-500',
       textColor: 'text-purple-700 dark:text-purple-400',
-      progressPct: 96
+      progressPct: opportunities.length > 0 ? 100 : 0
     },
     {
       name: UI_STRINGS.module4.categories.logisticsFreight,
       targetPct: UI_STRINGS.module4.categoryTargets.logisticsFreight,
-      savingsFound: UI_STRINGS.module4.categorySavingsFound.logisticsFreight,
+      savingsFound: `₹${opportunities.filter(o => o.category === 'Logistics & Freight').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
       color: 'from-emerald-500 to-teal-500',
       textColor: 'text-emerald-700 dark:text-emerald-400',
-      progressPct: 102
+      progressPct: opportunities.length > 0 ? 100 : 0
     }
   ];
 
@@ -133,7 +139,15 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
       </div>
 
       {/* Cross-Module Strategic Sourcing & AI Categorization Savings Summary Banner */}
-      <StrategicSavingsSummaryBanner onNavigateToSection={handleNavigate} />
+      <StrategicSavingsSummaryBanner
+        summaryMetrics={buildStrategicSavingsSummary({
+          opportunities,
+          consolidationItems: opportunities.length > 0 ? undefined : [],
+          poItems: opportunities.length > 0 ? undefined : [],
+          strategicRiskItems: opportunities.length > 0 ? undefined : []
+        })}
+        onNavigateToSection={handleNavigate}
+      />
 
       {/* Grid: 1. Hero Total Savings Highlight Card (5 cols) + 2. Target vs Realized Distribution (7 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -292,11 +306,18 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
-                {filteredOpportunities.map((opp) => (
-                  <tr
-                    key={opp.opp_id}
-                    className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
+                {filteredOpportunities.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-500 dark:text-slate-400 font-sans text-xs">
+                      Awaiting dataset ingestion. Upload a procurement dataset in Module 1 to generate actionable savings pipelines.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredOpportunities.map((opp) => (
+                    <tr
+                      key={opp.opp_id}
+                      className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
                     <td className="py-3.5 px-4">
                       <span className="font-bold text-cyan-700 dark:text-cyan-400 block font-mono">
                         {opp.opp_id}
@@ -321,12 +342,12 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                     <td className="py-3.5 px-4 text-center font-sans">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
-                          opp.push_to_module === 'proCPX'
+                          (opp.push_to_module || opp.recommended_module) === 'proCPX'
                             ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800/60'
                             : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-400 border border-purple-300 dark:border-purple-800/60'
                         }`}
                       >
-                        {opp.push_to_module}
+                        {opp.push_to_module || opp.recommended_module || 'proCPX'}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right font-sans">
@@ -335,7 +356,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                           <Check className="w-3.5 h-3.5" />
                           <span>{UI_STRINGS.module4.pushedBadge}</span>
                         </span>
-                      ) : opp.push_to_module === 'proCPX' ? (
+                      ) : (opp.push_to_module || opp.recommended_module) === 'proCPX' ? (
                         <button
                           onClick={() => onOpenProCPX(opp)}
                           className="px-3 py-1.5 text-xs font-bold text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-all shadow-xs active:scale-95 flex items-center space-x-1 ml-auto cursor-pointer"
@@ -354,7 +375,8 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
           </div>

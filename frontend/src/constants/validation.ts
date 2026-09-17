@@ -23,7 +23,7 @@ export const clientIngestionSetupFormSchema = z.object({
   spendPeriod: z.string().min(1, 'Spend period is required'),
   currency: z.enum(['INR', 'USD', 'EUR', 'GBP']),
   region: z.enum(['NA', 'EU', 'APAC', 'GLOBAL']),
-  estimatedSpend: z.number().positive('Estimated spend must be positive'),
+  estimatedSpend: z.number().min(0, 'Estimated spend cannot be negative'),
   majorSector: z.string().min(1, 'Major sector is required').optional().default('Chemical & Petrochemicals'),
   minorSector: z.string().min(1, 'Minor sector is required').optional().default('Specialty Chemicals')
 });
@@ -63,7 +63,7 @@ export const proCPXFormSchema = z.object({
   oppId: z.string().min(1, 'Opportunity ID is required'),
   eventType: z.enum(['Reverse Auction', 'Multi-Stage RFP', 'Sealed Bid']),
   baselineSpendCr: z.number().positive('Baseline spend must be positive'),
-  targetSavingsPct: z.number().min(0, 'Target savings cannot be negative').max(100, 'Target savings cannot exceed 100%'),
+  targetSavingsPct: z.number().min(0, 'Target savings cannot be negative').max(100, 'Target savings cannot exceed 100%').optional().default(10),
   invitedSuppliers: z.array(z.string()).min(1, 'At least one supplier must be invited'),
   auctionEndDate: z.string().min(1, 'Auction end date is required')
 });

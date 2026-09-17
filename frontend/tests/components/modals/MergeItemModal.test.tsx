@@ -6,8 +6,32 @@ import { initialValidationRecords } from '../../../src/data/mockData';
 import { UI_STRINGS, DEFAULT_MASTER_ITEMS } from '../../../src/constants';
 
 describe('MergeItemModal Component', () => {
-  const sampleRec = initialValidationRecords[0];
-  const secondRec = initialValidationRecords[1];
+  const sampleRec = {
+    record_id: 'REC-001',
+    column_l_code: '43211501',
+    raw_desc: 'Industrial Heat Exchanger Tube Bundle 304L',
+    core_category: 'Direct Materials',
+    vendor_name: 'Apex Industrial Piping Ltd',
+    order_quantity: 450,
+    unit_price: 12500,
+    spend_inr: 5625000,
+    issue_flag: 'UNSPSC_MISMATCH' as const,
+    po_number: 'PO-2026-9001'
+  };
+
+  const secondRec = {
+    record_id: 'REC-002',
+    column_l_code: '43211502',
+    raw_desc: 'Stainless Steel Flange Class 150',
+    core_category: 'Piping & Valving',
+    vendor_name: 'Bharat Forge & Fittings',
+    order_quantity: 1200,
+    unit_price: 3400,
+    spend_inr: 4080000,
+    issue_flag: 'PRICE_ANOMALY' as const,
+    po_number: 'PO-2026-9002'
+  };
+
   const realMasterItems = [
     {
       code: `ITM-${sampleRec.column_l_code}`,

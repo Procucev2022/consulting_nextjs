@@ -132,16 +132,23 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
             </h3>
           </div>
           <div className="flex items-center space-x-2">
-            <button
-              onClick={() => onSelectTab('module5')}
-              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all ${
+            <a
+              href="#module5"
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectTab('module5');
+                if (typeof window !== 'undefined') window.location.hash = 'module5';
+              }}
+              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all inline-block cursor-pointer ${
                 activeTab === 'module5'
                   ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border border-purple-500'
                   : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
               }`}
             >
               {UI_STRINGS.pipeline.conversionMatrixTab}
-            </button>
+            </a>
+            {/* Data Architecture Tab - Commented out */}
+            {/*
             <button
               onClick={() => onSelectTab('schema')}
               className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all flex items-center space-x-1 ${
@@ -153,6 +160,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               <Database className="w-3.5 h-3.5" />
               <span>{UI_STRINGS.pipeline.dataArchitectureTab}</span>
             </button>
+            */}
           </div>
         </div>
 
@@ -162,10 +170,15 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
             const Icon = stage.icon;
             const isActive = activeTab === stage.id;
             return (
-              <button
+              <a
                 key={stage.id}
-                onClick={() => onSelectTab(stage.id)}
-                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between ${
+                href={`#${stage.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelectTab(stage.id);
+                  if (typeof window !== 'undefined') window.location.hash = stage.id;
+                }}
+                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between cursor-pointer no-underline block ${
                   isActive
                     ? 'bg-gradient-to-b from-cyan-50 to-white dark:from-cyan-950/80 dark:to-slate-900 border-cyan-500 shadow-md shadow-cyan-500/10 dark:shadow-cyan-500/15'
                     : 'bg-slate-50/50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/60'
@@ -212,7 +225,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                     }`}
                   />
                 </div>
-              </button>
+              </a>
             );
           })}
         </div>

@@ -50,10 +50,10 @@ export const Header: React.FC<HeaderProps> = ({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeUser = currentUser || user || null;
-  const displayName = activeUser?.name || UI_STRINGS.header.authorName;
-  const userInitials = activeUser?.name
-    ? activeUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-    : 'U';
+  const displayName = activeUser?.full_name || (activeUser as any)?.name || activeUser?.email || UI_STRINGS.header.userProfile.defaultName;
+  const userInitials = displayName
+    ? displayName.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'G';
 
   const handleMouseEnter = (): void => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -104,9 +104,15 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{UI_STRINGS.header.docRefValue}</span>
           </span>
           <span className="hidden md:inline text-slate-300 dark:text-slate-500">|</span>
-          <span className="hidden md:inline text-slate-700 dark:text-slate-300">
-            {UI_STRINGS.header.authorLabel} <strong className="text-slate-900 dark:text-white">{displayName}</strong> ({activeUser?.role ? `${activeUser.role.charAt(0).toUpperCase()}${activeUser.role.slice(1)}` : UI_STRINGS.header.authorRole})
-          </span>
+          {activeUser ? (
+            <span className="hidden md:inline text-slate-700 dark:text-slate-300">
+              {UI_STRINGS.header.authorLabel} <strong className="text-slate-900 dark:text-white">{activeUser.name}</strong> ({activeUser.role ? `${activeUser.role.charAt(0).toUpperCase()}${activeUser.role.slice(1)}` : 'User'})
+            </span>
+          ) : (
+            <span className="hidden md:inline text-slate-600 dark:text-slate-400">
+              <strong className="text-slate-800 dark:text-slate-200">aiCEV Suite</strong> (Procurement Intelligence)
+            </span>
+          )}
           <span className="hidden lg:inline text-slate-300 dark:text-slate-500">|</span>
           <span className="hidden lg:inline text-emerald-700 dark:text-emerald-400 font-semibold tracking-wide">
             {UI_STRINGS.header.baseCurrencyNote}
@@ -166,7 +172,8 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          {/* Deep Spend Scan Trigger (Primary Action) */}
+          {/* Deep Spend Scan Trigger (Primary Action) - Commented out */}
+          {/*
           <button
             type="button"
             onClick={onStartAnalysis}
@@ -180,6 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Sparkles className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{UI_STRINGS.analyzingLoader.triggerButton}</span>
           </button>
+          */}
 
           {/* Executive Report Button */}
           <button
@@ -210,7 +218,7 @@ export const Header: React.FC<HeaderProps> = ({
               {activeUser ? userInitials : <User className="w-3.5 h-3.5 text-white" />}
             </div>
             <span className="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors max-w-[100px] truncate">
-              {displayName.split(' ')[0]}
+              {activeUser ? displayName.split(' ')[0] : 'Sign In'}
             </span>
             <ChevronDown
               className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
@@ -229,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800">
                 <div className="flex items-center space-x-3 min-w-0">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
-                    {userInitials}
+                    {activeUser ? userInitials : <User className="w-5 h-5 text-white" />}
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
@@ -244,18 +252,20 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Active Subscription Tier Badge */}
                 <div
                   data-testid="subscription-tier-badge"
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold text-[10px] shrink-0 ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[10px] tracking-wide shrink-0 transition-all ${
                     currentTier === 'GOLD'
-                      ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 font-black shadow-xs'
+                      ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-amber-950 font-black shadow-xs border border-amber-300'
                       : currentTier === 'SILVER'
-                      ? 'bg-gradient-to-r from-slate-200 to-slate-300 text-slate-900 font-bold shadow-xs'
-                      : 'bg-amber-900/40 text-amber-300 font-bold border border-amber-700/50'
+                      ? 'bg-gradient-to-r from-slate-100 to-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold shadow-xs border border-slate-300 dark:border-slate-700'
+                      : 'bg-amber-100/90 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 font-bold border border-amber-300/90 dark:border-amber-700/60 shadow-xs'
                   }`}
                 >
                   {currentTier === 'GOLD' ? (
-                    <Crown className="w-3 h-3 text-amber-950" />
+                    <Crown className="w-3.5 h-3.5 text-amber-950" />
+                  ) : currentTier === 'SILVER' ? (
+                    <Sparkles className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />
                   ) : (
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
                   )}
                   <span>{UI_STRINGS.subscription.tierBadge(currentTier)}</span>
                 </div>

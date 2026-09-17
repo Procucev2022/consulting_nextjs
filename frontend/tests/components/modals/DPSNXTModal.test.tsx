@@ -5,9 +5,19 @@ import { DPSNXTModal } from '../../../src/components/modals/DPSNXTModal';
 import { mockSavingsOpportunities } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
-describe('DPSNXTModal Component', () => {
-  const sampleOpp = mockSavingsOpportunities[0];
+const sampleOpp: any = {
+  opp_id: 'OPP-DPS-TEST-001',
+  title: 'Direct Chemicals Index Pegging & Rebates',
+  category: 'Direct Chemicals',
+  est_savings: 250000,
+  est_savings_inr_cr: 2.5,
+  confidence_score: 94,
+  implementation_time_months: 3,
+  recommended_action: 'Index pegging and automated tier rebates',
+  impact_level: 'HIGH'
+};
 
+describe('DPSNXTModal Component', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
