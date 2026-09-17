@@ -176,7 +176,7 @@ export class DatabaseStore {
       return cached.map((item, idx) => this.sanitizeIngestionItem(item, idx));
     }
     const filteredQueue = tenantId
-      ? this.ingestionQueue.filter((item) => !item.tenant_id || item.tenant_id === tenantId)
+      ? this.ingestionQueue.filter((item) => item.tenant_id === tenantId)
       : this.ingestionQueue;
     const result = filteredQueue.map((item, idx) => this.sanitizeIngestionItem(item, idx));
     queryCache.setCached(cacheKey, result);

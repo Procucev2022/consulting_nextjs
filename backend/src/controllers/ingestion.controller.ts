@@ -5,7 +5,15 @@ import logger from '../utils/logger';
 
 export const getIngestionData = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const tenantId = (req?.query?.tenantId as string) || (req?.query?.buyerId as string) || (req?.headers?.['x-buyer-id'] as string) || (req?.headers?.['x-tenant-id'] as string);
+    const tenantId =
+      (req?.query?.buyerId as string) ||
+      (req?.query?.buyer_id as string) ||
+      (req?.query?.tenantId as string) ||
+      (req?.query?.tenant_id as string) ||
+      (req?.headers?.['x-buyer-id'] as string) ||
+      (req?.headers?.['X-Buyer-Id'] as string) ||
+      (req?.headers?.['x-tenant-id'] as string) ||
+      (req?.headers?.['X-Tenant-Id'] as string);
     const queue = db.getIngestionQueue(tenantId);
     const validationRecords = db.getValidationRecords();
     logger.debug('Fetched ingestion data', {
