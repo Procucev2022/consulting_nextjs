@@ -26,7 +26,7 @@ const mockUser = {
   mobile_number: '+91 91234 56789',
   company_name: 'Apex Industrial Dynamics',
   company_address: 'Peenya Industrial Estate, Bengaluru',
-  role: 'ADMIN' as const,
+  role: 'USER' as const,
   status: 'ACTIVE' as const,
   subscription_tier: 'ENTERPRISE_PRO',
   created_at: new Date('2025-01-15').toISOString()
@@ -97,6 +97,18 @@ describe('Enterprise Profile Page Component', () => {
     });
   });
 
+  it('redirects to /admin/dashboard if authenticated user has ADMIN role', async () => {
+    const mockAdminUser = { ...mockUser, role: 'ADMIN' as const };
+    vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(mockAdminUser);
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('admin-token');
+
+    render(<ProfilePage />);
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/admin/dashboard');
+    });
+  });
+
   it('renders profile with user information, Buyer ID, and isolated organization documents', async () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(mockUser);
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('mock-token');
@@ -126,7 +138,7 @@ describe('Enterprise Profile Page Component', () => {
     expect(screen.getByText('BUYER-NAVIN-89')).toBeInTheDocument();
     expect(screen.getByText('navin@enterprise.com')).toBeInTheDocument();
     expect(screen.getByText('Peenya Industrial Estate, Bengaluru')).toBeInTheDocument();
-    expect(screen.getByText('Admin Directory')).toBeInTheDocument();
+    expect(screen.queryByText('Admin Directory')).not.toBeInTheDocument();
 
     // Verify own uploaded document is rendered
     expect(screen.getByText('FY25_Purchase_Data.xlsx')).toBeInTheDocument();

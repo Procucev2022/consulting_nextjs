@@ -71,6 +71,12 @@ export default function ProfilePage(): React.ReactElement {
           return;
         }
 
+        // Admins belong in the Admin Portal, not the buyer profile page
+        if (storedUser?.role === 'ADMIN') {
+          router.push('/admin/dashboard');
+          return;
+        }
+
         if (storedUser && isMounted) {
           setUser(storedUser);
         }
@@ -86,6 +92,10 @@ export default function ProfilePage(): React.ReactElement {
         if (!isMounted) return;
 
         if (meRes?.user) {
+          if (meRes.user.role === 'ADMIN') {
+            router.push('/admin/dashboard');
+            return;
+          }
           setUser(meRes.user);
           if (storedToken) authApiClient.setStoredSession(storedToken, meRes.user);
         }
@@ -189,12 +199,14 @@ export default function ProfilePage(): React.ReactElement {
     router.push('/');
   };
 
-  if (loading) {
+  if (loading || user?.role === 'ADMIN') {
     return (
       <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex items-center justify-center p-4">
         <div className="flex flex-col items-center space-y-3">
           <div className="w-10 h-10 border-3 border-cyan-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-500 font-mono">Loading enterprise profile credentials...</p>
+          <p className="text-xs text-slate-500 font-mono">
+            {user?.role === 'ADMIN' ? 'Redirecting to Admin Portal...' : 'Loading enterprise profile credentials...'}
+          </p>
         </div>
       </div>
     );
