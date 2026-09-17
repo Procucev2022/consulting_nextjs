@@ -115,8 +115,15 @@ export default function Home() {
       }
     };
   }
-  // Theme State: Default to Light Mode
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  // Theme State: Default to Stored Theme or Light Mode
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('procucev_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (document.documentElement.classList.contains('dark')) return 'dark';
+    }
+    return 'light';
+  });
 
   // Navigation & User Session State
   const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
@@ -325,9 +332,15 @@ export default function Home() {
     if (theme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('procucev_theme', 'dark');
+      }
     } else {
       root.classList.add('light');
       root.classList.remove('dark');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('procucev_theme', 'light');
+      }
     }
   }, [theme]);
 
