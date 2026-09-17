@@ -25,6 +25,8 @@ coverage/
 .env*.local
 .env
 **/.env
+.dev.vars
+**/.dev.vars
 
 # Vercel
 .vercel

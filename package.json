@@ -15,6 +15,7 @@
     "build:frontend": "npm --prefix frontend run build",
     "build:backend": "npm --prefix backend run build",
     "deploy:frontend": "npm --prefix frontend run deploy",
+    "deploy:backend": "npm --prefix backend run cloudflare:deploy",
     "start": "concurrently -n \"frontend,backend\" -c \"cyan,green\" \"npm --prefix frontend run start\" \"npm --prefix backend run start\"",
     "postinstall": "npm --prefix frontend install && npm --prefix backend install",
     "install:all": "npm install && npm --prefix frontend install && npm --prefix backend install",

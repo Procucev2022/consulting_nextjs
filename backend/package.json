@@ -8,6 +8,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "node scripts/generate-client.js && tsc",
     "start": "node dist/server.js",
+    "cloudflare:dev": "wrangler dev",
+    "cloudflare:deploy": "wrangler deploy",
+    "cloudflare:types": "wrangler types",
     "db:generate": "prisma generate",
     "db:push": "prisma db push --skip-generate",
     "db:seed": "tsx prisma/seed.ts",
@@ -42,7 +45,8 @@
     "tsx": "^4.19.3",
     "typescript": "^5.4.5",
     "vite": "^6.2.0",
-    "vitest": "^3.0.7"
+    "vitest": "^3.0.7",
+    "wrangler": "^4.133.0"
   },
   "overrides": {
     "qs": "^6.16.0"
