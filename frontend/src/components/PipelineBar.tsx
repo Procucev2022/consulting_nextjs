@@ -5,7 +5,6 @@ import {
   Cpu,
   LineChart,
   Target,
-  Database,
   ArrowRight
 } from 'lucide-react';
 import type { PipelineBarProps } from '../types';
@@ -25,8 +24,8 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
     ? (hasData ? opportunities.reduce((sum, o) => sum + (o.est_savings_inr_cr || 0), 0) : 0)
     : (hasData ? 119.67 : 0);
 
-  const totalRecords = hasData
-    ? ingestionQueue!.reduce((sum, doc) => sum + (doc.records_count || 0), 0)
+  const totalRecords = hasData && ingestionQueue
+    ? ingestionQueue.reduce((sum, doc) => sum + (doc.records_count || 0), 0)
     : 0;
 
   const evaluatedSpend = hasData ? (totalSpendCr || tenant?.total_spend_evaluated_inr || 0) : 0;

@@ -15,9 +15,7 @@ import { TierMaskOverlay } from './TierMaskOverlay';
 import { StrategicSavingsSummaryBanner } from './savings/StrategicSavingsSummaryBanner';
 import { buildStrategicSavingsSummary } from '../utils/strategicSavingsCalculator';
 import {
-  UI_STRINGS,
-  DEFAULT_SPEND_BASELINE_INR_CR,
-  DEFAULT_SAVINGS_TARGET_INR_CR
+  UI_STRINGS
 } from '../constants';
 
 export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({

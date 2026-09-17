@@ -8,8 +8,7 @@ import {
   Sparkles,
   Zap,
   Building2,
-  ArrowRight,
-  RefreshCw
+  ArrowRight
 } from 'lucide-react';
 import type {
   ValidationPreCheckSectionProps,
@@ -26,7 +25,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
   onResetValidationRecords,
   onRunAICategorization,
   isDataRefreshed,
-  onRefreshWithFixes
+  onRefreshWithFixes: _onRefreshWithFixes
 }) => {
   const [filterIssue, setFilterIssue] = useState<ValidationIssueCategoryFilter>('ALL');
 

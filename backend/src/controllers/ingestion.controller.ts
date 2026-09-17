@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import type { RawDocumentIngestion } from '../types';
 import { db } from '../services/db';
 import { objectStore } from '../services/objectStoreService';
 import logger from '../utils/logger';
@@ -142,6 +143,29 @@ export const applyBlanketRemediation = async (_req: Request, res: Response): Pro
   }
 };
 
+const parseUploadBuffer = (fileBase64?: string, fileName?: string): Buffer => {
+  if (fileBase64) {
+    const cleanBase64 = fileBase64.replace(/^data:[^;]+;base64,/, '');
+    return Buffer.from(cleanBase64, 'base64');
+  }
+  return Buffer.from(fileName || 'empty', 'utf-8');
+};
+
+const resolveContentType = (fileType?: string): string => {
+  if (fileType === 'XLSX') {
+    return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  }
+  return 'text/csv';
+};
+
+const resolveTenantId = (bodyTenant?: string, bodyBuyer?: string, req?: Request): string => {
+  if (bodyTenant) return bodyTenant;
+  if (bodyBuyer) return bodyBuyer;
+  if (req?.headers['x-buyer-id']) return req.headers['x-buyer-id'] as string;
+  if (req?.headers['x-tenant-id']) return req.headers['x-tenant-id'] as string;
+  return 'DEFAULT_TENANT';
+};
+
 export const uploadDocumentToObjectStore = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const {
@@ -153,37 +177,30 @@ export const uploadDocumentToObjectStore = async (req: Request, res: Response): 
       convertedInrCrores,
       detectedCurrencies,
       datasetType,
-      tenant_id,
-      buyer_id
+      tenant_id: bodyTenantId,
+      buyer_id: bodyBuyerId
     } = req.body;
 
     if (!fileName) {
       return res.status(400).json({ success: false, message: 'Missing fileName in upload payload' });
     }
 
-    let buffer: Buffer;
-    if (fileBase64) {
-      const cleanBase64 = fileBase64.replace(/^data:[^;]+;base64,/, '');
-      buffer = Buffer.from(cleanBase64, 'base64');
-    } else {
-      buffer = Buffer.from(fileName, 'utf-8');
-    }
-
+    const buffer = parseUploadBuffer(fileBase64, fileName);
     const calculatedSizeMb = fileSizeMb || Number((buffer.length / (1024 * 1024)).toFixed(2)) || 1.0;
     const objectMeta = await objectStore.putObject(
       buffer,
       fileName,
-      fileType === 'XLSX' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv',
+      resolveContentType(fileType),
       process.env.R2_BUCKET || 'consulting-doc',
       { datasetType: datasetType || 'Purchase History' }
     );
 
-    const effectiveTenantId = tenant_id || buyer_id || (req.headers['x-buyer-id'] as string) || (req.headers['x-tenant-id'] as string);
+    const effectiveTenantId = resolveTenantId(bodyTenantId, bodyBuyerId, req);
 
     const ingestionItem = {
       tenant_id: effectiveTenantId,
       file_name: fileName,
-      file_type: (fileType || 'XLSX') as any,
+      file_type: (fileType || 'XLSX') as RawDocumentIngestion['file_type'],
       file_size_mb: calculatedSizeMb,
       records_count: recordsCount || 0,
       converted_inr_crores: convertedInrCrores || 0,

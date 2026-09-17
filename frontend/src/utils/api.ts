@@ -94,10 +94,13 @@ export const apiClient = {
     buyer_id?: string;
     tenant_id?: string;
   }): Promise<{
-    objectMeta: any;
+    objectMeta: Record<string, unknown>;
     ingestionQueue: RawDocumentIngestion[];
   }> {
-    frontendLogger.info('Uploading document to Object Store', { fileName: payload.fileName, buyerId: payload.buyer_id });
+    frontendLogger.info('Uploading document to Object Store', {
+      fileName: payload.fileName,
+      buyerId: payload.buyer_id
+    });
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (payload.buyer_id) headers['x-buyer-id'] = payload.buyer_id;
     if (payload.tenant_id) headers['x-tenant-id'] = payload.tenant_id;

@@ -81,7 +81,7 @@ export const getEffectiveUserTier = (
   if (user.role === 'ADMIN') {
     return 'GOLD';
   }
-  return user.subscription_tier || 'BRONZE';
+  return (user.subscription_tier as SubscriptionTier) || 'BRONZE';
 };
 
 /**

@@ -17,11 +17,11 @@ export interface AnalyzingPhase {
 }
 
 export interface AnalyzingMetricsSummary {
-  totalRecords: number;
-  spendCrores: number;
-  uniqueVendors: number;
-  categoriesIdentified: number;
-  confidenceScore: number;
+  totalRecords?: number;
+  spendCrores?: number;
+  uniqueVendors?: number;
+  categoriesIdentified?: number;
+  confidenceScore?: number;
 }
 
 export interface AnalyzingLoaderProps {

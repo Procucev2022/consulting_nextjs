@@ -79,6 +79,7 @@ export interface Module1IngestionProps {
   isDataRefreshed?: boolean;
   paretoSpendData?: ParetoSpendData;
   onRefreshWithFixes?: () => void;
+  rawUploadRecords?: Record<string, unknown>[] | unknown;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
 }

@@ -6,7 +6,6 @@ import {
   Building2,
   Calendar,
   Search,
-  ArrowRight,
   CheckCircle2,
   Package,
   Users

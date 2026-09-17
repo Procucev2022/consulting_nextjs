@@ -8,19 +8,8 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command
 } from '@aws-sdk/client-s3';
+import type { StoredObjectMetadata } from '../types';
 import logger from '../utils/logger';
-
-export interface StoredObjectMetadata {
-  key: string;
-  bucket: string;
-  filename: string;
-  contentType: string;
-  sizeBytes: number;
-  sha256: string;
-  uploadedAt: string;
-  storageUrl: string;
-  metadata?: Record<string, string>;
-}
 
 export class ObjectStoreService {
   private baseDir: string;
@@ -45,15 +34,9 @@ export class ObjectStoreService {
       this.s3Client = new S3Client({
         region: 'auto',
         endpoint,
-        credentials: {
-          accessKeyId,
-          secretAccessKey
-        }
+        credentials: { accessKeyId, secretAccessKey }
       });
-      logger.info('Cloudflare R2 Object Storage client initialized', {
-        endpoint,
-        bucket: this.defaultBucket
-      });
+      logger.info('Cloudflare R2 Object Storage client initialized', { endpoint, bucket: this.defaultBucket });
     } else {
       logger.info('Cloudflare R2 credentials not set; using local filesystem / memory store');
     }
@@ -89,9 +72,8 @@ export class ObjectStoreService {
   ): Promise<StoredObjectMetadata> {
     const targetBucket = bucket || this.defaultBucket;
     const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-    const timestamp = Date.now();
     const safeFilename = path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
-    const objectKey = `${targetBucket}/${timestamp}_${hash.slice(0, 12)}_${safeFilename}`;
+    const objectKey = `${targetBucket}/${Date.now()}_${hash.slice(0, 12)}_${safeFilename}`;
 
     const metadata: StoredObjectMetadata = {
       key: objectKey,
@@ -105,153 +87,162 @@ export class ObjectStoreService {
       metadata: customMetadata
     };
 
-    // Upload to Cloudflare R2 if configured
     if (this.s3Client) {
-      try {
-        const metadataHeader: Record<string, string> = {
-          filename: encodeURIComponent(safeFilename),
-          sha256: hash,
-          uploadedat: metadata.uploadedAt
-        };
-
-        if (customMetadata) {
-          for (const [k, v] of Object.entries(customMetadata)) {
-            metadataHeader[k.toLowerCase()] = encodeURIComponent(v);
-          }
-        }
-
-        await this.s3Client.send(
-          new PutObjectCommand({
-            Bucket: targetBucket,
-            Key: objectKey,
-            Body: fileBuffer,
-            ContentType: contentType,
-            Metadata: metadataHeader
-          })
-        );
-
-        logger.info('Object uploaded directly to Cloudflare R2', {
-          bucket: targetBucket,
-          key: objectKey,
-          sizeBytes: fileBuffer.length
-        });
-      } catch (r2Err) {
-        logger.error('Failed to upload object to Cloudflare R2; caching locally', {
-          key: objectKey,
-          error: r2Err instanceof Error ? r2Err.message : String(r2Err)
-        });
-      }
+      await this.uploadToR2(
+        objectKey,
+        targetBucket,
+        fileBuffer,
+        contentType,
+        safeFilename,
+        hash,
+        metadata.uploadedAt,
+        customMetadata
+      );
     }
 
-    // Local / In-memory redundancy cache
+    this.cacheLocally(objectKey, targetBucket, fileBuffer, metadata);
+    return metadata;
+  }
+
+  private async uploadToR2(
+    key: string,
+    bucket: string,
+    body: Buffer,
+    contentType: string,
+    filename: string,
+    hash: string,
+    uploadedAt: string,
+    customMetadata?: Record<string, string>
+  ): Promise<void> {
     try {
-      const bucketDir = path.join(this.baseDir, targetBucket);
-      this.ensureDirectory(bucketDir);
-      const filePath = path.join(this.baseDir, objectKey);
+      const metadataHeader: Record<string, string> = {
+        filename: encodeURIComponent(filename),
+        sha256: hash,
+        uploadedat: uploadedAt
+      };
+      if (customMetadata) {
+        for (const [k, v] of Object.entries(customMetadata)) {
+          metadataHeader[k.toLowerCase()] = encodeURIComponent(v);
+        }
+      }
+      await this.s3Client?.send(new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        Metadata: metadataHeader
+      }));
+      logger.info('Object uploaded directly to Cloudflare R2', { bucket, key, sizeBytes: body.length });
+    } catch (r2Err) {
+      logger.error('Failed to upload object to Cloudflare R2; caching locally', {
+        key,
+        error: r2Err instanceof Error ? r2Err.message : String(r2Err)
+      });
+    }
+  }
+
+  private cacheLocally(key: string, bucket: string, buffer: Buffer, metadata: StoredObjectMetadata): void {
+    try {
+      this.ensureDirectory(path.join(this.baseDir, bucket));
+      const filePath = path.join(this.baseDir, key);
       this.ensureDirectory(path.dirname(filePath));
-      fs.writeFileSync(filePath, fileBuffer);
+      fs.writeFileSync(filePath, buffer);
     } catch (err) {
       logger.warn('Failed to write object to disk cache, saving to in-memory store', {
-        key: objectKey,
+        key,
         error: err instanceof Error ? err.message : String(err)
       });
     }
+    this.memoryStore.set(key, { buffer, metadata });
+    logger.info('Object stored successfully in Object Store', { key, sizeBytes: buffer.length, bucket });
+  }
 
-    this.memoryStore.set(objectKey, { buffer: fileBuffer, metadata });
-    logger.info('Object stored successfully in Object Store', {
-      key: objectKey,
-      sizeBytes: fileBuffer.length,
-      bucket: targetBucket
-    });
+  private async streamToBuffer(body: AsyncIterable<Uint8Array | Buffer>): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of body) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
+  }
 
-    return metadata;
+  private buildR2Metadata(
+    key: string,
+    targetBucket: string,
+    response: { Metadata?: Record<string, string>; ContentType?: string; ContentLength?: number; LastModified?: Date },
+    buffer: Buffer
+  ): StoredObjectMetadata {
+    const r2Metadata = response.Metadata || {};
+    return {
+      key,
+      bucket: targetBucket,
+      filename: r2Metadata.filename ? decodeURIComponent(r2Metadata.filename) : path.basename(key),
+      contentType: response.ContentType || 'application/octet-stream',
+      sizeBytes: response.ContentLength || buffer.length,
+      sha256: r2Metadata.sha256 || crypto.createHash('sha256').update(buffer).digest('hex'),
+      uploadedAt: r2Metadata.uploadedat || response.LastModified?.toISOString() || new Date().toISOString(),
+      storageUrl: `/api/documents/storage/${encodeURIComponent(key)}`
+    };
+  }
+
+  private async getFromR2(
+    key: string,
+    targetBucket: string
+  ): Promise<{ buffer: Buffer; metadata: StoredObjectMetadata } | null> {
+    if (!this.s3Client) return null;
+    try {
+      const response = await this.s3Client.send(new GetObjectCommand({ Bucket: targetBucket, Key: key }));
+      if (response.Body) {
+        const buffer = await this.streamToBuffer(response.Body as AsyncIterable<Uint8Array | Buffer>);
+        const metadata = this.buildR2Metadata(key, targetBucket, response, buffer);
+        return { buffer, metadata };
+      }
+    } catch (r2Err) {
+      logger.warn('Cloudflare R2 fetch encountered error, falling back to local store', {
+        key,
+        error: r2Err instanceof Error ? r2Err.message : String(r2Err)
+      });
+    }
+    return null;
+  }
+
+  private getFromDisk(key: string, targetBucket: string): { buffer: Buffer; metadata: StoredObjectMetadata } | null {
+    const filePath = path.join(this.baseDir, key);
+    if (!fs.existsSync(filePath)) return null;
+    try {
+      const buffer = fs.readFileSync(filePath);
+      const stat = fs.statSync(filePath);
+      const metadata: StoredObjectMetadata = {
+        key,
+        bucket: targetBucket,
+        filename: path.basename(key),
+        contentType: 'application/octet-stream',
+        sizeBytes: stat.size,
+        sha256: crypto.createHash('sha256').update(buffer).digest('hex'),
+        uploadedAt: stat.birthtime.toISOString(),
+        storageUrl: `/api/documents/storage/${encodeURIComponent(key)}`
+      };
+      return { buffer, metadata };
+    } catch (err) {
+      logger.error('Failed to read object from disk', { key }, err);
+      return null;
+    }
   }
 
   public async getObject(key: string): Promise<{ buffer: Buffer; metadata: StoredObjectMetadata } | null> {
     const targetBucket = key.split('/')[0] || this.defaultBucket;
-
-    // Check Cloudflare R2 first if configured
-    if (this.s3Client) {
-      try {
-        const response = await this.s3Client.send(
-          new GetObjectCommand({
-            Bucket: targetBucket,
-            Key: key
-          })
-        );
-
-        if (response.Body) {
-          const chunks: Buffer[] = [];
-          for await (const chunk of response.Body as AsyncIterable<Uint8Array | Buffer>) {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-          }
-          const buffer = Buffer.concat(chunks);
-          const r2Metadata = response.Metadata || {};
-          const meta: StoredObjectMetadata = {
-            key,
-            bucket: targetBucket,
-            filename: r2Metadata.filename ? decodeURIComponent(r2Metadata.filename) : path.basename(key),
-            contentType: response.ContentType || 'application/octet-stream',
-            sizeBytes: response.ContentLength || buffer.length,
-            sha256: r2Metadata.sha256 || crypto.createHash('sha256').update(buffer).digest('hex'),
-            uploadedAt: r2Metadata.uploadedat || response.LastModified?.toISOString() || new Date().toISOString(),
-            storageUrl: `/api/documents/storage/${encodeURIComponent(key)}`
-          };
-
-          return { buffer, metadata: meta };
-        }
-      } catch (r2Err) {
-        logger.warn('Cloudflare R2 fetch encountered error, falling back to local store', {
-          key,
-          error: r2Err instanceof Error ? r2Err.message : String(r2Err)
-        });
-      }
-    }
-
-    // In-memory lookup
+    const r2Obj = await this.getFromR2(key, targetBucket);
+    if (r2Obj) return r2Obj;
     const mem = this.memoryStore.get(key);
-    if (mem) {
-      return mem;
-    }
-
-    // Disk lookup
-    const filePath = path.join(this.baseDir, key);
-    if (fs.existsSync(filePath)) {
-      try {
-        const buffer = fs.readFileSync(filePath);
-        const hash = crypto.createHash('sha256').update(buffer).digest('hex');
-        const stat = fs.statSync(filePath);
-        const metadata: StoredObjectMetadata = {
-          key,
-          bucket: targetBucket,
-          filename: path.basename(key),
-          contentType: 'application/octet-stream',
-          sizeBytes: stat.size,
-          sha256: hash,
-          uploadedAt: stat.birthtime.toISOString(),
-          storageUrl: `/api/documents/storage/${encodeURIComponent(key)}`
-        };
-        return { buffer, metadata };
-      } catch (err) {
-        logger.error('Failed to read object from disk', { key }, err);
-      }
-    }
-
-    return null;
+    if (mem) return mem;
+    return this.getFromDisk(key, targetBucket);
   }
 
   public async deleteObject(key: string): Promise<boolean> {
     const targetBucket = key.split('/')[0] || this.defaultBucket;
     this.memoryStore.delete(key);
-
     if (this.s3Client) {
       try {
-        await this.s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: targetBucket,
-            Key: key
-          })
-        );
+        await this.s3Client.send(new DeleteObjectCommand({ Bucket: targetBucket, Key: key }));
         logger.info('Deleted object from Cloudflare R2', { bucket: targetBucket, key });
       } catch (r2Err) {
         logger.warn('Failed to delete object from Cloudflare R2', {
@@ -260,7 +251,6 @@ export class ObjectStoreService {
         });
       }
     }
-
     const filePath = path.join(this.baseDir, key);
     if (fs.existsSync(filePath)) {
       try {
@@ -275,15 +265,9 @@ export class ObjectStoreService {
 
   public async listObjects(bucket?: string): Promise<StoredObjectMetadata[]> {
     const targetBucket = bucket || this.defaultBucket;
-
     if (this.s3Client) {
       try {
-        const response = await this.s3Client.send(
-          new ListObjectsV2Command({
-            Bucket: targetBucket
-          })
-        );
-
+        const response = await this.s3Client.send(new ListObjectsV2Command({ Bucket: targetBucket }));
         if (response.Contents && response.Contents.length > 0) {
           return response.Contents.map((item) => ({
             key: item.Key || '',
@@ -303,14 +287,12 @@ export class ObjectStoreService {
         });
       }
     }
-
     const results: StoredObjectMetadata[] = [];
-    for (const [_, val] of this.memoryStore.entries()) {
+    for (const val of this.memoryStore.values()) {
       if (val.metadata.bucket === targetBucket) {
         results.push(val.metadata);
       }
     }
-
     return results;
   }
 }

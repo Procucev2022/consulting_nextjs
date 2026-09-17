@@ -400,7 +400,7 @@ export class DatabaseStore {
 
   public setOpportunities(opps: SavingsOpportunity[]): void {
     this.opportunities = [...opps];
-    queryCache.invalidateCache(CACHE_KEYS.OPPORTUNITIES);
+    queryCache.invalidateCache(CACHE_KEYS.SAVINGS_OPPORTUNITIES);
   }
 
   public resetValidationRecords(): ValidationPreCheckRecord[] {
@@ -534,7 +534,7 @@ export class DatabaseStore {
   public mergeVendor(targetName: string, masterId: string, canonicalName: string): { success: boolean; affected: number } {
     let affected = 0;
     this.validationRecords = this.validationRecords.map((r) => {
-      if (r.vendor_name && r.vendor_name.toLowerCase().includes(targetName.toLowerCase())) {
+      if (r.vendor_name?.toLowerCase().includes(targetName.toLowerCase())) {
         affected++;
         return {
           ...r,
@@ -548,7 +548,7 @@ export class DatabaseStore {
     });
 
     this.lineItems = this.lineItems.map((li) => {
-      if (li.vendor_identified && li.vendor_identified.toLowerCase().includes(targetName.toLowerCase())) {
+      if (li.vendor_identified?.toLowerCase().includes(targetName.toLowerCase())) {
         return {
           ...li,
           vendor_identified: `${canonicalName} (${masterId})`,
@@ -830,8 +830,8 @@ export class DatabaseStore {
       filtered = filtered.filter((u) =>
         u.name.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        (u.company_name && u.company_name.toLowerCase().includes(q)) ||
-        (u.mobile_number && u.mobile_number.includes(q))
+        Boolean(u.company_name?.toLowerCase().includes(q)) ||
+        Boolean(u.mobile_number?.includes(q))
       );
     }
     return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

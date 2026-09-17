@@ -191,7 +191,10 @@ export const authApiClient = {
   },
 
   // Change Password
-  async changePassword(data: { currentPassword: string; newPassword: string }, token?: string): Promise<{ success: boolean; message: string }> {
+  async changePassword(
+    data: { currentPassword: string; newPassword: string },
+    token?: string
+  ): Promise<{ success: boolean; message: string }> {
     frontendLogger.info('Changing user account password');
     const authToken = token || authApiClient.getStoredToken();
     if (!authToken) {

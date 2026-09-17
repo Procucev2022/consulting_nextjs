@@ -23,7 +23,6 @@ import {
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
 import type { VendorSupplyRecord } from '../types/vendorSupply';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
-import { categoryYearWiseDetails } from '../data/mockData';
 import { formatINRAmount } from '../utils/currencyConverter';
 import {
   UI_STRINGS,
@@ -197,10 +196,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
     lineItems.forEach((item) => {
       const vName = item.vendor_identified || 'Unknown Vendor';
-      if (!vendorMap.has(vName)) {
-        vendorMap.set(vName, { spend: 0, categories: new Set(), items: [] });
+      let entry = vendorMap.get(vName);
+      if (!entry) {
+        entry = { spend: 0, categories: new Set(), items: [] };
+        vendorMap.set(vName, entry);
       }
-      const entry = vendorMap.get(vName)!;
       const spendCr = item.inr_crores || (item.total_spend ? item.total_spend / 10000000 : 0.5);
       entry.spend += spendCr;
       entry.categories.add(item.core_bucket || item.unspsc_category_name || 'General Materials');
@@ -233,16 +233,16 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         spend_share_pct: Number(((data.spend / (totalEvaluatedSpendInrCr || 1)) * 100).toFixed(1)),
         primary_category: suppliedCategories[0] || 'Direct Materials',
         category_type: isMulti ? ('MULTI_CATEGORY' as const) : ('SINGLE_CATEGORY' as const),
-        supplied_categories_count: suppliedCategories.length,
+        category_count: suppliedCategories.length,
         supplied_categories: suppliedCategories,
         irrelevant_categories: isMulti ? suppliedCategories.slice(1) : [],
+        line_items_count: data.items.length,
         spend_fy24_cr: spendFy24,
         spend_fy25_cr: spendFy25,
         spend_fy26_cr: spendFy26,
         yoy_growth_pct: yoy,
-        yoy_trend_direction: yoy > 5 ? ('INCREASING' as const) : yoy < -5 ? ('DECREASING' as const) : ('STABLE' as const),
-        risk_level: isMulti || data.spend > 10 ? ('HIGH_RISK' as const) : data.spend > 5 ? ('MEDIUM_RISK' as const) : ('LOW_RISK' as const),
-        leakage_type: isMulti ? 'Cross-Category Margin Leakage' : 'Standard Pricing Variance',
+        risk_level: isMulti || data.spend > 10 ? ('HIGH_RISK' as const) : data.spend > 5 ? ('MEDIUM_RISK' as const) : ('OPTIMAL' as const),
+        observation_note: isMulti ? 'Supplying across multiple non-core material categories' : 'Dedicated single-category specialist',
         item_count: data.items.length,
         items: data.items
       };

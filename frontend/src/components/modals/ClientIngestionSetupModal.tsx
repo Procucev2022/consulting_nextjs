@@ -21,11 +21,9 @@ import {
 import type { DatasetType, ClientIngestionSetupModalProps } from '../../types';
 import {
   UI_STRINGS,
-  DEFAULT_TENANT_ENTERPRISE_NAME,
   clientIngestionSetupFormSchema,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
   DEFAULT_INDUSTRY_MINOR_SECTOR,
-  ENTERPRISE_INDUSTRY_PRESETS,
   getDistinctMajorSectors,
   getMinorSectorsForMajor,
   getIndustryMaterialProfile
@@ -62,15 +60,6 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
   const distinctMajorSectors = getDistinctMajorSectors();
   const availableMinorSectors = getMinorSectorsForMajor(majorSector);
   const activeMaterialProfile = getIndustryMaterialProfile(majorSector, minorSector);
-
-  const handleSelectPreset = (name: string) => {
-    setClientName(name);
-    const preset = ENTERPRISE_INDUSTRY_PRESETS[name];
-    if (preset) {
-      setMajorSector(preset.major);
-      setMinorSector(preset.minor);
-    }
-  };
 
   const handleMajorSectorChange = (newMajor: string) => {
     setMajorSector(newMajor);

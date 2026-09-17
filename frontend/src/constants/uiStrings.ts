@@ -82,6 +82,7 @@ export const UI_STRINGS = {
     inrCroresSymbol: '₹ Cr',
     subtitle: 'Tech Enabled Strategic Sourcing Suite',
     securityBadge: 'SOC2 Type II / AES-256',
+    dpsVerified: 'DPS Verified',
     userProfile: {
       menuButtonTitle: 'User Profile & Settings Menu',
       defaultName: 'Guest User',
@@ -1595,6 +1596,7 @@ export const UI_STRINGS = {
     taxonomyReassigned: (code: string, bucket: string) => `Taxonomy re-assigned to UNSPSC ${code} (${bucket}).`,
     issueIgnored: (recordId: string) => `Validation anomaly for Record ${recordId} ignored and retained as reviewed.`,
     refreshedFinalNumbers: 'Dataset refreshed with fixes: All final spend totals, clean records, and multi-year summaries recalculated!',
+    clientConfigUpdated: (name: string) => `Client configuration updated for ${name}. Ingestion pipeline re-initialized.`,
     navigatingToInitiativeSection: (sectionName: string) => `Navigating to ${sectionName} detailed review area...`
   },
 

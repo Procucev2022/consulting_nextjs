@@ -41,7 +41,7 @@ export const initialSavingsOpportunities: SavingsOpportunity[] = [];
 
 export const conversionFunnelStages: ConversionFunnelPhase[] = [
   {
-    phase_number: 1,
+    phase_num: 1,
     phase_name: 'Dataset Ingestion & ETL Normalization',
     spend_evaluated_cr: 0,
     count_elements: 0,
@@ -53,7 +53,7 @@ export const conversionFunnelStages: ConversionFunnelPhase[] = [
     status: 'Completed'
   },
   {
-    phase_number: 2,
+    phase_num: 2,
     phase_name: 'AI UNSPSC Taxonomy & Entity Resolution',
     spend_evaluated_cr: 0,
     count_elements: 0,
@@ -62,10 +62,10 @@ export const conversionFunnelStages: ConversionFunnelPhase[] = [
     value_outcome_delivered: 'Standardized commodity codes and unified vendor master',
     commercial_lock_in_metric: 'Taxonomy Match Confidence >= 95%',
     completion_pct: 75,
-    status: 'Active'
+    status: 'In Progress'
   },
   {
-    phase_number: 3,
+    phase_num: 3,
     phase_name: 'Multi-Year Spend Trend & Volatility Indexing',
     spend_evaluated_cr: 0,
     count_elements: 0,
@@ -77,7 +77,7 @@ export const conversionFunnelStages: ConversionFunnelPhase[] = [
     status: 'Upcoming'
   },
   {
-    phase_number: 4,
+    phase_num: 4,
     phase_name: 'Real-Time Opportunity Identification',
     spend_evaluated_cr: 0,
     count_elements: 0,
@@ -89,7 +89,7 @@ export const conversionFunnelStages: ConversionFunnelPhase[] = [
     status: 'Upcoming'
   },
   {
-    phase_number: 5,
+    phase_num: 5,
     phase_name: 'Commercial ROI & SaaS Lock-in',
     spend_evaluated_cr: 0,
     count_elements: 0,

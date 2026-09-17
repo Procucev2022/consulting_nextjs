@@ -69,12 +69,24 @@ const updateCategorySavings = (
   if (items.length === 0) return { ...init, spendInrCr: 0, savingsInrCr: 0, savingsPct: 0 };
   const spend = Number(
     items
-      .reduce((acc, opp) => acc + (opp.current_spend_inr_cr || ((opp.current_spend || 0) * 83.8) / 10000000 || opp.baseline_spend_inr_cr || 0), 0)
+      .reduce((acc, opp) => {
+        const rawSpend = opp.current_spend_inr_cr
+          || ((opp.current_spend || 0) * 83.8) / 10000000
+          || opp.baseline_spend_inr_cr
+          || 0;
+        return acc + rawSpend;
+      }, 0)
       .toFixed(2)
   );
   const savings = Number(
     items
-      .reduce((acc, opp) => acc + (opp.est_savings_inr_cr || ((opp.est_savings || 0) * 83.8) / 10000000 || opp.estimated_savings_inr_cr || 0), 0)
+      .reduce((acc, opp) => {
+        const rawSavings = opp.est_savings_inr_cr
+          || ((opp.est_savings || 0) * 83.8) / 10000000
+          || opp.estimated_savings_inr_cr
+          || 0;
+        return acc + rawSavings;
+      }, 0)
       .toFixed(2)
   );
   const pct = spend > 0 ? Number(((savings / spend) * 100).toFixed(1)) : 0;
@@ -93,7 +105,7 @@ const resolveInitiativeData = (
     case 'STRATEGIC_SINGLE_VENDOR':
       return updateStrategicRisk(init, options.strategicRiskItems);
     case 'VENDOR_SUPPLY_RATIONALIZATION':
-      if (options.opportunities !== undefined && options.opportunities.length === 0) {
+      if (options.opportunities?.length === 0) {
         return { ...init, spendInrCr: 0, savingsInrCr: 0, savingsPct: 0 };
       }
       return { ...init };

@@ -28,8 +28,9 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
       return categoryYearWiseDetails;
     }
     return propCategories.map((c: any, idx: number) => {
+      const calculatedSum = (c.spend_fy24_cr || 0) + (c.spend_fy25_cr || 0) + (c.spend_fy26_cr || 0);
       const spend = Number(
-        (c.total_3yr_spend_inr_cr ?? c.spend_inr_crores ?? (c.spend_fy24_cr || 0) + (c.spend_fy25_cr || 0) + (c.spend_fy26_cr || 0) ?? 10).toFixed(2)
+        (c.total_3yr_spend_inr_cr ?? c.spend_inr_crores ?? (calculatedSum > 0 ? calculatedSum : 10)).toFixed(2)
       );
       const fy24 = Number((c.spend_fy24_cr ?? c.spend_inr_2023_cr ?? (spend * 0.28)).toFixed(2));
       const fy25 = Number((c.spend_fy25_cr ?? c.spend_inr_2024_cr ?? (spend * 0.34)).toFixed(2));

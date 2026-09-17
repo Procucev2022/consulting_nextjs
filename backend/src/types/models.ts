@@ -203,28 +203,36 @@ export interface VendorPriceRank {
 
 export interface SavingsOpportunity {
   opp_id: string;
-  category: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
-  title: string;
-  current_spend: number;
+  category: string;
+  title?: string;
+  current_spend?: number;
   current_spend_inr_cr?: number;
-  target_savings_pct: number;
-  est_savings: number;
+  target_savings_pct?: number;
+  est_savings?: number;
   est_savings_inr_cr?: number;
-  recommended_action: string;
-  push_to_module: 'proCPX' | 'DPS NXT';
-  status: 'Identified' | 'Pushed to proCPX' | 'Pushed to DPS NXT' | 'Executed';
-  risk_level: 'Low' | 'Medium' | 'High';
-  contract_leak_type: string;
+  savings_percentage?: number;
+  lever?: string;
+  recommended_action?: string;
+  push_to_module?: 'proCPX' | 'DPS NXT' | string;
+  recommended_module?: 'proCPX' | 'DPS NXT' | string;
+  status?: string;
+  risk_level?: 'Low' | 'Medium' | 'High' | string;
+  contract_leak_type?: string;
+  complexity?: 'Low' | 'Medium' | 'High' | string;
+  confidence_score?: number;
 }
 
 export interface ConversionFunnelPhase {
-  phase_num: 1 | 2 | 3;
+  phase_num: number;
   phase_name: string;
   platform_actionable_focus: string;
   value_outcome_delivered: string;
   commercial_lock_in_metric: string;
   completion_pct: number;
   status: 'Completed' | 'In Progress' | 'Upcoming';
+  spend_evaluated_cr?: number;
+  count_elements?: number;
+  percentage_leakage_identified?: number;
 }
 
 export interface ApiResponse<T> {
@@ -232,4 +240,16 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   timestamp: string;
+}
+
+export interface StoredObjectMetadata {
+  key: string;
+  bucket: string;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  uploadedAt: string;
+  storageUrl: string;
+  metadata?: Record<string, string>;
 }

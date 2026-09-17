@@ -11,7 +11,6 @@ import type { Module5ConversionMatrixProps } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
 import {
   UI_STRINGS,
-  DEFAULT_SPEND_BASELINE_INR_CR,
   DEFAULT_SAVINGS_TARGET_PCT,
   DEFAULT_SAAS_FEE_RATE,
   conversionInputsSchema

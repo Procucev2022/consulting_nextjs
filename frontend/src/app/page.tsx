@@ -74,10 +74,6 @@ import {
   mockTenant,
   initialIngestionQueue,
   initialValidationRecords,
-  spendCategoriesData,
-  initialLineItemMappings,
-  vendorVolatilityRankings,
-  initialSavingsOpportunities,
   conversionFunnelStages
 } from '@/data/mockData';
 
@@ -86,6 +82,7 @@ import type {
   RawDocumentIngestion,
   ValidationPreCheckRecord,
   LineItemMapping,
+  VendorPriceRank,
   SavingsOpportunity,
   DatasetType,
   PipelineActiveTab,
@@ -188,6 +185,13 @@ export default function Home() {
     isOpen: boolean;
     title?: string;
     subtitle?: string;
+    metrics?: {
+      totalRecords?: number;
+      spendCrores?: number;
+      uniqueVendors?: number;
+      categoriesIdentified?: number;
+      confidenceScore?: number;
+    };
     onComplete?: () => void;
   } | null>(null);
 
@@ -1635,7 +1639,16 @@ export default function Home() {
         isOpen={isClientSetupModalOpen}
         onClose={() => setIsClientSetupModalOpen(false)}
         currentTenant={tenant}
-        onConfirmAndUpload={(updatedTenant) => {
+        onConfirmAndUpload={(updatedConfig) => {
+          const updatedTenant: TenantMaster = {
+            ...tenant,
+            enterprise_name: updatedConfig.clientName || tenant.enterprise_name,
+            base_currency: updatedConfig.currency || tenant.base_currency,
+            region: updatedConfig.region || tenant.region,
+            major_sector: updatedConfig.majorSector || tenant.major_sector,
+            minor_sector: updatedConfig.minorSector || tenant.minor_sector,
+            total_spend_evaluated_inr: (updatedConfig.estimatedSpend * 83.8) / 10000000 || tenant.total_spend_evaluated_inr
+          };
           setTenant(updatedTenant);
           setIsClientSetupModalOpen(false);
           apiClient.updateTenant(updatedTenant).catch((e) => {
