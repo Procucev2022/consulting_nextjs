@@ -121,7 +121,7 @@ describe('Header Component', () => {
       mobile_number: '+91 9876543210',
       company_name: 'Apex Industrial Dynamics',
       company_address: 'Industrial Area',
-      role: 'ADMIN' as const,
+      role: 'USER' as const,
       status: 'ACTIVE' as const,
       subscription_tier: 'GOLD' as const,
       created_at: new Date().toISOString(),
@@ -138,13 +138,43 @@ describe('Header Component', () => {
     fireEvent.click(userBtn);
 
     expect(screen.getByText('Profile & Account Settings')).toBeInTheDocument();
-    expect(screen.getByText('Admin User Directory')).toBeInTheDocument();
+    expect(screen.queryByText('Admin User Directory')).not.toBeInTheDocument();
     expect(screen.getByText('navin@enterprise.com')).toBeInTheDocument();
 
     // Logout action
     const logoutBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.auth.logout, 'i') });
     fireEvent.click(logoutBtn);
     expect(onLogout).toHaveBeenCalled();
+  });
+
+  it('displays "Sign In" and does NOT render admin tab when logged in as ADMIN on client workspace', () => {
+    const mockAdmin = {
+      id: 'usr-admin-1',
+      name: 'System Administrator',
+      email: 'admin@procucev.com',
+      mobile_number: '+91 9876543210',
+      company_name: 'Procucev Admin Corp',
+      company_address: 'HQ',
+      role: 'ADMIN' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'GOLD' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    render(<Header {...defaultProps} currentUser={mockAdmin} />);
+
+    const userBtn = screen.getByTestId('user-profile-menu-button');
+    expect(userBtn).toBeInTheDocument();
+    expect(screen.getByText('Sign In')).toBeInTheDocument();
+
+    // Click to open dropdown
+    fireEvent.click(userBtn);
+
+    expect(screen.queryByText('Admin User Directory')).not.toBeInTheDocument();
+    const signInLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.auth.signInTab, 'i') });
+    expect(signInLink).toBeInTheDocument();
+    expect(signInLink).toHaveAttribute('href', '/login');
   });
 
   it('renders subscription tier badge and interactive demo switcher', () => {

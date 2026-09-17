@@ -49,7 +49,8 @@ export const Header: React.FC<HeaderProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const activeUser = currentUser || user || null;
+  const rawUser = currentUser || user || null;
+  const activeUser = rawUser && rawUser.role !== 'ADMIN' ? rawUser : null;
   const displayName = activeUser?.full_name || (activeUser as any)?.name || activeUser?.email || UI_STRINGS.header.userProfile.defaultName;
   const userInitials = displayName
     ? displayName.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase()

@@ -123,7 +123,8 @@ export default function Home() {
   const [targetSection, setTargetSection] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     if (typeof window !== 'undefined') {
-      return authApiClient.getStoredUser();
+      const stored = authApiClient.getStoredUser();
+      return stored && stored.role !== 'ADMIN' ? stored : null;
     }
     return null;
   });
@@ -132,7 +133,7 @@ export default function Home() {
   const [tenant, setTenant] = useState<TenantMaster>(() => {
     if (typeof window !== 'undefined') {
       const user = authApiClient.getStoredUser();
-      if (user) {
+      if (user && user.role !== 'ADMIN') {
         return {
           ...mockTenant,
           enterprise_name: user.company_name || 'Enterprise Client',
@@ -204,8 +205,10 @@ export default function Home() {
 
     try {
       const user = apiClient.getStoredUser();
-      if (user) {
+      if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
       }
       const simTier = apiClient.getSimulatedTier();
       if (simTier) {
@@ -218,19 +221,20 @@ export default function Home() {
     async function loadBackendData() {
       try {
         const storedUser = authApiClient.getStoredUser();
+        const buyerUser = storedUser && storedUser.role !== 'ADMIN' ? storedUser : null;
         const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
-          apiClient.getTenant(storedUser?.id),
-          apiClient.getIngestionData(storedUser?.id),
+          apiClient.getTenant(buyerUser?.id),
+          apiClient.getIngestionData(buyerUser?.id),
           apiClient.getCategories(),
           apiClient.getVendors(),
           apiClient.getSavingsOpportunities()
         ]);
 
         if (tenantData.status === 'fulfilled' && tenantData.value) {
-          if (storedUser) {
+          if (buyerUser) {
             setTenant((prev) => ({
               ...tenantData.value,
-              enterprise_name: storedUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
+              enterprise_name: buyerUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
               total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
               total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
             }));
@@ -244,9 +248,9 @@ export default function Home() {
 
         if (ingestionData.status === 'fulfilled' && ingestionData.value) {
           const backendQueue = ingestionData.value.queue || [];
-          const queueToHydrate = storedUser?.id
+          const queueToHydrate = buyerUser?.id
             ? backendQueue.filter(
-                (d: any) => !d.tenant_id || d.tenant_id === storedUser.id || d.tenant_id === storedUser.email
+                (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
               )
             : backendQueue;
 
