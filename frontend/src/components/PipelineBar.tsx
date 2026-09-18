@@ -5,11 +5,11 @@ import {
   Cpu,
   LineChart,
   Target,
-  ArrowRight
+  ArrowRight,
+  Lock
 } from 'lucide-react';
-import type { PipelineBarProps } from '../types';
+import type { PipelineBarProps, PipelineActiveTab } from '../types';
 import { UI_STRINGS } from '../constants';
-
 
 export const PipelineBar: React.FC<PipelineBarProps> = ({
   activeTab,
@@ -17,9 +17,43 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   tenant,
   opportunities,
   ingestionQueue,
-  totalSpendCr
+  totalSpendCr,
+  isStep1Complete,
+  isStep2Complete,
+  isStep3Complete,
+  isStep4Complete,
+  unlockedTabs,
+  onLockedTabClick
 }) => {
   const hasData = Boolean(ingestionQueue && ingestionQueue.length > 0);
+  const isStep1Done = isStep1Complete !== undefined
+    ? isStep1Complete
+    : Boolean(hasData || (totalSpendCr && totalSpendCr > 0) || (tenant?.total_spend_evaluated_inr && tenant.total_spend_evaluated_inr > 0));
+
+  const isStep2Done = isStep2Complete !== undefined
+    ? isStep2Complete
+    : isStep1Done;
+
+  const isStep3Done = isStep3Complete !== undefined
+    ? isStep3Complete
+    : isStep2Done;
+
+  const isStep4Done = isStep4Complete !== undefined
+    ? isStep4Complete
+    : isStep3Done;
+
+  const isStageLocked = (stageId: PipelineActiveTab): boolean => {
+    if (unlockedTabs?.includes(stageId)) {
+      return false;
+    }
+    if (stageId === 'module1') return false;
+    if (stageId === 'module2') return !isStep1Done;
+    if (stageId === 'module3') return !isStep2Done;
+    if (stageId === 'module4') return !isStep3Done;
+    if (stageId === 'module5') return !isStep4Done;
+    return false;
+  };
+
   const dynamicTotalSavings = opportunities && opportunities.length > 0
     ? (hasData ? opportunities.reduce((sum, o) => sum + (o.est_savings_inr_cr || 0), 0) : 0)
     : (hasData ? 119.67 : 0);
@@ -96,6 +130,8 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
     }
   ];
 
+  const isModule5Locked = isStageLocked('module5');
+
   return (
     <div className="space-y-6">
       {/* 1. Executive Summary & Strategic System Vision - KPI Cards */}
@@ -135,31 +171,27 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               href="#module5"
               onClick={(e) => {
                 e.preventDefault();
+                if (isModule5Locked) {
+                  if (onLockedTabClick) {
+                    onLockedTabClick('module5');
+                  } else {
+                    onSelectTab('module5');
+                  }
+                  return;
+                }
                 onSelectTab('module5');
                 if (typeof window !== 'undefined') window.location.hash = 'module5';
               }}
-              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all inline-block cursor-pointer ${
-                activeTab === 'module5'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border border-purple-500'
-                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
+              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all inline-block ${
+                isModule5Locked
+                  ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'
+                  : activeTab === 'module5'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border border-purple-500 cursor-pointer'
+                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer'
               }`}
             >
               {UI_STRINGS.pipeline.conversionMatrixTab}
             </a>
-            {/* Data Architecture Tab - Commented out */}
-            {/*
-            <button
-              onClick={() => onSelectTab('schema')}
-              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all flex items-center space-x-1 ${
-                activeTab === 'schema'
-                  ? 'bg-cyan-600 text-white shadow-md shadow-cyan-500/25 border border-cyan-500'
-                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
-              }`}
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>{UI_STRINGS.pipeline.dataArchitectureTab}</span>
-            </button>
-            */}
           </div>
         </div>
 
@@ -168,41 +200,69 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
           {stages.map((stage) => {
             const Icon = stage.icon;
             const isActive = activeTab === stage.id;
+            const isLocked = isStageLocked(stage.id);
+
             return (
               <a
                 key={stage.id}
                 href={`#${stage.id}`}
                 onClick={(e) => {
                   e.preventDefault();
+                  if (isLocked) {
+                    if (onLockedTabClick) {
+                      onLockedTabClick(stage.id);
+                    }
+                    return;
+                  }
                   onSelectTab(stage.id);
                   if (typeof window !== 'undefined') window.location.hash = stage.id;
                 }}
-                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between cursor-pointer no-underline block ${
-                  isActive
-                    ? 'bg-gradient-to-b from-cyan-50 to-white dark:from-cyan-950/80 dark:to-slate-900 border-cyan-500 shadow-md shadow-cyan-500/10 dark:shadow-cyan-500/15'
-                    : 'bg-slate-50/50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/60'
+                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between no-underline block ${
+                  isLocked
+                    ? 'opacity-65 cursor-not-allowed bg-slate-100/50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800/60'
+                    : isActive
+                    ? 'cursor-pointer bg-gradient-to-b from-cyan-50 to-white dark:from-cyan-950/80 dark:to-slate-900 border-cyan-500 shadow-md shadow-cyan-500/10 dark:shadow-cyan-500/15'
+                    : 'cursor-pointer bg-slate-50/50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/60'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center border ${
-                        isActive
-                          ? 'bg-cyan-600 dark:bg-cyan-400 text-white dark:text-slate-950 border-cyan-500 dark:border-cyan-300 shadow-xs'
-                          : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700 group-hover:text-slate-900 dark:group-hover:text-white'
-                      }`}
-                    >
-                      {stage.step}
-                    </span>
+                    <div className="flex items-center space-x-1.5">
+                      <span
+                        className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center border ${
+                          isLocked
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
+                            : isActive
+                            ? 'bg-cyan-600 dark:bg-cyan-400 text-white dark:text-slate-950 border-cyan-500 dark:border-cyan-300 shadow-xs'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700 group-hover:text-slate-900 dark:group-hover:text-white'
+                        }`}
+                      >
+                        {stage.step}
+                      </span>
+                      {isLocked && (
+                        <span className="flex items-center space-x-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900/60">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>{UI_STRINGS.pipeline.stepLockedBadge}</span>
+                        </span>
+                      )}
+                    </div>
                     <Icon
                       className={`w-4 h-4 ${
-                        isActive ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-400'
+                        isLocked
+                          ? 'text-slate-300 dark:text-slate-600'
+                          : isActive
+                          ? 'text-cyan-600 dark:text-cyan-400'
+                          : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-400'
                       }`}
                     />
                   </div>
                   <h4
                     className={`text-sm font-bold tracking-tight ${
-                      isActive ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
+                      isLocked
+                        ? 'text-slate-500 dark:text-slate-400'
+                        : isActive
+                        ? 'text-slate-900 dark:text-white'
+                        : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
                     }`}
                   >
                     {stage.title}
@@ -214,15 +274,29 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
 
                 <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px]">
                   <span
-                    className={isActive ? 'text-cyan-700 dark:text-cyan-400 font-semibold' : 'text-slate-400 dark:text-slate-500'}
+                    className={
+                      isLocked
+                        ? 'text-amber-600 dark:text-amber-500 font-medium'
+                        : isActive
+                        ? 'text-cyan-700 dark:text-cyan-400 font-semibold'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }
                   >
-                    {isActive ? UI_STRINGS.pipeline.currentActiveView : UI_STRINGS.pipeline.exploreModule}
+                    {isLocked
+                      ? UI_STRINGS.pipeline.lockedStage
+                      : isActive
+                      ? UI_STRINGS.pipeline.currentActiveView
+                      : UI_STRINGS.pipeline.exploreModule}
                   </span>
-                  <ArrowRight
-                    className={`w-3 h-3 transition-transform ${
-                      isActive ? 'text-cyan-600 dark:text-cyan-400 translate-x-0.5' : 'text-slate-400 dark:text-slate-600 group-hover:translate-x-0.5'
-                    }`}
-                  />
+                  {isLocked ? (
+                    <Lock className="w-3 h-3 text-amber-500/80" />
+                  ) : (
+                    <ArrowRight
+                      className={`w-3 h-3 transition-transform ${
+                        isActive ? 'text-cyan-600 dark:text-cyan-400 translate-x-0.5' : 'text-slate-400 dark:text-slate-600 group-hover:translate-x-0.5'
+                      }`}
+                    />
+                  )}
                 </div>
               </a>
             );

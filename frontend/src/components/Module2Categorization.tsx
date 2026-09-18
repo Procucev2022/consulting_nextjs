@@ -25,6 +25,13 @@ import type { VendorSupplyRecord } from '../types/vendorSupply';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
 import { formatINRAmount } from '../utils/currencyConverter';
 import {
+  calculateCategoryYearDetails,
+  calculateVendorYearDetails,
+  calculateStrategicVendorRisk,
+  calculateVendorConsolidation,
+  calculatePoConsolidation
+} from '../utils/step2Calculators';
+import {
   UI_STRINGS,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
   DEFAULT_INDUSTRY_MINOR_SECTOR,
@@ -175,14 +182,17 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   const explorerResults = searchUNSPSCTaxonomy(explorerSearch, explorerBucketFilter).slice(0, 8);
 
-  const categoriesList = categories || [];
+  const categoriesList = useMemo(() => categories || [], [categories]);
 
-  const totalEvaluatedSpendInrCr = (tenant?.total_spend_evaluated_inr != null)
-    ? tenant.total_spend_evaluated_inr
-    : (categoriesList.reduce(
-        (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
-        0
-      ) || 0);
+  const totalEvaluatedSpendInrCr = useMemo(() => {
+    if (tenant?.total_spend_evaluated_inr != null) {
+      return tenant.total_spend_evaluated_inr;
+    }
+    return categoriesList.reduce(
+      (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
+      0
+    ) || 0;
+  }, [tenant?.total_spend_evaluated_inr, categoriesList]);
 
   const dynamicVendorSupply = useMemo<VendorSupplyRecord[]>(() => {
     if (!lineItems || lineItems.length === 0) {
@@ -249,19 +259,24 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     });
   }, [lineItems, totalEvaluatedSpendInrCr]);
 
+  const dynamicCategoryDetails = useMemo(() => {
+    return calculateCategoryYearDetails(lineItems, categoriesList, totalEvaluatedSpendInrCr);
+  }, [lineItems, categoriesList, totalEvaluatedSpendInrCr]);
+
+  const dynamicVendorDetails = useMemo(() => {
+    return calculateVendorYearDetails(lineItems, totalEvaluatedSpendInrCr);
+  }, [lineItems, totalEvaluatedSpendInrCr]);
+
   const dynamicStrategicRiskItems = useMemo(() => {
-    if (!lineItems || lineItems.length === 0) return [];
-    return [];
+    return calculateStrategicVendorRisk(lineItems);
   }, [lineItems]);
 
   const dynamicVendorConsolidationItems = useMemo(() => {
-    if (!lineItems || lineItems.length === 0) return [];
-    return [];
+    return calculateVendorConsolidation(lineItems);
   }, [lineItems]);
 
   const dynamicPoConsolidationItems = useMemo(() => {
-    if (!lineItems || lineItems.length === 0) return [];
-    return [];
+    return calculatePoConsolidation(lineItems);
   }, [lineItems]);
 
   const handleUpgradeSilver = () => {
@@ -519,7 +534,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       </div>
 
       {/* Category & Vendor Spend Breakdown Analysis */}
-      <CategoryVendorBreakdownView tenant={tenant} categories={categoriesList as any} />
+      <CategoryVendorBreakdownView
+        tenant={tenant}
+        categories={dynamicCategoryDetails as any}
+        vendors={dynamicVendorDetails}
+        lineItems={lineItems}
+      />
 
       {/* Silver Customer Detail Mask */}
       {currentTier === 'SILVER' ? (

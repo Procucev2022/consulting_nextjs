@@ -14,7 +14,6 @@ import {
   CONSOLIDATION_SORT_OPTIONS
 } from '../../constants';
 import {
-  mockRecurringConsolidationItems,
   calculateVendorConsolidationSummary
 } from '../../data/mockVendorConsolidation';
 import { VendorConsolidationSummaryBanner } from './VendorConsolidationSummaryBanner';
@@ -22,7 +21,7 @@ import { VendorConsolidationCard } from './VendorConsolidationCard';
 import { VendorConsolidationModal } from './VendorConsolidationModal';
 
 export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProps> = ({
-  items = mockRecurringConsolidationItems
+  items = []
 }) => {
   const strings = UI_STRINGS.vendorConsolidation;
 

@@ -13,13 +13,12 @@ import {
   isSoleSource,
   isSingleDigitSecondary
 } from '../../constants';
-import { mockStrategicSingleVendorItems } from '../../data/mockStrategicSingleVendorItems';
 import { StrategicRiskSummaryBanner } from './StrategicRiskSummaryBanner';
 import { StrategicSingleVendorCard } from './StrategicSingleVendorCard';
 import { StrategicRiskMitigationModal } from './StrategicRiskMitigationModal';
 
 export const StrategicSingleVendorRiskSection: React.FC<StrategicSingleVendorRiskSectionProps> = ({
-  items = mockStrategicSingleVendorItems
+  items = []
 }) => {
   const strings = UI_STRINGS.module2.strategicVendorRisk;
   const [searchQuery, setSearchQuery] = useState('');

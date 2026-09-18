@@ -12,7 +12,7 @@ import { MOCK_MULTIPLE_PO_ITEMS } from '../../../src/data/mockPoConsolidation';
 
 describe('PoConsolidationSection Component', () => {
   it('should render section header, badge, subtitle, and KPI summary banner', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     expect(screen.getByText(UI_STRINGS.poConsolidation.badge)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.poConsolidation.title)).toBeInTheDocument();
@@ -23,7 +23,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should switch global cadence simulator and update target KPIs', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     // Click Annual in global simulation bar
     const annualBtn = screen.getByRole('button', { name: UI_STRINGS.poConsolidation.cadenceShortLabels.annual });
@@ -41,7 +41,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should filter items by category tabs', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     const packagingTab = screen.getByRole('button', { name: 'Packaging Materials' });
     fireEvent.click(packagingTab);
@@ -56,7 +56,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should filter items by live search query and display empty state when not found', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     const searchInput = screen.getByPlaceholderText(UI_STRINGS.poConsolidation.searchPlaceholder);
     fireEvent.change(searchInput, { target: { value: 'Trafigura' } });
@@ -69,7 +69,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should toggle between card view and matrix table view', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     // Click Table View
     const tableBtn = screen.getByRole('button', { name: UI_STRINGS.poConsolidation.viewTable });
@@ -86,7 +86,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should open modal when clicking explore CTA, change cadence inside modal, and generate draft', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     const exploreBtns = screen.getAllByRole('button', { name: UI_STRINGS.poConsolidation.exploreConsolidationBtn });
     fireEvent.click(exploreBtns[0]);
@@ -114,7 +114,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should open modal from table view consolidate button and close with X icon', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     const tableBtn = screen.getByRole('button', { name: UI_STRINGS.poConsolidation.viewTable });
     fireEvent.click(tableBtn);
@@ -132,7 +132,7 @@ describe('PoConsolidationSection Component', () => {
   });
 
   it('should change cadence directly on an individual card and sort items', () => {
-    render(<PoConsolidationSection />);
+    render(<PoConsolidationSection items={MOCK_MULTIPLE_PO_ITEMS} />);
 
     // Click individual card cadence button
     const cardCadenceBtns = screen.getAllByRole('button', { name: /6-Month/i });
@@ -145,5 +145,10 @@ describe('PoConsolidationSection Component', () => {
 
     fireEvent.change(select, { target: { value: 'SAVINGS_DESC' } });
     expect(select).toHaveValue('SAVINGS_DESC');
+  });
+
+  it('renders clean empty state when empty items prop is passed', () => {
+    render(<PoConsolidationSection items={[]} />);
+    expect(screen.getByText(UI_STRINGS.poConsolidation.title)).toBeInTheDocument();
   });
 });

@@ -14,9 +14,9 @@ describe('PipelineBar Component', () => {
     expect(screen.getByText(UI_STRINGS.pipeline.kpis.fasterConversion.label)).toBeInTheDocument();
   });
 
-  it('renders all 4 stages and triggers onSelectTab when clicking a stage', () => {
+  it('renders all 4 stages and triggers onSelectTab when clicking an unlocked stage', () => {
     const onSelectTab = vi.fn();
-    render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} />);
+    render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} isStep1Complete={true} />);
 
     const step2 = screen.getByText(UI_STRINGS.pipeline.navStages.step2.title);
     fireEvent.click(step2);
@@ -36,9 +36,29 @@ describe('PipelineBar Component', () => {
     expect(onSelectTab).toHaveBeenCalledWith('module1');
   });
 
-  it('handles clicking Conversion Matrix tab and verifies Data Architecture is commented out', () => {
+  it('locks Step 2-5 when Step 1 is not complete and invokes onLockedTabClick', () => {
     const onSelectTab = vi.fn();
-    const { rerender } = render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} />);
+    const onLockedTabClick = vi.fn();
+    render(
+      <PipelineBar
+        activeTab="module1"
+        onSelectTab={onSelectTab}
+        isStep1Complete={false}
+        onLockedTabClick={onLockedTabClick}
+      />
+    );
+
+    expect(screen.getAllByText(UI_STRINGS.pipeline.stepLockedBadge).length).toBeGreaterThan(0);
+
+    const step2 = screen.getByText(UI_STRINGS.pipeline.navStages.step2.title);
+    fireEvent.click(step2);
+    expect(onLockedTabClick).toHaveBeenCalledWith('module2');
+    expect(onSelectTab).not.toHaveBeenCalledWith('module2');
+  });
+
+  it('handles clicking Conversion Matrix tab when unlocked and verifies Data Architecture is commented out', () => {
+    const onSelectTab = vi.fn();
+    const { rerender } = render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} isStep1Complete={true} />);
 
     const matrixLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.pipeline.conversionMatrixTab, 'i') });
     expect(matrixLink).toHaveAttribute('href', '#module5');
@@ -49,7 +69,7 @@ describe('PipelineBar Component', () => {
     expect(schemaTab).not.toBeInTheDocument();
 
     // Rerender with active tab module5 to cover active styles
-    rerender(<PipelineBar activeTab="module5" onSelectTab={onSelectTab} />);
+    rerender(<PipelineBar activeTab="module5" onSelectTab={onSelectTab} isStep1Complete={true} />);
     expect(matrixLink).toHaveClass('bg-purple-600');
   });
 });

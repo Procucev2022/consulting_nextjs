@@ -13,7 +13,7 @@ import type {
   CategoryYearDetail,
   VendorYearDetail
 } from '../types';
-import { categoryYearWiseDetails, vendorYearWiseDetails } from '../data/mockData';
+import { calculateCategoryYearDetails, calculateVendorYearDetails } from '../utils/step2Calculators';
 import { CategoryTopItemsModal } from './modals/CategoryTopItemsModal';
 import { VendorTopItemsModal } from './modals/VendorTopItemsModal';
 import { UI_STRINGS, resolveUNSPSCCategoryDisplay } from '../constants';
@@ -21,56 +21,72 @@ import type { UNSPSCFilterMode } from '../constants';
 
 export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewProps> = ({
   tenant,
-  categories: propCategories
+  categories: propCategories = [],
+  vendors: propVendors = [],
+  lineItems = []
 }) => {
   const categoriesList: CategoryYearDetail[] = React.useMemo(() => {
-    if (!propCategories || propCategories.length === 0) {
-      return categoryYearWiseDetails;
+    if (propCategories && propCategories.length > 0) {
+      return propCategories.map((c: any, idx: number) => {
+        const calculatedSum = (c.spend_fy24_cr || 0) + (c.spend_fy25_cr || 0) + (c.spend_fy26_cr || 0);
+        const spend = Number(
+          (c.total_3yr_spend_inr_cr ?? c.spend_inr_crores ?? (calculatedSum > 0 ? calculatedSum : 0)).toFixed(2)
+        );
+        const fy24 = Number((c.spend_fy24_cr ?? c.spend_inr_2023_cr ?? (spend * 0.28)).toFixed(2));
+        const fy25 = Number((c.spend_fy25_cr ?? c.spend_inr_2024_cr ?? (spend * 0.34)).toFixed(2));
+        const fy26 = Number((c.spend_fy26_cr ?? c.spend_inr_2025_26_cr ?? (spend * 0.38)).toFixed(2));
+        return {
+          id: c.id || `CAT-${idx + 1}`,
+          category: c.category || c.name || 'Direct Materials',
+          core_bucket: c.core_bucket || 'Direct Materials',
+          sample_column_l_code: c.sample_column_l_code || c.unspsc_code || '10000000',
+          spend_fy24_cr: fy24,
+          spend_fy25_cr: fy25,
+          spend_fy26_cr: fy26,
+          total_3yr_spend_inr_cr: spend,
+          spend_share_pct: c.spend_share_pct ?? 0,
+          yoy_growth_pct: c.yoy_growth_pct ?? 8.0,
+          vendor_count: c.vendor_count ?? 1,
+          item_count: c.item_count ?? 1,
+          top_items: c.top_items ?? [],
+          balance_items: c.balance_items,
+          sample_column_l_title: c.sample_column_l_title,
+          is_balance_category: Boolean(c.is_balance_category),
+          rank: c.rank ?? idx + 1
+        };
+      });
     }
-    return propCategories.map((c: any, idx: number) => {
-      const calculatedSum = (c.spend_fy24_cr || 0) + (c.spend_fy25_cr || 0) + (c.spend_fy26_cr || 0);
-      const spend = Number(
-        (c.total_3yr_spend_inr_cr ?? c.spend_inr_crores ?? (calculatedSum > 0 ? calculatedSum : 10)).toFixed(2)
-      );
-      const fy24 = Number((c.spend_fy24_cr ?? c.spend_inr_2023_cr ?? (spend * 0.28)).toFixed(2));
-      const fy25 = Number((c.spend_fy25_cr ?? c.spend_inr_2024_cr ?? (spend * 0.34)).toFixed(2));
-      const fy26 = Number((c.spend_fy26_cr ?? c.spend_inr_2025_26_cr ?? (spend * 0.38)).toFixed(2));
-      return {
-        id: c.id || `CAT-${idx + 1}`,
-        category: c.category || c.name || 'Direct Materials Category',
-        core_bucket: c.core_bucket || 'Direct Materials',
-        sample_column_l_code: c.sample_column_l_code || c.unspsc_code || '12352200',
-        spend_fy24_cr: fy24,
-        spend_fy25_cr: fy25,
-        spend_fy26_cr: fy26,
-        total_3yr_spend_inr_cr: spend,
-        spend_share_pct: c.spend_share_pct ?? 10,
-        yoy_growth_pct: c.yoy_growth_pct ?? 12.0,
-        vendor_count: c.vendor_count ?? 5,
-        item_count: c.item_count ?? 10,
-        top_items: c.top_items ?? [],
-        balance_items: c.balance_items,
-        sample_column_l_title: c.sample_column_l_title,
-        is_balance_category: Boolean(c.is_balance_category),
-        rank: c.rank ?? idx + 1
-      };
-    });
-  }, [propCategories]);
+
+    if (lineItems && lineItems.length > 0) {
+      return calculateCategoryYearDetails(lineItems, undefined, tenant?.total_spend_evaluated_inr);
+    }
+
+    return [];
+  }, [propCategories, lineItems, tenant?.total_spend_evaluated_inr]);
+
+  const vendorsList: VendorYearDetail[] = React.useMemo(() => {
+    if (propVendors && propVendors.length > 0) {
+      return propVendors;
+    }
+    if (lineItems && lineItems.length > 0) {
+      return calculateVendorYearDetails(lineItems, tenant?.total_spend_evaluated_inr);
+    }
+    return [];
+  }, [propVendors, lineItems, tenant?.total_spend_evaluated_inr]);
 
   const [selectedYearView, setSelectedYearView] = useState<'ALL' | 'FY24' | 'FY25' | 'FY26'>('ALL');
   const [breakdownMode, setBreakdownMode] = useState<'CATEGORY' | 'VENDOR'>('CATEGORY');
   const [unspscFilterMode, setUnspscFilterMode] = useState<UNSPSCFilterMode>('AUTO');
   const [isBalanceExpanded, setIsBalanceExpanded] = useState<boolean>(false);
   const [isVendorBalanceExpanded, setIsVendorBalanceExpanded] = useState<boolean>(false);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryYearDetail | null>(categoriesList[0]);
-  const [selectedVendor, setSelectedVendor] = useState<VendorYearDetail | null>(vendorYearWiseDetails[0]);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryYearDetail | null>(categoriesList[0] || null);
+  const [selectedVendor, setSelectedVendor] = useState<VendorYearDetail | null>(vendorsList[0] || null);
   const [isTopItemsModalOpen, setIsTopItemsModalOpen] = useState<boolean>(false);
   const [isVendorModalOpen, setIsVendorModalOpen] = useState<boolean>(false);
 
-  const totalEvaluatedSpendInrCr = categoriesList.reduce(
-    (sum, item) => sum + (item.total_3yr_spend_inr_cr ?? 0),
-    0
-  );
+  const totalEvaluatedSpendInrCr = (tenant?.total_spend_evaluated_inr != null && tenant.total_spend_evaluated_inr > 0)
+    ? tenant.total_spend_evaluated_inr
+    : categoriesList.reduce((sum, item) => sum + (item.total_3yr_spend_inr_cr ?? 0), 0);
 
   const getYearSpend = (
     item: { spend_fy24_cr?: number; spend_fy25_cr?: number; spend_fy26_cr?: number; total_3yr_spend_inr_cr?: number },
@@ -95,7 +111,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
     return getYearSpend(b, selectedYearView) - getYearSpend(a, selectedYearView);
   });
 
-  const sortedVendors = [...vendorYearWiseDetails].sort((a, b) => {
+  const sortedVendors = [...vendorsList].sort((a, b) => {
     if (a.is_balance_vendor) return 1;
     if (b.is_balance_vendor) return -1;
     return getYearSpend(b, selectedYearView) - getYearSpend(a, selectedYearView);
