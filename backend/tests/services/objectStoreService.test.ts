@@ -3,6 +3,18 @@ import { ObjectStoreService } from '../../src/services/objectStoreService';
 import fs from 'fs';
 import path from 'path';
 
+vi.mock('@aws-sdk/client-s3', () => {
+  return {
+    S3Client: vi.fn().mockImplementation(() => ({
+      send: vi.fn().mockRejectedValue(new Error('Mocked network offline'))
+    })),
+    PutObjectCommand: vi.fn().mockImplementation((input) => input),
+    GetObjectCommand: vi.fn().mockImplementation((input) => input),
+    DeleteObjectCommand: vi.fn().mockImplementation((input) => input),
+    ListObjectsV2Command: vi.fn().mockImplementation((input) => input)
+  };
+});
+
 describe('ObjectStoreService with Cloudflare R2 and Local Fallback', () => {
   const testDir = path.resolve(process.cwd(), 'storage', 'test-objects');
   let store: ObjectStoreService;
