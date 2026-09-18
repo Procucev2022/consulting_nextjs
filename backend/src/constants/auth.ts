@@ -31,5 +31,7 @@ export const AUTH_MESSAGES = {
   FORBIDDEN_ADMIN_ONLY: 'Access denied: Administrator privileges required',
   USER_NOT_FOUND: 'Requested user account not found',
   STATUS_UPDATED: 'User status updated successfully',
+  PASSWORD_CHANGED: 'Password updated successfully',
+  CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
   TIER_UPDATED: 'User subscription tier updated successfully'
 } as const;

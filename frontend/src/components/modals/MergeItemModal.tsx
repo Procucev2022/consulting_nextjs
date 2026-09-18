@@ -5,20 +5,47 @@ import type { MergeItemModalProps } from '../../types';
 import { UI_STRINGS, DEFAULT_MASTER_ITEMS, mergeItemFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
 
-export const MergeItemModal: React.FC<MergeItemModalProps> = ({
+export const MergeItemModal: React.FC<MergeItemModalProps & {
+  masterItems?: Array<{
+    code: string;
+    name: string;
+    category: string;
+    column_l_code: string;
+    aliases: string[];
+  }>;
+}> = ({
   record,
   isOpen,
   onClose,
   onMerge,
-  onIgnore
+  onIgnore,
+  masterItems: customMasterItems
 }) => {
-  const masterItems = DEFAULT_MASTER_ITEMS;
-  const [selectedCode, setSelectedCode] = useState<string>(masterItems[0].code);
+  const masterItems = (customMasterItems && customMasterItems.length > 0)
+    ? customMasterItems
+    : (record?.raw_desc ? [
+        {
+          code: `ITM-${record.column_l_code || '101'}`,
+          name: record.raw_desc,
+          category: record.core_category || 'Direct Materials',
+          column_l_code: record.column_l_code || '13101502',
+          aliases: [record.raw_desc]
+        }
+      ] : (DEFAULT_MASTER_ITEMS as unknown as Array<{
+        code: string;
+        name: string;
+        category: string;
+        column_l_code: string;
+        aliases: string[];
+      }>));
+
+  const [selectedCode, setSelectedCode] = useState<string>(masterItems[0]?.code || '');
 
   if (!isOpen || !record) return null;
 
   const handleConfirm = (): void => {
     const chosen = masterItems.find((i) => i.code === selectedCode) || masterItems[0];
+    if (!chosen) return;
     const validation = validateInput(mergeItemFormSchema, {
       recordId: record.record_id,
       masterItemCode: chosen.code,

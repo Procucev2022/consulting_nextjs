@@ -20,12 +20,14 @@ export const tenantUpdateSchema = z.object({
   region: z.string().min(1).optional(),
   base_currency: z.string().min(1).optional(),
   financial_year: z.string().min(1).optional(),
-  total_spend_evaluated_inr: z.number().positive().optional(),
+  total_spend_evaluated: z.number().nonnegative().optional(),
+  total_spend_evaluated_inr: z.number().nonnegative().optional(),
   target_savings_rate_pct: z.number().nonnegative().optional(),
   erp_source: z.string().optional(),
   refresh_cycle: z.string().optional(),
   major_sector: z.string().min(1).optional(),
-  minor_sector: z.string().min(1).optional()
+  minor_sector: z.string().min(1).optional(),
+  status: z.string().optional()
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'At least one field to update must be provided'
 });
@@ -159,8 +161,13 @@ export const registerUserSchema = z.object({
 });
 
 export const loginUserSchema = z.object({
-  email: z.string().email('Valid organization email is required').toLowerCase(),
+  email: z.string().min(1, 'Valid organization email or Buyer ID is required'),
   password: z.string().min(1, 'Password is required')
+});
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters').max(100)
 });
 
 export const adminUserQuerySchema = z.object({
@@ -174,8 +181,63 @@ export const adminUpdateUserStatusSchema = z.object({
   status: z.enum(['ACTIVE', 'SUSPENDED', 'PENDING'])
 });
 
+// AI Service Validation Schemas
+export const aiExtractSchema = z.object({
+  documentText: z.string().optional(),
+  inlineData: z.string().optional(),
+  mimeType: z.string().optional(),
+  fileName: z.string().optional()
+}).refine((data) => Boolean(data.documentText || data.inlineData), {
+  message: 'Either documentText or inlineData must be provided'
+});
+
+export const aiCategorizeSchema = z.object({
+  items: z.array(
+    z.object({
+      rawLineText: z.string().min(1, 'rawLineText is required'),
+      vendorIdentified: z.string().optional(),
+      amount: z.number().optional()
+    })
+  ).min(1, 'At least one item must be provided for categorization')
+});
+
+export const aiExecutiveSummarySchema = z.object({
+  tenantName: z.string().optional(),
+  totalSpendInrCr: z.number().nonnegative(),
+  categories: z.array(
+    z.object({
+      name: z.string(),
+      spendInrCr: z.number(),
+      targetReductionPct: z.number()
+    })
+  ).default([]),
+  vendors: z.array(
+    z.object({
+      vendorName: z.string(),
+      totalSpendInrCr: z.number(),
+      priceCreepPct: z.number().optional()
+    })
+  ).default([]),
+  currency: z.string().optional()
+});
+
+export const aiAnalyzeAnomaliesSchema = z.object({
+  records: z.array(
+    z.object({
+      recordId: z.string().min(1),
+      poNumber: z.string(),
+      vendorName: z.string(),
+      rawCurrency: z.string().optional().nullable(),
+      amount: z.number(),
+      amountInr: z.number().optional().nullable(),
+      issueFlag: z.string().optional()
+    })
+  ).min(1, 'At least one record is required for anomaly analysis')
+});
+
 export const adminUpdateUserTierSchema = z.object({
   tier: z.enum(['BRONZE', 'SILVER', 'GOLD'])
 });
+
 
 

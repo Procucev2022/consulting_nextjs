@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
 import { Module1Ingestion } from '@/components/Module1Ingestion';
@@ -28,11 +29,11 @@ const AnalyzingLoader = dynamic(
 );
 
 import { getYahooFinanceRateToINR, parseDateOrYear } from '@/utils/currencyConverter';
-import { apiClient } from '@/utils/api';
+import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { frontendLogger } from '@/utils/logger';
-import { UI_STRINGS } from '@/constants';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
-import { lookupUNSPSCDetails } from '@/data/unspscTaxonomy';
+import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '@/data/unspscTaxonomy';
+import { UI_STRINGS } from '@/constants/uiStrings';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -63,16 +64,16 @@ const ExecutiveReportModal = dynamic(
   () => import('@/components/modals/ExecutiveReportModal').then((mod) => mod.ExecutiveReportModal),
   { ssr: false }
 );
+const ClientIngestionSetupModal = dynamic(
+  () => import('@/components/modals/ClientIngestionSetupModal').then((mod) => mod.ClientIngestionSetupModal),
+  { ssr: false }
+);
 
 // Mock Data Seed
 import {
   mockTenant,
   initialIngestionQueue,
   initialValidationRecords,
-  spendCategoriesData,
-  initialLineItemMappings,
-  vendorVolatilityRankings,
-  initialSavingsOpportunities,
   conversionFunnelStages
 } from '@/data/mockData';
 
@@ -81,6 +82,7 @@ import type {
   RawDocumentIngestion,
   ValidationPreCheckRecord,
   LineItemMapping,
+  VendorPriceRank,
   SavingsOpportunity,
   DatasetType,
   PipelineActiveTab,
@@ -91,24 +93,61 @@ import type {
   ParetoSpendData,
   ParetoRawRecord,
   SpendCategorySummary,
-  VendorPriceRank,
   UserProfile,
   SubscriptionTier
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
 export default function Home() {
-  // Theme State: Default to Light Mode
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  let router: { push: (url: string) => void } | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    router = useRouter();
+  } catch {
+    router = {
+      push: (url: string) => {
+        if (typeof window !== 'undefined') {
+          window.location.href = url;
+        }
+      }
+    };
+  }
+  // Theme State: Default to Stored Theme or Light Mode
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('procucev_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (document.documentElement.classList.contains('dark')) return 'dark';
+    }
+    return 'light';
+  });
 
-  // Authentication & Subscription Tier State
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>(null);
-
-  // Navigation State
+  // Navigation & User Session State
   const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
   const [targetSection, setTargetSection] = useState<string | null>(null);
-  const [tenant, setTenant] = useState<TenantMaster>(mockTenant);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = authApiClient.getStoredUser();
+      return stored && stored.role !== 'ADMIN' ? stored : null;
+    }
+    return null;
+  });
+  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>(null);
+  const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
+  const [tenant, setTenant] = useState<TenantMaster>(() => {
+    if (typeof window !== 'undefined') {
+      const user = authApiClient.getStoredUser();
+      if (user && user.role !== 'ADMIN') {
+        return {
+          ...mockTenant,
+          enterprise_name: user.company_name || 'Enterprise Client',
+          total_spend_evaluated_inr: 0,
+          total_spend_evaluated: 0
+        };
+      }
+    }
+    return mockTenant;
+  });
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
 
   const handleNavigateToSection = (targetModule: PipelineActiveTab, targetSectionId: string) => {
@@ -119,18 +158,18 @@ export default function Home() {
 
 
   // Application Data States
-  const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>(initialIngestionQueue);
+  const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
   const [uploadedMaterialGroups, setUploadedMaterialGroups] = useState<MaterialGroupSummary[] | undefined>(undefined);
   const [uploadedPlants, setUploadedPlants] = useState<PlantSummary[] | undefined>(undefined);
   const [uploadedMonths, setUploadedMonths] = useState<MonthWiseSummary[] | undefined>(undefined);
   const [uploadedUniqueItems, setUploadedUniqueItems] = useState<number | undefined>(undefined);
   const [uploadedUniqueVendors, setUploadedUniqueVendors] = useState<number | undefined>(undefined);
   const [uploadedParetoData, setUploadedParetoData] = useState<ParetoSpendData | undefined>(undefined);
-  const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>(initialValidationRecords);
-  const [categories, setCategories] = useState(spendCategoriesData);
-  const [lineItems, setLineItems] = useState<LineItemMapping[]>(initialLineItemMappings);
-  const [vendorRankings, setVendorRankings] = useState(vendorVolatilityRankings);
-  const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>(initialSavingsOpportunities);
+  const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
+  const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
+  const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
+  const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
+  const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>([]);
   const [funnelStages] = useState(conversionFunnelStages);
 
   // Modal States
@@ -146,105 +185,174 @@ export default function Home() {
     isOpen: boolean;
     title?: string;
     subtitle?: string;
+    metrics?: {
+      totalRecords?: number;
+      spendCrores?: number;
+      uniqueVendors?: number;
+      categoriesIdentified?: number;
+      confidenceScore?: number;
+    };
     onComplete?: () => void;
   } | null>(null);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initial Sync with Backend API & Session Storage
+  // Initial Sync with Backend API, Session Storage & Authenticated User
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        const saved = window.sessionStorage.getItem('procucev_uploaded_dataset');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.doc) setIngestionQueue([parsed.doc]);
-          if (parsed.materialGroupSummaries) setUploadedMaterialGroups(parsed.materialGroupSummaries);
-          if (parsed.plantSummaries) setUploadedPlants(parsed.plantSummaries);
-          if (parsed.monthWiseSummaries) setUploadedMonths(parsed.monthWiseSummaries);
-          if (parsed.uploadedUniqueItems) setUploadedUniqueItems(parsed.uploadedUniqueItems);
-          if (parsed.uploadedUniqueVendors) setUploadedUniqueVendors(parsed.uploadedUniqueVendors);
-          if (parsed.paretoData) setUploadedParetoData(parsed.paretoData);
-          if (parsed.validationRecords) setValidationRecords(parsed.validationRecords);
-          if (parsed.categories) setCategories(parsed.categories);
-          if (parsed.lineItems) setLineItems(parsed.lineItems);
-          if (parsed.vendorRankings) setVendorRankings(parsed.vendorRankings);
-          if (parsed.opportunities) setOpportunities(parsed.opportunities);
-          if (parsed.isDataRefreshed) setIsDataRefreshed(true);
+    const storedUser = authApiClient.getStoredUser();
+    const storedToken = authApiClient.getStoredToken();
+
+    // Redirect unauthenticated visitors to /login
+    if (!storedUser && !storedToken) {
+      if (router) {
+        router.push('/login');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    // Redirect admin users to /admin/dashboard
+    if (storedUser?.role === 'ADMIN') {
+      if (router) {
+        router.push('/admin/dashboard');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/admin/dashboard';
+      }
+      return;
+    }
+
+    const handleHash = () => {
+      if (typeof window !== 'undefined') {
+        const rawHash = window.location.hash.replace('#', '');
+        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(rawHash)) {
+          setActiveTab(rawHash as PipelineActiveTab);
         }
       }
+    };
+
+    if (typeof window !== 'undefined') {
+      handleHash();
+      window.addEventListener('hashchange', handleHash);
+    }
+
+    try {
       const user = apiClient.getStoredUser();
-      if (user) {
+      if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
       }
       const simTier = apiClient.getSimulatedTier();
       if (simTier) {
         setSimulatedTier(simTier);
       }
     } catch {
-      // Safe fallback if sessionStorage is inaccessible
+      // Safe fallback
     }
 
     async function loadBackendData() {
       try {
+        const storedUser = authApiClient.getStoredUser();
+        const buyerUser = storedUser && storedUser.role !== 'ADMIN' ? storedUser : null;
         const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
-          apiClient.getTenant(),
-          apiClient.getIngestionData(),
+          apiClient.getTenant(buyerUser?.id),
+          apiClient.getIngestionData(buyerUser?.id),
           apiClient.getCategories(),
           apiClient.getVendors(),
           apiClient.getSavingsOpportunities()
         ]);
 
         if (tenantData.status === 'fulfilled' && tenantData.value) {
-          setTenant(tenantData.value);
-        }
-        if (ingestionData.status === 'fulfilled' && ingestionData.value) {
-          const rawQueue = ingestionData.value.queue || [];
-          const sanitizedQueue: RawDocumentIngestion[] = rawQueue.map((doc: any, idx: number) => ({
-            doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
-            tenant_id: doc.tenant_id || 'TNT-GLOBAL-8902',
-            file_name: doc.file_name || 'Uploaded_Document.xlsx',
-            file_type: doc.file_type || 'XLSX',
-            file_size_mb: doc.file_size_mb || 1.0,
-            ocr_status: doc.ocr_status || 'Completed',
-            progress: doc.progress ?? 100,
-            uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
-            records_count: doc.records_count ?? 0,
-            detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
-            converted_inr_crores: doc.converted_inr_crores ?? 8066.86,
-            unique_items_count: doc.unique_items_count,
-            unique_vendors_count: doc.unique_vendors_count,
-            material_groups_count: doc.material_groups_count,
-            plants_count: doc.plants_count
-          }));
-          let hasSessionDoc = false;
-          try {
-            hasSessionDoc = Boolean(typeof window !== 'undefined' && window.sessionStorage?.getItem('procucev_uploaded_dataset'));
-          } catch {
-            hasSessionDoc = false;
+          if (buyerUser) {
+            setTenant((prev) => ({
+              ...tenantData.value,
+              enterprise_name: buyerUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
+              total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
+              total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
+            }));
+          } else {
+            setTenant({
+              ...tenantData.value,
+              enterprise_name: tenantData.value.enterprise_name || mockTenant.enterprise_name
+            });
           }
-          if (!hasSessionDoc) {
+        }
+
+        if (ingestionData.status === 'fulfilled' && ingestionData.value) {
+          const backendQueue = ingestionData.value.queue || [];
+          const queueToHydrate = buyerUser?.id
+            ? backendQueue.filter(
+                (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
+              )
+            : backendQueue;
+
+          if (queueToHydrate.length === 0) {
+            // Current buyer has NO uploaded documents!
+            setIngestionQueue([]);
+            setValidationRecords([]);
+            setUploadedMaterialGroups(undefined);
+            setUploadedPlants(undefined);
+            setUploadedMonths(undefined);
+            setUploadedUniqueItems(undefined);
+            setUploadedUniqueVendors(undefined);
+            setUploadedParetoData(undefined);
+            setCategories([]);
+            setLineItems([]);
+            setVendorRankings([]);
+            setOpportunities([]);
+            setIsDataRefreshed(false);
+            setTenant((prev) => ({
+              ...prev,
+              total_spend_evaluated_inr: 0,
+              total_spend_evaluated: 0
+            }));
+          } else {
+            const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
+              doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
+              tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
+              file_name: doc.file_name || 'Uploaded_Document.xlsx',
+              file_type: doc.file_type || 'XLSX',
+              file_size_mb: doc.file_size_mb || 1.0,
+              ocr_status: doc.ocr_status || 'Completed',
+              progress: doc.progress ?? 100,
+              uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
+              records_count: doc.records_count ?? 0,
+              detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
+              converted_inr_crores: doc.converted_inr_crores ?? 0,
+              unique_items_count: doc.unique_items_count,
+              unique_vendors_count: doc.unique_vendors_count,
+              material_groups_count: doc.material_groups_count,
+              plants_count: doc.plants_count
+            }));
             setIngestionQueue(sanitizedQueue.slice(0, 1));
             if (ingestionData.value.validationRecords) {
               setValidationRecords(ingestionData.value.validationRecords);
             }
+            if (categoryData.status === 'fulfilled' && categoryData.value) {
+              setCategories(categoryData.value.categories || []);
+            }
+            if (vendorData.status === 'fulfilled' && vendorData.value) {
+              setVendorRankings(vendorData.value.vendorRankings || []);
+            }
+            if (savingsData.status === 'fulfilled' && savingsData.value) {
+              setOpportunities(savingsData.value.opportunities || []);
+            }
           }
-        }
-        if (categoryData.status === 'fulfilled' && categoryData.value) {
-          setCategories(categoryData.value.categories);
-        }
-        if (vendorData.status === 'fulfilled' && vendorData.value) {
-          setVendorRankings(vendorData.value.vendorRankings);
-        }
-        if (savingsData.status === 'fulfilled' && savingsData.value) {
-          setOpportunities(savingsData.value.opportunities);
         }
       } catch (err) {
         frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
       }
     }
     loadBackendData();
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('hashchange', handleHash);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -252,9 +360,15 @@ export default function Home() {
     if (theme === 'dark') {
       root.classList.add('dark');
       root.classList.remove('light');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('procucev_theme', 'dark');
+      }
     } else {
       root.classList.add('light');
       root.classList.remove('dark');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('procucev_theme', 'light');
+      }
     }
   }, [theme]);
 
@@ -276,6 +390,12 @@ export default function Home() {
     toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
     }, 3500);
+  };
+
+  const handleLogout = () => {
+    authApiClient.clearStoredSession();
+    setCurrentUser(null);
+    showToast(UI_STRINGS.auth.logout);
   };
 
   // Subscription Tier Resolution & Simulation Handlers
@@ -518,6 +638,13 @@ export default function Home() {
       isOpen: true,
       title: 'Applying Blanket AI Remediation Across Dataset',
       subtitle: 'Normalizing 100% of vendor entities, currency conversions, and SKU descriptions...',
+      metrics: {
+        totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
+        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
+        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
+        confidenceScore: 99.4
+      },
       onComplete: () => {
         setAnalyzingLoaderState(null);
       }
@@ -570,10 +697,19 @@ export default function Home() {
       }
     }
 
+    const currentRecordsCount = uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0);
+
     setAnalyzingLoaderState({
       isOpen: true,
       title: 'Recalculating Enterprise Spend & Refreshing Final Numbers',
-      subtitle: 'Auditing 7,357 line items across facilities, material groups, and 3-year timelines...',
+      subtitle: `Auditing ${currentRecordsCount ? currentRecordsCount.toLocaleString() : 'all'} line items across facilities, material groups, and 3-year timelines...`,
+      metrics: {
+        totalRecords: currentRecordsCount,
+        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
+        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
+        confidenceScore: 99.4
+      },
       onComplete: () => {
         setAnalyzingLoaderState(null);
       }
@@ -594,11 +730,55 @@ export default function Home() {
     showToast(UI_STRINGS.toasts.validationReset);
   };
 
+  const handleDeleteDocument = async (_docId?: string) => {
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        window.sessionStorage.removeItem('procucev_uploaded_dataset');
+      }
+    } catch {
+      // Safe fallback
+    }
+    setIngestionQueue([]);
+    setValidationRecords([]);
+    setUploadedMaterialGroups(undefined);
+    setUploadedPlants(undefined);
+    setUploadedMonths(undefined);
+    setUploadedUniqueItems(undefined);
+    setUploadedUniqueVendors(undefined);
+    setUploadedParetoData(undefined);
+    setIsDataRefreshed(false);
+    setTenant((prev) => ({
+      ...prev,
+      total_spend_evaluated_inr: 0,
+      total_spend_evaluated: 0
+    }));
+
+    apiClient.deleteIngestionDocument(_docId).catch((e) => {
+      frontendLogger.warn('Backend sync warning for delete ingestion document', { error: e });
+    });
+
+    showToast('Uploaded dataset removed successfully. You can now upload a new dataset.');
+  };
+
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
+    const loggedUser = currentUser || authApiClient.getStoredUser();
+    if (!loggedUser) {
+      showToast('Please sign in to upload datasets');
+      router.push('/login');
+      return;
+    }
+
     setAnalyzingLoaderState({
       isOpen: true,
       title: `Analyzing Uploaded File "${file.name}"`,
       subtitle: 'Running multi-currency normalizations, ERP document deduplication and UNSPSC matching...',
+      metrics: {
+        totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
+        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
+        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
+        confidenceScore: 99.4
+      },
       onComplete: () => {
         setAnalyzingLoaderState(null);
       }
@@ -722,29 +902,16 @@ export default function Home() {
           const plantMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
           const monthMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
 
-          const fallbackQuantities = [1000, 320, 2000, 650, 50, 10000];
-          const fallbackPrices = [145.0, 120.0, 44.6, 300.0, 850.0, 6.73];
-          const fallbackCurrencies = ['EUR', 'USD', 'USD', 'GBP', 'AED', 'USD'];
-          const fallbackYears = [2024, 2024, 2024, 2023, 2023, 2026];
-          const fallbackVendors = ['Continental Polymer S.A.', 'DHL Logistics GmbH', 'Amcor Packaging Group', 'Acme Chemical Co. LLC', 'Flowserve Industrial Services', 'Crown Paper Box Corp'];
-          const fallbackDescs = ['High Density Polyethylene Granules', 'Cross-Border Air Express Logistics', 'Double Wall Corrugated Pallet Box', 'Hydrochloric Acid Tech Grade Bulk', 'Emergency Centrifugal Pump Impeller', 'Reinforced Shipping Cartons Heavy Duty'];
-          const fallbackCodes = ['13101502', '78101801', '14121506', '12352204', '40151501', '14121506'];
-          const fallbackCategories: Array<ValidationPreCheckRecord['core_category']> = ['Direct Materials', 'Logistics & Freight', 'Packaging Materials', 'Direct Materials', 'Indirect & MRO', 'Packaging Materials'];
-          const fallbackFlags: Array<ValidationPreCheckRecord['issue_flag']> = ['Missing Currency Code', 'Unmapped Supplier Name', 'Passed Clean', 'Tax Discrepancy', 'Passed Clean', 'Passed Clean'];
-          const fallbackStatuses: Array<ValidationPreCheckRecord['action_status']> = ['Fix (INR)', 'Merge Vendor', 'Ready', 'Ready', 'Ready', 'Ready'];
-          const fallbackDates = ['2024-05-18', '2025-02-14', '2025-09-04', '2023-11-20', '2023-08-11', '2026-01-16'];
-
           rows.forEach((r, idx) => {
-            const rowIdx = idx % fallbackQuantities.length;
             const hasExplicitQty = qtyKey && r[qtyKey] != null && !isNaN(Number(r[qtyKey]));
-            const rawQty = hasExplicitQty ? Number(r[qtyKey]) : fallbackQuantities[rowIdx];
+            const rawQty = hasExplicitQty ? Math.max(0, Number(r[qtyKey])) : 1;
             const hasExplicitPrice = priceKey && r[priceKey] != null && !isNaN(Number(r[priceKey]));
-            const rawPrice = hasExplicitPrice ? Number(r[priceKey]) : fallbackPrices[rowIdx];
-            const rawCurr = (currKey ? String(r[currKey] || '').toUpperCase().trim() : '') || fallbackCurrencies[rowIdx];
-            const rawYear = (yearKey ? Number(String(r[yearKey]).match(/\d{4}/)?.[0]) : 0) || fallbackYears[rowIdx];
+            const rawPrice = hasExplicitPrice ? Math.max(0, Number(r[priceKey])) : 0;
+            const rawCurr = currKey && r[currKey] != null ? String(r[currKey]).trim().toUpperCase() : '';
             const rawDateVal = dateKey ? r[dateKey] : null;
-            const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || rawYear);
-            const fxRate = getYahooFinanceRateToINR(rawCurr, rawDateVal || rawYear);
+            const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || new Date().getFullYear());
+            const rawYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
+            const fxRate = getYahooFinanceRateToINR(rawCurr || 'INR', rawDateVal || rawYear);
 
             // Ground truth check: Use Total In Crs or Total INR if present, otherwise Qty * Price * FX
             const rawCr = totalCrKey && r[totalCrKey] != null ? Number(r[totalCrKey]) : NaN;
@@ -766,8 +933,8 @@ export default function Home() {
               ? rawDesc
               : rawMat && !/^\d{1,3}$/.test(rawMat)
                 ? rawMat
-                : 'DIRECT CONSUMABLES';
-            const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || 'SUPPLIER CORP';
+                : `Item-${idx + 1}`;
+            const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || '';
 
             const isValidVendor = Boolean(rowVendor && !/^\d+$/.test(rowVendor) && rowVendor.length > 2);
             const isValidItem = Boolean(rowItem && !/^\d+$/.test(rowItem) && rowItem.length > 1);
@@ -816,32 +983,56 @@ export default function Home() {
             if (lineTotalCr > 0 && isValidVendor) {
               dynamicParetoRecords.push({
                 vendorName: rowVendor,
-                shortText: isValidItem ? rowItem : 'DIRECT CONSUMABLES',
+                shortText: isValidItem ? rowItem : 'Direct Consumables',
                 spendCr: lineTotalCr
               });
             }
 
-            if (idx < 6) {
+            // Real anomaly pre-check classification
+            const unspscMatch = lookupUNSPSCByDescription(rowItem);
+            const columnLCode = unspscMatch?.commodityCode || '13101502';
+            const coreCategory = (unspscMatch?.coreBucket as ValidationPreCheckRecord['core_category']) || 'Direct Materials';
+
+            let issueFlag: ValidationPreCheckRecord['issue_flag'] = 'Passed Clean';
+            let actionStatus: ValidationPreCheckRecord['action_status'] = 'Ready';
+            let isResolved = true;
+
+            if (!rawCurr) {
+              issueFlag = 'Missing Currency Code';
+              actionStatus = 'Fix (INR)';
+              isResolved = false;
+            } else if (!isValidVendor) {
+              issueFlag = 'Unmapped Supplier Name';
+              actionStatus = 'Merge Vendor';
+              isResolved = false;
+            } else if (rawPrice <= 0 || lineTotalCr <= 0) {
+              issueFlag = 'Tax Discrepancy';
+              actionStatus = 'Ready';
+              isResolved = false;
+            }
+
+            // Collect rows for validation pre-check inspection (up to 30 sample rows from genuine dataset)
+            if (parsedValidationItems.length < 30) {
               parsedValidationItems.push({
-                record_id: `REC-${8841 + idx}`,
-                po_number: poKey && r[poKey] ? String(r[poKey]) : `PO-2024-9981${idx}`,
-                vendor_name: rowVendor || (vendorKey && r[vendorKey] ? String(r[vendorKey]) : fallbackVendors[rowIdx]),
-                raw_desc: rowItem || (descKey && r[descKey] ? String(r[descKey]) : fallbackDescs[rowIdx]),
+                record_id: `REC-${8800 + idx}`,
+                po_number: poKey && r[poKey] ? String(r[poKey]).trim() : `PO-${rawYear}-${1000 + idx}`,
+                vendor_name: rowVendor || 'Unmapped Supplier',
+                raw_desc: rowItem,
                 order_quantity: rawQty,
                 net_price: rawPrice,
                 subtotal_raw: rawQty * rawPrice,
                 amount: rawQty * rawPrice,
-                raw_currency: rawCurr,
+                raw_currency: rawCurr || 'INR',
                 amount_inr: lineTotalINR,
                 inr_crores: Number((lineTotalINR / 10000000).toFixed(2)),
                 fx_rate_applied: fxRate,
                 spend_year: rawYear,
-                transaction_date: parsedDateInfo.formattedDate || fallbackDates[rowIdx],
-                column_l_code: fallbackCodes[rowIdx],
-                core_category: fallbackCategories[rowIdx],
-                issue_flag: fallbackFlags[rowIdx],
-                action_status: fallbackStatuses[rowIdx],
-                resolved: idx === 2 || idx === 5
+                transaction_date: parsedDateInfo.formattedDate || `${rawYear}-01-01`,
+                column_l_code: columnLCode,
+                core_category: coreCategory,
+                issue_flag: issueFlag,
+                action_status: actionStatus,
+                resolved: isResolved
               });
             }
           });
@@ -1079,7 +1270,7 @@ export default function Home() {
 
     const newDoc: RawDocumentIngestion = {
       doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
-      tenant_id: tenant.tenant_id,
+      tenant_id: loggedUser.id || tenant.tenant_id,
       file_name: file.name,
       file_type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
       file_size_mb: Number((file.size / (1024 * 1024)).toFixed(2)),
@@ -1098,32 +1289,37 @@ export default function Home() {
     setIngestionQueue([newDoc]);
 
     try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({
-          doc: newDoc,
-          materialGroupSummaries: dynamicMgs,
-          plantSummaries: dynamicPlants,
-          monthWiseSummaries: dynamicMonths,
-          uploadedUniqueItems: dynamicUniqueItems,
-          uploadedUniqueVendors: dynamicUniqueVendors,
-          paretoData: paretoDataToStore,
-          validationRecords: parsedValidationItems,
-          categories: dynamicCategories,
-          lineItems: dynamicLineItems,
-          vendorRankings: dynamicVendorRankings,
-          opportunities: dynamicOpportunities,
-          totalSpendInrCr,
-          isDataRefreshed: false
-        }));
+      let fileBase64 = '';
+      try {
+        if (typeof window !== 'undefined' && window.FileReader) {
+          fileBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const res = reader.result as string;
+              resolve(res.replace(/^data:[^;]+;base64,/, ''));
+            };
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(file);
+          });
+        }
+      } catch {
+        // Base64 conversion fallback
       }
-    } catch {
-      // Safe fallback if sessionStorage is inaccessible
-    }
 
-    try {
-      await apiClient.addIngestionFile(newDoc);
+      await apiClient.uploadDocumentToObjectStore({
+        fileName: file.name,
+        fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
+        fileBase64: fileBase64 || undefined,
+        fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)) || 1.0,
+        recordsCount,
+        convertedInrCrores: totalSpendInrCr,
+        detectedCurrencies: ['USD', 'EUR', 'INR'],
+        datasetType: _datasetType,
+        buyer_id: loggedUser.id,
+        tenant_id: loggedUser.id
+      });
     } catch (e) {
-      frontendLogger.warn('Backend sync warning for add ingestion file', { error: e });
+      frontendLogger.warn('Backend sync warning for document upload', { error: e });
     }
 
     showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, totalSpendInrCr, recordsCount));
@@ -1178,11 +1374,95 @@ export default function Home() {
     showToast(UI_STRINGS.toasts.deployedToDPSNXT(oppId));
   };
 
+  const handleStartAICategorization = async () => {
+    showToast(UI_STRINGS.toasts.runningAiCat);
+    setAnalyzingLoaderState({
+      isOpen: true,
+      title: 'Running Google Gemini UNSPSC AI Categorization',
+      subtitle: 'Analyzing item descriptions, vendor transaction patterns, and assigning 8-digit UNSPSC codes...',
+      metrics: {
+        totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
+        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
+        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
+        confidenceScore: 99.4
+      },
+      onComplete: () => {
+        setAnalyzingLoaderState(null);
+      }
+    });
+
+    try {
+      const itemsToCategorize = lineItems.map((item) => ({
+        rawLineText: item.raw_desc,
+        vendorIdentified: item.vendor_identified,
+        amount: item.inr_crores || item.total_spend
+      }));
+
+      const res = await aiApiClient.categorizeItems(itemsToCategorize);
+      if (res?.success && Array.isArray(res.mappings) && res.mappings.length > 0) {
+        const mappingMap = new Map(
+          res.mappings.map((m) => [String(m.rawLineText || '').toLowerCase().trim(), m])
+        );
+
+        setLineItems((prev) =>
+          prev.map((item) => {
+            const match = mappingMap.get(item.raw_desc.toLowerCase().trim());
+            if (match) {
+              return {
+                ...item,
+                unspsc_code: match.mappedUnspscCode || item.unspsc_code,
+                unspsc_commodity_title: match.unspscTitle || item.unspsc_commodity_title,
+                unspsc_category_name: match.unspscTitle || item.unspsc_category_name,
+                core_bucket: (match.suggestedBucket as LineItemMapping['core_bucket']) || item.core_bucket,
+                ai_confidence: typeof match.confidenceScore === 'number' ? match.confidenceScore : item.ai_confidence,
+                status: 'Confirmed'
+              };
+            }
+            return item;
+          })
+        );
+        showToast(`AI Categorization completed via ${res.model || 'Google Gemini'}`);
+      } else {
+        showToast(UI_STRINGS.toasts.runningAiCat);
+      }
+    } catch (err) {
+      frontendLogger.error('Error in AI categorization', {}, err as Error);
+      showToast('AI Categorization finished');
+    }
+
+  };
+
+  const handleUpdateTenant = async (updatedTenant: TenantMaster) => {
+    setTenant(updatedTenant);
+    try {
+      await apiClient.updateTenant({
+        enterprise_name: updatedTenant.enterprise_name,
+        region: updatedTenant.region,
+        base_currency: updatedTenant.base_currency,
+        total_spend_evaluated: updatedTenant.total_spend_evaluated,
+        total_spend_evaluated_inr: updatedTenant.total_spend_evaluated_inr,
+        major_sector: updatedTenant.major_sector,
+        minor_sector: updatedTenant.minor_sector,
+        status: updatedTenant.status
+      });
+      frontendLogger.info('Tenant setup synced to database successfully', {
+        tenantId: updatedTenant.tenant_id,
+        enterprise: updatedTenant.enterprise_name
+      });
+    } catch (err) {
+      frontendLogger.warn('Backend sync warning for tenant update', { error: err });
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-[#f8fafc] dark:bg-[#080c16] text-slate-900 dark:text-slate-100 bg-grid-pattern pb-16 transition-colors duration-200 ${theme}`}>
       {/* Top Header */}
       <Header
         tenant={tenant}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onOpenClientSetup={() => setIsClientSetupModalOpen(true)}
         onSelectTenant={(t) => {
           setTenant(t);
           apiClient.updateTenant(t).catch((e) => {
@@ -1204,6 +1484,13 @@ export default function Home() {
             isOpen: true,
             title: UI_STRINGS.analyzingLoader.title,
             subtitle: UI_STRINGS.analyzingLoader.subtitle,
+            metrics: {
+              totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
+              spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
+              uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
+              categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
+              confidenceScore: 99.4
+            },
             onComplete: () => {
               setAnalyzingLoaderState(null);
               showToast(UI_STRINGS.toasts.runningAiCat);
@@ -1219,13 +1506,20 @@ export default function Home() {
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         {/* Pipeline & Strategic Vision Navigation */}
-        <PipelineBar activeTab={activeTab} onSelectTab={setActiveTab} />
+        <PipelineBar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          tenant={tenant}
+          opportunities={opportunities}
+          ingestionQueue={ingestionQueue}
+          totalSpendCr={tenant.total_spend_evaluated_inr}
+        />
 
         {/* Tab Modules */}
         {activeTab === 'module1' && (
           <Module1Ingestion
             tenant={tenant}
-            onUpdateTenant={setTenant}
+            onUpdateTenant={handleUpdateTenant}
             ingestionQueue={ingestionQueue}
             validationRecords={validationRecords}
             onFixCurrency={handleFixCurrency}
@@ -1243,6 +1537,7 @@ export default function Home() {
             uniqueItemsCount={uploadedUniqueItems}
             uniqueVendorsCount={uploadedUniqueVendors}
             onMergeItem={handleMergeItem}
+            onDeleteDocument={handleDeleteDocument}
             isDataRefreshed={isDataRefreshed}
             paretoSpendData={uploadedParetoData}
             onRefreshWithFixes={handleRefreshWithFixes}
@@ -1262,15 +1557,14 @@ export default function Home() {
               setActiveTab('module3');
               showToast(UI_STRINGS.toasts.transitioningToVolatility);
             }}
-            onStartAICategorization={() => {
-              showToast(UI_STRINGS.toasts.runningAiCat);
-            }}
+            onStartAICategorization={handleStartAICategorization}
             onUpdateTenant={setTenant}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
             targetSection={targetSection}
           />
         )}
+
 
         {activeTab === 'module3' && (
           <Module3TrendAnalytics
@@ -1365,6 +1659,29 @@ export default function Home() {
         onClose={() => setIsReportModalOpen(false)}
       />
 
+      <ClientIngestionSetupModal
+        isOpen={isClientSetupModalOpen}
+        onClose={() => setIsClientSetupModalOpen(false)}
+        currentTenant={tenant}
+        onConfirmAndUpload={(updatedConfig) => {
+          const updatedTenant: TenantMaster = {
+            ...tenant,
+            enterprise_name: updatedConfig.clientName || tenant.enterprise_name,
+            base_currency: updatedConfig.currency || tenant.base_currency,
+            region: updatedConfig.region || tenant.region,
+            major_sector: updatedConfig.majorSector || tenant.major_sector,
+            minor_sector: updatedConfig.minorSector || tenant.minor_sector,
+            total_spend_evaluated_inr: (updatedConfig.estimatedSpend * 83.8) / 10000000 || tenant.total_spend_evaluated_inr
+          };
+          setTenant(updatedTenant);
+          setIsClientSetupModalOpen(false);
+          apiClient.updateTenant(updatedTenant).catch((e) => {
+            frontendLogger.warn('Backend sync warning for client setup update', { error: e });
+          });
+          showToast(UI_STRINGS.toasts.clientConfigUpdated(updatedTenant.enterprise_name));
+        }}
+      />
+
       {/* Global Pictorial Analyzing Loader */}
       {analyzingLoaderState?.isOpen && (
         <AnalyzingLoader
@@ -1372,6 +1689,13 @@ export default function Home() {
           mode="overlay"
           title={analyzingLoaderState.title}
           subtitle={analyzingLoaderState.subtitle}
+          metrics={analyzingLoaderState.metrics || {
+            totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
+            spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
+            uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
+            categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
+            confidenceScore: 99.4
+          }}
           onComplete={analyzingLoaderState.onComplete}
           onCancel={() => setAnalyzingLoaderState(null)}
         />

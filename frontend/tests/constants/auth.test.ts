@@ -27,6 +27,7 @@ describe('Frontend Auth Constants', () => {
     expect(AUTH_API_ENDPOINTS.LOGIN).toBe('/api/auth/login');
     expect(AUTH_API_ENDPOINTS.REGISTER).toBe('/api/auth/register');
     expect(AUTH_API_ENDPOINTS.ME).toBe('/api/auth/me');
+    expect(AUTH_API_ENDPOINTS.CHANGE_PASSWORD).toBe('/api/auth/change-password');
     expect(AUTH_API_ENDPOINTS.ADMIN_USERS).toBe('/api/admin/users');
     expect(AUTH_API_ENDPOINTS.ADMIN_USER_STATUS('usr-123')).toBe('/api/admin/users/usr-123/status');
   });

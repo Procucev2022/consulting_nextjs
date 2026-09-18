@@ -150,15 +150,27 @@ describe('Management Presentation Slide Components', () => {
     });
 
     it('renders Slide 9 with provided opportunities including fallback calculation', () => {
+      const sampleOpps = [
+        {
+          opp_id: 'OPP-SLIDE-01',
+          title: 'Direct Chemicals Index Pegging',
+          category: 'Direct Chemicals',
+          recommended_action: 'Renegotiate contract formulas',
+          est_savings_inr_cr: 4.5,
+          confidence_score: 95,
+          push_to_module: 'DPS NXT' as const,
+          status: 'Identified' as const
+        }
+      ];
       render(
         <Slide9SavingsLeversRoadmap
           {...defaultSlideProps}
           slideNumber={9}
-          opportunities={mockSavingsOpportunities}
+          opportunities={sampleOpps}
         />
       );
       expect(screen.getByText(UI_STRINGS.presentation.savingsLevers.title)).toBeInTheDocument();
-      expect(screen.getByText(mockSavingsOpportunities[0].title)).toBeInTheDocument();
+      expect(screen.getByText('Direct Chemicals Index Pegging')).toBeInTheDocument();
     });
 
     it('exercises all branch conditions in Slide 9 with custom opportunity fallbacks', () => {

@@ -3,7 +3,8 @@ import React from 'react';
 import {
   UploadCloud,
   FileCheck,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Trash2
 } from 'lucide-react';
 import type { IngestionUploadSectionProps } from '../types';
 import { UI_STRINGS } from '../constants';
@@ -18,7 +19,8 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
   onFileChange,
   fileInputRef,
   totalEvaluatedSpendInrCr,
-  onOpenSetupModal
+  onOpenSetupModal,
+  onDeleteDocument
 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -150,6 +152,20 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                         ? `${doc.progress ?? 100}% ${doc.ocr_status || 'Completed'}`
                         : UI_STRINGS.module1.processingStatus(doc.progress ?? 100)}
                     </span>
+                    {onDeleteDocument && (
+                      <button
+                        type="button"
+                        data-testid="delete-uploaded-dataset-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteDocument(doc.doc_id);
+                        }}
+                        title="Delete uploaded dataset"
+                        className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/80 border border-rose-200 dark:border-rose-800/60 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -175,7 +191,7 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                         Calculated Total Spend from File:
                       </span>
                       <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-lg">
-                        ₹{(doc.converted_inr_crores != null ? doc.converted_inr_crores : 732.41).toFixed(2)} Cr
+                        ₹{(doc.converted_inr_crores != null ? doc.converted_inr_crores : 0).toFixed(2)} Cr
                       </span>
                     </div>
                   </div>

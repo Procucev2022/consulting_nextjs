@@ -5,11 +5,25 @@ import { IngestionUploadSection } from '../../src/components/IngestionUploadSect
 import { mockTenant, initialIngestionQueue } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants';
 
+const mockIngestionItem = {
+  doc_id: 'DOC-9041',
+  tenant_id: 'TNT-GLOBAL-8902',
+  file_name: 'Purchase_History_Sample.xlsx',
+  file_type: 'XLSX' as const,
+  file_size_mb: 9.55,
+  ocr_status: 'Completed' as const,
+  progress: 100,
+  uploaded_at: '2026-08-24 09:14:22',
+  records_count: 42765,
+  detected_currencies: ['INR'],
+  converted_inr_crores: 8066.86
+};
+
 describe('IngestionUploadSection Component', () => {
   const defaultProps = {
     tenant: mockTenant,
     activeDatasetType: 'Purchase History' as const,
-    ingestionQueue: initialIngestionQueue,
+    ingestionQueue: [mockIngestionItem],
     dragActive: false,
     onDrag: vi.fn(),
     onDrop: vi.fn(),
@@ -23,7 +37,7 @@ describe('IngestionUploadSection Component', () => {
     render(<IngestionUploadSection {...defaultProps} />);
 
     expect(screen.getByText(UI_STRINGS.module1.uploadedFileDetails)).toBeInTheDocument();
-    expect(screen.getByText(initialIngestionQueue[0].file_name)).toBeInTheDocument();
+    expect(screen.getByText(mockIngestionItem.file_name)).toBeInTheDocument();
     expect(screen.getAllByText(/Excluding Header Row/i)[0]).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module1.setupDetails)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module1.selectFile)).toBeInTheDocument();
@@ -83,7 +97,7 @@ describe('IngestionUploadSection Component', () => {
   it('renders active progress when doc status is Parsing OCR', () => {
     const processingDoc = [
       {
-        ...initialIngestionQueue[0],
+        ...mockIngestionItem,
         ocr_status: 'Parsing OCR' as const,
         progress: 45,
         detected_currencies: undefined
@@ -126,12 +140,12 @@ describe('IngestionUploadSection Component', () => {
   it('renders strictly only the single active document card even if multiple items exist in ingestionQueue', () => {
     const multipleDocs = [
       {
-        ...initialIngestionQueue[0],
+        ...mockIngestionItem,
         doc_id: 'DOC-ACTIVE-1',
         file_name: 'active_dataset.xlsx'
       },
       {
-        ...initialIngestionQueue[0],
+        ...mockIngestionItem,
         doc_id: 'DOC-OLD-2',
         file_name: 'previous_dataset.xlsx'
       }

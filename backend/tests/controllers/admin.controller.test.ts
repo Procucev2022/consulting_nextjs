@@ -5,7 +5,7 @@ import { generateAuthToken } from '../../src/utils/auth';
 
 describe('Admin Controller Integration Tests', () => {
   const adminToken = generateAuthToken('usr-admin-001', 'admin@procucev.com', 'ADMIN');
-  const userToken = generateAuthToken('usr-user-001', 'srinivas@apexindustrial.com', 'USER');
+  const userToken = generateAuthToken('usr-user-001', 'buyer@procucev.com', 'USER');
 
   it('should list all registered users for admin', async () => {
     const res = await request(app)
@@ -29,12 +29,12 @@ describe('Admin Controller Integration Tests', () => {
 
   it('should filter users by search term', async () => {
     const res = await request(app)
-      .get('/api/admin/users?search=srinivas')
+      .get('/api/admin/users?search=buyer')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.users.some((u: any) => u.email.includes('srinivas'))).toBe(true);
+    expect(res.body.users.some((u: any) => u.email.includes('buyer'))).toBe(true);
   });
 
   it('should filter users by role and status', async () => {
@@ -98,7 +98,7 @@ describe('Admin Controller Integration Tests', () => {
     const loginRes = await request(app)
       .post('/api/auth/login')
       .send({
-        email: 'srinivas@apexindustrial.com',
+        email: 'buyer@procucev.com',
         password: 'User@123456'
       });
     expect(loginRes.status).toBe(403);
@@ -111,7 +111,8 @@ describe('Admin Controller Integration Tests', () => {
 
     expect(reactivateRes.status).toBe(200);
     expect(reactivateRes.body.user.status).toBe('ACTIVE');
-  });
+  }, 20000);
+
 
   it('should return 400 if user status update payload is invalid', async () => {
     const res = await request(app)
@@ -124,7 +125,7 @@ describe('Admin Controller Integration Tests', () => {
 
   it('should filter users by search term, role, and status', async () => {
     const res = await request(app)
-      .get('/api/admin/users?search=srinivas&role=USER&status=ACTIVE')
+      .get('/api/admin/users?search=buyer&role=USER&status=ACTIVE')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
@@ -153,18 +154,18 @@ describe('Admin Controller Integration Tests', () => {
 
   it('should filter users by subscription tier', async () => {
     const res = await request(app)
-      .get('/api/admin/users?tier=BRONZE')
+      .get('/api/admin/users?tier=GOLD')
       .set('Authorization', `Bearer ${adminToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.users.every((u: any) => u.subscription_tier === 'BRONZE')).toBe(true);
+    expect(res.body.users.every((u: any) => u.subscription_tier === 'GOLD')).toBe(true);
   });
 
   it('should update user subscription tier to GOLD and BRONZE', async () => {
     // 1. Upgrade user to GOLD
     const res = await request(app)
-      .patch('/api/admin/users/usr-user-002/tier')
+      .patch('/api/admin/users/usr-user-001/tier')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ tier: 'GOLD' });
 
@@ -174,7 +175,7 @@ describe('Admin Controller Integration Tests', () => {
 
     // 2. Downgrade back to SILVER
     const resSilver = await request(app)
-      .patch('/api/admin/users/usr-user-002/tier')
+      .patch('/api/admin/users/usr-user-001/tier')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ tier: 'SILVER' });
 

@@ -6,10 +6,106 @@ import { mockTenant, initialIngestionQueue } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { MonthWiseSummary } from '../../src/types';
 
+const mockIngestionItem = {
+  doc_id: 'DOC-9041',
+  tenant_id: 'TNT-GLOBAL-8902',
+  file_name: 'Purchase_History_Sample.xlsx',
+  file_type: 'XLSX' as const,
+  file_size_mb: 9.55,
+  ocr_status: 'Completed' as const,
+  progress: 100,
+  uploaded_at: '2026-08-24 09:14:22',
+  records_count: 42765,
+  detected_currencies: ['INR'],
+  converted_inr_crores: 8066.86,
+  unique_items_count: 7357,
+  unique_vendors_count: 1073,
+  material_groups_count: 274,
+  plants_count: 24
+};
+
+const mockMaterialGroupsFixture = [
+  {
+    group_code: 'FERRO',
+    group_name: 'Ferro Alloys & Noble Metals (FERRO)',
+    primary_segment: '11101501',
+    records_count: 5200,
+    unique_items_count: 850,
+    unique_vendors_count: 42,
+    spend_inr_cr: 2540.5,
+    spend_usd_m: 303.16,
+    share_pct: 31.5,
+    sample_item: 'FERRO NICKEL 10-14'
+  },
+  {
+    group_code: 'SCRAP',
+    group_name: 'Stainless Steel & Melting Scrap (SCRAP)',
+    primary_segment: '11101502',
+    records_count: 4100,
+    unique_items_count: 620,
+    unique_vendors_count: 35,
+    spend_inr_cr: 1890.2,
+    spend_usd_m: 225.56,
+    share_pct: 23.4,
+    sample_item: 'SS 304 MELTING SCRAP'
+  }
+];
+
+const mockPlantsFixture = [
+  {
+    plant_code: '1000',
+    plant_name: 'Main Smelter & Steel Plant 1000',
+    location: 'Khopoli, Maharashtra',
+    region: 'West Region',
+    records_count: 14500,
+    unique_items_count: 2400,
+    unique_vendors_count: 380,
+    spend_inr_cr: 3450.8,
+    spend_usd_m: 411.79,
+    share_pct: 42.8,
+    active_vendors_count: 380,
+    primary_material_group: 'FERRO'
+  },
+  {
+    plant_code: '2000',
+    plant_name: 'Secondary Finishing Plant 2000',
+    location: 'Jamshedpur, Jharkhand',
+    region: 'East Region',
+    records_count: 9800,
+    unique_items_count: 1650,
+    unique_vendors_count: 210,
+    spend_inr_cr: 1796.56,
+    spend_usd_m: 214.39,
+    share_pct: 22.3,
+    active_vendors_count: 210,
+    primary_material_group: 'SCRAP'
+  }
+];
+
+const mockMonthsFixture = [
+  {
+    month_key: '2023-04',
+    month_label: 'Apr 2023',
+    fiscal_year: 'FY24',
+    spend_inr_cr: 220.5,
+    spend_usd_m: 26.31,
+    mom_change_pct: 4.2,
+    records_count: 1200,
+    po_count: 310,
+    unique_items_count: 450,
+    unique_vendors_count: 95,
+    top_material_group: 'FERRO',
+    top_plant: '1000'
+  }
+];
+
 describe('DocumentSummaryView Component', () => {
   const defaultProps = {
     tenant: mockTenant,
-    ingestionQueue: initialIngestionQueue,
+    ingestionQueue: [mockIngestionItem],
+    materialGroupSummaries: mockMaterialGroupsFixture,
+    plantSummaries: mockPlantsFixture,
+    monthWiseSummaries: mockMonthsFixture,
     onNavigateToCategorization: vi.fn()
   };
 
@@ -124,14 +220,11 @@ describe('DocumentSummaryView Component', () => {
     expect(screen.getByText('Ferro Alloys & Noble Metals (FERRO)')).toBeInTheDocument();
   });
 
-  it('triggers onNavigateToCategorization when action button is clicked', () => {
+  it('does not render View Category & Vendor Spend Analysis button (hidden as requested)', () => {
     const onNavigate = vi.fn();
     render(<DocumentSummaryView {...defaultProps} onNavigateToCategorization={onNavigate} />);
 
-    const proceedBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') });
-    fireEvent.click(proceedBtn);
-
-    expect(onNavigate).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') })).not.toBeInTheDocument();
   });
 
   it('renders with custom dynamic summaries passed via props', () => {
@@ -232,7 +325,7 @@ describe('DocumentSummaryView Component', () => {
     render(<DocumentSummaryView tenant={undefined} />);
     const usdBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.currencies.usd });
     fireEvent.click(usdBtn);
-    expect(screen.getAllByText('$9626.32 M').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('$0.00 M').length).toBeGreaterThanOrEqual(1);
   });
 
   it('filters and displays USD currency in Plant view and handles empty plant search', () => {
@@ -245,7 +338,7 @@ describe('DocumentSummaryView Component', () => {
     // Switch to USD
     const usdBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.currencies.usd });
     fireEvent.click(usdBtn);
-    expect(screen.getAllByText('$1796.56 M').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/\$214\.39\s*M/).length).toBeGreaterThanOrEqual(1);
 
     // Search plant by location / region
     const searchInput = screen.getByPlaceholderText(UI_STRINGS.documentSummary.plant.searchPlaceholder);
@@ -269,7 +362,7 @@ describe('DocumentSummaryView Component', () => {
     fireEvent.click(usdBtn);
 
     // Check USD month values rendered for Apr 2023
-    expect(screen.getAllByText('$248.11 M').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$26\.31\s*M/).length).toBeGreaterThan(0);
 
     // Search month
     const searchInput = screen.getByPlaceholderText(UI_STRINGS.documentSummary.month.searchPlaceholder);
@@ -375,7 +468,41 @@ describe('DocumentSummaryView Component', () => {
   });
 
   it('renders reconciliation scope banners, toggles between Top 10 and All for Plant and Material Group', () => {
-    render(<DocumentSummaryView {...defaultProps} />);
+    const testMgs = Array.from({ length: 15 }, (_, i) => ({
+      group_code: `MG${i + 1}`,
+      group_name: `Material Group ${i + 1}`,
+      primary_segment: `SEG${i + 1}`,
+      records_count: 100,
+      unique_items_count: 20,
+      unique_vendors_count: 5,
+      spend_inr_cr: 100,
+      spend_usd_m: 12,
+      share_pct: 6.6,
+      sample_item: `Item ${i + 1}`
+    }));
+
+    const testPlants = Array.from({ length: 24 }, (_, i) => ({
+      plant_code: `P${i + 1}`,
+      plant_name: `Plant Facility ${i + 1}`,
+      location: `City ${i + 1}`,
+      region: 'North',
+      records_count: 100,
+      unique_items_count: 20,
+      unique_vendors_count: 5,
+      spend_inr_cr: 100,
+      spend_usd_m: 12,
+      share_pct: 4.1,
+      active_vendors_count: 5,
+      primary_material_group: 'MG1'
+    }));
+
+    render(
+      <DocumentSummaryView
+        {...defaultProps}
+        materialGroupSummaries={testMgs}
+        plantSummaries={testPlants}
+      />
+    );
 
     // Material Group scope banner is rendered
     expect(screen.getByText(UI_STRINGS.documentSummary.reconciliation.mgScopeHeading)).toBeInTheDocument();

@@ -35,9 +35,12 @@ export interface HeaderProps {
   onSelectTheme: (theme: 'light' | 'dark') => void;
   onStartAnalysis?: () => void;
   isAnalyzing?: boolean;
+  currentUser?: UserProfile | null;
   currentTier?: SubscriptionTier;
   onSelectSimulatedTier?: (tier: SubscriptionTier | null) => void;
   user?: UserProfile | null;
+  onLogout?: () => void;
+  onOpenClientSetup?: () => void;
   onContactSupport?: () => void;
 }
 
@@ -46,6 +49,10 @@ export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 
 export interface PipelineBarProps {
   activeTab: PipelineActiveTab;
   onSelectTab: (tab: PipelineActiveTab) => void;
+  tenant?: TenantMaster;
+  opportunities?: SavingsOpportunity[];
+  ingestionQueue?: RawDocumentIngestion[];
+  totalSpendCr?: number;
 }
 
 export type DatabaseSchemaViewProps = Record<string, never>;
@@ -59,6 +66,7 @@ export interface Module1IngestionProps {
   onFixCurrency: (record: ValidationPreCheckRecord) => void;
   onMergeVendor: (record: ValidationPreCheckRecord) => void;
   onMergeItem?: (record: ValidationPreCheckRecord) => void;
+  onDeleteDocument?: (docId?: string) => void;
   onApplyBlanketFixes?: () => void;
   onResetValidationRecords?: () => void;
   onRunAICategorization: () => void;
@@ -71,6 +79,7 @@ export interface Module1IngestionProps {
   isDataRefreshed?: boolean;
   paretoSpendData?: ParetoSpendData;
   onRefreshWithFixes?: () => void;
+  rawUploadRecords?: Record<string, unknown>[] | unknown;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
 }
@@ -128,6 +137,9 @@ export interface Module5ConversionMatrixProps {
   onUpgrade?: (tier: SubscriptionTier) => void;
 }
 
+export interface SummaryScopeModeEnum {
+  mode: 'TOP_10' | 'ALL';
+}
 export type SummaryScopeMode = 'TOP_10' | 'ALL';
 
 export interface DocumentSummaryViewProps {
@@ -150,6 +162,11 @@ export interface MonthWiseTrendChartProps {
   viewMode: MonthGraphViewMode;
   onChangeViewMode: (mode: MonthGraphViewMode) => void;
   searchQuery?: string;
+}
+
+export interface PlantWiseSpendChartProps {
+  plants: PlantSummary[];
+  spendCurrency: DocumentSpendCurrency;
 }
 
 export interface MultiYearLineGraphProps {
@@ -304,6 +321,7 @@ export interface IngestionUploadSectionProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   totalEvaluatedSpendInrCr: number;
   onOpenSetupModal?: () => void;
+  onDeleteDocument?: (docId?: string) => void;
 }
 
 export interface LoginBenefitsShowcaseProps {

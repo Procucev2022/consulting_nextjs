@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 import { UI_STRINGS, AICEV_LOGO_SRC } from '../../constants';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
@@ -20,6 +21,11 @@ export default function LoginPage(): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Password Visibility States
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
 
   // Login Form State
   const [loginForm, setLoginForm] = useState<LoginFormData>({
@@ -95,12 +101,6 @@ export default function LoginPage(): React.ReactElement {
     } finally {
       setLoading(false);
     }
-  };
-
-  const setQuickLogin = (email: string, pass: string): void => {
-    setActiveTab('LOGIN');
-    setLoginForm({ email, password: pass });
-    setErrorMessage(null);
   };
 
   return (
@@ -278,6 +278,7 @@ export default function LoginPage(): React.ReactElement {
               <input
                 id="login-email"
                 type="email"
+                autoComplete="email"
                 required
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
@@ -302,25 +303,49 @@ export default function LoginPage(): React.ReactElement {
               }}>
                 {UI_STRINGS.auth.passwordLabel}
               </label>
-              <input
-                id="login-password"
-                type="password"
-                required
-                value={loginForm.password}
-                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                placeholder={UI_STRINGS.auth.passwordPlaceholder}
-                style={{
-                  width: '100%',
-                  padding: '11px 14px',
-                  backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                  border: '1px solid rgba(148, 163, 184, 0.25)',
-                  borderRadius: '8px',
-                  color: '#f8fafc',
-                  fontSize: '14px',
-                  outline: 'none',
-                  boxSizing: 'border-box'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="login-password"
+                  type={showLoginPassword ? 'text' : 'password'}
+                  required
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  placeholder={UI_STRINGS.auth.passwordPlaceholder}
+                  style={{
+                    width: '100%',
+                    padding: '11px 40px 11px 14px',
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                    border: '1px solid rgba(148, 163, 184, 0.25)',
+                    borderRadius: '8px',
+                    color: '#f8fafc',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                  title={showLoginPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#94a3b8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px'
+                  }}
+                >
+                  {showLoginPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -495,25 +520,49 @@ export default function LoginPage(): React.ReactElement {
                 }}>
                   {UI_STRINGS.auth.passwordLabel} *
                 </label>
-                <input
-                  id="reg-password"
-                  type="password"
-                  required
-                  value={registerForm.password}
-                  onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                  placeholder={UI_STRINGS.auth.passwordPlaceholder}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(148, 163, 184, 0.25)',
-                    borderRadius: '8px',
-                    color: '#f8fafc',
-                    fontSize: '13px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="reg-password"
+                    type={showRegisterPassword ? 'text' : 'password'}
+                    required
+                    value={registerForm.password}
+                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                    placeholder={UI_STRINGS.auth.passwordPlaceholder}
+                    style={{
+                      width: '100%',
+                      padding: '10px 36px 10px 12px',
+                      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(148, 163, 184, 0.25)',
+                      borderRadius: '8px',
+                      color: '#f8fafc',
+                      fontSize: '13px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                    aria-label={showRegisterPassword ? 'Hide password' : 'Show password'}
+                    title={showRegisterPassword ? 'Hide password' : 'Show password'}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px'
+                    }}
+                  >
+                    {showRegisterPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -522,25 +571,49 @@ export default function LoginPage(): React.ReactElement {
                 }}>
                   {UI_STRINGS.auth.confirmPasswordLabel} *
                 </label>
-                <input
-                  id="reg-confirm-password"
-                  type="password"
-                  required
-                  value={registerForm.confirm_password}
-                  onChange={(e) => setRegisterForm({ ...registerForm, confirm_password: e.target.value })}
-                  placeholder={UI_STRINGS.auth.confirmPasswordPlaceholder}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
-                    border: '1px solid rgba(148, 163, 184, 0.25)',
-                    borderRadius: '8px',
-                    color: '#f8fafc',
-                    fontSize: '13px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="reg-confirm-password"
+                    type={showRegisterConfirmPassword ? 'text' : 'password'}
+                    required
+                    value={registerForm.confirm_password}
+                    onChange={(e) => setRegisterForm({ ...registerForm, confirm_password: e.target.value })}
+                    placeholder={UI_STRINGS.auth.confirmPasswordPlaceholder}
+                    style={{
+                      width: '100%',
+                      padding: '10px 36px 10px 12px',
+                      backgroundColor: 'rgba(15, 23, 42, 0.6)',
+                      border: '1px solid rgba(148, 163, 184, 0.25)',
+                      borderRadius: '8px',
+                      color: '#f8fafc',
+                      fontSize: '13px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisterConfirmPassword(!showRegisterConfirmPassword)}
+                    aria-label={showRegisterConfirmPassword ? 'Hide password' : 'Show password'}
+                    title={showRegisterConfirmPassword ? 'Hide password' : 'Show password'}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '4px'
+                    }}
+                  >
+                    {showRegisterConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -567,51 +640,6 @@ export default function LoginPage(): React.ReactElement {
             </button>
           </form>
         )}
-
-        {/* Quick Test Logins Section */}
-        <div style={{
-          marginTop: '24px',
-          paddingTop: '20px',
-          borderTop: '1px solid rgba(148, 163, 184, 0.15)'
-        }}>
-          <p style={{ margin: '0 0 10px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {UI_STRINGS.auth.quickTestLogins}
-          </p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              id="quick-login-admin"
-              onClick={() => setQuickLogin('admin@procucev.com', 'Admin@123456')}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                borderRadius: '6px',
-                color: '#38bdf8',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              {UI_STRINGS.auth.quickAdmin}
-            </button>
-            <button
-              type="button"
-              id="quick-login-user"
-              onClick={() => setQuickLogin('srinivas@apexindustrial.com', 'User@123456')}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                border: '1px solid rgba(168, 85, 247, 0.3)',
-                borderRadius: '6px',
-                color: '#c084fc',
-                fontSize: '12px',
-                cursor: 'pointer'
-              }}
-            >
-              {UI_STRINGS.auth.quickUser}
-            </button>
-          </div>
-        </div>
       </div>
       </div>
     </div>

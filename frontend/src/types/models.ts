@@ -16,12 +16,12 @@ export interface TenantMaster {
 
 export interface RawDocumentIngestion {
   doc_id: string;
-  tenant_id: string;
+  tenant_id?: string;
   file_name: string;
-  file_type: 'PDF' | 'XLSX' | 'CSV' | 'XML' | 'ZIP';
+  file_type: 'PDF' | 'XLSX' | 'CSV' | 'XML' | 'ZIP' | string;
   file_size_mb: number;
-  ocr_status: 'Completed' | 'Parsing OCR' | 'Pending' | 'Error';
-  progress: number;
+  ocr_status: 'Completed' | 'Parsing OCR' | 'Pending' | 'Error' | string;
+  progress?: number;
   uploaded_at: string;
   records_count: number;
   detected_currencies?: string[];
@@ -30,6 +30,7 @@ export interface RawDocumentIngestion {
   unique_vendors_count?: number;
   material_groups_count?: number;
   plants_count?: number;
+  source_origin?: string;
 }
 
 export type ValidationIssueCategory = 'CONVERSION' | 'VENDOR_DUPLICATION' | 'ITEM_DUPLICATION' | 'CLEAN';
@@ -49,8 +50,10 @@ export interface ValidationPreCheckRecord {
   raw_desc: string;
   order_quantity?: number; // Order Quantity (Q)
   net_price?: number;      // Net Price (P)
+  unit_price?: number;
   subtotal_raw?: number;   // Q * P in original currency
-  amount: number;          // Total original currency amount (Q * P)
+  amount?: number;         // Total original currency amount (Q * P)
+  spend_inr?: number;
   raw_currency?: string;
   amount_inr?: number;     // Q * P * Currency in INR
   inr_crores?: number;     // (Q * P * Currency in INR) / 10,000,000
@@ -59,29 +62,31 @@ export interface ValidationPreCheckRecord {
   spend_year?: number;
   transaction_date?: string;
   column_l_code?: string;
-  core_category?: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
+  core_category?: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight' | string;
   issue_flag:
     | 'Missing Currency Code'
     | 'Unmapped Supplier Name'
     | 'Duplicate Item Description'
     | 'Passed Clean'
     | 'Duplicate PO'
-    | 'Tax Discrepancy';
+    | 'Tax Discrepancy'
+    | string;
   issue_category?: ValidationIssueCategory;
-  action_status: 'Fix (INR)' | 'Merge Vendor' | 'Merge Item' | 'Ready' | 'Resolved' | 'Reviewed';
-  resolved: boolean;
+  action_status?: 'Fix (INR)' | 'Merge Vendor' | 'Merge Item' | 'Ready' | 'Resolved' | 'Reviewed' | string;
+  resolved?: boolean;
   duplicate_target_id?: string;
 }
 
 export interface SpendCategorySummary {
   id: string;
-  name: string;
-  spend: number;
+  name?: string;
+  category?: string;
+  spend?: number;
   spend_inr?: number;
   spend_inr_crores?: number;
-  targetReductionPct: number;
-  lineItemsCount: number;
-  color: string;
+  targetReductionPct?: number;
+  lineItemsCount?: number;
+  color?: string;
   column_l_code?: string;
   spend_2023?: number;
   spend_2024?: number;
@@ -89,6 +94,16 @@ export interface SpendCategorySummary {
   spend_inr_2023?: number;
   spend_inr_2024?: number;
   spend_inr_2025_26?: number;
+  total_3yr_spend_inr_cr?: number;
+  spend_fy24_cr?: number;
+  spend_fy25_cr?: number;
+  spend_fy26_cr?: number;
+  three_year_cagr?: number;
+  supplier_count?: number;
+  major_suppliers?: string[];
+  sample_column_l_code?: string;
+  sample_column_l_title?: string;
+  top_items?: CategoryTopItem[];
 }
 
 export interface BalanceCategoryItem {
@@ -99,21 +114,28 @@ export interface BalanceCategoryItem {
 }
 
 export interface CategoryTopItem {
-  item_id: string;
-  item_desc: string;
-  column_l_code: string;
-  vendor_name: string;
-  po_number: string;
-  unit_of_measure: string;
-  raw_currency: string;
-  order_qty_annual: number;
-  price_fy24: number; // Unit Price in FY24 (1 Apr 2023 - 31 Mar 2024)
-  price_fy25: number; // Unit Price in FY25 (1 Apr 2024 - 31 Mar 2025)
-  price_fy26: number; // Unit Price in FY26 (1 Apr 2025 - 31 Mar 2026)
-  fx_rate_applied: number;
-  total_spend_inr_cr: number; // Sum of Q * P * FX across 3 yrs in ₹ Cr
-  price_change_pct: number; // 3-yr price variance %
-  trend_direction: 'INCREASING' | 'DECREASING' | 'STABLE';
+  item_id?: string;
+  item_name?: string;
+  name?: string;
+  item_desc?: string;
+  description?: string;
+  column_l_code?: string;
+  vendor_name?: string;
+  po_number?: string;
+  unit_of_measure?: string;
+  unit?: string;
+  raw_currency?: string;
+  order_qty_annual?: number;
+  volume?: number;
+  price_fy24?: number; // Unit Price in FY24 (1 Apr 2023 - 31 Mar 2024)
+  price_fy25?: number; // Unit Price in FY25 (1 Apr 2024 - 31 Mar 2025)
+  price_fy26?: number; // Unit Price in FY26 (1 Apr 2025 - 31 Mar 2026)
+  fx_rate_applied?: number;
+  spend_inr_cr?: number;
+  total_spend_inr_cr?: number; // Sum of Q * P * FX across 3 yrs in ₹ Cr
+  share_pct?: number;
+  price_change_pct?: number; // 3-yr price variance %
+  trend_direction?: 'INCREASING' | 'DECREASING' | 'STABLE' | string;
   leakage_flag?: string;
   opportunity_potential_inr_lakhs?: number;
 }
@@ -122,25 +144,28 @@ export interface CategoryYearDetail {
   id?: string;
   rank?: number;
   category: string;
-  core_bucket?: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight' | 'Other Balance';
-  sample_column_l_code: string;
-  sample_column_l_title: string;
+  core_bucket?: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight' | 'Other Balance' | string;
+  sample_column_l_code?: string;
+  sample_column_l_title?: string;
   class_title?: string;
   commodity_title?: string;
   spend_2023?: number;
   spend_2024?: number;
   spend_2025_26?: number;
   total_3yr_spend?: number;
-  spend_inr_2023_cr: number;
-  spend_inr_2024_cr: number;
-  spend_inr_2025_26_cr: number;
+  spend_inr_2023_cr?: number;
+  spend_inr_2024_cr?: number;
+  spend_inr_2025_26_cr?: number;
   spend_fy24_cr?: number; // FY24 (1 Apr 2023 - 31 Mar 2024)
   spend_fy25_cr?: number; // FY25 (1 Apr 2024 - 31 Mar 2025)
   spend_fy26_cr?: number; // FY26 (1 Apr 2025 - 31 Mar 2026)
   total_3yr_spend_inr_cr: number;
-  yoy_growth_pct: number;
-  line_items_count: number;
-  color: string;
+  yoy_growth_pct?: number;
+  line_items_count?: number;
+  item_count?: number;
+  vendor_count?: number;
+  color?: string;
+  spend_share_pct?: number;
   is_balance_category?: boolean;
   balance_items?: BalanceCategoryItem[];
   top_items?: CategoryTopItem[];
@@ -159,21 +184,27 @@ export interface VendorYearDetail {
   id: string;
   rank?: number;
   vendor_name: string;
-  master_vendor_id: string;
+  master_vendor_id?: string;
   primary_category: string;
-  sample_column_l_code: string;
-  sample_column_l_title: string;
+  sample_column_l_code?: string;
+  sample_column_l_title?: string;
   spend_fy24_cr: number; // 1 Apr 2023 - 31 Mar 2024
   spend_fy25_cr: number; // 1 Apr 2024 - 31 Mar 2025
   spend_fy26_cr: number; // 1 Apr 2025 - 31 Mar 2026
+  spend_inr_2023_cr?: number;
+  spend_inr_2024_cr?: number;
+  spend_inr_2025_26_cr?: number;
   total_3yr_spend_inr_cr: number;
-  yoy_growth_pct: number;
-  line_items_count: number;
-  color: string;
-  risk_status?: 'HIGH CREEP' | 'REVIEW' | 'ALIGNED' | 'FAVORABLE';
+  yoy_growth_pct?: number;
+  line_items_count?: number;
+  item_count?: number;
+  color?: string;
+  risk_status?: 'HIGH CREEP' | 'REVIEW' | 'ALIGNED' | 'FAVORABLE' | string;
   price_creep_pct?: number;
+  spend_share_pct?: number;
   is_balance_vendor?: boolean;
   balance_vendors?: BalanceVendorItem[];
+  balance_items?: BalanceCategoryItem[];
   top_items?: CategoryTopItem[];
 }
 
@@ -189,9 +220,9 @@ export interface LineItemMapping {
   unspsc_category_name: string;
   unspsc_commodity_title?: string;
   unspsc_class_title?: string;
-  core_bucket: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
+  core_bucket: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight' | string;
   ai_confidence: number;
-  status: 'Confirmed' | 'Pending Review' | 'Re-Assigned';
+  status: 'Confirmed' | 'Pending Review' | 'Re-Assigned' | string;
   unit_price: number;
   qty: number;
   total_spend: number;
@@ -203,97 +234,124 @@ export interface LineItemMapping {
   spend_year?: number;
   po_number: string;
   industry_sector?: string;
-  sector_relevance?: 'CORE_DIRECT' | 'CRITICAL_PACKAGING' | 'SECTOR_LOGISTICS' | 'GENERAL_MRO' | 'CROSS_DOMAIN';
+  sector_relevance?: 'CORE_DIRECT' | 'CRITICAL_PACKAGING' | 'SECTOR_LOGISTICS' | 'GENERAL_MRO' | 'CROSS_DOMAIN' | string;
   sector_alignment_score?: number;
 }
 
 export interface VendorPriceRank {
   vendor_name: string;
-  master_id: string;
-  category: 'Direct Mat.' | 'Packaging' | 'Freight' | 'Indirect / MRO';
-  price_creep_pct: number;
-  total_spend: number;
+  master_id?: string;
+  vendor_id?: string;
+  category: 'Direct Mat.' | 'Packaging' | 'Freight' | 'Indirect / MRO' | string;
+  price_creep_pct?: number;
+  total_spend?: number;
   total_spend_inr_cr?: number;
-  risk_status: 'HIGH CREEP' | 'REVIEW' | 'ALIGNED' | 'FAVORABLE';
-  variance_leakage_usd: number;
+  risk_status?: 'HIGH CREEP' | 'REVIEW' | 'ALIGNED' | 'FAVORABLE' | string;
+  risk_level?: 'High' | 'Medium' | 'Low' | string;
+  variance_leakage_usd?: number;
   variance_leakage_inr_cr?: number;
-  benchmark_index: string;
-  last_36mo_trend: number[];
+  benchmark_index?: string;
+  last_36mo_trend?: number[];
+  audit_flag?: string;
 }
 
 export interface SavingsOpportunity {
   opp_id: string;
-  category: 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
-  title: string;
-  current_spend: number;
+  category: string;
+  title?: string;
+  current_spend?: number;
   current_spend_inr_cr?: number;
-  target_savings_pct: number;
-  est_savings: number;
+  current_spend_usd?: number;
+  baseline_spend_inr_cr?: number;
+  target_savings_pct?: number;
+  est_savings?: number;
   est_savings_inr_cr?: number;
-  recommended_action: string;
-  push_to_module: 'proCPX' | 'DPS NXT';
-  status: 'Identified' | 'Pushed to proCPX' | 'Pushed to DPS NXT' | 'Executed';
-  risk_level: 'Low' | 'Medium' | 'High';
-  contract_leak_type: string;
+  estimated_savings_inr_cr?: number;
+  estimated_savings_usd?: number;
+  savings_percentage?: number;
+  lever?: string;
+  recommended_action?: string;
+  push_to_module?: 'proCPX' | 'DPS NXT' | string;
+  recommended_module?: 'proCPX' | 'DPS NXT' | string;
+  status?: string;
+  risk_level?: 'Low' | 'Medium' | 'High' | string;
+  contract_leak_type?: string;
+  complexity?: 'Low' | 'Medium' | 'High' | string;
+  confidence_score?: number;
 }
 
 export interface ConversionFunnelPhase {
-  phase_num: 1 | 2 | 3;
+  phase_num: number;
   phase_name: string;
   platform_actionable_focus: string;
   value_outcome_delivered: string;
   commercial_lock_in_metric: string;
   completion_pct: number;
-  status: 'Completed' | 'In Progress' | 'Upcoming';
+  status: 'Completed' | 'In Progress' | 'Upcoming' | string;
+  spend_evaluated_cr?: number;
+  count_elements?: number;
+  percentage_leakage_identified?: number;
 }
 
 export interface MaterialGroupSummary {
   group_code: string;
   group_name: string;
-  records_count: number;
-  po_count: number;
-  spend_inr_cr: number;
-  spend_usd_m: number;
-  share_pct: number;
+  records_count?: number;
+  po_count?: number;
+  spend_inr_cr?: number;
+  spend_usd_m?: number;
+  share_pct?: number;
   primary_segment: string;
   sample_item?: string;
   unique_items_count?: number;
   unique_vendors_count?: number;
-  fy24_spend_inr_cr: number;
-  fy25_spend_inr_cr: number;
-  fy26_spend_inr_cr: number;
-  color: string;
+  fy24_spend_inr_cr?: number;
+  fy25_spend_inr_cr?: number;
+  fy26_spend_inr_cr?: number;
+  total_spend_inr_cr?: number;
+  spend_fy24_cr?: number;
+  spend_fy25_cr?: number;
+  spend_fy26_cr?: number;
+  three_year_cagr?: number;
+  item_count?: number;
+  top_supplier?: string;
+  active_vendors_count?: number;
+  color?: string;
 }
 
 export interface PlantSummary {
   plant_code: string;
   plant_name: string;
-  region: 'North' | 'South' | 'West' | 'East' | 'Central';
+  region: 'North' | 'South' | 'West' | 'East' | 'Central' | string;
   location: string;
-  po_count: number;
-  records_count: number;
+  po_count?: number;
+  total_po_count?: number;
+  records_count?: number;
   spend_inr_cr: number;
-  spend_usd_m: number;
+  spend_usd_m?: number;
   share_pct: number;
-  active_vendors_count: number;
+  active_vendors_count?: number;
   unique_items_count?: number;
   unique_vendors_count?: number;
-  primary_material_group: string;
+  primary_material_group?: string;
+  top_material_group?: string;
 }
 
 export interface MonthWiseSummary {
   month_key: string; // e.g. '2023-04'
   month_label: string; // e.g. 'Apr 2023'
-  fiscal_year: 'FY24' | 'FY25' | 'FY26';
+  fiscal_year: 'FY24' | 'FY25' | 'FY26' | string;
   spend_inr_cr: number;
-  spend_usd_m: number;
-  records_count: number;
+  spend_usd_m?: number;
+  records_count?: number;
   po_count: number;
+  line_items_count?: number;
+  vendors_count?: number;
   unique_items_count?: number;
   unique_vendors_count?: number;
   top_material_group: string;
   top_plant: string;
-  mom_change_pct: number;
+  mom_change_pct?: number;
 }
 
 export type DocumentSummaryDimension = 'MATERIAL_GROUP' | 'PLANT' | 'MONTH';
@@ -307,4 +365,3 @@ export interface ApiResponse<T> {
   message?: string;
   timestamp: string;
 }
-

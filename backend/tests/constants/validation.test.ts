@@ -302,7 +302,9 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
 
     it('should validate loginUserSchema', () => {
       expect(loginUserSchema.safeParse({ email: 'valid@test.com', password: 'pass' }).success).toBe(true);
-      expect(loginUserSchema.safeParse({ email: 'bad-email', password: 'pass' }).success).toBe(false);
+      expect(loginUserSchema.safeParse({ email: 'BUYER-101', password: 'pass' }).success).toBe(true);
+      expect(loginUserSchema.safeParse({ email: '', password: 'pass' }).success).toBe(false);
+      expect(loginUserSchema.safeParse({ email: 'valid@test.com', password: '' }).success).toBe(false);
     });
 
     it('should validate adminUserQuerySchema with and without tier filter', () => {

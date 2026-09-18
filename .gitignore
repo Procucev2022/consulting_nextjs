@@ -44,5 +44,6 @@ logs/
 test-results.json
 **/test-results.json
 pr-summary.md
-
-
+# Local storage
+storage/
+**/storage/

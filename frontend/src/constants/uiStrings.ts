@@ -51,9 +51,9 @@ export const UI_STRINGS = {
     docRefValue: 'FRD-PRC-2026-V2',
     docRef: (ref: string) => `DOC REF: ${ref}`,
     authorLabel: 'Author:',
-    authorName: 'Srinivas Mukku',
-    authorRole: 'Co-Founder & CEO',
-    authorFull: 'Author: Srinivas Mukku (Co-Founder & CEO)',
+    authorName: 'Guest User',
+    authorRole: 'Procurement Lead',
+    authorFull: 'Author: Procurement Lead',
     authorFormatted: (name: string, role: string) => `Author: ${name} (${role})`,
     baseCurrencyNote: 'Base Currency: INR in Crores (₹ Cr) | Multi-Currency Live FX',
     slaText: 'SLA: <800ms Query',
@@ -82,11 +82,12 @@ export const UI_STRINGS = {
     inrCroresSymbol: '₹ Cr',
     subtitle: 'Tech Enabled Strategic Sourcing Suite',
     securityBadge: 'SOC2 Type II / AES-256',
+    dpsVerified: 'DPS Verified',
     userProfile: {
       menuButtonTitle: 'User Profile & Settings Menu',
-      defaultName: 'Srinivas Mukku',
-      defaultRole: 'Co-Founder & CEO',
-      defaultEmail: 'srinivas.mukku@procucev.com',
+      defaultName: 'Guest User',
+      defaultRole: 'Guest',
+      defaultEmail: 'Sign in to access account',
       userDetailsTitle: 'Account & Subscription',
       switchTierTitle: 'Simulate Subscription Tier',
       currencyTitle: 'Display Currency',
@@ -247,7 +248,7 @@ export const UI_STRINGS = {
   module1: {
     title: 'Multi-ERP Ingestion & Normalization Engine',
     subtitle: 'SAP, Oracle & Infor Ingestion Pipeline with Pre-Categorization Remediation',
-    badge: 'Module 1: Document Ingestion & Multi-Currency ETL',
+    badge: 'Data Ingestion & Multi-Currency ETL',
     fxEngineActive: 'Multi-Currency FX Engine Active',
     multiCurrencyActive: 'Multi-Currency FX Engine Active',
     liveFxRatesLabel: 'Live FX Benchmark Conversion Rates to INR:',
@@ -581,7 +582,7 @@ export const UI_STRINGS = {
   module2: {
     title: '4-Tier UNSPSC Taxonomy & AI Classification Engine',
     subtitle: 'Segment > Family > Class > Commodity Auto-Categorization with Confidence Scoring',
-    badge: 'Module 2: AI Categorization & Taxonomy Mapping (FR-CAT-01, FR-CAT-02)',
+    badge: 'AI Categorization & UNSPSC Taxonomy Mapping',
     valuationBadge: 'INR in Crores (₹ Cr) & Column L Taxonomy',
     heading: 'AI Taxonomy Classification & Spend Year Valuation (INR Crores)',
     descriptionPrefix: 'Multi-year spend categorization by value based on ',
@@ -662,7 +663,7 @@ export const UI_STRINGS = {
     matrixDesc: 'Annual spend progression in INR Crores (Fiscal Year: 1st April to 31st March), line item counts, and target reduction % mapped to Column L taxonomy.',
     tabCategoryMatrix: 'Year-Wise Category Spend Matrix & Column L Benchmarks',
     tabVendorSupply: 'Top 50 Vendors (Supply Categorization & Risk Trend)',
-    totalEvaluated: (amount: number) => `Total Evaluated: ₹${amount.toFixed(2)} Cr`,
+    totalEvaluated: (amount: number) => `Total Evaluated: ₹${Number(amount || 0).toFixed(2)} Cr`,
     vendorSupply: {
       sectionTitle: 'Top 50 Vendors Supply Categorization & Spend Distribution',
       sectionDesc: 'Categorization of top 50 vendors based on material supply categories, tracking multi-category supplier dominance in higher spend tiers.',
@@ -933,7 +934,7 @@ export const UI_STRINGS = {
   module3: {
     title: 'Price Creep & Volatility Leakage Analytics',
     subtitle: 'Quarter-over-quarter vendor unit price creep, contract variance, and EBITDA leakage',
-    badge: 'Module 3: 36-Month Trend & Material Volatility Analysis (FR-TRD-01, FR-TRD-02)',
+    badge: '36-Month Spend Trend & Material Volatility Analysis',
     valuationBadge: 'INR Crores Valuation',
     heading: 'Historical Spend & Commodity Volatility Analytics',
     description: 'Isolating true raw material market deflation from unapproved supplier price markups across a 36-month timeline in INR Crores (₹ Cr).',
@@ -997,13 +998,13 @@ export const UI_STRINGS = {
     volatilityIndex: (idx: number) => `Volatility Index: ${idx}`,
     priceCreepPct: (pct: number) => `+${pct}% Creep`,
     leakageAmount: (amt: string) => `${amt} Leakage`,
-    proceedToSavings: 'Proceed to Stage 4: Opportunity Engine & Modules'
+    proceedToSavings: 'Proceed to Real-Time Savings Engine'
   },
 
   module4: {
     title: 'Savings Opportunity Engine & Specialized Modules',
     subtitle: 'ProCPX (Rate Contract Enforcement) & DPS NXT (Strategic Sourcing Auctions)',
-    badge: 'Module 4: Real-Time Savings Engine & Optimization Targets',
+    badge: 'Real-Time Savings Engine & Optimization Targets',
     frRef: 'FR-SAV-01, FR-SAV-02',
     heading: 'Savings Engine Dashboard & Suite Integration (INR in Crores)',
     description: 'Real-time opportunity quantification denominated in INR Crores (₹ Cr) with native execution export into proCPX (e-sourcing) and DPS NXT (contract rate cards).',
@@ -1126,7 +1127,7 @@ export const UI_STRINGS = {
         badge: '> 5 Vendors / Recurring',
         lever: 'Volume Aggregation via Dynamic Multi-Round Reverse e-Auctions',
         executionPlatform: 'DPS NXT Sourcing Hub',
-        navLabel: 'Module 2: Vendor Consolidation'
+        navLabel: 'Vendor Consolidation & Rationalization'
       },
       poConsolidation: {
         title: 'Multiple Monthly PO Consolidation & Economies of Scale',
@@ -1134,7 +1135,7 @@ export const UI_STRINGS = {
         badge: 'Multi-PO / Spot Consolidation',
         lever: 'Annual Master Blanket Agreements (SAP ME31K) & Bulk Rolling',
         executionPlatform: 'proCPX Rate Contracts',
-        navLabel: 'Module 2: PO Consolidation'
+        navLabel: 'PO Consolidation & Volume Pooling'
       },
       strategicSingleVendor: {
         title: 'Strategic Single/Dominant Vendor Risk & Dual-Sourcing',
@@ -1142,7 +1143,7 @@ export const UI_STRINGS = {
         badge: 'Sole-Source & Dominant (>90%)',
         lever: 'Competitive Dual-Sourcing Quota Allocation & LME Collar Mechanism',
         executionPlatform: 'proCPX Sourcing RFP',
-        navLabel: 'Module 2: Strategic Vendor Risk'
+        navLabel: 'Strategic Vendor Risk Matrix'
       },
       vendorSupplyRationalization: {
         title: 'Vendor Material Supply Rationalization & Tail Cleanup',
@@ -1150,7 +1151,7 @@ export const UI_STRINGS = {
         badge: 'Multi vs Single Category',
         lever: 'Non-Core Tail Exclusion & Direct OEM Sourcing Alignment',
         executionPlatform: 'Supplier Segmentation',
-        navLabel: 'Module 2: Vendor Supply Matrix'
+        navLabel: 'Vendor Supply & Sourcing Matrix'
       },
       categorySavingsPipeline: {
         title: 'UNSPSC Category Specification & Price Creep Pipeline',
@@ -1158,7 +1159,7 @@ export const UI_STRINGS = {
         badge: 'Category Optimization',
         lever: 'Dynamic Index Pegging, Master Catalogs & Route Standardization',
         executionPlatform: 'proCPX & DPS NXT Suite',
-        navLabel: 'Module 4: Savings Pipeline Table'
+        navLabel: 'Savings Opportunity Pipeline Table'
       }
     }
   },
@@ -1166,7 +1167,7 @@ export const UI_STRINGS = {
   module5: {
     title: 'Client Sign-Off & EBITDA Savings Conversion Matrix',
     subtitle: 'Adjust realization probability sliders, simulate lock-in, and generate final client deliverable',
-    badge: 'Screen 5: Executive Conversion Matrix & Commercial SaaS Portal',
+    badge: 'Executive Conversion Matrix & Commercial SaaS Portal',
     badgeSubtitle: 'Advisory-to-SaaS Value Lifecycle',
     heading: 'Commercial Realization & SaaS Lock-in Matrix (FR-MTRX-01, FR-MTRX-02)',
     generateExecutiveReport: 'Generate Executive Brief',
@@ -1231,10 +1232,10 @@ export const UI_STRINGS = {
       title: 'Client & Dataset Ingestion Setup',
       subtitle: 'Define ERP data source profile, fiscal year parameters, and base currency',
       stepBadge: 'Step 1: Multi-Currency Setup (INR in Crores)',
-      moduleBadge: 'Module 1 (3-Year Intake)',
+      moduleBadge: 'Data Ingestion (3-Year Intake)',
       enterpriseClientName: 'Enterprise Client Name',
       clientName: 'Client / Enterprise Name',
-      clientPlaceholder: 'e.g. Apex Industrial Dynamics (Fortune 500)',
+      clientPlaceholder: 'e.g. Enterprise Client (Fortune 500)',
       quickSelect: 'Quick Select:',
       selectDatasetType: 'Select Ingestion Dataset Type',
       datasetType: 'Dataset Type',
@@ -1417,9 +1418,9 @@ export const UI_STRINGS = {
       activeLineItems: 'Active Line Items',
       contractedItems: 'Contracted Items',
       priceCreepRiskItems: 'Price Creep Risk Items',
-      itemsCount: (count: number) => `${count} Items`,
-      lineItemsCount: (count: number) => `${count.toLocaleString()} Line Items`,
-      activeItemsCount: (count: number) => `${count.toLocaleString()} Items`,
+      itemsCount: (count: number) => `${count || 0} Items`,
+      lineItemsCount: (count: number) => `${(count || 0).toLocaleString()} Line Items`,
+      activeItemsCount: (count: number) => `${(count || 0).toLocaleString()} Items`,
       quantifiedSavingsPotential: 'Quantified Savings Potential',
       negotiationOpportunity: 'Negotiation Opportunity',
       highCreepBadge: '(▲ >15%)',
@@ -1595,6 +1596,7 @@ export const UI_STRINGS = {
     taxonomyReassigned: (code: string, bucket: string) => `Taxonomy re-assigned to UNSPSC ${code} (${bucket}).`,
     issueIgnored: (recordId: string) => `Validation anomaly for Record ${recordId} ignored and retained as reviewed.`,
     refreshedFinalNumbers: 'Dataset refreshed with fixes: All final spend totals, clean records, and multi-year summaries recalculated!',
+    clientConfigUpdated: (name: string) => `Client configuration updated for ${name}. Ingestion pipeline re-initialized.`,
     navigatingToInitiativeSection: (sectionName: string) => `Navigating to ${sectionName} detailed review area...`
   },
 
@@ -2016,7 +2018,7 @@ export const UI_STRINGS = {
     namePlaceholder: 'e.g., Rajesh Verma',
     mobileLabel: 'Mobile Number',
     mobilePlaceholder: 'e.g., +91 98234 56789',
-    emailLabel: 'Organization Email ID',
+    emailLabel: 'Organization Email',
     emailPlaceholder: 'e.g., rajesh.verma@company.com',
     companyNameLabel: 'Company Name',
     companyNamePlaceholder: 'e.g., Apex Industrial Dynamics Ltd.',
@@ -2026,6 +2028,12 @@ export const UI_STRINGS = {
     passwordPlaceholder: '••••••••••••',
     confirmPasswordLabel: 'Confirm Password',
     confirmPasswordPlaceholder: '••••••••••••',
+    currentPasswordLabel: 'Current Password',
+    newPasswordLabel: 'New Password',
+    changePasswordHeading: 'Change Account Password',
+    changePasswordSubheading: 'Update your enterprise authentication password securely',
+    changePasswordButton: 'Update Password',
+    passwordChangedSuccess: 'Your password has been successfully updated.',
     signInButton: 'Sign In to Workspace',
     createAccountButton: 'Create Enterprise Account',
     signingIn: 'Authenticating...',

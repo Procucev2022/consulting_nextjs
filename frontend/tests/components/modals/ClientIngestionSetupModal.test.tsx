@@ -109,16 +109,9 @@ describe('ClientIngestionSetupModal Component', () => {
       />
     );
 
-    // Empty name submit should return early
-    const nameInput = screen.getByPlaceholderText(/Fortune 500/i);
-    fireEvent.change(nameInput, { target: { value: '   ' } });
-    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn });
-    fireEvent.click(submitBtn);
-    expect(onConfirmAndUpload).not.toHaveBeenCalled();
-
-    // Click preset name button
-    const presetPill = screen.getByText('Apex Industrial Dynamics');
-    fireEvent.click(presetPill);
+    // Enter client name
+    const nameInput = screen.getByPlaceholderText(UI_STRINGS.modals.clientSetup.clientPlaceholder);
+    fireEvent.change(nameInput, { target: { value: 'Apex Industrial Dynamics' } });
 
     // Select EUR and GBP
     fireEvent.click(screen.getByRole('button', { name: 'EUR' }));
@@ -163,9 +156,9 @@ describe('ClientIngestionSetupModal Component', () => {
     const minorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel);
     fireEvent.change(minorSelect, { target: { value: 'Precision Engineering & Tooling' } });
 
-    // Click enterprise preset (Vanguard Eurocorp AG -> Automotive & Transportation)
-    const vanguardBtn = screen.getByText('Vanguard Eurocorp AG');
-    fireEvent.click(vanguardBtn);
+    // Enter client name
+    const clientInput = screen.getByDisplayValue(mockTenant.enterprise_name);
+    fireEvent.change(clientInput, { target: { value: 'Vanguard Eurocorp AG' } });
 
     // Submit form and ensure majorSector and minorSector are delivered
     const submitBtn = screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn });
@@ -174,8 +167,8 @@ describe('ClientIngestionSetupModal Component', () => {
     expect(onConfirmAndUpload).toHaveBeenCalledWith(
       expect.objectContaining({
         clientName: 'Vanguard Eurocorp AG',
-        majorSector: 'Automotive & Transportation',
-        minorSector: 'Auto Components & Tier-1 Assemblies'
+        majorSector: 'Manufacturing & Industrial',
+        minorSector: 'Precision Engineering & Tooling'
       })
     );
   });

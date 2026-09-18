@@ -18,8 +18,17 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   onSuccess
 }) => {
   const [eventType, setEventType] = useState<ProCPXEventType>('Multi-Stage RFP');
-  const [targetBaseline, setTargetBaseline] = useState<number>(opportunity ? opportunity.est_savings : DEFAULT_PROCPX_BASELINE);
-  const [invitedSuppliers] = useState<string[]>([...DEFAULT_INVITED_SUPPLIERS]);
+  const [targetBaseline, setTargetBaseline] = useState<number>(
+    (opportunity && opportunity.est_savings > 0)
+      ? opportunity.est_savings
+      : (DEFAULT_PROCPX_BASELINE > 0 ? DEFAULT_PROCPX_BASELINE : (opportunity?.current_spend || 1850000))
+  );
+  const [invitedSuppliers] = useState<string[]>(() => {
+    if (opportunity?.category) {
+      return [`${opportunity.category} Qualified Suppliers`];
+    }
+    return DEFAULT_INVITED_SUPPLIERS.length > 0 ? [...DEFAULT_INVITED_SUPPLIERS] : ['Enterprise Qualified Suppliers'];
+  });
 
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedSuccess, setDeployedSuccess] = useState(false);
@@ -31,7 +40,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
       oppId: opportunity.opp_id,
       eventType,
       baselineSpendCr: targetBaseline,
-      targetSavingsPct: opportunity.target_savings_pct,
+      targetSavingsPct: opportunity.target_savings_pct ?? 10,
       invitedSuppliers,
       auctionEndDate: new Date().toISOString()
     });
@@ -111,7 +120,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                   <div className="text-right">
                     <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.proCPX.identifiedSavings}</span>
                     <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                      ${opportunity.est_savings.toLocaleString()}
+                      ${(opportunity.est_savings ?? ((opportunity.est_savings_inr_cr || 0) * 10000000 / 83.8)).toLocaleString()}
                     </p>
                   </div>
                 </div>

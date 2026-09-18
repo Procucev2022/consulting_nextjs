@@ -51,11 +51,11 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
             <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-900">
               <div className="flex items-center space-x-1">
                 <Package className="w-3 h-3 text-cyan-600 shrink-0" />
-                <span>{(selectedFy24.unique_items_count || selectedFy24.records_count).toLocaleString()} items</span>
+                <span>{((selectedFy24.unique_items_count ?? selectedFy24.records_count ?? selectedFy24.line_items_count ?? 0)).toLocaleString()} items</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Users className="w-3 h-3 text-indigo-600 shrink-0" />
-                <span>{(selectedFy24.unique_vendors_count || 100).toLocaleString()} vendors</span>
+                <span>{((selectedFy24.unique_vendors_count ?? selectedFy24.vendors_count ?? (selectedFy24 as any).vendor_count ?? (selectedFy24 as any).active_vendors_count ?? 100)).toLocaleString()} vendors</span>
               </div>
             </div>
           )}
@@ -89,11 +89,11 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
             <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-900">
               <div className="flex items-center space-x-1">
                 <Package className="w-3 h-3 text-cyan-600 shrink-0" />
-                <span>{(selectedFy25.unique_items_count || selectedFy25.records_count).toLocaleString()} items</span>
+                <span>{((selectedFy25.unique_items_count ?? selectedFy25.records_count ?? selectedFy25.line_items_count ?? 0)).toLocaleString()} items</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Users className="w-3 h-3 text-indigo-600 shrink-0" />
-                <span>{(selectedFy25.unique_vendors_count || 100).toLocaleString()} vendors</span>
+                <span>{((selectedFy25.unique_vendors_count ?? selectedFy25.vendors_count ?? (selectedFy25 as any).vendor_count ?? (selectedFy25 as any).active_vendors_count ?? 100)).toLocaleString()} vendors</span>
               </div>
             </div>
           )}
@@ -127,11 +127,11 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
             <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-900">
               <div className="flex items-center space-x-1">
                 <Package className="w-3 h-3 text-cyan-600 shrink-0" />
-                <span>{(selectedFy26.unique_items_count || selectedFy26.records_count).toLocaleString()} items</span>
+                <span>{((selectedFy26.unique_items_count ?? selectedFy26.records_count ?? selectedFy26.line_items_count ?? 0)).toLocaleString()} items</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Users className="w-3 h-3 text-indigo-600 shrink-0" />
-                <span>{(selectedFy26.unique_vendors_count || 100).toLocaleString()} vendors</span>
+                <span>{((selectedFy26.unique_vendors_count ?? selectedFy26.vendors_count ?? (selectedFy26 as any).vendor_count ?? (selectedFy26 as any).active_vendors_count ?? 100)).toLocaleString()} vendors</span>
               </div>
             </div>
           )}

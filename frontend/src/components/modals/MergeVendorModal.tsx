@@ -5,21 +5,33 @@ import type { MergeVendorModalProps } from '../../types';
 import { UI_STRINGS, DEFAULT_MASTER_SUPPLIERS, mergeVendorFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
 
-export const MergeVendorModal: React.FC<MergeVendorModalProps> = ({
+export const MergeVendorModal: React.FC<MergeVendorModalProps & {
+  masterSuppliers?: Array<{ id: string; name: string; subsidiaries: string[] }>;
+}> = ({
   record,
   isOpen,
   onClose,
   onMerge,
-  onIgnore
+  onIgnore,
+  masterSuppliers: customMasterSuppliers
 }) => {
-  const masterSuppliers = DEFAULT_MASTER_SUPPLIERS;
+  const masterSuppliers = (customMasterSuppliers && customMasterSuppliers.length > 0)
+    ? customMasterSuppliers
+    : (record?.vendor_name ? [
+        {
+          id: `VEN-${record.vendor_name.replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase() || 'MSTR'}-001`,
+          name: record.vendor_name,
+          subsidiaries: [`${record.vendor_name} Corporate`, `${record.vendor_name} Logistics`]
+        }
+      ] : (DEFAULT_MASTER_SUPPLIERS as unknown as Array<{ id: string; name: string; subsidiaries: string[] }>));
 
-  const [selectedMaster, setSelectedMaster] = useState<string>(masterSuppliers[0].id);
+  const [selectedMaster, setSelectedMaster] = useState<string>(masterSuppliers[0]?.id || '');
 
   if (!isOpen || !record) return null;
 
   const handleConfirm = (): void => {
     const chosen = masterSuppliers.find((s) => s.id === selectedMaster) || masterSuppliers[0];
+    if (!chosen) return;
     const validation = validateInput(mergeVendorFormSchema, {
       recordId: record.record_id,
       masterVendorId: chosen.id,

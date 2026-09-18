@@ -4,7 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
-import { AICEV_LOGO_SRC } from '../../src/constants/app';
+
+import { DEFAULT_SPEND_BASELINE_INR_CR } from '../../src/constants/app';
 
 describe('Header Component', () => {
   const defaultProps = {
@@ -23,7 +24,7 @@ describe('Header Component', () => {
     // Brand is now rendered as official aiCEV logo image
     const logoImg = screen.getByAltText(UI_STRINGS.header.logoAlt);
     expect(logoImg).toBeInTheDocument();
-    expect(logoImg).toHaveAttribute('src', AICEV_LOGO_SRC);
+    expect(logoImg.getAttribute('src')).toContain('aicev-logo.png');
     expect(screen.getByText(UI_STRINGS.header.subtitle)).toBeInTheDocument();
     expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
     expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
@@ -32,12 +33,15 @@ describe('Header Component', () => {
   it('renders fallback spend if total_spend_evaluated_inr is undefined', () => {
     const tenantWithoutINR = { ...mockTenant, total_spend_evaluated_inr: undefined as any };
     render(<Header {...defaultProps} tenant={tenantWithoutINR} />);
-    expect(screen.getByText(UI_STRINGS.header.evaluatedSpendFallback)).toBeInTheDocument();
+    expect(screen.getByText(`₹${DEFAULT_SPEND_BASELINE_INR_CR} Cr`)).toBeInTheDocument();
   });
 
   it('handles theme switching between light and dark', () => {
     const onSelectTheme = vi.fn();
     const { rerender } = render(<Header {...defaultProps} onSelectTheme={onSelectTheme} />);
+
+    // Open profile menu to access theme controls
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
 
     const darkBtn = screen.getByTitle(UI_STRINGS.header.themeToggleDark);
     fireEvent.click(darkBtn);
@@ -52,6 +56,9 @@ describe('Header Component', () => {
   it('handles currency selection', () => {
     const onSelectCurrency = vi.fn();
     render(<Header {...defaultProps} onSelectCurrency={onSelectCurrency} />);
+
+    // Open profile menu to access currency controls
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
 
     const usdBtn = screen.getByTitle(UI_STRINGS.header.currencyTitle('USD'));
     fireEvent.click(usdBtn);
@@ -88,31 +95,86 @@ describe('Header Component', () => {
     expect(onSelectTenant).toHaveBeenCalled();
   });
 
-  it('triggers onStartAnalysis when clicking Deep Spend Scan', () => {
-    const onStartAnalysis = vi.fn();
-    render(<Header {...defaultProps} onStartAnalysis={onStartAnalysis} />);
-
-    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
-    fireEvent.click(scanBtn);
-    expect(onStartAnalysis).toHaveBeenCalledTimes(1);
-  });
-
-  it('renders active analyzing state on scan button when isAnalyzing is true', () => {
-    render(<Header {...defaultProps} isAnalyzing={true} />);
-    const scanBtn = screen.getByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
-    expect(scanBtn).toHaveClass('animate-pulse');
-  });
-
-  it('renders Admin directory and Sign In navigation links', () => {
+  it('does not render Deep Spend Scan when commented out', () => {
     render(<Header {...defaultProps} />);
+    const scanBtn = screen.queryByTitle(UI_STRINGS.analyzingLoader.triggerTooltip);
+    expect(scanBtn).not.toBeInTheDocument();
+  });
 
-    const adminLink = screen.getByTitle(UI_STRINGS.admin.pageTitle);
-    expect(adminLink).toBeInTheDocument();
-    expect(adminLink).toHaveAttribute('href', '/admin');
+  it('renders Sign In navigation link when unauthenticated', () => {
+    render(<Header {...defaultProps} currentUser={null} />);
 
-    const loginLink = screen.getByTitle(UI_STRINGS.auth.pageTitle);
+    // Open profile menu to view auth action
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
+
+    const loginLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.auth.signInTab, 'i') });
     expect(loginLink).toBeInTheDocument();
     expect(loginLink).toHaveAttribute('href', '/login');
+  });
+
+  it('renders user avatar and opens profile dropdown menu on click/hover for authenticated user', () => {
+    const onLogout = vi.fn();
+    const mockUser = {
+      id: 'usr-navin-101',
+      name: 'Navin Kumar',
+      email: 'navin@enterprise.com',
+      mobile_number: '+91 9876543210',
+      company_name: 'Apex Industrial Dynamics',
+      company_address: 'Industrial Area',
+      role: 'USER' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'GOLD' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    render(<Header {...defaultProps} currentUser={mockUser} onLogout={onLogout} />);
+
+    const userBtn = screen.getByTestId('user-profile-menu-button');
+    expect(userBtn).toBeInTheDocument();
+    expect(screen.getAllByText('Navin').length).toBeGreaterThanOrEqual(1);
+
+    // Click to open dropdown
+    fireEvent.click(userBtn);
+
+    expect(screen.getByText('Profile & Account Settings')).toBeInTheDocument();
+    expect(screen.queryByText('Admin User Directory')).not.toBeInTheDocument();
+    expect(screen.getByText('navin@enterprise.com')).toBeInTheDocument();
+
+    // Logout action
+    const logoutBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.auth.logout, 'i') });
+    fireEvent.click(logoutBtn);
+    expect(onLogout).toHaveBeenCalled();
+  });
+
+  it('displays "Sign In" and does NOT render admin tab when logged in as ADMIN on client workspace', () => {
+    const mockAdmin = {
+      id: 'usr-admin-1',
+      name: 'System Administrator',
+      email: 'admin@procucev.com',
+      mobile_number: '+91 9876543210',
+      company_name: 'Procucev Admin Corp',
+      company_address: 'HQ',
+      role: 'ADMIN' as const,
+      status: 'ACTIVE' as const,
+      subscription_tier: 'GOLD' as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    render(<Header {...defaultProps} currentUser={mockAdmin} />);
+
+    const userBtn = screen.getByTestId('user-profile-menu-button');
+    expect(userBtn).toBeInTheDocument();
+    expect(screen.getByText('Sign In')).toBeInTheDocument();
+
+    // Click to open dropdown
+    fireEvent.click(userBtn);
+
+    expect(screen.queryByText('Admin User Directory')).not.toBeInTheDocument();
+    const signInLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.auth.signInTab, 'i') });
+    expect(signInLink).toBeInTheDocument();
+    expect(signInLink).toHaveAttribute('href', '/login');
   });
 
   it('renders subscription tier badge and interactive demo switcher', () => {
@@ -124,6 +186,9 @@ describe('Header Component', () => {
         onSelectSimulatedTier={onSelectSimulatedTier}
       />
     );
+
+    // Open profile menu
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
 
     expect(screen.getByTestId('subscription-tier-badge')).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.subscription.tierBadge('BRONZE'))).toBeInTheDocument();
@@ -170,38 +235,33 @@ describe('Header Component', () => {
     expect(screen.getByText('Rohan')).toBeInTheDocument();
   });
 
-  it('does not render author details or document reference in the header ribbon', () => {
-    render(<Header {...defaultProps} />);
-    expect(screen.queryByText(UI_STRINGS.header.docRefValue)).not.toBeInTheDocument();
-    expect(screen.queryByText(UI_STRINGS.header.authorName)).not.toBeInTheDocument();
-  });
-
   it('toggles user profile dropdown menu and handles outside clicks and escape key', () => {
     render(<Header {...defaultProps} />);
 
     const menuBtn = screen.getByTestId('user-profile-menu-button');
-    const dropdown = screen.getByTestId('user-profile-dropdown');
-
-    expect(dropdown).toHaveClass('hidden');
+    expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
 
     fireEvent.click(menuBtn);
-    expect(dropdown).toHaveClass('block');
+    expect(screen.getByTestId('user-profile-dropdown')).toBeInTheDocument();
 
     // Press Escape to close
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(dropdown).toHaveClass('hidden');
+    expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
 
     // Re-open and test clicking outside
     fireEvent.click(menuBtn);
-    expect(dropdown).toHaveClass('block');
+    expect(screen.getByTestId('user-profile-dropdown')).toBeInTheDocument();
 
     fireEvent.mouseDown(document.body);
-    expect(dropdown).toHaveClass('hidden');
+    expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
   });
 
   it('triggers onContactSupport when provided, or falls back to window.open', () => {
     const onContactSupport = vi.fn();
     const { rerender } = render(<Header {...defaultProps} onContactSupport={onContactSupport} />);
+
+    // Open profile menu
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
 
     const supportBtn = screen.getByTestId('header-support-button');
     fireEvent.click(supportBtn);
@@ -209,7 +269,7 @@ describe('Header Component', () => {
 
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     rerender(<Header {...defaultProps} onContactSupport={undefined} />);
-    fireEvent.click(supportBtn);
+    fireEvent.click(screen.getByTestId('header-support-button'));
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringContaining('mailto:support@procucev.com'),
       '_blank'
@@ -217,5 +277,3 @@ describe('Header Component', () => {
     openSpy.mockRestore();
   });
 });
-
-

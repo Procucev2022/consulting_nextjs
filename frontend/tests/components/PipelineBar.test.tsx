@@ -36,23 +36,20 @@ describe('PipelineBar Component', () => {
     expect(onSelectTab).toHaveBeenCalledWith('module1');
   });
 
-  it('handles clicking Conversion Matrix and Data Architecture tabs', () => {
+  it('handles clicking Conversion Matrix tab and verifies Data Architecture is commented out', () => {
     const onSelectTab = vi.fn();
     const { rerender } = render(<PipelineBar activeTab="module1" onSelectTab={onSelectTab} />);
 
-    const matrixBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.pipeline.conversionMatrixTab, 'i') });
-    fireEvent.click(matrixBtn);
+    const matrixLink = screen.getByRole('link', { name: new RegExp(UI_STRINGS.pipeline.conversionMatrixTab, 'i') });
+    expect(matrixLink).toHaveAttribute('href', '#module5');
+    fireEvent.click(matrixLink);
     expect(onSelectTab).toHaveBeenCalledWith('module5');
 
-    const schemaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.pipeline.dataArchitectureTab, 'i') });
-    fireEvent.click(schemaBtn);
-    expect(onSelectTab).toHaveBeenCalledWith('schema');
+    const schemaTab = screen.queryByText(UI_STRINGS.pipeline.dataArchitectureTab);
+    expect(schemaTab).not.toBeInTheDocument();
 
-    // Rerender with active tab module5 and schema to cover active styles
+    // Rerender with active tab module5 to cover active styles
     rerender(<PipelineBar activeTab="module5" onSelectTab={onSelectTab} />);
-    expect(matrixBtn).toHaveClass('bg-purple-600');
-
-    rerender(<PipelineBar activeTab="schema" onSelectTab={onSelectTab} />);
-    expect(schemaBtn).toHaveClass('bg-cyan-600');
+    expect(matrixLink).toHaveClass('bg-purple-600');
   });
 });

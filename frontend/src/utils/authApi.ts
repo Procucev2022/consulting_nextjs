@@ -46,6 +46,37 @@ export const buildAdminUserQueryParams = (query?: AdminUserQuery): URLSearchPara
   return params;
 };
 
+async function parseResponseJson<T>(res: Response, fallbackError: string): Promise<T> {
+  let json: Record<string, unknown> | null = null;
+  if (typeof res.text === 'function') {
+    const text = await res.text();
+    try {
+      json = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      if (!res.ok) {
+        throw new Error(`Server error (${res.status}): Please ensure backend is running on port 5000`);
+      }
+      throw new Error('Invalid response received from server');
+    }
+  } else if (typeof res.json === 'function') {
+    try {
+      json = (await res.json()) as Record<string, unknown>;
+    } catch {
+      if (!res.ok) {
+        throw new Error(`Server error (${res.status}): Please ensure backend is running on port 5000`);
+      }
+      throw new Error('Invalid response received from server');
+    }
+  }
+
+  if (!res.ok) {
+    const errorMsg = typeof json?.message === 'string' ? json.message : fallbackError;
+    throw new Error(errorMsg);
+  }
+
+  return json as T;
+}
+
 export const authApiClient = {
   // Session Storage Helpers
   getStoredToken(): string | null {
@@ -75,6 +106,12 @@ export const authApiClient = {
     localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH_TOKEN);
     localStorage.removeItem(AUTH_STORAGE_KEYS.CURRENT_USER);
     localStorage.removeItem(AUTH_STORAGE_KEYS.SIMULATED_TIER);
+    try {
+      sessionStorage.removeItem('procucev_uploaded_dataset');
+      sessionStorage.removeItem('procucev_autofill_active_doc');
+    } catch {
+      // ignore
+    }
   },
 
   getSimulatedTier(): SubscriptionTier | null {
@@ -109,10 +146,7 @@ export const authApiClient = {
       body: JSON.stringify(validation.data)
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Registration failed');
-    }
+    const json = await parseResponseJson<AuthSessionResponse>(res, 'Registration failed');
 
     if (json.token && json.user) {
       authApiClient.setStoredSession(json.token, json.user);
@@ -134,10 +168,7 @@ export const authApiClient = {
       body: JSON.stringify(validation.data)
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Authentication failed');
-    }
+    const json = await parseResponseJson<AuthSessionResponse>(res, 'Authentication failed');
 
     if (json.token && json.user) {
       authApiClient.setStoredSession(json.token, json.user);
@@ -156,11 +187,30 @@ export const authApiClient = {
       headers: { Authorization: `Bearer ${authToken}` }
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to fetch user profile');
+    return await parseResponseJson<{ success: boolean; user: UserProfile }>(res, 'Failed to fetch user profile');
+  },
+
+  // Change Password
+  async changePassword(
+    data: { currentPassword: string; newPassword: string },
+    token?: string
+  ): Promise<{ success: boolean; message: string }> {
+    frontendLogger.info('Changing user account password');
+    const authToken = token || authApiClient.getStoredToken();
+    if (!authToken) {
+      throw new Error('Authentication required: please log in again');
     }
-    return json;
+
+    const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.CHANGE_PASSWORD}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    return await parseResponseJson<{ success: boolean; message: string }>(res, 'Failed to update password');
   },
 
   // Admin: List All Users
@@ -176,11 +226,7 @@ export const authApiClient = {
     }
 
     const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.ADMIN_USERS}${queryString}`, { headers });
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to load user directory');
-    }
-    return json;
+    return await parseResponseJson<AdminUsersResponse>(res, 'Failed to load user directory');
   },
 
   // Admin: Update User Status
@@ -203,11 +249,7 @@ export const authApiClient = {
       body: JSON.stringify({ status })
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to update user status');
-    }
-    return json;
+    return await parseResponseJson<{ success: boolean; user: UserProfile }>(res, 'Failed to update user status');
   },
 
   // Admin: Update User Subscription Tier
@@ -235,11 +277,7 @@ export const authApiClient = {
       body: JSON.stringify(validation.data)
     });
 
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json.message || 'Failed to update user subscription tier');
-    }
-    return json;
+    return await parseResponseJson<{ success: boolean; user: UserProfile }>(res, 'Failed to update user subscription tier');
   }
 };
 

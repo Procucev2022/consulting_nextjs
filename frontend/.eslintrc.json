@@ -107,7 +107,7 @@
   },
   "overrides": [
     {
-      "files": ["src/data/**", "src/constants/uiStrings.ts", "src/components/**", "src/app/**", "tests/**", "scripts/**"],
+      "files": ["src/data/**", "src/constants/uiStrings.ts", "src/components/**", "src/app/**", "src/types/**", "tests/**", "scripts/**"],
       "rules": {
         "max-lines": "off",
         "max-len": "off",

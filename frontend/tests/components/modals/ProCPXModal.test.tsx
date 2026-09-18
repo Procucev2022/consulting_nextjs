@@ -5,9 +5,20 @@ import { ProCPXModal } from '../../../src/components/modals/ProCPXModal';
 import { mockSavingsOpportunities } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
-describe('ProCPXModal Component', () => {
-  const sampleOpp = mockSavingsOpportunities[0];
+const sampleOpp: any = {
+  opp_id: 'OPP-CPX-TEST-001',
+  title: 'Global Freight Sourcing & Reverse Auction',
+  category: 'Logistics & Freight',
+  est_savings: 180000,
+  est_savings_inr_cr: 1.8,
+  confidence_score: 91,
+  implementation_time_months: 2,
+  recommended_action: 'Multi-round reverse auction',
+  contract_leak_type: 'Rate creep and unhedged fuel surcharge',
+  impact_level: 'MEDIUM'
+};
 
+describe('ProCPXModal Component', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });

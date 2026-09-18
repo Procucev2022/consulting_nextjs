@@ -5,9 +5,87 @@ import { ValidationPreCheckSection } from '../../src/components/ValidationPreChe
 import { initialValidationRecords } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants';
 
+const sampleRecords: any[] = [
+  {
+    record_id: 'REC-8841',
+    spend_year: 2025,
+    po_number: 'PO-8841',
+    raw_desc: 'Caustic Soda Flakes',
+    core_category: 'Direct Materials',
+    column_l_code: '12345678',
+    vendor_name: 'Acme Chemicals LLC',
+    order_quantity: 100,
+    net_price: 500,
+    raw_currency: 'USD',
+    fx_rate_applied: 83.5,
+    inr_crores: 0.42,
+    amount: 50000,
+    issue_flag: 'Missing Currency Code',
+    issue_category: 'CONVERSION',
+    action_status: 'Fix (INR)',
+    resolved: false
+  },
+  {
+    record_id: 'REC-8842',
+    spend_year: 2025,
+    po_number: 'PO-8842',
+    raw_desc: 'Hydrochloric Acid',
+    core_category: 'Direct Materials',
+    column_l_code: '12345679',
+    vendor_name: 'Acme Chemical Global LLC',
+    order_quantity: 200,
+    net_price: 250,
+    raw_currency: 'INR',
+    fx_rate_applied: 1.0,
+    inr_crores: 0.50,
+    amount: 50000,
+    issue_flag: 'Unmapped Supplier Name',
+    issue_category: 'VENDOR_DUPLICATION',
+    action_status: 'Merge Vendor',
+    resolved: false
+  },
+  {
+    record_id: 'REC-8847',
+    spend_year: 2025,
+    po_number: 'PO-8847',
+    raw_desc: 'Packaging Corrugated Carton',
+    core_category: 'Packaging Materials',
+    column_l_code: '14121506',
+    vendor_name: 'Box Corp',
+    order_quantity: 5000,
+    net_price: 1.5,
+    raw_currency: 'INR',
+    fx_rate_applied: 1.0,
+    inr_crores: 0.08,
+    amount: 7500,
+    issue_flag: 'Duplicate Item Description',
+    issue_category: 'ITEM_DUPLICATION',
+    action_status: 'Merge Item',
+    resolved: false
+  },
+  {
+    record_id: 'REC-8843',
+    spend_year: 2025,
+    po_number: 'PO-8843',
+    raw_desc: 'Safety Gloves Nitrile',
+    core_category: 'Indirect & MRO',
+    column_l_code: '46181504',
+    vendor_name: 'Safety Direct',
+    order_quantity: 1000,
+    net_price: 2.0,
+    raw_currency: 'INR',
+    fx_rate_applied: 1.0,
+    inr_crores: 0.02,
+    amount: 2000,
+    issue_flag: 'Passed Clean',
+    action_status: 'Ready',
+    resolved: true
+  }
+];
+
 describe('ValidationPreCheckSection Component', () => {
   const defaultProps = {
-    validationRecords: initialValidationRecords,
+    validationRecords: sampleRecords,
     onFixCurrency: vi.fn(),
     onMergeVendor: vi.fn(),
     onMergeItem: vi.fn(),
@@ -116,7 +194,7 @@ describe('ValidationPreCheckSection Component', () => {
     const onResetValidationRecords = vi.fn();
 
     // Render with all resolved records to test reset button
-    const resolvedRecords = initialValidationRecords.map((r) => ({ ...r, resolved: true, action_status: 'Ready' as const }));
+    const resolvedRecords = sampleRecords.map((r) => ({ ...r, resolved: true, issue_flag: 'Passed Clean' as const, action_status: 'Ready' as const }));
     const { rerender } = render(
       <ValidationPreCheckSection
         {...defaultProps}
@@ -148,21 +226,10 @@ describe('ValidationPreCheckSection Component', () => {
     expect(screen.getByText(UI_STRINGS.module1.dataRefreshedBanner)).toBeInTheDocument();
   });
 
-  it('triggers onRefreshWithFixes when clicking the refresh button in header or footer', () => {
+  it('does not render Refresh with Fixes buttons (hidden as requested)', () => {
     const onRefreshWithFixes = vi.fn();
     render(<ValidationPreCheckSection {...defaultProps} onRefreshWithFixes={onRefreshWithFixes} />);
 
-    const refreshButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') });
-    expect(refreshButtons.length).toBeGreaterThanOrEqual(1);
-
-    // Click the CTA refresh button (footer)
-    fireEvent.click(refreshButtons[refreshButtons.length - 1]);
-    expect(onRefreshWithFixes).toHaveBeenCalledTimes(1);
-
-    // Click header refresh button if present
-    if (refreshButtons.length > 1) {
-      fireEvent.click(refreshButtons[0]);
-      expect(onRefreshWithFixes).toHaveBeenCalledTimes(2);
-    }
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') })).not.toBeInTheDocument();
   });
 });

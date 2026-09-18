@@ -23,7 +23,7 @@ export const clientIngestionSetupFormSchema = z.object({
   spendPeriod: z.string().min(1, 'Spend period is required'),
   currency: z.enum(['INR', 'USD', 'EUR', 'GBP']),
   region: z.enum(['NA', 'EU', 'APAC', 'GLOBAL']),
-  estimatedSpend: z.number().positive('Estimated spend must be positive'),
+  estimatedSpend: z.number().min(0, 'Estimated spend cannot be negative'),
   majorSector: z.string().min(1, 'Major sector is required').optional().default('Chemical & Petrochemicals'),
   minorSector: z.string().min(1, 'Minor sector is required').optional().default('Specialty Chemicals')
 });
@@ -63,7 +63,7 @@ export const proCPXFormSchema = z.object({
   oppId: z.string().min(1, 'Opportunity ID is required'),
   eventType: z.enum(['Reverse Auction', 'Multi-Stage RFP', 'Sealed Bid']),
   baselineSpendCr: z.number().positive('Baseline spend must be positive'),
-  targetSavingsPct: z.number().min(0, 'Target savings cannot be negative').max(100, 'Target savings cannot exceed 100%'),
+  targetSavingsPct: z.number().min(0, 'Target savings cannot be negative').max(100, 'Target savings cannot exceed 100%').optional().default(10),
   invitedSuppliers: z.array(z.string()).min(1, 'At least one supplier must be invited'),
   auctionEndDate: z.string().min(1, 'Auction end date is required')
 });
@@ -98,8 +98,12 @@ export const apiUpdateTenantPayloadSchema = z.object({
   region: z.string().min(1).optional(),
   base_currency: z.string().min(1).optional(),
   financial_year: z.string().min(1).optional(),
-  total_spend_evaluated_inr: z.number().positive().optional(),
-  target_savings_rate_pct: z.number().nonnegative().optional()
+  total_spend_evaluated: z.number().nonnegative().optional(),
+  total_spend_evaluated_inr: z.number().nonnegative().optional(),
+  target_savings_rate_pct: z.number().nonnegative().optional(),
+  major_sector: z.string().min(1).optional(),
+  minor_sector: z.string().min(1).optional(),
+  status: z.string().optional()
 });
 
 export const apiAddIngestionFilePayloadSchema = z.object({
@@ -152,6 +156,16 @@ export const registerFormSchema = z.object({
 export const loginFormSchema = z.object({
   email: z.string().email('Valid organization email is required').toLowerCase(),
   password: z.string().min(1, 'Password is required')
+});
+
+// Change Password Form Schema
+export const changePasswordFormSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(6, 'New password must be at least 6 characters').max(100),
+  confirmPassword: z.string().min(6, 'Confirm password is required').max(100)
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'New passwords do not match',
+  path: ['confirmPassword']
 });
 
 // Admin User Query Schema

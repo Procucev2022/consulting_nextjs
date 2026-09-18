@@ -1,0 +1,16 @@
+PO Number,Document Date,Material Code,Item Description,Supplier Name,Material Group,Plant,Quantity,Unit,Unit Price,Currency
+PO-2024-8901,2024-05-18,MAT-CHEM-101,High Density Polyethylene (HDPE) Granules Grade 5502,Continental Polymer S.A.,DIRECT MATERIALS,Plant 1000 - Gujarat,25000,KG,1.45,USD
+PO-2024-8902,2024-06-12,MAT-LOG-204,Cross-Border Air Freight & Ocean Container Logistics,DHL Global Forwarding GmbH,LOGISTICS & FREIGHT,Plant 2000 - Mumbai Port,12,CONTAINER,4250,EUR
+PO-2024-8903,2024-07-04,MAT-PKG-301,Double-Wall Heavy Duty Corrugated Pallet Boxes (1200x1000),Amcor Packaging Solutions Corp,PACKAGING MATERIALS,Plant 1000 - Gujarat,15000,PCS,5.8,USD
+PO-2024-8904,2024-08-20,MAT-CHEM-105,Technical Grade Hydrochloric Acid (HCl 33%) Bulk ISO Tank,Acme Chemical Co. LLC,DIRECT MATERIALS,Plant 3000 - Dahej Hub,45000,LTR,0.82,GBP
+PO-2024-8905,2024-09-15,MAT-MRO-402,Centrifugal Slurry Pump Mechanical Seals & Titanium Impeller,Flowserve Industrial Pumps Ltd,INDIRECT & MRO,Plant 1000 - Gujarat,8,SET,14200,EUR
+PO-2024-8906,2024-10-08,MAT-ELEC-501,Variable Frequency Drive (VFD) 75kW Inverter System,Siemens Industrial Automation Ltd,CAPEX & MACHINERY,Plant 4000 - Chennai Plant,5,UNIT,285000,INR
+PO-2024-8907,2024-11-22,MAT-CHEM-108,Ethylene Glycol Monobutyl Ether (EB Solvent),BASF Specialty Chemicals SE,DIRECT MATERIALS,Plant 3000 - Dahej Hub,18000,KG,2.35,EUR
+PO-2024-8908,2024-12-05,MAT-SRV-601,Annual Facility HVAC & Cleanroom Calibration Services,Johnson Controls Middle East FZE,SERVICES,Plant 2000 - Mumbai Port,1,ANNUAL CONTRACT,125000,AED
+PO-2025-9001,2025-01-14,MAT-PKG-304,Multi-Layer Barrier Films (EVOH High Barrier Lamination),Berry Global Flexible Packaging,PACKAGING MATERIALS,Plant 1000 - Gujarat,32000,MTR,1.15,USD
+PO-2025-9002,2025-02-18,MAT-LOG-208,Temperature-Controlled Pharma Freight Forwarding,Kuehne + Nagel Logistics Ltd,LOGISTICS & FREIGHT,Plant 4000 - Chennai Plant,8,REEFER CONTAINER,6800,EUR
+PO-2025-9003,2025-03-25,MAT-MRO-409,High Precision CNC Tungsten Carbide Cutting Inserts,Sandvik Coromant Tools Corp,INDIRECT & MRO,Plant 4000 - Chennai Plant,500,BOX,185,USD
+PO-2025-9004,2025-04-30,MAT-CHEM-112,Titanium Dioxide Rutile Pigment (White TiO2 R-902+),Chemours International Operations,DIRECT MATERIALS,Plant 1000 - Gujarat,20000,KG,3.1,USD
+PO-2025-9005,2025-05-19,MAT-MET-701,Stainless Steel Seamless Pipes SS316L (Sch 40),Jindal Stainless Pipes & Tubes Ltd,DIRECT MATERIALS,Plant 3000 - Dahej Hub,3500,MTR,1450,INR
+PO-2025-9006,2025-06-28,MAT-PKG-309,High Tensile Steel Strapping & Anti-Corrosion VCI Bags,Signode Packaging Solutions Ltd,PACKAGING MATERIALS,Plant 2000 - Mumbai Port,850,ROLL,72.5,GBP
+PO-2025-9007,2025-07-15,MAT-IT-801,Enterprise Cloud SCM ERP Integration & AI License Seats,SAP Global Enterprise Software,SERVICES,Plant 2000 - Mumbai Port,150,USER SEATS,1200,EUR

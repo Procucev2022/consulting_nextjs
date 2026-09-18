@@ -2,10 +2,11 @@ import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import logger from '../utils/logger';
 
-export const getTenant = async (_req: Request, res: Response): Promise<Response | void> => {
+export const getTenant = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const tenant = db.getTenant();
-    logger.debug('Fetched tenant master details', { tenantId: tenant.tenant_id });
+    const buyerId = (req?.query?.buyerId as string) || (req?.query?.tenantId as string) || (req?.headers?.['x-buyer-id'] as string) || (req?.headers?.['x-tenant-id'] as string);
+    const tenant = db.getTenant(buyerId);
+    logger.debug('Fetched tenant master details', { tenantId: tenant.tenant_id, buyerId });
     return res.json({
       success: true,
       data: tenant,

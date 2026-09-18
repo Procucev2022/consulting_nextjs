@@ -12,7 +12,7 @@ export const getExecutiveReport = async (_req: Request, res: Response): Promise<
 
     const totalIdentifiedSavingsCr = opportunities.reduce((s, o) => s + (o.est_savings_inr_cr || 0), 0);
     const avgSavingsRatePct = opportunities.length > 0
-      ? (opportunities.reduce((s, o) => s + o.target_savings_pct, 0) / opportunities.length).toFixed(1)
+      ? (opportunities.reduce((s, o) => s + (o.target_savings_pct || 0), 0) / opportunities.length).toFixed(1)
       : '0';
 
     const report = {

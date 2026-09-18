@@ -33,10 +33,16 @@ describe('Logger Helpers Suite', () => {
 
   describe('resolveLoggerConfig', () => {
     it('uses defaults when no options provided', () => {
+      const origLevel = process.env.LOG_LEVEL;
+      const origRetention = process.env.LOG_RETENTION_DAYS;
+      delete process.env.LOG_LEVEL;
+      delete process.env.LOG_RETENTION_DAYS;
       const config = resolveLoggerConfig();
       expect(config.serviceName).toBeDefined();
       expect(config.minLevel).toBe('debug');
       expect(config.retentionDays).toBe(14);
+      if (origLevel) process.env.LOG_LEVEL = origLevel;
+      if (origRetention) process.env.LOG_RETENTION_DAYS = origRetention;
     });
 
     it('uses provided options when supplied', () => {

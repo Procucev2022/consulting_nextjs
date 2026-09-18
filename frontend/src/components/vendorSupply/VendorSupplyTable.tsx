@@ -127,7 +127,7 @@ export const VendorSupplyTable: React.FC<VendorSupplyTableProps> = ({
                     <td className="py-3.5 px-3.5 max-w-[200px]">
                       <div className="flex flex-wrap gap-1">
                         {vendor.supplied_categories.map((cat) => {
-                          const isDisparate = vendor.irrelevant_categories.includes(cat);
+                          const isDisparate = Boolean(vendor.irrelevant_categories?.includes(cat));
                           return (
                             <span
                               key={cat}

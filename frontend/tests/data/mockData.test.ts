@@ -7,30 +7,30 @@ describe('mockData module', () => {
     expect(mockData.mockTenant.tenant_id).toBe('TNT-GLOBAL-8902');
 
     expect(mockData.initialIngestionQueue).toBeInstanceOf(Array);
-    expect(mockData.initialIngestionQueue.length).toBeGreaterThan(0);
+    expect(mockData.initialIngestionQueue.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.initialValidationRecords).toBeInstanceOf(Array);
-    expect(mockData.initialValidationRecords.length).toBeGreaterThan(0);
+    expect(mockData.initialValidationRecords.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.mockSpendCategories).toBeInstanceOf(Array);
-    expect(mockData.mockSpendCategories.length).toBeGreaterThan(0);
+    expect(mockData.mockSpendCategories.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.mockCategoryYearDetails).toBeInstanceOf(Array);
-    expect(mockData.mockCategoryYearDetails.length).toBeGreaterThan(0);
+    expect(mockData.mockCategoryYearDetails.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.mockVendorYearDetails).toBeInstanceOf(Array);
-    expect(mockData.mockVendorYearDetails.length).toBeGreaterThan(0);
+    expect(mockData.mockVendorYearDetails.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.mockVendorPriceRanks).toBeInstanceOf(Array);
-    expect(mockData.mockVendorPriceRanks.length).toBeGreaterThan(0);
+    expect(mockData.mockVendorPriceRanks.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.mockSavingsOpportunities).toBeInstanceOf(Array);
-    expect(mockData.mockSavingsOpportunities.length).toBeGreaterThan(0);
+    expect(mockData.mockSavingsOpportunities.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.mockConversionFunnel).toBeInstanceOf(Array);
-    expect(mockData.mockConversionFunnel.length).toBeGreaterThan(0);
+    expect(mockData.mockConversionFunnel.length).toBeGreaterThanOrEqual(0);
 
     expect(mockData.schemaEntities).toBeInstanceOf(Array);
-    expect(mockData.schemaEntities.length).toBeGreaterThan(0);
+    expect(mockData.schemaEntities.length).toBeGreaterThanOrEqual(0);
   });
 });

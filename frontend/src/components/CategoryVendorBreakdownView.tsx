@@ -23,7 +23,40 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
   tenant,
   categories: propCategories
 }) => {
-  const categoriesList = propCategories && propCategories.length > 0 ? propCategories : categoryYearWiseDetails;
+  const categoriesList: CategoryYearDetail[] = React.useMemo(() => {
+    if (!propCategories || propCategories.length === 0) {
+      return categoryYearWiseDetails;
+    }
+    return propCategories.map((c: any, idx: number) => {
+      const calculatedSum = (c.spend_fy24_cr || 0) + (c.spend_fy25_cr || 0) + (c.spend_fy26_cr || 0);
+      const spend = Number(
+        (c.total_3yr_spend_inr_cr ?? c.spend_inr_crores ?? (calculatedSum > 0 ? calculatedSum : 10)).toFixed(2)
+      );
+      const fy24 = Number((c.spend_fy24_cr ?? c.spend_inr_2023_cr ?? (spend * 0.28)).toFixed(2));
+      const fy25 = Number((c.spend_fy25_cr ?? c.spend_inr_2024_cr ?? (spend * 0.34)).toFixed(2));
+      const fy26 = Number((c.spend_fy26_cr ?? c.spend_inr_2025_26_cr ?? (spend * 0.38)).toFixed(2));
+      return {
+        id: c.id || `CAT-${idx + 1}`,
+        category: c.category || c.name || 'Direct Materials Category',
+        core_bucket: c.core_bucket || 'Direct Materials',
+        sample_column_l_code: c.sample_column_l_code || c.unspsc_code || '12352200',
+        spend_fy24_cr: fy24,
+        spend_fy25_cr: fy25,
+        spend_fy26_cr: fy26,
+        total_3yr_spend_inr_cr: spend,
+        spend_share_pct: c.spend_share_pct ?? 10,
+        yoy_growth_pct: c.yoy_growth_pct ?? 12.0,
+        vendor_count: c.vendor_count ?? 5,
+        item_count: c.item_count ?? 10,
+        top_items: c.top_items ?? [],
+        balance_items: c.balance_items,
+        sample_column_l_title: c.sample_column_l_title,
+        is_balance_category: Boolean(c.is_balance_category),
+        rank: c.rank ?? idx + 1
+      };
+    });
+  }, [propCategories]);
+
   const [selectedYearView, setSelectedYearView] = useState<'ALL' | 'FY24' | 'FY25' | 'FY26'>('ALL');
   const [breakdownMode, setBreakdownMode] = useState<'CATEGORY' | 'VENDOR'>('CATEGORY');
   const [unspscFilterMode, setUnspscFilterMode] = useState<UNSPSCFilterMode>('AUTO');
@@ -35,14 +68,15 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
   const [isVendorModalOpen, setIsVendorModalOpen] = useState<boolean>(false);
 
   const totalEvaluatedSpendInrCr = categoriesList.reduce(
-    (sum, item) => sum + item.total_3yr_spend_inr_cr,
+    (sum, item) => sum + (item.total_3yr_spend_inr_cr ?? 0),
     0
   );
 
   const getYearSpend = (
-    item: { spend_fy24_cr?: number; spend_fy25_cr?: number; spend_fy26_cr?: number; total_3yr_spend_inr_cr: number },
+    item: { spend_fy24_cr?: number; spend_fy25_cr?: number; spend_fy26_cr?: number; total_3yr_spend_inr_cr?: number },
     year: 'ALL' | 'FY24' | 'FY25' | 'FY26'
   ): number => {
+    if (!item) return 0;
     switch (year) {
       case 'FY24':
         return item.spend_fy24_cr ?? 0;
@@ -51,7 +85,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
       case 'FY26':
         return item.spend_fy26_cr ?? 0;
       default:
-        return item.total_3yr_spend_inr_cr;
+        return item.total_3yr_spend_inr_cr ?? 0;
     }
   };
 
@@ -67,7 +101,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
     return getYearSpend(b, selectedYearView) - getYearSpend(a, selectedYearView);
   });
 
-  const enterpriseName = tenant?.enterprise_name || 'Apex Industrial Dynamics (Fortune 500)';
+  const enterpriseName = tenant?.enterprise_name || 'Enterprise Client';
 
   return (
     <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-5">
@@ -231,17 +265,20 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
       {breakdownMode === 'CATEGORY' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
-            {sortedCategories.filter((c) => !c.is_balance_category).slice(0, 10).map((cat, idx) => {
+            {sortedCategories.filter((c) => !c.is_balance_category).length === 0 ? (
+              <div className="col-span-full p-8 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
+                Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
+              </div>
+            ) : (
+              sortedCategories.filter((c) => !c.is_balance_category).slice(0, 10).map((cat, idx) => {
               const currentSpendCr = getYearSpend(cat, selectedYearView);
 
               const fy24 = cat.spend_fy24_cr ?? 0;
               const fy25 = cat.spend_fy25_cr ?? 0;
               const fy26 = cat.spend_fy26_cr ?? 0;
 
-              const sharePct = (
-                (currentSpendCr / (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3)) *
-                100
-              ).toFixed(1);
+              const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+              const sharePct = ((currentSpendCr / divisor) * 100).toFixed(1);
 
               const resolvedUNSPSC = resolveUNSPSCCategoryDisplay(
                 cat.sample_column_l_code,
@@ -365,7 +402,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[9px] font-mono space-y-1 w-full">
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[9px] font-mono space-y-1 w-full">
                     <div className="flex justify-between text-slate-500">
                       <span>FY24: <strong>₹{fy24.toFixed(1)}</strong></span>
                       <span>FY25: <strong>₹{fy25.toFixed(1)}</strong></span>
@@ -379,18 +416,17 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                   </div>
                 </button>
               );
-            })}
+            })
+            )}
           </div>
 
           {/* Balance Categories Drawer */}
           {(() => {
             const balanceCat = sortedCategories.find((c) => c.is_balance_category) ?? sortedCategories[sortedCategories.length - 1];
+            if (!balanceCat) return null;
             const balSpendCr = getYearSpend(balanceCat, selectedYearView);
-
-            const balSharePct = (
-              (balSpendCr / (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3)) *
-              100
-            ).toFixed(1);
+            const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+            const balSharePct = ((balSpendCr / divisor) * 100).toFixed(1);
 
             const resolvedBalanceUNSPSC = resolveUNSPSCCategoryDisplay(
               balanceCat.sample_column_l_code,
@@ -484,17 +520,20 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
       {breakdownMode === 'VENDOR' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
-            {sortedVendors.filter((v) => !v.is_balance_vendor).slice(0, 10).map((vnd, idx) => {
+            {sortedVendors.filter((v) => !v.is_balance_vendor).length === 0 ? (
+              <div className="col-span-full p-8 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-800">
+                Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate vendor spend breakdown.
+              </div>
+            ) : (
+              sortedVendors.filter((v) => !v.is_balance_vendor).slice(0, 10).map((vnd, idx) => {
               const currentSpendCr = getYearSpend(vnd, selectedYearView);
 
               const fy24 = vnd.spend_fy24_cr;
               const fy25 = vnd.spend_fy25_cr;
               const fy26 = vnd.spend_fy26_cr;
 
-              const sharePct = (
-                (currentSpendCr / (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3)) *
-                100
-              ).toFixed(1);
+              const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+              const sharePct = ((currentSpendCr / divisor) * 100).toFixed(1);
 
               const isSelected = selectedVendor?.vendor_name === vnd.vendor_name;
 
@@ -557,30 +596,30 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
 
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[9px] font-mono space-y-1 w-full">
                     <div className="flex justify-between text-slate-500">
-                      <span>FY24: <strong>₹{fy24.toFixed(1)}</strong></span>
-                      <span>FY25: <strong>₹{fy25.toFixed(1)}</strong></span>
-                      <span>FY26: <strong>₹{fy26.toFixed(1)}</strong></span>
+                      <span>FY24: <strong>₹{(fy24 || 0).toFixed(1)}</strong></span>
+                      <span>FY25: <strong>₹{(fy25 || 0).toFixed(1)}</strong></span>
+                      <span>FY26: <strong>₹{(fy26 || 0).toFixed(1)}</strong></span>
                     </div>
                     <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 flex overflow-hidden">
-                      <div className="bg-sky-400 h-full" style={{ width: `${(fy24 / vnd.total_3yr_spend_inr_cr) * 100}%` }} />
-                      <div className="bg-blue-500 h-full" style={{ width: `${(fy25 / vnd.total_3yr_spend_inr_cr) * 100}%` }} />
-                      <div className="bg-indigo-600 h-full" style={{ width: `${(fy26 / vnd.total_3yr_spend_inr_cr) * 100}%` }} />
+                      <div className="bg-sky-400 h-full" style={{ width: `${((fy24 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
+                      <div className="bg-blue-500 h-full" style={{ width: `${((fy25 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
+                      <div className="bg-indigo-600 h-full" style={{ width: `${((fy26 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
                     </div>
                   </div>
                 </button>
               );
-            })}
+            })
+            )}
           </div>
 
           {/* Balance Vendors Drawer */}
           {(() => {
             const balanceVnd = sortedVendors.find((v) => v.is_balance_vendor) ?? sortedVendors[sortedVendors.length - 1];
+            if (!balanceVnd) return null;
             const balSpendCr = getYearSpend(balanceVnd, selectedYearView);
 
-            const balSharePct = (
-              (balSpendCr / (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3)) *
-              100
-            ).toFixed(1);
+            const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+            const balSharePct = ((balSpendCr / divisor) * 100).toFixed(1);
 
             return (
               <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">

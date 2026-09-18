@@ -21,11 +21,9 @@ import {
 import type { DatasetType, ClientIngestionSetupModalProps } from '../../types';
 import {
   UI_STRINGS,
-  DEFAULT_TENANT_ENTERPRISE_NAME,
   clientIngestionSetupFormSchema,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
   DEFAULT_INDUSTRY_MINOR_SECTOR,
-  ENTERPRISE_INDUSTRY_PRESETS,
   getDistinctMajorSectors,
   getMinorSectorsForMajor,
   getIndustryMaterialProfile
@@ -40,14 +38,14 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
   currentTenant,
   onConfirmAndUpload
 }) => {
-  const [clientName, setClientName] = useState(currentTenant.enterprise_name || DEFAULT_TENANT_ENTERPRISE_NAME);
+  const [clientName, setClientName] = useState(currentTenant.enterprise_name || '');
 
   const [datasetType, setDatasetType] = useState<DatasetType>('Purchase History');
   const [spendPeriod, setSpendPeriod] = useState<string>(UI_STRINGS.modals.clientSetup.spendPeriods.months36);
   const [currency, setCurrency] = useState<'INR' | 'USD' | 'EUR' | 'GBP'>(currentTenant.base_currency || 'INR');
   const [region, setRegion] = useState<'NA' | 'EU' | 'APAC' | 'GLOBAL'>(currentTenant.region || 'GLOBAL');
   const [estimatedSpendCr, setEstimatedSpendCr] = useState<number>(
-    currentTenant.total_spend_evaluated_inr || 732.41
+    currentTenant.total_spend_evaluated_inr || 0
   );
 
   const [majorSector, setMajorSector] = useState<string>(
@@ -62,15 +60,6 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
   const distinctMajorSectors = getDistinctMajorSectors();
   const availableMinorSectors = getMinorSectorsForMajor(majorSector);
   const activeMaterialProfile = getIndustryMaterialProfile(majorSector, minorSector);
-
-  const handleSelectPreset = (name: string) => {
-    setClientName(name);
-    const preset = ENTERPRISE_INDUSTRY_PRESETS[name];
-    if (preset) {
-      setMajorSector(preset.major);
-      setMinorSector(preset.minor);
-    }
-  };
 
   const handleMajorSectorChange = (newMajor: string) => {
     setMajorSector(newMajor);
@@ -177,24 +166,6 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
               onChange={(e) => setClientName(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500 transition-colors"
             />
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              <span className="text-[11px] text-slate-400">{UI_STRINGS.modals.clientSetup.quickSelect}</span>
-              {[
-                'Apex Industrial Dynamics',
-                'Vanguard Eurocorp AG',
-                'Global Packaging Holdings',
-                'Starlight Precision LLC'
-              ].map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => handleSelectPreset(name)}
-                  className="text-[10px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 transition-colors"
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Dataset Type Selection */}

@@ -5,12 +5,148 @@ import { Module1Ingestion } from '../../src/components/Module1Ingestion';
 import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
+const sampleIngestionQueue = [
+  {
+    doc_id: 'DOC-1',
+    file_name: 'multi_currency_procurement.xlsx',
+    file_type: 'XLSX',
+    file_size_mb: 1.2,
+    uploaded_at: '2026-03-15',
+    records_count: 50,
+    ocr_status: 'Completed' as const,
+    detected_currencies: ['USD', 'EUR', 'INR'],
+    converted_inr_crores: 12.5,
+    source_origin: 'SAP ERP'
+  }
+];
+
+const sampleMaterialGroupSummaries = [
+  {
+    group_code: 'FERRO',
+    group_name: 'Ferro Alloys & Noble Metals (FERRO)',
+    primary_segment: 'Direct Materials',
+    total_spend_inr_cr: 25.4,
+    spend_fy24_cr: 8.0,
+    spend_fy25_cr: 8.4,
+    spend_fy26_cr: 9.0,
+    three_year_cagr: 6.0,
+    item_count: 120,
+    active_vendors_count: 6,
+    sample_item: 'Ferro Silicon 70%',
+    top_supplier: 'Tata Steel'
+  }
+];
+
+const samplePlantSummaries = [
+  {
+    plant_code: 'PLT-01',
+    plant_name: 'Hazira Manufacturing Hub',
+    location: 'Hazira, Gujarat',
+    region: 'West',
+    spend_inr_cr: 45.2,
+    share_pct: 35.0,
+    total_po_count: 1200,
+    top_material_group: 'Direct Materials'
+  }
+];
+
+const sampleMonthWiseSummaries = [
+  {
+    month_key: '2024-04',
+    month_label: 'Apr 2024',
+    fiscal_year: 'FY25' as const,
+    spend_inr_cr: 8.5,
+    po_count: 120,
+    line_items_count: 450,
+    top_material_group: 'Direct Materials',
+    top_plant: 'Hazira'
+  }
+];
+
+const sampleValidationRecords = [
+  {
+    record_id: 'VAL-001',
+    spend_year: 2025,
+    po_number: 'PO-8841',
+    raw_desc: 'Caustic Soda Flakes',
+    core_category: 'Direct Materials',
+    column_l_code: '12345678',
+    vendor_name: 'Acme Chemicals LLC',
+    order_quantity: 100,
+    net_price: 500,
+    raw_currency: 'USD',
+    fx_rate_applied: 83.5,
+    inr_crores: 0.42,
+    amount: 50000,
+    issue_flag: 'Missing Currency Code' as const,
+    action_status: 'Action Needed' as const,
+    resolved: false
+  },
+  {
+    record_id: 'VAL-002',
+    spend_year: 2025,
+    po_number: 'PO-8842',
+    raw_desc: 'Packaging Corrugated Carton',
+    core_category: 'Packaging Materials',
+    column_l_code: '14111500',
+    vendor_name: 'Amcor Packaging',
+    order_quantity: 200,
+    net_price: 250,
+    raw_currency: 'INR',
+    fx_rate_applied: 1,
+    inr_crores: 0.05,
+    amount: 50000,
+    issue_flag: 'Passed Clean' as const,
+    action_status: 'Ready' as const,
+    resolved: true
+  },
+  {
+    record_id: 'VAL-003',
+    spend_year: 2025,
+    po_number: 'PO-8843',
+    raw_desc: 'Industrial MRO Hydraulic Seal',
+    core_category: 'Indirect & MRO',
+    column_l_code: '40141600',
+    vendor_name: 'Ferguson MRO',
+    order_quantity: 50,
+    net_price: 1500,
+    raw_currency: 'INR',
+    fx_rate_applied: 1,
+    inr_crores: 0.075,
+    amount: 75000,
+    issue_flag: 'Duplicate Item Description' as const,
+    action_status: 'Action Needed' as const,
+    resolved: false
+  },
+  {
+    record_id: 'VAL-004',
+    spend_year: 2025,
+    po_number: 'PO-8844',
+    raw_desc: 'Steel Fasteners',
+    core_category: 'Direct Materials',
+    column_l_code: '31161500',
+    vendor_name: 'Unmapped Supplier X',
+    order_quantity: 300,
+    net_price: 100,
+    raw_currency: 'INR',
+    fx_rate_applied: 1,
+    inr_crores: 0.03,
+    amount: 30000,
+    issue_flag: 'Unmapped Supplier Name' as const,
+    action_status: 'Action Needed' as const,
+    resolved: false
+  }
+];
+
 describe('Module1Ingestion Component', () => {
   const defaultProps = {
     tenant: mockTenant,
     onUpdateTenant: vi.fn(),
-    ingestionQueue: initialIngestionQueue,
-    validationRecords: initialValidationRecords,
+    ingestionQueue: sampleIngestionQueue,
+    validationRecords: sampleValidationRecords,
+    materialGroupSummaries: sampleMaterialGroupSummaries,
+    plantSummaries: samplePlantSummaries,
+    monthWiseSummaries: sampleMonthWiseSummaries,
     onFixCurrency: vi.fn(),
     onMergeVendor: vi.fn(),
     onApplyBlanketFixes: vi.fn(),
@@ -18,6 +154,17 @@ describe('Module1Ingestion Component', () => {
     onRunAICategorization: vi.fn(),
     onAddBatchUpload: vi.fn()
   };
+
+  it('renders cold zero-data state when ingestion queue and validation records are empty', () => {
+    render(
+      <Module1Ingestion
+        {...defaultProps}
+        ingestionQueue={[]}
+        validationRecords={[]}
+      />
+    );
+    expect(screen.getByText('Awaiting Procurement Dataset Ingestion')).toBeInTheDocument();
+  });
 
   it('renders correctly with ingestion queue and validation tables', () => {
     render(<Module1Ingestion {...defaultProps} />);
@@ -307,13 +454,11 @@ describe('Module1Ingestion Component', () => {
     vi.useRealTimers();
   });
 
-  it('navigates to categorization from document summary CTA', () => {
+  it('does not render View Category & Vendor Spend Analysis button in DocumentSummaryView', () => {
     const onRunAICategorization = vi.fn();
     render(<Module1Ingestion {...defaultProps} onRunAICategorization={onRunAICategorization} />);
 
-    const ctaBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') });
-    fireEvent.click(ctaBtn);
-    expect(onRunAICategorization).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.documentSummary.viewAnalysisInAiCat, 'i') })).not.toBeInTheDocument();
   });
 
   it('handles calculations with missing fields and fallback calculations', () => {
@@ -326,44 +471,15 @@ describe('Module1Ingestion Component', () => {
         line_item_description: 'Widget',
         raw_currency: 'USD',
         amount: 20000,
-        fx_rate_applied: undefined as any,
-        inr_crores: undefined as any,
-        order_quantity: undefined as any,
-        net_price: undefined as any,
-        issue_flag: 'Missing Currency Code' as const,
-        issue_details: 'Flagged',
-        remedy_action: 'Fix',
-        confidence_score: 80,
-        resolved: false
-      },
-      {
-        id: 'VAL-RAW-2',
-        file_name: 'test2.xlsx',
-        row_number: 11,
-        vendor_name: 'Vendor B',
-        line_item_description: 'Gadget',
-        raw_currency: 'EUR',
-        amount: 500,
-        fx_rate_applied: 90,
-        inr_crores: undefined as any,
-        order_quantity: undefined as any,
-        net_price: undefined as any,
-        issue_flag: 'Tax Discrepancy' as const,
-        issue_details: 'Tax issue',
-        remedy_action: 'Fix',
-        confidence_score: 75,
-        resolved: false
+        spend_inr_crores: 0.1676,
+        category: 'Packaging',
+        plant: 'Plant 1',
+        material_group: 'Group A',
+        issue_type: 'Currency'
       }
     ];
-
-    render(
-      <Module1Ingestion
-        {...defaultProps}
-        validationRecords={rawRecords as any}
-      />
-    );
-
-    expect(screen.getByText(new RegExp(UI_STRINGS.module1.badge, 'i'))).toBeInTheDocument();
+    render(<Module1Ingestion {...defaultProps} rawUploadRecords={rawRecords as any} isDataRefreshed={true} />);
+    expect(screen.getByText(UI_STRINGS.documentSummary.heading)).toBeInTheDocument();
   });
 
   it('renders ParetoSpendHierarchySection before validation pre-check', () => {
@@ -373,19 +489,34 @@ describe('Module1Ingestion Component', () => {
     expect(screen.getByText(UI_STRINGS.module1.paretoHierarchy.badge)).toBeInTheDocument();
   });
 
-  it('passes through onRefreshWithFixes to ValidationPreCheckSection and triggers on click', () => {
+  it('does not render Refresh with Fixes button (hidden as requested)', () => {
     const onRefreshWithFixes = vi.fn();
     render(<Module1Ingestion {...defaultProps} onRefreshWithFixes={onRefreshWithFixes} />);
 
-    const refreshButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') });
-    expect(refreshButtons.length).toBeGreaterThan(0);
-    fireEvent.click(refreshButtons[0]);
-    expect(onRefreshWithFixes).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') })).not.toBeInTheDocument();
   });
 
   it('renders bronze tier banner, complete deep dive analysis, and handles upgrade to silver', () => {
     const onUpgrade = vi.fn();
-    render(<Module1Ingestion {...defaultProps} currentTier="BRONZE" onUpgrade={onUpgrade} />);
+    const sampleRecord: any = {
+      record_id: 'REC-TEST-001',
+      spend_year: 2025,
+      po_number: 'PO-8841',
+      raw_desc: 'Caustic Soda Flakes',
+      core_category: 'Direct Materials',
+      column_l_code: '12345678',
+      vendor_name: 'Acme Chemicals LLC',
+      order_quantity: 100,
+      net_price: 500,
+      raw_currency: 'USD',
+      fx_rate_applied: 83.5,
+      inr_crores: 0.42,
+      amount: 50000,
+      issue_flag: 'Passed Clean',
+      action_status: 'Ready',
+      resolved: true
+    };
+    render(<Module1Ingestion {...defaultProps} validationRecords={[sampleRecord]} currentTier="BRONZE" onUpgrade={onUpgrade} />);
 
     expect(screen.getByText(UI_STRINGS.subscription.savingsAvailableHeading)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.subscription.savingsAvailableYes)).toBeInTheDocument();
@@ -402,7 +533,25 @@ describe('Module1Ingestion Component', () => {
   });
 
   it('handles upgrade click gracefully when onUpgrade is undefined', () => {
-    render(<Module1Ingestion {...defaultProps} currentTier="BRONZE" onUpgrade={undefined} />);
+    const sampleRecord: any = {
+      record_id: 'REC-TEST-001',
+      spend_year: 2025,
+      po_number: 'PO-8841',
+      raw_desc: 'Caustic Soda Flakes',
+      core_category: 'Direct Materials',
+      column_l_code: '12345678',
+      vendor_name: 'Acme Chemicals LLC',
+      order_quantity: 100,
+      net_price: 500,
+      raw_currency: 'USD',
+      fx_rate_applied: 83.5,
+      inr_crores: 0.42,
+      amount: 50000,
+      issue_flag: 'Passed Clean',
+      action_status: 'Ready',
+      resolved: true
+    };
+    render(<Module1Ingestion {...defaultProps} validationRecords={[sampleRecord]} currentTier="BRONZE" onUpgrade={undefined} />);
     const upgradeBtns = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.subscription.upgradeToSilver, 'i') });
     expect(upgradeBtns.length).toBeGreaterThan(0);
     fireEvent.click(upgradeBtns[0]);

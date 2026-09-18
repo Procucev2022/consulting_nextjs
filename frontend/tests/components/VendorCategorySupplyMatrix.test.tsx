@@ -9,8 +9,14 @@ import type { VendorSupplyRecord } from '../../src/types/vendorSupply';
 describe('VendorCategorySupplyMatrix Component', () => {
   const strings = UI_STRINGS.module2.vendorSupply;
 
-  it('renders top 50 vendors table and executive alarm banner by default', () => {
+  it('renders zero state cleanly by default with empty vendors array', () => {
     render(<VendorCategorySupplyMatrix />);
+    expect(screen.getByText(strings.kpiTotalSpend)).toBeInTheDocument();
+    expect(screen.getByText('₹0.00 Cr')).toBeInTheDocument();
+  });
+
+  it('renders top 50 vendors table and executive alarm banner with vendor data', () => {
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} />);
 
     // Alarm banner
     const alert = screen.getByRole('alert');
@@ -48,7 +54,7 @@ describe('VendorCategorySupplyMatrix Component', () => {
   });
 
   it('displays YoY increases in green with red observation and decreases in amber with blue remark', () => {
-    render(<VendorCategorySupplyMatrix />);
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} />);
 
     // Legend entries
     expect(screen.getByText(strings.yoyLegendIncrease)).toBeInTheDocument();
@@ -65,7 +71,7 @@ describe('VendorCategorySupplyMatrix Component', () => {
   });
 
   it('opens vendor line items modal on clicking View Items button and closes it', () => {
-    render(<VendorCategorySupplyMatrix />);
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} />);
 
     const viewButtons = screen.getAllByRole('button', { name: new RegExp(strings.btnViewItems, 'i') });
     expect(viewButtons.length).toBeGreaterThan(0);
@@ -90,7 +96,7 @@ describe('VendorCategorySupplyMatrix Component', () => {
   });
 
   it('filters vendors by search query matching vendor name, master ID, or supplied category', () => {
-    render(<VendorCategorySupplyMatrix />);
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} />);
 
     const searchInput = screen.getByPlaceholderText(strings.tableSearchPlaceholder);
 
@@ -120,7 +126,7 @@ describe('VendorCategorySupplyMatrix Component', () => {
   });
 
   it('filters by category type (Multi-Category vs Single-Category)', () => {
-    render(<VendorCategorySupplyMatrix />);
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} />);
 
     // Multi-Category Only
     const multiBtn = screen.getByRole('button', { name: strings.filterMultiOnly });
@@ -142,7 +148,7 @@ describe('VendorCategorySupplyMatrix Component', () => {
   });
 
   it('filters by High Spend (> ₹15 Cr) and Risk Flagged only', () => {
-    render(<VendorCategorySupplyMatrix />);
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} />);
 
     const highSpendBtn = screen.getByRole('button', { name: strings.filterHighSpendOnly });
     fireEvent.click(highSpendBtn);
@@ -168,7 +174,7 @@ describe('VendorCategorySupplyMatrix Component', () => {
 
   it('invokes onSelectVendor callback when a table row is clicked and opens modal', () => {
     const handleSelect = vi.fn();
-    render(<VendorCategorySupplyMatrix onSelectVendor={handleSelect} />);
+    render(<VendorCategorySupplyMatrix vendors={mockTop50VendorsSupply} onSelectVendor={handleSelect} />);
 
     const vendorRow = screen.getByText('Acme Chemical Global LLC').closest('tr');
     expect(vendorRow).not.toBeNull();

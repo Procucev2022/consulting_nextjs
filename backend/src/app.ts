@@ -9,6 +9,13 @@ import { requestHeadersSchema } from './constants/validation';
 
 dotenv.config();
 
+// Suppress premature NodeVersionSupportWarning from AWS SDK v3
+process.on('warning', (warning) => {
+  if (warning.name === 'NodeVersionSupportWarning' || warning.message?.includes('AWS SDK for JavaScript (v3)')) {
+    return;
+  }
+});
+
 const app = express();
 
 // Middlewares
@@ -20,9 +27,26 @@ const allowedOrigins: string[] = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-buyer-id',
+      'x-tenant-id',
+      'X-Buyer-Id',
+      'X-Tenant-Id',
+      'x-request-id',
+      'X-Request-Id',
+      'Accept',
+      'Origin'
+    ]
   })
 );
 

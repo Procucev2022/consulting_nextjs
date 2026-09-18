@@ -15,11 +15,11 @@ describe('Loader Constants', () => {
   });
 
   it('should define default analyzing metrics with enterprise benchmarks', () => {
-    expect(DEFAULT_ANALYZING_METRICS.totalRecords).toBe(7357);
-    expect(DEFAULT_ANALYZING_METRICS.spendCrores).toBe(8066.86);
-    expect(DEFAULT_ANALYZING_METRICS.uniqueVendors).toBe(1073);
-    expect(DEFAULT_ANALYZING_METRICS.categoriesIdentified).toBe(48);
-    expect(DEFAULT_ANALYZING_METRICS.confidenceScore).toBe(99.4);
+    expect(DEFAULT_ANALYZING_METRICS.totalRecords).toBe(0);
+    expect(DEFAULT_ANALYZING_METRICS.spendCrores).toBe(0);
+    expect(DEFAULT_ANALYZING_METRICS.uniqueVendors).toBe(0);
+    expect(DEFAULT_ANALYZING_METRICS.categoriesIdentified).toBe(0);
+    expect(DEFAULT_ANALYZING_METRICS.confidenceScore).toBe(100);
   });
 
   it('should define the 4 default analyzing pipeline phases', () => {

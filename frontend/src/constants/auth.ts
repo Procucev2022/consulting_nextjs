@@ -29,6 +29,7 @@ export const AUTH_API_ENDPOINTS = {
   LOGIN: '/api/auth/login',
   REGISTER: '/api/auth/register',
   ME: '/api/auth/me',
+  CHANGE_PASSWORD: '/api/auth/change-password',
   ADMIN_USERS: '/api/admin/users',
   ADMIN_USER_STATUS: (id: string) => `/api/admin/users/${id}/status`,
   ADMIN_USER_TIER: (id: string) => `/api/admin/users/${id}/tier`

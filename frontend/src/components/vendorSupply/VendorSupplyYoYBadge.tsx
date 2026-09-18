@@ -4,15 +4,16 @@ import { VENDOR_SUPPLY_YOY_STYLES } from '../../constants/vendorSupply';
 import { UI_STRINGS } from '../../constants/uiStrings';
 
 export const VendorSupplyYoYBadge: React.FC<VendorSupplyYoYBadgeProps> = ({
-  pct,
+  pct = 0,
   label,
   observationMark,
   remark,
   compact = false
 }) => {
   const strings = UI_STRINGS.module2.vendorSupply;
-  const isIncrease = pct > 0;
-  const isDecrease = pct < 0;
+  const safePct = typeof pct === 'number' && !isNaN(pct) ? pct : 0;
+  const isIncrease = safePct > 0;
+  const isDecrease = safePct < 0;
 
   const style = isIncrease
     ? VENDOR_SUPPLY_YOY_STYLES.INCREASE
@@ -21,7 +22,7 @@ export const VendorSupplyYoYBadge: React.FC<VendorSupplyYoYBadgeProps> = ({
     : VENDOR_SUPPLY_YOY_STYLES.NEUTRAL;
 
   const sign = isIncrease ? '+' : '';
-  const formattedPct = `${sign}${pct.toFixed(1)}%`;
+  const formattedPct = `${sign}${safePct.toFixed(1)}%`;
 
   return (
     <div className="inline-flex flex-col items-end space-y-1">

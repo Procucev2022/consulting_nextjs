@@ -5,7 +5,6 @@ import {
   Cpu,
   LineChart,
   Target,
-  Database,
   ArrowRight
 } from 'lucide-react';
 import type { PipelineBarProps } from '../types';
@@ -14,13 +13,56 @@ import { UI_STRINGS } from '../constants';
 
 export const PipelineBar: React.FC<PipelineBarProps> = ({
   activeTab,
-  onSelectTab
+  onSelectTab,
+  tenant,
+  opportunities,
+  ingestionQueue,
+  totalSpendCr
 }) => {
+  const hasData = Boolean(ingestionQueue && ingestionQueue.length > 0);
+  const dynamicTotalSavings = opportunities && opportunities.length > 0
+    ? (hasData ? opportunities.reduce((sum, o) => sum + (o.est_savings_inr_cr || 0), 0) : 0)
+    : (hasData ? 119.67 : 0);
+
+  const totalRecords = hasData && ingestionQueue
+    ? ingestionQueue.reduce((sum, doc) => sum + (doc.records_count || 0), 0)
+    : 0;
+
+  const evaluatedSpend = hasData ? (totalSpendCr || tenant?.total_spend_evaluated_inr || 0) : 0;
+
   const kpis = [
-    { label: UI_STRINGS.pipeline.kpis.historicalIngestion.label, value: UI_STRINGS.pipeline.kpis.historicalIngestion.value, sub: UI_STRINGS.pipeline.kpis.historicalIngestion.sub, color: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-500/30' },
-    { label: UI_STRINGS.pipeline.kpis.realTimeProcessing.label, value: UI_STRINGS.pipeline.kpis.realTimeProcessing.value, sub: UI_STRINGS.pipeline.kpis.realTimeProcessing.sub, color: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/30' },
-    { label: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.label, value: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.value, sub: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.sub, color: 'text-emerald-700 dark:text-emerald-400', border: 'border-emerald-500/30' },
-    { label: UI_STRINGS.pipeline.kpis.fasterConversion.label, value: UI_STRINGS.pipeline.kpis.fasterConversion.value, sub: UI_STRINGS.pipeline.kpis.fasterConversion.sub, color: 'text-purple-700 dark:text-purple-400', border: 'border-purple-500/30' }
+    {
+      label: UI_STRINGS.pipeline.kpis.historicalIngestion.label,
+      value: hasData ? UI_STRINGS.pipeline.kpis.historicalIngestion.value : '0 Mo',
+      sub: hasData && totalRecords > 0
+        ? `${totalRecords.toLocaleString()} Verified Records Ingested`
+        : 'Awaiting File Ingestion',
+      color: 'text-cyan-700 dark:text-cyan-400',
+      border: 'border-cyan-500/30'
+    },
+    {
+      label: UI_STRINGS.pipeline.kpis.realTimeProcessing.label,
+      value: hasData ? UI_STRINGS.pipeline.kpis.realTimeProcessing.value : 'Ready',
+      sub: hasData ? UI_STRINGS.pipeline.kpis.realTimeProcessing.sub : 'Upload File to Ingest',
+      color: 'text-blue-700 dark:text-blue-400',
+      border: 'border-blue-500/30'
+    },
+    {
+      label: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.label,
+      value: hasData ? `₹${dynamicTotalSavings.toFixed(2)} Cr` : '₹0.00 Cr',
+      sub: hasData && evaluatedSpend && evaluatedSpend > 0
+        ? `Evaluated on ₹${evaluatedSpend.toFixed(2)} Cr baseline`
+        : 'Awaiting Ingestion Baseline',
+      color: 'text-emerald-700 dark:text-emerald-400',
+      border: 'border-emerald-500/30'
+    },
+    {
+      label: UI_STRINGS.pipeline.kpis.fasterConversion.label,
+      value: hasData ? UI_STRINGS.pipeline.kpis.fasterConversion.value : 'Ready',
+      sub: hasData ? UI_STRINGS.pipeline.kpis.fasterConversion.sub : 'Pipeline Ready',
+      color: 'text-purple-700 dark:text-purple-400',
+      border: 'border-purple-500/30'
+    }
   ];
 
   const stages = [
@@ -89,16 +131,23 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
             </h3>
           </div>
           <div className="flex items-center space-x-2">
-            <button
-              onClick={() => onSelectTab('module5')}
-              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all ${
+            <a
+              href="#module5"
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectTab('module5');
+                if (typeof window !== 'undefined') window.location.hash = 'module5';
+              }}
+              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all inline-block cursor-pointer ${
                 activeTab === 'module5'
                   ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border border-purple-500'
                   : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700'
               }`}
             >
               {UI_STRINGS.pipeline.conversionMatrixTab}
-            </button>
+            </a>
+            {/* Data Architecture Tab - Commented out */}
+            {/*
             <button
               onClick={() => onSelectTab('schema')}
               className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all flex items-center space-x-1 ${
@@ -110,6 +159,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               <Database className="w-3.5 h-3.5" />
               <span>{UI_STRINGS.pipeline.dataArchitectureTab}</span>
             </button>
+            */}
           </div>
         </div>
 
@@ -119,10 +169,15 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
             const Icon = stage.icon;
             const isActive = activeTab === stage.id;
             return (
-              <button
+              <a
                 key={stage.id}
-                onClick={() => onSelectTab(stage.id)}
-                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between ${
+                href={`#${stage.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelectTab(stage.id);
+                  if (typeof window !== 'undefined') window.location.hash = stage.id;
+                }}
+                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between cursor-pointer no-underline block ${
                   isActive
                     ? 'bg-gradient-to-b from-cyan-50 to-white dark:from-cyan-950/80 dark:to-slate-900 border-cyan-500 shadow-md shadow-cyan-500/10 dark:shadow-cyan-500/15'
                     : 'bg-slate-50/50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/60'
@@ -169,7 +224,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                     }`}
                   />
                 </div>
-              </button>
+              </a>
             );
           })}
         </div>

@@ -2,14 +2,50 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module3TrendAnalytics } from '../../src/components/Module3TrendAnalytics';
-import { mockVendorPriceRanks } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
+const sampleVendorPriceRanks = [
+  {
+    vendor_id: 'VND-001',
+    vendor_name: 'Acme Chemicals LLC',
+    category: 'Direct Materials',
+    total_spend_inr_cr: 25.5,
+    price_creep_pct: 12.4,
+    benchmark_index: 'ICIS Chemical Benchmark',
+    variance_leakage_inr_cr: 2.1,
+    variance_leakage_usd: 250000,
+    risk_level: 'High' as const,
+    audit_flag: 'Price Creep Anomaly'
+  },
+  {
+    vendor_id: 'VND-002',
+    vendor_name: 'Amcor Packaging',
+    category: 'Packaging Materials',
+    total_spend_inr_cr: 14.2,
+    price_creep_pct: 1.2,
+    benchmark_index: 'PPI Index',
+    variance_leakage_inr_cr: 0.1,
+    variance_leakage_usd: 12000,
+    risk_level: 'Low' as const,
+    audit_flag: 'Market Aligned'
+  }
+];
+
 describe('Module3TrendAnalytics Component', () => {
+  it('renders cold zero-data state when vendorRankings is empty', () => {
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={[]}
+        onProceedToSavings={vi.fn()}
+      />
+    );
+    expect(screen.getByText('Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate supplier price volatility.')).toBeInTheDocument();
+  });
+
   it('renders correctly with light and dark themes', () => {
     const { rerender } = render(
       <Module3TrendAnalytics
-        vendorRankings={mockVendorPriceRanks}
+        vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
         theme="light"
       />
@@ -20,7 +56,7 @@ describe('Module3TrendAnalytics Component', () => {
 
     rerender(
       <Module3TrendAnalytics
-        vendorRankings={mockVendorPriceRanks}
+        vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
         theme="dark"
       />
@@ -31,7 +67,7 @@ describe('Module3TrendAnalytics Component', () => {
   it('handles changing commodity benchmark', () => {
     render(
       <Module3TrendAnalytics
-        vendorRankings={mockVendorPriceRanks}
+        vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
       />
     );
@@ -48,7 +84,7 @@ describe('Module3TrendAnalytics Component', () => {
   it('handles risk filtering', () => {
     render(
       <Module3TrendAnalytics
-        vendorRankings={mockVendorPriceRanks}
+        vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
       />
     );
@@ -59,21 +95,21 @@ describe('Module3TrendAnalytics Component', () => {
     const alignedBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAligned });
     fireEvent.click(alignedBtn);
 
-    const allBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAllVendors(mockVendorPriceRanks.length) });
+    const allBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAllVendors(sampleVendorPriceRanks.length) });
     fireEvent.click(allBtn);
   });
 
   it('handles fallback spend calculations and triggers onProceedToSavings', () => {
     const customRankings = [
       {
-        ...mockVendorPriceRanks[0],
+        ...sampleVendorPriceRanks[0],
         total_spend_inr_cr: undefined as any,
         variance_leakage_inr_cr: undefined as any,
         variance_leakage_usd: 0,
         price_creep_pct: 2
       },
       {
-        ...mockVendorPriceRanks[1],
+        ...sampleVendorPriceRanks[1],
         total_spend_inr_cr: undefined as any,
         variance_leakage_inr_cr: undefined as any,
         variance_leakage_usd: 150000,
@@ -100,7 +136,7 @@ describe('Module3TrendAnalytics Component', () => {
     const onUpgrade = vi.fn();
     render(
       <Module3TrendAnalytics
-        vendorRankings={mockVendorPriceRanks}
+        vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
         currentTier="BRONZE"
         onUpgrade={onUpgrade}
@@ -117,7 +153,7 @@ describe('Module3TrendAnalytics Component', () => {
     const onUpgrade = vi.fn();
     render(
       <Module3TrendAnalytics
-        vendorRankings={mockVendorPriceRanks}
+        vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
         currentTier="SILVER"
         onUpgrade={onUpgrade}

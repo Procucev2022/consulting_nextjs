@@ -6,7 +6,44 @@ import { initialValidationRecords } from '../../../src/data/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('MergeVendorModal Component', () => {
-  const sampleRec = initialValidationRecords[0];
+  const sampleRec = {
+    record_id: 'REC-001',
+    column_l_code: '43211501',
+    raw_desc: 'Industrial Heat Exchanger Tube Bundle 304L',
+    core_category: 'Direct Materials',
+    vendor_name: 'Apex Industrial Piping Ltd',
+    order_quantity: 450,
+    unit_price: 12500,
+    spend_inr: 5625000,
+    issue_flag: 'VENDOR_NAME_ANOMALY' as const,
+    po_number: 'PO-2026-9001'
+  };
+
+  const secondRec = {
+    record_id: 'REC-002',
+    column_l_code: '43211502',
+    raw_desc: 'Stainless Steel Flange Class 150',
+    core_category: 'Piping & Valving',
+    vendor_name: 'Bharat Forge & Fittings',
+    order_quantity: 1200,
+    unit_price: 3400,
+    spend_inr: 4080000,
+    issue_flag: 'PRICE_ANOMALY' as const,
+    po_number: 'PO-2026-9002'
+  };
+
+  const realMasterSuppliers = [
+    {
+      id: `VEN-${sampleRec.vendor_name.replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}-001`,
+      name: sampleRec.vendor_name,
+      subsidiaries: [`${sampleRec.vendor_name} Corporate`, `${sampleRec.vendor_name} Logistics`]
+    },
+    {
+      id: `VEN-${secondRec.vendor_name.replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}-001`,
+      name: secondRec.vendor_name,
+      subsidiaries: [`${secondRec.vendor_name} Global`, `${secondRec.vendor_name} Express`]
+    }
+  ];
 
   it('renders null when not open or record is null', () => {
     const { container } = render(
@@ -30,15 +67,16 @@ describe('MergeVendorModal Component', () => {
         isOpen={true}
         onClose={onClose}
         onMerge={onMerge}
+        masterSuppliers={realMasterSuppliers}
       />
     );
 
     expect(screen.getByText(UI_STRINGS.modals.mergeVendor.title)).toBeInTheDocument();
-    expect(screen.getByText(sampleRec.vendor_name)).toBeInTheDocument();
+    expect(screen.getAllByText(sampleRec.vendor_name)[0]).toBeInTheDocument();
 
     // Select second master supplier
-    const amcorBtn = screen.getByText('Amcor Packaging Group Global');
-    fireEvent.click(amcorBtn);
+    const secondVendorBtn = screen.getAllByText(secondRec.vendor_name)[0];
+    fireEvent.click(secondVendorBtn);
 
     // Confirm merge
     const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
@@ -46,8 +84,8 @@ describe('MergeVendorModal Component', () => {
 
     expect(onMerge).toHaveBeenCalledWith(
       sampleRec.record_id,
-      'SUP-AMCOR-001',
-      'Amcor Packaging Group Global'
+      realMasterSuppliers[1].id,
+      secondRec.vendor_name
     );
     expect(onClose).toHaveBeenCalled();
   });
@@ -124,7 +162,11 @@ describe('MergeVendorModal Component', () => {
 
     const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
     fireEvent.click(confirmBtn);
-    expect(onMerge).toHaveBeenCalledWith(sampleRec.record_id, 'SUP-DHL-001', 'DHL Global Forwarding & Logistics SE');
+    expect(onMerge).toHaveBeenCalledWith(
+      sampleRec.record_id,
+      realMasterSuppliers[0].id,
+      sampleRec.vendor_name
+    );
   });
 
   it('returns early when validation fails on invalid record', () => {

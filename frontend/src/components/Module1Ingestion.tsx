@@ -4,7 +4,8 @@ import {
   TrendingUp,
   Settings,
   Globe,
-  CheckCircle2
+  CheckCircle2,
+  FileSpreadsheet
 } from 'lucide-react';
 import type {
   Module1IngestionProps,
@@ -35,12 +36,16 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   uniqueItemsCount,
   uniqueVendorsCount,
   onMergeItem,
+  onDeleteDocument,
   isDataRefreshed,
   paretoSpendData,
   onRefreshWithFixes,
   currentTier = 'GOLD',
-  onUpgrade
-}) => {
+  onUpgrade,
+  ...restProps
+}: Module1IngestionProps & { rawUploadRecords?: any[] }) => {
+  const rawUploadRecords = (restProps as any).rawUploadRecords;
+  const hasActiveData = (ingestionQueue && ingestionQueue.length > 0) || (validationRecords && validationRecords.length > 0) || Boolean(rawUploadRecords && rawUploadRecords.length > 0) || Boolean(isDataRefreshed);
   const [dragActive, setDragActive] = useState(false);
 
   // Client & File Details Pop-up State
@@ -49,7 +54,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   const [spendPeriod, setSpendPeriod] = useState<string>('36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores || 8066.86;
+  const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores ?? (tenant.total_spend_evaluated_inr ?? 0);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -230,75 +235,92 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         fileInputRef={fileInputRef}
         totalEvaluatedSpendInrCr={totalEvaluatedSpendInrCr}
         onOpenSetupModal={handleOpenSetupModal}
+        onDeleteDocument={onDeleteDocument}
       />
 
-      {/* Bronze Tier Savings Availability Summary Card */}
-      {currentTier === 'BRONZE' && (
-        <div
-          data-testid="bronze-savings-availability-summary"
-          className="p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900/90 to-sky-950/40 border border-emerald-500/40 shadow-xl backdrop-blur-sm"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-                  {UI_STRINGS.subscription.savingsAvailableHeading}
-                </span>
+      {hasActiveData ? (
+        <>
+          {/* Bronze Tier Savings Availability Summary Card */}
+          {currentTier === 'BRONZE' && (
+            <div
+              data-testid="bronze-savings-availability-summary"
+              className="p-6 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900/90 to-sky-950/40 border border-emerald-500/40 shadow-xl backdrop-blur-sm"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
+                      {UI_STRINGS.subscription.savingsAvailableHeading}
+                    </span>
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                    <span>{UI_STRINGS.subscription.savingsAvailableYes}</span>
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+                    {UI_STRINGS.subscription.savingsAvailableYesDesc}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleUpgradeToSilver}
+                    className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 border border-cyan-300/40 transition-all active:scale-95 cursor-pointer"
+                  >
+                    {UI_STRINGS.subscription.upgradeToSilver}
+                  </button>
+                </div>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                <span>{UI_STRINGS.subscription.savingsAvailableYes}</span>
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                {UI_STRINGS.subscription.savingsAvailableYesDesc}
-              </p>
             </div>
-            <div className="shrink-0">
-              <button
-                type="button"
-                onClick={handleUpgradeToSilver}
-                className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-cyan-500 hover:from-sky-400 hover:to-cyan-400 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 border border-cyan-300/40 transition-all active:scale-95 cursor-pointer"
-              >
-                {UI_STRINGS.subscription.upgradeToSilver}
-              </button>
-            </div>
+          )}
+
+          {/* Uploaded Document Summary Component */}
+          <DocumentSummaryView
+            tenant={tenant}
+            ingestionQueue={ingestionQueue}
+            materialGroupSummaries={materialGroupSummaries}
+            plantSummaries={plantSummaries}
+            monthWiseSummaries={monthWiseSummaries}
+            uniqueItemsCount={uniqueItemsCount}
+            uniqueVendorsCount={uniqueVendorsCount}
+            isDataRefreshed={isDataRefreshed}
+            onNavigateToCategorization={onRunAICategorization}
+          />
+
+          {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}
+          <ParetoSpendHierarchySection
+            vendorHierarchy={paretoSpendData?.vendorHierarchy}
+            itemHierarchy={paretoSpendData?.itemHierarchy}
+            totalSpendCr={paretoSpendData?.totalSpendCr}
+          />
+
+          {/* Ingestion Validation & Remediation Log (Extracted Pre-Check Component) */}
+          <ValidationPreCheckSection
+            validationRecords={validationRecords}
+            onFixCurrency={onFixCurrency}
+            onMergeVendor={onMergeVendor}
+            onMergeItem={onMergeItem}
+            onApplyBlanketFixes={onApplyBlanketFixes}
+            onResetValidationRecords={onResetValidationRecords}
+            onRunAICategorization={onRunAICategorization}
+            isDataRefreshed={isDataRefreshed}
+            onRefreshWithFixes={onRefreshWithFixes}
+          />
+        </>
+      ) : (
+        <div className="p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-3 glass-card">
+          <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
+            <FileSpreadsheet className="w-6 h-6" />
           </div>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Awaiting Procurement Dataset Ingestion
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Upload your historical purchase orders, invoices, or ERP spend file (Excel/CSV) above to automatically generate real-time spend dimensions, 80/20 Pareto hierarchies, and multi-currency FX normalization.
+          </p>
         </div>
       )}
-
-      {/* Uploaded Document Summary Component */}
-      <DocumentSummaryView
-        tenant={tenant}
-        ingestionQueue={ingestionQueue}
-        materialGroupSummaries={materialGroupSummaries}
-        plantSummaries={plantSummaries}
-        monthWiseSummaries={monthWiseSummaries}
-        uniqueItemsCount={uniqueItemsCount}
-        uniqueVendorsCount={uniqueVendorsCount}
-        isDataRefreshed={isDataRefreshed}
-        onNavigateToCategorization={onRunAICategorization}
-      />
-
-      {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}
-      <ParetoSpendHierarchySection
-        vendorHierarchy={paretoSpendData?.vendorHierarchy}
-        itemHierarchy={paretoSpendData?.itemHierarchy}
-        totalSpendCr={paretoSpendData?.totalSpendCr}
-      />
-
-      {/* Ingestion Validation & Remediation Log (Extracted Pre-Check Component) */}
-      <ValidationPreCheckSection
-        validationRecords={validationRecords}
-        onFixCurrency={onFixCurrency}
-        onMergeVendor={onMergeVendor}
-        onMergeItem={onMergeItem}
-        onApplyBlanketFixes={onApplyBlanketFixes}
-        onResetValidationRecords={onResetValidationRecords}
-        onRunAICategorization={onRunAICategorization}
-        isDataRefreshed={isDataRefreshed}
-        onRefreshWithFixes={onRefreshWithFixes}
-      />
 
       {/* Pop-up Modal for Client & File Ingestion Setup */}
       <ClientIngestionSetupModal

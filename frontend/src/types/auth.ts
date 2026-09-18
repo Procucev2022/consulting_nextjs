@@ -8,16 +8,19 @@ export type SubscriptionTier = 'BRONZE' | 'SILVER' | 'GOLD';
 
 export interface UserProfile {
   id: string;
-  name: string;
-  mobile_number: string;
+  name?: string;
+  full_name?: string;
+  mobile_number?: string;
+  phone?: string;
   email: string;
-  company_name: string;
-  company_address: string;
-  role: UserRole;
-  status: UserStatus;
-  subscription_tier: SubscriptionTier;
-  created_at: string;
-  updated_at: string;
+  company_name?: string;
+  company_address?: string;
+  role: UserRole | string;
+  status: UserStatus | string;
+  subscription_tier?: SubscriptionTier | string;
+  tier?: SubscriptionTier | string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AuthSessionResponse {
