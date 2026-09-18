@@ -200,6 +200,29 @@ export default function Home() {
 
   // Initial Sync with Backend API, Session Storage & Authenticated User
   useEffect(() => {
+    const storedUser = authApiClient.getStoredUser();
+    const storedToken = authApiClient.getStoredToken();
+
+    // Redirect unauthenticated visitors to /login
+    if (!storedUser && !storedToken) {
+      if (router) {
+        router.push('/login');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+
+    // Redirect admin users to /admin/dashboard
+    if (storedUser?.role === 'ADMIN') {
+      if (router) {
+        router.push('/admin/dashboard');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = '/admin/dashboard';
+      }
+      return;
+    }
+
     const handleHash = () => {
       if (typeof window !== 'undefined') {
         const rawHash = window.location.hash.replace('#', '');
@@ -329,6 +352,7 @@ export default function Home() {
         window.removeEventListener('hashchange', handleHash);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

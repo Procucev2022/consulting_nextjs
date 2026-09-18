@@ -6,6 +6,15 @@ import { apiClient, authApiClient } from '../../src/utils/api';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: vi.fn(),
+    prefetch: vi.fn()
+  })
+}));
+
 const sampleDoc = {
   doc_id: 'DOC-PAGE-001',
   tenant_id: 'USR-TEST-1',
@@ -169,14 +178,15 @@ describe('Home Page Component', () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
       id: 'USR-TEST-1',
       email: 'test@example.com',
-      role: 'ADMIN',
+      role: 'BUYER',
       status: 'ACTIVE',
       tier: 'GOLD',
-      full_name: 'Test Admin',
+      full_name: 'Test Buyer',
       company_name: 'Enterprise Client',
       phone: '+1234567890',
       created_at: '2026-01-01T00:00:00.000Z'
     });
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('mock-token-123');
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue({
       ...mockTenant,
       total_spend_evaluated_inr: 254.8,
@@ -1030,6 +1040,34 @@ describe('Home Page Component', () => {
     // Verify activeTab switched to module2 and toast triggered
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.toasts.navigatingToInitiativeSection('vendor-consolidation-section'))).toBeInTheDocument();
+    });
+  });
+
+  it('redirects unauthenticated visitors to /login', async () => {
+    vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(null);
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(null);
+    render(<Home />);
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/login');
+    });
+  });
+
+  it('redirects admin users to /admin/dashboard', async () => {
+    vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
+      id: 'USR-ADMIN-1',
+      email: 'admin@example.com',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      tier: 'GOLD',
+      full_name: 'Super Admin',
+      company_name: 'Admin Enterprise',
+      phone: '+1234567890',
+      created_at: '2026-01-01T00:00:00.000Z'
+    });
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('admin-token-123');
+    render(<Home />);
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/admin/dashboard');
     });
   });
 });
