@@ -111,7 +111,7 @@ jobs:
         run: npm run install:all
 
       - name: Build OpenNext
-        run: npx opennextjs-cloudflare build
+        run: npm run cloudflare:build
         working-directory: frontend
 
       - name: Deploy to Cloudflare

@@ -6,7 +6,7 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "next:build": "next build",
-    "cloudflare:build": "npm run build",
+    "cloudflare:build": "npm run build && opennextjs-cloudflare build",
     "cloudflare:preview": "npm run cloudflare:build && opennextjs-cloudflare preview",
     "cloudflare:deploy": "npm run cloudflare:build && opennextjs-cloudflare deploy",
     "deploy": "npm run cloudflare:build && opennextjs-cloudflare deploy",
