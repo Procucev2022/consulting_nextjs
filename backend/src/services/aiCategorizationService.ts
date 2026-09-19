@@ -27,7 +27,12 @@ export class AiCategorizationService {
 
     const clampedItems = items.slice(0, AI_MAX_LINE_ITEMS_IN_PROMPT);
     const itemsPrompt = clampedItems
-      .map((item, idx) => `${idx + 1}. Description: "${item.rawLineText}" | Vendor: "${item.vendorIdentified || 'Unknown'}" | Spend: ${item.amount ?? 0}`)
+      .map((item, idx) => {
+        const desc = item.rawLineText;
+        const vendor = item.vendorIdentified || 'Unknown';
+        const spend = item.amount ?? 0;
+        return `${idx + 1}. Description: "${desc}" | Vendor: "${vendor}" | Spend: ${spend}`;
+      })
       .join('\n');
 
     const prompt = `${CATEGORIZATION_SYSTEM_PROMPT}\n\nPURCHASE LINE ITEMS TO CATEGORIZE:\n${itemsPrompt}`;
@@ -37,7 +42,10 @@ export class AiCategorizationService {
       label: 'UNSPSC AI Categorization'
     });
 
-    if (result.status !== EXTRACTION_STATUS.SUCCESS || !result.data || !Array.isArray(result.data.mappings) || result.data.mappings.length === 0) {
+    const hasValidMappings = result.status === EXTRACTION_STATUS.SUCCESS &&
+      Boolean(result.data?.mappings && Array.isArray(result.data.mappings) && result.data.mappings.length > 0);
+
+    if (!hasValidMappings) {
       logger.info('Using high-precision UNSPSC Taxonomy engine fallback for categorization', {
         itemCount: items.length,
         geminiError: result.error
@@ -67,7 +75,7 @@ export class AiCategorizationService {
       };
     }
 
-    const rawMappings = Array.isArray(result.data.mappings) ? result.data.mappings : [];
+    const rawMappings = (result.data && Array.isArray(result.data.mappings)) ? result.data.mappings : [];
     const mappings: AiCategorizationMapping[] = rawMappings.map((m: RawAiMapping) => ({
       rawLineText: typeof m?.rawLineText === 'string' ? m.rawLineText : '',
       vendorIdentified: typeof m?.vendorIdentified === 'string' ? m.vendorIdentified : 'Unknown',

@@ -11041,13 +11041,17 @@ export function searchUNSPSCTaxonomy(query: string, category?: string): UNSPSCCo
 }
 
 export function lookupUNSPSCDetails(queryOrCode: string, fallbackCategory?: string): {
+  commodityCode: string;
   commodityTitle: string;
   classTitle: string;
+  coreBucket: string;
 } {
   if (!queryOrCode) {
     return {
+      commodityCode: '10000000',
       commodityTitle: 'Industrial Material Commodity',
-      classTitle: fallbackCategory || 'Direct Materials'
+      classTitle: fallbackCategory || 'Direct Materials',
+      coreBucket: fallbackCategory || 'Direct Materials'
     };
   }
   const q = queryOrCode.toLowerCase();
@@ -11060,8 +11064,11 @@ export function lookupUNSPSCDetails(queryOrCode: string, fallbackCategory?: stri
   );
 
   return {
+    commodityCode: match?.commodityCode || '10000000',
     commodityTitle: match?.commodityTitle || queryOrCode,
-    classTitle: match?.classTitle || fallbackCategory || 'General Sourcing Class'
+    classTitle: match?.classTitle || fallbackCategory || 'General Sourcing Class',
+    coreBucket: match?.coreBucket || fallbackCategory || 'Direct Materials'
   };
 }
+
 
