@@ -53,6 +53,12 @@ export interface PipelineBarProps {
   opportunities?: SavingsOpportunity[];
   ingestionQueue?: RawDocumentIngestion[];
   totalSpendCr?: number;
+  isStep1Complete?: boolean;
+  isStep2Complete?: boolean;
+  isStep3Complete?: boolean;
+  isStep4Complete?: boolean;
+  unlockedTabs?: PipelineActiveTab[];
+  onLockedTabClick?: (tab: PipelineActiveTab) => void;
 }
 
 export type DatabaseSchemaViewProps = Record<string, never>;
@@ -201,6 +207,8 @@ export interface MonthTimelineBarChartProps {
 export interface CategoryVendorBreakdownViewProps {
   tenant?: TenantMaster;
   categories?: CategoryYearDetail[];
+  vendors?: VendorYearDetail[];
+  lineItems?: LineItemMapping[];
 }
 
 // Modal Props & Types

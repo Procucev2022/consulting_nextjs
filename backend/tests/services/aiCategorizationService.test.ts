@@ -49,7 +49,7 @@ describe('AiCategorizationService Unit Tests', () => {
     expect(result.mappings[0].mappedUnspscCode).toBe('40151503');
   });
 
-  it('should handle AI failure response gracefully', async () => {
+  it('should fall back to UNSPSC taxonomy classification when Gemini fails', async () => {
     vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
       status: EXTRACTION_STATUS.AI_FAILED,
       data: null,
@@ -58,10 +58,12 @@ describe('AiCategorizationService Unit Tests', () => {
     });
 
     const result = await service.categorizeLineItems([
-      { rawLineText: 'Generic Item', vendorIdentified: 'Vendor A' }
+      { rawLineText: 'Centrifugal pump', vendorIdentified: 'Vendor A', amount: 50000 }
     ]);
 
-    expect(result.status).toBe(CLASSIFICATION_STATUS.AI_FAILED);
-    expect(result.mappings).toEqual([]);
+    expect(result.status).toBe(CLASSIFICATION_STATUS.SUCCESS);
+    expect(result.mappings.length).toBe(1);
+    expect(result.mappings[0].mappedUnspscCode).toBeDefined();
+    expect(result.mappings[0].confidenceScore).toBeGreaterThanOrEqual(90);
   });
 });

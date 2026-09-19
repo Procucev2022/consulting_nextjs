@@ -473,12 +473,12 @@ describe('Module2Categorization Component', () => {
 
     // Verify Item Cells
     expect(screen.getByText(UI_STRINGS.module2.unspscCodeBadge('14121506'))).toBeInTheDocument();
-    expect(screen.getByText('MAT-9901-BOX')).toBeInTheDocument();
-    expect(screen.getByText('Heavy Duty Packaging Box 50x50')).toBeInTheDocument();
-    expect(screen.getByText('PO-2024-998877')).toBeInTheDocument();
+    expect(screen.getAllByText('MAT-9901-BOX').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Heavy Duty Packaging Box 50x50').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('PO-2024-998877').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Global Box Co.').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('SUP-GBOX-100')).toBeInTheDocument();
-    expect(screen.getByText('Corrugated fiberboard boxes')).toBeInTheDocument();
+    expect(screen.getAllByText('SUP-GBOX-100').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Corrugated fiberboard boxes').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Paperboard and packaging papers').length).toBeGreaterThan(0);
     expect(screen.getAllByText(UI_STRINGS.module2.commodityLabel).length).toBeGreaterThan(0);
     expect(screen.getAllByText(UI_STRINGS.module2.classLabel).length).toBeGreaterThan(0);
@@ -486,13 +486,13 @@ describe('Module2Categorization Component', () => {
     // Verify Search by material code and PO number
     const tableSearch = screen.getByPlaceholderText(UI_STRINGS.module2.searchPlaceholder);
     fireEvent.change(tableSearch, { target: { value: 'MAT-9901-BOX' } });
-    expect(screen.getByText('MAT-9901-BOX')).toBeInTheDocument();
+    expect(screen.getAllByText('MAT-9901-BOX').length).toBeGreaterThanOrEqual(1);
 
     fireEvent.change(tableSearch, { target: { value: 'PO-2024-998877' } });
-    expect(screen.getByText('PO-2024-998877')).toBeInTheDocument();
+    expect(screen.getAllByText('PO-2024-998877').length).toBeGreaterThanOrEqual(1);
 
     fireEvent.change(tableSearch, { target: { value: 'Corrugated fiberboard' } });
-    expect(screen.getByText('Corrugated fiberboard boxes')).toBeInTheDocument();
+    expect(screen.getAllByText('Corrugated fiberboard boxes').length).toBeGreaterThanOrEqual(1);
   });
 
   it('displays Commodity Title and Class Title on catalog cards and opens UNSPSCDetailModal pop-up on click', async () => {

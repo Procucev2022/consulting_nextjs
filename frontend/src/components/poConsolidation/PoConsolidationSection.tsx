@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Search, LayoutGrid, Table, ArrowUpDown } from 'lucide-react';
 import type { PoConsolidationSectionProps, MultiplePoItem, PoConsolidationCadence } from '../../types/poConsolidation';
-import { MOCK_MULTIPLE_PO_ITEMS, calculatePoConsolidationSummary } from '../../data/mockPoConsolidation';
+import { calculatePoConsolidationSummary } from '../../data/mockPoConsolidation';
 import { PO_CONSOLIDATION_CATEGORY_TABS, PO_CONSOLIDATION_SORT_OPTIONS, getCadenceBadgeClass } from '../../constants/poConsolidation';
 import { UI_STRINGS } from '../../constants/uiStrings';
 import { PoConsolidationSummaryBanner } from './PoConsolidationSummaryBanner';
@@ -11,7 +11,7 @@ import { PoConsolidationCard } from './PoConsolidationCard';
 import { PoConsolidationModal } from './PoConsolidationModal';
 
 export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
-  items = MOCK_MULTIPLE_PO_ITEMS
+  items = []
 }) => {
   const [globalCadence, setGlobalCadence] = useState<PoConsolidationCadence>('QUARTERLY');
   const [cardCadences, setCardCadences] = useState<Record<string, PoConsolidationCadence>>({});
