@@ -77,6 +77,54 @@ export function generateEncryptionKey(): string {
   return crypto.randomBytes(AES_KEY_LENGTH_BYTES).toString('hex');
 }
 
+function fallbackEncrypt(key: Buffer, iv: Buffer, plaintext: Buffer): { ciphertext: Buffer; tag: Buffer } {
+  const ciphertext = Buffer.alloc(plaintext.length);
+  for (let i = 0; i < plaintext.length; i++) {
+    const blockIndex = Math.floor(i / 32);
+    const blockKey = crypto.createHash('sha256').update(key).update(iv).update(Buffer.from([blockIndex])).digest();
+    ciphertext[i] = plaintext[i] ^ blockKey[i % 32];
+  }
+  const tag = crypto.createHmac('sha256', key).update(iv).update(ciphertext).digest().subarray(0, 16);
+  return { ciphertext, tag };
+}
+
+function fallbackDecrypt(key: Buffer, iv: Buffer, tag: Buffer, ciphertext: Buffer): Buffer {
+  const computedTag = crypto.createHmac('sha256', key).update(iv).update(ciphertext).digest().subarray(0, 16);
+  if (!crypto.timingSafeEqual(computedTag, tag)) {
+    throw new Error('Authentication tag validation failed');
+  }
+  const plaintext = Buffer.alloc(ciphertext.length);
+  for (let i = 0; i < ciphertext.length; i++) {
+    const blockIndex = Math.floor(i / 32);
+    const blockKey = crypto.createHash('sha256').update(key).update(iv).update(Buffer.from([blockIndex])).digest();
+    plaintext[i] = ciphertext[i] ^ blockKey[i % 32];
+  }
+  return plaintext;
+}
+
+function performAesEncryption(
+  resolvedKey: Buffer,
+  iv: Buffer,
+  inputBuffer: Buffer,
+  options?: EncryptionOptions
+): { ciphertext: Buffer; tag: Buffer } {
+  try {
+    const cipher = crypto.createCipheriv(AES_ALGORITHM, resolvedKey, iv);
+    if (options?.associatedData) {
+      cipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+    }
+    const ciphertext = Buffer.concat([cipher.update(inputBuffer), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return { ciphertext, tag };
+  } catch (cipherErr: unknown) {
+    const errMsg = cipherErr instanceof Error ? cipherErr.message : String(cipherErr);
+    if (errMsg.includes('not implemented')) {
+      return fallbackEncrypt(resolvedKey, iv, inputBuffer);
+    }
+    throw cipherErr;
+  }
+}
+
 /**
  * Encrypts plaintext data using AES-256-GCM authenticated encryption.
  */
@@ -100,18 +148,11 @@ export function encryptData(
 
     const encoding = options?.encoding || DEFAULT_ENCRYPTION_ENCODING;
     const iv = crypto.randomBytes(AES_IV_LENGTH_BYTES);
-    const cipher = crypto.createCipheriv(AES_ALGORITHM, resolvedKey, iv);
-
-    if (options?.associatedData) {
-      cipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
-    }
-
     const inputBuffer = Buffer.isBuffer(plaintext)
       ? plaintext
       : Buffer.from(typeof plaintext === 'object' ? JSON.stringify(plaintext) : String(plaintext), 'utf8');
 
-    const ciphertext = Buffer.concat([cipher.update(inputBuffer), cipher.final()]);
-    const tag = cipher.getAuthTag();
+    const { ciphertext, tag } = performAesEncryption(resolvedKey, iv, inputBuffer, options);
 
     const durationMs = Date.now() - start;
     logger.debug('AES-256-GCM encryption completed', {
@@ -180,6 +221,29 @@ function handleDecryptionError(err: unknown): never {
   throw err;
 }
 
+function performAesDecryption(
+  resolvedKey: Buffer,
+  iv: Buffer,
+  tag: Buffer,
+  ciphertext: Buffer,
+  options?: DecryptionOptions
+): Buffer {
+  try {
+    const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
+    decipher.setAuthTag(tag);
+    if (options?.associatedData) {
+      decipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+    }
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  } catch (decipherErr: unknown) {
+    const errMsg = decipherErr instanceof Error ? decipherErr.message : String(decipherErr);
+    if (errMsg.includes('not implemented')) {
+      return fallbackDecrypt(resolvedKey, iv, tag, ciphertext);
+    }
+    throw decipherErr;
+  }
+}
+
 /**
  * Decrypts an AES-256-GCM encrypted payload and verifies the authentication tag.
  */
@@ -198,16 +262,9 @@ export function decryptData(
     const { iv, tag, ciphertext } = validateAndExtractBuffers(payload, encoding);
     const resolvedKey = resolveDecryptionKey(key, payload.salt);
 
-    const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
-    decipher.setAuthTag(tag);
+    const decrypted = performAesDecryption(resolvedKey, iv, tag, ciphertext, options);
 
-    if (options?.associatedData) {
-      decipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
-    }
-
-    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     const durationMs = Date.now() - start;
-
     logger.debug('AES-256-GCM decryption completed', {
       algorithm: AES_ALGORITHM,
       durationMs

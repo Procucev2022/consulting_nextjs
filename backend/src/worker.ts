@@ -1,113 +1,110 @@
-import {
-  CLOUDFLARE_ALLOWED_HEADERS,
-  CLOUDFLARE_ALLOWED_METHODS,
-  CLOUDFLARE_API_PREFIX,
-  CLOUDFLARE_HEALTH_PATH,
-  CLOUDFLARE_MAX_AGE_SECONDS,
-  CLOUDFLARE_SERVICE_NAME
-} from './constants/cloudflare';
+import { IncomingMessage, ServerResponse } from 'node:http';
+import { Socket } from 'node:net';
 import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
+import { db } from './services/db';
+import app from './app';
 
-const getCorsHeaders = (request: Request): Headers => {
-  const headers = new Headers({
-    'Access-Control-Allow-Methods': CLOUDFLARE_ALLOWED_METHODS,
-    'Access-Control-Allow-Headers': CLOUDFLARE_ALLOWED_HEADERS,
-    'Access-Control-Max-Age': CLOUDFLARE_MAX_AGE_SECONDS,
-    Vary: 'Origin'
+const handleExpress = async (request: Request): Promise<Response> => {
+  const url = new URL(request.url);
+  const socket = new Socket();
+
+  const req = new IncomingMessage(socket);
+  req.url = url.pathname + url.search;
+  req.method = request.method;
+  request.headers.forEach((value, key) => {
+    req.headers[key.toLowerCase()] = value;
   });
-  const origin = request.headers.get('Origin');
-  if (origin) {
-    headers.set('Access-Control-Allow-Origin', origin);
-  }
-  return headers;
-};
 
-const withCors = (response: Response, request: Request): Response => {
-  const headers = new Headers(response.headers);
-  const corsHeaders = getCorsHeaders(request);
-  corsHeaders.forEach((value, key) => headers.set(key, value));
-  return new Response(response.body, { status: response.status, headers });
-};
+  // Ensure body-parser / raw-body marks the stream as readable
+  req.readable = true;
+  const streamState = req as unknown as { _readableState: { ended: boolean } };
+  streamState._readableState = streamState._readableState || { ended: false };
+  streamState._readableState.ended = false;
 
-const jsonResponse = (body: Record<string, unknown>, status: number, request: Request): Response => {
-  return withCors(
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { 'Content-Type': 'application/json' }
-    }),
-    request
-  );
-};
+  const chunks: Buffer[] = [];
+  const res = new ServerResponse(req);
 
-const resolveOrigin = (environment: CloudflareEnvironment): URL | null => {
-  if (!environment.BACKEND_ORIGIN) {
-    return null;
-  }
+  return new Promise<Response>((resolve, reject) => {
+    res.write = function (chunk: unknown, ..._args: unknown[]) {
+      if (chunk) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string | Uint8Array));
+      }
+      return true;
+    };
 
-  try {
-    return new URL(environment.BACKEND_ORIGIN);
-  } catch {
-    return null;
-  }
-};
+    res.end = function (chunk?: unknown, ..._args: unknown[]) {
+      if (chunk) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string | Uint8Array));
+      }
+      const rawHeaders = res.getHeaders();
+      const responseHeaders = new Headers();
+      Object.entries(rawHeaders).forEach(([k, v]) => {
+        if (Array.isArray(v)) {
+          v.forEach(val => responseHeaders.append(k, String(val)));
+        } else if (v !== undefined) {
+          responseHeaders.set(k, String(v));
+        }
+      });
 
-const proxyRequest = async (
-  request: Request,
-  environment: CloudflareEnvironment,
-  executionContext: CloudflareExecutionContext
-): Promise<Response> => {
-  const origin = resolveOrigin(environment);
-  if (!origin) {
-    return jsonResponse(
-      { success: false, message: 'BACKEND_ORIGIN is missing or invalid.' },
-      503,
-      request
-    );
-  }
+      // Ensure CORS headers for cross-origin browser fetch
+      const origin = request.headers.get('Origin');
+      if (origin) {
+        responseHeaders.set('Access-Control-Allow-Origin', origin);
+      } else {
+        responseHeaders.set('Access-Control-Allow-Origin', '*');
+      }
+      responseHeaders.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+      responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Request-Id,x-request-id,x-buyer-id,x-tenant-id');
+      responseHeaders.set('Access-Control-Allow-Credentials', 'true');
 
-  const target = new URL(request.url);
-  origin.pathname = `${origin.pathname.replace(/\/$/, '')}${target.pathname}`;
-  origin.search = target.search;
+      const body = chunks.length > 0 ? Buffer.concat(chunks) : null;
+      resolve(new Response(body, {
+        status: res.statusCode || 200,
+        statusText: res.statusMessage || 'OK',
+        headers: responseHeaders
+      }));
+      return res;
+    };
 
-  const headers = new Headers(request.headers);
-  headers.set('X-Forwarded-Host', target.host);
-  headers.set('X-Cloudflare-Service', CLOUDFLARE_SERVICE_NAME);
+    const processRequest = async (): Promise<void> => {
+      if (request.method !== 'GET' && request.method !== 'HEAD') {
+        const bodyBuffer = Buffer.from(await request.arrayBuffer());
+        req.headers['content-length'] = String(bodyBuffer.length);
+        req.push(bodyBuffer);
+      }
+      req.push(null);
+      app(req, res);
+    };
 
-  try {
-    const response = await globalThis.fetch(new Request(origin, {
-      method: request.method,
-      headers,
-      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
-      duplex: request.method === 'GET' || request.method === 'HEAD' ? undefined : 'half',
-      redirect: 'manual'
-    }));
-    executionContext.waitUntil(Promise.resolve());
-    return withCors(response, request);
-  } catch {
-    return jsonResponse(
-      { success: false, message: 'Backend origin is unavailable. Retry the request.' },
-      502,
-      request
-    );
-  }
+    processRequest().catch(reject);
+  });
 };
 
 export const fetch = async (
   request: Request,
   environment: CloudflareEnvironment,
-  executionContext: CloudflareExecutionContext
+  _executionContext: CloudflareExecutionContext
 ): Promise<Response> => {
-  const url = new URL(request.url);
+  if (environment.DB) {
+    await db.initD1(environment.DB);
+  }
 
+  // Fast preflight response
   if (request.method === 'OPTIONS') {
-    return withCors(new Response(null, { status: 204 }), request);
+    const origin = request.headers.get('Origin') || '*';
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Request-Id,x-request-id,x-buyer-id,x-tenant-id',
+        'Access-Control-Max-Age': '86400',
+        'Access-Control-Allow-Credentials': 'true'
+      }
+    });
   }
 
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`) {
-    return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME }, 200, request);
-  }
-
-  return proxyRequest(request, environment, executionContext);
+  return handleExpress(request);
 };
 
 export default { fetch };

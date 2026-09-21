@@ -1,10 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model TenantMaster {
@@ -31,7 +32,7 @@ model RawDocumentIngestion {
   progress             Int      @default(0)
   uploaded_at          DateTime @default(now())
   records_count        Int      @default(0)
-  detected_currencies  String[] @default([])
+  detected_currencies  String   @default("[]")
   converted_inr_crores Float?
 
   @@index([tenant_id])
@@ -105,8 +106,8 @@ model CategoryYearDetail {
   line_items_count       Int
   color                  String
   is_balance_category    Boolean  @default(false)
-  balance_items          Json?
-  top_items              Json?
+  balance_items          String?
+  top_items              String?
 }
 
 model VendorYearDetail {
@@ -128,8 +129,8 @@ model VendorYearDetail {
   risk_status            String?
   price_creep_pct        Float?
   variance_leakage_inr_cr Float?
-  balance_vendors        Json?
-  top_items              Json?
+  balance_vendors        String?
+  top_items              String?
 
   @@index([vendor_name])
   @@index([master_vendor_id])

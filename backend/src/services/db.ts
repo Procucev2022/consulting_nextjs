@@ -1,3 +1,4 @@
+import { PrismaD1 } from '@prisma/adapter-d1';
 import { PrismaClient } from '@prisma/client';
 import {
   mockTenant,
@@ -31,13 +32,14 @@ import logger from '../utils/logger';
 import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';
 import { CACHE_KEYS } from '../constants/db';
-
-export const prisma = new PrismaClient({
-  log: ['warn', 'error']
-});
+export let prisma: PrismaClient =
+  typeof (globalThis as any).WebSocketPair === 'undefined'
+    ? new PrismaClient({ log: ['warn', 'error'] })
+    : (null as any);
 
 export class DatabaseStore {
   private isPostgresConnected: boolean = false;
+  private d1: any = null;
   private tenant: TenantMaster = JSON.parse(JSON.stringify(mockTenant));
   private ingestionQueue: RawDocumentIngestion[] = JSON.parse(JSON.stringify(initialIngestionQueue));
   private validationRecords: ValidationPreCheckRecord[] = JSON.parse(JSON.stringify(initialValidationRecords));
@@ -51,16 +53,41 @@ export class DatabaseStore {
   private users: UserRecord[] = JSON.parse(JSON.stringify(initialSeedUsers));
 
   constructor() {
-    this.initPostgres();
+    try {
+      if (typeof (globalThis as any).WebSocketPair === 'undefined') {
+        prisma = new PrismaClient({ log: ['warn', 'error'] });
+        if (process.env.DATABASE_URL) {
+          this.initPostgres();
+        }
+      }
+    } catch {
+      // In edge runtime before initD1
+    }
   }
 
-  private async initPostgres() {
+  public async initD1(d1Database: any) {
+    if (!d1Database) return;
+    this.d1 = d1Database;
+    if (this.isPostgresConnected && prisma) return;
     try {
+      const adapter = new PrismaD1(d1Database);
+      prisma = new PrismaClient({ adapter, log: ['warn', 'error'] } as any);
       await prisma.$connect();
       this.isPostgresConnected = true;
-      logger.info('🐘 PostgreSQL connected successfully via Prisma', { source: 'DatabaseStore' });
-      
-      // Optionally hydrate from PostgreSQL if data exists
+      logger.info('⚡ Cloudflare D1 connected successfully via Prisma D1 Adapter', { source: 'DatabaseStore' });
+      await this.hydrateFromDb();
+    } catch (err: any) {
+      this.isPostgresConnected = false;
+      logger.error('⚠️  Cloudflare D1 initialization error', {
+        source: 'DatabaseStore',
+        reason: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined
+      });
+    }
+  }
+
+  private async hydrateFromDb() {
+    try {
       const dbTenant = await prisma.tenantMaster.findFirst();
       if (dbTenant) {
         this.tenant = {
@@ -70,12 +97,26 @@ export class DatabaseStore {
           base_currency: dbTenant.base_currency as any,
           status: dbTenant.status as any,
           total_spend_evaluated: 0,
-          total_spend_evaluated_inr: 0
+          total_spend_evaluated_inr: 0,
+          major_sector: dbTenant.major_sector || undefined,
+          minor_sector: dbTenant.minor_sector || undefined
         };
       }
+    } catch {
+      // Ignore hydration errors
+    }
+  }
+
+  private async initPostgres() {
+    try {
+      if (!prisma) return;
+      await prisma.$connect();
+      this.isPostgresConnected = true;
+      logger.info('🗄️ Database connected successfully via Prisma', { source: 'DatabaseStore' });
+      await this.hydrateFromDb();
     } catch (err: any) {
       this.isPostgresConnected = false;
-      logger.warn('⚠️  PostgreSQL connection unavailable - running with active high-performance datastore', {
+      logger.warn('⚠️  Database connection unavailable - running with active high-performance datastore', {
         source: 'DatabaseStore',
         reason: err instanceof Error ? err.message.split('\n')[0] : String(err)
       });
@@ -230,11 +271,11 @@ export class DatabaseStore {
           progress: fullItem.progress,
           uploaded_at: new Date(fullItem.uploaded_at),
           records_count: fullItem.records_count,
-          detected_currencies: fullItem.detected_currencies,
+          detected_currencies: JSON.stringify(fullItem.detected_currencies),
           converted_inr_crores: fullItem.converted_inr_crores
         }
       }).catch((e: any) => {
-        logger.warn('PostgreSQL sync skipped - running with active in-memory store', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
+        logger.warn('Database sync skipped - running with active in-memory store', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
         this.isPostgresConnected = false;
       });
     }
@@ -674,10 +715,18 @@ export class DatabaseStore {
     return result;
   }
 
-  // Users & Authentication (PostgreSQL with resilient in-memory fallback)
+  // Users & Authentication (Cloudflare D1 & PostgreSQL with resilient in-memory fallback)
   public async getUserByEmail(email: string): Promise<UserRecord | null> {
     const normalizedEmail = email.trim().toLowerCase();
-    if (this.isPostgresConnected) {
+    if (this.d1) {
+      try {
+        const u = await this.d1.prepare('SELECT * FROM User WHERE LOWER(email) = ?').bind(normalizedEmail).first();
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('D1 query failed in getUserByEmail', { email: normalizedEmail, error: err.message });
+      }
+    }
+    if (this.isPostgresConnected && prisma) {
       try {
         const u = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
         if (u) return u as UserRecord;
@@ -692,7 +741,15 @@ export class DatabaseStore {
   public async getUserByEmailOrBuyerId(identifier: string): Promise<UserRecord | null> {
     const clean = identifier.trim();
     const normalizedEmail = clean.toLowerCase();
-    if (this.isPostgresConnected) {
+    if (this.d1) {
+      try {
+        const u = await this.d1.prepare('SELECT * FROM User WHERE LOWER(email) = ? OR id = ?').bind(normalizedEmail, clean).first();
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('D1 query failed in getUserByEmailOrBuyerId', { identifier: clean, error: err.message });
+      }
+    }
+    if (this.isPostgresConnected && prisma) {
       try {
         const u = await (prisma as any).user.findFirst({
           where: {
@@ -712,7 +769,15 @@ export class DatabaseStore {
   }
 
   public async getUserById(id: string): Promise<UserRecord | null> {
-    if (this.isPostgresConnected) {
+    if (this.d1) {
+      try {
+        const u = await this.d1.prepare('SELECT * FROM User WHERE id = ?').bind(id).first();
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('D1 query failed in getUserById', { id, error: err.message });
+      }
+    }
+    if (this.isPostgresConnected && prisma) {
       try {
         const u = await (prisma as any).user.findUnique({ where: { id } });
         if (u) return u as UserRecord;
@@ -732,7 +797,32 @@ export class DatabaseStore {
       created_at: now,
       updated_at: now
     };
-    if (this.isPostgresConnected) {
+    if (this.d1) {
+      try {
+        await this.d1.prepare(`
+          INSERT INTO User (id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          newUser.id,
+          newUser.name,
+          newUser.mobile_number,
+          newUser.email,
+          newUser.company_name,
+          newUser.company_address,
+          newUser.password_hash,
+          newUser.role,
+          newUser.status,
+          newUser.subscription_tier || 'BRONZE',
+          newUser.created_at.toISOString(),
+          newUser.updated_at.toISOString()
+        ).run();
+        this.users.push(newUser);
+        return newUser;
+      } catch (err: any) {
+        logger.error('D1 insert failed in createUser', { email: data.email, error: err.message });
+      }
+    }
+    if (this.isPostgresConnected && prisma) {
       try {
         const created = await (prisma as any).user.create({
           data: {
@@ -758,7 +848,16 @@ export class DatabaseStore {
   }
 
   public async updateUserPassword(id: string, passwordHash: string): Promise<boolean> {
-    if (this.isPostgresConnected) {
+    if (this.d1) {
+      try {
+        await this.d1.prepare('UPDATE User SET password_hash = ?, updated_at = ? WHERE id = ?')
+          .bind(passwordHash, new Date().toISOString(), id).run();
+        return true;
+      } catch (err: any) {
+        logger.warn('D1 query failed in updateUserPassword', { id, error: err.message });
+      }
+    }
+    if (this.isPostgresConnected && prisma) {
       try {
         await (prisma as any).user.update({
           where: { id },
@@ -781,7 +880,27 @@ export class DatabaseStore {
   public async getAllUsers(
     query?: { search?: string; role?: string; status?: string; tier?: string }
   ): Promise<UserRecord[]> {
-    if (this.isPostgresConnected) {
+    if (this.d1) {
+      try {
+        const res = await this.d1.prepare('SELECT * FROM User ORDER BY created_at DESC').all();
+        if (res?.results && res.results.length > 0) {
+          let users = res.results as UserRecord[];
+          if (query?.role && query.role !== 'ALL') {
+            users = users.filter((u) => u.role.toUpperCase() === query.role?.toUpperCase());
+          }
+          if (query?.status && query.status !== 'ALL') {
+            users = users.filter((u) => u.status.toUpperCase() === query.status?.toUpperCase());
+          }
+          if (query?.tier && query.tier !== 'ALL') {
+            users = users.filter((u) => u.subscription_tier?.toUpperCase() === query.tier?.toUpperCase());
+          }
+          return users;
+        }
+      } catch (err: any) {
+        logger.warn('D1 query failed in getAllUsers', { error: err.message });
+      }
+    }
+    if (this.isPostgresConnected && prisma) {
       try {
         const whereClause: any = {};
         if (query?.role && query.role !== 'ALL') {
@@ -796,9 +915,9 @@ export class DatabaseStore {
         if (query?.search && query.search.trim() !== '') {
           const q = query.search.trim();
           whereClause.OR = [
-            { name: { contains: q, mode: 'insensitive' } },
-            { email: { contains: q, mode: 'insensitive' } },
-            { company_name: { contains: q, mode: 'insensitive' } },
+            { name: { contains: q } },
+            { email: { contains: q } },
+            { company_name: { contains: q } },
             { mobile_number: { contains: q } }
           ];
         }

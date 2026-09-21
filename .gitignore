@@ -22,11 +22,17 @@ coverage/
 *.pem
 
 # Local env files
-.env*.local
-.env
-**/.env
+.env*
+**/.env*
 .dev.vars
 **/.dev.vars
+
+# Cloudflare & SQLite local state
+.wrangler/
+**/.wrangler/
+*.db
+*.sqlite*
+*.sqlite3*
 
 # Vercel
 .vercel

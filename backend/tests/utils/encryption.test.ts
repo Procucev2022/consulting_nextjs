@@ -256,5 +256,36 @@ describe('AES-256-GCM Encryption Utility', () => {
       const decrypted = decryptField<string>(serialized);
       expect(decrypted).toBe(str);
     });
+
+    it('should return plain string if decryptField encounters non-json string', () => {
+      const plain = 'non-json string';
+      const encrypted = encryptData(plain);
+      const serialized = serializeEncryptedPayload(encrypted);
+      const decrypted = decryptField<string>(serialized);
+      expect(decrypted).toBe(plain);
+    });
+  });
+
+  describe('Edge fallback encryption and decryption', () => {
+    it('should fallback to authenticated stream encryption when crypto.createCipheriv is not implemented', () => {
+      const cipherSpy = vi.spyOn(require('node:crypto'), 'createCipheriv').mockImplementation(() => {
+        throw new Error('createCipheriv is not implemented');
+      });
+      const decipherSpy = vi.spyOn(require('node:crypto'), 'createDecipheriv').mockImplementation(() => {
+        throw new Error('createDecipheriv is not implemented');
+      });
+
+      const message = 'Fallback encrypted edge secret message';
+      const encrypted = encryptData(message);
+      expect(encrypted.ciphertext).toBeDefined();
+      expect(encrypted.tag).toBeDefined();
+
+      const decrypted = decryptData(encrypted);
+      expect(decrypted).toBe(message);
+
+      cipherSpy.mockRestore();
+      decipherSpy.mockRestore();
+    });
   });
 });
+
