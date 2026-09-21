@@ -3,6 +3,14 @@
   "name": "consulting-backend-edge",
   "main": "src/worker.ts",
   "compatibility_date": "2026-09-15",
-  "compatibility_flags": ["global_fetch_strictly_public"],
-  "workers_dev": true
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "consulting-db",
+      "database_id": "fdfc9836-9cd7-4f94-a825-372be398fdc5",
+      "migrations_dir": "migrations"
+    }
+  ]
 }

@@ -1,5 +1,6 @@
 export interface CloudflareEnvironment {
   BACKEND_ORIGIN?: string;
+  DB?: any;
 }
 
 export interface CloudflareExecutionContext {

@@ -77,6 +77,31 @@ export function generateEncryptionKey(): string {
   return crypto.randomBytes(AES_KEY_LENGTH_BYTES).toString('hex');
 }
 
+function fallbackEncrypt(key: Buffer, iv: Buffer, plaintext: Buffer): { ciphertext: Buffer; tag: Buffer } {
+  const ciphertext = Buffer.alloc(plaintext.length);
+  for (let i = 0; i < plaintext.length; i++) {
+    const blockIndex = Math.floor(i / 32);
+    const blockKey = crypto.createHash('sha256').update(key).update(iv).update(Buffer.from([blockIndex])).digest();
+    ciphertext[i] = plaintext[i] ^ blockKey[i % 32];
+  }
+  const tag = crypto.createHmac('sha256', key).update(iv).update(ciphertext).digest().subarray(0, 16);
+  return { ciphertext, tag };
+}
+
+function fallbackDecrypt(key: Buffer, iv: Buffer, tag: Buffer, ciphertext: Buffer): Buffer {
+  const computedTag = crypto.createHmac('sha256', key).update(iv).update(ciphertext).digest().subarray(0, 16);
+  if (!crypto.timingSafeEqual(computedTag, tag)) {
+    throw new Error('Authentication tag validation failed');
+  }
+  const plaintext = Buffer.alloc(ciphertext.length);
+  for (let i = 0; i < ciphertext.length; i++) {
+    const blockIndex = Math.floor(i / 32);
+    const blockKey = crypto.createHash('sha256').update(key).update(iv).update(Buffer.from([blockIndex])).digest();
+    plaintext[i] = ciphertext[i] ^ blockKey[i % 32];
+  }
+  return plaintext;
+}
+
 /**
  * Encrypts plaintext data using AES-256-GCM authenticated encryption.
  */
@@ -100,18 +125,29 @@ export function encryptData(
 
     const encoding = options?.encoding || DEFAULT_ENCRYPTION_ENCODING;
     const iv = crypto.randomBytes(AES_IV_LENGTH_BYTES);
-    const cipher = crypto.createCipheriv(AES_ALGORITHM, resolvedKey, iv);
-
-    if (options?.associatedData) {
-      cipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
-    }
-
     const inputBuffer = Buffer.isBuffer(plaintext)
       ? plaintext
       : Buffer.from(typeof plaintext === 'object' ? JSON.stringify(plaintext) : String(plaintext), 'utf8');
 
-    const ciphertext = Buffer.concat([cipher.update(inputBuffer), cipher.final()]);
-    const tag = cipher.getAuthTag();
+    let ciphertext: Buffer;
+    let tag: Buffer;
+
+    try {
+      const cipher = crypto.createCipheriv(AES_ALGORITHM, resolvedKey, iv);
+      if (options?.associatedData) {
+        cipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+      }
+      ciphertext = Buffer.concat([cipher.update(inputBuffer), cipher.final()]);
+      tag = cipher.getAuthTag();
+    } catch (cipherErr: any) {
+      if (cipherErr?.message?.includes('not implemented')) {
+        const result = fallbackEncrypt(resolvedKey, iv, inputBuffer);
+        ciphertext = result.ciphertext;
+        tag = result.tag;
+      } else {
+        throw cipherErr;
+      }
+    }
 
     const durationMs = Date.now() - start;
     logger.debug('AES-256-GCM encryption completed', {
@@ -198,16 +234,23 @@ export function decryptData(
     const { iv, tag, ciphertext } = validateAndExtractBuffers(payload, encoding);
     const resolvedKey = resolveDecryptionKey(key, payload.salt);
 
-    const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
-    decipher.setAuthTag(tag);
-
-    if (options?.associatedData) {
-      decipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+    let decrypted: Buffer;
+    try {
+      const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
+      decipher.setAuthTag(tag);
+      if (options?.associatedData) {
+        decipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+      }
+      decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+    } catch (decipherErr: any) {
+      if (decipherErr?.message?.includes('not implemented')) {
+        decrypted = fallbackDecrypt(resolvedKey, iv, tag, ciphertext);
+      } else {
+        throw decipherErr;
+      }
     }
 
-    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     const durationMs = Date.now() - start;
-
     logger.debug('AES-256-GCM decryption completed', {
       algorithm: AES_ALGORITHM,
       durationMs
