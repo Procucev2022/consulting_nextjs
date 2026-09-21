@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetch as workerFetch } from '../src/worker';
+import defaultWorker, { fetch as workerFetch } from '../src/worker';
 import type { CloudflareExecutionContext } from '../src/types/cloudflare';
+import { db } from '../src/services/db';
 
 const executionContext: CloudflareExecutionContext = {
   waitUntil: vi.fn(),
@@ -25,74 +25,80 @@ describe('Cloudflare backend worker', () => {
 
     expect(response.status).toBe(204);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.com');
+    expect(response.headers.get('Access-Control-Allow-Methods')).toContain('POST');
   });
 
-  it('returns a local health response', async () => {
+  it('handles CORS preflight requests with default origin', async () => {
+    const response = await workerFetch(
+      request('/api/tenant', { method: 'OPTIONS' }),
+      {},
+      executionContext
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
+  });
+
+  it('returns a health response from the Express app', async () => {
     const response = await workerFetch(request('/api/health'), {}, executionContext);
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ status: 'ok', service: 'consulting-backend-edge' });
+    const body = await response.json();
+    expect(body.status).toBe('ok');
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*');
   });
 
-  it('rejects a missing or invalid backend origin', async () => {
-    const missing = await workerFetch(request('/api/tenant'), {}, executionContext);
-    const invalid = await workerFetch(request('/api/tenant'), { BACKEND_ORIGIN: 'not-a-url' }, executionContext);
-
-    expect(missing.status).toBe(503);
-    expect(invalid.status).toBe(503);
+  it('works when invoked through default export fetch', async () => {
+    const response = await defaultWorker.fetch(request('/api/health'), {}, executionContext);
+    expect(response.status).toBe(200);
   });
 
-  it('proxies requests, preserving the path, query, body, and CORS headers', async () => {
-    const upstream = new Response(JSON.stringify({ success: true }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
-    const fetchMock = vi.fn().mockResolvedValue(upstream);
-    vi.stubGlobal('fetch', fetchMock);
-
+  it('forwards requests with Origin headers and preserves CORS', async () => {
     const response = await workerFetch(
-      request('/api/tenant?region=us', {
-        method: 'POST',
-        headers: { Origin: 'https://app.example.com', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: 'Acme' })
+      request('/api/health', {
+        headers: { Origin: 'https://client.procucev.com' }
       }),
-      { BACKEND_ORIGIN: 'https://origin.example.com/base/' },
+      {},
       executionContext
     );
 
-    const proxiedRequest = fetchMock.mock.calls[0]?.[0];
-    expect(proxiedRequest).toBeInstanceOf(Request);
-    expect((proxiedRequest as Request).url).toBe('https://origin.example.com/base/api/tenant?region=us');
-    expect((proxiedRequest as Request).headers.get('X-Cloudflare-Service')).toBe('consulting-backend-edge');
-    await expect((proxiedRequest as Request).json()).resolves.toEqual({ name: 'Acme' });
-    expect(response.status).toBe(201);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://client.procucev.com');
+  });
+
+  it('initializes D1 database when environment.DB binding is present', async () => {
+    const initD1Spy = vi.spyOn(db, 'initD1').mockResolvedValue(undefined as never);
+    const mockDbBinding = { prepare: vi.fn() };
+
+    const response = await workerFetch(
+      request('/api/health'),
+      { DB: mockDbBinding },
+      executionContext
+    );
+
+    expect(initD1Spy).toHaveBeenCalledWith(mockDbBinding);
+    expect(response.status).toBe(200);
+  });
+
+  it('processes POST requests with JSON body into Express router', async () => {
+    const response = await workerFetch(
+      request('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Origin: 'https://app.example.com'
+        },
+        body: JSON.stringify({})
+      }),
+      {},
+      executionContext
+    );
+
+    // Should return 400 Bad Request because of missing required fields in request body
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.success).toBe(false);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.com');
   });
-
-  it('proxies GET requests without a body', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response('ok'));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await workerFetch(request('/api/tenant'), { BACKEND_ORIGIN: 'https://origin.example.com' }, executionContext);
-
-    const proxiedRequest = fetchMock.mock.calls[0]?.[0] as Request;
-    expect(proxiedRequest.method).toBe('GET');
-    expect(proxiedRequest.body).toBeNull();
-  });
-
-  it('returns a gateway error when the origin cannot be reached', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('connection refused')));
-
-    const response = await workerFetch(
-      request('/api/tenant'),
-      { BACKEND_ORIGIN: 'https://origin.example.com' },
-      executionContext
-    );
-
-    expect(response.status).toBe(502);
-    await expect(response.json()).resolves.toEqual({
-      success: false,
-      message: 'Backend origin is unavailable. Retry the request.'
-    });
-  });
 });
+

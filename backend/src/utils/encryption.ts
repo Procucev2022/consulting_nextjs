@@ -102,6 +102,29 @@ function fallbackDecrypt(key: Buffer, iv: Buffer, tag: Buffer, ciphertext: Buffe
   return plaintext;
 }
 
+function performAesEncryption(
+  resolvedKey: Buffer,
+  iv: Buffer,
+  inputBuffer: Buffer,
+  options?: EncryptionOptions
+): { ciphertext: Buffer; tag: Buffer } {
+  try {
+    const cipher = crypto.createCipheriv(AES_ALGORITHM, resolvedKey, iv);
+    if (options?.associatedData) {
+      cipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+    }
+    const ciphertext = Buffer.concat([cipher.update(inputBuffer), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return { ciphertext, tag };
+  } catch (cipherErr: unknown) {
+    const errMsg = cipherErr instanceof Error ? cipherErr.message : String(cipherErr);
+    if (errMsg.includes('not implemented')) {
+      return fallbackEncrypt(resolvedKey, iv, inputBuffer);
+    }
+    throw cipherErr;
+  }
+}
+
 /**
  * Encrypts plaintext data using AES-256-GCM authenticated encryption.
  */
@@ -129,25 +152,7 @@ export function encryptData(
       ? plaintext
       : Buffer.from(typeof plaintext === 'object' ? JSON.stringify(plaintext) : String(plaintext), 'utf8');
 
-    let ciphertext: Buffer;
-    let tag: Buffer;
-
-    try {
-      const cipher = crypto.createCipheriv(AES_ALGORITHM, resolvedKey, iv);
-      if (options?.associatedData) {
-        cipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
-      }
-      ciphertext = Buffer.concat([cipher.update(inputBuffer), cipher.final()]);
-      tag = cipher.getAuthTag();
-    } catch (cipherErr: any) {
-      if (cipherErr?.message?.includes('not implemented')) {
-        const result = fallbackEncrypt(resolvedKey, iv, inputBuffer);
-        ciphertext = result.ciphertext;
-        tag = result.tag;
-      } else {
-        throw cipherErr;
-      }
-    }
+    const { ciphertext, tag } = performAesEncryption(resolvedKey, iv, inputBuffer, options);
 
     const durationMs = Date.now() - start;
     logger.debug('AES-256-GCM encryption completed', {
@@ -216,6 +221,29 @@ function handleDecryptionError(err: unknown): never {
   throw err;
 }
 
+function performAesDecryption(
+  resolvedKey: Buffer,
+  iv: Buffer,
+  tag: Buffer,
+  ciphertext: Buffer,
+  options?: DecryptionOptions
+): Buffer {
+  try {
+    const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
+    decipher.setAuthTag(tag);
+    if (options?.associatedData) {
+      decipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
+    }
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+  } catch (decipherErr: unknown) {
+    const errMsg = decipherErr instanceof Error ? decipherErr.message : String(decipherErr);
+    if (errMsg.includes('not implemented')) {
+      return fallbackDecrypt(resolvedKey, iv, tag, ciphertext);
+    }
+    throw decipherErr;
+  }
+}
+
 /**
  * Decrypts an AES-256-GCM encrypted payload and verifies the authentication tag.
  */
@@ -234,21 +262,7 @@ export function decryptData(
     const { iv, tag, ciphertext } = validateAndExtractBuffers(payload, encoding);
     const resolvedKey = resolveDecryptionKey(key, payload.salt);
 
-    let decrypted: Buffer;
-    try {
-      const decipher = crypto.createDecipheriv(AES_ALGORITHM, resolvedKey, iv);
-      decipher.setAuthTag(tag);
-      if (options?.associatedData) {
-        decipher.setAAD(Buffer.from(options.associatedData, 'utf8'));
-      }
-      decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-    } catch (decipherErr: any) {
-      if (decipherErr?.message?.includes('not implemented')) {
-        decrypted = fallbackDecrypt(resolvedKey, iv, tag, ciphertext);
-      } else {
-        throw decipherErr;
-      }
-    }
+    const decrypted = performAesDecryption(resolvedKey, iv, tag, ciphertext, options);
 
     const durationMs = Date.now() - start;
     logger.debug('AES-256-GCM decryption completed', {

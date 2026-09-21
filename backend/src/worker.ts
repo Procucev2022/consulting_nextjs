@@ -17,23 +17,24 @@ const handleExpress = async (request: Request): Promise<Response> => {
 
   // Ensure body-parser / raw-body marks the stream as readable
   req.readable = true;
-  (req as any)._readableState = (req as any)._readableState || {};
-  (req as any)._readableState.ended = false;
+  const streamState = req as unknown as { _readableState: { ended: boolean } };
+  streamState._readableState = streamState._readableState || { ended: false };
+  streamState._readableState.ended = false;
 
   const chunks: Buffer[] = [];
   const res = new ServerResponse(req);
 
-  return new Promise<Response>(async (resolve, reject) => {
-    res.write = function (chunk: any, ...args: any[]) {
+  return new Promise<Response>((resolve, reject) => {
+    res.write = function (chunk: unknown, ..._args: unknown[]) {
       if (chunk) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string | Uint8Array));
       }
       return true;
     };
 
-    res.end = function (chunk: any, ...args: any[]) {
+    res.end = function (chunk?: unknown, ..._args: unknown[]) {
       if (chunk) {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string | Uint8Array));
       }
       const rawHeaders = res.getHeaders();
       const responseHeaders = new Headers();
@@ -65,7 +66,7 @@ const handleExpress = async (request: Request): Promise<Response> => {
       return res;
     };
 
-    try {
+    const processRequest = async (): Promise<void> => {
       if (request.method !== 'GET' && request.method !== 'HEAD') {
         const bodyBuffer = Buffer.from(await request.arrayBuffer());
         req.headers['content-length'] = String(bodyBuffer.length);
@@ -73,9 +74,9 @@ const handleExpress = async (request: Request): Promise<Response> => {
       }
       req.push(null);
       app(req, res);
-    } catch (err) {
-      reject(err);
-    }
+    };
+
+    processRequest().catch(reject);
   });
 };
 
