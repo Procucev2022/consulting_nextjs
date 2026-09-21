@@ -29,6 +29,12 @@ export interface CloudflareEnvironment {
   DB?: CloudflareD1Database;
   OBJECTS?: CloudflareR2Bucket;
   FRONTEND_URL?: string;
+  AUTH_SECRET?: string;
+}
+
+export interface AuthRouteResult {
+  body: Record<string, unknown>;
+  status: number;
 }
 
 export interface CloudflareExecutionContext {

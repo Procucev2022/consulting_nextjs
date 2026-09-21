@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import type {
   TenantMaster,
   RawDocumentIngestion,
@@ -147,11 +146,6 @@ export const schemaEntities = [
 
 export const vendorYearWiseDetails: VendorYearDetail[] = [];
 
-const hashPw = (pw: string, salt: string) => {
-  const h = crypto.pbkdf2Sync(pw, salt, 100000, 64, 'sha512').toString('hex');
-  return `${salt}:${h}`;
-};
-
 export const initialSeedUsers: UserRecord[] = [
   {
     id: 'usr-admin-001',
@@ -160,7 +154,7 @@ export const initialSeedUsers: UserRecord[] = [
     email: 'admin@procucev.com',
     company_name: 'aiCEV Procucev Enterprise Inc.',
     company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
-    password_hash: hashPw('Admin@123456', 'a1b2c3d4e5f60718293a4b5c6d7e8f90'),
+    password_hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f90:d94a65eb79041bf8bc35680693400ff3bc1cc9113000930f8d94cc61d6b7d842a152fcdc3d854e9daaf6d9789be1a09bdb6eb11750e63b605bf6f368085f7c3b',
     role: 'ADMIN',
     status: 'ACTIVE',
     subscription_tier: 'GOLD',
@@ -174,7 +168,7 @@ export const initialSeedUsers: UserRecord[] = [
     email: 'buyer@procucev.com',
     company_name: 'Enterprise Client Ltd.',
     company_address: 'Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India',
-    password_hash: hashPw('User@123456', 'b2c3d4e5f60718293a4b5c6d7e8f90a1'),
+    password_hash: 'b2c3d4e5f60718293a4b5c6d7e8f90a1:30ad14913a5d6652f98f32c1461a84ff793d18816c44eaa693f2828e2fe5a6de706fc18b8b1f437a570b665b153c49446dadd9c1803c9fc7184bfe0b618645a4',
     role: 'USER',
     status: 'ACTIVE',
     subscription_tier: 'GOLD',
