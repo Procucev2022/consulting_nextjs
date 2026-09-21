@@ -32,7 +32,10 @@ import logger from '../utils/logger';
 import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';
 import { CACHE_KEYS } from '../constants/db';
-export let prisma: PrismaClient = null as any;
+export let prisma: PrismaClient =
+  typeof (globalThis as any).WebSocketPair === 'undefined'
+    ? new PrismaClient({ log: ['warn', 'error'] })
+    : (null as any);
 
 export class DatabaseStore {
   private isPostgresConnected: boolean = false;
@@ -51,9 +54,11 @@ export class DatabaseStore {
 
   constructor() {
     try {
-      if (typeof (globalThis as any).WebSocketPair === 'undefined' && process.env.DATABASE_URL) {
+      if (typeof (globalThis as any).WebSocketPair === 'undefined') {
         prisma = new PrismaClient({ log: ['warn', 'error'] });
-        this.initPostgres();
+        if (process.env.DATABASE_URL) {
+          this.initPostgres();
+        }
       }
     } catch {
       // In edge runtime before initD1
