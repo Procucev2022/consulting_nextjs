@@ -10,7 +10,11 @@ export interface CloudflareD1PreparedStatement {
 }
 
 export interface CloudflareR2Bucket {
-  put(key: string, value: ArrayBuffer | ArrayBufferView | ReadableStream | string, options?: Record<string, unknown>): Promise<unknown>;
+  put(
+    key: string,
+    value: ArrayBuffer | ArrayBufferView | ReadableStream | string,
+    options?: Record<string, unknown>
+  ): Promise<unknown>;
   get(key: string): Promise<CloudflareR2Object | null>;
   delete(key: string): Promise<void>;
 }
