@@ -2,6 +2,7 @@ import {
   CLOUDFLARE_ALLOWED_HEADERS,
   CLOUDFLARE_ALLOWED_METHODS,
   CLOUDFLARE_API_PREFIX,
+  CLOUDFLARE_DEFAULT_FRONTEND_URL,
   CLOUDFLARE_HEALTH_PATH,
   CLOUDFLARE_MAX_AGE_SECONDS,
   CLOUDFLARE_SERVICE_NAME
@@ -39,57 +40,26 @@ const jsonResponse = (body: Record<string, unknown>, status: number, request: Re
   );
 };
 
-const resolveOrigin = (environment: CloudflareEnvironment): URL | null => {
-  if (!environment.BACKEND_ORIGIN) {
-    return null;
-  }
-
-  try {
-    return new URL(environment.BACKEND_ORIGIN);
-  } catch {
-    return null;
-  }
+const getFrontendOrigin = (environment: CloudflareEnvironment): string => {
+  return environment.FRONTEND_URL || CLOUDFLARE_DEFAULT_FRONTEND_URL;
 };
 
-const proxyRequest = async (
-  request: Request,
-  environment: CloudflareEnvironment,
-  executionContext: CloudflareExecutionContext
-): Promise<Response> => {
-  const origin = resolveOrigin(environment);
-  if (!origin) {
-    return jsonResponse(
-      { success: false, message: 'BACKEND_ORIGIN is missing or invalid.' },
-      503,
-      request
-    );
+const handleApiRequest = async (request: Request, environment: CloudflareEnvironment): Promise<Response> => {
+  const url = new URL(request.url);
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`) {
+    return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME, database: Boolean(environment.DB) }, 200, request);
   }
 
-  const target = new URL(request.url);
-  origin.pathname = `${origin.pathname.replace(/\/$/, '')}${target.pathname}`;
-  origin.search = target.search;
-
-  const headers = new Headers(request.headers);
-  headers.set('X-Forwarded-Host', target.host);
-  headers.set('X-Cloudflare-Service', CLOUDFLARE_SERVICE_NAME);
-
-  try {
-    const response = await globalThis.fetch(new Request(origin, {
-      method: request.method,
-      headers,
-      body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
-      duplex: request.method === 'GET' || request.method === 'HEAD' ? undefined : 'half',
-      redirect: 'manual'
-    }));
-    executionContext.waitUntil(Promise.resolve());
-    return withCors(response, request);
-  } catch {
-    return jsonResponse(
-      { success: false, message: 'Backend origin is unavailable. Retry the request.' },
-      502,
-      request
-    );
+  if (!environment.DB) {
+    return jsonResponse({ success: false, message: 'Cloudflare D1 binding is not configured.' }, 503, request);
   }
+
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/tenant` && request.method === 'GET') {
+    const tenant = await environment.DB.prepare('SELECT * FROM TenantMaster LIMIT 1').first();
+    return jsonResponse({ success: true, data: tenant }, 200, request);
+  }
+
+  return jsonResponse({ success: false, message: 'This API route has not been migrated to the Cloudflare Worker yet.' }, 501, request);
 };
 
 export const fetch = async (
@@ -100,14 +70,32 @@ export const fetch = async (
   const url = new URL(request.url);
 
   if (request.method === 'OPTIONS') {
-    return withCors(new Response(null, { status: 204 }), request);
+    const response = withCors(new Response(null, { status: 204 }), request);
+    response.headers.set(
+      'Access-Control-Allow-Origin',
+      environment.FRONTEND_URL || request.headers.get('Origin') || getFrontendOrigin(environment)
+    );
+    return response;
+  }
+
+  if (url.pathname === '/') {
+    return jsonResponse({
+      message: 'Consulting & Procurement Intelligence Platform - Cloudflare Worker API',
+      status: 'online',
+      docs: `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`
+    }, 200, request);
+  }
+
+  if (url.pathname.startsWith(CLOUDFLARE_API_PREFIX)) {
+    return handleApiRequest(request, environment);
   }
 
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`) {
     return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME }, 200, request);
   }
 
-  return proxyRequest(request, environment, executionContext);
+  executionContext.passThroughOnException();
+  return jsonResponse({ success: false, message: 'Endpoint not found.' }, 404, request);
 };
 
 export default { fetch };

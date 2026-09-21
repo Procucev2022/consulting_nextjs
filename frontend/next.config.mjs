@@ -15,7 +15,7 @@ const nextConfig = {
       process.env.BACKEND_INTERNAL_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
       (isProd
-        ? 'https://consulting-backend-edge.mukul93028.workers.dev'
+        ? 'https://consulting-nextjs-backend.mukul93028.workers.dev'
         : 'http://127.0.0.1:5000');
 
     // Normalize the backend URL so the rewrite destination is always a valid

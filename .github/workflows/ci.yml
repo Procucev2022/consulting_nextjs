@@ -122,7 +122,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy Backend Edge Worker
-        run: npx wrangler deploy --var BACKEND_ORIGIN:${{ secrets.BACKEND_ORIGIN }}
+        run: npx wrangler deploy
         working-directory: backend
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
