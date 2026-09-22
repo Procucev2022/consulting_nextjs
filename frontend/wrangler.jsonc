@@ -9,7 +9,7 @@
     "binding": "ASSETS"
   },
   "vars": {
-    "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+    "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.navinchaudhary-dev.workers.dev"
   },
   "observability": {
     "logs": {

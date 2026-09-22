@@ -9,27 +9,16 @@
 	"workers_dev": true,
 	"vars": {
 		"AUTH_SECRET": "a1b2c3d4e5f60718293a4b5c6d7e8f90_procucev_secret_key_2026",
-		"FRONTEND_URL": "https://consulting-frontend.mukul93028.workers.dev"
+		"FRONTEND_URL": "https://consulting-frontend.navinchaudhary-dev.workers.dev"
 	},
 	"observability": {
-		"logs": {
-			"enabled": true,
-			"head_sampling_rate": 1,
-			"invocation_logs": true,
-			"persist": true
-		}
+		"enabled": true
 	},
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "consulting-db",
-			"database_id": "4e7c2ba7-5cd2-4028-a630-2b5ae88625db"
-		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "OBJECTS",
-			"bucket_name": "consulting-doc"
+			"database_id": "fdfc9836-9cd7-4f94-a825-372be398fdc5"
 		}
 	]
 }
