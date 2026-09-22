@@ -47,3 +47,6 @@ pr-summary.md
 # Local storage
 storage/
 **/storage/
+*.db
+*.db-journal
+**/*.db

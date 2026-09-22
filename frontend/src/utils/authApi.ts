@@ -21,8 +21,7 @@ import {
   adminUpdateUserTierSchema
 } from '../constants/validation';
 import { AUTH_STORAGE_KEYS, AUTH_API_ENDPOINTS } from '../constants/auth';
-
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+import { getApiBaseUrl } from './apiBase';
 
 const setFilterParam = (params: URLSearchParams, key: string, value?: string): void => {
   if (value && value !== 'ALL') {
@@ -140,7 +139,7 @@ export const authApiClient = {
       throw new Error(`Validation failed: ${JSON.stringify(validation.errors)}`);
     }
 
-    const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.REGISTER}`, {
+    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.REGISTER}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)
@@ -162,7 +161,7 @@ export const authApiClient = {
       throw new Error(`Validation failed: ${JSON.stringify(validation.errors)}`);
     }
 
-    const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.LOGIN}`, {
+    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.LOGIN}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(validation.data)
@@ -183,7 +182,7 @@ export const authApiClient = {
       throw new Error('No authentication token found');
     }
 
-    const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.ME}`, {
+    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ME}`, {
       headers: { Authorization: `Bearer ${authToken}` }
     });
 
@@ -201,7 +200,7 @@ export const authApiClient = {
       throw new Error('Authentication required: please log in again');
     }
 
-    const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.CHANGE_PASSWORD}`, {
+    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CHANGE_PASSWORD}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -225,7 +224,7 @@ export const authApiClient = {
       headers.Authorization = `Bearer ${authToken}`;
     }
 
-    const res = await fetch(`${API_BASE}${AUTH_API_ENDPOINTS.ADMIN_USERS}${queryString}`, { headers });
+    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.ADMIN_USERS}${queryString}`, { headers });
     return await parseResponseJson<AdminUsersResponse>(res, 'Failed to load user directory');
   },
 
@@ -243,7 +242,7 @@ export const authApiClient = {
     }
 
     const endpoint = AUTH_API_ENDPOINTS.ADMIN_USER_STATUS(id);
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ status })
@@ -271,7 +270,7 @@ export const authApiClient = {
     }
 
     const endpoint = AUTH_API_ENDPOINTS.ADMIN_USER_TIER(id);
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(validation.data)
