@@ -417,6 +417,9 @@ export default function AdminLoginPage(): React.ReactElement {
             color: '#64748b'
           }}>
             Protected System. Access attempts are cryptographically signed and logged.
+            <div style={{ marginTop: '6px', color: '#38bdf8', fontSize: '11px', fontWeight: 500 }}>
+              🚀 Deployment Test: Active &amp; Verified
+            </div>
           </div>
         </div>
       </main>

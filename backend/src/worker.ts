@@ -298,6 +298,7 @@ export const fetch = async (
     return jsonResponse({
       message: 'Consulting & Procurement Intelligence Platform - Cloudflare Worker API',
       status: 'online',
+      version: '1.0.1-deployment-test',
       docs: `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`
     }, 200, request);
   }
