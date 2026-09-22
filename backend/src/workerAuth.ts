@@ -169,3 +169,117 @@ export const handleAuthRoute = async (
   if (url.pathname.endsWith('/login') && request.method === 'POST') return login(request, environment);
   return authenticatedRoute(request, environment, url);
 };
+
+export const handleAdminRoute = async (
+  request: Request,
+  environment: CloudflareEnvironment,
+  url: URL
+): Promise<AuthRouteResult> => {
+  if (!environment.DB || !environment.AUTH_SECRET) {
+    return result({ success: false, message: 'Cloudflare D1 or AUTH_SECRET is not configured.' }, 503);
+  }
+
+  const authHeader = request.headers.get('Authorization') || request.headers.get('x-auth-token') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  const payload = await verifyToken(token, environment.AUTH_SECRET);
+  if (!payload || payload.role !== AUTH_ROLES.ADMIN) {
+    return result({
+      success: false,
+      message: 'Access denied: Administrator privileges required'
+    }, 403);
+  }
+
+  // GET /api/admin/users
+  if (url.pathname.endsWith('/users') && request.method === 'GET') {
+    const search = url.searchParams.get('search')?.trim().toLowerCase() || '';
+    const role = url.searchParams.get('role')?.trim() || '';
+    const status = url.searchParams.get('status')?.trim() || '';
+    const tier = url.searchParams.get('tier')?.trim() || '';
+
+    const queryResult = await environment.DB.prepare(
+      'SELECT id, name, mobile_number, email, company_name, company_address, role, status, subscription_tier, created_at, updated_at FROM User ORDER BY created_at DESC'
+    ).all<Record<string, unknown>>();
+
+    let users = (queryResult.results || []) as Record<string, unknown>[];
+
+    if (search) {
+      users = users.filter((u) =>
+        String(u.name || '').toLowerCase().includes(search) ||
+        String(u.email || '').toLowerCase().includes(search) ||
+        String(u.company_name || '').toLowerCase().includes(search)
+      );
+    }
+    if (role && role !== 'ALL') {
+      users = users.filter((u) => u.role === role);
+    }
+    if (status && status !== 'ALL') {
+      users = users.filter((u) => u.status === status);
+    }
+    if (tier && tier !== 'ALL') {
+      users = users.filter((u) => u.subscription_tier === tier);
+    }
+
+    const activeCount = users.filter((u) => u.status === AUTH_STATUS.ACTIVE).length;
+    const uniqueCompanies = new Set(users.map((u) => String(u.company_name || '').trim().toLowerCase())).size;
+
+    return result({
+      success: true,
+      users,
+      total: users.length,
+      activeCount,
+      companiesCount: uniqueCompanies
+    }, 200);
+  }
+
+  // PATCH /api/admin/users/:id/status
+  const statusMatch = url.pathname.match(/\/admin\/users\/([^/]+)\/status$/);
+  if (statusMatch && request.method === 'PATCH') {
+    const userId = decodeURIComponent(statusMatch[1]);
+    const body = await readJson(request);
+    const newStatus = body.status as string;
+    if (!newStatus || (newStatus !== AUTH_STATUS.ACTIVE && newStatus !== AUTH_STATUS.SUSPENDED)) {
+      return result({ success: false, message: 'Invalid status. Must be ACTIVE or SUSPENDED.' }, 400);
+    }
+    const user = await environment.DB.prepare('SELECT * FROM User WHERE id = ?1').bind(userId).first<Record<string, unknown>>();
+    if (!user) {
+      return result({ success: false, message: 'User not found in registry' }, 404);
+    }
+    const now = new Date().toISOString();
+    await environment.DB.prepare('UPDATE User SET status = ?1, updated_at = ?2 WHERE id = ?3')
+      .bind(newStatus, now, userId)
+      .run();
+    const updated = { ...user, status: newStatus, updated_at: now };
+    return result({
+      success: true,
+      message: 'User status updated successfully',
+      user: publicUser(updated)
+    }, 200);
+  }
+
+  // PATCH /api/admin/users/:id/tier
+  const tierMatch = url.pathname.match(/\/admin\/users\/([^/]+)\/tier$/);
+  if (tierMatch && request.method === 'PATCH') {
+    const userId = decodeURIComponent(tierMatch[1]);
+    const body = await readJson(request);
+    const newTier = body.tier as string;
+    if (!newTier || !['BRONZE', 'SILVER', 'GOLD'].includes(newTier)) {
+      return result({ success: false, message: 'Invalid subscription tier. Must be BRONZE, SILVER, or GOLD.' }, 400);
+    }
+    const user = await environment.DB.prepare('SELECT * FROM User WHERE id = ?1').bind(userId).first<Record<string, unknown>>();
+    if (!user) {
+      return result({ success: false, message: 'User not found in registry' }, 404);
+    }
+    const now = new Date().toISOString();
+    await environment.DB.prepare('UPDATE User SET subscription_tier = ?1, updated_at = ?2 WHERE id = ?3')
+      .bind(newTier, now, userId)
+      .run();
+    const updated = { ...user, subscription_tier: newTier, updated_at: now };
+    return result({
+      success: true,
+      message: 'User subscription tier updated successfully',
+      user: publicUser(updated)
+    }, 200);
+  }
+
+  return result({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404);
+};

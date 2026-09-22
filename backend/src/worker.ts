@@ -8,7 +8,7 @@ import {
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
 import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
-import { handleAuthRoute } from './workerAuth';
+import { handleAuthRoute, handleAdminRoute } from './workerAuth';
 import {
   mockTenant,
   initialIngestionQueue,
@@ -35,18 +35,18 @@ const workerState = {
 };
 
 const getCorsHeaders = (request: Request): Headers => {
+  const origin = request.headers.get('Origin') || '*';
+  const reqHeaders = request.headers.get('Access-Control-Request-Headers') || CLOUDFLARE_ALLOWED_HEADERS;
   const headers = new Headers({
+    'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': CLOUDFLARE_ALLOWED_METHODS,
-    'Access-Control-Allow-Headers': CLOUDFLARE_ALLOWED_HEADERS,
+    'Access-Control-Allow-Headers': reqHeaders,
     'Access-Control-Max-Age': CLOUDFLARE_MAX_AGE_SECONDS,
     Vary: 'Origin'
   });
-  const origin = request.headers.get('Origin');
-  if (origin) {
-    headers.set('Access-Control-Allow-Origin', origin);
-  }
   return headers;
 };
+
 
 const withCors = (response: Response, request: Request): Response => {
   const headers = new Headers(response.headers);
@@ -124,6 +124,45 @@ const addIngestion = async (request: Request): Promise<{ data: unknown }> => {
   return { data: workerState.ingestionQueue };
 };
 
+const uploadIngestion = async (request: Request): Promise<{ data: unknown }> => {
+  const body = await readJson(request);
+  const fileName = String(body.fileName || 'dataset.xlsx');
+  const effectiveTenantId = String(
+    body.tenant_id ||
+    body.buyer_id ||
+    request.headers.get('x-buyer-id') ||
+    request.headers.get('x-tenant-id') ||
+    workerState.tenant.tenant_id
+  );
+  const fileSizeMb = Number(body.fileSizeMb || 1.0);
+  const ingestionItem = {
+    doc_id: `DOC-INGEST-${Date.now()}`,
+    tenant_id: effectiveTenantId,
+    file_name: fileName,
+    file_type: (body.fileType || 'XLSX'),
+    file_size_mb: fileSizeMb,
+    records_count: Number(body.recordsCount || 0),
+    converted_inr_crores: Number(body.convertedInrCrores || 0),
+    detected_currencies: Array.isArray(body.detectedCurrencies) ? body.detectedCurrencies : ['INR'],
+    ocr_status: 'Completed' as const,
+    progress: 100,
+    created_at: new Date().toISOString()
+  };
+  workerState.ingestionQueue = [ingestionItem, ...workerState.ingestionQueue] as typeof workerState.ingestionQueue;
+  const objectMeta = {
+    key: `raw-datasets/${Date.now()}_${fileName}`,
+    size: Math.round(fileSizeMb * 1024 * 1024),
+    uploadedAt: new Date().toISOString(),
+    bucket: 'consulting-doc'
+  };
+  return {
+    data: {
+      objectMeta,
+      ingestionQueue: workerState.ingestionQueue
+    }
+  };
+};
+
 const updateIngestion = async (request: Request): Promise<{ data: unknown; status?: number }> => {
   const body = await readJson(request);
   const recordId = String(body.record_id || '');
@@ -142,12 +181,14 @@ const deleteIngestion = (url: URL): { data: unknown } => {
 
 const handleIngestion = async (request: Request, url: URL): Promise<{ data: unknown; status?: number }> => {
   if (request.method === 'GET') return getIngestionData(url);
+  if (request.method === 'POST' && url.pathname.endsWith('/upload')) return uploadIngestion(request);
   if (request.method === 'POST' && url.pathname.endsWith('/remediate')) return remediateIngestion();
   if (request.method === 'POST') return addIngestion(request);
   if (request.method === 'PATCH') return updateIngestion(request);
   if (request.method === 'DELETE') return deleteIngestion(url);
   return { data: { success: false, message: 'Unsupported ingestion operation.' }, status: 405 };
 };
+
 
 const handleConversion = async (request: Request): Promise<Record<string, unknown>> => {
   if (request.method === 'GET') return { data: workerState.funnelStages };
@@ -274,6 +315,10 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
     const authResult = await handleAuthRoute(request, environment, url);
     return jsonResponse(authResult.body, authResult.status, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/admin`)) {
+    const adminResult = await handleAdminRoute(request, environment, url);
+    return jsonResponse(adminResult.body, adminResult.status, request);
   }
   return handleDataRoute(request, environment, url);
 };
