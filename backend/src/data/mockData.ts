@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import type {
   TenantMaster,
   RawDocumentIngestion,
@@ -136,5 +137,53 @@ export const schemaEntities = [
 
 export const vendorYearWiseDetails: VendorYearDetail[] = [];
 
-export const initialSeedUsers: UserRecord[] = [];
+const hashPw = (pw: string, salt: string) => {
+  const h = crypto.pbkdf2Sync(pw, salt, 100000, 64, 'sha512').toString('hex');
+  return `${salt}:${h}`;
+};
+
+export const initialSeedUsers: UserRecord[] = [
+  {
+    id: 'usr-admin-001',
+    name: 'System Administrator',
+    mobile_number: '+91 98765 43210',
+    email: 'admin@procucev.com',
+    company_name: 'aiCEV Procucev Enterprise Inc.',
+    company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
+    password_hash: hashPw('Admin@123456', 'a1b2c3d4e5f60718293a4b5c6d7e8f90'),
+    role: 'ADMIN',
+    status: 'ACTIVE',
+    subscription_tier: 'GOLD',
+    created_at: new Date('2026-01-01T00:00:00.000Z'),
+    updated_at: new Date('2026-01-01T00:00:00.000Z')
+  },
+  {
+    id: 'usr-user-001',
+    name: 'Buyer User',
+    mobile_number: '+91 98450 12345',
+    email: 'buyer@procucev.com',
+    company_name: 'Apex Industrial Dynamics Ltd.',
+    company_address: 'Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India',
+    password_hash: hashPw('User@123456', 'b2c3d4e5f60718293a4b5c6d7e8f90a1'),
+    role: 'USER',
+    status: 'ACTIVE',
+    subscription_tier: 'BRONZE',
+    created_at: new Date('2026-01-02T00:00:00.000Z'),
+    updated_at: new Date('2026-01-02T00:00:00.000Z')
+  },
+  {
+    id: 'usr-user-002',
+    name: 'Priya Sharma',
+    mobile_number: '+91 97123 45678',
+    email: 'priya.sharma@tatasupply.com',
+    company_name: 'Tata Strategic Procurement Corp',
+    company_address: 'Bombay House, 24 Homi Mody Street, Fort, Mumbai 400001, Maharashtra, India',
+    password_hash: hashPw('User@123456', 'c3d4e5f60718293a4b5c6d7e8f90a1b2'),
+    role: 'USER',
+    status: 'ACTIVE',
+    subscription_tier: 'SILVER',
+    created_at: new Date('2026-01-03T00:00:00.000Z'),
+    updated_at: new Date('2026-01-03T00:00:00.000Z')
+  }
+];
 
