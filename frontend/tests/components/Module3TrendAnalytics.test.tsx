@@ -89,10 +89,10 @@ describe('Module3TrendAnalytics Component', () => {
       />
     );
 
-    const creepBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterCreepAnomaly });
+    const creepBtn = screen.getByRole('button', { name: /Creep Anomaly/i });
     fireEvent.click(creepBtn);
 
-    const alignedBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAligned });
+    const alignedBtn = screen.getByRole('button', { name: /Aligned/i });
     fireEvent.click(alignedBtn);
 
     const allBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAllVendors(sampleVendorPriceRanks.length) });

@@ -141,6 +141,9 @@ export interface Module5ConversionMatrixProps {
   onOpenReport: () => void;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
+  categories?: SpendCategorySummary[];
+  opportunities?: SavingsOpportunity[];
+  cleanRecordsCount?: number;
 }
 
 export interface SummaryScopeModeEnum {

@@ -565,9 +565,8 @@ describe('Module1Ingestion Component', () => {
       major_sector: undefined as any,
       minor_sector: undefined as any
     };
-
     render(<Module1Ingestion {...defaultProps} tenant={sparseTenant as any} />);
-    expect(screen.getByText('Global Chemicals Corp.')).toBeInTheDocument();
+    expect(screen.getByText('Enterprise Client')).toBeInTheDocument();
     expect(screen.getByText('Chemical & Petrochemicals - Specialty Chemicals')).toBeInTheDocument();
   });
 

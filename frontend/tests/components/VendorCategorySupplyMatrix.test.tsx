@@ -2,9 +2,97 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VendorCategorySupplyMatrix } from '../../src/components/VendorCategorySupplyMatrix';
-import { mockTop50VendorsSupply } from '../../src/data/mockVendorSupply';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { VendorSupplyRecord } from '../../src/types/vendorSupply';
+
+const mockTop50VendorsSupply: VendorSupplyRecord[] = [
+  {
+    rank: 1,
+    vendor_name: 'Acme Chemical Global LLC',
+    master_vendor_id: 'VND-ACM-101',
+    total_spend_inr_cr: 25.5,
+    spend_fy24_cr: 7.0,
+    spend_fy25_cr: 8.5,
+    spend_fy26_cr: 10.0,
+    yoy_growth_pct: 17.6,
+    category_type: 'MULTI_CATEGORY',
+    category_count: 3,
+    primary_category: 'Chemicals & Solvents',
+    supplied_categories: ['Chemicals & Solvents', 'Packaging Materials', 'Industrial Gases'],
+    irrelevant_categories: ['Packaging Materials'],
+    line_items_count: 42,
+    risk_level: 'HIGH_RISK',
+    observation_note: 'Multi-category spend detected with packaging crossover',
+    spend_share_pct: 12.5,
+    spend_yoy_pct: 8.5,
+    qty_yoy_pct: 3.2,
+    price_yoy_pct: 5.1,
+    yoy_observation_mark: 'Inflation observed',
+    yoy_remark: 'Price revised',
+    top_items: [
+      {
+        material_code: 'MAT-CHEM-01',
+        material_description: 'Industrial Methanol 99%',
+        po_number: 'PO-2026-901',
+        unspsc_code: '12142104',
+        unspsc_title: 'Methanol',
+        spend_yoy_pct: 9.2,
+        qty_yoy_pct: 3.5,
+        price_yoy_pct: 5.5,
+        observation_mark: 'Global price index hike',
+        remark: 'Annual supply agreement'
+      }
+    ]
+  },
+  {
+    rank: 2,
+    vendor_name: 'DHL Global Freight Solutions',
+    master_vendor_id: 'VND-DHL-404',
+    total_spend_inr_cr: 18.2,
+    spend_fy24_cr: 5.5,
+    spend_fy25_cr: 6.2,
+    spend_fy26_cr: 6.5,
+    yoy_growth_pct: 4.8,
+    category_type: 'SINGLE_CATEGORY',
+    category_count: 1,
+    primary_category: 'Logistics & Freight Services',
+    supplied_categories: ['Logistics & Freight Services'],
+    irrelevant_categories: [],
+    line_items_count: 15,
+    risk_level: 'OPTIMAL',
+    observation_note: 'Specialized logistics freight provider',
+    spend_share_pct: 8.9,
+    spend_yoy_pct: -2.1,
+    qty_yoy_pct: 1.0,
+    price_yoy_pct: -3.1,
+    yoy_observation_mark: '',
+    yoy_remark: 'Volume discount applied'
+  },
+  {
+    rank: 50,
+    vendor_name: 'Allied Industrial Direct Source',
+    master_vendor_id: 'VND-ALL-050',
+    total_spend_inr_cr: 1.85,
+    spend_fy24_cr: 0.6,
+    spend_fy25_cr: 0.6,
+    spend_fy26_cr: 0.65,
+    yoy_growth_pct: 8.3,
+    category_type: 'SINGLE_CATEGORY',
+    category_count: 1,
+    primary_category: 'MRO & Tools',
+    supplied_categories: ['MRO & Tools'],
+    irrelevant_categories: [],
+    line_items_count: 8,
+    risk_level: 'OPTIMAL',
+    observation_note: 'Tail spend supplier',
+    spend_share_pct: 0.9,
+    spend_yoy_pct: 1.2,
+    qty_yoy_pct: 1.0,
+    price_yoy_pct: 0.2,
+    yoy_observation_mark: '',
+    yoy_remark: 'Stable spend'
+  }
+];
 
 describe('VendorCategorySupplyMatrix Component', () => {
   const strings = UI_STRINGS.module2.vendorSupply;

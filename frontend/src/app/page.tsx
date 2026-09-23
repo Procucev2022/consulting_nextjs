@@ -137,7 +137,7 @@ export default function Home() {
   const [tenant, setTenant] = useState<TenantMaster>(() => {
     if (typeof window !== 'undefined') {
       const user = authApiClient.getStoredUser();
-      if (user && user.role !== 'ADMIN') {
+      if (user) {
         return {
           ...mockTenant,
           enterprise_name: user.company_name || 'Enterprise Client',
@@ -146,7 +146,12 @@ export default function Home() {
         };
       }
     }
-    return mockTenant;
+    return {
+      ...mockTenant,
+      enterprise_name: 'Enterprise Client',
+      total_spend_evaluated_inr: 0,
+      total_spend_evaluated: 0
+    };
   });
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
 
@@ -163,7 +168,12 @@ export default function Home() {
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
   const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
   const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>([]);
-  const [funnelStages] = useState(conversionFunnelStages);
+  const [funnelStages] = useState(() =>
+    conversionFunnelStages.map((stage) => ({
+      ...stage,
+      spend_inr_crores: 0
+    }))
+  );
 
   const [completedSteps, setCompletedSteps] = useState<{
     step1: boolean;
@@ -1743,6 +1753,9 @@ export default function Home() {
           <Module5ConversionMatrix
             tenant={tenant}
             funnelStages={funnelStages}
+            categories={categories}
+            opportunities={opportunities}
+            cleanRecordsCount={uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || validationRecords.filter((v) => v.issue_flag === 'Passed Clean').length || 0)}
             onOpenReport={() => setIsReportModalOpen(true)}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}

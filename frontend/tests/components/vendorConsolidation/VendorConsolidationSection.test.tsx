@@ -9,11 +9,103 @@ import {
   getCategoryBadgeClass,
   getSupplierTierBadgeClass
 } from '../../../src/components/vendorConsolidation';
-import {
-  mockRecurringConsolidationItems,
-  calculateVendorConsolidationSummary
-} from '../../../src/data/mockVendorConsolidation';
+import { calculateVendorConsolidationSummary } from '../../../src/utils/step2Consolidation';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import type { RecurringConsolidationItem } from '../../../src/types/vendorConsolidation';
+
+const mockRecurringConsolidationItems: RecurringConsolidationItem[] = [
+  {
+    id: 'VC-PKG-01',
+    category: 'Packaging Materials',
+    item_group_title: 'Corrugated Packaging & Heavy-Duty Shipper Cartons',
+    item_group_code: 'PKG-BOX-CORR',
+    unspsc_family: 'Packaging Materials',
+    unspsc_code: '24121500',
+    total_spend_inr_cr: 18.4,
+    vendor_count: 5,
+    recurring_monthly: true,
+    procurement_cadence: 'Monthly Reorder',
+    monthly_po_avg: 14,
+    annual_units: 1250000,
+    unit_of_measure: 'Boxes',
+    price_variance_pct: 22.4,
+    target_consolidated_vendors: 2,
+    est_volume_savings_pct: 12.5,
+    est_volume_savings_cr: 2.3,
+    recommended_auction_type: 'Rank-Based Reverse Auction',
+    auction_platform: 'Procucev e-Sourcing Suite',
+    suppliers: [
+      {
+        vendor_id: 'VND-PKG-01',
+        vendor_name: 'Apex Corrugated Packaging Ltd',
+        annual_spend_inr_cr: 8.2,
+        spend_share_pct: 44.5,
+        unit_rate_index: 100,
+        monthly_po_count: 6,
+        status: 'Primary'
+      },
+      {
+        vendor_id: 'VND-PKG-02',
+        vendor_name: 'Metro Box & Containers Inc',
+        annual_spend_inr_cr: 5.4,
+        spend_share_pct: 29.3,
+        unit_rate_index: 114,
+        monthly_po_count: 4,
+        status: 'Incumbent'
+      },
+      {
+        vendor_id: 'VND-PKG-03',
+        vendor_name: 'QuickPack Logistics & Supplies',
+        annual_spend_inr_cr: 4.8,
+        spend_share_pct: 26.2,
+        unit_rate_index: 122,
+        monthly_po_count: 4,
+        status: 'Spot / Peripheral'
+      }
+    ],
+    consolidation_roadmap: [
+      'Standardize box specs',
+      'Conduct multi-round reverse auction',
+      'Allocate 70/30 volume split'
+    ]
+  },
+  {
+    id: 'VC-DIR-02',
+    category: 'Direct Materials',
+    item_group_title: 'Industrial Process Solvents & Specialty Cleaning Chemicals',
+    item_group_code: 'DIR-SOLV-PROC',
+    unspsc_family: 'Solvents',
+    unspsc_code: '12142100',
+    total_spend_inr_cr: 24.6,
+    vendor_count: 4,
+    recurring_monthly: true,
+    procurement_cadence: 'Monthly Reorder',
+    monthly_po_avg: 18,
+    annual_units: 450000,
+    unit_of_measure: 'Liters',
+    price_variance_pct: 18.5,
+    target_consolidated_vendors: 2,
+    est_volume_savings_pct: 10.0,
+    est_volume_savings_cr: 2.46,
+    recommended_auction_type: 'Dynamic English Reverse Auction',
+    auction_platform: 'Procucev e-Sourcing Suite',
+    suppliers: [
+      {
+        vendor_id: 'VND-CHM-01',
+        vendor_name: 'Reliance Petrochem Supply',
+        annual_spend_inr_cr: 12.0,
+        spend_share_pct: 48.8,
+        unit_rate_index: 100,
+        monthly_po_count: 8,
+        status: 'Primary'
+      }
+    ],
+    consolidation_roadmap: [
+      'Standardize solvent purity specifications',
+      'Execute 2-year framework contract'
+    ]
+  }
+];
 
 describe('Vendor Consolidation Components Suite', () => {
   const sampleItem = mockRecurringConsolidationItems[0];

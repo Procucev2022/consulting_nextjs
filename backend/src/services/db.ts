@@ -3,12 +3,6 @@ import {
   mockTenant,
   initialIngestionQueue,
   initialValidationRecords,
-  spendCategoriesData,
-  categoryYearWiseDetails,
-  vendorYearWiseDetails,
-  initialLineItemMappings,
-  vendorVolatilityRankings,
-  initialSavingsOpportunities,
   conversionFunnelStages,
   initialSeedUsers
 } from '../data/mockData';
@@ -38,16 +32,23 @@ export const prisma = new PrismaClient({
 
 export class DatabaseStore {
   private isPostgresConnected: boolean = false;
-  private tenant: TenantMaster = JSON.parse(JSON.stringify(mockTenant));
-  private ingestionQueue: RawDocumentIngestion[] = JSON.parse(JSON.stringify(initialIngestionQueue));
-  private validationRecords: ValidationPreCheckRecord[] = JSON.parse(JSON.stringify(initialValidationRecords));
-  private categories: SpendCategorySummary[] = JSON.parse(JSON.stringify(spendCategoriesData));
-  private categoryDetails: CategoryYearDetail[] = JSON.parse(JSON.stringify(categoryYearWiseDetails));
-  private vendorDetails: VendorYearDetail[] = JSON.parse(JSON.stringify(vendorYearWiseDetails));
-  private lineItems: LineItemMapping[] = JSON.parse(JSON.stringify(initialLineItemMappings));
-  private vendorRankings: VendorPriceRank[] = JSON.parse(JSON.stringify(vendorVolatilityRankings));
-  private opportunities: SavingsOpportunity[] = JSON.parse(JSON.stringify(initialSavingsOpportunities));
-  private funnelStages: ConversionFunnelPhase[] = JSON.parse(JSON.stringify(conversionFunnelStages));
+  private tenant: TenantMaster = {
+    ...mockTenant,
+    total_spend_evaluated: 0,
+    total_spend_evaluated_inr: 0
+  };
+  private ingestionQueue: RawDocumentIngestion[] = [];
+  private validationRecords: ValidationPreCheckRecord[] = [];
+  private categories: SpendCategorySummary[] = [];
+  private categoryDetails: CategoryYearDetail[] = [];
+  private vendorDetails: VendorYearDetail[] = [];
+  private lineItems: LineItemMapping[] = [];
+  private vendorRankings: VendorPriceRank[] = [];
+  private opportunities: SavingsOpportunity[] = [];
+  private funnelStages: ConversionFunnelPhase[] = conversionFunnelStages.map((stage) => ({
+    ...stage,
+    spend_inr_crores: 0
+  }));
   private users: UserRecord[] = JSON.parse(JSON.stringify(initialSeedUsers));
 
   constructor() {

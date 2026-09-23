@@ -16,7 +16,6 @@ import { DocumentSummaryView } from './DocumentSummaryView';
 import { ParetoSpendHierarchySection } from './ParetoSpendHierarchySection';
 import { ValidationPreCheckSection } from './ValidationPreCheckSection';
 import { IngestionUploadSection } from './IngestionUploadSection';
-import { yahooFinanceFXRates } from '../utils/currencyConverter';
 import { UI_STRINGS } from '../constants';
 
 export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
@@ -52,6 +51,53 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
   const [activeDatasetType, setActiveDatasetType] = useState<DatasetType>('Purchase History');
   const [spendPeriod, setSpendPeriod] = useState<string>('36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)');
+
+  // Live Real-Time Financial Exchange Rates
+  const [liveFXRates, setLiveFXRates] = useState<Record<string, { currentRate: number; name?: string }> | null>(null);
+  const [isLoadingFX, setIsLoadingFX] = useState<boolean>(true);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    async function loadLiveRates() {
+      try {
+        const res = await fetch('/api/currency');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && isMounted) {
+            setLiveFXRates(json.data);
+            setIsLoadingFX(false);
+            return;
+          }
+        }
+      } catch {
+        // Fallback to direct financial market API query
+      }
+      try {
+        const openRes = await fetch('https://open.er-api.com/v6/latest/USD');
+        if (openRes.ok) {
+          const openData = await openRes.json();
+          const inrPerUsd = openData.rates?.INR || 83.8;
+          if (isMounted) {
+            setLiveFXRates({
+              USD: { currentRate: Number(inrPerUsd.toFixed(2)), name: 'US Dollar' },
+              EUR: { currentRate: Number((inrPerUsd / (openData.rates?.EUR || 1)).toFixed(2)), name: 'Euro' },
+              GBP: { currentRate: Number((inrPerUsd / (openData.rates?.GBP || 1)).toFixed(2)), name: 'British Pound' },
+              AED: { currentRate: Number((inrPerUsd / (openData.rates?.AED || 3.6725)).toFixed(2)), name: 'UAE Dirham' },
+              JPY: { currentRate: Number((inrPerUsd / (openData.rates?.JPY || 150)).toFixed(2)), name: 'Japanese Yen' },
+              SGD: { currentRate: Number((inrPerUsd / (openData.rates?.SGD || 1.35)).toFixed(2)), name: 'Singapore Dollar' }
+            });
+            setIsLoadingFX(false);
+          }
+        }
+      } catch {
+        if (isMounted) setIsLoadingFX(false);
+      }
+    }
+    loadLiveRates();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores ?? (tenant.total_spend_evaluated_inr ?? 0);
@@ -159,20 +205,33 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 shrink-0">
           <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxRatesLabel}</span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 font-semibold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live Market Feed
+          </span>
         </div>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] overflow-x-auto">
-          {Object.entries(yahooFinanceFXRates)
-            .filter(([k]) => k !== 'INR')
-            .map(([curr, fx]) => (
-              <span
-                key={curr}
-                className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
-                title={`${fx.name} conversion rate`}
-              >
-                <span className="font-bold text-cyan-700 dark:text-cyan-400">{curr}/INR:</span>
-                <span className="font-black text-slate-900 dark:text-white">₹{fx.currentRate.toFixed(2)}</span>
-              </span>
-            ))}
+          {isLoadingFX ? (
+            <span className="text-slate-400 font-mono text-[11px] flex items-center space-x-1.5">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping inline-block" />
+              <span>Connecting live market feed...</span>
+            </span>
+          ) : liveFXRates ? (
+            Object.entries(liveFXRates)
+              .filter(([k]) => k !== 'INR')
+              .map(([curr, fx]) => (
+                <span
+                  key={curr}
+                  className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
+                  title={`${fx.name || curr} live rate to INR`}
+                >
+                  <span className="font-bold text-cyan-700 dark:text-cyan-400">{curr}/INR:</span>
+                  <span className="font-black text-slate-900 dark:text-white">₹{fx.currentRate.toFixed(2)}</span>
+                </span>
+              ))
+          ) : (
+            <span className="text-slate-400 font-mono text-[11px]">Live feed unavailable</span>
+          )}
         </div>
       </div>
 
@@ -182,7 +241,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">{UI_STRINGS.module1.activeTenant}</span>
             <span className="font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800/60">
-              {tenant?.enterprise_name || 'Global Chemicals Corp.'}
+              {tenant?.enterprise_name || 'Enterprise Client'}
             </span>
           </div>
           <span className="text-slate-300 dark:text-slate-700">|</span>

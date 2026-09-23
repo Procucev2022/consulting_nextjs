@@ -15,7 +15,7 @@ import {
 } from '../../constants';
 import {
   calculateVendorConsolidationSummary
-} from '../../data/mockVendorConsolidation';
+} from '../../utils/step2Calculators';
 import { VendorConsolidationSummaryBanner } from './VendorConsolidationSummaryBanner';
 import { VendorConsolidationCard } from './VendorConsolidationCard';
 import { VendorConsolidationModal } from './VendorConsolidationModal';

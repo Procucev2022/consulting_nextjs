@@ -106,7 +106,7 @@
   },
   "overrides": [
     {
-      "files": ["src/data/**", "src/services/db.ts", "tests/**", "prisma/**"],
+      "files": ["src/data/**", "src/services/db.ts", "src/worker*.ts", "tests/**", "prisma/**"],
       "rules": {
         "max-lines": "off",
         "max-len": "off",

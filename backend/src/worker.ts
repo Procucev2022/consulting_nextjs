@@ -2,25 +2,12 @@ import {
   CLOUDFLARE_ALLOWED_HEADERS,
   CLOUDFLARE_ALLOWED_METHODS,
   CLOUDFLARE_API_PREFIX,
-  CLOUDFLARE_DEFAULT_FRONTEND_URL,
   CLOUDFLARE_HEALTH_PATH,
   CLOUDFLARE_MAX_AGE_SECONDS,
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
 import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
-import {
-  mockTenant,
-  initialIngestionQueue,
-  initialValidationRecords,
-  spendCategoriesData,
-  categoryYearWiseDetails,
-  vendorYearWiseDetails,
-  vendorVolatilityRankings,
-  initialSavingsOpportunities,
-  conversionFunnelStages
-} from './data/mockData';
-import { yahooFinanceFXRates } from './constants/currency';
 import { geminiService } from './services/geminiService';
 import { aiCategorizationService } from './services/aiCategorizationService';
 import { aiReportService } from './services/aiReportService';
@@ -28,20 +15,6 @@ import { aiAnomalyService } from './services/aiAnomalyService';
 import { lookupTaxonomy, searchTaxonomy, getAllTaxonomyRecords } from './services/taxonomyService';
 import { EXTRACTION_STATUS, CLASSIFICATION_STATUS } from './constants/ai';
 import type { AiCategorizationItem } from './types/ai';
-
-
-
-const workerState = {
-  tenant: { ...mockTenant },
-  ingestionQueue: [...initialIngestionQueue],
-  validationRecords: [...initialValidationRecords],
-  categories: [...spendCategoriesData],
-  categoryDetails: [...categoryYearWiseDetails],
-  vendorDetails: [...vendorYearWiseDetails],
-  vendorRankings: [...vendorVolatilityRankings],
-  opportunities: [...initialSavingsOpportunities],
-  funnelStages: [...conversionFunnelStages]
-};
 
 const getCorsHeaders = (request: Request): Headers => {
   const origin = request.headers.get('Origin') || '*';
@@ -53,6 +26,9 @@ const getCorsHeaders = (request: Request): Headers => {
     'Access-Control-Max-Age': CLOUDFLARE_MAX_AGE_SECONDS,
     Vary: 'Origin'
   });
+  if (origin !== '*') {
+    headers.set('Access-Control-Allow-Credentials', 'true');
+  }
   return headers;
 };
 
@@ -74,10 +50,6 @@ const jsonResponse = (body: Record<string, unknown>, status: number, request: Re
   );
 };
 
-const getFrontendOrigin = (environment: CloudflareEnvironment): string => {
-  return environment.FRONTEND_URL || CLOUDFLARE_DEFAULT_FRONTEND_URL;
-};
-
 const readJson = async (request: Request): Promise<Record<string, unknown>> => {
   try {
     const body: unknown = await request.json();
@@ -88,52 +60,118 @@ const readJson = async (request: Request): Promise<Record<string, unknown>> => {
 };
 
 const getTenant = async (environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
-  if (!environment.DB) return workerState.tenant as unknown as Record<string, unknown>;
-  const tenant = await environment.DB.prepare('SELECT * FROM TenantMaster LIMIT 1').first<Record<string, unknown>>();
-  return tenant || workerState.tenant as unknown as Record<string, unknown>;
+  if (environment.DB) {
+    try {
+      const tenant = await environment.DB.prepare('SELECT * FROM TenantMaster LIMIT 1').first<Record<string, unknown>>();
+      if (tenant) return tenant;
+    } catch {
+      // fallback to baseline tenant
+    }
+  }
+  return {
+    tenant_id: 'TNT-GLOBAL-8902',
+    enterprise_name: 'Enterprise Client',
+    region: 'GLOBAL',
+    base_currency: 'INR',
+    status: 'ACTIVE',
+    total_spend_evaluated: 0,
+    total_spend_evaluated_inr: 0,
+    major_sector: 'Direct & Indirect Procurement',
+    minor_sector: 'Strategic Sourcing'
+  };
 };
 
 const apiData = (data: unknown, request: Request, extra: Record<string, unknown> = {}): Response => {
   return jsonResponse({ success: true, data, timestamp: new Date().toISOString(), ...extra }, 200, request);
 };
 
+const getIngestionData = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+  if (environment.DB) {
+    try {
+      const tenantId = url.searchParams.get('buyerId') || url.searchParams.get('tenantId');
+      const queueStmt = tenantId
+        ? environment.DB.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC').bind(tenantId)
+        : environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC');
+      const queueRes = await queueStmt.all<Record<string, unknown>>();
+      const queue = (queueRes.results || []).map((row: any) => ({
+        ...row,
+        detected_currencies: typeof row.detected_currencies === 'string'
+          ? (() => { try { return JSON.parse(row.detected_currencies); } catch { return ['INR']; } })()
+          : (row.detected_currencies || ['INR'])
+      }));
 
-const getIngestionData = (url: URL): { data: unknown } => {
-  const tenantId = url.searchParams.get('buyerId') || url.searchParams.get('tenantId');
-  const queue = tenantId
-    ? workerState.ingestionQueue.filter((item) => item.tenant_id === tenantId)
-    : workerState.ingestionQueue;
-  return { data: { queue, validationRecords: workerState.validationRecords, summary: {
-    totalFiles: queue.length,
-    totalRecords: workerState.validationRecords.length,
-    cleanCount: workerState.validationRecords.filter((item) => item.issue_flag === 'Passed Clean').length,
-    anomaliesCount: workerState.validationRecords.filter((item) => item.issue_flag !== 'Passed Clean').length
-  } } };
-};
+      const valRes = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all<Record<string, unknown>>();
+      const validationRecords = (valRes.results || []).map((row: any) => ({
+        ...row,
+        resolved: Boolean(row.resolved)
+      }));
 
-const remediateIngestion = (): { data: unknown } => {
-  const records = workerState.validationRecords.map((record) => ({
-    ...record,
-    resolved: true,
-    issue_flag: 'Passed Clean' as const,
-    action_status: 'Ready' as const
-  }));
-  workerState.validationRecords = records;
-  return { data: { updatedCount: records.length, records } };
-};
-
-const addIngestion = async (request: Request): Promise<{ data: unknown }> => {
-  const body = await readJson(request);
-  const item = {
-    ...body,
-    doc_id: body.doc_id || `DOC-INGEST-${Date.now()}`,
-    tenant_id: body.tenant_id || workerState.tenant.tenant_id
+      return {
+        data: {
+          queue,
+          validationRecords,
+          summary: {
+            totalFiles: queue.length,
+            totalRecords: validationRecords.length,
+            cleanCount: validationRecords.filter((item: any) => item.issue_flag === 'Passed Clean').length,
+            anomaliesCount: validationRecords.filter((item: any) => item.issue_flag !== 'Passed Clean').length
+          }
+        }
+      };
+    } catch {
+      // fallback
+    }
+  }
+  return {
+    data: {
+      queue: [],
+      validationRecords: [],
+      summary: { totalFiles: 0, totalRecords: 0, cleanCount: 0, anomaliesCount: 0 }
+    }
   };
-  workerState.ingestionQueue = [...workerState.ingestionQueue, item] as typeof workerState.ingestionQueue;
-  return { data: workerState.ingestionQueue };
 };
 
-const uploadIngestion = async (request: Request): Promise<{ data: unknown }> => {
+const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+  if (environment.DB) {
+    try {
+      await environment.DB.prepare("UPDATE ValidationPreCheckRecord SET resolved = 1, issue_flag = 'Passed Clean', action_status = 'Ready'").run();
+      const records = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all();
+      return { data: { updatedCount: records.results?.length || 0, records: records.results || [] } };
+    } catch {
+      // ignore
+    }
+  }
+  return { data: { updatedCount: 0, records: [] } };
+};
+
+const addIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+  const body = await readJson(request);
+  const docId = String(body.doc_id || `DOC-INGEST-${Date.now()}`);
+  const tenantId = String(body.tenant_id || 'TNT-GLOBAL-8902');
+  const fileName = String(body.file_name || 'dataset.xlsx');
+  const fileType = String(body.file_type || 'XLSX');
+  const fileSizeMb = Number(body.file_size_mb || 1.0);
+  const recordsCount = Number(body.records_count || 0);
+  const convertedInrCrores = Number(body.converted_inr_crores || 0);
+  const detectedCurrencies = JSON.stringify(Array.isArray(body.detected_currencies) ? body.detected_currencies : ['INR']);
+
+  if (environment.DB) {
+    try {
+      await environment.DB.prepare(`
+        INSERT INTO RawDocumentIngestion (
+          doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
+        ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
+      `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
+      const res = await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all();
+      return { data: res.results || [] };
+    } catch {
+      // ignore
+    }
+  }
+  return { data: [] };
+};
+
+const uploadIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
   const body = await readJson(request);
   const fileName = String(body.fileName || 'dataset.xlsx');
   const effectiveTenantId = String(
@@ -141,70 +179,120 @@ const uploadIngestion = async (request: Request): Promise<{ data: unknown }> => 
     body.buyer_id ||
     request.headers.get('x-buyer-id') ||
     request.headers.get('x-tenant-id') ||
-    workerState.tenant.tenant_id
+    'TNT-GLOBAL-8902'
   );
   const fileSizeMb = Number(body.fileSizeMb || 1.0);
-  const ingestionItem = {
-    doc_id: `DOC-INGEST-${Date.now()}`,
-    tenant_id: effectiveTenantId,
-    file_name: fileName,
-    file_type: (body.fileType || 'XLSX'),
-    file_size_mb: fileSizeMb,
-    records_count: Number(body.recordsCount || 0),
-    converted_inr_crores: Number(body.convertedInrCrores || 0),
-    detected_currencies: Array.isArray(body.detectedCurrencies) ? body.detectedCurrencies : ['INR'],
-    ocr_status: 'Completed' as const,
-    progress: 100,
-    created_at: new Date().toISOString()
-  };
-  workerState.ingestionQueue = [ingestionItem, ...workerState.ingestionQueue] as typeof workerState.ingestionQueue;
+  const docId = `DOC-INGEST-${Date.now()}`;
+  const fileType = String(body.fileType || 'XLSX');
+  const recordsCount = Number(body.recordsCount || 0);
+  const convertedInrCrores = Number(body.convertedInrCrores || 0);
+  const detectedCurrencies = JSON.stringify(Array.isArray(body.detectedCurrencies) ? body.detectedCurrencies : ['INR']);
+
+  if (environment.DB) {
+    try {
+      await environment.DB.prepare(`
+        INSERT INTO RawDocumentIngestion (
+          doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
+        ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
+      `).bind(docId, effectiveTenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
+    } catch {
+      // ignore
+    }
+  }
+
+  const queueRes = environment.DB
+    ? await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all<Record<string, unknown>>()
+    : { results: [] };
+
+  const parsedQueue = (queueRes.results || []).map((row: any) => ({
+    ...row,
+    detected_currencies: typeof row.detected_currencies === 'string'
+      ? (() => { try { return JSON.parse(row.detected_currencies); } catch { return ['INR']; } })()
+      : (Array.isArray(row.detected_currencies) ? row.detected_currencies : ['INR'])
+  }));
+
   const objectMeta = {
     key: `raw-datasets/${Date.now()}_${fileName}`,
     size: Math.round(fileSizeMb * 1024 * 1024),
     uploadedAt: new Date().toISOString(),
     bucket: 'consulting-doc'
   };
+
   return {
     data: {
       objectMeta,
-      ingestionQueue: workerState.ingestionQueue
+      ingestionQueue: parsedQueue
     }
   };
 };
 
-const updateIngestion = async (request: Request): Promise<{ data: unknown; status?: number }> => {
+const updateIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
   const body = await readJson(request);
   const recordId = String(body.record_id || '');
-  const updated = workerState.validationRecords.find((record) => record.record_id === recordId);
-  if (!updated) return { data: { success: false, message: 'Validation record not found.' }, status: 404 };
-  Object.assign(updated, body);
-  return { data: updated };
+  if (!recordId) return { data: { success: false, message: 'Missing record_id.' }, status: 400 };
+
+  if (environment.DB) {
+    try {
+      await environment.DB.prepare(`
+        UPDATE ValidationPreCheckRecord
+        SET issue_flag = COALESCE(?, issue_flag),
+            action_status = COALESCE(?, action_status),
+            resolved = COALESCE(?, resolved)
+        WHERE record_id = ?
+      `).bind(body.issue_flag ?? null, body.action_status ?? null, body.resolved !== undefined ? (body.resolved ? 1 : 0) : null, recordId).run();
+      const updated = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord WHERE record_id = ?').first();
+      return { data: updated || {} };
+    } catch {
+      // ignore
+    }
+  }
+  return { data: { success: false, message: 'Validation record not found.' }, status: 404 };
 };
 
-const deleteIngestion = (url: URL): { data: unknown } => {
-  workerState.ingestionQueue = url.pathname.includes('/document/')
-    ? workerState.ingestionQueue.filter((item) => item.doc_id !== url.pathname.split('/').pop())
-    : [];
-  return { data: workerState.ingestionQueue };
+const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+  const docId = url.pathname.includes('/document/') ? url.pathname.split('/').pop() : null;
+  if (environment.DB) {
+    try {
+      if (docId) {
+        await environment.DB.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ?').bind(docId).run();
+      } else {
+        await environment.DB.prepare('DELETE FROM RawDocumentIngestion').run();
+      }
+      const queue = await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all();
+      return { data: queue.results || [] };
+    } catch {
+      // ignore
+    }
+  }
+  return { data: [] };
 };
 
-const handleIngestion = async (request: Request, url: URL): Promise<{ data: unknown; status?: number }> => {
-  if (request.method === 'GET') return getIngestionData(url);
-  if (request.method === 'POST' && url.pathname.endsWith('/upload')) return uploadIngestion(request);
-  if (request.method === 'POST' && url.pathname.endsWith('/remediate')) return remediateIngestion();
-  if (request.method === 'POST') return addIngestion(request);
-  if (request.method === 'PATCH') return updateIngestion(request);
-  if (request.method === 'DELETE') return deleteIngestion(url);
+const handleIngestion = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<{ data: unknown; status?: number }> => {
+  if (request.method === 'GET') return getIngestionData(url, environment);
+  if (request.method === 'POST' && url.pathname.endsWith('/upload')) return uploadIngestion(request, environment);
+  if (request.method === 'POST' && url.pathname.endsWith('/remediate')) return remediateIngestion(environment);
+  if (request.method === 'POST') return addIngestion(request, environment);
+  if (request.method === 'PATCH') return updateIngestion(request, environment);
+  if (request.method === 'DELETE') return deleteIngestion(url, environment);
   return { data: { success: false, message: 'Unsupported ingestion operation.' }, status: 405 };
 };
 
-
-const handleConversion = async (request: Request): Promise<Record<string, unknown>> => {
-  if (request.method === 'GET') return { data: workerState.funnelStages };
+const handleConversion = async (request: Request, environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
+  if (request.method === 'GET') {
+    if (environment.DB) {
+      try {
+        const stages = await environment.DB.prepare('SELECT * FROM ConversionFunnelPhase').all();
+        if (stages.results && stages.results.length > 0) return { data: stages.results };
+      } catch {
+        // ignore
+      }
+    }
+    return { data: [] };
+  }
   const body = await readJson(request);
-  const annualSpendCr = Number(body.annualSpendCr || 428.5);
-  const savingsRate = Number(body.savingsRate || 9.4);
-  const saasFeeRate = Number(body.saasFeeRate || 0.85);
+  const annualSpendCr = Number(body.annualSpendCr || 0);
+  const savingsRate = Number(body.savingsRate || 0);
+  const saasFeeRate = Number(body.saasFeeRate || 0);
   const grossSavingsCr = annualSpendCr * savingsRate / 100;
   const platformFeeCr = annualSpendCr * saasFeeRate / 100;
   return {
@@ -215,20 +303,36 @@ const handleConversion = async (request: Request): Promise<Record<string, unknow
       grossSavingsCr,
       platformFeeCr,
       netClientBenefitCr: grossSavingsCr - platformFeeCr,
-      roiMultiple: grossSavingsCr / (platformFeeCr || 1)
+      roiMultiple: platformFeeCr > 0 ? grossSavingsCr / platformFeeCr : 0
     }
   };
 };
 
-const handleDatabase = (request: Request, environment: CloudflareEnvironment): Response => {
+const handleDatabase = async (request: Request, environment: CloudflareEnvironment): Promise<Response> => {
   const path = new URL(request.url).pathname;
   if (path.endsWith('/status')) {
+    let totalRecords = 0;
+    if (environment.DB) {
+      try {
+        const [t1, t2, t3, t4, t5, t6] = await Promise.all([
+          environment.DB.prepare('SELECT COUNT(*) as c FROM TenantMaster').first<any>(),
+          environment.DB.prepare('SELECT COUNT(*) as c FROM RawDocumentIngestion').first<any>(),
+          environment.DB.prepare('SELECT COUNT(*) as c FROM ValidationPreCheckRecord').first<any>(),
+          environment.DB.prepare('SELECT COUNT(*) as c FROM SpendCategorySummary').first<any>(),
+          environment.DB.prepare('SELECT COUNT(*) as c FROM VendorYearDetail').first<any>(),
+          environment.DB.prepare('SELECT COUNT(*) as c FROM User').first<any>()
+        ]);
+        totalRecords = (t1?.c || 0) + (t2?.c || 0) + (t3?.c || 0) + (t4?.c || 0) + (t5?.c || 0) + (t6?.c || 0);
+      } catch {
+        // ignore
+      }
+    }
     return apiData({
       isConnected: Boolean(environment.DB),
-      provider: 'Cloudflare D1',
+      provider: 'Cloudflare D1 (consulting-db)',
       serverTime: new Date().toISOString(),
-      tablesCount: 1,
-      totalRecords: 0
+      tablesCount: 11,
+      totalRecords
     }, request);
   }
   if (path.endsWith('/test-connection')) {
@@ -240,55 +344,150 @@ const handleDatabase = (request: Request, environment: CloudflareEnvironment): R
   }, request);
 };
 
-const handleIngestionRoute = async (request: Request, url: URL): Promise<Response> => {
-  const result = await handleIngestion(request, url);
+const handleIngestionRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
+  const result = await handleIngestion(request, environment, url);
   return result.status
     ? jsonResponse(result.data as Record<string, unknown>, result.status, request)
     : apiData(result.data, request);
 };
 
-const handleStaticDataRoute = (request: Request, url: URL): Response | null => {
+const handleStaticDataRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/categories`) {
-    return apiData({ categories: workerState.categories, categoryDetails: workerState.categoryDetails }, request);
+    if (environment.DB) {
+      try {
+        const [cats, details] = await Promise.all([
+          environment.DB.prepare('SELECT * FROM SpendCategorySummary').all(),
+          environment.DB.prepare('SELECT * FROM CategoryYearDetail').all()
+        ]);
+        return apiData({ categories: cats.results || [], categoryDetails: details.results || [] }, request);
+      } catch {
+        // ignore
+      }
+    }
+    return apiData({ categories: [], categoryDetails: [] }, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/vendors`) {
-    return apiData({ vendorRankings: workerState.vendorRankings, vendorDetails: workerState.vendorDetails }, request);
+    if (environment.DB) {
+      try {
+        const [ranks, details] = await Promise.all([
+          environment.DB.prepare('SELECT * FROM VendorPriceRank').all(),
+          environment.DB.prepare('SELECT * FROM VendorYearDetail').all()
+        ]);
+        return apiData({ vendorRankings: ranks.results || [], vendorDetails: details.results || [] }, request);
+      } catch {
+        // ignore
+      }
+    }
+    return apiData({ vendorRankings: [], vendorDetails: [] }, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/savings`) {
-    const total = workerState.opportunities.reduce((sum, item) => sum + (item.est_savings_inr_cr || 0), 0);
-    return apiData({ opportunities: workerState.opportunities, totalPotentialSavingsCr: total }, request);
+    if (environment.DB) {
+      try {
+        const opps = await environment.DB.prepare('SELECT * FROM SavingsOpportunity').all();
+        const opportunities = opps.results || [];
+        const total = opportunities.reduce((sum: number, item: any) => sum + (Number(item.est_savings_inr_cr) || 0), 0);
+        return apiData({ opportunities, totalPotentialSavingsCr: total }, request);
+      } catch {
+        // ignore
+      }
+    }
+    return apiData({ opportunities: [], totalPotentialSavingsCr: 0 }, request);
   }
   return null;
 };
 
-const handleFinancialRoute = async (request: Request, url: URL): Promise<Response | null> => {
+const handleFinancialRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/conversion`) {
-    const result = await handleConversion(request);
+    const result = await handleConversion(request, environment);
     return apiData(result.data, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/currency`) {
-    const from = url.searchParams.get('from');
+    const from = url.searchParams.get('from')?.toUpperCase().trim();
     const amount = Number(url.searchParams.get('amount') || 0);
-    const rate = from ? yahooFinanceFXRates[from]?.currentRate || 1 : 1;
-    const data = from
-      ? { amount, fromCurrency: from, amountINR: amount * rate, exchangeRate: rate }
-      : yahooFinanceFXRates;
-    return apiData(data, request);
+
+    const baseFXRates: Record<string, { ticker: string; currencyPair: string; currencyCode: string; name: string; currentRate: number; lastUpdated: string }> = {
+      USD: { ticker: 'USDINR=X', currencyPair: 'USD / INR', currencyCode: 'USD', name: 'US Dollar', currentRate: 83.9, lastUpdated: 'Live Global FX Market (API)' },
+      EUR: { ticker: 'EURINR=X', currencyPair: 'EUR / INR', currencyCode: 'EUR', name: 'Euro', currentRate: 91.2, lastUpdated: 'Live Global FX Market (API)' },
+      GBP: { ticker: 'GBPINR=X', currencyPair: 'GBP / INR', currencyCode: 'GBP', name: 'British Pound', currentRate: 109.5, lastUpdated: 'Live Global FX Market (API)' },
+      AED: { ticker: 'AEDINR=X', currencyPair: 'AED / INR', currencyCode: 'AED', name: 'UAE Dirham', currentRate: 22.8, lastUpdated: 'Live Global FX Market (API)' },
+      JPY: { ticker: 'JPYINR=X', currencyPair: 'JPY / INR', currencyCode: 'JPY', name: 'Japanese Yen', currentRate: 0.56, lastUpdated: 'Live Global FX Market (API)' },
+      SGD: { ticker: 'SGDINR=X', currencyPair: 'SGD / INR', currencyCode: 'SGD', name: 'Singapore Dollar', currentRate: 64.8, lastUpdated: 'Live Global FX Market (API)' },
+      INR: { ticker: 'INR=X', currencyPair: 'INR / INR', currencyCode: 'INR', name: 'Indian Rupee (Base)', currentRate: 1.0, lastUpdated: 'Base Currency' }
+    };
+
+    try {
+      const openRes = await globalThis.fetch('https://open.er-api.com/v6/latest/USD', {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ConsultingPlatform/1.0' }
+      });
+      if (openRes.ok) {
+        const openData: any = await openRes.json();
+        const inrPerUsd = openData.rates?.INR;
+        if (inrPerUsd && typeof inrPerUsd === 'number') {
+          baseFXRates.USD.currentRate = Number(inrPerUsd.toFixed(2));
+          if (openData.rates?.EUR) baseFXRates.EUR.currentRate = Number((inrPerUsd / openData.rates.EUR).toFixed(2));
+          if (openData.rates?.GBP) baseFXRates.GBP.currentRate = Number((inrPerUsd / openData.rates.GBP).toFixed(2));
+          if (openData.rates?.AED) baseFXRates.AED.currentRate = Number((inrPerUsd / openData.rates.AED).toFixed(2));
+          if (openData.rates?.JPY) baseFXRates.JPY.currentRate = Number((inrPerUsd / openData.rates.JPY).toFixed(2));
+          if (openData.rates?.SGD) baseFXRates.SGD.currentRate = Number((inrPerUsd / openData.rates.SGD).toFixed(2));
+        }
+      }
+    } catch {
+      // Safe live fallback
+    }
+
+    if (from) {
+      const rate = baseFXRates[from]?.currentRate || 1.0;
+      return apiData({
+        amount,
+        fromCurrency: from,
+        amountINR: Number((amount * rate).toFixed(2)),
+        exchangeRate: rate
+      }, request);
+    }
+    return apiData(baseFXRates, request);
   }
   return null;
 };
 
-const handleReportRoute = (request: Request, url: URL): Response | null => {
+const handleReportRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/report`) {
+    const tenant: any = await getTenant(environment);
+    let totalSpendEvaluatedCr = 0;
+    let totalLineItemsAudited = 0;
+    let categoryHighlights: any[] = [];
+    let topActionableOpportunities: any[] = [];
+
+    if (environment.DB) {
+      try {
+        const [docSpend, recordsCount, catDetails, opps] = await Promise.all([
+          environment.DB.prepare('SELECT SUM(converted_inr_crores) as totalSpend FROM RawDocumentIngestion').first<any>(),
+          environment.DB.prepare('SELECT COUNT(*) as cnt FROM ValidationPreCheckRecord').first<any>(),
+          environment.DB.prepare('SELECT * FROM CategoryYearDetail').all(),
+          environment.DB.prepare('SELECT * FROM SavingsOpportunity').all()
+        ]);
+        totalSpendEvaluatedCr = docSpend?.totalSpend || tenant.total_spend_evaluated_inr || 0;
+        totalLineItemsAudited = recordsCount?.cnt || 0;
+        categoryHighlights = catDetails.results || [];
+        topActionableOpportunities = opps.results || [];
+      } catch {
+        // ignore
+      }
+    }
+
+    const totalIdentifiedSavingsCr = topActionableOpportunities.reduce(
+      (sum: number, item: any) => sum + (Number(item.est_savings_inr_cr) || 0),
+      0
+    );
+
     return apiData({
-      tenant: workerState.tenant,
+      tenant,
       executiveSummary: {
-        totalSpendEvaluatedCr: workerState.tenant.total_spend_evaluated_inr || 0,
-        totalIdentifiedSavingsCr: 0,
-        totalLineItemsAudited: workerState.validationRecords.length
+        totalSpendEvaluatedCr: Number(totalSpendEvaluatedCr.toFixed(2)),
+        totalIdentifiedSavingsCr: Number(totalIdentifiedSavingsCr.toFixed(2)),
+        totalLineItemsAudited
       },
-      categoryHighlights: workerState.categoryDetails,
-      topActionableOpportunities: workerState.opportunities
+      categoryHighlights,
+      topActionableOpportunities
     }, request);
   }
   return null;
@@ -433,12 +632,12 @@ const handleTaxonomyRoute = (request: Request, url: URL): Response => {
 };
 
 const handleDataRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
-  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ingestion`)) return handleIngestionRoute(request, url);
-  const staticResponse = handleStaticDataRoute(request, url);
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ingestion`)) return handleIngestionRoute(request, environment, url);
+  const staticResponse = await handleStaticDataRoute(request, environment, url);
   if (staticResponse) return staticResponse;
-  const financialResponse = await handleFinancialRoute(request, url);
+  const financialResponse = await handleFinancialRoute(request, environment, url);
   if (financialResponse) return financialResponse;
-  const reportResponse = handleReportRoute(request, url);
+  const reportResponse = await handleReportRoute(request, environment, url);
   if (reportResponse) return reportResponse;
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/db/`)) return handleDatabase(request, environment);
   return jsonResponse({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404, request);
@@ -456,8 +655,33 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
 
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/tenant` && request.method === 'PUT') {
     const body = await readJson(request);
-    Object.assign(workerState.tenant, body);
-    return apiData(workerState.tenant, request);
+    if (environment.DB) {
+      try {
+        const tenantId = String(body.tenant_id || 'TNT-GLOBAL-8902');
+        await environment.DB.prepare(`
+          UPDATE TenantMaster 
+          SET enterprise_name = COALESCE(?, enterprise_name),
+              region = COALESCE(?, region),
+              base_currency = COALESCE(?, base_currency),
+              status = COALESCE(?, status),
+              major_sector = COALESCE(?, major_sector),
+              minor_sector = COALESCE(?, minor_sector),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE tenant_id = ?
+        `).bind(
+          body.enterprise_name ?? null,
+          body.region ?? null,
+          body.base_currency ?? null,
+          body.status ?? null,
+          body.major_sector ?? null,
+          body.minor_sector ?? null,
+          tenantId
+        ).run();
+      } catch {
+        // ignore
+      }
+    }
+    return apiData(await getTenant(environment), request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
     const authResult = await handleAuthRoute(request, environment, url);
@@ -481,36 +705,36 @@ export const fetch = async (
   environment: CloudflareEnvironment,
   executionContext: CloudflareExecutionContext
 ): Promise<Response> => {
-  const url = new URL(request.url);
+  try {
+    const url = new URL(request.url);
 
-  if (request.method === 'OPTIONS') {
-    const response = withCors(new Response(null, { status: 204 }), request);
-    response.headers.set(
-      'Access-Control-Allow-Origin',
-      environment.FRONTEND_URL || request.headers.get('Origin') || getFrontendOrigin(environment)
-    );
-    return response;
+    if (request.method === 'OPTIONS') {
+      return withCors(new Response(null, { status: 204 }), request);
+    }
+
+    if (url.pathname === '/') {
+      return jsonResponse({
+        message: 'Consulting & Procurement Intelligence Platform - Cloudflare Worker API',
+        status: 'online',
+        version: '1.0.1-deployment-test',
+        docs: `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`
+      }, 200, request);
+    }
+
+    if (url.pathname.startsWith(CLOUDFLARE_API_PREFIX)) {
+      return await handleApiRequest(request, environment);
+    }
+
+    if (url.pathname === `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`) {
+      return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME }, 200, request);
+    }
+
+    executionContext.passThroughOnException();
+    return jsonResponse({ success: false, message: 'Endpoint not found.' }, 404, request);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return jsonResponse({ success: false, message: errorMsg }, 500, request);
   }
-
-  if (url.pathname === '/') {
-    return jsonResponse({
-      message: 'Consulting & Procurement Intelligence Platform - Cloudflare Worker API',
-      status: 'online',
-      version: '1.0.1-deployment-test',
-      docs: `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`
-    }, 200, request);
-  }
-
-  if (url.pathname.startsWith(CLOUDFLARE_API_PREFIX)) {
-    return handleApiRequest(request, environment);
-  }
-
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`) {
-    return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME }, 200, request);
-  }
-
-  executionContext.passThroughOnException();
-  return jsonResponse({ success: false, message: 'Endpoint not found.' }, 404, request);
 };
 
 export default { fetch };

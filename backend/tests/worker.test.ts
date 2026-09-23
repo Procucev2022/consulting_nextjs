@@ -64,6 +64,130 @@ describe('Cloudflare backend worker', () => {
     });
   });
 
+  it('handles categories, vendors, and savings routes', async () => {
+    const all = vi.fn().mockResolvedValue({ results: [] });
+    const environment = {
+      DB: { prepare: vi.fn().mockReturnValue({ all, first: vi.fn().mockResolvedValue(null) }) }
+    };
+
+    const categoriesRes = await workerFetch(request('/api/categories'), environment, executionContext);
+    expect(categoriesRes.status).toBe(200);
+
+    const vendorsRes = await workerFetch(request('/api/vendors'), environment, executionContext);
+    expect(vendorsRes.status).toBe(200);
+
+    const savingsRes = await workerFetch(request('/api/savings'), environment, executionContext);
+    expect(savingsRes.status).toBe(200);
+  });
+
+  it('handles conversion, db, and report endpoints', async () => {
+    const all = vi.fn().mockResolvedValue({ results: [] });
+    const first = vi.fn().mockResolvedValue({ totalSpend: 100, cnt: 5 });
+    const environment = {
+      DB: {
+        prepare: vi.fn().mockReturnValue({
+          all,
+          first
+        })
+      }
+    };
+
+    const conversionRes = await workerFetch(request('/api/conversion'), environment, executionContext);
+    expect(conversionRes.status).toBe(200);
+
+    const dbRes = await workerFetch(request('/api/db/status'), environment, executionContext);
+    expect(dbRes.status).toBe(200);
+
+    const reportRes = await workerFetch(request('/api/report'), environment, executionContext);
+    expect(reportRes.status).toBe(200);
+  });
+
+  it('handles ingestion and taxonomy endpoints', async () => {
+    const all = vi.fn().mockResolvedValue({ results: [] });
+    const run = vi.fn().mockResolvedValue({});
+    const environment = {
+      DB: { prepare: vi.fn().mockReturnValue({ all, first: vi.fn().mockResolvedValue(null), bind: vi.fn().mockReturnValue({ run }) }) }
+    };
+
+    const queueRes = await workerFetch(request('/api/ingestion'), environment, executionContext);
+    expect(queueRes.status).toBe(200);
+
+    const uploadRes = await workerFetch(
+      request('/api/ingestion/upload', {
+        method: 'POST',
+        body: JSON.stringify({ fileName: 'data.xlsx', fileSizeMb: 2 }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      environment,
+      executionContext
+    );
+    expect(uploadRes.status).toBe(200);
+
+    const taxRes = await workerFetch(request('/api/taxonomy?q=valves'), environment, executionContext);
+    expect(taxRes.status).toBe(200);
+  });
+
+  it('handles currency endpoints', async () => {
+    const ratesRes = await workerFetch(request('/api/currency'), {}, executionContext);
+    expect(ratesRes.status).toBe(200);
+
+    const convertRes = await workerFetch(
+      request('/api/currency?from=USD&amount=100'),
+      {},
+      executionContext
+    );
+    expect(convertRes.status).toBe(200);
+  });
+
+  it('handles AI endpoints', async () => {
+    const configRes = await workerFetch(request('/api/ai/config'), {}, executionContext);
+    expect(configRes.status).toBe(200);
+
+    const extractRes = await workerFetch(
+      request('/api/ai/extract', {
+        method: 'POST',
+        body: JSON.stringify({ documentText: 'Line 1 Item' }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      {},
+      executionContext
+    );
+    expect(extractRes.status).toBe(200);
+
+    const catRes = await workerFetch(
+      request('/api/ai/categorize', {
+        method: 'POST',
+        body: JSON.stringify({ items: [{ lineId: '1', rawDescription: 'Ball bearings' }] }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      {},
+      executionContext
+    );
+    expect(catRes.status).toBe(200);
+
+    const execReportRes = await workerFetch(
+      request('/api/ai/executive-summary', {
+        method: 'POST',
+        body: JSON.stringify({ tenantName: 'Acme', totalSpendInrCr: 10 }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      {},
+      executionContext
+    );
+    expect(execReportRes.status).toBe(200);
+
+    const anomaliesRes = await workerFetch(
+      request('/api/ai/analyze-anomalies', {
+        method: 'POST',
+        body: JSON.stringify({ records: [] }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
+      {},
+      executionContext
+    );
+    expect(anomaliesRes.status).toBe(200);
+  });
+
   it('registers and logs in a user through D1', async () => {
     const users = new Map<string, Record<string, unknown>>();
     const prepare = vi.fn((query: string) => ({

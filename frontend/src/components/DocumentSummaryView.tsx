@@ -17,11 +17,6 @@ import type {
   MonthGraphViewMode,
   SummaryScopeMode
 } from '../types';
-import {
-  mockMaterialGroupSummaries,
-  mockPlantSummaries,
-  mockMonthWiseSummaries
-} from '../data/mockData';
 import { UI_STRINGS } from '../constants';
 import { MonthWiseTrendChart } from './MonthWiseTrendChart';
 
@@ -59,9 +54,9 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   const resolvedFileName = activeDoc.file_name || 'Uploaded Dataset';
   const resolvedSpendCr = activeDoc.converted_inr_crores != null ? activeDoc.converted_inr_crores : 0;
 
-  const materialGroups = materialGroupSummaries !== undefined ? materialGroupSummaries : mockMaterialGroupSummaries;
-  const plants = plantSummaries !== undefined ? plantSummaries : mockPlantSummaries;
-  const months = monthWiseSummaries !== undefined ? monthWiseSummaries : mockMonthWiseSummaries;
+  const materialGroups = materialGroupSummaries ?? [];
+  const plants = plantSummaries ?? [];
+  const months = monthWiseSummaries ?? [];
 
   const resolvedUniqueItems = uniqueItemsCount ?? activeDoc.unique_items_count ?? (activeDoc.records_count ? Math.round(activeDoc.records_count * 0.3) : 0);
   const resolvedUniqueVendors = uniqueVendorsCount ?? activeDoc.unique_vendors_count ?? (activeDoc.records_count ? Math.round(activeDoc.records_count * 0.08) : 0);

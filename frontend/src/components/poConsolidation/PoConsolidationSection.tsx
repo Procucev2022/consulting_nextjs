@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Layers, Search, LayoutGrid, Table, ArrowUpDown } from 'lucide-react';
 import type { PoConsolidationSectionProps, MultiplePoItem, PoConsolidationCadence } from '../../types/poConsolidation';
-import { calculatePoConsolidationSummary } from '../../data/mockPoConsolidation';
+import { calculatePoConsolidationSummary } from '../../utils/step2Calculators';
 import { PO_CONSOLIDATION_CATEGORY_TABS, PO_CONSOLIDATION_SORT_OPTIONS, getCadenceBadgeClass } from '../../constants/poConsolidation';
 import { UI_STRINGS } from '../../constants/uiStrings';
 import { PoConsolidationSummaryBanner } from './PoConsolidationSummaryBanner';
