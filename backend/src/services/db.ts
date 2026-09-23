@@ -3,12 +3,6 @@ import {
   mockTenant,
   initialIngestionQueue,
   initialValidationRecords,
-  spendCategoriesData,
-  categoryYearWiseDetails,
-  vendorYearWiseDetails,
-  initialLineItemMappings,
-  vendorVolatilityRankings,
-  initialSavingsOpportunities,
   conversionFunnelStages,
   initialSeedUsers
 } from '../data/mockData';

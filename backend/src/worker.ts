@@ -2,7 +2,6 @@ import {
   CLOUDFLARE_ALLOWED_HEADERS,
   CLOUDFLARE_ALLOWED_METHODS,
   CLOUDFLARE_API_PREFIX,
-  CLOUDFLARE_DEFAULT_FRONTEND_URL,
   CLOUDFLARE_HEALTH_PATH,
   CLOUDFLARE_MAX_AGE_SECONDS,
   CLOUDFLARE_SERVICE_NAME
@@ -49,10 +48,6 @@ const jsonResponse = (body: Record<string, unknown>, status: number, request: Re
     }),
     request
   );
-};
-
-const getFrontendOrigin = (environment: CloudflareEnvironment): string => {
-  return environment.FRONTEND_URL || CLOUDFLARE_DEFAULT_FRONTEND_URL;
 };
 
 const readJson = async (request: Request): Promise<Record<string, unknown>> => {
@@ -456,7 +451,7 @@ const handleFinancialRoute = async (request: Request, environment: CloudflareEnv
 
 const handleReportRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/report`) {
-    let tenant: any = await getTenant(environment);
+    const tenant: any = await getTenant(environment);
     let totalSpendEvaluatedCr = 0;
     let totalLineItemsAudited = 0;
     let categoryHighlights: any[] = [];

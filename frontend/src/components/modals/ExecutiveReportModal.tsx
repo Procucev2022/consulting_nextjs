@@ -2,8 +2,6 @@
 import React, { useState } from 'react';
 import type { ExecutiveReportModalProps } from '../../types';
 import {
-  DEFAULT_SPEND_BASELINE_INR_CR,
-  DEFAULT_SAVINGS_TARGET_INR_CR,
   PRESENTATION_TOTAL_SLIDES
 } from '../../constants';
 import {

@@ -14,9 +14,7 @@ import type { Module3TrendAnalyticsProps } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
 import {
   UI_STRINGS,
-  TIMELINE_MONTHS,
-  MARKET_INDEX_DATA,
-  VENDOR_INVOICED_DATA
+  TIMELINE_MONTHS
 } from '../constants';
 import {
   Chart as ChartJS,

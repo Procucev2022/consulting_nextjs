@@ -14,6 +14,36 @@ import {
   VENDOR_SUPPLY_TIERS
 } from '../constants/vendorSupply';
 
+function buildTierSummary(
+  tierVendors: VendorSupplyRecord[],
+  tierConfig: { id: string; name: string; label: string; minSpendCr: number },
+  alarmTriggered: boolean = false
+): VendorSupplyTierSummary {
+  const totalSpendCr = tierVendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
+  const multiVendors = tierVendors.filter((v) => v.category_type === 'MULTI_CATEGORY');
+  const multiSpendCr = multiVendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
+  const multiSpendPct = totalSpendCr > 0 ? (multiSpendCr / totalSpendCr) * 100 : 0;
+  const singleVendors = tierVendors.filter((v) => v.category_type === 'SINGLE_CATEGORY');
+  const singleSpendCr = singleVendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
+  const singleSpendPct = totalSpendCr > 0 ? (singleSpendCr / totalSpendCr) * 100 : 0;
+
+  return {
+    tier_id: tierConfig.id,
+    tier_name: tierConfig.name,
+    spend_range_label: tierConfig.label,
+    min_spend_cr: tierConfig.minSpendCr,
+    vendor_count: tierVendors.length,
+    total_spend_cr: totalSpendCr,
+    multi_category_count: multiVendors.length,
+    multi_category_spend_cr: multiSpendCr,
+    multi_category_spend_pct: multiSpendPct,
+    single_category_count: singleVendors.length,
+    single_category_spend_cr: singleSpendCr,
+    single_category_spend_pct: singleSpendPct,
+    alarm_triggered: alarmTriggered
+  };
+}
+
 export function computeVendorSupplyOverview(
   vendors: VendorSupplyRecord[] = []
 ): VendorSupplyOverview {
@@ -29,94 +59,30 @@ export function computeVendorSupplyOverview(
   const singleCategorySpendPct = totalSpendCr > 0 ? (singleCategorySpendCr / totalSpendCr) * 100 : 0;
   const multiCategorySpendPct = totalSpendCr > 0 ? (multiCategorySpendCr / totalSpendCr) * 100 : 0;
 
-  // Tier 1: High Spend (> ₹15 Cr)
   const tier1Vendors = vendors.filter((v) => v.total_spend_inr_cr >= VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR);
-  const tier1SpendCr = tier1Vendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier1Multi = tier1Vendors.filter((v) => v.category_type === 'MULTI_CATEGORY');
-  const tier1MultiSpendCr = tier1Multi.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier1MultiSpendPct = tier1SpendCr > 0 ? (tier1MultiSpendCr / tier1SpendCr) * 100 : 0;
-  const tier1Single = tier1Vendors.filter((v) => v.category_type === 'SINGLE_CATEGORY');
-  const tier1SingleSpendCr = tier1Single.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier1SingleSpendPct = tier1SpendCr > 0 ? (tier1SingleSpendCr / tier1SpendCr) * 100 : 0;
-
-  // Tier 2: Mid Spend (₹5 Cr – ₹15 Cr)
   const tier2Vendors = vendors.filter(
     (v) =>
       v.total_spend_inr_cr >= VENDOR_SUPPLY_THRESHOLDS.MID_SPEND_THRESHOLD_CR &&
       v.total_spend_inr_cr < VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR
   );
-  const tier2SpendCr = tier2Vendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier2Multi = tier2Vendors.filter((v) => v.category_type === 'MULTI_CATEGORY');
-  const tier2MultiSpendCr = tier2Multi.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier2MultiSpendPct = tier2SpendCr > 0 ? (tier2MultiSpendCr / tier2SpendCr) * 100 : 0;
-  const tier2Single = tier2Vendors.filter((v) => v.category_type === 'SINGLE_CATEGORY');
-  const tier2SingleSpendCr = tier2Single.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier2SingleSpendPct = tier2SpendCr > 0 ? (tier2SingleSpendCr / tier2SpendCr) * 100 : 0;
-
-  // Tier 3: Base Spend (< ₹5 Cr)
   const tier3Vendors = vendors.filter((v) => v.total_spend_inr_cr < VENDOR_SUPPLY_THRESHOLDS.MID_SPEND_THRESHOLD_CR);
-  const tier3SpendCr = tier3Vendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier3Multi = tier3Vendors.filter((v) => v.category_type === 'MULTI_CATEGORY');
-  const tier3MultiSpendCr = tier3Multi.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier3MultiSpendPct = tier3SpendCr > 0 ? (tier3MultiSpendCr / tier3SpendCr) * 100 : 0;
-  const tier3Single = tier3Vendors.filter((v) => v.category_type === 'SINGLE_CATEGORY');
-  const tier3SingleSpendCr = tier3Single.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const tier3SingleSpendPct = tier3SpendCr > 0 ? (tier3SingleSpendCr / tier3SpendCr) * 100 : 0;
 
-  // Alarm condition: If Multi-Category vendors account for >50% of spend in Tier 1 OR >50% of vendor count in Tier 1
+  const tier1Summary = buildTierSummary(tier1Vendors, VENDOR_SUPPLY_TIERS.TIER_1_HIGH);
+  const multiCountRatio = tier1Vendors.length > 0 ? tier1Summary.multi_category_count / tier1Vendors.length : 0;
   const highSpendMultiAlarm =
     tier1Vendors.length > 0 &&
-    (tier1Multi.length / tier1Vendors.length >= VENDOR_SUPPLY_THRESHOLDS.MULTI_CATEGORY_ALARM_COUNT_RATIO_THRESHOLD ||
-      tier1MultiSpendPct >= VENDOR_SUPPLY_THRESHOLDS.MULTI_CATEGORY_ALARM_SPEND_SHARE_THRESHOLD * 100);
+    (multiCountRatio >= VENDOR_SUPPLY_THRESHOLDS.MULTI_CATEGORY_ALARM_COUNT_RATIO_THRESHOLD ||
+      tier1Summary.multi_category_spend_pct >=
+        VENDOR_SUPPLY_THRESHOLDS.MULTI_CATEGORY_ALARM_SPEND_SHARE_THRESHOLD * 100);
 
-  const potentialSavingsCr = tier1MultiSpendCr * VENDOR_SUPPLY_THRESHOLDS.ESTIMATED_SAVINGS_OPPORTUNITY_RATE;
+  tier1Summary.alarm_triggered = highSpendMultiAlarm;
+  const potentialSavingsCr =
+    tier1Summary.multi_category_spend_cr * VENDOR_SUPPLY_THRESHOLDS.ESTIMATED_SAVINGS_OPPORTUNITY_RATE;
 
   const tiers: VendorSupplyTierSummary[] = [
-    {
-      tier_id: VENDOR_SUPPLY_TIERS.TIER_1_HIGH.id,
-      tier_name: VENDOR_SUPPLY_TIERS.TIER_1_HIGH.name,
-      spend_range_label: VENDOR_SUPPLY_TIERS.TIER_1_HIGH.label,
-      min_spend_cr: VENDOR_SUPPLY_TIERS.TIER_1_HIGH.minSpendCr,
-      vendor_count: tier1Vendors.length,
-      total_spend_cr: tier1SpendCr,
-      multi_category_count: tier1Multi.length,
-      multi_category_spend_cr: tier1MultiSpendCr,
-      multi_category_spend_pct: tier1MultiSpendPct,
-      single_category_count: tier1Single.length,
-      single_category_spend_cr: tier1SingleSpendCr,
-      single_category_spend_pct: tier1SingleSpendPct,
-      alarm_triggered: highSpendMultiAlarm
-    },
-    {
-      tier_id: VENDOR_SUPPLY_TIERS.TIER_2_MID.id,
-      tier_name: VENDOR_SUPPLY_TIERS.TIER_2_MID.name,
-      spend_range_label: VENDOR_SUPPLY_TIERS.TIER_2_MID.label,
-      min_spend_cr: VENDOR_SUPPLY_TIERS.TIER_2_MID.minSpendCr,
-      vendor_count: tier2Vendors.length,
-      total_spend_cr: tier2SpendCr,
-      multi_category_count: tier2Multi.length,
-      multi_category_spend_cr: tier2MultiSpendCr,
-      multi_category_spend_pct: tier2MultiSpendPct,
-      single_category_count: tier2Single.length,
-      single_category_spend_cr: tier2SingleSpendCr,
-      single_category_spend_pct: tier2SingleSpendPct,
-      alarm_triggered: false
-    },
-    {
-      tier_id: VENDOR_SUPPLY_TIERS.TIER_3_BASE.id,
-      tier_name: VENDOR_SUPPLY_TIERS.TIER_3_BASE.name,
-      spend_range_label: VENDOR_SUPPLY_TIERS.TIER_3_BASE.label,
-      min_spend_cr: VENDOR_SUPPLY_TIERS.TIER_3_BASE.minSpendCr,
-      vendor_count: tier3Vendors.length,
-      total_spend_cr: tier3SpendCr,
-      multi_category_count: tier3Multi.length,
-      multi_category_spend_cr: tier3MultiSpendCr,
-      multi_category_spend_pct: tier3MultiSpendPct,
-      single_category_count: tier3Single.length,
-      single_category_spend_cr: tier3SingleSpendCr,
-      single_category_spend_pct: tier3SingleSpendPct,
-      alarm_triggered: false
-    }
+    tier1Summary,
+    buildTierSummary(tier2Vendors, VENDOR_SUPPLY_TIERS.TIER_2_MID),
+    buildTierSummary(tier3Vendors, VENDOR_SUPPLY_TIERS.TIER_3_BASE)
   ];
 
   return {
@@ -131,10 +97,10 @@ export function computeVendorSupplyOverview(
     high_spend_multi_category_alarm: highSpendMultiAlarm,
     alarm_details: {
       title: 'High-Spend Multi-Category Supply Disparity & Maverick Leakage Detected',
-      observation: `Analysis of top spend tiers reveals that among high-spend suppliers (> ₹${VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR} Cr), ${tier1MultiSpendPct.toFixed(1)}% of spend (₹${tier1MultiSpendCr.toFixed(2)} Cr) is captured by Multi-Category Vendors supplying disparate, unrelated material categories.`,
-      high_spend_multi_pct: tier1MultiSpendPct,
-      high_spend_multi_cr: tier1MultiSpendCr,
-      affected_vendor_count: tier1Multi.length,
+      observation: `Analysis of top spend tiers reveals that among high-spend suppliers (> ₹${VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR} Cr), ${tier1Summary.multi_category_spend_pct.toFixed(1)}% of spend (₹${tier1Summary.multi_category_spend_cr.toFixed(2)} Cr) is captured by Multi-Category Vendors supplying disparate, unrelated material categories.`,
+      high_spend_multi_pct: tier1Summary.multi_category_spend_pct,
+      high_spend_multi_cr: tier1Summary.multi_category_spend_cr,
+      affected_vendor_count: tier1Summary.multi_category_count,
       total_high_spend_vendors: tier1Vendors.length,
       potential_savings_cr: potentialSavingsCr,
       recommendation: 'Initiate priority category unbundling audits, restrict multi-category PO issuance, and issue targeted RFPs to consolidate volume with dedicated Single-Category specialists.'

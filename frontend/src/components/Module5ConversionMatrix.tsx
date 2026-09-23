@@ -38,7 +38,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
   const [saasFeeRate, setSaasFeeRate] = useState<number>(DEFAULT_SAAS_FEE_RATE); // 0.85% of spend or platform fee
 
   // Buyer Email Dispatch State
-  const [buyerEmail, setBuyerEmail] = useState<string>(() => {
+  const [buyerEmail] = useState<string>(() => {
     const user = authApiClient.getStoredUser();
     return user?.email || '';
   });
