@@ -47,38 +47,67 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     0
   );
 
+  const realizationTargetPct = totalEvaluatedSpendInrCr > 0
+    ? ((totalSavingsInrCr / totalEvaluatedSpendInrCr) * 100).toFixed(1)
+    : '0.0';
+
+  const directSourcingSavingsCr = opportunities
+    .filter((o) => o.push_to_module === 'proCPX')
+    .reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
+
+  const contractRulesSavingsCr = opportunities
+    .filter((o) => o.push_to_module === 'DPS NXT')
+    .reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
+
+  const getCategoryMetrics = (catName: string) => {
+    const catOpps = opportunities.filter((o) => o.category === catName);
+    const catSavings = catOpps.reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
+    const catSpend = catOpps.reduce((s, o) => s + (o.baseline_spend_inr_cr || (o.current_spend_usd ? o.current_spend_usd * 83.8 / 10000000 : 0) || 0), 0);
+    const targetPct = catSpend > 0 ? `${((catSavings / catSpend) * 100).toFixed(1)}%` : (catSavings > 0 ? `${realizationTargetPct}%` : '0.0%');
+    return {
+      savingsFound: `₹${catSavings.toFixed(2)} Cr`,
+      targetPct,
+      progressPct: catSpend > 0 ? Math.min(100, Math.round((catSavings / catSpend) * 100)) : (catSavings > 0 ? 100 : 0)
+    };
+  };
+
+  const dmMetrics = getCategoryMetrics('Direct Materials');
+  const pkgMetrics = getCategoryMetrics('Packaging Materials');
+  const mroMetrics = getCategoryMetrics('Indirect & MRO');
+  const logMetrics = getCategoryMetrics('Logistics & Freight');
+
   const categoryBreakdowns = [
     {
       name: UI_STRINGS.module4.categories.directMaterials,
-      targetPct: UI_STRINGS.module4.categoryTargets.directMaterials,
-      savingsFound: `₹${opportunities.filter(o => o.category === 'Direct Materials').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
+      targetPct: dmMetrics.targetPct,
+      savingsFound: dmMetrics.savingsFound,
       color: 'from-cyan-500 to-blue-500',
       textColor: 'text-cyan-700 dark:text-cyan-400',
-      progressPct: opportunities.length > 0 ? 100 : 0
+      progressPct: dmMetrics.progressPct
     },
     {
       name: UI_STRINGS.module4.categories.packagingMaterials,
-      targetPct: UI_STRINGS.module4.categoryTargets.packagingMaterials,
-      savingsFound: `₹${opportunities.filter(o => o.category === 'Packaging Materials').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
+      targetPct: pkgMetrics.targetPct,
+      savingsFound: pkgMetrics.savingsFound,
       color: 'from-blue-500 to-indigo-500',
       textColor: 'text-blue-700 dark:text-blue-400',
-      progressPct: opportunities.length > 0 ? 100 : 0
+      progressPct: pkgMetrics.progressPct
     },
     {
       name: UI_STRINGS.module4.categories.indirectMRO,
-      targetPct: UI_STRINGS.module4.categoryTargets.indirectMRO,
-      savingsFound: `₹${opportunities.filter(o => o.category === 'Indirect & MRO').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
+      targetPct: mroMetrics.targetPct,
+      savingsFound: mroMetrics.savingsFound,
       color: 'from-purple-500 to-violet-500',
       textColor: 'text-purple-700 dark:text-purple-400',
-      progressPct: opportunities.length > 0 ? 100 : 0
+      progressPct: mroMetrics.progressPct
     },
     {
       name: UI_STRINGS.module4.categories.logisticsFreight,
-      targetPct: UI_STRINGS.module4.categoryTargets.logisticsFreight,
-      savingsFound: `₹${opportunities.filter(o => o.category === 'Logistics & Freight').reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0).toFixed(2)} Cr`,
+      targetPct: logMetrics.targetPct,
+      savingsFound: logMetrics.savingsFound,
       color: 'from-emerald-500 to-teal-500',
       textColor: 'text-emerald-700 dark:text-emerald-400',
-      progressPct: opportunities.length > 0 ? 100 : 0
+      progressPct: logMetrics.progressPct
     }
   ];
 
@@ -131,7 +160,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         <div className="flex items-center space-x-2 shrink-0">
           <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-400 text-xs font-bold font-mono">
             <Award className="w-4 h-4" />
-            <span>{UI_STRINGS.module4.realizationTargetBadge}</span>
+            <span>{realizationTargetPct}% Realization Target</span>
           </span>
         </div>
       </div>
@@ -157,7 +186,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                 {UI_STRINGS.module4.heroBadge}
               </span>
               <span className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-700/50">
-                {UI_STRINGS.module4.netSpendBadge}
+                {realizationTargetPct}% Net Spend
               </span>
             </div>
 
@@ -175,11 +204,11 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <div className="mt-6 pt-4 border-t border-emerald-200/60 dark:border-emerald-500/20 flex items-center justify-between text-xs font-mono">
             <div>
               <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase">{UI_STRINGS.module4.directSourcingLabel}</span>
-              <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm">{UI_STRINGS.module4.directSourcingVal}</span>
+              <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm">₹{directSourcingSavingsCr.toFixed(2)} Cr</span>
             </div>
             <div className="text-right">
               <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase">{UI_STRINGS.module4.contractRulesLabel}</span>
-              <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">{UI_STRINGS.module4.contractRulesVal}</span>
+              <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">₹{contractRulesSavingsCr.toFixed(2)} Cr</span>
             </div>
           </div>
         </div>

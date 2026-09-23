@@ -2,8 +2,72 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { StrategicSingleVendorRiskSection } from '../../src/components/strategicRisk/StrategicSingleVendorRiskSection';
-import { mockStrategicSingleVendorItems } from '../../src/data/mockStrategicSingleVendorItems';
+import type { StrategicSingleVendorItem } from '../../src/types';
 import { UI_STRINGS } from '../../src/constants';
+
+const mockStrategicSingleVendorItems: StrategicSingleVendorItem[] = [
+  {
+    material_code: 'MAT-NKL-9980',
+    material_desc: 'Refined Nickel Cathodes & Briquettes (Electrolytic 99.8%)',
+    total_spend_inr_cr: 1215.81,
+    core_bucket: 'Direct Materials',
+    unspsc_code: '11101701',
+    unspsc_commodity_title: 'Nickel and nickel alloys',
+    unspsc_class_title: 'Non ferrous metals and alloys',
+    unspsc_class_code: '11101700',
+    unspsc_family_title: 'Minerals and ores and metals',
+    segment_code: '11000000',
+    primary_vendor: {
+      vendor_name: 'TRAFIGURA INDIA PRIVATE LIMITED',
+      spend_inr_cr: 1215.81,
+      share_percentage: 100.0,
+      is_primary: true,
+      is_secondary_single_digit: false
+    },
+    risk_level: 'SOLE_SOURCE_CRITICAL',
+    risk_score: 99,
+    annual_quantity: 4800,
+    unit_of_measure: 'MT',
+    po_count: 36,
+    mitigation_urgency: 'IMMEDIATE_ACTION',
+    actionable_mitigation: 'Critical Sole-Source Exposure: 100% dependency on single supplier.',
+    suggested_action_plan: ['Execute multi-sourcing tender', 'Buffer inventory']
+  },
+  {
+    material_code: 'MAT-PKG-001',
+    material_desc: 'Heavy-Duty Corrugated Master Shipping Boxes',
+    total_spend_inr_cr: 450.2,
+    core_bucket: 'Packaging Materials',
+    unspsc_code: '24111500',
+    unspsc_commodity_title: 'Corrugated boxes',
+    unspsc_class_title: 'Packaging materials',
+    unspsc_class_code: '24111500',
+    unspsc_family_title: 'Packaging boxes and bags',
+    segment_code: '24000000',
+    primary_vendor: {
+      vendor_name: 'AMCOR PACKAGING INDIA',
+      spend_inr_cr: 420.0,
+      share_percentage: 93.3,
+      is_primary: true,
+      is_secondary_single_digit: true
+    },
+    risk_level: 'DOMINANT_SUPPLIER_SINGLE_DIGIT_SECONDARY',
+    risk_score: 85,
+    annual_quantity: 120000,
+    unit_of_measure: 'BOX',
+    po_count: 48,
+    secondary_vendor: {
+      vendor_name: 'TCPL PACKAGING',
+      spend_inr_cr: 30.2,
+      share_percentage: 6.7,
+      is_primary: false,
+      is_secondary_single_digit: true
+    },
+    mitigation_urgency: 'SCHEDULED_REVIEW',
+    actionable_mitigation: 'Dominant Supplier Risk: Secondary supplier holds less than 7% share.',
+    suggested_action_plan: ['Increase secondary allocation', 'Renegotiate tiered pricing']
+  }
+];
 
 describe('StrategicSingleVendorRiskSection Component', () => {
   const strings = UI_STRINGS.module2.strategicVendorRisk;

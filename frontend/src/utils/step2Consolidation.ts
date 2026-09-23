@@ -8,7 +8,9 @@ import type {
   MultiplePoItem,
   PoConsolidationCadence,
   CadenceSavingsBenefit,
-  ConsolidationCategory
+  ConsolidationCategory,
+  VendorConsolidationSummary,
+  PoConsolidationSummary
 } from '../types';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
 
@@ -304,3 +306,72 @@ function buildCadenceOption(
     total_benefit_cr: totalBenefit
   };
 }
+
+export const calculateVendorConsolidationSummary = (
+  items: RecurringConsolidationItem[] = []
+): VendorConsolidationSummary => {
+  const totalFragmentedSpendCr = Number(
+    items.reduce((acc, curr) => acc + curr.total_spend_inr_cr, 0).toFixed(2)
+  );
+
+  const categoriesCount = items.length;
+
+  const totalActiveVendors = items.reduce((acc, curr) => acc + curr.vendor_count, 0);
+
+  const avgVendorsPerCategory = categoriesCount > 0
+    ? Number((totalActiveVendors / categoriesCount).toFixed(1))
+    : 0;
+
+  const potentialVolumeSavingsCr = Number(
+    items.reduce((acc, curr) => acc + curr.est_volume_savings_cr, 0).toFixed(2)
+  );
+
+  const avgSavingsPct = totalFragmentedSpendCr > 0
+    ? Number(((potentialVolumeSavingsCr / totalFragmentedSpendCr) * 100).toFixed(1))
+    : 0;
+
+  return {
+    totalFragmentedSpendCr,
+    categoriesCount,
+    totalActiveVendors,
+    avgVendorsPerCategory,
+    potentialVolumeSavingsCr,
+    avgSavingsPct
+  };
+};
+
+export const calculatePoConsolidationSummary = (
+  items: MultiplePoItem[] = [],
+  activeCadence: PoConsolidationCadence = 'QUARTERLY'
+): PoConsolidationSummary => {
+  let totalSpend = 0;
+  let totalCurrentPos = 0;
+  let totalTargetPos = 0;
+  let totalAdminSavings = 0;
+  let totalScaleSavings = 0;
+
+  items.forEach((item) => {
+    totalSpend += item.total_annual_spend_cr;
+    totalCurrentPos += item.annual_po_count;
+    const option = item.cadence_options[activeCadence];
+    if (option) {
+      totalTargetPos += option.target_pos_per_year;
+      totalAdminSavings += option.admin_savings_lakhs;
+      totalScaleSavings += option.scale_savings_cr;
+    }
+  });
+
+  const avgReduction =
+    totalCurrentPos > 0 ? Number((((totalCurrentPos - totalTargetPos) / totalCurrentPos) * 100).toFixed(1)) : 0;
+
+  return {
+    totalFragmentedSpendCr: Number(totalSpend.toFixed(2)),
+    totalCurrentPos,
+    totalTargetPos,
+    totalAdminCostSavingsLakhs: Number(totalAdminSavings.toFixed(1)),
+    totalScaleSavingsCr: Number(totalScaleSavings.toFixed(2)),
+    avgPoReductionPct: avgReduction,
+    qualifiedSuppliersCount: items.length
+  };
+};
+

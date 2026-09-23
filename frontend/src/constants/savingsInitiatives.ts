@@ -22,9 +22,9 @@ export const DEFAULT_STRATEGIC_SAVINGS_INITIATIVES: StrategicSavingsInitiative[]
     sourceLabel: UI_STRINGS.savingsInitiativesSummary.sources.module2,
     targetModule: 'module2',
     targetSectionId: 'vendor-consolidation-section',
-    spendInrCr: 162.8,
-    savingsInrCr: 20.45,
-    savingsPct: 12.6,
+    spendInrCr: 0,
+    savingsInrCr: 0,
+    savingsPct: 0,
     lever: UI_STRINGS.savingsInitiativesSummary.initiatives.vendorConsolidation.lever,
     executionPlatform: UI_STRINGS.savingsInitiativesSummary.initiatives.vendorConsolidation.executionPlatform,
     accentColor: 'cyan',
@@ -39,9 +39,9 @@ export const DEFAULT_STRATEGIC_SAVINGS_INITIATIVES: StrategicSavingsInitiative[]
     sourceLabel: UI_STRINGS.savingsInitiativesSummary.sources.module2,
     targetModule: 'module2',
     targetSectionId: 'po-consolidation-section',
-    spendInrCr: 182.4,
-    savingsInrCr: 24.86,
-    savingsPct: 13.6,
+    spendInrCr: 0,
+    savingsInrCr: 0,
+    savingsPct: 0,
     lever: UI_STRINGS.savingsInitiativesSummary.initiatives.poConsolidation.lever,
     executionPlatform: UI_STRINGS.savingsInitiativesSummary.initiatives.poConsolidation.executionPlatform,
     accentColor: 'blue',
@@ -56,9 +56,9 @@ export const DEFAULT_STRATEGIC_SAVINGS_INITIATIVES: StrategicSavingsInitiative[]
     sourceLabel: UI_STRINGS.savingsInitiativesSummary.sources.module2,
     targetModule: 'module2',
     targetSectionId: 'strategic-risk-section',
-    spendInrCr: 4307.81,
-    savingsInrCr: 38.7,
-    savingsPct: 5.8,
+    spendInrCr: 0,
+    savingsInrCr: 0,
+    savingsPct: 0,
     lever: UI_STRINGS.savingsInitiativesSummary.initiatives.strategicSingleVendor.lever,
     executionPlatform: UI_STRINGS.savingsInitiativesSummary.initiatives.strategicSingleVendor.executionPlatform,
     accentColor: 'rose',
@@ -73,9 +73,9 @@ export const DEFAULT_STRATEGIC_SAVINGS_INITIATIVES: StrategicSavingsInitiative[]
     sourceLabel: UI_STRINGS.savingsInitiativesSummary.sources.module2,
     targetModule: 'module2',
     targetSectionId: 'vendor-category-supply-section',
-    spendInrCr: 94.5,
-    savingsInrCr: 14.25,
-    savingsPct: 15.1,
+    spendInrCr: 0,
+    savingsInrCr: 0,
+    savingsPct: 0,
     lever: UI_STRINGS.savingsInitiativesSummary.initiatives.vendorSupplyRationalization.lever,
     executionPlatform: UI_STRINGS.savingsInitiativesSummary.initiatives.vendorSupplyRationalization.executionPlatform,
     accentColor: 'purple',
@@ -90,9 +90,9 @@ export const DEFAULT_STRATEGIC_SAVINGS_INITIATIVES: StrategicSavingsInitiative[]
     sourceLabel: UI_STRINGS.savingsInitiativesSummary.sources.module4,
     targetModule: 'module4',
     targetSectionId: 'savings-pipeline-table-section',
-    spendInrCr: 732.41,
-    savingsInrCr: 119.67,
-    savingsPct: 16.4,
+    spendInrCr: 0,
+    savingsInrCr: 0,
+    savingsPct: 0,
     lever: UI_STRINGS.savingsInitiativesSummary.initiatives.categorySavingsPipeline.lever,
     executionPlatform: UI_STRINGS.savingsInitiativesSummary.initiatives.categorySavingsPipeline.executionPlatform,
     accentColor: 'emerald',
@@ -132,14 +132,11 @@ export const calculateDefaultStrategicSavingsMetrics = (): StrategicSavingsSumma
   );
 
   const grandTotalSavingsInrCr = Number((module2SavingsInrCr + module4SavingsInrCr).toFixed(2));
-  // Total operational spend evaluated (excluding non-overlapping duplicate commodities)
-  const grandTotalSpendInrCr = Number(
-    (162.8 + 182.4 + 94.5 + 732.41).toFixed(2)
-  ); // ₹1,172.11 Cr operational baseline
+  const grandTotalSpendInrCr = Number((module2SpendInrCr + module4SpendInrCr).toFixed(2));
 
-  const overallSavingsPct = Number(
-    ((grandTotalSavingsInrCr / grandTotalSpendInrCr) * 100).toFixed(1)
-  );
+  const overallSavingsPct = grandTotalSpendInrCr > 0
+    ? Number(((grandTotalSavingsInrCr / grandTotalSpendInrCr) * 100).toFixed(1))
+    : 0;
 
   return {
     grandTotalSpendInrCr,

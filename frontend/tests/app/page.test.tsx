@@ -509,15 +509,26 @@ describe('Home Page Component', () => {
   });
 
   it('handles ProCPX and DPS NXT successful deployment flows and API rejections', async () => {
+    vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
+    vi.spyOn(apiClient, 'getIngestionData').mockResolvedValue({
+      queue: [sampleDoc],
+      validationRecords: [sampleValidationRecord]
+    });
+    vi.spyOn(apiClient, 'getSavingsOpportunities').mockResolvedValue({
+      opportunities: [sampleOpportunity, sampleOpportunity2],
+      totalPotentialSavingsCr: 7.0
+    });
+    vi.spyOn(apiClient, 'getVendors').mockResolvedValue({
+      vendorRankings: [sampleVendorRanking],
+      vendorDetails: []
+    });
     vi.spyOn(apiClient, 'deployOpportunity')
       .mockRejectedValueOnce(new Error('Deployment sync failed'))
       .mockRejectedValueOnce(new Error('DPS sync failed'));
 
     render(<Home />);
 
-    await waitFor(() => {
-      expect(apiClient.getTenant).toHaveBeenCalled();
-    });
+    expect(await screen.findByText('test_dataset.xlsx')).toBeInTheDocument();
 
     // Navigate to Module 4
     const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
@@ -985,19 +996,15 @@ describe('Home Page Component', () => {
   });
 
   it('triggers onStartAICategorization toast in Module2', async () => {
+    vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
     render(<Home />);
     await waitFor(() => {
-      // Brand is rendered as aiCEV logo image
-      expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
+      expect(apiClient.getTenant).toHaveBeenCalled();
     });
 
-    // Switch to Module 2
-    const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
-    fireEvent.click(step2);
-
-    // Click Start AI Categorization
-    const startAiBtn = await screen.findByRole('button', { name: UI_STRINGS.module2.startAiCategorization });
-    fireEvent.click(startAiBtn);
+    // Click Run AI Categorization from Module 1
+    const runAiBtn = await screen.findByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
+    fireEvent.click(runAiBtn);
 
     // Verify toast is triggered
     await waitFor(() => {
@@ -1021,10 +1028,21 @@ describe('Home Page Component', () => {
   });
 
   it('handles cross-module initiative navigation from Module 4 to Module 2 section', async () => {
-    render(<Home />);
-    await waitFor(() => {
-      expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
+    vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
+    vi.spyOn(apiClient, 'getIngestionData').mockResolvedValue({
+      queue: [sampleDoc],
+      validationRecords: [sampleValidationRecord]
     });
+    vi.spyOn(apiClient, 'getSavingsOpportunities').mockResolvedValue({
+      opportunities: [sampleOpportunity, sampleOpportunity2],
+      totalPotentialSavingsCr: 7.0
+    });
+    vi.spyOn(apiClient, 'getVendors').mockResolvedValue({
+      vendorRankings: [sampleVendorRanking],
+      vendorDetails: []
+    });
+    render(<Home />);
+    expect(await screen.findByText('test_dataset.xlsx')).toBeInTheDocument();
 
     // Switch to Module 4 (Savings Engine)
     const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);

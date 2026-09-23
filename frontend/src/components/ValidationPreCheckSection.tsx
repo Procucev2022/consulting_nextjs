@@ -355,7 +355,6 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
                     <td className="py-3 px-3 text-right">
                       <span className="font-bold text-cyan-700 dark:text-cyan-400 block">₹{fx.toFixed(2)}</span>
                       <span className="text-[10px] text-slate-400">1 {curr}</span>
-                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 block font-mono">Yahoo Fin API</span>
                     </td>
                     <td className="py-3 px-3 text-right">
                       <div className="font-black text-emerald-700 dark:text-emerald-400 text-sm">₹{totalCr.toFixed(2)} Cr</div>

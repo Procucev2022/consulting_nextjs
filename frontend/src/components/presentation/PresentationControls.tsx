@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Printer, ChevronLeft, ChevronRight, X, Layout, Layers } from 'lucide-react';
+import { Printer, ChevronLeft, ChevronRight, X, Layout, Layers, Mail, Loader2 } from 'lucide-react';
 import { UI_STRINGS, PRESENTATION_SLIDES_LIST } from '../../constants';
 
 interface PresentationControlsProps {
@@ -13,6 +13,8 @@ interface PresentationControlsProps {
   onToggleViewMode: () => void;
   onPrint: () => void;
   onClose: () => void;
+  onEmailBrief?: () => void;
+  isSendingEmail?: boolean;
 }
 
 export const PresentationControls: React.FC<PresentationControlsProps> = ({
@@ -24,7 +26,9 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
   onSelectSlide,
   onToggleViewMode,
   onPrint,
-  onClose
+  onClose,
+  onEmailBrief,
+  isSendingEmail
 }) => {
   const strings = UI_STRINGS.presentation;
 
@@ -102,11 +106,28 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           </span>
         </button>
 
+        {/* Email Brief to Buyer */}
+        {onEmailBrief && (
+          <button
+            type="button"
+            onClick={onEmailBrief}
+            disabled={isSendingEmail}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {isSendingEmail ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Mail className="w-3.5 h-3.5" />
+            )}
+            <span>Email Brief</span>
+          </button>
+        )}
+
         {/* Print / Export Landscape PDF */}
         <button
           type="button"
           onClick={onPrint}
-          className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold shadow-sm transition-all"
+          className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
         >
           <Printer className="w-3.5 h-3.5" />
           <span>{strings.exportPdf}</span>

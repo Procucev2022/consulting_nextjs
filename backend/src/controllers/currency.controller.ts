@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getAllFXRates, convertAmount } from '../services/currencyService';
+import { getAllFXRates, convertAmount, refreshLiveFXRates } from '../services/currencyService';
 import logger from '../utils/logger';
 
 export const getCurrencyData = async (req: Request, res: Response): Promise<Response | void> => {
@@ -21,6 +21,7 @@ export const getCurrencyData = async (req: Request, res: Response): Promise<Resp
       });
     }
 
+    await refreshLiveFXRates();
     const rates = getAllFXRates();
     logger.debug('Fetched all FX rates', { count: Object.keys(rates).length });
     return res.json({

@@ -19,6 +19,8 @@ import {
   Slide9SavingsLeversRoadmap,
   Slide10ExecutionGovernance
 } from '../presentation';
+import { authApiClient } from '../../utils/authApi';
+import { Check, AlertCircle } from 'lucide-react';
 
 export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   tenant,
@@ -28,17 +30,59 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
 }) => {
   const [currentSlide, setCurrentSlide] = useState<number>(1);
   const [isAllSlidesView, setIsAllSlidesView] = useState<boolean>(false);
+  const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
+  const [emailStatus, setEmailStatus] = useState<{ success: boolean; message: string } | null>(null);
 
   if (!isOpen) return null;
 
-  const totalSpendInrCr = tenant.total_spend_evaluated_inr || (tenant.total_spend_evaluated ? Number((tenant.total_spend_evaluated * 83.8 / 10000000).toFixed(2)) : DEFAULT_SPEND_BASELINE_INR_CR);
+  const totalSpendInrCr = tenant.total_spend_evaluated_inr || 0;
   const totalSavingsInrCr = opportunities && opportunities.length > 0
     ? Number(opportunities.reduce((sum, o) => sum + (o.est_savings_inr_cr || 0), 0).toFixed(2))
-    : DEFAULT_SAVINGS_TARGET_INR_CR;
+    : 0;
   const totalSlides = PRESENTATION_TOTAL_SLIDES;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleEmailBrief = async () => {
+    const user = authApiClient.getStoredUser();
+    const buyerEmail = user?.email || '';
+    setIsSendingEmail(true);
+    setEmailStatus(null);
+    try {
+      const res = await fetch('/api/email/executive-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyerEmail,
+          tenantName: tenant.enterprise_name || 'Enterprise Client',
+          totalSpendInrCr,
+          totalSavingsInrCr,
+          cleanLineItemsCount: 0,
+          opportunities: opportunities || []
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailStatus({
+          success: true,
+          message: `Management Presentation Deck emailed to ${buyerEmail}`
+        });
+      } else {
+        setEmailStatus({
+          success: false,
+          message: data.message || 'Failed to dispatch email.'
+        });
+      }
+    } catch (err: any) {
+      setEmailStatus({
+        success: false,
+        message: err?.message || 'Network error while dispatching email.'
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const handlePrevSlide = () => {
@@ -111,7 +155,28 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           onToggleViewMode={handleToggleViewMode}
           onPrint={handlePrint}
           onClose={onClose}
+          onEmailBrief={handleEmailBrief}
+          isSendingEmail={isSendingEmail}
         />
+
+        {/* Email Brief Feedback Banner */}
+        {emailStatus && (
+          <div className={`px-6 py-2.5 text-xs flex items-center justify-between border-b ${emailStatus.success
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold'
+              : 'bg-rose-500/10 border-rose-500/30 text-rose-400 font-semibold'
+            }`}>
+            <div className="flex items-center space-x-2">
+              {emailStatus.success ? <Check className="w-4 h-4 text-emerald-400" /> : <AlertCircle className="w-4 h-4 text-rose-400" />}
+              <span>{emailStatus.message}</span>
+            </div>
+            <button
+              onClick={() => setEmailStatus(null)}
+              className="text-[11px] underline opacity-80 hover:opacity-100 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Presentation Slide Canvas */}
         <div className="p-4 sm:p-8 overflow-y-auto bg-slate-100/70 dark:bg-[#070b14] flex-1">

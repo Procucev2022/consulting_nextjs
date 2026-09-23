@@ -5,7 +5,10 @@ import {
   FileText,
   Calculator,
   Layers,
-  Sparkles
+  Sparkles,
+  Loader2,
+  AlertCircle,
+  Check
 } from 'lucide-react';
 import type { Module5ConversionMatrixProps } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
@@ -16,6 +19,7 @@ import {
   conversionInputsSchema
 } from '../constants';
 import { validateInput } from '../utils/validation';
+import { authApiClient } from '../utils/authApi';
 import confetti from 'canvas-confetti';
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
@@ -23,25 +27,44 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
   funnelStages,
   onOpenReport,
   currentTier = 'GOLD',
-  onUpgrade
+  onUpgrade,
+  categories = [],
+  opportunities = [],
+  cleanRecordsCount = 0
 }) => {
   // ROI Interactive Calculator State in INR in Crores (₹ Cr)
   const [annualSpendCr, setAnnualSpendCr] = useState<number>(() => tenant?.total_spend_evaluated_inr || 0);
   const [savingsRate, setSavingsRate] = useState<number>(DEFAULT_SAVINGS_TARGET_PCT); // 16.4%
   const [saasFeeRate, setSaasFeeRate] = useState<number>(DEFAULT_SAAS_FEE_RATE); // 0.85% of spend or platform fee
 
+  // Buyer Email Dispatch State
+  const [buyerEmail, setBuyerEmail] = useState<string>(() => {
+    const user = authApiClient.getStoredUser();
+    return user?.email || '';
+  });
+  const [isSendingEmail, setIsSendingEmail] = useState<boolean>(false);
+  const [emailStatus, setEmailStatus] = useState<{ success: boolean; message: string; messageId?: string } | null>(null);
+
   React.useEffect(() => {
-    if (tenant?.total_spend_evaluated_inr !== undefined) {
+    if (tenant?.total_spend_evaluated_inr !== undefined && tenant.total_spend_evaluated_inr > 0) {
       setAnnualSpendCr(tenant.total_spend_evaluated_inr);
+      if (opportunities && opportunities.length > 0) {
+        const totalOppSavings = opportunities.reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
+        const derivedRate = Number(((totalOppSavings / tenant.total_spend_evaluated_inr) * 100).toFixed(1));
+        if (derivedRate > 0) {
+          setSavingsRate(Math.min(25, Math.max(8, derivedRate)));
+        }
+      }
     }
-  }, [tenant?.total_spend_evaluated_inr]);
+  }, [tenant?.total_spend_evaluated_inr, opportunities]);
 
   const calculatedGrossSavingsCr = (annualSpendCr * savingsRate) / 100;
   const calculatedPlatformFeeCr = (annualSpendCr * saasFeeRate) / 100;
   const netClientBenefitCr = calculatedGrossSavingsCr - calculatedPlatformFeeCr;
   const roiMultiple = calculatedGrossSavingsCr / (calculatedPlatformFeeCr || 1);
+  const paybackMonths = Number((12 / roiMultiple).toFixed(1));
 
-  const handleSimulateLockIn = () => {
+  const handleSimulateLockIn = async () => {
     const validation = validateInput(conversionInputsSchema, {
       annualSpendCr,
       savingsRate,
@@ -49,11 +72,71 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
     });
     if (!validation.success) return;
 
-    confetti({
-      particleCount: 100,
-      spread: 90,
-      origin: { y: 0.5 }
-    });
+    setIsSendingEmail(true);
+    setEmailStatus(null);
+
+    const user = authApiClient.getStoredUser();
+    const recipientEmail = user?.email || buyerEmail || '';
+
+    try {
+      const res = await fetch('/api/email/executive-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buyerEmail: recipientEmail,
+          tenantName: tenant.enterprise_name || 'Enterprise Client',
+          totalSpendInrCr: annualSpendCr,
+          totalSavingsInrCr: calculatedGrossSavingsCr,
+          cleanLineItemsCount: cleanRecordsCount,
+          categories: categories.map((c) => ({
+            name: c.name,
+            spend_inr_crores: c.spend_inr_crores || c.spend,
+            lineItemsCount: c.lineItemsCount
+          })),
+          opportunities: opportunities.map((o) => ({
+            category: o.category,
+            current_spend_inr_cr: o.current_spend_inr_cr,
+            est_savings_inr_cr: o.est_savings_inr_cr,
+            target_savings_pct: o.target_savings_pct
+          })),
+          commercialMetrics: {
+            annualSpendCr,
+            grossSavingsCr: calculatedGrossSavingsCr,
+            platformFeeCr: calculatedPlatformFeeCr,
+            netClientBenefitCr,
+            roiMultiple,
+            savingsRate,
+            saasFeeRate,
+            paybackMonths
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailStatus({
+          success: true,
+          message: `Multi-Year Terms Locked In! Management Presentation Deck successfully emailed to ${recipientEmail}`,
+          messageId: data.messageId
+        });
+        confetti({
+          particleCount: 120,
+          spread: 90,
+          origin: { y: 0.5 }
+        });
+      } else {
+        setEmailStatus({
+          success: false,
+          message: data.message || 'Commercial terms saved locally. Failed to dispatch email.'
+        });
+      }
+    } catch (err: any) {
+      setEmailStatus({
+        success: false,
+        message: err?.message || 'Network error while dispatching Management Presentation Deck.'
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const handleUpgradeSilver = () => {
@@ -112,7 +195,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
               <span>{UI_STRINGS.module5.funnelTitle}</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {UI_STRINGS.module5.funnelSubtitle}
+              The 3-phase strategic roadmap driving 3x faster conversion from diagnostic advisory to long-term SaaS ARR across ₹{annualSpendCr.toFixed(2)} Cr evaluated spend.
             </p>
           </div>
           <span className="text-xs font-mono text-purple-800 dark:text-purple-400 bg-purple-100 dark:bg-purple-950/80 px-2.5 py-1 rounded-lg border border-purple-300 dark:border-purple-800/50">
@@ -133,47 +216,62 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 text-slate-700 dark:text-slate-300">
-                {funnelStages.map((stage) => (
-                  <tr
-                    key={stage.phase_num}
-                    className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                  >
-                    <td className="py-4 px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center ${stage.status === 'Completed'
+                {funnelStages.map((stage) => {
+                  let dynamicMetric = stage.commercial_lock_in_metric;
+                  if (stage.phase_num === 1) {
+                    dynamicMetric = cleanRecordsCount > 0 ? `${cleanRecordsCount.toLocaleString()} Clean Items Verified` : stage.commercial_lock_in_metric;
+                  } else if (stage.phase_num === 2) {
+                    dynamicMetric = categories.length > 0 ? `${categories.length} Categories Mapped (UNSPSC)` : stage.commercial_lock_in_metric;
+                  } else if (stage.phase_num === 3) {
+                    dynamicMetric = annualSpendCr > 0 ? `₹${annualSpendCr.toFixed(2)} Cr Evaluated Spend` : stage.commercial_lock_in_metric;
+                  } else if (stage.phase_num === 4) {
+                    dynamicMetric = calculatedGrossSavingsCr > 0 ? `₹${calculatedGrossSavingsCr.toFixed(2)} Cr (${savingsRate.toFixed(1)}%) Target` : stage.commercial_lock_in_metric;
+                  } else if (stage.phase_num === 5) {
+                    dynamicMetric = netClientBenefitCr > 0 ? `₹${netClientBenefitCr.toFixed(2)} Cr Net Realization` : stage.commercial_lock_in_metric;
+                  }
+
+                  return (
+                    <tr
+                      key={stage.phase_num}
+                      className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    >
+                      <td className="py-4 px-5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center ${stage.status === 'Completed'
                               ? 'bg-emerald-600 text-white'
                               : stage.status === 'In Progress'
                                 ? 'bg-cyan-600 text-white animate-pulse'
                                 : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                            }`}
-                        >
-                          {stage.phase_num}
-                        </span>
-                        <span>{stage.phase_name}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-5 font-medium text-slate-900 dark:text-slate-100">
-                      {stage.platform_actionable_focus}
-                    </td>
-                    <td className="py-4 px-5 text-slate-600 dark:text-slate-300">
-                      {stage.value_outcome_delivered}
-                    </td>
-                    <td className="py-4 px-5 text-right">
-                      <span
-                        className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold font-mono ${stage.phase_num === 1
+                              }`}
+                          >
+                            {stage.phase_num}
+                          </span>
+                          <span>{stage.phase_name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-5 font-medium text-slate-900 dark:text-slate-100">
+                        {stage.platform_actionable_focus}
+                      </td>
+                      <td className="py-4 px-5 text-slate-600 dark:text-slate-300">
+                        {stage.value_outcome_delivered}
+                      </td>
+                      <td className="py-4 px-5 text-right">
+                        <span
+                          className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold font-mono ${stage.phase_num === 1
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60'
                             : stage.phase_num === 2
                               ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800/60'
                               : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-300 dark:border-purple-800/60'
-                          }`}
-                      >
-                        {stage.status === 'Completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        <span>{stage.commercial_lock_in_metric}</span>
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                            }`}
+                        >
+                          {stage.status === 'Completed' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                          <span>{dynamicMetric}</span>
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -301,11 +399,45 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
 
           <button
             onClick={handleSimulateLockIn}
-            className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-98 flex items-center justify-center space-x-2 cursor-pointer"
+            disabled={isSendingEmail}
+            className="w-full py-3.5 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-lg shadow-purple-600/25 transition-all transform active:scale-98 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>{UI_STRINGS.module5.lockInButton}</span>
+            {isSendingEmail ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Locking In Terms & Dispatching Management Deck...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                <span>{UI_STRINGS.module5.lockInButton}</span>
+              </>
+            )}
           </button>
+
+          {/* Delivery Status Banner */}
+          {emailStatus && (
+            <div
+              className={`p-3.5 rounded-xl border text-xs flex items-center space-x-2.5 transition-all animate-in fade-in duration-200 ${emailStatus.success
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                  : 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+                }`}
+            >
+              {emailStatus.success ? (
+                <Check className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              )}
+              <div className="flex-1 font-medium">
+                <span>{emailStatus.message}</span>
+                {emailStatus.messageId && (
+                  <span className="block text-[10px] font-mono opacity-80 mt-0.5">
+                    Gateway Message ID: {emailStatus.messageId}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import type {
 } from '../types/vendorSupply';
 import {
   computeVendorSupplyOverview
-} from '../data/mockVendorSupply';
+} from '../utils/vendorSupplyCalculator';
 import { VENDOR_SUPPLY_THRESHOLDS } from '../constants/vendorSupply';
 import { frontendLogger as logger } from '../utils/logger';
 import { VendorSupplyAlarmBanner } from './vendorSupply/VendorSupplyAlarmBanner';
