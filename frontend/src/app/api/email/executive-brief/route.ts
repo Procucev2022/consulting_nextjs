@@ -19,21 +19,16 @@ export async function POST(req: Request) {
       ? buyerEmail
       : '';
 
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = Number(process.env.SMTP_PORT || 465);
-    const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-    const user = process.env.SMTP_USER || process.env.EMAIL_GATEWAY_USER || 'rfqprocucev@gmail.com';
-    const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_GATEWAY_PASSWORD || 'teug nzpt qdfe vjzi';
+    if (!recipient) {
+      return NextResponse.json(
+        { success: false, message: 'Valid recipient email address is required.' },
+        { status: 400 }
+      );
+    }
 
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: {
-        user,
-        pass
-      }
-    });
+    let messageId = '';
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const resendFrom = process.env.RESEND_FROM || 'onboarding@resend.dev';
 
     const netBenefit = commercialMetrics?.netClientBenefitCr ?? (totalSavingsInrCr > 0 ? Number((totalSavingsInrCr * 0.9).toFixed(2)) : 0);
     const roiMultiple = commercialMetrics?.roiMultiple ? Number(commercialMetrics.roiMultiple).toFixed(1) : (totalSavingsInrCr > 0 ? '11.1' : '0.0');
@@ -584,18 +579,62 @@ export async function POST(req: Request) {
 </html>
     `;
 
-    const info = await transporter.sendMail({
-      from: `"PROCUCEV Advisory" <${user}>`,
-      to: recipient,
-      subject: `Executive Management Presentation Deck — ${tenantName} (FRD-PRC-2026)`,
-      text: `Executive Management Presentation Deck for ${tenantName}. Evaluated spend baseline: ₹${Number(totalSpendInrCr).toFixed(2)} Cr. Quantified EBITDA savings target: ₹${Number(totalSavingsInrCr).toFixed(2)} Cr (${savingsRate}%). Client ROI Multiple: ${roiMultiple}x.`,
-      html: htmlContent
-    });
+    if (resendApiKey) {
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: resendFrom,
+          to: [recipient],
+          subject: `Executive Management Presentation Deck — ${tenantName} (FRD-PRC-2026)`,
+          text: `Executive Management Presentation Deck for ${tenantName}. Evaluated spend baseline: ₹${Number(totalSpendInrCr).toFixed(2)} Cr. Quantified EBITDA savings target: ₹${Number(totalSavingsInrCr).toFixed(2)} Cr (${savingsRate}%). Client ROI Multiple: ${roiMultiple}x.`,
+          html: htmlContent
+        })
+      });
+
+      const resendData = (await resendRes.json().catch(() => ({}))) as Record<string, any>;
+      if (!resendRes.ok) {
+        throw new Error(resendData?.message || resendData?.error?.message || `Resend API returned status ${resendRes.status}`);
+      }
+      messageId = resendData?.id || `resend_${Date.now()}`;
+    } else {
+      const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+      const port = Number(process.env.SMTP_PORT || 465);
+      const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+      const user = process.env.SMTP_USER || process.env.EMAIL_GATEWAY_USER;
+      const pass = process.env.SMTP_PASSWORD || process.env.EMAIL_GATEWAY_PASSWORD;
+
+      if (!user || !pass) {
+        throw new Error('Email credentials not configured. Please set RESEND_API_KEY or SMTP_USER and SMTP_PASSWORD.');
+      }
+
+      const transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: {
+          user,
+          pass
+        }
+      });
+
+      const info = await transporter.sendMail({
+        from: `"PROCUCEV Advisory" <${user}>`,
+        to: recipient,
+        subject: `Executive Management Presentation Deck — ${tenantName} (FRD-PRC-2026)`,
+        text: `Executive Management Presentation Deck for ${tenantName}. Evaluated spend baseline: ₹${Number(totalSpendInrCr).toFixed(2)} Cr. Quantified EBITDA savings target: ₹${Number(totalSavingsInrCr).toFixed(2)} Cr (${savingsRate}%). Client ROI Multiple: ${roiMultiple}x.`,
+        html: htmlContent
+      });
+      messageId = info.messageId;
+    }
 
     return NextResponse.json({
       success: true,
       message: `Management Presentation Deck successfully sent to ${recipient}`,
-      messageId: info.messageId,
+      messageId,
       commercialMetrics: {
         annualSpendCr: totalSpendInrCr,
         grossSavingsCr: grossSavings,
@@ -607,10 +646,16 @@ export async function POST(req: Request) {
       }
     });
   } catch (error: any) {
+    const errorStr = String(error?.message || error || '');
+    const isEdgeProxyError = errorStr.includes('proxy request failed') || errorStr.includes('socket');
+    const message = isEdgeProxyError
+      ? 'Email delivery via direct SMTP TCP sockets is blocked on Cloudflare Workers edge. Please configure RESEND_API_KEY in your Cloudflare environment variables / secrets.'
+      : (error?.message || 'Failed to dispatch Management Presentation Deck email');
+
     return NextResponse.json(
       {
         success: false,
-        message: error.message || 'Failed to dispatch Management Presentation Deck email',
+        message,
         error: String(error)
       },
       { status: 500 }
