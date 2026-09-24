@@ -629,5 +629,25 @@ what is the git current remote origin
 ## Prompt 84
 please update the git remote origin
 
+---
 
+## Prompt 85
+add this prompt here
+abc
+
+---
+
+## Prompt 86
+why the changes are pushed in main branch i am trying to push in consulting branch
+
+---
+
+## Prompt 87
+Please checkout the origin/main branch and pull the latest updates.
+Create a new branch named consulting from the updated origin/main branch and checkout. If the branch already exists, delete it prior to creation.
+
+---
+
+## Prompt 88
+run both frontend and backend and also setup frontend gateway
 
