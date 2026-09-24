@@ -604,4 +604,24 @@ Requirements:
 7. End-to-end testing
 8. Fix all issues found, connect disconnected components, adjust database schema carefully.
 
+---
+
+## Prompt 80
+please checkout the origin main branch
+
+---
+
+## Prompt 81
+create a new branch from latest origin main branch and ccheckout
+
+---
+
+## Prompt 82
+create a new branch consulting from latest origin main branch and checkout
+
+---
+
+## Prompt 83
+what is the git current remote origin
+
 
