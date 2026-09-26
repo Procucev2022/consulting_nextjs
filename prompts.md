@@ -2245,3 +2245,8 @@ Keep it unloacked till the time we complete the development
 ## Prompt 98
 Please checkout the origin/main branch and pull the latest updates.
 Create a new branch named consulting from the updated origin/main branch and checkout. If the branch already exists, delete it prior to creation.
+
+---
+
+## Prompt 99
+remove the locks right now. we will implement once the design is complete
