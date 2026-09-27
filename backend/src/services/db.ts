@@ -21,6 +21,29 @@ import type {
   UserRecord
 } from '../types';
 
+import type {
+  PCBIBenchmarkMaster,
+  PCBIBenchmarkComponent,
+  PCBIWeeklyIndex,
+  PCBIUNSPSCMapping,
+  PCBIClientPurchaseTransaction,
+  PCBIBasePurchase,
+  PCBITransactionCalculation,
+  PCBIDataQualityReport,
+  PCBIExecutiveSummary,
+  PCBIExplainabilityAudit,
+  UpgradeRequestRecord,
+  AdminOTPValidationSession
+} from '../types/pcbi';
+
+import {
+  initialPCBIBenchmarks,
+  initialPCBIBenchmarkComponents,
+  initialPCBIWeeklyIndices,
+  initialPCBIUNSPSCMappings
+} from '../data/pcbiMasterData';
+import { PCBICalculationEngine } from './pcbiCalculationEngine';
+
 import logger from '../utils/logger';
 import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';
@@ -51,7 +74,28 @@ export class DatabaseStore {
   }));
   private users: UserRecord[] = JSON.parse(JSON.stringify(initialSeedUsers));
 
+  // PCBI State
+  private pcbiBenchmarks: PCBIBenchmarkMaster[] = JSON.parse(JSON.stringify(initialPCBIBenchmarks));
+  private pcbiComponents: PCBIBenchmarkComponent[] = JSON.parse(JSON.stringify(initialPCBIBenchmarkComponents));
+  private pcbiIndices: PCBIWeeklyIndex[] = JSON.parse(JSON.stringify(initialPCBIWeeklyIndices));
+  private pcbiUnspscMappings: PCBIUNSPSCMapping[] = JSON.parse(JSON.stringify(initialPCBIUNSPSCMappings));
+  private pcbiEngine: PCBICalculationEngine;
+  private pcbiLastCalculations: PCBITransactionCalculation[] = [];
+  private pcbiLastBasePurchases: PCBIBasePurchase[] = [];
+  private pcbiLastExecutiveSummary: PCBIExecutiveSummary | null = null;
+  private pcbiLastDataQuality: PCBIDataQualityReport | null = null;
+
+  // Upgrade Request State (Prompt 81)
+  private upgradeRequests: UpgradeRequestRecord[] = [];
+  private adminOtpSessions: Map<string, AdminOTPValidationSession> = new Map();
+
   constructor() {
+    this.pcbiEngine = new PCBICalculationEngine(
+      this.pcbiBenchmarks,
+      this.pcbiComponents,
+      this.pcbiIndices,
+      this.pcbiUnspscMappings
+    );
     this.initPostgres();
   }
 
@@ -884,7 +928,190 @@ export class DatabaseStore {
     found.updated_at = new Date();
     return { ...found };
   }
+
+  // =========================================================================
+  // PCBI BENCHMARK INTELLIGENCE STORE METHODS (Prompts 82 & 86)
+  // =========================================================================
+
+  public getPCBIBenchmarks(): PCBIBenchmarkMaster[] {
+    return [...this.pcbiBenchmarks];
+  }
+
+  public addPCBIBenchmark(bm: PCBIBenchmarkMaster): PCBIBenchmarkMaster {
+    const idx = this.pcbiBenchmarks.findIndex((b) => b.pcbi_id === bm.pcbi_id);
+    if (idx >= 0) {
+      this.pcbiBenchmarks[idx] = bm;
+    } else {
+      this.pcbiBenchmarks.push(bm);
+    }
+    this.refreshPCBI();
+    return bm;
+  }
+
+  public getPCBIComponents(pcbiId?: string): PCBIBenchmarkComponent[] {
+    if (pcbiId) {
+      return this.pcbiComponents.filter((c) => c.pcbi_id === pcbiId);
+    }
+    return [...this.pcbiComponents];
+  }
+
+  public addPCBIComponent(comp: PCBIBenchmarkComponent): PCBIBenchmarkComponent {
+    this.pcbiComponents.push(comp);
+    this.refreshPCBI();
+    return comp;
+  }
+
+  public getPCBIWeeklyIndices(pcbiId?: string): PCBIWeeklyIndex[] {
+    if (pcbiId) {
+      return this.pcbiIndices.filter((i) => i.pcbi_id === pcbiId);
+    }
+    return [...this.pcbiIndices];
+  }
+
+  public addPCBIWeeklyIndex(idx: PCBIWeeklyIndex): PCBIWeeklyIndex {
+    this.pcbiIndices.push(idx);
+    this.refreshPCBI();
+    return idx;
+  }
+
+  public getPCBIUNSPSCMappings(): PCBIUNSPSCMapping[] {
+    return [...this.pcbiUnspscMappings];
+  }
+
+  public addPCBIUNSPSCMapping(map: PCBIUNSPSCMapping): PCBIUNSPSCMapping {
+    const idx = this.pcbiUnspscMappings.findIndex((m) => m.unspsc_code === map.unspsc_code);
+    if (idx >= 0) {
+      this.pcbiUnspscMappings[idx] = map;
+    } else {
+      this.pcbiUnspscMappings.push(map);
+    }
+    this.refreshPCBI();
+    return map;
+  }
+
+  private refreshPCBI(): void {
+    this.pcbiEngine.initMasterData(
+      this.pcbiBenchmarks,
+      this.pcbiComponents,
+      this.pcbiIndices,
+      this.pcbiUnspscMappings
+    );
+  }
+
+  /**
+   * Run PCBI calculations using client purchase transactions (from current validation/line-items baseline)
+   */
+  public runPCBICalculation(customTransactions?: PCBIClientPurchaseTransaction[]): {
+    calculations: PCBITransactionCalculation[];
+    basePurchases: PCBIBasePurchase[];
+    dataQuality: PCBIDataQualityReport;
+    executiveSummary: PCBIExecutiveSummary;
+  } {
+    let txList: PCBIClientPurchaseTransaction[] = [];
+
+    if (customTransactions && customTransactions.length > 0) {
+      txList = customTransactions;
+    } else {
+      // Build transactions from line items & validation records
+      const validationList = this.getValidationRecords();
+      if (validationList.length > 0) {
+        txList = validationList.map((v, i) => ({
+          id: v.record_id || `tx-${i + 1}`,
+          sector: this.tenant.major_sector || 'Cement & Process',
+          plant: 'Main Plant 1',
+          po_number: v.po_number || `PO-2023-${1000 + i}`,
+          po_date: v.transaction_date || (v.spend_year ? `${v.spend_year}-05-15` : '2023-06-01'),
+          material_code: v.column_l_code || `MAT-${1000 + (i % 25)}`,
+          short_text: v.raw_desc || 'Industrial Material Line Item',
+          unspsc: undefined,
+          vendor: v.vendor_name || 'Generic Vendor',
+          quantity: v.order_quantity && v.order_quantity > 0 ? v.order_quantity : 100,
+          uom: 'EA',
+          currency: v.raw_currency || 'INR',
+          unit_price: v.net_price && v.net_price > 0 ? v.net_price : (v.amount ? v.amount / 100 : 1500),
+          total_value: v.amount_inr || (v.inr_crores ? v.inr_crores * 10000000 : 150000),
+          source_row_number: i + 1,
+          comparable_key: `${(v.column_l_code || `MAT-${1000 + (i % 25)}`).trim().toUpperCase()}|EA`
+        }));
+      }
+    }
+
+    const result = this.pcbiEngine.calculate(txList);
+    this.pcbiLastCalculations = result.calculations;
+    this.pcbiLastBasePurchases = result.basePurchases;
+    this.pcbiLastExecutiveSummary = result.executiveSummary;
+    this.pcbiLastDataQuality = result.dataQuality;
+
+    return result;
+  }
+
+  public getPCBILastCalculationResults() {
+    if (!this.pcbiLastExecutiveSummary) {
+      return this.runPCBICalculation();
+    }
+    return {
+      calculations: this.pcbiLastCalculations,
+      basePurchases: this.pcbiLastBasePurchases,
+      dataQuality: this.pcbiLastDataQuality,
+      executiveSummary: this.pcbiLastExecutiveSummary
+    };
+  }
+
+  public getPCBIExplainabilityAudit(calcId: string): PCBIExplainabilityAudit | null {
+    if (this.pcbiLastCalculations.length === 0) {
+      this.runPCBICalculation();
+    }
+    return this.pcbiEngine.generateExplainabilityAudit(calcId, this.pcbiLastCalculations);
+  }
+
+  // =========================================================================
+  // UPGRADE REQUEST & ADMIN OTP MANAGEMENT (Prompt 81)
+  // =========================================================================
+
+  public createUpgradeRequest(reqData: Omit<UpgradeRequestRecord, 'id' | 'status' | 'created_at'>): UpgradeRequestRecord {
+    const record: UpgradeRequestRecord = {
+      id: `upg-req-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      status: 'PENDING_ADMIN_ACTION',
+      created_at: new Date().toISOString(),
+      ...reqData
+    };
+    this.upgradeRequests.unshift(record);
+    return record;
+  }
+
+  public getUpgradeRequests(): UpgradeRequestRecord[] {
+    return [...this.upgradeRequests];
+  }
+
+  public getUpgradeRequestById(id: string): UpgradeRequestRecord | null {
+    return this.upgradeRequests.find((r) => r.id === id) || null;
+  }
+
+  public setAdminOtpSession(session: AdminOTPValidationSession): void {
+    this.adminOtpSessions.set(session.request_id, session);
+  }
+
+  public getAdminOtpSession(requestId: string): AdminOTPValidationSession | null {
+    return this.adminOtpSessions.get(requestId) || null;
+  }
+
+  public updateUpgradeRequest(id: string, updates: Partial<UpgradeRequestRecord>): UpgradeRequestRecord | null {
+    const idx = this.upgradeRequests.findIndex((r) => r.id === id);
+    if (idx === -1) return null;
+    this.upgradeRequests[idx] = {
+      ...this.upgradeRequests[idx],
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+    return { ...this.upgradeRequests[idx] };
+  }
+
+  public findUpgradeRequestByCode(code: string): UpgradeRequestRecord | null {
+    const cleanCode = code.trim().toUpperCase();
+    return this.upgradeRequests.find((r) => r.generated_unique_code === cleanCode) || null;
+  }
 }
 
 // Server-wide Singleton
 export const db = new DatabaseStore();
+
