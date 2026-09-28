@@ -2250,3 +2250,2151 @@ Create a new branch named consulting from the updated origin/main branch and che
 
 ## Prompt 99
 remove the locks right now. we will implement once the design is complete
+
+---
+
+## Prompt 100
+PROCUCEV — END-TO-END PROCUREMENT INTELLIGENCE, PCBI BENCHMARKING & SAVINGS PLATFORM
+
+BUILD INSTRUCTION — MASTER PRODUCT SPECIFICATION
+
+Build a production-grade B2B SaaS application for Procucev Enterprise Solutions Pvt Ltd.
+
+The product is an end-to-end Procurement Intelligence and Savings platform.
+
+DO NOT build this as a generic spend-analysis dashboard.
+
+The core business flow is:
+
+MODULE 1 → Understand Customer Spend
+MODULE 2 → Categorize Spend + Identify Strategic Sourcing Opportunities
+MODULE 3 → PCBI Benchmark & Trend Analysis
+MODULE 4 → Consolidated Savings Engine + Action Plan
+
+The existing UI already has the four-module concept:
+
+1. Data Upload
+2. AI Categorization and Strategic Sourcing
+3. Trend Analysis
+4. Savings Engine
+
+Retain the existing clean professional B2B SaaS design language and improve it without unnecessarily redesigning the entire interface.
+
+The final product must be auditable, explainable and suitable for consulting use with CEOs, CFOs, Promoters, Procurement Heads and Supply Chain Heads.
+
+
+============================================================
+PRODUCT OBJECTIVE
+============================================================
+
+The platform must answer four questions:
+
+MODULE 1:
+"Where did the customer spend the money?"
+
+MODULE 2:
+"How can the customer improve the way they source and buy?"
+
+MODULE 3:
+"Did the customer's purchase price move appropriately against the underlying market benchmark?"
+
+MODULE 4:
+"What should the customer do, what is the potential savings, who should act, and what savings have actually been realized?"
+
+The PCBI (Procucev Benchmark Index) is the evidence layer supporting the savings engine.
+
+The end-to-end processing chain must be:
+
+Purchase History
+    ↓
+Data Validation
+    ↓
+Spend Normalization
+    ↓
+UNSPSC Classification
+    ↓
+Spend Category Classification
+    ↓
+Strategic Sourcing Analysis
+    ↓
+PCBI Category Mapping
+    ↓
+Benchmark Selection
+    ↓
+Benchmark Quality
+    ↓
+Benchmarkability %
+    ↓
+Constituent / Raw Material Decomposition
+    ↓
+Weekly PCBI Index
+    ↓
+Expected Benchmark Price
+    ↓
+Actual Purchase Price Comparison
+    ↓
+Potential Opportunity
+    ↓
+Savings Consolidation
+    ↓
+Action Plan
+    ↓
+Savings Realization
+
+
+============================================================
+MODULE 1 — DATA UPLOAD & SPEND INTELLIGENCE
+============================================================
+
+Purpose:
+Understand and normalize the customer's current purchase history before any sourcing or benchmarking analysis.
+
+INPUT FORMATS:
+- Excel
+- CSV
+
+The system must support different customer file structures.
+
+Typical fields may include:
+
+PO Number
+PO Date
+Invoice Number
+Invoice Date
+Vendor Code
+Vendor Name
+Material Code
+Material Description / Short Text
+Quantity
+UOM
+Unit Price
+Currency
+Total Value
+Plant
+Business Unit
+Department
+Material Group
+GL
+Cost Center
+Buyer
+Payment Terms
+Delivery Location
+
+Do NOT assume every file contains every field.
+
+Create an intelligent column-mapping interface during upload.
+
+Allow the user to map uploaded columns to the Procucev standard schema.
+
+Preserve the original uploaded data.
+
+
+DATA VALIDATION
+
+Identify:
+
+- Missing material description
+- Missing quantity
+- Missing unit price
+- Missing UOM
+- Missing vendor
+- Duplicate transactions
+- Negative values
+- Zero values
+- Invalid dates
+- Invalid currencies
+- Abnormal quantities
+- Abnormal prices
+- Missing PO number
+- Missing material code
+
+Do NOT silently delete records.
+
+Classify records as:
+
+VALID
+WARNING
+EXCEPTION
+
+Provide an exception report.
+
+
+CURRENCY NORMALIZATION
+
+Convert all currencies to INR for reporting.
+
+Preserve:
+
+Original Currency
+Original Value
+FX Rate
+INR Value
+
+Never overwrite the original transaction value.
+
+
+SPEND DASHBOARD
+
+Display:
+
+Total Purchase Spend
+Material Spend
+Service Spend
+Number of Transactions
+Number of Vendors
+Number of Unique Materials
+Number of Plants
+Number of Categories
+Average Transaction Value
+
+Top 10 Vendors
+Top 10 Materials
+Top 10 Categories
+
+
+SPEND ANALYSIS
+
+Provide:
+
+Vendor-wise Spend
+Material-wise Spend
+Plant-wise Spend
+Monthly Spend
+Quarterly Spend
+Yearly Spend
+Category Spend
+Vendor Concentration
+Material Concentration
+Pareto Analysis
+
+Show:
+
+Top 20%
+Top 50%
+Top 80%
+Remaining 20%
+
+The objective is to identify the 80% of spend requiring detailed procurement analysis.
+
+
+============================================================
+MODULE 2 — AI CATEGORIZATION & STRATEGIC SOURCING
+============================================================
+
+Module 2 has TWO separate engines:
+
+A. AI Categorization Engine
+B. Strategic Sourcing Opportunity Engine
+
+
+------------------------------------------------------------
+MODULE 2A — AI CATEGORIZATION ENGINE
+------------------------------------------------------------
+
+UNSPSC is the primary taxonomy.
+
+Use the Procucev UNSPSC master database uploaded/configured by the administrator.
+
+Map every material wherever possible to:
+
+UNSPSC Segment
+UNSPSC Family
+UNSPSC Class
+UNSPSC Commodity
+
+Priority:
+
+1. Commodity-level mapping
+2. Class-level mapping where commodity mapping is not reliable or appropriate
+3. Exception/manual review if no defensible mapping exists
+
+Do not leave a material unmapped merely because the description is short.
+
+Use available contextual information:
+
+Material Description
+Material Code
+Vendor
+UOM
+Historical category
+Related descriptions
+Customer material group
+Plant
+Other available attributes
+
+The system should use AI/LLM/RAG-assisted classification where appropriate, but the final mapping must be deterministic and stored in the database.
+
+Every mapped material must store:
+
+UNSPSC Segment
+UNSPSC Family
+UNSPSC Class
+UNSPSC Commodity
+UNSPSC Code
+UNSPSC Level
+Mapping Confidence
+Mapping Method
+Manual Override
+Reviewer
+Mapping Version
+
+
+SERVICE CLASSIFICATION
+
+If a transaction is clearly a service:
+
+Classification = SERVICE
+Benchmarking = EXCLUDED FROM MATERIAL PCBI
+Strategic sourcing = INCLUDED
+
+Do not force services into material benchmarking.
+
+If the system cannot confidently classify a material:
+
+Classification = UNMAPPED
+
+Create a review queue.
+
+Do not silently discard unmapped records.
+
+
+------------------------------------------------------------
+SPEND CATEGORY CLASSIFICATION
+------------------------------------------------------------
+
+Every transaction/material must additionally be assigned to exactly one of:
+
+DIRECT MATERIALS
+MRO
+PACKING MATERIALS
+INDIRECT MATERIALS
+SERVICES
+UNMAPPED
+
+This classification is independent of UNSPSC.
+
+Show spend and transaction count by these categories.
+
+
+------------------------------------------------------------
+MODULE 2B — STRATEGIC SOURCING ENGINE
+------------------------------------------------------------
+
+Identify sourcing opportunities independently of PCBI.
+
+The following opportunity engines are required:
+
+
+1. VENDOR CONSOLIDATION
+
+Identify:
+
+- Multiple vendors supplying same/similar materials
+- Vendor fragmentation
+- Low-volume vendors
+- Duplicate vendors
+- Similar vendor names
+- Excessive vendor count
+
+Show:
+
+Current Vendor Count
+Potential Vendor Consolidation
+Affected Spend
+Potential Opportunity
+
+
+2. PO CONSOLIDATION
+
+Identify:
+
+- Multiple POs for same material
+- Repeated small orders
+- Same vendor + same material
+- Fragmented purchasing
+- High PO frequency
+
+Show:
+
+PO Count
+Average PO Value
+Potential Consolidation Opportunity
+
+
+3. E-AUCTION / COMPETITIVE SOURCING
+
+Identify categories suitable for:
+
+- E-auction
+- RFQ
+- e-RFQ
+- Competitive bidding
+
+Consider:
+
+Spend
+Number of Vendors
+Standardization
+Market Availability
+Price Transparency
+Purchase Frequency
+
+
+4. RATE CONTRACT
+
+Identify:
+
+- Recurring materials
+- Predictable demand
+- Repeated purchases
+- Stable specifications
+
+Recommend:
+
+Annual Rate Contract
+Framework Agreement
+Blanket PO
+
+
+5. SPECIFICATION RATIONALIZATION
+
+Identify:
+
+- Duplicate material descriptions
+- Similar specifications
+- Duplicate material codes
+- Excessive variants
+- Standardization opportunities
+
+
+6. DEMAND CONSOLIDATION
+
+Identify opportunities to consolidate purchases across:
+
+- Plants
+- Business Units
+- Departments
+- Time periods
+
+
+7. NEW VENDOR DEVELOPMENT
+
+Identify:
+
+- Single-source dependency
+- High vendor concentration
+- High spend with one vendor
+- Limited competition
+
+
+8. ALTERNATE MATERIAL / MAKE-BUY
+
+Identify potential opportunities where data supports it.
+
+Do not automatically claim savings.
+
+Mark as:
+
+OPPORTUNITY REQUIRING VALIDATION
+
+
+============================================================
+MODULE 3 — PCBI BENCHMARK & TREND ANALYSIS
+============================================================
+
+This is the core Procucev Benchmark Intelligence module.
+
+The UI may retain the existing name:
+
+TREND ANALYSIS
+
+but the module should display:
+
+PCBI BENCHMARK & TREND ANALYSIS
+
+Subtitle:
+
+Market Index, Price Movement & Benchmark Opportunity
+
+
+PCBI means:
+
+PROCUCEV BENCHMARK INDEX
+
+
+The PCBI engine must use the Procucev PCBI Master Database.
+
+
+------------------------------------------------------------
+PCBI MASTER DATA MODEL
+------------------------------------------------------------
+
+Each benchmark must contain:
+
+PCBI ID
+PCBI Category
+PCBI Subcategory
+UNSPSC Commodity
+UNSPSC Class
+Benchmark Name
+Benchmark Type
+Benchmark Source
+Source URL
+Geography
+Currency
+Unit
+Frequency
+Historical Start Date
+Historical End Date
+Quality Rating
+Benchmarkability %
+Constituent
+Constituent Weight %
+Methodology
+PCBI Version
+Status
+
+
+------------------------------------------------------------
+PCBI BENCHMARK QUALITY
+------------------------------------------------------------
+
+Use the following client-facing quality classification:
+
+A = DIRECT BENCHMARK
+
+Direct market benchmark or reliable published market index.
+
+B = CONSTITUENT BENCHMARK
+
+Benchmark derived from major raw-material constituents or a strong defensible market relationship.
+
+C = PROXY BENCHMARK
+
+Best available market proxy where a direct or constituent benchmark is not available.
+
+NOT CURRENTLY BENCHMARKABLE
+
+Use only where there is no defensible benchmark.
+
+Do NOT use "NR" as the primary client-facing terminology.
+
+
+------------------------------------------------------------
+BENCHMARKABILITY %
+------------------------------------------------------------
+
+Benchmark quality and benchmarkability are different concepts.
+
+The system must calculate benchmarkable spend independently.
+
+Example:
+
+Bearing Spend = ₹10 Cr
+
+Constituents:
+
+Steel = 60%
+Rubber = 10%
+Conversion = 30%
+
+If steel + rubber can be benchmarked:
+
+Benchmarkability = 70%
+
+Benchmarkable Spend = ₹7 Cr
+
+Do NOT claim that the full ₹10 Cr is benchmarked.
+
+The software must calculate:
+
+Benchmarkable Spend =
+Spend × Benchmarkability %
+
+This is a critical PCBI calculation.
+
+
+------------------------------------------------------------
+CONSTITUENT / RAW MATERIAL ENGINE
+------------------------------------------------------------
+
+The system must support decomposition of purchased items into major economic constituents.
+
+Examples:
+
+BEARING:
+
+Steel = 60%
+Rubber = 10%
+Conversion = 30%
+
+LUBRICANT:
+
+Base Oil = 70%
+Additives = 15%
+Packaging = 5%
+Conversion = 10%
+
+PLASTIC BAG:
+
+PE Resin = 75%
+Additives = 5%
+Conversion = 20%
+
+The system must allow administrators/consultants to create and modify constituent structures.
+
+Each constituent must have:
+
+Constituent Name
+Weight %
+Benchmark Index
+Quality
+Source
+Benchmarkability %
+Methodology
+
+
+------------------------------------------------------------
+COMPOSITE PCBI CALCULATION
+------------------------------------------------------------
+
+For a multi-constituent item:
+
+Composite PCBI movement must be calculated using the constituent weights.
+
+Example:
+
+Steel movement = 10%
+Weight = 60%
+
+Rubber movement = 5%
+Weight = 10%
+
+Conversion movement = 3%
+Weight = 30%
+
+Composite PCBI movement:
+
+(60% × 10%)
++
+(10% × 5%)
++
+(30% × 3%)
+
+The system must calculate this automatically.
+
+Store the calculation details so the consultant can explain the benchmark to the client.
+
+
+------------------------------------------------------------
+PCBI INDEX
+------------------------------------------------------------
+
+The standard PCBI base index is:
+
+BASE INDEX = 100
+
+The system must support historical weekly benchmark data.
+
+Default historical period:
+
+1 April 2020 to 31 July 2026
+
+But the system must NOT hard-code these dates.
+
+The administrator must be able to upload additional historical periods and future benchmark data.
+
+
+INDEX FORMULA
+
+PCBI Index =
+Current Benchmark Cost
+/
+Base Benchmark Cost
+× 100
+
+
+Primary frequency:
+
+WEEKLY
+
+Also support:
+
+Monthly
+Quarterly
+Yearly
+
+Monthly/quarterly/yearly values should be derived from the weekly dataset according to the defined aggregation methodology.
+
+
+------------------------------------------------------------
+PURCHASE PRICE BASELINE
+------------------------------------------------------------
+
+For each material/item:
+
+Default baseline = first valid purchase transaction in the selected analysis period.
+
+Store:
+
+Baseline Date
+Baseline Quantity
+Baseline UOM
+Baseline Unit Price
+Baseline Currency
+Baseline INR Price
+Baseline PCBI Index
+
+
+------------------------------------------------------------
+EXPECTED BENCHMARK PRICE
+------------------------------------------------------------
+
+For every subsequent purchase:
+
+Expected Benchmark Price =
+Baseline Purchase Price
+×
+(Current PCBI Index / Baseline PCBI Index)
+
+
+PRICE GAP
+
+Price Gap =
+Actual Purchase Price
+-
+Expected Benchmark Price
+
+
+PRICE GAP %
+
+Price Gap % =
+(Actual Purchase Price - Expected Benchmark Price)
+/
+Expected Benchmark Price
+× 100
+
+
+------------------------------------------------------------
+PCBI OPPORTUNITY
+------------------------------------------------------------
+
+Only positive price gaps should initially be considered potential price opportunity.
+
+Gross Opportunity =
+MAX(Actual Price - Expected Benchmark Price, 0)
+× Quantity
+
+
+Benchmark-adjusted opportunity:
+
+PCBI Potential Opportunity =
+Gross Opportunity
+× Benchmarkability %
+
+
+IMPORTANT:
+
+Do NOT call this "Actual Savings".
+
+Use:
+
+POTENTIAL OPPORTUNITY
+
+until validated by the client/procurement team.
+
+
+------------------------------------------------------------
+MODULE 3 — TREND ANALYSIS SCREEN
+------------------------------------------------------------
+
+Allow selection by:
+
+Client
+Project
+Sector
+Plant
+Business Unit
+Spend Category
+UNSPSC Segment
+UNSPSC Family
+UNSPSC Class
+UNSPSC Commodity
+PCBI Category
+PCBI Subcategory
+Material
+Vendor
+Date Range
+
+
+Display a trend chart containing:
+
+Actual Purchase Price
+Expected PCBI Benchmark Price
+PCBI Index
+
+Use:
+
+Weekly
+Monthly
+Quarterly
+Yearly
+
+
+The user must be able to zoom and drill down.
+
+
+------------------------------------------------------------
+MODULE 3 — EXECUTIVE BENCHMARK SUMMARY
+------------------------------------------------------------
+
+At the top of the dashboard show:
+
+TOTAL PURCHASE SPEND
+
+MATERIAL SPEND
+
+SERVICE SPEND
+
+UNSPSC MAPPED SPEND
+
+UNSPSC MAPPING %
+
+PCBI MAPPED SPEND
+
+PCBI COVERAGE %
+
+BENCHMARKABLE SPEND
+
+BENCHMARKABILITY %
+
+A QUALITY SPEND
+
+B QUALITY SPEND
+
+C QUALITY SPEND
+
+NOT CURRENTLY BENCHMARKABLE SPEND
+
+POTENTIAL PCBI OPPORTUNITY
+
+
+Each KPI must show:
+
+Value
+% of total
+Trend where applicable
+
+
+------------------------------------------------------------
+BENCHMARK QUALITY DASHBOARD
+------------------------------------------------------------
+
+Show:
+
+A — Direct Benchmark
+B — Constituent Benchmark
+C — Proxy Benchmark
+Not Currently Benchmarkable
+
+For each:
+
+Spend
+% Spend
+Transaction Count
+Material Count
+Potential Opportunity
+
+
+------------------------------------------------------------
+BENCHMARK COVERAGE WATERFALL
+------------------------------------------------------------
+
+Create a visual waterfall:
+
+TOTAL PURCHASE SPEND
+        ↓
+MATERIAL SPEND
+        ↓
+UNSPSC MAPPED SPEND
+        ↓
+PCBI MAPPED SPEND
+        ↓
+BENCHMARKABLE SPEND
+        ↓
+SPEND WITH POSITIVE PRICE GAP
+        ↓
+POTENTIAL PCBI OPPORTUNITY
+
+
+------------------------------------------------------------
+MODULE 3 — SPEND CATEGORY VIEW
+------------------------------------------------------------
+
+Always show:
+
+DIRECT MATERIALS
+MRO
+PACKING MATERIALS
+INDIRECT MATERIALS
+SERVICES
+UNMAPPED
+
+
+For each show:
+
+Spend
+% Spend
+UNSPSC Coverage
+PCBI Coverage
+Benchmarkable Spend
+Benchmarkability %
+Potential Opportunity
+
+
+------------------------------------------------------------
+MODULE 3 — UNSPSC ANALYSIS
+------------------------------------------------------------
+
+Provide drill-down:
+
+Segment
+→ Family
+→ Class
+→ Commodity
+→ Material
+→ Vendor
+→ Transaction
+
+
+For every level show:
+
+Spend
+% Spend
+Material Count
+Vendor Count
+UNSPSC Mapping
+PCBI Mapping
+Benchmarkable Spend
+Potential Opportunity
+
+
+------------------------------------------------------------
+MODULE 3 — VENDOR ANALYSIS
+------------------------------------------------------------
+
+For each category/material:
+
+Vendor
+Spend
+Quantity
+Average Purchase Price
+PCBI Benchmark Price
+Price Gap
+Price Gap %
+Benchmarkability %
+Potential Opportunity
+
+
+Show vendor price dispersion.
+
+Example:
+
+Vendor A = ₹150
+Vendor B = ₹162
+Vendor C = ₹175
+PCBI Benchmark = ₹153
+
+This should clearly identify the procurement price gap.
+
+
+------------------------------------------------------------
+MODULE 3 — PLANT ANALYSIS
+------------------------------------------------------------
+
+For multi-plant clients show:
+
+Plant Spend
+Benchmark Coverage
+Benchmarkable Spend
+Average Price
+PCBI Benchmark
+Price Gap
+Potential Opportunity
+
+Allow comparison across plants.
+
+
+------------------------------------------------------------
+MODULE 3 — "WHY THIS BENCHMARK?" FEATURE
+------------------------------------------------------------
+
+Every benchmark must have an explainability panel.
+
+When the consultant clicks:
+
+WHY THIS BENCHMARK?
+
+Show:
+
+Benchmark Name
+UNSPSC
+PCBI Category
+Benchmark Quality
+Benchmarkability %
+Source
+Source URL
+Geography
+Currency
+Unit
+Frequency
+Constituents
+Constituent Weights
+Calculation Methodology
+PCBI Version
+Last Validation Date
+
+
+Example:
+
+Item:
+Bearing 6205
+
+Benchmark:
+Steel + Rubber + Conversion
+
+Steel:
+60%
+
+Rubber:
+10%
+
+Conversion:
+30%
+
+Benchmark Quality:
+B
+
+Benchmarkability:
+70%
+
+The consultant must be able to explain exactly why this benchmark was selected.
+
+
+------------------------------------------------------------
+MODULE 3 — CALCULATION TRANSPARENCY
+------------------------------------------------------------
+
+For every opportunity provide a calculation view.
+
+Example:
+
+Item:
+Lubricant
+
+Vendor:
+ABC
+
+Baseline Date:
+July 2023 Week 2
+
+Baseline Purchase Price:
+₹150
+
+Baseline PCBI Index:
+105
+
+Current Date:
+September 2023 Week 4
+
+Current PCBI Index:
+110
+
+Expected Benchmark Price:
+
+₹150 × (110 / 105)
+
+= ₹157.14
+
+Actual Purchase Price:
+₹180
+
+Price Gap:
+₹22.86
+
+Quantity:
+10,000
+
+Gross Opportunity:
+₹2,28,600
+
+Benchmarkability:
+70%
+
+PCBI Potential Opportunity:
+₹1,60,020
+
+
+The calculation must be generated dynamically, not hard-coded.
+
+
+============================================================
+MODULE 4 — SAVINGS ENGINE
+============================================================
+
+Module 4 consolidates opportunities from BOTH:
+
+MODULE 2
+Strategic Sourcing Opportunities
+
+AND
+
+MODULE 3
+PCBI Potential Opportunities
+
+
+------------------------------------------------------------
+SAVINGS CATEGORIES
+------------------------------------------------------------
+
+1. PCBI PRICE OPPORTUNITY
+
+2. VENDOR CONSOLIDATION
+
+3. PO CONSOLIDATION
+
+4. E-AUCTION
+
+5. RATE CONTRACT
+
+6. SPECIFICATION RATIONALIZATION
+
+7. DEMAND CONSOLIDATION
+
+8. NEW VENDOR DEVELOPMENT
+
+9. ALTERNATE MATERIAL / MAKE-BUY
+
+10. OTHER STRATEGIC SOURCING OPPORTUNITIES
+
+
+------------------------------------------------------------
+SAVINGS WATERFALL
+------------------------------------------------------------
+
+Create:
+
+TOTAL SPEND
+      ↓
+ADDRESSABLE SPEND
+      ↓
+IDENTIFIED OPPORTUNITIES
+      ↓
+POTENTIAL SAVINGS
+      ↓
+VALIDATED SAVINGS
+      ↓
+APPROVED SAVINGS
+      ↓
+REALIZED SAVINGS
+
+
+Do not automatically treat potential savings as realized savings.
+
+
+------------------------------------------------------------
+SAVINGS DE-DUPLICATION
+------------------------------------------------------------
+
+The same spend may appear in multiple opportunity engines.
+
+Example:
+
+A material may have:
+
+PCBI Opportunity = ₹10L
+E-Auction Opportunity = ₹7L
+Vendor Consolidation = ₹5L
+
+Do NOT add all three automatically.
+
+The system must detect overlap.
+
+Each opportunity must have:
+
+Opportunity ID
+Source Module
+Source Engine
+Category
+Item
+Vendor
+Plant
+Spend
+Potential Savings
+Overlap ID
+Status
+Owner
+Timeline
+
+
+Opportunity Status:
+
+IDENTIFIED
+UNDER VALIDATION
+VALIDATED
+APPROVED
+IMPLEMENTING
+REALIZED
+REJECTED
+DEFERRED
+
+
+The final savings dashboard must only count non-overlapping opportunities according to the configured savings methodology.
+
+
+------------------------------------------------------------
+ACTION PLAN
+------------------------------------------------------------
+
+Every significant opportunity should be convertible into an action.
+
+Action fields:
+
+Opportunity ID
+Action
+Owner
+Department
+Target Date
+Priority
+Expected Value
+Status
+Comments
+
+Example:
+
+Opportunity:
+Lubricant PCBI Price Gap
+
+Value:
+₹25L
+
+Action:
+Renegotiate rate
+
+Owner:
+Procurement
+
+Timeline:
+30 Days
+
+Status:
+Open
+
+
+Allow owners:
+
+Procurement
+SCM
+Plant
+Finance
+Technical
+Management
+Other
+
+
+============================================================
+EXECUTIVE MANAGEMENT DASHBOARD
+============================================================
+
+Create one consolidated executive dashboard.
+
+TOP KPIs:
+
+Total Spend
+Material Spend
+Service Spend
+UNSPSC Mapping %
+PCBI Coverage %
+Benchmarkable Spend
+Potential PCBI Opportunity
+Strategic Sourcing Opportunity
+Total Potential Opportunity
+Validated Savings
+Realized Savings
+
+
+Create four visual sections:
+
+1. SPEND
+
+Where is the money going?
+
+2. SOURCING
+
+Where can procurement improve?
+
+3. BENCHMARK
+
+Where are we paying above the benchmark?
+
+4. SAVINGS
+
+What action should management take?
+
+
+------------------------------------------------------------
+TOP OPPORTUNITY ANALYSIS
+------------------------------------------------------------
+
+Show:
+
+Top 10 Categories
+Top 10 Materials
+Top 10 Vendors
+Top 10 Plants
+Top 10 PCBI Opportunities
+Top 10 Strategic Sourcing Opportunities
+
+
+------------------------------------------------------------
+CLIENT SUMMARY
+------------------------------------------------------------
+
+The executive dashboard must be understandable within 30 seconds.
+
+Example layout:
+
+TOTAL SPEND
+₹100 Cr
+
+MATERIAL SPEND
+₹92 Cr
+
+UNSPSC MAPPED
+₹88 Cr
+95.7%
+
+BENCHMARKABLE
+₹70 Cr
+76.1%
+
+PCBI POTENTIAL OPPORTUNITY
+₹8.2 Cr
+
+STRATEGIC SOURCING OPPORTUNITY
+₹5.4 Cr
+
+TOTAL ADDRESSABLE OPPORTUNITY
+₹12.6 Cr
+
+VALIDATED SAVINGS
+₹X Cr
+
+REALIZED SAVINGS
+₹X Cr
+
+
+============================================================
+REPORTING
+============================================================
+
+Allow generation of:
+
+PDF
+Excel
+
+Reports must include:
+
+1. Executive Summary
+2. Spend Analysis
+3. UNSPSC Coverage
+4. Spend Category Analysis
+5. Strategic Sourcing Opportunities
+6. PCBI Benchmark Coverage
+7. Benchmark Quality
+8. Benchmarkability
+9. Constituent Analysis
+10. Price Trend Analysis
+11. Actual vs Benchmark
+12. Top Price Gaps
+13. PCBI Opportunity
+14. Savings Waterfall
+15. Action Plan
+16. Methodology
+17. Detailed Appendix
+
+
+============================================================
+DRILL-DOWN REQUIREMENT
+============================================================
+
+Every major number shown on the dashboard must be clickable.
+
+Example:
+
+Potential Opportunity
+₹4.60 Cr
+
+Click
+
+→ Category
+
+Click
+
+→ UNSPSC
+
+Click
+
+→ PCBI Category
+
+Click
+
+→ Material
+
+Click
+
+→ Vendor
+
+Click
+
+→ Transaction
+
+Click
+
+→ Calculation
+
+
+The consultant must be able to trace every rupee back to the original purchase transaction.
+
+
+============================================================
+DATABASE DESIGN
+============================================================
+
+Create normalized database entities:
+
+Users
+Clients
+Projects
+Uploads
+Upload_Columns
+Transactions
+Vendors
+Materials
+UNSPSC_Master
+Spend_Categories
+PCBI_Master
+PCBI_Weekly_Index
+PCBI_Constituents
+Benchmark_Sources
+Benchmark_Quality
+Material_PCBI_Mapping
+Strategic_Opportunities
+Savings_Opportunities
+Opportunity_Overlap
+Action_Plans
+Reports
+Audit_Log
+
+
+Important:
+
+Do not store calculated values unnecessarily where they can be derived reliably.
+
+Use proper relational keys.
+
+Create indexes for:
+
+Client
+Project
+Material
+Vendor
+UNSPSC
+PCBI
+Date
+Plant
+Category
+
+
+============================================================
+PCBI MASTER VERSION CONTROL
+============================================================
+
+PCBI must be version controlled.
+
+Example:
+
+PCBI Master V1.0
+PCBI Master V1.1
+PCBI Master V2.0
+
+Every client analysis must store:
+
+PCBI Version Used
+UNSPSC Version Used
+Analysis Date
+Methodology Version
+
+
+IMPORTANT:
+
+Historical reports must NOT change automatically when the PCBI master is updated.
+
+A report generated using PCBI V1.0 must continue to reproduce the same result even after PCBI V2.0 is uploaded.
+
+
+============================================================
+AUDIT TRAIL
+============================================================
+
+Maintain an audit trail from:
+
+Original Purchase Data
+↓
+Data Validation
+↓
+Currency Normalization
+↓
+UNSPSC Mapping
+↓
+Spend Category
+↓
+PCBI Mapping
+↓
+Benchmark Quality
+↓
+Benchmarkability
+↓
+Constituent Calculation
+↓
+PCBI Index
+↓
+Expected Benchmark Price
+↓
+Price Gap
+↓
+Potential Opportunity
+↓
+Savings
+↓
+Action
+
+
+Every transformation must be traceable.
+
+
+============================================================
+DATA QUALITY & AI RULES
+============================================================
+
+Never fabricate:
+
+UNSPSC codes
+Benchmark prices
+Benchmark sources
+Index values
+Constituent weights
+Savings values
+
+If information is unavailable:
+
+mark it clearly as:
+
+UNMAPPED
+NOT CURRENTLY BENCHMARKABLE
+REQUIRES REVIEW
+
+Do not silently make assumptions.
+
+AI-generated classifications must be stored with confidence and methodology.
+
+Allow consultant override.
+
+Consultant overrides must be logged.
+
+
+============================================================
+SECURITY & MULTI-TENANCY
+============================================================
+
+Design the architecture as multi-client SaaS.
+
+Client A must never see Client B's data.
+
+Every major database table must have:
+
+client_id
+project_id
+
+where applicable.
+
+Implement role-based access.
+
+Roles:
+
+ADMIN
+CONSULTANT
+CLIENT
+MANAGEMENT
+
+
+============================================================
+UI/UX REQUIREMENTS
+============================================================
+
+Retain the existing Procucev visual style.
+
+Use a clean professional B2B procurement/enterprise interface.
+
+The primary navigation must show:
+
+1. DATA UPLOAD
+2. AI CATEGORIZATION & STRATEGIC SOURCING
+3. PCBI BENCHMARK & TREND ANALYSIS
+4. SAVINGS ENGINE
+
+
+MODULE 1 subtitle:
+
+Data Ingestion & Spend Intelligence
+
+MODULE 2 subtitle:
+
+AI Taxonomy, Categorization & Strategic Sourcing
+
+MODULE 3 subtitle:
+
+Market Index, Price Movement & Benchmark Opportunity
+
+MODULE 4 subtitle:
+
+Consolidated Savings, Actions & Realization
+
+
+The current UI card design can be retained, but Module 3 must clearly communicate that it is not merely a generic trend chart.
+
+Use:
+
+PCBI BENCHMARK & TREND ANALYSIS
+
+
+============================================================
+TECHNICAL ARCHITECTURE
+============================================================
+
+Build using a scalable production architecture.
+
+Separate:
+
+Frontend
+Backend API
+Database
+AI/ML services
+PCBI Calculation Engine
+Background Processing
+File Processing
+Reporting Engine
+Authentication
+Audit Service
+
+
+Large Excel uploads must be processed asynchronously.
+
+Do not block the browser during large data processing.
+
+Use job status:
+
+UPLOADED
+VALIDATING
+PROCESSING
+CATEGORIZING
+BENCHMARKING
+CALCULATING
+COMPLETED
+FAILED
+
+
+Provide progress indicators.
+
+
+============================================================
+EXCEL IMPORT / EXPORT
+============================================================
+
+Provide downloadable templates.
+
+MODULE 1 PURCHASE HISTORY TEMPLATE
+
+MODULE 2 UNSPSC MASTER TEMPLATE
+
+MODULE 3 PCBI MASTER TEMPLATE
+
+MODULE 3 PCBI WEEKLY INDEX TEMPLATE
+
+MODULE 3 PCBI CONSTITUENT TEMPLATE
+
+MODULE 4 SAVINGS ACTION TEMPLATE
+
+
+Allow export of:
+
+Raw Data
+Mapped Data
+PCBI Analysis
+Opportunity Analysis
+Savings Register
+Action Plan
+
+
+============================================================
+PCBI MASTER UPLOAD FORMAT
+============================================================
+
+Create an administrator upload format containing at minimum:
+
+PCBI_ID
+PCBI_CATEGORY
+PCBI_SUBCATEGORY
+UNSPSC_COMMODITY
+UNSPSC_CLASS
+BENCHMARK_NAME
+BENCHMARK_TYPE
+SOURCE
+SOURCE_URL
+GEOGRAPHY
+CURRENCY
+UNIT
+FREQUENCY
+QUALITY_RATING
+BENCHMARKABILITY_PERCENT
+CONSTITUENT
+CONSTITUENT_WEIGHT_PERCENT
+METHODOLOGY
+PCBI_VERSION
+EFFECTIVE_FROM
+EFFECTIVE_TO
+
+
+============================================================
+PCBI WEEKLY INDEX UPLOAD FORMAT
+============================================================
+
+PCBI_ID
+INDEX_DATE
+WEEK
+INDEX_VALUE
+SOURCE_VALUE
+SOURCE_CURRENCY
+SOURCE_UNIT
+SOURCE
+QUALITY_RATING
+PCBI_VERSION
+
+
+============================================================
+CONSTITUENT UPLOAD FORMAT
+============================================================
+
+PCBI_ID
+ITEM_CATEGORY
+CONSTITUENT_NAME
+CONSTITUENT_WEIGHT_PERCENT
+BENCHMARK_PCBI_ID
+BENCHMARKABILITY_PERCENT
+QUALITY_RATING
+METHODOLOGY
+EFFECTIVE_FROM
+EFFECTIVE_TO
+
+
+============================================================
+PERFORMANCE
+============================================================
+
+The platform may eventually process millions of transactions.
+
+Design the processing architecture accordingly.
+
+Use:
+
+- Batch processing
+- Background jobs
+- Pagination
+- Indexed database queries
+- Cached dashboard summaries
+- Precomputed analytical aggregates where useful
+- Lazy loading for detailed tables
+
+
+============================================================
+ERROR HANDLING
+============================================================
+
+Every failed processing step must show:
+
+What failed
+Why it failed
+Affected records
+Suggested corrective action
+
+Do not fail the entire project because of a small number of bad rows.
+
+Allow reprocessing of failed rows.
+
+
+============================================================
+MVP PRIORITY
+============================================================
+
+Build in this order.
+
+PHASE 1
+
+Database schema
+Authentication
+Client/project structure
+File upload
+Column mapping
+Data validation
+Transaction storage
+
+
+PHASE 2
+
+Spend analysis
+Vendor analysis
+Material analysis
+Plant analysis
+Pareto
+Spend categories
+
+
+PHASE 3
+
+UNSPSC mapping
+AI categorization
+Manual review
+Mapping confidence
+Spend category classification
+
+
+PHASE 4
+
+Strategic sourcing engines:
+
+Vendor Consolidation
+PO Consolidation
+E-Auction
+Rate Contract
+Specification Rationalization
+Demand Consolidation
+New Vendor Development
+
+
+PHASE 5
+
+PCBI:
+
+PCBI Master
+PCBI Weekly Index
+PCBI Constituents
+Benchmark Quality
+Benchmarkability
+UNSPSC → PCBI mapping
+Composite index
+Actual vs Benchmark
+Opportunity calculation
+
+
+PHASE 6
+
+Savings Engine:
+
+Opportunity consolidation
+Overlap detection
+Savings waterfall
+Validation
+Approval
+Action plan
+Realization tracking
+
+
+PHASE 7
+
+Reporting:
+
+PDF
+Excel
+Executive dashboard
+Detailed appendix
+
+
+============================================================
+CRITICAL BUSINESS RULES
+============================================================
+
+RULE 1:
+
+Do not treat PCBI as a simple price-index chart.
+
+PCBI is the benchmark intelligence layer supporting the savings engine.
+
+
+RULE 2:
+
+Do not claim that all spend is benchmarkable.
+
+Always show:
+
+Total Spend
+Benchmarkable Spend
+Benchmarkability %
+
+
+RULE 3:
+
+Benchmark Quality and Benchmarkability are different.
+
+Example:
+
+Quality B
+Benchmarkability 70%
+
+
+RULE 4:
+
+Potential Opportunity is not Savings.
+
+Use:
+
+Potential Opportunity
+Validated Savings
+Approved Savings
+Realized Savings
+
+
+RULE 5:
+
+Never double-count opportunities.
+
+Use an overlap/de-duplication engine.
+
+
+RULE 6:
+
+Services are excluded from material PCBI benchmarking but remain available for strategic sourcing analysis.
+
+
+RULE 7:
+
+Every benchmark must have a source and methodology.
+
+
+RULE 8:
+
+Every benchmark calculation must be explainable.
+
+
+RULE 9:
+
+Every dashboard number must be drillable to transaction level.
+
+
+RULE 10:
+
+PCBI versions must be immutable once used in a client report.
+
+
+RULE 11:
+
+Original customer data must never be overwritten.
+
+
+RULE 12:
+
+AI must assist classification but must not silently fabricate missing information.
+
+
+============================================================
+FINAL PRODUCT EXPERIENCE
+============================================================
+
+The final customer journey should be:
+
+LOGIN
+↓
+CREATE CLIENT
+↓
+CREATE PROJECT
+↓
+UPLOAD PURCHASE HISTORY
+↓
+MODULE 1 — SPEND INTELLIGENCE
+↓
+MODULE 2 — AI CATEGORIZATION & STRATEGIC SOURCING
+↓
+REVIEW UNSPSC
+↓
+REVIEW STRATEGIC SOURCING OPPORTUNITIES
+↓
+MODULE 3 — PCBI BENCHMARK & TREND ANALYSIS
+↓
+REVIEW BENCHMARK COVERAGE
+↓
+REVIEW A/B/C QUALITY
+↓
+REVIEW BENCHMARKABILITY
+↓
+REVIEW ACTUAL VS PCBI
+↓
+REVIEW POTENTIAL OPPORTUNITY
+↓
+MODULE 4 — SAVINGS ENGINE
+↓
+CONSOLIDATE ALL OPPORTUNITIES
+↓
+REMOVE OVERLAPS
+↓
+VALIDATE
+↓
+ASSIGN ACTIONS
+↓
+TRACK SAVINGS
+↓
+GENERATE MANAGEMENT REPORT
+
+
+============================================================
+FINAL MANAGEMENT OUTPUT
+============================================================
+
+The final dashboard must answer:
+
+1. How much did we spend?
+
+2. Where did we spend it?
+
+3. How much is mapped to UNSPSC?
+
+4. How much is Direct Material / MRO / Packing / Indirect / Service?
+
+5. How much spend is benchmarkable?
+
+6. What percentage is A / B / C quality?
+
+7. Which categories have the largest price gaps?
+
+8. Which vendors have the largest price gaps?
+
+9. Which plants have the largest gaps?
+
+10. How much PCBI potential opportunity exists?
+
+11. How much strategic sourcing opportunity exists?
+
+12. What opportunities overlap?
+
+13. What is the consolidated potential savings?
+
+14. What has been realized?
+
+15. What actions should the customer take next?
+
+The application should ultimately convert:
+
+RAW PURCHASE DATA
+
+into:
+
+SPEND INTELLIGENCE
+
+into:
+
+PROCUREMENT OPPORTUNITIES
+
+into:
+
+MARKET BENCHMARK INTELLIGENCE
+
+into:
+
+POTENTIAL SAVINGS
+
+into:
+
+ACTIONABLE PROCUREMENT TRANSFORMATION.
+
+
+============================================================
+IMPORTANT DEVELOPMENT INSTRUCTION
+============================================================
+
+Do NOT start by creating only the visual dashboard.
+
+FIRST build and validate:
+
+1. Database schema
+2. Data ingestion
+3. UNSPSC mapping
+4. PCBI master structure
+5. PCBI weekly index structure
+6. Constituent engine
+7. Benchmarkability calculation
+8. Expected price calculation
+9. Opportunity calculation
+10. Savings de-duplication
+
+THEN build the dashboards and visualizations on top of the validated calculation engine.
+
+The calculation engine is the core intellectual property of this product.
+
+All calculations must be deterministic, testable and auditable.
+
+Create automated unit tests for the major formulas before connecting the final dashboard.
+
+Use the following test case:
+
+Baseline purchase:
+₹150
+
+Baseline PCBI Index:
+105
+
+Current PCBI Index:
+110
+
+Current actual purchase:
+₹180
+
+Quantity:
+10,000
+
+Benchmarkability:
+70%
+
+Expected benchmark:
+
+₹150 × (110 / 105) = ₹157.14
+
+Price gap:
+
+₹180 - ₹157.14 = ₹22.86
+
+Gross opportunity:
+
+₹22.86 × 10,000 = ₹228,600
+
+PCBI potential opportunity:
+
+₹228,600 × 70% = ₹160,020
+
+The software must reproduce this calculation correctly.
+
+Finally, create the application so that the PCBI master, UNSPSC master, weekly benchmark data and constituent database can be updated without changing application code.
+
+The result must be a scalable Procucev Procurement Intelligence SaaS platform, not a static consulting spreadsheet application.
+
+---
+
+## Prompt 101
+run locally on chrome

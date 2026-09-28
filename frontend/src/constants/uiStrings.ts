@@ -127,20 +127,20 @@ export const UI_STRINGS = {
     viewSchemaButton: 'Data Architecture / DDL Schema View',
     steps: {
       step1: {
-        title: 'Data Upload',
-        desc: 'Data Ingestion and Deep Dive Analysis'
+        title: 'DATA UPLOAD',
+        desc: 'Data Ingestion & Spend Intelligence'
       },
       step2: {
-        title: 'AI Categorization and Strategic Sourcing',
-        desc: 'Automated taxonomy & vendor disambiguation'
+        title: 'AI CATEGORIZATION & STRATEGIC SOURCING',
+        desc: 'AI Taxonomy, Categorization & Strategic Sourcing'
       },
       step3: {
         title: 'Trend Analysis',
-        desc: '36-month material base price & markup tracking'
+        desc: 'Market Index, Price Movement & Benchmark Opportunity'
       },
       step4: {
-        title: 'Savings Engine',
-        desc: 'Real-time opportunity mapping & UI alerts'
+        title: 'SAVINGS ENGINE',
+        desc: 'Consolidated Savings, Actions & Realization'
       }
     },
     kpis: {
@@ -167,20 +167,20 @@ export const UI_STRINGS = {
     },
     navStages: {
       step1: {
-        title: 'Data Upload',
-        desc: 'Data Ingestion and Deep Dive Analysis'
+        title: 'DATA UPLOAD',
+        desc: 'Data Ingestion & Spend Intelligence'
       },
       step2: {
-        title: 'AI Categorization and Strategic Sourcing',
-        desc: 'Automated taxonomy & vendor disambiguation'
+        title: 'AI CATEGORIZATION & STRATEGIC SOURCING',
+        desc: 'AI Taxonomy, Categorization & Strategic Sourcing'
       },
       step3: {
         title: 'Trend Analysis',
         desc: '36-month material base price & markup tracking'
       },
       step4: {
-        title: 'Savings Engine',
-        desc: 'Real-time opportunity mapping & UI alerts'
+        title: 'SAVINGS ENGINE',
+        desc: 'Consolidated Savings, Actions & Realization'
       }
     },
     stages: {
@@ -940,12 +940,12 @@ export const UI_STRINGS = {
   },
 
   module3: {
-    title: 'Price Creep & Volatility Leakage Analytics',
-    subtitle: 'Quarter-over-quarter vendor unit price creep, contract variance, and EBITDA leakage',
-    badge: '36-Month Spend Trend & Material Volatility Analysis',
+    title: 'PCBI BENCHMARK & TREND ANALYSIS',
+    subtitle: 'Market Index, Price Movement & Benchmark Opportunity',
+    badge: 'PCBI Commodity Benchmark Intelligence & Variance Engine',
     valuationBadge: 'INR Crores Valuation',
-    heading: 'Historical Spend & Commodity Volatility Analytics',
-    description: 'Isolating true raw material market deflation from unapproved supplier price markups across a 36-month timeline in INR Crores (₹ Cr).',
+    heading: 'PCBI BENCHMARK & TREND ANALYSIS',
+    description: 'Market Index, Price Movement & Benchmark Opportunity across 36-month timeline with A/B/C Quality ratings and Constituent Decomposition.',
     benchmarkLabel: 'Benchmark:',
     commodities: {
       icis: 'ICIS Chemicals & Resins',
@@ -1006,16 +1006,155 @@ export const UI_STRINGS = {
     volatilityIndex: (idx: number) => `Volatility Index: ${idx}`,
     priceCreepPct: (pct: number) => `+${pct}% Creep`,
     leakageAmount: (amt: string) => `${amt} Leakage`,
-    proceedToSavings: 'Proceed to Real-Time Savings Engine'
+    proceedToSavings: 'Proceed to Real-Time Savings Engine',
+    executiveBenchmarkSummary: {
+      title: 'Executive Benchmark Summary',
+      subtitle: 'Key procurement metrics, UNSPSC mapping, and PCBI benchmark coverage across total spend',
+      totalSpend: 'TOTAL PURCHASE SPEND',
+      materialSpend: 'MATERIAL SPEND',
+      serviceSpend: 'SERVICE SPEND',
+      unspscMappedSpend: 'UNSPSC MAPPED SPEND',
+      unspscMappingPct: 'UNSPSC MAPPING %',
+      pcbiMappedSpend: 'PCBI MAPPED SPEND',
+      pcbiCoveragePct: 'PCBI COVERAGE %',
+      benchmarkableSpend: 'BENCHMARKABLE SPEND',
+      benchmarkabilityPct: 'BENCHMARKABILITY %',
+      aQualitySpend: 'A QUALITY SPEND',
+      bQualitySpend: 'B QUALITY SPEND',
+      cQualitySpend: 'C QUALITY SPEND',
+      notBenchmarkableSpend: 'NOT CURRENTLY BENCHMARKABLE',
+      potentialPcbiOpportunity: 'POTENTIAL PCBI OPPORTUNITY'
+    },
+    benchmarkQuality: {
+      title: 'Benchmark Quality Dashboard',
+      subtitle: 'Spend categorization by defensibility tier: Direct (A), Constituent (B), Proxy (C), and Not Currently Benchmarkable',
+      aBadge: 'A — DIRECT BENCHMARK',
+      aDesc: 'Direct market benchmark or reliable published market index.',
+      bBadge: 'B — CONSTITUENT BENCHMARK',
+      bDesc: 'Benchmark derived from major raw-material constituents or a strong defensible market relationship.',
+      cBadge: 'C — PROXY BENCHMARK',
+      cDesc: 'Best available market proxy where a direct or constituent benchmark is not available.',
+      notBenchmarkableBadge: 'NOT CURRENTLY BENCHMARKABLE',
+      notBenchmarkableDesc: 'Procurement spend without a defensible market benchmark.',
+      spendLabel: 'Spend',
+      spendPctLabel: '% Spend',
+      transactionsLabel: 'Transactions',
+      materialsLabel: 'Materials',
+      opportunityLabel: 'Potential Opportunity'
+    },
+    waterfall: {
+      title: 'Benchmark Coverage Waterfall',
+      subtitle: 'Spend isolation cascade identifying benchmarkable spend and addressable pricing gaps',
+      step1: 'TOTAL PURCHASE SPEND',
+      step2: 'MATERIAL SPEND',
+      step3: 'UNSPSC MAPPED SPEND',
+      step4: 'PCBI MAPPED SPEND',
+      step5: 'BENCHMARKABLE SPEND',
+      step6: 'SPEND WITH POSITIVE PRICE GAP',
+      step7: 'POTENTIAL PCBI OPPORTUNITY'
+    },
+    spendCategoryView: {
+      title: 'Spend Category View',
+      subtitle: 'Allocation across standard enterprise spend categories independent of UNSPSC',
+      directMaterials: 'DIRECT MATERIALS',
+      mro: 'MRO',
+      packingMaterials: 'PACKING MATERIALS',
+      indirectMaterials: 'INDIRECT MATERIALS',
+      services: 'SERVICES',
+      unmapped: 'UNMAPPED',
+      headers: {
+        category: 'Spend Category',
+        spendCr: 'Spend (₹ Cr)',
+        spendPct: '% Spend',
+        unspscCoverage: 'UNSPSC Coverage %',
+        pcbiCoverage: 'PCBI Coverage %',
+        benchmarkableSpendCr: 'Benchmarkable Spend (₹ Cr)',
+        benchmarkabilityPct: 'Benchmarkability %',
+        potentialOpportunityCr: 'Potential Opportunity (₹ Cr)'
+      }
+    },
+    calculationTransparency: {
+      title: 'Dynamic Calculation Transparency',
+      subtitle: 'Auditable mathematical verification of Expected Benchmark Price, Price Gap, and PCBI Potential Opportunity',
+      verifiedBadge: 'Deterministic Calculation Verified',
+      promptTestCaseBadge: 'Prompt 100 Reference Test Case',
+      itemLabel: 'Item',
+      itemValue: 'Industrial Lubricant Oil (MAT-LUBRICANT-01)',
+      vendorLabel: 'Vendor',
+      vendorValue: 'ABC Vendor',
+      baselineDateLabel: 'Baseline Date',
+      baselineDateValue: 'July 2023 Week 2',
+      baselinePriceLabel: 'Baseline Purchase Price',
+      baselinePriceValue: '₹150.00',
+      baselineIndexLabel: 'Baseline PCBI Index',
+      baselineIndexValue: '105.0',
+      currentDateLabel: 'Current Date',
+      currentDateValue: 'September 2023 Week 4',
+      currentIndexLabel: 'Current PCBI Index',
+      currentIndexValue: '110.0',
+      expectedPriceLabel: 'Expected Benchmark Price',
+      expectedPriceFormula: '₹150.00 × (110.0 / 105.0) = ₹157.14',
+      actualPriceLabel: 'Actual Purchase Price',
+      actualPriceValue: '₹180.00',
+      priceGapLabel: 'Price Gap',
+      priceGapFormula: '₹180.00 - ₹157.14 = ₹22.86 (+14.5%)',
+      quantityLabel: 'Quantity',
+      quantityValue: '10,000 L',
+      grossOppLabel: 'Gross Opportunity',
+      grossOppFormula: '₹22.86 × 10,000 = ₹2,28,600',
+      benchmarkabilityLabel: 'Benchmarkability %',
+      benchmarkabilityValue: '70.0%',
+      potentialOppLabel: 'PCBI Potential Opportunity',
+      potentialOppFormula: '₹2,28,600 × 70.0% = ₹1,60,020 (₹0.16 Cr)'
+    },
+    explainability: {
+      btnLabel: 'WHY THIS BENCHMARK?',
+      modalTitle: 'PCBI Benchmark Explainability Panel',
+      modalSubtitle: 'Auditable documentation of market index selection, constituent decomposition, and pricing methodology',
+      fields: {
+        benchmarkName: 'Benchmark Name',
+        unspsc: 'UNSPSC Classification',
+        pcbiCategory: 'PCBI Category & Subcategory',
+        qualityRating: 'Benchmark Quality Rating',
+        benchmarkabilityPct: 'Benchmarkability %',
+        source: 'Published Source',
+        sourceUrl: 'Source URL',
+        geography: 'Geography',
+        currency: 'Index Currency',
+        unit: 'Benchmark Unit',
+        frequency: 'Index Frequency',
+        constituents: 'Constituent Decomposition',
+        methodology: 'Calculation Methodology',
+        pcbiVersion: 'PCBI Master Version',
+        lastValidationDate: 'Last Validation Date'
+      }
+    },
+    vendorDispersion: {
+      title: 'Vendor Price Dispersion & Opportunity Analysis',
+      subtitle: 'Price gap comparison between actual supplier prices and PCBI benchmark price',
+      headers: {
+        vendor: 'Vendor Name',
+        item: 'Item / Material',
+        spendCr: 'Spend (₹ Cr)',
+        quantity: 'Quantity',
+        actualPrice: 'Avg Purchase Price',
+        benchmarkPrice: 'PCBI Benchmark Price',
+        priceGap: 'Price Gap',
+        priceGapPct: 'Price Gap %',
+        benchmarkability: 'Benchmarkability %',
+        opportunityCr: 'Potential Opportunity (₹ Cr)',
+        explainability: 'Explainability'
+      }
+    }
   },
 
   module4: {
-    title: 'Savings Opportunity Engine & Specialized Modules',
-    subtitle: 'ProCPX (Rate Contract Enforcement) & DPS NXT (Strategic Sourcing Auctions)',
-    badge: 'Real-Time Savings Engine & Optimization Targets',
+    title: 'SAVINGS ENGINE',
+    subtitle: 'Consolidated Savings, Actions & Realization',
+    badge: 'Consolidated Savings Engine & Action Plan Tracking',
     frRef: 'FR-SAV-01, FR-SAV-02',
-    heading: 'Savings Engine Dashboard & Suite Integration (INR in Crores)',
-    description: 'Real-time opportunity quantification denominated in INR Crores (₹ Cr) with native execution export into proCPX (e-sourcing) and DPS NXT (contract rate cards).',
+    heading: 'SAVINGS ENGINE — CONSOLIDATED SAVINGS & REALIZATION',
+    description: 'Consolidated opportunity quantification from Module 2 (Strategic Sourcing) and Module 3 (PCBI) with overlap de-duplication, waterfall governance, and action plan tracking.',
     realizationTargetBadge: '16.4% Realization Target',
     heroBadge: 'Total Quantified Savings Target',
     netSpendBadge: '16.4% Net Spend',
@@ -1096,7 +1235,77 @@ export const UI_STRINGS = {
     pushToProCPX: 'Push to proCPX',
     pushToDPSNXT: 'Push to DPS NXT',
     ctaSubtitle: 'Ready to calculate Client ROI and Transition to Commercial Lock-in Funnel',
-    ctaProceedButton: 'Proceed to Conversion Matrix & ROI Engine'
+    ctaProceedButton: 'Proceed to Conversion Matrix & ROI Engine',
+    savingsWaterfall: {
+      title: 'Consolidated Savings Waterfall',
+      subtitle: 'Value progression from Total Spend to Realized Savings across all strategic levers',
+      steps: {
+        totalSpend: 'TOTAL SPEND',
+        addressableSpend: 'ADDRESSABLE SPEND',
+        identifiedOpportunities: 'IDENTIFIED OPPORTUNITIES',
+        potentialSavings: 'POTENTIAL SAVINGS',
+        validatedSavings: 'VALIDATED SAVINGS',
+        approvedSavings: 'APPROVED SAVINGS',
+        realizedSavings: 'REALIZED SAVINGS'
+      },
+      note: 'Potential Opportunity is not Savings. Savings are confirmed only after client validation, management approval, and contractual execution.'
+    },
+    overlapDeduplication: {
+      title: 'Savings De-Duplication & Overlap Resolution Engine',
+      subtitle: 'Multi-engine overlap detection ensuring no double-counting between PCBI and Strategic Sourcing opportunities',
+      explanation: 'The same spend may appear in multiple opportunity engines (e.g. PCBI ₹10L, E-Auction ₹7L, Vendor Consolidation ₹5L). The overlap engine enforces priority deduplication so that only net non-overlapping savings count towards total potential savings.',
+      tableHeaders: {
+        overlapGroup: 'Item / Overlap Group',
+        primaryEngine: 'Primary Opportunity Lever',
+        primarySavings: 'Primary Savings (₹ Cr)',
+        overlappingEngines: 'Overlapping Secondary Levers',
+        grossSavings: 'Gross Combined (₹ Cr)',
+        deduplicated: 'Deduplicated Overlap (₹ Cr)',
+        netSavings: 'Net Non-Overlapping (₹ Cr)',
+        status: 'Workflow Status',
+        action: 'Validation Action'
+      },
+      nonOverlappingBadge: 'Non-Overlapping',
+      overlappingBadge: 'Overlapping',
+      netSavingsSummary: (netCr: number, grossCr: number, dedupCr: number) =>
+        `Net Non-Overlapping: ₹${netCr.toFixed(2)} Cr (Gross: ₹${grossCr.toFixed(2)} Cr, Deduplicated Overlap: ₹${dedupCr.toFixed(2)} Cr)`
+    },
+    actionPlan: {
+      title: 'Executive Action Plan & Implementation Tracker',
+      subtitle: 'Converting high-value validated opportunities into time-bound procurement initiatives with owner accountability',
+      tableHeaders: {
+        oppId: 'Opportunity ID',
+        action: 'Procurement Action',
+        owner: 'Action Owner',
+        department: 'Department',
+        targetDate: 'Target Date',
+        priority: 'Priority',
+        expectedValue: 'Expected Value (₹ Cr)',
+        status: 'Execution Status',
+        comments: 'Comments',
+        update: 'Update'
+      },
+      owners: {
+        procurement: 'Procurement',
+        scm: 'SCM',
+        plant: 'Plant',
+        finance: 'Finance',
+        technical: 'Technical',
+        management: 'Management',
+        other: 'Other'
+      },
+      statuses: {
+        open: 'Open',
+        inProgress: 'In Progress',
+        completed: 'Completed',
+        deferred: 'Deferred'
+      },
+      priorities: {
+        high: 'HIGH',
+        medium: 'MEDIUM',
+        low: 'LOW'
+      }
+    }
   },
 
   savingsInitiativesSummary: {

@@ -1,5 +1,5 @@
 /**
- * PCBI (Procucev Benchmark Intelligence) Frontend Types
+ * PCBI (Procucev Benchmark Intelligence) Domain Types
  */
 
 export type PCBISector =
@@ -19,6 +19,9 @@ export type PCBISector =
 
 export type PCBIBenchmarkScope = 'GLOBAL' | 'MULTI_SECTOR' | 'SECTOR_SPECIFIC';
 export type PCBIQualityRating = 'A' | 'B' | 'C';
+export type PCBIClassificationMethod = 'UNSPSC_COMMODITY' | 'UNSPSC_CLASS' | 'AI_TEXT' | 'MANUAL';
+export type PCBIMappingStatus = 'AUTO_MAPPED' | 'MAPPING_REQUIRED' | 'MANUALLY_MAPPED' | 'VERIFIED';
+export type PCBIIndexGapMethod = 'NO_VALUE' | 'FORWARD_FILL' | 'BACKWARD_FILL' | 'LINEAR_INTERPOLATION';
 
 export interface PCBIBenchmarkMaster {
   id: string;
@@ -34,19 +37,92 @@ export interface PCBIBenchmarkMaster {
   benchmark_source: string;
   source_series: string;
   benchmark_unit: string;
-  currency: string;
+  currency: 'INR' | 'USD' | 'EUR' | 'GBP' | 'CNY';
   geography: string;
   benchmark_type: 'SINGLE' | 'COMPOSITE';
-  benchmarkability_percent: number;
-  residual_percent: number;
+  benchmarkability_percent: number; // e.g. 70
+  residual_percent: number; // e.g. 30
   quality_rating: PCBIQualityRating;
   calculation_method: string;
   benchmark_scope?: PCBIBenchmarkScope;
   applicable_sectors?: string[];
+  gap_handling_method?: PCBIIndexGapMethod;
   effective_from: string;
+  effective_to?: string;
   version: number;
   notes?: string;
   active: boolean;
+}
+
+export interface PCBIBenchmarkComponent {
+  id: string;
+  pcbi_id: string;
+  component_name: string;
+  benchmark_source: string;
+  source_series: string;
+  weight_percent: number; // e.g. 55
+  benchmark_unit: string;
+  currency: 'INR' | 'USD' | 'EUR' | 'GBP' | 'CNY';
+  geography: string;
+  quality_rating: PCBIQualityRating;
+  active: boolean;
+}
+
+export interface PCBIWeeklyIndex {
+  id: string;
+  pcbi_id: string;
+  component_id?: string;
+  week_start: string; // Monday (YYYY-MM-DD)
+  week_end: string;   // Sunday (YYYY-MM-DD)
+  index_value: number;
+  base_period_index?: number; // Normalized to 100
+  source: string;
+  source_series?: string;
+  quality_rating: PCBIQualityRating;
+  currency: string;
+  unit: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface PCBIUNSPSCMapping {
+  id?: string;
+  unspsc_code: string;
+  unspsc_title?: string;
+  unspsc_level?: 'SEGMENT' | 'FAMILY' | 'CLASS' | 'COMMODITY';
+  match_level?: string;
+  pcbi_id: string;
+  category?: string;
+  sub_category?: string;
+  default_benchmarkability?: number;
+  quality_rating: PCBIQualityRating;
+  active: boolean;
+}
+
+export interface PCBIClientPurchaseTransaction {
+  id: string;
+  upload_id?: string;
+  sector: string;
+  plant: string;
+  po_number: string;
+  po_date: string;
+  material_code: string;
+  short_text: string;
+  unspsc?: string;
+  unspsc_commodity?: string;
+  pcbi_id?: string;
+  specification?: string;
+  grade?: string;
+  brand?: string;
+  vendor?: string;
+  quantity: number;
+  uom: string;
+  currency: string;
+  unit_price: number;
+  total_value: number;
+  source_row_number?: number;
+  comparable_key?: string;
+  created_at?: string;
 }
 
 export interface PCBIBasePurchase {
@@ -66,6 +142,9 @@ export interface PCBIBasePurchase {
   base_version: number;
   status: 'ACTIVE' | 'RESET_SUPERSEDED' | 'EXCLUDED';
   reason_if_excluded?: string;
+  reset_reason?: string;
+  reset_by?: string;
+  reset_timestamp?: string;
   created_at: string;
 }
 
@@ -104,10 +183,13 @@ export interface PCBITransactionCalculation {
   residual_percent: number;
   expected_price: number;
   actual_price: number;
-  price_gap_per_unit: number;
+  price_gap_per_unit: number; // MAX(0, Actual - Expected)
+  price_gap_pct?: number;
+  gross_opportunity?: number;
+  benchmarkable_spend?: number;
   quantity: number;
-  opportunity_value: number;
-  favourable_variance: number;
+  opportunity_value: number;  // Gross Opportunity * (Benchmarkability% / 100)
+  favourable_variance: number;// MAX(0, Expected - Actual) * quantity
   benchmark_quality: PCBIQualityRating;
   calculation_method: 'SINGLE_BENCHMARK' | 'COMPOSITE_BENCHMARK';
   calculation_status: 'SUCCESS' | 'BASE_RECORD' | 'BENCHMARK_DATA_MISSING' | 'MAPPING_REQUIRED';
@@ -116,7 +198,6 @@ export interface PCBITransactionCalculation {
 }
 
 export interface PCBIExplainabilityAudit {
-  calculation_id?: string;
   transaction_id: string;
   po_number: string;
   material_code: string;
@@ -127,7 +208,6 @@ export interface PCBIExplainabilityAudit {
   pcbi_id: string;
   benchmark_name: string;
   quality_rating: PCBIQualityRating;
-  benchmark_quality?: PCBIQualityRating;
   base_purchase: {
     po_number: string;
     date: string;
@@ -170,7 +250,7 @@ export interface PCBIExplainabilityAudit {
 }
 
 export interface PCBIDataQualityReport {
-  overall_score: number;
+  overall_score: number; // 0 - 100
   total_records: number;
   clean_records: number;
   records_with_warnings: number;
@@ -201,14 +281,33 @@ export interface PCBIDataQualityReport {
 export interface PCBIExecutiveSummary {
   total_spend_inr: number;
   total_spend_inr_cr: number;
+  material_spend_inr?: number;
+  material_spend_inr_cr?: number;
+  service_spend_inr?: number;
+  service_spend_inr_cr?: number;
+  unspsc_mapped_spend_inr?: number;
+  unspsc_mapped_spend_inr_cr?: number;
+  unspsc_mapping_percent?: number;
+  pcbi_mapped_spend_inr?: number;
+  pcbi_mapped_spend_inr_cr?: number;
+  pcbi_coverage_percent?: number;
   mapped_spend_inr: number;
   mapped_spend_inr_cr: number;
   mapped_spend_percent: number;
   benchmarkable_spend_inr: number;
   benchmarkable_spend_inr_cr: number;
   benchmarkable_spend_percent: number;
+  benchmarkability_percent?: number;
+  a_quality_spend_inr_cr?: number;
+  b_quality_spend_inr_cr?: number;
+  c_quality_spend_inr_cr?: number;
+  not_benchmarkable_spend_inr_cr?: number;
   total_opportunity_inr: number;
   total_opportunity_inr_cr: number;
+  strategic_sourcing_opportunity_inr_cr?: number;
+  total_potential_opportunity_inr_cr?: number;
+  validated_savings_inr_cr?: number;
+  realized_savings_inr_cr?: number;
   opportunity_percent: number;
   total_favourable_variance_inr: number;
   total_favourable_variance_inr_cr: number;
@@ -216,11 +315,6 @@ export interface PCBIExecutiveSummary {
   benchmarkable_transactions: number;
   mapping_required_transactions: number;
   data_quality_score: number;
-  category_breakdown?: Array<{
-    category: string;
-    spend_cr: number;
-    opportunity_cr: number;
-  }>;
   category_aggregations: Array<{
     category: string;
     spend_cr: number;
@@ -262,6 +356,7 @@ export interface PCBIExecutiveSummary {
   }>;
 }
 
+// Upgrade Request & OTP Validation Types (Prompt 81)
 export interface UpgradeRequestRecord {
   id: string;
   customer_user_id?: string;
@@ -281,18 +376,19 @@ export interface UpgradeRequestRecord {
   updated_at?: string;
 }
 
+export interface AdminOTPValidationSession {
+  request_id: string;
+  admin_email: string;
+  admin_mobile: string;
+  otp_code: string;
+  expires_at: number;
+  verified: boolean;
+}
+
+export type PCBICalculationResult = PCBITransactionCalculation;
+
 export interface PCBIExplainabilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   audit: PCBIExplainabilityAudit | null;
-}
-
-export interface CustomerUpgradeModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentTier?: 'BRONZE' | 'SILVER' | 'GOLD';
-  prefilledEmail?: string;
-  prefilledName?: string;
-  prefilledCompany?: string;
-  onSuccess?: () => void;
 }

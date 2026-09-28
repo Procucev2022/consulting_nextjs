@@ -133,7 +133,7 @@ export default function Home() {
     }
     return null;
   });
-  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>(null);
+  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>('GOLD');
   const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
   const [tenant, setTenant] = useState<TenantMaster>(() => {
     if (typeof window !== 'undefined') {
@@ -1571,6 +1571,10 @@ export default function Home() {
       );
       setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
       showToast('UNSPSC AI Categorization completed');
+    } finally {
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+        setAnalyzingLoaderState(null);
+      }
     }
   };
 

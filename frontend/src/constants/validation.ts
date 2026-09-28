@@ -181,3 +181,25 @@ export const adminUpdateUserTierSchema = z.object({
   tier: z.enum(['BRONZE', 'SILVER', 'GOLD'])
 });
 
+export const updateActionPlanSchema = z.object({
+  actionId: z.string().min(1, 'actionId is required'),
+  status: z.enum(['Open', 'In Progress', 'Completed', 'Deferred']).optional(),
+  owner: z.enum(['Procurement', 'SCM', 'Plant', 'Finance', 'Technical', 'Management', 'Other']).optional(),
+  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+  comments: z.string().optional()
+});
+
+export const updateOpportunityStatusSchema = z.object({
+  opp_id: z.string().min(1, 'opp_id is required'),
+  status: z.enum([
+    'IDENTIFIED',
+    'UNDER_VALIDATION',
+    'VALIDATED',
+    'APPROVED',
+    'IMPLEMENTING',
+    'REALIZED',
+    'REJECTED',
+    'DEFERRED'
+  ])
+});
+

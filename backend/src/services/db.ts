@@ -43,6 +43,17 @@ import {
   initialPCBIUNSPSCMappings
 } from '../data/pcbiMasterData';
 import { PCBICalculationEngine } from './pcbiCalculationEngine';
+import { StrategicSourcingEngine } from './strategicSourcingEngine';
+import { SavingsDeduplicationEngine } from './savingsDeduplicationEngine';
+import type {
+  SavingsOpportunityItem,
+  SavingsWaterfallMetrics,
+  OpportunityOverlapGroup,
+  ActionPlanItem,
+  SavingsOpportunityStatus,
+  ActionOwner
+} from '../types/savings';
+import type { StrategicInputTransaction, StrategicSourcingResult } from '../types/strategicSourcing';
 
 import logger from '../utils/logger';
 import { queryCache } from '../utils/queryCache';
@@ -84,6 +95,13 @@ export class DatabaseStore {
   private pcbiLastBasePurchases: PCBIBasePurchase[] = [];
   private pcbiLastExecutiveSummary: PCBIExecutiveSummary | null = null;
   private pcbiLastDataQuality: PCBIDataQualityReport | null = null;
+  // Strategic Sourcing & Savings Engine State (Module 2B & Module 4 - Prompt 100)
+  private strategicEngine = new StrategicSourcingEngine();
+  private savingsEngine = new SavingsDeduplicationEngine();
+  private cachedActionPlans: ActionPlanItem[] = [];
+  private cachedConsolidatedOpportunities: SavingsOpportunityItem[] = [];
+  private cachedOverlaps: OpportunityOverlapGroup[] = [];
+  private cachedWaterfallMetrics: SavingsWaterfallMetrics | null = null;
 
   // Upgrade Request State (Prompt 81)
   private upgradeRequests: UpgradeRequestRecord[] = [];
@@ -1033,6 +1051,80 @@ export class DatabaseStore {
           source_row_number: i + 1,
           comparable_key: `${(v.column_l_code || `MAT-${1000 + (i % 25)}`).trim().toUpperCase()}|EA`
         }));
+      } else {
+        // Fallback default sample transactions matching Prompt 100 specifications
+        txList = [
+          // Prompt 100 Exact Test Case (Lubricant)
+          {
+            id: 'tx-prompt100-baseline',
+            sector: 'Industrial Consumables',
+            plant: 'Main Plant',
+            po_number: 'PO-BASE-001',
+            po_date: '2023-07-12',
+            material_code: 'MAT-LUBRICANT-01',
+            short_text: 'Industrial Lubricant Oil',
+            vendor: 'ABC Vendor',
+            quantity: 5000,
+            uom: 'L',
+            currency: 'INR',
+            unit_price: 150.0,
+            total_value: 750000.0,
+            pcbi_id: 'PCBI-TEST-001',
+            comparable_key: 'MAT-LUBRICANT-01|L'
+          },
+          {
+            id: 'tx-prompt100-subsequent',
+            sector: 'Industrial Consumables',
+            plant: 'Main Plant',
+            po_number: 'PO-CURR-002',
+            po_date: '2023-09-28',
+            material_code: 'MAT-LUBRICANT-01',
+            short_text: 'Industrial Lubricant Oil',
+            vendor: 'ABC Vendor',
+            quantity: 10000,
+            uom: 'L',
+            currency: 'INR',
+            unit_price: 180.0,
+            total_value: 1800000.0,
+            pcbi_id: 'PCBI-TEST-001',
+            comparable_key: 'MAT-LUBRICANT-01|L'
+          },
+          // Bearing 6205 Composite
+          {
+            id: 'tx-brg-base',
+            sector: 'Bearings & Assemblies',
+            plant: 'Main Plant',
+            po_number: 'PO-BRG-01',
+            po_date: '2023-07-12',
+            material_code: 'MAT-BRG-6205',
+            short_text: 'Deep Groove Ball Bearing 6205',
+            vendor: 'SKF India',
+            quantity: 500,
+            uom: 'EA',
+            currency: 'INR',
+            unit_price: 1000.0,
+            total_value: 500000.0,
+            pcbi_id: 'PCBI-BEARING-001',
+            comparable_key: 'MAT-BRG-6205|EA'
+          },
+          {
+            id: 'tx-brg-subsequent',
+            sector: 'Bearings & Assemblies',
+            plant: 'Main Plant',
+            po_number: 'PO-BRG-02',
+            po_date: '2023-09-28',
+            material_code: 'MAT-BRG-6205',
+            short_text: 'Deep Groove Ball Bearing 6205',
+            vendor: 'SKF India',
+            quantity: 5000,
+            uom: 'EA',
+            currency: 'INR',
+            unit_price: 1200.0,
+            total_value: 6000000.0,
+            pcbi_id: 'PCBI-BEARING-001',
+            comparable_key: 'MAT-BRG-6205|EA'
+          }
+        ];
       }
     }
 
@@ -1109,6 +1201,200 @@ export class DatabaseStore {
   public findUpgradeRequestByCode(code: string): UpgradeRequestRecord | null {
     const cleanCode = code.trim().toUpperCase();
     return this.upgradeRequests.find((r) => r.generated_unique_code === cleanCode) || null;
+  }
+
+  // =========================================================================
+  // CONSOLIDATED SAVINGS & DE-DUPLICATION ENGINE (Module 4 - Prompt 100)
+  // =========================================================================
+
+  public getConsolidatedSavings(): {
+    opportunities: SavingsOpportunityItem[];
+    overlaps: OpportunityOverlapGroup[];
+    waterfallMetrics: SavingsWaterfallMetrics;
+    actionPlans: ActionPlanItem[];
+    strategicSummary: StrategicSourcingResult['summary'];
+  } {
+    // 1. Run or get PCBI calculations
+    const pcbiRes = this.getPCBILastCalculationResults();
+    const pcbiCalcs = pcbiRes.calculations;
+    const totalSpend = pcbiRes.executiveSummary.total_spend_inr || 100000000;
+    const benchmarkableSpend = pcbiRes.executiveSummary.benchmarkable_spend_inr || 70000000;
+
+    // 2. Build Strategic Sourcing transactions from current baseline
+    const validationList = this.getValidationRecords();
+    let strategicTxs: StrategicInputTransaction[] = [];
+    if (validationList.length > 0) {
+      strategicTxs = validationList.map((v, i) => ({
+        id: v.record_id || `tx-${i + 1}`,
+        po_number: v.po_number || `PO-${1000 + i}`,
+        po_date: v.transaction_date || (v.spend_year ? `${v.spend_year}-05-15` : '2023-06-01'),
+        vendor_name: v.vendor_name || 'Generic Vendor',
+        material_code: v.column_l_code || `MAT-${1000 + (i % 25)}`,
+        material_desc: v.raw_desc || 'Industrial Material Line Item',
+        quantity: v.order_quantity && v.order_quantity > 0 ? v.order_quantity : 100,
+        uom: 'EA',
+        unit_price: v.net_price && v.net_price > 0 ? v.net_price : (v.amount ? v.amount / 100 : 1500),
+        total_spend_inr: v.amount_inr || (v.inr_crores ? v.inr_crores * 10000000 : 150000),
+        currency: v.raw_currency || 'INR',
+        plant: 'Main Plant 1',
+        spend_category: 'DIRECT MATERIALS'
+      }));
+    } else {
+      strategicTxs = [
+        // 1. Vendor Consolidation on Steel Plates (Tata Steel & JSW)
+        {
+          material_code: 'MAT-STL-PLT',
+          material_desc: 'Structural Steel Plate 12mm',
+          vendor_name: 'Tata Steel Ltd',
+          plant: 'Jamshedpur',
+          spend_category: 'DIRECT MATERIALS',
+          quantity: 100,
+          unit_price: 60000,
+          total_spend_inr: 6000000
+        },
+        {
+          material_code: 'MAT-STL-PLT',
+          material_desc: 'Structural Steel Plate 12mm',
+          vendor_name: 'JSW Steel Ltd',
+          plant: 'Jamshedpur',
+          spend_category: 'DIRECT MATERIALS',
+          quantity: 40,
+          unit_price: 62500,
+          total_spend_inr: 2500000
+        },
+        // 2. PO Consolidation (5 small POs from SafetyFirst)
+        ...[1, 2, 3, 4, 5].map((idx) => ({
+          po_number: `PO-00${idx}`,
+          material_code: 'MRO-HLMT-01',
+          material_desc: 'Industrial Safety Helmet',
+          vendor_name: 'SafetyFirst Corp',
+          plant: 'Plant 1',
+          spend_category: 'MRO',
+          quantity: 100,
+          unit_price: 1000,
+          total_spend_inr: 100000
+        })),
+        // 3. E-Auction candidate (Corrugated Boxes)
+        {
+          material_code: 'PKG-CORR-BOX',
+          material_desc: 'Corrugated Shipping Boxes 5-Ply',
+          vendor_name: 'Packwell Industries',
+          plant: 'Main Plant',
+          spend_category: 'PACKING MATERIALS',
+          quantity: 20000,
+          unit_price: 150,
+          total_spend_inr: 3000000
+        },
+        {
+          material_code: 'PKG-CORR-BOX',
+          material_desc: 'Corrugated Shipping Boxes 5-Ply',
+          vendor_name: 'Boxmakers Corp',
+          plant: 'Main Plant',
+          spend_category: 'PACKING MATERIALS',
+          quantity: 20000,
+          unit_price: 150,
+          total_spend_inr: 3000000
+        }
+      ];
+    }
+
+    // 3. Run Strategic Sourcing Engine
+    const strategicResult = this.strategicEngine.analyzeAll(strategicTxs);
+
+    // 4. Generate PCBI Opportunities
+    const pcbiOpportunities: SavingsOpportunityItem[] = pcbiCalcs
+      .filter((c) => c.opportunity_value > 0)
+      .map((c, idx) => ({
+        opportunity_id: `OPP-PCBI-${String(idx + 1).padStart(3, '0')}`,
+        source_module: 'MODULE_3_PCBI',
+        source_engine: 'PCBI_PRICE',
+        category: c.sector || 'Direct Materials',
+        item: c.material_code || 'Industrial Supply',
+        vendor: c.vendor || 'Vendor',
+        plant: c.plant || 'Main Plant 1',
+        spend_inr: Math.round(c.actual_price * c.quantity),
+        spend_inr_cr: Math.round(((c.actual_price * c.quantity) / 10000000) * 1000) / 1000,
+        potential_savings_inr: Math.round(c.opportunity_value),
+        potential_savings_inr_cr: Math.round((c.opportunity_value / 10000000) * 1000) / 1000,
+        is_overlapping: false,
+        net_savings_inr: Math.round(c.opportunity_value),
+        net_savings_inr_cr: Math.round((c.opportunity_value / 10000000) * 1000) / 1000,
+        status: 'IDENTIFIED',
+        owner: 'Procurement',
+        timeline: '30 Days',
+        validation_notes: `PCBI Price Gap: ₹${c.price_gap_per_unit}/unit against benchmark ${c.base_pcbi_id}`,
+        created_at: new Date().toISOString()
+      }));
+
+    // 5. Combine and deduplicate
+    const combinedOpps = [...pcbiOpportunities, ...strategicResult.opportunities];
+    const deduplicated = this.savingsEngine.deduplicateOpportunities(
+      combinedOpps,
+      totalSpend,
+      benchmarkableSpend
+    );
+
+    this.cachedConsolidatedOpportunities = deduplicated.opportunities;
+    this.cachedOverlaps = deduplicated.overlaps;
+    this.cachedWaterfallMetrics = deduplicated.waterfallMetrics;
+
+    // 6. Action plans for non-overlapping or high-value opportunities
+    if (this.cachedActionPlans.length === 0) {
+      this.cachedActionPlans = deduplicated.opportunities
+        .filter((o) => !o.is_overlapping && o.net_savings_inr > 0)
+        .slice(0, 10)
+        .map((opp, idx) =>
+          this.savingsEngine.convertToActionPlan(opp, {
+            action: opp.source_engine === 'PCBI_PRICE'
+              ? `Renegotiate contract price with ${opp.vendor} based on PCBI gap`
+              : `Execute ${opp.source_engine.replace('_', ' ')} initiative for ${opp.item}`,
+            priority: idx < 3 ? 'HIGH' : idx < 7 ? 'MEDIUM' : 'LOW'
+          })
+        );
+    }
+
+    return {
+      opportunities: this.cachedConsolidatedOpportunities,
+      overlaps: this.cachedOverlaps,
+      waterfallMetrics: this.cachedWaterfallMetrics,
+      actionPlans: this.cachedActionPlans,
+      strategicSummary: strategicResult.summary
+    };
+  }
+
+  public updateActionPlan(
+    actionId: string,
+    updates: {
+      status?: 'Open' | 'In Progress' | 'Completed' | 'Deferred';
+      owner?: ActionOwner;
+      priority?: 'HIGH' | 'MEDIUM' | 'LOW';
+      comments?: string;
+    }
+  ): ActionPlanItem | null {
+    if (this.cachedActionPlans.length === 0) {
+      this.getConsolidatedSavings();
+    }
+    const plan = this.cachedActionPlans.find((p) => p.id === actionId);
+    if (!plan) return null;
+    if (updates.status) plan.status = updates.status;
+    if (updates.owner) plan.owner = updates.owner;
+    if (updates.priority) plan.priority = updates.priority;
+    if (updates.comments !== undefined) plan.comments = updates.comments;
+    plan.updated_at = new Date().toISOString();
+    return { ...plan };
+  }
+
+  public updateSavingsOpportunityStatus(
+    oppId: string,
+    status: SavingsOpportunityStatus
+  ): SavingsOpportunityItem | null {
+    if (this.cachedConsolidatedOpportunities.length === 0) {
+      this.getConsolidatedSavings();
+    }
+    const opp = this.cachedConsolidatedOpportunities.find((o) => o.opportunity_id === oppId);
+    if (!opp) return null;
+    opp.status = status;
+    return { ...opp };
   }
 }
 

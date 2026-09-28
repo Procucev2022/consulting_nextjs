@@ -1,7 +1,5 @@
 import type {
   TenantMaster,
-  RawDocumentIngestion,
-  ValidationPreCheckRecord,
   SpendCategorySummary,
   CategoryYearDetail,
   VendorYearDetail,
@@ -9,20 +7,22 @@ import type {
   SavingsOpportunity,
   DashboardOverviewData
 } from '../types';
-import type { DBHealthData, DBTableData, DBTestConnectionResponse } from '../types/dbView';
+import type { PCBIExplainabilityAudit } from '../types/pcbi';
 import frontendLogger from './logger';
 import { aiApiClient } from './aiApi';
+import { authApiClient } from './authApi';
+import { dbApiClient } from './dbApi';
+import { savingsApiClient } from './savingsApi';
+import { pcbiApiClient } from './pcbiApi';
+import { ingestionApiClient } from './ingestionApi';
 import { validateInput } from './validation';
 import {
   apiUpdateTenantPayloadSchema,
-  apiAddIngestionFilePayloadSchema,
-  apiUpdateValidationRecordPayloadSchema,
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
   apiCalculateConversionPayloadSchema
 } from '../constants/validation';
 import { fetchDashboardOverview } from './graphqlClient';
-import { authApiClient } from './authApi';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -54,139 +54,48 @@ export const apiClient = {
     return json.data;
   },
 
-  // Ingestion
-  async getIngestionData(buyerId?: string): Promise<{
-    queue: RawDocumentIngestion[];
-    validationRecords: ValidationPreCheckRecord[];
-  }> {
-    frontendLogger.debug('Fetching ingestion queue and validation records', { buyerId });
-    const query = buyerId ? `?buyerId=${encodeURIComponent(buyerId)}` : '';
-    const res = await fetch(`${API_BASE}/api/ingestion${query}`);
-    const json = await res.json();
-    return json.data;
-  },
-
-  async addIngestionFile(fileData: Partial<RawDocumentIngestion>): Promise<RawDocumentIngestion[]> {
-    frontendLogger.info('Submitting ingestion file', { fileName: fileData.file_name });
-    const validation = validateInput(apiAddIngestionFilePayloadSchema, fileData);
-    if (!validation.success) {
-      throw new Error(`Invalid file data: ${JSON.stringify(validation.errors)}`);
-    }
-
-    const res = await fetch(`${API_BASE}/api/ingestion`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(validation.data)
-    });
-    const json = await res.json();
-    return json.data;
-  },
-
-  async uploadDocumentToObjectStore(payload: {
-    fileName: string;
-    fileType: string;
-    fileBase64?: string;
-    fileSizeMb?: number;
-    recordsCount?: number;
-    convertedInrCrores?: number;
-    detectedCurrencies?: string[];
-    datasetType?: string;
-    buyer_id?: string;
-    tenant_id?: string;
-  }): Promise<{
-    objectMeta: Record<string, unknown>;
-    ingestionQueue: RawDocumentIngestion[];
-  }> {
-    frontendLogger.info('Uploading document to Object Store', {
-      fileName: payload.fileName,
-      buyerId: payload.buyer_id
-    });
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (payload.buyer_id) headers['x-buyer-id'] = payload.buyer_id;
-    if (payload.tenant_id) headers['x-tenant-id'] = payload.tenant_id;
-
-    const res = await fetch(`${API_BASE}/api/ingestion/upload`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.message || 'Failed to upload document to Object Store');
-    }
-    return json.data;
-  },
-
-  async updateValidationRecord(
-    recordId: string,
-    updates: Partial<ValidationPreCheckRecord>
-  ): Promise<ValidationPreCheckRecord> {
-    frontendLogger.info('Updating validation pre-check record', { record_id: recordId, updates });
-    const validation = validateInput(apiUpdateValidationRecordPayloadSchema, {
-      record_id: recordId,
-      ...updates
-    });
-    if (!validation.success) {
-      throw new Error(`Invalid record update: ${JSON.stringify(validation.errors)}`);
-    }
-
-    const res = await fetch(`${API_BASE}/api/ingestion`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(validation.data)
-    });
-    const json = await res.json();
-    return json.data;
-  },
-
-  async applyBlanketRemediation(): Promise<{ updatedCount: number; records: ValidationPreCheckRecord[] }> {
-    frontendLogger.info('Executing blanket AI remediation across anomalous records');
-    const res = await fetch(`${API_BASE}/api/ingestion/remediate`, {
-      method: 'POST'
-    });
-    const json = await res.json();
-    return json.data;
-  },
-
-  async resetValidationRecords(): Promise<ValidationPreCheckRecord[]> {
-    frontendLogger.warn('Resetting validation records to baseline');
-    const res = await fetch(`${API_BASE}/api/ingestion`, {
-      method: 'DELETE'
-    });
-    const json = await res.json();
-    return json.data;
-  },
-
-  async deleteIngestionDocument(docId?: string, buyerId?: string): Promise<RawDocumentIngestion[]> {
-    frontendLogger.info('Deleting ingestion document', { docId, buyerId });
-    let endpoint = docId ? `${API_BASE}/api/ingestion/document/${encodeURIComponent(docId)}` : `${API_BASE}/api/ingestion/document`;
-    if (buyerId) {
-      endpoint += `?buyerId=${encodeURIComponent(buyerId)}`;
-    }
-    const res = await fetch(endpoint, {
-      method: 'DELETE'
-    });
-    const json = await res.json();
-    return json.data;
-  },
+  // Ingestion Delegations
+  getIngestionData: ingestionApiClient.getIngestionData.bind(ingestionApiClient),
+  addIngestionFile: ingestionApiClient.addIngestionFile.bind(ingestionApiClient),
+  uploadDocumentToObjectStore: ingestionApiClient.uploadDocumentToObjectStore.bind(ingestionApiClient),
+  deleteIngestionFile: ingestionApiClient.deleteIngestionFile.bind(ingestionApiClient),
+  updateValidationRecord: ingestionApiClient.updateValidationRecord.bind(ingestionApiClient),
+  applyBlanketRemediation: ingestionApiClient.applyBlanketRemediation.bind(ingestionApiClient),
+  resetValidationRecords: ingestionApiClient.resetValidationRecords.bind(ingestionApiClient),
+  deleteIngestionDocument: ingestionApiClient.deleteIngestionDocument.bind(ingestionApiClient),
+  resetBlanketData: ingestionApiClient.resetBlanketData.bind(ingestionApiClient),
 
   // Categories
   async getCategories(): Promise<{ categories: SpendCategorySummary[]; categoryDetails: CategoryYearDetail[] }> {
-    frontendLogger.debug('Fetching taxonomy categories and yearly spend breakdowns');
+    frontendLogger.debug('Fetching spend categories and year details');
     const res = await fetch(`${API_BASE}/api/categories`);
     const json = await res.json();
     return json.data;
   },
 
+  async getCategoryDetails(): Promise<CategoryYearDetail[]> {
+    frontendLogger.debug('Fetching category year details matrix');
+    const res = await fetch(`${API_BASE}/api/categories?details=true`);
+    const json = await res.json();
+    return json.data.categoryDetails;
+  },
+
   // Vendors
   async getVendors(): Promise<{ vendorRankings: VendorPriceRank[]; vendorDetails: VendorYearDetail[] }> {
-    frontendLogger.debug('Fetching vendor price rankings and volatility metrics');
+    frontendLogger.debug('Fetching vendor price rankings and year details');
     const res = await fetch(`${API_BASE}/api/vendors`);
     const json = await res.json();
     return json.data;
   },
 
-  async mergeVendor(targetName: string, masterId: string, canonicalName: string) {
+  async getVendorDetails(): Promise<VendorYearDetail[]> {
+    frontendLogger.debug('Fetching vendor year details');
+    const res = await fetch(`${API_BASE}/api/vendors?details=true`);
+    const json = await res.json();
+    return json.data.vendorDetails;
+  },
+
+  async mergeVendor(targetName: string, masterId: string, canonicalName: string): Promise<Record<string, unknown>> {
     frontendLogger.info('Executing vendor consolidation merge', { targetName, masterId, canonicalName });
     const validation = validateInput(apiMergeVendorPayloadSchema, { targetName, masterId, canonicalName });
     if (!validation.success) {
@@ -225,6 +134,20 @@ export const apiClient = {
     return json.data;
   },
 
+  // PCBI Benchmark Intelligence (Module 3 - Prompt 100)
+  getPCBIDashboard: pcbiApiClient.getPCBIDashboard.bind(pcbiApiClient),
+  async getPCBIExplainabilityAudit(id: string): Promise<PCBIExplainabilityAudit> {
+    frontendLogger.debug('Fetching PCBI explainability audit record', { id });
+    const res = await fetch(`${API_BASE}/api/pcbi/opportunity/${encodeURIComponent(id)}`);
+    const json = await res.json();
+    return json.audit;
+  },
+
+  // Consolidated Savings & De-Duplication (Module 4 - Prompt 100)
+  getConsolidatedSavings: savingsApiClient.getConsolidatedSavings.bind(savingsApiClient),
+  updateActionPlan: savingsApiClient.updateActionPlan.bind(savingsApiClient),
+  updateSavingsOpportunityStatus: savingsApiClient.updateSavingsOpportunityStatus.bind(savingsApiClient),
+
   // Conversion
   async calculateCommercialSaaS(annualSpendCr: number, savingsRate: number, saasFeeRate: number) {
     frontendLogger.debug('Calculating SaaS commercial projection', { annualSpendCr, savingsRate, saasFeeRate });
@@ -241,16 +164,16 @@ export const apiClient = {
     return await res.json();
   },
 
-  // Report
+  // Executive Report
   async getExecutiveReport() {
-    frontendLogger.info('Generating executive intelligence summary report');
+    frontendLogger.debug('Fetching executive report data');
     const res = await fetch(`${API_BASE}/api/report`);
     return await res.json();
   },
 
-  // GraphQL Streamlined Batch Fetching
+  // GraphQL Integration
   async getDashboardOverviewGraphQL(): Promise<DashboardOverviewData> {
-    frontendLogger.info('Fetching aggregated dashboard overview via GraphQL apiClient wrapper');
+    frontendLogger.debug('Calling batch GraphQL query for unified dashboard overview');
     return await fetchDashboardOverview();
   },
 
@@ -281,39 +204,11 @@ export const apiClient = {
   getSimulatedTier: authApiClient.getSimulatedTier.bind(authApiClient),
   setSimulatedTier: authApiClient.setSimulatedTier.bind(authApiClient),
 
-  // Database View & Telemetry
-  async getDBStatus(): Promise<DBHealthData> {
-    frontendLogger.debug('Fetching database status & health telemetry');
-    const res = await fetch(`${API_BASE}/api/db/status`);
-    const json = await res.json();
-    return json.data;
-  },
-
-  async getDBMetrics(): Promise<Record<string, unknown>> {
-    frontendLogger.debug('Fetching database optimization metrics');
-    const res = await fetch(`${API_BASE}/api/db/metrics`);
-    const json = await res.json();
-    return json.data;
-  },
-
-  async getDBTableData(table: string, page = 1, limit = 20, search = ''): Promise<DBTableData> {
-    frontendLogger.debug('Fetching database table data', { table, page, limit, search });
-    const query = new URLSearchParams({
-      table,
-      page: String(page),
-      limit: String(limit),
-      ...(search ? { search } : {})
-    });
-    const res = await fetch(`${API_BASE}/api/db/tables?${query.toString()}`);
-    const json = await res.json();
-    return json.data;
-  },
-
-  async testDBConnection(): Promise<DBTestConnectionResponse> {
-    frontendLogger.info('Testing live database round-trip ping');
-    const res = await fetch(`${API_BASE}/api/db/test-connection`, { method: 'POST' });
-    return await res.json();
-  },
+  // Database View & Telemetry Delegations
+  getDBStatus: dbApiClient.getDBStatus.bind(dbApiClient),
+  getDBMetrics: dbApiClient.getDBMetrics.bind(dbApiClient),
+  getDBTableData: dbApiClient.getDBTableData.bind(dbApiClient),
+  testDBConnection: dbApiClient.testDBConnection.bind(dbApiClient),
 
   // Google Gemini AI Services
   checkAiConfig: aiApiClient.checkConfig.bind(aiApiClient),
@@ -323,8 +218,4 @@ export const apiClient = {
   analyzeAnomaliesAi: aiApiClient.analyzeAnomalies.bind(aiApiClient)
 };
 
-export { aiApiClient, authApiClient };
-
-
-
-
+export { aiApiClient, authApiClient, dbApiClient, savingsApiClient, pcbiApiClient, ingestionApiClient };

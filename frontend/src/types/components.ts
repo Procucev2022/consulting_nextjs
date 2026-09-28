@@ -340,4 +340,55 @@ export interface LoginBenefitsShowcaseProps {
   showMetrics?: boolean;
 }
 
+// Module 3: PCBI Benchmark & Trend Analytics Props (Prompt 100)
+export interface ExecutiveBenchmarkSummaryProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface BenchmarkQualityDashboardProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface BenchmarkCoverageWaterfallProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface SpendCategoryViewProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface CalculationTransparencyCardProps {
+  className?: string;
+}
+
+export interface VendorPriceDispersionTableProps {
+  vendorRankings?: VendorPriceRank[];
+  calculations?: import('./pcbi').PCBITransactionCalculation[];
+  onWhyThisBenchmark?: (item: import('./pcbi').PCBITransactionCalculation) => void;
+  className?: string;
+}
+
+// Module 4: Consolidated Savings Engine Props (Prompt 100)
+export interface SavingsWaterfallSectionProps {
+  waterfallMetrics: import('./savings').SavingsWaterfallMetrics;
+  className?: string;
+}
+
+export interface OverlapDeduplicationTableProps {
+  overlaps: import('./savings').OpportunityOverlapGroup[];
+  opportunities: import('./savings').SavingsOpportunityItem[];
+  onUpdateStatus?: (oppId: string, status: import('./savings').SavingsOpportunityStatus) => void;
+  className?: string;
+}
+
+export interface ActionPlanTrackerProps {
+  actionPlans: import('./savings').ActionPlanItem[];
+  onUpdateAction?: (actionId: string, updates: { status?: import('./savings').ActionPlanItem['status']; owner?: import('./savings').ActionOwner; priority?: 'HIGH' | 'MEDIUM' | 'LOW'; comments?: string }) => void;
+  className?: string;
+}
+
 
