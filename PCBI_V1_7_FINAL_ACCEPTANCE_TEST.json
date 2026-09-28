@@ -1,0 +1,274 @@
+[
+  {
+    "testNumber": 1,
+    "testId": "TEST_01",
+    "name": "Existing valid PCBI calculates",
+    "passed": true,
+    "details": "Existing valid PCBI series (HR Steel, Kraft Paper, Copper, Caustic Soda) calculate with index base 100.00.",
+    "evidence": {
+      "eligibleCalculatedCount": 6,
+      "basePeriod": "2020-04",
+      "baseIndex": 100
+    }
+  },
+  {
+    "testNumber": 2,
+    "testId": "TEST_02",
+    "name": "Missing PCBI creates gap",
+    "passed": true,
+    "details": "Missing PCBI for Ferro Molybdenum creates actionable P1_CRITICAL gap.",
+    "evidence": {
+      "commodity": "Ferro Molybdenum 65%",
+      "status": "PCBI_MISSING",
+      "priority": "P1_CRITICAL"
+    }
+  },
+  {
+    "testNumber": 3,
+    "testId": "TEST_03",
+    "name": "Admin creates new PCBI",
+    "passed": true,
+    "details": "Admin creates new PCBI without software deployment.",
+    "evidence": {
+      "action": "ADD_PCBI_DEFINITION",
+      "dynamicIdGenerated": true,
+      "id": "PCBI-FEMOLY-V1"
+    }
+  },
+  {
+    "testNumber": 4,
+    "testId": "TEST_04",
+    "name": "Admin uploads XLSX",
+    "passed": true,
+    "details": "Admin uploads XLSX workbook with auto-detection preview.",
+    "evidence": {
+      "format": "XLSX",
+      "previewMode": true,
+      "silentApproval": false
+    }
+  },
+  {
+    "testNumber": 5,
+    "testId": "TEST_05",
+    "name": "Admin uploads PDF",
+    "passed": true,
+    "details": "Admin uploads PDF market report with tabular extraction.",
+    "evidence": {
+      "format": "PDF",
+      "previewMode": true,
+      "silentApproval": false
+    }
+  },
+  {
+    "testNumber": 6,
+    "testId": "TEST_06",
+    "name": "Admin uploads CSV",
+    "passed": true,
+    "details": "Admin uploads CSV price history.",
+    "evidence": {
+      "format": "CSV",
+      "observationsLoaded": 75
+    }
+  },
+  {
+    "testNumber": 7,
+    "testId": "TEST_07",
+    "name": "Admin manually maps ambiguous columns",
+    "passed": true,
+    "details": "System flags ambiguous columns as DATA_MAPPING_REVIEW_REQUIRED and allows manual mapping.",
+    "evidence": {
+      "status": "DATA_MAPPING_REVIEW_REQUIRED",
+      "manualMappingSupported": true
+    }
+  },
+  {
+    "testNumber": 8,
+    "testId": "TEST_08",
+    "name": "Admin adds historical observations",
+    "passed": true,
+    "details": "Admin appends historical observations without overwriting previous data.",
+    "evidence": {
+      "action": "APPEND_HISTORY",
+      "previousMonths": 42,
+      "newMonths": 75
+    }
+  },
+  {
+    "testNumber": 9,
+    "testId": "TEST_09",
+    "name": "Duplicate observation detected",
+    "passed": true,
+    "details": "Duplicate DATE + SERIES_ID detected and routed to DUPLICATE_OBSERVATION_REVIEW.",
+    "evidence": {
+      "duplicateDetected": true,
+      "status": "DUPLICATE_OBSERVATION_REVIEW"
+    }
+  },
+  {
+    "testNumber": 10,
+    "testId": "TEST_10",
+    "name": "Partial history remains blocked",
+    "passed": true,
+    "details": "Partial history (< 75m) remains strictly blocked from production indexing.",
+    "evidence": {
+      "commodity": "Carbide Cutting Inserts",
+      "depth": "42m",
+      "blocked": true
+    }
+  },
+  {
+    "testNumber": 11,
+    "testId": "TEST_11",
+    "name": "Frequency mismatch remains blocked",
+    "passed": true,
+    "details": "Frequency mismatch (Fortnightly to Weekly) remains blocked pending approved methodology.",
+    "evidence": {
+      "rule": "FORTNIGHTLY_TO_WEEKLY",
+      "blocked": true,
+      "action": "METHODOLOGY_APPROVAL_REQUIRED"
+    }
+  },
+  {
+    "testNumber": 12,
+    "testId": "TEST_12",
+    "name": "Specification mismatch remains blocked",
+    "passed": true,
+    "details": "Specification mismatch (Automotive oil for Hydraulic oil) remains blocked.",
+    "evidence": {
+      "commodity": "Hydraulic Oil VG 46",
+      "status": "SPECIFICATION_MISMATCH",
+      "blocked": true
+    }
+  },
+  {
+    "testNumber": 13,
+    "testId": "TEST_13",
+    "name": "Admin approves methodology",
+    "passed": true,
+    "details": "Admin approves methodology through governed approval gate.",
+    "evidence": {
+      "methodologyId": "METH-FEMOLY-V1",
+      "status": "APPROVED"
+    }
+  },
+  {
+    "testNumber": 14,
+    "testId": "TEST_14",
+    "name": "Admin approves PCBI",
+    "passed": true,
+    "details": "Admin approves PCBI series promotion to production.",
+    "evidence": {
+      "pcbiId": "PCBI-FEMOLY-001",
+      "approved": true
+    }
+  },
+  {
+    "testNumber": 15,
+    "testId": "TEST_15",
+    "name": "Affected commodity recalculates only",
+    "passed": true,
+    "details": "Targeted isolated recalculation executed for affected series only.",
+    "evidence": {
+      "recalculatedSeries": "SERIES-FEMOLY-M1",
+      "globalRerunAvoided": true
+    }
+  },
+  {
+    "testNumber": 16,
+    "testId": "TEST_16",
+    "name": "Other commodities remain unaffected",
+    "passed": true,
+    "details": "Other commodities (HR Steel, Paper, Caustic) remain completely unaffected.",
+    "evidence": {
+      "otherCommoditiesAffected": false,
+      "isolationVerified": true
+    }
+  },
+  {
+    "testNumber": 17,
+    "testId": "TEST_17",
+    "name": "New source can be added",
+    "passed": true,
+    "details": "Multiple independent sources added and coexisting under single commodity family.",
+    "evidence": {
+      "sourcesCount": 2,
+      "separateProvenance": true
+    }
+  },
+  {
+    "testNumber": 18,
+    "testId": "TEST_18",
+    "name": "Existing history remains immutable",
+    "passed": true,
+    "details": "Existing approved historical observations remain immutable.",
+    "evidence": {
+      "historyImmutable": true,
+      "previousBatchesIntact": true
+    }
+  },
+  {
+    "testNumber": 19,
+    "testId": "TEST_19",
+    "name": "Module 1 unchanged",
+    "passed": true,
+    "details": "Module 1 customer ingestion and normalization records remain completely unchanged.",
+    "evidence": {
+      "module1Frozen": true,
+      "txnCount": 15
+    }
+  },
+  {
+    "testNumber": 20,
+    "testId": "TEST_20",
+    "name": "Module 2 unchanged",
+    "passed": true,
+    "details": "Module 2 classification authority and taxonomy structure remain completely unchanged.",
+    "evidence": {
+      "module2Frozen": true,
+      "taxonomyFamilies": 12
+    }
+  },
+  {
+    "testNumber": 21,
+    "testId": "TEST_21",
+    "name": "Module 4 remains disconnected",
+    "passed": true,
+    "details": "Module 4 commercial negotiation and sourcing execution engine remains disconnected.",
+    "evidence": {
+      "module4Connected": false
+    }
+  },
+  {
+    "testNumber": 22,
+    "testId": "TEST_22",
+    "name": "Savings remains ZERO",
+    "passed": true,
+    "details": "Commercial savings and monetary recovery calculations remain strictly ZERO.",
+    "evidence": {
+      "savingsCalculated": 0,
+      "opportunityCalculated": 0
+    }
+  },
+  {
+    "testNumber": 23,
+    "testId": "TEST_23",
+    "name": "New commodity can be added without code deployment",
+    "passed": true,
+    "details": "New future commodity added dynamically via Admin Portal without code deployment.",
+    "evidence": {
+      "dynamicCommodityAdded": true,
+      "codeDeploymentRequired": false
+    }
+  },
+  {
+    "testNumber": 24,
+    "testId": "TEST_24",
+    "name": "Research queue automatically reprioritizes",
+    "passed": true,
+    "details": "Research queue automatically updates and reprioritizes upon customer data changes.",
+    "evidence": {
+      "reprioritizationActive": true,
+      "primarySort": "CUSTOMER_SPEND_DESC"
+    }
+  }
+]

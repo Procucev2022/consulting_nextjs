@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PCBI_V1_3_1_METHODOLOGY_GOVERNANCE",
+  "version": "1.3.1",
+  "description": "Methodology governance architecture prohibiting unapproved mathematical adjustments and enforcing Module 2 classification authority.",
+  "module2AuthorityMandate": {
+    "principle": "MODULE_2_SOLE_AUTHORITY",
+    "rule": "Module 2 remains the ONLY classification authority. Module 3 MUST NOT independently classify customer materials based on keyword searches, description matching, AI inference, or commodity assumptions.",
+    "permittedModule2Inputs": [
+      "Material Code",
+      "UNSPSC",
+      "Material Group",
+      "Commodity",
+      "Sub-Commodity",
+      "Grade",
+      "Specification"
+    ],
+    "hardValidation": {
+      "condition": "IF Module 3 classification conflicts with Module 2 classification",
+      "status": "CLASSIFICATION_CONFLICT",
+      "action": "BLOCK",
+      "autoResolutionPermitted": false
+    }
+  },
+  "methodologyPrerequisites": {
+    "rule": "NO_AUTOMATIC_NUMERICAL_ADJUSTMENTS",
+    "prohibitedAutomaticAdjustments": [
+      "form-factor discounts",
+      "grade conversion",
+      "specification adjustment",
+      "commodity proxy",
+      "index substitution",
+      "source substitution",
+      "price conversion"
+    ],
+    "mandatoryPrerequisites": [
+      { "id": 1, "requirement": "Documented methodology exists" },
+      { "id": 2, "requirement": "Unique METHOD_ID assigned" },
+      { "id": 3, "requirement": "Governance committee approval record exists (status = APPROVED)" },
+      { "id": 4, "requirement": "Explicit mathematical rule specified" },
+      { "id": 5, "requirement": "Source and provenance audit record verified" }
+    ],
+    "fallbackBehavior": {
+      "status": "METHODOLOGY_PENDING",
+      "action": "ADMIN_ACTION_REQUIRED",
+      "numericalAdjustmentApplied": null
+    }
+  },
+  "exemplarCases": [
+    {
+      "caseId": "CASE-SS304-TURNINGS",
+      "description": "SS 304 Turnings vs SS 304 Prime Scrap Adjustment",
+      "prohibitedAction": "Do NOT automatically apply -18% heuristic discount.",
+      "enforcedGovernanceOutput": {
+        "status": "SPECIFICATION_MISMATCH",
+        "methodologyStatus": "METHODOLOGY_PENDING",
+        "action": "ADMIN_ACTION_REQUIRED",
+        "appliedAdjustment": 0
+      }
+    },
+    {
+      "caseId": "CASE-FERROMOLY-ASP",
+      "description": "Ferro Molybdenum 65% vs IBM Mineral ASP",
+      "prohibitedAction": "Do NOT automatically treat IBM mineral ASP as equivalent ferro-moly benchmark.",
+      "enforcedGovernanceOutput": {
+        "sourceStatus": "SOURCE_CANDIDATE",
+        "methodologyStatus": "METHODOLOGY_PENDING",
+        "action": "ADMIN_ACTION_REQUIRED"
+      }
+    }
+  ]
+}

@@ -229,5 +229,33 @@ describe('PCBI Admin Service Unit Tests (backend/src/services/pcbiAdminService.t
     if (v1) v1.status = 'ARCHIVED';
     expect(fresh.getActivePublishedVersion()).toBeNull();
   });
+
+  it('should return formal gap matrix covering customer requirements with 16 series', () => {
+    const matrix = service.getGapMatrix();
+    expect(matrix.length).toBe(16);
+    expect(matrix[0].material).toContain('Hot Rolled Steel');
+    expect(matrix.some((r) => r.readinessStatus === 'READY_FOR_VALIDATION')).toBe(true);
+    expect(matrix.some((r) => r.readinessStatus === 'HISTORY_REQUIRED')).toBe(true);
+    expect(matrix.some((r) => r.readinessStatus === 'PCBI_MISSING')).toBe(true);
+    expect(matrix.some((r) => r.readinessStatus === 'NOT_BENCHMARKABLE')).toBe(true);
+  });
+
+  it('should execute 12 synthetic QA test cases and return all passed', () => {
+    const tests = service.getSyntheticQATestResults();
+    expect(tests.length).toBe(12);
+    expect(tests.every((t) => t.passed)).toBe(true);
+  });
+
+  it('should run preview sandbox with 0 production writes and Module 4 disconnected', () => {
+    const preview = service.runPreviewSandbox();
+    expect(preview.mode).toBe('SIMULATION_ONLY');
+    expect(preview.productionStatus).toBe('NOT_PRODUCTION');
+    expect(preview.approvalStatus).toBe('NOT_APPROVED');
+    expect(preview.pcbiObservationsWritten).toBe(0);
+    expect(preview.pcbiMasterCatalogWritten).toBe(0);
+    expect(preview.savingsEngineWritten).toBe(0);
+    expect(preview.module4Connected).toBe(false);
+  });
 });
+
 

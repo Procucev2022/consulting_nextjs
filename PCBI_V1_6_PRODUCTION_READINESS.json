@@ -1,0 +1,45 @@
+{
+  "releaseVersion": "1.6.0",
+  "module3Status": "PRODUCTION_READY_FOR_CONTROLLED_PILOT",
+  "all20TestsPassed": true,
+  "totalTests": 20,
+  "passedTests": 20,
+  "failedTests": 0,
+  "datasetAudit": {
+    "fullDatasetConfirmed": true,
+    "datasetName": "Certified Module 1 + Module 2 Customer Spend Dataset (Purchase_History_Multi_Currency_Sample.xlsx)",
+    "totalCustomerSpend": 86317055,
+    "totalCustomerSpendCr": "₹8.6317 Cr",
+    "totalTransactions": 15,
+    "totalCustomerCommodityFamilies": 13,
+    "productionReadyCount": 6,
+    "blockedGapsCount": 6,
+    "excludedServiceCount": 1,
+    "highImpactGapsCount": 2
+  },
+  "governanceLocks": {
+    "module1Frozen": true,
+    "module2Frozen": true,
+    "pcbiMasterImmutable": true,
+    "module4Disconnected": true,
+    "savingsCalculated": 0,
+    "commercialPurchases": 0,
+    "controlledPilotMode": true
+  },
+  "operationalBaseline": {
+    "basePeriod": "2020-04",
+    "baseIndex": 100,
+    "supportedUploadFormats": [
+      "XLSX",
+      "XLS",
+      "CSV",
+      "PDF",
+      "JSON",
+      "TXT"
+    ],
+    "provenanceLinksEnforced": 10,
+    "frequencyGovernanceStrict": true,
+    "nonBlockingExecutionValidated": true
+  },
+  "signoffTimestamp": "2026-09-28T10:00:00Z"
+}

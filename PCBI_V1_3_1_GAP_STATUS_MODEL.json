@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PCBI_V1_3_1_GAP_STATUS_MODEL",
+  "version": "1.3.1",
+  "description": "Formal governance model separating PCBI catalog existence from historical data availability.",
+  "statusDimensions": {
+    "dimension_1_definition_status": {
+      "name": "PCBI_DEFINITION_STATUS",
+      "description": "Evaluates whether a formal PCBI technical specification and commodity definition exists in the catalog.",
+      "values": [
+        {
+          "code": "DEFINED",
+          "label": "Defined in PCBI Master Catalog",
+          "description": "Benchmark record exists with technical ID, scope, formula, and governance parameters.",
+          "impliesCompleteData": false
+        },
+        {
+          "code": "MISSING",
+          "label": "Missing from PCBI Master Catalog",
+          "description": "No benchmark profile exists for this commodity; admin action required to create definition.",
+          "impliesCompleteData": false
+        },
+        {
+          "code": "UNDER_REVIEW",
+          "label": "Under Review",
+          "description": "Proposed benchmark definition undergoing governance review or committee evaluation.",
+          "impliesCompleteData": false
+        },
+        {
+          "code": "NOT_BENCHMARKABLE",
+          "label": "Not Benchmarkable",
+          "description": "Classified as non-benchmarkable spend (e.g. customized industrial services, facilities, unindexed items).",
+          "impliesCompleteData": false
+        }
+      ]
+    },
+    "dimension_2_data_status": {
+      "name": "PCBI_DATA_STATUS",
+      "description": "Evaluates the historical depth, continuity, frequency, and source verification of time-series observations.",
+      "values": [
+        {
+          "code": "COMPLETE",
+          "label": "Complete History",
+          "description": "Continuous historical observations available covering 100% of required client spend evaluation period (2020-2026)."
+        },
+        {
+          "code": "PARTIAL_HISTORY",
+          "label": "Partial History",
+          "description": "Observations exist for recent periods but historical series has gaps or starts later than required."
+        },
+        {
+          "code": "NO_HISTORY",
+          "label": "No Historical Observations",
+          "description": "PCBI definition may exist, but zero time-series price or index observations have been ingested."
+        },
+        {
+          "code": "FREQUENCY_MISMATCH",
+          "label": "Frequency Mismatch",
+          "description": "Source frequency differs from requirement (e.g. monthly benchmark published for weekly client procurement requirement)."
+        },
+        {
+          "code": "SPECIFICATION_MISMATCH",
+          "label": "Specification Mismatch",
+          "description": "Index observations track a different grade, form-factor, or purity requiring documented transformation."
+        },
+        {
+          "code": "SOURCE_UNVERIFIED",
+          "label": "Source Unverified",
+          "description": "Historical data points exist from an unvalidated candidate source without verified provenance."
+        }
+      ]
+    }
+  },
+  "orthogonalityPrinciple": {
+    "rule": "INDEPENDENT_DIMENSIONS",
+    "statement": "PCBI_DEFINITION_STATUS being DEFINED must NOT imply that PCBI_DATA_STATUS is COMPLETE.",
+    "dashboardRequirement": "The dashboard and reporting layers must show both dimensions separately.",
+    "resolutionTable": {
+      "DEFINED_x_COMPLETE": "READY_FOR_VALIDATION",
+      "DEFINED_x_PARTIAL_HISTORY": "HISTORY_REQUIRED",
+      "DEFINED_x_NO_HISTORY": "HISTORY_REQUIRED",
+      "DEFINED_x_FREQUENCY_MISMATCH": "METHODOLOGY_REQUIRED",
+      "DEFINED_x_SPECIFICATION_MISMATCH": "SPECIFICATION_REVIEW",
+      "DEFINED_x_SOURCE_UNVERIFIED": "SOURCE_REQUIRED",
+      "MISSING_x_ANY": "PCBI_MISSING",
+      "NOT_BENCHMARKABLE_x_ANY": "NOT_BENCHMARKABLE"
+    }
+  }
+}

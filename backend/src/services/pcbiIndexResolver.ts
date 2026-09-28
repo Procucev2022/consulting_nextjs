@@ -80,12 +80,50 @@ export function getIndexForDate(
   return { indexValue: 100.0, source: 'Base Baseline (100.0)', quality: 'C' };
 }
 
+export function validateModule2Authority(tx: Partial<PCBIClientPurchaseTransaction> & {
+  module2_commodity?: string;
+  module2_unspsc?: string;
+  module3_commodity?: string;
+}): { isValid: boolean; status: 'VALIDATED' | 'CLASSIFICATION_CONFLICT'; action: 'ALLOW' | 'BLOCK'; error?: string } {
+  const mod2 = (tx.module2_commodity || '').trim().toLowerCase();
+  const mod3 = (tx.module3_commodity || '').trim().toLowerCase();
+
+  if (mod2 && mod3 && mod2 !== mod3) {
+    return {
+      isValid: false,
+      status: 'CLASSIFICATION_CONFLICT',
+      action: 'BLOCK',
+      error: `Classification conflict: Module 3 classification '${tx.module3_commodity}' conflicts with Module 2 authority '${tx.module2_commodity}'.`
+    };
+  }
+
+  return { isValid: true, status: 'VALIDATED', action: 'ALLOW' };
+}
+
 export function resolvePCBIMapping(
   unspscMappings: Map<string, PCBIUNSPSCMapping>,
-  tx: PCBIClientPurchaseTransaction
-): { pcbiId: string; quality: PCBIQualityRating; method: string } {
-  if (tx.unspsc) {
-    const cleanUnspsc = tx.unspsc.trim();
+  tx: PCBIClientPurchaseTransaction & {
+    module2_commodity?: string;
+    module2_unspsc?: string;
+    module3_commodity?: string;
+  }
+): { pcbiId: string; quality: PCBIQualityRating; method: string; status?: string; action?: string } {
+  // Hard validation: Module 2 is the ONLY classification authority
+  const authorityCheck = validateModule2Authority(tx);
+  if (!authorityCheck.isValid) {
+    return {
+      pcbiId: 'PCBI-CONFLICT-BLOCK',
+      quality: 'C',
+      method: 'BLOCKED_CLASSIFICATION_CONFLICT',
+      status: 'CLASSIFICATION_CONFLICT',
+      action: 'BLOCK'
+    };
+  }
+
+  // Use Module 2 UNSPSC input if present
+  const unspscCode = tx.module2_unspsc || tx.unspsc;
+  if (unspscCode) {
+    const cleanUnspsc = unspscCode.trim();
     const commodityMap = unspscMappings.get(cleanUnspsc);
     if (commodityMap) {
       return { pcbiId: commodityMap.pcbi_id, quality: commodityMap.quality_rating, method: 'UNSPSC_COMMODITY' };
@@ -108,6 +146,7 @@ export function resolvePCBIMapping(
 
   return { pcbiId: 'PCBI-STEEL-001', quality: 'C', method: 'SECTOR_DEFAULT_PROXY' };
 }
+
 
 export function analyzeDataQuality(
   transactions: PCBIClientPurchaseTransaction[],

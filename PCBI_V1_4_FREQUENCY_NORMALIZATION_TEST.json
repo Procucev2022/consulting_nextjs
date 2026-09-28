@@ -1,0 +1,54 @@
+{
+  "testSuite": "PCBI_MODULE_3_FREQUENCY_NORMALIZATION_GOVERNANCE",
+  "version": "V1.4",
+  "timestamp": "2026-09-28T08:54:31.314Z",
+  "governanceRule": "DO NOT interpolate unless an explicitly approved methodology exists. If interpolation or synthetic values required, BLOCK transformation and state METHODOLOGY_APPROVAL_REQUIRED.",
+  "cases": [
+    {
+      "caseId": "CASE_01_WEEKLY",
+      "sourceFrequency": "WEEKLY",
+      "targetPcbiFrequency": "WEEKLY",
+      "proposedTransformation": "IDENTITY_PASS_THROUGH",
+      "methodologyStatus": "APPROVED",
+      "adminApprovalRequired": false,
+      "blocked": false,
+      "lineagePreserved": true,
+      "message": "Direct frequency alignment. No interpolation required."
+    },
+    {
+      "caseId": "CASE_02_FORTNIGHTLY",
+      "sourceFrequency": "FORTNIGHTLY",
+      "targetPcbiFrequency": "WEEKLY",
+      "proposedTransformation": "LINEAR_STEP_INTERPOLATION",
+      "methodologyStatus": "METHODOLOGY_APPROVAL_REQUIRED",
+      "adminApprovalRequired": true,
+      "blocked": true,
+      "lineagePreserved": true,
+      "message": "METHODOLOGY_APPROVAL_REQUIRED: Fortnightly to Weekly transformation requires approved interpolation rule."
+    },
+    {
+      "caseId": "CASE_03_MONTHLY",
+      "sourceFrequency": "MONTHLY",
+      "targetPcbiFrequency": "WEEKLY",
+      "proposedTransformation": "CUBIC_SPLINE_OR_STEP_INTERPOLATION",
+      "methodologyStatus": "METHODOLOGY_APPROVAL_REQUIRED",
+      "adminApprovalRequired": true,
+      "blocked": true,
+      "lineagePreserved": true,
+      "message": "METHODOLOGY_APPROVAL_REQUIRED: Monthly to Weekly conversion introduces synthetic weekly data points."
+    },
+    {
+      "caseId": "CASE_04_QUARTERLY",
+      "sourceFrequency": "QUARTERLY",
+      "targetPcbiFrequency": "MONTHLY",
+      "proposedTransformation": "DIVIDED_STEP_OR_PRO_RATA",
+      "methodologyStatus": "METHODOLOGY_APPROVAL_REQUIRED",
+      "adminApprovalRequired": true,
+      "blocked": true,
+      "lineagePreserved": true,
+      "message": "METHODOLOGY_APPROVAL_REQUIRED: Quarterly to Monthly transformation requires approved methodology."
+    }
+  ],
+  "syntheticObservationPreventionVerified": true,
+  "lineagePreservationVerified": true
+}

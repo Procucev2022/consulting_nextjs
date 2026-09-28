@@ -164,6 +164,145 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
           </div>
         </div>
       </div>
+
+      {/* PCBI V1.3.1 Independent Governance Dimensions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Dimension 1: PCBI Definition Status */}
+        <div className="p-5 bg-slate-900/70 border border-slate-800 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Database size={16} className="text-cyan-400" />
+                {UI_STRINGS.pcbiAdmin.definitionStatusTitle}
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {UI_STRINGS.pcbiAdmin.definitionStatusSubtitle}
+              </p>
+            </div>
+            <span className="text-xs font-mono px-2.5 py-1 bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 rounded-lg">
+              Dimension 1
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+            <div className="p-3 bg-slate-950/50 border border-emerald-500/30 rounded-xl">
+              <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.definedLabel}
+              </span>
+              <span className="text-xl font-extrabold text-white mt-1 block">13</span>
+              <span className="text-[10px] text-slate-400">Catalogued</span>
+            </div>
+
+            <div className="p-3 bg-slate-950/50 border border-rose-500/30 rounded-xl">
+              <span className="text-[11px] font-semibold text-rose-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.missingLabel}
+              </span>
+              <span className="text-xl font-extrabold text-rose-300 mt-1 block">1</span>
+              <span className="text-[10px] text-slate-400">Uncatalogued</span>
+            </div>
+
+            <div className="p-3 bg-slate-950/50 border border-amber-500/30 rounded-xl">
+              <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.underReviewLabel}
+              </span>
+              <span className="text-xl font-extrabold text-amber-300 mt-1 block">1</span>
+              <span className="text-[10px] text-slate-400">Pending Review</span>
+            </div>
+
+            <div className="p-3 bg-slate-950/50 border border-slate-700 rounded-xl">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.notBenchmarkableLabel}
+              </span>
+              <span className="text-xl font-extrabold text-slate-300 mt-1 block">1</span>
+              <span className="text-[10px] text-slate-400">Services Excluded</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dimension 2: PCBI Historical Data Status */}
+        <div className="p-5 bg-slate-900/70 border border-slate-800 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Clock size={16} className="text-emerald-400" />
+                {UI_STRINGS.pcbiAdmin.dataStatusTitle}
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {UI_STRINGS.pcbiAdmin.dataStatusSubtitle}
+              </p>
+            </div>
+            <span className="text-xs font-mono px-2.5 py-1 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 rounded-lg">
+              Dimension 2
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+            <div className="p-2.5 bg-slate-950/50 border border-emerald-500/30 rounded-xl">
+              <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.completeDataLabel}
+              </span>
+              <span className="text-lg font-bold text-white mt-0.5 block">2</span>
+              <span className="text-[9px] text-slate-400">Full 2020-2026</span>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/50 border border-amber-500/30 rounded-xl">
+              <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.partialHistoryLabel}
+              </span>
+              <span className="text-lg font-bold text-amber-300 mt-0.5 block">7</span>
+              <span className="text-[9px] text-slate-400">Gap Backfill Req</span>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/50 border border-rose-500/30 rounded-xl">
+              <span className="text-[10px] font-semibold text-rose-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.noHistoryLabel}
+              </span>
+              <span className="text-lg font-bold text-rose-300 mt-0.5 block">2</span>
+              <span className="text-[9px] text-slate-400">Zero Observations</span>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/50 border border-purple-500/30 rounded-xl">
+              <span className="text-[10px] font-semibold text-purple-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.freqMismatchLabel}
+              </span>
+              <span className="text-lg font-bold text-purple-300 mt-0.5 block">2</span>
+              <span className="text-[9px] text-slate-400">Monthly vs Weekly</span>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/50 border border-cyan-500/30 rounded-xl">
+              <span className="text-[10px] font-semibold text-cyan-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.specMismatchLabel}
+              </span>
+              <span className="text-lg font-bold text-cyan-300 mt-0.5 block">1</span>
+              <span className="text-[9px] text-slate-400">Grade / Form Mismatch</span>
+            </div>
+
+            <div className="p-2.5 bg-slate-950/50 border border-orange-500/30 rounded-xl">
+              <span className="text-[10px] font-semibold text-orange-400 uppercase tracking-wider block">
+                {UI_STRINGS.pcbiAdmin.sourceUnverifiedLabel}
+              </span>
+              <span className="text-lg font-bold text-orange-300 mt-0.5 block">2</span>
+              <span className="text-[9px] text-slate-400">Candidate Only</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Critical Materiality Governance Rule Notice */}
+      <div className="p-4 bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 rounded-2xl flex items-center gap-4 text-xs text-slate-300 shadow-md">
+        <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 text-indigo-400 font-bold">
+          !
+        </div>
+        <div className="space-y-1">
+          <span className="font-bold text-white uppercase tracking-wider text-[11px] block">
+            Critical Materiality Governance Rule
+          </span>
+          <p className="text-slate-400 leading-relaxed">
+            {UI_STRINGS.pcbiAdmin.criticalMaterialityRuleNotice}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
+

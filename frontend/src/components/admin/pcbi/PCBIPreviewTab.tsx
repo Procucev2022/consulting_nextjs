@@ -27,6 +27,34 @@ export const PCBIPreviewTab: React.FC<PCBIPreviewTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* PCBI V1.3.1 Preview Safety & Sandbox Isolation Header */}
+      <div className="p-4 bg-amber-950/30 border border-amber-500/40 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg backdrop-blur-sm">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-md text-[11px] font-mono font-extrabold uppercase tracking-wider">
+              {UI_STRINGS.pcbiAdmin.previewSimulationBadge}
+            </span>
+            <span className="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-md text-[11px] font-mono font-extrabold uppercase tracking-wider">
+              {UI_STRINGS.pcbiAdmin.previewNotProductionBadge}
+            </span>
+            <span className="px-2.5 py-1 bg-slate-800 text-slate-300 border border-slate-700 rounded-md text-[11px] font-mono font-extrabold uppercase tracking-wider">
+              {UI_STRINGS.pcbiAdmin.previewNotApprovedBadge}
+            </span>
+          </div>
+          <p className="text-xs text-slate-300 max-w-3xl leading-relaxed pt-1">
+            {UI_STRINGS.pcbiAdmin.previewSandboxNotice}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 text-[11px] font-mono bg-slate-950/60 px-3 py-2 rounded-xl border border-slate-800">
+          <span className="text-slate-400">Prod Writes: <strong className="text-emerald-400">0</strong></span>
+          <span className="text-slate-600">|</span>
+          <span className="text-slate-400">Savings: <strong className="text-emerald-400">0</strong></span>
+          <span className="text-slate-600">|</span>
+          <span className="text-slate-400">Mod 4: <strong className="text-amber-400">DISCONNECTED</strong></span>
+        </div>
+      </div>
+
       {/* KPI Cards Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-xs">

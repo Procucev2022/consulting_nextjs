@@ -66,6 +66,11 @@ describe('PCBI Admin UI Components Unit Tests', () => {
     expect(screen.getAllByText('290')).toHaveLength(2);
     expect(screen.getByText('95,700')).toBeInTheDocument();
 
+    // PCBI V1.3.1 Independent Dimensions & Critical Materiality Rule Assertions
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.definitionStatusTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.dataStatusTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.criticalMaterialityRuleNotice)).toBeInTheDocument();
+
     const uploadBtn = screen.getByText('+ Upload PCBI Master');
     fireEvent.click(uploadBtn);
     expect(onUpload).toHaveBeenCalled();
@@ -74,6 +79,7 @@ describe('PCBI Admin UI Components Unit Tests', () => {
     fireEvent.click(versionsBtn);
     expect(onVersions).toHaveBeenCalled();
   });
+
 
   it('PCBIUploadTab renders dropzone and handles file selection', () => {
     const onUpload = vi.fn();
@@ -223,6 +229,13 @@ describe('PCBI Admin UI Components Unit Tests', () => {
     );
 
     expect(screen.getByText('PCBI-0001')).toBeInTheDocument();
+
+    // PCBI V1.3.1 Preview Safety Badges Assertions
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.previewSimulationBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.previewNotProductionBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.previewNotApprovedBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiAdmin.previewSandboxNotice)).toBeInTheDocument();
+
     const importBtn = screen.getByText('Import PCBI Master');
     expect(importBtn).not.toBeDisabled();
     fireEvent.click(importBtn);

@@ -159,3 +159,194 @@ export interface PCBIImportResult {
   validation_report_url?: string;
   error_records_url?: string;
 }
+
+// ==========================================
+// PCBI V1.3.1 ARCHITECTURE QA & GAP GOVERNANCE TYPES
+// ==========================================
+
+export type PCBIDefinitionStatus =
+  | 'DEFINED'
+  | 'MISSING'
+  | 'UNDER_REVIEW'
+  | 'NOT_BENCHMARKABLE';
+
+export type PCBIDataStatus =
+  | 'COMPLETE'
+  | 'PARTIAL_HISTORY'
+  | 'NO_HISTORY'
+  | 'FREQUENCY_MISMATCH'
+  | 'SPECIFICATION_MISMATCH'
+  | 'SOURCE_UNVERIFIED';
+
+export type PCBISourceStatus =
+  | 'CANDIDATE'
+  | 'UNDER_VALIDATION'
+  | 'VALIDATED'
+  | 'REJECTED';
+
+export type PCBIMethodologyStatus =
+  | 'APPROVED'
+  | 'METHODOLOGY_PENDING'
+  | 'REJECTED'
+  | 'NONE_REQUIRED';
+
+export type PCBIReadinessStatus =
+  | 'PRODUCTION_READY'
+  | 'VALIDATED_CANDIDATE'
+  | 'DATA_GAP_PARTIAL_HISTORY'
+  | 'DATA_GAP_NO_HISTORY'
+  | 'METHODOLOGY_PENDING'
+  | 'SOURCE_UNVERIFIED'
+  | 'CLASSIFICATION_CONFLICT'
+  | 'NOT_BENCHMARKABLE'
+  | 'READY_FOR_VALIDATION'
+  | 'SOURCE_REQUIRED'
+  | 'HISTORY_REQUIRED'
+  | 'METHODOLOGY_REQUIRED'
+  | 'SPECIFICATION_REVIEW'
+  | 'PCBI_MISSING';
+
+export type PCBIMatchEvaluation = 'MATCH' | 'MISMATCH' | 'UNDER_REVIEW';
+
+export interface PCBIClassificationInput {
+  materialCode: string;
+  shortText?: string;
+  module2Commodity?: string;
+  module2SubCommodity?: string;
+  module2Unspsc?: string;
+  module2MaterialGroup?: string;
+  module2Grade?: string;
+  module2Specification?: string;
+  module3Commodity?: string;
+  module3Category?: string;
+}
+
+export interface PCBIClassificationValidationResult {
+  isValid: boolean;
+  status: 'VALIDATED' | 'CLASSIFICATION_CONFLICT';
+  action: 'ALLOW' | 'BLOCK';
+  conflictDetails?: string;
+  classificationAuthority: 'MODULE_2_ONLY';
+}
+
+export interface PCBIMethodologyRecord {
+  methodId: string;
+  name: string;
+  commodity: string;
+  materialType: string;
+  mathematicalRule: string;
+  adjustmentPercentage?: number;
+  status: 'APPROVED' | 'METHODOLOGY_PENDING' | 'REJECTED';
+  sourceProvenance: string;
+  approvedBy?: string;
+  approvedDate?: string;
+}
+
+export interface PCBIMethodologyValidationResult {
+  isApproved: boolean;
+  status: 'APPROVED' | 'METHODOLOGY_PENDING' | 'REJECTED';
+  action: 'APPLY' | 'ADMIN_ACTION_REQUIRED';
+  methodId: string | null;
+  mathematicalRule: string | null;
+  adjustmentPercentage: number | null;
+  reason?: string;
+}
+
+export interface PCBISourceValidationRecord {
+  sourceId: string;
+  sourceName: string;
+  commodity: string;
+  grade: string;
+  specification: string;
+  unit: string;
+  geography: string;
+  frequency: string;
+  historicalCoverageYears: number;
+  priceBasis: string;
+  marketBasis: string;
+  status: PCBISourceStatus;
+  equivalenceProven: boolean;
+  notes: string;
+}
+
+export interface PCBISourceValidationResult {
+  sourceId: string;
+  status: PCBISourceStatus;
+  isValidated: boolean;
+  validatedFields: {
+    commodity: boolean;
+    grade: boolean;
+    specification: boolean;
+    unit: boolean;
+    geography: boolean;
+    frequency: boolean;
+    historicalCoverage: boolean;
+    priceBasis: boolean;
+    marketBasis: boolean;
+  };
+  equivalenceProven: boolean;
+  rejectionReason?: string;
+}
+
+export interface PCBIProvenanceChain {
+  observationId: string;
+  sourceId: string;
+  sourceDocument: string;
+  pageTableRow: string;
+  originalValue: number;
+  originalUnit: string;
+  originalFrequency: string;
+  transformationRuleId: string | null;
+  standardizedValue: number;
+  approvalRecordId: string | null;
+  isValid: boolean;
+  validationStatus: 'VALIDATED' | 'BLOCKED';
+  missingLinks: string[];
+}
+
+export interface PCBIPreviewSafetyRecord {
+  executionId: string;
+  mode: 'SIMULATION_ONLY';
+  productionStatus: 'NOT_PRODUCTION';
+  approvalStatus: 'NOT_APPROVED';
+  pcbiObservationsWritten: 0;
+  pcbiMasterCatalogWritten: 0;
+  savingsEngineWritten: 0;
+  module4Connected: false;
+  sandboxIsolated: true;
+  timestamp: string;
+}
+
+export interface PCBIGapMatrixRow {
+  material: string;
+  module2Commodity: string;
+  unspsc: string;
+  spend: number;
+  transactions: number;
+  pcbiId: string | null;
+  definitionStatus: PCBIDefinitionStatus;
+  dataStatus: PCBIDataStatus;
+  sourceStatus: PCBISourceStatus;
+  methodologyStatus: PCBIMethodologyStatus;
+  historicalStartRequired: string;
+  historicalEndRequired: string;
+  historicalStartAvailable: string | null;
+  historicalEndAvailable: string | null;
+  frequencyRequired: string;
+  frequencyAvailable: string | null;
+  specificationMatch: PCBIMatchEvaluation;
+  geographyMatch: PCBIMatchEvaluation;
+  unitMatch: PCBIMatchEvaluation;
+  actionRequired: string;
+  readinessStatus: PCBIReadinessStatus;
+}
+
+export interface PCBISyntheticTestCase {
+  testId: string;
+  description: string;
+  expected: string;
+  actual: string;
+  passed: boolean;
+  details?: Record<string, unknown>;
+}
+

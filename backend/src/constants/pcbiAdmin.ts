@@ -256,3 +256,68 @@ export const PCBI_WORKSHEET_PURPOSE_LABELS: Record<PCBIWorksheetType, string> = 
   OTHER: 'Informational / Other',
   IGNORE: 'Ignore Sheet'
 };
+
+// ==========================================
+// PCBI V1.3.1 ARCHITECTURE QA CONSTANTS
+// ==========================================
+
+export const PCBI_DEFINITION_STATUSES = [
+  'DEFINED',
+  'MISSING',
+  'UNDER_REVIEW',
+  'NOT_BENCHMARKABLE'
+] as const;
+
+export const PCBI_DATA_STATUSES = [
+  'COMPLETE',
+  'PARTIAL_HISTORY',
+  'NO_HISTORY',
+  'FREQUENCY_MISMATCH',
+  'SPECIFICATION_MISMATCH',
+  'SOURCE_UNVERIFIED'
+] as const;
+
+export const PCBI_SOURCE_STATUSES = [
+  'CANDIDATE',
+  'UNDER_VALIDATION',
+  'VALIDATED',
+  'REJECTED'
+] as const;
+
+export const PCBI_METHODOLOGY_STATUSES = [
+  'APPROVED',
+  'METHODOLOGY_PENDING',
+  'REJECTED',
+  'NONE_REQUIRED'
+] as const;
+
+export const PCBI_READINESS_STATUSES = [
+  'READY_FOR_VALIDATION',
+  'SOURCE_REQUIRED',
+  'HISTORY_REQUIRED',
+  'METHODOLOGY_REQUIRED',
+  'SPECIFICATION_REVIEW',
+  'CLASSIFICATION_CONFLICT',
+  'PCBI_MISSING',
+  'NOT_BENCHMARKABLE'
+] as const;
+
+export const PCBI_PREVIEW_STATUS_BADGES = {
+  SIMULATION_ONLY: 'SIMULATION_ONLY',
+  NOT_PRODUCTION: 'NOT_PRODUCTION',
+  NOT_APPROVED: 'NOT_APPROVED'
+} as const;
+
+export const PCBI_PROVENANCE_LINK_KEYS = [
+  'observationId',
+  'sourceId',
+  'sourceDocument',
+  'pageTableRow',
+  'originalValue',
+  'originalUnit',
+  'originalFrequency',
+  'transformationRuleId',
+  'standardizedValue',
+  'approvalRecordId'
+] as const;
+

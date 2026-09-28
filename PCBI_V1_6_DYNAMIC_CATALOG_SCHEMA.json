@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PCBI_V1_6_Dynamic_Commodity_Catalog_Schema",
+  "version": "1.6.0",
+  "description": "Schema definition for PCBI dynamic multi-source commodity catalog, standardized observations, and admin research queue",
+  "definitions": {
+    "CommodityState": {
+      "type": "string",
+      "enum": [
+        "PCBI_MISSING",
+        "PCBI_DEFINED_NO_HISTORY",
+        "PARTIAL_HISTORY",
+        "SOURCE_UNVERIFIED",
+        "METHODOLOGY_PENDING",
+        "SPECIFICATION_MISMATCH",
+        "FREQUENCY_MISMATCH",
+        "READY_FOR_CALCULATION",
+        "PRODUCTION_READY",
+        "NOT_BENCHMARKABLE"
+      ]
+    },
+    "Priority": {
+      "type": "string",
+      "enum": [
+        "P1_CRITICAL",
+        "P2_HIGH",
+        "P3_MEDIUM",
+        "P4_LOW"
+      ]
+    },
+    "FileFormat": {
+      "type": "string",
+      "enum": [
+        "XLSX",
+        "XLS",
+        "CSV",
+        "PDF",
+        "JSON",
+        "TXT"
+      ]
+    },
+    "StandardObservation": {
+      "type": "object",
+      "required": [
+        "pcbiId",
+        "commodityId",
+        "seriesId",
+        "sourceName",
+        "sourceDate",
+        "effectiveDate",
+        "rawValue",
+        "rawUnit",
+        "rawCurrency",
+        "standardValue",
+        "standardUnit",
+        "standardCurrency",
+        "sourceFrequency",
+        "standardFrequency",
+        "geography",
+        "grade",
+        "specification",
+        "transformationMethod",
+        "methodologyId",
+        "ingestionBatchId",
+        "checksum",
+        "validationStatus",
+        "version",
+        "approvedBy",
+        "approvedAt"
+      ],
+      "properties": {
+        "pcbiId": {
+          "type": "string"
+        },
+        "commodityId": {
+          "type": "string"
+        },
+        "seriesId": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        },
+        "sourceDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "effectiveDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "rawValue": {
+          "type": "number"
+        },
+        "rawUnit": {
+          "type": "string"
+        },
+        "rawCurrency": {
+          "type": "string"
+        },
+        "standardValue": {
+          "type": "number"
+        },
+        "standardUnit": {
+          "type": "string"
+        },
+        "standardCurrency": {
+          "type": "string"
+        },
+        "sourceFrequency": {
+          "type": "string",
+          "enum": [
+            "DAILY",
+            "WEEKLY",
+            "FORTNIGHTLY",
+            "MONTHLY",
+            "QUARTERLY"
+          ]
+        },
+        "standardFrequency": {
+          "type": "string",
+          "enum": [
+            "WEEKLY",
+            "MONTHLY"
+          ]
+        },
+        "geography": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "string"
+        },
+        "specification": {
+          "type": "string"
+        },
+        "transformationMethod": {
+          "type": "string"
+        },
+        "methodologyId": {
+          "type": "string"
+        },
+        "ingestionBatchId": {
+          "type": "string"
+        },
+        "checksum": {
+          "type": "string"
+        },
+        "validationStatus": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "approvedBy": {
+          "type": "string"
+        },
+        "approvedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "catalogMetadata": {
+      "type": "object",
+      "properties": {
+        "releaseVersion": {
+          "type": "string"
+        },
+        "basePeriod": {
+          "type": "string"
+        },
+        "baseIndex": {
+          "type": "number"
+        },
+        "totalRegisteredCommodities": {
+          "type": "integer"
+        }
+      }
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/StandardObservation"
+      }
+    }
+  }
+}

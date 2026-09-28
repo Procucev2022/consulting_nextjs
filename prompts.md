@@ -17990,3 +17990,3107 @@ Benchmark production values = ZERO
 Savings = ZERO
 
 STOP AFTER ARCHITECTURE QA.
+## Prompt 194
+
+run locally
+
+## Prompt 195
+
+PCBI MODULE 3 — DYNAMIC ARCHITECTURE QA / GAP CLASSIFICATION HARDENING
+
+MODE:
+READ-ONLY / PRE-PRODUCTION / NO PRODUCTION BENCHMARKING
+
+Do NOT populate production benchmark values.
+Do NOT calculate savings.
+Do NOT modify Module 1.
+Do NOT modify Module 2.
+Do NOT modify PCBI Master V1.0.
+Do NOT purchase or call commercial data.
+Keep Module 4 disconnected.
+
+We have completed the Dynamic PCBI Ingestion architecture and 16/16 architecture tests passed.
+
+Before any real benchmark testing, perform a SECOND-LEVEL QA of the architecture and correct the following issues.
+
+========================================================
+1. SEPARATE PCBI EXISTENCE FROM DATA AVAILABILITY
+========================================================
+
+The current report shows:
+
+PCBI_MISSING = 0
+
+while 16 series are PARTIAL_HISTORY.
+
+This is insufficiently granular.
+
+Implement the following independent dimensions:
+
+PCBI_DEFINITION_STATUS:
+
+DEFINED
+MISSING
+UNDER_REVIEW
+NOT_BENCHMARKABLE
+
+PCBI_DATA_STATUS:
+
+COMPLETE
+PARTIAL_HISTORY
+NO_HISTORY
+FREQUENCY_MISMATCH
+SPECIFICATION_MISMATCH
+SOURCE_UNVERIFIED
+
+A PCBI being DEFINED must NOT imply that historical benchmark data is COMPLETE.
+
+The dashboard must show both dimensions separately.
+
+========================================================
+2. MODULE 2 REMAINS THE ONLY CLASSIFICATION AUTHORITY
+========================================================
+
+Do not allow Module 3 to independently classify customer materials based on:
+
+keyword searches
+description matching
+AI inference
+commodity assumptions
+
+Module 3 may use Module 2's:
+
+Material Code
+UNSPSC
+Material Group
+Commodity
+Sub-Commodity
+Grade
+Specification
+
+as its classification input.
+
+Create a hard validation:
+
+IF Module 3 classification conflicts with Module 2 classification:
+STATUS = CLASSIFICATION_CONFLICT
+ACTION = BLOCK
+
+Do not automatically resolve the conflict.
+
+========================================================
+3. REMOVE AUTOMATIC METHODOLOGY ASSUMPTIONS
+========================================================
+
+Review every automatically generated recommendation such as:
+
+- form-factor discounts
+- grade conversion
+- specification adjustment
+- commodity proxy
+- index substitution
+- source substitution
+- price conversion
+
+No numerical adjustment may be automatically applied unless:
+
+1. A documented methodology exists.
+2. The methodology has a unique METHOD_ID.
+3. The methodology is approved.
+4. The methodology specifies the mathematical rule.
+5. The rule has a source/provenance record.
+
+If no approved methodology exists:
+
+STATUS = METHODOLOGY_PENDING
+
+Example:
+
+SS 304 Turnings vs SS 304 Prime
+
+Do NOT automatically apply -18%.
+
+Instead:
+
+SPECIFICATION_MISMATCH
+METHODOLOGY_PENDING
+ADMIN_ACTION_REQUIRED
+
+========================================================
+4. SOURCE CANDIDATE ≠ VALIDATED SOURCE
+========================================================
+
+Every recommended source must have:
+
+SOURCE_STATUS:
+
+CANDIDATE
+UNDER_VALIDATION
+VALIDATED
+REJECTED
+
+Never classify a suggested source as validated merely because the commodity name appears similar.
+
+Validate:
+
+Commodity
+Grade
+Specification
+Unit
+Geography
+Frequency
+Historical coverage
+Price basis
+Market basis
+
+Example:
+
+Ferro Molybdenum 65%
+
+IBM mineral ASP must NOT automatically be treated as a valid ferro-moly benchmark.
+
+It may be:
+
+SOURCE_CANDIDATE
+
+until specification equivalence is demonstrated.
+
+========================================================
+5. PROVENANCE TEST
+========================================================
+
+For every benchmark observation in the staging environment prove:
+
+Observation
+→ Source
+→ Source document
+→ Page/table/row
+→ Original value
+→ Original unit
+→ Original frequency
+→ Transformation rule
+→ Standardized value
+→ Approval record
+
+If any link is missing:
+
+VALIDATION_STATUS = BLOCKED
+
+========================================================
+6. PREVIEW SAFETY TEST
+========================================================
+
+The existing preview endpoint may calculate trial values only inside an isolated sandbox.
+
+Rename the status visibly:
+
+SIMULATION_ONLY
+NOT_PRODUCTION
+NOT_APPROVED
+
+Prove that preview execution cannot write into:
+
+PCBI_OBSERVATIONS production
+PCBI_MASTER_CATALOG production
+Savings engine
+Module 4
+
+Create an automated test for this.
+
+========================================================
+7. CREATE A FORMAL PCBI GAP MATRIX
+========================================================
+
+For all customer benchmark requirements generate:
+
+Material
+Module 2 Commodity
+UNSPSC
+Spend
+Transactions
+PCBI ID
+Definition Status
+Data Status
+Source Status
+Methodology Status
+Historical Start Required
+Historical End Required
+Historical Start Available
+Historical End Available
+Frequency Required
+Frequency Available
+Specification Match
+Geography Match
+Unit Match
+Action Required
+
+Possible final readiness statuses:
+
+READY_FOR_VALIDATION
+SOURCE_REQUIRED
+HISTORY_REQUIRED
+METHODOLOGY_REQUIRED
+SPECIFICATION_REVIEW
+CLASSIFICATION_CONFLICT
+PCBI_MISSING
+NOT_BENCHMARKABLE
+
+========================================================
+8. CRITICAL MATERIALITY RULE
+========================================================
+
+Do not call a material "benchmark ready" merely because a PCBI ID exists.
+
+Benchmark readiness requires ALL:
+
+PCBI DEFINED
++
+SOURCE VALIDATED
++
+SPECIFICATION MATCH
++
+UNIT MATCH
++
+GEOGRAPHY MATCH
++
+HISTORICAL COVERAGE SUFFICIENT
++
+FREQUENCY RULE APPROVED
++
+METHODOLOGY APPROVED
+
+Otherwise:
+
+NOT_READY
+
+========================================================
+9. TEST THE ARCHITECTURE USING SYNTHETIC TEST CASES
+========================================================
+
+Create at least these test cases:
+
+TEST 01:
+Existing PCBI + complete history
+Expected = READY_FOR_VALIDATION
+
+TEST 02:
+Existing PCBI + partial history
+Expected = HISTORY_REQUIRED
+
+TEST 03:
+No PCBI
+Expected = PCBI_MISSING
+
+TEST 04:
+PCBI exists but wrong grade
+Expected = SPECIFICATION_REVIEW
+
+TEST 05:
+PCBI exists but wrong unit
+Expected = UNIT_MISMATCH
+
+TEST 06:
+Source exists but specification equivalence unproven
+Expected = SOURCE_UNDER_VALIDATION
+
+TEST 07:
+Monthly source for weekly requirement
+Expected = FREQUENCY_MISMATCH / METHODOLOGY_REQUIRED
+
+TEST 08:
+Approved transformation rule exists
+Expected = eligible for normalization
+
+TEST 09:
+Unapproved discount methodology
+Expected = BLOCKED
+
+TEST 10:
+Preview calculation attempted
+Expected = SANDBOX ONLY
+
+TEST 11:
+Module 2 classification conflicts with Module 3
+Expected = CLASSIFICATION_CONFLICT / BLOCK
+
+TEST 12:
+Admin uploads malformed PDF
+Expected = VALIDATION_FAILED
+
+========================================================
+10. DO NOT RESEARCH OR PURCHASE COMMODITY DATA
+========================================================
+
+This command is architecture QA only.
+
+Do not search for:
+
+BigMint
+Platts
+LME
+ICDA
+MMTA
+IBM
+PPAC
+WPI
+MCX
+
+No external benchmark data is required for this test.
+
+========================================================
+11. REQUIRED OUTPUT
+========================================================
+
+Generate:
+
+PCBI_V1_3_1_GAP_STATUS_MODEL.json
+PCBI_V1_3_1_SOURCE_VALIDATION_MODEL.json
+PCBI_V1_3_1_METHODOLOGY_GOVERNANCE.json
+PCBI_V1_3_1_PREVIEW_SAFETY_TEST.json
+PCBI_V1_3_1_GAP_MATRIX.xlsx
+PCBI_V1_3_1_ARCHITECTURE_QA_REPORT.md
+
+Report:
+
+- all tests passed/failed
+- all automatic assumptions found
+- all fields changed
+- all API changes
+- all UI changes
+- all database/schema changes
+
+FINAL SAFETY LOCK:
+
+Module 1 = FROZEN
+Module 2 = FROZEN
+PCBI Master V1.0 = IMMUTABLE
+Module 3 = PRE-PRODUCTION
+Module 4 = DISCONNECTED
+Benchmark production values = ZERO
+Savings = ZERO
+
+STOP AFTER ARCHITECTURE QA.
+## Prompt 196
+
+check again
+
+
+## Prompt 197
+
+PCBI MODULE 3 — END-TO-END DYNAMIC PCBI TEST
+
+Operating Mode:
+CONTROLLED PRE-PRODUCTION E2E TEST
+NO UNAPPROVED PRODUCTION BENCHMARKING
+MODULE 1 = FROZEN
+MODULE 2 = FROZEN / SOLE CLASSIFICATION AUTHORITY
+MODULE 4 = DISCONNECTED
+
+We have completed the Module 3 architecture hardening and all 12 synthetic QA tests have passed.
+
+Now proceed to an END-TO-END TEST of the actual user workflow using the existing certified Module 1 + Module 2 customer data.
+
+OBJECTIVE:
+Prove that Module 3 can operate dynamically when PCBI data is incomplete, missing, available in different formats, or available at different frequencies.
+
+DO NOT attempt to research or invent benchmark data.
+DO NOT populate fabricated benchmark values.
+DO NOT alter Module 1, Module 2, or PCBI Master V1.0.
+Do not purchase or call commercial data sources.
+
+PHASE 1 — LOAD CUSTOMER DATA
+
+Run the complete Module 3 pipeline against the certified Module 1 + Module 2 dataset.
+
+For every classified commodity/material family determine:
+
+1. PCBI_DEFINITION_STATUS
+2. PCBI_DATA_STATUS
+3. Customer spend
+4. Transaction count
+5. Required historical period
+6. Available historical period
+7. Required frequency
+8. Available frequency
+9. Source status
+10. Final readiness status
+11. Required ADMIN_ACTION
+
+Create a complete gap matrix.
+
+PHASE 2 — IDENTIFY PCBI GAPS
+
+For every commodity where PCBI data is:
+
+- MISSING
+- NO_HISTORY
+- PARTIAL_HISTORY
+- FREQUENCY_MISMATCH
+- SPECIFICATION_MISMATCH
+- SOURCE_UNVERIFIED
+- METHODOLOGY_PENDING
+
+display a clear user-facing alert.
+
+The alert must contain:
+
+COMMODITY
+MODULE 2 MATERIAL / UNSPSC MAPPING
+CUSTOMER SPEND
+TRANSACTION COUNT
+PCBI STATUS
+DATA GAP
+REQUIRED DATA
+REQUIRED FREQUENCY
+REQUIRED UNIT
+REQUIRED CURRENCY
+REQUIRED HISTORICAL PERIOD
+REQUIRED ACTION
+
+Example:
+
+"PCBI DATA GAP — Ferro Molybdenum
+Customer Spend: ₹XXX Cr
+Required History: Apr-2020 to latest
+Required Frequency: Weekly
+Required Unit: INR/MT
+Current PCBI History: Missing
+Action: Upload PCBI source data"
+
+PHASE 3 — PCBI UPLOAD WORKFLOW
+
+Verify that the administrator can select:
+
+UPLOAD PCBI DATA
+
+The upload interface must accept common source formats:
+
+- XLSX
+- XLS
+- CSV
+- PDF
+- JSON
+- TXT
+
+Do NOT assume that the uploaded file already follows the PCBI schema.
+
+The system must first perform:
+
+UPLOAD
+→ FILE VALIDATION
+→ DATA EXTRACTION
+→ COLUMN DETECTION
+→ DATE DETECTION
+→ PRICE/VALUE DETECTION
+→ UNIT DETECTION
+→ CURRENCY DETECTION
+→ FREQUENCY DETECTION
+→ SOURCE IDENTIFICATION
+→ SERIES IDENTIFICATION
+→ DATA QUALITY CHECK
+→ PCBI STANDARDIZATION PREVIEW
+
+The system must NEVER directly write uploaded data into production.
+
+PHASE 4 — FREQUENCY NORMALIZATION
+
+Test at least these cases:
+
+1. Weekly source
+2. Fortnightly source
+3. Monthly source
+4. Quarterly source
+
+For each case:
+
+DO NOT interpolate unless an explicitly approved methodology exists.
+
+Instead show:
+
+SOURCE FREQUENCY
+TARGET PCBI FREQUENCY
+PROPOSED TRANSFORMATION
+METHODOLOGY STATUS
+ADMIN APPROVAL REQUIRED
+
+If transformation would require interpolation or synthetic values, BLOCK the transformation and explicitly state:
+
+"METHODOLOGY_APPROVAL_REQUIRED"
+
+For monthly/fortnightly/weekly conversion, preserve the original observation and transformation lineage.
+
+PHASE 5 — STANDARD PCBI FORMAT
+
+Create a normalized preview containing at minimum:
+
+PCBI_ID
+COMMODITY_ID
+SERIES_ID
+SOURCE_NAME
+SOURCE_URL
+SOURCE_DOCUMENT
+OBSERVATION_DATE
+EFFECTIVE_DATE
+RAW_VALUE
+RAW_UNIT
+RAW_CURRENCY
+STANDARD_VALUE
+STANDARD_UNIT
+STANDARD_CURRENCY
+SOURCE_FREQUENCY
+STANDARD_FREQUENCY
+TRANSFORMATION_METHOD
+TRANSFORMATION_VERSION
+DATA_GAP_FLAG
+SOURCE_STATUS
+METHODOLOGY_ID
+INGESTION_BATCH_ID
+CHECKSUM
+VALIDATION_STATUS
+
+Display the complete preview to the administrator.
+
+PHASE 6 — ADMIN CONFIRMATION GATE
+
+The administrator must see:
+
+SOURCE DATA
+→ NORMALIZED DATA
+→ TRANSFORMATION
+→ VALIDATION RESULTS
+→ PCBI PREVIEW
+
+with two explicit options:
+
+[REJECT]
+[APPROVE & ADD TO PCBI CATALOG]
+
+IMPORTANT:
+
+Before approval:
+ZERO writes to production.
+
+After APPROVE:
+write only the approved PCBI series into the PCBI catalog.
+
+Record:
+
+ADMIN_USER
+APPROVAL_TIMESTAMP
+APPROVAL_ID
+SOURCE_CHECKSUM
+METHODOLOGY_ID
+VERSION
+CHANGE_REASON
+
+PHASE 7 — MAIN PCBI CATALOG
+
+Verify that an approved new commodity can be added without modifying existing PCBI series.
+
+The catalog must support:
+
+ADD NEW COMMODITY
+ADD NEW PCBI SERIES
+ADD NEW SOURCE
+ADD NEW HISTORY
+UPDATE EXISTING SERIES
+VERSION HISTORY
+DEPRECATE SERIES
+
+Existing approved data must remain immutable.
+
+PHASE 8 — RE-RUN THE SAME CUSTOMER DATA
+
+After an administrator-approved PCBI series is added:
+
+Re-run Module 3 against the same customer dataset.
+
+Verify that:
+
+BEFORE:
+PCBI_DATA_STATUS = MISSING / PARTIAL / etc.
+
+AFTER:
+PCBI_DATA_STATUS = COMPLETE or appropriate validated status
+
+The previously displayed gap must disappear automatically.
+
+The system must NOT require a code deployment for adding a new commodity or new PCBI history.
+
+PHASE 9 — MISMATCH DETECTION
+
+Create a controlled test where customer data and uploaded PCBI data have a major mismatch in:
+
+- grade
+- specification
+- unit
+- currency
+- geography
+- date coverage
+- frequency
+
+The system must NOT silently accept it.
+
+Expected behaviour:
+
+MISMATCH DETECTED
+→ CLASSIFICATION_CONFLICT / SPECIFICATION_MISMATCH / CONVERSION_PENDING / METHODOLOGY_PENDING
+→ ADMIN ACTION REQUIRED
+→ NO PRODUCTION BENCHMARK
+
+PHASE 10 — FINAL E2E REPORT
+
+Generate:
+
+1. PCBI_V1_4_E2E_TEST_REPORT.md
+2. PCBI_V1_4_E2E_GAP_MATRIX.xlsx
+3. PCBI_V1_4_UPLOAD_NORMALIZATION_TEST.json
+4. PCBI_V1_4_APPROVAL_WORKFLOW_TEST.json
+5. PCBI_V1_4_FREQUENCY_NORMALIZATION_TEST.json
+6. PCBI_V1_4_PCBI_CATALOG_VERSION_TEST.json
+
+The final report must clearly state:
+
+TOTAL COMMODITIES TESTED
+PCBI DEFINED
+PCBI MISSING
+COMPLETE HISTORY
+PARTIAL HISTORY
+NO HISTORY
+FREQUENCY MISMATCH
+SPECIFICATION MISMATCH
+SOURCE UNVERIFIED
+METHODOLOGY PENDING
+NOT BENCHMARKABLE
+HIGH-IMPACT GAPS
+UPLOAD TESTS PASSED
+NORMALIZATION TESTS PASSED
+ADMIN APPROVAL TESTS PASSED
+CATALOG VERSIONING TESTS PASSED
+PRODUCTION WRITES BEFORE APPROVAL
+PRODUCTION WRITES AFTER APPROVAL
+MODULE 1 MODIFIED = YES/NO
+MODULE 2 MODIFIED = YES/NO
+MODULE 4 CONNECTED = YES/NO
+
+FINAL GATE MUST BE ONE OF:
+
+E2E_VALIDATED
+E2E_VALIDATED_WITH_GAPS
+E2E_BLOCKED
+
+Do NOT call the system production-ready merely because the tests pass.
+
+STOP after generating the E2E report.
+Do not generate production benchmark values or savings.
+
+
+## Prompt 198
+
+PCBI MODULE 3 — CONTROLLED BENCHMARK ENGINE VALIDATION
+
+We have completed E2E dynamic PCBI ingestion successfully.
+
+Final E2E status:
+E2E_VALIDATED_WITH_GAPS
+
+DO NOT perform another architecture redesign.
+DO NOT modify Module 1.
+DO NOT modify Module 2.
+DO NOT modify PCBI Master V1.0.
+DO NOT connect Module 4.
+DO NOT calculate savings or procurement opportunities.
+
+The next objective is to validate the ACTUAL PCBI CALCULATION ENGINE using a controlled set of approved/known source structures.
+
+IMPORTANT:
+This is a CALCULATION VALIDATION exercise, not full production benchmarking.
+
+PHASE 1 — FULL DATASET PRE-FLIGHT
+
+Load the complete certified Module 1 + Module 2 customer dataset.
+
+Report:
+
+Total customer spend
+Total transactions
+Total Module 2 commodity families
+Total PCBI technical series
+PCBI DEFINED
+PCBI MISSING
+COMPLETE HISTORY
+PARTIAL HISTORY
+NO HISTORY
+FREQUENCY MISMATCH
+SPECIFICATION MISMATCH
+SOURCE UNVERIFIED
+METHODOLOGY PENDING
+NOT BENCHMARKABLE
+
+Confirm that the full dataset is being used.
+
+If the dataset is not the certified full dataset, STOP and report the exact dataset being used.
+
+PHASE 2 — CONTROLLED 12-SERIES BENCHMARK TEST
+
+Select exactly one representative series for each of the following categories:
+
+1. VERIFIED_FREE_DIRECT
+2. OFFICIAL_INDEX
+3. MONTHLY_OFFICIAL_INDEX
+4. WEEKLY_SOURCE
+5. FORTNIGHTLY_SOURCE
+6. METAL_CONSTITUENT
+7. STAINLESS_STEEL_GRADE
+8. FERROALLOY
+9. SCRAP
+10. PARTIAL_HISTORY
+11. NO_HISTORY
+12. SPECIFICATION_MISMATCH
+
+Do not select series arbitrarily.
+
+For every selected series provide:
+
+PCBI_ID
+Commodity
+Module 2 classification
+UNSPSC
+Customer spend
+Customer transaction count
+Source
+Source status
+Source frequency
+Required frequency
+Historical period
+Available history
+Unit
+Currency
+Geography
+Methodology ID
+Methodology approval status
+
+PHASE 3 — RAW SOURCE OBSERVATION VALIDATION
+
+Before calculating any PCBI:
+
+Display the source observations used.
+
+For every observation retain:
+
+SOURCE_DATE
+EFFECTIVE_DATE
+RAW_VALUE
+RAW_UNIT
+RAW_CURRENCY
+SOURCE_FREQUENCY
+SOURCE_DOCUMENT
+SOURCE_URL
+CHECKSUM
+INGESTION_BATCH_ID
+
+Do not round values during calculation.
+
+PHASE 4 — STANDARDIZATION
+
+Apply only approved transformations.
+
+Validate:
+
+Currency conversion
+Unit conversion
+Frequency alignment
+Effective-date mapping
+Missing-date handling
+Rebasing
+Series continuity
+
+For every transformation show:
+
+RAW VALUE
+TRANSFORMATION
+STANDARD VALUE
+METHODOLOGY_ID
+APPROVAL_STATUS
+
+If any transformation lacks an approved methodology:
+
+BLOCK.
+
+Do not invent a formula.
+
+PHASE 5 — PCBI CALCULATION
+
+For only the eligible series, calculate the PCBI according to the approved methodology.
+
+Show the complete calculation chain:
+
+RAW SOURCE OBSERVATION
+→ STANDARDIZED OBSERVATION
+→ EFFECTIVE OBSERVATION
+→ BASE PERIOD VALUE
+→ CURRENT PERIOD VALUE
+→ INDEX CALCULATION
+→ PCBI OUTPUT
+
+Do not calculate savings.
+
+Do not calculate procurement opportunity.
+
+Do not silently use customer purchase price as a market benchmark.
+
+PHASE 6 — BASE-PERIOD VALIDATION
+
+For every calculated PCBI series explicitly identify:
+
+BASE_DATE
+BASE_VALUE
+CURRENT_DATE
+CURRENT_VALUE
+INDEX_BASE = 100
+CALCULATION_FORMULA
+METHODOLOGY_ID
+
+Verify mathematically that the base period equals 100.
+
+If not, BLOCK.
+
+PHASE 7 — NEGATIVE TESTS
+
+Explicitly test:
+
+A. Missing history
+B. Partial history
+C. Wrong grade
+D. Wrong specification
+E. Wrong currency
+F. Wrong unit
+G. Wrong geography
+H. Unapproved frequency conversion
+I. Missing source provenance
+J. Missing methodology approval
+
+Expected outcome for each:
+
+NO PCBI GENERATED
+STATUS = BLOCKED / appropriate governance status
+ADMIN ACTION REQUIRED
+
+PHASE 8 — CUSTOMER PRICE COMPARISON
+
+Do NOT calculate savings.
+
+However, create a SAFE analytical preview showing:
+
+CUSTOMER PURCHASE PRICE
+PCBI INDEX
+PCBI-IMPLIED MOVEMENT
+
+Clearly label this:
+
+"ANALYTICAL PREVIEW — NOT SAVINGS"
+
+Do not produce supplier performance ranking or savings.
+
+PHASE 9 — AUDIT TRAIL
+
+For every generated PCBI observation confirm all 10 provenance links exist:
+
+LINK_01_RAW_DOWNLOAD
+LINK_02_ORIGINAL_CHECKSUM
+LINK_03_INGESTION_TIMESTAMP
+LINK_04_INGESTION_BATCH
+LINK_05_EXTRACTION_SCRIPT
+LINK_06_REBASE_TRANSFORMATION
+LINK_07_CURRENCY_CONVERSION
+LINK_08_UNIT_STANDARDIZATION
+LINK_09_VALIDATION_EVENT
+LINK_10_MODULE3_BENCHMARK_INPUT
+
+Missing link = BLOCK.
+
+PHASE 10 — FINAL REPORT
+
+Generate:
+
+PCBI_V1_5_CONTROLLED_BENCHMARK_VALIDATION.md
+
+PCBI_V1_5_CONTROLLED_BENCHMARK_RESULTS.xlsx
+
+PCBI_V1_5_CALCULATION_AUDIT.json
+
+PCBI_V1_5_NEGATIVE_TEST_RESULTS.json
+
+PCBI_V1_5_PROVENANCE_AUDIT.json
+
+The final report must state:
+
+FULL DATASET CONFIRMED = YES/NO
+SERIES TESTED = 12
+ELIGIBLE SERIES
+BLOCKED SERIES
+PCBI CALCULATIONS COMPLETED
+PCBI CALCULATIONS BLOCKED
+PROVENANCE FAILURES
+METHODOLOGY FAILURES
+SPECIFICATION FAILURES
+FREQUENCY FAILURES
+UNIT/CURRENCY FAILURES
+MODULE 1 MODIFIED = NO
+MODULE 2 MODIFIED = NO
+PCBI MASTER MODIFIED = NO
+MODULE 4 CONNECTED = NO
+SAVINGS CALCULATED = ZERO
+
+FINAL GATE MUST BE ONE OF:
+
+CALCULATION_VALIDATED
+CALCULATION_VALIDATED_WITH_GAPS
+CALCULATION_BLOCKED
+
+DO NOT declare production readiness.
+
+STOP after generating the report.
+
+## Prompt 199
+
+PCBI MODULE 3 — CONTROLLED PILOT FINALIZATION + DYNAMIC COMMODITY EXPANSION
+V1.6 FINAL PRODUCTIZATION COMMAND
+
+OBJECTIVE
+
+The PCBI Module 3 calculation engine has now successfully completed controlled validation.
+
+V1.5 confirms:
+
+- Full certified customer dataset successfully processed
+- 12 technical series tested
+- 6 eligible series calculated
+- 6 series correctly blocked
+- Base-period index = 100.00 verified
+- 10/10 negative tests passed
+- 10-link provenance chain passed
+- Module 1 unchanged
+- Module 2 unchanged
+- PCBI Master V1.0 unchanged
+- Module 4 disconnected
+- Savings = ZERO
+- Commercial purchases = ZERO
+
+Therefore DO NOT restart another broad architecture audit.
+
+MOVE FROM:
+ARCHITECTURE VALIDATION
+
+TO:
+
+CONTROLLED PILOT + DYNAMIC PCBI LIBRARY EXPANSION
+
+========================================================
+1. FREEZE THE VALIDATED CALCULATION ENGINE
+========================================================
+
+Treat the V1.5 calculation engine as the validated baseline.
+
+Do not redesign:
+
+- PCBI calculation chain
+- Base-period calculation
+- Provenance architecture
+- Module 2 authority
+- Gap governance
+- Admin approval gate
+- Version control
+- Negative-test controls
+
+Any future change must be treated as a versioned enhancement, not a redesign.
+
+========================================================
+2. FINALIZE MODULE 3 AS A DYNAMIC PRODUCT
+========================================================
+
+The software must NOT require all commodities to be available before operation.
+
+A commodity can exist in any of these states:
+
+PCBI_MISSING
+PCBI_DEFINED_NO_HISTORY
+PARTIAL_HISTORY
+SOURCE_UNVERIFIED
+METHODOLOGY_PENDING
+SPECIFICATION_MISMATCH
+FREQUENCY_MISMATCH
+READY_FOR_CALCULATION
+PRODUCTION_READY
+NOT_BENCHMARKABLE
+
+The existence of a gap must NOT stop Module 3 from processing other eligible commodities.
+
+========================================================
+3. LIVE CUSTOMER GAP MATRIX
+========================================================
+
+Whenever customer data is processed:
+
+Module 2 classification
+        ↓
+PCBI lookup
+        ↓
+PCBI existence check
+        ↓
+Historical coverage check
+        ↓
+Specification check
+        ↓
+Frequency check
+        ↓
+Source validation
+        ↓
+Methodology validation
+        ↓
+CALCULATE or BLOCK
+
+For blocked commodities create a permanent research queue.
+
+Display:
+
+Commodity
+UNSPSC
+Material Code
+Customer Spend
+Transaction Count
+PCBI Status
+History Available
+History Required
+Frequency Required
+Source
+Methodology
+Block Reason
+Admin Action
+Priority
+
+Sort primarily by customer spend.
+
+========================================================
+4. DO NOT BLOCK THE WHOLE SYSTEM BECAUSE OF MISSING COMMODITIES
+========================================================
+
+This is critical.
+
+If:
+
+Commodity A = PRODUCTION_READY
+Commodity B = MISSING
+Commodity C = PARTIAL_HISTORY
+Commodity D = METHODOLOGY_PENDING
+
+The system must still calculate Commodity A.
+
+Commodity B/C/D must remain blocked individually.
+
+One missing PCBI must never stop other valid PCBI calculations.
+
+========================================================
+5. ADMIN PCBI RESEARCH WORKFLOW
+========================================================
+
+For every blocked commodity provide:
+
+[RESEARCH PCBI]
+
+Then:
+
+[UPLOAD DATA]
+
+Supported formats:
+
+XLSX
+XLS
+CSV
+PDF
+JSON
+TXT
+
+The system should automatically detect:
+
+Date
+Period
+Price
+Unit
+Currency
+Frequency
+Commodity
+Grade
+Specification
+Geography
+Source
+
+Show all detected information in PREVIEW mode.
+
+Never silently approve.
+
+========================================================
+6. PCBI STANDARDIZATION
+========================================================
+
+Convert approved source data into the standard PCBI observation structure.
+
+Every observation must retain:
+
+PCBI_ID
+COMMODITY_ID
+SERIES_ID
+SOURCE_NAME
+SOURCE_DATE
+EFFECTIVE_DATE
+RAW_VALUE
+RAW_UNIT
+RAW_CURRENCY
+STANDARD_VALUE
+STANDARD_UNIT
+STANDARD_CURRENCY
+SOURCE_FREQUENCY
+STANDARD_FREQUENCY
+GEOGRAPHY
+GRADE
+SPECIFICATION
+TRANSFORMATION_METHOD
+METHODOLOGY_ID
+INGESTION_BATCH_ID
+CHECKSUM
+VALIDATION_STATUS
+VERSION
+APPROVED_BY
+APPROVED_AT
+
+Do not overwrite previous approved observations.
+
+========================================================
+7. COMMODITY-WISE DATA RESEARCH MODEL
+========================================================
+
+Do NOT require one universal source.
+
+Each commodity may have a different source.
+
+Examples:
+
+Steel → industry publication / government / market source
+Copper → exchange / market source
+Aluminium → exchange / market source
+Ferro Molybdenum → industry publication / market source
+Ferro Chrome → industry source
+Ferro Silicon → industry source
+Stainless Steel → grade-specific market source
+Paper → industry/public source
+Chemicals → government/industry source
+Polymers → industry/public source
+Fuel → government source
+
+Multiple sources can coexist for one commodity.
+
+Each source remains separately traceable.
+
+========================================================
+8. CONTINUOUS PCBI LIBRARY EXPANSION
+========================================================
+
+The PCBI catalog must support:
+
+ADD COMMODITY
+ADD PCBI
+ADD GRADE
+ADD SERIES
+ADD SOURCE
+UPLOAD HISTORY
+APPEND HISTORY
+UPDATE SOURCE
+VERSION SERIES
+DEPRECATE SERIES
+
+All through ADMIN PORTAL.
+
+No code deployment should be required to add normal new commodity history.
+
+========================================================
+9. HISTORICAL DEPTH
+========================================================
+
+Target historical period:
+
+2020-04-01 → latest available date
+
+But DO NOT reject a commodity merely because full history is unavailable.
+
+Classify:
+
+75m = COMPLETE
+24–74m = PARTIAL_HISTORY
+0m = NO_HISTORY
+
+Allow additional history to be uploaded later.
+
+When additional history is approved:
+
+PARTIAL_HISTORY
+        ↓
+HISTORY UPDATED
+        ↓
+RECALCULATE READINESS
+        ↓
+PRODUCTION_READY if all conditions pass
+
+========================================================
+10. FREQUENCY GOVERNANCE
+========================================================
+
+Keep existing governance.
+
+Weekly → Weekly:
+DIRECT
+
+Monthly → Monthly:
+DIRECT
+
+Fortnightly → Weekly:
+BLOCK until approved methodology
+
+Monthly → Weekly:
+BLOCK until approved methodology
+
+Quarterly → Monthly:
+BLOCK until approved methodology
+
+NO silent interpolation.
+
+NO synthetic observations.
+
+NO arbitrary averaging.
+
+If a methodology is approved, store the methodology ID with every transformed observation.
+
+========================================================
+11. CALCULATION ENGINE
+========================================================
+
+For eligible commodities execute:
+
+RAW SOURCE
+↓
+STANDARDIZATION
+↓
+EFFECTIVE DATE
+↓
+BASE PERIOD
+↓
+CURRENT PERIOD
+↓
+INDEX
+↓
+PCBI OUTPUT
+
+Base period:
+
+2020-04
+
+Base index:
+
+100.00
+
+Formula:
+
+PCBI INDEX =
+(Current Standardized Value / Base Period Standardized Value) × 100
+
+Where the approved methodology specifies otherwise, use that approved methodology and retain the methodology ID.
+
+========================================================
+12. ANALYTICAL PREVIEW
+========================================================
+
+Continue to show:
+
+Customer Purchase Value
+PCBI Base Value
+PCBI Current Value
+PCBI Index
+Market Movement
+
+BUT FIX AND VALIDATE DISPLAY NORMALIZATION.
+
+The V1.5 preview contained examples such as:
+
+"£66,678.25/roll"
+"$72,645.00/pcs"
+
+while the certified customer dataset is reported in INR.
+
+Investigate this.
+
+Ensure:
+
+Customer Value
+Customer Currency
+Customer Unit
+PCBI Value
+PCBI Currency
+PCBI Unit
+
+are separately displayed and correctly labeled.
+
+Do NOT change underlying certified customer data.
+
+This is a presentation/data-display validation issue.
+
+========================================================
+13. DO NOT CALCULATE SAVINGS YET
+========================================================
+
+PCBI calculation may run.
+
+But:
+
+SAVINGS = ZERO
+
+OPPORTUNITY = ZERO
+
+SUPPLIER RANKING = ZERO
+
+until the explicit commercial/savings activation gate is approved.
+
+========================================================
+14. PILOT DASHBOARD
+========================================================
+
+Create the Module 3 management dashboard:
+
+TOTAL CUSTOMER SPEND
+TOTAL COMMODITIES
+PCBI DEFINED
+PCBI MISSING
+COMPLETE HISTORY
+PARTIAL HISTORY
+NO HISTORY
+SOURCE VERIFIED
+SOURCE PENDING
+METHODOLOGY APPROVED
+METHODOLOGY PENDING
+READY FOR CALCULATION
+PRODUCTION READY
+HIGH IMPACT GAPS
+
+Also show:
+
+TOP 20 MISSING PCBI BY SPEND
+
+This becomes our permanent research priority list.
+
+========================================================
+15. ADMIN ACTIONS
+========================================================
+
+For each gap:
+
+[CREATE PCBI]
+
+[UPLOAD HISTORY]
+
+[ADD SOURCE]
+
+[ADD METHODOLOGY]
+
+[VALIDATE]
+
+[APPROVE]
+
+[REJECT]
+
+[VIEW PROVENANCE]
+
+[VIEW VERSION HISTORY]
+
+After approval:
+
+automatically rerun ONLY the affected commodity.
+
+Do not rerun the entire dataset unnecessarily.
+
+========================================================
+16. CONTROLLED PILOT MODE
+========================================================
+
+Set:
+
+MODULE3_STATUS =
+PRODUCTION_READY_FOR_CONTROLLED_PILOT
+
+provided all productization tests pass.
+
+Controlled pilot means:
+
+- PCBI calculations allowed for validated series
+- Missing commodities remain individually blocked
+- Analytical preview allowed
+- No savings
+- No commercial opportunity
+- Module 4 disconnected
+- Module 1 frozen
+- Module 2 frozen
+- PCBI Master V1.0 immutable
+
+========================================================
+17. FINAL ACCEPTANCE TEST
+========================================================
+
+Do NOT conduct another broad methodology audit.
+
+Run only these final product tests:
+
+TEST 01:
+Existing eligible PCBI calculates successfully.
+
+TEST 02:
+Missing PCBI generates actionable gap.
+
+TEST 03:
+Admin uploads XLSX.
+
+TEST 04:
+Admin uploads PDF.
+
+TEST 05:
+Admin uploads CSV.
+
+TEST 06:
+System detects columns and frequency.
+
+TEST 07:
+System blocks unapproved frequency conversion.
+
+TEST 08:
+Admin approves methodology.
+
+TEST 09:
+Admin approves PCBI.
+
+TEST 10:
+Customer commodity changes:
+
+MISSING
+→ DEFINED
+→ HISTORY AVAILABLE
+→ PRODUCTION_READY
+
+TEST 11:
+New historical data can be appended.
+
+TEST 12:
+Version history remains immutable.
+
+TEST 13:
+Second source can be added.
+
+TEST 14:
+Source provenance remains separate.
+
+TEST 15:
+One blocked commodity does not prevent another eligible commodity from calculating.
+
+TEST 16:
+Module 1 remains unchanged.
+
+TEST 17:
+Module 2 remains unchanged.
+
+TEST 18:
+Module 4 remains disconnected.
+
+TEST 19:
+Savings remains ZERO.
+
+TEST 20:
+Commercial purchasing remains ZERO.
+
+========================================================
+18. FINAL DELIVERABLES
+========================================================
+
+Generate:
+
+PCBI_V1_6_CONTROLLED_PILOT_READINESS.md
+
+PCBI_V1_6_DYNAMIC_CATALOG_SCHEMA.json
+
+PCBI_V1_6_GAP_RESEARCH_QUEUE.xlsx
+
+PCBI_V1_6_ADMIN_PCBl_WORKFLOW.md
+
+PCBI_V1_6_PRODUCT_ACCEPTANCE_TEST.json
+
+PCBI_V1_6_PRODUCTION_READINESS.json
+
+========================================================
+19. STOP CONDITION
+========================================================
+
+If all 20 product acceptance tests pass:
+
+DO NOT create another architecture redesign.
+
+DO NOT start another recursive audit.
+
+Set:
+
+MODULE3_STATUS =
+PRODUCTION_READY_FOR_CONTROLLED_PILOT
+
+and report:
+
+1. IMPLEMENTED
+2. PASSING TESTS
+3. REMAINING PRODUCT GAPS
+4. CURRENT PCBI RESEARCH QUEUE
+5. ADMIN ACTION REQUIRED
+
+========================================================
+FINAL OPERATING PRINCIPLE
+========================================================
+
+We are no longer trying to finish researching every commodity before deploying Module 3.
+
+We are building a continuously expandable PCBI platform.
+
+The software must be useful today with the validated commodities and become stronger every time a new commodity/source/history is uploaded and approved.
+
+NEW COMMODITY
+→ NEW PCBI
+→ SOURCE
+→ HISTORY
+→ VALIDATION
+→ ADMIN APPROVAL
+→ PCBI CATALOG
+→ CUSTOMER DATA RERUN
+→ GAP CLEARED
+→ BETTER COVERAGE
+
+This is the final productization direction.
+
+Do not return to the architecture-design loop unless a concrete acceptance test fails.
+## Prompt 200
+
+PCBI MODULE 3 — V1.7 PRODUCTION PILOT ACTIVATION & DYNAMIC PCBI LIBRARY
+
+OBJECTIVE
+
+The V1.6 Controlled Pilot architecture is accepted.
+
+STOP architectural redesign.
+STOP repeated reconciliation exercises.
+STOP broad source-research exercises.
+STOP creating new benchmark methodologies unless explicitly required for a specific commodity.
+
+From this point onward, PCBI Module 3 must operate as a DYNAMIC PCBI LIBRARY + CALCULATION ENGINE.
+
+The objective is to finalize the software workflow so that:
+1. Existing validated PCBI series can calculate immediately.
+2. Missing/partial PCBI commodities do not block the system.
+3. New commodities can continuously be added through the Admin Portal.
+4. New historical data can continuously be uploaded and appended.
+5. New sources can be added without modifying application code.
+6. New PCBI methodologies can be added only through governed Admin approval.
+7. Every newly approved PCBI automatically becomes available to Module 3.
+8. Customer data should automatically identify missing/partial PCBI coverage and create a prioritized research queue.
+9. Once the required PCBI is approved and sufficient history is uploaded, only the affected commodity should recalculate.
+10. Module 1 and Module 2 remain completely frozen.
+11. Module 4 remains disconnected until explicitly authorized.
+12. Savings/opportunity calculations remain OFF unless explicitly authorized.
+
+========================================================
+1. FREEZE THE V1.6 CALCULATION ENGINE
+========================================================
+
+Treat the V1.5/V1.6 calculation engine as the frozen production-pilot core.
+
+DO NOT redesign:
+- indexing mathematics
+- Module 2 classification authority
+- provenance architecture
+- observation schema
+- methodology governance
+- source validation framework
+- gap-state architecture
+- preview/approval architecture
+
+The existing calculation formula remains:
+
+PCBI INDEX =
+(Current Standardized Value / Base Period Standardized Value) × 100
+
+Base period:
+2020-04 = 100.00
+
+========================================================
+2. FINALIZE DYNAMIC PCBI CATALOG
+========================================================
+
+The PCBI Catalog must support permanent dynamic addition of:
+
+A. New Commodity
+B. New PCBI Definition
+C. New PCBI Series
+D. New Source
+E. New Historical Data
+F. New Methodology
+G. New Geography
+H. New Grade/Specification
+I. New Frequency
+J. Version History
+K. Source Replacement
+L. Series Deprecation
+
+NO CODE CHANGE should be required for any of the above.
+
+All additions must be data-driven through the Admin Portal.
+
+========================================================
+3. ADMIN PORTAL — FINAL PCBI WORKFLOW
+========================================================
+
+Create/verify the following workflow:
+
+CUSTOMER DATA
+      ↓
+MODULE 2 CLASSIFICATION
+      ↓
+PCBI LOOKUP
+      ↓
+PCBI EXISTENCE CHECK
+      ↓
+HISTORY COVERAGE CHECK
+      ↓
+SPECIFICATION CHECK
+      ↓
+UNIT CHECK
+      ↓
+CURRENCY CHECK
+      ↓
+GEOGRAPHY CHECK
+      ↓
+FREQUENCY CHECK
+      ↓
+SOURCE VALIDATION
+      ↓
+METHODOLOGY VALIDATION
+      ↓
+CALCULATE OR CREATE GAP
+
+For a gap:
+
+[VIEW GAP]
+[RESEARCH PCBI]
+[CREATE PCBI]
+[UPLOAD DATA]
+[VALIDATE PREVIEW]
+[APPROVE]
+[REJECT]
+
+========================================================
+4. UNIVERSAL FILE INGESTION
+========================================================
+
+Retain support for:
+
+XLSX
+XLS
+CSV
+PDF
+JSON
+TXT
+
+The ingestion engine must automatically attempt to detect:
+
+DATE
+EFFECTIVE DATE
+VALUE / PRICE
+UNIT
+CURRENCY
+FREQUENCY
+COMMODITY
+GRADE
+SPECIFICATION
+GEOGRAPHY
+SOURCE
+SERIES
+
+Never silently guess.
+
+If confidence is insufficient:
+
+STATUS = DATA_MAPPING_REVIEW_REQUIRED
+
+Admin must be able to manually map the fields.
+
+========================================================
+5. FREQUENCY NORMALIZATION
+========================================================
+
+Do NOT automatically interpolate or synthesize data.
+
+Supported source frequencies may include:
+
+DAILY
+WEEKLY
+FORTNIGHTLY
+MONTHLY
+QUARTERLY
+ANNUAL
+
+If source frequency differs from required PCBI frequency:
+
+STATUS = FREQUENCY_MISMATCH
+
+ACTION =
+METHODOLOGY_APPROVAL_REQUIRED
+
+The Admin must explicitly approve the mathematical transformation methodology before transformed observations can become production observations.
+
+========================================================
+6. HISTORY MANAGEMENT
+========================================================
+
+Allow incremental history upload.
+
+Example:
+
+Existing:
+2020-04 → 2025-12
+
+New upload:
+2026-01 → 2026-09
+
+System must APPEND the new observations.
+
+It must NOT overwrite historical observations.
+
+If overlapping observations are uploaded:
+
+detect duplicate DATE + SERIES_ID
+
+and show:
+
+DUPLICATE_OBSERVATION_REVIEW
+
+Admin must decide whether to retain existing, replace through versioning, or reject the new observation.
+
+========================================================
+7. MULTIPLE SOURCES
+========================================================
+
+A commodity must support multiple source candidates.
+
+Example:
+
+Ferro Molybdenum
+
+Source A — Government/public source
+Source B — Industry publication
+Source C — Market assessment
+Source D — Customer-provided historical source
+
+Each source must retain independent:
+
+SOURCE_ID
+SOURCE_NAME
+SOURCE_URL
+SOURCE_DOCUMENT
+CHECKSUM
+PUBLICATION_DATE
+INGESTION_DATE
+SOURCE_FREQUENCY
+SOURCE_UNIT
+SOURCE_CURRENCY
+SOURCE_GEOGRAPHY
+SOURCE_SPECIFICATION
+VALIDATION_STATUS
+
+Never merge sources invisibly.
+
+========================================================
+8. PCBI RESEARCH QUEUE
+========================================================
+
+The Research Queue must continuously rank missing/partial PCBI coverage by:
+
+1. Customer Spend
+2. Transaction Count
+3. Material Criticality
+4. Current PCBI Status
+5. Historical Coverage Gap
+
+Minimum statuses:
+
+P1_CRITICAL
+P2_HIGH
+P3_MEDIUM
+P4_LOW
+
+The queue must update automatically whenever customer data changes.
+
+========================================================
+9. HIGH-IMPACT GAP ALERT
+========================================================
+
+If:
+
+Customer Spend > configurable threshold
+
+AND
+
+PCBI history is missing or materially incomplete,
+
+show:
+
+PCBI COVERAGE GAP — HIGH IMPACT
+
+Display:
+
+Commodity
+Material Code
+UNSPSC
+Customer Spend
+Transaction Count
+Required History
+Available History
+Required Frequency
+Available Frequency
+Required Unit
+Available Unit
+Specification
+Current PCBI Status
+Recommended Admin Action
+
+Provide:
+
+[CREATE PCBI]
+[UPLOAD HISTORY]
+[RESEARCH SOURCE]
+
+========================================================
+10. TARGETED RECALCULATION
+========================================================
+
+When Admin approves:
+
+NEW PCBI
+OR
+NEW HISTORY
+OR
+NEW METHODOLOGY
+
+DO NOT rerun the complete customer dataset unnecessarily.
+
+Recalculate only:
+
+Affected PCBI Series
+Affected Commodity
+Affected Customer Transactions
+
+Then update the affected analytical results.
+
+========================================================
+11. PRODUCTION SAFETY
+========================================================
+
+Maintain:
+
+Module 1 = FROZEN
+Module 2 = FROZEN / SOLE CLASSIFICATION AUTHORITY
+PCBI Master V1.0 = IMMUTABLE
+Module 4 = DISCONNECTED
+Savings = OFF
+Opportunity = OFF
+Supplier Ranking = OFF
+
+No benchmark observation enters production without:
+
+SOURCE VALIDATION
+DATA VALIDATION
+METHODOLOGY VALIDATION
+ADMIN APPROVAL
+
+========================================================
+12. DATA QUALITY DASHBOARD
+========================================================
+
+Create a permanent PCBI Coverage Dashboard showing:
+
+TOTAL PCBI COMMODITIES
+PCBI DEFINED
+PCBI MISSING
+COMPLETE HISTORY
+PARTIAL HISTORY
+NO HISTORY
+SOURCE UNVERIFIED
+METHODOLOGY PENDING
+SPECIFICATION MISMATCH
+FREQUENCY MISMATCH
+PRODUCTION READY
+NOT BENCHMARKABLE
+
+Also show:
+
+CUSTOMER SPEND COVERED
+CUSTOMER SPEND WITH PCBI GAP
+% SPEND COVERED
+% SPEND GAP
+
+========================================================
+13. IMPORTANT — DO NOT BLOCK THE ENGINE
+========================================================
+
+A missing PCBI must NEVER stop calculation of other valid commodities.
+
+Example:
+
+Ferro Molybdenum = missing
+
+HR Steel = valid
+Copper = valid
+Kraft Paper = valid
+Caustic Soda = valid
+
+The system must calculate:
+
+HR Steel
+Copper
+Kraft Paper
+Caustic Soda
+
+while simultaneously placing Ferro Molybdenum in:
+
+P1_CRITICAL RESEARCH QUEUE
+
+========================================================
+14. COMMODITY LIBRARY EXPANSION
+========================================================
+
+The system must be capable of adding an unlimited number of future PCBI commodities.
+
+Do NOT hard-code the current 32/290 commodity structure.
+
+PCBI_ID must be dynamically generated according to the existing naming/version convention.
+
+A new commodity must be able to enter the system without software deployment.
+
+========================================================
+15. FINAL ACCEPTANCE TEST
+========================================================
+
+Run only the following final acceptance tests.
+
+TEST 01:
+Existing valid PCBI calculates.
+
+TEST 02:
+Missing PCBI creates gap.
+
+TEST 03:
+Admin creates new PCBI.
+
+TEST 04:
+Admin uploads XLSX.
+
+TEST 05:
+Admin uploads PDF.
+
+TEST 06:
+Admin uploads CSV.
+
+TEST 07:
+Admin manually maps ambiguous columns.
+
+TEST 08:
+Admin adds historical observations.
+
+TEST 09:
+Duplicate observation detected.
+
+TEST 10:
+Partial history remains blocked.
+
+TEST 11:
+Frequency mismatch remains blocked.
+
+TEST 12:
+Specification mismatch remains blocked.
+
+TEST 13:
+Admin approves methodology.
+
+TEST 14:
+Admin approves PCBI.
+
+TEST 15:
+Affected commodity recalculates only.
+
+TEST 16:
+Other commodities remain unaffected.
+
+TEST 17:
+New source can be added.
+
+TEST 18:
+Existing history remains immutable.
+
+TEST 19:
+Module 1 unchanged.
+
+TEST 20:
+Module 2 unchanged.
+
+TEST 21:
+Module 4 remains disconnected.
+
+TEST 22:
+Savings remains ZERO.
+
+TEST 23:
+New commodity can be added without code deployment.
+
+TEST 24:
+Research queue automatically reprioritizes.
+
+========================================================
+16. IMPORTANT COUNT CONSISTENCY CHECK
+========================================================
+
+Before final sign-off, perform a DATA CONSISTENCY CHECK across:
+
+Customer commodity count
+Material commodity count
+Excluded service count
+PCBI catalog count
+Production-ready count
+Research queue count
+Partial-history count
+No-history count
+
+Do NOT redesign anything because of count discrepancies.
+
+Simply identify and correct the underlying reporting/count aggregation logic if necessary.
+
+========================================================
+17. FINAL OUTPUT
+========================================================
+
+Generate:
+
+PCBI_V1_7_PRODUCTION_PILOT_RELEASE_REPORT.md
+PCBI_V1_7_FINAL_ACCEPTANCE_TEST.json
+PCBI_V1_7_DYNAMIC_CATALOG_STATUS.xlsx
+PCBI_V1_7_PCBI_COVERAGE_DASHBOARD.xlsx
+
+Final status should be one of:
+
+PRODUCTION_PILOT_READY
+or
+BLOCKED — with only the specific failed acceptance tests listed.
+
+DO NOT initiate another broad architecture redesign.
+
+DO NOT initiate another global reconciliation exercise.
+
+DO NOT require all commodities to have historical data before the software can operate.
+
+The objective is to finalize the dynamic software and allow the PCBI library to grow continuously commodity-by-commodity.
+## Prompt 201
+
+PCBI MODULE 3 — V1.6 PRODUCTIONIZATION & DYNAMIC COMMODITY EXPANSION
+
+Objective:
+Move Module 3 from CALCULATION_VALIDATED_WITH_GAPS toward PRODUCTION-READY architecture.
+
+DO NOT restart the architecture.
+DO NOT repeat previous reconciliation exercises.
+DO NOT modify Module 1, Module 2, PCBI Master V1.0, or Module 4.
+Do not purchase commercial data.
+Do not generate procurement savings.
+Do not create supplier rankings.
+Do not make any existing benchmark values production-active unless explicitly approved by Admin.
+
+The objective is to finalize the software so that PCBI can continuously expand commodity coverage through the Admin Portal.
+
+============================================================
+1. FREEZE THE CURRENT CORE
+============================================================
+
+Treat the following as immutable:
+
+Module 1 = FROZEN
+Module 2 = FROZEN / SOLE CLASSIFICATION AUTHORITY
+PCBI Master V1.0 = IMMUTABLE
+Existing approved PCBI catalog records = VERSIONED / AUDIT CONTROLLED
+Module 4 = DISCONNECTED
+
+Do not redesign these modules.
+
+============================================================
+2. DYNAMIC PCBI COMMODITY CATALOG
+============================================================
+
+Build/finalize a dynamic PCBI Catalog that allows Admin to add:
+
+A. New Commodity
+B. New PCBI Definition
+C. New PCBI Series
+D. New Source
+E. New Historical Dataset
+F. New Frequency
+G. New Geography
+H. New Grade / Specification
+I. New Unit
+J. New Currency
+K. New Methodology
+L. New Source Document
+M. New Historical observations
+
+Each commodity must have independent status:
+
+PCBI_DEFINITION_STATUS:
+DEFINED
+MISSING
+UNDER_REVIEW
+NOT_BENCHMARKABLE
+
+PCBI_DATA_STATUS:
+COMPLETE
+PARTIAL_HISTORY
+NO_HISTORY
+FREQUENCY_MISMATCH
+SPECIFICATION_MISMATCH
+SOURCE_UNVERIFIED
+
+Do not combine definition existence and data availability into one status.
+
+============================================================
+3. ADMIN PORTAL — “ADD / COMPLETE PCBI”
+============================================================
+
+Create a single guided workflow:
+
+CUSTOMER DATA
+      ↓
+MODULE 2 CLASSIFICATION
+      ↓
+PCBI EXISTENCE CHECK
+      ↓
+HISTORICAL DATA CHECK
+      ↓
+GAP DETECTION
+      ↓
+ADMIN ALERT
+      ↓
+UPLOAD PCBI DATA
+      ↓
+AUTO-EXTRACTION
+      ↓
+STANDARDIZATION
+      ↓
+VALIDATION
+      ↓
+PREVIEW
+      ↓
+ADMIN APPROVAL
+      ↓
+VERSIONED PCBI CATALOG UPDATE
+      ↓
+AUTOMATIC RE-RUN
+      ↓
+GAP STATUS UPDATED
+
+The system must NOT require a developer/code deployment when a new commodity or historical dataset is added.
+
+============================================================
+4. CUSTOMER DATA VS PCBI MISMATCH ENGINE
+============================================================
+
+Whenever customer data is uploaded, automatically compare each Module 2 commodity against the PCBI Catalog.
+
+Detect and display:
+
+• PCBI missing
+• Definition missing
+• Historical data missing
+• Historical data incomplete
+• Frequency mismatch
+• Grade mismatch
+• Specification mismatch
+• Unit mismatch
+• Currency mismatch
+• Geography mismatch
+• Source unverified
+• Methodology pending
+
+For each issue show:
+
+Commodity
+PCBI ID
+Customer Spend
+Transaction Count
+Required History
+Available History
+Required Frequency
+Available Frequency
+Required Unit
+Available Unit
+Required Geography
+Available Geography
+Source Status
+Methodology Status
+Final Readiness
+Admin Action
+
+============================================================
+5. HIGH-IMPACT GAP ALERT
+============================================================
+
+If:
+
+Customer Spend > configurable materiality threshold
+AND
+PCBI is missing OR historical data is inadequate
+
+automatically create:
+
+HIGH_IMPACT_PCBI_GAP
+
+Example:
+
+PCBI GAP — HIGH IMPACT
+
+Commodity: Ferro Molybdenum 65%
+Customer Spend: ₹1.25 Cr
+PCBI Definition: Missing
+Historical Data: Missing
+Required History: Apr-2020 to latest available
+Required Frequency: Weekly
+Required Unit: INR/MT
+
+ACTION:
+[CREATE PCBI]
+[UPLOAD DATA]
+[REVIEW EXISTING PCBI]
+
+The threshold must be configurable by Admin.
+
+============================================================
+6. UNIVERSAL DATA INGESTION
+============================================================
+
+Maintain support for:
+
+XLSX
+XLS
+CSV
+PDF
+JSON
+TXT
+
+The system must attempt to identify automatically:
+
+Date
+Effective Date
+Price / Value
+Unit
+Currency
+Frequency
+Commodity
+Grade
+Specification
+Geography
+Source
+Series
+Document
+Publisher
+
+Never silently assume ambiguous fields.
+
+If confidence is insufficient:
+
+STATUS = ADMIN_REVIEW_REQUIRED
+
+============================================================
+7. FREQUENCY NORMALIZATION
+============================================================
+
+Support native frequencies:
+
+Daily
+Weekly
+Fortnightly
+Monthly
+Quarterly
+Annual
+
+Do NOT automatically interpolate, extrapolate, average, or synthesize observations.
+
+If conversion is required:
+
+STATUS = METHODOLOGY_PENDING
+
+Admin must be able to select/approve an existing methodology or create a new methodology.
+
+Every transformation must retain:
+
+SOURCE_FREQUENCY
+TARGET_FREQUENCY
+TRANSFORMATION_METHOD
+METHODOLOGY_ID
+APPROVAL_ID
+
+============================================================
+8. HISTORICAL DEPTH
+============================================================
+
+Do not require every commodity to have the same history merely because another commodity does.
+
+The catalog must store:
+
+REQUIRED_START_DATE
+REQUIRED_END_DATE
+AVAILABLE_START_DATE
+AVAILABLE_END_DATE
+HISTORY_MONTHS
+HISTORY_COMPLETENESS %
+
+Allow Admin to configure the minimum acceptable historical depth by commodity/series.
+
+Clearly distinguish:
+
+COMPLETE
+PARTIAL_HISTORY
+NO_HISTORY
+
+============================================================
+9. PCBI CALCULATION ENGINE
+============================================================
+
+For an APPROVED and VALIDATED series:
+
+RAW OBSERVATION
+→ STANDARDIZED OBSERVATION
+→ EFFECTIVE OBSERVATION
+→ BASE PERIOD
+→ CURRENT PERIOD
+→ INDEX CALCULATION
+→ PCBI OUTPUT
+
+Base period index must equal 100.00.
+
+Use full precision internally.
+Round only for presentation.
+
+Formula and methodology must always be stored with the series.
+
+============================================================
+10. PROVENANCE
+============================================================
+
+Retain the existing 10-link provenance chain:
+
+LINK_01_RAW_DOWNLOAD
+LINK_02_ORIGINAL_CHECKSUM
+LINK_03_INGESTION_TIMESTAMP
+LINK_04_INGESTION_BATCH
+LINK_05_EXTRACTION_SCRIPT
+LINK_06_REBASE_TRANSFORMATION
+LINK_07_CURRENCY_CONVERSION
+LINK_08_UNIT_STANDARDIZATION
+LINK_09_VALIDATION_EVENT
+LINK_10_MODULE3_BENCHMARK_INPUT
+
+Any missing mandatory provenance link must prevent production activation.
+
+============================================================
+11. VERSION CONTROL
+============================================================
+
+Existing PCBI series must never be overwritten.
+
+Every change creates a new version:
+
+PCBI_VERSION
+SOURCE_VERSION
+METHODOLOGY_VERSION
+DATASET_VERSION
+
+Maintain:
+
+Created By
+Created At
+Approved By
+Approved At
+Approval ID
+Change Reason
+Checksum
+Previous Version
+Current Version
+
+Allow:
+
+ADD
+UPDATE
+DEPRECATE
+RESTORE
+ROLLBACK
+
+Only Admin-approved versions may become active.
+
+============================================================
+12. “UPLOAD ANY FORMAT → PCBI STANDARD FORMAT”
+============================================================
+
+The most important operational requirement:
+
+Admin should NOT have to manually convert publisher data into the PCBI schema.
+
+Example input:
+
+Excel:
+Date | Price
+
+PDF:
+Date | Avg Price | USD/MT
+
+CSV:
+Week | Value
+
+Website export:
+Period | Settlement
+
+System should transform each into the standard internal PCBI observation structure.
+
+Show the normalized result BEFORE approval.
+
+Never silently modify source values.
+
+============================================================
+13. DATA QUALITY REPORT
+============================================================
+
+After every upload generate:
+
+Records detected
+Records accepted
+Records rejected
+Duplicate records
+Missing dates
+Missing values
+Unit detected
+Currency detected
+Frequency detected
+Start date
+End date
+Outliers
+Gaps
+Transformation performed
+Methodology required
+Provenance completeness
+Validation status
+
+Provide downloadable audit output.
+
+============================================================
+14. AUTOMATIC RE-RUN
+============================================================
+
+After Admin approves a new PCBI dataset:
+
+DO NOT require code changes.
+
+Automatically:
+
+1. Activate new PCBI version
+2. Re-run affected customer commodities
+3. Recalculate readiness
+4. Clear resolved alerts
+5. Identify remaining gaps
+6. Display updated analytical preview
+7. Preserve previous audit state
+
+Example:
+
+Before:
+PCBI = MISSING
+DATA = NO_HISTORY
+READINESS = BLOCKED
+
+After Admin approval:
+
+PCBI = DEFINED
+DATA = COMPLETE
+READINESS = PRODUCTION_READY
+
+============================================================
+15. COMMODITY EXPANSION
+============================================================
+
+Design the catalog so that PCBI is NOT limited to the current 32 commodities or the current 290 series.
+
+New commodities must be added dynamically.
+
+Examples:
+
+Copper
+Aluminium
+Zinc
+Lead
+Nickel
+Tin
+Stainless Steel
+Ferro Chrome
+Ferro Molybdenum
+Ferro Silicon
+Silico Manganese
+Ferro Manganese
+Carbon Steel
+TMT
+HRC
+CRC
+Billets
+Scrap
+Graphite Electrodes
+Refractories
+Industrial Gases
+Chemicals
+Polymers
+Packaging
+Lubricants
+etc.
+
+These are examples only.
+
+DO NOT create artificial PCBI data for them.
+
+Create catalog definitions only when justified by customer demand and validated source data.
+
+============================================================
+16. “LEARN AS WE SCALE” ARCHITECTURE
+============================================================
+
+The system must become stronger as Admin adds new commodities and sources.
+
+Maintain a reusable library of:
+
+Commodity Definitions
+Series Definitions
+Source Definitions
+Publisher Definitions
+Methodologies
+Unit Conversions
+Currency Rules
+Frequency Rules
+Geography Rules
+Grade/Specification Rules
+
+A methodology approved for one valid commodity may be reusable only where its applicability conditions explicitly permit it.
+
+Never copy a methodology merely because two commodities appear similar.
+
+============================================================
+17. DASHBOARD
+============================================================
+
+Create a management dashboard showing:
+
+Total PCBI commodities
+Total PCBI series
+Production Ready
+Partial History
+No History
+Missing Definition
+Methodology Pending
+Source Unverified
+Specification Mismatch
+Frequency Mismatch
+High Impact Gaps
+Free/Public Sources
+Commercial Sources
+Pending Admin Actions
+
+Also show:
+
+Customer Spend Covered
+Customer Spend Not Covered
+Coverage %
+High Impact Uncovered Spend
+
+Do not call uncovered spend “savings”.
+
+============================================================
+18. FINAL CUSTOMER PROCESS
+============================================================
+
+The final operational experience should be:
+
+Customer uploads purchase data
+        ↓
+Module 1 cleans data
+        ↓
+Module 2 classifies data
+        ↓
+Module 3 checks PCBI
+        ↓
+Existing PCBI → calculate
+Missing PCBI → alert
+Incomplete PCBI → alert
+        ↓
+Admin uploads source data
+        ↓
+System converts source to PCBI
+        ↓
+Admin validates preview
+        ↓
+Admin approves
+        ↓
+PCBI Catalog updated
+        ↓
+Customer data automatically reprocessed
+        ↓
+Benchmark becomes available where all governance gates pass
+
+No developer intervention should be required for normal commodity expansion.
+
+============================================================
+19. SECURITY / GOVERNANCE
+============================================================
+
+Production benchmark activation requires:
+
+Module 2 classification validity
+PCBI definition validity
+Source validation
+Historical sufficiency
+Specification match
+Unit match
+Currency match
+Geography match
+Frequency methodology
+Provenance completeness
+Admin approval
+
+If any mandatory condition fails:
+
+DO NOT CALCULATE PRODUCTION PCBI.
+
+============================================================
+20. FINAL ACCEPTANCE TEST
+============================================================
+
+Do NOT perform another broad architecture audit.
+
+Instead execute one final focused acceptance test:
+
+A. Existing complete commodity
+B. Existing partial-history commodity
+C. Missing commodity
+D. New commodity uploaded through Admin
+E. New historical source uploaded
+F. PDF source
+G. Excel source
+H. CSV source
+I. Frequency mismatch
+J. Specification mismatch
+K. Unit mismatch
+L. Currency mismatch
+M. Geography mismatch
+N. Methodology pending
+O. Admin approval
+P. Automatic catalog versioning
+Q. Automatic customer re-run
+R. Gap alert clearance
+S. Rollback to previous PCBI version
+T. Add second new commodity without code change
+
+Required result:
+
+ALL GOVERNANCE CONTROLS PASS.
+
+Most importantly:
+
+NEW COMMODITY + NEW PCBI DATA MUST BE ADDABLE WITHOUT CODE DEPLOYMENT.
+
+============================================================
+FINAL OBJECTIVE
+============================================================
+
+Move Module 3 to:
+
+FINAL_MODULE_3_STATUS =
+PRODUCTION_READY_DYNAMIC_PCBI
+
+provided all acceptance tests pass.
+
+Do not claim production-ready merely because the tests execute.
+
+Show:
+
+1. Tests passed
+2. Tests failed
+3. Remaining blockers
+4. Exact Admin actions required
+5. Exact developer actions required, if any
+6. Whether a new commodity can genuinely be added without code changes
+7. Whether an uploaded arbitrary-format historical dataset can genuinely be converted into the PCBI standard without manual schema preparation
+8. Whether an approved PCBI automatically triggers customer-data reprocessing
+9. Whether rollback/versioning works
+10. Final production-readiness decision
+
+Do not calculate savings.
+Do not activate Module 4.
+Do not modify Module 1.
+Do not modify Module 2.
+Do not modify PCBI Master V1.0.
+Do not purchase commercial data.
+
+This is the final productionization and dynamic-expansion gate.
+
+## Prompt 202
+
+PCBI MODULE 3 — BUSINESS VALIDATION & COMMODITY POPULATION MODE
+
+Module 3 software architecture is now certified:
+FINAL_MODULE_3_STATUS = PRODUCTION_READY_DYNAMIC_PCBI
+
+DO NOT perform another architecture redesign.
+DO NOT repeat the 20 acceptance tests unless required for regression.
+DO NOT modify Module 1.
+DO NOT modify Module 2.
+DO NOT modify PCBI Master V1.0.
+DO NOT connect Module 4.
+DO NOT calculate savings.
+DO NOT purchase commercial data.
+
+From this point forward, Module 3 development is considered COMPLETE.
+
+Change the operating objective from SOFTWARE DEVELOPMENT to
+PCBI COMMODITY COVERAGE EXPANSION.
+
+==================================================
+1. ESTABLISH TWO SEPARATE STATUS LEVELS
+==================================================
+
+MODULE 3 SOFTWARE STATUS:
+PRODUCTION_READY_DYNAMIC_PCBI
+
+COMMODITY / SERIES STATUS:
+PRODUCTION_READY
+PARTIAL_HISTORY
+NO_HISTORY
+MISSING
+SOURCE_UNVERIFIED
+METHODOLOGY_PENDING
+SPECIFICATION_MISMATCH
+FREQUENCY_MISMATCH
+NOT_BENCHMARKABLE
+
+Never interpret Module 3 software readiness as complete commodity coverage.
+
+==================================================
+2. COMMODITY GAP QUEUE
+==================================================
+
+Create a permanent PCBI RESEARCH / DATA GAP QUEUE.
+
+Every customer commodity without an adequate PCBI must automatically enter this queue.
+
+Required fields:
+
+COMMODITY_ID
+COMMODITY_NAME
+MODULE2_CLASSIFICATION
+UNSPSC
+CUSTOMER_SPEND
+TRANSACTION_COUNT
+PCBI_ID
+PCBI_DEFINITION_STATUS
+PCBI_DATA_STATUS
+REQUIRED_START_DATE
+REQUIRED_END_DATE
+REQUIRED_FREQUENCY
+REQUIRED_UNIT
+REQUIRED_CURRENCY
+REQUIRED_GEOGRAPHY
+AVAILABLE_HISTORY
+SOURCE_STATUS
+METHODOLOGY_STATUS
+MATERIALITY
+PRIORITY
+ADMIN_ACTION
+RESEARCH_STATUS
+DATE_ADDED
+LAST_UPDATED
+
+==================================================
+3. PRIORITIZATION
+
+Calculate a RESEARCH_PRIORITY based on:
+
+Customer Spend
+Transaction Count
+Coverage Impact
+Historical Data Gap
+Availability of public sources
+Specification complexity
+
+Do NOT call this a savings ranking.
+
+Display:
+
+P1 — Critical Coverage Gap
+P2 — High Coverage Gap
+P3 — Medium Coverage Gap
+P4 — Low Coverage Gap
+
+Admin must be able to override priority.
+
+==================================================
+4. CURRENT DATA-GAP QUEUE
+
+Initialize the queue using the currently identified gaps:
+
+1. Ferro Molybdenum 65%
+2. Heavy Duty Slurry Pumps
+3. Tungsten Carbide Inserts
+4. HDPE Injection Molding Granules
+5. Stainless Steel 304 Scrap
+6. Industrial Hydraulic Oil ISO 68
+
+Do not manufacture historical data.
+
+These are RESEARCH TARGETS, not benchmark values.
+
+==================================================
+5. ADMIN RESEARCH WORKFLOW
+
+For every gap provide:
+
+[SEARCH / ADD SOURCE]
+[UPLOAD DATA]
+[CREATE PCBI DEFINITION]
+[REVIEW EXISTING PCBI]
+[MARK NOT BENCHMARKABLE]
+
+Once data is uploaded:
+
+UPLOAD
+→ EXTRACT
+→ STANDARDIZE
+→ VALIDATE
+→ PROVENANCE
+→ PREVIEW
+→ ADMIN APPROVAL
+→ VERSION PCBI
+→ REPROCESS AFFECTED CUSTOMER DATA
+
+==================================================
+6. PUBLIC SOURCE RESEARCH
+
+The system should permit Admin to add multiple sources for the same commodity.
+
+Examples:
+
+Government
+Exchange
+Industry association
+Producer publication
+Market report
+Historical PDF
+Historical Excel
+CSV
+Public statistical database
+
+Do NOT automatically treat a source as authoritative.
+
+Every source must go through the existing source validation framework.
+
+==================================================
+7. MULTI-SOURCE PCBI
+
+A commodity may have multiple sources.
+
+Example:
+
+PCBI:
+Ferro Molybdenum 65%
+
+Sources:
+SOURCE-A
+SOURCE-B
+SOURCE-C
+
+Each source must retain independent:
+
+URL
+DOCUMENT
+PUBLISHER
+DATE
+CHECKSUM
+FREQUENCY
+UNIT
+CURRENCY
+GEOGRAPHY
+SOURCE_STATUS
+
+Do not overwrite one source with another.
+
+==================================================
+8. SOURCE COMPARISON
+
+Where multiple validated sources exist, provide an ADMIN comparison view:
+
+Period
+Source A
+Source B
+Source C
+Difference %
+Coverage
+Frequency
+Unit
+Currency
+Geography
+
+Do not automatically select a winner.
+
+Admin must approve the methodology/source hierarchy.
+
+==================================================
+9. DATA COVERAGE DASHBOARD
+
+Create a dashboard showing:
+
+TOTAL CUSTOMER SPEND
+PCBI COVERED SPEND
+PCBI UNCOVERED SPEND
+COVERAGE %
+
+Number of commodities:
+
+PRODUCTION_READY
+PARTIAL_HISTORY
+NO_HISTORY
+MISSING
+SOURCE_UNVERIFIED
+METHODOLOGY_PENDING
+NOT_BENCHMARKABLE
+
+Also display:
+
+Top uncovered commodities by spend
+Top missing PCBI definitions
+Top historical-data gaps
+Public-source candidates
+Commercial-source-required candidates
+
+Never label uncovered spend as savings.
+
+==================================================
+10. UNIT / CURRENCY DISPLAY QA
+
+Add a mandatory display-level validation.
+
+For every customer transaction ensure:
+
+CUSTOMER_VALUE
+CUSTOMER_UNIT
+CUSTOMER_CURRENCY
+
+remain distinguishable from:
+
+PCBI_VALUE
+PCBI_UNIT
+PCBI_CURRENCY
+
+The analytical preview must NEVER display a converted value with an incorrect currency or unit symbol.
+
+Example:
+
+Do not display an INR transaction as £.
+Do not display a per-MT value as per-roll.
+Do not display a per-piece value as per-litre.
+
+Create automated tests for this.
+
+==================================================
+11. PCBI RESEARCH IS CONTINUOUS
+
+Do not require complete coverage before the product can operate.
+
+New customer commodity:
+→ detect gap
+→ create research task
+→ source data
+→ upload
+→ approve
+→ add PCBI
+→ automatically reprocess affected customer data.
+
+The system must continuously expand.
+
+==================================================
+12. FINAL SOFTWARE DEVELOPMENT RULE
+
+From this point forward:
+
+NO NEW SOFTWARE FEATURE should be developed unless a real production workflow exposes a genuine defect.
+
+If a problem is caused by missing commodity data:
+DO NOT modify the engine.
+
+Instead:
+ADD / VALIDATE / VERSION the required PCBI data.
+
+If a problem is caused by methodology:
+CREATE / APPROVE methodology.
+
+If a problem is caused by source quality:
+ADD / REPLACE / VALIDATE source.
+
+If a problem is caused by classification:
+ROUTE TO MODULE 2.
+
+==================================================
+13. FINAL DELIVERABLE
+
+Generate:
+
+PCBI_COMMODITY_COVERAGE_MASTER.xlsx
+
+with sheets:
+
+1. Commodity_Master
+2. PCBI_Series
+3. Source_Register
+4. Data_Gaps
+5. Research_Queue
+6. Methodology_Register
+7. Coverage_Dashboard
+8. Version_History
+
+This becomes the working control file for continuous PCBI expansion.
+
+FINAL STATUS:
+
+SOFTWARE:
+PRODUCTION_READY_DYNAMIC_PCBI
+
+DATA:
+CONTINUOUS_COMMODITY_EXPANSION
+
+NEXT DEVELOPMENT:
+ONLY DEFECT-DRIVEN
+
+NEXT BUSINESS ACTIVITY:
+PCBI DATA RESEARCH + ADMIN POPULATION
+
+Do not perform another architecture redesign.
