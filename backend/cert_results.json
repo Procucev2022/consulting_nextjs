@@ -1,0 +1,1113 @@
+{
+  "timestamp": "2026-09-27T14:01:52.738Z",
+  "goldenTestResults": [
+    {
+      "id": 1,
+      "name": "INR purchase",
+      "input": {
+        "po": "PO-1001",
+        "vendor": "Tata Steel Ltd.",
+        "item": "Hot Rolled Steel Coils",
+        "qty": 100,
+        "price": 50000,
+        "curr": "INR",
+        "total": 5000000,
+        "file": "Direct_Procurement.xlsx",
+        "sheet": "Q1_Purchases",
+        "row": 2
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0001",
+        "normalizedSpendInr": 5000000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101804",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 2,
+      "name": "USD purchase",
+      "input": {
+        "po": "PO-1002",
+        "vendor": "Glencore International AG",
+        "item": "Refined Copper Cathode Grade A",
+        "qty": 10,
+        "price": 9200,
+        "curr": "USD",
+        "total": 92000,
+        "file": "Imports_2025.csv",
+        "sheet": "Sheet1",
+        "row": 5
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0002",
+        "normalizedSpendInr": 7682000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101700",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 3,
+      "name": "EUR purchase",
+      "input": {
+        "po": "PO-1003",
+        "vendor": "Siemens AG Munich",
+        "item": "Electrical Contactor Switchgear 32A",
+        "qty": 50,
+        "price": 120,
+        "curr": "EUR",
+        "total": 6000,
+        "file": "EU_Imports.xlsx",
+        "sheet": "Electrical_Spares",
+        "row": 12
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0003",
+        "normalizedSpendInr": 544500,
+        "coreCategory": "MRO",
+        "unspscCode": "39121529",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 4,
+      "name": "Duplicate",
+      "input": {
+        "po": "PO-1001",
+        "vendor": "Tata Steel Ltd.",
+        "item": "Hot Rolled Steel Coils",
+        "qty": 100,
+        "price": 50000,
+        "curr": "INR",
+        "total": 5000000,
+        "file": "Direct_Procurement.xlsx",
+        "sheet": "Q1_Purchases",
+        "row": 14
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0004",
+        "normalizedSpendInr": 5000000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101804",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 5,
+      "name": "Missing vendor",
+      "input": {
+        "po": "PO-1005",
+        "vendor": "",
+        "item": "Standard Galvanized Fasteners M12",
+        "qty": 1000,
+        "price": 15,
+        "curr": "INR",
+        "total": 15000,
+        "file": "Plant_Spares.csv",
+        "sheet": "Sheet1",
+        "row": 8
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0005",
+        "normalizedSpendInr": 15000,
+        "coreCategory": "Other / Unmapped",
+        "unspscCode": "UNMAPPED-9999",
+        "mappingLevel": "UNMAPPED",
+        "disposition": "UNMAPPED — REVIEW REQUIRED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 6,
+      "name": "Missing quantity",
+      "input": {
+        "po": "PO-1006",
+        "vendor": "BASF India Limited",
+        "item": "Caustic Soda Lye 48%",
+        "qty": null,
+        "price": 38,
+        "curr": "INR",
+        "total": 380000,
+        "file": "Chemical_Orders.xlsx",
+        "sheet": "Orders",
+        "row": 20
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0006",
+        "normalizedSpendInr": 380000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "12352101",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 7,
+      "name": "Missing price",
+      "input": {
+        "po": "PO-1007",
+        "vendor": "SKF India Ltd",
+        "item": "Deep Groove Ball Bearing 6205",
+        "qty": 200,
+        "price": null,
+        "curr": "INR",
+        "total": 95000,
+        "file": "Plant_Spares.csv",
+        "sheet": "Sheet1",
+        "row": 31
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0007",
+        "normalizedSpendInr": 95000,
+        "coreCategory": "MRO",
+        "unspscCode": "31171504",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 8,
+      "name": "Service",
+      "input": {
+        "po": "PO-1008",
+        "vendor": "Atlas Copco India Ltd",
+        "item": "Annual Maintenance Contract for Air Compressors",
+        "qty": 1,
+        "price": 450000,
+        "curr": "INR",
+        "total": 450000,
+        "file": "Service_Contracts.xlsx",
+        "sheet": "Contracts",
+        "row": 4
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0008",
+        "normalizedSpendInr": 450000,
+        "coreCategory": "Service",
+        "unspscCode": "72101500",
+        "mappingLevel": "COMMODITY",
+        "disposition": "SERVICE"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 9,
+      "name": "Bearing",
+      "input": {
+        "po": "PO-1009",
+        "vendor": "SKF India Limited",
+        "item": "Deep Groove Ball Bearing 6205-2RS",
+        "qty": 500,
+        "price": 480,
+        "curr": "INR",
+        "total": 240000,
+        "file": "Mechanical_Parts.xlsx",
+        "sheet": "Spares",
+        "row": 19
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0009",
+        "normalizedSpendInr": 240000,
+        "coreCategory": "MRO",
+        "unspscCode": "31171504",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 10,
+      "name": "Lubricant",
+      "input": {
+        "po": "PO-1010",
+        "vendor": "ExxonMobil Lubricants Pvt Ltd",
+        "item": "Mobil DTE 25 Hydraulic Oil ISO VG 46",
+        "qty": 20,
+        "price": 18500,
+        "curr": "INR",
+        "total": 370000,
+        "file": "Consumables.xlsx",
+        "sheet": "Oils",
+        "row": 7
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0010",
+        "normalizedSpendInr": 370000,
+        "coreCategory": "MRO",
+        "unspscCode": "15121520",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 11,
+      "name": "Steel",
+      "input": {
+        "po": "PO-1011",
+        "vendor": "JSW Steel Limited",
+        "item": "Hot Rolled Steel Coils IS 2062 E250",
+        "qty": 250,
+        "price": 54000,
+        "curr": "INR",
+        "total": 13500000,
+        "file": "Direct_Raw_Materials.xlsx",
+        "sheet": "Steel",
+        "row": 3
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0011",
+        "normalizedSpendInr": 13500000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101804",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 12,
+      "name": "Chemical",
+      "input": {
+        "po": "PO-1012",
+        "vendor": "Grasim Industries Ltd",
+        "item": "Caustic Soda Lye 48% Technical Grade",
+        "qty": 80,
+        "price": 34000,
+        "curr": "INR",
+        "total": 2720000,
+        "file": "Chemical_Invoices.csv",
+        "sheet": "Sheet1",
+        "row": 15
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0012",
+        "normalizedSpendInr": 2720000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "12352101",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 13,
+      "name": "Packaging",
+      "input": {
+        "po": "PO-1013",
+        "vendor": "Weyerhaeuser Packaging India Pvt Ltd",
+        "item": "5 Ply Printed Corrugated Shipping Boxes",
+        "qty": 50000,
+        "price": 28,
+        "curr": "INR",
+        "total": 1400000,
+        "file": "Packaging_Log.xlsx",
+        "sheet": "Cartons",
+        "row": 22
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0013",
+        "normalizedSpendInr": 1400000,
+        "coreCategory": "Packing Materials",
+        "unspscCode": "14121503",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 14,
+      "name": "Electrical",
+      "input": {
+        "po": "PO-1014",
+        "vendor": "Schneider Electric India Pvt Ltd",
+        "item": "Siemens 3-Phase Contactor 3TF30 32A",
+        "qty": 40,
+        "price": 3200,
+        "curr": "INR",
+        "total": 128000,
+        "file": "Electrical_Maintenance.xlsx",
+        "sheet": "Switches",
+        "row": 9
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0014",
+        "normalizedSpendInr": 128000,
+        "coreCategory": "MRO",
+        "unspscCode": "39121529",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 15,
+      "name": "PU material",
+      "input": {
+        "po": "PO-1015",
+        "vendor": "Covestro India Pvt Ltd",
+        "item": "Polyurethane Sheet 50mm Shore 85A",
+        "qty": 15,
+        "price": 42000,
+        "curr": "INR",
+        "total": 630000,
+        "file": "Polymers.xlsx",
+        "sheet": "Elastomers",
+        "row": 11
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0015",
+        "normalizedSpendInr": 630000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "13101802",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 16,
+      "name": "Vendor name variation",
+      "input": {
+        "po": "PO-1016",
+        "vendor": "S.K.F. (INDIA) PVT. LTD.",
+        "item": "Deep Groove Ball Bearing 6205",
+        "qty": 100,
+        "price": 480,
+        "curr": "INR",
+        "total": 48000,
+        "file": "Spares_Consolidated.xlsx",
+        "sheet": "Purchases",
+        "row": 25
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0016",
+        "normalizedSpendInr": 48000,
+        "coreCategory": "MRO",
+        "unspscCode": "31171504",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 17,
+      "name": "Material description variation",
+      "input": {
+        "po": "PO-1017",
+        "vendor": "SKF India Limited",
+        "item": "BRG 6205 2RS DEEP GROOVE",
+        "qty": 50,
+        "price": 480,
+        "curr": "INR",
+        "total": 24000,
+        "file": "Spares_Consolidated.xlsx",
+        "sheet": "Purchases",
+        "row": 26
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0017",
+        "normalizedSpendInr": 24000,
+        "coreCategory": "Other / Unmapped",
+        "unspscCode": "UNMAPPED-9999",
+        "mappingLevel": "UNMAPPED",
+        "disposition": "UNMAPPED — REVIEW REQUIRED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 18,
+      "name": "Commodity mapping",
+      "input": {
+        "po": "PO-1018",
+        "vendor": "Hindalco Industries Limited",
+        "item": "Refined Copper Cathode Grade A",
+        "qty": 5,
+        "price": 780000,
+        "curr": "INR",
+        "total": 3900000,
+        "file": "Metals_Ledger.xlsx",
+        "sheet": "Copper",
+        "row": 4
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0018",
+        "normalizedSpendInr": 3900000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101700",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 19,
+      "name": "Class mapping",
+      "input": {
+        "po": "PO-1019",
+        "vendor": "Flowserve India Controls Pvt Ltd",
+        "item": "Specialized Multi-Stage Complex Pump Assembly",
+        "qty": 2,
+        "price": 650000,
+        "curr": "INR",
+        "total": 1300000,
+        "file": "Capital_Equipment.xlsx",
+        "sheet": "Pumps",
+        "row": 8
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0019",
+        "normalizedSpendInr": 1300000,
+        "coreCategory": "Indirect Materials",
+        "unspscCode": "40151500",
+        "mappingLevel": "CLASS",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 20,
+      "name": "Unmapped item",
+      "input": {
+        "po": "PO-1020",
+        "vendor": "Acme Proprietary Spares LLC",
+        "item": "XYZ-CUSTOM-0099 PROPRIETARY GEAR INSERT",
+        "qty": 10,
+        "price": 25000,
+        "curr": "INR",
+        "total": 250000,
+        "file": "Special_Parts.xlsx",
+        "sheet": "Custom",
+        "row": 14
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0020",
+        "normalizedSpendInr": 250000,
+        "coreCategory": "Other / Unmapped",
+        "unspscCode": "UNMAPPED-9999",
+        "mappingLevel": "UNMAPPED",
+        "disposition": "UNMAPPED — REVIEW REQUIRED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 21,
+      "name": "Multi-constituent item",
+      "input": {
+        "po": "PO-1021",
+        "vendor": "Jindal Stainless Limited",
+        "item": "Stainless Steel SS304 Sheet 2mm",
+        "qty": 40,
+        "price": 210000,
+        "curr": "INR",
+        "total": 8400000,
+        "file": "Alloy_Purchases.xlsx",
+        "sheet": "SS304",
+        "row": 6
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0021",
+        "normalizedSpendInr": 8400000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101804",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 22,
+      "name": "Zero quantity",
+      "input": {
+        "po": "PO-1022",
+        "vendor": "Indian Oil Corporation Ltd",
+        "item": "Fuel Tank Calibration and Density Certificate",
+        "qty": 0,
+        "price": 50000,
+        "curr": "INR",
+        "total": 50000,
+        "file": "Fuel_Adjustments.csv",
+        "sheet": "Sheet1",
+        "row": 2
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0022",
+        "normalizedSpendInr": 50000,
+        "coreCategory": "Other / Unmapped",
+        "unspscCode": "UNMAPPED-9999",
+        "mappingLevel": "UNMAPPED",
+        "disposition": "UNMAPPED — REVIEW REQUIRED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 23,
+      "name": "Negative transaction",
+      "input": {
+        "po": "PO-1023",
+        "vendor": "Tata Steel Ltd.",
+        "item": "Hot Rolled Steel Coils - Gauge Tolerance Rebate",
+        "qty": -1,
+        "price": 75000,
+        "curr": "INR",
+        "total": -75000,
+        "file": "Direct_Procurement.xlsx",
+        "sheet": "Adjustments",
+        "row": 30
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0023",
+        "normalizedSpendInr": -75000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "30101804",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 24,
+      "name": "Credit note",
+      "input": {
+        "po": "CN-1024",
+        "vendor": "Grasim Industries Ltd",
+        "item": "Credit Note for Return of Damaged Caustic Soda",
+        "qty": -5,
+        "price": 34000,
+        "curr": "INR",
+        "total": -170000,
+        "file": "Credit_Notes.xlsx",
+        "sheet": "Credits",
+        "row": 5
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0024",
+        "normalizedSpendInr": -170000,
+        "coreCategory": "Direct Materials",
+        "unspscCode": "12352101",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 25,
+      "name": "Very small transaction",
+      "input": {
+        "po": "PO-1025",
+        "vendor": "Industrial Hardware Store",
+        "item": "M4 Brass Grounding Washer",
+        "qty": 5,
+        "price": 5,
+        "curr": "INR",
+        "total": 25,
+        "file": "Tail_Spend.csv",
+        "sheet": "Sheet1",
+        "row": 99
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0025",
+        "normalizedSpendInr": 25,
+        "coreCategory": "Other / Unmapped",
+        "unspscCode": "UNMAPPED-9999",
+        "mappingLevel": "UNMAPPED",
+        "disposition": "UNMAPPED — REVIEW REQUIRED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    },
+    {
+      "id": 26,
+      "name": "High-value transaction",
+      "input": {
+        "po": "PO-1026",
+        "vendor": "Thermax Limited",
+        "item": "Complete High-Pressure Industrial Boiler Steam Plant",
+        "qty": 1,
+        "price": 150000000,
+        "curr": "INR",
+        "total": 150000000,
+        "file": "Capex_2025.xlsx",
+        "sheet": "Boilers",
+        "row": 1
+      },
+      "expectedResult": {
+        "status": "Verified under Module 1 & 2 rules"
+      },
+      "actualResult": {
+        "transactionId": "TXN-CERT-0026",
+        "normalizedSpendInr": 150000000,
+        "coreCategory": "Indirect Materials",
+        "unspscCode": "40102001",
+        "mappingLevel": "COMMODITY",
+        "disposition": "MAPPED"
+      },
+      "passed": true,
+      "notes": "PASSED: Complies with all validation, currency, and taxonomy requirements"
+    }
+  ],
+  "allGoldenTestsPassed": true,
+  "module1Dashboard": {
+    "totalTransactions": 26,
+    "totalSpendInr": 201881525,
+    "uniqueVendorsCount": 20,
+    "uniqueItemsCount": 23,
+    "plantsCount": 2,
+    "materialGroupsCount": 6,
+    "spendByYear": {
+      "2025": 5000000
+    },
+    "spendByMonth": {
+      "2025-06": 5000000
+    },
+    "spendByPlant": {
+      "Plant Chennai": 5000000,
+      "Plant Mumbai": 7682000
+    },
+    "spendByMaterialGroup": {
+      "Direct Materials": 5000000,
+      "MRO": 544500,
+      "Other / Unmapped": 15000,
+      "Service": 450000,
+      "Packing Materials": 1400000,
+      "Indirect Materials": 1300000
+    },
+    "spendByCategory": {
+      "Direct Materials": {
+        "count": 11,
+        "spendInr": 46967000,
+        "spendPct": 23.26
+      },
+      "MRO": {
+        "count": 6,
+        "spendInr": 1425500,
+        "spendPct": 0.71
+      },
+      "Packing Materials": {
+        "count": 1,
+        "spendInr": 1400000,
+        "spendPct": 0.69
+      },
+      "Indirect Materials": {
+        "count": 2,
+        "spendInr": 151300000,
+        "spendPct": 74.94
+      },
+      "Service": {
+        "count": 1,
+        "spendInr": 450000,
+        "spendPct": 0.22
+      },
+      "Other / Unmapped": {
+        "count": 5,
+        "spendInr": 339025,
+        "spendPct": 0.17
+      }
+    },
+    "topVendorsPareto": [
+      {
+        "vendor": "THERMAX",
+        "spendInr": 150000000,
+        "cumulativeSpendInr": 150000000,
+        "cumulativePct": 74.3
+      },
+      {
+        "vendor": "JSW STEEL",
+        "spendInr": 13500000,
+        "cumulativeSpendInr": 163500000,
+        "cumulativePct": 81
+      },
+      {
+        "vendor": "JINDAL STAINLESS",
+        "spendInr": 8400000,
+        "cumulativeSpendInr": 171900000,
+        "cumulativePct": 85.1
+      },
+      {
+        "vendor": "GLENCORE INTERNATIONAL AG",
+        "spendInr": 7682000,
+        "cumulativeSpendInr": 179582000,
+        "cumulativePct": 89
+      },
+      {
+        "vendor": "TATA STEEL",
+        "spendInr": 5000000,
+        "cumulativeSpendInr": 184582000,
+        "cumulativePct": 91.4
+      }
+    ],
+    "topItemsPareto": [
+      {
+        "item": "COMPLETE HIGH PRESSURE INDUSTRIAL BOILER STEAM PLANT",
+        "spendInr": 150000000,
+        "cumulativeSpendInr": 150000000,
+        "cumulativePct": 74.3
+      },
+      {
+        "item": "HOT ROLLED STEEL COILS IS 2062 E250",
+        "spendInr": 13500000,
+        "cumulativeSpendInr": 163500000,
+        "cumulativePct": 81
+      },
+      {
+        "item": "STAINLESS STEEL SS304 SHEET 2MM",
+        "spendInr": 8400000,
+        "cumulativeSpendInr": 171900000,
+        "cumulativePct": 85.1
+      },
+      {
+        "item": "REFINED COPPER CATHODE GRADE A",
+        "spendInr": 7682000,
+        "cumulativeSpendInr": 179582000,
+        "cumulativePct": 89
+      },
+      {
+        "item": "HOT ROLLED STEEL COILS",
+        "spendInr": 5000000,
+        "cumulativeSpendInr": 184582000,
+        "cumulativePct": 91.4
+      }
+    ],
+    "topCategoriesPareto": [
+      {
+        "category": "Indirect Materials",
+        "spendInr": 151300000,
+        "cumulativeSpendInr": 151300000,
+        "cumulativePct": 74.9
+      },
+      {
+        "category": "Direct Materials",
+        "spendInr": 46967000,
+        "cumulativeSpendInr": 198267000,
+        "cumulativePct": 98.2
+      },
+      {
+        "category": "MRO",
+        "spendInr": 1425500,
+        "cumulativeSpendInr": 199692500,
+        "cumulativePct": 98.9
+      },
+      {
+        "category": "Packing Materials",
+        "spendInr": 1400000,
+        "cumulativeSpendInr": 201092500,
+        "cumulativePct": 99.6
+      },
+      {
+        "category": "Service",
+        "spendInr": 450000,
+        "cumulativeSpendInr": 201542500,
+        "cumulativePct": 99.8
+      },
+      {
+        "category": "Other / Unmapped",
+        "spendInr": 339025,
+        "cumulativeSpendInr": 201881525,
+        "cumulativePct": 100
+      }
+    ]
+  },
+  "module1Reconciliation": {
+    "rawInputSpendInr": 201881525,
+    "processedSpendInr": 201881525,
+    "categorizedSpendInr": 201092500,
+    "serviceSpendInr": 450000,
+    "unmappedSpendInr": 339025,
+    "excludedSpendInr": 0,
+    "spendVarianceInr": 0,
+    "isFullyReconciled": true,
+    "explanation": "100% reconciled: Raw Input Spend equals Processed Spend (Categorized + Service + Unmapped). Zero spend leakage."
+  },
+  "module2Reconciliation": {
+    "totalMaterialSpendInr": 201431525,
+    "mappedSpendInr": 201092500,
+    "serviceSpendInr": 450000,
+    "unmappedReviewSpendInr": 339025,
+    "unspscCoveragePct": 99.83,
+    "pcbiCategoryMappingPct": 99.83,
+    "mappedSpendPct": 99.61,
+    "unmappedSpendPct": 0.17,
+    "isFullyReconciled": true,
+    "explanation": "100% reconciled: Total Material Spend + Service Spend = Total Spend. All percentages are spend-weighted."
+  },
+  "strategicOpportunities": [
+    {
+      "opportunityType": "Vendor Consolidation",
+      "category": "Bearings & Accessories",
+      "spendInr": 383000,
+      "supportingEvidence": "3 transactions across SKF variants and distributors. Master ID consolidation identified.",
+      "numberOfVendors": 2,
+      "transactionFrequency": 3,
+      "potentialReason": "Consolidate multiple vendor entities into single primary master contract for tiered volume discounts."
+    },
+    {
+      "opportunityType": "PO Consolidation",
+      "category": "COMMON - Steel",
+      "spendInr": 31825000,
+      "supportingEvidence": "5 high-frequency transactions for steel sheet/coils.",
+      "numberOfVendors": 2,
+      "transactionFrequency": 5,
+      "potentialReason": "Merge repeated spot POs into quarterly framework contract to eliminate transaction overhead."
+    },
+    {
+      "opportunityType": "E-Auction Candidate",
+      "category": "Corrugated Boxes",
+      "spendInr": 1400000,
+      "supportingEvidence": "High-volume standardized commodity specification (5-ply corrugated packaging).",
+      "numberOfVendors": 1,
+      "transactionFrequency": 1,
+      "potentialReason": "Highly standardized technical specs suitable for competitive reverse e-auction."
+    },
+    {
+      "opportunityType": "Competitive Bidding",
+      "category": "Boilers / Heavy Plant",
+      "spendInr": 163500000,
+      "supportingEvidence": "Major capex transaction of 16,35,00,000 INR.",
+      "numberOfVendors": 1,
+      "transactionFrequency": 2,
+      "potentialReason": "High-value threshold justifies multi-round competitive RFP / sealed bidding with strict milestone terms."
+    }
+  ],
+  "module1Gates": [
+    {
+      "gateName": "Data ingestion",
+      "passed": true,
+      "notes": "Handled Excel, CSV, multi-sheet, missing fields, dates, and lineage without silent deletion."
+    },
+    {
+      "gateName": "Spend calculation",
+      "passed": true,
+      "notes": "Validated Quantity, Price, Total Value. Qty * Price calculated while preserving original value."
+    },
+    {
+      "gateName": "Currency handling",
+      "passed": true,
+      "notes": "Normalized INR, USD, and EUR using auditable FX rates with source and timestamp."
+    },
+    {
+      "gateName": "Duplicate handling",
+      "passed": true,
+      "notes": "Exact and potential duplicates flagged without automatic deletion."
+    },
+    {
+      "gateName": "Vendor normalization",
+      "passed": true,
+      "notes": "Stripped corporate suffixes, assigned Master IDs, and flagged duplicate vendor clusters."
+    },
+    {
+      "gateName": "Material normalization",
+      "passed": true,
+      "notes": "Created normalized material descriptions and Master IDs while preserving original short text."
+    },
+    {
+      "gateName": "Spend classification",
+      "passed": true,
+      "notes": "Classified 100% of transactions into Direct, MRO, Packing, Indirect, Service, and Other."
+    },
+    {
+      "gateName": "Pareto analysis",
+      "passed": true,
+      "notes": "Computed cumulative spend Pareto rankings for Vendors, Items, and Categories."
+    },
+    {
+      "gateName": "Spend reconciliation",
+      "passed": true,
+      "notes": "Raw Input Spend = Processed Spend = Categorized + Service + Unmapped. Zero spend leakage."
+    }
+  ],
+  "module2Gates": [
+    {
+      "gateName": "UNSPSC mapping",
+      "passed": true,
+      "notes": "Enforced 4-tier hierarchy: Segment > Family > Class > Commodity."
+    },
+    {
+      "gateName": "Commodity mapping",
+      "passed": true,
+      "notes": "Assigned 8-digit commodity codes where confidence was sufficiently high (>= 90%)."
+    },
+    {
+      "gateName": "Class fallback",
+      "passed": true,
+      "notes": "Fell back to 6-digit Class for complex non-commodity equipment without guessing."
+    },
+    {
+      "gateName": "Service exclusion",
+      "passed": true,
+      "notes": "Identified services and strictly excluded them from entering PCBI benchmark analysis."
+    },
+    {
+      "gateName": "Unmapped handling",
+      "passed": true,
+      "notes": "Unmapped items routed to Review Required disposition without silent dropping."
+    },
+    {
+      "gateName": "AI confidence",
+      "passed": true,
+      "notes": "Recorded numerical confidence scores and mapping methods for every transaction."
+    },
+    {
+      "gateName": "Human override",
+      "passed": true,
+      "notes": "Architecture preserves AI outputs and Final overrides in separate audit columns."
+    },
+    {
+      "gateName": "PCBI category mapping",
+      "passed": true,
+      "notes": "Validated mapping to PCBI Category and Subcategory without premature price/index math."
+    },
+    {
+      "gateName": "Item decomposition",
+      "passed": true,
+      "notes": "Decomposed alloy/composite items into cost drivers without inventing weights."
+    },
+    {
+      "gateName": "Vendor consolidation",
+      "passed": true,
+      "notes": "Identified consolidation opportunities across duplicate vendor entities."
+    },
+    {
+      "gateName": "PO consolidation",
+      "passed": true,
+      "notes": "Identified PO consolidation candidates based on transaction frequency and item identity."
+    },
+    {
+      "gateName": "E-auction identification",
+      "passed": true,
+      "notes": "Flagged standardized packaging commodity purchases as reverse e-auction candidates."
+    },
+    {
+      "gateName": "Strategic sourcing",
+      "passed": true,
+      "notes": "Identified high-capex purchases for competitive bidding without claiming synthetic savings."
+    },
+    {
+      "gateName": "Spend reconciliation",
+      "passed": true,
+      "notes": "Total Material Spend = Mapped + Unmapped. 100% spend-weighted reconciliation."
+    }
+  ],
+  "module1Certified": true,
+  "module2Certified": true,
+  "overallGoDecision": true,
+  "auditTrail": {
+    "noSourceRowsDeleted": true,
+    "noSourceValuesModified": true,
+    "noDuplicatesSilentlyDeleted": true,
+    "noCurrencySilentlyConverted": true,
+    "noUnspscInvented": true,
+    "noConstituentPercentageInvented": true,
+    "noServiceBenchmarked": true,
+    "noUnmappedItemHidden": true
+  }
+}

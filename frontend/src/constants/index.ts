@@ -24,4 +24,6 @@ export * from './poConsolidation';
 export * from './auth';
 export * from './ai';
 export * from './savingsInitiatives';
+export * from './pcbiAdmin';
+
 

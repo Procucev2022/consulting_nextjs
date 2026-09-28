@@ -9,4 +9,5 @@ export const DEFAULT_SAAS_FEE_RATE = 0.85;
 export const DEFAULT_TENANT_ENTERPRISE_NAME = 'Enterprise Client';
 export const AICEV_LOGO_SRC = '/images/aicev-logo.png';
 export const AICEV_LOGO_WHITE_SRC = '/images/aicev-logo-white.png';
+export const BACKEND_API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 

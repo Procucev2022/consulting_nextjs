@@ -198,6 +198,17 @@ export const Header: React.FC<HeaderProps> = ({
             <FileText className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="hidden sm:inline">{UI_STRINGS.header.executiveBrief}</span>
           </button>
+
+          {/* Admin Portal Direct Access Button */}
+          <Link
+            href="/admin"
+            id="header-admin-portal-link"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-300 dark:border-amber-700/70 rounded-xl shadow-xs transition-all hover:border-amber-400 active:scale-95 shrink-0"
+            title={UI_STRINGS.header.adminPortal}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="hidden sm:inline">{UI_STRINGS.header.adminPortal}</span>
+          </Link>
         </div>
 
         {/* Right Corner: User Profile & Details Dropdown Trigger */}

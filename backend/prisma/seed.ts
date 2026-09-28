@@ -67,6 +67,17 @@ async function main() {
 
   const seedUsers = [
     {
+      id: 'usr-admin-sriman',
+      name: 'Sriman Admin',
+      mobile_number: '+91 99000 11223',
+      email: 'sriman@procucev.com',
+      company_name: 'Procucev Enterprise Solutions Pvt Ltd',
+      company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru 560055, Karnataka, India',
+      password_hash: hashPw('sriman@123', 'd4e5f60718293a4b5c6d7e8f90a1b2c3'),
+      role: 'ADMIN',
+      status: 'ACTIVE'
+    },
+    {
       id: 'usr-admin-001',
       name: 'System Administrator',
       mobile_number: '+91 98765 43210',

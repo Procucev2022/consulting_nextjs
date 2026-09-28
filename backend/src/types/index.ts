@@ -18,3 +18,5 @@ export * from './ai';
 export * from './pcbi';
 export * from './savings';
 export * from './strategicSourcing';
+export * from './pcbiAdmin';
+export * from './certification';

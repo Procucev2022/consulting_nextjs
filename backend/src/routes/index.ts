@@ -18,6 +18,7 @@ import dbRoutes from './db.routes';
 import aiRoutes from './ai.routes';
 import pcbiRoutes from './pcbi.routes';
 import upgradeRoutes from './upgrade.routes';
+import pcbiAdminRoutes from './pcbiAdmin.routes';
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.use('/db', dbRoutes);
 router.use('/ai', aiRoutes);
 router.use('/pcbi', pcbiRoutes);
 router.use('/upgrade', upgradeRoutes);
+router.use('/admin/pcbi', pcbiAdminRoutes);
 
 export default router;
 

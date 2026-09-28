@@ -29,3 +29,4 @@ export * from './savingsInitiatives';
 export * from './pcbi';
 export * from './savings';
 export * from './strategicSourcing';
+export * from './pcbiAdmin';
