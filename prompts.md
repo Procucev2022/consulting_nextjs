@@ -21979,3 +21979,15 @@ Strict Monorepo Quality Gate: Vitest enforces comprehensive coverage across the 
  Unit Tests Execution: 1491 / 1493 passed (0 failures)
  Per-File Code Coverage: All modified and created files >= 90%
  Pipeline Timeout: Enforced on all CI/CD jobs (timeout-minutes: 15)
+
+## Prompt 214
+
+? tests/routes/logs.routes.test.ts (3 tests) 45ms
+
+??????? Failed Tests 1 ???????
+
+ FAIL  tests/services/pcbiCalculationEngine.test.ts > PCBI Calculation Engine - Master Product Specification Tests (Prompt 100) > MUST EXACTLY REPRODUCE Prompt 100 Test Case: Baseline ?150, Base Index 105, Curr Index 110, Actual ?180, Qty 10,000, Benchmarkability 70%
+AssertionError: expected 'Expected Benchmark Price = Baseline P…' to contain '2,28,600'
+
+fix this issue in my pr and raise fix this issue
+
