@@ -5,6 +5,8 @@
 export type PlatformProductionStatus =
   | 'PRODUCTION_READY'
   | 'PRODUCTION_READY_WITH_CONTROLLED_GAPS'
+  | 'PRODUCTION_READY_WITH_CONTROLLED_DATA_GAPS'
+  | 'PRODUCTION_OPERATIONAL'
   | 'BLOCKED';
 
 export type Module4AuditComponentStatus =
@@ -113,3 +115,31 @@ export interface PlatformDeploymentChecklistItem {
   status: 'READY' | 'BLOCKED' | 'DEFECT' | 'REQUIRES_ADMIN_ACTION';
   notes: string;
 }
+
+export interface VersionChangeSimulationResult {
+  commodityId: string;
+  previousVersion: string;
+  newVersion: string;
+  previousIndex: number;
+  newIndex: number;
+  previousOpportunityInr: number;
+  newOpportunityInr: number;
+  recalculatedTransactionsCount: number;
+  unaffectedTransactionsCount: number;
+  previousCalculationAuditable: boolean;
+  oldVersionImmutable: boolean;
+  varianceInr: number;
+}
+
+export interface DynamicGapToOpportunitySimulationResult {
+  commodityId: string;
+  commodityName: string;
+  stepsCompleted: string[];
+  initialState: string;
+  finalState: string;
+  initialOpportunityInr: number;
+  finalOpportunityInr: number;
+  codeDeploymentRequired: boolean;
+  auditTrailReference: string;
+}
+

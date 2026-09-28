@@ -21094,3 +21094,845 @@ NEXT BUSINESS ACTIVITY:
 PCBI DATA RESEARCH + ADMIN POPULATION
 
 Do not perform another architecture redesign.
+
+
+## Prompt 207
+
+run locally on chrome
+
+
+## Prompt 208
+
+PCBI PLATFORM — MODULE 4 DEPLOYMENT + END-TO-END MODULE 1→4 CONTINUITY TEST
+
+Operating Mode:
+PRODUCTION CANDIDATE / CONTROLLED DEPLOYMENT / FULL SYSTEM INTEGRATION TEST
+
+OBJECTIVE:
+Module 3 is now FROZEN and certified as:
+FINAL_MODULE_3_STATUS = PRODUCTION_READY_DYNAMIC_PCBI
+
+Do NOT modify Module 3 architecture.
+Do NOT reopen Module 1 or Module 2.
+Do NOT modify PCBI Master V1.0.
+Do NOT manufacture missing PCBI data.
+Do NOT block the system merely because some commodities remain in the PCBI research queue.
+
+The objective now is to deploy and validate Module 4 and prove complete continuity:
+
+MODULE 1
+Customer Data Ingestion
+        ↓
+MODULE 2
+Classification / UNSPSC / Commodity Authority
+        ↓
+MODULE 3
+PCBI Match → Coverage/Gaps → Benchmark Calculation
+        ↓
+MODULE 4
+Opportunity / Savings / Sourcing Action Engine
+
+========================================================
+1. MODULE 4 DEPLOYMENT
+========================================================
+
+Deploy Module 4 in CONTROLLED PRE-PRODUCTION mode.
+
+Module 4 must consume ONLY certified outputs from Module 3.
+
+Module 4 must NEVER:
+- classify commodities independently
+- create PCBI values
+- manufacture missing benchmarks
+- infer prices where PCBI is unavailable
+- treat uncovered spend as savings
+- overwrite Module 3 data
+- modify Module 1 or Module 2
+
+========================================================
+2. DEFINE THE MODULE 3 → MODULE 4 CONTRACT
+========================================================
+
+Create and freeze an explicit interface contract.
+
+For every customer commodity, Module 4 must receive:
+
+CUSTOMER_TRANSACTION_ID
+COMMODITY_ID
+MODULE2_CLASSIFICATION
+UNSPSC
+CUSTOMER_QUANTITY
+CUSTOMER_UNIT
+CUSTOMER_CURRENCY
+CUSTOMER_VALUE
+CUSTOMER_DATE
+PCBI_ID
+PCBI_VERSION
+PCBI_INDEX
+PCBI_BASE_PERIOD
+PCBI_CURRENT_PERIOD
+PCBI_STATUS
+PCBI_SOURCE_STATUS
+METHODOLOGY_STATUS
+COVERAGE_STATUS
+DATA_QUALITY_STATUS
+GEOGRAPHY
+SPECIFICATION
+FREQUENCY
+PROVENANCE_REFERENCE
+
+Module 4 must distinguish:
+
+1. BENCHMARK_AVAILABLE
+2. BENCHMARK_UNAVAILABLE
+3. BENCHMARK_BLOCKED
+4. PCBI_DATA_GAP
+5. SPECIFICATION_MISMATCH
+6. FREQUENCY_MISMATCH
+7. SOURCE_UNVERIFIED
+8. METHODOLOGY_PENDING
+9. NOT_BENCHMARKABLE
+
+========================================================
+3. MODULE 4 OPPORTUNITY GOVERNANCE
+========================================================
+
+Before calculating anything, establish the following states:
+
+BENCHMARKED_SPEND
+UNBENCHMARKED_SPEND
+BLOCKED_SPEND
+NOT_BENCHMARKABLE_SPEND
+
+CRITICAL RULE:
+
+UNBENCHMARKED SPEND ≠ SAVINGS
+
+PCBI DATA GAP ≠ SAVINGS
+
+MARKET MOVEMENT ≠ SAVINGS
+
+INDEX MOVEMENT ≠ SAVINGS
+
+Only an approved Module 4 methodology may produce an opportunity/savings calculation.
+
+========================================================
+4. CONTROLLED SAVINGS TEST
+========================================================
+
+Create a synthetic controlled dataset containing:
+
+A. Commodity with valid PCBI
+B. Commodity with partial PCBI
+C. Commodity with no PCBI
+D. Specification mismatch
+E. Frequency mismatch
+F. Currency mismatch
+G. Unit mismatch
+H. Geography mismatch
+I. Not-benchmarkable service
+
+For A, calculate the Module 4 opportunity using the approved methodology.
+
+For B–I:
+
+DO NOT calculate savings.
+
+Instead return the appropriate status and ADMIN_ACTION.
+
+========================================================
+5. MODULE 1 → MODULE 4 TRACEABILITY
+========================================================
+
+For every calculated result, prove the complete lineage:
+
+CUSTOMER RAW RECORD
+→ MODULE 1 CLEANED RECORD
+→ MODULE 2 CLASSIFICATION
+→ PCBI MATCH
+→ PCBI SOURCE OBSERVATION
+→ PCBI NORMALIZATION
+→ PCBI INDEX
+→ MODULE 4 CALCULATION
+→ OPPORTUNITY RESULT
+
+Every result must be traceable back to the original customer transaction.
+
+No orphan calculations are permitted.
+
+========================================================
+6. PCBI VERSION CHANGE TEST
+========================================================
+
+Test:
+
+PCBI Version 1.0
+→ Module 4 calculation
+
+Then:
+
+PCBI Version 1.1
+→ targeted Module 3 reprocessing
+→ Module 4 recalculation
+
+Verify:
+
+- previous calculation remains auditable
+- new calculation references new PCBI version
+- old PCBI version is immutable
+- no unrelated commodities are recalculated
+- difference is explicitly recorded
+
+========================================================
+7. PCBI GAP → ADMIN UPLOAD → MODULE 4 REPROCESS TEST
+========================================================
+
+Take one currently uncovered commodity.
+
+Example:
+
+FERRO MOLYBDENUM 65%
+
+Initial state:
+
+PCBI_DATA_STATUS = NO_HISTORY
+MODULE 4 = BENCHMARK_UNAVAILABLE
+SAVINGS = ZERO
+
+Then simulate:
+
+ADMIN UPLOAD
+→ DATA EXTRACTION
+→ STANDARDIZATION
+→ VALIDATION
+→ ADMIN APPROVAL
+→ PCBI CATALOG VERSION
+→ TARGETED CUSTOMER REPROCESSING
+→ MODULE 4 REPROCESSING
+
+Verify that the commodity automatically moves through:
+
+NO_HISTORY
+→ DATA_AVAILABLE
+→ VALIDATED
+→ PRODUCTION_READY
+→ MODULE 4 ELIGIBLE
+
+WITHOUT CODE DEPLOYMENT.
+
+Do not manufacture the Ferro Molybdenum historical data. Use a clearly labelled synthetic test dataset only.
+
+========================================================
+8. FULL DATASET CONTINUITY TEST
+========================================================
+
+Run the complete certified customer dataset through:
+
+MODULE 1
+→ MODULE 2
+→ MODULE 3
+→ MODULE 4
+
+Produce a reconciliation table:
+
+Total customer spend
+Module 1 spend
+Module 2 classified spend
+Module 3 benchmarked spend
+Module 3 unbenchmarked spend
+Module 4 eligible spend
+Module 4 blocked spend
+Module 4 not-benchmarkable spend
+Calculated opportunity
+Uncalculated opportunity
+
+The following must reconcile exactly:
+
+MODULE 1 TOTAL
+=
+MODULE 2 TOTAL
+=
+MODULE 3 CUSTOMER BASELINE
+=
+MODULE 4 INPUT BASELINE
+
+Any variance must BLOCK final certification.
+
+========================================================
+9. ZERO SILENT FAILURES
+========================================================
+
+Every transaction must end in exactly one terminal state:
+
+OPPORTUNITY_CALCULATED
+BENCHMARK_UNAVAILABLE
+PCBI_DATA_GAP
+SPECIFICATION_MISMATCH
+FREQUENCY_MISMATCH
+CURRENCY_MISMATCH
+UNIT_MISMATCH
+GEOGRAPHY_MISMATCH
+METHODOLOGY_PENDING
+SOURCE_UNVERIFIED
+NOT_BENCHMARKABLE
+PROCESSING_ERROR
+
+No transaction may disappear from the pipeline.
+
+========================================================
+10. MODULE 4 DASHBOARD
+========================================================
+
+Create/validate dashboard metrics:
+
+TOTAL CUSTOMER SPEND
+BENCHMARKED SPEND
+UNBENCHMARKED SPEND
+BLOCKED SPEND
+NOT BENCHMARKABLE
+PCBI COVERAGE %
+MODULE 4 ELIGIBLE SPEND
+OPPORTUNITY CALCULATED
+OPPORTUNITY BLOCKED
+PCBI RESEARCH GAPS
+HIGH-IMPACT GAPS
+
+Clearly label all coverage gaps.
+
+NEVER display uncovered spend as savings.
+
+========================================================
+11. PARALLEL PCBI RESEARCH MODE
+========================================================
+
+Do NOT make PCBI research a software-development blocker.
+
+The existing PCBI Research Queue must remain active in parallel.
+
+Continue researching:
+
+P1 — Ferro Molybdenum 65%
+P1 — Heavy Duty Slurry Pumps
+P2 — Tungsten Carbide Inserts
+P3 — HDPE Injection Molding Granules
+P3 — Stainless Steel 304 Scrap
+P4 — Industrial Hydraulic Oil ISO 68
+
+Any newly discovered source must enter the existing Admin workflow:
+
+SOURCE DISCOVERY
+→ UPLOAD
+→ STANDARDIZATION
+→ VALIDATION
+→ ADMIN APPROVAL
+→ PCBI VERSION
+→ TARGETED REPROCESSING
+
+No code change should be required.
+
+========================================================
+12. PRODUCTION DEPLOYMENT GATE
+========================================================
+
+Do NOT declare production-ready merely because tests pass.
+
+Create a final gate report containing:
+
+A. Module 1 status
+B. Module 2 status
+C. Module 3 status
+D. Module 4 status
+E. End-to-end reconciliation
+F. Opportunity calculation validation
+G. PCBI gap handling
+H. Versioning validation
+I. Audit/provenance validation
+J. Security/role validation
+K. Error handling
+L. Performance results
+M. Rollback procedure
+N. Known data gaps
+O. Known software defects
+P. Final deployment recommendation
+
+========================================================
+13. IMPORTANT GOVERNANCE RULE
+========================================================
+
+There are now TWO independent workstreams:
+
+WORKSTREAM A — SOFTWARE
+Module 1 → Module 2 → Module 3 → Module 4
+Objective: Production deployment and end-to-end stability.
+
+WORKSTREAM B — DATA
+PCBI Commodity Research → Source Validation → Admin Population
+Objective: Continuously increase PCBI coverage.
+
+WORKSTREAM B MUST NOT REOPEN OR DELAY THE SOFTWARE ARCHITECTURE UNLESS A REAL SOFTWARE DEFECT IS DISCOVERED.
+
+========================================================
+FINAL REQUEST
+========================================================
+
+Proceed with Module 4 deployment and complete Module 1 → Module 4 E2E validation.
+
+Freeze all existing certified modules.
+
+Do not ask for another architecture redesign unless a genuine defect is discovered.
+
+At the end, return:
+
+1. MODULE 4 DEPLOYMENT STATUS
+2. E2E TEST RESULT
+3. MODULE 1→4 RECONCILIATION
+4. OPPORTUNITY ENGINE VALIDATION
+5. LIST OF ACTUAL SOFTWARE DEFECTS
+6. LIST OF DATA/PCBI GAPS — NOT SOFTWARE DEFECTS
+7. PRODUCTION BLOCKERS, IF ANY
+8. REQUIRED ADMIN ACTIONS
+9. REQUIRED DEVELOPER ACTIONS
+10. FINAL PRODUCTION DEPLOYMENT GATE
+
+PCBI DATA RESEARCH SHALL CONTINUE IN PARALLEL AND SHALL NOT BECOME A REASON TO RESTART THE SOFTWARE DEVELOPMENT CYCLE.
+
+
+## Prompt 209
+
+PCBI PLATFORM — FINAL BUSINESS UAT & PRODUCTION SMOKE TEST
+
+Module 1, Module 2, Module 3 and Module 4 architecture are now FROZEN.
+
+DO NOT redesign or modify the architecture.
+DO NOT reopen Module 3.
+DO NOT modify Module 1 or Module 2.
+DO NOT manufacture PCBI data.
+
+The previous E2E report has certified:
+
+M1 → M2 → M3 → M4 continuity
+468/468 transactions processed
+₹86,317,055 reconciled
+0 reconciliation variance
+0 silent transaction drops
+0 orphan calculations
+0 software defects
+Module 4 production-ready
+
+The remaining PCBI gaps are BUSINESS/DATA RESEARCH items.
+
+Now perform the FINAL BUSINESS UAT / PRODUCTION SMOKE TEST.
+
+1. Select representative real customer transactions from:
+   - Opportunity Eligible
+   - PCBI Gap
+   - Specification Mismatch
+   - Frequency Mismatch
+   - Currency Mismatch
+   - Unit Mismatch
+   - Geography Mismatch
+   - Non-Benchmarkable Service
+
+2. For each transaction show:
+   Customer purchase
+   Customer specification
+   Customer quantity
+   Customer unit
+   Customer currency
+   PCBI ID
+   PCBI version
+   PCBI index
+   benchmark status
+   Module 4 methodology
+   calculated opportunity, if eligible
+   reason for blocking, if not eligible
+   complete provenance
+
+3. For every opportunity calculation verify:
+   - mathematical formula
+   - base period
+   - current period
+   - PCBI index
+   - customer value
+   - opportunity calculation
+   - rounding
+   - transaction-level traceability
+
+4. CRITICAL GOVERNANCE CHECK:
+
+   Confirm that the system NEVER represents:
+
+   PCBI COVERAGE GAP
+   UNBENCHMARKED SPEND
+   BLOCKED SPEND
+   MARKET MOVEMENT
+
+   as SAVINGS.
+
+5. Verify that every opportunity number can be independently reproduced from:
+   CUSTOMER RECORD + PCBI VERSION + APPROVED METHODOLOGY.
+
+6. Verify that PCBI version changes preserve historical calculations.
+
+7. Verify that adding a new PCBI through Admin:
+   SOURCE → UPLOAD → VALIDATE → APPROVE → ACTIVATE → TARGETED REPROCESS
+
+   does not require code deployment.
+
+8. Verify that the six current PCBI research gaps remain isolated from software readiness:
+
+   Ferro Molybdenum 65%
+   Heavy Duty Slurry Pumps
+   Tungsten Carbide Inserts
+   HDPE Injection Molding Granules
+   Stainless Steel 304 Scrap
+   Industrial Hydraulic Oil ISO 68
+
+9. DO NOT treat these six gaps as software blockers.
+
+10. Produce a final UAT report with only:
+
+    A. Business UAT PASS/FAIL
+    B. Mathematical calculation verification
+    C. Opportunity calculation verification
+    D. Data-gap handling verification
+    E. Versioning verification
+    F. Admin PCBI population verification
+    G. Security/governance verification
+    H. Actual defects, if any
+    I. Business/data gaps
+    J. Final production smoke-test result
+
+If all tests pass:
+
+FINAL_STATUS = PRODUCTION_OPERATIONAL
+
+Then STOP SOFTWARE DEVELOPMENT.
+
+From this point onward:
+
+SOFTWARE = DEFECT_DRIVEN_ONLY
+
+DATA = CONTINUOUS_PCBI_RESEARCH_AND_POPULATION
+
+Do not generate another architecture redesign, enhancement roadmap, or Module 3 redevelopment cycle unless a genuine production defect is demonstrated.
+
+
+## Prompt 210
+
+PCBI PLATFORM — FINAL PRODUCTION HANDOVER & OPERATING MODE LOCK
+
+The final Business UAT and Production Smoke Test has been completed successfully.
+
+FINAL_STATUS = PRODUCTION_OPERATIONAL
+
+The objective now is NOT further software development.
+
+From this point forward:
+
+SOFTWARE DEVELOPMENT = FROZEN
+SOFTWARE CHANGES = DEFECT_DRIVEN_ONLY
+PCBI DATA = CONTINUOUS_RESEARCH_AND_POPULATION
+MODULE 1 = FROZEN
+MODULE 2 = FROZEN / SOLE CLASSIFICATION AUTHORITY
+MODULE 3 = FROZEN / PRODUCTION READY DYNAMIC PCBI
+MODULE 4 = PRODUCTION OPERATIONAL
+PCBI MASTER V1.0 = IMMUTABLE
+MODULE 4 OPPORTUNITY ENGINE = ACTIVE ONLY FOR ELIGIBLE / VALIDATED PCBI
+UNBENCHMARKED SPEND = NEVER SAVINGS
+PCBI DATA GAPS = NEVER SAVINGS
+MARKET MOVEMENT = NEVER SAVINGS
+
+DO NOT redesign, refactor or extend the architecture.
+DO NOT create another development cycle.
+DO NOT modify Modules 1, 2, 3 or the PCBI Master merely to improve coverage.
+DO NOT introduce synthetic benchmark data.
+DO NOT create benchmark values when source/history/specification/methodology requirements are not satisfied.
+
+============================================================
+1. PRODUCTION OPERATING MODEL
+============================================================
+
+Lock the platform into the following operating model:
+
+CUSTOMER DATA
+↓
+MODULE 1
+↓
+MODULE 2 — SOLE CLASSIFICATION AUTHORITY
+↓
+PCBI MATCH
+↓
+PCBI COVERAGE / GAP DETECTION
+↓
+IF VALID PCBI EXISTS
+    ↓
+MODULE 3 PCBI CALCULATION
+    ↓
+MODULE 4 OPPORTUNITY ENGINE
+ELSE
+    ↓
+PCBI RESEARCH QUEUE
+    ↓
+ADMIN DATA POPULATION
+    ↓
+VALIDATION
+    ↓
+ADMIN APPROVAL
+    ↓
+PCBI CATALOG VERSION
+    ↓
+TARGETED CUSTOMER REPROCESSING
+    ↓
+MODULE 4 ELIGIBILITY
+
+============================================================
+2. CONTINUOUS PCBI RESEARCH MUST BE PARALLEL
+============================================================
+
+The six current research gaps must remain active in the Business Data Research Queue:
+
+P1 — Ferro Molybdenum 65%
+P1 — Heavy Duty Slurry Pumps
+P2 — Tungsten Carbide Inserts
+P3 — HDPE Injection Molding Granules
+P3 — Stainless Steel 304 Scrap
+P4 — Industrial Hydraulic Oil ISO 68
+
+These research activities must NOT block:
+
+• production deployment
+• customer data processing
+• Module 4 execution
+• valid PCBI calculations
+• opportunity generation for already-covered commodities
+
+Research is an independent continuous operational track.
+
+============================================================
+3. NEW COMMODITY / PCBI OPERATING RULE
+============================================================
+
+Whenever Module 2 identifies a commodity for which a suitable PCBI does not exist:
+
+Automatically create/update the Research Queue entry containing:
+
+COMMODITY_ID
+COMMODITY_NAME
+MODULE2_CLASSIFICATION
+UNSPSC
+CUSTOMER_SPEND
+TRANSACTION_COUNT
+PCBI_ID
+PCBI_DEFINITION_STATUS
+PCBI_DATA_STATUS
+REQUIRED_START_DATE
+REQUIRED_END_DATE
+REQUIRED_FREQUENCY
+REQUIRED_UNIT
+REQUIRED_CURRENCY
+REQUIRED_GEOGRAPHY
+AVAILABLE_HISTORY
+SOURCE_STATUS
+METHODOLOGY_STATUS
+MATERIALITY
+PRIORITY
+ADMIN_ACTION
+RESEARCH_STATUS
+DATE_ADDED
+LAST_UPDATED
+
+No code deployment should be required.
+
+============================================================
+4. DATA UPLOAD RULE
+============================================================
+
+Admin must be able to upload any supported source format:
+
+XLSX
+XLS
+CSV
+PDF
+JSON
+TXT
+
+The system must:
+
+UPLOAD
+→ EXTRACT
+→ DETECT DATE
+→ DETECT VALUE
+→ DETECT UNIT
+→ DETECT CURRENCY
+→ DETECT FREQUENCY
+→ DETECT SOURCE
+→ DETECT SERIES
+→ VALIDATE
+→ STANDARDIZE
+→ SHOW PREVIEW
+→ REQUIRE ADMIN APPROVAL
+→ VERSION PCBI
+→ TARGETED REPROCESS
+
+Never silently accept a mismatch.
+
+============================================================
+5. GOVERNANCE RULE
+============================================================
+
+If any of the following fail:
+
+SPECIFICATION
+GRADE
+UNIT
+CURRENCY
+GEOGRAPHY
+FREQUENCY
+HISTORY
+SOURCE PROVENANCE
+METHODOLOGY
+
+then:
+
+DO NOT GENERATE BENCHMARK
+DO NOT GENERATE SAVINGS
+DO NOT SEND TO MODULE 4
+
+Instead assign the appropriate blocked status and Research/Admin Action.
+
+============================================================
+6. PRODUCTION MONITORING
+============================================================
+
+Create/maintain a production dashboard showing:
+
+Total customer spend
+PCBI covered spend
+PCBI uncovered spend
+Coverage %
+Production-ready commodities
+Partial-history commodities
+No-history commodities
+Source-unverified commodities
+Methodology-pending commodities
+Specification mismatches
+Frequency mismatches
+Non-benchmarkable commodities
+P1/P2/P3/P4 research queue
+
+Clearly label uncovered spend as:
+
+PCBI COVERAGE GAP / UNCOVERED SPEND
+
+NEVER label it as savings.
+
+============================================================
+7. MODULE 4 PRODUCTION RULE
+============================================================
+
+Module 4 may calculate an opportunity only when:
+
+• customer classification is valid
+• PCBI exists
+• PCBI version is active
+• specification is compatible
+• geography is compatible
+• unit is compatible
+• currency methodology is approved
+• frequency methodology is approved
+• provenance is complete
+• methodology is approved
+
+Otherwise:
+
+OPPORTUNITY = 0
+STATUS = BLOCKED
+REASON = explicit governance reason
+
+============================================================
+8. TARGETED REPROCESSING
+============================================================
+
+When a new PCBI is approved:
+
+DO NOT unnecessarily reprocess the entire customer database.
+
+Identify only the affected Module 2 commodity/classification records and reprocess those transactions.
+
+Preserve:
+
+previous PCBI version
+previous calculations
+previous customer results
+approval ID
+timestamp
+user
+checksum
+methodology ID
+change reason
+
+============================================================
+9. DEFECT-DRIVEN SOFTWARE POLICY
+============================================================
+
+No new architecture work should be initiated unless a production defect is identified.
+
+A production defect must have:
+
+DEFECT_ID
+REPRODUCTION_STEPS
+EXPECTED_RESULT
+ACTUAL_RESULT
+IMPACT
+AFFECTED_MODULE
+ROOT_CAUSE
+FIX
+REGRESSION_TEST
+APPROVAL
+DEPLOYMENT_RECORD
+
+Do not classify normal commodity data gaps as software defects.
+
+============================================================
+10. FINAL HANDOVER
+============================================================
+
+Mark the following as COMPLETE:
+
+BUSINESS UAT = PASSED
+PRODUCTION SMOKE TEST = PASSED
+MODULE 1→2→3→4 CONTINUITY = PASSED
+MATHEMATICAL VALIDATION = PASSED
+GOVERNANCE VALIDATION = PASSED
+PCBI GAP HANDLING = PASSED
+DYNAMIC PCBI POPULATION = PASSED
+TARGETED REPROCESSING = PASSED
+VERSIONING = PASSED
+ROLLBACK = PASSED
+PRODUCTION DEPLOYMENT = APPROVED
+
+Final operating state:
+
+FINAL_STATUS = PRODUCTION_OPERATIONAL
+
+SOFTWARE = FROZEN / DEFECT_DRIVEN_ONLY
+DATA = CONTINUOUS_PCBI_RESEARCH_AND_POPULATION
+
+DO NOT GENERATE ANOTHER ARCHITECTURE VERSION.
+
+Return only:
+
+1. Final production handover confirmation
+2. Current production monitoring status
+3. Current PCBI research queue
+4. Production deployment checklist
+5. Defect-only change policy
+6. Exact admin procedure for adding the next PCBI
+
+No further architecture redesign is required.
+
+
+## Prompt 211
+
+continue

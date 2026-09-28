@@ -8,12 +8,17 @@ import type {
 } from '../types/pcbiPlatformIntegration';
 
 export const PLATFORM_STATUS: PlatformProductionStatus = 'PRODUCTION_READY_WITH_CONTROLLED_GAPS';
+export const FINAL_PLATFORM_STATUS: PlatformProductionStatus = 'PRODUCTION_READY_WITH_CONTROLLED_DATA_GAPS';
+export const FINAL_STATUS: PlatformProductionStatus = 'PRODUCTION_OPERATIONAL';
 export const MODULE_1_STATUS = 'FROZEN_CERTIFIED' as const;
 export const MODULE_2_STATUS = 'FROZEN_CERTIFIED_SOLE_AUTHORITY' as const;
 export const PCBI_MASTER_V1_STATUS = 'IMMUTABLE' as const;
 export const MODULE_3_STATUS = 'PRODUCTION_READY_DYNAMIC_PCBI' as const;
 export const MODULE_4_STATUS = 'ACTIVE_PRODUCTION_INTEGRATION' as const;
 export const OPERATING_MODE = 'PRODUCTIONIZATION_INTEGRATION_END_TO_END_QA' as const;
+export const FINAL_OPERATING_MODE = 'PRODUCTION + CONTINUOUS_COMMODITY_EXPANSION' as const;
+export const SOFTWARE_DEVELOPMENT_STATUS = 'FROZEN / DEFECT_DRIVEN_ONLY' as const;
+export const DATA_OPERATING_STATUS = 'CONTINUOUS_PCBI_RESEARCH_AND_POPULATION' as const;
 
 export const MODULE_4_PRE_PRODUCTION_AUDIT_REPORT = [
   { area: 'Current Architecture', status: 'READY', notes: 'Modular pipeline engine with de-duplicated savings' },

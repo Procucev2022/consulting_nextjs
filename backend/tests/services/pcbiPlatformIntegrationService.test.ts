@@ -145,6 +145,11 @@ describe('PCBIPlatformIntegrationService (backend/src/services/pcbiPlatformInteg
     expect(fs.existsSync(out)).toBe(true);
     const content = JSON.parse(fs.readFileSync(out, 'utf8'));
     expect(content.platformStatus).toBe('PRODUCTION_READY_WITH_CONTROLLED_GAPS');
+    expect(content.finalPlatformStatus).toBe('PRODUCTION_READY_WITH_CONTROLLED_DATA_GAPS');
+    expect(content.finalProductionGate.continuityProven).toBe(true);
+    expect(content.finalProductionGate.softwareBlockersCount).toBe(0);
+    expect(content.classificationSummary.productionBlockers.length).toBe(0);
+    expect(content.classificationSummary.dataGaps.length).toBe(6);
     expect(content.acceptanceTests.length).toBe(20);
   });
 });
