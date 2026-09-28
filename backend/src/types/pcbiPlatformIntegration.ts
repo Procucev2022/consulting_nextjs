@@ -23,6 +23,11 @@ export type Module3ToModule4AvailabilityStatus =
   | 'PCBI_BLOCKED'
   | 'PCBI_NOT_BENCHMARKABLE';
 
+export type SpecificationMatchStatus =
+  | 'MATCH'
+  | 'MISMATCH'
+  | 'UNVERIFIED';
+
 export type Module4OpportunityOutputCategory =
   | 'OPPORTUNITY_ELIGIBLE'
   | 'OPPORTUNITY_BLOCKED_PCBI_GAP'
@@ -53,6 +58,8 @@ export interface Module4InputContractRecord {
   pcbiCurrency: string;
   pcbiGeography: string;
   provenanceReference: string;
+  /** Typed specification/grade match status — replaces string-convention pcbiId hack (DEFECT-02 fix) */
+  specificationStatus?: SpecificationMatchStatus;
 }
 
 export interface Module4OpportunityEvaluationResult {

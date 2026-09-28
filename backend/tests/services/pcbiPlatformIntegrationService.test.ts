@@ -105,6 +105,79 @@ describe('PCBIPlatformIntegrationService (backend/src/services/pcbiPlatformInteg
     });
     expect(gap.outputCategory).toBe('OPPORTUNITY_BLOCKED_PCBI_GAP');
     expect(gap.isOpportunityEligible).toBe(false);
+
+    // 4. PCBI_BLOCKED status gate (DEFECT-01)
+    const blocked = service.evaluateModule4Opportunity({
+      transactionId: 'TX-TEST-004',
+      customerActualPrice: 150000,
+      customerUnit: 'MT',
+      customerCurrency: 'INR',
+      customerDate: '2026-06-01',
+      module2Classification: 'Blocked Commodity',
+      unspsc: '30102100',
+      pcbiId: 'PCBI-BLK-001',
+      pcbiIndex: null,
+      pcbiBenchmarkValue: null,
+      pcbiSource: 'QUARANTINE',
+      pcbiMethodology: 'NONE',
+      pcbiEffectiveDate: '2026-06',
+      pcbiStatus: 'PCBI_BLOCKED',
+      pcbiUnit: 'MT',
+      pcbiCurrency: 'INR',
+      pcbiGeography: 'INDIA_DOMESTIC',
+      provenanceReference: 'REF-004'
+    });
+    expect(blocked.outputCategory).toBe('OPPORTUNITY_BLOCKED_PCBI_GAP');
+    expect(blocked.isOpportunityEligible).toBe(false);
+
+    // 5. Legacy SPEC_MISMATCH in pcbiId without typed specificationStatus (DEFECT-02 fallback)
+    const legacySpec = service.evaluateModule4Opportunity({
+      transactionId: 'TX-TEST-005',
+      customerActualPrice: 180,
+      customerUnit: 'LTR',
+      customerCurrency: 'INR',
+      customerDate: '2026-06-01',
+      module2Classification: 'Industrial Lubricant',
+      unspsc: '15121500',
+      pcbiId: 'PCBI-SPEC_MISMATCH-LUB',
+      pcbiIndex: 110.0,
+      pcbiBenchmarkValue: 160,
+      pcbiSource: 'Index',
+      pcbiMethodology: 'MONTHLY_AVERAGE',
+      pcbiEffectiveDate: '2026-06',
+      pcbiStatus: 'PCBI_AVAILABLE',
+      pcbiUnit: 'LTR',
+      pcbiCurrency: 'INR',
+      pcbiGeography: 'INDIA_DOMESTIC',
+      provenanceReference: 'REF-005'
+    });
+    expect(legacySpec.outputCategory).toBe('OPPORTUNITY_BLOCKED_SPECIFICATION');
+    expect(legacySpec.isOpportunityEligible).toBe(false);
+
+    // 6. Zero opportunity when customer actual price <= benchmark value
+    const noSavings = service.evaluateModule4Opportunity({
+      transactionId: 'TX-TEST-006',
+      customerActualPrice: 80000,
+      customerUnit: 'MT',
+      customerCurrency: 'INR',
+      customerDate: '2026-06-01',
+      module2Classification: 'Copper Rods',
+      unspsc: '30102100',
+      pcbiId: 'PCBI-001',
+      pcbiIndex: 120.0,
+      pcbiBenchmarkValue: 90000,
+      pcbiSource: 'Exchange',
+      pcbiMethodology: 'WEIGHTED_AVG',
+      pcbiEffectiveDate: '2026-06',
+      pcbiStatus: 'PCBI_AVAILABLE',
+      pcbiUnit: 'MT',
+      pcbiCurrency: 'INR',
+      pcbiGeography: 'INDIA_DOMESTIC',
+      provenanceReference: 'REF-006'
+    });
+    expect(noSavings.outputCategory).toBe('OPPORTUNITY_ELIGIBLE');
+    expect(noSavings.isOpportunityEligible).toBe(true);
+    expect(noSavings.potentialOpportunityInr).toBe(0);
   });
 
   it('should evaluate controlled test portfolio across scenarios A through J', () => {
