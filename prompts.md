@@ -21936,3 +21936,46 @@ No further architecture redesign is required.
 ## Prompt 211
 
 continue
+
+
+## Prompt 213
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+ Test Files  1 failed | 98 passed (99)
+      Tests  2 failed | 804 passed (806)
+   Start at  13:00:18
+   Duration  158.20s (transform 2.62s, setup 13.92s, collect 14.77s, tests 60.85s, environment 40.13s, prepare 7.49s)
+JSON report written to /home/runner/work/consulting_nextjs/consulting_nextjs/frontend/test-results.json
+Error: Process completed with exit code 1.
+
+fix this issuse in my pr and raise fix this issuse
+
+logs:
+
+📊 Pull Request Quality & Unit Test Summary
+❌ FAILED — QUALITY GATES NOT SATISFIED
+
+🧪 Unit Tests Execution Overview
+Metric	Backend (Node.js)	Frontend (Next.js)	Total Combined
+Test Suites	259 passed	287 passed	546 passed
+Total Tests	687	806	1493
+Passed Tests	✅ 687	✅ 804	✅ 1491
+Failed Tests	0	❌ 2	❌ 2
+Status	✅ Passed	⚠️ Warning	❌ Failures Detected
+📈 Code Coverage Metrics (High-Precision Quality Gate)
+Parameter	Backend Coverage	Frontend Coverage	Overall Monorepo	Benchmark Status
+Statements	93.83%	0%	93.83%	✅ Meets Benchmark (>= 90%)
+Branches	82.38%	0%	82.38%	❌ Below 85%
+Functions	90.13%	0%	90.13%	✅ Meets Benchmark (>= 90%)
+Lines	93.83%	0%	93.83%	✅ Meets Benchmark (>= 90%)
+Note
+
+Strict Monorepo Quality Gate: Vitest enforces comprehensive coverage across the codebase with all 1,107 unit tests passing across backend and frontend.
+
+🛡️ Quality Gates Checklist
+ Linting: Passed (ESLint & TypeScript syntax check)
+ Typechecking: Passed (tsc --noEmit with 0 errors)
+ Production Builds: Backend and Frontend built successfully
+ Unit Tests Execution: 1491 / 1493 passed (0 failures)
+ Per-File Code Coverage: All modified and created files >= 90%
+ Pipeline Timeout: Enforced on all CI/CD jobs (timeout-minutes: 15)

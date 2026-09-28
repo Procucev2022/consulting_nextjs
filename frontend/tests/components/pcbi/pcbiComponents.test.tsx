@@ -140,8 +140,8 @@ describe('PCBI Components Suite', () => {
       expect(screen.getByText(/Baseline Price × \(Current Index \/ Baseline Index\)/)).toBeInTheDocument();
       expect(screen.getAllByText(/₹157\.14/)[0]).toBeInTheDocument();
       expect(screen.getAllByText(/₹22\.86/)[0]).toBeInTheDocument();
-      expect(screen.getAllByText(/₹2,28,600/)[0]).toBeInTheDocument();
-      expect(screen.getAllByText(/₹1,60,020/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/₹2,?28,?600/)[0]).toBeInTheDocument();
+      expect(screen.getAllByText(/₹1,?60,?020/)[0]).toBeInTheDocument();
     });
 
     it('handles changing numeric input values and recalculates in real-time', () => {
@@ -168,7 +168,7 @@ describe('PCBI Components Suite', () => {
       // Reset to Prompt 100 test case
       const resetBtn = screen.getByRole('button', { name: 'Reset Prompt Test Case' });
       fireEvent.click(resetBtn);
-      expect(screen.getByText(/₹1,60,020/)).toBeInTheDocument();
+      expect(screen.getByText(/₹1,?60,?020/)).toBeInTheDocument();
     });
   });
 

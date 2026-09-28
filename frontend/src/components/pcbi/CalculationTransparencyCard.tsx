@@ -118,12 +118,12 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
                   Unit Price Gap × Purchased Volume
                 </span>
                 <div className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-0.5">
-                  ₹{priceGap.toFixed(2)} × {quantity.toLocaleString()} L
+                  ₹{priceGap.toFixed(2)} × {quantity.toLocaleString('en-IN')} L
                 </div>
               </div>
               <div className="text-right shrink-0">
                 <span className="text-[10px] text-slate-400 uppercase block">Gross Opportunity</span>
-                <span className="text-base font-black text-amber-600 dark:text-amber-400">₹{grossOpportunity.toLocaleString()}</span>
+                <span className="text-base font-black text-amber-600 dark:text-amber-400">₹{grossOpportunity.toLocaleString('en-IN')}</span>
               </div>
             </div>
 
@@ -140,7 +140,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
                   Gross Opportunity × Benchmarkability %
                 </span>
                 <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-0.5">
-                  ₹{grossOpportunity.toLocaleString()} × {benchmarkabilityPct}%
+                  ₹{grossOpportunity.toLocaleString('en-IN')} × {benchmarkabilityPct}%
                 </div>
               </div>
               <div className="text-right shrink-0">
@@ -148,7 +148,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
                   Potential Opportunity
                 </span>
                 <span className="text-xl font-black text-emerald-700 dark:text-emerald-300">
-                  ₹{pcbiOpportunity.toLocaleString()}
+                  ₹{pcbiOpportunity.toLocaleString('en-IN')}
                 </span>
                 <span className="text-[10px] text-slate-500 block">
                   (~₹{pcbiOpportunityCr.toFixed(2)} Cr)
