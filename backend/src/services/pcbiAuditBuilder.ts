@@ -38,16 +38,18 @@ export function buildExplainabilityAudit(
     ? calc.gross_opportunity
     : Number((calc.price_gap_per_unit * calc.quantity).toFixed(2));
 
-  const expFmt = calc.expected_price.toLocaleString();
-  const actFmt = calc.actual_price.toLocaleString();
-  const gapFmt = calc.price_gap_per_unit.toLocaleString();
-  const oppFmt = calc.opportunity_value.toLocaleString();
+  const expFmt = calc.expected_price.toLocaleString('en-IN');
+  const actFmt = calc.actual_price.toLocaleString('en-IN');
+  const gapFmt = calc.price_gap_per_unit.toLocaleString('en-IN');
+  const oppFmt = calc.opportunity_value.toLocaleString('en-IN');
+  const qtyFmt = calc.quantity.toLocaleString('en-IN');
+  const grossOppFmt = grossOpp.toLocaleString('en-IN');
 
   const formulaDisplay = isComposite
     ? `Expected Price = SUM(Base_Comp_i * (Current_Index_i / Base_Index_i)) + Residual = ₹${expFmt}`
     : `Expected Benchmark Price = Baseline Price × (${I1} / ${I0}) = ₹${expFmt} | `
       + `Price Gap = ₹${actFmt} - ₹${expFmt} = ₹${gapFmt} | `
-      + `Gross Opportunity = ₹${gapFmt} × ${calc.quantity.toLocaleString()} = ₹${grossOpp.toLocaleString()} | `
+      + `Gross Opportunity = ₹${gapFmt} × ${qtyFmt} = ₹${grossOppFmt} | `
       + `PCBI Potential Opportunity = ₹${oppFmt}`;
 
   return {

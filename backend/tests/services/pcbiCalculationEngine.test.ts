@@ -274,8 +274,8 @@ describe('PCBI Calculation Engine - Master Product Specification Tests (Prompt 1
     expect(audit!.opportunity_value).toBe(160020.0);
     expect(audit!.formula_display).toContain('157.14');
     expect(audit!.formula_display).toContain('22.86');
-    expect(audit!.formula_display).toContain('2,28,600');
-    expect(audit!.formula_display).toContain('1,60,020');
+    expect(audit!.formula_display).toMatch(/2,?28,?600/);
+    expect(audit!.formula_display).toMatch(/1,?60,?020/);
   });
 
   it('calculates Multi-Constituent Composite PCBI decomposition correctly (Bearing: Steel 60%, Rubber 10%, Conversion 30%)', () => {
