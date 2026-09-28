@@ -340,4 +340,148 @@ export interface LoginBenefitsShowcaseProps {
   showMetrics?: boolean;
 }
 
+// Module 3: PCBI Benchmark & Trend Analytics Props (Prompt 100)
+export interface ExecutiveBenchmarkSummaryProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface BenchmarkQualityDashboardProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface BenchmarkCoverageWaterfallProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface SpendCategoryViewProps {
+  summary: import('./pcbi').PCBIExecutiveSummary;
+  className?: string;
+}
+
+export interface CalculationTransparencyCardProps {
+  className?: string;
+}
+
+export interface VendorPriceDispersionTableProps {
+  vendorRankings?: VendorPriceRank[];
+  calculations?: import('./pcbi').PCBITransactionCalculation[];
+  onWhyThisBenchmark?: (item: import('./pcbi').PCBITransactionCalculation) => void;
+  className?: string;
+}
+
+// Module 4: Consolidated Savings Engine Props (Prompt 100)
+export interface SavingsWaterfallSectionProps {
+  waterfallMetrics: import('./savings').SavingsWaterfallMetrics;
+  className?: string;
+}
+
+export interface OverlapDeduplicationTableProps {
+  overlaps: import('./savings').OpportunityOverlapGroup[];
+  opportunities: import('./savings').SavingsOpportunityItem[];
+  onUpdateStatus?: (oppId: string, status: import('./savings').SavingsOpportunityStatus) => void;
+  className?: string;
+}
+
+export interface ActionPlanTrackerProps {
+  actionPlans: import('./savings').ActionPlanItem[];
+  onUpdateAction?: (actionId: string, updates: { status?: import('./savings').ActionPlanItem['status']; owner?: import('./savings').ActionOwner; priority?: 'HIGH' | 'MEDIUM' | 'LOW'; comments?: string }) => void;
+  className?: string;
+}
+
+// Admin: PCBI Master Management Props (Prompts 103-104)
+export interface PCBIUploadTabProps {
+  uploadedFile: File | null;
+  fileMetadata: {
+    name: string;
+    sizeMb: number;
+    uploadDate: string;
+    uploadedBy: string;
+    worksheetCount: number;
+    totalRecords: number;
+  } | null;
+  worksheets: import('./pcbiAdmin').PCBIWorksheetDetection[];
+  mappings: Record<string, import('./pcbiAdmin').PCBIColumnMapping[]>;
+  onFileUpload: (
+    file: File,
+    worksheets: import('./pcbiAdmin').PCBIWorksheetDetection[],
+    datasets: Record<string, Record<string, unknown>[]>,
+    mappings: Record<string, import('./pcbiAdmin').PCBIColumnMapping[]>
+  ) => void;
+  onOverrideWorksheet: (sheetName: string, newType: import('./pcbiAdmin').PCBIWorksheetType) => void;
+  onOverrideColumnMapping: (sheetType: string, excelCol: string, mappedField: string) => void;
+  onProceedToValidate: () => void;
+}
+
+export interface PCBIWorksheetDetectionSectionProps {
+  worksheets: import('./pcbiAdmin').PCBIWorksheetDetection[];
+  onOverrideWorksheet: (sheetName: string, newType: import('./pcbiAdmin').PCBIWorksheetType) => void;
+}
+
+export interface PCBIColumnMappingSectionProps {
+  mappings: Record<string, import('./pcbiAdmin').PCBIColumnMapping[]>;
+  selectedSheetForMapping: string;
+  onSelectSheetForMapping: (sheetType: string) => void;
+  onOverrideColumnMapping: (sheetType: string, excelCol: string, mappedField: string) => void;
+}
+
+export interface PCBIValidationSummaryCardsProps {
+  summary: import('./pcbiAdmin').PCBIValidationSummary;
+}
+
+export interface PCBIConstituentReviewTableProps {
+  constituentTotals: import('./pcbiAdmin').PCBIConstituentTotalSummary[];
+}
+
+export interface PCBIValidationIssuesTableProps {
+  issues: import('./pcbiAdmin').PCBIValidationIssue[];
+  blockingErrorCount: number;
+  warningCount: number;
+  informationCount: number;
+}
+
+export interface PCBIValidateTabProps {
+  validationSummary: import('./pcbiAdmin').PCBIValidationSummary | null;
+  onProceedToPreview: () => void;
+}
+
+export interface PCBIPreviewTabProps {
+  validationSummary: import('./pcbiAdmin').PCBIValidationSummary | null;
+  datasets: Record<string, Record<string, unknown>[]>;
+  onProceedToImport: () => void;
+}
+
+export interface PCBIImportTabProps {
+  importResult: import('./pcbiAdmin').PCBIImportResult | null;
+  validationSummary: import('./pcbiAdmin').PCBIValidationSummary | null;
+  fileName: string;
+  isImporting: boolean;
+  onExecuteImport: () => void;
+  onOpenPublishModal: () => void;
+  onViewImportedMaster: () => void;
+}
+
+export interface PCBIDashboardTabProps {
+  activeVersion: import('./pcbiAdmin').PCBIVersionRecord | null;
+  onNavigateToUpload: () => void;
+  onNavigateToVersions: () => void;
+}
+
+export interface PCBIVersionsTabProps {
+  versions: import('./pcbiAdmin').PCBIVersionRecord[];
+  onPublishVersion: (version: string) => Promise<void>;
+  showOnlyPublished?: boolean;
+}
+
+export interface PCBIPublishModalProps {
+  isOpen: boolean;
+  version: string;
+  metrics: import('./pcbiAdmin').PCBIVersionMetrics | null;
+  isPublishing: boolean;
+  onConfirmPublish: () => Promise<void>;
+  onClose: () => void;
+}
+
 

@@ -57,6 +57,9 @@ describe('Frontend Constants Modules', () => {
       expect(PipelineConstants.MARKET_INDEX_DATA[0]).toBe(100);
       expect(PipelineConstants.VENDOR_INVOICED_DATA.length).toBe(10);
       expect(PipelineConstants.VENDOR_INVOICED_DATA[0]).toBe(100);
+      expect(PipelineConstants.UNLOCKED_DEV_PIPELINE_STAGES).toEqual([
+        'module1', 'module2', 'module3', 'module4', 'module5', 'schema'
+      ]);
     });
   });
 

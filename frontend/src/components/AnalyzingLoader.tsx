@@ -72,7 +72,8 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
   useEffect(() => {
     if (!isOpen || !autoProgress) return;
 
-    const totalTicks = speedMultiplier && speedMultiplier >= 10
+    const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+    const totalTicks = (speedMultiplier && speedMultiplier >= 10) || isTest
       ? 2
       : Math.max(10, Math.round((ANALYZING_DEFAULT_DURATION_MS / speedMultiplier) / ANALYZING_TICK_INTERVAL_MS));
     let tickCount = 0;

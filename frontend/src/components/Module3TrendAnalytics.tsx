@@ -1,5 +1,6 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import {
   LineChart as LineChartIcon,
   TrendingDown,
@@ -7,11 +8,23 @@ import {
   AlertOctagon,
   ShieldAlert,
   ArrowRight,
-  CheckCircle2,
-  Sliders
+  CheckCircle2
 } from 'lucide-react';
 import type { Module3TrendAnalyticsProps } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
+import { ExecutiveBenchmarkSummary } from './pcbi/ExecutiveBenchmarkSummary';
+import { BenchmarkQualityDashboard } from './pcbi/BenchmarkQualityDashboard';
+import { BenchmarkCoverageWaterfall } from './pcbi/BenchmarkCoverageWaterfall';
+import { SpendCategoryView } from './pcbi/SpendCategoryView';
+import { CalculationTransparencyCard } from './pcbi/CalculationTransparencyCard';
+import { VendorPriceDispersionTable } from './pcbi/VendorPriceDispersionTable';
+import { PCBIExplainabilityModal } from './modals/PCBIExplainabilityModal';
+import { apiClient } from '../utils/api';
+import type {
+  PCBIExecutiveSummary,
+  PCBIExplainabilityAudit,
+  PCBITransactionCalculation
+} from '../types/pcbi';
 import {
   UI_STRINGS,
   TIMELINE_MONTHS
@@ -48,7 +61,29 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   onUpgrade
 }) => {
   const [selectedCommodity, setSelectedCommodity] = useState<string>(UI_STRINGS.module3.commodities.icis);
-  const [filterRisk, setFilterRisk] = useState<string>('ALL');
+  const [filterRisk, setFilterRisk] = useState<'ALL' | 'CREEP_ANOMALY' | 'ALIGNED'>('ALL');
+  const [pcbiSummary, setPcbiSummary] = useState<PCBIExecutiveSummary | null>(null);
+  const [calculations] = useState<PCBITransactionCalculation[]>([]);
+  const [selectedAudit, setSelectedAudit] = useState<PCBIExplainabilityAudit | null>(null);
+  const [isExplainModalOpen, setIsExplainModalOpen] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiClient
+      .getPCBIDashboard()
+      .then((data) => {
+        if (isMounted && data?.summary) {
+          setPcbiSummary(data.summary);
+        }
+      })
+      .catch(() => {
+        // Fall back gracefully to internal calculations
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const totalLeakageCr = vendorRankings.reduce(
     (sum, v) => sum + (v.variance_leakage_inr_cr || (v.variance_leakage_usd ? (v.variance_leakage_usd * 83.8) / 10000000 : 0) || 0),
@@ -187,28 +222,42 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
     }
   };
 
+  const handleWhyThisBenchmark = (item?: PCBITransactionCalculation) => {
+    if (item?.id) {
+      apiClient
+        .getPCBIExplainabilityAudit(item.id)
+        .then((audit) => {
+          setSelectedAudit(audit);
+          setIsExplainModalOpen(true);
+        })
+        .catch(() => {
+          setSelectedAudit(null);
+          setIsExplainModalOpen(true);
+        });
+    } else {
+      setSelectedAudit(null);
+      setIsExplainModalOpen(true);
+    }
+  };
+
   const filteredRankings = vendorRankings.filter((v) => {
-    if (filterRisk === 'ALL') return true;
-    if (filterRisk === 'CREEP_ANOMALY') return v.price_creep_pct > 5;
-    return v.risk_status === filterRisk;
+    if (filterRisk === 'CREEP_ANOMALY') {
+      return v.risk_status === 'HIGH CREEP' || v.risk_status === 'REVIEW' || (v.price_creep_pct != null && v.price_creep_pct > 0);
+    }
+    if (filterRisk === 'ALIGNED') {
+      return v.risk_status === 'ALIGNED' || (v.price_creep_pct != null && v.price_creep_pct <= 0);
+    }
+    return true;
   });
-
-  const handleUpgradeSilver = () => {
-    onUpgrade?.('SILVER');
-  };
-
-  const handleUpgradeGold = () => {
-    onUpgrade?.('GOLD');
-  };
 
   if (currentTier === 'BRONZE') {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="relative min-h-[500px]">
         <TierMaskOverlay
-          requiredTier="SILVER"
           title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module3.heading)}
           description={UI_STRINGS.subscription.stageMaskedBronzeDesc}
-          onUpgrade={handleUpgradeSilver}
+          requiredTier="SILVER"
+          onUpgrade={() => onUpgrade?.('SILVER')}
         />
       </div>
     );
@@ -251,7 +300,19 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         </div>
       </div>
 
-      {/* Grid: 36-Month Dynamic Trend Chart + Price Creep Leakage Box */}
+      {/* 1. Executive Benchmark Summary (14 Top KPIs - Master Product Spec) */}
+      <ExecutiveBenchmarkSummary summary={pcbiSummary as any} />
+
+      {/* 2. Benchmark Quality Dashboard (A/B/C/Not Benchmarkable) */}
+      <BenchmarkQualityDashboard summary={pcbiSummary as any} />
+
+      {/* 3. Benchmark Coverage Waterfall (Spend Isolation Cascade) */}
+      <BenchmarkCoverageWaterfall summary={pcbiSummary as any} />
+
+      {/* 4. Spend Category View (6 Standard Enterprise Categories) */}
+      <SpendCategoryView summary={pcbiSummary as any} />
+
+      {/* 5. 36-Month Dynamic Trend Chart + Price Creep Leakage Box */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Chart (8 cols) */}
         <div className="lg:col-span-8 p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
@@ -283,7 +344,9 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
               <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center p-6 space-y-2">
                 <LineChartIcon className="w-8 h-8 text-slate-400 dark:text-slate-600" />
                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Awaiting Dataset Ingestion</p>
-                <p className="text-[11px] text-slate-500 max-w-sm">Upload your procurement spend file in Step 1 to generate live 36-month pricing trends and market index comparisons.</p>
+                <p className="text-[11px] text-slate-500 max-w-sm">
+                  Upload your procurement spend file in Step 1 to generate live 36-month pricing trends and market index comparisons.
+                </p>
               </div>
             ) : (
               <Line data={chartData} options={chartOptions} />
@@ -356,176 +419,182 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         </div>
       </div>
 
-      {/* Silver Customer Detail Mask */}
+      {/* 6. Dynamic Calculation Transparency Card (Prompt 100 Test Case) */}
+      <CalculationTransparencyCard />
+
       {currentTier === 'SILVER' ? (
-        <div className="space-y-6">
+        <div className="relative min-h-[300px]">
           <TierMaskOverlay
-            requiredTier="GOLD"
             title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module3.rankingsTableTitle)}
             description={UI_STRINGS.subscription.stageMaskedSilverDesc}
-            onUpgrade={handleUpgradeGold}
-            isSummaryVisible
+            requiredTier="GOLD"
+            onUpgrade={() => onUpgrade?.('GOLD')}
           />
-          {/* CTA to Savings Engine */}
-          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>{UI_STRINGS.module3.ctaBadge}</span>
-            </div>
-            <button
-              type="button"
-              onClick={onProceedToSavings}
-              className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group cursor-pointer"
-            >
-              <span>{UI_STRINGS.module3.ctaProceedButton}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
         </div>
       ) : (
-        /* Vendor Price Volatility & Inflation Rankings Table */
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
-              <Sliders className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-              <span>{UI_STRINGS.module3.rankingsTableTitle}</span>
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {UI_STRINGS.module3.rankingsTableDesc}
-            </p>
+        <div className="space-y-6">
+          {/* Detailed Vendor Rankings Table */}
+          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  {UI_STRINGS.module3.rankingsTableTitle}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {UI_STRINGS.module3.rankingsTableDesc}
+                </p>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilterRisk('ALL')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterRisk === 'ALL'
+                      ? 'bg-slate-900 text-white dark:bg-cyan-500 dark:text-slate-950 shadow-xs'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  {UI_STRINGS.module3.filterAllVendors(vendorRankings.length)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterRisk('CREEP_ANOMALY')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterRisk === 'CREEP_ANOMALY'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  {`Creep Anomaly (${vendorRankings.filter((v) => v.risk_status === 'HIGH CREEP' || (v.price_creep_pct && v.price_creep_pct > 0)).length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterRisk('ALIGNED')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    filterRisk === 'ALIGNED'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  {`Aligned (${vendorRankings.filter((v) => v.risk_status === 'ALIGNED' || (v.price_creep_pct && v.price_creep_pct <= 0)).length})`}
+                </button>
+              </div>
+            </div>
+
+            {/* Rankings Table */}
+            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.vendorName}</th>
+                      <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.category}</th>
+                      <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.totalSpendInrCr}</th>
+                      <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.commodityBenchmark}</th>
+                      <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.priceCreepPct}</th>
+                      <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.unjustifiedLeakage}</th>
+                      <th className="py-3 px-4 text-right">{UI_STRINGS.module3.tableHeaders.riskStatus}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+                    {filteredRankings.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 text-center text-slate-500 dark:text-slate-400 font-sans text-xs">
+                          Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate supplier price volatility.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredRankings.map((vendor, vIdx) => (
+                        <tr
+                          key={vendor.master_id || `${vendor.vendor_name}-${vIdx}`}
+                          className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                        >
+                          <td className="py-3.5 px-4 font-sans font-bold text-slate-900 dark:text-white">
+                            <div>{vendor.vendor_name}</div>
+                            <span className="text-[10px] font-mono text-slate-400">{vendor.master_id}</span>
+                          </td>
+                          <td className="py-3.5 px-4 font-sans text-slate-600 dark:text-slate-300">
+                            {vendor.category}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                            ₹{vendor.total_spend_inr_cr?.toFixed(2) || (vendor.total_spend * 83.8 / 10000000).toFixed(2)} Cr
+                          </td>
+                          <td className="py-3.5 px-4 font-sans text-xs text-cyan-700 dark:text-cyan-400">
+                            {vendor.benchmark_index}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`font-bold ${
+                                vendor.price_creep_pct > 5
+                                  ? 'text-rose-600 dark:text-rose-400'
+                                  : vendor.price_creep_pct > 0
+                                  ? 'text-amber-600 dark:text-amber-400'
+                                  : 'text-emerald-600 dark:text-emerald-400'
+                              }`}
+                            >
+                              {vendor.price_creep_pct > 0 ? `+${vendor.price_creep_pct}%` : `${vendor.price_creep_pct}%`}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-rose-600 dark:text-rose-400">
+                            {vendor.variance_leakage_usd > 0 || (vendor.variance_leakage_inr_cr && vendor.variance_leakage_inr_cr > 0)
+                              ? `₹${(vendor.variance_leakage_inr_cr || (vendor.variance_leakage_usd * 83.8 / 10000000)).toFixed(2)} Cr`
+                              : UI_STRINGS.module3.alignedLeakageVal}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-sans tracking-wide ${
+                                vendor.risk_status === 'HIGH CREEP'
+                                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60'
+                                  : vendor.risk_status === 'REVIEW'
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60'
+                                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60'
+                              }`}
+                            >
+                              {vendor.risk_status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setFilterRisk('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filterRisk === 'ALL'
-                  ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-300 dark:border-cyan-500/40'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              {UI_STRINGS.module3.filterAllVendors(vendorRankings.length)}
-            </button>
-            <button
-              onClick={() => setFilterRisk('CREEP_ANOMALY')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filterRisk === 'CREEP_ANOMALY'
-                  ? 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              {`>5% Creep Anomaly (${vendorRankings.filter((v) => (v.price_creep_pct || 0) > 5).length})`}
-            </button>
-            <button
-              onClick={() => setFilterRisk('ALIGNED')}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filterRisk === 'ALIGNED'
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              {`Aligned (${vendorRankings.filter((v) => v.risk_status === 'ALIGNED').length})`}
-            </button>
-          </div>
+          {/* 7. Vendor Price Dispersion Table with Explainability Triggers */}
+          <VendorPriceDispersionTable
+            vendorRankings={vendorRankings}
+            calculations={calculations}
+            onWhyThisBenchmark={handleWhyThisBenchmark}
+          />
         </div>
-
-        {/* Rankings Table */}
-        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
-                <tr>
-                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.vendorName}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.category}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.totalSpendInrCr}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.commodityBenchmark}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.priceCreepPct}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.unjustifiedLeakage}</th>
-                  <th className="py-3 px-4 text-right">{UI_STRINGS.module3.tableHeaders.riskStatus}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
-                {filteredRankings.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500 dark:text-slate-400 font-sans text-xs">
-                      Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate supplier price volatility.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredRankings.map((vendor, vIdx) => (
-                    <tr
-                      key={vendor.master_id || `${vendor.vendor_name}-${vIdx}`}
-                      className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                    >
-                    <td className="py-3.5 px-4 font-sans font-bold text-slate-900 dark:text-white">
-                      <div>{vendor.vendor_name}</div>
-                      <span className="text-[10px] font-mono text-slate-400">{vendor.master_id}</span>
-                    </td>
-                    <td className="py-3.5 px-4 font-sans text-slate-600 dark:text-slate-300">
-                      {vendor.category}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
-                      ₹{vendor.total_spend_inr_cr?.toFixed(2) || (vendor.total_spend * 83.8 / 10000000).toFixed(2)} Cr
-                    </td>
-                    <td className="py-3.5 px-4 font-sans text-xs text-cyan-700 dark:text-cyan-400">
-                      {vendor.benchmark_index}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`font-bold ${
-                          vendor.price_creep_pct > 5
-                            ? 'text-rose-600 dark:text-rose-400'
-                            : vendor.price_creep_pct > 0
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-emerald-600 dark:text-emerald-400'
-                        }`}
-                      >
-                        {vendor.price_creep_pct > 0 ? `+${vendor.price_creep_pct}%` : `${vendor.price_creep_pct}%`}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-rose-600 dark:text-rose-400">
-                      {vendor.variance_leakage_usd > 0
-                        ? `₹${(vendor.variance_leakage_inr_cr || (vendor.variance_leakage_usd * 83.8 / 10000000)).toFixed(2)} Cr`
-                        : UI_STRINGS.module3.alignedLeakageVal}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-sans tracking-wide ${
-                          vendor.risk_status === 'HIGH CREEP'
-                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60'
-                            : vendor.risk_status === 'REVIEW'
-                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60'
-                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60'
-                        }`}
-                      >
-                        {vendor.risk_status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* CTA to Savings Engine */}
-        <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <span>{UI_STRINGS.module3.ctaBadge}</span>
-          </div>
-          <button
-            onClick={onProceedToSavings}
-            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group cursor-pointer"
-          >
-            <span>{UI_STRINGS.module3.ctaProceedButton}</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-      </div>
       )}
+
+      {/* CTA to Savings Engine */}
+      <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>{UI_STRINGS.module3.ctaBadge}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onProceedToSavings}
+          className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95 group cursor-pointer"
+        >
+          <span>{UI_STRINGS.module3.ctaProceedButton}</span>
+          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+
+      {/* Explainability Modal */}
+      <PCBIExplainabilityModal
+        isOpen={isExplainModalOpen}
+        onClose={() => setIsExplainModalOpen(false)}
+        audit={selectedAudit}
+      />
     </div>
   );
 };

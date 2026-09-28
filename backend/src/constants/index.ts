@@ -14,4 +14,13 @@ export * from './logDiagnostics';
 export * from './industry';
 export * from './auth';
 export * from './ai';
+export * from './strategicSourcing';
+export * from './pcbiAdmin';
+export * from './pcbiDynamicE2E';
+export * from './pcbiControlledValidation';
+export * from './pcbiPilotExpansion';
+export * from './pcbiProductionPilot';
+export * from './pcbiProductionReady';
+export * from './pcbiCommodityCoverage';
+export * from './pcbiPlatformIntegration';
 

@@ -372,6 +372,53 @@ export default function AdminLoginPage(): React.ReactElement {
               </div>
             </div>
 
+            {/* Quick Fill Admin Credentials */}
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              marginTop: '4px'
+            }}>
+              <button
+                type="button"
+                id="quick-fill-sriman"
+                onClick={() => {
+                  setForm({ email: 'sriman@procucev.com', password: 'sriman@123' });
+                  setErrorMessage(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '8px 10px',
+                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  borderRadius: '6px',
+                  color: '#38bdf8',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                ⚡ Sriman (Admin)
+              </button>
+              <button
+                type="button"
+                id="quick-fill-admin"
+                onClick={handleQuickFillAdmin}
+                style={{
+                  flex: 1,
+                  padding: '8px 10px',
+                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                  border: '1px solid rgba(148, 163, 184, 0.25)',
+                  borderRadius: '6px',
+                  color: '#94a3b8',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                ⚡ System Admin
+              </button>
+            </div>
+
             <button
               type="submit"
               id="admin-login-submit"

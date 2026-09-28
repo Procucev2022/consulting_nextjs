@@ -207,3 +207,422 @@ model User {
   @@index([subscription_tier])
 }
 
+// ==========================================
+// PROCUCEV ENTERPRISE MULTI-TENANT ENTITIES
+// ==========================================
+
+model Client {
+  id               String    @id @default(uuid())
+  client_name      String
+  client_code      String    @unique
+  industry_sector  String?
+  base_currency    String    @default("INR")
+  status           String    @default("ACTIVE")
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  projects         Project[]
+  uploads          Upload[]
+  transactions     Transaction[]
+  vendors          Vendor[]
+  materials        Material[]
+
+  @@index([client_code])
+  @@index([status])
+}
+
+model Project {
+  id               String    @id @default(uuid())
+  client_id        String
+  project_name     String
+  status           String    @default("ACTIVE")
+  pcbi_version     String    @default("V1.0")
+  unspsc_version   String    @default("V24.0")
+  analysis_date    DateTime?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  client           Client    @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  uploads          Upload[]
+  transactions     Transaction[]
+
+  @@index([client_id])
+  @@index([status])
+}
+
+model Upload {
+  id               String         @id @default(uuid())
+  client_id        String
+  project_id       String
+  file_name        String
+  file_type        String
+  file_size_mb     Float
+  status           String         @default("UPLOADED")
+  progress         Int            @default(0)
+  records_count    Int            @default(0)
+  valid_count      Int            @default(0)
+  warning_count    Int            @default(0)
+  exception_count  Int            @default(0)
+  total_spend_inr  Float?         @default(0)
+  uploaded_at      DateTime       @default(now())
+  client           Client         @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  project          Project        @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  columns          UploadColumn[]
+  transactions     Transaction[]
+
+  @@index([client_id])
+  @@index([project_id])
+  @@index([status])
+}
+
+model UploadColumn {
+  id               String   @id @default(uuid())
+  upload_id        String
+  source_column    String
+  target_field     String
+  confidence       Float    @default(1.0)
+  data_type        String   @default("STRING")
+  upload           Upload   @relation(fields: [upload_id], references: [id], onDelete: Cascade)
+
+  @@index([upload_id])
+}
+
+model Transaction {
+  id                    String   @id @default(uuid())
+  client_id             String
+  project_id            String
+  upload_id             String
+  po_number             String
+  po_date               String
+  invoice_number        String?
+  invoice_date          String?
+  vendor_code           String?
+  vendor_name           String
+  material_code         String
+  material_description  String
+  quantity              Float
+  uom                   String
+  unit_price            Float
+  currency              String   @default("INR")
+  total_value           Float
+  fx_rate               Float    @default(1.0)
+  total_value_inr       Float
+  plant                 String?  @default("Main Plant")
+  business_unit         String?
+  department            String?
+  material_group        String?
+  gl_account            String?
+  cost_center           String?
+  buyer                 String?
+  payment_terms         String?
+  delivery_location     String?
+  spend_category        String   @default("DIRECT MATERIALS")
+  unspsc_code           String?
+  pcbi_id               String?
+  validation_status     String   @default("VALID")
+  validation_errors     Json?
+  created_at            DateTime @default(now())
+  client                Client   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+  project               Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  upload                Upload   @relation(fields: [upload_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([project_id])
+  @@index([vendor_name])
+  @@index([material_code])
+  @@index([unspsc_code])
+  @@index([pcbi_id])
+  @@index([po_date])
+  @@index([plant])
+  @@index([spend_category])
+}
+
+model Vendor {
+  id               String   @id @default(uuid())
+  client_id        String
+  vendor_code      String
+  vendor_name      String
+  normalized_name  String
+  category         String?
+  total_spend_inr  Float    @default(0)
+  po_count         Int      @default(0)
+  materials_count  Int      @default(0)
+  risk_status      String?  @default("NORMAL")
+  created_at       DateTime @default(now())
+  client           Client   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([vendor_name])
+  @@index([normalized_name])
+}
+
+model Material {
+  id                     String   @id @default(uuid())
+  client_id              String
+  material_code          String
+  material_name          String
+  uom                    String
+  spend_category         String   @default("DIRECT MATERIALS")
+  unspsc_code            String?
+  pcbi_id                String?
+  benchmark_quality      String?  @default("B")
+  benchmarkability_pct   Float    @default(70.0)
+  total_spend_inr        Float    @default(0)
+  total_qty              Float    @default(0)
+  created_at             DateTime @default(now())
+  client                 Client   @relation(fields: [client_id], references: [id], onDelete: Cascade)
+
+  @@index([client_id])
+  @@index([material_code])
+  @@index([unspsc_code])
+  @@index([pcbi_id])
+}
+
+model UNSPSCMaster {
+  id               String   @id @default(uuid())
+  segment_code     String
+  segment_title    String
+  family_code      String
+  family_title     String
+  class_code       String
+  class_title      String
+  commodity_code   String   @unique
+  commodity_title  String
+  version          String   @default("V24.0")
+  created_at       DateTime @default(now())
+
+  @@index([segment_code])
+  @@index([family_code])
+  @@index([class_code])
+  @@index([commodity_code])
+}
+
+model SpendCategory {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  description      String?
+  is_material      Boolean  @default(true)
+  display_order    Int      @default(1)
+}
+
+model PCBIMaster {
+  id                        String   @id @default(uuid())
+  pcbi_id                   String   @unique
+  pcbi_category             String
+  pcbi_subcategory          String
+  unspsc_commodity          String?
+  unspsc_class              String?
+  benchmark_name            String
+  benchmark_type            String   @default("SINGLE")
+  benchmark_source          String
+  source_url                String?
+  geography                 String   @default("India")
+  currency                  String   @default("INR")
+  unit                      String   @default("MT")
+  frequency                 String   @default("WEEKLY")
+  historical_start_date     String   @default("2020-04-01")
+  historical_end_date       String   @default("2026-07-31")
+  quality_rating            String   @default("A")
+  benchmarkability_percent  Float    @default(70.0)
+  constituent               String?
+  constituent_weight_percent Float?
+  methodology               String?
+  pcbi_version              String   @default("V1.0")
+  status                    String   @default("ACTIVE")
+  effective_from            DateTime @default(now())
+  effective_to              DateTime?
+
+  @@index([pcbi_id])
+  @@index([pcbi_category])
+  @@index([quality_rating])
+  @@index([pcbi_version])
+}
+
+model PCBIWeeklyIndex {
+  id               String   @id @default(uuid())
+  pcbi_id          String
+  component_id     String?
+  index_date       String
+  week_number      Int?
+  week_start       String
+  week_end         String
+  index_value      Float
+  source_value     Float?
+  source_currency  String   @default("INR")
+  source_unit      String?
+  source           String?
+  quality_rating   String   @default("A")
+  pcbi_version     String   @default("V1.0")
+  created_at       DateTime @default(now())
+
+  @@index([pcbi_id])
+  @@index([week_start])
+  @@index([index_date])
+}
+
+model PCBIConstituent {
+  id                          String   @id @default(uuid())
+  pcbi_id                     String
+  item_category               String
+  constituent_name            String
+  constituent_weight_percent  Float
+  benchmark_pcbi_id           String?
+  benchmarkability_percent    Float    @default(100.0)
+  quality_rating              String   @default("A")
+  methodology                 String?
+  effective_from              DateTime @default(now())
+  effective_to                DateTime?
+
+  @@index([pcbi_id])
+  @@index([benchmark_pcbi_id])
+}
+
+model BenchmarkSource {
+  id               String   @id @default(uuid())
+  source_name      String   @unique
+  source_type      String
+  source_url       String?
+  reliability_score Float   @default(1.0)
+  created_at       DateTime @default(now())
+}
+
+model BenchmarkQuality {
+  id               String   @id @default(uuid())
+  code             String   @unique
+  client_label     String
+  description      String
+}
+
+model MaterialPCBIMapping {
+  id                       String   @id @default(uuid())
+  client_id                String
+  material_code            String
+  pcbi_id                  String
+  quality_rating           String   @default("B")
+  benchmarkability_percent Float    @default(70.0)
+  confidence               Float    @default(0.95)
+  mapping_method           String   @default("AUTOMATED_UNSPSC")
+  manual_override          Boolean  @default(false)
+  reviewer                 String?
+  version                  String   @default("V1.0")
+  created_at               DateTime @default(now())
+
+  @@index([client_id])
+  @@index([material_code])
+  @@index([pcbi_id])
+}
+
+model StrategicOpportunity {
+  id                     String   @id @default(uuid())
+  client_id              String
+  project_id             String
+  engine_type            String
+  category               String
+  material_code          String?
+  vendor_name            String?
+  plant                  String?
+  affected_spend_inr     Float
+  potential_savings_inr  Float
+  status                 String   @default("IDENTIFIED")
+  created_at             DateTime @default(now())
+
+  @@index([client_id])
+  @@index([project_id])
+  @@index([engine_type])
+  @@index([status])
+}
+
+model SavingsOpportunityRecord {
+  id                     String   @id @default(uuid())
+  opportunity_id         String   @unique
+  client_id              String
+  project_id             String
+  source_module          String
+  source_engine          String
+  category               String
+  item_code              String?
+  vendor_name            String?
+  plant                  String?
+  spend_inr              Float
+  potential_savings_inr  Float
+  overlap_id             String?
+  is_overlapping         Boolean  @default(false)
+  net_savings_inr        Float
+  status                 String   @default("IDENTIFIED")
+  owner                  String?  @default("Procurement")
+  department             String?
+  timeline               String?  @default("30 Days")
+  created_at             DateTime @default(now())
+
+  @@index([client_id])
+  @@index([project_id])
+  @@index([source_engine])
+  @@index([status])
+  @@index([overlap_id])
+}
+
+model OpportunityOverlap {
+  id                     String   @id @default(uuid())
+  overlap_group_id       String
+  item_code              String
+  primary_opportunity_id String
+  overlapping_opp_ids    Json
+  total_gross_savings    Float
+  net_savings            Float
+  deduplicated_amount    Float
+  created_at             DateTime @default(now())
+
+  @@index([overlap_group_id])
+  @@index([item_code])
+}
+
+model ActionPlan {
+  id                 String   @id @default(uuid())
+  opportunity_id     String
+  action_title       String
+  owner              String
+  department         String?
+  target_date        String
+  priority           String   @default("HIGH")
+  expected_value_inr Float
+  status             String   @default("Open")
+  comments           String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@index([opportunity_id])
+  @@index([owner])
+  @@index([status])
+}
+
+model Report {
+  id               String   @id @default(uuid())
+  client_id        String
+  project_id       String
+  report_type      String
+  report_title     String
+  file_url         String?
+  generated_by     String
+  pcbi_version     String   @default("V1.0")
+  unspsc_version   String   @default("V24.0")
+  summary_metrics  Json?
+  created_at       DateTime @default(now())
+
+  @@index([client_id])
+  @@index([project_id])
+}
+
+model AuditLog {
+  id               String   @id @default(uuid())
+  client_id        String?
+  project_id       String?
+  entity_type      String
+  entity_id        String
+  action           String
+  user_id          String?
+  details          Json?
+  created_at       DateTime @default(now())
+
+  @@index([client_id])
+  @@index([entity_type])
+  @@index([entity_id])
+}
+

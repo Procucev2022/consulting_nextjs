@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PCBI_V1_3_1_SOURCE_VALIDATION_MODEL",
+  "version": "1.3.1",
+  "description": "Source qualification and 10-link provenance verification architecture.",
+  "sourceStatusEnum": [
+    "CANDIDATE",
+    "UNDER_VALIDATION",
+    "VALIDATED",
+    "REJECTED"
+  ],
+  "sourceGovernanceRules": [
+    {
+      "ruleId": "SRC-GOV-01",
+      "ruleName": "CANDIDATE_INEQUIVALENCE",
+      "statement": "SOURCE_CANDIDATE != VALIDATED_SOURCE. Never classify a suggested source as validated merely because the commodity name appears similar."
+    },
+    {
+      "ruleId": "SRC-GOV-02",
+      "ruleName": "NINE_DIMENSION_VERIFICATION",
+      "statement": "Validation requires explicit technical verification across all 9 required dimensions.",
+      "dimensions": [
+        "Commodity",
+        "Grade",
+        "Specification",
+        "Unit",
+        "Geography",
+        "Frequency",
+        "Historical coverage",
+        "Price basis",
+        "Market basis"
+      ]
+    },
+    {
+      "ruleId": "SRC-GOV-03",
+      "ruleName": "PROVENANCE_MANDATE",
+      "statement": "Every benchmark observation in staging must prove a complete 10-link provenance chain. If any link is missing: VALIDATION_STATUS = BLOCKED."
+    }
+  ],
+  "provenanceChainSchema": {
+    "totalLinks": 10,
+    "links": [
+      { "step": 1, "link": "Observation", "field": "observationId", "required": true },
+      { "step": 2, "link": "Source", "field": "sourceId", "required": true },
+      { "step": 3, "link": "Source document", "field": "sourceDocument", "required": true },
+      { "step": 4, "link": "Page/table/row", "field": "pageTableRow", "required": true },
+      { "step": 5, "link": "Original value", "field": "originalValue", "required": true },
+      { "step": 6, "link": "Original unit", "field": "originalUnit", "required": true },
+      { "step": 7, "link": "Original frequency", "field": "originalFrequency", "required": true },
+      { "step": 8, "link": "Transformation rule", "field": "transformationRuleId", "required": true },
+      { "step": 9, "link": "Standardized value", "field": "standardizedValue", "required": true },
+      { "step": 10, "link": "Approval record", "field": "approvalRecordId", "required": true }
+    ],
+    "failureAction": "VALIDATION_STATUS = BLOCKED"
+  },
+  "exemplarEvaluation": {
+    "commodity": "Ferro Molybdenum 65%",
+    "candidateSource": "IBM Mineral ASP",
+    "evaluation": {
+      "commodityMatch": "PARTIAL",
+      "specificationEquivalence": "UNPROVEN",
+      "assignedStatus": "SOURCE_CANDIDATE",
+      "allowedInProduction": false,
+      "remediationRequired": "Technical specification comparison and metallurgical assay equivalence proof required before advancing to UNDER_VALIDATION."
+    }
+  }
+}

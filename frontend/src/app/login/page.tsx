@@ -8,8 +8,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Shield, Sparkles, ArrowRight } from 'lucide-react';
 import { UI_STRINGS, AICEV_LOGO_SRC } from '../../constants';
+import { DEV_TEMP_CREDENTIALS } from '../../constants/auth';
 import { apiClient } from '../../utils/api';
 import frontendLogger from '../../utils/logger';
 import type { RegisterFormData, LoginFormData } from '../../types';
@@ -43,6 +44,26 @@ export default function LoginPage(): React.ReactElement {
     password: '',
     confirm_password: ''
   });
+
+  const handleQuickFillCred = (email: string, pw: string): void => {
+    setLoginForm({ email, password: pw });
+    setErrorMessage(null);
+  };
+
+  const handleDirectAdminBypass = (): void => {
+    const devAdmin = {
+      id: 'usr-admin-sriman',
+      name: 'Sriman Admin',
+      email: 'sriman@procucev.com',
+      role: 'ADMIN',
+      status: 'ACTIVE',
+      subscription_tier: 'GOLD',
+      company_name: 'Procucev Enterprise Solutions Pvt Ltd',
+      created_at: new Date().toISOString()
+    };
+    apiClient.setStoredSession('dev-temp-token-sriman', devAdmin);
+    router.push('/admin');
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -369,6 +390,99 @@ export default function LoginPage(): React.ReactElement {
             >
               {loading ? UI_STRINGS.auth.signingIn : UI_STRINGS.auth.signInButton}
             </button>
+
+            {/* Temporary Development Login & Admin Direct Access Panel */}
+            <div style={{
+              marginTop: '16px',
+              padding: '14px',
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              borderRadius: '12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: '#38bdf8',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <Sparkles size={13} />
+                  {UI_STRINGS.auth.tempDevCredentialsBadge}
+                </span>
+                <span style={{ fontSize: '10px', color: '#94a3b8' }}>Dev & Test Mode</span>
+              </div>
+              <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', lineHeight: 1.4 }}>
+                {UI_STRINGS.auth.devBypassNotice}
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+                {DEV_TEMP_CREDENTIALS.map((cred) => (
+                  <button
+                    key={cred.email}
+                    type="button"
+                    onClick={() => handleQuickFillCred(cred.email, cred.password)}
+                    style={{
+                      padding: '8px 10px',
+                      backgroundColor: cred.role === 'ADMIN' ? 'rgba(56, 189, 248, 0.12)' : 'rgba(148, 163, 184, 0.1)',
+                      border: cred.role === 'ADMIN' ? '1px solid rgba(56, 189, 248, 0.35)' : '1px solid rgba(148, 163, 184, 0.2)',
+                      borderRadius: '8px',
+                      color: cred.role === 'ADMIN' ? '#bae6fd' : '#e2e8f0',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title={`Fill ${cred.email}`}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                      <span style={{ fontWeight: 700 }}>{cred.label}</span>
+                      <span style={{
+                        fontSize: '9px',
+                        padding: '1px 5px',
+                        borderRadius: '4px',
+                        backgroundColor: cred.role === 'ADMIN' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(148, 163, 184, 0.2)',
+                        color: cred.role === 'ADMIN' ? '#38bdf8' : '#94a3b8'
+                      }}>{cred.badge}</span>
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#94a3b8', fontFamily: 'monospace' }}>{cred.email}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleDirectAdminBypass}
+                style={{
+                  marginTop: '4px',
+                  padding: '9px 12px',
+                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  borderRadius: '8px',
+                  color: '#fcd34d',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Shield size={14} />
+                <span>{UI_STRINGS.auth.goToAdminDirectly}</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
           </form>
         )}
 

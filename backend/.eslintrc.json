@@ -106,7 +106,23 @@
   },
   "overrides": [
     {
-      "files": ["src/data/**", "src/services/db.ts", "src/worker*.ts", "tests/**", "prisma/**"],
+      "files": [
+        "src/data/**",
+        "src/services/db.ts",
+        "src/worker*.ts",
+        "tests/**",
+        "prisma/**",
+        "src/services/certificationEngine.ts",
+        "src/services/pcbiAdminService.ts",
+        "src/services/pcbiGapGovernanceService.ts",
+        "src/services/pcbiControlledValidationService.ts",
+        "src/services/pcbiPilotExpansionService.ts",
+        "src/services/pcbiProductionPilotService.ts",
+        "src/controllers/pcbiAdmin.controller.ts",
+        "src/types/pcbiAdmin.ts",
+        "src/types/pcbiPilotExpansion.ts",
+        "src/types/pcbiProductionPilot.ts"
+      ],
       "rules": {
         "max-lines": "off",
         "max-len": "off",

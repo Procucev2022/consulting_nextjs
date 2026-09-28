@@ -43,6 +43,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
     : isStep3Done;
 
   const isStageLocked = (stageId: PipelineActiveTab): boolean => {
+    // If explicitly listed in unlockedTabs, it is unlocked (development mode per Prompt 99)
     if (unlockedTabs?.includes(stageId)) {
       return false;
     }

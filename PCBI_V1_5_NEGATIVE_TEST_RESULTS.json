@@ -1,0 +1,110 @@
+{
+  "testSuite": "PCBI_MODULE_3_NEGATIVE_BENCHMARK_VALIDATION_SUITE",
+  "version": "V1.5",
+  "executionDate": "2026-09-28",
+  "totalTests": 10,
+  "allPassed": true,
+  "governanceRule": "Under all failure conditions, NO PCBI is generated, status is set to BLOCKED, and admin action is mandated.",
+  "tests": [
+    {
+      "testId": "NEG_TEST_A",
+      "code": "A",
+      "scenario": "Missing History",
+      "testedCondition": "Series has zero observation points in catalog",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_NO_HISTORY",
+      "adminActionRequired": "Upload historical observation feed from verified publisher",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_B",
+      "code": "B",
+      "scenario": "Partial History",
+      "testedCondition": "Available history is 42 months (less than required 75 months)",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_PARTIAL_HISTORY",
+      "adminActionRequired": "Obtain missing early baseline periods (2020-04 to 2022-12)",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_C",
+      "code": "C",
+      "scenario": "Wrong Grade",
+      "testedCondition": "Grade mismatch between customer spec (SS316L) and feed (SS304)",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_GRADE_MISMATCH",
+      "adminActionRequired": "Select feed strictly matching high-moly marine grade specification",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_D",
+      "code": "D",
+      "scenario": "Wrong Specification",
+      "testedCondition": "Hydraulic oil specification matched against automotive engine oil",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_SPECIFICATION_MISMATCH",
+      "adminActionRequired": "Reject automotive oil feed; procure ISO VG 46 industrial hydraulic series",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_E",
+      "code": "E",
+      "scenario": "Wrong Currency",
+      "testedCondition": "Feed reported in Japanese Yen without approved FX conversion rule",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_CURRENCY_MISMATCH",
+      "adminActionRequired": "Establish approved RBI/BOJ daily settlement FX rate rule",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_F",
+      "code": "F",
+      "scenario": "Wrong Unit",
+      "testedCondition": "Feed measured in Short Tons (2000 lbs) without conversion formula",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_UNIT_MISMATCH",
+      "adminActionRequired": "Define and approve METH-SHORT-TON-TO-METRIC-TON conversion",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_G",
+      "code": "G",
+      "scenario": "Wrong Geography",
+      "testedCondition": "Customer purchase in India matched to Brazilian domestic FOB mill",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_GEOGRAPHY_MISMATCH",
+      "adminActionRequired": "Require domestic Indian or CFR Nhava Sheva landed benchmark",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_H",
+      "code": "H",
+      "scenario": "Unapproved Frequency Conversion",
+      "testedCondition": "Fortnightly feed mapped to weekly cycle using synthetic interpolation",
+      "pcbiGenerated": false,
+      "status": "METHODOLOGY_APPROVAL_REQUIRED",
+      "adminActionRequired": "Obtain methodology approval before performing interpolation",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_I",
+      "code": "I",
+      "scenario": "Missing Source Provenance",
+      "testedCondition": "Observation missing LINK_02_ORIGINAL_CHECKSUM audit link",
+      "pcbiGenerated": false,
+      "status": "BLOCKED_PROVENANCE_MISSING",
+      "adminActionRequired": "Re-ingest source document with cryptographically verified checksum",
+      "passed": true
+    },
+    {
+      "testId": "NEG_TEST_J",
+      "code": "J",
+      "scenario": "Missing Methodology Approval",
+      "testedCondition": "Turnings scrap series attempting automatic -18% price formula",
+      "pcbiGenerated": false,
+      "status": "METHODOLOGY_PENDING",
+      "adminActionRequired": "Submit methodology derivation to administrator for governance approval",
+      "passed": true
+    }
+  ]
+}

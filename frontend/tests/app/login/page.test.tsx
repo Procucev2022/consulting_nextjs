@@ -325,5 +325,31 @@ describe('Login & Registration Page Component', () => {
     fireEvent.click(showButtons[1]);
     expect(regConfirmInput.type).toBe('text');
   });
+
+  it('should render dev temporary logins and allow quick-filling credentials', () => {
+    render(<LoginPage />);
+
+    expect(screen.getByText(UI_STRINGS.auth.tempDevCredentialsBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.goToAdminDirectly)).toBeInTheDocument();
+
+    const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel) as HTMLInputElement;
+    const passwordInput = screen.getByLabelText(UI_STRINGS.auth.passwordLabel) as HTMLInputElement;
+
+    const srimanBtn = screen.getByTitle('Fill sriman@procucev.com');
+    fireEvent.click(srimanBtn);
+
+    expect(emailInput.value).toBe('sriman@procucev.com');
+    expect(passwordInput.value).toBe('sriman@123');
+  });
+
+  it('should bypass directly to admin portal when clicking direct admin button', () => {
+    render(<LoginPage />);
+
+    const directAdminBtn = screen.getByText(UI_STRINGS.auth.goToAdminDirectly);
+    fireEvent.click(directAdminBtn);
+
+    expect(mockPush).toHaveBeenCalledWith('/admin');
+  });
 });
+
 

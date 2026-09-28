@@ -248,6 +248,150 @@ describe('apiClient', () => {
     expect(res).toEqual(mockOverview);
   });
 
+  it('getPCBIDashboard should perform GET /api/pcbi/dashboard', async () => {
+    const mockDash = { summary: { total_spend_inr_cr: 100 } };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => mockDash
+    });
+
+    const res = await apiClient.getPCBIDashboard();
+    expect(global.fetch).toHaveBeenCalledWith('/api/pcbi/dashboard');
+    expect(res).toEqual(mockDash);
+  });
+
+  it('getPCBIExplainabilityAudit should perform GET /api/pcbi/opportunity/:id', async () => {
+    const mockAudit = { transaction_id: 'TX-01', material_code: 'MAT-01' };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ audit: mockAudit })
+    });
+
+    const res = await apiClient.getPCBIExplainabilityAudit('TX-01');
+    expect(global.fetch).toHaveBeenCalledWith('/api/pcbi/opportunity/TX-01');
+    expect(res).toEqual(mockAudit);
+  });
+
+  it('getConsolidatedSavings should perform GET /api/savings/consolidated', async () => {
+    const mockData = { opportunities: [], overlaps: [], waterfallMetrics: {} };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockData })
+    });
+
+    const res = await apiClient.getConsolidatedSavings();
+    expect(global.fetch).toHaveBeenCalledWith('/api/savings/consolidated');
+    expect(res).toEqual(mockData);
+  });
+
+  it('updateActionPlan should perform POST /api/savings/action-plan/update', async () => {
+    const mockPlan = { id: 'ACT-01', status: 'In Progress' };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockPlan })
+    });
+
+    const res = await apiClient.updateActionPlan('ACT-01', { status: 'In Progress', owner: 'Procurement' });
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/savings/action-plan/update',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actionId: 'ACT-01', status: 'In Progress', owner: 'Procurement' })
+      })
+    );
+    expect(res).toEqual(mockPlan);
+  });
+
+  it('updateSavingsOpportunityStatus should perform POST /api/savings/opportunity/status', async () => {
+    const mockOpp = { opportunity_id: 'OPP-01', status: 'APPROVED' };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockOpp })
+    });
+
+    const res = await apiClient.updateSavingsOpportunityStatus('OPP-01', 'APPROVED');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/savings/opportunity/status',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ opp_id: 'OPP-01', status: 'APPROVED' })
+      })
+    );
+    expect(res).toEqual(mockOpp);
+  });
+
+  it('getDBMetrics should perform GET /api/db/metrics', async () => {
+    const mockMetrics = { queryCount: 10 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockMetrics })
+    });
+
+    const res = await apiClient.getDBMetrics();
+    expect(global.fetch).toHaveBeenCalledWith('/api/db/metrics');
+    expect(res).toEqual(mockMetrics);
+  });
+
+  it('getDBTableData should perform GET /api/db/tables with query params', async () => {
+    const mockData = { rows: [], total: 0 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockData })
+    });
+
+    const res = await apiClient.getDBTableData('tenants', 1, 20, 'Acme');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/db/tables?table=tenants&page=1&limit=20&search=Acme')
+    );
+    expect(res).toEqual(mockData);
+  });
+
+  it('testDBConnection should perform POST /api/db/test-connection', async () => {
+    const mockData = { success: true, latencyMs: 2.5 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => mockData
+    });
+
+    const res = await apiClient.testDBConnection();
+    expect(global.fetch).toHaveBeenCalledWith('/api/db/test-connection', { method: 'POST' });
+    expect(res).toEqual(mockData);
+  });
+
+  it('getVendorDetails should perform GET /api/vendors?details=true', async () => {
+    const mockDetails = [{ vendor_name: 'Vendor A', year: 2024 }];
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: { vendorDetails: mockDetails } })
+    });
+
+    const res = await apiClient.getVendorDetails();
+    expect(global.fetch).toHaveBeenCalledWith('/api/vendors?details=true');
+    expect(res).toEqual(mockDetails);
+  });
+
+  it('getCurrencyConversion should perform GET /api/currency with and without date', async () => {
+    const mockData = { from: 'USD', amount: 100, converted: 8300 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockData })
+    });
+
+    const res1 = await apiClient.getCurrencyConversion('USD', 100, 2024);
+    expect(global.fetch).toHaveBeenCalledWith('/api/currency?from=USD&amount=100&date=2024');
+    expect(res1).toEqual(mockData);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockData })
+    });
+    const res2 = await apiClient.getCurrencyConversion('USD', 100);
+    expect(global.fetch).toHaveBeenCalledWith('/api/currency?from=USD&amount=100');
+    expect(res2).toEqual(mockData);
+  });
+
+  it('getDBStatus should perform GET /api/db/status', async () => {
+    const mockHealth = { status: 'healthy', latencyMs: 5 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ data: mockHealth })
+    });
+
+    const res = await apiClient.getDBStatus();
+    expect(global.fetch).toHaveBeenCalledWith('/api/db/status');
+    expect(res).toEqual(mockHealth);
+  });
+
   describe('apiClient Input Validation Failures', () => {
     it('should throw validation error when updateTenant receives invalid data', async () => {
       await expect(apiClient.updateTenant({ enterprise_name: '' })).rejects.toThrow('Invalid tenant updates');
@@ -271,6 +415,14 @@ describe('apiClient', () => {
 
     it('should throw validation error when calculateCommercialSaaS receives invalid data', async () => {
       await expect(apiClient.calculateCommercialSaaS(-100, 10, 1)).rejects.toThrow('Invalid commercial metrics calculation');
+    });
+
+    it('should throw validation error when updateActionPlan receives invalid data', async () => {
+      await expect(apiClient.updateActionPlan('', { status: 'In Progress' })).rejects.toThrow('Invalid action plan update');
+    });
+
+    it('should throw validation error when updateSavingsOpportunityStatus receives invalid data', async () => {
+      await expect(apiClient.updateSavingsOpportunityStatus('', 'APPROVED')).rejects.toThrow('Invalid opportunity status update');
     });
   });
 });

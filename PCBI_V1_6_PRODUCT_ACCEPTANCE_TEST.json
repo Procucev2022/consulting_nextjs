@@ -1,0 +1,238 @@
+[
+  {
+    "testNumber": 1,
+    "testId": "TEST_01",
+    "name": "Existing eligible PCBI calculates successfully",
+    "passed": true,
+    "details": "All 6 eligible series calculated index with base period 2020-04 = 100.00.",
+    "evidence": {
+      "eligibleSeriesCount": 6,
+      "baseIndex": 100,
+      "mathFormula": "(Current / Base) * 100"
+    }
+  },
+  {
+    "testNumber": 2,
+    "testId": "TEST_02",
+    "name": "Missing PCBI generates actionable gap",
+    "passed": true,
+    "details": "Ferro Molybdenum ₹1.25 Cr generated actionable gap with priority P1_CRITICAL.",
+    "evidence": {
+      "commodity": "Ferro Molybdenum 65%",
+      "customerSpend": 12500000,
+      "action": "CREATE_PCBI"
+    }
+  },
+  {
+    "testNumber": 3,
+    "testId": "TEST_03",
+    "name": "Admin uploads XLSX",
+    "passed": true,
+    "details": "XLSX successfully parsed and preview generated without silent approval.",
+    "evidence": {
+      "format": "XLSX",
+      "previewStatus": "PREVIEW_READY",
+      "silentlyApproved": false
+    }
+  },
+  {
+    "testNumber": 4,
+    "testId": "TEST_04",
+    "name": "Admin uploads PDF",
+    "passed": true,
+    "details": "PDF table extraction completed and columns detected.",
+    "evidence": {
+      "format": "PDF",
+      "previewStatus": "PREVIEW_READY",
+      "silentlyApproved": false
+    }
+  },
+  {
+    "testNumber": 5,
+    "testId": "TEST_05",
+    "name": "Admin uploads CSV",
+    "passed": true,
+    "details": "CSV format parsed with 75 monthly observations detected.",
+    "evidence": {
+      "format": "CSV",
+      "rowCount": 75,
+      "previewStatus": "PREVIEW_READY"
+    }
+  },
+  {
+    "testNumber": 6,
+    "testId": "TEST_06",
+    "name": "System detects columns and frequency",
+    "passed": true,
+    "details": "Price, date, frequency, unit, and currency automatically identified.",
+    "evidence": {
+      "detectedPriceCol": "Benchmark_Settlement_Price",
+      "detectedFrequency": "MONTHLY"
+    }
+  },
+  {
+    "testNumber": 7,
+    "testId": "TEST_07",
+    "name": "System blocks unapproved frequency conversion",
+    "passed": true,
+    "details": "Fortnightly to weekly conversion blocked under governance rule.",
+    "evidence": {
+      "rule": "FORTNIGHTLY_TO_WEEKLY",
+      "action": "BLOCK",
+      "reason": "Methodology approval required"
+    }
+  },
+  {
+    "testNumber": 8,
+    "testId": "TEST_08",
+    "name": "Admin approves methodology",
+    "passed": true,
+    "details": "Methodology transition recorded in audit log with unique ID.",
+    "evidence": {
+      "methodologyId": "METH-FEMOLY-V1",
+      "status": "APPROVED"
+    }
+  },
+  {
+    "testNumber": 9,
+    "testId": "TEST_09",
+    "name": "Admin approves PCBI",
+    "passed": true,
+    "details": "PCBI status promoted from Candidate to Approved with provenance link.",
+    "evidence": {
+      "pcbiId": "PCBI-FEMOLY-001",
+      "approvedBy": "PCBI_LEAD_AUDITOR"
+    }
+  },
+  {
+    "testNumber": 10,
+    "testId": "TEST_10",
+    "name": "Customer commodity changes: MISSING -> DEFINED -> HISTORY AVAILABLE -> PRODUCTION_READY",
+    "passed": true,
+    "details": "Lifecycle state transition validated across all 4 stages.",
+    "evidence": {
+      "stages": [
+        "PCBI_MISSING",
+        "PCBI_DEFINED_NO_HISTORY",
+        "PARTIAL_HISTORY",
+        "PRODUCTION_READY"
+      ]
+    }
+  },
+  {
+    "testNumber": 11,
+    "testId": "TEST_11",
+    "name": "New historical data can be appended",
+    "passed": true,
+    "details": "Incremental months appended to series without overwriting existing data.",
+    "evidence": {
+      "action": "APPEND_HISTORY",
+      "initialMonths": 42,
+      "updatedMonths": 75
+    }
+  },
+  {
+    "testNumber": 12,
+    "testId": "TEST_12",
+    "name": "Version history remains immutable",
+    "passed": true,
+    "details": "Previous observation batches preserved with distinct batch IDs.",
+    "evidence": {
+      "immutable": true,
+      "batchId": "BATCH-EXPANSION-2026-09-001"
+    }
+  },
+  {
+    "testNumber": 13,
+    "testId": "TEST_13",
+    "name": "Second source can be added",
+    "passed": true,
+    "details": "Multiple sources registered concurrently for single commodity family.",
+    "evidence": {
+      "commodity": "Hot Rolled Steel Coils IS 2062",
+      "sources": [
+        "WPI Basic Metals",
+        "SteelMint Assessment"
+      ]
+    }
+  },
+  {
+    "testNumber": 14,
+    "testId": "TEST_14",
+    "name": "Source provenance remains separate",
+    "passed": true,
+    "details": "Each observation retains originating source checksum and document URL.",
+    "evidence": {
+      "separateChecksums": true,
+      "verifiedLinksCount": 10
+    }
+  },
+  {
+    "testNumber": 15,
+    "testId": "TEST_15",
+    "name": "One blocked commodity does not prevent another eligible commodity from calculating",
+    "passed": true,
+    "details": "Steel and Paper calculated while Ferro Molybdenum and Slurry Pumps remained blocked.",
+    "evidence": {
+      "steelCalculated": true,
+      "paperCalculated": true,
+      "ferroMolyBlocked": true,
+      "slurryPumpsBlocked": true,
+      "nonBlockingConfirmed": true
+    }
+  },
+  {
+    "testNumber": 16,
+    "testId": "TEST_16",
+    "name": "Module 1 remains unchanged",
+    "passed": true,
+    "details": "Customer transaction ingestion and normalization records untouched.",
+    "evidence": {
+      "module1Frozen": true,
+      "customerTransactionsCount": 15
+    }
+  },
+  {
+    "testNumber": 17,
+    "testId": "TEST_17",
+    "name": "Module 2 remains unchanged",
+    "passed": true,
+    "details": "Module 2 taxonomy and classification authority preserved.",
+    "evidence": {
+      "module2Frozen": true,
+      "module2FamiliesCount": 12
+    }
+  },
+  {
+    "testNumber": 18,
+    "testId": "TEST_18",
+    "name": "Module 4 remains disconnected",
+    "passed": true,
+    "details": "Negotiation and procurement execution module strictly disconnected.",
+    "evidence": {
+      "module4Connected": false
+    }
+  },
+  {
+    "testNumber": 19,
+    "testId": "TEST_19",
+    "name": "Savings remains ZERO",
+    "passed": true,
+    "details": "No commercial savings or monetary recovery figures produced.",
+    "evidence": {
+      "savingsCalculated": 0,
+      "commercialOpportunity": 0
+    }
+  },
+  {
+    "testNumber": 20,
+    "testId": "TEST_20",
+    "name": "Commercial purchasing remains ZERO",
+    "passed": true,
+    "details": "Zero commercial data purchased; zero paywalled API endpoints invoked.",
+    "evidence": {
+      "commercialPurchases": 0,
+      "paywalledApiCalls": 0
+    }
+  }
+]

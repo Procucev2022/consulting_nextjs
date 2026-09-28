@@ -3,7 +3,8 @@ import {
   AUTH_ROLES,
   AUTH_STATUS,
   AUTH_STORAGE_KEYS,
-  AUTH_API_ENDPOINTS
+  AUTH_API_ENDPOINTS,
+  DEV_TEMP_CREDENTIALS
 } from '../../src/constants/auth';
 
 describe('Frontend Auth Constants', () => {
@@ -30,5 +31,16 @@ describe('Frontend Auth Constants', () => {
     expect(AUTH_API_ENDPOINTS.CHANGE_PASSWORD).toBe('/api/auth/change-password');
     expect(AUTH_API_ENDPOINTS.ADMIN_USERS).toBe('/api/admin/users');
     expect(AUTH_API_ENDPOINTS.ADMIN_USER_STATUS('usr-123')).toBe('/api/admin/users/usr-123/status');
+    expect(AUTH_API_ENDPOINTS.ADMIN_USER_TIER('usr-123')).toBe('/api/admin/users/usr-123/tier');
+  });
+
+  it('should define valid temporary development credentials including sriman admin', () => {
+    expect(DEV_TEMP_CREDENTIALS.length).toBeGreaterThan(0);
+    const sriman = DEV_TEMP_CREDENTIALS.find((c) => c.email === 'sriman@procucev.com');
+    expect(sriman).toBeDefined();
+    expect(sriman?.password).toBe('sriman@123');
+    expect(sriman?.role).toBe('ADMIN');
   });
 });
+
+
