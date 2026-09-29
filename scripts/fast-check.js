@@ -97,6 +97,7 @@ function main() {
 
   const backendFiles = changedFiles.filter((f) => f.startsWith('backend/'));
   const frontendFiles = changedFiles.filter((f) => f.startsWith('frontend/'));
+  const rootFiles = changedFiles.filter((f) => !f.startsWith('backend/') && !f.startsWith('frontend/'));
   const BACKEND_DIR = path.resolve(ROOT_DIR, 'backend');
   const FRONTEND_DIR = path.resolve(ROOT_DIR, 'frontend');
 

@@ -18,5 +18,25 @@
       "invocation_logs": true,
       "persist": true
     }
+  },
+  "env": {
+    "dev": {
+      "name": "consulting-frontend",
+      "vars": {
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+      }
+    },
+    "prod": {
+      "name": "consulting-frontend",
+      "vars": {
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+      }
+    },
+    "production": {
+      "name": "consulting-frontend",
+      "vars": {
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+      }
+    }
   }
 }
