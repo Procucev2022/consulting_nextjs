@@ -73,7 +73,7 @@ export class ObjectStoreService {
     const targetBucket = bucket || this.defaultBucket;
     const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
     const safeFilename = path.basename(filename).replace(/[^a-zA-Z0-9._-]/g, '_');
-    const objectKey = `${Date.now()}_${safeFilename}`;
+    const objectKey = `${targetBucket}/${Date.now()}_${safeFilename}`;
 
     const metadata: StoredObjectMetadata = {
       key: objectKey,
