@@ -1,0 +1,52 @@
+{
+  "reconciliationTimestamp": "2026-09-29T19:51:15.298Z",
+  "categoryId": "CAT-StructuralSt",
+  "categoryName": "Structural Steel",
+  "totalSpendInr": 219000000,
+  "addressableSpendInr": 219000000,
+  "netDefensibleOpportunityInr": 8400000,
+  "sumOfTransactionAllocationsInr": 8399999,
+  "reconciled": true,
+  "transactionAllocations": [
+    {
+      "transactionId": "TX-VAL-001",
+      "poNumber": "PO-8001",
+      "supplierName": "Tata Steel Ltd",
+      "categoryName": "Structural Steel",
+      "totalSpendInr": 76800000,
+      "waterfallStage": "E_AUCTION",
+      "opportunityPool": "Competitive Price Arbitrage",
+      "allocatedValueInr": 2945753
+    },
+    {
+      "transactionId": "TX-VAL-002",
+      "poNumber": "PO-8002",
+      "supplierName": "JSW Steel Ltd",
+      "categoryName": "Structural Steel",
+      "totalSpendInr": 60000000,
+      "waterfallStage": "E_AUCTION",
+      "opportunityPool": "Competitive Price Arbitrage",
+      "allocatedValueInr": 2301370
+    },
+    {
+      "transactionId": "TX-VAL-003",
+      "poNumber": "PO-8003",
+      "supplierName": "Jindal Steel & Power",
+      "categoryName": "Structural Steel",
+      "totalSpendInr": 46800000,
+      "waterfallStage": "E_AUCTION",
+      "opportunityPool": "Competitive Price Arbitrage",
+      "allocatedValueInr": 1795068
+    },
+    {
+      "transactionId": "TX-VAL-004",
+      "poNumber": "PO-8004",
+      "supplierName": "Steel Authority of India Ltd",
+      "categoryName": "Structural Steel",
+      "totalSpendInr": 35400000,
+      "waterfallStage": "E_AUCTION",
+      "opportunityPool": "Competitive Price Arbitrage",
+      "allocatedValueInr": 1357808
+    }
+  ]
+}

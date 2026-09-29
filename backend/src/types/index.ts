@@ -28,3 +28,5 @@ export * from './pcbiCommodityCoverage';
 export * from './certification';
 export * from './pcbiPlatformIntegration';
 export * from './pcbiCommodityDataLab';
+export * from './module2StrategicSourcing';
+export * from './module2AuditDossier';

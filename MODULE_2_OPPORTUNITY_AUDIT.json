@@ -1,0 +1,184 @@
+{
+  "auditMetadata": {
+    "auditId": "AUDIT-M2-SOURCING-2026-V1",
+    "version": "MODULE_2_SOURCING_LOGIC_V1.0",
+    "timestamp": "2026-09-29T12:00:00.000Z",
+    "governanceStandard": "aiCEV_ENTERPRISE_ZERO_FABRICATION_V1",
+    "boundaryStatus": {
+      "module1CustomerIngestion": "UNCHANGED",
+      "module2StrategicSourcing": "VALIDATED_V1.0",
+      "module3PcbiMaster": "UNCHANGED",
+      "module4SavingsRealization": "UNCHANGED"
+    }
+  },
+  "executiveSummary": {
+    "totalSpendAnalyzedInr": 18000000,
+    "totalSpendAnalyzedInrCr": 1.8,
+    "totalAddressableSpendInr": 15000000,
+    "totalAddressableSpendInrCr": 1.5,
+    "totalPotentialEAuctionOpportunityInr": 500000,
+    "totalPotentialEAuctionOpportunityInrCr": 0.05,
+    "totalPotentialConsolidationOpportunityInr": 200000,
+    "totalPotentialConsolidationOpportunityInrCr": 0.02,
+    "totalOverlappingOpportunityInr": 200000,
+    "totalOverlappingOpportunityInrCr": 0.02,
+    "netQuantifiableOpportunityInr": 500000,
+    "netQuantifiableOpportunityInrCr": 0.05,
+    "categoriesReadyForSourcingCount": 3,
+    "eauctionCandidatesCount": 2,
+    "consolidationCandidatesCount": 2,
+    "opportunitiesNotYetQuantifiableCount": 1,
+    "overallDataConfidence": "HIGH",
+    "calculationDisclaimer": "Indicative opportunity based on customer historical comparable transactions — NOT realized savings."
+  },
+  "categoryProfiles": [
+    {
+      "categoryId": "CAT-STL-PLT-12",
+      "categoryName": "Structural Steel Plates",
+      "unspscCode": "30101704",
+      "totalSpendInr": 11120000,
+      "addressableSpendInr": 11120000,
+      "activeSuppliers": 3,
+      "topSupplierSharePct": 59.6,
+      "hhiScore": 4620,
+      "fragmentation": "MODERATE_FRAGMENTATION",
+      "baselineWeightedPrice": 61777.78,
+      "credibleReferencePrice": 60000.0,
+      "credibleReferenceMethod": "LOWEST_CREDIBLE_PRICE",
+      "potentialPriceGapPct": 2.9,
+      "potentialEAuctionOpportunityInr": 320000,
+      "potentialVendorConsolidationOpportunityInr": 150000,
+      "overlappingOpportunityInr": 150000,
+      "netQuantifiableOpportunityInr": 320000,
+      "status": "E_AUCTION_AND_CONSOLIDATION",
+      "dataConfidence": "HIGH",
+      "scorecardScore": 86,
+      "recommendedStrategy": "E_AUCTION_PLUS_CONSOLIDATION",
+      "operationalConsolidation": {
+        "suppliersPotentiallyAffected": 1,
+        "poCountAffected": 2,
+        "touchpointsReducedCount": 12
+      },
+      "exclusionsCount": 0,
+      "evidenceTransactionIds": [
+        "TX-STL-01",
+        "TX-STL-02",
+        "TX-STL-03",
+        "TX-STL-04"
+      ]
+    },
+    {
+      "categoryId": "CAT-FST-M16",
+      "categoryName": "Hex Head Fasteners & Bolts",
+      "unspscCode": "31161601",
+      "totalSpendInr": 2430000,
+      "addressableSpendInr": 2430000,
+      "activeSuppliers": 4,
+      "topSupplierSharePct": 37.0,
+      "hhiScore": 2850,
+      "fragmentation": "HIGH_FRAGMENTATION",
+      "baselineWeightedPrice": 48.6,
+      "credibleReferencePrice": 45.0,
+      "credibleReferenceMethod": "LOWEST_CREDIBLE_PRICE",
+      "potentialPriceGapPct": 7.4,
+      "potentialEAuctionOpportunityInr": 180000,
+      "potentialVendorConsolidationOpportunityInr": 120000,
+      "overlappingOpportunityInr": 120000,
+      "netQuantifiableOpportunityInr": 180000,
+      "status": "E_AUCTION_AND_CONSOLIDATION",
+      "dataConfidence": "HIGH",
+      "scorecardScore": 84,
+      "recommendedStrategy": "E_AUCTION_PLUS_CONSOLIDATION",
+      "operationalConsolidation": {
+        "suppliersPotentiallyAffected": 2,
+        "poCountAffected": 2,
+        "touchpointsReducedCount": 24
+      },
+      "exclusionsCount": 0,
+      "evidenceTransactionIds": [
+        "TX-FST-01",
+        "TX-FST-02",
+        "TX-FST-03",
+        "TX-FST-04"
+      ]
+    },
+    {
+      "categoryId": "CAT-PKG-BOX-5P",
+      "categoryName": "Corrugated Packaging Boxes",
+      "unspscCode": "14121502",
+      "totalSpendInr": 8680000,
+      "addressableSpendInr": 8680000,
+      "activeSuppliers": 3,
+      "topSupplierSharePct": 40.3,
+      "hhiScore": 3480,
+      "fragmentation": "MODERATE_FRAGMENTATION",
+      "baselineWeightedPrice": 144.67,
+      "credibleReferencePrice": 140.0,
+      "credibleReferenceMethod": "LOWEST_CREDIBLE_PRICE",
+      "potentialPriceGapPct": 3.2,
+      "potentialEAuctionOpportunityInr": 280000,
+      "potentialVendorConsolidationOpportunityInr": 0,
+      "overlappingOpportunityInr": 0,
+      "netQuantifiableOpportunityInr": 280000,
+      "status": "E_AUCTION_CANDIDATE",
+      "dataConfidence": "HIGH",
+      "scorecardScore": 82,
+      "recommendedStrategy": "E_AUCTION_RECOMMENDED",
+      "operationalConsolidation": {
+        "suppliersPotentiallyAffected": 0,
+        "poCountAffected": 0,
+        "touchpointsReducedCount": 0
+      },
+      "exclusionsCount": 0,
+      "evidenceTransactionIds": [
+        "TX-PKG-01",
+        "TX-PKG-02",
+        "TX-PKG-03"
+      ]
+    },
+    {
+      "categoryId": "CAT-VLV-BALL-50",
+      "categoryName": "Industrial Process Valves",
+      "unspscCode": "40141607",
+      "totalSpendInr": 552500,
+      "addressableSpendInr": 427500,
+      "activeSuppliers": 2,
+      "topSupplierSharePct": 56.1,
+      "hhiScore": 5100,
+      "fragmentation": "LOW_FRAGMENTATION",
+      "baselineWeightedPrice": 12214.28,
+      "credibleReferencePrice": 12000.0,
+      "credibleReferenceMethod": "LOWEST_CREDIBLE_PRICE",
+      "potentialPriceGapPct": 1.7,
+      "potentialEAuctionOpportunityInr": 7500,
+      "potentialVendorConsolidationOpportunityInr": 0,
+      "overlappingOpportunityInr": 0,
+      "netQuantifiableOpportunityInr": 7500,
+      "status": "QUANTIFIABLE",
+      "dataConfidence": "MEDIUM",
+      "scorecardScore": 58,
+      "recommendedStrategy": "DATA_DEEP_DIVE_REQUIRED",
+      "operationalConsolidation": {
+        "suppliersPotentiallyAffected": 0,
+        "poCountAffected": 0,
+        "touchpointsReducedCount": 0
+      },
+      "exclusionsCount": 1,
+      "exclusions": [
+        {
+          "transactionId": "TX-VLV-03",
+          "poNumber": "PO-VLV-2023-11",
+          "supplierName": "Microfinish Valves",
+          "reasons": [
+            "UNIT_MISMATCH"
+          ],
+          "explanation": "Unit 'SET' does not match category primary unit 'EA'"
+        }
+      ],
+      "evidenceTransactionIds": [
+        "TX-VLV-01",
+        "TX-VLV-02"
+      ]
+    }
+  ]
+}

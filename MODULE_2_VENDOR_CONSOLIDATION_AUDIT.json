@@ -1,0 +1,88 @@
+{
+  "categoryId": "CAT-StructuralSt",
+  "categoryName": "Structural Steel",
+  "totalCategorySpendInr": 219000000,
+  "currentSupplierCount": 4,
+  "hhiScore": 2698,
+  "tailSpendInr": 82200000,
+  "scenarios": [
+    {
+      "scenarioName": "CURRENT_STATE",
+      "targetSupplierCount": 4,
+      "spendAffectedInr": 0,
+      "volumeAffected": 0,
+      "suppliersAffected": [],
+      "historicalPriceBasis": "Current observed supplier prices",
+      "opportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "operationalRisks": [
+        "Supplier transition friction"
+      ],
+      "confidence": "MEDIUM"
+    },
+    {
+      "scenarioName": "SCENARIO_A",
+      "targetSupplierCount": 3,
+      "spendAffectedInr": 35400000,
+      "volumeAffected": 600,
+      "suppliersAffected": [
+        "Steel Authority of India Ltd"
+      ],
+      "historicalPriceBasis": "Price of top 3 suppliers applied to tail volume",
+      "opportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "operationalRisks": [
+        "Supplier transition friction"
+      ],
+      "confidence": "MEDIUM"
+    },
+    {
+      "scenarioName": "SCENARIO_B",
+      "targetSupplierCount": 2,
+      "spendAffectedInr": 82200000,
+      "volumeAffected": 1400,
+      "suppliersAffected": [
+        "Jindal Steel & Power",
+        "Steel Authority of India Ltd"
+      ],
+      "historicalPriceBasis": "Price of top 2 suppliers applied to tail volume",
+      "opportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "operationalRisks": [
+        "High dependency on primary supplier",
+        "Capacity constraints"
+      ],
+      "confidence": "MEDIUM"
+    },
+    {
+      "scenarioName": "SCENARIO_C",
+      "targetSupplierCount": 2,
+      "spendAffectedInr": 82200000,
+      "volumeAffected": 1400,
+      "suppliersAffected": [
+        "Jindal Steel & Power",
+        "Steel Authority of India Ltd"
+      ],
+      "historicalPriceBasis": "Price of top 2 suppliers applied to tail volume",
+      "opportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "operationalRisks": [
+        "High dependency on primary supplier",
+        "Capacity constraints"
+      ],
+      "confidence": "MEDIUM"
+    }
+  ]
+}

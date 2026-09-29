@@ -45,6 +45,12 @@ import {
 import { PCBICalculationEngine } from './pcbiCalculationEngine';
 import { StrategicSourcingEngine } from './strategicSourcingEngine';
 import { SavingsDeduplicationEngine } from './savingsDeduplicationEngine';
+import { Module2StrategicSourcingEngine } from './module2StrategicSourcingEngine';
+import type {
+  CategoryStrategicSourcingProfile,
+  Module2StrategicSourcingDashboardSummary,
+  Module2ToModule4HandoffPackage
+} from '../types/module2StrategicSourcing';
 import type {
   SavingsOpportunityItem,
   SavingsWaterfallMetrics,
@@ -102,6 +108,10 @@ export class DatabaseStore {
   private cachedConsolidatedOpportunities: SavingsOpportunityItem[] = [];
   private cachedOverlaps: OpportunityOverlapGroup[] = [];
   private cachedWaterfallMetrics: SavingsWaterfallMetrics | null = null;
+  // Module 2 Strategic Sourcing Cache (V1.0)
+  private cachedModule2Profiles: CategoryStrategicSourcingProfile[] = [];
+  private cachedModule2Summary: Module2StrategicSourcingDashboardSummary | null = null;
+  private cachedModule2Handoff: Module2ToModule4HandoffPackage[] = [];
 
   // Upgrade Request State (Prompt 81)
   private upgradeRequests: UpgradeRequestRecord[] = [];
@@ -1395,6 +1405,340 @@ export class DatabaseStore {
     if (!opp) return null;
     opp.status = status;
     return { ...opp };
+  }
+
+  // =========================================================================
+  // MODULE 2 STRATEGIC SOURCING INTELLIGENCE (V1.0)
+  // =========================================================================
+
+  public getModule2StrategicTransactions(): StrategicInputTransaction[] {
+    const validationList = this.getValidationRecords();
+    if (validationList.length >= 10) {
+      return validationList.map((v, i) => ({
+        id: v.record_id || `TX-M2-${i + 1}`,
+        po_number: v.po_number || `PO-${1000 + i}`,
+        po_date: v.transaction_date || (v.spend_year ? `${v.spend_year}-05-15` : '2023-06-01'),
+        vendor_name: v.vendor_name || 'Generic Vendor',
+        material_code: v.column_l_code || `MAT-${1000 + (i % 25)}`,
+        material_desc: v.raw_desc || 'Industrial Material Line Item',
+        quantity: v.order_quantity && v.order_quantity > 0 ? v.order_quantity : 100,
+        uom: 'EA',
+        unit_price: v.net_price && v.net_price > 0 ? v.net_price : (v.amount ? v.amount / 100 : 1500),
+        total_spend_inr: v.amount_inr || (v.inr_crores ? v.inr_crores * 10000000 : 150000),
+        currency: v.raw_currency || 'INR',
+        plant: 'Main Plant 1',
+        spend_category: v.core_category || 'DIRECT MATERIALS',
+        unspsc_code: '44101500',
+        unspsc_commodity: v.core_category || 'Direct Materials'
+      }));
+    }
+
+    // Default validated enterprise purchase transaction baseline
+    return [
+      // 1. Structural Steel Plates (High dispersion, e-auction & consolidation)
+      {
+        id: 'TX-STL-01',
+        po_number: 'PO-STL-2023-01',
+        po_date: '2023-01-15',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'Tata Steel Ltd',
+        quantity: 50,
+        uom: 'MT',
+        unit_price: 60000,
+        total_spend_inr: 3000000,
+        currency: 'INR',
+        plant: 'Jamshedpur',
+        spend_category: 'Structural Steel Plates'
+      },
+      {
+        id: 'TX-STL-02',
+        po_number: 'PO-STL-2023-04',
+        po_date: '2023-04-10',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'Tata Steel Ltd',
+        quantity: 60,
+        uom: 'MT',
+        unit_price: 60500,
+        total_spend_inr: 3630000,
+        currency: 'INR',
+        plant: 'Jamshedpur',
+        spend_category: 'Structural Steel Plates'
+      },
+      {
+        id: 'TX-STL-03',
+        po_number: 'PO-STL-2023-06',
+        po_date: '2023-06-20',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'JSW Steel Ltd',
+        quantity: 40,
+        uom: 'MT',
+        unit_price: 63500,
+        total_spend_inr: 2540000,
+        currency: 'INR',
+        plant: 'Bellary',
+        spend_category: 'Structural Steel Plates'
+      },
+      {
+        id: 'TX-STL-04',
+        po_number: 'PO-STL-2023-09',
+        po_date: '2023-09-05',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'Jindal Steel & Power',
+        quantity: 30,
+        uom: 'MT',
+        unit_price: 65000,
+        total_spend_inr: 1950000,
+        currency: 'INR',
+        plant: 'Angul',
+        spend_category: 'Structural Steel Plates'
+      },
+
+      // 2. Hex Head Fasteners (High fragmentation, multiple vendors)
+      {
+        id: 'TX-FST-01',
+        po_number: 'PO-FST-2023-02',
+        po_date: '2023-02-10',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'Unbrako Fasteners',
+        quantity: 20000,
+        uom: 'PCS',
+        unit_price: 45,
+        total_spend_inr: 900000,
+        currency: 'INR',
+        plant: 'Plant 1',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+      {
+        id: 'TX-FST-02',
+        po_number: 'PO-FST-2023-05',
+        po_date: '2023-05-12',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'TVS Fasteners',
+        quantity: 15000,
+        uom: 'PCS',
+        unit_price: 48,
+        total_spend_inr: 720000,
+        currency: 'INR',
+        plant: 'Plant 1',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+      {
+        id: 'TX-FST-03',
+        po_number: 'PO-FST-2023-07',
+        po_date: '2023-07-22',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'Sundaram Fasteners Ltd',
+        quantity: 10000,
+        uom: 'PCS',
+        unit_price: 52,
+        total_spend_inr: 520000,
+        currency: 'INR',
+        plant: 'Plant 2',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+      {
+        id: 'TX-FST-04',
+        po_number: 'PO-FST-2023-10',
+        po_date: '2023-10-18',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'Precision Industrial Bolts',
+        quantity: 5000,
+        uom: 'PCS',
+        unit_price: 58,
+        total_spend_inr: 290000,
+        currency: 'INR',
+        plant: 'Plant 2',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+
+      // 3. Corrugated Packaging (E-Auction Candidate)
+      {
+        id: 'TX-PKG-01',
+        po_number: 'PO-PKG-2023-03',
+        po_date: '2023-03-01',
+        material_code: 'MAT-PKG-BOX-5P',
+        material_desc: 'Corrugated Shipping Box 5-Ply 400x300x250mm',
+        vendor_name: 'Packwell Industries',
+        quantity: 25000,
+        uom: 'BOX',
+        unit_price: 140,
+        total_spend_inr: 3500000,
+        currency: 'INR',
+        plant: 'Main Warehouse',
+        spend_category: 'Corrugated Packaging Boxes'
+      },
+      {
+        id: 'TX-PKG-02',
+        po_number: 'PO-PKG-2023-06',
+        po_date: '2023-06-15',
+        material_code: 'MAT-PKG-BOX-5P',
+        material_desc: 'Corrugated Shipping Box 5-Ply 400x300x250mm',
+        vendor_name: 'Boxmakers Corp',
+        quantity: 20000,
+        uom: 'BOX',
+        unit_price: 145,
+        total_spend_inr: 2900000,
+        currency: 'INR',
+        plant: 'Main Warehouse',
+        spend_category: 'Corrugated Packaging Boxes'
+      },
+      {
+        id: 'TX-PKG-03',
+        po_number: 'PO-PKG-2023-09',
+        po_date: '2023-09-20',
+        material_code: 'MAT-PKG-BOX-5P',
+        material_desc: 'Corrugated Shipping Box 5-Ply 400x300x250mm',
+        vendor_name: 'Amber Packaging Ltd',
+        quantity: 15000,
+        uom: 'BOX',
+        unit_price: 152,
+        total_spend_inr: 2280000,
+        currency: 'INR',
+        plant: 'Main Warehouse',
+        spend_category: 'Corrugated Packaging Boxes'
+      },
+
+      // 4. Industrial Valves (Demonstrates unit mismatch and exclusions)
+      {
+        id: 'TX-VLV-01',
+        po_number: 'PO-VLV-2023-04',
+        po_date: '2023-04-12',
+        material_code: 'MAT-VLV-BALL-50',
+        material_desc: 'Forged Steel Ball Valve DN50 Class 300',
+        vendor_name: 'Audco Valves Ltd',
+        quantity: 20,
+        uom: 'EA',
+        unit_price: 12000,
+        total_spend_inr: 240000,
+        currency: 'INR',
+        plant: 'Process Unit',
+        spend_category: 'Industrial Process Valves'
+      },
+      {
+        id: 'TX-VLV-02',
+        po_number: 'PO-VLV-2023-08',
+        po_date: '2023-08-14',
+        material_code: 'MAT-VLV-BALL-50',
+        material_desc: 'Forged Steel Ball Valve DN50 Class 300',
+        vendor_name: 'L&T Valves Ltd',
+        quantity: 15,
+        uom: 'EA',
+        unit_price: 12500,
+        total_spend_inr: 187500,
+        currency: 'INR',
+        plant: 'Process Unit',
+        spend_category: 'Industrial Process Valves'
+      },
+      {
+        id: 'TX-VLV-03',
+        po_number: 'PO-VLV-2023-11',
+        po_date: '2023-11-02',
+        material_code: 'MAT-VLV-BALL-50',
+        material_desc: 'Forged Steel Ball Valve DN50 Class 300 Set of 2',
+        vendor_name: 'Microfinish Valves',
+        quantity: 5,
+        uom: 'SET', // UNIT_MISMATCH exclusion trigger
+        unit_price: 25000,
+        total_spend_inr: 125000,
+        currency: 'INR',
+        plant: 'Process Unit',
+        spend_category: 'Industrial Process Valves'
+      },
+
+      // 5. Specialty Lubricants (Single Supplier)
+      {
+        id: 'TX-LUB-01',
+        po_number: 'PO-LUB-2023-02',
+        po_date: '2023-02-18',
+        material_code: 'MAT-LUB-SYN-46',
+        material_desc: 'Synthetic Industrial Gear Oil ISO VG 46',
+        vendor_name: 'Shell India Markets',
+        quantity: 50,
+        uom: 'DRUM',
+        unit_price: 32000,
+        total_spend_inr: 1600000,
+        currency: 'INR',
+        plant: 'Maintenance Shop',
+        spend_category: 'Specialty Lubricants & Greases'
+      },
+      {
+        id: 'TX-LUB-02',
+        po_number: 'PO-LUB-2023-07',
+        po_date: '2023-07-15',
+        material_code: 'MAT-LUB-SYN-46',
+        material_desc: 'Synthetic Industrial Gear Oil ISO VG 46',
+        vendor_name: 'Shell India Markets',
+        quantity: 40,
+        uom: 'DRUM',
+        unit_price: 32000,
+        total_spend_inr: 1280000,
+        currency: 'INR',
+        plant: 'Maintenance Shop',
+        spend_category: 'Specialty Lubricants & Greases'
+      },
+
+      // 6. One-off Turbine Overhaul (Non-recurring Capex)
+      {
+        id: 'TX-CPX-01',
+        po_number: 'PO-CPX-2023-05',
+        po_date: '2023-05-30',
+        material_code: 'SRV-TRB-OVRHL',
+        material_desc: 'Turbine Rotor Major Overhaul & Reblading Service',
+        vendor_name: 'Siemens Energy India',
+        quantity: 1,
+        uom: 'JOB',
+        unit_price: 7500000,
+        total_spend_inr: 7500000,
+        currency: 'INR',
+        plant: 'Power Plant',
+        spend_category: 'Turbine Capital Overhaul'
+      }
+    ];
+  }
+
+  public getModule2StrategicSourcingAnalysis(forceRefresh = false): {
+    profiles: CategoryStrategicSourcingProfile[];
+    summary: Module2StrategicSourcingDashboardSummary;
+    handoffPackages: Module2ToModule4HandoffPackage[];
+  } {
+    if (!forceRefresh && this.cachedModule2Profiles.length > 0 && this.cachedModule2Summary) {
+      return {
+        profiles: this.cachedModule2Profiles,
+        summary: this.cachedModule2Summary,
+        handoffPackages: this.cachedModule2Handoff
+      };
+    }
+
+    const txs = this.getModule2StrategicTransactions();
+    const result = Module2StrategicSourcingEngine.analyze(txs);
+    this.cachedModule2Profiles = result.profiles;
+    this.cachedModule2Summary = result.summary;
+    this.cachedModule2Handoff = result.handoffPackages;
+
+    return result;
+  }
+
+  public getModule2StrategicProfile(categoryIdOrName: string): CategoryStrategicSourcingProfile | null {
+    const analysis = this.getModule2StrategicSourcingAnalysis();
+    const normalized = categoryIdOrName.trim().toLowerCase();
+    return analysis.profiles.find(
+      (p) =>
+        p.categoryId.toLowerCase() === normalized ||
+        p.categoryName.toLowerCase() === normalized
+    ) || null;
+  }
+
+  public getModule2HandoffPackages(): Module2ToModule4HandoffPackage[] {
+    const analysis = this.getModule2StrategicSourcingAnalysis();
+    return analysis.handoffPackages;
   }
 }
 

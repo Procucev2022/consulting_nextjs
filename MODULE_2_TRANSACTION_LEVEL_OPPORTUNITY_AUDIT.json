@@ -1,0 +1,91 @@
+{
+  "auditTimestamp": "2026-09-29T19:51:15.282Z",
+  "engineVersion": "MODULE_2_EVALUATION_V1.0",
+  "totalInputTransactions": 4,
+  "categoryProfile": "Structural Steel",
+  "netOpportunityInr": 8400000,
+  "evidenceChain": {
+    "chainId": "EVID-CHAIN-STR-1790711475279",
+    "categoryId": "CAT-STR",
+    "categoryName": "Structural Steel",
+    "addressability": {
+      "totalHistoricalSpendInr": 219000000,
+      "comparableSpendInr": 219000000,
+      "priceAddressableSpendInr": 219000000,
+      "contractuallyAddressableSpendInr": 186150000,
+      "executableSpendInr": 164250000,
+      "realizableSavingsInr": null,
+      "disclaimer": "Spend addressability represents analytical opportunity potential. Realized savings are certified exclusively through Module 4 execution."
+    },
+    "comparableTransactionSet": {
+      "totalTransactions": 4,
+      "eligibleTransactions": 4,
+      "excludedTransactions": 0,
+      "supplierCount": 4,
+      "totalQuantity": 3600,
+      "excludedSpendInr": 0
+    },
+    "referencePriceAudit": {
+      "lowestObservedPrice": 58500,
+      "lowestCrediblePrice": 58875,
+      "p25Price": 58875,
+      "medianPrice": 59500,
+      "weightedAveragePrice": 60833.333333333336,
+      "currentRecentPrice": 59000,
+      "selectedReferencePrice": 58875,
+      "selectedMethodology": "LOWEST_CREDIBLE_PRICE",
+      "selectionRationale": "P25 historical quartile ₹58875.00 established as conservative defensible reference.",
+      "supportingTransactionIds": [
+        "TX-VAL-004"
+      ]
+    },
+    "priceDifference": 1958.3333333333358,
+    "addressableVolume": 3600,
+    "grossOpportunityInr": 7050000,
+    "addressabilityConstraints": {
+      "contractLockedSpendInr": 32850000,
+      "unharmonizedSpecSpendInr": 21900000,
+      "nonRecurringSpendInr": 0,
+      "operationalConstraintSpendInr": 10950000
+    },
+    "realisticOpportunityRange": {
+      "conservativeOpportunityInr": 7050000,
+      "conservativeRefPrice": 58875,
+      "baseOpportunityInr": 7050000,
+      "baseRefPrice": 58875,
+      "upsideOpportunityInr": 8400000,
+      "upsideRefPrice": 58500,
+      "label": "ANALYTICAL PROCUREMENT OPPORTUNITY — NOT REALIZED SAVINGS"
+    },
+    "executionMechanisms": [
+      {
+        "mechanism": "E_AUCTION",
+        "sharePct": 60,
+        "amountInr": 5040000,
+        "traceabilityNote": "Reconciled price dispersion"
+      },
+      {
+        "mechanism": "VENDOR_CONSOLIDATION",
+        "sharePct": 40,
+        "amountInr": 3360000,
+        "traceabilityNote": "Tail-spend volume shift"
+      }
+    ],
+    "evidenceConfidence": "MEDIUM",
+    "evidenceConfidenceReasons": [
+      "4 transactions across active suppliers",
+      "Moderate transaction volume"
+    ],
+    "evidenceStatus": "PROVEN_OPPORTUNITY",
+    "untestedOpportunityAreas": [
+      "E-auction dynamic market price discovery",
+      "Competitive multi-supplier RFQ tender",
+      "Volume aggregation across operating facilities",
+      "Commercial terms & payment period renegotiation",
+      "Specification harmonization & SKU rationalization",
+      "Demand smoothing & emergency order suppression",
+      "Cross-category strategic vendor consolidation",
+      "Tail-spend supplier base rationalization"
+    ]
+  }
+}

@@ -23283,3 +23283,9817 @@ BLOCKED — DEFECTS REQUIRE ATTENTION
 ## Prompt 221
 continue
 
+
+## Prompt 222
+MODULE 2 — STRATEGIC SOURCING INTELLIGENCE, E-AUCTION & VENDOR CONSOLIDATION ENGINE
+VERSION: MODULE_2_SOURCING_LOGIC_V1.0
+OBJECTIVE: STRENGTHEN MODULE 2 OUTPUTS INTO A COMPLETE STRATEGIC SOURCING OPPORTUNITY ENGINE
+
+IMPORTANT ARCHITECTURAL BOUNDARY
+
+This task is ONLY for MODULE 2.
+
+DO NOT modify:
+- Module 1 customer data ingestion, cleaning, schema or certified transaction data
+- Module 3 PCBI Master
+- Module 3 PCBI calculation engine
+- Module 3 PCBI Data Library
+- Module 3 benchmark methodology
+- Module 4 execution/savings realization engine
+- Module 2 classification authority
+
+Module 2 remains the sole analytical layer for:
+CUSTOMER SPEND → SPEND INTELLIGENCE → SUPPLIER ANALYSIS → SOURCING OPPORTUNITY → E-AUCTION / CONSOLIDATION RECOMMENDATION.
+
+Module 2 must NOT use PCBI or external market benchmarks to calculate its opportunity values.
+
+The purpose of this change is to make Module 2 commercially and strategically useful BEFORE Module 4 execution.
+
+============================================================
+1. CORE BUSINESS OBJECTIVE
+============================================================
+
+Transform Module 2 from a spend/classification output into a:
+
+STRATEGIC SOURCING OPPORTUNITY ENGINE
+
+For every meaningful category / commodity / spend cluster, Module 2 should answer:
+
+1. What are we buying?
+2. How much are we buying?
+3. How frequently are we buying?
+4. From how many suppliers?
+5. How fragmented is the supplier base?
+6. How concentrated is the spend?
+7. Are comparable suppliers charging materially different prices?
+8. Is there sufficient competitive tension for an e-auction?
+9. Is supplier consolidation commercially relevant?
+10. What portion of spend is addressable?
+11. What price improvement is demonstrable from customer historical data?
+12. What is the potential e-auction opportunity?
+13. What is the potential vendor consolidation opportunity?
+14. Are these two opportunities overlapping?
+15. What is the NET QUANTIFIABLE OPPORTUNITY after overlap removal?
+16. What sourcing strategy should procurement consider?
+17. What data supports the recommendation?
+18. What information is missing?
+19. What risks or constraints should procurement investigate?
+20. What should be the next strategic sourcing action?
+
+Do NOT simply produce a savings percentage.
+
+============================================================
+2. TERMINOLOGY — STRICTLY ENFORCE
+============================================================
+
+Module 2 must distinguish:
+
+A. TOTAL SPEND
+Actual customer purchase spend.
+
+B. ADDRESSABLE SPEND
+Portion of spend that can reasonably be considered for the specific sourcing opportunity.
+
+C. OPPORTUNITY
+A procurement pattern identified by Module 2.
+
+D. QUANTIFIABLE OPPORTUNITY
+An opportunity for which customer data supports a defensible monetary calculation.
+
+E. POTENTIAL E-AUCTION OPPORTUNITY
+Historical price-dispersion-based opportunity that may be addressable through competitive bidding/e-auction.
+
+F. POTENTIAL VENDOR CONSOLIDATION OPPORTUNITY
+Opportunity arising from fragmented supplier allocation and demonstrable price/volume improvement potential.
+
+G. NET QUANTIFIABLE OPPORTUNITY
+Combined opportunity after removing overlap between sourcing levers.
+
+H. REALIZED SAVINGS
+DO NOT calculate in Module 2.
+This belongs to Module 4 after actual sourcing execution and award.
+
+I. APPROVED SAVINGS
+DO NOT calculate in Module 2.
+
+NEVER call an analytical opportunity "realized savings".
+
+NEVER convert an opportunity into savings merely by applying a generic percentage assumption.
+
+============================================================
+3. ABSOLUTE NO-FABRICATION RULE
+============================================================
+
+The system must NEVER invent:
+
+- supplier prices
+- quantities
+- savings percentages
+- market prices
+- benchmark prices
+- external supplier capabilities
+- supplier capacity
+- market share
+- expected auction discount
+- expected consolidation percentage
+- negotiated prices
+
+If customer data does not contain sufficient evidence:
+
+STATUS = NOT_QUANTIFIABLE
+
+Do NOT display ₹0 as if the opportunity is zero.
+
+Use:
+
+"Opportunity Identified — Benefit Not Yet Quantifiable"
+
+when appropriate.
+
+₹0 should only mean a mathematically calculated opportunity of zero after sufficient validated data exists.
+
+============================================================
+4. CATEGORY-LEVEL STRATEGIC SOURCING DEEP DIVE
+============================================================
+
+For every eligible spend category, create a Strategic Sourcing Profile.
+
+The profile must contain:
+
+SECTION A — CATEGORY OVERVIEW
+
+- Category Name
+- Module 2 Classification
+- UNSPSC
+- Total Spend
+- Transaction Count
+- Active Suppliers
+- Active Months
+- Average Monthly Spend
+- Average Transaction Value
+- Spend Trend
+- Recurring / Non-Recurring
+- Spend Concentration
+- Category Materiality
+
+SECTION B — PURCHASE BEHAVIOUR
+
+Analyze:
+
+- Monthly spend
+- Monthly quantity
+- Transaction frequency
+- Purchase frequency
+- Order size distribution
+- Quantity concentration
+- Supplier frequency
+- Repeated purchases
+- Seasonal patterns if supported
+- Price movement over time
+- Volume movement over time
+
+Do not infer seasonality unless sufficient historical data supports it.
+
+SECTION C — SUPPLIER STRUCTURE
+
+Show:
+
+- Supplier count
+- Supplier spend
+- Supplier spend %
+- Supplier transaction count
+- Supplier transaction %
+- Supplier average price
+- Supplier quantity
+- Supplier price range
+- Top supplier share
+- Top 3 supplier share
+- Top 5 supplier share
+- Long tail supplier share
+
+Where useful calculate supplier concentration metrics such as HHI.
+
+Explain the meaning of the concentration result.
+
+Do not call concentration automatically "good" or "bad".
+
+============================================================
+5. SUPPLIER FRAGMENTATION ANALYSIS
+============================================================
+
+Create a Supplier Fragmentation Score / classification.
+
+At minimum evaluate:
+
+- Number of active suppliers
+- Spend distribution
+- Number of low-spend suppliers
+- Number of suppliers with repeated transactions
+- Supplier concentration
+- Price dispersion
+- Comparable specifications
+- Addressable volume
+
+Classify:
+
+LOW FRAGMENTATION
+MODERATE FRAGMENTATION
+HIGH FRAGMENTATION
+EXTREME FRAGMENTATION
+
+Do NOT use supplier count alone.
+
+For example:
+
+8 suppliers with one supplier holding 95% of spend is different from 8 suppliers each holding approximately 12%.
+
+Show the underlying evidence behind the classification.
+
+============================================================
+6. COMPARABILITY ENGINE
+============================================================
+
+Before calculating any price-based opportunity, normalize transactions using:
+
+- Commodity
+- Module 2 classification
+- Item / material
+- Specification
+- Grade
+- Unit
+- Currency
+- Quantity basis
+- Geography where available
+- Tax treatment where available
+- Freight treatment where available
+- Delivery basis where available
+- Date / period
+
+Do not compare fundamentally different products.
+
+Create:
+
+COMPARABLE
+PARTIALLY_COMPARABLE
+NOT_COMPARABLE
+
+transactions/groups.
+
+Only COMPARABLE transactions may directly participate in price-gap calculations.
+
+============================================================
+7. PRICE NORMALIZATION
+============================================================
+
+For each comparable sourcing group calculate:
+
+- Total Quantity
+- Total Spend
+- Weighted Average Purchase Price
+- Median Purchase Price
+- Minimum Price
+- Maximum Price
+- Price P10
+- Price P25
+- Price P50
+- Price P75
+- Price P90
+- Price dispersion
+- Supplier-level price distribution
+
+Primary baseline:
+
+WEIGHTED AVERAGE PURCHASE PRICE
+
+Formula:
+
+Weighted Average Price =
+SUM(Quantity × Unit Price) / SUM(Quantity)
+
+Do NOT use simple average price where quantities differ materially.
+
+============================================================
+8. CREDIBLE LOW-PRICE RULE
+============================================================
+
+Do NOT blindly use the lowest transaction ever recorded.
+
+Create a CREDIBLE LOWEST PRICE calculation.
+
+A transaction may qualify only when:
+
+- specification is comparable
+- unit is comparable
+- currency is comparable
+- geography is compatible where applicable
+- transaction is valid
+- quantity is meaningful
+- transaction is not an obvious outlier
+- sufficient supplier/transaction evidence exists
+- transaction is within the configured historical relevance window
+
+The system must record WHY a transaction qualifies or does not qualify.
+
+Store:
+
+REFERENCE_PRICE_METHOD
+
+Examples:
+
+- LOWEST_CREDIBLE_PRICE
+- P25_COMPARABLE_PRICE
+- MEDIAN_COMPARABLE_PRICE
+- NO_VALID_REFERENCE
+
+============================================================
+9. E-AUCTION OPPORTUNITY LOGIC
+============================================================
+
+E-auction should be identified as an opportunity, not assumed automatically.
+
+Evaluate:
+
+1. Recurring spend
+2. Sufficient addressable volume
+3. Multiple comparable suppliers
+4. Comparable specification
+5. Demonstrable price dispersion
+6. Sufficient supplier competition
+7. No obvious single-source technical constraint
+8. No obvious contractual lock
+9. Repeated procurement
+10. Sufficient spend materiality
+
+Generate:
+
+E_AUCTION_SUITABILITY
+
+with:
+
+HIGH
+MEDIUM
+LOW
+NOT_SUITABLE
+INSUFFICIENT_DATA
+
+Also provide the reasons.
+
+============================================================
+10. E-AUCTION BENEFIT CALCULATION
+============================================================
+
+For a qualifying category:
+
+Current Weighted Price =
+Total Comparable Spend / Total Comparable Quantity
+
+Reference Price =
+approved internal historical reference methodology
+
+Potential Price Gap =
+Current Weighted Price - Reference Price
+
+Potential E-Auction Opportunity =
+Potential Price Gap × Addressable Comparable Quantity
+
+Potential E-Auction Opportunity % =
+Potential Price Gap / Current Weighted Price × 100
+
+Example:
+
+Weighted current price = ₹100
+Credible historical reference = ₹95
+Addressable quantity = 100,000
+
+Potential price gap = ₹5
+
+Potential e-auction opportunity = ₹5 × 100,000
+= ₹5,00,000
+
+Display:
+
+POTENTIAL E-AUCTION OPPORTUNITY
+₹5.00 L
+
+5.0% historical price gap
+
+Label clearly:
+
+"Indicative opportunity based on customer historical comparable transactions — NOT realized savings."
+
+============================================================
+11. OPPORTUNITY RANGE — DO NOT HIDE UNCERTAINTY
+============================================================
+
+Where sufficient data exists, calculate scenarios:
+
+CONSERVATIVE
+BASE
+STRETCH
+
+Example methodology:
+
+Conservative:
+P25 comparable price
+
+Base:
+Median / approved reference method
+
+Stretch:
+Lowest credible comparable price
+
+Do NOT use arbitrary percentages.
+
+Display the underlying price and methodology for each scenario.
+
+Example:
+
+Conservative Opportunity: ₹X
+Base Opportunity: ₹Y
+Stretch Opportunity: ₹Z
+
+All must remain labelled POTENTIAL OPPORTUNITY.
+
+If the dataset is insufficient for scenarios, show:
+
+SCENARIO ANALYSIS = NOT AVAILABLE
+
+============================================================
+12. VENDOR CONSOLIDATION OPPORTUNITY
+============================================================
+
+Identify categories where supplier fragmentation may be strategically addressable.
+
+Analyze:
+
+- Supplier count
+- Spend concentration
+- Tail supplier count
+- Tail supplier spend
+- Comparable supplier count
+- Supplier price dispersion
+- Recurring volume
+- Addressable volume
+
+Do NOT assume a target supplier count such as:
+
+8 suppliers → 2 suppliers
+
+unless the customer data or business rule supports it.
+
+Instead identify:
+
+CONSOLIDATION CANDIDATE
+
+and explain:
+
+"Why consolidation may be relevant."
+
+============================================================
+13. VENDOR CONSOLIDATION BENEFIT CALCULATION
+============================================================
+
+Calculate a monetary consolidation opportunity ONLY where there is defensible historical price evidence.
+
+Example:
+
+Current weighted price = ₹100
+Credible lower comparable supplier/reference price = ₹96
+Addressable quantity = 50,000
+
+Potential consolidation price opportunity:
+
+₹4 × 50,000
+= ₹2,00,000
+
+Display separately:
+
+POTENTIAL VENDOR CONSOLIDATION OPPORTUNITY
+₹2.00 L
+
+Do not count supplier administration benefits as monetary savings unless a formally approved customer methodology exists.
+
+============================================================
+14. OPERATIONAL CONSOLIDATION BENEFIT
+============================================================
+
+Separately calculate operational indicators:
+
+- Suppliers potentially affected
+- POs
+- Transactions
+- Invoice count where available
+- Supplier onboarding count
+- Supplier management touchpoints where available
+
+Do NOT convert these into rupees without an approved cost methodology.
+
+Display:
+
+OPERATIONAL CONSOLIDATION BENEFIT
+
+with measurable activity reduction indicators.
+
+============================================================
+15. E-AUCTION VS CONSOLIDATION OVERLAP
+============================================================
+
+THIS IS CRITICAL.
+
+E-auction and vendor consolidation may identify the same price opportunity.
+
+Therefore:
+
+DO NOT ADD THEM DIRECTLY.
+
+Create:
+
+E_AUCTION_OPPORTUNITY
+CONSOLIDATION_OPPORTUNITY
+OVERLAPPING_OPPORTUNITY
+NET_QUANTIFIABLE_OPPORTUNITY
+
+Formula:
+
+NET OPPORTUNITY =
+E-AUCTION OPPORTUNITY
++ CONSOLIDATION OPPORTUNITY
+- OVERLAP
+
+The overlap must be traceable to the same:
+
+- category
+- commodity
+- quantity
+- transaction group
+- supplier group
+- price differential
+
+No double counting.
+
+============================================================
+16. STRATEGIC SOURCING LEVER MATRIX
+============================================================
+
+For each category identify applicable sourcing levers.
+
+Possible levers:
+
+1. E-AUCTION
+2. RFQ COMPETITION
+3. VENDOR CONSOLIDATION
+4. VOLUME CONSOLIDATION
+5. CONTRACT CONSOLIDATION
+6. ORDER FREQUENCY OPTIMIZATION
+7. MOQ / LOT-SIZE OPTIMIZATION
+8. SPECIFICATION STANDARDIZATION
+9. SUPPLIER TAIL REDUCTION
+10. PAYMENT TERM REVIEW
+11. DELIVERY TERM REVIEW
+12. FREIGHT / LOGISTICS REVIEW
+13. LOCALIZATION / GEOGRAPHIC SOURCING
+14. MAKE/BUY REVIEW — ONLY IF DATA SUPPORTS IT
+15. DEMAND CONSOLIDATION
+
+Do not claim a lever is beneficial merely because it exists.
+
+For every recommended lever show:
+
+LEVER
+RATIONALE
+EVIDENCE
+ADDRESSABLE SPEND
+POTENTIAL BENEFIT
+DATA CONFIDENCE
+RISKS
+NEXT ACTION
+
+============================================================
+17. STRATEGIC SOURCING SCORECARD
+============================================================
+
+Create a transparent score rather than a black-box recommendation.
+
+Evaluate:
+
+- Spend Materiality
+- Supplier Fragmentation
+- Price Dispersion
+- Recurrence
+- Addressable Volume
+- Supplier Competition
+- Comparability
+- Historical Evidence Quality
+- Contract Constraints where available
+- Specification Complexity
+
+Show the individual dimensions.
+
+Do not hide the score behind a single unexplained number.
+
+============================================================
+18. SOURCING STRATEGY RECOMMENDATION
+============================================================
+
+For each opportunity generate one of:
+
+E_AUCTION_RECOMMENDED
+COMPETITIVE_RFQ_RECOMMENDED
+VENDOR_CONSOLIDATION_REVIEW
+E_AUCTION_PLUS_CONSOLIDATION
+SPECIFICATION_STANDARDIZATION_REVIEW
+DATA_DEEP_DIVE_REQUIRED
+NO_IMMEDIATE_SOURCING_ACTION
+
+The recommendation must be based only on the evidence available in Module 2.
+
+Show the reasons.
+
+============================================================
+19. STRATEGIC SOURCING DEEP-DIVE PAGE
+============================================================
+
+When a user clicks any category, open a complete strategic sourcing workspace.
+
+Required sections:
+
+A. Executive Summary
+B. Spend Overview
+C. Purchase Trend
+D. Supplier Landscape
+E. Supplier Concentration
+F. Supplier Fragmentation
+G. Price Analysis
+H. Comparable Transaction Analysis
+I. E-Auction Assessment
+J. Vendor Consolidation Assessment
+K. Opportunity Calculation
+L. Opportunity Range
+M. Double-Counting / Overlap Analysis
+N. Strategic Sourcing Levers
+O. Risks & Constraints
+P. Data Quality
+Q. Missing Information
+R. Recommended Procurement Action
+S. Transaction-Level Evidence
+T. Audit Trail
+
+The user should be able to drill from:
+
+CATEGORY
+→ SUPPLIER
+→ TRANSACTION
+→ CALCULATION
+
+============================================================
+20. EVIDENCE-FIRST DESIGN
+============================================================
+
+Every monetary opportunity must be drillable to source transactions.
+
+For every calculated amount show:
+
+- calculation ID
+- category ID
+- supplier IDs
+- transaction IDs
+- quantity
+- baseline price
+- reference price
+- price difference
+- addressable quantity
+- calculation formula
+- methodology
+- date range
+- exclusions
+- timestamp
+
+A procurement user must be able to answer:
+
+"How did the system arrive at this ₹X opportunity?"
+
+in one or two clicks.
+
+============================================================
+21. DATA CONFIDENCE
+============================================================
+
+Every opportunity must contain:
+
+DATA_CONFIDENCE:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+And explain why.
+
+Example:
+
+HIGH:
+> 24 months, 7 suppliers, 95% comparable transactions, consistent units.
+
+LOW:
+> 5 transactions, 2 suppliers, inconsistent specifications.
+
+INSUFFICIENT:
+> insufficient comparable observations.
+
+============================================================
+22. EXCLUSIONS
+============================================================
+
+Create an explicit exclusion engine.
+
+Transactions may be excluded from a specific calculation because of:
+
+- specification mismatch
+- grade mismatch
+- unit mismatch
+- currency mismatch
+- non-comparable geography
+- one-off abnormal quantity
+- obvious outlier
+- insufficient quantity
+- non-recurring purchase
+- contractually locked spend
+- incomplete transaction data
+- invalid price
+- missing quantity
+
+Every exclusion must be visible.
+
+NEVER silently exclude transactions.
+
+============================================================
+23. OPPORTUNITY STATUS MODEL
+============================================================
+
+Implement:
+
+OPPORTUNITY_IDENTIFIED
+QUANTIFIABLE
+E_AUCTION_CANDIDATE
+CONSOLIDATION_CANDIDATE
+E_AUCTION_AND_CONSOLIDATION
+NOT_QUANTIFIABLE
+NOT_COMPARABLE
+INSUFFICIENT_DATA
+READY_FOR_SOURCING
+
+Do NOT use:
+
+"ZERO SAVINGS"
+
+when the real condition is insufficient evidence.
+
+============================================================
+24. DASHBOARD OUTPUT
+============================================================
+
+Strengthen the existing Module 2 dashboard.
+
+Replace the current simplistic:
+
+"POTENTIAL E-AUCTION VOLUME BENEFIT"
+
+with separate cards:
+
+1. TOTAL ADDRESSABLE SPEND
+
+2. E-AUCTION OPPORTUNITY
+
+3. VENDOR CONSOLIDATION OPPORTUNITY
+
+4. OVERLAPPING OPPORTUNITY
+
+5. NET QUANTIFIABLE OPPORTUNITY
+
+6. CATEGORIES READY FOR SOURCING
+
+7. E-AUCTION CANDIDATES
+
+8. CONSOLIDATION CANDIDATES
+
+9. OPPORTUNITIES NOT YET QUANTIFIABLE
+
+10. DATA QUALITY / CONFIDENCE
+
+Each monetary card must be drillable.
+
+============================================================
+25. CATEGORY TABLE
+============================================================
+
+Create a strategic sourcing table with:
+
+Category
+Spend
+Transactions
+Suppliers
+Supplier Concentration
+Fragmentation
+Addressable Spend
+E-Auction Suitability
+E-Auction Opportunity
+Consolidation Suitability
+Consolidation Opportunity
+Overlap
+Net Opportunity
+Opportunity %
+Confidence
+Recommended Sourcing Lever
+Next Action
+
+Allow sorting by:
+
+- Spend
+- Addressable Spend
+- Net Opportunity
+- Supplier Count
+- Price Dispersion
+- Materiality
+- Confidence
+
+============================================================
+26. SUPPLIER DEEP DIVE
+============================================================
+
+For each supplier show:
+
+Supplier
+Total Spend
+Categories
+Transactions
+Quantity
+Average Price
+Weighted Price
+Share of Category Spend
+Share of Category Volume
+Rank
+Price Position vs Comparable Suppliers
+Trend
+Categories Supplied
+Potential Consolidation Relevance
+
+Do not label a supplier "expensive" merely because its price is higher without controlling for comparability.
+
+============================================================
+27. PRICE DISPERSION ANALYSIS
+============================================================
+
+For comparable purchases calculate:
+
+- Minimum
+- P10
+- P25
+- Median
+- P75
+- P90
+- Maximum
+- Weighted average
+
+Show price distribution visually.
+
+Explain:
+
+"X% of comparable volume was purchased above the P25 historical price."
+
+Do not turn this automatically into savings.
+
+============================================================
+28. RECURRING SPEND LOGIC
+============================================================
+
+Define recurring spend transparently.
+
+Use configurable rules based on:
+
+- number of active months
+- transaction frequency
+- repeated purchase activity
+- spend continuity
+
+Expose the exact rule used.
+
+Do not classify one-off large purchases as recurring merely because the spend is high.
+
+============================================================
+29. MATERIALITY
+============================================================
+
+Use configurable thresholds for:
+
+HIGH
+MEDIUM
+LOW
+
+based on customer spend.
+
+Do not hard-code assumptions without exposing configuration.
+
+Every threshold must be visible in Admin configuration.
+
+============================================================
+30. UI/UX
+============================================================
+
+Maintain the existing Procucev / aiCEV Enterprise design language.
+
+The strategic sourcing workspace should feel like professional enterprise procurement software.
+
+Use:
+
+- clean executive dashboard
+- concise KPI cards
+- expandable analytical sections
+- supplier comparison tables
+- price distribution charts
+- trend charts
+- opportunity waterfall
+- sourcing lever matrix
+- evidence drill-down
+- clear status badges
+- clear distinction between opportunity and realized savings
+
+Do NOT clutter the primary screen.
+
+Executive view first.
+Deep analytical detail through drill-down.
+
+============================================================
+31. OPPORTUNITY WATERFALL
+============================================================
+
+Create a transparent opportunity waterfall:
+
+TOTAL CATEGORY SPEND
+        ↓
+NON-ADDRESSABLE SPEND
+        ↓
+ADDRESSABLE SPEND
+        ↓
+E-AUCTION OPPORTUNITY
+        ↓
+CONSOLIDATION OPPORTUNITY
+        ↓
+OVERLAP REMOVED
+        ↓
+NET QUANTIFIABLE OPPORTUNITY
+
+Every stage must be traceable.
+
+============================================================
+32. EXPORT
+============================================================
+
+Allow export of strategic sourcing analysis containing:
+
+- Executive summary
+- Category profile
+- Supplier analysis
+- Transaction analysis
+- Opportunity calculations
+- Methodology
+- Exclusions
+- Risks
+- Recommended actions
+- Evidence
+
+Export must never omit the calculation basis.
+
+============================================================
+33. AUDIT REQUIREMENTS
+============================================================
+
+Every opportunity calculation must be immutable after generation.
+
+Record:
+
+- Calculation ID
+- User
+- Timestamp
+- Dataset version
+- Calculation version
+- Input transaction IDs
+- Formula version
+- Methodology
+- Output
+- Exclusions
+- Approval status where applicable
+
+============================================================
+34. MODULE 2 → MODULE 4 HANDOFF
+============================================================
+
+Module 2 should NOT execute sourcing.
+
+It should produce a structured sourcing opportunity package for Module 4.
+
+Example:
+
+{
+  opportunityId,
+  categoryId,
+  opportunityType,
+  addressableSpend,
+  addressableQuantity,
+  baselinePrice,
+  referencePrice,
+  potentialOpportunity,
+  overlapAmount,
+  netOpportunity,
+  supplierCount,
+  recommendedLever,
+  confidence,
+  evidenceIds,
+  calculationVersion
+}
+
+Module 4 may later consume this package for actual sourcing execution.
+
+Do not modify Module 4 in this task.
+
+============================================================
+35. ACCEPTANCE TESTS
+============================================================
+
+Create comprehensive acceptance tests covering at minimum:
+
+TEST A — Single supplier
+Expected: no supplier consolidation opportunity.
+
+TEST B — Multiple suppliers with identical pricing
+Expected: consolidation may be identified, but no fabricated price benefit.
+
+TEST C — Multiple comparable suppliers with price dispersion
+Expected: e-auction opportunity calculated.
+
+TEST D — One abnormal low-price transaction
+Expected: lowest price not blindly used.
+
+TEST E — Different specifications
+Expected: transactions excluded from direct price comparison.
+
+TEST F — Different units
+Expected: comparison blocked unless Module 2 has an approved conversion rule.
+
+TEST G — Different currencies
+Expected: comparison blocked unless approved Module 2 currency normalization exists.
+
+TEST H — Different geography
+Expected: appropriate comparability treatment.
+
+TEST I — Recurring category
+Expected: recurring logic correctly applied.
+
+TEST J — One-time purchase
+Expected: not classified as recurring merely because spend is high.
+
+TEST K — High supplier count but concentrated spend
+Expected: fragmentation logic reflects concentration.
+
+TEST L — Low supplier count but highly fragmented spend
+Expected: appropriate classification.
+
+TEST M — E-auction + consolidation overlap
+Expected: no double counting.
+
+TEST N — No credible lower-price reference
+Expected: NOT_QUANTIFIABLE.
+
+TEST O — Insufficient transaction history
+Expected: INSUFFICIENT_DATA.
+
+TEST P — Valid opportunity
+Expected: transaction-level evidence drill-down.
+
+TEST Q — Weighted price validation
+Expected: quantity-weighted calculation, not simple average.
+
+TEST R — Opportunity scenario analysis
+Expected: conservative/base/stretch only when data supports it.
+
+TEST S — Excluded transactions
+Expected: every exclusion visible and auditable.
+
+TEST T — ₹0 opportunity
+Expected: distinguish mathematical zero from insufficient evidence.
+
+TEST U — No data
+Expected: NOT_QUANTIFIABLE, never false ₹0.
+
+TEST V — Supplier consolidation
+Expected: operational consolidation indicators separated from monetary benefit.
+
+TEST W — Category drill-down
+Expected: complete strategic sourcing workspace.
+
+TEST X — Module boundary
+Expected: no modification to Module 1, Module 3 or Module 4.
+
+============================================================
+36. REGRESSION REQUIREMENTS
+============================================================
+
+Before implementation:
+
+1. Inspect existing Module 2 architecture.
+2. Identify existing calculations.
+3. Preserve certified Module 2 classification logic.
+4. Identify all current UI outputs.
+5. Identify current e-auction logic.
+6. Identify current vendor consolidation logic.
+7. Identify current benefit calculations.
+8. Identify possible double-counting.
+9. Produce a gap analysis BEFORE changing code.
+
+Do not overwrite existing certified logic blindly.
+
+Where existing logic conflicts with this specification:
+
+DOCUMENT THE CONFLICT FIRST.
+
+Then implement the approved V1.0 governance logic.
+
+============================================================
+37. QUALITY GATES
+============================================================
+
+Required:
+
+- Typecheck = 0 errors
+- Lint = 0 errors / warnings
+- Build = PASS
+- Existing regression tests = PASS
+- New Module 2 tests = PASS
+- No Module 1 regressions
+- No Module 3 regressions
+- No Module 4 modifications
+- No PCBI dependency introduced
+- No external benchmark dependency introduced
+
+Maintain strict test coverage on all newly created/modified calculation services.
+
+============================================================
+38. REQUIRED DELIVERABLES
+============================================================
+
+Generate:
+
+1. MODULE_2_STRATEGIC_SOURCING_LOGIC_V1.md
+
+2. MODULE_2_SOURCING_CALCULATION_SPEC_V1.md
+
+3. MODULE_2_OPPORTUNITY_METHODOLOGY.md
+
+4. MODULE_2_UI_OUTPUT_SPEC_V1.md
+
+5. MODULE_2_ACCEPTANCE_TEST_REPORT.md
+
+6. MODULE_2_OPPORTUNITY_AUDIT.json
+
+7. Updated Module 2 strategic sourcing UI
+
+8. Updated calculation services
+
+9. Updated tests
+
+10. Any required type definitions/constants
+
+============================================================
+39. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+The work is NOT complete merely because tests pass.
+
+The final system must demonstrate:
+
+A. Module 2 can identify recurring spend.
+
+B. Module 2 can identify supplier fragmentation.
+
+C. Module 2 can normalize comparable purchases.
+
+D. Module 2 can calculate weighted historical purchase price.
+
+E. Module 2 can identify credible historical price references.
+
+F. Module 2 can calculate defensible e-auction opportunity.
+
+G. Module 2 can identify vendor consolidation opportunity.
+
+H. Module 2 can calculate defensible consolidation opportunity where evidence exists.
+
+I. Module 2 can detect overlap.
+
+J. Module 2 can calculate NET opportunity without double counting.
+
+K. Module 2 can explain every opportunity at transaction level.
+
+L. Module 2 can clearly distinguish:
+   OPPORTUNITY
+   POTENTIAL BENEFIT
+   REALIZED SAVINGS
+
+M. Module 2 never fabricates savings.
+
+N. Module 2 never displays false ₹0 when data is insufficient.
+
+O. Module 2 provides strategic sourcing recommendations with evidence.
+
+P. Module 2 provides a complete category-level strategic sourcing deep dive.
+
+Q. Module 2 remains completely independent of PCBI / Module 3.
+
+R. Module 4 remains unchanged and disconnected from implementation changes.
+
+FINAL REQUIRED STATUS:
+
+MODULE_2_STRATEGIC_SOURCING_ENGINE = VALIDATED
+
+MODULE_2_E_AUCTION_LOGIC = VALIDATED
+
+MODULE_2_VENDOR_CONSOLIDATION_LOGIC = VALIDATED
+
+MODULE_2_OPPORTUNITY_CALCULATION = VALIDATED
+
+MODULE_2_DOUBLE_COUNTING_CONTROL = VALIDATED
+
+MODULE_2_TRANSACTION_LEVEL_AUDIT = VALIDATED
+
+MODULE_2_STRATEGIC_DEEP_DIVE = VALIDATED
+
+MODULE_1 = UNCHANGED
+
+MODULE_3 = UNCHANGED
+
+MODULE_4 = UNCHANGED
+
+
+## Prompt 223
+
+MASTER COMMAND — MODULE 2 STRATEGIC SOURCING LOGIC V2.0
+
+We are now strengthening ONLY MODULE 2.
+
+Do NOT modify Module 1, Module 3 / PCBI, or Module 4.
+
+Module 2 scope is strictly:
+
+CUSTOMER HISTORICAL SPEND
+→ SPEND INTELLIGENCE
+→ STRATEGIC SOURCING ANALYSIS
+→ E-AUCTION OPPORTUNITY
+→ VENDOR CONSOLIDATION OPPORTUNITY
+→ PO / VOLUME CONSOLIDATION OPPORTUNITY
+→ NET DEFENSIBLE SOURCING OPPORTUNITY
+
+The objective is to make Module 2 commercially and mathematically defensible for a CPO/CFO audience.
+
+IMPORTANT:
+Do not start coding immediately.
+First inspect the existing Module 2 implementation, calculations, data models, APIs, UI components, existing documentation and tests.
+
+Then identify what must be changed to implement the logic below.
+
+========================================================
+1. CORE BUSINESS PRINCIPLE
+========================================================
+
+Module 2 must NEVER manufacture savings.
+
+The system must NOT use assumed savings percentages such as:
+
+- 3% auction savings
+- 5% vendor consolidation savings
+- 8% volume savings
+- any fixed percentage based only on number of vendors
+- any generic industry benchmark
+
+A ₹ benefit can only be calculated when supported by the customer's own historical transaction data.
+
+If an opportunity mechanism is identified but there is insufficient historical evidence to calculate a defensible ₹ benefit:
+
+STATUS = IDENTIFIED_NOT_QUANTIFIABLE
+
+Do NOT display a false ₹0 as if there is no opportunity.
+
+Do NOT create synthetic savings.
+
+Do NOT use external benchmarks in Module 2.
+
+========================================================
+2. UNIT OF ANALYSIS
+========================================================
+
+The fundamental sourcing analysis hierarchy must be:
+
+CATEGORY
+→ SUB-CATEGORY
+→ ITEM / MATERIAL
+→ COMPARABLE SPECIFICATION
+→ SUPPLIER
+→ TRANSACTION
+
+Supplier-level analysis alone is NOT sufficient.
+
+All sourcing opportunities must ultimately be traceable to comparable item/category-level requirements.
+
+Example:
+
+Category: Bearings
+Item: Bearing 6205
+
+Supplier A = ₹200
+Supplier B = ₹190
+Supplier C = ₹210
+
+The engine must analyse the actual comparable historical transactions.
+
+Do NOT simply conclude:
+
+"3 suppliers = consolidation opportunity."
+
+The supplier fragmentation must first be translated into item/category economics.
+
+========================================================
+3. COMPARABILITY ENGINE
+========================================================
+
+Before calculating any opportunity, establish whether transactions are comparable.
+
+Comparable transactions should consider, where data is available:
+
+- material / item
+- specification
+- grade
+- dimensions
+- UOM
+- currency
+- purchasing basis
+- category
+- geography / delivery basis
+- quantity band
+- transaction period
+
+Never compare incompatible UOMs or materially different specifications.
+
+If reliable comparability cannot be established:
+
+STATUS = DATA_ENRICHMENT_REQUIRED
+or
+STATUS = IDENTIFIED_NOT_QUANTIFIABLE
+
+depending on the reason.
+
+========================================================
+4. HISTORICAL PRICE ANALYSIS
+========================================================
+
+For every comparable item/category calculate:
+
+- Minimum Price
+- P25
+- Median
+- Weighted Average Price
+- P75
+- Maximum Price
+- IQR
+- Price Spread %
+- Supplier-level Weighted Average
+- Supplier-level Minimum Price
+- Supplier-level Quantity
+- Supplier-level Spend
+- Supplier-level Spend Share
+
+Weighted average must be:
+
+Weighted Average Price = Total Spend / Total Quantity
+
+Do NOT use a simple average when quantities differ materially.
+
+========================================================
+5. LOWEST CREDIBLE HISTORICAL PRICE
+========================================================
+
+Do NOT automatically use the absolute lowest transaction.
+
+The Lowest Credible Historical Price must satisfy the existing qualification framework and should consider:
+
+1. Comparable specification
+2. Comparable UOM
+3. Comparable currency
+4. Meaningful volume
+5. Non-outlier transaction
+6. Valid historical period
+
+Also determine whether the price was:
+
+- repeated
+- achieved at meaningful volume
+- achieved by multiple suppliers where applicable
+- sufficiently recent
+- commercially credible
+
+Classify evidence:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+========================================================
+6. E-AUCTION LOGIC
+========================================================
+
+IMPORTANT:
+
+E-auction suitability is NOT the same as e-auction savings.
+
+A category can be highly suitable for an auction but have:
+
+₹0 QUANTIFIABLE HISTORICAL PRICE OPPORTUNITY
+
+if supplier prices historically show no meaningful dispersion.
+
+E-auction suitability should consider:
+
+- number of qualified suppliers
+- comparable specifications
+- price dispersion
+- recurring demand
+- spend materiality
+- supplier competition
+- switching feasibility
+- contract status
+- transaction depth
+- demand aggregation potential
+
+========================================================
+7. E-AUCTION OPPORTUNITY FORMULA
+========================================================
+
+For each eligible comparable item:
+
+Current Baseline Price
+=
+Current / relevant historical weighted average price
+
+Historical Competitive Reference
+=
+qualified historical reference price
+
+Unit Opportunity
+=
+MAX(0, Current Baseline Price - Historical Competitive Reference)
+
+E-Auction Opportunity
+=
+Unit Opportunity × Eligible Quantity
+
+NEVER calculate:
+
+Spend × assumed auction savings %
+
+That logic is prohibited.
+
+========================================================
+8. E-AUCTION SCENARIOS
+========================================================
+
+Provide three clearly separated scenarios:
+
+CONSERVATIVE
+Use P25 historical price where statistically valid.
+
+BASE
+Use Lowest Credible Demonstrated Historical Price.
+
+STRETCH
+Use Best Demonstrated Historical Price where:
+
+- comparable
+- repeatable
+- sufficiently material
+- supplier competition exists
+- volume movement is reasonably supportable
+
+Do NOT call Stretch a forecast.
+
+Label it:
+
+BEST HISTORICAL DEMONSTRATED OPPORTUNITY
+
+========================================================
+9. VENDOR CONSOLIDATION — CRITICAL
+========================================================
+
+Vendor consolidation must NOT be based only on supplier count.
+
+Analyse:
+
+CATEGORY
+→ ITEM
+→ CURRENT SUPPLIER
+→ COMPETING SUPPLIER
+→ PRICE
+→ QUANTITY
+→ SPEND
+→ HISTORICAL CAPABILITY
+→ POTENTIAL VOLUME MOVEMENT
+
+There are two distinct consolidation situations.
+
+--------------------------------------------------------
+CASE A — MULTIPLE SUPPLIERS FOR THE SAME CATEGORY / ITEM
+--------------------------------------------------------
+
+Example:
+
+Bearing 6205:
+
+Supplier A = ₹20L
+Supplier B = ₹15L
+Supplier C = ₹10L
+Supplier D = ₹5L
+
+Ask:
+
+1. Are requirements comparable?
+2. Is there meaningful price dispersion?
+3. Which suppliers have historically demonstrated lower prices?
+4. At what quantities?
+5. Can volume reasonably be shifted?
+6. Is supplier capacity known?
+7. Are switching/qualification constraints present?
+
+Only then calculate a consolidation opportunity.
+
+--------------------------------------------------------
+CASE B — ONE SUPPLIER PROVIDES MULTIPLE CATEGORIES
+--------------------------------------------------------
+
+Example:
+
+Vendor A:
+
+Bearings = ₹40L
+Electrical = ₹25L
+Packaging = ₹20L
+MRO = ₹10L
+
+Do NOT conclude that Vendor A should automatically be replaced.
+
+Analyse each category independently.
+
+For every Vendor × Category relationship calculate:
+
+- category spend
+- item count
+- quantity
+- supplier share
+- price position
+- price trend
+- number of competing suppliers
+- specialist suppliers
+- historical specialist pricing
+- category-specific supplier evidence
+
+The sourcing decision must happen at category/item level.
+
+========================================================
+10. MULTI-CATEGORY VENDOR LOGIC
+========================================================
+
+Identify:
+
+MULTI-CATEGORY SUPPLIER
+
+when a supplier supplies multiple distinct procurement domains.
+
+Identify:
+
+CATEGORY SPECIALIST
+
+when a supplier has demonstrated meaningful participation in a specific procurement category.
+
+But:
+
+SPECIALIST SUPPLIER ≠ AUTOMATICALLY CHEAPER SUPPLIER.
+
+Specialist classification is descriptive.
+
+Financial benefit must still be demonstrated through historical transactions.
+
+Example:
+
+Generalist Vendor A = ₹120/unit
+
+Specialists B/C = ₹105–110/unit
+
+If the transactions are comparable and credible:
+
+→ Potential category-specific sourcing opportunity.
+
+If all suppliers historically transact at ₹118–121:
+
+→ Supplier specialization exists,
+BUT
+
+→ No demonstrated historical price benefit.
+
+Therefore:
+
+₹ SAVINGS = NOT QUANTIFIABLE
+
+========================================================
+11. VOLUME LEVERAGE
+========================================================
+
+Do NOT assume that larger volume automatically generates savings.
+
+Only calculate a volume-price opportunity when historical customer data demonstrates a relationship.
+
+Example:
+
+Supplier B:
+
+0–1,000 units = ₹120
+1,001–5,000 = ₹112
+5,001+ = ₹108
+
+This can support a historical volume-price opportunity.
+
+If no such relationship exists:
+
+STATUS =
+VOLUME CONSOLIDATION IDENTIFIED
+PRICE BENEFIT NOT QUANTIFIABLE
+
+========================================================
+12. SHIFTABLE QUANTITY
+========================================================
+
+Never assume a supplier can absorb 100% of another supplier's volume.
+
+Determine:
+
+- observed historical supplier volume
+- historical comparable quantity
+- supplier participation
+- actual capacity evidence if available
+- qualification status
+- operational constraints
+
+If capacity cannot be established:
+
+STATUS =
+CAPACITY VALIDATION REQUIRED
+
+Do not fabricate supplier capacity.
+
+========================================================
+13. TWO DIFFERENT CONSOLIDATION OUTCOMES
+========================================================
+
+The objective is NOT always to reduce suppliers.
+
+The system must identify both:
+
+A. FEWER SUPPLIERS
+
+and
+
+B. MORE VOLUME WITH QUALIFIED CATEGORY SPECIALISTS
+
+Example:
+
+Current:
+
+Generalist A = ₹20L
+Specialist B = ₹8L
+Specialist C = ₹7L
+Specialist D = ₹5L
+
+Potential target structure:
+
+B + C receive larger qualified volumes.
+
+But the financial benefit must be calculated from demonstrated historical prices, not from the fact that B/C are specialists.
+
+========================================================
+14. PO CONSOLIDATION
+========================================================
+
+Keep PO consolidation separate from sourcing price savings.
+
+Analyse:
+
+Current PO frequency
+versus
+Target PO frequency
+
+Supported cadences:
+
+- Monthly
+- Quarterly
+- Half-Yearly
+- Annual
+
+Example:
+
+12 monthly POs
+→ 4 quarterly POs
+
+Transaction reduction:
+
+1 - Target PO Count / Current PO Count
+
+This is a TRANSACTION EFFICIENCY benefit.
+
+Do NOT automatically convert transaction reduction into ₹.
+
+If validated internal administrative cost per PO exists:
+
+Administrative Benefit
+=
+PO Reduction × Validated Cost Per PO
+
+If no validated administrative cost exists:
+
+Show:
+
+TRANSACTION REDUCTION = QUANTIFIED
+₹ ADMINISTRATIVE SAVING = NOT QUANTIFIABLE
+
+Never assume ₹500, ₹1,000 or any other cost per PO.
+
+========================================================
+15. ECONOMIES OF SCALE
+========================================================
+
+Separate:
+
+A. PO / Transaction Reduction
+B. Volume Aggregation
+C. Historical Price-Volume Benefit
+
+Only C is automatically a price/savings opportunity.
+
+A and B may be operational opportunities without a defensible ₹ saving.
+
+========================================================
+16. NO DOUBLE COUNTING
+========================================================
+
+This is mandatory.
+
+The same item/quantity cannot produce separate savings under:
+
+- e-auction
+- vendor consolidation
+- volume consolidation
+
+and then be added together.
+
+Create a unique opportunity key such as:
+
+CATEGORY + ITEM + COMPARABLE SPECIFICATION + PERIOD
+
+Calculate:
+
+Gross Opportunity Pools
+
+then
+
+Overlap
+
+then
+
+Net Unique Opportunity
+
+The final number must represent the UNION of unique opportunity quantities.
+
+Do NOT simply add the three opportunity pools.
+
+========================================================
+17. OPPORTUNITY WATERFALL
+========================================================
+
+Rebuild the Module 2 waterfall as:
+
+Stage 1:
+Total Historical Spend
+
+↓
+
+Stage 2:
+Comparable / Addressable Spend
+
+↓
+
+Stage 3:
+Contractually / Operationally Addressable Spend
+
+↓
+
+Stage 4:
+Price Dispersion Opportunity
+
+↓
+
+Stage 5:
+Volume Aggregation Opportunity
+
+↓
+
+Stage 6:
+E-Auction Opportunity
+
+↓
+
+Stage 7:
+Vendor Consolidation Opportunity
+
+↓
+
+Stage 8:
+Overlap Elimination
+
+↓
+
+Stage 9:
+Risk / Capacity / Switching Constraints
+
+↓
+
+Stage 10:
+NET QUANTIFIABLE HISTORICAL SOURCING OPPORTUNITY
+
+Each stage must have a mathematical definition and audit trail.
+
+========================================================
+18. MODULE 2 EXECUTIVE KPI CARDS
+========================================================
+
+The current dashboard structure is acceptable, but revise definitions.
+
+CARD 1:
+TOTAL ADDRESSABLE SPEND
+
+Definition:
+Spend that passes Module 2 addressability rules.
+
+CARD 2:
+POTENTIAL E-AUCTION OPPORTUNITY
+
+Definition:
+Historical price opportunity attributable to auctionable comparable demand.
+
+CARD 3:
+POTENTIAL VENDOR CONSOLIDATION OPPORTUNITY
+
+Definition:
+Historical price opportunity attributable to supplier/category/item restructuring.
+
+CARD 4:
+OVERLAPPING OPPORTUNITY
+
+Definition:
+Opportunity already represented in another sourcing mechanism.
+
+CARD 5:
+NET QUANTIFIABLE SOURCING OPPORTUNITY
+
+Definition:
+Unique validated opportunity after overlap and applicable constraints.
+
+Every ₹ value must be traceable.
+
+========================================================
+19. SCREEN: HIGH-VALUE RECURRING SPEND
+========================================================
+
+Replace the current ambiguous:
+
+"POTENTIAL E-AUCTION VOLUME BENEFIT"
+
+with:
+
+"NET HISTORICAL SOURCING OPPORTUNITY"
+
+Sub-label:
+
+"E-Auction + Consolidation | Overlap Adjusted"
+
+Cards:
+
+1. Recurring Addressable Spend
+2. Fragmented Categories
+3. Qualified Suppliers
+4. Net Historical Sourcing Opportunity
+
+Do not show arbitrary projected savings percentages.
+
+========================================================
+20. CATEGORY TABLE
+========================================================
+
+Each category row must contain:
+
+- Category
+- Item Count
+- Recurrence
+- Annualized Spend
+- Supplier Count
+- Top Supplier Share
+- Price Dispersion
+- P25
+- Lowest Credible Historical Price
+- E-Auction Suitability
+- Vendor Consolidation Suitability
+- Historical Opportunity ₹
+- Data Confidence
+- Primary Sourcing Action
+
+Clicking the category must open a detailed sourcing deep dive.
+
+========================================================
+21. CATEGORY DEEP DIVE
+========================================================
+
+Create a proper strategic sourcing deep dive containing:
+
+A. SPEND PROFILE
+
+- 3-year spend
+- annual spend
+- recurring spend
+- quantity
+- item count
+
+B. SUPPLIER STRUCTURE
+
+- supplier count
+- supplier shares
+- HHI
+- top supplier
+- tail suppliers
+
+C. ITEM ANALYSIS
+
+For significant items:
+
+- spend
+- quantity
+- supplier count
+- supplier pricing
+- weighted average
+- P25
+- median
+- lowest credible price
+- price dispersion
+
+D. E-AUCTION ANALYSIS
+
+- suitability
+- qualified suppliers
+- eligible spend
+- eligible quantity
+- baseline price
+- historical reference price
+- conservative opportunity
+- base opportunity
+- stretch opportunity
+
+E. VENDOR CONSOLIDATION
+
+- current supplier structure
+- category specialists
+- multi-category suppliers
+- current volume distribution
+- potential volume movement
+- capacity evidence
+- qualification constraints
+- consolidation opportunity
+
+F. RISK
+
+- dependency
+- capacity
+- switching
+- specification
+- contract
+- supplier concentration
+
+========================================================
+22. TOP 50 SUPPLIER ANALYSIS
+========================================================
+
+For each supplier calculate:
+
+- total 3-year spend
+- annual spend
+- category count
+- item count
+- category-wise spend
+- category-wise supplier share
+- price position
+- quantity YoY
+- price YoY
+- multi-category exposure
+- specialist/generalist classification
+- sourcing opportunity exposure
+- risk indicators
+
+Do NOT classify a high-spend supplier as an opportunity simply because it has high spend.
+
+========================================================
+23. SINGLE / DOMINANT SUPPLIER RISK
+========================================================
+
+This component is primarily a SUPPLY RISK engine.
+
+Identify:
+
+100% SOLE SOURCE
+
+and
+
+DOMINANT SUPPLIER
+
+based on configured thresholds.
+
+Do NOT automatically convert this into savings.
+
+Only calculate a financial sourcing opportunity if:
+
+- alternatives exist
+- requirements are comparable
+- historical alternate pricing exists
+- volume can reasonably be shifted
+
+Otherwise:
+
+STRATEGIC SUPPLY RISK IDENTIFIED
+FINANCIAL BENEFIT NOT QUANTIFIABLE
+
+========================================================
+24. CATEGORY SPEND MASTER
+========================================================
+
+The category spend screen must become the denominator for Module 2.
+
+For every category show:
+
+- FY24
+- FY25
+- FY26
+- 3-year spend
+- annualized spend
+- item count
+- supplier count
+- recurring/non-recurring
+- contracted/non-contracted where available
+
+All downstream Module 2 screens must reconcile to this dataset.
+
+No screen may independently calculate a different spend denominator.
+
+========================================================
+25. STATUS MODEL
+========================================================
+
+Implement these statuses:
+
+QUANTIFIABLE
+
+Historical evidence supports a defensible ₹ calculation.
+
+IDENTIFIED_NOT_QUANTIFIABLE
+
+Opportunity mechanism exists but evidence is insufficient for a ₹ calculation.
+
+NOT_ELIGIBLE
+
+Does not meet sourcing criteria.
+
+DATA_ENRICHMENT_REQUIRED
+
+Required data is missing.
+
+CONSTRAINED
+
+Opportunity exists but capacity, contract, specification or switching constraints restrict quantification.
+
+Do NOT convert these states into fake ₹0.
+
+========================================================
+26. DATA CONFIDENCE
+========================================================
+
+Calculate confidence independently from opportunity.
+
+HIGH
+Strong comparable transaction history and sufficient supplier/quantity depth.
+
+MEDIUM
+Reasonable evidence but limited depth.
+
+LOW
+Weak evidence.
+
+INSUFFICIENT
+Unable to support a defensible calculation.
+
+Never create savings merely because confidence is LOW or MEDIUM.
+
+========================================================
+27. TRACEABILITY
+========================================================
+
+Every ₹ opportunity must be traceable:
+
+₹ Opportunity
+→ Category
+→ Subcategory
+→ Item
+→ Material Code
+→ Supplier
+→ PO
+→ Quantity
+→ Historical Price
+→ Reference Price
+→ Price Difference
+→ Formula
+→ Opportunity
+
+The deep dive must expose this evidence.
+
+The audit JSON must contain sufficient information to reproduce the calculation.
+
+========================================================
+28. FIVE CONCEPTS MUST NEVER BE MIXED
+========================================================
+
+The UI and data model must clearly distinguish:
+
+1. ADDRESSABLE SPEND
+How much spend can potentially be sourced?
+
+2. SOURCING OPPORTUNITY
+What historical price advantage exists?
+
+3. VOLUME OPPORTUNITY
+How much volume can potentially be aggregated?
+
+4. SUPPLIER CONSOLIDATION
+How can supplier structure potentially change?
+
+5. NET QUANTIFIABLE BENEFIT
+What ₹ benefit is actually supported by historical evidence?
+
+These are NOT interchangeable.
+
+========================================================
+29. MOST IMPORTANT BUSINESS RULE
+========================================================
+
+Do not reward fragmentation merely because fragmentation exists.
+
+Examples:
+
+8 suppliers + same item + significant price dispersion
+=
+STRONG SOURCING OPPORTUNITY
+
+8 suppliers + same item + virtually identical pricing
+=
+SUPPLIER FRAGMENTATION IDENTIFIED
+BUT NO DEMONSTRATED HISTORICAL PRICE BENEFIT
+
+8 suppliers + materially different specifications
+=
+NOT A CONSOLIDATION OPPORTUNITY UNTIL COMPARABILITY IS ESTABLISHED
+
+One generalist supplier + several specialists
+=
+INVESTIGATE CATEGORY-LEVEL SOURCING
+
+NOT:
+AUTOMATICALLY REPLACE GENERALIST
+
+========================================================
+30. REQUIRED OUTPUT FROM ANTIGRAVITY
+========================================================
+
+Before coding, provide:
+
+A. Current Module 2 logic map
+B. Existing calculation formulas
+C. Existing data dependencies
+D. Existing UI → backend mapping
+E. Logic gaps against this V2 specification
+F. Proposed changes
+G. Potential conflicts with existing Module 2 implementation
+H. Test cases required
+
+Then implement.
+
+Generate/update:
+
+MODULE_2_STRATEGIC_SOURCING_LOGIC_V2.md
+MODULE_2_SOURCING_CALCULATION_SPEC_V2.md
+MODULE_2_VENDOR_CONSOLIDATION_LOGIC_V2.md
+MODULE_2_E_AUCTION_LOGIC_V2.md
+MODULE_2_PO_CONSOLIDATION_LOGIC_V2.md
+MODULE_2_OPPORTUNITY_WATERFALL_V2.md
+MODULE_2_UI_OUTPUT_SPEC_V2.md
+MODULE_2_AUDIT_SCHEMA_V2.json
+
+========================================================
+31. TESTING REQUIREMENTS
+========================================================
+
+Create explicit test data and tests for:
+
+1. One item / one supplier
+2. One item / multiple suppliers / identical prices
+3. One item / multiple suppliers / price dispersion
+4. Multiple categories / one generalist supplier
+5. Multiple categories / specialist suppliers
+6. Supplier consolidation with demonstrated price advantage
+7. Supplier consolidation without demonstrated price advantage
+8. Volume-price relationship exists
+9. Volume-price relationship does not exist
+10. Supplier capacity unknown
+11. Supplier capacity demonstrated
+12. E-auction eligible
+13. E-auction not eligible
+14. PO consolidation
+15. PO consolidation without validated administrative cost
+16. E-auction + consolidation overlap
+17. Missing specification
+18. Missing UOM
+19. Outlier transaction
+20. Insufficient historical observations
+21. Contracted spend
+22. Non-recurring spend
+23. Sole-source risk
+24. Dominant supplier risk
+25. Zero quantifiable savings despite identified sourcing opportunity
+
+The tests must prove that the engine does not fabricate savings.
+
+========================================================
+32. ACCEPTANCE CRITERIA
+========================================================
+
+Module 2 is NOT complete merely because:
+
+- backend builds
+- frontend builds
+- tests compile
+- UI renders
+
+It is complete only when the system demonstrates that:
+
+✓ Same item across multiple suppliers is analysed correctly.
+
+✓ Multi-category suppliers are analysed category-by-category.
+
+✓ Specialist suppliers are identified without assuming they are cheaper.
+
+✓ E-auction opportunity is based on demonstrated historical price evidence.
+
+✓ Vendor consolidation opportunity is based on item/category-level economics.
+
+✓ Volume opportunity is separated from price opportunity.
+
+✓ PO reduction is separated from procurement savings.
+
+✓ Capacity constraints prevent unrealistic volume shifts.
+
+✓ E-auction and consolidation do not double-count the same opportunity.
+
+✓ Unsupported savings are marked NOT_QUANTIFIABLE.
+
+✓ Every ₹ opportunity is traceable to underlying transactions.
+
+✓ All Module 2 screens reconcile to the same underlying spend dataset.
+
+✓ Module 1, Module 3/PCBI and Module 4 remain untouched.
+
+========================================================
+33. FINAL EXECUTIVE QUESTION
+========================================================
+
+For every opportunity, the system should be able to answer:
+
+"If I am the Strategic Sourcing Manager or CFO looking at this category, exactly:
+
+- where is the opportunity?
+- which item creates it?
+- which suppliers are involved?
+- what is the current price?
+- what historical price supports the opportunity?
+- how much volume is addressable?
+- why is an e-auction/consolidation strategy appropriate?
+- what constraints exist?
+- how much ₹ benefit is defensible?
+- where did that ₹ number come from?"
+
+If the system cannot answer these questions from customer data:
+
+DO NOT INVENT THE ANSWER.
+
+Return:
+
+OPPORTUNITY IDENTIFIED — BENEFIT NOT YET QUANTIFIABLE.
+
+Do not modify any module outside Module 2.
+
+END OF MASTER COMMAND
+
+
+## Prompt 224
+
+MODULE 2 — STRATEGIC SOURCING INTELLIGENCE, E-AUCTION & VENDOR CONSOLIDATION
+MASTER LOGIC REFINEMENT + UI + SAVINGS METHODOLOGY
+VERSION: MODULE_2_SOURCING_LOGIC_V2.0
+
+IMPORTANT:
+This is a Module 2 ONLY assignment.
+
+DO NOT modify, redesign, redevelop, repush or alter:
+- Module 1 Customer Spend Ingestion
+- Module 3 PCBI / Market Benchmarking
+- Module 4 Savings Realization / Execution
+- Existing Module 1 → Module 2 data contracts
+- Existing Module 2 → Module 4 handoff contracts unless explicitly required by this specification.
+
+First inspect the current repository, existing Module 2 code, database schema, API contracts, calculations, UI components and all existing Module 2 documentation.
+
+Do NOT blindly rebuild existing functionality.
+
+The objective is to strengthen Module 2 from its current V1.0 implementation into a logically rigorous V2.0 strategic sourcing engine.
+
+============================================================
+1. CORE MODULE 2 PURPOSE
+============================================================
+
+Module 2 must answer:
+
+"Based ONLY on the customer's own historical procurement transactions, where is there a credible opportunity to improve sourcing through:
+
+1. Category / item-level sourcing
+2. E-auction
+3. Supplier competition
+4. Vendor consolidation
+5. Category-specialist sourcing
+6. Volume bundling
+7. PO consolidation / economies of scale
+8. Rate-contract / recurring sourcing opportunities
+9. Strategic supplier risk identification
+
+WITHOUT using external market benchmarks."
+
+Module 2 is NOT a generic savings calculator.
+
+It is a:
+SPEND → CATEGORY → ITEM → SUPPLIER → PRICE → VOLUME → SOURCING OPPORTUNITY
+intelligence engine.
+
+Every benefit must be traceable back to actual customer transactions.
+
+============================================================
+2. ABSOLUTE NON-FABRICATION RULE
+============================================================
+
+NEVER use:
+- assumed 3% savings
+- assumed 5% savings
+- assumed 8% savings
+- assumed auction savings %
+- assumed consolidation savings %
+- generic industry benchmarks
+- external market prices
+- PCBI benchmarks
+- arbitrary volume-discount curves
+
+If historical customer data does not support a defensible calculation:
+
+STATUS =
+"OPPORTUNITY IDENTIFIED — BENEFIT NOT YET QUANTIFIABLE"
+
+Do NOT show ₹0 as though ₹0 means no opportunity.
+
+Distinguish:
+
+A. No Opportunity
+B. Opportunity Identified
+C. Benefit Quantifiable
+D. Data Insufficient
+
+============================================================
+3. PRIMARY DATA HIERARCHY
+============================================================
+
+All sourcing calculations must work at the lowest reliable comparable level.
+
+Priority:
+
+LEVEL 1:
+Item / Material Code + Specification + UOM
+
+LEVEL 2:
+Comparable Item / Commodity + Specification + UOM
+
+LEVEL 3:
+UNSPSC Commodity / Class
+
+LEVEL 4:
+Procurement Category
+
+Never aggregate dissimilar items merely because they belong to the same broad category.
+
+Example:
+
+"Steel Plates"
+must not automatically combine:
+- different grades
+- different thicknesses
+- different sizes
+- different UOM
+- different specifications
+
+unless comparability has been established.
+
+============================================================
+4. BENEFIT CALCULATION ARCHITECTURE
+============================================================
+
+Every opportunity must have these separate fields:
+
+1. Addressable Spend
+2. Eligible Spend
+3. Comparable Spend
+4. Quantifiable Benefit
+5. Benefit %
+6. Confidence
+7. Calculation Basis
+8. Excluded Spend
+9. Exclusion Reason
+10. Overlap Adjustment
+11. Net Defensible Benefit
+
+Never show only one large "Potential Savings" number.
+
+============================================================
+5. E-AUCTION BENEFIT LOGIC
+============================================================
+
+E-auction benefit must NOT simply be:
+
+Spend × assumed auction %
+
+Instead calculate from historical transaction evidence.
+
+For each comparable item/category:
+
+CURRENT BASELINE PRICE =
+Weighted Average Historical Price of eligible comparable transactions.
+
+ELIGIBLE SPEND must exclude:
+- non-comparable specifications
+- invalid UOM
+- obvious outliers
+- cancelled transactions
+- one-off abnormal transactions
+- locked contractual spend where sourcing cannot currently occur
+- transactions failing minimum data confidence
+
+Then identify:
+
+LOWEST CREDIBLE HISTORICAL PRICE
+
+using the existing credibility rules.
+
+Minimum credibility conditions:
+
+1. Same/comparable specification
+2. Same UOM
+3. Same currency normalized to INR
+4. Sufficient transaction/volume representation
+5. Non-outlier
+6. Within defined historical window
+
+The target auction reference should be based on an actual demonstrated historical competitive price.
+
+Do NOT automatically use the absolute minimum transaction.
+
+Use:
+
+LOWEST CREDIBLE HISTORICAL PRICE
+
+where sufficient evidence exists.
+
+Where the lowest credible historical price is not statistically reliable, use an appropriate historical percentile/reference such as P25 ONLY where the data supports it.
+
+If neither is defensible:
+
+BENEFIT = NOT QUANTIFIABLE.
+
+E-AUCTION BENEFIT:
+
+Eligible Quantity ×
+(Current Weighted Average Unit Price − Credible Target Unit Price)
+
+subject to:
+
+Current Weighted Average Unit Price > Target Unit Price
+
+If target >= baseline:
+E-AUCTION BENEFIT = 0
+
+but the opportunity may still remain eligible for auction.
+
+IMPORTANT:
+
+"Eligible for E-Auction" and "E-Auction Benefit" are TWO DIFFERENT OUTPUTS.
+
+Example:
+
+₹10 Cr eligible auction spend
+does NOT mean ₹10 Cr savings.
+
+The UI must clearly distinguish:
+
+E-AUCTION ADDRESSABLE SPEND
+from
+E-AUCTION QUANTIFIABLE BENEFIT.
+
+============================================================
+6. E-AUCTION ELIGIBILITY LOGIC
+============================================================
+
+Evaluate each category/item against:
+
+1. Number of qualified suppliers
+2. Supplier competition
+3. Price dispersion
+4. Comparable specification
+5. Spend materiality
+6. Historical transaction depth
+7. Recurrence
+8. Contract status
+9. Supplier switching feasibility
+10. Demand aggregation potential
+
+Create:
+
+HIGH
+MEDIUM
+LOW
+NOT SUITABLE
+
+auction suitability.
+
+Do not make "more vendors" automatically equal "auction suitable."
+
+Example:
+
+10 suppliers with completely different specifications
+may be LESS auctionable than
+4 suppliers selling the exact same specification.
+
+============================================================
+7. PRICE DISPERSION LOGIC
+============================================================
+
+For every eligible category/item show:
+
+Minimum
+P25
+Median
+Weighted Average
+P75
+Maximum
+IQR
+Price Spread %
+Coefficient of Variation where meaningful
+Supplier-level price position
+
+Price Spread %:
+
+(Max Credible Price − Min Credible Price)
+/ Weighted Average Price × 100
+
+Also calculate:
+
+Weighted Price Gap:
+
+(Current Weighted Average Price − Best Credible Historical Price)
+/ Current Weighted Average Price × 100
+
+Do not call this "savings achieved".
+
+Call it:
+
+"HISTORICAL PRICE OPPORTUNITY"
+
+until execution occurs.
+
+============================================================
+8. VENDOR CONSOLIDATION LOGIC
+============================================================
+
+Vendor consolidation is NOT simply:
+
+"5 vendors → 2 vendors = savings"
+
+That is invalid.
+
+Vendor consolidation benefit must be calculated from actual category/item-level economics.
+
+For each item/category:
+
+Identify:
+- supplier
+- item
+- annual quantity
+- annual spend
+- unit price
+- transaction frequency
+- supplier share
+- historical price position
+- supplier category specialization
+- supplier breadth
+- concentration
+
+Then determine whether spend can be consolidated.
+
+============================================================
+9. MULTIPLE VENDORS — SAME CATEGORY LOGIC
+============================================================
+
+Where the same item/category is purchased from multiple suppliers:
+
+Example:
+
+Item A:
+
+Vendor 1 = ₹4 Cr
+Vendor 2 = ₹3 Cr
+Vendor 3 = ₹2 Cr
+Vendor 4 = ₹1 Cr
+
+Do NOT assume that moving ₹10 Cr to one supplier produces savings.
+
+Instead determine:
+
+A. Current weighted average price
+B. Best credible historical supplier price
+C. Quantity associated with that price
+D. Supplier capacity evidence, where available
+E. Price-volume relationship
+F. Historical evidence of larger-volume purchases at lower prices
+
+If historical data shows:
+
+Higher volume → demonstrably lower unit price
+
+then calculate a volume-bundling opportunity.
+
+If not:
+
+STATUS =
+"CONSOLIDATION OPPORTUNITY IDENTIFIED — BENEFIT NOT YET QUANTIFIABLE"
+
+============================================================
+10. MULTIPLE SMALL SAME-CATEGORY VENDORS
+============================================================
+
+The engine must explicitly identify:
+
+"Fragmented Same-Category Supplier Pool"
+
+Example:
+
+Category = Industrial Fasteners
+
+Vendor A = ₹0.40 Cr
+Vendor B = ₹0.35 Cr
+Vendor C = ₹0.25 Cr
+Vendor D = ₹0.20 Cr
+Vendor E = ₹0.15 Cr
+
+The engine should evaluate whether:
+
+A+B+C+D+E
+
+can be strategically sourced as one aggregated requirement.
+
+But the benefit is calculated ONLY if historical customer data provides evidence that:
+
+larger aggregated volume
+has previously achieved
+lower comparable unit pricing.
+
+If such evidence exists:
+
+VOLUME BUNDLING BENEFIT =
+Eligible Volume ×
+(Current Weighted Average Price − Historical Price at Comparable Higher Volume)
+
+If such evidence does not exist:
+
+show:
+
+"VOLUME AGGREGATION OPPORTUNITY"
+but
+"BENEFIT NOT YET QUANTIFIABLE"
+
+This distinction is mandatory.
+
+============================================================
+11. MULTI-CATEGORY VENDOR LOGIC
+============================================================
+
+This is a critical Module 2 requirement.
+
+Identify vendors supplying multiple unrelated procurement categories.
+
+Example:
+
+Vendor X supplies:
+- Packaging
+- MRO
+- Electrical
+- Safety
+- Stationery
+
+Do NOT assume Vendor X is economically optimal merely because it already supplies multiple categories.
+
+For each supplied category/item:
+
+Compare Vendor X's historical unit price against:
+
+1. Other suppliers for the same item
+2. Category-specialist suppliers
+3. Other credible historical transactions
+
+Calculate category/item-level price positioning.
+
+============================================================
+12. CATEGORY SPECIALIST OPPORTUNITY
+============================================================
+
+The system must identify:
+
+MULTI-CATEGORY VENDOR
+vs
+CATEGORY SPECIALIST
+
+The purpose is to answer:
+
+"Is this item currently being purchased through a broad/multi-category supplier when comparable customer history indicates that specialist suppliers have demonstrated better pricing?"
+
+This must be evaluated ITEM/CATEGORY WISE.
+
+Never say:
+
+"Move all business from multi-category vendor to specialists."
+
+Instead:
+
+"Category/item-level supplier rationalization opportunity."
+
+============================================================
+13. CATEGORY SPECIALIST BENEFIT CALCULATION
+============================================================
+
+For each comparable item:
+
+Current Supplier Price =
+historical weighted price from current/multi-category supplier.
+
+Specialist Reference Price =
+credible historical price from supplier(s) classified as category specialists.
+
+Potential Benefit:
+
+Eligible Quantity ×
+(Current Supplier Weighted Unit Price − Specialist Reference Unit Price)
+
+ONLY if:
+
+Specialist Reference Price < Current Supplier Price
+
+and comparability is established.
+
+Otherwise:
+
+BENEFIT NOT QUANTIFIABLE.
+
+============================================================
+14. IMPORTANT — NO BLANKET VENDOR REPLACEMENT
+============================================================
+
+The engine must NEVER recommend:
+
+"Replace Vendor X"
+
+simply because Vendor X supplies multiple categories.
+
+Instead output:
+
+"ITEM/CATEGORY SOURCING REALIGNMENT"
+
+with:
+
+Current Supplier
+Current Category
+Current Spend
+Current Unit Price
+Alternative Supplier Type
+Alternative Historical Price
+Price Difference
+Eligible Spend
+Potential Benefit
+Confidence
+Reason
+
+============================================================
+15. SUPPLIER CONSOLIDATION TARGET STATE
+============================================================
+
+For each category, determine:
+
+Current Supplier Count
+
+Potential Target Supplier Count
+
+But target supplier count must consider:
+
+- spend concentration
+- item compatibility
+- supplier capability
+- category specialization
+- historical pricing
+- supplier dependency
+- switching risk
+- continuity requirements
+- available supplier competition
+
+Example output:
+
+CURRENT:
+8 suppliers
+
+POTENTIAL TARGET:
+3 suppliers
+
+But DO NOT calculate:
+
+"8 → 3 = X% savings"
+
+unless historical transaction data supports the price improvement.
+
+============================================================
+16. VENDOR CONSOLIDATION BENEFIT
+============================================================
+
+Calculate consolidation benefit using one of the following evidence paths:
+
+PATH A — Historical Same-Supplier Volume Evidence
+
+A supplier has previously supplied materially higher volume at a lower comparable unit price.
+
+Use observed historical price difference.
+
+PATH B — Supplier Reallocation Evidence
+
+Another supplier has historically supplied the same comparable item at a lower price.
+
+Use observed price difference.
+
+PATH C — Combined Category Evidence
+
+Multiple suppliers have historically supplied comparable items at different prices, and aggregation can be supported by historical price-volume evidence.
+
+PATH D — No Evidence
+
+Opportunity identified, benefit not quantifiable.
+
+NEVER invent a discount for PATH D.
+
+============================================================
+17. OVERLAP / DOUBLE COUNTING CONTROL
+============================================================
+
+This is mandatory.
+
+The same ₹100 of spend cannot simultaneously produce:
+
+E-AUCTION BENEFIT = ₹5
+VENDOR CONSOLIDATION BENEFIT = ₹4
+CATEGORY SPECIALIST BENEFIT = ₹3
+
+and report ₹12.
+
+Every opportunity must carry an Opportunity ID.
+
+Examples:
+
+EA-001
+VC-001
+CS-001
+VB-001
+PO-001
+
+Each spend line/item can be allocated to one primary savings mechanism.
+
+Where opportunities overlap:
+
+calculate:
+
+GROSS OPPORTUNITY
+LESS OVERLAPPING OPPORTUNITY
+=
+NET DEFENSIBLE BENEFIT
+
+The engine must identify the PRIMARY lever.
+
+Priority should be based on the actual sourcing mechanism applicable to the spend, not on which lever produces the largest theoretical number.
+
+============================================================
+18. PRIMARY SAVINGS LEVER
+============================================================
+
+Every opportunity must have:
+
+PRIMARY LEVER:
+- E-AUCTION
+- VENDOR CONSOLIDATION
+- CATEGORY SPECIALIST REALIGNMENT
+- VOLUME BUNDLING
+- PO CONSOLIDATION
+- RATE CONTRACT
+- NO QUANTIFIABLE BENEFIT
+
+SECONDARY LEVERS may be shown separately.
+
+But the final Module 2 benefit must be deduplicated.
+
+============================================================
+19. PO CONSOLIDATION / ECONOMIES OF SCALE
+============================================================
+
+For multiple POs for the same:
+
+Supplier + Item + Category + Comparable Specification
+
+within recurring periods:
+
+identify PO fragmentation.
+
+Outputs:
+
+Current PO Frequency
+Annual Spend
+Average PO Value
+Potential PO Frequency
+Transaction Reduction
+
+However:
+
+Administrative savings and commercial savings must be separated.
+
+Do NOT convert transaction reduction automatically into procurement savings.
+
+If there is historical price evidence showing larger order quantities received lower unit prices:
+
+calculate commercial benefit.
+
+Otherwise:
+
+show administrative/process opportunity separately.
+
+============================================================
+20. RECURRING PROCUREMENT ENGINE
+============================================================
+
+Identify:
+
+Monthly
+Quarterly
+Half-Yearly
+Annual
+
+recurring procurement patterns.
+
+Show:
+
+Annual Spend
+Supplier Count
+Item Count
+Transaction Count
+Recurring Frequency
+Supplier Fragmentation
+Potential Aggregation Pool
+
+But do NOT automatically assign savings.
+
+Savings require historical evidence.
+
+============================================================
+21. STRATEGIC SOURCING CATEGORY OUTPUT
+============================================================
+
+For every significant category, the deep dive must answer:
+
+1. What is being purchased?
+2. How much is being purchased?
+3. How frequently?
+4. From how many suppliers?
+5. Which suppliers?
+6. What is the supplier concentration?
+7. Is the category fragmented?
+8. Is there a dominant supplier?
+9. Is there a multi-category supplier?
+10. Are category specialists available in historical data?
+11. What is the historical price dispersion?
+12. What is the current weighted average price?
+13. What is the lowest credible historical price?
+14. What is the price-volume relationship?
+15. Is the category auctionable?
+16. Is vendor consolidation feasible?
+17. Is volume bundling feasible?
+18. What is the defensible opportunity?
+19. What is NOT quantifiable and why?
+20. What sourcing action should be considered?
+
+============================================================
+22. STRATEGIC SOURCING SCORECARD
+============================================================
+
+Retain the existing scorecard but make every score traceable.
+
+Dimensions may include:
+
+- Spend Materiality
+- Supplier Fragmentation
+- Price Dispersion
+- Volume Aggregation Potential
+- E-Auction Suitability
+- Supplier Competition
+- Recurrence
+- Contract Timing
+- Switching Feasibility
+- Data Confidence
+
+Every score must have an explanation.
+
+Do NOT allow a score to become a black-box recommendation.
+
+============================================================
+23. TOP 50 VENDOR ANALYSIS
+============================================================
+
+The Top 50 Vendor screen must distinguish:
+
+A. Single Category Specialist
+B. Multi-Category Supplier
+C. Dominant Multi-Category Supplier
+D. High-Spend Fragmented Supplier
+E. Strategic Single-Source Supplier
+F. Potential Category Realignment Candidate
+
+For each vendor show:
+
+Vendor
+3-Year Spend
+Annual Spend
+Categories Supplied
+Primary Category
+Number of Categories
+Number of Items
+Supplier Share
+Price Position
+YOY Spend
+YOY Quantity
+YOY Price
+Risk Indicators
+
+The multi-category flag must NOT itself be a risk.
+
+It is an analytical trigger for category-level sourcing review.
+
+============================================================
+24. MULTI-CATEGORY VENDOR DEEP DIVE
+============================================================
+
+Clicking a multi-category vendor must open:
+
+VENDOR → CATEGORY → ITEM
+
+hierarchy.
+
+Example:
+
+Vendor X
+  ├── Electrical
+  │    ├── Item A
+  │    ├── Item B
+  │
+  ├── MRO
+  │    ├── Item C
+  │
+  └── Packaging
+       ├── Item D
+
+For every category/item show:
+
+Vendor Spend
+Category Spend
+Item Spend
+Vendor Unit Price
+Other Supplier Unit Prices
+Best Credible Historical Price
+Price Gap
+Potential Specialist Benefit
+Volume Opportunity
+Auction Opportunity
+Primary Recommended Sourcing Lever
+Benefit Status
+Confidence
+
+============================================================
+25. CATEGORY SPEND SCREEN
+============================================================
+
+Category Spend Breakdown must become the starting point for sourcing analysis.
+
+Allow drill-down:
+
+TOTAL SPEND
+→ CATEGORY
+→ UNSPSC COMMODITY
+→ ITEM
+→ SUPPLIER
+→ TRANSACTION
+
+At each level show:
+
+Spend
+Volume
+Transactions
+Suppliers
+Weighted Price
+Price Dispersion
+Supplier Concentration
+Potential Sourcing Opportunity
+
+============================================================
+26. SOLE-SOURCE / DOMINANT SUPPLIER SCREEN
+============================================================
+
+This screen should identify:
+
+100% Sole Source
+Dominant Supplier
+Secondary Supplier <10%
+High Spend Single Supplier
+
+But distinguish:
+
+RISK
+from
+SAVINGS OPPORTUNITY.
+
+A sole-source item is not automatically a savings opportunity.
+
+It is primarily a sourcing-risk indicator.
+
+If historical alternative supplier evidence exists:
+
+show potential sourcing opportunity.
+
+Otherwise:
+
+"Supply concentration risk — benefit not quantifiable."
+
+============================================================
+27. BENEFIT WATERFALL
+============================================================
+
+Build a transparent waterfall:
+
+TOTAL HISTORICAL SPEND
+↓
+ADDRESSABLE SPEND
+↓
+COMPARABLE SPEND
+↓
+E-AUCTION ELIGIBLE SPEND
+↓
+VENDOR CONSOLIDATION ELIGIBLE SPEND
+↓
+VOLUME BUNDLING ELIGIBLE SPEND
+↓
+CATEGORY SPECIALIST REALIGNMENT ELIGIBLE SPEND
+↓
+OVERLAP REMOVAL
+↓
+NET QUANTIFIABLE BENEFIT
+
+IMPORTANT:
+
+These are not all additive.
+
+The waterfall must show spend eligibility and benefit separately.
+
+============================================================
+28. REQUIRED KPI CARDS
+============================================================
+
+Do not label every opportunity as "savings".
+
+Use these KPI cards:
+
+1. TOTAL ADDRESSABLE SPEND
+2. E-AUCTION ADDRESSABLE SPEND
+3. E-AUCTION QUANTIFIABLE BENEFIT
+4. VENDOR CONSOLIDATION ADDRESSABLE SPEND
+5. VENDOR CONSOLIDATION QUANTIFIABLE BENEFIT
+6. VOLUME BUNDLING ADDRESSABLE SPEND
+7. CATEGORY SPECIALIST OPPORTUNITY
+8. GROSS QUANTIFIABLE BENEFIT
+9. OVERLAPPING BENEFIT
+10. NET DEFENSIBLE BENEFIT
+11. BENEFIT NOT YET QUANTIFIABLE
+12. OVERALL DATA CONFIDENCE
+
+============================================================
+29. IMPORTANT UI TERMINOLOGY CHANGE
+============================================================
+
+Avoid:
+
+"POTENTIAL E-AUCTION VOLUME BENEFIT"
+
+because this mixes volume and benefit.
+
+Use:
+
+"E-AUCTION ADDRESSABLE SPEND"
+
+and separately:
+
+"E-AUCTION QUANTIFIABLE BENEFIT"
+
+Similarly:
+
+"VENDOR CONSOLIDATION ADDRESSABLE SPEND"
+
+and:
+
+"VENDOR CONSOLIDATION QUANTIFIABLE BENEFIT"
+
+This is mandatory.
+
+============================================================
+30. CATEGORY CARD OUTPUT
+============================================================
+
+Each category card should show:
+
+CATEGORY NAME
+
+3-Year Spend
+Annualized Spend
+Supplier Count
+Item Count
+Transaction Count
+
+E-Auction:
+Suitability
+Addressable Spend
+Quantifiable Benefit
+
+Vendor Consolidation:
+Current Suppliers
+Potential Target Suppliers
+Addressable Spend
+Quantifiable Benefit
+
+Volume Bundling:
+Eligible Spend
+Historical Volume Evidence
+Quantifiable Benefit
+
+Category Specialist:
+Multi-Category Supplier Spend
+Specialist Comparison Spend
+Quantifiable Benefit
+
+Final:
+NET DEFENSIBLE BENEFIT
+CONFIDENCE
+PRIMARY SOURCING LEVER
+
+============================================================
+31. DEEP-DIVE MODAL
+============================================================
+
+The existing 20-question deep dive should be retained but reorganized into:
+
+SECTION A — SPEND PROFILE
+SECTION B — ITEM / CATEGORY STRUCTURE
+SECTION C — SUPPLIER STRUCTURE
+SECTION D — PRICE DISPERSION
+SECTION E — VOLUME ANALYSIS
+SECTION F — E-AUCTION ANALYSIS
+SECTION G — VENDOR CONSOLIDATION
+SECTION H — CATEGORY SPECIALIST ANALYSIS
+SECTION I — PO / RECURRENCE ANALYSIS
+SECTION J — OPPORTUNITY WATERFALL
+SECTION K — OVERLAP / DOUBLE COUNTING
+SECTION L — DATA CONFIDENCE
+SECTION M — SOURCING ACTION
+
+Every calculated benefit must have a "Why?" explanation.
+
+============================================================
+32. EXAMPLE OF REQUIRED EXPLANATION
+============================================================
+
+Instead of:
+
+"Potential Savings: ₹18 Lakh"
+
+show:
+
+"Quantifiable E-Auction Benefit: ₹18 Lakh
+
+Basis:
+₹4.20 Cr eligible comparable spend
+Current weighted average price: ₹X/unit
+Lowest credible historical reference: ₹Y/unit
+Historical reference observed across 23% of eligible volume
+Comparable specification and UOM verified
+Price difference: Z%
+
+Calculation:
+Eligible Quantity × Historical Demonstrated Price Gap
+
+Confidence: HIGH
+
+This is a historical opportunity estimate, NOT realized savings."
+
+============================================================
+33. WHEN BENEFIT MUST BE "NOT QUANTIFIABLE"
+============================================================
+
+Return NOT QUANTIFIABLE where:
+
+- no comparable historical price
+- insufficient transaction volume
+- insufficient supplier competition
+- specifications differ
+- UOM differs
+- historical price is unreliable
+- only one supplier exists
+- no demonstrated volume-price relationship
+- contract prevents current sourcing
+- supplier switching feasibility cannot be established
+- data confidence is insufficient
+
+Still display the opportunity.
+
+Example:
+
+"₹2.8 Cr fragmented spend
+5 suppliers
+High sourcing relevance
+Benefit not yet quantifiable because no defensible historical volume-price relationship exists."
+
+This is more valuable than manufacturing a number.
+
+============================================================
+34. DATA CONFIDENCE
+============================================================
+
+Every benefit must have:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+with explicit reason.
+
+Confidence should consider:
+
+- transaction count
+- comparable volume
+- supplier count
+- price consistency
+- specification quality
+- historical coverage
+- data completeness
+
+============================================================
+35. FINAL MODULE 2 OUTPUT
+============================================================
+
+Module 2 must ultimately answer:
+
+WHERE SHOULD PROCUREMENT ACT?
+
+Not:
+
+"How much savings did we make?"
+
+Because no sourcing event has yet been executed.
+
+The output must therefore distinguish:
+
+A. Addressable Spend
+B. Quantifiable Opportunity
+C. Opportunity Requiring Competitive Event
+D. Opportunity Requiring Supplier Consolidation
+E. Opportunity Requiring Category Specialist Sourcing
+F. Opportunity Requiring Volume Aggregation
+G. Opportunity Requiring Data Enrichment
+H. Supply Risk / Concentration
+I. Net Defensible Benefit
+
+============================================================
+36. VALIDATION TEST CASES
+============================================================
+
+Create automated tests for at least these scenarios:
+
+TEST 1:
+5 suppliers, same item, clear historical price dispersion.
+→ E-auction opportunity should calculate.
+
+TEST 2:
+5 suppliers, same category, but no demonstrated price-volume relationship.
+→ Consolidation opportunity identified.
+→ Benefit NOT quantifiable.
+
+TEST 3:
+One multi-category vendor supplies 5 categories.
+Category specialist historically sells one item cheaper.
+→ Only that item/category should show specialist opportunity.
+
+TEST 4:
+Multi-category vendor is actually cheaper than specialists.
+→ No specialist savings should be generated.
+
+TEST 5:
+One supplier, no alternative historical supplier.
+→ Supply concentration risk.
+→ No fabricated savings.
+
+TEST 6:
+Multiple small suppliers with demonstrated lower historical price at higher volume.
+→ Volume bundling benefit calculated.
+
+TEST 7:
+Same spend qualifies for auction and consolidation.
+→ Gross benefits shown separately.
+→ Net benefit removes overlap.
+
+TEST 8:
+Different specifications under same category.
+→ No aggregation unless comparability rules pass.
+
+TEST 9:
+PO fragmentation exists but no price-volume evidence.
+→ Administrative opportunity shown separately.
+→ No commercial savings fabricated.
+
+TEST 10:
+Insufficient data.
+→ Opportunity shown.
+→ Benefit status = NOT QUANTIFIABLE.
+
+============================================================
+37. UI QUALITY REQUIREMENT
+============================================================
+
+The existing screens shown in the Module 2 screenshots must be reviewed one by one.
+
+Do not merely make calculations work in the backend.
+
+Every screen must answer:
+
+"What decision does this screen help the procurement user make?"
+
+Avoid excessive KPI cards.
+
+Avoid ambiguous labels.
+
+Avoid showing ₹0.00 where the actual meaning is "not quantifiable."
+
+Use:
+
+N/A
+Not Quantifiable
+Insufficient Evidence
+
+where appropriate.
+
+Every opportunity should be drillable to:
+
+Category
+→ Item
+→ Supplier
+→ Transaction evidence
+
+============================================================
+38. EXISTING MODULE 2 SCREENS TO BE STRENGTHENED
+============================================================
+
+Review and improve all existing Module 2 screens shown in the supplied screenshots, including:
+
+1. ML Line Item AI Categorization & Spend Review Workbench
+2. Multiple Monthly PO Consolidation & Economies of Scale Engine
+3. High-Value Recurring Spend & Vendor Consolidation Engine
+4. Strategic Sourcing Intelligence & Opportunity Engine
+5. Strategic High-Value Single & Dominant Vendor Risk Engine
+6. Top 50 Vendors Supply Categorization & Spend Distribution
+7. Category Spend Breakdown by Fiscal Year
+8. Strategic sourcing category/deep-dive views
+9. Vendor/category drill-downs
+10. Opportunity waterfall/deep-dive outputs
+
+Do NOT create unrelated Module 3 or Module 4 functionality.
+
+============================================================
+39. AUDITABILITY
+============================================================
+
+For every ₹ of quantifiable benefit, the system must be able to answer:
+
+Which transaction(s) created the baseline?
+
+Which transaction(s) created the reference price?
+
+Which supplier(s)?
+
+Which item?
+
+Which quantity?
+
+Which UOM?
+
+Which date?
+
+Which price?
+
+Why was the transaction considered comparable?
+
+Why was it considered credible?
+
+What formula produced the benefit?
+
+Which opportunity ID owns this spend?
+
+Was any overlap removed?
+
+What confidence level was assigned?
+
+This evidence must be available in the deep dive/audit output.
+
+============================================================
+40. ENGINEERING REQUIREMENT
+============================================================
+
+Before modifying code:
+
+1. Inspect current Module 2 implementation.
+2. Inspect existing tests.
+3. Inspect database schema.
+4. Inspect current APIs.
+5. Inspect current UI.
+6. Inspect MODULE_2_STRATEGIC_SOURCING_LOGIC_V1.md
+7. Inspect MODULE_2_SOURCING_CALCULATION_SPEC_V1.md
+8. Inspect MODULE_2_OPPORTUNITY_METHODOLOGY.md
+9. Inspect MODULE_2_UI_OUTPUT_SPEC_V1.md
+10. Inspect MODULE_2_ACCEPTANCE_TEST_REPORT.md
+
+Then prepare an internal implementation map.
+
+Preserve working functionality.
+
+Modify only what is necessary.
+
+============================================================
+41. REQUIRED DOCUMENTATION
+============================================================
+
+Create/update:
+
+MODULE_2_STRATEGIC_SOURCING_LOGIC_V2.md
+MODULE_2_SOURCING_CALCULATION_SPEC_V2.md
+MODULE_2_OPPORTUNITY_METHODOLOGY_V2.md
+MODULE_2_UI_OUTPUT_SPEC_V2.md
+MODULE_2_ACCEPTANCE_TEST_REPORT_V2.md
+MODULE_2_OPPORTUNITY_AUDIT_V2.json
+
+Include exact mathematical formulas.
+
+============================================================
+42. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+Module 2 V2.0 is accepted only if:
+
+- No fabricated savings
+- No external benchmarks
+- No PCBI dependency
+- Item/category comparability enforced
+- E-auction benefit separately calculated
+- Vendor consolidation benefit separately calculated
+- Category specialist benefit separately calculated
+- Volume bundling benefit separately calculated
+- PO consolidation benefit separated from commercial savings
+- Multi-category supplier analysis is item/category specific
+- Same-category supplier fragmentation is identified
+- Historical price-volume evidence is required for volume savings
+- Double counting is eliminated
+- Gross and net opportunities are visible
+- Addressable spend is separated from benefit
+- Quantifiable vs non-quantifiable opportunities are separated
+- Every benefit is auditable to transaction-level evidence
+- Every deep dive explains the calculation
+- Existing Module 2 architecture remains stable
+- Modules 1, 3 and 4 remain untouched
+- Existing tests continue to pass
+- New tests cover all benefit scenarios above
+- Production build passes
+- TypeScript passes
+- Lint passes
+- Existing quality gates pass
+
+FINAL OUTPUT REQUIRED FROM ANTIGRAVITY:
+
+1. Files modified
+2. Files added
+3. Mathematical logic implemented
+4. UI changes implemented
+5. API changes
+6. Database changes, if any
+7. Test cases added
+8. Test results
+9. Before vs after KPI logic
+10. Examples of e-auction calculation
+11. Examples of vendor consolidation calculation
+12. Examples of multi-category vendor/category-specialist calculation
+13. Examples where benefit is correctly NOT QUANTIFIABLE
+14. Double-counting validation
+15. Confirmation that Module 1, Module 3 and Module 4 were not modified
+16. Production readiness status
+
+DO NOT CLAIM "SAVINGS REALIZED".
+
+Module 2 produces:
+"DEFENSIBLE PROCUREMENT OPPORTUNITY"
+
+Actual savings realization belongs to downstream execution.
+
+
+## Prompt 225
+
+DO NOT START CODING IMMEDIATELY. First inspect the existing Module 2 implementation and map every existing calculation to the above logic. Produce a short "CURRENT → PROPOSED" gap analysis, identify which existing formulas will change, and only then implement. Do not overwrite working Module 2 functionality blindly. MASTER COMMAND — MODULE 2 LOGIC HARDENING & STRATEGIC SOURCING OUTPUT V2.0
+Objective
+We are now hardening MODULE 2 ONLY.
+Do NOT modify the architecture, calculations, UI or business logic of Module 1, Module 3/PCBI, or Module 4.
+Module 2 is:
+Strategic Sourcing Intelligence, E-Auction & Vendor Consolidation Engine
+
+The purpose of Module 2 is to take the validated customer procurement history from Module 1 and identify defensible sourcing opportunities based strictly on the customer's own historical transaction data.
+The output must answer:
+Where can the customer realistically create sourcing benefit by changing the way the category/item is sourced, competitively bidding it, consolidating demand, rationalizing suppliers, or moving spend to better-positioned suppliers?
+
+The system must NOT simply apply assumed savings percentages.
+1. ABSOLUTE MODULE 2 PRINCIPLES
+Rule 1 — No fabricated savings
+Never apply generic assumptions such as:
+- 3% auction savings
+- 5% vendor consolidation savings
+- 7% volume savings
+- 10% strategic sourcing savings
+unless such percentages are explicitly supported by the customer's own historical transactions.
+If sufficient historical evidence does not exist:
+STATUS = NOT_QUANTIFIABLE
+
+Display:
+Opportunity Identified — Benefit Not Yet Quantifiable
+
+Do not show ₹0 as if there is no opportunity.
+Rule 2 — All opportunity calculations must ultimately trace to:
+Item → Category → Supplier → Historical Price → Historical Quantity/Volume → Date
+Every ₹ opportunity must be auditable back to transaction records.
+Rule 3 — Category/item is the primary sourcing unit
+Do NOT calculate sourcing benefit merely at:
+Vendor level
+
+A supplier supplying ₹10 Cr across 10 unrelated categories must NOT automatically be considered a ₹10 Cr consolidation opportunity.
+Instead calculate:
+Vendor × Category × Item/Material
+
+and aggregate upward only after item/category-level qualification.
+2. MODULE 2 OPPORTUNITY ARCHITECTURE
+Module 2 should have five distinct sourcing opportunity engines:
+A. Price Competition / E-Auction Opportunity
+Where comparable items/categories have credible historical price dispersion across suppliers.
+B. Vendor Consolidation Opportunity
+Where multiple suppliers are supplying the same or highly comparable category/item and demand can potentially be consolidated.
+C. Multi-Category Supplier Rationalization
+Where one supplier supplies multiple unrelated categories and those categories could be sourced from category-specialist suppliers.
+D. Same-Category Volume Pooling
+Where several smaller suppliers supply the same category/item and their demand can potentially be combined to create larger sourcing lots.
+E. PO / Ordering Frequency Optimization
+Where repeated procurement transactions can potentially be consolidated into fewer commercial events.
+These five engines must remain logically distinct.
+3. CRITICAL RULE — NO DOUBLE COUNTING
+This is mandatory.
+A single ₹1 Cr spend cannot simultaneously become:
+- ₹10 lakh e-auction saving
+- ₹8 lakh consolidation saving
+- ₹5 lakh volume saving
+- ₹3 lakh vendor rationalization saving
+and then be presented as ₹26 lakh benefit.
+Instead establish an:
+OPPORTUNITY WATERFALL
+Example:
+Total Addressable Spend
+        ↓
+Comparable / Eligible Spend
+        ↓
+Price Dispersion Opportunity
+        ↓
+Volume Pooling Opportunity
+        ↓
+E-Auction Opportunity
+        ↓
+Vendor Consolidation Opportunity
+        ↓
+Net Defensible Opportunity
+
+However, the implementation must calculate the actual mutually exclusive opportunity contribution, not blindly subtract percentages.
+Each transaction/spend pool gets an opportunity_id and opportunity_type.
+Once a spend pool has been allocated to one quantified opportunity:
+It cannot contribute again to another quantified savings pool.
+
+4. E-AUCTION BENEFIT LOGIC
+The current Module 2 screen showing:
+Potential E-Auction Volume Benefit
+
+must be redesigned around historical price dispersion, not an assumed auction discount.
+E-auction eligibility
+A category/item becomes an e-auction candidate only when sufficient evidence exists.
+Minimum checks:
+1. Multiple qualified suppliers
+2. Comparable specification
+3. Comparable UOM
+4. Comparable currency
+5. Meaningful historical transaction volume
+6. Multiple comparable transactions
+7. Price dispersion exists
+8. No obvious specification distortion
+9. No obvious one-off/outlier transaction
+10. Category is commercially suitable for competitive bidding
+5. CREDIBLE HISTORICAL PRICE LOGIC
+For each:
+Item / Material × Category
+
+calculate:
+- Minimum price
+- P10
+- P25
+- Median
+- Weighted average price
+- P75
+- P90
+- Maximum
+- IQR
+- Coefficient of variation
+- Price spread %
+- Supplier-specific weighted average price
+But the minimum historical price cannot automatically become the benchmark.
+Create:
+Lowest Credible Historical Reference Price
+The transaction/reference price must satisfy all relevant comparability checks.
+For example:
+Comparable specification = TRUE
+Comparable UOM = TRUE
+Comparable currency = TRUE
+Meaningful volume = TRUE
+Within eligible historical period = TRUE
+Not an extreme statistical outlier = TRUE
+
+Only then can the price become a credible reference.
+6. E-AUCTION BENEFIT FORMULA
+For every eligible sourcing pool:
+Current Eligible Spend
+        -
+Expected Defensible Award Spend
+        =
+Gross E-Auction Opportunity
+
+Where:
+Expected Defensible Award Price
+=
+credible historical competitive reference price
+
+and:
+Expected Award Spend
+=
+Eligible Quantity × Credible Reference Price
+
+Therefore:
+E-Auction Opportunity
+=
+Eligible Quantity ×
+(Current Weighted Average Price
+ -
+Credible Reference Price)
+
+Do not calculate using:
+Current Spend × assumed auction %
+
+7. IMPORTANT — PRICE REFERENCE MUST BE VOLUME-AWARE
+A supplier selling:
+10 units @ ₹80
+
+cannot automatically become the benchmark against:
+10,000 units @ ₹100.
+
+The engine must consider:
+- historical quantity
+- transaction volume
+- percentage of category volume
+- frequency
+- recency
+- comparability
+Create:
+Credible Reference Volume Share
+and show it in the deep dive.
+Example:
+₹92/kg reference price
+Supported by 18.4% of comparable historical category volume across 4 suppliers.
+
+This makes the opportunity defensible.
+8. VENDOR CONSOLIDATION LOGIC
+This is extremely important.
+Do NOT define vendor consolidation as:
+"There are 6 suppliers, therefore consolidate to 2 and assume savings."
+
+Instead determine:
+Current State
+Category A
+
+Supplier 1 → ₹2.2 Cr
+Supplier 2 → ₹1.8 Cr
+Supplier 3 → ₹1.1 Cr
+Supplier 4 → ₹0.7 Cr
+Supplier 5 → ₹0.4 Cr
+Supplier 6 → ₹0.3 Cr
+
+Then determine:
+Comparable Spend Pool
+Only combine suppliers supplying:
+- same item
+- equivalent item
+- same category
+- compatible specifications
+Then calculate:
+Total Comparable Spend
+Total Comparable Quantity
+Number of Suppliers
+Top Supplier Share
+Tail Supplier Share
+Price dispersion
+Capacity evidence
+Historical competitive price
+
+9. VENDOR CONSOLIDATION BENEFIT
+There are TWO different benefits and they must not be confused.
+Benefit A — Commercial Benefit
+This is quantified only if historical pricing demonstrates that consolidation can reasonably move spend toward a lower credible price.
+Formula:
+Consolidation Commercial Opportunity
+=
+Eligible Consolidatable Quantity
+×
+(Current Weighted Average Price
+ -
+Credible Consolidated Reference Price)
+
+This can be quantified.
+Benefit B — Supplier Rationalization / Process Benefit
+Reducing suppliers can create:
+- fewer supplier relationships
+- fewer RFQs
+- fewer negotiations
+- fewer POs
+- fewer invoices
+- simpler supplier management
+- better volume visibility
+But unless internal transaction-cost data exists:
+DO NOT convert this into ₹ savings.
+
+Show it separately as:
+Operational Benefit — Quantification Pending
+
+This is important.
+10. MULTIPLE SMALL SUPPLIERS — SAME CATEGORY
+This directly addresses the logic shown in the screens.
+Suppose:
+Category: Industrial Fasteners
+
+Supplier A = ₹0.40 Cr
+Supplier B = ₹0.35 Cr
+Supplier C = ₹0.28 Cr
+Supplier D = ₹0.22 Cr
+Supplier E = ₹0.18 Cr
+Supplier F = ₹0.12 Cr
+
+Do NOT simply say:
+Consolidate six suppliers.
+
+Instead determine:
+Comparable category spend
++
+Comparable item spend
++
+combined quantity
++
+supplier price distribution
+
+Then simulate:
+Current State
+Each supplier receives fragmented demand.
+Consolidated State
+Potentially:
+Supplier A + B + C + D + E + F
+                ↓
+       Competitive sourcing event
+                ↓
+       2–3 qualified suppliers
+
+The benefit is quantified only where historical price evidence supports it.
+11. MULTI-CATEGORY VENDOR LOGIC
+This is the second major component visible in the supplied screens.
+A vendor may supply:
+Vendor X
+
+Structural Steel        ₹4.0 Cr
+Packaging Materials     ₹1.5 Cr
+MRO                      ₹0.8 Cr
+Electrical Items         ₹0.6 Cr
+Safety Items             ₹0.2 Cr
+
+Do NOT consider ₹7.1 Cr as one consolidation opportunity.
+Instead identify:
+Vendor × Category relationships.
+
+Then determine whether each category has:
+- specialist suppliers
+- alternative suppliers
+- price dispersion
+- sufficient competition
+- meaningful spend
+- comparable transactions
+12. MULTI-CATEGORY VENDOR OPPORTUNITY
+For each multi-category supplier:
+Create:
+Category Dependency Map
+Category	Spend	Current Supplier	Other Suppliers	Price Dispersion	Specialist Availability	Opportunity
+Steel	₹4.0 Cr	Vendor X	4	High	Yes	Quantifiable
+Packaging	₹1.5 Cr	Vendor X	6	Medium	Yes	Quantifiable
+MRO	₹0.8 Cr	Vendor X	12	High	Yes	Quantifiable
+Electrical	₹0.6 Cr	Vendor X	1	Low	No	Not Quantifiable
+
+
+The system must then identify:
+Which categories should remain with the current supplier and which categories should be competitively sourced separately?
+
+13. SPECIALIST SUPPLIER LOGIC
+Do NOT assume:
+Single-category supplier = better supplier.
+
+Instead classify suppliers as:
+Category Specialist
+Supplier's meaningful historical supply is concentrated within the category/domain.
+Multi-Category Supplier
+Supplier supplies multiple procurement domains.
+Cross-Category Supplier
+Supplier supplies unrelated categories.
+The engine should then identify:
+Potential category-specialist sourcing opportunity
+
+rather than automatically calling it savings.
+14. SPECIALIST REPLACEMENT BENEFIT
+Moving spend from a multi-category supplier to a specialist supplier does NOT itself create savings.
+Therefore:
+Specialist Opportunity
+≠
+Savings
+
+Savings can only be quantified if:
+Current supplier price
+>
+credible comparable specialist supplier reference price
+
+Then:
+Potential Commercial Benefit
+=
+Eligible Quantity ×
+(Current Price − Specialist Reference Price)
+
+Otherwise show:
+Strategic Sourcing Opportunity — Commercial Benefit Not Yet Quantifiable
+
+This is a very important governance rule.
+15. SAME-CATEGORY SUPPLIER POOLING
+Create a separate calculation.
+Example:
+Category: Corrugated Boxes
+
+Supplier A ₹0.8 Cr
+Supplier B ₹0.6 Cr
+Supplier C ₹0.4 Cr
+Supplier D ₹0.3 Cr
+Supplier E ₹0.2 Cr
+
+Current total:
+₹2.3 Cr
+
+The engine should determine:
+Current supplier fragmentation
+5 suppliers
+
+Potential sourcing pool
+₹2.3 Cr
+
+Historical competitive price
+Example:
+Current weighted average = ₹52/unit
+Credible historical reference = ₹48/unit
+
+Then:
+Potential commercial opportunity
+=
+Eligible quantity × ₹4
+
+The ₹4 differential must be supported by historical transactions.
+16. DO NOT USE SUPPLIER COUNT AS A SAVINGS DRIVER
+Supplier count is an opportunity indicator, not a savings formula.
+Wrong:
+6 suppliers = 6% saving
+
+Correct:
+6 suppliers
++
+same category
++
+comparable items
++
+fragmented volume
++
+historical price dispersion
++
+credible lower reference price
+=
+quantifiable opportunity
+
+17. CONSOLIDATION TARGET LOGIC
+Do not always recommend:
+1 supplier
+
+Instead calculate a target range based on evidence.
+Examples:
+Current: 8 suppliers
+Potential target: 2–3 suppliers
+
+or:
+Current: 5 suppliers
+Potential target: 2 suppliers
+
+or:
+Current: 3 suppliers
+No consolidation recommended
+
+The target must consider:
+- supplier capacity evidence
+- historical volume supplied
+- supplier dependency
+- category criticality
+- price competitiveness
+- continuity risk
+- current supplier concentration
+- switching difficulty
+18. CATEGORY / ITEM LEVEL DECISION MATRIX
+Every opportunity should ultimately receive one of these statuses:
+1. E-AUCTION — QUANTIFIABLE
+Historical evidence supports competitive sourcing.
+2. CONSOLIDATION — QUANTIFIABLE
+Historical evidence supports commercial benefit from demand pooling/supplier consolidation.
+3. SPECIALIST SOURCING — QUANTIFIABLE
+Historical evidence supports moving category/item spend to a better-priced qualified supplier pool.
+4. STRATEGIC OPPORTUNITY — NOT YET QUANTIFIABLE
+Opportunity exists but price evidence is insufficient.
+5. NO MATERIAL OPPORTUNITY
+Evidence does not support a meaningful sourcing intervention.
+6. NOT SUITABLE
+Category/item is not appropriate for the sourcing mechanism.
+19. BENEFIT WATERFALL
+Every category must display:
+Total Category Spend
+        ↓
+Addressable Spend
+        ↓
+Comparable Spend
+        ↓
+Eligible Competitive Spend
+        ↓
+Price Dispersion Pool
+        ↓
+Volume Pooling Pool
+        ↓
+E-Auction Opportunity
+        ↓
+Vendor Consolidation Opportunity
+        ↓
+Net Defensible Commercial Opportunity
+
+Do NOT sum all intermediate pools.
+Only the final mutually exclusive opportunity contributes to:
+NET QUANTIFIABLE OPPORTUNITY
+
+20. THREE SCENARIOS
+Retain scenario analysis, but make the methodology explicit.
+Conservative
+Use a conservative historical reference such as:
+P25 / qualified competitive reference
+
+only where statistically and commercially valid.
+Base
+Use:
+lowest credible historical reference price
+
+subject to comparability and volume qualification.
+Stretch
+Use:
+best demonstrated historical competitive price
+
+only where the required volume and comparability conditions are satisfied.
+Never use a synthetic percentage.
+21. MODULE 2 EXECUTIVE KPI CARDS
+The top-level screen should show:
+1. Total Addressable Spend
+Spend that passes the basic sourcing eligibility rules.
+2. E-Auction Opportunity
+Only the mutually exclusive, quantifiable e-auction pool.
+3. Vendor Consolidation Opportunity
+Only the mutually exclusive, quantifiable consolidation pool.
+4. Overlapping Opportunity
+Amount identified by multiple engines but removed from the final benefit calculation.
+This should be shown because it demonstrates governance.
+5. Net Quantifiable Opportunity
+The final defensible commercial opportunity after overlap elimination.
+22. ADD OPPORTUNITY TRANSPARENCY
+For every ₹ opportunity show:
+Current Spend
+Eligible Spend
+Current Weighted Price
+Reference Price
+Quantity
+Reference Supplier(s)
+Reference Transaction Count
+Reference Volume %
+Price Differential
+Gross Opportunity
+Overlap Adjustment
+Net Opportunity
+Confidence
+
+This is essential for CFO/CEO credibility.
+23. DEEP-DIVE REQUIREMENT
+Clicking any category must open a proper strategic sourcing deep dive.
+Structure:
+Section 1 — Category Overview
+- total spend
+- volume
+- transactions
+- suppliers
+- recurring/non-recurring
+- contracted/spot
+Section 2 — Supplier Structure
+- supplier-wise spend
+- supplier share
+- HHI
+- top 3 share
+- tail share
+- fragmentation
+Section 3 — Item-Level Spend
+Show:
+Item
+Description
+Quantity
+Spend
+Supplier
+Average Price
+Lowest Price
+Highest Price
+Price Spread
+
+Section 4 — Price Dispersion
+Show:
+- P25
+- median
+- weighted average
+- P75
+- IQR
+- credible reference
+Section 5 — Supplier Price Positioning
+Show each supplier:
+Supplier
+Spend
+Volume
+Weighted Avg Price
+Price vs Category Reference
+
+Section 6 — E-Auction Assessment
+Show:
+- eligible/not eligible
+- reasons
+- auction type
+- eligible volume
+- reference price
+- opportunity
+Section 7 — Vendor Consolidation Assessment
+Show:
+- current suppliers
+- eligible suppliers
+- proposed target supplier range
+- consolidatable spend
+- commercial opportunity
+- operational considerations
+Section 8 — Multi-Category Supplier Analysis
+Show:
+Vendor
+Category
+Spend
+% of Vendor Spend
+Other Suppliers
+Specialists Available
+Price Position
+Opportunity
+
+Section 9 — Volume Pooling
+Show:
+Current fragmented volume
+Potential pooled volume
+Number of suppliers
+Current weighted price
+Historical competitive price
+Potential opportunity
+
+Section 10 — Opportunity Waterfall
+Show exactly how the final ₹ benefit is derived.
+Section 11 — Risks
+- supplier dependency
+- capacity
+- specification differences
+- switching cost
+- contract restrictions
+- supply continuity
+Section 12 — Recommended Sourcing Action
+Examples:
+Run reverse e-auction
+
+Consolidate demand and run competitive RFQ
+
+Split category from multi-category incumbent
+
+Rationalize tail suppliers
+
+Maintain current structure
+
+Opportunity identified — further data required
+
+24. SCREEN-SPECIFIC LOGIC
+The supplied Module 2 screens must all be connected to the same underlying calculation engine.
+Screen: Multiple Monthly PO Consolidation
+This is primarily:
+transaction/order-frequency optimization
+
+Do not mix its administrative benefit with sourcing savings unless actual transaction-cost data exists.
+Show:
+- fragmented annual spend
+- PO count
+- suppliers
+- category
+- average PO value
+- proposed PO cadence
+- transaction reduction
+- administrative benefit status
+If administrative cost is unavailable:
+Administrative Savings: NOT QUANTIFIABLE
+
+Do not invent ₹ savings.
+25. SCREEN: HIGH-VALUE RECURRING SPEND & VENDOR CONSOLIDATION
+This screen must identify:
+Recurring Category
++
+High Spend
++
+Multiple Active Suppliers
++
+Comparable Demand
+
+Then calculate:
+- total recurring spend
+- supplier count
+- supplier concentration
+- comparable spend
+- volume pooling potential
+- e-auction suitability
+- vendor consolidation suitability
+- net opportunity
+The current:
+"Potential E-Auction Volume Benefit"
+
+must not be a generic projected percentage.
+It must be:
+Potential E-Auction Commercial Opportunity
+
+and must come directly from the historical price/reference calculation.
+26. SCREEN: TOP 50 VENDORS
+The Top 50 vendor screen must not simply identify large vendors.
+For every vendor determine:
+Vendor × Category matrix
+Example:
+Vendor A
+
+Steel                 ₹5.2 Cr
+Packaging             ₹2.1 Cr
+MRO                   ₹1.4 Cr
+Electrical            ₹0.8 Cr
+
+Then identify:
+- multi-category spend
+- category specialists available in customer's own data
+- price position
+- concentration
+- category-level opportunity
+- potential category separation
+27. SPEND TIER ANALYSIS
+Retain:
+Tier 1 — High Spend
+₹15 Cr
+
+Tier 2 — Mid Spend
+₹5–₹15 Cr
+
+Tier 3 — Base/Tail
+< ₹5 Cr
+
+But these thresholds must be configuration parameters, not hard-coded business assumptions.
+For each tier show:
+Multi-category supplier spend
+Single-category specialist spend
+% of tier spend
+Potential sourcing opportunity
+
+Do not call a tier "risk" merely because it has multi-category suppliers.
+28. IMPORTANT CORRECTION TO CURRENT "SPEND DISPARITY ALARM"
+The current screen uses:
+NORMAL (Balanced Supply)
+
+This should not be based simply on multi-category supplier presence.
+Instead calculate:
+Category Supply Structure Indicator
+based on:
+- supplier concentration
+- supplier count
+- category coverage
+- multi-category dependency
+- price dispersion
+- specialist availability
+Possible outputs:
+BALANCED
+CONCENTRATED
+FRAGMENTED
+MULTI-CATEGORY DEPENDENT
+SINGLE-SOURCE DEPENDENT
+INSUFFICIENT DATA
+
+These are descriptive states, not savings assumptions.
+29. STRATEGIC SOURCING SCORECARD
+Retain the scorecard but ensure that the score does NOT itself generate ₹ savings.
+It should evaluate:
+1. Spend materiality
+2. Supplier fragmentation
+3. Price dispersion
+4. Competition availability
+5. Volume pooling potential
+6. E-auction suitability
+7. Supplier consolidation feasibility
+8. Switching complexity
+9. Contract timing
+10. Data confidence
+Score = prioritization mechanism.
+Score ≠ savings formula.
+30. DATA CONFIDENCE
+Every quantified opportunity must carry:
+HIGH
+Strong transaction volume, multiple suppliers, high comparability and credible price evidence.
+MEDIUM
+Reasonable evidence but some limitations.
+LOW
+Weak evidence.
+INSUFFICIENT
+Cannot defensibly quantify.
+A LOW/INSUFFICIENT opportunity must not be presented as a firm ₹ saving.
+31. FINAL SAVINGS / BENEFIT DEFINITIONS
+Use the following terminology consistently.
+DO NOT SAY
+Savings
+
+unless it has actually been realized after execution.
+USE
+Potential Commercial Opportunity
+
+for pre-sourcing analysis.
+Use
+Quantifiable Opportunity
+
+when supported by historical evidence.
+Use
+Indicative Opportunity
+
+when evidence exists but qualification is incomplete.
+Use
+Realized Savings
+
+ONLY in Module 4 after execution evidence exists.
+32. FINAL FORMULA
+The final Module 2 number must be:
+NET QUANTIFIABLE COMMERCIAL OPPORTUNITY
+=
+SUM OF MUTUALLY EXCLUSIVE QUALIFIED OPPORTUNITY POOLS
+
+Where each opportunity pool is:
+Eligible Quantity
+×
+(Current Comparable Weighted Average Price
+ -
+Defensible Reference Price)
+
+subject to:
+Comparability
++
+Volume Qualification
++
+Supplier Qualification
++
+Historical Evidence
++
+Data Confidence
+
+and:
+NET OPPORTUNITY
+=
+GROSS QUALIFIED OPPORTUNITY
+-
+OVERLAPPING OPPORTUNITY
+
+Never:
+Total Spend × Assumed Savings %
+
+33. AUDIT TRAIL
+For every opportunity create an audit object containing:
+opportunityId
+categoryId
+itemIds[]
+supplierIds[]
+opportunityType
+currentSpend
+eligibleSpend
+quantity
+currentWeightedPrice
+referencePrice
+referenceSupplierIds[]
+referenceTransactionIds[]
+referenceVolumeShare
+grossOpportunity
+overlapAmount
+netOpportunity
+confidence
+qualificationRules[]
+disqualificationRules[]
+calculationVersion
+
+This must be exportable through the Module 2 audit dossier.
+34. ACCEPTANCE TESTS
+Create test cases for at least these scenarios:
+Test 1
+One supplier, no competition.
+Expected:
+No e-auction opportunity.
+
+Test 2
+Five suppliers, same item, strong price dispersion.
+Expected:
+E-auction opportunity quantified.
+
+Test 3
+Five suppliers, same category but completely different specifications.
+Expected:
+No automatic consolidation.
+
+Test 4
+One supplier supplying ten unrelated categories.
+Expected:
+Multi-category rationalization opportunity identified.
+
+But:
+No savings unless price evidence exists.
+
+Test 5
+Five small suppliers supplying same category with comparable prices.
+Expected:
+Volume pooling opportunity identified.
+
+Test 6
+Five small suppliers with large price dispersion.
+Expected:
+E-auction + volume pooling opportunity.
+
+Ensure no double counting.
+Test 7
+One supplier has the lowest price but only one tiny historical transaction.
+Expected:
+Cannot become credible benchmark automatically.
+
+Test 8
+Same supplier supplies multiple categories but is competitively priced in every category.
+Expected:
+No artificial consolidation savings.
+
+Test 9
+No price dispersion.
+Expected:
+Opportunity may exist operationally, but commercial benefit = NOT QUANTIFIABLE.
+
+Test 10
+Two sourcing engines identify the same spend.
+Expected:
+Overlap is removed from final net opportunity.
+
+35. REQUIRED UI CHANGE
+Every ₹ benefit displayed anywhere in Module 2 must have a clickable:
+"How calculated?"
+
+drawer.
+It must show:
+Current Spend
+↓
+Eligible Spend
+↓
+Eligible Quantity
+↓
+Current Weighted Price
+↓
+Historical Reference Price
+↓
+Price Differential
+↓
+Gross Opportunity
+↓
+Overlap Adjustment
+↓
+NET OPPORTUNITY
+
+This is mandatory.
+36. FINAL MODULE 2 EXECUTIVE OUTPUT
+The executive should be able to understand Module 2 in less than 60 seconds:
+₹X Cr Addressable Spend
+
+₹X Cr E-Auction Opportunity
+₹X Cr Vendor Consolidation Opportunity
+₹X Cr Volume Pooling Opportunity
+
+₹X Cr Overlapping Opportunity Removed
+
+₹X Cr NET QUANTIFIABLE COMMERCIAL OPPORTUNITY
+
+And underneath:
+Based exclusively on qualified historical customer transactions. Not realized savings.
+
+Then:
+X E-Auction Candidates
+X Consolidation Candidates
+X Volume Pooling Candidates
+X Multi-Category Supplier Opportunities
+X Opportunities Requiring Data Enrichment
+
+37. MOST IMPORTANT BUSINESS RULE
+The engine must think like a strategic sourcing professional, not like a percentage-based savings calculator.
+The logic should always ask:
+What exactly is being bought?
+
+How much is being bought?
+
+From whom?
+
+At what comparable price?
+
+Who else has supplied the same/comparable item?
+
+What volume can realistically be pooled?
+
+Is there evidence that a lower price has actually been achieved?
+
+Can that historical price reasonably support the proposed sourcing event?
+
+What portion of spend is genuinely addressable?
+
+Has this spend already been counted under another sourcing opportunity?
+
+Only after answering these questions should Module 2 produce a ₹ opportunity.
+38. IMPLEMENTATION REQUIREMENT
+Do not merely change labels/UI.
+Review and refactor the underlying:
+- calculation engine
+- opportunity calculator
+- price engine
+- supplier structure engine
+- waterfall engine
+- consolidation engine
+- e-auction engine
+- category profile
+- deep-dive API
+- audit JSON
+- frontend KPI cards
+- category tables
+- vendor tables
+- "How calculated?" views
+All screens must consume the same canonical Module 2 opportunity model.
+There must be one source of truth for every ₹ opportunity.
+After implementation run:
+- backend build
+- frontend build
+- typecheck
+- lint
+- existing tests
+- new Module 2 acceptance tests
+- regression tests
+Do not modify Module 1, Module 3/PCBI or Module 4.
+Create/update documentation as:
+MODULE_2_STRATEGIC_SOURCING_LOGIC_V2.md
+MODULE_2_SOURCING_CALCULATION_SPEC_V2.md
+MODULE_2_OPPORTUNITY_METHODOLOGY_V2.md
+MODULE_2_UI_OUTPUT_SPEC_V2.md
+MODULE_2_ACCEPTANCE_TEST_REPORT_V2.md
+MODULE_2_OPPORTUNITY_AUDIT_V2.json
+
+Final status must clearly identify:
+Quantifiable Commercial Opportunity
+
+Indicative / Not Yet Quantifiable Opportunity
+
+Operational Opportunity — ₹ Benefit Not Quantified
+
+No Material Opportunity
+
+Do not represent any pre-execution Module 2 figure as realized savings.
+
+
+## Prompt 226
+
+MODULE 2 — STRATEGIC SOURCING INTELLIGENCE, E-AUCTION & VENDOR CONSOLIDATION
+MASTER LOGIC HARDENING COMMAND
+VERSION: MODULE_2_SOURCING_LOGIC_V2.0
+
+IMPORTANT:
+This is a MODULE 2 ONLY enhancement.
+
+DO NOT modify:
+- Module 1 ingestion architecture
+- Module 3 PCBI / external benchmarking
+- Module 4 execution / savings realization
+- Any unrelated application functionality
+
+The objective is to make Module 2 a commercially credible Strategic Sourcing Intelligence Engine.
+
+The engine must identify:
+1. Where the customer is spending
+2. Where spend is fragmented
+3. Where suppliers are supplying across unrelated categories
+4. Where category-specialist sourcing can create leverage
+5. Where multiple suppliers can be consolidated
+6. Where multiple POs can be consolidated
+7. Where recurring demand can be bundled
+8. Where a reverse e-auction is commercially suitable
+9. What the historical-data-supported benefit opportunity is
+10. Exactly how every benefit number was calculated
+
+ABSOLUTE RULE:
+
+NO ARBITRARY SAVINGS PERCENTAGE.
+
+DO NOT use:
+- assumed 3%
+- assumed 5%
+- assumed 8%
+- assumed 10%
+- generic industry savings %
+- external benchmarks
+- PCBI benchmarks
+- analyst assumptions
+
+unless explicitly marked as a non-quantified scenario and NOT included in the quantified Module 2 benefit.
+
+Every quantified ₹ opportunity must be derived from the customer's own historical transaction data.
+
+------------------------------------------------------------
+1. CORE PRINCIPLE — BENEFIT ≠ SPEND
+------------------------------------------------------------
+
+Never display total spend as savings.
+
+For every opportunity:
+
+ADDRESSABLE SPEND
+→ ELIGIBLE SPEND
+→ HISTORICAL REFERENCE
+→ ACHIEVABLE / DEFENSIBLE REFERENCE
+→ BENEFIT OPPORTUNITY
+
+The system must distinguish:
+
+A. Addressable Spend
+B. Eligible Spend
+C. Potential Benefit
+D. Net Quantifiable Benefit
+E. Non-Quantifiable Opportunity
+
+These must never be mixed.
+
+Example:
+
+Historical category spend = ₹10 Cr
+
+Only ₹7 Cr is comparable and addressable.
+
+Historical eligible price reference indicates ₹0.40 Cr potential differential.
+
+Then:
+
+Addressable Spend = ₹7 Cr
+Potential Benefit = ₹0.40 Cr
+
+NOT ₹7 Cr savings.
+
+------------------------------------------------------------
+2. UNIT-LEVEL CALCULATION IS MANDATORY
+------------------------------------------------------------
+
+All benefit calculations must ultimately originate at:
+
+ITEM / MATERIAL CODE / NORMALIZED ITEM
++
+CATEGORY
++
+SUPPLIER
++
+UOM
++
+QUANTITY
++
+UNIT PRICE
++
+DATE / PERIOD
++
+CONTRACT STATUS
+
+Do NOT calculate opportunity only at category total level.
+
+The system may aggregate upward, but never calculate an opportunity without an underlying eligible transaction population.
+
+Every opportunity must be drillable:
+
+Enterprise
+→ Category
+→ Sub-category
+→ Item / Material
+→ Supplier
+→ Historical transactions
+→ Calculation
+
+------------------------------------------------------------
+3. MODULE 2 OPPORTUNITY TYPES
+------------------------------------------------------------
+
+Create separate opportunity engines.
+
+OPPORTUNITY TYPE 1:
+PRICE / E-AUCTION OPPORTUNITY
+
+OPPORTUNITY TYPE 2:
+VENDOR CONSOLIDATION OPPORTUNITY
+
+OPPORTUNITY TYPE 3:
+CATEGORY SPECIALIZATION / RE-SOURCING OPPORTUNITY
+
+OPPORTUNITY TYPE 4:
+VOLUME BUNDLING OPPORTUNITY
+
+OPPORTUNITY TYPE 5:
+PO CONSOLIDATION / TRANSACTION EFFICIENCY
+
+OPPORTUNITY TYPE 6:
+RECURRING DEMAND CONSOLIDATION
+
+OPPORTUNITY TYPE 7:
+SINGLE / DOMINANT SUPPLIER RISK
+
+Important:
+
+PO consolidation benefit must NOT be added to price savings unless independently quantifiable.
+
+Risk must NOT automatically become savings.
+
+Opportunity types must be independently calculated and then overlap-controlled.
+
+------------------------------------------------------------
+4. E-AUCTION BENEFIT LOGIC — FINALIZE THIS CAREFULLY
+------------------------------------------------------------
+
+E-auction should only be recommended when the historical data demonstrates sufficient competitive comparability.
+
+Eligibility conditions should include:
+
+1. Same or comparable item/specification
+2. Same normalized UOM
+3. Same currency
+4. Sufficient historical transaction volume
+5. Multiple qualified suppliers
+6. Meaningful historical price dispersion
+7. No major specification differences
+8. No obvious one-off/outlier transaction
+9. Demand is sufficiently repeatable or aggregatable
+10. Supplier participation is commercially plausible
+
+Do NOT trigger e-auction merely because there are >5 vendors.
+
+Vendor count is a qualification factor, not the benefit calculation.
+
+------------------------------------------------------------
+5. E-AUCTION REFERENCE PRICE
+------------------------------------------------------------
+
+For each eligible item/category:
+
+Calculate:
+
+Historical Weighted Average Price
+Historical Median Price
+P25
+P50
+P75
+Minimum
+Maximum
+IQR
+Price Dispersion %
+
+Then identify:
+
+LOWEST CREDIBLE HISTORICAL PRICE
+
+But the lowest price must pass qualification tests.
+
+At minimum:
+
+- comparable specification
+- comparable UOM
+- comparable currency
+- sufficient transaction volume
+- non-outlier
+- valid historical period
+- commercially repeatable transaction
+
+Do not blindly use MIN(price).
+
+------------------------------------------------------------
+6. E-AUCTION BENEFIT CALCULATION
+------------------------------------------------------------
+
+For every eligible item:
+
+Current / Baseline Price
+minus
+Defensible Auction Reference Price
+=
+Potential Unit Benefit
+
+Potential Unit Benefit
+×
+Future Addressable Quantity
+=
+Potential E-Auction Benefit
+
+Where appropriate:
+
+Baseline Price = weighted average price for the eligible baseline population.
+
+Reference Price = lowest credible historical comparable price.
+
+Formula:
+
+E_AUCTION_BENEFIT =
+MAX(
+0,
+BASELINE_UNIT_PRICE - REFERENCE_UNIT_PRICE
+)
+×
+ELIGIBLE_FUTURE_QUANTITY
+
+If future quantity cannot be reliably derived:
+
+use normalized historical recurring quantity only as the addressable quantity.
+
+Clearly label it:
+
+"HISTORICAL RUN-RATE OPPORTUNITY"
+
+Do not call it realized savings.
+
+------------------------------------------------------------
+7. PRICE DISPERSION LOGIC
+------------------------------------------------------------
+
+For each item/category:
+
+Price Dispersion % =
+(P75 - P25) / P50
+
+Also calculate:
+
+Weighted Average vs Lowest Credible Price
+
+and:
+
+Weighted Average vs P25
+
+The engine must show which reference was used and why.
+
+Example:
+
+Weighted Avg = ₹110
+P25 = ₹103
+Credible historical low = ₹98
+
+The system may show:
+
+Conservative Opportunity:
+₹110 → ₹103
+
+Base Opportunity:
+₹110 → ₹98
+
+But only if ₹98 passes all credibility checks.
+
+Do not automatically treat the lowest price as achievable.
+
+------------------------------------------------------------
+8. THREE E-AUCTION SCENARIOS
+------------------------------------------------------------
+
+Create:
+
+CONSERVATIVE
+
+Reference:
+P25
+
+BASE
+
+Reference:
+Lowest Credible Historical Price
+
+STRETCH
+
+Reference:
+Best demonstrated comparable price after volume bundling,
+ONLY where sufficient evidence exists.
+
+Each scenario must display:
+
+Addressable Spend
+Reference Price
+Expected Unit Differential
+Expected Benefit
+Eligibility
+Confidence
+
+If evidence is insufficient:
+
+STATUS = NOT QUANTIFIABLE
+
+Never substitute ₹0 for missing evidence.
+
+------------------------------------------------------------
+9. VENDOR CONSOLIDATION LOGIC — VERY IMPORTANT
+------------------------------------------------------------
+
+Vendor consolidation must NOT mean:
+
+"Reduce 8 vendors to 2 vendors = X% savings."
+
+That is prohibited.
+
+Vendor consolidation must be calculated at:
+
+CATEGORY + ITEM LEVEL.
+
+For each category:
+
+identify:
+
+Supplier A
+Supplier B
+Supplier C
+Supplier D
+etc.
+
+Then calculate:
+
+Supplier Spend
+Supplier Volume
+Number of Items
+Number of POs
+Average Price
+Weighted Average Price
+Item Coverage
+Category Coverage
+
+Then determine whether suppliers are:
+
+A. Category Specialists
+B. Multi-Category Suppliers
+C. Cross-Category Generalists
+D. Tail Suppliers
+E. Strategic / Sole Source
+F. Duplicative Suppliers
+
+------------------------------------------------------------
+10. MULTI-CATEGORY SUPPLIER LOGIC
+------------------------------------------------------------
+
+A supplier supplying multiple unrelated procurement categories must NOT automatically be considered inefficient.
+
+First calculate:
+
+Supplier → Category → Item → Spend
+
+Example:
+
+Vendor X:
+
+Steel = ₹4 Cr
+Packaging = ₹1 Cr
+MRO = ₹0.50 Cr
+Safety = ₹0.20 Cr
+
+The engine must identify:
+
+"Multi-category supplier"
+
+But the sourcing recommendation must be category-specific.
+
+For each category supplied by Vendor X:
+
+compare Vendor X against:
+
+1. Other suppliers already supplying the same category
+2. Other suppliers supplying the same/similar items
+3. Historical category price dispersion
+4. Item-level price positioning
+5. Supplier coverage
+6. Volume available for consolidation
+
+------------------------------------------------------------
+11. CATEGORY SPECIALIST RE-SOURCING LOGIC
+------------------------------------------------------------
+
+The engine should identify cases where:
+
+ONE GENERALIST SUPPLIER
+is supplying
+MULTIPLE CATEGORIES
+
+and there is evidence that:
+
+CATEGORY-SPECIALIST SUPPLIERS
+exist in the customer's historical data.
+
+Example:
+
+Vendor X supplies:
+
+Packaging = ₹2 Cr
+MRO = ₹1 Cr
+Electrical = ₹1 Cr
+
+But:
+
+Packaging Specialist A historically supplies comparable packaging items
+at a lower credible price.
+
+Then:
+
+Packaging Spend with Vendor X
+becomes a CATEGORY RE-SOURCING OPPORTUNITY.
+
+Do NOT assume the entire ₹2 Cr is savings.
+
+Calculate:
+
+Current Vendor X Packaging Spend
+vs
+Credible Historical Specialist Reference
+
+Only the eligible item-level population becomes opportunity.
+
+------------------------------------------------------------
+12. SMALL SUPPLIER CONSOLIDATION LOGIC
+------------------------------------------------------------
+
+The opposite situation must also be detected.
+
+Example:
+
+Category = Industrial Fasteners
+
+Supplier A = ₹0.30 Cr
+Supplier B = ₹0.25 Cr
+Supplier C = ₹0.20 Cr
+Supplier D = ₹0.15 Cr
+Supplier E = ₹0.10 Cr
+
+Total = ₹1.00 Cr
+
+If these suppliers provide comparable items and there is sufficient historical evidence that one/two suppliers can competitively supply the combined volume:
+
+identify:
+
+VOLUME BUNDLING OPPORTUNITY.
+
+Potential benefit must be calculated from:
+
+Current weighted average price
+vs
+historically demonstrated price at comparable volume.
+
+Do NOT use supplier-count reduction as savings.
+
+------------------------------------------------------------
+13. TWO-DIRECTION SOURCING LOGIC
+------------------------------------------------------------
+
+Module 2 must explicitly support both:
+
+DIRECTION A:
+GENERALIST → SPECIALIST
+
+Move category/item spend from a multi-category supplier toward qualified category specialists.
+
+DIRECTION B:
+FRAGMENTED TAIL → FEWER QUALIFIED SUPPLIERS
+
+Combine comparable item/category demand across smaller suppliers to create purchasing leverage.
+
+These two strategies may coexist in the same category.
+
+The engine must determine which is applicable at:
+
+ITEM / CATEGORY level.
+
+------------------------------------------------------------
+14. VENDOR CONSOLIDATION BENEFIT
+------------------------------------------------------------
+
+Vendor consolidation benefit should have TWO components:
+
+A. PRICE BENEFIT
+
+Only when historical comparable pricing supports it.
+
+Formula:
+
+(Current Weighted Unit Price
+-
+Target Credible Unit Price)
+×
+Eligible Consolidatable Quantity
+
+B. TRANSACTION / ADMINISTRATIVE BENEFIT
+
+Only if transaction cost assumptions are explicitly provided by the customer.
+
+For example:
+
+PO Count Reduction
+×
+Customer-provided Cost per PO
+
+If no customer-provided transaction cost exists:
+
+Administrative Benefit =
+NOT QUANTIFIABLE
+
+Do NOT invent an administrative cost.
+
+Therefore:
+
+Vendor Consolidation Benefit =
+Price Benefit
++
+Quantifiable Administrative Benefit
+
+If only price benefit is available, show only price benefit.
+
+------------------------------------------------------------
+15. VENDOR CONSOLIDATION TARGET
+------------------------------------------------------------
+
+Do not simply recommend:
+
+"8 suppliers → 2 suppliers."
+
+Instead determine:
+
+Current Supplier Count
+Current Item Coverage
+Current Category Coverage
+Current Spend Distribution
+
+Then calculate a defensible target based on historical capability.
+
+Example:
+
+Current:
+7 suppliers
+
+Target:
+3 suppliers
+
+Reason:
+
+Supplier A:
+45% item coverage
+30% spend
+
+Supplier B:
+35% item coverage
+25% spend
+
+Supplier C:
+20% item coverage
+15% spend
+
+Remaining tail:
+30% spend
+
+The system must show:
+
+"Potentially consolidate eligible tail volume into 3 qualified suppliers"
+
+NOT:
+
+"3 suppliers will definitely deliver all demand."
+
+------------------------------------------------------------
+16. CONSOLIDATION FEASIBILITY
+------------------------------------------------------------
+
+Evaluate:
+
+- supplier capacity evidence
+- historical volume handled
+- item coverage
+- category coverage
+- price competitiveness
+- supplier dependency
+- switching complexity
+- qualification requirements
+- contractual restrictions
+- single-source risk
+- geographic/logistics constraints
+
+Output:
+
+HIGH
+MEDIUM
+LOW
+NOT QUANTIFIABLE
+
+------------------------------------------------------------
+17. RECURRING SPEND LOGIC
+------------------------------------------------------------
+
+Identify:
+
+Same item/category
+purchased repeatedly
+from multiple suppliers
+over recurring periods.
+
+Calculate:
+
+12-month spend
+24-month spend
+36-month spend
+monthly run rate
+purchase frequency
+supplier count
+supplier fragmentation
+
+Do NOT simply label every repeated purchase as an opportunity.
+
+Opportunity requires:
+
+repeatable demand
++
+comparable item
++
+supplier competition
++
+price evidence.
+
+------------------------------------------------------------
+18. MULTIPLE PO CONSOLIDATION
+------------------------------------------------------------
+
+This is operational sourcing efficiency, not automatically price savings.
+
+For each supplier/category/item:
+
+calculate:
+
+POs per year
+PO lines
+average PO value
+monthly frequency
+quarterly frequency
+annual spend
+
+Allow target cadence:
+
+Monthly
+Quarterly
+Half-Yearly
+Annual
+
+Calculate:
+
+Current PO count
+Target PO count
+PO reduction %
+
+Example:
+
+48 POs/year
+→
+12 POs/year
+
+Transaction reduction =
+75%
+
+But:
+
+Savings = NOT QUANTIFIABLE
+
+unless customer-provided transaction processing cost exists.
+
+If customer gives:
+
+Cost per PO = ₹X
+
+then:
+
+Administrative Benefit =
+PO Reduction × ₹X
+
+Otherwise show:
+
+"75% transaction reduction opportunity"
+and
+"₹ benefit not quantified."
+
+------------------------------------------------------------
+19. STRATEGIC SOURCING WATERFALL
+------------------------------------------------------------
+
+Replace generic waterfall logic with:
+
+1. TOTAL HISTORICAL SPEND
+2. ADDRESSABLE SPEND
+3. COMPARABLE ITEM SPEND
+4. PRICE / DISPERSION OPPORTUNITY
+5. VOLUME BUNDLING OPPORTUNITY
+6. CATEGORY RE-SOURCING OPPORTUNITY
+7. VENDOR CONSOLIDATION OPPORTUNITY
+8. E-AUCTION OPPORTUNITY
+9. OVERLAP REMOVAL
+10. NET QUANTIFIABLE SOURCING OPPORTUNITY
+
+Important:
+
+Do not add all opportunities blindly.
+
+A ₹1 Cr item cannot simultaneously contribute:
+
+₹10L e-auction saving
++
+₹8L consolidation saving
++
+₹7L specialist sourcing saving
+
+unless the logic proves these are independent.
+
+Use opportunity IDs and transaction/item populations to prevent double counting.
+
+------------------------------------------------------------
+20. OVERLAP CONTROL
+------------------------------------------------------------
+
+Every opportunity must have:
+
+Opportunity ID
+Category
+Item IDs
+Supplier IDs
+Transaction IDs
+Eligible Spend
+Benefit Type
+
+Before adding opportunities:
+
+compare transaction/item populations.
+
+If two opportunities use the same economic lever:
+
+keep the higher defensible opportunity OR calculate sequentially.
+
+Example:
+
+Baseline price
+→ specialist supplier price
+→ consolidated volume price
+
+Do not add both price differences.
+
+Use:
+
+MAX / SEQUENTIAL WATERFALL LOGIC
+
+where required.
+
+------------------------------------------------------------
+21. NET BENEFIT LOGIC
+------------------------------------------------------------
+
+For each category:
+
+Gross Opportunity
+
+minus
+Overlapping Opportunity
+
+=
+Net Quantifiable Opportunity
+
+Then:
+
+Net Quantifiable Opportunity
+=
+E-Auction Benefit
++
+Net Consolidation Price Benefit
++
+Net Specialist Re-Sourcing Benefit
++
+Quantifiable Administrative Benefit
+
+ONLY after overlap controls.
+
+------------------------------------------------------------
+22. BENEFIT CONFIDENCE
+------------------------------------------------------------
+
+Every quantified opportunity must carry:
+
+HIGH
+MEDIUM
+LOW
+NOT QUANTIFIABLE
+
+Confidence should consider:
+
+- item comparability
+- price history depth
+- supplier count
+- transaction count
+- quantity consistency
+- UOM consistency
+- specification confidence
+- price dispersion
+- historical recency
+- volume evidence
+
+Do not display a precise ₹ opportunity with HIGH visual emphasis if data confidence is LOW.
+
+------------------------------------------------------------
+23. CATEGORY DEEP DIVE — MANDATORY
+------------------------------------------------------------
+
+Clicking any category must open a full sourcing deep dive.
+
+Show:
+
+A. Category Overview
+- Total Spend
+- Addressable Spend
+- Suppliers
+- Items
+- Transactions
+- Recurrence
+
+B. Supplier Structure
+- supplier-wise spend
+- supplier-wise volume
+- supplier-wise item coverage
+- supplier concentration
+- tail suppliers
+
+C. Item-Level Price Analysis
+- item
+- current weighted price
+- median
+- P25
+- P75
+- credible low
+- quantity
+- supplier count
+
+D. E-Auction Analysis
+- eligibility
+- reason
+- baseline
+- target reference
+- quantity
+- benefit
+- confidence
+
+E. Vendor Consolidation
+- current supplier structure
+- candidate suppliers
+- items suitable for consolidation
+- volume available
+- price evidence
+- target supplier structure
+- benefit
+
+F. Category Specialist Analysis
+- items currently purchased from generalists
+- specialist suppliers available
+- historical specialist price
+- potential re-sourcing benefit
+
+G. Volume Bundling
+- fragmented suppliers
+- combined volume
+- historical volume-price relationship
+- potential opportunity
+
+H. Risk
+- sole-source
+- supplier dependency
+- switching complexity
+- contractual constraints
+
+I. Final Recommendation
+The recommendation must be category/item-specific and evidence-backed.
+
+------------------------------------------------------------
+24. TOP KPI CARDS
+------------------------------------------------------------
+
+The current Module 2 dashboard must clearly distinguish:
+
+TOTAL ADDRESSABLE SPEND
+
+POTENTIAL E-AUCTION BENEFIT
+
+POTENTIAL VENDOR CONSOLIDATION BENEFIT
+
+CATEGORY RE-SOURCING BENEFIT
+
+VOLUME BUNDLING BENEFIT
+
+PO / ADMINISTRATIVE BENEFIT
+
+OVERLAPPING OPPORTUNITY
+
+NET QUANTIFIABLE SOURCING OPPORTUNITY
+
+Do not call any of these "savings."
+
+Use:
+
+"Potential Benefit"
+"Quantifiable Opportunity"
+"Historical Opportunity"
+
+until Module 4 confirms realization.
+
+------------------------------------------------------------
+25. TOP 50 VENDOR ANALYSIS
+------------------------------------------------------------
+
+For every top vendor show:
+
+Vendor
+3-Year Spend
+Annual Spend
+Category Count
+Primary Category
+Other Categories
+Item Count
+Supplier Share
+Category Share
+Price Position
+YoY Spend
+YoY Quantity
+YoY Price
+Category Specialist / Generalist
+Risk Flag
+
+A vendor supplying multiple categories should trigger:
+
+"Cross-Category Supply Review"
+
+not automatically:
+
+"Vendor Consolidation Opportunity."
+
+------------------------------------------------------------
+26. SPEND DISPARITY ALARM
+------------------------------------------------------------
+
+The current "NORMAL / BALANCED SUPPLY" logic is too simplistic.
+
+Replace it with evidence-based signals:
+
+CATEGORY SPECIALIST DOMINANCE
+GENERALIST SUPPLIER DOMINANCE
+TAIL FRAGMENTATION
+SINGLE SUPPLIER CONCENTRATION
+MULTI-SUPPLIER PRICE DISPERSION
+CROSS-CATEGORY SUPPLIER DEPENDENCY
+
+The alarm must identify the underlying reason.
+
+------------------------------------------------------------
+27. SOLE / DOMINANT SUPPLIER MODULE
+------------------------------------------------------------
+
+This is a RISK ENGINE.
+
+Do NOT convert risk directly into savings.
+
+For:
+
+100% sole-source
+or
+secondary supplier <10%
+
+show:
+
+Strategic Risk Spend
+
+Potential Alternate Supplier Development
+
+but:
+
+Savings =
+NOT QUANTIFIABLE
+
+unless actual historical competitive price evidence exists.
+
+------------------------------------------------------------
+28. CATEGORY SPEND BREAKDOWN
+------------------------------------------------------------
+
+The category spend screen must be the foundation for Module 2 sourcing analysis.
+
+For every category:
+
+FY24
+FY25
+FY26
+3-Year Total
+
+and:
+
+Supplier Count
+Item Count
+PO Count
+Recurring Spend
+Spot Spend
+Contracted Spend
+Addressable Spend
+
+Then connect directly to sourcing opportunity.
+
+------------------------------------------------------------
+29. NO FALSE ₹0
+------------------------------------------------------------
+
+This is critical.
+
+If an opportunity cannot be quantified:
+
+DO NOT display:
+
+₹0.00 Cr
+
+because ₹0 can be interpreted as "no opportunity."
+
+Instead display:
+
+"Opportunity Identified"
+"Benefit Not Yet Quantifiable"
+
+or:
+
+"Insufficient historical evidence"
+
+with the exact missing data reason.
+
+₹0 should only appear where the mathematically calculated opportunity is genuinely zero.
+
+------------------------------------------------------------
+30. DATA TRACEABILITY
+------------------------------------------------------------
+
+Every ₹ opportunity must be traceable.
+
+Add:
+
+"Why this number?"
+
+Click should show:
+
+Baseline transaction population
+Eligible transactions
+Baseline price
+Reference price
+Eligible quantity
+Formula
+Excluded transactions
+Reason for exclusions
+Confidence
+Opportunity ID
+
+Example:
+
+₹18.4 L Potential E-Auction Benefit
+
+should show:
+
+Eligible Spend = ₹2.46 Cr
+Baseline Weighted Price = ₹124.60
+Reference Price = ₹117.10
+Eligible Quantity = 245,333 units
+
+Benefit:
+
+(124.60 - 117.10) × 245,333
+= ₹18.40 L
+
+This is the level of auditability required.
+
+------------------------------------------------------------
+31. OUTPUT LANGUAGE
+------------------------------------------------------------
+
+Avoid statements such as:
+
+"Save 10%"
+"Consolidate to 2 vendors"
+"Guaranteed savings"
+"Expected savings"
+
+Instead use:
+
+"Historical opportunity"
+"Potential benefit"
+"Eligible opportunity"
+"Potential sourcing benefit"
+"Target supplier structure"
+"Historically demonstrated price"
+"Opportunity requiring competitive event"
+
+------------------------------------------------------------
+32. FINAL CATEGORY OUTPUT
+------------------------------------------------------------
+
+Every category should end with:
+
+CATEGORY SOURCING THESIS
+
+Example:
+
+"Packaging spend is fragmented across 7 suppliers. 82% of addressable spend is comparable across 14 recurring items. Historical price dispersion indicates an auction opportunity across 9 items. A further 23% of category spend is currently distributed across four small suppliers and can be evaluated for volume bundling. Two items are currently supplied by a multi-category generalist where a historical category specialist demonstrates a lower credible price."
+
+Then:
+
+E-AUCTION:
+₹X
+
+SPECIALIST RE-SOURCING:
+₹Y
+
+VOLUME BUNDLING:
+₹Z
+
+VENDOR CONSOLIDATION:
+₹A
+
+ADMINISTRATIVE:
+NOT QUANTIFIABLE
+
+OVERLAP:
+₹B
+
+NET QUANTIFIABLE OPPORTUNITY:
+₹C
+
+CONFIDENCE:
+HIGH / MEDIUM / LOW
+
+------------------------------------------------------------
+33. IMPORTANT — DO NOT FORCE AN OPPORTUNITY
+------------------------------------------------------------
+
+Module 2 should be allowed to conclude:
+
+"No quantifiable sourcing opportunity identified."
+
+This is a valid output.
+
+Likewise:
+
+"Opportunity identified but not quantifiable."
+
+is a valid output.
+
+The engine must never manufacture a benefit simply because:
+
+- vendor count is high
+- spend is high
+- POs are frequent
+- category is recurring
+- supplier is multi-category
+
+These are opportunity signals, not savings.
+
+------------------------------------------------------------
+34. UI REQUIREMENT
+------------------------------------------------------------
+
+Retain the existing Module 2 visual design language.
+
+Improve the information hierarchy.
+
+The dashboard should answer in this order:
+
+1. WHERE IS THE SPEND?
+2. WHERE IS THE FRAGMENTATION?
+3. WHAT SOURCING LEVER EXISTS?
+4. WHAT EVIDENCE SUPPORTS IT?
+5. WHAT IS THE QUANTIFIABLE BENEFIT?
+6. WHAT IS NOT QUANTIFIABLE?
+7. WHAT SHOULD STRATEGIC SOURCING DO NEXT?
+
+Every card must drill into evidence.
+
+------------------------------------------------------------
+35. ENGINEERING REQUIREMENT
+------------------------------------------------------------
+
+Implement the logic as modular services.
+
+Suggested services:
+
+module2BenefitEngine
+module2EAuctionBenefitEngine
+module2VendorConsolidationEngine
+module2CategorySpecializationEngine
+module2VolumeBundlingEngine
+module2POConsolidationEngine
+module2OpportunityOverlapEngine
+module2BenefitTraceabilityEngine
+module2ConfidenceEngine
+
+Do not put all calculations inside UI components.
+
+------------------------------------------------------------
+36. TESTING REQUIREMENT
+------------------------------------------------------------
+
+Create test cases for at least:
+
+A. One supplier, no competition
+B. Multiple suppliers, identical price
+C. Multiple suppliers, high price dispersion
+D. Multi-category generalist supplier
+E. Category specialist with lower historical price
+F. Multiple small suppliers with comparable items
+G. Recurring monthly demand
+H. Multiple monthly POs
+I. Sole-source category
+J. Insufficient historical data
+K. Different UOM
+L. Different specification
+M. Outlier low price
+N. Contracted spend
+O. Spot spend
+P. Overlapping e-auction and consolidation opportunity
+Q. Genuine zero opportunity
+R. Opportunity identified but not quantifiable
+
+Every test must verify the ₹ calculation and the reason.
+
+------------------------------------------------------------
+37. FINAL ACCEPTANCE CRITERIA
+------------------------------------------------------------
+
+Module 2 is accepted only when:
+
+1. Every ₹ benefit is mathematically traceable.
+2. No arbitrary savings percentage is used.
+3. E-auction benefit is based on comparable historical price evidence.
+4. Vendor consolidation benefit is item/category based.
+5. Multi-category vendors are evaluated category-by-category.
+6. Category specialists are compared against generalists using historical evidence.
+7. Small suppliers can be consolidated only where item/category comparability exists.
+8. PO consolidation is separated from price savings.
+9. Administrative savings are only quantified using customer-provided cost assumptions.
+10. Sole-source risk is not treated as savings.
+11. Opportunity overlap is eliminated.
+12. ₹0 is never used to hide missing evidence.
+13. Every opportunity has confidence and traceability.
+14. Every category has a deep-dive sourcing explanation.
+15. Dashboard KPIs reconcile exactly with underlying category-level calculations.
+16. Module 2 remains completely isolated from Module 3 and Module 4.
+17. No external benchmark is used to calculate Module 2 benefits.
+18. All existing Module 2 functionality must continue to work.
+19. Existing build/typecheck/lint/test quality gates must pass.
+20. Produce an updated:
+   MODULE_2_SOURCING_LOGIC_V2.0
+   MODULE_2_SOURCING_CALCULATION_SPEC_V2.0
+   MODULE_2_OPPORTUNITY_METHODOLOGY_V2.0
+   MODULE_2_UI_OUTPUT_SPEC_V2.0
+   MODULE_2_ACCEPTANCE_TEST_REPORT_V2.0
+
+FINAL PRINCIPLE:
+
+MODULE 2 DOES NOT CLAIM WHAT THE CUSTOMER WILL SAVE.
+
+MODULE 2 PROVES WHAT HISTORICAL CUSTOMER DATA INDICATES CAN BE SOURCED DIFFERENTLY AND WHAT QUANTIFIABLE BENEFIT IS SUPPORTED BY THAT EVIDENCE.
+
+The output must therefore be:
+
+DATA → LOGIC → ELIGIBILITY → SOURCING LEVER → REFERENCE → BENEFIT → OVERLAP CONTROL → NET OPPORTUNITY → CONFIDENCE → ACTION.
+
+Implement this as the definitive Module 2 sourcing-benefit architecture.
+
+
+## Prompt 227
+
+MODULE 2 — STRATEGIC SOURCING INTELLIGENCE
+FINAL BUSINESS LOGIC + UI/UX HARDENING COMMAND
+==============================================================
+
+OBJECTIVE
+---------
+
+We are now finalizing Module 2 as a production-grade Strategic Sourcing Intelligence
+engine.
+
+DO NOT touch Module 1, Module 3 / PCBI, or Module 4 business logic.
+
+Module 2 must independently answer:
+
+1. WHERE is the spend?
+2. HOW is the spend currently distributed?
+3. WHO are the suppliers?
+4. WHERE is fragmentation / concentration?
+5. WHAT price dispersion exists?
+6. WHERE can volume be consolidated?
+7. WHERE can suppliers be consolidated?
+8. WHERE is an e-auction commercially and operationally suitable?
+9. WHAT is the defensible opportunity?
+10. WHY is that opportunity defensible?
+11. WHAT should Procurement actually do next?
+12. HOW should the opportunity be handed over to Module 4?
+
+This command supersedes previous Module 2 UI assumptions where necessary.
+
+==============================================================
+A. ABSOLUTE MODULE 2 BOUNDARY
+==============================================================
+
+Module 2 works ONLY from validated customer procurement history and
+Module 2 classification outputs.
+
+Module 2 MUST NOT use PCBI, external market indexes, or external benchmark
+prices to calculate its own sourcing opportunity.
+
+PCBI remains exclusively within Module 3.
+
+Module 2 may create an independent sourcing opportunity based on:
+
+- Customer historical prices
+- Customer historical volumes
+- Customer supplier structure
+- Customer category/item structure
+- Supplier concentration
+- Price dispersion
+- Volume fragmentation
+- Supplier fragmentation
+- Contract vs spot buying
+- Recurrence
+- Historical demonstrated prices
+- Historical supplier performance where available
+- Historical transaction frequency
+- Category/specification comparability
+
+NO ASSUMED SAVINGS PERCENTAGE.
+
+NO FABRICATED DISCOUNT.
+
+NO SYNTHETIC TARGET PRICE.
+
+NO "SAVINGS" unless the mathematical basis is demonstrated from
+customer historical data.
+
+==============================================================
+B. CORE BUSINESS PRINCIPLE — CATEGORY / ITEM LEVEL FIRST
+==============================================================
+
+This is extremely important.
+
+The system must NOT make vendor consolidation decisions merely from
+supplier-level spend.
+
+A supplier may sell multiple unrelated categories.
+
+Therefore:
+
+SUPPLIER
+   ↓
+CATEGORY
+   ↓
+ITEM / COMMODITY
+   ↓
+SPECIFICATION
+   ↓
+SPEND
+   ↓
+VOLUME
+   ↓
+SUPPLIER COUNT
+   ↓
+PRICE POSITION
+   ↓
+CONSOLIDATION / AUCTION OPPORTUNITY
+
+The primary analytical unit must be:
+
+CATEGORY + ITEM/COMMODITY + SPECIFICATION
+
+Supplier-level aggregation is a secondary analytical view.
+
+Example:
+
+Vendor A supplies:
+
+- Bearings
+- Fasteners
+- Lubricants
+- Electrical items
+
+The system must NOT conclude:
+
+"Vendor A should be consolidated."
+
+Instead it must determine:
+
+- Which categories does Vendor A serve?
+- What percentage of each category does Vendor A supply?
+- Is Vendor A competitive within each category?
+- Are other suppliers better positioned?
+- Can the categories be separated and sourced through specialist vendors?
+- Can multiple small suppliers within the same category be consolidated?
+- Can volume be bundled without creating excessive dependency?
+
+The output must therefore support both:
+
+A. CATEGORY SPECIALIZATION
+"Move category/item to appropriate specialist suppliers"
+
+AND
+
+B. SAME-CATEGORY CONSOLIDATION
+"Combine fragmented spend from multiple small suppliers within the
+same category/item to increase purchasing leverage."
+
+==============================================================
+C. DEFINE TWO DISTINCT CONSOLIDATION LOGICS
+==============================================================
+
+The system must distinguish:
+
+1. CATEGORY SPECIALIZATION
+2. SAME-CATEGORY SUPPLIER CONSOLIDATION
+
+--------------------------------------------------------------
+1. CATEGORY SPECIALIZATION
+--------------------------------------------------------------
+
+Used when one supplier supplies multiple unrelated categories.
+
+Example:
+
+Supplier A:
+- Electrical: ₹20L
+- Mechanical: ₹15L
+- Lubricants: ₹10L
+- Fasteners: ₹5L
+
+The engine must analyze each category separately.
+
+Potential output:
+
+CATEGORY SPECIALIZATION OPPORTUNITY
+
+Electrical:
+Current suppliers = 3
+Specialist suppliers = 2
+Supplier concentration = fragmented
+Action = source through electrical category suppliers
+
+Mechanical:
+Current supplier = Vendor A + 2 others
+Vendor A share = 18%
+Action = evaluate category-specific sourcing
+
+The engine must NOT calculate a benefit simply because one supplier
+currently supplies multiple categories.
+
+Benefit must arise only where historical customer data demonstrates
+a credible price / volume / supplier-structure opportunity.
+
+--------------------------------------------------------------
+2. SAME-CATEGORY SUPPLIER CONSOLIDATION
+--------------------------------------------------------------
+
+Example:
+
+Category = Industrial Fasteners
+
+Supplier A = ₹4L
+Supplier B = ₹3L
+Supplier C = ₹2L
+Supplier D = ₹1.5L
+Supplier E = ₹0.5L
+
+Total = ₹11L
+
+If specifications are comparable and suppliers are eligible:
+
+Current state:
+5 suppliers
+
+Potential target:
+2 or 3 suppliers
+
+The engine should calculate:
+
+- Addressable spend
+- Eligible volume
+- Current supplier count
+- Proposed supplier count
+- Supplier share before
+- Supplier share after
+- Historical price dispersion
+- Lowest credible demonstrated price
+- Volume that can realistically be bundled
+- Opportunity attributable to price
+- Opportunity attributable to volume consolidation
+- Dependency risk
+- Switching risk
+
+Do NOT assume that reducing 5 suppliers to 2 automatically creates
+a benefit.
+
+The benefit must be calculated only where historical data supports it.
+
+==============================================================
+D. E-AUCTION BENEFIT LOGIC
+==============================================================
+
+E-auction benefit must be completely separated from vendor
+consolidation benefit.
+
+Do not combine the two into one unexplained number.
+
+For every e-auction opportunity show:
+
+CURRENT BASELINE
+----------------
+Eligible historical spend
+Eligible volume
+Current weighted average price
+Supplier count
+Number of qualified suppliers
+Historical lowest credible price
+P25
+Median
+P75
+Price dispersion
+
+AUCTION ELIGIBILITY
+-------------------
+Specification standardization
+Supplier qualification
+Comparable UOM
+Comparable currency
+Comparable geography
+Sufficient supplier competition
+Historical price dispersion
+Repeatable requirement
+Volume visibility
+Commercial readiness
+
+AUCTION TARGET
+--------------
+Use ONLY historically demonstrated customer prices.
+
+Target price methodology must be explicitly displayed.
+
+Example:
+
+Current weighted average:
+₹X / MT
+
+Historical P25:
+₹Y / MT
+
+Lowest credible demonstrated price:
+₹Z / MT
+
+Eligible volume:
+Q MT
+
+Potential gross price opportunity:
+
+(Current weighted average price - selected defensible reference price)
+× eligible volume
+
+Every value must be traceable to underlying customer transactions.
+
+If there is insufficient historical evidence:
+
+STATUS = NOT_QUANTIFIABLE
+
+Do NOT show ₹0 as benefit.
+
+Do NOT invent 3%, 5%, 8%, 10%, 15%, etc.
+
+==============================================================
+E. VENDOR CONSOLIDATION BENEFIT LOGIC
+==============================================================
+
+Vendor consolidation must have its own calculation.
+
+Separate:
+
+A. PRICE BENEFIT
+B. VOLUME LEVERAGE
+C. PROCESS / SUPPLIER COUNT BENEFIT
+
+Only A and B may contribute to a monetary opportunity.
+
+C may be reported as an operational benefit, but must NOT be
+converted into monetary savings unless validated cost data exists.
+
+--------------------------------------------------------------
+PRICE BENEFIT
+--------------------------------------------------------------
+
+If historically comparable supplier transactions demonstrate a lower
+credible price:
+
+Price Opportunity =
+(Current eligible weighted average price
+ -
+Selected credible historical reference price)
+×
+Eligible volume
+
+--------------------------------------------------------------
+VOLUME LEVERAGE
+--------------------------------------------------------------
+
+Identify:
+
+- Same category
+- Same item
+- Same specification
+- Same UOM
+- Same currency
+- Comparable geography
+- Multiple suppliers
+- Fragmented spend
+
+Calculate the volume that could realistically be bundled.
+
+Do not assume 100% consolidation.
+
+Show:
+
+Total category volume
+Eligible volume
+Volume currently fragmented
+Potential bundled volume
+Excluded volume
+Reason for exclusion
+
+Then determine whether the historical data supports a better price
+at higher volume.
+
+If no historical evidence exists:
+
+VOLUME_LEVERAGE = IDENTIFIED_NOT_QUANTIFIABLE
+
+--------------------------------------------------------------
+SUPPLIER COUNT BENEFIT
+--------------------------------------------------------------
+
+Report:
+
+Current suppliers
+Potential target suppliers
+Suppliers retained
+Suppliers potentially exited
+Dependency before
+Dependency after
+Concentration risk
+
+But do not assign monetary savings merely because supplier count
+falls.
+
+==============================================================
+F. COMBINED OPPORTUNITY MUST NEVER DOUBLE COUNT
+==============================================================
+
+This is a critical requirement.
+
+Example:
+
+Current price = ₹100
+Historical credible reference = ₹90
+Eligible volume = 10,000 units
+
+Price opportunity = ₹100,000
+
+If supplier consolidation also creates access to the same ₹90 price,
+DO NOT add another ₹50,000 as "consolidation savings."
+
+The system must maintain:
+
+PRICE OPPORTUNITY
+VOLUME LEVERAGE OPPORTUNITY
+AUCTION OPPORTUNITY
+CONSOLIDATION OPPORTUNITY
+
+with overlap flags.
+
+Then calculate:
+
+GROSS IDENTIFIED OPPORTUNITY
+
+minus
+
+OVERLAP / DOUBLE-COUNT ADJUSTMENT
+
+=
+
+NET DEFENSIBLE OPPORTUNITY POOL
+
+The UI must clearly show this reconciliation.
+
+==============================================================
+G. STRATEGIC SOURCING WATERFALL
+==============================================================
+
+Implement the opportunity waterfall as:
+
+1. Total Category Spend
+2. Addressable Spend
+3. Specification Harmonization
+4. Eligible Comparable Spend
+5. Price Dispersion Opportunity
+6. Volume Bundling Opportunity
+7. E-Auction Opportunity
+8. Supplier Consolidation Opportunity
+9. Overlap / Double Count Adjustment
+10. Net Defensible Opportunity Pool
+
+Every stage must show:
+
+Starting value
+Excluded value
+Reason for exclusion
+Remaining addressable value
+
+The waterfall must be auditable back to transactions.
+
+==============================================================
+H. CATEGORY / ITEM DEEP DIVE
+==============================================================
+
+Every category must have a deep-dive workspace.
+
+Required sections:
+
+1. Category Summary
+2. Item / Commodity Breakdown
+3. Specification Breakdown
+4. Total Spend
+5. Total Volume
+6. Transaction Count
+7. Supplier Count
+8. Supplier Concentration
+9. Supplier Share
+10. Price Distribution
+11. Price Dispersion
+12. Lowest Credible Historical Price
+13. Contract vs Spot
+14. Recurrence
+15. Volume Fragmentation
+16. Supplier Fragmentation
+17. E-Auction Suitability
+18. Vendor Consolidation Suitability
+19. Category Specialization Opportunity
+20. Same-Category Consolidation Opportunity
+21. Risk & Dependency
+22. Opportunity Waterfall
+23. Data Confidence
+24. Recommended Procurement Action
+
+==============================================================
+I. SUPPLIER DEEP DIVE
+==============================================================
+
+For every significant supplier show:
+
+Supplier
+Total spend
+Categories served
+Items served
+Specifications served
+Transaction count
+Volume
+Category-wise spend
+Category share
+Item-wise spend
+Price position
+Weighted average price
+Historical minimum
+P25
+Median
+P75
+Contracted spend
+Spot spend
+Supplier concentration
+Dependency risk
+Category specialization relevance
+Consolidation relevance
+
+Important:
+
+The supplier view must NOT automatically recommend consolidation.
+
+It must explain where the supplier is relevant and why.
+
+==============================================================
+J. MULTI-CATEGORY SUPPLIER INTELLIGENCE
+==============================================================
+
+Create a dedicated analytical view:
+
+"MULTI-CATEGORY SUPPLIER ANALYSIS"
+
+For each supplier:
+
+Supplier
+Number of categories
+Total spend
+Category 1 spend
+Category 2 spend
+Category 3 spend
+...
+
+Then classify the relationship:
+
+SPECIALIST
+MULTI-CATEGORY
+GENERALIST
+CROSS-CATEGORY
+
+For each category supplied by the vendor calculate:
+
+Supplier share within category
+Supplier price position
+Supplier volume position
+Alternative supplier availability
+Category competitiveness
+Category consolidation potential
+
+Output:
+
+"Category should remain with current supplier"
+
+or
+
+"Category should be competitively sourced"
+
+or
+
+"Category should be moved to specialist supplier pool"
+
+or
+
+"Category should be consolidated with same-category suppliers"
+
+These are analytical recommendations based on data rules, not generic
+assumptions.
+
+==============================================================
+K. SAME-CATEGORY FRAGMENTATION ENGINE
+==============================================================
+
+Create a specific metric:
+
+CATEGORY SUPPLIER FRAGMENTATION INDEX
+
+For each category/item:
+
+Supplier count
+Top supplier share
+Top 3 supplier share
+HHI
+Tail supplier share
+Number of suppliers below configurable spend threshold
+Number of comparable suppliers
+Volume fragmentation
+
+Then identify:
+
+HIGH FRAGMENTATION
+MODERATE FRAGMENTATION
+LOW FRAGMENTATION
+CONCENTRATED
+
+The threshold must be configurable and documented.
+
+==============================================================
+L. E-AUCTION READINESS SCORE
+==============================================================
+
+Do NOT use a single unexplained score.
+
+Show the seven/eight underlying dimensions.
+
+Example:
+
+Specification standardization
+Price comparability
+Supplier competition
+Volume aggregation
+Historical price dispersion
+Requirement recurrence
+Commercial readiness
+Switching feasibility
+
+Each criterion:
+
+PASS
+PARTIAL
+FAIL
+NOT AVAILABLE
+
+Then:
+
+AUCTION READY
+AUCTION CONDITIONALLY READY
+NOT AUCTION READY
+NOT QUANTIFIABLE
+
+==============================================================
+M. OPPORTUNITY STATUS MODEL
+==============================================================
+
+Every opportunity must have one of:
+
+QUANTIFIED
+PARTIALLY_QUANTIFIED
+IDENTIFIED_NOT_QUANTIFIABLE
+NOT_ACTIONABLE
+INSUFFICIENT_DATA
+
+Never display a monetary benefit where the evidence does not support it.
+
+Use:
+
+"Opportunity Identified — Benefit Not Yet Quantifiable"
+
+instead of:
+
+₹0 savings
+
+when evidence is insufficient.
+
+==============================================================
+N. BENEFIT LABELING
+==============================================================
+
+Module 2 must use precise terminology.
+
+Use:
+
+Historical Price Opportunity
+E-Auction Opportunity
+Volume Leverage Opportunity
+Supplier Consolidation Opportunity
+Category Specialization Opportunity
+Net Defensible Opportunity Pool
+
+Do NOT use:
+
+"Guaranteed Savings"
+"Expected Savings"
+"Assured Savings"
+
+unless Module 4 later records actual realized savings.
+
+Module 2 is an opportunity-identification engine.
+
+Module 4 is the execution / realization layer.
+
+==============================================================
+O. EXECUTIVE DASHBOARD
+==============================================================
+
+The top-level Module 2 dashboard must show:
+
+1. Total Addressable Spend
+2. Categories Analyzed
+3. Items Analyzed
+4. Suppliers Analyzed
+5. E-Auction Opportunities
+6. Consolidation Opportunities
+7. Category Specialization Opportunities
+8. Quantified Opportunity Pool
+9. Identified but Unquantifiable Opportunities
+10. Data Confidence
+
+Also show separate cards:
+
+PRICE
+VOLUME
+AUCTION
+CONSOLIDATION
+SPECIALIZATION
+
+Do not merge these into one opaque number.
+
+==============================================================
+P. SCREEN-BY-SCREEN REDESIGN
+==============================================================
+
+Use the previously provided Module 2 screenshots as the visual
+reference, but redesign the complete Module 2 experience around the
+above business logic.
+
+Do not merely cosmetically improve the screens.
+
+Each screen must have:
+
+- Clear purpose
+- Clear input data
+- Clear calculation logic
+- Clear output
+- Drill-down capability
+- Auditability
+- Data lineage
+- Action recommendation
+- Confidence indicator
+
+No clutter.
+
+Executive summary first.
+Deep-dive second.
+Transaction-level evidence third.
+
+==============================================================
+Q. REQUIRED INTERACTION MODEL
+==============================================================
+
+Every monetary number must be clickable.
+
+For example:
+
+₹12.5 Cr Opportunity
+
+→ click
+
+Opportunity Breakdown
+
+→ Price opportunity
+→ Volume opportunity
+→ Auction opportunity
+→ Consolidation opportunity
+→ Overlap adjustment
+
+→ click any component
+
+Underlying category/item/supplier transactions.
+
+This is essential for enterprise credibility.
+
+==============================================================
+R. DATA TRACEABILITY
+==============================================================
+
+Every calculation must retain:
+
+SOURCE_TRANSACTION_ID
+CATEGORY_ID
+ITEM_ID
+SPECIFICATION_ID
+SUPPLIER_ID
+UOM
+CURRENCY
+QUANTITY
+UNIT_PRICE
+TRANSACTION_DATE
+CONTRACT_STATUS
+ELIGIBILITY_STATUS
+EXCLUSION_REASON
+CALCULATION_METHOD
+OPPORTUNITY_TYPE
+CONFIDENCE_LEVEL
+
+The user must be able to trace every opportunity to the underlying
+customer transactions.
+
+==============================================================
+S. QUALITY / GOVERNANCE
+==============================================================
+
+Add negative tests for:
+
+1. Mixed specifications
+2. Mixed UOM
+3. Mixed currency
+4. Mixed geography
+5. Non-comparable items
+6. Insufficient supplier competition
+7. Outlier price
+8. Single supplier
+9. No historical dispersion
+10. Contracted-only spend
+11. Non-recurring spend
+12. Double-counting between auction and consolidation
+13. Cross-category supplier incorrectly treated as consolidation
+14. Same-category suppliers incorrectly consolidated despite spec mismatch
+15. Insufficient data
+
+Expected behavior must be:
+
+BLOCKED
+NOT_QUANTIFIABLE
+or
+EXCLUDED
+
+where appropriate.
+
+Never fabricate an opportunity.
+
+==============================================================
+T. ACCEPTANCE TESTS
+==============================================================
+
+Create comprehensive acceptance tests covering:
+
+A. Category-level analysis
+B. Item-level analysis
+C. Specification comparability
+D. Multi-category supplier analysis
+E. Same-category supplier fragmentation
+F. Category specialization
+G. Vendor consolidation
+H. E-auction suitability
+I. Historical price opportunity
+J. Volume leverage
+K. Double-count prevention
+L. Opportunity waterfall
+M. Transaction traceability
+N. Confidence scoring
+O. Insufficient data behavior
+P. Executive dashboard
+Q. Deep-dive navigation
+R. Export / audit data
+S. Module 2 isolation
+T. Module 4 handoff
+
+All existing Module 2 tests must continue to pass.
+
+==============================================================
+U. PERFORMANCE / ENGINEERING
+==============================================================
+
+Maintain:
+
+- TypeScript strictness
+- No duplicated business logic
+- Modular services
+- Constants separated from calculation code
+- Backend calculation authority
+- Frontend presentation only
+- No calculation logic duplicated in frontend
+- Per-file coverage >= 90%
+- Zero TypeScript errors
+- Zero ESLint warnings
+- Production build clean
+- Existing Module 1 / Module 3 / Module 4 contracts unchanged
+
+==============================================================
+V. DOCUMENTATION
+==============================================================
+
+Generate/update:
+
+MODULE_2_STRATEGIC_SOURCING_LOGIC_V2.md
+MODULE_2_SOURCING_CALCULATION_SPEC_V2.md
+MODULE_2_OPPORTUNITY_METHODOLOGY_V2.md
+MODULE_2_VENDOR_CONSOLIDATION_LOGIC_V2.md
+MODULE_2_EAUCTION_LOGIC_V2.md
+MODULE_2_CATEGORY_SPECIALIZATION_LOGIC_V2.md
+MODULE_2_UI_OUTPUT_SPEC_V2.md
+MODULE_2_ACCEPTANCE_TEST_REPORT_V2.md
+MODULE_2_OPPORTUNITY_AUDIT_V2.json
+
+Also update prompts.md with this command.
+
+==============================================================
+FINAL DELIVERABLE
+==============================================================
+
+Do NOT simply report that the existing implementation passes.
+
+First inspect the current Module 2 implementation.
+
+Then compare it against this complete business specification.
+
+Identify:
+
+1. What already exists
+2. What is partially implemented
+3. What is logically incorrect
+4. What needs to be changed
+5. What new calculations are required
+6. What new UI views are required
+7. What new tests are required
+
+Then implement the required changes.
+
+FINAL SUCCESS CONDITION:
+
+MODULE 2 must become a defensible Strategic Sourcing Intelligence
+platform where every opportunity can be explained as:
+
+WHERE is the opportunity?
+WHY does it exist?
+HOW was it calculated?
+WHICH suppliers/items/categories create it?
+WHAT historical evidence supports it?
+WHAT portion is price?
+WHAT portion is volume?
+WHAT portion is auction?
+WHAT portion is consolidation?
+WHAT portion is category specialization?
+WHAT overlap was removed?
+WHAT is the final NET DEFENSIBLE OPPORTUNITY?
+WHAT should Procurement do next?
+
+No black-box savings.
+No arbitrary percentages.
+No double counting.
+No cross-category consolidation assumptions.
+No fabricated benefits.
+
+After implementation, provide:
+
+1. Business logic summary
+2. Calculation formulas
+3. Screen-by-screen changes
+4. New/modified files
+5. Test results
+6. Coverage results
+7. Build/typecheck/lint results
+8. Regression results
+9. Module 2 isolation confirmation
+10. Final readiness status
+
+Do not modify Module 1, Module 3, PCBI, or Module 4 business logic.
+==============================================================
+END COMMAND
+==============================================================
+
+
+## Prompt 228
+
+MODULE 2 — OPPORTUNITY POTENTIAL, MARKET DISCOVERY & PROCUREMENT
+MATURITY ENGINE
+===============================================================
+VERSION: MODULE_2_OPPORTUNITY_INTELLIGENCE_V2.0
+STATUS: FINAL BUSINESS LOGIC HARDENING
+SCOPE: MODULE 2 ONLY
+===============================================================
+
+OBJECTIVE
+---------
+
+Strengthen Module 2 from a historical price/strategic sourcing analysis
+engine into a complete Strategic Sourcing Opportunity Intelligence
+engine.
+
+The fundamental business principle is:
+
+ABSENCE OF HISTORICAL EVIDENCE OF SAVINGS
+DOES NOT MEAN
+ABSENCE OF PROCUREMENT OPPORTUNITY.
+
+A company must NEVER be told or implied that its procurement is
+"perfect" merely because the available customer transaction history
+does not demonstrate a quantifiable price opportunity.
+
+At the same time:
+
+DO NOT FABRICATE SAVINGS.
+DO NOT ASSUME DISCOUNT PERCENTAGES.
+DO NOT CREATE SYNTHETIC MARKET PRICES.
+DO NOT PRESENT UNVERIFIED POTENTIAL AS REALIZED SAVINGS.
+
+Module 2 must therefore distinguish between:
+
+1. PROVEN OPPORTUNITY
+2. QUANTIFIABLE OPPORTUNITY RANGE
+3. MARKET DISCOVERY OPPORTUNITY
+4. OPPORTUNITY IDENTIFIED BUT NOT YET QUANTIFIABLE
+5. LOW EVIDENCED OPPORTUNITY
+6. INSUFFICIENT DATA
+
+The system must explain:
+
+WHAT WE KNOW
+WHAT WE CAN QUANTIFY
+WHAT WE SUSPECT BASED ON STRUCTURAL EVIDENCE
+WHAT REQUIRES MARKET TESTING
+WHAT CANNOT YET BE QUANTIFIED
+AND WHY.
+
+===============================================================
+A. MODULE 2 ARCHITECTURAL BOUNDARY
+===============================================================
+
+THIS COMMAND APPLIES ONLY TO MODULE 2.
+
+DO NOT MODIFY:
+
+Module 1 customer ingestion logic
+Module 1 customer data schema
+Module 2 classification authority outside approved Module 2 logic
+Module 3 PCBI / benchmark logic
+PCBI Master
+PCBI Data Library
+Module 4 execution / savings realization logic
+
+Module 2 continues to use customer procurement history as its
+primary evidence base.
+
+PCBI / external market benchmarks remain outside Module 2.
+
+Module 4 remains the eventual execution and realized-savings layer.
+
+===============================================================
+B. CHANGE THE CENTRAL BUSINESS CONCEPT
+===============================================================
+
+Replace the simplistic concept:
+
+"SAVINGS IDENTIFIED"
+
+with:
+
+"PROCURABLE OPPORTUNITY POTENTIAL"
+
+Module 2 should answer:
+
+1. What opportunity is demonstrated by historical customer data?
+2. What opportunity can reasonably be quantified as a range?
+3. What structural procurement weaknesses suggest further opportunity?
+4. What requires competitive market discovery?
+5. What requires RFQ / e-auction validation?
+6. What requires supplier consolidation?
+7. What requires specification harmonization?
+8. What requires contract/commercial intervention?
+9. What requires demand/process intervention?
+10. What requires should-cost analysis?
+11. What cannot currently be quantified because evidence is insufficient?
+
+===============================================================
+C. SIX OPPORTUNITY EVIDENCE STATES
+===============================================================
+
+Implement the following controlled status model:
+
+---------------------------------------------------------------
+1. PROVEN_OPPORTUNITY
+---------------------------------------------------------------
+
+Use only where historical customer data directly demonstrates
+a defensible economic opportunity.
+
+Example:
+
+Current comparable weighted average = ₹105
+Credible historical reference = ₹95
+Eligible volume = 100,000 units
+
+Opportunity:
+
+(₹105 - ₹95) × 100,000
+= ₹10,00,000
+
+This is:
+
+PROVEN_OPPORTUNITY
+CONFIDENCE = HIGH
+
+---------------------------------------------------------------
+2. QUANTIFIABLE_OPPORTUNITY_RANGE
+---------------------------------------------------------------
+
+Use where historical and structural evidence supports a range,
+but a single deterministic value would create false precision.
+
+Example:
+
+Historical comparable prices:
+P25 = ₹98
+Median = ₹105
+P75 = ₹113
+
+Eligible volume = 100,000
+
+The engine may produce a governed range using documented
+methodology.
+
+Example:
+
+₹7L – ₹12L
+
+The range must be mathematically derived from the underlying
+customer data.
+
+Never use arbitrary percentages.
+
+---------------------------------------------------------------
+3. MARKET_DISCOVERY_OPPORTUNITY
+---------------------------------------------------------------
+
+Use when structural indicators strongly suggest competitive
+opportunity but customer history alone cannot establish a reliable
+price target.
+
+Examples:
+
+- Single incumbent supplier
+- Very low supplier competition
+- Large recurring spend
+- Significant category spend
+- No competitive sourcing event history
+- Long supplier tenure
+- Limited price transparency
+- High supplier dependency
+- Large addressable volume
+- No credible internal price comparator
+
+Output:
+
+MARKET_DISCOVERY_REQUIRED
+
+Do NOT display ₹0.
+
+Do NOT state that procurement is optimized.
+
+Instead:
+
+"Market opportunity cannot be established from internal historical
+transactions alone. Competitive sourcing is required to discover
+market price."
+
+---------------------------------------------------------------
+4. IDENTIFIED_NOT_QUANTIFIABLE
+---------------------------------------------------------------
+
+Use when an opportunity mechanism is clearly visible but insufficient
+data exists to calculate a monetary range.
+
+Example:
+
+Multiple suppliers exist but specification comparability is incomplete.
+
+Output:
+
+"Supplier consolidation opportunity identified.
+Benefit not yet quantifiable until specification harmonization."
+
+---------------------------------------------------------------
+5. LOW_EVIDENCED_OPPORTUNITY
+---------------------------------------------------------------
+
+Use when available evidence does not currently demonstrate a material
+opportunity.
+
+This must NOT be interpreted as:
+
+"Procurement is perfect."
+
+Instead:
+
+"Current available evidence does not demonstrate a material
+opportunity. Continued monitoring / periodic market testing is
+recommended."
+
+---------------------------------------------------------------
+6. INSUFFICIENT_DATA
+---------------------------------------------------------------
+
+Use where data quality prevents meaningful analysis.
+
+Clearly show:
+
+Missing data
+Required data
+Impact on analysis
+Recommended action
+
+===============================================================
+D. TWO-DIMENSIONAL OPPORTUNITY MODEL
+===============================================================
+
+Every opportunity must have two independent dimensions:
+
+1. POTENTIAL VALUE
+2. EVIDENCE CONFIDENCE
+
+Evidence confidence:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+Potential value:
+
+PROVEN
+RANGE
+MARKET_DISCOVERY
+NOT_QUANTIFIABLE
+
+Never combine these into one opaque score.
+
+Example:
+
+Historical Price Opportunity
+₹35L
+HIGH CONFIDENCE
+
+Supplier Consolidation
+₹20L–₹35L
+MEDIUM CONFIDENCE
+
+E-Auction
+MARKET DISCOVERY
+MEDIUM CONFIDENCE
+
+Specification Harmonization
+NOT QUANTIFIABLE
+LOW CONFIDENCE
+
+===============================================================
+E. SIX MAJOR OPPORTUNITY DIMENSIONS
+===============================================================
+
+Module 2 must analyze opportunity through at least these dimensions:
+
+1. PRICE
+2. VOLUME
+3. E-AUCTION
+4. SUPPLIER CONSOLIDATION
+5. CATEGORY SPECIALIZATION
+6. PROCUREMENT MATURITY / COMMERCIAL EXCELLENCE
+
+---------------------------------------------------------------
+1. PRICE OPPORTUNITY
+---------------------------------------------------------------
+
+Use:
+
+Current eligible weighted average
+vs
+credible historical comparable reference
+
+Potential formula:
+
+(Current price - reference price)
+× eligible volume
+
+Apply only to comparable transactions.
+
+---------------------------------------------------------------
+2. VOLUME OPPORTUNITY
+---------------------------------------------------------------
+
+Analyze:
+
+Total category volume
+Supplier-wise volume
+Volume fragmentation
+Recurring volume
+Addressable volume
+Potentially bundleable volume
+
+Determine whether historical customer data demonstrates that higher
+volume has achieved better prices.
+
+If yes:
+
+QUANTIFIABLE VOLUME LEVERAGE
+
+If no:
+
+VOLUME LEVERAGE OPPORTUNITY
+IDENTIFIED — MARKET / RFQ VALIDATION REQUIRED
+
+Never assume a volume discount.
+
+---------------------------------------------------------------
+3. E-AUCTION OPPORTUNITY
+---------------------------------------------------------------
+
+Evaluate:
+
+Specification standardization
+Supplier competition
+Historical price dispersion
+Supplier qualification
+Volume
+Recurrence
+Commercial readiness
+Auction feasibility
+
+Possible outputs:
+
+AUCTION_READY
+AUCTION_CONDITIONALLY_READY
+MARKET_DISCOVERY_REQUIRED
+NOT_AUCTION_SUITABLE
+
+If historical data supports a target:
+
+quantify it.
+
+If not:
+
+show:
+
+"Competitive price discovery opportunity"
+
+rather than fabricated savings.
+
+---------------------------------------------------------------
+4. SUPPLIER CONSOLIDATION
+---------------------------------------------------------------
+
+Analyze:
+
+Supplier count
+Category supplier count
+Top supplier share
+Top 3 share
+HHI
+Tail suppliers
+Supplier capacity
+Comparable specifications
+Volume fragmentation
+
+Distinguish:
+
+A. Category specialization
+B. Same-category consolidation
+
+Never consolidate unrelated categories simply because the same vendor
+currently supplies them.
+
+---------------------------------------------------------------
+5. CATEGORY SPECIALIZATION
+---------------------------------------------------------------
+
+If one supplier serves multiple unrelated categories:
+
+Analyze each category independently.
+
+Example:
+
+Supplier A:
+
+Electrical
+Mechanical
+Lubricants
+Fasteners
+
+Do NOT automatically recommend removing Supplier A.
+
+Instead determine:
+
+Category
+Spend
+Supplier share
+Price position
+Alternative suppliers
+Specialist supplier availability
+Specification complexity
+Switching risk
+Consolidation potential
+
+Potential recommendation:
+
+KEEP
+COMPETITIVELY SOURCE
+MOVE TO SPECIALIST SUPPLIER POOL
+CONSOLIDATE WITH CATEGORY SUPPLIERS
+MARKET DISCOVERY
+
+---------------------------------------------------------------
+6. PROCUREMENT MATURITY / COMMERCIAL EXCELLENCE
+---------------------------------------------------------------
+
+Add a completely separate opportunity layer covering:
+
+Contract maturity
+Payment terms
+MOQ
+Freight terms
+Rebates
+Volume discounts
+Escalation clauses
+Price review mechanisms
+Indexation
+Warranty
+Service levels
+Contract duration
+Notice period
+Renewal structure
+Spot purchasing
+Emergency purchasing
+Maverick purchasing
+Demand aggregation
+Ordering frequency
+SKU duplication
+Specification fragmentation
+
+Do not convert these automatically into monetary savings.
+
+Where monetary evidence exists:
+
+QUANTIFY.
+
+Where only structural evidence exists:
+
+IDENTIFIED_NOT_QUANTIFIABLE
+or
+MARKET_DISCOVERY_REQUIRED.
+
+===============================================================
+F. COMMERCIAL TERMS OPPORTUNITY
+===============================================================
+
+Create:
+
+COMMERCIAL EXCELLENCE ANALYSIS
+
+For each category:
+
+Payment Terms
+Contract Coverage
+Contract Expiry
+Escalation
+Rebate
+MOQ
+Freight
+Warranty
+Lead Time
+Price Review
+Volume Commitment
+Service Level
+
+Identify:
+
+OPTIMIZED
+PARTIALLY_OPTIMIZED
+OPPORTUNITY IDENTIFIED
+INSUFFICIENT DATA
+
+Never assign monetary benefit without supporting data.
+
+===============================================================
+G. MARKET DISCOVERY ENGINE
+===============================================================
+
+Create a dedicated:
+
+MARKET DISCOVERY OPPORTUNITY
+
+logic.
+
+Trigger when structural evidence suggests that the customer has not
+adequately tested the market.
+
+Possible triggers:
+
+- Single supplier
+- Low supplier competition
+- High supplier dependency
+- Large recurring spend
+- High category materiality
+- No recent RFQ
+- No recent e-auction
+- No competitive event
+- Large price variance
+- Long incumbent tenure
+- Significant tail supplier fragmentation
+- Significant volume aggregation potential
+- Lack of external competitive validation
+
+The output must say:
+
+"MARKET DISCOVERY REQUIRED"
+
+and explain WHY.
+
+Do not manufacture a monetary value.
+
+===============================================================
+H. MIN / MAX / RANGE LOGIC
+===============================================================
+
+Where sufficient historical customer evidence exists, support:
+
+LOW CASE
+BASE CASE
+HIGH CASE
+
+But these must NOT be arbitrary percentage scenarios.
+
+They must be derived from actual customer evidence.
+
+Example:
+
+LOW CASE:
+P75 / conservative defensible reference
+
+BASE CASE:
+P50 / median or approved reference
+
+HIGH CASE:
+P25 / stronger historical demonstrated reference
+
+The exact statistical method must be documented per opportunity type.
+
+For every range show:
+
+Method
+Eligible transactions
+Eligible volume
+Excluded transactions
+Exclusion reason
+Reference statistic
+Confidence
+
+If the data does not support a range:
+
+DO NOT CREATE ONE.
+
+Use:
+
+MARKET_DISCOVERY_REQUIRED
+or
+NOT_QUANTIFIABLE.
+
+===============================================================
+I. OPPORTUNITY WATERFALL V2
+===============================================================
+
+Redesign the opportunity waterfall:
+
+TOTAL CATEGORY SPEND
+        ↓
+ADDRESSABLE SPEND
+        ↓
+COMPARABLE SPEND
+        ↓
+PRICE OPPORTUNITY
+        ↓
+VOLUME LEVERAGE
+        ↓
+E-AUCTION OPPORTUNITY
+        ↓
+SUPPLIER CONSOLIDATION
+        ↓
+CATEGORY SPECIALIZATION
+        ↓
+COMMERCIAL / CONTRACT OPPORTUNITY
+        ↓
+PROCESS / DEMAND OPPORTUNITY
+        ↓
+MARKET DISCOVERY POTENTIAL
+        ↓
+OVERLAP / DOUBLE COUNT ADJUSTMENT
+        ↓
+NET DEFENSIBLE OPPORTUNITY POTENTIAL
+
+Every stage must show:
+
+Starting amount
+Eligible amount
+Excluded amount
+Reason
+Evidence level
+Confidence
+
+===============================================================
+J. DOUBLE-COUNTING CONTROL
+===============================================================
+
+This is mandatory.
+
+Example:
+
+Price opportunity = ₹50L
+
+E-auction opportunity = ₹60L
+
+Supplier consolidation opportunity = ₹40L
+
+These cannot automatically be added.
+
+The system must identify whether:
+
+E-auction is the mechanism to achieve the price opportunity.
+
+If yes:
+
+do NOT count both independently.
+
+Likewise:
+
+Volume consolidation may create the same price opportunity already
+captured under supplier consolidation.
+
+Therefore create:
+
+OPPORTUNITY_COMPONENT_ID
+OVERLAP_GROUP_ID
+PRIMARY_OPPORTUNITY
+SECONDARY_OPPORTUNITY
+OVERLAP_AMOUNT
+NET_OPPORTUNITY
+
+Final calculation:
+
+GROSS OPPORTUNITY COMPONENTS
+-
+OVERLAP ADJUSTMENT
+=
+NET DEFENSIBLE OPPORTUNITY POTENTIAL
+
+===============================================================
+K. "NO SAVINGS" MUST NOT BE AN OUTPUT
+===============================================================
+
+Do NOT show:
+
+"Savings = ₹0"
+
+when historical evidence simply does not establish savings.
+
+Instead use one of:
+
+PROVEN OPPORTUNITY
+QUANTIFIABLE OPPORTUNITY RANGE
+MARKET DISCOVERY REQUIRED
+IDENTIFIED — NOT YET QUANTIFIABLE
+LOW EVIDENCED OPPORTUNITY
+INSUFFICIENT DATA
+
+Only show zero when:
+
+A mathematically valid opportunity calculation produces exactly zero
+AND the data is sufficient AND the result is statistically meaningful.
+
+===============================================================
+L. EXECUTIVE MODULE 2 OUTPUT
+===============================================================
+
+Redesign the executive output to show:
+
+TOTAL ADDRESSABLE SPEND
+
+PROVEN OPPORTUNITY
+₹X
+
+QUANTIFIABLE OPPORTUNITY RANGE
+₹X – ₹Y
+
+MARKET DISCOVERY OPPORTUNITY
+₹NOT YET QUANTIFIABLE
+or
+₹X – ₹Y if governed evidence supports it
+
+IDENTIFIED BUT NOT QUANTIFIABLE
+₹N/A
+
+LOW EVIDENCED OPPORTUNITY
+₹N/A
+
+INSUFFICIENT DATA
+₹N/A
+
+Then show:
+
+OVERALL NET DEFENSIBLE OPPORTUNITY POTENTIAL
+
+Only include monetary values that can be legitimately combined after
+overlap reconciliation.
+
+===============================================================
+M. OPPORTUNITY CONFIDENCE
+===============================================================
+
+Every output must display:
+
+CONFIDENCE:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+And explain the reason.
+
+Example:
+
+HIGH
+- 84 comparable transactions
+- 6 suppliers
+- same specification
+- same UOM
+- same currency
+- 24 months history
+
+MEDIUM
+- supplier fragmentation evident
+- comparable specifications
+- limited competitive events
+
+LOW
+- single supplier
+- limited historical price dispersion
+- no market competition data
+
+===============================================================
+N. PROCUREMENT MATURITY SCORECARD
+===============================================================
+
+Create a separate scorecard:
+
+PRICE MANAGEMENT
+VOLUME MANAGEMENT
+SUPPLIER MANAGEMENT
+CATEGORY STRATEGY
+SPECIFICATION MANAGEMENT
+COMPETITIVE SOURCING
+CONTRACT MANAGEMENT
+COMMERCIAL TERMS
+DEMAND MANAGEMENT
+DATA QUALITY
+
+Use scores only as diagnostic indicators.
+
+Do NOT convert the maturity score directly into savings.
+
+For each weak area show:
+
+Observed condition
+Evidence
+Potential implication
+Recommended action
+Quantifiability
+
+===============================================================
+O. "PROCUREMENT PERFECTION" SAFEGUARD
+===============================================================
+
+The system must NEVER make the statement:
+
+"Procurement is optimized."
+"Procurement is perfect."
+"No savings available."
+
+unless explicitly supported by an approved methodology and sufficient
+evidence.
+
+Preferred language:
+
+"Current available evidence does not demonstrate a material
+quantifiable opportunity."
+
+And then:
+
+"Market discovery is recommended where competitive validation has not
+recently occurred."
+
+This is mandatory.
+
+===============================================================
+P. ACTION-ORIENTED OUTPUT
+===============================================================
+
+For every category generate:
+
+WHAT WE FOUND
+WHY IT MATTERS
+WHAT WE CAN QUANTIFY
+WHAT WE CANNOT YET QUANTIFY
+WHAT SHOULD BE TESTED
+WHAT PROCUREMENT SHOULD DO NEXT
+
+Examples:
+
+RUN E-AUCTION
+RUN RFQ
+CONSOLIDATE VOLUME
+CONSOLIDATE SUPPLIERS
+HARMONIZE SPECIFICATIONS
+SEPARATE CATEGORY SOURCING
+NEGOTIATE COMMERCIAL TERMS
+REVIEW CONTRACT
+PERFORM MARKET DISCOVERY
+COLLECT MISSING DATA
+MONITOR
+
+===============================================================
+Q. CATEGORY EXAMPLE
+===============================================================
+
+For:
+
+Industrial Fasteners
+Spend = ₹12.4 Cr
+
+The output may look like:
+
+CURRENT STATE
+-------------
+Spend = ₹12.4 Cr
+Suppliers = 8
+Transactions = 1,240
+Comparable spend = ₹9.8 Cr
+
+PROVEN OPPORTUNITY
+------------------
+Historical price opportunity = ₹42L
+Confidence = HIGH
+
+QUANTIFIABLE RANGE
+------------------
+Volume leverage = ₹20L – ₹35L
+Confidence = MEDIUM
+
+MARKET DISCOVERY
+----------------
+E-auction = REQUIRED
+Reason:
+8 suppliers
+Recurring demand
+Comparable specification
+No competitive event in last X months
+
+Category specialization:
+IDENTIFIED
+Benefit: NOT YET QUANTIFIABLE
+
+Commercial terms:
+IDENTIFIED
+Benefit: NOT YET QUANTIFIABLE
+
+Gross potential:
+₹62L – ₹77L
+
+Overlap adjustment:
+₹15L
+
+NET DEFENSIBLE OPPORTUNITY POTENTIAL:
+₹47L – ₹62L
+
+Confidence:
+MEDIUM-HIGH
+
+Recommended action:
+Specification harmonization
++
+Supplier qualification
++
+Competitive RFQ / e-auction
+
+IMPORTANT:
+This is only an example of the output structure.
+Do NOT hardcode these values or assumptions.
+
+===============================================================
+R. TRANSACTION TRACEABILITY
+===============================================================
+
+Every monetary opportunity must trace to:
+
+TRANSACTION_ID
+CATEGORY_ID
+ITEM_ID
+SPECIFICATION_ID
+SUPPLIER_ID
+DATE
+QUANTITY
+UNIT_PRICE
+UOM
+CURRENCY
+CONTRACT_STATUS
+ELIGIBILITY
+EXCLUSION_REASON
+REFERENCE_PRICE
+CALCULATION_METHOD
+OPPORTUNITY_TYPE
+CONFIDENCE
+
+The user must be able to drill:
+
+Executive Dashboard
+↓
+Category
+↓
+Item
+↓
+Specification
+↓
+Supplier
+↓
+Transaction
+↓
+Calculation
+
+===============================================================
+S. REQUIRED UI COMPONENTS
+===============================================================
+
+Add / enhance:
+
+1. Opportunity Potential Dashboard
+2. Proven Opportunity Panel
+3. Opportunity Range Panel
+4. Market Discovery Panel
+5. Procurement Maturity Panel
+6. Commercial Excellence Panel
+7. Category Specialization Panel
+8. Supplier Consolidation Panel
+9. E-Auction Opportunity Panel
+10. Volume Leverage Panel
+11. Opportunity Waterfall V2
+12. Overlap / Double Count Reconciliation
+13. Evidence & Confidence Panel
+14. Transaction Evidence Drawer
+15. Recommended Action Panel
+
+The UI must clearly distinguish:
+
+PROVEN
+RANGE
+DISCOVERY
+NOT QUANTIFIABLE
+INSUFFICIENT DATA
+
+Do not use one generic "Savings Opportunity" card.
+
+===============================================================
+T. ENTERPRISE LANGUAGE
+===============================================================
+
+Use professional procurement terminology.
+
+Preferred:
+
+Opportunity Potential
+Proven Opportunity
+Competitive Sourcing Opportunity
+Market Discovery
+Historical Price Opportunity
+Volume Leverage
+Supplier Consolidation
+Category Specialization
+Commercial Excellence
+Net Defensible Opportunity
+Evidence Confidence
+Addressable Spend
+
+Avoid:
+
+Guaranteed Savings
+Easy Savings
+Certain Savings
+Perfect Procurement
+No Savings
+Zero Opportunity
+
+unless mathematically and evidentially justified.
+
+===============================================================
+U. TESTING
+===============================================================
+
+Create comprehensive tests for:
+
+1. Proven opportunity
+2. Zero demonstrated price variance
+3. Single supplier
+4. Multiple suppliers
+5. Multi-category supplier
+6. Same-category fragmentation
+7. Volume aggregation
+8. E-auction suitability
+9. Market discovery trigger
+10. Commercial terms opportunity
+11. Contract opportunity
+12. Specification opportunity
+13. Insufficient data
+14. Not quantifiable
+15. Historical price range
+16. Double counting
+17. Overlap reconciliation
+18. Confidence scoring
+19. Executive dashboard
+20. Category deep dive
+21. Supplier deep dive
+22. Transaction drill-down
+23. Export
+24. Module 2 isolation
+25. Regression of all existing Module 2 tests
+
+===============================================================
+V. DOCUMENTATION
+===============================================================
+
+Create/update:
+
+MODULE_2_OPPORTUNITY_INTELLIGENCE_V2.md
+
+MODULE_2_OPPORTUNITY_POTENTIAL_LOGIC_V2.md
+
+MODULE_2_MARKET_DISCOVERY_LOGIC_V2.md
+
+MODULE_2_PROCUREMENT_MATURITY_LOGIC_V2.md
+
+MODULE_2_COMMERCIAL_EXCELLENCE_LOGIC_V2.md
+
+MODULE_2_OPPORTUNITY_CALCULATION_SPEC_V2.md
+
+MODULE_2_DOUBLE_COUNT_RECONCILIATION_V2.md
+
+MODULE_2_UI_OUTPUT_SPEC_V3.md
+
+MODULE_2_ACCEPTANCE_TEST_REPORT_V3.md
+
+MODULE_2_OPPORTUNITY_AUDIT_V2.json
+
+Update prompts.md.
+
+===============================================================
+W. ENGINEERING RULES
+===============================================================
+
+All business calculations remain backend-authoritative.
+
+Frontend is presentation only.
+
+No duplicated calculation logic.
+
+Maintain:
+
+TypeScript strictness
+Modular architecture
+Constants separation
+Validation
+Audit logging
+Per-file coverage >= 90%
+Zero TypeScript errors
+Zero ESLint warnings
+Production build clean
+All existing Module 2 tests passing
+
+===============================================================
+X. FINAL VALIDATION REPORT
+===============================================================
+
+Before declaring completion, report:
+
+1. Existing Module 2 capabilities
+2. New opportunity intelligence capabilities
+3. New opportunity statuses
+4. New calculation methodologies
+5. Market discovery logic
+6. Procurement maturity logic
+7. Commercial excellence logic
+8. Double-count prevention
+9. UI changes
+10. API changes
+11. Database/schema changes if any
+12. Tests added
+13. Existing tests retained
+14. Coverage
+15. Typecheck
+16. Lint
+17. Build
+18. Regression
+19. Module isolation
+20. Final production readiness
+
+FINAL SUCCESS CRITERIA
+----------------------
+
+Module 2 must NEVER conclude:
+
+"Procurement is perfect"
+
+merely because historical data does not show a price difference.
+
+It must instead intelligently distinguish:
+
+PROVEN OPPORTUNITY
+        +
+QUANTIFIABLE OPPORTUNITY RANGE
+        +
+MARKET DISCOVERY OPPORTUNITY
+        +
+STRUCTURAL PROCUREMENT OPPORTUNITY
+        +
+COMMERCIAL / PROCESS OPPORTUNITY
+        +
+INSUFFICIENT DATA
+
+while maintaining absolute protection against:
+
+FABRICATED SAVINGS
+ARBITRARY DISCOUNTS
+SYNTHETIC PRICES
+DOUBLE COUNTING
+FALSE PRECISION
+UNSUPPORTED MARKET ASSUMPTIONS
+
+The final Module 2 output must answer:
+
+"Based on everything available in the customer's procurement data,
+where can procurement potentially improve price, volume, supplier
+structure, category strategy, commercial terms, sourcing competition,
+specifications and procurement process — what can we prove today,
+what can we reasonably quantify, and what must be validated through
+the market?"
+
+That is the required production-grade Module 2 behavior.
+
+===============================================================
+END OF COMMAND
+===============================================================
+
+
+## Prompt 229
+
+MODULE 2 — TRANSACTION-LEVEL EVIDENCE, SAVINGS PROOF & OPPORTUNITY TRACEABILITY HARDENING
+VERSION: MODULE_2_EVIDENCE_LOGIC_V1.0
+
+IMPORTANT SCOPE LOCK
+
+This command applies ONLY to MODULE 2 — Strategic Sourcing Intelligence,
+E-Auction Intelligence, Vendor Consolidation and Commercial Opportunity Analysis.
+
+DO NOT modify:
+- Module 1 customer ingestion / cleansing
+- Module 2 classification authority / taxonomy
+- Module 3 PCBI / external benchmarks
+- Module 4 execution / savings realization
+- PCBI Master
+- Any frozen upstream/downstream business logic
+
+Module 2 must continue to operate exclusively on validated customer transaction history
+for its historical procurement intelligence.
+
+============================================================
+1. CORE BUSINESS PRINCIPLE
+============================================================
+
+A procurement organization should NEVER receive a conclusion such as:
+
+"Potential savings = ₹X"
+
+without being able to drill down and answer:
+
+1. Which transactions created this opportunity?
+2. Which suppliers created it?
+3. Which category/item/specification created it?
+4. What quantity was purchased?
+5. At what price?
+6. In what unit/currency?
+7. What was the comparable reference price?
+8. Why was that reference price selected?
+9. Which transactions were excluded and why?
+10. What mathematical calculation generated the opportunity?
+11. What portion is realistically addressable?
+12. What portion is only an analytical opportunity?
+13. What assumptions, if any, were used?
+14. What evidence supports the conclusion?
+
+NO BLACK-BOX SAVINGS.
+
+Every calculated opportunity must be TRACEABLE TO SOURCE TRANSACTIONS.
+
+============================================================
+2. NEW FUNDAMENTAL CONCEPT
+============================================================
+
+Introduce:
+
+OPPORTUNITY_EVIDENCE_CHAIN
+
+Transaction
+→ Comparable Transaction Set
+→ Reference Price
+→ Addressable Volume
+→ Price Difference
+→ Gross Opportunity
+→ Addressability Constraints
+→ Realistic Opportunity Range
+→ Execution Mechanism
+→ Evidence Status
+
+Every stage must be persisted and drillable.
+
+============================================================
+3. TRANSACTION-LEVEL EVIDENCE
+============================================================
+
+For every opportunity, provide a transaction evidence table containing:
+
+TRANSACTION_ID
+PO_NUMBER
+PO_DATE
+SUPPLIER_ID
+SUPPLIER_NAME
+CATEGORY
+SUB_CATEGORY
+ITEM_ID
+ITEM_DESCRIPTION
+SPECIFICATION
+GRADE
+UOM
+QUANTITY
+UNIT_PRICE
+CURRENCY
+TOTAL_VALUE
+DELIVERY_LOCATION
+CONTRACT_STATUS
+CONTRACT_REFERENCE
+PAYMENT_TERMS
+INCOTERM (if available)
+SOURCE_DOCUMENT
+SOURCE_ROW / SOURCE_RECORD
+DATA_QUALITY_STATUS
+COMPARABILITY_STATUS
+
+The UI must allow:
+
+OPPORTUNITY
+    ↓
+CATEGORY
+    ↓
+ITEM / SPECIFICATION
+    ↓
+SUPPLIER
+    ↓
+TRANSACTION
+    ↓
+SOURCE RECORD
+
+The user must be able to reach the actual underlying transaction.
+
+============================================================
+4. EVERY PRICE COMPARISON MUST SHOW ITS PROOF
+============================================================
+
+Whenever Module 2 says:
+
+"Supplier A paid ₹105/kg while Supplier B paid ₹92/kg"
+
+the system must show:
+
+Supplier A:
+Quantity
+Unit
+Price
+Date
+Specification
+Transaction IDs
+Total spend
+
+Supplier B:
+Quantity
+Unit
+Price
+Date
+Specification
+Transaction IDs
+Total spend
+
+Then explicitly show:
+
+PRICE DIFFERENCE = ₹13/kg
+
+COMPARABILITY:
+SPECIFICATION = MATCH
+UOM = MATCH
+CURRENCY = MATCH
+GEOGRAPHY = MATCH / NOT AVAILABLE
+TIME WINDOW = MATCH / DIFFERENT
+
+No comparison should be presented as valid unless comparability rules pass.
+
+============================================================
+5. MIN / MAX / MEDIAN MUST BE EVIDENCE-BACKED
+============================================================
+
+For every category/item analysis show:
+
+MIN PRICE
+MAX PRICE
+P25
+MEDIAN
+WEIGHTED AVERAGE
+P75
+PRICE DISPERSION
+IQR
+COEFFICIENT OF VARIATION
+
+But importantly:
+
+Every statistical value must have:
+
+- Number of transactions
+- Number of suppliers
+- Total quantity
+- Total spend
+- Eligible transaction count
+- Excluded transaction count
+- Exclusion reasons
+
+Clicking any statistic must open the underlying transaction population.
+
+Example:
+
+P25 = ₹94.50/kg
+
+[VIEW 127 TRANSACTIONS]
+
+The system must show exactly which transactions contributed to the calculation.
+
+============================================================
+6. NO SINGLE TRANSACTION SHOULD AUTOMATICALLY BECOME THE TARGET
+============================================================
+
+Do NOT use:
+
+MINIMUM HISTORICAL PRICE
+
+as the automatic sourcing target.
+
+Instead establish:
+
+LOWEST CREDIBLE PRICE
+
+based on configurable evidence criteria:
+
+- Comparable specification
+- Comparable UOM
+- Comparable geography
+- Comparable currency
+- Minimum quantity / volume relevance
+- Minimum supplier participation
+- Non-outlier validation
+- Recency eligibility
+- Transaction validity
+- Contractual comparability
+- Commercial-term comparability where available
+
+Display:
+
+LOWEST OBSERVED PRICE
+LOWEST CREDIBLE PRICE
+MEDIAN
+WEIGHTED AVERAGE
+P25
+CURRENT / RECENT PRICE
+
+And explain the difference.
+
+============================================================
+7. SAVINGS / OPPORTUNITY MUST BE A RANGE
+============================================================
+
+Do NOT force a single "savings" number.
+
+Introduce:
+
+ANALYTICAL OPPORTUNITY RANGE
+
+with:
+
+CONSERVATIVE OPPORTUNITY
+BASE OPPORTUNITY
+UPSIDE OPPORTUNITY
+
+Each must have its own evidence and calculation.
+
+Example:
+
+Eligible Spend = ₹10.00 Cr
+
+Conservative reference:
+P25 = ₹98/kg
+
+Base reference:
+Lowest Credible Price = ₹94/kg
+
+Upside reference:
+Best demonstrated comparable historical price = ₹91/kg
+
+Then show:
+
+Conservative Opportunity: ₹X
+Base Opportunity: ₹Y
+Upside Opportunity: ₹Z
+
+Clearly label:
+
+"ANALYTICAL PROCUREMENT OPPORTUNITY — NOT REALIZED SAVINGS"
+
+Do not call any amount "Savings" until Module 4 confirms realized savings.
+
+============================================================
+8. ADDRESSABILITY MUST BE SEPARATE FROM PRICE OPPORTUNITY
+============================================================
+
+Introduce:
+
+TOTAL HISTORICAL SPEND
+↓
+COMPARABLE SPEND
+↓
+PRICE-ADDRESSABLE SPEND
+↓
+EXECUTABLE SPEND
+↓
+REALIZABLE SAVINGS
+
+For example:
+
+Total Category Spend          ₹10.00 Cr
+Comparable Spend              ₹8.20 Cr
+Price-Addressable Spend       ₹6.70 Cr
+Contractually Addressable     ₹4.80 Cr
+Analytical Opportunity        ₹42 L
+Execution-Dependent Range     ₹28–₹42 L
+Realized Savings              Module 4 only
+
+This prevents inflated opportunity claims.
+
+============================================================
+9. EXCLUSION LEDGER
+============================================================
+
+For every opportunity create an:
+
+OPPORTUNITY_EXCLUSION_LEDGER
+
+Every excluded transaction must have a reason.
+
+Examples:
+
+EXCLUDED_SPEC_MISMATCH
+EXCLUDED_UOM_MISMATCH
+EXCLUDED_CURRENCY_MISMATCH
+EXCLUDED_GEOGRAPHY
+EXCLUDED_SINGLE_SOURCE_OUTLIER
+EXCLUDED_LOW_VOLUME
+EXCLUDED_CONTRACT_LOCK
+EXCLUDED_NON_RECURRING
+EXCLUDED_INVALID_TRANSACTION
+EXCLUDED_INSUFFICIENT_DATA
+EXCLUDED_PRICE_NOT_COMPARABLE
+
+The user must be able to see:
+
+"₹2.4 Cr excluded from this opportunity"
+
+and drill into every rupee.
+
+============================================================
+10. E-AUCTION LOGIC — TRANSACTION PROOF
+============================================================
+
+For every E-Auction recommendation show:
+
+TOTAL CATEGORY SPEND
+ELIGIBLE AUCTION SPEND
+ELIGIBLE VOLUME
+NUMBER OF SUPPLIERS
+QUALIFIED SUPPLIERS
+HISTORICAL PRICE DISPERSION
+SUPPLIER PRICE POSITIONING
+LOWEST CREDIBLE PRICE
+P25
+MEDIAN
+WEIGHTED AVERAGE
+AUCTION TARGET RANGE
+AUCTION RESERVE RANGE
+EXPECTED COMPETITIVE RESPONSE RANGE
+
+Also show why each supplier is included/excluded.
+
+Supplier eligibility must be evidence-driven.
+
+Do NOT say:
+
+"Run auction and save 8%."
+
+Instead:
+
+"Historical transaction evidence indicates a price dispersion of X% across Y comparable transactions and Z suppliers. Based on the selected reference population, the analytical opportunity range is ₹A–₹B."
+
+============================================================
+11. VENDOR CONSOLIDATION LOGIC
+============================================================
+
+For consolidation opportunities, drill down:
+
+CATEGORY
+→ ITEM FAMILY
+→ SPECIFICATION
+→ SUPPLIER
+→ TRANSACTION
+
+Show:
+
+Supplier
+Spend
+Volume
+Categories supplied
+Items supplied
+Price position
+Transaction count
+Geographic coverage
+Specification coverage
+Supplier concentration
+Capacity evidence
+Contract status
+Switching considerations
+
+Then identify:
+
+CURRENT SUPPLIER STRUCTURE
+
+versus
+
+POTENTIAL TARGET STRUCTURE
+
+Example:
+
+Current:
+12 suppliers
+₹8.5 Cr spend
+
+Observed fragmentation:
+Supplier A = ₹1.2 Cr
+Supplier B = ₹0.9 Cr
+Supplier C = ₹0.7 Cr
+Supplier D = ₹0.3 Cr
+Supplier E = ₹0.2 Cr
+...
+
+Potential consolidation scenario:
+
+3 qualified suppliers
+
+But the system must NOT assume consolidation automatically creates savings.
+
+It must calculate:
+
+CURRENT PRICE DISTRIBUTION
++
+VOLUME BUNDLING POTENTIAL
++
+HISTORICAL PRICE RESPONSE
++
+SUPPLIER CAPACITY
++
+SPECIFICATION COVERAGE
+
+Then produce:
+
+CONSOLIDATION OPPORTUNITY RANGE
+
+with evidence.
+
+============================================================
+12. CATEGORY SPECIALIST / RIGHT-VENDOR LOGIC
+============================================================
+
+For cases where one supplier supplies multiple unrelated categories:
+
+Analyze supplier/category relationships.
+
+Example:
+
+Supplier A:
+Steel → ₹2.0 Cr
+Lubricants → ₹0.8 Cr
+Packaging → ₹0.4 Cr
+Electrical → ₹0.3 Cr
+
+Module 2 should identify:
+
+CATEGORY-SUPPLIER ALIGNMENT
+
+and determine whether the spend should potentially move toward:
+
+Category-specialist suppliers
+OR
+Consolidated strategic suppliers
+OR
+Multiple suppliers to create competitive tension
+
+Do NOT assume "single vendor = better."
+
+The system must compare:
+
+CURRENT STRUCTURE
+vs
+CATEGORY-SPECIALIST SCENARIO
+vs
+MULTI-SUPPLIER COMPETITION SCENARIO
+vs
+CONSOLIDATED-VOLUME SCENARIO
+
+Every scenario must be evidence-backed.
+
+============================================================
+13. "NO SAVINGS FOUND" MUST NOT MEAN "PROCUREMENT IS PERFECT"
+============================================================
+
+This is a critical business rule.
+
+Never display:
+
+"Savings = ₹0 → Procurement is optimized."
+
+Instead use:
+
+NO_QUANTIFIED_PRICE_OPPORTUNITY_IDENTIFIED
+
+with diagnostic reasons:
+
+- Low price dispersion
+- Insufficient comparable transactions
+- Single supplier
+- Contract restrictions
+- Low transaction volume
+- Insufficient historical depth
+- Data quality limitations
+- High supplier concentration
+- Stable pricing
+- Specification fragmentation
+- Non-recurring spend
+- Insufficient competitive evidence
+
+Then identify:
+
+"UNTESTED OPPORTUNITY AREAS"
+
+such as:
+
+E-auction potential
+Supplier competition
+Volume aggregation
+Contract renegotiation
+Specification harmonization
+Demand aggregation
+Category consolidation
+Supplier rationalization
+
+Thus ₹0 quantified opportunity does NOT equal procurement perfection.
+
+============================================================
+14. OPPORTUNITY CONFIDENCE
+============================================================
+
+Every opportunity must have:
+
+EVIDENCE_CONFIDENCE
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+And display the reasons.
+
+Example:
+
+HIGH CONFIDENCE
+
+127 comparable transactions
+8 suppliers
+₹4.2 Cr comparable spend
+3-year history
+same specification
+same UOM
+same geography
+
+or:
+
+LOW CONFIDENCE
+
+11 transactions
+2 suppliers
+limited historical coverage
+specification variation
+
+============================================================
+15. COMPLETE CALCULATION TRACE
+============================================================
+
+For every calculated opportunity provide:
+
+INPUTS
+↓
+FILTERS
+↓
+ELIGIBLE TRANSACTIONS
+↓
+EXCLUDED TRANSACTIONS
+↓
+REFERENCE PRICE
+↓
+ADDRESSABLE VOLUME
+↓
+PRICE DIFFERENTIAL
+↓
+GROSS OPPORTUNITY
+↓
+CONSTRAINTS
+↓
+ANALYTICAL OPPORTUNITY RANGE
+↓
+CONFIDENCE
+↓
+RECOMMENDED ACTION
+
+The user must be able to click:
+
+"WHY ₹42.6 L?"
+
+and receive the exact mathematical calculation and transaction population.
+
+============================================================
+16. DATA-LEVEL PROOF EXPORT
+============================================================
+
+Every opportunity should support:
+
+VIEW EVIDENCE
+
+and:
+
+EXPORT EVIDENCE PACK
+
+The export should contain:
+
+1. Opportunity summary
+2. Calculation methodology
+3. Eligible transactions
+4. Excluded transactions
+5. Supplier comparison
+6. Price statistics
+7. Reference-price selection
+8. Addressability calculation
+9. Opportunity range
+10. Confidence assessment
+11. Assumptions
+12. Source transaction references
+13. Calculation timestamp
+14. Logic/version identifier
+
+This becomes the procurement team's audit-ready evidence pack.
+
+============================================================
+17. UI REQUIREMENT
+============================================================
+
+Every major KPI must be drillable.
+
+Example:
+
+₹42.6 L Opportunity
+
+Click
+
+→ 3 categories
+→ 14 item/specification groups
+→ 8 suppliers
+→ 427 transactions
+→ ₹6.7 Cr addressable spend
+
+Then:
+
+Select Supplier A
+
+→ 83 transactions
+
+Select Item X
+
+→ 17 transactions
+
+Select Transaction
+
+→ original transaction record + source reference.
+
+NO DEAD-END NUMBERS.
+
+============================================================
+18. EXECUTIVE OUTPUT
+
+The executive dashboard should show:
+
+TOTAL ADDRESSABLE SPEND
+COMPARABLE SPEND
+PRICE-ADDRESSABLE SPEND
+ANALYTICAL OPPORTUNITY RANGE
+E-AUCTION OPPORTUNITY
+VOLUME BUNDLING OPPORTUNITY
+VENDOR CONSOLIDATION OPPORTUNITY
+CATEGORY SPECIALIZATION OPPORTUNITY
+SPECIFICATION HARMONIZATION OPPORTUNITY
+DATA-LIMITED OPPORTUNITY
+UNTESTED OPPORTUNITY
+
+And explicitly separate:
+
+ANALYTICAL OPPORTUNITY
+from
+REALIZED SAVINGS
+
+============================================================
+19. FINAL MODULE 2 PRINCIPLE
+
+Implement the following permanent rule:
+
+"EVERY RUPEE OF ANALYTICAL OPPORTUNITY MUST BE EXPLAINABLE."
+
+A user should be able to move from:
+
+₹42.6 L opportunity
+
+all the way down to:
+
+Supplier
+→ Item
+→ Specification
+→ Transaction
+→ Quantity
+→ Price
+→ Date
+→ UOM
+→ Currency
+→ Reference transaction
+→ Calculation
+
+without losing the audit trail.
+
+If the system cannot prove an opportunity at transaction/data level,
+the opportunity must be downgraded to:
+
+NOT_QUANTIFIABLE
+
+rather than inventing a number.
+
+============================================================
+20. ACCEPTANCE TESTS
+
+Add tests proving:
+
+TEST 01 — Every opportunity has transaction evidence.
+TEST 02 — Every reference price has supporting transactions.
+TEST 03 — Every excluded transaction has an exclusion reason.
+TEST 04 — Every opportunity range has independent calculations.
+TEST 05 — No single minimum transaction becomes a target automatically.
+TEST 06 — E-auction opportunity is traceable to eligible spend.
+TEST 07 — Vendor consolidation opportunity is traceable to supplier/category/item data.
+TEST 08 — Category-specialist opportunity is transaction-backed.
+TEST 09 — ₹0 opportunity never implies procurement perfection.
+TEST 10 — Insufficient evidence returns NOT_QUANTIFIABLE.
+TEST 11 — Every KPI is drillable to transaction level.
+TEST 12 — Evidence export reproduces the calculation.
+TEST 13 — No Module 3 / PCBI data is used in Module 2.
+TEST 14 — No Module 4 realized savings are generated.
+TEST 15 — Existing Module 2 outputs remain regression-compatible.
+
+Run:
+
+- typecheck
+- lint
+- build
+- full Module 2 regression suite
+- new evidence-chain tests
+- per-file coverage >= 90%
+
+Do NOT modify Modules 1, 3 or 4.
+
+FINAL OBJECTIVE:
+
+Transform Module 2 from a strategic sourcing calculation engine into an:
+
+"EVIDENCE-FIRST PROCUREMENT INTELLIGENCE ENGINE"
+
+where every recommendation, opportunity, price comparison, auction recommendation,
+vendor consolidation recommendation and category strategy can be defended
+with transaction-level evidence.
+
+
+## Prompt 230
+
+MODULE 2 — FINAL END-TO-END CERTIFICATION
+STRATEGIC SOURCING + E-AUCTION + VENDOR CONSOLIDATION
+PRODUCTION VALIDATION GATE
+
+OBJECTIVE
+=========
+Module 2 business logic has now been substantially completed.
+
+DO NOT introduce another round of feature development.
+
+The objective of this task is to perform a deep, adversarial, end-to-end validation of Module 2 and certify whether the current implementation is production-ready.
+
+If a defect, incorrect calculation, missing control, broken traceability, double-counting issue, or logical inconsistency is discovered:
+    1. Document it.
+    2. Fix only the defect required.
+    3. Add a regression test.
+    4. Re-run the affected tests.
+    5. Re-run the complete Module 2 regression suite.
+
+Do NOT modify Module 1, Module 3, or Module 4 business logic.
+
+============================================================
+1. MODULE 2 SCOPE — STRICT
+============================================================
+
+Module 2 covers ONLY:
+
+A. Strategic Sourcing Intelligence
+B. Category / Item / Supplier analysis
+C. Price intelligence from customer historical transactions
+D. E-Auction opportunity identification
+E. Vendor consolidation opportunity identification
+F. Volume bundling opportunity identification
+G. Supplier/category fragmentation analysis
+H. Strategic sourcing opportunity waterfall
+I. Opportunity ranges and confidence
+J. Transaction-level evidence and auditability
+
+Module 2 MUST NOT:
+
+- use PCBI/external benchmark values to calculate Module 2 benefits
+- use external market indices
+- invent market prices
+- assume arbitrary savings percentages
+- generate synthetic prices
+- modify Module 1
+- modify Module 3
+- execute savings
+- recognize realized savings
+- execute supplier awards
+- execute auctions
+- modify contracts
+- invoke Module 4 runtime logic
+
+Module 2 identifies and quantifies sourcing opportunities.
+
+Module 4 remains responsible for execution and savings realization.
+
+============================================================
+2. GOLDEN RULE — EVERY OPPORTUNITY MUST BE PROVABLE
+============================================================
+
+For EVERY opportunity displayed anywhere in Module 2, create a complete evidence chain:
+
+OPPORTUNITY_ID
+    ↓
+CATEGORY
+    ↓
+SUBCATEGORY
+    ↓
+ITEM / COMMODITY
+    ↓
+SUPPLIER(S)
+    ↓
+TRANSACTION_ID(S)
+    ↓
+PO / INVOICE REFERENCE where available
+    ↓
+TRANSACTION_DATE
+    ↓
+QUANTITY
+    ↓
+UOM
+    ↓
+CURRENCY
+    ↓
+UNIT PRICE
+    ↓
+EXTENDED VALUE
+    ↓
+COMPARABILITY RESULT
+    ↓
+REFERENCE TRANSACTION(S)
+    ↓
+REFERENCE PRICE
+    ↓
+MATHEMATICAL FORMULA
+    ↓
+OPPORTUNITY VALUE
+    ↓
+CONFIDENCE
+    ↓
+FINAL OPPORTUNITY RANGE
+
+The user must be able to drill from a ₹ opportunity figure all the way to the underlying transactions that created it.
+
+NO BLACK-BOX OPPORTUNITY NUMBER IS ACCEPTABLE.
+
+============================================================
+3. CUSTOMER DATA INTEGRITY TEST
+============================================================
+
+Validate the complete Module 2 input dataset.
+
+Verify:
+
+- transaction count
+- total spend
+- supplier count
+- category count
+- item count
+- UOM
+- currency
+- dates
+- quantities
+- unit prices
+- extended values
+
+For every transaction:
+
+Extended Value = Quantity × Unit Price
+
+where applicable.
+
+Identify:
+
+- duplicate transactions
+- missing values
+- invalid prices
+- zero quantities
+- negative values
+- inconsistent UOM
+- inconsistent currencies
+- abnormal transaction dates
+- duplicate PO/invoice records
+
+No transaction may disappear silently.
+
+Create:
+
+TOTAL_INPUT_TRANSACTIONS
+TOTAL_ANALYZED_TRANSACTIONS
+TOTAL_EXCLUDED_TRANSACTIONS
+EXCLUSION_REASON_BY_TRANSACTION
+
+Any exclusion must be explainable.
+
+============================================================
+4. CATEGORY / ITEM / SUPPLIER INTELLIGENCE
+============================================================
+
+Test the hierarchy:
+
+CATEGORY
+→ SUBCATEGORY
+→ ITEM
+→ SUPPLIER
+→ TRANSACTION
+
+Verify that all strategic sourcing calculations can be viewed at:
+
+1. Enterprise/category level
+2. Category level
+3. Subcategory level
+4. Item/commodity level
+5. Supplier level
+6. Supplier + item level
+7. Individual transaction level
+
+IMPORTANT:
+
+Vendor consolidation must NOT be based merely on supplier count.
+
+It must be based on:
+
+CATEGORY / ITEM SPEND
++
+VOLUME
++
+SPECIFICATION
++
+SUPPLIER CAPABILITY
++
+COMPARABILITY
++
+TRANSACTION HISTORY
+
+============================================================
+5. MULTI-CATEGORY SUPPLIER TEST
+============================================================
+
+Explicitly test the scenario:
+
+Supplier A supplies:
+
+Category 1
+Category 2
+Category 3
+Category 4
+
+Determine whether the current supplier is actually appropriate for each category.
+
+Show:
+
+Supplier
+→ Category
+→ Item
+→ Spend
+→ Volume
+→ Transaction count
+
+Identify opportunities where:
+
+- specialist category suppliers could be introduced
+- current supplier is serving unrelated categories
+- category-specific competition could be increased
+- spend can be redirected to qualified category suppliers
+
+Do NOT assume that moving spend to a specialist supplier automatically creates savings.
+
+Only quantify where historical evidence supports it.
+
+Otherwise:
+
+STATUS = OPPORTUNITY_IDENTIFIED_NOT_YET_QUANTIFIABLE
+
+============================================================
+6. SAME-CATEGORY SUPPLIER CONSOLIDATION TEST
+============================================================
+
+Test the opposite scenario:
+
+One category is fragmented across multiple small suppliers.
+
+Example:
+
+Category X
+
+Supplier A = ₹10L
+Supplier B = ₹8L
+Supplier C = ₹6L
+Supplier D = ₹4L
+Supplier E = ₹2L
+
+Determine:
+
+- total category spend
+- supplier concentration
+- supplier count
+- tail spend
+- transaction volume
+- price dispersion
+- volume concentration opportunity
+- potential supplier consolidation scenarios
+
+Test multiple target states:
+
+CURRENT STATE
+→ 5 suppliers
+
+SCENARIO A
+→ 4 suppliers
+
+SCENARIO B
+→ 3 suppliers
+
+SCENARIO C
+→ 2 suppliers
+
+Do NOT assume that fewer suppliers automatically means lower price.
+
+Each scenario must show:
+
+- spend affected
+- volume affected
+- suppliers affected
+- historical price evidence
+- expected price basis
+- opportunity range
+- operational risks
+- confidence
+
+============================================================
+7. PRICE INTELLIGENCE TEST
+============================================================
+
+For each eligible item/category calculate and validate:
+
+MIN
+P25
+MEDIAN
+WEIGHTED AVERAGE
+P75
+MAX
+IQR
+PRICE SPREAD
+COEFFICIENT OF VARIATION where appropriate
+
+Validate that all calculations are reproducible from raw transactions.
+
+Test the LOWEST CREDIBLE HISTORICAL PRICE logic.
+
+A reference transaction may only qualify when the existing rules are satisfied, including:
+
+- comparable specification
+- comparable UOM
+- comparable currency
+- sufficient volume
+- non-outlier
+- valid historical window
+
+Show the exact transactions supporting the selected reference.
+
+============================================================
+8. E-AUCTION OPPORTUNITY ENGINE — DEEP TEST
+============================================================
+
+For every category/item assess:
+
+AUCTION_SUITABILITY
+
+using actual data.
+
+Test:
+
+- sufficient supplier competition
+- sufficient historical supplier participation
+- comparable specification
+- comparable UOM
+- recurring demand
+- addressable volume
+- price dispersion
+- transaction frequency
+- switching constraints
+- supplier qualification
+- contract constraints
+
+Determine:
+
+AUCTION_ELIGIBLE
+or
+AUCTION_NOT_ELIGIBLE
+or
+AUCTION_POTENTIAL_REQUIRES_VALIDATION
+
+Where eligible, calculate:
+
+CURRENT_BASELINE
+ELIGIBLE_SPEND
+ELIGIBLE_VOLUME
+REFERENCE_PRICE
+HISTORICAL_PRICE_RANGE
+HISTORICAL_SUPPLIER_COUNT
+AUCTION_SCENARIO
+OPPORTUNITY_RANGE
+
+DO NOT assume:
+
+"auction = X% savings"
+
+unless the percentage is derived from actual historical evidence.
+
+============================================================
+9. E-AUCTION RANGE LOGIC
+============================================================
+
+Where historical evidence supports it, calculate:
+
+LOWER BOUND
+BASE CASE
+UPPER BOUND
+
+The range must be evidence-derived.
+
+Clearly distinguish:
+
+DEMONSTRATED HISTORICAL OPPORTUNITY
+DEFENSIBLE OPPORTUNITY RANGE
+POTENTIAL OPPORTUNITY REQUIRING VALIDATION
+
+Never present a potential opportunity as realized savings.
+
+============================================================
+10. VENDOR CONSOLIDATION OPPORTUNITY
+============================================================
+
+For every consolidation opportunity determine:
+
+CURRENT SUPPLIER STRUCTURE
+CATEGORY SPEND
+ITEM SPEND
+SUPPLIER SPEND
+SUPPLIER COUNT
+TOP SUPPLIER SHARE
+TAIL SUPPLIER SHARE
+PRICE DISPERSION
+VOLUME DISTRIBUTION
+
+Then evaluate:
+
+- consolidation feasibility
+- supplier capacity
+- specification compatibility
+- qualification requirements
+- switching cost
+- supply continuity
+- dependency risk
+- geographic constraints
+- contractual constraints
+
+Output:
+
+CURRENT STATE
+TARGET STATE
+SPEND AFFECTED
+SUPPLIERS AFFECTED
+ITEMS AFFECTED
+HISTORICAL PRICE EVIDENCE
+OPPORTUNITY RANGE
+CONFIDENCE
+KEY RISKS
+
+============================================================
+11. VOLUME BUNDLING
+============================================================
+
+Test whether multiple suppliers/items can be grouped to increase purchasing leverage.
+
+However:
+
+DO NOT combine unrelated specifications merely to increase volume.
+
+Volume bundling must respect:
+
+- specification
+- UOM
+- geography
+- delivery requirements
+- quality requirements
+- supplier capability
+
+Show:
+
+CURRENT VOLUME
+BUNDLABLE VOLUME
+NON-BUNDLABLE VOLUME
+REASON FOR EXCLUSION
+
+============================================================
+12. OPPORTUNITY WATERFALL
+============================================================
+
+Validate the complete waterfall:
+
+ADDRESSABLE SPEND
+        ↓
+SPECIFICATION HARMONIZATION
+        ↓
+PRICE ARBITRAGE
+        ↓
+VOLUME BUNDLING
+        ↓
+E-AUCTION
+        ↓
+VENDOR CONSOLIDATION
+        ↓
+NET DEFENSIBLE OPPORTUNITY
+
+CRITICAL:
+
+Prevent double counting.
+
+The same transaction/spend cannot contribute independently to multiple opportunity pools unless the methodology explicitly permits it.
+
+Create a transaction-level allocation map:
+
+TRANSACTION_ID
+→ WATERFALL_STAGE
+→ OPPORTUNITY_POOL
+→ VALUE
+
+At the end:
+
+SUM_OF_STAGE_OPPORTUNITIES
+must reconcile with
+NET_DEFENSIBLE_OPPORTUNITY
+
+============================================================
+13. "NO SAVINGS" LOGIC
+============================================================
+
+NEVER display:
+
+"Customer procurement is perfect."
+
+NEVER infer that zero quantified opportunity means zero procurement opportunity.
+
+Instead distinguish:
+
+A. NO DEFENSIBLE HISTORICAL PRICE OPPORTUNITY IDENTIFIED
+
+B. DATA INSUFFICIENT TO QUANTIFY
+
+C. STRATEGIC OPPORTUNITY IDENTIFIED BUT REQUIRES VALIDATION
+
+D. QUANTIFIABLE HISTORICAL OPPORTUNITY
+
+E. OPPORTUNITY RANGE AVAILABLE
+
+The UI must clearly distinguish:
+
+₹0 proven opportunity
+
+from
+
+₹0 because insufficient evidence
+
+from
+
+₹X–₹Y defensible opportunity.
+
+============================================================
+14. OPPORTUNITY CONFIDENCE
+============================================================
+
+Every opportunity must carry:
+
+CONFIDENCE = HIGH / MEDIUM / LOW / INSUFFICIENT
+
+and explain why.
+
+Confidence must consider:
+
+- transaction count
+- historical depth
+- price dispersion
+- comparability
+- supplier competition
+- volume concentration
+- data completeness
+- contractual visibility
+- operational feasibility
+
+The confidence explanation must be visible to the user.
+
+============================================================
+15. CFO CHALLENGE TEST
+============================================================
+
+For every major opportunity, the system must answer:
+
+1. Why does this opportunity exist?
+2. Which transactions prove it?
+3. Which suppliers create the opportunity?
+4. What price is being used as the reference?
+5. Why is that reference price credible?
+6. What assumptions were made?
+7. What assumptions were NOT made?
+8. What spend is actually addressable?
+9. What portion is demonstrated historically?
+10. What portion requires future validation?
+11. Could this opportunity be double-counted?
+12. What operational action is required?
+13. What risks could prevent realization?
+14. What evidence would change the conclusion?
+
+All answers must be generated from the underlying Module 2 data.
+
+============================================================
+16. TRANSACTION-LEVEL PROOF VIEW
+============================================================
+
+Create/validate a drill-down view:
+
+OPPORTUNITY
+→ CATEGORY
+→ ITEM
+→ SUPPLIER
+→ TRANSACTION
+
+The transaction table must show at minimum:
+
+Transaction ID
+PO/Invoice
+Date
+Supplier
+Category
+Item
+Quantity
+UOM
+Unit Price
+Currency
+Extended Spend
+Reference Flag
+Eligibility Flag
+Exclusion Reason where applicable
+
+Allow export of the evidence set.
+
+============================================================
+17. NO FABRICATION / NO ASSUMPTION TEST
+============================================================
+
+Inject scenarios where:
+
+- only one supplier exists
+- only one comparable transaction exists
+- prices are identical
+- historical data is insufficient
+- specifications differ
+- UOM differs
+- currencies differ
+- supplier capacity is unknown
+- contract restrictions are unknown
+
+Expected behavior:
+
+DO NOT INVENT SAVINGS.
+
+Return:
+
+NOT_QUANTIFIABLE
+or
+OPPORTUNITY_REQUIRES_VALIDATION
+
+with a specific reason.
+
+============================================================
+18. DOUBLE-COUNTING TEST
+============================================================
+
+Create deliberately overlapping opportunities.
+
+Example:
+
+Same ₹10 Cr spend appears to have:
+
+- price arbitrage opportunity
+- auction opportunity
+- vendor consolidation opportunity
+- volume bundling opportunity
+
+Verify that the engine does NOT simply add:
+
+₹1 Cr + ₹1.5 Cr + ₹0.8 Cr + ₹0.7 Cr
+
+unless the methodology proves these are independent.
+
+Calculate:
+
+GROSS_IDENTIFIED_OPPORTUNITY
+OVERLAPPING_OPPORTUNITY
+NET_DEFENSIBLE_OPPORTUNITY
+
+============================================================
+19. MODULE 2 OUTPUT SCORECARD
+============================================================
+
+Final category output should contain:
+
+ADDRESSABLE_SPEND
+QUANTIFIABLE_OPPORTUNITY
+DEFENSIBLE_OPPORTUNITY_LOW
+DEFENSIBLE_OPPORTUNITY_BASE
+DEFENSIBLE_OPPORTUNITY_HIGH
+POTENTIAL_UNQUANTIFIED_OPPORTUNITY
+DATA_COVERAGE
+CONFIDENCE
+E_AUCTION_SUITABILITY
+VENDOR_CONSOLIDATION_OPPORTUNITY
+VOLUME_BUNDLING_OPPORTUNITY
+PRICE_ARBITRAGE_OPPORTUNITY
+TOP_SUPPLIERS
+TOP_ITEMS
+KEY_RISKS
+RECOMMENDED_NEXT_ACTION
+
+Do not label any of these as realized savings.
+
+============================================================
+20. MODULE 4 HANDOFF VALIDATION
+============================================================
+
+Validate only the handoff contract.
+
+Module 2 may send:
+
+Opportunity ID
+Category
+Item
+Supplier scope
+Addressable spend
+Opportunity range
+Evidence references
+Recommended sourcing action
+Confidence
+Risks
+Required validation
+
+Module 2 must NOT claim that Module 4 has realized the opportunity.
+
+============================================================
+21. CROSS-MODULE ISOLATION TEST
+============================================================
+
+Verify:
+
+MODULE 1
+Customer data = source
+
+MODULE 2
+Strategic sourcing intelligence = analysis
+
+MODULE 3
+PCBI = separate benchmark intelligence
+
+MODULE 4
+Execution / savings realization = downstream
+
+No circular dependency.
+
+No Module 2 → Module 3 dependency.
+
+No Module 2 → Module 4 runtime execution.
+
+============================================================
+22. ADVERSARIAL TEST DATA
+============================================================
+
+Create controlled test cases for:
+
+A. Perfectly uniform pricing
+B. Extreme price dispersion
+C. One supplier
+D. Many suppliers
+E. Multi-category supplier
+F. Fragmented same-category suppliers
+G. Different specifications
+H. Different UOM
+I. Different currency
+J. Insufficient history
+K. Outlier transaction
+L. Contracted spend
+M. Spot spend
+N. Non-recurring spend
+O. High-volume low-price supplier
+P. Low-volume high-price supplier
+Q. Multiple overlapping opportunities
+R. No quantifiable opportunity
+S. Opportunity requiring validation
+T. E-auction eligible category
+U. E-auction unsuitable category
+V. Consolidation suitable
+W. Consolidation unsuitable
+
+Each must produce the expected governed status.
+
+============================================================
+23. PERFORMANCE / REGRESSION
+============================================================
+
+Run:
+
+- typecheck
+- lint
+- build
+- existing Module 2 tests
+- all new E2E tests
+- per-file coverage
+- API tests
+- UI tests
+- calculation reconciliation tests
+
+Maintain >= 90% per-file coverage for all new/modified code.
+
+No regression is acceptable in Module 1, Module 3, or Module 4.
+
+============================================================
+24. FINAL AUDIT ARTIFACTS
+============================================================
+
+Generate:
+
+MODULE_2_FINAL_E2E_CERTIFICATION.md
+
+MODULE_2_FINAL_E2E_RESULTS.xlsx
+
+MODULE_2_TRANSACTION_LEVEL_OPPORTUNITY_AUDIT.json
+
+MODULE_2_EAUCTION_AUDIT.json
+
+MODULE_2_VENDOR_CONSOLIDATION_AUDIT.json
+
+MODULE_2_WATERFALL_RECONCILIATION.json
+
+MODULE_2_CFO_CHALLENGE_TEST.json
+
+MODULE_2_NO_FABRICATION_TEST.json
+
+MODULE_2_DOUBLE_COUNTING_AUDIT.json
+
+============================================================
+25. FINAL GATE
+============================================================
+
+Do NOT automatically declare production readiness.
+
+Evaluate:
+
+MODULE_2_FINAL_STATUS
+
+Allowed values:
+
+PRODUCTION_VALIDATED
+PRODUCTION_VALIDATED_WITH_MINOR_DEFECTS
+REQUIRES_DEFECT_FIX
+REQUIRES_LOGIC_FIX
+BLOCKED
+
+Production validation requires:
+
+- 100% critical E2E tests passed
+- zero calculation defects
+- zero silent exclusions
+- zero fabricated opportunity values
+- zero unapproved assumptions
+- zero material double counting
+- transaction-level traceability
+- complete e-auction governance
+- complete vendor consolidation governance
+- opportunity ranges mathematically reconciled
+- CFO challenge tests passed
+- Module 1 isolation preserved
+- Module 3 isolation preserved
+- Module 4 isolation preserved
+- typecheck passed
+- lint passed
+- build passed
+- regression suite passed
+- required coverage threshold passed
+
+IMPORTANT:
+
+Do NOT change business logic simply to make tests pass.
+
+If an existing rule is logically wrong, identify it explicitly as:
+
+LOGIC_DEFECT_REQUIRING_BUSINESS_DECISION
+
+and stop that specific area for review.
+
+Do not silently reinterpret the requirement.
+
+FINAL OBJECTIVE:
+
+CERTIFY WHETHER MODULE 2 IS A DEFENSIBLE, AUDITABLE,
+TRANSACTION-LEVEL STRATEGIC SOURCING INTELLIGENCE ENGINE
+READY FOR PRODUCTION.
+
+The final report must clearly state:
+
+WHAT PASSED
+WHAT FAILED
+WHAT WAS FIXED
+WHAT REMAINS
+WHAT REQUIRES BUSINESS DECISION
+WHAT IS QUANTIFIABLE
+WHAT IS ONLY POTENTIAL
+AND WHETHER MODULE 2 IS PRODUCTION VALIDATED.
+
+
+## Prompt 231
+
+run locally on chrome
+
+## Prompt 232
+
+{{ CHECKPOINT 27 }}

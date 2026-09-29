@@ -39,3 +39,6 @@ export * from './pcbiCommodityCoverage';
 export * from './pcbiPlatformIntegration';
 export * from './pcbiCommodityDataLab';
 export * from './pcbiDataLibraryComponents';
+export * from './module2StrategicSourcing';
+export * from './module2Components';
+export * from './module2AuditDossier';

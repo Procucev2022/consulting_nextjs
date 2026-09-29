@@ -19,6 +19,7 @@ import aiRoutes from './ai.routes';
 import pcbiRoutes from './pcbi.routes';
 import upgradeRoutes from './upgrade.routes';
 import pcbiAdminRoutes from './pcbiAdmin.routes';
+import module2SourcingRoutes from './module2StrategicSourcing.routes';
 
 const router = Router();
 
@@ -51,6 +52,7 @@ router.use('/ai', aiRoutes);
 router.use('/pcbi', pcbiRoutes);
 router.use('/upgrade', upgradeRoutes);
 router.use('/admin/pcbi', pcbiAdminRoutes);
+router.use('/module2/sourcing', module2SourcingRoutes);
 
 export default router;
 

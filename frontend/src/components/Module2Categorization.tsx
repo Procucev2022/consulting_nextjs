@@ -44,6 +44,7 @@ import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
 import { VendorConsolidationSection } from './vendorConsolidation';
 import { PoConsolidationSection } from './poConsolidation';
+import { Module2StrategicSourcingWorkspace } from './module2';
 import { VendorCategorySupplyMatrix } from './VendorCategorySupplyMatrix';
 import dynamic from 'next/dynamic';
 import { AnalyzingLoader } from './AnalyzingLoader';
@@ -944,6 +945,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Module 2 Strategic Sourcing Intelligence, E-Auction & Vendor Consolidation Engine */}
+      <div
+        id="module2-strategic-sourcing-workspace-section"
+        data-testid="module2-strategic-sourcing-workspace-container"
+      >
+        <Module2StrategicSourcingWorkspace />
       </div>
 
       {/* High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) */}

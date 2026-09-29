@@ -2616,6 +2616,108 @@ export const UI_STRINGS = {
     sourcesCoexistenceNotice: 'Multiple sources for the same commodity coexist. Existing sources are never overwritten.',
     adminApproveButton: 'ADMIN APPROVAL — PROMOTE TO PCBI CATALOG',
     approvalSuccessNotice: (version: string) => `Approved data entered into dynamic PCBI catalog version ${version}.`
+  },
+
+  module2Sourcing: {
+    title: 'STRATEGIC SOURCING INTELLIGENCE & OPPORTUNITY ENGINE',
+    subtitle: 'Module 2: Strategic Sourcing Opportunity Intelligence, Market Discovery & Procurement Maturity (V2.0)',
+    versionBadge: 'VERSION: MODULE_2_OPPORTUNITY_INTELLIGENCE_V2.0',
+    disclaimer: 'Indicative opportunity potential based on customer historical comparable transactions — NOT realized savings.',
+    noFabricationNotice: 'Calculated strictly from internal customer purchase history without external market benchmarks.',
+    notQuantifiableText: 'Opportunity Identified — Benefit Not Yet Quantifiable',
+
+    // Evidence States
+    provenOpp: 'Proven Opportunity',
+    quantifiableRange: 'Quantifiable Opportunity Range',
+    marketDiscoveryOpp: 'Market Discovery Opportunity',
+    identifiedNotQuantifiable: 'Opportunity Identified — Benefit Not Yet Quantifiable',
+    lowEvidencedOpp: 'Low Evidenced Opportunity',
+    insufficientData: 'Insufficient Data',
+    safeguardNoMaterialEvidence:
+      'Current available evidence does not demonstrate a material quantifiable opportunity. Market discovery is recommended where competitive validation has not recently occurred.',
+    safeguardMarketDiscovery:
+      'Market opportunity cannot be established from internal historical transactions alone. Competitive sourcing is required to discover market price.',
+
+    // Executive KPI Summary Cards
+    cardAddressableSpend: 'TOTAL ADDRESSABLE SPEND',
+    cardProvenOpp: 'PROVEN OPPORTUNITY',
+    cardQuantifiableRange: 'QUANTIFIABLE OPPORTUNITY RANGE',
+    cardMarketDiscovery: 'MARKET DISCOVERY CANDIDATES',
+    cardEAuctionOpp: 'POTENTIAL E-AUCTION OPPORTUNITY',
+    cardConsolidationOpp: 'POTENTIAL VENDOR CONSOLIDATION OPPORTUNITY',
+    cardOverlapOpp: 'OVERLAPPING OPPORTUNITY (REMOVED)',
+    cardNetOpp: 'NET QUANTIFIABLE OPPORTUNITY',
+    cardNetDefensibleRange: 'NET DEFENSIBLE OPPORTUNITY POTENTIAL',
+    cardReadyCategories: 'CATEGORIES READY FOR SOURCING',
+    cardEAuctionCandidates: 'E-AUCTION CANDIDATES',
+    cardConsolidationCandidates: 'CONSOLIDATION CANDIDATES',
+    cardNotQuantifiable: 'OPPORTUNITIES NOT YET QUANTIFIABLE',
+    cardLowEvidenced: 'LOW EVIDENCED OPPORTUNITIES',
+    cardDataConfidence: 'OVERALL DATA CONFIDENCE',
+
+    // Table Headers
+    colCategory: 'Category / Spend Cluster',
+    colSpend: 'Total Spend',
+    colTransactions: 'Txns',
+    colSuppliers: 'Suppliers',
+    colConcentration: 'HHI Concentration',
+    colFragmentation: 'Fragmentation',
+    colAddressableSpend: 'Addressable Spend',
+    colEvidenceState: 'Evidence State',
+    colEAuctionSuitability: 'E-Auction Suitability',
+    colEAuctionOpp: 'E-Auction Opp',
+    colConsolSuitability: 'Consol. Suitability',
+    colConsolOpp: 'Consolidation Opp',
+    colOverlap: 'Overlap Deducted',
+    colNetOpp: 'Net Quantifiable Opp',
+    colOppRange: 'Governed Range',
+    colOppPct: 'Opp %',
+    colConfidence: 'Confidence',
+    colRecommendedLever: 'Recommended Sourcing Lever',
+    colNextAction: 'Next Strategic Action',
+
+    // Waterfall
+    waterfallTitle: 'OPPORTUNITY WATERFALL — ZERO DOUBLE COUNTING',
+    waterfallSubtitle: 'Strict deduplication of shared price variance across E-Auction and Vendor Consolidation',
+
+    // Scorecard & Levers
+    scorecardTitle: '10-DIMENSION STRATEGIC SOURCING SCORECARD',
+    leversTitle: '15-LEVER STRATEGIC SOURCING MATRIX',
+
+    // Deep Dive Modal Sections
+    deepDiveTitle: 'CATEGORY STRATEGIC SOURCING DEEP DIVE',
+    sectionOverview: 'SECTION A: CATEGORY OVERVIEW',
+    sectionPurchaseBehaviour: 'SECTION B: PURCHASE BEHAVIOUR & CADENCE',
+    sectionSupplierStructure: 'SECTION C: SUPPLIER STRUCTURE & CONCENTRATION',
+    sectionFragmentation: 'SECTION D: SUPPLIER FRAGMENTATION ANALYSIS',
+    sectionComparability: 'SECTION E: TRANSACTION COMPARABILITY & NORMALIZATION',
+    sectionPriceDispersion: 'SECTION F: PRICE DISPERSION & PERCENTILE ANALYSIS',
+    sectionCredibleReference: 'SECTION G: CREDIBLE LOW-PRICE REFERENCE RULE',
+    sectionEAuctionAssessment: 'SECTION H: E-AUCTION SUITABILITY & PRICE GAP CALCULATION',
+    sectionConsolidationAssessment: 'SECTION I: VENDOR CONSOLIDATION & OPERATIONAL REDUCTION',
+    sectionOverlapDeduplication: 'SECTION J: OVERLAP REMOVAL & NET QUANTIFIABLE OPPORTUNITY',
+    sectionScenarioAnalysis: 'SECTION K: SCENARIO RANGE (CONSERVATIVE, BASE, STRETCH)',
+    sectionOpportunityWaterfall: 'SECTION L: TRANSPARENT OPPORTUNITY WATERFALL',
+    sectionLeverMatrix: 'SECTION M: 15-LEVER SOURCING MATRIX',
+    sectionScorecard: 'SECTION N: 10-DIMENSION SOURCING SCORECARD',
+    sectionRisksConstraints: 'SECTION O: RISKS, CONSTRAINTS & DEPENDENCIES',
+    sectionDataQuality: 'SECTION P: DATA QUALITY & MISSING INFORMATION',
+    sectionRecommendedAction: 'SECTION Q: RECOMMENDED PROCUREMENT STRATEGY',
+    sectionTransactionEvidence: 'SECTION R: TRANSACTION-LEVEL EVIDENCE AUDIT',
+    sectionExclusions: 'SECTION S: EXPLICIT TRANSACTION EXCLUSIONS LOG',
+    sectionAuditHandoff: 'SECTION T: AUDIT TRAIL & MODULE 4 HANDOFF PACKAGE',
+    sectionMarketDiscovery: 'SECTION U: MARKET DISCOVERY & COMPETITIVE SOURCING ASSESSMENT',
+    sectionCommercialExcellence: 'SECTION V: COMMERCIAL EXCELLENCE & CONTRACT TERMS HARMONIZATION',
+    sectionProcurementMaturity: 'SECTION W: 10-DIMENSION PROCUREMENT MATURITY SCORECARD',
+    sectionActionPlan: 'SECTION X: ACTION-ORIENTED CATEGORY SOURCING ROADMAP',
+    sectionWaterfallV2: 'SECTION Y: 13-STAGE OPPORTUNITY WATERFALL V2',
+
+    // Buttons
+    btnViewDeepDive: 'Deep Dive Workspace',
+    btnExportAudit: 'Export Audit Dossier (JSON)',
+    btnHandoffToModule4: 'Package for Module 4 Sourcing',
+    btnFilterHighMateriality: 'High Materiality',
+    btnFilterQuantifiable: 'Quantifiable Only'
   }
 } as const;
 

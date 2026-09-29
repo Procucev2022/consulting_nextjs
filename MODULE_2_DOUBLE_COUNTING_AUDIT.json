@@ -1,0 +1,18 @@
+[
+  {
+    "categoryId": "CAT-StructuralSt",
+    "categoryName": "Structural Steel",
+    "grossIdentifiedOpportunityInr": 8400000,
+    "leverBreakdown": {
+      "priceArbitrageInr": 8400000,
+      "eauctionInr": 8400000,
+      "vendorConsolidationInr": 0,
+      "volumeBundlingInr": 0,
+      "categorySpecialistInr": 0
+    },
+    "overlappingOpportunityInr": 0,
+    "netDefensibleOpportunityInr": 8400000,
+    "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
+    "reconciled": true
+  }
+]
