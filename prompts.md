@@ -21979,3 +21979,8 @@ Strict Monorepo Quality Gate: Vitest enforces comprehensive coverage across the 
  Unit Tests Execution: 1491 / 1493 passed (0 failures)
  Per-File Code Coverage: All modified and created files >= 90%
  Pipeline Timeout: Enforced on all CI/CD jobs (timeout-minutes: 15)
+
+
+## Prompt 214
+
+make the chnages in wringle.jsonc file for deploypent of ci/cd pipline too work
