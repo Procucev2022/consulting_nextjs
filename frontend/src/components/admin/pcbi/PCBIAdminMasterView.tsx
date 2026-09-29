@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Table,
   Layers,
-  Info,
   ShieldCheck,
   FileCheck
 } from 'lucide-react';
@@ -27,6 +26,8 @@ import { PCBIPreviewTab } from './PCBIPreviewTab';
 import { PCBIImportTab } from './PCBIImportTab';
 import { PCBIVersionsTab } from './PCBIVersionsTab';
 import { PCBIPublishModal } from './PCBIPublishModal';
+import { PCBIBreadcrumb } from './PCBIBreadcrumb';
+import { PCBIModuleWarningBanner } from './PCBIModuleWarningBanner';
 import type {
   PCBIWorksheetDetection,
   PCBIColumnMapping,
@@ -208,6 +209,17 @@ export const PCBIAdminMasterView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation (Part P) */}
+      <PCBIBreadcrumb
+        items={[
+          { label: 'Admin', href: '/admin/pcbi' },
+          { label: 'PCBI Master', isCurrent: true }
+        ]}
+      />
+
+      {/* Part D Clear User Warning for PCBI Master */}
+      <PCBIModuleWarningBanner moduleContext="PCBI_MASTER" />
+
       {/* Top Banner & Header */}
       <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
         <div className="space-y-1">
@@ -224,21 +236,15 @@ export const PCBIAdminMasterView: React.FC = () => {
           </p>
         </div>
 
-        {/* Prominent Upload Button */}
+        {/* Prominent Upload Button (Part Q: Explicit Label) */}
         <button
           type="button"
           onClick={() => setActiveTab('UPLOAD')}
           className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all active:scale-95 shrink-0"
         >
           <UploadCloud size={16} />
-          <span>{UI_STRINGS.pcbiAdmin.uploadButton}</span>
+          <span>Upload / Update Master</span>
         </button>
-      </div>
-
-      {/* System Reference Integrity Alert Notice */}
-      <div className="p-3 bg-cyan-950/40 border border-cyan-800/40 rounded-xl flex items-center gap-2.5 text-xs text-cyan-200">
-        <Info size={15} className="text-cyan-400 shrink-0" />
-        <p>{UI_STRINGS.pcbiAdmin.systemReferenceNotice}</p>
       </div>
 
       {/* Workflow Navigation Sub-Tabs */}

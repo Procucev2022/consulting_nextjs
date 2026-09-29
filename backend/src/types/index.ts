@@ -27,3 +27,4 @@ export * from './pcbiProductionReady';
 export * from './pcbiCommodityCoverage';
 export * from './certification';
 export * from './pcbiPlatformIntegration';
+export * from './pcbiCommodityDataLab';

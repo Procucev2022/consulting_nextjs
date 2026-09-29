@@ -484,4 +484,17 @@ export interface PCBIPublishModalProps {
   onClose: () => void;
 }
 
+export interface CommodityWorkspaceModalProps {
+  isOpen: boolean;
+  pcbiId: string | null;
+  onClose: () => void;
+  onSourceUploaded?: () => void;
+  onDataApproved?: (version: string) => void;
+}
+
+export interface PCBICommodityDataLabViewProps {
+  onOpenWorkspaceModal?: (pcbiId: string) => void;
+  onNavigateToMaster?: () => void;
+}
+
 

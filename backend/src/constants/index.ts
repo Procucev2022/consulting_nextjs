@@ -23,4 +23,5 @@ export * from './pcbiProductionPilot';
 export * from './pcbiProductionReady';
 export * from './pcbiCommodityCoverage';
 export * from './pcbiPlatformIntegration';
+export * from './pcbiCommodityDataLab';
 

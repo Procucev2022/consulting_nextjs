@@ -8,13 +8,15 @@ import React, { useRef, useState } from 'react';
 import {
   UploadCloud,
   FileSpreadsheet,
-  ArrowRight
+  ArrowRight,
+  ShieldAlert
 } from 'lucide-react';
 import { UI_STRINGS } from '../../../constants';
 import {
   detectWorksheets,
   autoMapColumns
 } from '../../../utils/pcbiParser';
+import { pcbiCommodityDataLabApi } from '../../../utils/pcbiCommodityDataLabApi';
 import frontendLogger from '../../../utils/logger';
 import { PCBIWorksheetDetectionSection } from './PCBIWorksheetDetectionSection';
 import { PCBIColumnMappingSection } from './PCBIColumnMappingSection';
@@ -33,10 +35,47 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [selectedSheetForMapping, setSelectedSheetForMapping] = useState<string>('PCBI_MASTER');
+  const [domainError, setDomainError] = useState<{ title: string; message: string } | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setDomainError(null);
+
+    // Protection against accidental wrong uploads (Prompt 218 Section 10)
+    try {
+      const domainCheck = await pcbiCommodityDataLabApi.detectUploadDomain(
+        file.name,
+        '',
+        'PCBI_MASTER'
+      );
+      if (domainCheck?.detection && !domainCheck.detection.isAllowedInTarget) {
+        const title = domainCheck.detection.errorMessage || (
+          domainCheck.detection.detectedDomain === 'CUSTOMER_PURCHASE_HISTORY'
+            ? 'CUSTOMER DATA DETECTED'
+            : 'COMMODITY RESEARCH DATA DETECTED'
+        );
+        const message = domainCheck.detection.guidanceMessage || (
+          domainCheck.detection.detectedDomain === 'CUSTOMER_PURCHASE_HISTORY'
+            ? 'Customer purchase history must be uploaded through Module 1.'
+            : 'This file belongs in PCBI Commodity Data Lab.'
+        );
+        setDomainError({
+          title,
+          message
+        });
+        frontendLogger.warn('Wrong file domain rejected in PCBI Master Upload', {
+          fileName: file.name,
+          detectedDomain: domainCheck.detection.detectedDomain
+        });
+        return;
+      }
+    } catch (err: unknown) {
+      frontendLogger.warn('Domain check warning', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+    }
 
     try {
       setIsParsing(true);
@@ -77,6 +116,17 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Domain Error Banner (Accidental Wrong Upload Protection) */}
+      {domainError && (
+        <div className="p-4 bg-rose-950/70 border border-rose-800 rounded-2xl flex items-start space-x-3 text-rose-200">
+          <ShieldAlert size={20} className="text-rose-400 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold text-sm text-white">{domainError.title}</div>
+            <div className="text-xs text-rose-300 mt-1">{domainError.message}</div>
+          </div>
+        </div>
+      )}
+
       {/* File Dropzone / Upload Box */}
       <div
         onClick={() => fileInputRef.current?.click()}

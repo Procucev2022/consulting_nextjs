@@ -16,6 +16,7 @@ import { DocumentSummaryView } from './DocumentSummaryView';
 import { ParetoSpendHierarchySection } from './ParetoSpendHierarchySection';
 import { ValidationPreCheckSection } from './ValidationPreCheckSection';
 import { IngestionUploadSection } from './IngestionUploadSection';
+import { PCBIModuleWarningBanner } from './admin/pcbi/PCBIModuleWarningBanner';
 import { UI_STRINGS } from '../constants';
 
 export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
@@ -199,6 +200,9 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Part D Clear User Warning for Customer Purchase Data */}
+      <PCBIModuleWarningBanner moduleContext="MODULE_1" />
 
       {/* Live FX Rates Bar */}
       <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">

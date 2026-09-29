@@ -13,17 +13,22 @@ import {
   Users,
   ExternalLink,
   LogOut,
-  Layers
+  Layers,
+  FlaskConical,
+  BarChart3
 } from 'lucide-react';
-import { AICEV_LOGO_SRC } from '../../../constants';
+import { AICEV_LOGO_SRC, UI_STRINGS } from '../../../constants';
 import { apiClient } from '../../../utils/api';
 import { PCBIAdminMasterView } from '../../../components/admin/pcbi/PCBIAdminMasterView';
+import { PCBICommodityDataLabView } from '../../../components/admin/pcbi/PCBICommodityDataLabView';
 import type { UserProfile } from '../../../types';
+import type { PCBIAdminTopNavigationTab } from '../../../types/pcbiCommodityDataLab';
 
 export default function AdminPCBIPage(): React.ReactElement {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [topNavTab, setTopNavTab] = useState<PCBIAdminTopNavigationTab>('PCBI_MASTER');
 
   useEffect(() => {
     let session = apiClient.getStoredUser();
@@ -76,18 +81,46 @@ export default function AdminPCBIPage(): React.ReactElement {
 
             <span className="text-slate-600">/</span>
 
+            {/* Prompt 218 Top-Level Navigation: PCBI Master | PCBI Commodity Data Lab | PCBI Dashboard */}
             <nav className="flex items-center space-x-1 text-xs font-bold">
-              <Link
-                href="/admin/dashboard"
-                className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all flex items-center gap-1.5"
+              <button
+                type="button"
+                onClick={() => setTopNavTab('PCBI_MASTER')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  topNavTab === 'PCBI_MASTER'
+                    ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
               >
-                <Users size={14} />
-                <span>User Directory</span>
-              </Link>
-              <span className="px-3 py-1.5 rounded-lg bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1.5">
-                <Layers size={14} className="text-cyan-400" />
-                <span>PCBI Master</span>
-              </span>
+                <Layers size={14} className={topNavTab === 'PCBI_MASTER' ? 'text-cyan-400' : 'text-slate-400'} />
+                <span>{UI_STRINGS.pcbiCommodityDataLab.navPcbiMaster}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTopNavTab('PCBI_COMMODITY_DATA_LAB')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  topNavTab === 'PCBI_COMMODITY_DATA_LAB'
+                    ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <FlaskConical size={14} className={topNavTab === 'PCBI_COMMODITY_DATA_LAB' ? 'text-cyan-400' : 'text-slate-400'} />
+                <span>{UI_STRINGS.pcbiCommodityDataLab.navCommodityDataLab}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTopNavTab('PCBI_DASHBOARD')}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all ${
+                  topNavTab === 'PCBI_DASHBOARD'
+                    ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <BarChart3 size={14} className={topNavTab === 'PCBI_DASHBOARD' ? 'text-cyan-400' : 'text-slate-400'} />
+                <span>{UI_STRINGS.pcbiCommodityDataLab.navPcbiDashboard}</span>
+              </button>
             </nav>
           </div>
 
@@ -97,6 +130,14 @@ export default function AdminPCBIPage(): React.ReactElement {
               <span className="font-semibold text-white">{currentUser?.name}</span>
               <span className="text-[10px] text-cyan-300 font-mono">({currentUser?.email})</span>
             </div>
+
+            <Link
+              href="/admin/dashboard"
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold flex items-center gap-1.5 transition-all"
+            >
+              <Users size={13} />
+              <span>User Directory</span>
+            </Link>
 
             <Link
               href="/"
@@ -120,7 +161,9 @@ export default function AdminPCBIPage(): React.ReactElement {
 
       {/* Main Body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
-        <PCBIAdminMasterView />
+        {topNavTab === 'PCBI_MASTER' && <PCBIAdminMasterView />}
+        {topNavTab === 'PCBI_COMMODITY_DATA_LAB' && <PCBICommodityDataLabView />}
+        {topNavTab === 'PCBI_DASHBOARD' && <PCBIAdminMasterView />}
       </main>
     </div>
   );

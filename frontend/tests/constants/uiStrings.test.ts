@@ -194,6 +194,16 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(admin.userCountLabel(15)).toBe('15 Registered Users');
     expect(admin.statusUpdateSuccess('Alice', 'SUSPENDED')).toBe('User "Alice" status updated to SUSPENDED.');
   });
+
+  it('should correctly provide pcbiCommodityDataLab strings and formatters', () => {
+    const lab = UI_STRINGS.pcbiCommodityDataLab;
+    expect(lab.navPcbiMaster).toBe('PCBI Master');
+    expect(lab.navCommodityDataLab).toBe('PCBI Data Library');
+    expect(lab.navPcbiDashboard).toBe('PCBI Dashboard');
+    expect(lab.pageTitle).toBe('PCBI Data Library');
+    expect(lab.workspaceTitle('Ferro Moly', 'PCBI-001')).toBe('Ferro Moly (PCBI-001)');
+    expect(lab.approvalSuccessNotice('V2.0')).toBe('Approved data entered into dynamic PCBI catalog version V2.0.');
+  });
 });
 
 
