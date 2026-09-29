@@ -211,8 +211,30 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
       : (Array.isArray(row.detected_currencies) ? row.detected_currencies : ['INR'])
   }));
 
+  const objectKey = `${Date.now()}_${fileName}`;
+
+  if (environment.OBJECTS && body.fileBase64) {
+    try {
+      const cleanBase64 = String(body.fileBase64).replace(/^data:[^;]+;base64,/, '');
+      const binaryString = atob(cleanBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      await environment.OBJECTS.put(objectKey, bytes, {
+        httpMetadata: {
+          contentType: fileType === 'XLSX'
+            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            : 'text/csv'
+        }
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   const objectMeta = {
-    key: `raw-datasets/${Date.now()}_${fileName}`,
+    key: objectKey,
     size: Math.round(fileSizeMb * 1024 * 1024),
     uploadedAt: new Date().toISOString(),
     bucket: 'consulting-doc'
@@ -269,7 +291,7 @@ const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Pr
 
 const handleIngestion = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<{ data: unknown; status?: number }> => {
   if (request.method === 'GET') return getIngestionData(url, environment);
-  if (request.method === 'POST' && url.pathname.endsWith('/upload')) return uploadIngestion(request, environment);
+  if (request.method === 'POST' && (url.pathname.endsWith('/upload') || url.pathname.endsWith('/upload-object'))) return uploadIngestion(request, environment);
   if (request.method === 'POST' && url.pathname.endsWith('/remediate')) return remediateIngestion(environment);
   if (request.method === 'POST') return addIngestion(request, environment);
   if (request.method === 'PATCH') return updateIngestion(request, environment);

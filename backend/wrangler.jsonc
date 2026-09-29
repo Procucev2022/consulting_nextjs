@@ -20,5 +20,11 @@
 			"database_name": "consulting-db",
 			"database_id": "4e7c2ba7-5cd2-4028-a630-2b5ae88625db"
 		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "OBJECTS",
+			"bucket_name": "consulting-doc"
+		}
 	]
 }
