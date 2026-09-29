@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DatabaseStore, db, prisma } from '../../src/services/db';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { DatabaseStore, db } from '../../src/services/db';
 
 describe('DatabaseStore service', () => {
   let store: DatabaseStore;
@@ -8,57 +8,9 @@ describe('DatabaseStore service', () => {
     store = new DatabaseStore();
   });
 
-  describe('Postgres status and init', () => {
+  describe('DatabaseStore status and init', () => {
     it('should report connection status boolean', () => {
-      expect(typeof store.isConnectedToPostgres()).toBe('boolean');
-    });
-
-    it('should cover successful initPostgres when Postgres is reachable', async () => {
-      const mockStore = Object.create(DatabaseStore.prototype);
-      const connectSpy = vi.spyOn(prisma, '$connect').mockResolvedValueOnce(undefined);
-      const findSpy = vi.spyOn(prisma.tenantMaster, 'findFirst').mockResolvedValueOnce({
-        tenant_id: 'TNT-PG-MOCK',
-        enterprise_name: 'Postgres Tenant',
-        region: 'GLOBAL',
-        base_currency: 'USD',
-        status: 'ACTIVE',
-        total_spend_evaluated: 5000,
-        total_spend_evaluated_inr: 42.5
-      } as any);
-
-      await (mockStore as any).initPostgres();
-      expect(mockStore.isPostgresConnected).toBe(true);
-      expect(mockStore.tenant.enterprise_name).toBe('Postgres Tenant');
-      connectSpy.mockRestore();
-      findSpy.mockRestore();
-    });
-
-    it('should cover initPostgres when dbTenant has null total_spend_evaluated_inr', async () => {
-      const mockStore = Object.create(DatabaseStore.prototype);
-      const connectSpy = vi.spyOn(prisma, '$connect').mockResolvedValueOnce(undefined);
-      const findSpy = vi.spyOn(prisma.tenantMaster, 'findFirst').mockResolvedValueOnce({
-        tenant_id: 'TNT-PG-2',
-        enterprise_name: 'Postgres Tenant 2',
-        region: 'GLOBAL',
-        base_currency: 'USD',
-        status: 'ACTIVE',
-        total_spend_evaluated: 1000,
-        total_spend_evaluated_inr: null
-      } as any);
-
-      await (mockStore as any).initPostgres();
-      expect(mockStore.tenant.total_spend_evaluated_inr).toBe(0);
-      connectSpy.mockRestore();
-      findSpy.mockRestore();
-    });
-
-    it('should cover error path in initPostgres when connect throws', async () => {
-      const mockStore = Object.create(DatabaseStore.prototype);
-      const connectSpy = vi.spyOn(prisma, '$connect').mockRejectedValueOnce(new Error('Connection refused'));
-
-      await (mockStore as any).initPostgres();
-      expect(mockStore.isPostgresConnected).toBe(false);
-      connectSpy.mockRestore();
+      expect(typeof store.isConnected()).toBe('boolean');
     });
   });
 
@@ -481,48 +433,6 @@ describe('DatabaseStore service', () => {
     it('should return conversion funnel stages', () => {
       const stages = store.getFunnelStages();
       expect(stages.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('PostgreSQL Prisma syncing paths', () => {
-    it('should sync tenant update when Postgres is connected (resolving and rejecting)', async () => {
-      (store as any).isPostgresConnected = true;
-      const updateSpy = vi.spyOn(prisma.tenantMaster, 'updateMany').mockRejectedValueOnce(new Error('Prisma sync fail'));
-      const res = store.updateTenant({ base_currency: 'USD' });
-      expect(res.base_currency).toBe('USD');
-      updateSpy.mockRestore();
-    });
-
-    it('should sync ingestion item when Postgres is connected (resolving and rejecting)', async () => {
-      (store as any).isPostgresConnected = true;
-      const createSpy = vi.spyOn(prisma.rawDocumentIngestion, 'create').mockRejectedValueOnce(new Error('Create fail'));
-      const item: any = {
-        doc_id: 'DOC-PG-1',
-        tenant_id: 'TNT-1',
-        file_name: 'pg.pdf',
-        file_type: 'PDF',
-        file_size_mb: 1,
-        ocr_status: 'Completed',
-        progress: 100,
-        uploaded_at: new Date().toISOString(),
-        records_count: 5
-      };
-      const queue = store.addIngestionItem(item);
-      expect(queue[0].doc_id).toBe('DOC-PG-1');
-      createSpy.mockRestore();
-    });
-
-    it('should sync validation record update when Postgres is connected (resolving and rejecting)', async () => {
-      (store as any).isPostgresConnected = true;
-      store.setValidationRecords([{
-        record_id: 'REC-PG-VAL-1',
-        po_number: 'PO-ORIGINAL'
-      } as any]);
-      const updateSpy = vi.spyOn(prisma.validationPreCheckRecord, 'update').mockRejectedValueOnce(new Error('Update fail'));
-      const firstId = store.getValidationRecords()[0].record_id;
-      const updated = store.updateValidationRecord(firstId, { po_number: 'PO-PG-SYNC' });
-      expect(updated?.po_number).toBe('PO-PG-SYNC');
-      updateSpy.mockRestore();
     });
   });
 

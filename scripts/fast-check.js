@@ -97,24 +97,8 @@ function main() {
 
   const backendFiles = changedFiles.filter((f) => f.startsWith('backend/'));
   const frontendFiles = changedFiles.filter((f) => f.startsWith('frontend/'));
-  const prismaFiles = changedFiles.filter((f) => f.includes('prisma/schema.prisma'));
-  const rootFiles = changedFiles.filter(
-    (f) => !f.startsWith('backend/') && !f.startsWith('frontend/')
-  );
-
   const BACKEND_DIR = path.resolve(ROOT_DIR, 'backend');
   const FRONTEND_DIR = path.resolve(ROOT_DIR, 'frontend');
-
-  // 1. Database schema synchronization if Prisma schema modified
-  if (prismaFiles.length > 0) {
-    console.log('\n📦 Step 1: Synchronizing Database Schema...');
-    const dbPush = runCommand('npm run db:push', BACKEND_DIR);
-    if (!dbPush.success) {
-      console.error('[Fast Check] ❌ Database schema synchronization failed.');
-      process.exit(1);
-    }
-    console.log(`[Fast Check] ✔ Database schema synchronized (${(dbPush.durationMs / 1000).toFixed(2)}s).`);
-  }
 
   // 2. Fast Backend Checks
   if (backendFiles.length > 0 || rootFiles.some((f) => f.includes('package.json'))) {

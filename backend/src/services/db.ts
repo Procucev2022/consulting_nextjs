@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import {
   mockTenant,
   initialIngestionQueue,
@@ -60,12 +59,7 @@ import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';
 import { CACHE_KEYS } from '../constants/db';
 
-export const prisma = new PrismaClient({
-  log: ['warn', 'error']
-});
-
 export class DatabaseStore {
-  private isPostgresConnected: boolean = false;
   private tenant: TenantMaster = {
     ...mockTenant,
     total_spend_evaluated: 0,
@@ -114,39 +108,11 @@ export class DatabaseStore {
       this.pcbiIndices,
       this.pcbiUnspscMappings
     );
-    this.initPostgres();
+    logger.info('⚡ High-performance Cloudflare Edge Datastore initialized', { source: 'DatabaseStore' });
   }
 
-  private async initPostgres() {
-    try {
-      await prisma.$connect();
-      this.isPostgresConnected = true;
-      logger.info('🐘 PostgreSQL connected successfully via Prisma', { source: 'DatabaseStore' });
-      
-      // Optionally hydrate from PostgreSQL if data exists
-      const dbTenant = await prisma.tenantMaster.findFirst();
-      if (dbTenant) {
-        this.tenant = {
-          tenant_id: dbTenant.tenant_id,
-          enterprise_name: dbTenant.enterprise_name,
-          region: dbTenant.region as any,
-          base_currency: dbTenant.base_currency as any,
-          status: dbTenant.status as any,
-          total_spend_evaluated: 0,
-          total_spend_evaluated_inr: 0
-        };
-      }
-    } catch (err: any) {
-      this.isPostgresConnected = false;
-      logger.warn('⚠️  PostgreSQL connection unavailable - running with active high-performance datastore', {
-        source: 'DatabaseStore',
-        reason: err instanceof Error ? err.message.split('\n')[0] : String(err)
-      });
-    }
-  }
-
-  public isConnectedToPostgres(): boolean {
-    return this.isPostgresConnected;
+  public isConnected(): boolean {
+    return true;
   }
 
   // Tenant
@@ -173,32 +139,6 @@ export class DatabaseStore {
   public updateTenant(updates: Partial<TenantMaster>): TenantMaster {
     this.tenant = { ...this.tenant, ...updates };
     queryCache.invalidateCache(CACHE_KEYS.TENANT);
-    if (this.isPostgresConnected) {
-      prisma.tenantMaster.upsert({
-        where: { tenant_id: this.tenant.tenant_id },
-        create: {
-          tenant_id: this.tenant.tenant_id,
-          enterprise_name: this.tenant.enterprise_name,
-          region: this.tenant.region,
-          base_currency: this.tenant.base_currency,
-          status: this.tenant.status,
-          total_spend_evaluated: this.tenant.total_spend_evaluated,
-          total_spend_evaluated_inr: this.tenant.total_spend_evaluated_inr,
-          major_sector: this.tenant.major_sector,
-          minor_sector: this.tenant.minor_sector
-        },
-        update: {
-          enterprise_name: updates.enterprise_name ?? this.tenant.enterprise_name,
-          region: (updates.region as any) ?? this.tenant.region,
-          base_currency: (updates.base_currency as any) ?? this.tenant.base_currency,
-          status: (updates.status as any) ?? this.tenant.status,
-          total_spend_evaluated: updates.total_spend_evaluated ?? this.tenant.total_spend_evaluated,
-          total_spend_evaluated_inr: updates.total_spend_evaluated_inr ?? this.tenant.total_spend_evaluated_inr,
-          major_sector: updates.major_sector ?? this.tenant.major_sector,
-          minor_sector: updates.minor_sector ?? this.tenant.minor_sector
-        }
-      }).catch((e: any) => logger.error('Error syncing tenant to PostgreSQL', { source: 'DatabaseStore' }, e));
-    }
     return { ...this.tenant };
   }
 
@@ -281,58 +221,16 @@ export class DatabaseStore {
     if (fullItem.tenant_id) {
       queryCache.invalidateCache(`${CACHE_KEYS.INGESTION_QUEUE}_${fullItem.tenant_id}`);
     }
-    if (this.isPostgresConnected) {
-      prisma.rawDocumentIngestion.create({
-        data: {
-          doc_id: fullItem.doc_id,
-          tenant_id: fullItem.tenant_id,
-          file_name: fullItem.file_name,
-          file_type: fullItem.file_type,
-          file_size_mb: fullItem.file_size_mb,
-          ocr_status: fullItem.ocr_status,
-          progress: fullItem.progress,
-          uploaded_at: new Date(fullItem.uploaded_at),
-          records_count: fullItem.records_count,
-          detected_currencies: fullItem.detected_currencies,
-          converted_inr_crores: fullItem.converted_inr_crores
-        }
-      }).catch((e: any) => {
-        logger.warn('PostgreSQL sync skipped - running with active in-memory store', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
-        this.isPostgresConnected = false;
-      });
-    }
     return this.getIngestionQueue(fullItem.tenant_id);
   }
 
   public deleteIngestionItem(docId?: string, tenantId?: string): RawDocumentIngestion[] {
     if (docId) {
       this.ingestionQueue = this.ingestionQueue.filter((item) => item.doc_id !== docId);
-      if (this.isPostgresConnected) {
-        prisma.rawDocumentIngestion.deleteMany({
-          where: { doc_id: docId }
-        }).catch((e: any) => {
-          logger.warn('PostgreSQL delete skipped', { source: 'DatabaseStore', docId, reason: e?.message?.split('\n')[0] });
-          this.isPostgresConnected = false;
-        });
-      }
     } else if (tenantId) {
       this.ingestionQueue = this.ingestionQueue.filter((item) => item.tenant_id !== tenantId);
-      if (this.isPostgresConnected) {
-        prisma.rawDocumentIngestion.deleteMany({
-          where: { tenant_id: tenantId }
-        }).catch((e: any) => {
-          logger.warn('PostgreSQL delete skipped', { source: 'DatabaseStore', tenantId, reason: e?.message?.split('\n')[0] });
-          this.isPostgresConnected = false;
-        });
-      }
     } else {
       this.ingestionQueue = [];
-      if (this.isPostgresConnected) {
-        prisma.rawDocumentIngestion.deleteMany({}).catch((e: any) => {
-          logger.warn('PostgreSQL clear skipped', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
-          this.isPostgresConnected = false;
-        });
-      }
     }
     queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
     if (tenantId) {
@@ -380,13 +278,6 @@ export class DatabaseStore {
     });
 
     queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
-
-    if (this.isPostgresConnected && updated) {
-      prisma.validationPreCheckRecord.update({
-        where: { record_id: recordId },
-        data: { ...updates }
-      }).catch((e: any) => logger.error('Error syncing validation record to PostgreSQL', { source: 'DatabaseStore' }, e));
-    }
     return updated;
   }
 
@@ -737,17 +628,13 @@ export class DatabaseStore {
     return result;
   }
 
-  // Users & Authentication (PostgreSQL with resilient in-memory fallback)
+  // Users & Authentication (High-performance Edge Store)
+  public getUsers(): UserRecord[] {
+    return [...this.users];
+  }
+
   public async getUserByEmail(email: string): Promise<UserRecord | null> {
     const normalizedEmail = email.trim().toLowerCase();
-    if (this.isPostgresConnected) {
-      try {
-        const u = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
-        if (u) return u as UserRecord;
-      } catch (err: any) {
-        logger.warn('Database query failed in getUserByEmail, falling back to local store', { email: normalizedEmail, error: err.message });
-      }
-    }
     const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
     return found ? { ...found } : null;
   }
@@ -755,34 +642,11 @@ export class DatabaseStore {
   public async getUserByEmailOrBuyerId(identifier: string): Promise<UserRecord | null> {
     const clean = identifier.trim();
     const normalizedEmail = clean.toLowerCase();
-    if (this.isPostgresConnected) {
-      try {
-        const u = await (prisma as any).user.findFirst({
-          where: {
-            OR: [
-              { email: normalizedEmail },
-              { id: clean }
-            ]
-          }
-        });
-        if (u) return u as UserRecord;
-      } catch (err: any) {
-        logger.warn('Database query failed in getUserByEmailOrBuyerId, falling back to local store', { identifier: clean, error: err.message });
-      }
-    }
     const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail || u.id === clean);
     return found ? { ...found } : null;
   }
 
   public async getUserById(id: string): Promise<UserRecord | null> {
-    if (this.isPostgresConnected) {
-      try {
-        const u = await (prisma as any).user.findUnique({ where: { id } });
-        if (u) return u as UserRecord;
-      } catch (err: any) {
-        logger.warn('Database query failed in getUserById, falling back to local store', { id, error: err.message });
-      }
-    }
     const found = this.users.find((u) => u.id === id);
     return found ? { ...found } : null;
   }
@@ -795,43 +659,11 @@ export class DatabaseStore {
       created_at: now,
       updated_at: now
     };
-    if (this.isPostgresConnected) {
-      try {
-        const created = await (prisma as any).user.create({
-          data: {
-            id: newUser.id,
-            name: newUser.name,
-            mobile_number: newUser.mobile_number,
-            email: newUser.email,
-            company_name: newUser.company_name,
-            company_address: newUser.company_address,
-            password_hash: newUser.password_hash,
-            role: newUser.role,
-            status: newUser.status,
-            subscription_tier: newUser.subscription_tier || 'BRONZE'
-          }
-        });
-        return created as UserRecord;
-      } catch (err: any) {
-        logger.warn('Database query failed in createUser, saving to local store', { email: data.email, error: err.message });
-      }
-    }
     this.users.push(newUser);
     return newUser;
   }
 
   public async updateUserPassword(id: string, passwordHash: string): Promise<boolean> {
-    if (this.isPostgresConnected) {
-      try {
-        await (prisma as any).user.update({
-          where: { id },
-          data: { password_hash: passwordHash, updated_at: new Date() }
-        });
-        return true;
-      } catch (err: any) {
-        logger.warn('Database query failed in updateUserPassword, updating local store', { id, error: err.message });
-      }
-    }
     const idx = this.users.findIndex((u) => u.id === id);
     if (idx !== -1) {
       this.users[idx].password_hash = passwordHash;
@@ -844,40 +676,6 @@ export class DatabaseStore {
   public async getAllUsers(
     query?: { search?: string; role?: string; status?: string; tier?: string }
   ): Promise<UserRecord[]> {
-    if (this.isPostgresConnected) {
-      try {
-        const whereClause: any = {};
-        if (query?.role && query.role !== 'ALL') {
-          whereClause.role = query.role.toUpperCase();
-        }
-        if (query?.status && query.status !== 'ALL') {
-          whereClause.status = query.status.toUpperCase();
-        }
-        if (query?.tier && query.tier !== 'ALL') {
-          whereClause.subscription_tier = query.tier.toUpperCase();
-        }
-        if (query?.search && query.search.trim() !== '') {
-          const q = query.search.trim();
-          whereClause.OR = [
-            { name: { contains: q, mode: 'insensitive' } },
-            { email: { contains: q, mode: 'insensitive' } },
-            { company_name: { contains: q, mode: 'insensitive' } },
-            { mobile_number: { contains: q } }
-          ];
-        }
-
-        const users = await (prisma as any).user.findMany({
-          where: whereClause,
-          orderBy: { created_at: 'desc' }
-        });
-        if (users && users.length > 0) {
-          return users as UserRecord[];
-        }
-      } catch (err: any) {
-        logger.warn('Database query failed in getAllUsers, falling back to local store', { query, error: err.message });
-      }
-    }
-
     let filtered = [...this.users];
     if (query?.role && query.role !== 'ALL') {
       filtered = filtered.filter((u) => u.role.toUpperCase() === query.role?.toUpperCase());
@@ -902,18 +700,6 @@ export class DatabaseStore {
 
   public async updateUserStatus(id: string, status: string): Promise<UserRecord | null> {
     const validStatus = status.toUpperCase();
-    if (this.isPostgresConnected) {
-      try {
-        const updated = await (prisma as any).user.update({
-          where: { id },
-          data: { status: validStatus }
-        });
-        if (updated) return updated as UserRecord;
-      } catch (err: any) {
-        logger.warn('Database query failed in updateUserStatus, falling back to local store', { id, status: validStatus, error: err.message });
-      }
-    }
-
     const idx = this.users.findIndex((u) => u.id === id);
     if (idx === -1) return null;
     this.users[idx] = {
@@ -926,20 +712,6 @@ export class DatabaseStore {
 
   public async updateUserTier(id: string, tier: string): Promise<UserRecord | null> {
     const validTier = tier.toUpperCase();
-    if (this.isPostgresConnected) {
-      try {
-        const updated = await (prisma as any).user.update({
-          where: { id },
-          data: { subscription_tier: validTier }
-        });
-        const idx = this.users.findIndex((u) => u.id === id);
-        if (idx !== -1) this.users[idx] = { ...updated } as UserRecord;
-        return updated as UserRecord;
-      } catch (err: any) {
-        logger.warn('Failed to update user tier in PostgreSQL, falling back to local memory store', { id, tier: validTier, error: err.message });
-      }
-    }
-
     const found = this.users.find((u) => u.id === id);
     if (!found) return null;
     found.subscription_tier = validTier;
