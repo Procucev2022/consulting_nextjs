@@ -137,7 +137,7 @@ export const DatabaseViewSection: React.FC = () => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#f8fafc' }}>
-                  PostgreSQL Live Database
+                  Cloudflare D1 Live Database
                 </h2>
                 <span style={{
                   fontSize: '11px',
@@ -161,7 +161,7 @@ export const DatabaseViewSection: React.FC = () => {
                 </span>
               </div>
               <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8' }}>
-                Prisma ORM • Managed Neon Cloud Host • SSL Enforced
+                Cloudflare D1 SQL • Edge Worker Bindings • SSL Enforced
               </p>
             </div>
           </div>

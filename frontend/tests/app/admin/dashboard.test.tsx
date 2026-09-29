@@ -27,6 +27,7 @@ const mockAdmin = {
   company_address: 'HQ',
   role: 'ADMIN' as const,
   status: 'ACTIVE' as const,
+  tier: 'GOLD' as const,
   subscription_tier: 'GOLD' as const,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString()
@@ -114,4 +115,41 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
 
     expect(await screen.findByText('New passwords do not match')).toBeInTheDocument();
   });
+
+  it('handles search filtering and role/status dropdown selection', async () => {
+    render(<AdminDashboardPage />);
+
+    const searchInput = screen.getByPlaceholderText(/Search by name, email/i);
+    fireEvent.change(searchInput, { target: { value: 'System' } });
+    expect(searchInput).toHaveValue('System');
+
+    const roleSelect = screen.getByDisplayValue('All Roles');
+    fireEvent.change(roleSelect, { target: { value: 'ADMIN' } });
+    expect(roleSelect).toHaveValue('ADMIN');
+  });
+
+  it('handles user status toggle and tier update actions', async () => {
+    vi.spyOn(apiClient, 'updateAdminUserStatus').mockResolvedValue({
+      success: true,
+      message: 'User status updated'
+    } as any);
+    vi.spyOn(apiClient, 'updateAdminUserTier').mockResolvedValue({
+      success: true,
+      message: 'Tier updated'
+    } as any);
+
+    render(<AdminDashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('System Administrator')).toBeInTheDocument();
+    });
+
+    const tierSelect = screen.getByDisplayValue('GOLD');
+    fireEvent.change(tierSelect, { target: { value: 'SILVER' } });
+
+    await waitFor(() => {
+      expect(apiClient.updateAdminUserTier).toHaveBeenCalledWith('usr-admin-1', 'SILVER');
+    });
+  });
 });
+
