@@ -6,7 +6,7 @@ import {
   CLOUDFLARE_MAX_AGE_SECONDS,
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
-import type { CloudflareEnvironment, CloudflareExecutionContext } from './types/cloudflare';
+import type { CloudflareEnvironment, CloudflareExecutionContext, CloudflareD1Database } from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
 import { geminiService } from './services/geminiService';
 import { aiCategorizationService } from './services/aiCategorizationService';
@@ -61,7 +61,7 @@ const readJson = async (request: Request): Promise<Record<string, unknown>> => {
 
 let d1TablesInitialized = false;
 
-const ensureD1Tables = async (db?: D1Database): Promise<void> => {
+const ensureD1Tables = async (db?: CloudflareD1Database): Promise<void> => {
   if (!db || d1TablesInitialized) return;
   try {
     const tableSqls = [

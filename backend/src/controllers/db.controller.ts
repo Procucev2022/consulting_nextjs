@@ -136,64 +136,47 @@ export class DBController {
     }
   }
 
+  private getRawTableList(tableName: string): Record<string, unknown>[] {
+    const tableDataGetters: Record<string, () => unknown[]> = {
+      User: () => (db.getUsers ? db.getUsers() : []),
+      TenantMaster: () => [db.getTenant()].filter(Boolean),
+      RawDocumentIngestion: () => db.getIngestionQueue(),
+      ValidationPreCheckRecord: () => db.getValidationRecords(),
+      SpendCategorySummary: () => db.getCategories(),
+      CategoryYearDetail: () => db.getCategoryDetails(),
+      VendorYearDetail: () => db.getVendorDetails(),
+      VendorPriceRank: () => db.getVendorRankings(),
+      LineItemMapping: () => db.getLineItems(),
+      SavingsOpportunity: () => db.getOpportunities(),
+      ConversionFunnelPhase: () => db.getFunnelStages()
+    };
+
+    const getter = tableDataGetters[tableName];
+    return (getter ? getter() : []) as unknown as Record<string, unknown>[];
+  }
+
   private fetchTableRows(
     tableName: string,
     search: string,
     skip: number,
     take: number
   ): { total: number; rows: Record<string, unknown>[] } {
-    let rawList: Record<string, unknown>[] = [];
-    switch (tableName) {
-      case 'User':
-        rawList = (db.getUsers ? db.getUsers() : []) as unknown as Record<string, unknown>[];
-        break;
-      case 'TenantMaster':
-        rawList = [db.getTenant() as unknown as Record<string, unknown>].filter(Boolean);
-        break;
-      case 'RawDocumentIngestion':
-        rawList = db.getIngestionQueue() as unknown as Record<string, unknown>[];
-        break;
-      case 'ValidationPreCheckRecord':
-        rawList = db.getValidationRecords() as unknown as Record<string, unknown>[];
-        break;
-      case 'SpendCategorySummary':
-        rawList = db.getCategories() as unknown as Record<string, unknown>[];
-        break;
-      case 'CategoryYearDetail':
-        rawList = db.getCategoryDetails() as unknown as Record<string, unknown>[];
-        break;
-      case 'VendorYearDetail':
-        rawList = db.getVendorDetails() as unknown as Record<string, unknown>[];
-        break;
-      case 'VendorPriceRank':
-        rawList = db.getVendorRankings() as unknown as Record<string, unknown>[];
-        break;
-      case 'LineItemMapping':
-        rawList = db.getLineItems() as unknown as Record<string, unknown>[];
-        break;
-      case 'SavingsOpportunity':
-        rawList = db.getOpportunities() as unknown as Record<string, unknown>[];
-        break;
-      case 'ConversionFunnelPhase':
-        rawList = db.getFunnelStages() as unknown as Record<string, unknown>[];
-        break;
-      default:
-        rawList = [];
-    }
-
+    const rawList = this.getRawTableList(tableName);
     const searchFields = TABLE_FIELD_MAP[tableName] || [];
-    const filtered = search.trim() && searchFields.length > 0
+    const query = search.trim().toLowerCase();
+
+    const filtered = query && searchFields.length > 0
       ? rawList.filter((item) =>
           searchFields.some((field) =>
-            String(item[field] || '').toLowerCase().includes(search.trim().toLowerCase())
+            String(item[field] || '').toLowerCase().includes(query)
           )
         )
       : rawList;
 
-    const total = filtered.length;
-    const rows = filtered.slice(skip, skip + take);
-
-    return { total, rows };
+    return {
+      total: filtered.length,
+      rows: filtered.slice(skip, skip + take)
+    };
   }
 
   /**
