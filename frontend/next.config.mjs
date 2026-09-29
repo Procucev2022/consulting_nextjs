@@ -10,13 +10,10 @@ const nextConfig = {
   async rewrites() {
     // In production the backend URL should come from the environment. The
     // local fallback (127.0.0.1:5000) is only used for `next dev`.
-    const isProd = process.env.NODE_ENV === 'production';
     const rawBackendUrl =
       process.env.BACKEND_INTERNAL_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
-      (isProd
-        ? 'https://consulting-nextjs-backend.mukul93028.workers.dev'
-        : 'http://127.0.0.1:5000');
+      'https://consulting-nextjs-backend.mukul93028.workers.dev';
 
     // Normalize the backend URL so the rewrite destination is always a valid
     // absolute URL. A schemeless value (e.g. "host.workers.dev") or a bare

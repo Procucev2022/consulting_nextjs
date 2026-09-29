@@ -59,9 +59,134 @@ const readJson = async (request: Request): Promise<Record<string, unknown>> => {
   }
 };
 
+let d1TablesInitialized = false;
+
+const ensureD1Tables = async (db?: D1Database): Promise<void> => {
+  if (!db || d1TablesInitialized) return;
+  try {
+    const tableSqls = [
+      `CREATE TABLE IF NOT EXISTS TenantMaster (
+        tenant_id TEXT PRIMARY KEY NOT NULL,
+        enterprise_name TEXT NOT NULL,
+        region TEXT NOT NULL DEFAULT 'GLOBAL',
+        base_currency TEXT NOT NULL DEFAULT 'INR',
+        status TEXT NOT NULL DEFAULT 'ACTIVE',
+        total_spend_evaluated REAL NOT NULL DEFAULT 0,
+        total_spend_evaluated_inr REAL,
+        major_sector TEXT DEFAULT 'Chemical & Petrochemicals',
+        minor_sector TEXT DEFAULT 'Specialty Chemicals',
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name, region, base_currency, status) VALUES ('TNT-GLOBAL-8902', 'Global Enterprise Procurement', 'GLOBAL', 'INR', 'ACTIVE')`,
+      `CREATE TABLE IF NOT EXISTS User (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        mobile_number TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        company_name TEXT NOT NULL,
+        company_address TEXT NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'USER',
+        status TEXT NOT NULL DEFAULT 'ACTIVE',
+        subscription_tier TEXT NOT NULL DEFAULT 'BRONZE',
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS RawDocumentIngestion (
+        doc_id TEXT PRIMARY KEY NOT NULL,
+        tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
+        file_name TEXT NOT NULL,
+        file_type TEXT NOT NULL DEFAULT 'XLSX',
+        file_size_mb REAL NOT NULL DEFAULT 1.0,
+        ocr_status TEXT NOT NULL DEFAULT 'Completed',
+        progress REAL NOT NULL DEFAULT 100,
+        uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        records_count INTEGER NOT NULL DEFAULT 0,
+        detected_currencies TEXT DEFAULT '["INR"]',
+        converted_inr_crores REAL DEFAULT 0,
+        unique_items_count INTEGER DEFAULT 0,
+        unique_vendors_count INTEGER DEFAULT 0,
+        material_groups_count INTEGER DEFAULT 0,
+        plants_count INTEGER DEFAULT 0
+      )`,
+      `CREATE TABLE IF NOT EXISTS ValidationPreCheckRecord (
+        record_id TEXT PRIMARY KEY NOT NULL,
+        po_number TEXT NOT NULL,
+        vendor_name TEXT NOT NULL,
+        raw_desc TEXT NOT NULL,
+        order_quantity REAL,
+        net_price REAL,
+        subtotal_raw REAL,
+        amount REAL NOT NULL DEFAULT 0,
+        raw_currency TEXT DEFAULT 'INR',
+        amount_inr REAL,
+        inr_crores REAL,
+        fx_rate_applied REAL,
+        yahoo_ticker TEXT,
+        spend_year INTEGER,
+        transaction_date TEXT,
+        column_l_code TEXT,
+        core_category TEXT,
+        issue_flag TEXT NOT NULL DEFAULT 'Passed Clean',
+        action_status TEXT NOT NULL DEFAULT 'Ready',
+        resolved INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS SpendCategorySummary (
+        id TEXT PRIMARY KEY NOT NULL,
+        name TEXT NOT NULL,
+        spend REAL NOT NULL DEFAULT 0,
+        spend_inr REAL,
+        spend_inr_crores REAL,
+        targetReductionPct REAL DEFAULT 0,
+        lineItemsCount INTEGER DEFAULT 0,
+        color TEXT DEFAULT '#38bdf8',
+        column_l_code TEXT
+      )`,
+      `CREATE TABLE IF NOT EXISTS SavingsOpportunity (
+        opp_id TEXT PRIMARY KEY NOT NULL,
+        category TEXT NOT NULL,
+        title TEXT,
+        current_spend REAL,
+        current_spend_inr_cr REAL,
+        target_savings_pct REAL,
+        est_savings REAL,
+        est_savings_inr_cr REAL,
+        savings_percentage REAL,
+        lever TEXT,
+        recommended_action TEXT,
+        push_to_module TEXT DEFAULT 'proCPX',
+        recommended_module TEXT DEFAULT 'proCPX',
+        status TEXT DEFAULT 'Identified'
+      )`,
+      `CREATE TABLE IF NOT EXISTS ConversionFunnelPhase (
+        phase_num INTEGER PRIMARY KEY NOT NULL,
+        phase_name TEXT NOT NULL,
+        platform_actionable_focus TEXT NOT NULL,
+        value_outcome_delivered TEXT NOT NULL,
+        commercial_lock_in_metric TEXT NOT NULL,
+        completion_pct REAL NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'Upcoming'
+      )`
+    ];
+
+    for (const sql of tableSqls) {
+      try {
+        await db.prepare(sql).run();
+      } catch {
+        // ignore
+      }
+    }
+    d1TablesInitialized = true;
+  } catch {
+    // ignore
+  }
+};
+
 const getTenant = async (environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
   if (environment.DB) {
     try {
+      await ensureD1Tables(environment.DB);
       const tenant = await environment.DB.prepare('SELECT * FROM TenantMaster LIMIT 1').first<Record<string, unknown>>();
       if (tenant) return tenant;
     } catch {
@@ -88,6 +213,7 @@ const apiData = (data: unknown, request: Request, extra: Record<string, unknown>
 const getIngestionData = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
   if (environment.DB) {
     try {
+      await ensureD1Tables(environment.DB);
       const tenantId = url.searchParams.get('buyerId') || url.searchParams.get('tenantId');
       const queueStmt = tenantId
         ? environment.DB.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC').bind(tenantId)
@@ -100,11 +226,16 @@ const getIngestionData = async (url: URL, environment: CloudflareEnvironment): P
           : (row.detected_currencies || ['INR'])
       }));
 
-      const valRes = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all<Record<string, unknown>>();
-      const validationRecords = (valRes.results || []).map((row: any) => ({
-        ...row,
-        resolved: Boolean(row.resolved)
-      }));
+      let validationRecords: any[] = [];
+      try {
+        const valRes = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all<Record<string, unknown>>();
+        validationRecords = (valRes.results || []).map((row: any) => ({
+          ...row,
+          resolved: Boolean(row.resolved)
+        }));
+      } catch {
+        validationRecords = [];
+      }
 
       return {
         data: {
@@ -134,6 +265,7 @@ const getIngestionData = async (url: URL, environment: CloudflareEnvironment): P
 const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
   if (environment.DB) {
     try {
+      await ensureD1Tables(environment.DB);
       await environment.DB.prepare("UPDATE ValidationPreCheckRecord SET resolved = 1, issue_flag = 'Passed Clean', action_status = 'Ready'").run();
       const records = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all();
       return { data: { updatedCount: records.results?.length || 0, records: records.results || [] } };
@@ -157,6 +289,7 @@ const addIngestion = async (request: Request, environment: CloudflareEnvironment
 
   if (environment.DB) {
     try {
+      await ensureD1Tables(environment.DB);
       await environment.DB.prepare(`
         INSERT INTO RawDocumentIngestion (
           doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
@@ -190,6 +323,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
 
   if (environment.DB) {
     try {
+      await ensureD1Tables(environment.DB);
       await environment.DB.prepare(`
         INSERT INTO RawDocumentIngestion (
           doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
@@ -200,11 +334,17 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     }
   }
 
-  const queueRes = environment.DB
-    ? await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all<Record<string, unknown>>()
-    : { results: [] };
+  let queueRows: Record<string, unknown>[] = [];
+  if (environment.DB) {
+    try {
+      const queueRes = await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all<Record<string, unknown>>();
+      queueRows = queueRes.results || [];
+    } catch {
+      queueRows = [];
+    }
+  }
 
-  const parsedQueue = (queueRes.results || []).map((row: any) => ({
+  const parsedQueue = queueRows.map((row: any) => ({
     ...row,
     detected_currencies: typeof row.detected_currencies === 'string'
       ? (() => { try { return JSON.parse(row.detected_currencies); } catch { return ['INR']; } })()
