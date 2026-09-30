@@ -2072,7 +2072,7 @@ All 18 gate conditions specified in Prompt 243 have been satisfied:
     const liveFxIndependence = this.testLiveFxRateIndependence(validatedLedger);
 
     // Run Reproducibility test
-    const reproducibility = this.testPipelineReproducibility(filePath);
+    const reproducibility = this.testPipelineReproducibility(datasetPath);
 
     // Artifact 1: MODULE_1_FINAL_CALCULATION_AUDIT.xlsx (15 tabs)
     const calculationAuditPath = path.resolve(process.cwd(), 'MODULE_1_FINAL_CALCULATION_AUDIT.xlsx');
