@@ -30,3 +30,4 @@ export * from './pcbiPlatformIntegration';
 export * from './pcbiCommodityDataLab';
 export * from './module2StrategicSourcing';
 export * from './module2AuditDossier';
+export * from './module1Forensic';

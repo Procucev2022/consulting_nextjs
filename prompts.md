@@ -33097,3 +33097,6298 @@ run locally on chrome
 ## Prompt 232
 
 {{ CHECKPOINT 27 }}
+
+## Prompt 233
+
+MODULE 2 � FINAL END-TO-END BUSINESS + MATHEMATICAL + DATA-LINEAGE VALIDATION
+===============================================================
+
+[Full 20-section validation command as submitted on 2026-09-30]
+
+Sections 1-20 covering: Full Dataset Pre-flight, Transaction-Level Price Evidence, Price Dispersion Validation, Lowest Credible Historical Price, Price Opportunity Range, E-Auction Opportunity Logic, Vendor Consolidation Logic, Multi-Category Supplier Analysis, Category Specialist Logic, Volume Bundling Logic, Double Counting Control, Opportunity Waterfall Validation, No Opportunity Test, Data Confidence, Minute-Level Proof, Executive Output, Negative Tests, Mathematical Independent Reconciliation, API/UI/Data Consistency, Module 2 Final Certification.
+
+Final Gate: Do NOT modify Module 2 business logic merely to make tests pass. FINAL STATUS: E2E_VALIDATED / E2E_VALIDATED_WITH_CORRECTIONS / E2E_BLOCKED_PENDING_FIXES.
+
+## Prompt 234
+
+continue
+
+
+## Prompt 235
+
+MODULE 2 — FINAL END-TO-END BUSINESS VALIDATION, ADVERSARIAL TESTING & EVIDENCE TRACEABILITY
+
+Module 2 Strategic Sourcing, E-Auction & Vendor Consolidation is now functionally complete.
+
+DO NOT ADD NEW BUSINESS FEATURES.
+DO NOT MODIFY MODULE 1.
+DO NOT MODIFY MODULE 3 / PCBI.
+DO NOT MODIFY MODULE 4.
+DO NOT introduce external benchmarks, PCBI data, market indices or fabricated assumptions.
+
+This command is exclusively for FINAL END-TO-END VALIDATION of Module 2.
+
+============================================================
+1. PRIMARY OBJECTIVE
+============================================================
+
+Prove that Module 2 can take the certified customer procurement dataset and produce defensible strategic sourcing opportunities where:
+
+EXECUTIVE OUTPUT
+      ↓
+CATEGORY
+      ↓
+COMMODITY / ITEM
+      ↓
+SUPPLIER
+      ↓
+TRANSACTION
+      ↓
+COMPARABLE TRANSACTION SET
+      ↓
+PRICE / VOLUME / UOM / CURRENCY
+      ↓
+ELIGIBILITY RULES
+      ↓
+EXCLUSIONS
+      ↓
+MATHEMATICAL CALCULATION
+      ↓
+OPPORTUNITY RANGE
+      ↓
+CONFIDENCE
+      ↓
+IMPLEMENTATION ACTION
+
+Every material number displayed to the user must be explainable at transaction level.
+
+NO BLACK-BOX SAVINGS.
+
+============================================================
+2. TEST THE COMPLETE MODULE 2 PIPELINE
+============================================================
+
+Execute the complete pipeline using the certified Module 1 customer dataset:
+
+Customer Data
+→ Data Quality
+→ Category / Commodity analysis
+→ Supplier analysis
+→ Price analysis
+→ Volume analysis
+→ Recurrence analysis
+→ Supplier fragmentation
+→ E-Auction assessment
+→ Vendor Consolidation assessment
+→ Strategic Sourcing Opportunity
+→ Opportunity Range
+→ Evidence Drilldown
+
+Confirm that no step silently changes the source data.
+
+============================================================
+3. TRANSACTION-LEVEL PROOF REQUIREMENT
+============================================================
+
+For EVERY opportunity generated, create an evidence chain.
+
+Example:
+
+CATEGORY:
+Industrial Fasteners
+
+OPPORTUNITY:
+Supplier consolidation
+
+OPPORTUNITY RANGE:
+₹X – ₹Y
+
+The system MUST allow the administrator/user to drill down:
+
+Category
+→ Commodity
+→ Supplier
+→ Purchase Order / Transaction
+→ Date
+→ Quantity
+→ UOM
+→ Unit Price
+→ Currency
+→ Total Value
+→ Comparable transaction
+→ Historical supplier price
+→ Reference transaction
+→ Formula
+→ Calculated opportunity.
+
+The user must be able to see EXACTLY which transactions created the opportunity.
+
+============================================================
+4. PRICE OPPORTUNITY VALIDATION
+============================================================
+
+Test all price opportunity calculations.
+
+For every calculated opportunity verify:
+
+Current Price
+Comparable Price
+Quantity
+Eligible Volume
+Price Difference
+Gross Opportunity
+
+Formula must be explicitly displayed.
+
+Example:
+
+Opportunity
+=
+(Current Eligible Price - Reference Eligible Price)
+× Eligible Quantity
+
+Do not calculate opportunity on transactions that fail comparability.
+
+============================================================
+5. MIN / MAX / RANGE LOGIC
+============================================================
+
+Do NOT assume that a category has either:
+
+"₹0 savings"
+
+or
+
+"a single savings number."
+
+Where data supports it, produce:
+
+LOW / CONSERVATIVE OPPORTUNITY
+BASE / DEFENSIBLE OPPORTUNITY
+HIGH / UPSIDE OPPORTUNITY
+
+Clearly distinguish:
+
+Observed Historical Opportunity
+Defensible Opportunity
+Potential Opportunity
+
+Never represent the upside case as guaranteed savings.
+
+============================================================
+6. ZERO-OPPORTUNITY TEST
+
+Create controlled test cases where:
+
+• all comparable suppliers paid effectively the same price
+• no meaningful price dispersion exists
+• no volume consolidation opportunity exists
+• no auction compression evidence exists
+
+Expected output:
+
+NOT_QUANTIFIABLE or NO_OBSERVED_PRICE_OPPORTUNITY
+
+NOT:
+
+"Procurement is perfect."
+
+The UI must explicitly state:
+
+"No defensible price opportunity was identified from the available historical transaction evidence."
+
+This is a DATA FINDING, not a judgment about procurement performance.
+
+============================================================
+7. SUPPLIER CONSOLIDATION TESTING
+============================================================
+
+Test categories where:
+
+CASE A:
+One supplier dominates.
+
+CASE B:
+Many suppliers exist with fragmented spend.
+
+CASE C:
+One supplier supplies multiple commodities.
+
+CASE D:
+Multiple small suppliers supply the same commodity.
+
+CASE E:
+Different suppliers supply different specifications.
+
+CASE F:
+Supplier consolidation would create excessive dependency.
+
+For every case determine:
+
+Current Supplier Count
+Current Spend by Supplier
+Current Volume by Supplier
+Commodity-level supplier share
+Supplier concentration
+Potential consolidation candidates
+Volume that could realistically be consolidated
+Excluded volume
+Reason for exclusion
+Consolidation opportunity range
+
+IMPORTANT:
+
+Do not calculate consolidation benefit merely because supplier count can be reduced.
+
+The benefit must be supported by:
+
+PRICE EVIDENCE
++
+VOLUME EVIDENCE
++
+COMPARABILITY
++
+CAPACITY / FEASIBILITY
++
+HISTORICAL TRANSACTION EVIDENCE
+
+============================================================
+8. MULTI-CATEGORY SUPPLIER TEST
+
+Specifically test suppliers supplying multiple unrelated categories.
+
+Example:
+
+Supplier A:
+Category 1 = ₹10M
+Category 2 = ₹5M
+Category 3 = ₹2M
+
+The system must determine whether:
+
+A) Supplier should remain category-specific
+B) Category should be moved to specialist suppliers
+C) Multiple categories can legitimately be bundled
+D) Category-level supplier competition can increase
+E) Volume aggregation can create leverage
+
+DO NOT assume that "one supplier for everything" is automatically beneficial.
+
+The recommendation must be category / item / specification driven.
+
+============================================================
+9. SMALL-SUPPLIER AGGREGATION TEST
+
+Test multiple small suppliers supplying the same commodity/category.
+
+Example:
+
+Supplier A = ₹1M
+Supplier B = ₹1.2M
+Supplier C = ₹0.8M
+Supplier D = ₹0.5M
+
+Determine:
+
+Combined addressable volume
+Current weighted average price
+Supplier-level prices
+Best credible historical price
+Potential competition pool
+Auction suitability
+Consolidation suitability
+
+Calculate opportunity only on the eligible volume.
+
+============================================================
+10. E-AUCTION TESTING
+
+Test all auction logic.
+
+For each auction candidate verify:
+
+Auction eligibility
+Minimum supplier count
+Comparable specifications
+Historical price dispersion
+Volume attractiveness
+Supplier participation
+Transaction recurrence
+Price competitiveness
+Recommended auction type
+Opening ceiling
+Target reserve
+Eligible auction volume
+Excluded volume
+Evidence
+
+The system must explain WHY an auction is recommended.
+
+It must also explain WHY an auction is NOT recommended.
+
+============================================================
+11. AUCTION OPPORTUNITY MUST NOT BE FABRICATED
+
+Never assume:
+
+"Run auction = X% savings."
+
+Auction opportunity must be derived from customer historical evidence.
+
+If historical evidence is insufficient:
+
+STATUS =
+OPPORTUNITY_NOT_QUANTIFIABLE
+
+and show:
+
+"Historical transaction evidence is insufficient to quantify auction benefit."
+
+============================================================
+12. VENDOR CONSOLIDATION VS E-AUCTION
+
+Test cases where:
+
+• auction is suitable but consolidation is not
+• consolidation is suitable but auction is not
+• both are suitable
+• neither is suitable
+
+The system must not combine the two benefits automatically.
+
+Prevent double counting.
+
+============================================================
+13. DOUBLE-COUNTING CONTROL
+
+This is mandatory.
+
+If:
+
+Price arbitrage = ₹X
+Auction compression = ₹Y
+Vendor consolidation = ₹Z
+
+The system MUST NOT simply report:
+
+₹X + ₹Y + ₹Z
+
+unless the eligible transaction populations are proven mutually exclusive.
+
+Create:
+
+Opportunity Population A
+Opportunity Population B
+Opportunity Population C
+
+and calculate overlap.
+
+If overlap exists:
+
+Adjusted Opportunity
+=
+Union of eligible opportunity populations
+
+NOT simple addition.
+
+============================================================
+14. WATERFALL VALIDATION
+
+Validate the complete opportunity waterfall:
+
+Addressable Spend
+↓
+Data-Eligible Spend
+↓
+Comparable Spend
+↓
+Price Opportunity
+↓
+Volume Opportunity
+↓
+Auction Opportunity
+↓
+Consolidation Opportunity
+↓
+Excluded / Non-addressable Spend
+↓
+Final Defensible Opportunity Range
+
+Every stage must reconcile mathematically.
+
+No stage may create money from nowhere.
+
+============================================================
+15. OUTLIER & LOW-PRICE VALIDATION
+
+Test:
+
+• unusually low price
+• unusually high price
+• one-off transaction
+• very small quantity
+• abnormal UOM
+• abnormal currency
+• specification difference
+• emergency purchase
+• spot purchase
+• contract purchase
+
+The system must determine whether the transaction is eligible.
+
+Do not automatically select the lowest historical price.
+
+============================================================
+16. SUPPLIER DEPENDENCY TEST
+
+Test whether consolidation creates:
+
+• single-source dependency
+• excessive supplier concentration
+• capacity risk
+• switching risk
+• geographic dependency
+• specification dependency
+
+Where risk exists, reduce or block the consolidation opportunity.
+
+The system must show:
+
+Potential Opportunity
+vs
+Risk-adjusted Opportunity
+
+============================================================
+17. CONTRACT / SPOT PURCHASE TEST
+
+Separate:
+
+Contracted Spend
+Spot Spend
+Recurring Spend
+Non-recurring Spend
+
+Do not apply a historical spot price directly to contracted spend unless the data proves comparability.
+
+============================================================
+18. UNIT / CURRENCY / SPECIFICATION TEST
+
+Test:
+
+INR vs USD
+KG vs MT
+Litre vs KG
+Piece vs Box
+Grade A vs Grade B
+Specification A vs Specification B
+
+Any mismatch must either:
+
+NORMALIZE USING AN EXPLICIT CUSTOMER-DATA RULE
+
+or
+
+EXCLUDE FROM OPPORTUNITY.
+
+Never silently compare incompatible transactions.
+
+============================================================
+19. DATA CONFIDENCE
+
+Every opportunity must have:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+confidence.
+
+Display the exact reasons:
+
+Transaction count
+Historical depth
+Price dispersion
+Supplier coverage
+Specification completeness
+UOM consistency
+Currency consistency
+Volume coverage
+Recurrence
+
+============================================================
+20. OPPORTUNITY EVIDENCE SCORE
+
+Do NOT create an arbitrary score merely for presentation.
+
+Instead display evidence dimensions individually.
+
+Example:
+
+Price evidence: HIGH
+Volume evidence: HIGH
+Supplier competition: MEDIUM
+Specification comparability: HIGH
+Historical depth: HIGH
+Implementation feasibility: MEDIUM
+
+Final opportunity confidence must be explainable from these dimensions.
+
+============================================================
+21. EXECUTIVE OUTPUT
+
+The executive screen must answer:
+
+1. Where is the addressable spend?
+2. What is fragmented?
+3. Where is price dispersion?
+4. Where is supplier concentration?
+5. Where can volume be bundled?
+6. Where is e-auction suitable?
+7. Where is vendor consolidation suitable?
+8. What is the conservative opportunity?
+9. What is the defensible/base opportunity?
+10. What is the potential upside?
+11. What evidence supports it?
+12. What portion is excluded?
+13. What are the risks?
+14. What should procurement do next?
+
+============================================================
+22. DEEP-DIVE OUTPUT
+
+For every opportunity provide:
+
+CATEGORY
+COMMODITY
+SPECIFICATION
+SUPPLIER
+TRANSACTION COUNT
+TOTAL SPEND
+TOTAL VOLUME
+CURRENT WEIGHTED PRICE
+REFERENCE PRICE
+ELIGIBLE VOLUME
+EXCLUDED VOLUME
+PRICE DIFFERENCE
+GROSS OPPORTUNITY
+RISK ADJUSTMENT
+DEFENSIBLE OPPORTUNITY
+UPSIDE OPPORTUNITY
+CONFIDENCE
+EVIDENCE
+EXCLUSIONS
+RECOMMENDED ACTION
+
+============================================================
+23. TRANSACTION EVIDENCE VIEW
+
+Implement / validate an evidence view where the user can inspect every transaction contributing to the calculation.
+
+Minimum fields:
+
+Transaction ID
+PO Number
+Date
+Supplier
+Category
+Commodity
+Specification
+Quantity
+UOM
+Unit Price
+Currency
+Total Value
+Contract / Spot
+Eligibility
+Exclusion Reason
+Reference Group
+Opportunity Contribution
+
+============================================================
+24. RECONCILIATION TEST
+
+At the end of the analysis:
+
+SUM(all transaction values)
+=
+Certified Module 1 spend
+
+AND
+
+Addressable Spend
++
+Excluded Spend
+=
+Total Spend
+
+AND
+
+Eligible Opportunity Population
++
+Excluded Opportunity Population
+=
+Addressable Opportunity Population
+
+No unexplained residuals.
+
+============================================================
+25. ADVERSARIAL TESTING
+
+Create controlled negative tests for:
+
+• duplicate transaction
+• missing supplier
+• missing price
+• missing quantity
+• wrong UOM
+• wrong currency
+• wrong specification
+• negative quantity
+• zero quantity
+• zero price
+• extreme outlier
+• single supplier
+• no supplier competition
+• insufficient history
+• insufficient volume
+• contract-only category
+• non-recurring purchase
+• incompatible specifications
+• overlapping opportunity populations
+
+Expected result must be:
+
+BLOCKED
+EXCLUDED
+NOT_QUANTIFIABLE
+or another explicit governed status.
+
+Never fabricate opportunity.
+
+============================================================
+26. UI VALIDATION
+
+Validate every Module 2 output screen.
+
+Every headline number must have:
+
+"View Evidence"
+"View Transactions"
+"View Calculation"
+"View Exclusions"
+
+where applicable.
+
+A procurement executive should be able to challenge any number and reach its underlying transaction evidence.
+
+============================================================
+27. API / DATABASE VALIDATION
+
+Verify that the backend calculation and frontend display use the same source values.
+
+No frontend-only calculation of financial opportunity.
+
+All financial calculations must originate from the governed backend calculation engine.
+
+============================================================
+28. PERFORMANCE & REGRESSION
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run build
+npm run quality:fast
+
+Run all Module 2 tests.
+
+Run regression tests against Modules 1–4.
+
+Confirm:
+
+Module 1 = unchanged
+Module 2 = validated
+Module 3 = unchanged
+Module 4 = unchanged
+
+Do not activate Module 4 savings realization.
+
+============================================================
+29. FINAL AUDIT ARTIFACTS
+
+Generate:
+
+MODULE_2_FINAL_E2E_VALIDATION_REPORT.md
+MODULE_2_TRANSACTION_EVIDENCE_AUDIT.json
+MODULE_2_OPPORTUNITY_RECONCILIATION.json
+MODULE_2_DOUBLE_COUNTING_AUDIT.json
+MODULE_2_ADVERSARIAL_TEST_RESULTS.json
+MODULE_2_UI_EVIDENCE_AUDIT.json
+
+The report must contain:
+
+• test coverage
+• business scenarios
+• mathematical validation
+• transaction-level traceability
+• opportunity ranges
+• exclusions
+• double-counting analysis
+• supplier consolidation validation
+• e-auction validation
+• negative tests
+• reconciliation
+• regression results
+• defects discovered
+• defects fixed
+• remaining risks
+
+============================================================
+30. FINAL GATE
+
+Return exactly one of:
+
+MODULE_2_E2E_VALIDATED
+
+or
+
+MODULE_2_E2E_VALIDATED_WITH_DEFECTS
+
+or
+
+MODULE_2_E2E_BLOCKED
+
+Do NOT declare Module 2 production-ready merely because technical tests pass.
+
+Business validation must prove:
+
+1. Every opportunity is evidence-backed.
+2. Every financial number is traceable.
+3. Every exclusion is explainable.
+4. Every opportunity range is mathematically reproducible.
+5. E-auction logic is evidence-driven.
+6. Vendor consolidation logic is evidence-driven.
+7. Category/item-level supplier strategy is supported.
+8. Multi-category supplier analysis does not create false benefits.
+9. Small-supplier aggregation is evaluated correctly.
+10. Double counting is prevented.
+11. No external benchmark or PCBI data enters Module 2.
+12. No synthetic savings are created.
+13. Customer spend fully reconciles.
+14. Module 1, Module 3 and Module 4 remain isolated.
+
+If ANY of these conditions fail, report the exact failure and DO NOT mark the module validated.
+
+## Prompt 236
+
+MODULE 2 — FINAL END-TO-END BUSINESS LOGIC, TRANSACTION-LEVEL PROOF & OPPORTUNITY VALIDATION
+===============================================================
+
+OBJECTIVE
+=========
+
+Module 2 — Strategic Sourcing Intelligence, E-Auction & Vendor Consolidation is now functionally complete.
+
+DO NOT add new features unless a genuine defect, logical inconsistency, missing control, or auditability gap is discovered.
+
+Execute a FINAL DEEP END-TO-END BUSINESS VALIDATION of Module 2.
+
+The purpose of this validation is NOT merely to prove that APIs, calculations, UI and unit tests work.
+
+The purpose is to prove that every procurement opportunity presented by Module 2 is:
+
+1. mathematically correct,
+2. derived exclusively from certified Module 1 customer transaction data,
+3. traceable to transaction-level evidence,
+4. explainable to a procurement professional,
+5. reproducible,
+6. appropriately bounded by minimum/maximum defensible opportunity ranges,
+7. free from fabricated savings,
+8. free from double counting,
+9. separated by opportunity mechanism,
+10. clearly distinguished between OBSERVED FACT, CALCULATED OPPORTUNITY, and EXECUTION DEPENDENT POTENTIAL.
+
+MODULE 1, MODULE 3 AND MODULE 4 MUST REMAIN COMPLETELY UNCHANGED.
+
+
+===============================================================
+1. ABSOLUTE MODULE 2 DATA BOUNDARY
+===============================================================
+
+Confirm that Module 2 uses ONLY:
+
+- certified Module 1 customer purchase transactions,
+- supplier information contained in Module 1,
+- item/material/category information from Module 1,
+- historical transaction prices,
+- quantities,
+- UOM,
+- currency,
+- transaction dates,
+- contract/spot indicators where available,
+- payment/commercial terms where actually available.
+
+Module 2 MUST NOT use:
+
+- PCBI,
+- external market benchmarks,
+- fabricated market prices,
+- assumed discount percentages,
+- assumed supplier concessions,
+- synthetic auction results,
+- assumed consolidation savings,
+- arbitrary industry savings percentages.
+
+If data required for a calculation is unavailable:
+
+STATUS = NOT_QUANTIFIABLE
+
+and clearly explain:
+
+WHY IT CANNOT BE QUANTIFIED
+WHAT DATA IS MISSING
+WHAT DATA WOULD MAKE IT QUANTIFIABLE
+
+
+===============================================================
+2. THREE-LAYER OUTPUT MODEL
+===============================================================
+
+Every Module 2 output must clearly distinguish:
+
+A. OBSERVED FACT
+
+Example:
+
+Supplier A supplied 42,000 KG.
+Supplier B supplied 18,000 KG.
+Supplier A average price = ₹X/KG.
+Supplier B average price = ₹Y/KG.
+
+This must be directly traceable to transactions.
+
+B. CALCULATED PROCUREMENT OPPORTUNITY
+
+Example:
+
+Comparable transactions indicate that the same specification was historically purchased at a lower credible price.
+
+Potential opportunity:
+
+₹X – ₹Y.
+
+C. EXECUTION-DEPENDENT POTENTIAL
+
+Example:
+
+An e-auction may create additional competitive pressure, but the actual result depends on supplier participation and bids.
+
+Therefore:
+
+DO NOT PRESENT THIS AS REALIZED SAVINGS.
+
+Use terminology such as:
+
+POTENTIAL PROCUREMENT OPPORTUNITY
+DEFENSIBLE OPPORTUNITY RANGE
+NEGOTIATION POTENTIAL
+COMPETITIVE EVENT POTENTIAL
+EXECUTION-DEPENDENT POTENTIAL
+
+Never represent potential as realized savings.
+
+
+===============================================================
+3. TRANSACTION-LEVEL PROOF REQUIREMENT
+===============================================================
+
+For EVERY calculated opportunity, create a drill-down proof chain:
+
+CATEGORY
+→ ITEM / COMMODITY
+→ SUPPLIER
+→ TRANSACTION
+→ DATE
+→ QUANTITY
+→ UOM
+→ CURRENCY
+→ UNIT PRICE
+→ TOTAL VALUE
+→ COMPARABILITY FILTER
+→ ELIGIBLE TRANSACTIONS
+→ REFERENCE PRICE
+→ TARGET PRICE
+→ VOLUME
+→ OPPORTUNITY CALCULATION
+→ FINAL OPPORTUNITY RANGE
+
+The user must be able to drill from an executive number all the way down to the underlying transaction records.
+
+Example:
+
+Category Opportunity:
+₹18,50,000
+
+Drill Down:
+
+Supplier A
+  Transaction 1001
+  Date
+  Quantity
+  Unit Price
+  Total Value
+
+Supplier B
+  Transaction 1034
+  Date
+  Quantity
+  Unit Price
+  Total Value
+
+etc.
+
+Show exactly which transactions were included and which were excluded.
+
+
+===============================================================
+4. TRANSACTION ELIGIBILITY ENGINE
+===============================================================
+
+For every opportunity calculation, classify transactions as:
+
+ELIGIBLE
+EXCLUDED — SPECIFICATION MISMATCH
+EXCLUDED — UOM MISMATCH
+EXCLUDED — CURRENCY MISMATCH
+EXCLUDED — GEOGRAPHY MISMATCH
+EXCLUDED — OUTSIDE TIME WINDOW
+EXCLUDED — CONTRACTED
+EXCLUDED — NON-RECURRING
+EXCLUDED — OUTLIER
+EXCLUDED — INSUFFICIENT QUANTITY
+EXCLUDED — DATA QUALITY ISSUE
+
+For every exclusion, show the reason.
+
+Never silently exclude a transaction.
+
+
+===============================================================
+5. PRICE DISPERSION PROOF
+===============================================================
+
+For each category/item calculate and display:
+
+- Minimum price
+- P25
+- Median
+- Weighted average
+- P75
+- Maximum
+- IQR
+- Price spread
+- Supplier-level average price
+- Supplier-level weighted average price
+- Transaction count
+- Quantity
+- Spend
+
+Every statistic must be reproducible from transaction-level data.
+
+Weighted average must be mathematically verified:
+
+Weighted Average Price =
+Σ(Transaction Quantity × Unit Price)
+/ Σ(Transaction Quantity)
+
+Do not use simple averages where weighted averages are required.
+
+
+===============================================================
+6. LOWEST CREDIBLE HISTORICAL PRICE
+===============================================================
+
+Do NOT simply use the absolute minimum historical transaction.
+
+Create an auditable LOWEST CREDIBLE PRICE calculation.
+
+Validate:
+
+1. Same specification
+2. Same UOM
+3. Same currency
+4. Comparable transaction period
+5. Meaningful volume
+6. Non-outlier
+7. Comparable commercial context
+8. Transaction is genuine and valid
+
+For each selected reference price show:
+
+REFERENCE_TRANSACTION_ID
+SUPPLIER
+DATE
+QUANTITY
+UNIT_PRICE
+TOTAL_VALUE
+SPECIFICATION
+UOM
+CURRENCY
+ELIGIBILITY_REASON
+
+
+===============================================================
+7. PROCUREMENT OPPORTUNITY RANGE
+===============================================================
+
+Do NOT force a single savings number where the evidence supports a range.
+
+For every category calculate, where data permits:
+
+LOW CASE / CONSERVATIVE OPPORTUNITY
+BASE CASE / DEFENSIBLE OPPORTUNITY
+HIGH CASE / STRETCH OPPORTUNITY
+
+Example:
+
+Current addressable spend = ₹10 Cr
+
+Conservative:
+₹20 lakh
+
+Base:
+₹35 lakh
+
+Stretch:
+₹50 lakh
+
+But every range must be derived from actual customer transaction evidence.
+
+NEVER use:
+
+"Industry typically saves 5%"
+
+unless such external evidence is explicitly permitted by a future module.
+
+No arbitrary percentage assumptions.
+
+
+===============================================================
+8. E-AUCTION BENEFIT LOGIC
+===============================================================
+
+Validate the E-Auction opportunity separately from historical price arbitrage.
+
+E-auction opportunity must consider:
+
+- number of qualified suppliers,
+- supplier participation history,
+- historical supplier price dispersion,
+- volume available,
+- supplier concentration,
+- price spread,
+- repeatability,
+- specification standardization,
+- switching feasibility,
+- contract status,
+- competitive tension.
+
+Separate:
+
+A. HISTORICAL PRICE ARBITRAGE
+
+from
+
+B. E-AUCTION / COMPETITIVE EVENT POTENTIAL.
+
+Do NOT double count them.
+
+If historical data demonstrates a lower credible price, that opportunity belongs to historical price leverage.
+
+If there is evidence that competition among suppliers can create additional price movement, show that separately as execution-dependent potential.
+
+If there is insufficient evidence:
+
+E_AUCTION_BENEFIT = NOT_QUANTIFIABLE
+
+
+===============================================================
+9. VENDOR CONSOLIDATION LOGIC
+===============================================================
+
+Validate vendor consolidation independently.
+
+Analyze at:
+
+CATEGORY
+→ ITEM
+→ SUPPLIER
+→ SPEND
+→ VOLUME
+→ TRANSACTION COUNT
+
+Determine:
+
+- fragmented suppliers,
+- tail suppliers,
+- dominant suppliers,
+- overlapping specifications,
+- supplier specialization,
+- volume concentration,
+- supplier capacity evidence where available,
+- switching dependency,
+- single-source risk.
+
+The system must support TWO DIFFERENT CONSOLIDATION STRATEGIES:
+
+A. SINGLE / FEWER CATEGORY SUPPLIERS
+
+Example:
+
+Supplier A supplies multiple items in the same category.
+
+Evaluate whether those items can logically be consolidated with Supplier A based on:
+
+- item compatibility,
+- specification,
+- historical supply,
+- volume,
+- supplier capability evidence.
+
+B. MULTI-SUPPLIER VOLUME BUNDLING
+
+Where one supplier should NOT receive the entire category volume, identify opportunities to combine smaller suppliers or allocate volume across multiple qualified suppliers.
+
+Example:
+
+Current:
+
+Supplier A — ₹10L
+Supplier B — ₹8L
+Supplier C — ₹5L
+Supplier D — ₹2L
+
+Potential structure:
+
+Supplier A — 40%
+Supplier B — 35%
+Supplier C — 25%
+
+OR another evidence-supported structure.
+
+Do NOT assume that "one supplier" is always better.
+
+The engine must explicitly distinguish:
+
+CONSOLIDATION OPPORTUNITY
+from
+SUPPLIER DIVERSIFICATION REQUIREMENT.
+
+
+===============================================================
+10. CATEGORY / ITEM LEVEL BENEFIT
+===============================================================
+
+Benefits must NOT be calculated only at category level.
+
+Calculate at:
+
+1. Category
+2. Sub-category
+3. Commodity
+4. Item
+5. Specification / grade where available
+6. Supplier
+7. Supplier-item combination
+
+The system must identify situations where:
+
+ONE SUPPLIER IS EXPENSIVE FOR ITEM A
+but
+THE SAME SUPPLIER IS COMPETITIVE FOR ITEM B.
+
+Do not blindly consolidate all items to one supplier.
+
+The recommendation must therefore be:
+
+ITEM-WISE FIRST
+CATEGORY-WISE SECOND.
+
+
+===============================================================
+11. MULTIPLE BENEFIT MECHANISMS
+===============================================================
+
+Create separate opportunity buckets:
+
+1. PRICE ARBITRAGE
+2. SUPPLIER COMPETITION
+3. E-AUCTION
+4. VOLUME BUNDLING
+5. VENDOR CONSOLIDATION
+6. TAIL SUPPLIER REDUCTION
+7. SPECIFICATION STANDARDIZATION
+8. ORDER / LOT OPTIMIZATION
+9. CONTRACT VS SPOT OPTIMIZATION
+10. COMMERCIAL TERM OPPORTUNITY
+
+Only calculate a bucket when the underlying Module 1 data supports it.
+
+Otherwise:
+
+NOT_QUANTIFIABLE
+
+
+===============================================================
+12. DOUBLE-COUNTING CONTROL
+===============================================================
+
+This is CRITICAL.
+
+Build a Benefit Attribution Ledger.
+
+Every opportunity must have:
+
+OPPORTUNITY_ID
+CATEGORY
+ITEM
+SUPPLIER
+TRANSACTION_SCOPE
+OPPORTUNITY_TYPE
+CURRENT_SPEND
+REFERENCE_SPEND
+GROSS_OPPORTUNITY
+OVERLAP_GROUP
+ATTRIBUTION_STATUS
+
+An opportunity cannot be counted twice.
+
+Example:
+
+If ₹20L opportunity is identified through price arbitrage and the same ₹20L volume is also included in vendor consolidation:
+
+DO NOT add ₹20L + ₹20L.
+
+Create an overlap relationship.
+
+Executive opportunity must be:
+
+MAX / NON-OVERLAPPING DEFENSIBLE POOL
+
+rather than simple summation of every theoretical lever.
+
+
+===============================================================
+13. WATERFALL VALIDATION
+===============================================================
+
+Validate the existing opportunity waterfall:
+
+ADDRESSABLE SPEND
+↓
+DATA / SPECIFICATION NORMALIZATION
+↓
+PRICE ARBITRAGE
+↓
+VOLUME BUNDLING
+↓
+E-AUCTION
+↓
+VENDOR CONSOLIDATION
+↓
+COMMERCIAL TERMS
+↓
+NET DEFENSIBLE OPPORTUNITY
+
+Ensure each stage removes already-attributed spend from the next stage.
+
+No double counting.
+
+
+===============================================================
+14. "ZERO OPPORTUNITY" LOGIC
+===============================================================
+
+NEVER tell a customer:
+
+"Your procurement is perfect."
+
+NEVER infer procurement perfection from lack of quantifiable savings.
+
+If no defensible opportunity can currently be calculated:
+
+STATUS:
+
+NO_QUANTIFIABLE_OPPORTUNITY_FROM_AVAILABLE_DATA
+
+and explain:
+
+- data coverage,
+- transaction count,
+- supplier coverage,
+- price dispersion,
+- specification comparability,
+- historical depth,
+- limitations.
+
+Also identify:
+
+"AREAS REQUIRING FURTHER VALIDATION"
+
+where relevant.
+
+This means:
+
+No evidence of a quantifiable opportunity
+≠
+No procurement opportunity exists.
+
+
+===============================================================
+15. DATA CONFIDENCE
+===============================================================
+
+Every benefit must have:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+confidence.
+
+Confidence must be based on actual evidence:
+
+- transaction volume,
+- history depth,
+- specification consistency,
+- supplier coverage,
+- price dispersion,
+- data completeness,
+- comparability.
+
+Show the reasons behind the confidence rating.
+
+
+===============================================================
+16. EXECUTIVE OUTPUT
+===============================================================
+
+Executive Module 2 dashboard must clearly show:
+
+TOTAL HISTORICAL SPEND
+ADDRESSABLE SPEND
+OBSERVED PRICE DISPERSION
+QUANTIFIABLE OPPORTUNITY
+DEFENSIBLE OPPORTUNITY RANGE
+EXECUTION-DEPENDENT POTENTIAL
+UNQUANTIFIABLE AREAS
+DATA COVERAGE
+DATA CONFIDENCE
+SUPPLIER CONCENTRATION
+E-AUCTION CANDIDATES
+CONSOLIDATION CANDIDATES
+TOP PROCUREMENT LEVERS
+
+Do not show one misleading "SAVINGS" number without explaining its composition.
+
+
+===============================================================
+17. DEEP-DIVE OUTPUT
+===============================================================
+
+For every executive KPI provide:
+
+WHY?
+HOW CALCULATED?
+WHICH TRANSACTIONS?
+WHICH SUPPLIERS?
+WHICH ITEMS?
+WHICH FILTERS?
+WHICH REFERENCE PRICE?
+WHAT IS EXCLUDED?
+WHAT IS THE OPPORTUNITY RANGE?
+WHAT CONFIDENCE?
+WHAT COULD INVALIDATE THE OPPORTUNITY?
+WHAT SHOULD PROCUREMENT DO NEXT?
+
+
+===============================================================
+18. MACHINE-READABLE AUDIT TRAIL
+===============================================================
+
+Generate a machine-readable audit artifact containing:
+
+transaction-level inputs
+eligibility decisions
+exclusion reasons
+price statistics
+reference transactions
+opportunity calculations
+scenario calculations
+auction calculations
+consolidation calculations
+waterfall calculations
+overlap groups
+final attributed opportunity
+confidence
+timestamps
+calculation version
+
+The result must be reproducible from the source dataset.
+
+
+===============================================================
+19. NEGATIVE TESTS
+===============================================================
+
+Create deep negative tests for:
+
+A. Same price across all suppliers
+B. One unusually low transaction
+C. One unusually high transaction
+D. Different specifications
+E. Different UOM
+F. Different currency
+G. Different geography
+H. Very low-volume transaction
+I. One supplier dominates 95% of spend
+J. Highly fragmented supplier base
+K. No supplier overlap
+L. Contracted spend
+M. Spot spend
+N. Non-recurring spend
+O. Insufficient transaction history
+P. Missing quantity
+Q. Missing unit price
+R. Mixed specifications
+S. Consolidation opportunity overlapping with auction opportunity
+T. Multiple opportunity mechanisms applying to the same spend
+
+For each:
+
+EXPECTED RESULT
+ACTUAL RESULT
+STATUS
+NO_FALSE_OPPORTUNITY_CONFIRMATION
+
+
+===============================================================
+20. END-TO-END BUSINESS SCENARIOS
+===============================================================
+
+Test at least these complete scenarios:
+
+SCENARIO 1
+One category, 5 suppliers, significant price dispersion.
+
+SCENARIO 2
+One category, 1 dominant supplier + fragmented tail.
+
+SCENARIO 3
+One supplier supplies multiple categories.
+
+SCENARIO 4
+Same category supplied by multiple small suppliers.
+
+SCENARIO 5
+Supplier is cheapest for one item but expensive for another.
+
+SCENARIO 6
+Potential consolidation conflicts with supply-risk requirements.
+
+SCENARIO 7
+Strong historical price arbitrage but weak auction feasibility.
+
+SCENARIO 8
+Strong auction feasibility but no historical reference advantage.
+
+SCENARIO 9
+Consolidation and auction opportunities overlap.
+
+SCENARIO 10
+No statistically defensible opportunity.
+
+Every scenario must produce an explainable result.
+
+
+===============================================================
+21. UI VALIDATION
+===============================================================
+
+Validate that every number displayed on Module 2 UI can be clicked/drilled into.
+
+No "black box" numbers.
+
+For every major KPI:
+
+CLICK
+→ EXPLANATION
+→ FORMULA
+→ TRANSACTION DATA
+→ SUPPLIER DATA
+→ FILTERS
+→ EXCLUSIONS
+→ FINAL CALCULATION.
+
+Ensure labels clearly distinguish:
+
+OBSERVED
+CALCULATED
+POTENTIAL
+EXECUTION-DEPENDENT
+NOT_QUANTIFIABLE
+
+
+===============================================================
+22. FINAL MODULE 2 ACCEPTANCE GATE
+===============================================================
+
+Module 2 can only be declared FINAL if:
+
+- all calculations pass,
+- all transaction-level reconciliations pass,
+- all opportunity pools reconcile to source spend,
+- no double counting exists,
+- all exclusions are explainable,
+- every opportunity is traceable,
+- every displayed number is reproducible,
+- auction benefit is separated from historical price opportunity,
+- consolidation benefit is separated from auction benefit,
+- item-level logic works,
+- category-level aggregation works,
+- supplier-level logic works,
+- confidence is visible,
+- opportunity ranges are evidence-based,
+- no fabricated savings exist,
+- no false "procurement is perfect" conclusion is generated,
+- Module 1 remains frozen,
+- Module 3 remains untouched,
+- Module 4 remains untouched.
+
+===============================================================
+23. FINAL DELIVERABLES
+===============================================================
+
+Generate:
+
+MODULE_2_FINAL_E2E_VALIDATION_REPORT.md
+MODULE_2_TRANSACTION_LEVEL_AUDIT.json
+MODULE_2_OPPORTUNITY_ATTRIBUTION_LEDGER.json
+MODULE_2_EAUCTION_VALIDATION.json
+MODULE_2_VENDOR_CONSOLIDATION_VALIDATION.json
+MODULE_2_WATERFALL_RECONCILIATION.json
+MODULE_2_NEGATIVE_TEST_RESULTS.json
+
+Also provide:
+
+1. Total tests executed
+2. Tests passed
+3. Tests failed
+4. Business logic defects
+5. UI defects
+6. Calculation defects
+7. Auditability gaps
+8. Double-counting findings
+9. Data limitations
+10. Exact changes required, if any
+
+If everything passes:
+
+FINAL_MODULE_2_STATUS =
+PRODUCTION_READY_STRATEGIC_SOURCING
+
+If anything fails:
+
+FINAL_MODULE_2_STATUS =
+VALIDATED_WITH_GAPS
+
+DO NOT modify Module 1, Module 3 or Module 4.
+
+DO NOT proceed to Ferro Molybdenum PCBI research from this command.
+
+This command is ONLY for final Module 2 validation.
+
+## Prompt 237
+
+continue
+
+## Prompt 238
+
+MODULE 2 — FINAL FORENSIC E2E BUSINESS VALIDATION
+NO NEW FEATURES / NO BUSINESS LOGIC CHANGES
+
+We are now treating Module 2 — Strategic Sourcing Intelligence, E-Auction & Vendor Consolidation — as FEATURE COMPLETE.
+
+DO NOT add new functionality.
+DO NOT modify Module 1.
+DO NOT modify Module 3 / PCBI.
+DO NOT modify Module 4.
+DO NOT change the approved mathematical logic.
+DO NOT introduce assumed market savings percentages.
+DO NOT manufacture data.
+
+Your task is to perform the FINAL FORENSIC END-TO-END VALIDATION of Module 2 before production deployment.
+
+OBJECTIVE
+
+Prove that every benefit/opportunity shown by Module 2 can be traced from:
+
+EXECUTIVE OUTPUT
+→ CATEGORY
+→ ITEM / COMMODITY
+→ SUPPLIER
+→ PURCHASE ORDER / TRANSACTION
+→ QUANTITY
+→ UOM
+→ UNIT PRICE
+→ TOTAL VALUE
+→ ELIGIBILITY / EXCLUSION
+→ CALCULATION
+→ BENEFIT MECHANISM
+→ OPPORTUNITY RANGE
+→ FINAL NET DEFENSIBLE OPPORTUNITY
+
+Every rupee shown anywhere in Module 2 must have evidence.
+
+========================================================
+1. TRANSACTION-LEVEL FORENSIC RECONCILIATION
+========================================================
+
+For EVERY analyzed category:
+
+1. Reconcile:
+   Transaction Count
+   Quantity
+   Spend
+   Supplier Count
+   Addressable Spend
+   Excluded Spend
+
+2. Prove:
+
+SUM(transaction spend)
+=
+Module 1 certified spend
+
+3. Every transaction must have:
+
+TRANSACTION_ID
+PO / Invoice reference where available
+DATE
+ITEM
+CATEGORY
+SUPPLIER
+QUANTITY
+UOM
+UNIT_PRICE
+CURRENCY
+TOTAL_VALUE
+CONTRACT / SPOT status
+ELIGIBILITY_STATUS
+EXCLUSION_REASON where applicable
+
+4. Create:
+
+MODULE_2_TRANSACTION_FORENSIC_RECONCILIATION.json
+
+Any unexplained rupee difference = FAIL.
+
+========================================================
+2. BENEFIT ATTRIBUTION FORENSIC TEST
+========================================================
+
+For every calculated opportunity, identify exactly ONE primary benefit mechanism.
+
+Allowed mechanisms:
+
+A. HISTORICAL_PRICE_ARBITRAGE
+B. VOLUME_BUNDLING
+C. E_AUCTION_COMPETITIVE_COMPRESSION
+D. TAIL_VENDOR_CONSOLIDATION
+E. CATEGORY_VENDOR_SPECIALIZATION
+F. COMMERCIAL_TERM_NORMALIZATION
+G. SPECIFICATION_STANDARDIZATION
+H. SUPPLIER_REALLOCATION
+I. CONTRACT_RENEGOTIATION
+J. OTHER — ONLY IF EXPLICITLY GOVERNED
+
+No transaction may contribute to two benefit mechanisms unless the overlap is explicitly recorded and mathematically deducted.
+
+Create a transaction-level:
+
+BENEFIT_ATTRIBUTION_ID
+
+and prove:
+
+Gross Opportunity
+- Overlap
+- Exclusions
+= Net Defensible Opportunity
+
+========================================================
+3. MINIMUM / BASE / STRETCH OPPORTUNITY LOGIC
+========================================================
+
+For every category where an opportunity is quantifiable, produce:
+
+LOW / CONSERVATIVE
+BASE / DEFENSIBLE
+HIGH / STRETCH
+
+Each range must have:
+
+Reference transaction(s)
+Reference supplier(s)
+Reference price
+Eligible quantity
+Eligible spend
+Applicable realization assumption
+Calculation formula
+Result
+Confidence
+Execution dependency
+
+The system must NEVER state:
+
+"Company can save X%"
+
+unless X is mathematically derived from the customer's own transaction evidence.
+
+If there is insufficient evidence:
+
+STATUS = NOT_QUANTIFIABLE
+
+Do not substitute ₹0 and do not imply procurement is perfect.
+
+========================================================
+4. E-AUCTION FORENSIC VALIDATION
+========================================================
+
+For every category marked E-AUCTION suitable:
+
+Prove:
+
+Supplier count
+Qualified supplier count
+Comparable specification
+Comparable UOM
+Historical price dispersion
+Historical participation
+Volume available for auction
+Current reference price
+Opening ceiling
+Target/reserve logic
+Auction mechanism
+Potential benefit range
+Execution dependencies
+
+Test:
+
+IF fewer than required qualified suppliers
+OR insufficient historical dispersion
+OR incomparable specifications
+OR insufficient addressable volume
+
+THEN:
+
+E_AUCTION_STATUS = NOT_QUANTIFIABLE / NOT_RECOMMENDED
+
+No fabricated auction savings.
+
+Also verify that the e-auction opportunity is NOT simultaneously counted as historical price arbitrage.
+
+========================================================
+5. VENDOR CONSOLIDATION FORENSIC VALIDATION
+========================================================
+
+Validate BOTH strategic directions:
+
+STRATEGY A:
+Consolidate fragmented tail suppliers into fewer capable category suppliers.
+
+STRATEGY B:
+Avoid excessive concentration by allocating volume across multiple qualified suppliers where single-source dependency creates risk.
+
+For each recommendation show:
+
+Current supplier count
+Supplier spend
+Supplier volume
+Category/item coverage
+Supplier specialization
+Price position
+Capacity evidence
+Switching risk
+Dependency risk
+HHI before
+HHI after
+Target supplier structure
+Volume allocation
+Expected opportunity mechanism
+
+IMPORTANT:
+
+Do NOT assume that:
+
+"fewer suppliers = savings"
+
+and do NOT assume that:
+
+"more suppliers = better"
+
+The logic must be driven by item/category-level spend, price evidence, capacity, competition and risk.
+
+========================================================
+6. MULTI-CATEGORY SUPPLIER TEST
+========================================================
+
+This is a critical business validation.
+
+Identify suppliers supplying multiple categories/items.
+
+For every such supplier determine:
+
+Supplier
+Category
+Item
+Spend
+Transaction count
+Price position
+Specification
+Supplier specialization
+Alternative suppliers
+
+Then test whether:
+
+A. Supplier is genuinely strong across multiple categories
+
+OR
+
+B. Supplier should remain only in its strongest category
+
+OR
+
+C. Certain items should be moved to category-specialist suppliers
+
+OR
+
+D. Multiple suppliers should be pooled/consolidated within the same category.
+
+The recommendation MUST be made at:
+
+CATEGORY + ITEM level
+
+and NOT merely at supplier level.
+
+Show the exact spend affected.
+
+========================================================
+7. CATEGORY / ITEM VOLUME POOLING
+========================================================
+
+Identify opportunities where multiple small suppliers purchase/supply the same or comparable:
+
+Category
+Item
+Specification
+UOM
+
+Calculate:
+
+Current fragmented volume
+Current supplier count
+Supplier-wise volume
+Potential pooled volume
+Historical comparable rate
+Reference rate
+Potential opportunity
+
+Prove that pooling is economically and operationally defensible.
+
+Do NOT pool non-comparable specifications.
+
+========================================================
+8. ZERO-OPPORTUNITY TEST
+========================================================
+
+Deliberately test categories where the system should NOT produce a quantified opportunity.
+
+Examples:
+
+Uniform pricing
+Insufficient suppliers
+Insufficient history
+Non-comparable specifications
+Low transaction count
+Single-source dependency
+No credible reference price
+
+Expected result:
+
+NO_QUANTIFIABLE_OPPORTUNITY_FROM_AVAILABLE_DATA
+
+The UI must explain:
+
+WHY
+WHAT DATA WAS TESTED
+WHAT DATA IS MISSING
+WHAT ADDITIONAL DATA WOULD ENABLE QUANTIFICATION
+
+Never call the customer's procurement "perfect".
+
+========================================================
+9. NEGATIVE / ADVERSARIAL TESTS
+========================================================
+
+Run at least these scenarios:
+
+Wrong UOM
+Wrong currency
+Wrong specification
+Wrong grade
+Wrong geography
+Zero quantity
+Zero price
+Negative price
+Duplicate transaction
+Duplicate PO
+Outlier transaction
+Very small transaction
+Single supplier
+Single transaction
+No historical dispersion
+Contract-only spend
+Spot-only spend
+Mixed spot/contract
+Insufficient qualified suppliers
+Overlapping benefit mechanisms
+Multi-category supplier
+Supplier consolidation creating concentration risk
+
+Expected result for every invalid scenario:
+
+BLOCKED / EXCLUDED / NOT_QUANTIFIABLE
+
+with explicit reason.
+
+========================================================
+10. WATERFALL RECONCILIATION
+========================================================
+
+For every category prove:
+
+TOTAL SPEND
+↓
+NON-ADDRESSABLE
+↓
+ADDRESSABLE SPEND
+↓
+SPECIFICATION / DATA EXCLUSIONS
+↓
+PRICE ARBITRAGE
+↓
+VOLUME BUNDLING
+↓
+E-AUCTION
+↓
+VENDOR CONSOLIDATION
+↓
+OTHER GOVERNED LEVERS
+↓
+OVERLAP DEDUCTION
+↓
+NET DEFENSIBLE OPPORTUNITY
+
+No stage may double-count spend or benefit.
+
+The final number must reconcile exactly.
+
+========================================================
+11. EXECUTIVE OUTPUT VS DETAIL OUTPUT
+========================================================
+
+For EVERY headline KPI displayed on the UI:
+
+Provide a drill-down path to:
+
+Category
+→ Item
+→ Supplier
+→ Transaction
+→ Calculation
+→ Evidence
+
+Test that no executive number exists without an underlying audit record.
+
+========================================================
+12. DATA CONFIDENCE
+========================================================
+
+Every opportunity must carry:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+with explicit reasons.
+
+Confidence must never be based merely on the size of the opportunity.
+
+========================================================
+13. BENEFIT LANGUAGE GOVERNANCE
+========================================================
+
+Enforce strict terminology:
+
+OBSERVED HISTORICAL FACT
+DEMONSTRATED HISTORICAL OPPORTUNITY
+POTENTIAL PROCUREMENT OPPORTUNITY
+DEFENSIBLE OPPORTUNITY RANGE
+EXECUTION-DEPENDENT POTENTIAL
+
+Do NOT use:
+
+GUARANTEED SAVINGS
+CERTAIN SAVINGS
+EXPECTED SAVINGS
+
+unless Module 4 later confirms realized savings.
+
+Module 2 identifies procurement opportunity.
+Module 4 will ultimately track realized savings.
+
+========================================================
+14. MODULE BOUNDARY TEST
+========================================================
+
+Confirm:
+
+Module 1 = unchanged
+Module 2 = strategic sourcing intelligence
+Module 3 = isolated PCBI / external benchmark engine
+Module 4 = execution / savings realization
+
+Module 2 must not call PCBI to generate its historical opportunity calculations.
+
+========================================================
+15. FINAL AUDIT ARTIFACTS
+========================================================
+
+Generate:
+
+MODULE_2_FORENSIC_E2E_REPORT.md
+MODULE_2_TRANSACTION_FORENSIC_RECONCILIATION.json
+MODULE_2_BENEFIT_ATTRIBUTION_FINAL.json
+MODULE_2_EAUCTION_FORENSIC_VALIDATION.json
+MODULE_2_VENDOR_CONSOLIDATION_FORENSIC_VALIDATION.json
+MODULE_2_MULTI_CATEGORY_SUPPLIER_ANALYSIS.json
+MODULE_2_VOLUME_POOLING_VALIDATION.json
+MODULE_2_ZERO_OPPORTUNITY_VALIDATION.json
+MODULE_2_ADVERSARIAL_TEST_RESULTS.json
+MODULE_2_FINAL_WATERFALL_RECONCILIATION.json
+
+========================================================
+16. FINAL PRODUCTION GATE
+========================================================
+
+Run:
+
+typecheck
+lint
+build
+quality:fast
+full Module 2 test suite
+forensic E2E suite
+
+Require:
+
+0 calculation defects
+0 unexplained reconciliation differences
+0 benefit double-counting
+0 unsupported quantified opportunities
+0 broken drill-downs
+0 Module 1 changes
+0 Module 3 changes
+0 Module 4 changes
+
+If ANY issue is discovered:
+
+DO NOT modify business logic silently.
+
+Report:
+
+DEFECT
+ROOT CAUSE
+AFFECTED OUTPUT
+TRANSACTION EVIDENCE
+RECOMMENDED CORRECTION
+
+FINAL OUTPUT MUST BE ONE OF:
+
+PRODUCTION_READY_STRATEGIC_SOURCING
+
+OR
+
+PRODUCTION_READY_WITH_DOCUMENTED_DATA_LIMITATIONS
+
+OR
+
+BLOCKED_PENDING_DEFECT_FIX
+
+Do not add new features during this validation.
+This is the FINAL forensic certification gate for Module 2.
+
+## Prompt 239
+
+continue
+
+## Prompt 240
+
+continue
+
+## Prompt 241
+
+MODULE 2 — FINAL END-TO-END BUSINESS LOGIC, CALCULATION TRACEABILITY & PRODUCTION VALIDATION
+===============================================================
+
+OBJECTIVE
+===============================================================
+
+Module 2 Strategic Sourcing Intelligence is now functionally designed.
+
+DO NOT add new business features unless a defect is discovered.
+
+The purpose of this command is to perform a complete end-to-end validation of Module 2 as a production-grade strategic sourcing intelligence engine.
+
+The validation must prove that:
+
+1. Every KPI is mathematically correct.
+2. Every opportunity is traceable to transaction-level customer data.
+3. Every calculated benefit has an explicit mathematical basis.
+4. Every displayed number can be drilled down to the underlying transactions.
+5. Every opportunity has supporting evidence.
+6. No synthetic savings, assumed discount, fabricated benchmark or unsupported percentage is introduced.
+7. E-auction opportunity logic is independent from vendor consolidation logic.
+8. Vendor consolidation / category-specialist logic is calculated category/item-wise from actual spend.
+9. Min/Max opportunity ranges are defensible and clearly distinguishable from realized savings.
+10. A customer with very efficient procurement is NOT incorrectly shown as having zero opportunity merely because one simple price comparison cannot quantify a benefit.
+11. Module 2 remains completely independent from PCBI / Module 3.
+12. Module 2 does not calculate realized savings.
+13. Module 4 remains disconnected.
+
+===============================================================
+PART A — MODULE 2 ARCHITECTURAL LOCK
+===============================================================
+
+Confirm and enforce:
+
+MODULE 1
+Customer transaction ingestion
+        ↓
+MODULE 2
+Strategic Sourcing Intelligence
+        ↓
+Module 2 Opportunity/Hypothesis
+        ↓
+MODULE 4
+Execution / Realization — DISCONNECTED
+
+MODULE 3 PCBI must NOT be used inside Module 2 calculations.
+
+Do not import:
+- PCBI prices
+- PCBI indices
+- market benchmarks
+- external commodity prices
+- PCBI-derived savings
+- external benchmark assumptions
+
+Module 2 baseline must remain CUSTOMER-HISTORICAL-DATA-ONLY.
+
+If external benchmark information is displayed anywhere, label it as external/reference information and keep it completely outside Module 2 opportunity calculations.
+
+===============================================================
+PART B — TRANSACTION-LEVEL SOURCE OF TRUTH
+===============================================================
+
+Every Module 2 calculation must have a traceable lineage:
+
+OPPORTUNITY
+→ OPPORTUNITY COMPONENT
+→ CATEGORY / ITEM
+→ SUPPLIER
+→ TRANSACTION
+→ ORIGINAL CUSTOMER RECORD
+
+Every opportunity must expose:
+
+- Transaction ID
+- PO Number, if available
+- PO Date
+- Supplier
+- Item Description
+- Module 2 Category
+- Module 2 Subcategory
+- UNSPSC
+- Quantity
+- UOM
+- Unit Price
+- Currency
+- INR-normalized value, if applicable
+- Total transaction value
+- Contract / Spot indicator
+- Location
+- Relevant specification fields
+- Data eligibility status
+
+No aggregated number should be displayed without a drill-down mechanism.
+
+===============================================================
+PART C — OPPORTUNITY EVIDENCE LEDGER
+===============================================================
+
+Create/validate an Opportunity Evidence Ledger.
+
+Every opportunity must have:
+
+OPPORTUNITY_ID
+OPPORTUNITY_TYPE
+CATEGORY_ID
+CATEGORY_NAME
+ITEM_ID
+SUPPLIER_ID
+SUPPLIER_NAME
+TRANSACTION_COUNT
+ADDRESSABLE_SPEND
+ELIGIBLE_SPEND
+EXCLUDED_SPEND
+EXCLUSION_REASON
+CALCULATION_METHOD
+REFERENCE_TRANSACTIONS
+REFERENCE_VALUE
+CURRENT_VALUE
+LOW_CASE_VALUE
+BASE_CASE_VALUE
+HIGH_CASE_VALUE
+OPPORTUNITY_MIN
+OPPORTUNITY_BASE
+OPPORTUNITY_MAX
+CONFIDENCE
+DATA_COVERAGE
+CALCULATION_STATUS
+EVIDENCE_STATUS
+CREATED_FROM
+CALCULATION_VERSION
+
+The UI must allow:
+
+Executive Summary
+→ Category
+→ Item
+→ Supplier
+→ Opportunity
+→ Transaction Evidence
+
+===============================================================
+PART D — DO NOT SAY "NO SAVINGS"
+===============================================================
+
+Do NOT interpret:
+
+"Historical data does not prove a price reduction"
+
+as:
+
+"Customer procurement is perfect."
+
+Instead classify the result correctly.
+
+Introduce/validate these outcome states:
+
+1. QUANTIFIED_OPPORTUNITY
+   Historical data supports a defensible opportunity range.
+
+2. POTENTIAL_OPPORTUNITY
+   There is a structural sourcing lever, but historical data is insufficient to quantify the benefit reliably.
+
+3. DATA_LIMITED_OPPORTUNITY
+   Opportunity may exist but required evidence is insufficient.
+
+4. NO_QUANTIFIABLE_HISTORICAL_OPPORTUNITY
+   Current historical data does not support a defensible price-based opportunity.
+
+5. EXECUTION_VALIDATION_REQUIRED
+   Opportunity can only be validated through RFQ/e-auction/negotiation/vendor exercise.
+
+6. NO_ACTION_INDICATED
+   No material opportunity identified from available evidence.
+
+The UI must NEVER state:
+
+"Procurement is perfect."
+
+It should state something such as:
+
+"No quantifiable historical price opportunity identified from the available transaction evidence."
+
+===============================================================
+PART E — OPPORTUNITY RANGE MODEL
+===============================================================
+
+Where evidence permits, calculate:
+
+LOW OPPORTUNITY
+BASE OPPORTUNITY
+HIGH OPPORTUNITY
+
+Do NOT use arbitrary percentages.
+
+Each range must be derived from actual eligible historical transaction evidence.
+
+Example:
+
+Current eligible spend = ₹10 Cr
+
+Evidence-supported reference prices:
+
+P25
+Median
+Lowest Credible Historical Price
+
+Calculate:
+
+LOW CASE
+= conservative defensible improvement
+
+BASE CASE
+= central defensible improvement
+
+HIGH CASE
+= best demonstrated achievable historical condition
+
+Each scenario must show:
+
+Reference transaction set
+Reference supplier set
+Reference price
+Eligible volume
+Eligible spend
+Formula
+Result
+
+If insufficient evidence exists:
+
+Opportunity = NOT QUANTIFIABLE
+
+Do not manufacture a range.
+
+===============================================================
+PART F — E-AUCTION BENEFIT LOGIC
+===============================================================
+
+E-auction must NOT automatically equal savings.
+
+Calculate E-auction opportunity only where the following are satisfied:
+
+1. Comparable specifications
+2. Comparable UOM
+3. Comparable currency
+4. Sufficient supplier competition
+5. Sufficient historical volume
+6. Repeat/recurrent requirement
+7. Multiple qualified suppliers or credible supplier pool
+8. Standardized requirement
+9. No critical switching constraint
+10. Price evidence supports competition
+
+Calculate:
+
+Current Eligible Price
+Historical Competitive Price Evidence
+Eligible Auction Spend
+Auctionable Volume
+Reference Price Range
+Potential Auction Opportunity Range
+
+Separate:
+
+Auctionable Spend
+from
+Potential Auction Benefit
+
+The output should say:
+
+"Potential benefit subject to competitive event"
+
+NOT:
+
+"Guaranteed savings."
+
+===============================================================
+PART G — VENDOR CONSOLIDATION LOGIC
+===============================================================
+
+Vendor consolidation must be calculated CATEGORY/ITEM-WISE.
+
+Do NOT simply calculate:
+
+Total supplier count ↓ = Savings
+
+That is invalid.
+
+For each category/item:
+
+1. Calculate supplier spend.
+2. Calculate supplier transaction count.
+3. Calculate supplier volume.
+4. Calculate supplier share.
+5. Identify fragmented tail.
+6. Identify duplicate suppliers serving the same category.
+7. Identify suppliers serving multiple categories.
+8. Identify category-specialist opportunities.
+9. Identify suppliers with comparable specifications.
+10. Identify volume that can realistically be bundled.
+
+For each consolidation opportunity show:
+
+CURRENT STATE
+
+Supplier A
+Supplier B
+Supplier C
+Supplier D
+Supplier E
+
+Spend by supplier
+Volume by supplier
+Transaction count
+Category coverage
+
+TARGET STATE
+
+Example:
+
+5 suppliers → 2 qualified category suppliers
+
+But this must NOT automatically be treated as savings.
+
+Calculate potential benefit only where historical price evidence demonstrates that:
+
+higher volume
++
+credible comparable historical price
++
+supplier capability
++
+category concentration
+
+could support an economic improvement.
+
+Otherwise:
+
+CONSOLIDATION OPPORTUNITY IDENTIFIED
+BENEFIT = NOT YET QUANTIFIABLE
+
+===============================================================
+PART H — MULTI-CATEGORY SUPPLIER LOGIC
+===============================================================
+
+This is critical.
+
+If Supplier X currently supplies:
+
+Bearings ₹40L
+Fasteners ₹20L
+Electrical ₹15L
+PPE ₹10L
+Lubricants ₹5L
+
+do NOT automatically recommend "consolidate with Supplier X."
+
+Instead analyze:
+
+Supplier X's actual category-level performance.
+
+For every supplier-category relationship calculate:
+
+Supplier
+Category
+Item Count
+Spend
+Transaction Count
+Average Unit Price
+Price Dispersion
+Volume
+Specification Coverage
+Supplier Concentration
+Comparable Supplier Count
+
+Then identify:
+
+A. Category specialist opportunity
+B. Multi-category supplier rationalization
+C. Category-specific supplier consolidation
+D. Tail supplier aggregation
+E. Volume bundling opportunity
+
+The recommendation must be based on CATEGORY/ITEM economics, not simply supplier count.
+
+===============================================================
+PART I — TAIL SUPPLIER CONSOLIDATION
+===============================================================
+
+Identify small suppliers within the SAME category.
+
+Example:
+
+Supplier A ₹5L
+Supplier B ₹4L
+Supplier C ₹3L
+Supplier D ₹2L
+Supplier E ₹1.5L
+
+If they supply comparable items/specifications:
+
+calculate:
+
+Total tail spend
+Total volume
+Transaction count
+Number of suppliers
+Comparable item coverage
+Historical price dispersion
+
+Then determine whether combining this demand creates a demonstrable economic opportunity.
+
+Output:
+
+TAIL SPEND = ₹X
+POTENTIALLY BUNDLEABLE SPEND = ₹Y
+POTENTIAL BENEFIT = ₹A – ₹B
+
+Only if evidence supports the calculation.
+
+===============================================================
+PART J — PRICE DISPERSION DEEP DIVE
+===============================================================
+
+For every meaningful category/item:
+
+Show:
+
+Minimum
+P10
+P25
+Median
+Weighted Average
+P75
+P90
+Maximum
+IQR
+Coefficient of Variation
+Supplier-level price dispersion
+
+But also show:
+
+Number of eligible transactions
+Number of suppliers
+Eligible spend
+Excluded transactions
+Exclusion reasons
+
+The system must prevent misleading comparisons between:
+
+different specifications
+different UOMs
+different currencies
+different locations
+different delivery terms
+different contract conditions
+different quantity bands
+
+===============================================================
+PART K — TRANSACTION-LEVEL PROOF
+===============================================================
+
+Every opportunity card must have:
+
+[VIEW EVIDENCE]
+
+Clicking this must display the exact transactions supporting the calculation.
+
+Example:
+
+Opportunity:
+₹8.4L potential price opportunity
+
+Evidence:
+
+Transaction T001
+Supplier A
+Quantity 100 MT
+Price ₹50,000/MT
+Value ₹50L
+
+Transaction T002
+Supplier B
+Quantity 75 MT
+Price ₹47,000/MT
+Value ₹35.25L
+
+Transaction T003
+Supplier C
+Quantity 80 MT
+Price ₹46,500/MT
+Value ₹37.20L
+
+Reference:
+Supplier C
+Comparable specification
+Comparable UOM
+Comparable geography
+Eligible transaction
+
+Formula:
+
+(Current eligible weighted price
+−
+reference weighted price)
+×
+eligible quantity
+
+Result:
+
+₹X
+
+Every number must be reproducible.
+
+===============================================================
+PART L — EXCLUSION LEDGER
+===============================================================
+
+Create a visible exclusion ledger.
+
+Every excluded transaction must have a reason.
+
+Examples:
+
+SPECIFICATION_MISMATCH
+UOM_MISMATCH
+CURRENCY_MISMATCH
+GEOGRAPHY_MISMATCH
+CONTRACTUAL_DIFFERENCE
+INSUFFICIENT_VOLUME
+OUTLIER
+NON_RECURRENT
+INSUFFICIENT_DATA
+DATA_QUALITY_FAILURE
+
+Display:
+
+Total Transactions
+Eligible Transactions
+Excluded Transactions
+Eligible Spend
+Excluded Spend
+
+This prevents the engine from selectively choosing transactions to create attractive savings.
+
+===============================================================
+PART M — OPPORTUNITY WATERFALL VALIDATION
+===============================================================
+
+Validate the complete waterfall:
+
+TOTAL CATEGORY SPEND
+↓
+ADDRESSABLE SPEND
+↓
+DATA-ELIGIBLE SPEND
+↓
+SPECIFICATION-HARMONIZED SPEND
+↓
+PRICE-COMPARED SPEND
+↓
+AUCTIONABLE SPEND
+↓
+CONSOLIDATION-CANDIDATE SPEND
+↓
+QUANTIFIABLE OPPORTUNITY
+↓
+POTENTIAL / EXECUTION-VALIDATED OPPORTUNITY
+
+At every stage show:
+
+Spend
+Volume
+Transaction count
+Supplier count
+Excluded amount
+Reason
+
+The stages must reconcile mathematically.
+
+===============================================================
+PART N — BENEFIT CANNOT DOUBLE COUNT
+===============================================================
+
+This is a critical production rule.
+
+A single transaction/spend pool must NOT simultaneously generate:
+
+Price Arbitrage Benefit
++
+E-Auction Benefit
++
+Vendor Consolidation Benefit
++
+Volume Bundling Benefit
+
+unless the system explicitly proves that the benefits are independent and sequential.
+
+Create:
+
+OPPORTUNITY_OVERLAP_MATRIX
+
+For every opportunity:
+
+Opportunity ID
+Spend Pool
+Primary Lever
+Secondary Lever
+Overlap %
+Overlap Amount
+Net Opportunity
+
+Calculate:
+
+GROSS OPPORTUNITY
+LESS OVERLAP
+=
+NET DEFENSIBLE OPPORTUNITY
+
+===============================================================
+PART O — REALIZED VS POTENTIAL BENEFIT
+===============================================================
+
+Strictly distinguish:
+
+1. HISTORICAL OPPORTUNITY
+2. MODELLED POTENTIAL
+3. SOURCING EVENT OPPORTUNITY
+4. NEGOTIATED BENEFIT
+5. CONTRACTED BENEFIT
+6. REALIZED SAVINGS
+
+Module 2 can calculate:
+
+Historical / Modelled Potential
+
+Module 2 must NOT claim:
+
+Realized Savings
+
+unless actual execution data is later supplied through the appropriate downstream process.
+
+===============================================================
+PART P — EXECUTIVE OUTPUT
+===============================================================
+
+The executive Module 2 dashboard should show:
+
+Total Addressable Spend
+Data-Eligible Spend
+Quantified Opportunity
+Potential Opportunity
+Data-Limited Opportunity
+Execution-Validation Opportunity
+No-Quantifiable-Opportunity Spend
+No-Action-Indicated Spend
+
+Also show:
+
+Price Opportunity
+E-Auction Opportunity
+Vendor Consolidation Opportunity
+Volume Bundling Opportunity
+Specification Harmonization Opportunity
+Tail Spend Opportunity
+
+Every figure must be drillable.
+
+===============================================================
+PART Q — CATEGORY DEEP DIVE
+===============================================================
+
+For every major category, create a complete deep dive:
+
+1. Category spend
+2. Transaction count
+3. Supplier count
+4. Supplier concentration
+5. Category fragmentation
+6. Item fragmentation
+7. Price dispersion
+8. Historical price movement
+9. Contract coverage
+10. Spot buying
+11. Recurrence
+12. Volume leverage
+13. E-auction suitability
+14. Vendor consolidation suitability
+15. Category-specialist opportunity
+16. Multi-category supplier analysis
+17. Tail supplier analysis
+18. Opportunity range
+19. Data confidence
+20. Evidence ledger
+
+===============================================================
+PART R — SUPPLIER DEEP DIVE
+===============================================================
+
+For every material supplier:
+
+Supplier Spend
+Category Spend
+Item Spend
+Transaction Count
+Volume
+Average Price
+Weighted Price
+Price Dispersion
+Category Coverage
+Specification Coverage
+Supplier Share
+Contract Coverage
+Spot Spend
+Price Positioning
+Tail Spend Contribution
+Consolidation Role
+Auction Eligibility
+
+Allow:
+
+Supplier
+→ Category
+→ Item
+→ Transaction
+
+drill-down.
+
+===============================================================
+PART S — TEST DATA SCENARIOS
+===============================================================
+
+Create controlled test scenarios for:
+
+1. Perfectly competitive category
+2. Highly fragmented category
+3. Single supplier dependency
+4. High price dispersion
+5. Low price dispersion
+6. Multi-category supplier
+7. Tail supplier fragmentation
+8. E-auction suitable category
+9. E-auction unsuitable category
+10. High-volume leverage category
+11. Contracted category
+12. Spot-heavy category
+13. Specification mismatch
+14. UOM mismatch
+15. Currency mismatch
+16. Insufficient data
+17. No quantifiable opportunity
+18. Multiple overlapping opportunities
+
+For every scenario verify:
+
+Expected result
+Actual result
+Calculation
+Evidence
+Status
+
+===============================================================
+PART T — MATHEMATICAL RECONCILIATION
+===============================================================
+
+Every major dashboard number must reconcile:
+
+Category Spend
+=
+Sum(Transaction Values)
+
+Supplier Spend
+=
+Sum(Supplier Transaction Values)
+
+Opportunity
+=
+Eligible Spend × Evidence-Supported Price Difference
+
+Total Opportunity
+=
+Sum(Non-Overlapping Opportunity Pools)
+
+Addressable Spend
+=
+Eligible + Excluded with explicit reconciliation
+
+No unexplained variance is acceptable.
+
+===============================================================
+PART U — API / UI CONSISTENCY
+===============================================================
+
+Verify that:
+
+Backend calculation
+=
+API response
+=
+Frontend displayed value
+=
+Exported value
+
+Test:
+
+Dashboard
+Category table
+Deep dive
+Evidence modal
+Supplier view
+Export
+API
+
+No rounding discrepancy should change the underlying calculation.
+
+===============================================================
+PART V — DATA CONFIDENCE
+===============================================================
+
+Every opportunity must have:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+confidence.
+
+Confidence must be evidence-based.
+
+Show why:
+
+Transaction coverage
+Supplier coverage
+Historical depth
+Specification comparability
+Price dispersion quality
+Volume coverage
+
+===============================================================
+PART W — FINAL PRODUCTION SAFETY RULES
+===============================================================
+
+Enforce:
+
+NO fabricated savings
+NO assumed discount percentages
+NO synthetic benchmark
+NO PCBI reference
+NO external market benchmark
+NO silent interpolation
+NO selective transaction cherry-picking
+NO double counting
+NO realized savings claim
+NO "procurement is perfect" conclusion
+
+===============================================================
+PART X — FINAL ACCEPTANCE CRITERIA
+===============================================================
+
+Run a complete end-to-end test from:
+
+Module 1 customer transaction
+→ Module 2 classification
+→ Module 2 strategic sourcing
+→ opportunity identification
+→ opportunity calculation
+→ evidence ledger
+→ transaction drill-down
+→ category deep dive
+→ supplier deep dive
+→ e-auction analysis
+→ vendor consolidation analysis
+→ multi-category supplier analysis
+→ tail supplier analysis
+→ opportunity waterfall
+→ overlap elimination
+→ executive dashboard
+→ export.
+
+Acceptance criteria:
+
+1. Every number traceable.
+2. Every opportunity reproducible.
+3. Every benefit formula visible.
+4. Every transaction supporting the opportunity identifiable.
+5. Every excluded transaction explainable.
+6. No double counting.
+7. No fabricated benefits.
+8. Module 3 untouched.
+9. Module 4 disconnected.
+10. Module 1 unchanged.
+11. Module 2 calculations reconcile.
+12. UI/API/export values reconcile.
+13. All existing tests continue to pass.
+14. Add comprehensive new tests for the above scenarios.
+15. Maintain >=90% per-file coverage for all modified files.
+16. Typecheck = 0 errors.
+17. Lint = 0 errors.
+18. Production build = PASS.
+
+===============================================================
+FINAL OUTPUT REQUIRED
+===============================================================
+
+Generate:
+
+MODULE_2_FINAL_E2E_VALIDATION_REPORT.md
+
+MODULE_2_OPPORTUNITY_EVIDENCE_LEDGER.xlsx
+
+MODULE_2_TRANSACTION_TRACEABILITY.json
+
+MODULE_2_OVERLAP_AUDIT.json
+
+MODULE_2_FINAL_ACCEPTANCE_TEST_REPORT.md
+
+Also provide:
+
+- exact files changed
+- exact files created
+- test count
+- pass/fail count
+- coverage
+- build status
+- typecheck status
+- lint status
+- any defects found
+- any business logic ambiguity discovered
+- any calculation discrepancy discovered
+- final status:
+
+MODULE_2_FINAL_E2E_VALIDATED
+
+OR
+
+MODULE_2_E2E_VALIDATED_WITH_DEFECTS
+
+Do not proceed to Module 3 research or Module 4 integration as part of this command.
+This command is strictly for final Module 2 validation.
+
+
+## Prompt 242
+
+MODULE 2 — FINAL END-TO-END BUSINESS, MATHEMATICAL, TRANSACTION-LEVEL & UI VALIDATION
+VERSION: MODULE_2_FINAL_E2E_VALIDATION_V1.0
+
+OBJECTIVE
+=========
+Perform the FINAL end-to-end validation of Module 2 — Strategic Sourcing Intelligence,
+including:
+
+1. Strategic sourcing analysis
+2. E-auction opportunity logic
+3. Vendor consolidation logic
+4. Category/vendor specialization logic
+5. Price improvement opportunity logic
+6. Min–Max opportunity ranges
+7. Transaction-level evidence
+8. Supplier-level evidence
+9. Category/item-level evidence
+10. Opportunity waterfall
+11. Data confidence
+12. UI drill-down
+13. Mathematical reconciliation
+14. Audit/provenance
+15. Module 2 → Module 4 handoff integrity
+
+DO NOT modify Module 1, Module 3, PCBI or Module 4 business logic.
+
+Module 2 remains the SOLE owner of strategic sourcing opportunity identification.
+
+IMPORTANT:
+This is a VALIDATION command.
+Do not redesign existing logic unless a defect is discovered.
+Do not fabricate savings, benchmark values, supplier capabilities, prices,
+discount percentages or market assumptions.
+
+============================================================
+SECTION 1 — ABSOLUTE MODULE BOUNDARY
+============================================================
+
+Verify:
+
+MODULE 1
+Customer purchase data = INPUT ONLY
+No modifications.
+
+MODULE 2
+Strategic sourcing intelligence = OWNER
+
+MODULE 3
+PCBI / external benchmarks = NOT USED for Module 2 opportunity calculation.
+
+MODULE 4
+Execution / realized savings = DOWNSTREAM ONLY.
+
+Module 2 must distinguish:
+
+OPPORTUNITY IDENTIFIED
+from
+OPPORTUNITY QUANTIFIED
+from
+OPPORTUNITY EXECUTED
+from
+SAVINGS REALIZED.
+
+Never represent an identified or theoretical opportunity as realized savings.
+
+============================================================
+SECTION 2 — COMPLETE DATA RECONCILIATION
+============================================================
+
+For every customer dataset verify:
+
+TOTAL_CUSTOMER_SPEND
+=
+SUM(all valid transaction values)
+
+Then reconcile:
+
+Customer Spend
+→ Category Spend
+→ Item Spend
+→ Supplier Spend
+→ Strategic Sourcing Opportunities
+
+Every aggregation must reconcile exactly within defined rounding tolerance.
+
+Produce:
+
+DATA_RECONCILIATION_STATUS
+
+with:
+
+PASS / FAIL
+
+If FAIL:
+identify exact transaction/category/supplier causing the variance.
+
+============================================================
+SECTION 3 — TRANSACTION-LEVEL EVIDENCE ENGINE
+============================================================
+
+This is mandatory.
+
+Every opportunity generated by Module 2 must be traceable to the
+underlying transactions.
+
+For every opportunity create an evidence chain:
+
+OPPORTUNITY_ID
+CATEGORY_ID
+ITEM_ID
+SUPPLIER_ID
+TRANSACTION_ID
+PO_NUMBER
+PO_DATE
+QUANTITY
+UOM
+UNIT_PRICE
+CURRENCY
+TOTAL_VALUE
+SPECIFICATION
+DELIVERY_LOCATION
+CONTRACT_STATUS
+SOURCE_RECORD
+
+The user must be able to drill:
+
+Opportunity
+→ Category
+→ Item
+→ Supplier
+→ Transaction
+→ Original customer record.
+
+No aggregate opportunity should exist without transaction-level support.
+
+============================================================
+SECTION 4 — PRICE IMPROVEMENT OPPORTUNITY
+============================================================
+
+Do NOT assume that the current price is always improvable.
+
+Calculate historical price distribution for comparable transactions:
+
+MIN
+P10
+P25
+MEDIAN
+WEIGHTED_AVERAGE
+P75
+P90
+MAX
+
+Also calculate:
+
+PRICE_SPREAD
+IQR
+COEFFICIENT_OF_VARIATION
+SUPPLIER_PRICE_DISPERSION
+ITEM_PRICE_DISPERSION
+
+For every transaction identify its relative position within the historical
+distribution.
+
+Example:
+
+Transaction A
+₹105/unit
+
+Historical comparable distribution:
+
+P25 = ₹92
+Median = ₹100
+P75 = ₹108
+
+Then show:
+
+Current Price = ₹105
+Reference Range = ₹92–₹108
+Potential Improvement Range = ₹0–₹13
+
+Do NOT automatically call ₹13 savings.
+
+Label it:
+
+ILLUSTRATIVE_PRICE_OPPORTUNITY_RANGE
+
+============================================================
+SECTION 5 — MIN / BASE / MAX OPPORTUNITY
+============================================================
+
+For every quantifiable sourcing opportunity calculate:
+
+MIN_OPPORTUNITY
+BASE_OPPORTUNITY
+MAX_OPPORTUNITY
+
+But each must have an explicit mathematical basis.
+
+Example:
+
+Current Addressable Spend = ₹10 Cr
+
+Minimum opportunity:
+historically demonstrated credible improvement.
+
+Base opportunity:
+defensible achievable historical reference.
+
+Maximum opportunity:
+best demonstrated comparable outcome subject to volume,
+supplier capacity and transaction eligibility.
+
+Never use arbitrary percentages such as:
+
+5%
+10%
+15%
+20%
+
+unless those percentages are directly derived from customer data
+or explicitly configured as a governance assumption.
+
+If insufficient evidence exists:
+
+STATUS = NOT_QUANTIFIABLE
+
+Do not manufacture a number.
+
+============================================================
+SECTION 6 — E-AUCTION LOGIC
+============================================================
+
+For every category determine:
+
+AUCTION_SUITABILITY
+AUCTION_READINESS
+ADDRESSABLE_SPEND
+ELIGIBLE_VOLUME
+SUPPLIER_COUNT
+SUPPLIER_COMPETITION
+PRICE_DISPERSION
+SPECIFICATION_STANDARDIZATION
+HISTORICAL_EVENTUALITY
+CONTRACT_STATUS
+SWITCHING_COST
+CAPACITY_RISK
+
+Determine:
+
+RECOMMENDED_AUCTION_TYPE
+
+Examples:
+
+REVERSE_ENGLISH
+SEALED_BID
+MULTI_ROUND
+DUTCH
+NOT_RECOMMENDED
+
+For every auction opportunity show:
+
+Current Addressable Spend
+Eligible Volume
+Eligible Suppliers
+Historical Price Range
+Historical Winning/Lowest Credible Price
+Expected Competitive Range
+Minimum Opportunity
+Base Opportunity
+Maximum Opportunity
+
+Again:
+
+Do not represent the range as guaranteed savings.
+
+============================================================
+SECTION 7 — VENDOR CONSOLIDATION LOGIC
+============================================================
+
+Evaluate:
+
+CURRENT_SUPPLIER_COUNT
+CURRENT_SUPPLIER_SPEND
+TOP_SUPPLIER_SHARE
+TAIL_SUPPLIER_SHARE
+SUPPLIER_FRAGMENTATION
+ITEM_OVERLAP
+CATEGORY_OVERLAP
+PRICE_DISPERSION
+VOLUME_CONSOLIDATION_POTENTIAL
+CAPACITY
+DEPENDENCY
+SWITCHING_RISK
+
+Determine separately:
+
+A. CONSOLIDATE TO FEWER SUPPLIERS
+
+B. INCREASE VOLUME WITH EXISTING BEST-PERFORMING SUPPLIERS
+
+C. ADD SPECIALIZED CATEGORY SUPPLIERS
+
+D. MAINTAIN MULTI-SOURCE STRATEGY
+
+E. NO ACTION
+
+============================================================
+SECTION 8 — MULTI-CATEGORY SUPPLIER ANALYSIS
+============================================================
+
+This is a critical requirement.
+
+When one supplier supplies multiple unrelated categories/items:
+
+DO NOT automatically treat the supplier as efficient.
+
+Analyze supplier/category/item combinations.
+
+Example:
+
+Supplier A:
+
+Category 1 = ₹2 Cr
+Category 2 = ₹50 L
+Category 3 = ₹20 L
+Category 4 = ₹10 L
+
+Determine:
+
+Which categories should remain with Supplier A?
+Which categories should move to specialized suppliers?
+Which categories can be consolidated?
+Which categories should be sourced through additional vendors?
+
+Calculate opportunity at:
+
+SUPPLIER
+→ CATEGORY
+→ ITEM
+
+level.
+
+Also identify:
+
+CATEGORY_SPECIALIZATION_OPPORTUNITY
+
+where procurement should move from a general supplier to a specialist
+supplier.
+
+============================================================
+SECTION 9 — SMALL SUPPLIER CONSOLIDATION
+============================================================
+
+Identify multiple small suppliers supplying the same category/item.
+
+Example:
+
+Supplier A ₹5L
+Supplier B ₹7L
+Supplier C ₹8L
+Supplier D ₹4L
+Supplier E ₹6L
+
+Total = ₹30L
+
+Evaluate whether volume aggregation could create:
+
+Higher negotiation leverage
+Auction participation
+Supplier competition
+Lower transaction complexity
+Better contract terms
+
+But do not assume a price reduction.
+
+Show:
+
+CURRENT_FRAGMENTED_SPEND
+CONSOLIDATION_POOL
+NUMBER_OF_SUPPLIERS
+VOLUME_AVAILABLE_FOR_BUNDLING
+HISTORICAL_PRICE_EVIDENCE
+QUANTIFIABLE_OPPORTUNITY
+NON-QUANTIFIABLE_BENEFITS
+
+============================================================
+SECTION 10 — OPPORTUNITY WATERFALL
+============================================================
+
+For every category produce:
+
+TOTAL_SPEND
+
+↓
+ADDRESSABLE_SPEND
+
+↓
+SPECIFICATION_HARMONIZATION
+
+↓
+PRICE_DISPERSION
+
+↓
+VOLUME_BUNDLING
+
+↓
+E_AUCTION
+
+↓
+VENDOR_CONSOLIDATION
+
+↓
+SPECIALIST_SUPPLIER_REALLOCATION
+
+↓
+FINAL_DEFENSIBLE_OPPORTUNITY_POOL
+
+IMPORTANT:
+
+Do not add the individual stages together if they overlap.
+
+Each stage must contain:
+
+GROSS_OPPORTUNITY
+OVERLAP_ADJUSTMENT
+NET_OPPORTUNITY
+
+Final opportunity must reconcile mathematically.
+
+============================================================
+SECTION 11 — DOUBLE-COUNTING CONTROL
+============================================================
+
+This is mandatory.
+
+A single transaction must never contribute twice to the same
+opportunity pool.
+
+Create:
+
+OPPORTUNITY_TRANSACTION_LEDGER
+
+with:
+
+TRANSACTION_ID
+OPPORTUNITY_ID
+WATERFALL_STAGE
+ALLOCATED_SPEND
+OPPORTUNITY_VALUE
+OVERLAP_GROUP_ID
+
+Run:
+
+DOUBLE_COUNT_CHECK
+
+Expected:
+
+0 duplicate allocations.
+
+============================================================
+SECTION 12 — DATA CONFIDENCE
+============================================================
+
+Every opportunity must have:
+
+DATA_CONFIDENCE:
+
+HIGH
+MEDIUM
+LOW
+INSUFFICIENT
+
+Show the exact reason.
+
+Examples:
+
+HIGH:
+Large comparable transaction population + consistent specification +
+stable pricing.
+
+MEDIUM:
+Adequate transactions but moderate dispersion.
+
+LOW:
+Limited comparable observations.
+
+INSUFFICIENT:
+No defensible historical evidence.
+
+Never convert LOW or INSUFFICIENT confidence into a false precise
+savings number.
+
+============================================================
+SECTION 13 — CATEGORY DEEP DIVE
+============================================================
+
+Every category profile must provide:
+
+1. Category spend
+2. Transaction count
+3. Supplier count
+4. Item count
+5. Specification count
+6. UOM count
+7. Currency count
+8. Contracted spend
+9. Spot spend
+10. Recurring spend
+11. Price distribution
+12. Supplier price comparison
+13. Supplier concentration
+14. Fragmentation
+15. Auction suitability
+16. Consolidation suitability
+17. Specialist supplier opportunity
+18. Volume bundling opportunity
+19. Min/Base/Max opportunity
+20. Confidence
+21. Risks
+22. Recommended next action
+
+Every number must drill to evidence.
+
+============================================================
+SECTION 14 — SUPPLIER DEEP DIVE
+============================================================
+
+For every significant supplier show:
+
+Supplier Spend
+Transaction Count
+Categories
+Items
+Price Position
+Volume
+Category Share
+Supplier Share
+Contract Coverage
+Price Dispersion
+Lowest/Median/Highest comparable prices
+Potential consolidation role
+Specialist/generalist classification
+Dependency risk
+Switching risk
+Opportunity evidence
+
+Provide:
+
+SUPPLIER → CATEGORY → ITEM → TRANSACTION
+
+drill-down.
+
+============================================================
+SECTION 15 — ITEM-LEVEL ANALYSIS
+============================================================
+
+For every material item show:
+
+Item Spend
+Volume
+Transactions
+Suppliers
+Unit Prices
+Price Distribution
+Lowest Credible Historical Price
+Median Price
+Weighted Average
+Current Effective Price
+Price Dispersion
+Supplier Comparison
+Category Classification
+Auction Suitability
+Consolidation Potential
+Specialist Supplier Potential
+Opportunity Range
+Confidence
+
+============================================================
+SECTION 16 — EXECUTIVE OUTPUT
+============================================================
+
+The executive dashboard must NOT simply show:
+
+"Savings = ₹X"
+
+Instead show:
+
+TOTAL_ADDRESSABLE_SPEND
+QUANTIFIABLE_OPPORTUNITY_MIN
+QUANTIFIABLE_OPPORTUNITY_BASE
+QUANTIFIABLE_OPPORTUNITY_MAX
+NON_QUANTIFIABLE_OPPORTUNITY
+PROCESS_EFFICIENCY_OPPORTUNITY
+COMPETITION_OPPORTUNITY
+VOLUME_LEVERAGE_OPPORTUNITY
+SUPPLIER_CONSOLIDATION_OPPORTUNITY
+SPECIALIST_SOURCING_OPPORTUNITY
+
+Clearly distinguish:
+
+DATA-SUPPORTED OPPORTUNITY
+from
+EXECUTION-DEPENDENT OPPORTUNITY
+from
+NON-QUANTIFIABLE BENEFIT.
+
+============================================================
+SECTION 17 — "NO OPPORTUNITY" LOGIC
+============================================================
+
+Never display:
+
+"Savings = ₹0"
+
+as the sole conclusion.
+
+If no quantifiable price opportunity is detected, display:
+
+"NO QUANTIFIABLE PRICE OPPORTUNITY IDENTIFIED FROM AVAILABLE
+HISTORICAL DATA"
+
+Then investigate:
+
+Supplier fragmentation
+Category fragmentation
+Volume bundling
+Auction suitability
+Contract timing
+Specification harmonization
+Supplier specialization
+Process efficiency
+Transaction consolidation
+Tail spend
+Payment terms
+MOQ optimization
+Lead-time optimization
+Competition improvement
+
+The system must distinguish:
+
+NO PRICE OPPORTUNITY
+
+from
+
+NO PROCUREMENT OPPORTUNITY.
+
+============================================================
+SECTION 18 — BENEFIT CLASSIFICATION
+============================================================
+
+Every identified opportunity must be classified:
+
+1. PRICE BENEFIT
+2. VOLUME BENEFIT
+3. COMPETITION BENEFIT
+4. SUPPLIER CONSOLIDATION BENEFIT
+5. CATEGORY SPECIALIZATION BENEFIT
+6. CONTRACT BENEFIT
+7. PROCESS EFFICIENCY BENEFIT
+8. WORKING CAPITAL BENEFIT
+9. SPECIFICATION BENEFIT
+10. RISK BENEFIT
+
+Do not convert non-price benefits into ₹ unless a defensible
+calculation exists.
+
+============================================================
+SECTION 19 — MINUTE-LEVEL AUDITABILITY
+============================================================
+
+For every dashboard number provide:
+
+VIEW EVIDENCE
+
+The user should be able to click:
+
+₹X opportunity
+
+and see:
+
+Which category?
+Which item?
+Which supplier?
+Which transactions?
+Which prices?
+Which quantities?
+Which dates?
+Which formulas?
+Which exclusions?
+Which assumptions?
+Which confidence?
+Which opportunity stage?
+
+The calculation must be reproducible from the underlying records.
+
+============================================================
+SECTION 20 — FORMULA TRANSPARENCY
+============================================================
+
+Every calculated opportunity must expose:
+
+FORMULA_ID
+FORMULA_DESCRIPTION
+INPUT_FIELDS
+INPUT_VALUES
+CALCULATION
+OUTPUT
+
+Example:
+
+OPP-PRICE-001
+
+Eligible Spend = ₹1,00,00,000
+Current Weighted Price = ₹105
+Reference Price = ₹100
+
+Opportunity =
+(105 - 100) / 105 × 1,00,00,000
+
+Output =
+₹4,76,190
+
+The UI must allow the administrator to inspect the calculation.
+
+============================================================
+SECTION 21 — DATA EXCLUSIONS
+============================================================
+
+Every exclusion must be visible.
+
+Examples:
+
+Different specification
+Different UOM
+Different currency
+Different geography
+Outlier
+Insufficient volume
+Non-comparable item
+Contract locked
+Single-source dependency
+Insufficient historical evidence
+
+Create:
+
+EXCLUSION_REASON_CODE
+EXCLUSION_DESCRIPTION
+EXCLUDED_VALUE
+
+============================================================
+SECTION 22 — FINAL RECONCILIATION
+============================================================
+
+Verify:
+
+Total customer spend
+=
+Addressable spend
++
+Excluded spend
+
+And:
+
+Total quantified opportunity
+=
+Sum of unique opportunity transaction allocations
+
+And:
+
+Final opportunity pool
+=
+Gross opportunity
+-
+overlap adjustments
+-
+risk adjustments
+-
+excluded opportunity
+
+No unexplained variance.
+
+============================================================
+SECTION 23 — MODULE 2 → MODULE 4 HANDOFF
+============================================================
+
+Validate that Module 4 receives only approved opportunity packages.
+
+Handoff must contain:
+
+OPPORTUNITY_ID
+CATEGORY
+ITEM
+SUPPLIER
+CURRENT_BASELINE
+TARGET_REFERENCE
+OPPORTUNITY_RANGE
+CONFIDENCE
+EVIDENCE_IDS
+CALCULATION_ID
+RISK
+RECOMMENDED_ACTION
+EXECUTION_TYPE
+
+Module 4 must NOT receive:
+
+fabricated savings
+unapproved assumptions
+external PCBI values
+unvalidated opportunity values.
+
+============================================================
+SECTION 24 — UI VALIDATION
+============================================================
+
+Test all Module 2 screens.
+
+For every displayed value verify:
+
+Correct currency
+Correct UOM
+Correct category
+Correct supplier
+Correct transaction count
+Correct opportunity value
+Correct confidence
+Correct status
+
+No customer INR values may appear as GBP/USD/EUR.
+
+No customer KG values may appear as ROLL/LITRE/etc.
+
+No PCBI values may appear inside Module 2.
+
+============================================================
+SECTION 25 — NEGATIVE TESTS
+============================================================
+
+Execute at minimum:
+
+A. Duplicate transaction
+B. Missing price
+C. Missing quantity
+D. Wrong UOM
+E. Wrong currency
+F. Different specification
+G. Different geography
+H. Outlier price
+I. Single transaction supplier
+J. Single supplier category
+K. Multi-category supplier
+L. Fragmented supplier base
+M. Contracted transaction
+N. Non-recurring transaction
+O. Insufficient historical data
+P. No price dispersion
+Q. Identical supplier prices
+R. No auction suitability
+S. No consolidation suitability
+T. Overlapping opportunities
+U. Double-counting
+V. Zero opportunity
+W. Negative price variance
+X. Missing provenance
+
+Expected behavior for each must be documented.
+
+============================================================
+SECTION 26 — PERFORMANCE / REGRESSION
+============================================================
+
+Run:
+
+typecheck
+lint
+build
+quality:fast
+full test suite
+coverage
+
+Ensure:
+
+Module 1 = unchanged
+Module 3 = unchanged
+Module 4 = unchanged
+
+No regression.
+
+============================================================
+SECTION 27 — FINAL BUSINESS ACCEPTANCE REPORT
+============================================================
+
+Generate:
+
+MODULE_2_FINAL_E2E_BUSINESS_VALIDATION.md
+
+MODULE_2_FINAL_E2E_CALCULATION_AUDIT.xlsx
+
+MODULE_2_FINAL_E2E_OPPORTUNITY_LEDGER.xlsx
+
+MODULE_2_FINAL_E2E_AUDIT.json
+
+MODULE_2_FINAL_E2E_TEST_RESULTS.json
+
+The report must contain:
+
+1. Data reconciliation
+2. Transaction-level audit
+3. Category analysis
+4. Supplier analysis
+5. Item analysis
+6. E-auction validation
+7. Vendor consolidation validation
+8. Specialist supplier validation
+9. Volume bundling validation
+10. Opportunity ranges
+11. Opportunity waterfall
+12. Double-counting audit
+13. Confidence analysis
+14. UI validation
+15. Negative tests
+16. Module 4 handoff validation
+17. Regression results
+18. Final business acceptance decision
+
+============================================================
+FINAL GATE
+============================================================
+
+Do NOT declare Module 2 production-ready merely because tests pass.
+
+The final report must explicitly classify:
+
+SOFTWARE_VALIDATION
+BUSINESS_LOGIC_VALIDATION
+MATHEMATICAL_VALIDATION
+DATA_RECONCILIATION
+TRANSACTION_TRACEABILITY
+OPPORTUNITY_TRACEABILITY
+DOUBLE_COUNTING_CONTROL
+UI_VALIDATION
+MODULE_4_HANDOFF_VALIDATION
+
+Final status must be one of:
+
+MODULE_2_E2E_VALIDATED
+MODULE_2_E2E_VALIDATED_WITH_BUSINESS_GAPS
+MODULE_2_E2E_BLOCKED
+
+If any calculation cannot be reproduced from transaction-level evidence,
+mark the relevant test FAILED and identify the exact defect.
+
+DO NOT introduce new business logic unless required to correct an
+identified defect.
+
+DO NOT modify Module 1, Module 3 or Module 4.
+
+This is the FINAL validation gate for Module 2 before production
+deployment.
+
+
+## Prompt 243
+
+MODULE 1 — FINAL FORENSIC END-TO-END VALIDATION, CALCULATION HARDENING & FINANCIAL SOURCE-OF-TRUTH CERTIFICATION
+
+IMPORTANT:
+Do NOT modify Module 2, Module 3 / PCBI, or Module 4.
+Do NOT start any downstream module.
+Do NOT change business logic merely to make tests pass.
+Do NOT use synthetic values to satisfy tests.
+Do NOT assume that a UI value is correct because it looks correct.
+Do NOT silently correct, infer, overwrite, round, normalize, or exclude customer transaction data without recording the exact reason.
+
+This command is ONLY for Module 1.
+
+OBJECTIVE
+
+Module 1 must become the immutable financial and transactional source of truth for every downstream procurement analysis.
+
+The objective is to prove, at transaction level, that:
+
+RAW CUSTOMER DATA
+→ INGESTION
+→ PARSING
+→ DATA TYPE VALIDATION
+→ CURRENCY VALIDATION
+→ HISTORICAL FX CONVERSION
+→ LINE-SPEND CALCULATION
+→ EXCLUSION / ANOMALY LOGIC
+→ VALIDATED SPEND
+→ CATEGORY / ITEM / SUPPLIER / PLANT / MONTH AGGREGATION
+→ PARETO
+→ ALL UI KPIs
+
+are mathematically identical and fully traceable.
+
+Every displayed number must be reproducible from original customer transaction records.
+
+========================================================
+SECTION 1 — FREEZE THE MODULE 1 DATA CONTRACT
+========================================================
+
+Inspect the existing Module 1 implementation before changing anything.
+
+Document the exact accepted transaction schema.
+
+Identify and explicitly map:
+
+- Record ID
+- Fiscal year
+- Transaction date
+- PO number
+- PO line number
+- Material / item code
+- Short text / item description
+- Material group
+- Vendor code
+- Vendor name
+- Plant / facility
+- Quantity
+- UOM
+- Net price
+- Currency
+- FX rate
+- INR converted price
+- Line spend
+- Any other customer fields
+
+Do NOT invent missing fields.
+
+Create a formal DATA_DICTIONARY and DATA_CONTRACT for Module 1.
+
+Every field must have:
+- source field
+- datatype
+- nullable/non-nullable status
+- transformation rule
+- validation rule
+- calculation dependency
+- display rule
+
+========================================================
+SECTION 2 — RAW DATA IMMUTABILITY
+========================================================
+
+The original uploaded transaction values must remain immutable.
+
+Create two conceptual layers:
+
+RAW_TRANSACTION_LEDGER
+and
+VALIDATED_TRANSACTION_LEDGER
+
+RAW_TRANSACTION_LEDGER must preserve the customer-provided values exactly.
+
+VALIDATED_TRANSACTION_LEDGER may contain derived fields, but it must retain links back to the raw record.
+
+Never overwrite:
+- original quantity
+- original price
+- original currency
+- original date
+- original supplier
+- original item
+- original PO
+- original line item
+
+Every transformation must be deterministic and auditable.
+
+Create a stable transaction identifier.
+
+Every transaction must be traceable:
+
+UI KPI
+→ aggregate
+→ validated transaction
+→ raw transaction
+→ original row number / source record.
+
+========================================================
+SECTION 3 — DATE / PERIOD FORENSIC VALIDATION
+========================================================
+
+This is a mandatory high-risk test.
+
+The current UI contains:
+
+- "2 years data.xlsx"
+- 31,671 records
+- 24 billing months
+
+while another UI section states:
+
+"36 Months (FY24-FY26: 1 Apr 2023 – 31 Mar 2026)"
+
+DO NOT assume either statement is correct.
+
+Calculate the actual transaction date coverage directly from the uploaded records.
+
+Report:
+
+- minimum transaction date
+- maximum transaction date
+- number of distinct months
+- number of distinct fiscal years
+- records by month
+- spend by month
+- records outside configured evaluation period
+- spend outside configured evaluation period
+
+If configured evaluation period differs from actual file coverage:
+
+FLAG:
+PERIOD_SCOPE_MISMATCH
+
+Do not silently change the data or silently change the reporting period.
+
+The UI must clearly distinguish:
+
+ACTUAL DATA COVERAGE
+vs
+CONFIGURED EVALUATION WINDOW.
+
+No record may be included/excluded merely because a UI label says so.
+
+========================================================
+SECTION 4 — PRIMARY SPEND FORMULA
+========================================================
+
+Establish ONE authoritative spend formula.
+
+For every transaction:
+
+BASE_LINE_VALUE = QUANTITY × NET_PRICE
+
+Then apply the explicitly defined FX conversion rule.
+
+For INR:
+
+FX_RATE = 1.000000
+
+INR_LINE_SPEND = QUANTITY × NET_PRICE
+
+For non-INR currencies:
+
+INR_LINE_SPEND =
+QUANTITY × NET_PRICE × APPROVED_HISTORICAL_FX_RATE
+
+Do NOT use today's live FX rate to recalculate historical procurement transactions unless the transaction itself is explicitly defined as current-market valued.
+
+Historical transactions must use transaction-date / transaction-period FX according to the configured FX methodology.
+
+If historical FX is unavailable:
+
+FLAG:
+FX_DATA_UNAVAILABLE
+
+Do NOT silently use current FX.
+
+========================================================
+SECTION 5 — FX FORENSIC TESTING
+========================================================
+
+Test:
+
+- INR
+- USD
+- EUR
+- GBP
+- AED
+- JPY
+- SGD
+- zero FX
+- negative FX
+- missing FX
+- invalid currency
+- unsupported currency
+- malformed currency code
+- currency changing across transactions
+
+For INR:
+
+assert FX = 1
+
+For foreign currencies:
+
+assert historical FX methodology is explicitly recorded.
+
+Store:
+
+SOURCE_CURRENCY
+SOURCE_PRICE
+FX_RATE_USED
+FX_RATE_DATE
+FX_RATE_SOURCE
+INR_PRICE
+LINE_SPEND_INR
+
+No FX value may be hidden.
+
+The current UI's "Live Market Feed" must NOT overwrite historical transaction conversion.
+
+========================================================
+SECTION 6 — PRECISION / ROUNDING FORENSICS
+========================================================
+
+This is mandatory.
+
+All calculations must be performed using full numerical precision.
+
+NEVER calculate from a rounded UI value.
+
+Examples:
+
+₹5.623821 Cr may display as ₹5.62 Cr.
+
+But the underlying value must remain:
+
+₹56,238,210
+
+Similarly:
+
+₹0.000028 Cr may display as ₹0.00 Cr.
+
+The underlying transaction must never become zero.
+
+Create tests proving:
+
+DISPLAY_VALUE != CALCULATION_VALUE
+
+where appropriate.
+
+All aggregation must use unrounded values.
+
+Only the final presentation layer may round.
+
+Test:
+- 2 decimal display
+- Crore conversion
+- percentage display
+- FX display
+- Pareto percentage
+- vendor totals
+- category totals
+- monthly totals.
+
+========================================================
+SECTION 7 — LINE ITEM CALCULATION TESTS
+========================================================
+
+For EVERY transaction:
+
+expected =
+quantity × price × FX
+
+Compare against system-calculated line spend.
+
+Tolerance for arithmetic comparison must be effectively zero, subject only to the defined numeric representation/decimal strategy.
+
+Produce:
+
+RECORD_ID
+SOURCE_ROW
+QTY
+PRICE
+CURRENCY
+FX
+EXPECTED_SPEND
+SYSTEM_SPEND
+VARIANCE
+STATUS
+
+Any non-zero unexplained variance = FAIL.
+
+Randomly test:
+- smallest transactions
+- largest transactions
+- decimal quantities
+- decimal prices
+- foreign currency transactions
+- zero values
+- high-value transactions
+- negative transactions if present.
+
+========================================================
+SECTION 8 — ZERO / NEGATIVE / NULL / EXTREME VALUES
+========================================================
+
+Explicitly test:
+
+- quantity = 0
+- price = 0
+- quantity < 0
+- price < 0
+- missing quantity
+- missing price
+- missing currency
+- missing vendor
+- missing item
+- missing category
+- missing date
+- extremely large quantity
+- extremely large price
+- extremely large line value
+- decimal quantity
+- decimal price
+
+Do NOT automatically delete these records.
+
+Each must receive a deterministic status such as:
+
+VALID
+EXCLUDED
+ANOMALY
+REQUIRES_REVIEW
+
+with an exact exclusion / anomaly reason.
+
+Never silently convert invalid data to zero.
+
+========================================================
+SECTION 9 — DUPLICATE FORENSICS
+========================================================
+
+Test duplicates at multiple levels.
+
+Exact duplicate:
+all source fields identical.
+
+Business duplicate:
+same PO + PO line.
+
+Potential duplicate:
+same vendor + item + quantity + price + date.
+
+Do NOT automatically delete duplicates.
+
+A duplicate-looking transaction can be a legitimate repeated purchase.
+
+The system must distinguish:
+
+EXACT_DUPLICATE
+POTENTIAL_DUPLICATE
+LEGITIMATE_REPEAT_TRANSACTION
+
+and preserve the original data.
+
+If excluded, the excluded amount must be visible and reconcilable.
+
+========================================================
+SECTION 10 — SUPPLIER MASTER VALIDATION
+========================================================
+
+Validate:
+
+- supplier code
+- supplier name
+- spelling variants
+- whitespace
+- punctuation
+- case differences
+- legal entity differences
+- duplicate vendor IDs
+- same supplier with multiple codes
+
+Do NOT merge suppliers solely on name similarity.
+
+Every supplier normalization must be auditable.
+
+Maintain:
+
+RAW_VENDOR
+NORMALIZED_VENDOR
+NORMALIZATION_REASON
+CONFIDENCE
+SOURCE_RECORDS
+
+If uncertain:
+
+REQUIRES_REVIEW
+
+Do not make an irreversible AI guess.
+
+========================================================
+SECTION 11 — ITEM / MATERIAL VALIDATION
+========================================================
+
+Perform equivalent validation for:
+
+- item code
+- SKU
+- short text
+- material group
+- UOM
+
+Investigate the current UI condition where some material groups appear to show:
+
+UNIQUE ITEMS = 0
+
+while a sample SKU is visibly present.
+
+Determine whether this is:
+
+- legitimate definition
+- aggregation defect
+- mapping defect
+- UI defect
+
+Do not hide the issue.
+
+Create a regression test.
+
+========================================================
+SECTION 12 — CATEGORY / MATERIAL GROUP RECONCILIATION
+========================================================
+
+For every material group:
+
+SUM(group spend)
+must equal
+SUM(transaction spend belonging to group)
+
+No category may create or lose spend.
+
+Create reconciliation at:
+
+- material group
+- item
+- vendor
+- plant
+- month
+- fiscal year
+- currency
+
+Every dimension must reconcile back to the transaction ledger.
+
+========================================================
+SECTION 13 — SUPPLIER RECONCILIATION
+========================================================
+
+For every supplier:
+
+supplier spend =
+sum of all valid underlying transaction line spends.
+
+Test the supplier totals shown in the UI.
+
+The top supplier screen must be generated from the same transaction ledger.
+
+No separate calculation logic is permitted for UI summaries.
+
+========================================================
+SECTION 14 — PLANT / FACILITY RECONCILIATION
+========================================================
+
+Validate:
+
+Total Spend by Plant
+
+against:
+
+SUM(transaction spend grouped by plant)
+
+Test:
+
+- missing plant
+- multiple plants
+- invalid plant
+- plant normalization
+- plant totals
+- percentage of total spend.
+
+========================================================
+SECTION 15 — MONTHLY RECONCILIATION
+========================================================
+
+Generate monthly:
+
+- transaction count
+- spend
+- supplier count
+- item count
+
+Then prove:
+
+SUM(monthly spend)
+=
+TOTAL VALIDATED SPEND
+
+with zero unexplained variance.
+
+Do not use fiscal-year labels as substitutes for actual transaction dates.
+
+========================================================
+SECTION 16 — PARETO / 80% TEST
+========================================================
+
+The Pareto engine must be mathematically deterministic.
+
+For total spend T:
+
+80% threshold = T × 0.80
+
+Sort entities by descending spend.
+
+Cumulative spend must be calculated using exact values.
+
+The system must stop at the first entity where cumulative spend >= 80%.
+
+For the current dataset:
+
+T = ₹5,920.35 Cr
+
+80% theoretical threshold ≈ ₹4,736.28 Cr.
+
+The displayed cumulative value around ₹4,752.54 Cr must therefore be independently verified as the actual first threshold-crossing point, not hard-coded.
+
+Test:
+- supplier Pareto
+- item Pareto
+- material-group Pareto
+- category Pareto
+
+The UI must state that the 80% cutoff is threshold-crossing based, not exactly equal to 80%.
+
+========================================================
+SECTION 17 — CROSS-DIMENSION RECONCILIATION
+========================================================
+
+Prove:
+
+TOTAL TRANSACTION SPEND
+=
+TOTAL SUPPLIER SPEND
+=
+TOTAL ITEM SPEND
+=
+TOTAL CATEGORY SPEND
+=
+TOTAL MATERIAL GROUP SPEND
+=
+TOTAL PLANT SPEND
+=
+TOTAL MONTHLY SPEND
+
+Any difference is a HARD FAIL.
+
+========================================================
+SECTION 18 — UI VS BACKEND CALCULATION INTEGRITY
+========================================================
+
+For every major KPI visible in Module 1, create automated tests comparing:
+
+BACKEND SOURCE OF TRUTH
+vs
+UI DISPLAY DATA
+
+At minimum:
+
+- Total Evaluated Spend
+- Total Line Items
+- Unique Items
+- Unique Vendors
+- Material Groups
+- Operating Plants
+- Validated Spend
+- Pending Issues
+- Quality Index
+- Supplier totals
+- Category totals
+- Material-group totals
+- Pareto totals
+- Monthly totals
+- Line-item spend
+
+The UI must NEVER calculate its own financial numbers differently from the backend ledger.
+
+========================================================
+SECTION 19 — SAMPLE TRANSACTION FORENSIC TEST
+========================================================
+
+Explicitly verify visible transactions from the supplied Module 1 screen.
+
+Example:
+
+REC-8800
+
+Quantity = 340
+Net Price = ₹165,406.50
+Currency = INR
+
+Expected:
+
+340 × 165,406.50
+= ₹56,238,210
+= ₹5.623821 Cr
+
+The UI may display approximately ₹5.62 Cr.
+
+But the underlying ledger must contain ₹56,238,210.
+
+Also validate REC-8801 and REC-8802 independently.
+
+Create regression tests from these actual records.
+
+========================================================
+SECTION 20 — TOTAL FILE SPEND RECONCILIATION
+========================================================
+
+For the currently uploaded dataset:
+
+Reported total:
+
+₹5,920.35 Cr
+
+Reported records:
+
+31,671
+
+Do NOT simply assert these values.
+
+Recalculate independently from raw transaction records.
+
+Produce:
+
+RAW_RECORD_COUNT
+VALID_RECORD_COUNT
+EXCLUDED_RECORD_COUNT
+ANOMALY_RECORD_COUNT
+
+RAW_SPEND
+VALIDATED_SPEND
+EXCLUDED_SPEND
+
+and:
+
+RAW_SPEND =
+VALIDATED_SPEND + EXCLUDED_SPEND
+
+subject to explicitly documented treatment of invalid/unpriced records.
+
+No unexplained difference is permitted.
+
+========================================================
+SECTION 21 — RECONCILIATION LEDGER
+========================================================
+
+Create a permanent Module 1 reconciliation artifact:
+
+MODULE_1_FINAL_RECONCILIATION.xlsx
+
+Tabs:
+
+1. Raw Record Summary
+2. Validated Transaction Ledger
+3. Exclusion Ledger
+4. FX Audit
+5. Duplicate Audit
+6. Supplier Reconciliation
+7. Item Reconciliation
+8. Category Reconciliation
+9. Material Group Reconciliation
+10. Plant Reconciliation
+11. Monthly Reconciliation
+12. Pareto Audit
+13. UI KPI Audit
+14. Formula Audit
+15. Exception Register
+
+Every exception must have:
+
+Record ID
+Source Row
+Field
+Observed Value
+Expected Rule
+Status
+Reason
+Impact on Spend
+Resolution
+Timestamp
+
+========================================================
+SECTION 22 — TRANSACTION-LEVEL PROOF
+========================================================
+
+For every derived financial value, maintain:
+
+SOURCE_RECORD_ID
+SOURCE_ROW
+SOURCE_FILE
+QUANTITY
+PRICE
+CURRENCY
+FX_RATE
+CALCULATION_FORMULA
+RAW_LINE_VALUE
+CONVERTED_LINE_VALUE
+INCLUSION_STATUS
+EXCLUSION_REASON
+FINAL_LINE_SPEND
+
+This must make it possible for a consultant to answer:
+
+"Show me exactly where this ₹X Cr came from."
+
+The system must be able to drill:
+
+₹X Cr
+→ supplier
+→ item
+→ PO
+→ line
+→ source row
+→ original transaction.
+
+========================================================
+SECTION 23 — NO SILENT CORRECTIONS
+========================================================
+
+The system must NEVER silently:
+
+- change quantity
+- change price
+- change currency
+- change FX
+- change supplier
+- change item
+- change category
+- change date
+- delete duplicates
+- convert missing values to zero
+- exclude transactions
+- round before aggregation
+- use current FX for historical transactions
+- overwrite raw data
+
+Every correction/normalization must be separately recorded.
+
+========================================================
+SECTION 24 — ADVERSARIAL TEST SUITE
+========================================================
+
+Create negative tests for at least:
+
+A. duplicated row
+B. duplicate PO line
+C. missing quantity
+D. missing price
+E. zero quantity
+F. zero price
+G. negative quantity
+H. negative price
+I. missing currency
+J. invalid currency
+K. missing FX
+L. zero FX
+M. negative FX
+N. current FX incorrectly applied to historical transaction
+O. malformed date
+P. transaction outside configured period
+Q. duplicate supplier
+R. duplicate item
+S. missing supplier
+T. missing item
+U. missing material group
+V. rounding before aggregation
+W. UI/backend mismatch
+X. Pareto threshold error
+Y. category reconciliation mismatch
+Z. supplier reconciliation mismatch
+AA. monthly reconciliation mismatch
+AB. plant reconciliation mismatch
+AC. raw-to-validated mismatch
+AD. silent exclusion
+
+All must either PASS or produce a controlled failure with a documented reason.
+
+========================================================
+SECTION 25 — PROPERTY-BASED / INVARIANT TESTING
+========================================================
+
+Create mathematical invariants.
+
+Invariant 1:
+
+SUM(all transaction line spend)
+=
+TOTAL SPEND
+
+Invariant 2:
+
+SUM(all supplier spend)
+=
+TOTAL SPEND
+
+Invariant 3:
+
+SUM(all item spend)
+=
+TOTAL SPEND
+
+Invariant 4:
+
+SUM(all material-group spend)
+=
+TOTAL SPEND
+
+Invariant 5:
+
+SUM(all plant spend)
+=
+TOTAL SPEND
+
+Invariant 6:
+
+SUM(all monthly spend)
+=
+TOTAL SPEND
+
+Invariant 7:
+
+No displayed rounded value may be used as an input to another calculation.
+
+Invariant 8:
+
+No raw source value may change after ingestion.
+
+Invariant 9:
+
+Every included transaction has one and only one final inclusion status.
+
+Invariant 10:
+
+Every excluded transaction has one and only one exclusion reason.
+
+Invariant 11:
+
+Every financial KPI has transaction-level provenance.
+
+Invariant 12:
+
+No transaction can be counted twice in the same aggregation.
+
+========================================================
+SECTION 26 — SCALE TEST
+========================================================
+
+Run validation against the full current dataset:
+
+31,671 records.
+
+Do NOT validate only the visible 30 sample records.
+
+The visible sample may be used for forensic examples, but certification must use the entire dataset.
+
+Also test if the system remains correct when dataset size increases substantially.
+
+========================================================
+SECTION 27 — UI LABEL AUDIT
+========================================================
+
+Audit all financial labels.
+
+Correct any label that could mislead a client.
+
+Specifically review:
+
+- "Live FX"
+- "Validated Spend"
+- "Total Evaluated Spend"
+- "Quality Index"
+- "Clean Data Reconciled"
+- "Active in Spend"
+- "80% Spend Cutoff"
+- "Unique Items"
+- "Unique Vendors"
+- "24 Billing Months"
+- "36 Months"
+
+Every label must describe exactly what the backend calculates.
+
+Do not make marketing claims that exceed the evidence.
+
+========================================================
+SECTION 28 — QUALITY INDEX
+========================================================
+
+Do not allow:
+
+QUALITY INDEX = 100%
+
+merely because records passed basic cleansing.
+
+Define exactly what Quality Index measures.
+
+It must not imply:
+
+"100% procurement data is perfect"
+
+unless that is actually proven.
+
+Separate:
+
+DATA QUALITY
+from
+DATA COMPLETENESS
+from
+DATA RECONCILIATION
+from
+PROCUREMENT PERFORMANCE.
+
+A clean dataset does NOT mean procurement performance is perfect.
+
+========================================================
+SECTION 29 — CERTIFICATION REPORT
+========================================================
+
+Generate:
+
+MODULE_1_FINAL_FORENSIC_VALIDATION.md
+
+Include:
+
+1. Dataset scope
+2. Actual date coverage
+3. Record count
+4. Raw spend
+5. Validated spend
+6. Excluded spend
+7. Anomaly spend
+8. Currency distribution
+9. FX methodology
+10. Supplier reconciliation
+11. Item reconciliation
+12. Category reconciliation
+13. Material group reconciliation
+14. Plant reconciliation
+15. Monthly reconciliation
+16. Pareto validation
+17. UI/backend validation
+18. Transaction-level examples
+19. Exception register
+20. Adversarial test results
+21. Mathematical invariant results
+22. Final certification status
+
+========================================================
+SECTION 30 — FINAL ACCEPTANCE GATE
+========================================================
+
+Module 1 may only be marked:
+
+MODULE_1_E2E_VALIDATED
+
+IF AND ONLY IF:
+
+- Raw data integrity = PASS
+- Record count reconciliation = PASS
+- Spend reconciliation = PASS
+- Currency validation = PASS
+- Historical FX validation = PASS
+- Line-item calculations = PASS
+- Supplier reconciliation = PASS
+- Item reconciliation = PASS
+- Category reconciliation = PASS
+- Material-group reconciliation = PASS
+- Plant reconciliation = PASS
+- Monthly reconciliation = PASS
+- Pareto reconciliation = PASS
+- UI/backend reconciliation = PASS
+- Transaction traceability = 100%
+- No unexplained variance
+- No silent exclusions
+- No silent transformations
+- All adversarial tests PASS
+- All mathematical invariants PASS
+
+If ANY of these fail:
+
+FINAL_STATUS = MODULE_1_E2E_VALIDATION_BLOCKED
+
+Do NOT mark the module validated.
+
+========================================================
+SECTION 31 — REQUIRED FINAL ARTIFACTS
+========================================================
+
+Create:
+
+MODULE_1_FINAL_FORENSIC_VALIDATION.md
+MODULE_1_FINAL_RECONCILIATION.xlsx
+MODULE_1_TRANSACTION_AUDIT.json
+MODULE_1_EXCEPTION_LEDGER.xlsx
+MODULE_1_TEST_RESULTS.json
+
+Also create automated regression tests:
+
+backend/tests/services/module1FinalForensicValidation.test.ts
+
+Run:
+
+- full Module 1 test suite
+- backend typecheck
+- frontend typecheck
+- backend lint
+- frontend lint
+- full relevant integration tests
+
+Do NOT modify Module 2 business logic.
+
+========================================================
+FINAL PRINCIPLE
+========================================================
+
+Module 1 is not merely a data-upload screen.
+
+It is the FINANCIAL SOURCE OF TRUTH.
+
+Therefore every ₹1 of procurement spend shown anywhere in the product must be explainable back to:
+
+SOURCE FILE
+→ SOURCE ROW
+→ TRANSACTION
+→ QUANTITY
+→ PRICE
+→ CURRENCY
+→ FX
+→ LINE SPEND
+→ AGGREGATION
+→ KPI.
+
+If the system cannot perform this reverse drill-down, Module 1 is NOT validated.
+
+Do not optimize for a 100% pass rate.
+
+Optimize for discovering defects.
+
+A failed test is preferable to a false certification.
+
+After execution, report:
+- exact tests run
+- exact pass/fail count
+- all discovered defects
+- all calculation variances
+- all scope inconsistencies
+- all UI/backend inconsistencies
+- all FX issues
+- all reconciliation issues
+- all remaining risks
+
+Do not claim "perfect procurement".
+Do not claim "perfect data".
+Certify only what has been mathematically demonstrated.
+
+
+
+## Prompt 244
+
+MODULE 1 — FINAL FORENSIC END-TO-END VALIDATION, CALCULATION AUDIT & TRANSACTION-LEVEL PROOF
+
+Perform a FINAL, DEEP, ADVERSARIAL validation of MODULE 1 only.
+
+IMPORTANT:
+This is a production-grade procurement analytics system. Do not accept a result merely because the UI looks correct or because existing tests pass.
+
+The objective is to prove that every number displayed by Module 1 is mathematically correct, fully reconciled, transaction-level traceable, reproducible from the uploaded source file, and safe to hand over to Module 2.
+
+Do NOT modify Module 3 / PCBI.
+Do NOT introduce benchmark prices.
+Do NOT introduce synthetic savings.
+Do NOT use external benchmark data.
+Do NOT change Module 2 business logic except where a Module 1 handoff contract requires correction.
+Do NOT invent missing data.
+
+========================================================
+1. MODULE 1 BOUNDARY
+========================================================
+
+Freeze the Module 1 responsibility as:
+
+UPLOAD
+→ FILE PARSING
+→ RECORD INGESTION
+→ DATA VALIDATION
+→ DATA CLEANSING / NORMALIZATION
+→ MULTI-CURRENCY CONVERSION
+→ LINE-LEVEL SPEND CALCULATION
+→ RECONCILIATION
+→ MATERIAL / CATEGORY / SUPPLIER / PLANT / MONTH AGGREGATION
+→ PARETO
+→ DATA QUALITY
+→ AUDIT TRAIL
+→ MODULE 2 HANDOFF
+
+Module 1 must NOT calculate:
+- procurement savings
+- market benchmark savings
+- PCBI benchmark values
+- supplier negotiation savings
+- e-auction savings
+- vendor consolidation savings
+- assumed price reductions
+
+Module 1 supplies factual customer procurement data to Module 2.
+
+========================================================
+2. FULL-FILE RECONCILIATION — NO SAMPLING
+========================================================
+
+Validate the COMPLETE uploaded dataset.
+
+The current UI shows:
+- 31,671 records
+- ₹5,920.35 Cr evaluated spend
+- 1,932 unique items
+- 969 unique vendors
+- 256 material groups
+- 26 facilities
+- 24 billing months
+
+Verify every one of these independently from the raw uploaded records.
+
+DO NOT treat:
+"30 Sample Records Evaluated"
+as validation of the full dataset.
+
+Create a distinction between:
+
+A. FULL DATASET VALIDATION
+B. SAMPLE / UI DISPLAY VALIDATION
+
+The full dataset must be the authoritative reconciliation population.
+
+If only a sample is currently being validated anywhere in the application, identify this as a defect.
+
+========================================================
+3. SOURCE FILE INTEGRITY
+========================================================
+
+Read the uploaded workbook at raw-record level.
+
+Validate:
+
+- workbook sheets
+- sheet names
+- header rows
+- hidden rows
+- hidden columns
+- merged cells
+- blank rows
+- duplicate headers
+- formulas
+- cached formula values
+- text-formatted numbers
+- numeric-formatted numbers
+- dates
+- invalid dates
+- blank cells
+- whitespace
+- special characters
+- unexpected columns
+- missing expected columns
+- duplicate rows
+- duplicate transaction identifiers
+
+Never silently discard a row.
+
+Every discarded/excluded row must receive:
+- RECORD_ID
+- source row number
+- exclusion code
+- exclusion reason
+- original values
+- exclusion impact in INR
+
+========================================================
+4. GOLDEN SOURCE RECORD
+========================================================
+
+For every source row create or verify a deterministic internal record identity.
+
+Minimum lineage:
+
+SOURCE FILE
+→ SHEET
+→ SOURCE ROW NUMBER
+→ RECORD ID
+→ PO NUMBER
+→ LINE ITEM
+→ MATERIAL CODE
+→ VENDOR
+→ QUANTITY
+→ NET PRICE
+→ ORIGINAL CURRENCY
+→ FX RATE
+→ INR VALUE
+→ FINAL LINE SPEND
+
+The original uploaded value must NEVER be overwritten.
+
+Maintain:
+
+original_value
+normalized_value
+calculated_value
+
+where applicable.
+
+A user must be able to inspect any displayed number and trace it back to the exact source row.
+
+========================================================
+5. LINE-SPEND MATHEMATICAL ENGINE
+========================================================
+
+For every transaction independently calculate:
+
+BASE_LINE_VALUE =
+ORDER_QUANTITY × NET_PRICE
+
+If currency is INR:
+
+INR_LINE_SPEND =
+ORDER_QUANTITY × NET_PRICE
+
+If currency is non-INR:
+
+INR_LINE_SPEND =
+ORDER_QUANTITY × NET_PRICE × APPROVED_HISTORICAL_FX_RATE
+
+Do not round intermediate calculations.
+
+Use sufficient decimal precision internally.
+
+Only round for presentation.
+
+Store:
+
+quantity
+unit_price
+original_currency
+fx_rate
+fx_rate_source
+fx_rate_date
+base_value
+INR_value
+display_value
+
+For every row independently verify:
+
+EXPECTED_LINE_SPEND
+=
+QUANTITY × PRICE × FX
+
+against the application's calculated line spend.
+
+Tolerance must be defined explicitly and must distinguish:
+- calculation precision tolerance
+- display rounding tolerance
+
+Never use display-rounded values for reconciliation.
+
+========================================================
+6. CRITICAL FX VALIDATION
+========================================================
+
+The UI currently shows:
+
+"Live FX Benchmark Conversion Rates to INR"
+
+This MUST NOT silently be used to recalculate historical procurement transactions.
+
+Determine exactly how historical FX is calculated.
+
+For every non-INR transaction verify:
+
+- transaction date
+- original currency
+- FX rate used
+- FX rate date
+- FX rate source
+- conversion methodology
+- whether the rate is daily/monthly/customer-configured
+- fallback methodology
+- missing FX treatment
+
+Historical transactions must NOT change merely because today's live FX rate changes.
+
+If current live FX rates are displayed for reference, clearly separate:
+
+LIVE MARKET REFERENCE RATE
+
+from
+
+HISTORICAL TRANSACTION CONVERSION RATE
+
+They must never be conflated.
+
+Add regression test:
+
+Change today's FX rate.
+
+Historical INR procurement spend MUST remain unchanged.
+
+========================================================
+7. CURRENCY VALIDATION
+========================================================
+
+Test:
+
+INR
+USD
+EUR
+GBP
+AED
+JPY
+SGD
+
+and any other currencies present.
+
+For INR:
+
+FX must equal 1 only where policy explicitly requires it.
+
+For non-INR:
+
+FX must exist or the record must be explicitly excluded.
+
+Never silently assume:
+
+missing FX = 1
+
+unless the currency is INR.
+
+Test:
+- missing FX
+- invalid FX
+- zero FX
+- negative FX
+- extreme FX
+- future FX date
+- wrong-date FX
+- unsupported currency
+
+========================================================
+8. QUANTITY / PRICE VALIDATION
+========================================================
+
+Test:
+
+positive quantity
+zero quantity
+negative quantity
+decimal quantity
+very large quantity
+
+positive price
+zero price
+negative price
+decimal price
+very large price
+
+Do not automatically classify zero/negative transactions as errors.
+
+Determine whether they represent:
+- returns
+- credit notes
+- cancellations
+- reversals
+- corrections
+- legitimate zero-value transactions
+
+Every treatment must be explicit and auditable.
+
+========================================================
+9. TOTAL SPEND RECONCILIATION
+========================================================
+
+Prove:
+
+SUM(valid transaction INR spend)
++
+SUM(explicitly excluded transaction impact)
++
+other mathematically justified adjustments
+=
+RAW SOURCE FINANCIAL TOTAL
+
+Then prove:
+
+SUM(all active line spend)
+=
+TOTAL EVALUATED SPEND
+
+For the current dataset independently verify whether:
+
+31,671 records
+→ ₹5,920.35 Cr
+
+is exact.
+
+Do not rely on the UI's displayed total.
+
+Produce:
+
+RAW_SOURCE_TOTAL
+VALIDATED_TOTAL
+EXCLUDED_TOTAL
+UNRESOLVED_TOTAL
+RECONCILIATION_VARIANCE
+
+Required:
+
+RECONCILIATION_VARIANCE = ₹0.00
+
+unless a documented source-data issue makes exact reconciliation impossible.
+
+If not zero, FAIL the module.
+
+========================================================
+10. DIMENSIONAL RECONCILIATION
+========================================================
+
+Independently calculate totals by:
+
+1. Material Group
+2. Material Code
+3. Item / SKU
+4. Supplier
+5. Plant / Facility
+6. Billing Month
+7. Financial Year
+8. Currency
+9. PO
+10. PO Line
+11. Category
+12. Any other customer-facing aggregation
+
+For every dimension:
+
+SUM(children)
+=
+PARENT TOTAL
+
+No aggregation may create or lose spend.
+
+Verify the screenshot values such as:
+
+₹3,200.44 Cr Ferro
+₹1,571.90 Cr Scrap
+₹107.18 Cr Scrap-RM
+etc.
+
+against raw transactions.
+
+========================================================
+11. UNIQUE ITEM / VENDOR COUNTS
+========================================================
+
+Recalculate independently:
+
+unique items
+unique vendors
+material groups
+plants
+POs
+transactions
+line items
+
+Define exactly what constitutes uniqueness.
+
+For example:
+
+Vendor uniqueness must not depend on inconsistent casing,
+leading/trailing spaces,
+punctuation,
+legal suffixes,
+or accidental whitespace.
+
+BUT:
+
+Do NOT merge two legal entities merely because names look similar.
+
+Maintain:
+
+RAW_VENDOR_NAME
+NORMALIZED_VENDOR_NAME
+VENDOR_ENTITY_ID
+
+and provide evidence for any entity normalization.
+
+========================================================
+12. DUPLICATE DETECTION
+========================================================
+
+Detect:
+
+Exact duplicate rows
+PO + line duplicates
+Same PO + material + quantity + price + date
+Potential duplicate transactions
+Legitimate repeated purchases
+
+Never delete duplicates automatically.
+
+Classify them.
+
+Show:
+
+DUPLICATE_STATUS
+DUPLICATE_TYPE
+MATCHING_FIELDS
+SOURCE_ROWS
+FINANCIAL_IMPACT
+
+The total spend must remain mathematically explainable.
+
+========================================================
+13. DATE VALIDATION
+========================================================
+
+Validate every transaction date.
+
+Check:
+
+- valid date
+- invalid date
+- future date
+- date outside evaluation window
+- fiscal year mapping
+- month mapping
+- quarter mapping
+
+Independently verify:
+
+FY24
+FY25
+FY26
+
+against actual dates.
+
+Do NOT derive the evaluation period from the filename.
+
+For example:
+
+"2 years data.xlsx"
+
+must not override actual transaction dates.
+
+If the UI currently says:
+
+36 Months / FY24-FY26
+
+but the uploaded file contains only 24 months,
+
+flag the discrepancy.
+
+The system must clearly distinguish:
+
+CONFIGURED EVALUATION WINDOW
+from
+ACTUAL DATA COVERAGE
+
+========================================================
+14. ZERO / ROUNDING VALIDATION
+========================================================
+
+The UI displays values in ₹ Crores.
+
+Therefore:
+
+₹2,800
+
+may display as:
+
+₹0.00 Cr
+
+but it must NOT become mathematically zero.
+
+Maintain:
+
+RAW INR VALUE
+FULL PRECISION INR VALUE
+INR CRORE VALUE
+DISPLAY VALUE
+
+All calculations must use full precision.
+
+Test small transactions specifically.
+
+========================================================
+15. PARETO / 80% SPEND VALIDATION
+========================================================
+
+Recalculate the 80% Pareto independently.
+
+Required methodology:
+
+1. Aggregate spend by selected entity.
+2. Sort descending by spend.
+3. Calculate cumulative spend.
+4. Calculate cumulative percentage.
+5. Identify first boundary crossing 80%.
+6. Include/exclude boundary entity according to deterministic rule.
+7. Record exact threshold.
+
+For the current screenshot verify:
+
+Total spend
+Cumulative spend shown
+Number of entities shown
+Cumulative percentage
+
+all reconcile.
+
+The system must never claim:
+
+"80% of spend"
+
+without showing the exact mathematical boundary.
+
+The Pareto list must be reproducible from the transaction ledger.
+
+========================================================
+16. MATERIAL GROUP / CATEGORY RECONCILIATION
+========================================================
+
+For each material group:
+
+Group Spend
+=
+SUM(Transaction Spend belonging to group)
+
+Test:
+- blank material group
+- malformed material group
+- duplicate group names
+- case differences
+- special characters
+- unmapped materials
+
+No spend may disappear simply because categorization is missing.
+
+Unmapped spend must remain visible under an explicit bucket such as:
+
+UNMAPPED / UNCLASSIFIED
+
+and must still reconcile financially.
+
+========================================================
+17. SUPPLIER RECONCILIATION
+========================================================
+
+For every supplier:
+
+Supplier Spend
+=
+SUM(all valid transactions belonging to supplier)
+
+Validate large suppliers individually.
+
+Validate small suppliers.
+
+Validate suppliers near the 80% Pareto boundary.
+
+Validate long-tail suppliers.
+
+No supplier may disappear because it is outside the displayed top-N view.
+
+Top-N is a DISPLAY FILTER, never a DATA FILTER.
+
+========================================================
+18. PLANT / FACILITY RECONCILIATION
+========================================================
+
+Verify all 26 facilities.
+
+For each:
+
+facility spend
+=
+sum of underlying transactions
+
+Check missing facility codes and names.
+
+Never exclude facility spend merely because the plant mapping is unavailable.
+
+========================================================
+19. MONTHLY / FY TREND RECONCILIATION
+========================================================
+
+Recalculate monthly spend from transaction dates.
+
+Then independently aggregate:
+
+FY24
+FY25
+FY26
+
+Verify every displayed trend value.
+
+A trend chart must NEVER use synthetic or smoothed numbers.
+
+If the data is flat because the uploaded source data is flat, display the actual flat trend.
+
+========================================================
+20. DATA QUALITY ENGINE
+========================================================
+
+Create a deterministic quality framework.
+
+At minimum test:
+
+Missing vendor
+Missing material
+Missing quantity
+Missing price
+Missing currency
+Missing FX
+Invalid date
+Duplicate transaction
+Negative value
+Zero value
+Invalid UOM
+Invalid material code
+Invalid PO
+Unmapped category
+Unmapped plant
+Unsupported currency
+
+Each issue requires:
+
+RECORD_ID
+RULE_ID
+SEVERITY
+ORIGINAL_VALUE
+EXPECTED_VALUE
+ACTION
+FINANCIAL_IMPACT
+
+Quality Index must be calculated from actual rule results.
+
+Do NOT allow the application to simply return:
+
+100%
+
+because no exception was manually entered.
+
+========================================================
+21. "PASSED CLEAN" STATUS
+========================================================
+
+The status:
+
+PASSED CLEAN
+
+must only be assigned when ALL applicable validation rules pass for that transaction.
+
+Create explicit status categories:
+
+PASSED_CLEAN
+PASSED_WITH_NORMALIZATION
+PASSED_WITH_WARNING
+EXCLUDED
+FAILED
+REQUIRES_REVIEW
+
+Never hide warnings under PASSED CLEAN.
+
+========================================================
+22. "ACTIVE IN SPEND" VALIDATION
+========================================================
+
+The UI currently shows:
+
+Active in Spend (₹0.00 Cr)
+
+for very small transactions.
+
+Verify whether this is:
+
+actual zero spend
+or
+display rounding.
+
+Do not use the rounded Crore value to determine active/inactive status.
+
+Use the underlying INR amount.
+
+========================================================
+23. UI ↔ BACKEND CONSISTENCY
+========================================================
+
+Every major UI number must be compared against backend/database calculation.
+
+Test:
+
+UI Total Spend
+Backend Total Spend
+Raw Source Total
+
+UI Unique Vendors
+Backend Unique Vendors
+Raw Source Unique Vendors
+
+UI Unique Items
+Backend Unique Items
+Raw Source Unique Items
+
+UI Material Groups
+Backend Material Groups
+Raw Source Material Groups
+
+UI Facilities
+Backend Facilities
+Raw Source Facilities
+
+Any discrepancy = FAIL.
+
+========================================================
+24. UI DISPLAY DOES NOT DEFINE THE DATA
+========================================================
+
+Verify that pagination, lazy loading, top-N filtering, Pareto filtering, collapsed rows and virtualized tables do NOT alter the underlying calculations.
+
+Examples:
+
+Showing 46 suppliers must not mean only 46 suppliers exist.
+
+Showing Top 10 material groups must not mean only 10 groups are included in total spend.
+
+Collapsed items must still remain included.
+
+Hidden rows must remain included.
+
+Search filters must only change presentation.
+
+========================================================
+25. TRANSACTION-LEVEL PROOF
+========================================================
+
+For EVERY KPI, create a proof chain.
+
+Example:
+
+TOTAL SPEND
+↓
+Supplier Spend
+↓
+Material Group Spend
+↓
+Material / SKU Spend
+↓
+PO
+↓
+PO Line
+↓
+Transaction
+↓
+Source Row
+↓
+Original uploaded value
+
+The audit must allow a user to answer:
+
+"Show me exactly which customer records created this ₹X Cr."
+
+No KPI may be a black box.
+
+========================================================
+26. REPRODUCIBILITY TEST
+========================================================
+
+Take the uploaded source file.
+
+Run Module 1 twice.
+
+Expected:
+
+RUN 1 TOTAL = RUN 2 TOTAL
+
+All dimension totals must match.
+
+All record counts must match.
+
+All classifications must match.
+
+All Pareto results must match.
+
+All historical FX conversions must match.
+
+If the result changes between runs without source-data change:
+
+FAIL.
+
+========================================================
+27. ADVERSARIAL TESTING
+========================================================
+
+Create tests for:
+
+A. Duplicate row
+B. Missing price
+C. Missing quantity
+D. Missing vendor
+E. Missing material
+F. Missing currency
+G. Missing FX
+H. Unsupported currency
+I. Zero quantity
+J. Negative quantity
+K. Zero price
+L. Negative price
+M. Extremely large price
+N. Extremely large quantity
+O. Invalid date
+P. Future date
+Q. Date outside window
+R. Same vendor with whitespace differences
+S. Same material with formatting differences
+T. Duplicate PO line
+U. Hidden spreadsheet row
+V. Blank spreadsheet row
+W. Formula cell
+X. Text-number cell
+Y. Currency changed after upload
+Z. Current FX rate changed after upload
+AA. UI filter applied
+AB. Pagination changed
+AC. Top-N changed
+AD. Pareto threshold changed
+AE. Missing category
+AF. Missing plant
+AG. Small-value transaction
+AH. Large-value transaction
+
+Every test must have:
+
+INPUT
+EXPECTED RESULT
+ACTUAL RESULT
+PASS/FAIL
+FINANCIAL IMPACT
+
+========================================================
+28. DATA IMMUTABILITY TEST
+========================================================
+
+Once the file is ingested:
+
+Original source values must remain immutable.
+
+Normalization must create derived fields.
+
+Never overwrite the customer's original:
+
+Vendor
+Material
+Description
+Quantity
+Price
+Currency
+Date
+PO
+Line item
+
+without preserving the original.
+
+========================================================
+29. MODULE 2 HANDOFF
+========================================================
+
+Verify that Module 1 hands Module 2 only:
+
+- validated transactions
+- validated spend
+- transaction IDs
+- supplier IDs
+- material IDs
+- category/material group
+- quantity
+- price
+- currency
+- approved historical FX
+- INR spend
+- source lineage
+- quality status
+
+Module 2 must receive NO:
+
+- PCBI values
+- market benchmark prices
+- synthetic savings
+- assumed savings percentages
+
+========================================================
+30. FINANCIAL INVARIANTS
+========================================================
+
+Create automated invariants.
+
+At minimum:
+
+SUM(transaction_spend) = total_spend
+
+SUM(category_spend) = total_spend
+
+SUM(supplier_spend) = total_spend
+
+SUM(material_group_spend) = total_spend
+
+SUM(plant_spend) = total_spend
+
+SUM(month_spend) = total_spend
+
+SUM(currency_converted_spend) = total_spend
+
+No unexplained variance.
+
+Required:
+
+RECONCILIATION_VARIANCE = 0
+
+========================================================
+31. FINAL AUDIT ARTIFACTS
+========================================================
+
+Generate:
+
+MODULE_1_FINAL_FORENSIC_VALIDATION.md
+
+MODULE_1_FINAL_CALCULATION_AUDIT.xlsx
+
+MODULE_1_TRANSACTION_PROOF_LEDGER.xlsx
+
+MODULE_1_DATA_QUALITY_AUDIT.xlsx
+
+MODULE_1_RECONCILIATION_AUDIT.json
+
+MODULE_1_ADVERSARIAL_TEST_RESULTS.json
+
+MODULE_1_SOURCE_TO_KPI_LINEAGE.xlsx
+
+The calculation workbook must contain at minimum:
+
+1. Raw Record Reconciliation
+2. Transaction Calculation Audit
+3. FX Audit
+4. Supplier Reconciliation
+5. Material Reconciliation
+6. Category Reconciliation
+7. Plant Reconciliation
+8. Monthly Reconciliation
+9. FY Reconciliation
+10. Pareto Audit
+11. Duplicate Audit
+12. Data Quality Audit
+13. Exclusion Ledger
+14. KPI Lineage
+15. Financial Invariants
+
+========================================================
+32. FINAL ACCEPTANCE GATES
+========================================================
+
+Module 1 can only be declared:
+
+MODULE_1_E2E_VALIDATED
+
+if ALL are true:
+
+- Full dataset validated
+- Source record count reconciled
+- Total spend reconciled
+- Transaction calculations reconciled
+- Historical FX validated
+- No live FX contamination
+- Supplier totals reconciled
+- Material totals reconciled
+- Category totals reconciled
+- Plant totals reconciled
+- Monthly totals reconciled
+- FY totals reconciled
+- Pareto mathematically reproducible
+- Duplicate treatment proven
+- Data quality rules proven
+- UI/backend numbers match
+- Every KPI has transaction-level lineage
+- No hidden financial exclusions
+- No unexplained rounding loss
+- No Module 3 leakage
+- Module 2 handoff validated
+- All adversarial tests pass
+- Typecheck passes
+- Lint passes
+- Existing tests pass
+- New Module 1 forensic tests pass
+- RECONCILIATION_VARIANCE = ₹0.00
+
+========================================================
+33. CRITICAL FAILURE RULE
+========================================================
+
+If ANY financial number cannot be traced to source transactions:
+
+FAIL.
+
+If ANY aggregation does not reconcile:
+
+FAIL.
+
+If historical spend changes because current live FX changes:
+
+FAIL.
+
+If UI says 100% clean but full-file validation was not performed:
+
+FAIL.
+
+If any transaction is silently excluded:
+
+FAIL.
+
+If any KPI cannot be drilled down to source-row evidence:
+
+FAIL.
+
+Do not hide defects.
+
+Do not downgrade a defect to a warning simply to achieve PASS.
+
+========================================================
+34. SAFE PATCHING RULE
+========================================================
+
+If defects are discovered:
+
+1. Identify defect.
+2. Explain root cause.
+3. Create failing test.
+4. Fix the smallest appropriate code path.
+5. Re-run the failing test.
+6. Re-run the complete Module 1 test suite.
+7. Re-run Module 2 regression tests.
+8. Run backend typecheck.
+9. Run frontend typecheck.
+10. Run backend lint.
+11. Run frontend lint.
+12. Re-run full reconciliation.
+13. Regenerate audit artifacts.
+
+Do not modify unrelated modules.
+
+========================================================
+35. FINAL REPORT
+========================================================
+
+At the end provide:
+
+A. FINAL STATUS
+B. DATASET SIZE
+C. SOURCE TOTAL
+D. VALIDATED TOTAL
+E. EXCLUDED TOTAL
+F. UNRESOLVED TOTAL
+G. RECONCILIATION VARIANCE
+H. TRANSACTION CALCULATION STATUS
+I. FX STATUS
+J. DUPLICATE STATUS
+K. DATA QUALITY STATUS
+L. PARETO STATUS
+M. UI/BACKEND CONSISTENCY
+N. TRANSACTION-LEVEL TRACEABILITY %
+O. NUMBER OF TESTS
+P. PASS COUNT
+Q. FAIL COUNT
+R. DEFECTS FOUND
+S. DEFECTS FIXED
+T. REMAINING RISKS
+U. MODULE 2 HANDOFF STATUS
+
+Most importantly:
+
+DO NOT declare Module 1 "perfect".
+
+The purpose of this validation is not to prove that procurement data is perfect.
+
+The purpose is to prove that the SOFTWARE has correctly represented the customer's procurement data, that every calculation is defensible, and that any future savings/opportunity identified by Module 2 can be traced back to real customer transactions.
+
+The final output must distinguish:
+
+DATA IS CLEAN
+
+from
+
+PROCUREMENT IS OPTIMIZED.
+
+These are NOT the same statement.

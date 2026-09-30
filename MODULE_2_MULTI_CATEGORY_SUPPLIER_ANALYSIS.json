@@ -1,0 +1,116 @@
+{
+  "auditTimestamp": "2026-09-30T12:53:34.286Z",
+  "version": "MODULE_2_MULTI_CATEGORY_SUPPLIER_ANALYSIS_V1.0",
+  "totalMultiCategorySuppliersEvaluated": 4,
+  "evaluationLevel": "CATEGORY_PLUS_ITEM_LEVEL",
+  "suppliers": [
+    {
+      "supplierName": "3M Safety Products / 3M India",
+      "evaluatedCategories": [
+        {
+          "category": "Safety Equipment",
+          "item": "Safety Helmet & Gloves",
+          "spendInr": 555000,
+          "transactionCount": 2,
+          "pricePosition": "BENCHMARK_TIER_1",
+          "specification": "HDPE Class C / IS6994",
+          "supplierSpecialization": "CORE_MANUFACTURER",
+          "recommendation": "RETAIN_IN_CORE_CATEGORY",
+          "affectedSpendInr": 555000
+        },
+        {
+          "category": "Packaging Materials",
+          "item": "Standard Corrugated Box B-Flute",
+          "spendInr": 50000,
+          "transactionCount": 1,
+          "pricePosition": "NON_COMPETITIVE_RESELLER",
+          "specification": "Corrugated Box",
+          "supplierSpecialization": "NON_CORE_ANCILLARY",
+          "recommendation": "MOVE_TO_CATEGORY_SPECIALIST",
+          "affectedSpendInr": 50000
+        }
+      ]
+    },
+    {
+      "supplierName": "Bolt Masters India",
+      "evaluatedCategories": [
+        {
+          "category": "Industrial Fasteners",
+          "item": "Hex Bolt & Nut M20 Grade 8.8",
+          "spendInr": 6350000,
+          "transactionCount": 2,
+          "pricePosition": "COMPETITIVE_PRIMARY",
+          "specification": "M20 Grade 8.8 High Tensile",
+          "supplierSpecialization": "CATEGORY_SPECIALIST",
+          "recommendation": "RETAIN_AND_CONSOLIDATE_TAIL",
+          "affectedSpendInr": 6350000
+        },
+        {
+          "category": "Structural Steel",
+          "item": "Structural Hardware Accessories",
+          "spendInr": 850000,
+          "transactionCount": 1,
+          "pricePosition": "SUB_SCALE_TRADER",
+          "specification": "Steel Hardware Accessories",
+          "supplierSpecialization": "NON_INTEGRATED_TRADER",
+          "recommendation": "MOVE_TO_INTEGRATED_MILL_POOL",
+          "affectedSpendInr": 850000
+        }
+      ]
+    },
+    {
+      "supplierName": "Havells India Ltd",
+      "evaluatedCategories": [
+        {
+          "category": "Electrical Cables",
+          "item": "Armoured Cable 6 sqmm IS1554",
+          "spendInr": 1469000,
+          "transactionCount": 2,
+          "pricePosition": "PRIMARY_TIER_1",
+          "specification": "6 sqmm Armoured Copper IS1554",
+          "supplierSpecialization": "CORE_MANUFACTURER",
+          "recommendation": "RETAIN_IN_CORE_CATEGORY",
+          "affectedSpendInr": 1469000
+        },
+        {
+          "category": "Safety Equipment",
+          "item": "Workplace Industrial Lighting",
+          "spendInr": 320000,
+          "transactionCount": 1,
+          "pricePosition": "PREMIUM_DISPERSED",
+          "specification": "Industrial LED Luminaires",
+          "supplierSpecialization": "SECONDARY_SPECIALIZATION",
+          "recommendation": "POOL_WITH_ELECTRICAL_MRO",
+          "affectedSpendInr": 320000
+        }
+      ]
+    },
+    {
+      "supplierName": "IOC SERVO Lubricants",
+      "evaluatedCategories": [
+        {
+          "category": "Lubricants",
+          "item": "Hydraulic Oil ISO VG 46",
+          "spendInr": 3704000,
+          "transactionCount": 2,
+          "pricePosition": "LOWEST_PRICE_BENCHMARK",
+          "specification": "ISO VG 46 Mineral Hydraulic Fluid",
+          "supplierSpecialization": "PSU_INTEGRATED_REFINER",
+          "recommendation": "RETAIN_AND_EXPAND_SHARE",
+          "affectedSpendInr": 3704000
+        },
+        {
+          "category": "Industrial Solvents",
+          "item": "Degreasing Solvent Cleaners",
+          "spendInr": 450000,
+          "transactionCount": 1,
+          "pricePosition": "STANDARD_COMMODITY",
+          "specification": "Mineral Spirits",
+          "supplierSpecialization": "COMMODITY_BULK",
+          "recommendation": "POOL_WITH_CHEMICAL_CONTRACT",
+          "affectedSpendInr": 450000
+        }
+      ]
+    }
+  ]
+}

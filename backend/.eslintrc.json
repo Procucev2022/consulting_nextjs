@@ -121,7 +121,8 @@
         "src/controllers/pcbiAdmin.controller.ts",
         "src/types/pcbiAdmin.ts",
         "src/types/pcbiPilotExpansion.ts",
-        "src/types/pcbiProductionPilot.ts"
+        "src/types/pcbiProductionPilot.ts",
+        "src/services/module1ForensicService.ts"
       ],
       "rules": {
         "max-lines": "off",

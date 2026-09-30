@@ -27,3 +27,4 @@ export * from './pcbiCommodityDataLab';
 export * from './module2StrategicSourcing';
 export * from './module2OpportunityIntelligence';
 export * from './module2EvidenceChain';
+export * from './module1Forensic';

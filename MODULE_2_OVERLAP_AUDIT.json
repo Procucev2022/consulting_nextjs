@@ -1,0 +1,97 @@
+{
+  "auditTimestamp": "2026-09-30T12:53:34.360Z",
+  "version": "MODULE_2_OVERLAP_AUDIT_V1.0",
+  "totalOpportunitiesAudited": 7,
+  "totalGrossOpportunityInr": 52354500,
+  "totalOverlapDeductionsInr": 23250000,
+  "totalNetDefensibleOpportunityInr": 29104500,
+  "formula": "Gross Opportunity - Less Overlap = Net Defensible Opportunity",
+  "balanced": true,
+  "matchesEngineNet": true,
+  "opportunityOverlapMatrix": [
+    {
+      "opportunityId": "OPP-STEEL-001",
+      "category": "Structural Steel",
+      "spendPoolInr": 373450000,
+      "primaryLever": "HISTORICAL_PRICE_ARBITRAGE",
+      "secondaryLever": "NONE",
+      "grossOpportunityInr": 23250000,
+      "overlapPercentage": 0,
+      "overlapDeductionInr": 0,
+      "netOpportunityInr": 23250000,
+      "attributionStatus": "RETAINED_PRIMARY"
+    },
+    {
+      "opportunityId": "OPP-STEEL-002",
+      "category": "Structural Steel",
+      "spendPoolInr": 373450000,
+      "primaryLever": "E_AUCTION",
+      "secondaryLever": "HISTORICAL_PRICE_ARBITRAGE",
+      "grossOpportunityInr": 23250000,
+      "overlapPercentage": 100,
+      "overlapDeductionInr": 23250000,
+      "netOpportunityInr": 0,
+      "attributionStatus": "DEDUCTED_OVERLAP"
+    },
+    {
+      "opportunityId": "OPP-FASTENERS-001",
+      "category": "Industrial Fasteners",
+      "spendPoolInr": 14170000,
+      "primaryLever": "VENDOR_CONSOLIDATION",
+      "secondaryLever": "NONE",
+      "grossOpportunityInr": 5110000,
+      "overlapPercentage": 0,
+      "overlapDeductionInr": 0,
+      "netOpportunityInr": 5110000,
+      "attributionStatus": "RETAINED_PRIMARY"
+    },
+    {
+      "opportunityId": "OPP-LUBRICANTS-001",
+      "category": "Lubricants",
+      "spendPoolInr": 9605000,
+      "primaryLever": "VOLUME_BUNDLING",
+      "secondaryLever": "NONE",
+      "grossOpportunityInr": 485000,
+      "overlapPercentage": 0,
+      "overlapDeductionInr": 0,
+      "netOpportunityInr": 485000,
+      "attributionStatus": "RETAINED_PRIMARY"
+    },
+    {
+      "opportunityId": "OPP-CABLES-001",
+      "category": "Electrical Cables",
+      "spendPoolInr": 4929000,
+      "primaryLever": "HISTORICAL_PRICE_ARBITRAGE",
+      "secondaryLever": "NONE",
+      "grossOpportunityInr": 226500,
+      "overlapPercentage": 0,
+      "overlapDeductionInr": 0,
+      "netOpportunityInr": 226500,
+      "attributionStatus": "RETAINED_PRIMARY"
+    },
+    {
+      "opportunityId": "OPP-SAFETY-001",
+      "category": "Safety Equipment",
+      "spendPoolInr": 1099500,
+      "primaryLever": "COMMERCIAL_TERMS",
+      "secondaryLever": "NONE",
+      "grossOpportunityInr": 33000,
+      "overlapPercentage": 0,
+      "overlapDeductionInr": 0,
+      "netOpportunityInr": 33000,
+      "attributionStatus": "RETAINED_PRIMARY"
+    },
+    {
+      "opportunityId": "OPP-PACKAGING-001",
+      "category": "Packaging Materials",
+      "spendPoolInr": 600000,
+      "primaryLever": "HISTORICAL_PRICE_ARBITRAGE",
+      "secondaryLever": "NONE",
+      "grossOpportunityInr": 0,
+      "overlapPercentage": 0,
+      "overlapDeductionInr": 0,
+      "netOpportunityInr": 0,
+      "attributionStatus": "ZERO_OPPORTUNITY"
+    }
+  ]
+}

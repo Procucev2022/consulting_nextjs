@@ -1,0 +1,186 @@
+{
+  "auditTimestamp": "2026-09-30T12:53:34.291Z",
+  "version": "MODULE_2_ADVERSARIAL_TEST_RESULTS_V1.0",
+  "totalScenariosEvaluated": 22,
+  "passedScenariosCount": 22,
+  "failedScenariosCount": 0,
+  "zeroFabricatedSavingsConfirmed": true,
+  "scenarios": [
+    {
+      "id": 1,
+      "name": "Wrong UOM (MT vs KG)",
+      "expected": "BLOCKED_UOM_MISMATCH",
+      "actual": "BLOCKED_UOM_MISMATCH",
+      "status": "PASS",
+      "reason": "Non-comparable UOM rejected from pairwise comparison"
+    },
+    {
+      "id": 2,
+      "name": "Wrong currency (USD vs INR)",
+      "expected": "BLOCKED_CURRENCY_MISMATCH",
+      "actual": "BLOCKED_CURRENCY_MISMATCH",
+      "status": "PASS",
+      "reason": "Unconverted foreign currency rejected from baseline"
+    },
+    {
+      "id": 3,
+      "name": "Wrong specification (IS2062 vs Corten)",
+      "expected": "BLOCKED_SPEC_MISMATCH",
+      "actual": "BLOCKED_SPEC_MISMATCH",
+      "status": "PASS",
+      "reason": "Incomparable metallurgy prevented from price comparison"
+    },
+    {
+      "id": 4,
+      "name": "Wrong grade (Grade 8.8 vs Grade 4.6)",
+      "expected": "BLOCKED_GRADE_MISMATCH",
+      "actual": "BLOCKED_GRADE_MISMATCH",
+      "status": "PASS",
+      "reason": "Tensile grade disparity blocked from arbitrage calculation"
+    },
+    {
+      "id": 5,
+      "name": "Wrong geography / plant location",
+      "expected": "FILTERED_LOCATION_VARIANCE",
+      "actual": "FILTERED_LOCATION_VARIANCE",
+      "status": "PASS",
+      "reason": "Freight location differentials normalized before comparison"
+    },
+    {
+      "id": 6,
+      "name": "Zero quantity transaction",
+      "expected": "EXCLUDED_ZERO_QUANTITY",
+      "actual": "EXCLUDED_ZERO_QUANTITY",
+      "status": "PASS",
+      "reason": "Transactions with zero quantity discarded"
+    },
+    {
+      "id": 7,
+      "name": "Zero price transaction",
+      "expected": "EXCLUDED_ZERO_PRICE",
+      "actual": "EXCLUDED_ZERO_PRICE",
+      "status": "PASS",
+      "reason": "Zero unit price excluded from reference calculation"
+    },
+    {
+      "id": 8,
+      "name": "Negative price transaction",
+      "expected": "EXCLUDED_NEGATIVE_PRICE",
+      "actual": "EXCLUDED_NEGATIVE_PRICE",
+      "status": "PASS",
+      "reason": "Negative price entries rejected as invalid financial data"
+    },
+    {
+      "id": 9,
+      "name": "Duplicate transaction (identical ID & PO)",
+      "expected": "DEDUPLICATED",
+      "actual": "DEDUPLICATED",
+      "status": "PASS",
+      "reason": "Duplicate records deduplicated before ingestion"
+    },
+    {
+      "id": 10,
+      "name": "Duplicate PO line item",
+      "expected": "DEDUPLICATED_PO_LINE",
+      "actual": "DEDUPLICATED_PO_LINE",
+      "status": "PASS",
+      "reason": "Redundant PO line items consolidated"
+    },
+    {
+      "id": 11,
+      "name": "Outlier transaction (> 3-sigma price)",
+      "expected": "FILTERED_AS_OUTLIER",
+      "actual": "FILTERED_AS_OUTLIER",
+      "status": "PASS",
+      "reason": "Statistical outlier excluded from credible benchmark"
+    },
+    {
+      "id": 12,
+      "name": "Very small transaction (< min lot size)",
+      "expected": "DISQUALIFIED_MICRO_LOT",
+      "actual": "DISQUALIFIED_MICRO_LOT",
+      "status": "PASS",
+      "reason": "Sub-scale transaction disqualified from setting market price"
+    },
+    {
+      "id": 13,
+      "name": "Single supplier in category",
+      "expected": "NOT_QUANTIFIABLE_MONOPOLY",
+      "actual": "NOT_QUANTIFIABLE_MONOPOLY",
+      "status": "PASS",
+      "reason": "Sole-source spend flagged as non-quantifiable for competition"
+    },
+    {
+      "id": 14,
+      "name": "Single transaction in category",
+      "expected": "NOT_QUANTIFIABLE_INSUFFICIENT_HISTORY",
+      "actual": "NOT_QUANTIFIABLE_INSUFFICIENT_HISTORY",
+      "status": "PASS",
+      "reason": "Insufficient history to establish price trend"
+    },
+    {
+      "id": 15,
+      "name": "No historical dispersion (0% variance)",
+      "expected": "ZERO_OPPORTUNITY_FLAGGED",
+      "actual": "ZERO_OPPORTUNITY_FLAGGED",
+      "status": "PASS",
+      "reason": "Uniform pricing returns zero quantifiable opportunity"
+    },
+    {
+      "id": 16,
+      "name": "Contract-only spend (fixed annual SLA)",
+      "expected": "CONTRACT_LOCKED_FLAGGED",
+      "actual": "CONTRACT_LOCKED_FLAGGED",
+      "status": "PASS",
+      "reason": "Committed contract spend excluded from spot arbitrage"
+    },
+    {
+      "id": 17,
+      "name": "Spot-only non-recurring spend",
+      "expected": "NON_RECURRING_ISOLATED",
+      "actual": "NON_RECURRING_ISOLATED",
+      "status": "PASS",
+      "reason": "One-off purchases separated from recurring baseline"
+    },
+    {
+      "id": 18,
+      "name": "Mixed spot/contract spend",
+      "expected": "STRATIFIED_BY_STATUS",
+      "actual": "STRATIFIED_BY_STATUS",
+      "status": "PASS",
+      "reason": "Separate baselines established for spot vs contract spend"
+    },
+    {
+      "id": 19,
+      "name": "Insufficient qualified suppliers (< 3 for auction)",
+      "expected": "AUCTION_DISQUALIFIED",
+      "actual": "AUCTION_DISQUALIFIED",
+      "status": "PASS",
+      "reason": "E-auction marked unsuitable due to lack of competitive depth"
+    },
+    {
+      "id": 20,
+      "name": "Overlapping benefit mechanisms",
+      "expected": "OVERLAP_DEDUCTED_EXACT",
+      "actual": "OVERLAP_DEDUCTED_EXACT",
+      "status": "PASS",
+      "reason": "Double counting strictly deducted via overlap ledger"
+    },
+    {
+      "id": 21,
+      "name": "Multi-category supplier cross-subsidization",
+      "expected": "EVALUATED_AT_ITEM_LEVEL",
+      "actual": "EVALUATED_AT_ITEM_LEVEL",
+      "status": "PASS",
+      "reason": "Category + item level analysis unbundles cross-subsidies"
+    },
+    {
+      "id": 22,
+      "name": "Supplier consolidation creating concentration risk",
+      "expected": "DIVERSIFICATION_MANDATED",
+      "actual": "DIVERSIFICATION_MANDATED",
+      "status": "PASS",
+      "reason": "Strategy B mandates multi-sourcing when HHI exceeds safe threshold"
+    }
+  ]
+}

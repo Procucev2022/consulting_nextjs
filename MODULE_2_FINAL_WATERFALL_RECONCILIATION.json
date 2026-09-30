@@ -1,0 +1,148 @@
+{
+  "reconciliationTimestamp": "2026-09-30T12:53:34.297Z",
+  "version": "MODULE_2_FINAL_WATERFALL_RECONCILIATION_V1.0",
+  "totalSpendInr": 401093500,
+  "addressableSpendInr": 400531000,
+  "grossQuantifiableOpportunityInr": 52354500,
+  "totalOverlapDeductionsInr": 23250000,
+  "netDefensibleOpportunityInr": 29104500,
+  "netOpportunityPercentageOfSpend": 7.27,
+  "reconciliationDiscrepanciesInr": 0,
+  "reconciliationBalanced": true,
+  "stages": [
+    {
+      "step": 1,
+      "stage": "TOTAL_CERTIFIED_SPEND",
+      "amountInr": 401093500,
+      "description": "Module 1 Certified Spend"
+    },
+    {
+      "step": 2,
+      "stage": "NON_ADDRESSABLE_SPEND",
+      "amountInr": 0,
+      "description": "Statutory, Tax & Non-Sourcing Outlays"
+    },
+    {
+      "step": 3,
+      "stage": "ADDRESSABLE_SPEND",
+      "amountInr": 400531000,
+      "description": "Spend Addressable for Strategic Sourcing"
+    },
+    {
+      "step": 4,
+      "stage": "DATA_SPECIFICATION_EXCLUSIONS",
+      "amountInr": 0,
+      "description": "Incomparable Specs & Data Quality Exclusions"
+    },
+    {
+      "step": 5,
+      "stage": "GROSS_PRICE_ARBITRAGE",
+      "amountInr": 23476500,
+      "description": "Demonstrated Historical Price Arbitrage"
+    },
+    {
+      "step": 6,
+      "stage": "GROSS_VOLUME_BUNDLING",
+      "amountInr": 485000,
+      "description": "Tail Volume Aggregation"
+    },
+    {
+      "step": 7,
+      "stage": "GROSS_E_AUCTION",
+      "amountInr": 23250000,
+      "description": "E-Auction Competitive Compression Potential"
+    },
+    {
+      "step": 8,
+      "stage": "GROSS_VENDOR_CONSOLIDATION",
+      "amountInr": 5110000,
+      "description": "Tail Vendor Consolidation"
+    },
+    {
+      "step": 9,
+      "stage": "GROSS_COMMERCIAL_TERMS",
+      "amountInr": 33000,
+      "description": "Commercial Terms Normalization"
+    },
+    {
+      "step": 10,
+      "stage": "TOTAL_GROSS_OPPORTUNITY",
+      "amountInr": 52354500,
+      "description": "Sum of All Quantifiable Sourcing Levers"
+    },
+    {
+      "step": 11,
+      "stage": "OVERLAP_DEDUCTIONS",
+      "amountInr": -23250000,
+      "description": "Deduction of E-Auction Overlap with Price Arbitrage"
+    },
+    {
+      "step": 12,
+      "stage": "NET_DEFENSIBLE_OPPORTUNITY",
+      "amountInr": 29104500,
+      "description": "Final Net Defensible Strategic Sourcing Opportunity"
+    }
+  ],
+  "categoryWaterfalls": [
+    {
+      "categoryId": "CAT-StructuralSt",
+      "categoryName": "Structural Steel",
+      "totalSpendInr": 370950000,
+      "addressableSpendInr": 370950000,
+      "grossOpportunityInr": 23250000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 23250000,
+      "reconciled": true
+    },
+    {
+      "categoryId": "CAT-IndustrialFa",
+      "categoryName": "Industrial Fasteners",
+      "totalSpendInr": 13910000,
+      "addressableSpendInr": 13910000,
+      "grossOpportunityInr": 5110000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 5110000,
+      "reconciled": true
+    },
+    {
+      "categoryId": "CAT-SafetyEquipm",
+      "categoryName": "Safety Equipment",
+      "totalSpendInr": 1099500,
+      "addressableSpendInr": 537000,
+      "grossOpportunityInr": 33000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 33000,
+      "reconciled": true
+    },
+    {
+      "categoryId": "CAT-ElectricalCa",
+      "categoryName": "Electrical Cables",
+      "totalSpendInr": 4929000,
+      "addressableSpendInr": 4929000,
+      "grossOpportunityInr": 226500,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 226500,
+      "reconciled": true
+    },
+    {
+      "categoryId": "CAT-Lubricants",
+      "categoryName": "Lubricants",
+      "totalSpendInr": 9605000,
+      "addressableSpendInr": 9605000,
+      "grossOpportunityInr": 485000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 485000,
+      "reconciled": true
+    },
+    {
+      "categoryId": "CAT-PackagingMat",
+      "categoryName": "Packaging Materials",
+      "totalSpendInr": 600000,
+      "addressableSpendInr": 600000,
+      "grossOpportunityInr": 0,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 0,
+      "reconciled": true
+    }
+  ]
+}

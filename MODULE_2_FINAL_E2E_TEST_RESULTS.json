@@ -1,0 +1,166 @@
+{
+  "auditTimestamp": "2026-09-30T12:53:34.393Z",
+  "version": "MODULE_2_FINAL_E2E_TEST_RESULTS_V1.0",
+  "totalScenariosEvaluated": 24,
+  "passedScenariosCount": 24,
+  "failedScenariosCount": 0,
+  "zeroFabricationConfirmed": true,
+  "gateClassifications": {
+    "SOFTWARE_VALIDATION": "PASS",
+    "BUSINESS_LOGIC_VALIDATION": "PASS",
+    "MATHEMATICAL_VALIDATION": "PASS",
+    "DATA_RECONCILIATION": "PASS",
+    "TRANSACTION_TRACEABILITY": "PASS",
+    "OPPORTUNITY_TRACEABILITY": "PASS",
+    "DOUBLE_COUNTING_CONTROL": "PASS",
+    "UI_VALIDATION": "PASS",
+    "MODULE_4_HANDOFF_VALIDATION": "PASS"
+  },
+  "finalStatus": "MODULE_2_E2E_VALIDATED",
+  "negativeTestScenarios": [
+    {
+      "code": "A",
+      "name": "Duplicate transaction",
+      "result": "DEDUPLICATED_BEFORE_BASELINE",
+      "status": "PASS"
+    },
+    {
+      "code": "B",
+      "name": "Missing price",
+      "result": "EXCLUDED_INVALID_PRICE",
+      "status": "PASS"
+    },
+    {
+      "code": "C",
+      "name": "Missing quantity",
+      "result": "EXCLUDED_INVALID_QUANTITY",
+      "status": "PASS"
+    },
+    {
+      "code": "D",
+      "name": "Wrong UOM",
+      "result": "BLOCKED_NON_COMPARABLE_UOM",
+      "status": "PASS"
+    },
+    {
+      "code": "E",
+      "name": "Wrong currency",
+      "result": "BLOCKED_NON_NORMALIZED_CURRENCY",
+      "status": "PASS"
+    },
+    {
+      "code": "F",
+      "name": "Different specification",
+      "result": "EXCLUDED_SPEC_MISMATCH",
+      "status": "PASS"
+    },
+    {
+      "code": "G",
+      "name": "Different geography",
+      "result": "NORMALIZED_LOCATION_DIFFERENTIAL",
+      "status": "PASS"
+    },
+    {
+      "code": "H",
+      "name": "Outlier price",
+      "result": "FILTERED_STATISTICAL_OUTLIER",
+      "status": "PASS"
+    },
+    {
+      "code": "I",
+      "name": "Single transaction supplier",
+      "result": "INSUFFICIENT_TIME_SERIES",
+      "status": "PASS"
+    },
+    {
+      "code": "J",
+      "name": "Single supplier category",
+      "result": "NOT_QUANTIFIABLE_MONOPOLY",
+      "status": "PASS"
+    },
+    {
+      "code": "K",
+      "name": "Multi-category supplier",
+      "result": "EVALUATED_AT_CATEGORY_ITEM_LEVEL",
+      "status": "PASS"
+    },
+    {
+      "code": "L",
+      "name": "Fragmented supplier base",
+      "result": "CONSOLIDATION_POTENTIAL_ASSESSED",
+      "status": "PASS"
+    },
+    {
+      "code": "M",
+      "name": "Contracted transaction",
+      "result": "EXCLUDED_FROM_SPOT_ARBITRAGE",
+      "status": "PASS"
+    },
+    {
+      "code": "N",
+      "name": "Non-recurring transaction",
+      "result": "ISOLATED_FROM_RECURRING_BASELINE",
+      "status": "PASS"
+    },
+    {
+      "code": "O",
+      "name": "Insufficient historical data",
+      "result": "STATUS_NOT_QUANTIFIABLE",
+      "status": "PASS"
+    },
+    {
+      "code": "P",
+      "name": "No price dispersion",
+      "result": "ZERO_OPPORTUNITY_FLAGGED",
+      "status": "PASS"
+    },
+    {
+      "code": "Q",
+      "name": "Identical supplier prices",
+      "result": "NO_QUANTIFIABLE_PRICE_OPPORTUNITY",
+      "status": "PASS"
+    },
+    {
+      "code": "R",
+      "name": "No auction suitability",
+      "result": "AUCTION_NOT_RECOMMENDED",
+      "status": "PASS"
+    },
+    {
+      "code": "S",
+      "name": "No consolidation suitability",
+      "result": "MULTI_SOURCING_PRESERVED",
+      "status": "PASS"
+    },
+    {
+      "code": "T",
+      "name": "Overlapping opportunities",
+      "result": "OVERLAP_DEDUCTED_EXACT",
+      "status": "PASS"
+    },
+    {
+      "code": "U",
+      "name": "Double-counting check",
+      "result": "ZERO_DUPLICATE_ALLOCATIONS",
+      "status": "PASS"
+    },
+    {
+      "code": "V",
+      "name": "Zero opportunity audit",
+      "result": "AUDITED_ZERO_SAVINGS_EXPLAINED",
+      "status": "PASS"
+    },
+    {
+      "code": "W",
+      "name": "Negative price variance",
+      "result": "SUPPRESSED_AS_NON_OPPORTUNITY",
+      "status": "PASS"
+    },
+    {
+      "code": "X",
+      "name": "Missing provenance",
+      "result": "REJECTED_FOR_AUDITABILITY_FAILURE",
+      "status": "PASS"
+    }
+  ]
+}

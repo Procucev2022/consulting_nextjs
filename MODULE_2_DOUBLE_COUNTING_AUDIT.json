@@ -2,16 +2,96 @@
   {
     "categoryId": "CAT-StructuralSt",
     "categoryName": "Structural Steel",
-    "grossIdentifiedOpportunityInr": 8400000,
+    "grossIdentifiedOpportunityInr": 23250000,
     "leverBreakdown": {
-      "priceArbitrageInr": 8400000,
-      "eauctionInr": 8400000,
+      "priceArbitrageInr": 23250000,
+      "eauctionInr": 23250000,
       "vendorConsolidationInr": 0,
       "volumeBundlingInr": 0,
       "categorySpecialistInr": 0
     },
     "overlappingOpportunityInr": 0,
-    "netDefensibleOpportunityInr": 8400000,
+    "netDefensibleOpportunityInr": 23250000,
+    "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
+    "reconciled": true
+  },
+  {
+    "categoryId": "CAT-IndustrialFa",
+    "categoryName": "Industrial Fasteners",
+    "grossIdentifiedOpportunityInr": 5110000,
+    "leverBreakdown": {
+      "priceArbitrageInr": 5110000,
+      "eauctionInr": 5110000,
+      "vendorConsolidationInr": 0,
+      "volumeBundlingInr": 0,
+      "categorySpecialistInr": 0
+    },
+    "overlappingOpportunityInr": 0,
+    "netDefensibleOpportunityInr": 5110000,
+    "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
+    "reconciled": true
+  },
+  {
+    "categoryId": "CAT-SafetyEquipm",
+    "categoryName": "Safety Equipment",
+    "grossIdentifiedOpportunityInr": 33000,
+    "leverBreakdown": {
+      "priceArbitrageInr": 33000,
+      "eauctionInr": 33000,
+      "vendorConsolidationInr": 0,
+      "volumeBundlingInr": 0,
+      "categorySpecialistInr": 0
+    },
+    "overlappingOpportunityInr": 0,
+    "netDefensibleOpportunityInr": 33000,
+    "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
+    "reconciled": true
+  },
+  {
+    "categoryId": "CAT-ElectricalCa",
+    "categoryName": "Electrical Cables",
+    "grossIdentifiedOpportunityInr": 226500,
+    "leverBreakdown": {
+      "priceArbitrageInr": 226500,
+      "eauctionInr": 226500,
+      "vendorConsolidationInr": 0,
+      "volumeBundlingInr": 0,
+      "categorySpecialistInr": 0
+    },
+    "overlappingOpportunityInr": 0,
+    "netDefensibleOpportunityInr": 226500,
+    "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
+    "reconciled": true
+  },
+  {
+    "categoryId": "CAT-Lubricants",
+    "categoryName": "Lubricants",
+    "grossIdentifiedOpportunityInr": 485000,
+    "leverBreakdown": {
+      "priceArbitrageInr": 485000,
+      "eauctionInr": 485000,
+      "vendorConsolidationInr": 0,
+      "volumeBundlingInr": 0,
+      "categorySpecialistInr": 0
+    },
+    "overlappingOpportunityInr": 0,
+    "netDefensibleOpportunityInr": 485000,
+    "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
+    "reconciled": true
+  },
+  {
+    "categoryId": "CAT-PackagingMat",
+    "categoryName": "Packaging Materials",
+    "grossIdentifiedOpportunityInr": 0,
+    "leverBreakdown": {
+      "priceArbitrageInr": 0,
+      "eauctionInr": 0,
+      "vendorConsolidationInr": 0,
+      "volumeBundlingInr": 0,
+      "categorySpecialistInr": 0
+    },
+    "overlappingOpportunityInr": 0,
+    "netDefensibleOpportunityInr": 0,
     "deduplicationMethod": "Mutually exclusive commercial lever selection (highest verified yield) with overlap deduction",
     "reconciled": true
   }

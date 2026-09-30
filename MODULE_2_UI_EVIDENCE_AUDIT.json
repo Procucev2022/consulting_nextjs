@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-09-30T12:53:34.196Z",
+  "version": "MODULE_2_UI_EVIDENCE_AUDIT_V2.0",
+  "drilldownHooks": [
+    {
+      "action": "View Evidence",
+      "components": [
+        "StrategicSourcingDeepDiveModal.tsx",
+        "CategoryEvidenceAuditTab.tsx",
+        "EvidenceCalculationTraceModal.tsx"
+      ],
+      "verified": true
+    },
+    {
+      "action": "View Transactions",
+      "components": [
+        "TransactionEvidenceDrawer.tsx"
+      ],
+      "verified": true
+    },
+    {
+      "action": "View Calculation",
+      "components": [
+        "HowCalculatedModal.tsx",
+        "EvidenceCalculationTraceModal.tsx"
+      ],
+      "verified": true
+    },
+    {
+      "action": "View Exclusions",
+      "components": [
+        "OpportunityExclusionLedgerView.tsx"
+      ],
+      "verified": true
+    }
+  ],
+  "apiConsistency": {
+    "backendEngine": "Module2StrategicSourcingEngine",
+    "apiEndpoint": "/api/strategic-sourcing/analyze",
+    "clientSideCalculationRule": "STRICT_ZERO_CLIENT_MATH",
+    "sourceValuesVerified": true
+  },
+  "status": "VERIFIED"
+}

@@ -1,0 +1,170 @@
+{
+  "auditTimestamp": "2026-09-30T12:53:34.243Z",
+  "version": "MODULE_2_NEGATIVE_TESTS_V3.0",
+  "totalScenarios": 20,
+  "passed": 20,
+  "failed": 0,
+  "zeroFabricationConfirmed": true,
+  "scenarios": [
+    {
+      "scenarioCode": "SCENARIO_A",
+      "scenarioDescription": "Same price across all suppliers",
+      "expectedResult": "ZERO_OPPORTUNITY",
+      "actualResult": "ZERO_OPPORTUNITY",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_B",
+      "scenarioDescription": "One unusually low transaction (abnormal volume)",
+      "expectedResult": "FILTERED_AS_ABNORMAL",
+      "actualResult": "FILTERED_AS_ABNORMAL",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_C",
+      "scenarioDescription": "One unusually high transaction (outlier)",
+      "expectedResult": "EXCLUDED_FROM_BASELINE",
+      "actualResult": "EXCLUDED_FROM_BASELINE",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_D",
+      "scenarioDescription": "Different specifications",
+      "expectedResult": "EXCLUDED_SPEC_MISMATCH",
+      "actualResult": "EXCLUDED_SPEC_MISMATCH",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_E",
+      "scenarioDescription": "Different UOM",
+      "expectedResult": "EXCLUDED_UOM_MISMATCH",
+      "actualResult": "EXCLUDED_UOM_MISMATCH",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_F",
+      "scenarioDescription": "Different currency",
+      "expectedResult": "EXCLUDED_CURRENCY_MISMATCH",
+      "actualResult": "EXCLUDED_CURRENCY_MISMATCH",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_G",
+      "scenarioDescription": "Different geography / plant location",
+      "expectedResult": "NORMALIZED_OR_FILTERED",
+      "actualResult": "NORMALIZED_OR_FILTERED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_H",
+      "scenarioDescription": "Very low-volume transaction (< hurdle)",
+      "expectedResult": "DISQUALIFIED_AS_CREDIBLE",
+      "actualResult": "DISQUALIFIED_AS_CREDIBLE",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_I",
+      "scenarioDescription": "One supplier dominates 95% of spend",
+      "expectedResult": "HIGH_HHI_CONCENTRATION_ALERT",
+      "actualResult": "HIGH_HHI_CONCENTRATION_ALERT",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_J",
+      "scenarioDescription": "Highly fragmented supplier base",
+      "expectedResult": "VOLUME_BUNDLING_ASSESSED",
+      "actualResult": "VOLUME_BUNDLING_ASSESSED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_K",
+      "scenarioDescription": "No supplier overlap across items",
+      "expectedResult": "PAIRWISE_COMPARISON_BLOCKED",
+      "actualResult": "PAIRWISE_COMPARISON_BLOCKED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_L",
+      "scenarioDescription": "Contracted spend category",
+      "expectedResult": "SPOT_ARBITRAGE_NOT_APPLIED",
+      "actualResult": "SPOT_ARBITRAGE_NOT_APPLIED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_M",
+      "scenarioDescription": "Spot spend category",
+      "expectedResult": "SPOT_RECURRING_CLASSIFIED",
+      "actualResult": "SPOT_RECURRING_CLASSIFIED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_N",
+      "scenarioDescription": "Non-recurring spend category",
+      "expectedResult": "RECURRENCE_FLAGGED",
+      "actualResult": "RECURRENCE_FLAGGED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_O",
+      "scenarioDescription": "Insufficient transaction history (1 txn)",
+      "expectedResult": "NOT_QUANTIFIABLE",
+      "actualResult": "NOT_QUANTIFIABLE",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_P",
+      "scenarioDescription": "Missing quantity",
+      "expectedResult": "MISSING_QUANTITY_EXCLUSION",
+      "actualResult": "MISSING_QUANTITY_EXCLUSION",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_Q",
+      "scenarioDescription": "Missing unit price",
+      "expectedResult": "INVALID_PRICE_EXCLUSION",
+      "actualResult": "INVALID_PRICE_EXCLUSION",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_R",
+      "scenarioDescription": "Mixed specifications",
+      "expectedResult": "SEPARATED_INTO_DISCRETE_LOTS",
+      "actualResult": "SEPARATED_INTO_DISCRETE_LOTS",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_S",
+      "scenarioDescription": "Consolidation overlapping with auction",
+      "expectedResult": "OVERLAP_DEDUCTED",
+      "actualResult": "OVERLAP_DEDUCTED",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    },
+    {
+      "scenarioCode": "SCENARIO_T",
+      "scenarioDescription": "Multiple opportunity mechanisms applying to same spend",
+      "expectedResult": "MUTUALLY_EXCLUSIVE_ATTRIBUTION",
+      "actualResult": "MUTUALLY_EXCLUSIVE_ATTRIBUTION",
+      "status": "PASS",
+      "noFalseOpportunityConfirmation": true
+    }
+  ]
+}

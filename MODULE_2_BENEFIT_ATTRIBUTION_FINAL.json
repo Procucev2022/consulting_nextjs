@@ -1,0 +1,167 @@
+{
+  "auditTimestamp": "2026-09-30T12:53:34.263Z",
+  "version": "MODULE_2_BENEFIT_ATTRIBUTION_FINAL_V1.0",
+  "allowedBenefitMechanisms": [
+    "HISTORICAL_PRICE_ARBITRAGE",
+    "VOLUME_BUNDLING",
+    "E_AUCTION_COMPETITIVE_COMPRESSION",
+    "TAIL_VENDOR_CONSOLIDATION",
+    "CATEGORY_VENDOR_SPECIALIZATION",
+    "COMMERCIAL_TERM_NORMALIZATION",
+    "SPECIFICATION_STANDARDIZATION",
+    "SUPPLIER_REALLOCATION",
+    "CONTRACT_RENEGOTIATION",
+    "OTHER_EXPLICITLY_GOVERNED"
+  ],
+  "reconciliationFormula": "Gross Opportunity - Overlap - Exclusions = Net Defensible Opportunity",
+  "totalGrossOpportunityInr": 52354500,
+  "totalOverlapDeductedInr": 23250000,
+  "totalExclusionsDeductedInr": 0,
+  "totalNetDefensibleOpportunityInr": 29104500,
+  "reconciliationCheck": true,
+  "matchesEngineNetOpportunity": true,
+  "attributions": [
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-STEEL-001",
+      "PRIMARY_MECHANISM": "HISTORICAL_PRICE_ARBITRAGE",
+      "CATEGORY": "Structural Steel",
+      "ITEM": "Carbon Steel Plate 12mm IS2062",
+      "PRIMARY_SUPPLIER": "Tata Steel / JSW Steel Pool",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-SS-001",
+        "TX-SS-002",
+        "TX-SS-005",
+        "TX-SS-006"
+      ],
+      "GROSS_OPPORTUNITY_INR": 23250000,
+      "OVERLAPPING_MECHANISM": null,
+      "OVERLAP_DEDUCTED_INR": 0,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 23250000,
+      "STATUS": "ATTRIBUTED"
+    },
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-STEEL-002",
+      "PRIMARY_MECHANISM": "E_AUCTION_COMPETITIVE_COMPRESSION",
+      "CATEGORY": "Structural Steel",
+      "ITEM": "Carbon Steel Plate 12mm IS2062",
+      "PRIMARY_SUPPLIER": "Competitive Steel Suppliers (4 bidders)",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-SS-001",
+        "TX-SS-002",
+        "TX-SS-003",
+        "TX-SS-004",
+        "TX-SS-005",
+        "TX-SS-006",
+        "TX-SS-007",
+        "TX-SS-008"
+      ],
+      "GROSS_OPPORTUNITY_INR": 23250000,
+      "OVERLAPPING_MECHANISM": "HISTORICAL_PRICE_ARBITRAGE",
+      "OVERLAP_DEDUCTED_INR": 23250000,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 0,
+      "STATUS": "OVERLAP_DEDUCTED_NO_DOUBLE_COUNTING"
+    },
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-FASTENERS-001",
+      "PRIMARY_MECHANISM": "TAIL_VENDOR_CONSOLIDATION",
+      "CATEGORY": "Industrial Fasteners",
+      "ITEM": "Hex Bolt & Nut M20 Grade 8",
+      "PRIMARY_SUPPLIER": "Bolt Masters India / Fastek Pool",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-IF-001",
+        "TX-IF-002",
+        "TX-IF-003",
+        "TX-IF-004",
+        "TX-IF-005",
+        "TX-IF-006"
+      ],
+      "GROSS_OPPORTUNITY_INR": 5110000,
+      "OVERLAPPING_MECHANISM": null,
+      "OVERLAP_DEDUCTED_INR": 0,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 5110000,
+      "STATUS": "ATTRIBUTED"
+    },
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-LUBRICANTS-001",
+      "PRIMARY_MECHANISM": "VOLUME_BUNDLING",
+      "CATEGORY": "Lubricants",
+      "ITEM": "Hydraulic Oil ISO VG 46",
+      "PRIMARY_SUPPLIER": "Castrol / Gulf / SERVO",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-LB-001",
+        "TX-LB-002",
+        "TX-LB-003",
+        "TX-LB-004",
+        "TX-LB-005",
+        "TX-LB-006"
+      ],
+      "GROSS_OPPORTUNITY_INR": 485000,
+      "OVERLAPPING_MECHANISM": null,
+      "OVERLAP_DEDUCTED_INR": 0,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 485000,
+      "STATUS": "ATTRIBUTED"
+    },
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-CABLES-001",
+      "PRIMARY_MECHANISM": "HISTORICAL_PRICE_ARBITRAGE",
+      "CATEGORY": "Electrical Cables",
+      "ITEM": "Armoured Cable 6 sqmm IS1554",
+      "PRIMARY_SUPPLIER": "Polycab / Havells / KEI Pool",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-EC-001",
+        "TX-EC-002",
+        "TX-EC-003",
+        "TX-EC-004",
+        "TX-EC-005"
+      ],
+      "GROSS_OPPORTUNITY_INR": 226500,
+      "OVERLAPPING_MECHANISM": null,
+      "OVERLAP_DEDUCTED_INR": 0,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 226500,
+      "STATUS": "ATTRIBUTED"
+    },
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-SAFETY-001",
+      "PRIMARY_MECHANISM": "COMMERCIAL_TERM_NORMALIZATION",
+      "CATEGORY": "Safety Equipment",
+      "ITEM": "Safety Helmet & Gloves",
+      "PRIMARY_SUPPLIER": "3M / Karam / Honeywell Pool",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-SE-001",
+        "TX-SE-002",
+        "TX-SE-003",
+        "TX-SE-004",
+        "TX-SE-005"
+      ],
+      "GROSS_OPPORTUNITY_INR": 33000,
+      "OVERLAPPING_MECHANISM": null,
+      "OVERLAP_DEDUCTED_INR": 0,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 33000,
+      "STATUS": "ATTRIBUTED"
+    },
+    {
+      "BENEFIT_ATTRIBUTION_ID": "ATTR-PACKAGING-001",
+      "PRIMARY_MECHANISM": "HISTORICAL_PRICE_ARBITRAGE",
+      "CATEGORY": "Packaging Materials",
+      "ITEM": "Standard Corrugated Box B-Flute",
+      "PRIMARY_SUPPLIER": "Alpha / Beta / Gamma Packaging",
+      "ELIGIBLE_TRANSACTIONS": [
+        "TX-UP-001",
+        "TX-UP-002",
+        "TX-UP-003"
+      ],
+      "GROSS_OPPORTUNITY_INR": 0,
+      "OVERLAPPING_MECHANISM": null,
+      "OVERLAP_DEDUCTED_INR": 0,
+      "EXCLUSION_DEDUCTED_INR": 0,
+      "NET_DEFENSIBLE_OPPORTUNITY_INR": 0,
+      "STATUS": "NO_QUANTIFIABLE_OPPORTUNITY_FROM_AVAILABLE_DATA"
+    }
+  ]
+}

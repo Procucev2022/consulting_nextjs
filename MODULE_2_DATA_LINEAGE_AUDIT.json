@@ -1,0 +1,141 @@
+{
+  "auditId": "M2-LINEAGE-1790772814092",
+  "auditTimestamp": "2026-09-30T12:53:34.092Z",
+  "engineVersion": "MODULE_2_FINAL_E2E_BUSINESS_VALIDATION_V1.0",
+  "datasetStats": {
+    "totalTransactions": 33,
+    "totalSpendInr": 401093500,
+    "categories": 6,
+    "suppliers": 19
+  },
+  "lineageChain": [
+    {
+      "categoryId": "CAT-StructuralSt",
+      "categoryName": "Structural Steel",
+      "inputTransactions": 8,
+      "comparableTransactions": 8,
+      "excludedTransactions": 0,
+      "addressableSpendInr": 370950000,
+      "netOpportunityInr": 23250000,
+      "evidenceTransactionIds": [
+        "TX-SS-001",
+        "TX-SS-002",
+        "TX-SS-003",
+        "TX-SS-004",
+        "TX-SS-005",
+        "TX-SS-006",
+        "TX-SS-007",
+        "TX-SS-008"
+      ],
+      "confidence": "MEDIUM",
+      "calculationId": "CALC-M2-Structural-1790772814090",
+      "pcbiContamination": "NONE",
+      "realizedSavingsContamination": "NONE"
+    },
+    {
+      "categoryId": "CAT-IndustrialFa",
+      "categoryName": "Industrial Fasteners",
+      "inputTransactions": 6,
+      "comparableTransactions": 6,
+      "excludedTransactions": 0,
+      "addressableSpendInr": 13910000,
+      "netOpportunityInr": 5110000,
+      "evidenceTransactionIds": [
+        "TX-IF-001",
+        "TX-IF-002",
+        "TX-IF-003",
+        "TX-IF-004",
+        "TX-IF-005",
+        "TX-IF-006"
+      ],
+      "confidence": "MEDIUM",
+      "calculationId": "CALC-M2-Industrial-1790772814090",
+      "pcbiContamination": "NONE",
+      "realizedSavingsContamination": "NONE"
+    },
+    {
+      "categoryId": "CAT-SafetyEquipm",
+      "categoryName": "Safety Equipment",
+      "inputTransactions": 5,
+      "comparableTransactions": 3,
+      "excludedTransactions": 2,
+      "addressableSpendInr": 537000,
+      "netOpportunityInr": 33000,
+      "evidenceTransactionIds": [
+        "TX-SE-001",
+        "TX-SE-002",
+        "TX-SE-003"
+      ],
+      "confidence": "MEDIUM",
+      "calculationId": "CALC-M2-SafetyEqui-1790772814090",
+      "pcbiContamination": "NONE",
+      "realizedSavingsContamination": "NONE"
+    },
+    {
+      "categoryId": "CAT-ElectricalCa",
+      "categoryName": "Electrical Cables",
+      "inputTransactions": 5,
+      "comparableTransactions": 5,
+      "excludedTransactions": 0,
+      "addressableSpendInr": 4929000,
+      "netOpportunityInr": 226500,
+      "evidenceTransactionIds": [
+        "TX-EC-001",
+        "TX-EC-002",
+        "TX-EC-003",
+        "TX-EC-004",
+        "TX-EC-005"
+      ],
+      "confidence": "MEDIUM",
+      "calculationId": "CALC-M2-Electrical-1790772814091",
+      "pcbiContamination": "NONE",
+      "realizedSavingsContamination": "NONE"
+    },
+    {
+      "categoryId": "CAT-Lubricants",
+      "categoryName": "Lubricants",
+      "inputTransactions": 6,
+      "comparableTransactions": 6,
+      "excludedTransactions": 0,
+      "addressableSpendInr": 9605000,
+      "netOpportunityInr": 485000,
+      "evidenceTransactionIds": [
+        "TX-LB-001",
+        "TX-LB-002",
+        "TX-LB-003",
+        "TX-LB-004",
+        "TX-LB-005",
+        "TX-LB-006"
+      ],
+      "confidence": "MEDIUM",
+      "calculationId": "CALC-M2-Lubricants-1790772814091",
+      "pcbiContamination": "NONE",
+      "realizedSavingsContamination": "NONE"
+    },
+    {
+      "categoryId": "CAT-PackagingMat",
+      "categoryName": "Packaging Materials",
+      "inputTransactions": 3,
+      "comparableTransactions": 3,
+      "excludedTransactions": 0,
+      "addressableSpendInr": 600000,
+      "netOpportunityInr": 0,
+      "evidenceTransactionIds": [
+        "TX-UP-001",
+        "TX-UP-002",
+        "TX-UP-003"
+      ],
+      "confidence": "MEDIUM",
+      "calculationId": "CALC-M2-PackagingM-1790772814091",
+      "pcbiContamination": "NONE",
+      "realizedSavingsContamination": "NONE"
+    }
+  ],
+  "summaryValidation": {
+    "summedCategorySpend": 401093500,
+    "reportedTotalSpend": 401093500,
+    "summedNetOpp": 29104500,
+    "reportedNetOpp": 29104500,
+    "reconciled": true
+  }
+}

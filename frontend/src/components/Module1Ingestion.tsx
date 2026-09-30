@@ -267,6 +267,17 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             <span className="text-slate-500 font-medium">Evaluation Window:</span>
             <span className="font-semibold text-slate-800 dark:text-slate-200">{spendPeriod}</span>
           </div>
+          {monthWiseSummaries && monthWiseSummaries.length > 0 && (
+            <>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <div className="flex items-center space-x-2" title="Actual Verified Transaction Date Coverage from ERP file">
+                <span className="text-slate-500 font-medium">Actual Coverage:</span>
+                <span className="font-bold text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800/60 font-mono text-[11px]">
+                  {monthWiseSummaries.length} Billing Months ({monthWiseSummaries[0]?.month_label} – {monthWiseSummaries[monthWiseSummaries.length - 1]?.month_label})
+                </span>
+              </div>
+            </>
+          )}
           <span className="text-slate-300 dark:text-slate-700">|</span>
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">Reporting Base:</span>

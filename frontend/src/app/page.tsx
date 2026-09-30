@@ -1021,8 +1021,8 @@ export default function Home() {
                 : `Item-${idx + 1}`;
             const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || '';
 
-            const isValidVendor = Boolean(rowVendor && !/^\d+$/.test(rowVendor) && rowVendor.length > 2);
-            const isValidItem = Boolean(rowItem && !/^\d+$/.test(rowItem) && rowItem.length > 1);
+            const isValidVendor = Boolean(rowVendor && rowVendor.trim().length > 1);
+            const isValidItem = Boolean(rowItem && rowItem.trim().length > 0 && rowItem !== '0');
 
             if (isValidItem) uniqueItemsSet.add(rowItem);
             if (isValidVendor) uniqueVendorsSet.add(rowVendor);
@@ -1030,12 +1030,20 @@ export default function Home() {
             // Grouping by Material Group
             let rowMg = (mgKey && r[mgKey] != null ? String(r[mgKey]).trim() : '') || 'DIRECT';
             rowMg = rowMg.toUpperCase();
-            const existingMg = mgMap.get(rowMg) || { count: 0, spendCr: 0, items: new Set<string>(), vendors: new Set<string>(), sampleItem: rowItem };
+            const existingMg = mgMap.get(rowMg) || {
+              count: 0,
+              spendCr: 0,
+              items: new Set<string>(),
+              vendors: new Set<string>(),
+              sampleItem: isValidItem ? rowItem : ''
+            };
             existingMg.count++;
             existingMg.spendCr += lineTotalCr;
-            if (isValidItem) existingMg.items.add(rowItem);
+            if (isValidItem) {
+              existingMg.items.add(rowItem);
+              if (!existingMg.sampleItem) existingMg.sampleItem = rowItem;
+            }
             if (isValidVendor) existingMg.vendors.add(rowVendor);
-            if (!existingMg.sampleItem && isValidItem) existingMg.sampleItem = rowItem;
             mgMap.set(rowMg, existingMg);
 
             // Grouping by Plant
