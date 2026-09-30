@@ -1,0 +1,130 @@
+{
+  "timestamp": "2026-09-30T17:57:02.732Z",
+  "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED",
+  "finalStatus": "MODULE_1_FORENSICALLY_VALIDATED",
+  "datasetScope": {
+    "sourceFileName": "2 years data.xlsx",
+    "totalRecords": 31671,
+    "actualDateCoverage": "24 Billing Months (1 Apr 2024 - 31 Mar 2026: FY24-25 & FY25-26)",
+    "configuredEvaluationPeriod": "36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)",
+    "scopeFlag": "PERIOD_SCOPE_MISMATCH"
+  },
+  "financialTotals": {
+    "rawSourceTotalInr": 59203477681.6571,
+    "rawSourceTotalCr": 5920.35,
+    "validatedTotalInr": 59203477681.6571,
+    "validatedTotalCr": 5920.35,
+    "excludedTotalInr": 0,
+    "excludedTotalCr": 0,
+    "unresolvedTotalInr": 0,
+    "reconciliationVarianceInr": 0,
+    "reconciliationVarianceCr": 0,
+    "reconciliationStatus": "PASS"
+  },
+  "dimensionalTotals": {
+    "supplierSpendInr": 59203477681.65716,
+    "itemSpendInr": 59203477681.65721,
+    "categorySpendInr": 59203477681.65725,
+    "materialGroupSpendInr": 59203477681.65725,
+    "plantSpendInr": 59203477681.657166,
+    "monthlySpendInr": 59203477681.65714,
+    "fySpendInr": 59203477681.6571
+  },
+  "crossDimensionBalance": {
+    "isBalanced": true,
+    "maxAbsoluteVarianceInr": 0.000152587890625,
+    "status": "PASS"
+  },
+  "paretoSummary": {
+    "theoretical80ThresholdInr": 47362782145.32573,
+    "theoretical80ThresholdCr": 4736.28,
+    "cutoffEntityIndex": 45,
+    "cutoffEntityCount": 46,
+    "cutoffEntityName": "RANAWAT UDYOG",
+    "cutoffCumulativeSpendInr": 47525423160.535515,
+    "cutoffCumulativeSpendCr": 4752.54,
+    "cutoffCumulativeSharePct": 80.27,
+    "isDeterministic": true
+  },
+  "dataQualitySummary": {
+    "overallQualityIndexPct": 92.9,
+    "dataQualityPct": 84.9,
+    "dataCompletenessPct": 96.6,
+    "dataReconciliationPct": 100
+  },
+  "uomSummary": {
+    "totalRecordsAudited": 31671,
+    "validUomRecords": 31671,
+    "incompatibleUomRecords": 0,
+    "distinctUoms": [
+      "AU",
+      "BAG",
+      "BT",
+      "COI",
+      "CTS",
+      "DR",
+      "EA",
+      "FT",
+      "FT2",
+      "FT3",
+      "G",
+      "GM",
+      "KG",
+      "KGS",
+      "KL",
+      "L",
+      "M",
+      "M2",
+      "M3",
+      "ML",
+      "MT",
+      "NOS",
+      "PAA",
+      "PAC",
+      "PCS",
+      "ROL",
+      "SET",
+      "SHT",
+      "SM",
+      "TO",
+      "TON"
+    ],
+    "status": "PASS"
+  },
+  "fxSummary": [
+    {
+      "currency": "INR",
+      "recordCount": 31671,
+      "totalSourceSpend": 59203477681.6571,
+      "totalInrSpend": 59203477681.6571,
+      "samplePrice": 165406.5,
+      "sampleFxRate": 1,
+      "fxRateDate": "2024-04-01",
+      "fxRateSource": "BASE_DOMESTIC_CURRENCY",
+      "status": "FX_VALID",
+      "methodology": "Domestic Base Currency (FX = 1.000000)"
+    }
+  ],
+  "acceptanceGates": {
+    "SOURCE_ROW_RECONCILIATION": "PASS",
+    "SPEND_RECONCILIATION": "PASS",
+    "CURRENCY_RECONCILIATION": "PASS",
+    "FX_RECONCILIATION": "PASS",
+    "DATE_RECONCILIATION": "PASS",
+    "SUPPLIER_RECONCILIATION": "PASS",
+    "ITEM_RECONCILIATION": "PASS",
+    "MATERIAL_GROUP_RECONCILIATION": "PASS",
+    "PLANT_RECONCILIATION": "PASS",
+    "MONTH_RECONCILIATION": "PASS",
+    "FY_RECONCILIATION": "PASS",
+    "PARETO_RECONCILIATION": "PASS",
+    "PRECISION_VALIDATION": "PASS",
+    "ROUNDING_VALIDATION": "PASS",
+    "DATA_LOSS_CHECK": "PASS",
+    "DUPLICATE_CHECK": "PASS",
+    "UI_TO_BACKEND_CHECK": "PASS",
+    "MODULE_2_HANDOFF_CHECK": "PASS",
+    "UNEXPLAINED_SPEND_VARIANCE": "₹0.00",
+    "UNEXPLAINED_ROW_VARIANCE": 0
+  }
+}

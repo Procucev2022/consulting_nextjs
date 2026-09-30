@@ -39392,3 +39392,8907 @@ from
 PROCUREMENT IS OPTIMIZED.
 
 These are NOT the same statement.
+
+## Prompt 245
+
+MODULE 1 — FINAL FINANCIAL ENGINE HARDENING, ADVERSARIAL E2E TESTING & ZERO-DRIFT CERTIFICATION
+
+IMPORTANT:
+This is the FINAL hardening command for MODULE 1.
+
+Do NOT assume Module 1 is correct merely because previous tests passed.
+Do NOT accept existing certification reports as proof.
+Do NOT modify data to make a test pass.
+Do NOT hard-code expected UI numbers.
+Do NOT weaken tolerances to hide discrepancies.
+
+The objective is:
+
+EVERY FINANCIAL NUMBER DISPLAYED BY MODULE 1
+MUST BE REPRODUCIBLE FROM THE ORIGINAL UPLOADED SOURCE DATA,
+MATHEMATICALLY EXACT,
+TRANSACTION-LEVEL TRACEABLE,
+AGGREGATION-SAFE,
+CURRENCY-SAFE,
+ROUNDING-SAFE,
+FILTER-SAFE,
+AND IMMUTABLE FOR DOWNSTREAM MODULES.
+
+MODULE 1 remains the factual procurement source of truth.
+
+DO NOT introduce:
+- savings
+- benchmark prices
+- PCBI values
+- market prices
+- assumed discounts
+- negotiation assumptions
+- synthetic opportunities
+
+============================================================
+1. ABSOLUTE SOURCE-OF-TRUTH ARCHITECTURE
+============================================================
+
+Establish exactly one authoritative financial ledger:
+
+RAW SOURCE
+→ PARSED SOURCE
+→ VALIDATED SOURCE RECORD
+→ NORMALIZED RECORD
+→ FX-CONVERTED RECORD
+→ EXACT LINE-SPEND RECORD
+→ AUTHORITATIVE TRANSACTION LEDGER
+→ ALL AGGREGATIONS
+→ ALL UI KPIs
+
+There must NOT be separate competing calculation engines for:
+- dashboard
+- tables
+- Pareto
+- category totals
+- supplier totals
+- item totals
+- plant totals
+- monthly totals
+- Module 2 handoff.
+
+All must consume the same authoritative transaction ledger.
+
+Create a clear architectural rule:
+
+ONE SOURCE LEDGER
+ONE LINE-SPEND ENGINE
+ONE AGGREGATION ENGINE
+MANY PRESENTATIONS
+
+If multiple calculation paths exist, identify them and consolidate them where necessary.
+
+============================================================
+2. FULL DATASET IS ALWAYS AUTHORITATIVE
+============================================================
+
+The current UI may show a 30-row sample.
+
+This must NEVER be called:
+
+"Total File Spend"
+
+if it is only a sample.
+
+Strictly distinguish:
+
+FULL_DATASET:
+31,671 records
+₹5,920.35 Cr
+
+UI_SAMPLE:
+30 records
+sample spend only
+
+The sample must NEVER influence:
+- total spend
+- unique vendor count
+- unique item count
+- material group count
+- plant count
+- monthly totals
+- Pareto
+- quality index
+- Module 2 handoff.
+
+If the UI displays sample statistics, label them explicitly:
+
+"UI SAMPLE — NOT FINANCIAL TOTAL"
+
+If it displays the authoritative financial KPIs, those must come from the full ledger.
+
+Create automated tests proving:
+
+sample ≠ authoritative ledger
+
+and:
+
+changing sample size from 10 → 30 → 100 → 500
+does not change the authoritative full-dataset KPIs.
+
+============================================================
+3. EXACT FINANCIAL ARITHMETIC — CRITICAL
+============================================================
+
+Audit the entire financial calculation engine.
+
+DO NOT use binary floating point as the authoritative monetary calculation.
+
+Prefer:
+
+DECIMAL / arbitrary precision arithmetic
+
+or
+
+integer minor units where appropriate.
+
+For INR:
+
+Do not use rounded ₹ Crore values for calculations.
+
+Never calculate:
+
+₹5,920.35 Cr × percentage
+
+when the exact transaction ledger is available.
+
+Instead calculate from exact INR values.
+
+For every transaction:
+
+BASE_VALUE =
+QUANTITY × UNIT_PRICE
+
+FX_CONVERTED_VALUE =
+BASE_VALUE × APPROVED_HISTORICAL_FX
+
+LINE_SPEND_EXACT =
+exact decimal result
+
+Only after all calculations are complete:
+
+DISPLAY_CRORE =
+LINE_SPEND_EXACT / 10,000,000
+
+Display rounding is presentation only.
+
+Create separate fields:
+
+raw_quantity
+raw_price
+normalized_quantity
+normalized_price
+original_currency
+historical_fx
+fx_source
+fx_date
+exact_base_value
+exact_inr_value
+display_inr
+display_crore
+
+NEVER use display_crore in downstream calculations.
+
+============================================================
+4. PAISA-LEVEL RECONCILIATION
+============================================================
+
+For every transaction independently verify:
+
+EXPECTED =
+QTY × PRICE × FX
+
+ACTUAL =
+authoritative ledger line spend
+
+VARIANCE =
+ACTUAL - EXPECTED
+
+Acceptance:
+
+VARIANCE = exactly 0.00 INR
+
+for every deterministic transaction.
+
+Do not use an arbitrary tolerance that hides a monetary discrepancy.
+
+If decimal precision requires a technical epsilon internally, prove that the epsilon cannot alter the financial result at paisa level.
+
+Create:
+
+MODULE1_TRANSACTION_CALCULATION_AUDIT.xlsx
+
+with at least:
+
+RECORD_ID
+SOURCE_ROW
+PO
+PO_LINE
+MATERIAL
+SUPPLIER
+QTY
+UNIT_PRICE
+CURRENCY
+FX_RATE
+FX_DATE
+FX_SOURCE
+EXPECTED_EXACT_SPEND
+ACTUAL_EXACT_SPEND
+VARIANCE
+STATUS
+
+============================================================
+5. TOTAL SOURCE RECONCILIATION
+============================================================
+
+Independently calculate from the raw workbook.
+
+Produce:
+
+RAW_ROW_COUNT
+VALIDATED_ROW_COUNT
+EXCLUDED_ROW_COUNT
+UNRESOLVED_ROW_COUNT
+
+RAW_SOURCE_TOTAL
+VALIDATED_TOTAL
+EXCLUDED_TOTAL
+UNRESOLVED_TOTAL
+FINAL_LEDGER_TOTAL
+RECONCILIATION_VARIANCE
+
+Required invariant:
+
+RAW_SOURCE_TOTAL
+=
+VALIDATED_TOTAL
++
+EXCLUDED_FINANCIAL_IMPACT
++
+UNRESOLVED_FINANCIAL_IMPACT
++
+EXPLICIT_ADJUSTMENTS
+
+If there is any discrepancy, FAIL.
+
+Do NOT change the source total to match the UI.
+
+Do NOT change the UI to match an assumed source total.
+
+Find the actual root cause.
+
+IMPORTANT:
+Audit all previously generated artifacts for inconsistent totals.
+
+Specifically investigate any difference between:
+
+₹59,203,477,681.66
+
+and
+
+₹59,20,34,77,681.71
+
+or any other reported total.
+
+If the difference is real, identify the exact source rows causing it.
+
+If one value is a transcription/reporting error, correct the artifact and prevent recurrence.
+
+No certification until ONE authoritative exact total exists.
+
+============================================================
+6. ROW-ORDER INVARIANCE TEST
+============================================================
+
+Shuffle all 31,671 source rows randomly.
+
+Recalculate the entire system.
+
+Expected:
+
+same transaction values
+same total
+same supplier totals
+same item totals
+same category totals
+same plant totals
+same monthly totals
+same Pareto
+same quality metrics
+
+except ordering.
+
+Run at least 10 random permutations.
+
+All must reconcile exactly.
+
+============================================================
+7. PARTITION INVARIANCE TEST
+============================================================
+
+Split the source dataset into:
+
+2 partitions
+5 partitions
+10 partitions
+100 partitions
+
+Calculate each partition independently.
+
+Then aggregate.
+
+Expected:
+
+SUM(partitions) = full ledger exactly.
+
+This proves aggregation is associative and no rows are lost or duplicated.
+
+============================================================
+8. RE-UPLOAD / IDEMPOTENCY TEST
+============================================================
+
+Upload the exact same source file repeatedly.
+
+Test:
+
+1 upload
+2 uploads
+3 uploads
+delete + re-upload
+refresh
+navigate away and return
+change filters
+change currency display
+change tabs
+
+The financial ledger must not accumulate duplicate records.
+
+Expected:
+
+31,671 records every time.
+
+Same exact financial total every time.
+
+If repeated ingestion changes spend, FAIL.
+
+============================================================
+9. MULTI-CURRENCY FORENSIC TEST
+============================================================
+
+Do NOT rely only on the current INR-only source file.
+
+Create controlled test fixtures containing:
+
+INR
+USD
+EUR
+GBP
+AED
+JPY
+SGD
+unsupported currency
+blank currency
+
+Test:
+
+missing FX
+zero FX
+negative FX
+future FX date
+wrong FX date
+invalid FX
+unsupported currency
+missing currency
+INR with FX ≠ 1
+non-INR with missing FX
+
+Rules:
+
+INR:
+FX = 1.000000
+
+Non-INR:
+approved historical FX MUST exist.
+
+Never:
+
+missing FX = 1
+
+Never silently convert unsupported currencies.
+
+Every exception must receive:
+
+EXCEPTION_CODE
+SOURCE_ROW
+RECORD_ID
+ORIGINAL_CURRENCY
+FX_USED
+FX_SOURCE
+FINANCIAL_IMPACT
+ACTION
+
+============================================================
+10. LIVE FX ISOLATION TEST
+============================================================
+
+The UI currently displays live FX benchmark rates.
+
+These live rates MUST NEVER alter historical procurement spend.
+
+Test:
+
+Record historical spend.
+
+Change live FX values artificially.
+
+Recalculate UI.
+
+Expected:
+
+historical transaction spend changes by:
+
+₹0.00
+
+Historical transaction values must be immutable after ingestion.
+
+Create automated regression:
+
+LIVE_FX_CHANGE → HISTORICAL_LEDGER_VARIANCE = 0
+
+============================================================
+11. ZERO PRICE / FOC TRANSACTIONS
+============================================================
+
+Current dataset contains zero-price / FOC lines.
+
+Do NOT automatically delete them.
+
+For every zero-price line determine:
+
+ZERO_PRICE
+FOC
+RETURN
+CREDIT
+CANCELLATION
+REVERSAL
+UNKNOWN
+
+Preserve the original row.
+
+If financial impact is zero:
+
+ACTIVE_ZERO_SPEND
+
+must remain distinct from:
+
+EXCLUDED
+
+The user must be able to see how many records exist and why they contribute ₹0.
+
+Do not allow:
+
+0 price = deleted row.
+
+============================================================
+12. NEGATIVE QUANTITY / NEGATIVE PRICE
+============================================================
+
+Create controlled test cases for:
+
+negative quantity
+negative price
+negative line spend
+
+Determine whether they represent:
+
+return
+credit
+reversal
+cancellation
+correction
+invalid transaction
+
+Never silently convert negative values to positive values.
+
+Never ABS() a transaction unless the business rule explicitly requires it.
+
+Financial sign must be preserved.
+
+============================================================
+13. DUPLICATE FORENSICS
+============================================================
+
+Test:
+
+exact duplicate row
+same PO + line
+same PO + material
+same vendor + item + quantity + price + date
+same transaction repeated legitimately
+
+Never delete duplicates automatically.
+
+Classify:
+
+EXACT_DUPLICATE
+BUSINESS_DUPLICATE
+LEGITIMATE_REPEAT
+POTENTIAL_DUPLICATE
+UNRESOLVED
+
+Every classification must retain:
+
+source rows
+matching fields
+financial impact
+classification reason
+
+Most importantly:
+
+duplicate detection must NOT change total spend unless an explicit exclusion rule is applied.
+
+============================================================
+14. UNIQUE ITEM COUNT — CRITICAL REGRESSION
+============================================================
+
+Numeric SAP material numbers MUST be treated as valid material identifiers.
+
+Examples:
+
+110000001320
+210000000241
+190000000078
+
+must NOT be interpreted as invalid simply because they are numeric.
+
+Validate:
+
+numeric codes
+alphanumeric codes
+leading-zero codes
+spaces
+special characters
+mixed-format SAP codes
+
+Maintain:
+
+RAW_MATERIAL_CODE
+NORMALIZED_MATERIAL_CODE
+MATERIAL_ENTITY_ID
+
+Prove that:
+
+GROUP_UNIQUE_ITEMS =
+distinct valid material entity IDs belonging to that group.
+
+No group may show:
+
+Unique Items = 0
+
+if valid material records actually exist in that group.
+
+Create a regression test specifically for the previously discovered numeric SAP-code defect.
+
+============================================================
+15. UNIQUE SUPPLIER LOGIC
+============================================================
+
+Do not count supplier names using raw string alone.
+
+Normalize:
+
+case
+leading/trailing whitespace
+repeated spaces
+obvious formatting artifacts
+
+But NEVER merge two legally different entities merely because names look similar.
+
+Maintain:
+
+RAW_SUPPLIER_NAME
+NORMALIZED_SUPPLIER_NAME
+SUPPLIER_ENTITY_ID
+
+Test:
+
+ABC LTD
+ABC LTD.
+ABC  LTD
+abc ltd
+
+against:
+
+ABC ENGINEERING LTD
+
+Ensure legitimate distinct companies remain distinct.
+
+============================================================
+16. AGGREGATION RECONCILIATION
+============================================================
+
+Recalculate independently by:
+
+Supplier
+Material
+SKU
+Material Group
+Category
+Plant
+Billing Month
+Financial Year
+Currency
+PO
+PO Line
+Vendor
+Any customer-facing hierarchy
+
+For every aggregation:
+
+SUM(children) = parent
+
+exactly.
+
+No aggregation is allowed to create or lose spend.
+
+Produce an aggregation reconciliation matrix:
+
+DIMENSION
+PARENT
+CHILD_COUNT
+PARENT_TOTAL
+CHILD_TOTAL
+VARIANCE
+STATUS
+
+============================================================
+17. MATERIAL GROUP SCREEN VALIDATION
+============================================================
+
+For every visible Material Group row:
+
+verify:
+
+Displayed Spend
+=
+sum of underlying transactions.
+
+Displayed Unique Items
+=
+actual distinct material entities.
+
+Displayed Unique Vendors
+=
+actual distinct supplier entities.
+
+Displayed Line Items
+=
+actual transaction count.
+
+Do NOT calculate these from the top-N visible rows.
+
+The "Top 10 Only" UI view is only a presentation filter.
+
+The underlying totals must still use ALL 256 material groups.
+
+============================================================
+18. SUPPLIER PARETO VALIDATION
+============================================================
+
+Pareto must be calculated from exact full-ledger supplier spend.
+
+Calculate:
+
+TOTAL_SPEND × 80%
+
+Then sort suppliers descending by exact spend.
+
+The cutoff is:
+
+FIRST supplier whose cumulative exact spend >= 80%.
+
+Do not round before determining the cutoff.
+
+Display:
+
+THEORETICAL_THRESHOLD
+PREVIOUS_SUPPLIER_CUMULATIVE
+CUTOFF_SUPPLIER
+CUTOFF_CUMULATIVE
+CUTOFF_PERCENTAGE
+REMAINING_SPEND
+
+Validate the currently reported:
+
+₹4,736.28 Cr theoretical threshold
+₹4,752.54 Cr first crossing
+
+against exact INR values.
+
+If any difference exists, correct it.
+
+============================================================
+19. CRORE DISPLAY ROUNDING TEST
+============================================================
+
+This is critical for the current UI.
+
+A transaction such as:
+
+₹2,800
+
+may display:
+
+₹0.00 Cr
+
+but it is NOT zero spend.
+
+Therefore:
+
+Never display only ₹0.00 Cr for a non-zero transaction without a drill-down value.
+
+For small transactions show either:
+
+₹2,800
+₹0.000280 Cr
+
+or:
+
+₹0.00 Cr
+(Exact: ₹2,800)
+
+Similarly:
+
+₹5,920.35 Cr
+
+is presentation rounding.
+
+The underlying ledger must retain exact INR.
+
+Create boundary tests:
+
+₹0.01
+₹1
+₹99
+₹999
+₹9,999
+₹1,00,000
+₹99,99,999
+₹1,00,00,000
+
+and verify display does not imply zero financial value.
+
+============================================================
+20. SAMPLE SCREEN VALIDATION
+============================================================
+
+For the 30-record UI sample currently visible:
+
+For EVERY displayed row verify:
+
+Record ID
+PO
+PO Line
+Material
+Supplier
+Quantity
+Price
+Currency
+FX
+Line Spend
+Status
+
+against the actual underlying source row.
+
+The displayed value must be traceable to:
+
+SOURCE FILE
+→ SOURCE ROW
+→ RECORD ID
+
+No UI number may be generated independently.
+
+============================================================
+21. FILTER INVARIANTS
+============================================================
+
+Test every UI filter:
+
+supplier
+material
+material group
+plant
+month
+financial year
+currency
+category
+search
+Pareto
+Top 10
+All
+sample
+
+For any filter:
+
+FILTERED_TOTAL <= FULL_TOTAL
+
+and:
+
+SUM(all mutually exclusive filtered buckets) = FULL_TOTAL
+
+where applicable.
+
+Clear filters must restore the exact original ledger totals.
+
+Changing UI filters must NEVER mutate the underlying ledger.
+
+============================================================
+22. SORTING / PAGINATION INVARIANTS
+============================================================
+
+Changing:
+
+sort ascending
+sort descending
+page size
+pagination
+search
+expand/collapse
+Top 10 / All
+
+must NOT change:
+
+total spend
+record count
+unique counts
+Pareto
+quality score
+
+Test all combinations.
+
+============================================================
+23. CURRENCY DISPLAY TOGGLE
+============================================================
+
+If UI has:
+
+INR ₹ Cr
+USD $ M
+
+test both.
+
+Currency display conversion must NOT modify the authoritative INR ledger.
+
+Expected:
+
+INR ledger remains immutable.
+
+USD display = INR / approved display FX only where explicitly configured.
+
+Changing display currency must never rewrite historical procurement values.
+
+============================================================
+24. DATA QUALITY INDEX — NO STATIC 100%
+============================================================
+
+The Quality Index MUST be calculated from actual data.
+
+It must NEVER be hard-coded as:
+
+100%
+
+if the dataset contains:
+
+zero-price lines
+missing fields
+deletion indicators
+invalid UOMs
+normalization warnings
+duplicate warnings
+other quality exceptions.
+
+Show:
+
+QUALITY_INDEX
+COMPLETENESS_SCORE
+VALIDITY_SCORE
+RECONCILIATION_SCORE
+DUPLICATE_SCORE
+CURRENCY_SCORE
+DATE_SCORE
+OTHER_COMPONENTS
+
+with formula transparency.
+
+If the dataset is 100% reconciled but not 100% clean, show that distinction.
+
+CRITICAL:
+
+DATA RECONCILIATION = 100%
+
+does NOT automatically mean:
+
+DATA QUALITY = 100%.
+
+============================================================
+25. DATE / PERIOD VALIDATION
+============================================================
+
+The UI previously showed:
+
+36 Months
+FY24-FY26
+
+while actual data covered:
+
+24 billing months
+2024-04-01 to 2026-03-31
+
+This must never be misleading.
+
+Display separately:
+
+CONFIGURED EVALUATION WINDOW
+ACTUAL DATA COVERAGE
+
+If they differ:
+
+show:
+
+PERIOD_SCOPE_MISMATCH
+
+Do not fabricate missing months.
+
+Test:
+
+missing month
+duplicate month
+invalid date
+future date
+date outside evaluation window
+financial year boundary
+31 March / 1 April transition.
+
+============================================================
+26. RECONCILIATION WATERFALL
+============================================================
+
+Create a complete mathematical waterfall:
+
+RAW RECORDS
+↓
+VALID RECORDS
+↓
+ZERO-SPEND VALID RECORDS
+↓
+EXCLUDED RECORDS
+↓
+ACTIVE SPEND RECORDS
+↓
+EXACT LINE SPEND
+↓
+SUPPLIER TOTAL
+↓
+MATERIAL TOTAL
+↓
+CATEGORY TOTAL
+↓
+PLANT TOTAL
+↓
+MONTH TOTAL
+↓
+FULL DATASET TOTAL
+
+Every step must show:
+
+record count
+INR amount
+variance
+status
+
+All financial variances must be exactly zero unless explicitly documented as source-data exceptions.
+
+============================================================
+27. GOLDEN TRANSACTION PROOF
+============================================================
+
+Select at least 50 transactions covering:
+
+large value
+small value
+zero value
+numeric material
+alphanumeric material
+different suppliers
+different plants
+different months
+different categories
+boundary dates
+duplicate-like records
+
+For each produce:
+
+SOURCE ROW
+RAW VALUES
+NORMALIZED VALUES
+FX
+FORMULA
+EXACT CALCULATION
+FINAL VALUE
+UI VALUE
+VARIANCE
+
+All must reconcile.
+
+============================================================
+28. METAMORPHIC TESTS
+============================================================
+
+Run the following:
+
+A. Shuffle rows
+→ same totals
+
+B. Split file into partitions
+→ same totals
+
+C. Re-upload same file
+→ same totals
+
+D. Change live FX
+→ same historical totals
+
+E. Change UI sort
+→ same totals
+
+F. Change pagination
+→ same totals
+
+G. Change display currency
+→ same INR ledger
+
+H. Toggle Top 10 / All
+→ same authoritative total
+
+I. Expand / collapse hierarchy
+→ same total
+
+J. Refresh browser
+→ same totals
+
+K. Navigate away and return
+→ same totals
+
+L. Clear filters
+→ original totals restored
+
+M. Change sample size
+→ full ledger unchanged
+
+============================================================
+29. ADVERSARIAL DATA INJECTION
+============================================================
+
+Create synthetic test fixtures containing:
+
+blank quantity
+blank price
+blank currency
+blank supplier
+blank material
+blank date
+negative quantity
+negative price
+zero price
+extremely large quantity
+extremely large price
+very small decimal quantity
+very small decimal price
+invalid FX
+zero FX
+negative FX
+missing FX
+unsupported currency
+duplicate rows
+duplicate PO lines
+numeric material codes
+leading-zero material codes
+whitespace supplier names
+special-character supplier names
+invalid dates
+future dates
+duplicate headers
+hidden rows
+hidden columns
+formula cells
+cached formula cells
+text numbers
+numbers stored as text
+
+Expected outcome must be deterministic and auditable for every case.
+
+============================================================
+30. SOURCE ROW PRESERVATION
+============================================================
+
+NO SOURCE ROW MAY DISAPPEAR SILENTLY.
+
+For every excluded/rejected/quarantined record store:
+
+RECORD_ID
+SOURCE_FILE
+SHEET
+SOURCE_ROW
+ORIGINAL_VALUES
+NORMALIZED_VALUES
+EXCLUSION_CODE
+EXCLUSION_REASON
+FINANCIAL_IMPACT
+
+Create:
+
+MODULE_1_EXCEPTION_LEDGER.xlsx
+
+============================================================
+31. TRANSACTION-LEVEL PROOF API / UI
+============================================================
+
+For every displayed KPI provide drill-down capability:
+
+KPI
+→ DIMENSION
+→ TRANSACTION
+→ SOURCE ROW
+
+A user must be able to answer:
+
+"Why is this number ₹X?"
+
+with evidence.
+
+No black-box KPI.
+
+Every displayed number should have:
+
+SOURCE_RECORD_COUNT
+SOURCE_SPEND
+CALCULATION_FORMULA
+SOURCE_REFERENCE
+
+where practical.
+
+============================================================
+32. MODULE 2 HANDOFF SAFETY
+============================================================
+
+Module 2 may receive ONLY:
+
+validated transaction ledger
+supplier
+material
+category
+plant
+quantity
+UOM
+price
+currency
+historical FX
+INR spend
+source lineage
+quality indicators
+
+Module 1 must NOT send:
+
+benchmark price
+savings
+assumed savings
+negotiation target
+e-auction saving
+vendor consolidation saving
+market price
+
+============================================================
+33. UI/BACKEND CONSISTENCY
+============================================================
+
+For EVERY major screen KPI:
+
+Backend exact value
+=
+UI underlying exact value
+
+Do NOT compare rounded display strings.
+
+Compare exact numeric values.
+
+Create an automated UI/backend reconciliation report.
+
+============================================================
+34. FINAL CERTIFICATION GATES
+============================================================
+
+Module 1 may be certified ONLY if ALL are true:
+
+[ ] Full row count reconciled
+[ ] Exact source financial total reconciled
+[ ] Exact line calculations reconciled
+[ ] Exact aggregation reconciled
+[ ] Supplier totals reconciled
+[ ] Item totals reconciled
+[ ] Material group totals reconciled
+[ ] Plant totals reconciled
+[ ] Monthly totals reconciled
+[ ] Currency totals reconciled
+[ ] Pareto reconciled
+[ ] Unique item counts reconciled
+[ ] Unique supplier counts reconciled
+[ ] Duplicate logic reconciled
+[ ] Zero-price logic reconciled
+[ ] Negative transaction logic reconciled
+[ ] Historical FX isolated
+[ ] Live FX isolated
+[ ] Display rounding isolated
+[ ] Sample/full dataset distinction enforced
+[ ] Filters invariant
+[ ] Pagination invariant
+[ ] Sorting invariant
+[ ] Currency toggle invariant
+[ ] Re-upload invariant
+[ ] Row-order invariant
+[ ] Partition invariant
+[ ] Source-row lineage 100%
+[ ] No silent row loss
+[ ] No unexplained financial variance
+[ ] No hard-coded KPI
+[ ] No hard-coded quality score
+[ ] No synthetic data in production ledger
+[ ] Module 2 handoff clean
+[ ] Module 3 untouched
+[ ] Existing Module 2 tests still pass
+[ ] Typecheck passes
+[ ] Lint passes
+[ ] Quality pipeline passes
+
+IF ANY GATE FAILS:
+
+FINAL_STATUS = MODULE_1_E2E_FAILED
+
+Do NOT certify.
+
+============================================================
+35. REQUIRED FINAL ARTIFACTS
+============================================================
+
+Generate fresh artifacts, never reuse stale reports:
+
+1. MODULE_1_FINAL_FINANCIAL_CERTIFICATION.md
+
+2. MODULE_1_TRANSACTION_CALCULATION_AUDIT.xlsx
+
+3. MODULE_1_RECONCILIATION_MATRIX.xlsx
+
+4. MODULE_1_EXCEPTION_LEDGER.xlsx
+
+5. MODULE_1_TRANSACTION_PROOF.json
+
+6. MODULE_1_TEST_RESULTS.json
+
+7. MODULE_1_UI_BACKEND_RECONCILIATION.json
+
+8. MODULE_1_GOLDEN_DATASET_HASH.json
+
+The Golden Dataset Hash must identify:
+
+source filename
+file size
+file hash
+sheet names
+row count
+column count
+source data fingerprint
+
+This allows future uploads to be proven as the same source dataset.
+
+============================================================
+36. FINAL REPORT MUST EXPLICITLY SHOW
+============================================================
+
+SOURCE TOTAL
+VALIDATED TOTAL
+EXCLUDED TOTAL
+UNRESOLVED TOTAL
+FINAL LEDGER TOTAL
+EXACT VARIANCE
+
+RECORD COUNT
+
+UNIQUE ITEMS
+UNIQUE SUPPLIERS
+MATERIAL GROUPS
+PLANTS
+MONTHS
+FINANCIAL YEARS
+
+QUALITY INDEX
+AND ITS FORMULA
+
+PARETO THRESHOLD
+PARETO CUTOFF
+CUMULATIVE SPEND
+
+ZERO-SPEND RECORD COUNT
+DUPLICATE COUNTS
+EXCEPTION COUNTS
+
+TEST COUNT
+PASS COUNT
+FAIL COUNT
+
+SOURCE → TRANSACTION → KPI TRACEABILITY %
+
+============================================================
+37. ABSOLUTE NO-GO RULE
+============================================================
+
+Do NOT report:
+
+MODULE_1_E2E_VALIDATED
+
+simply because:
+
+tests pass.
+
+Certification requires:
+
+TEST PASS
++
+MATHEMATICAL RECONCILIATION
++
+SOURCE TRACEABILITY
++
+UI/BACKEND CONSISTENCY
++
+ADVERSARIAL TESTING
++
+EXACT FINANCIAL ARITHMETIC
++
+NO UNEXPLAINED VARIANCE.
+
+If any one fails:
+
+MODULE_1_E2E_FAILED
+
+============================================================
+38. DO NOT STOP AT REPORT GENERATION
+============================================================
+
+Actually execute the complete test suite.
+
+Do not merely create tests.
+
+Run them against:
+
+1. the real 31,671-row dataset
+2. controlled synthetic adversarial datasets
+3. UI/API calculation paths where available
+
+Then run:
+
+backend typecheck
+frontend typecheck
+backend lint
+frontend lint
+quality:fast
+all Module 1 tests
+all existing Module 2 regression tests
+
+Finally run git diff/status and report EXACTLY what was modified.
+
+DO NOT modify Module 3 / PCBI.
+
+DO NOT modify Module 2 business logic unless a Module 1 handoff defect demonstrably requires it.
+
+FINAL OUTPUT MUST STATE:
+
+FINAL_STATUS =
+MODULE_1_E2E_CERTIFIED
+
+ONLY IF EVERY GATE PASSES.
+
+Otherwise:
+
+FINAL_STATUS =
+MODULE_1_E2E_FAILED
+
+and list every failed gate with exact financial and technical evidence.
+
+## Prompt 246
+MODULE 1 — FINAL FORENSIC E2E VALIDATION & CALCULATION CERTIFICATION
+===============================================================
+
+OBJECTIVE
+---------
+Perform a complete forensic, transaction-level, mathematical, accounting,
+data-quality, FX, aggregation, UI and downstream-integrity validation of
+MODULE 1.
+
+Module 1 is the SINGLE SOURCE OF TRUTH for all procurement spend.
+
+DO NOT modify business logic merely to make tests pass.
+
+DO NOT use mock, synthetic, hardcoded, estimated, rounded or manually entered
+values anywhere in the calculation engine.
+
+DO NOT change Module 2, Module 3/PCBI or Module 4 logic except where required
+to guarantee that they consume the certified Module 1 output.
+
+DO NOT certify Module 1 until every calculation can be traced back to the
+original uploaded transaction.
+
+===============================================================
+1. SOURCE FILE IMMUTABILITY
+===============================================================
+
+Validate that the uploaded procurement file is preserved exactly as ingested.
+
+Create a deterministic source-file fingerprint/hash.
+
+Record:
+
+- filename
+- file type
+- file size
+- upload timestamp
+- sheet names
+- header row
+- total physical rows
+- total data rows
+- excluded header rows
+- detected columns
+- detected currencies
+- detected date range
+- source-file hash
+
+The original uploaded values must never be overwritten.
+
+Maintain:
+
+RAW_SOURCE
+    ↓
+NORMALIZED_TRANSACTION
+    ↓
+VALIDATED_TRANSACTION
+    ↓
+AGGREGATED_SPEND
+
+Never calculate directly from transformed display values.
+
+===============================================================
+2. TRANSACTION-LEVEL MASTER LEDGER
+===============================================================
+
+Create/verify one immutable canonical transaction ledger.
+
+Every source row must receive a unique:
+
+TRANSACTION_ID
+
+Store at minimum:
+
+- source row number
+- source record ID
+- PO number
+- PO line number
+- posting/document date
+- fiscal year
+- billing month
+- material/item code
+- material description
+- material group
+- supplier name
+- supplier normalized name
+- plant/facility
+- quantity
+- UOM
+- net price
+- price UOM
+- source currency
+- FX rate used
+- FX rate date/source
+- INR converted price
+- calculated line spend
+- inclusion status
+- exclusion code
+- validation status
+- calculation version
+
+Every transaction must be independently reproducible.
+
+===============================================================
+3. PRIMARY SPEND FORMULA
+===============================================================
+
+The ONLY authoritative transaction-level formula must be:
+
+SOURCE LINE SPEND
+=
+ORDER QUANTITY
+×
+NET PRICE
+×
+VALID FX CONVERSION FACTOR
+
+For INR:
+
+INR SPEND
+=
+ORDER QUANTITY × NET PRICE
+
+For foreign currencies:
+
+INR SPEND
+=
+ORDER QUANTITY × NET PRICE × FX_RATE
+
+Do NOT calculate from already-rounded Crore values.
+
+Do NOT calculate using displayed values.
+
+Do NOT calculate from aggregated quantity × aggregated price unless explicitly
+required for a separate analytical metric.
+
+Use maximum available source precision internally.
+
+Round ONLY at presentation/export level.
+
+===============================================================
+4. UNIT-OF-MEASURE VALIDATION
+===============================================================
+
+This is a CRITICAL PROCUREMENT CONTROL.
+
+Validate:
+
+- Order UOM
+- Price UOM
+- conversion factor
+- quantity UOM
+- pricing basis
+
+Examples:
+
+1 KG price must not be treated as 1 MT price.
+
+1 MT = 1000 KG only when the source/business rule confirms this.
+
+1 BOX cannot automatically equal 1 EA.
+
+1 TON cannot automatically equal 1 KG.
+
+Never silently assume UOM equivalence.
+
+If quantity UOM and price UOM are incompatible:
+
+STATUS = EXCLUDED_PENDING_UOM_RESOLUTION
+
+Create explicit:
+
+UOM_MISMATCH
+
+Do not silently calculate.
+
+===============================================================
+5. CURRENCY / FX VALIDATION
+===============================================================
+
+Do not use a single current/live FX rate for historical procurement
+transactions unless the source data explicitly requires current-rate
+normalization.
+
+For every foreign currency transaction verify:
+
+- transaction date
+- applicable FX date
+- FX source
+- FX rate
+- FX direction
+- conversion formula
+
+Validate USD, EUR, GBP, AED, JPY, SGD and any other detected currency.
+
+The screen currently displays:
+
+USD/INR
+EUR/INR
+GBP/INR
+AED/INR
+JPY/INR
+SGD/INR
+
+These live rates must NEVER overwrite historical transaction conversion
+rates.
+
+If the uploaded source already contains INR values, preserve the source
+INR logic.
+
+If historical FX is unavailable, do NOT invent it.
+
+Mark:
+
+FX_UNRESOLVED
+
+and exclude the affected transaction from validated spend until resolved,
+unless an explicit customer-approved FX methodology exists.
+
+Produce an FX audit table:
+
+Currency | Transaction Count | Source FX | FX Date | FX Rate | Converted Spend
+        |                  |           |         |         |
+
+===============================================================
+6. NEGATIVE / ZERO / NULL DATA TESTING
+===============================================================
+
+Test every transaction for:
+
+- NULL quantity
+- NULL price
+- NULL currency
+- NULL supplier
+- NULL item
+- NULL date
+- zero quantity
+- zero price
+- negative quantity
+- negative price
+- invalid currency
+- invalid date
+- text inside numeric fields
+- commas inside numbers
+- currency symbols
+- percentage values accidentally interpreted as amounts
+- scientific notation
+- excessive decimal precision
+
+Do NOT silently convert bad values to zero.
+
+Every invalid transaction receives an explicit exclusion code.
+
+Examples:
+
+NULL_QTY
+NULL_PRICE
+INVALID_CURRENCY
+INVALID_DATE
+NEGATIVE_QTY
+NEGATIVE_PRICE
+INVALID_NUMERIC
+MISSING_SUPPLIER
+MISSING_ITEM
+MISSING_UOM
+
+===============================================================
+7. DUPLICATE TRANSACTION DETECTION
+===============================================================
+
+Do NOT assume identical PO numbers automatically mean duplicates.
+
+Create duplicate fingerprints using the strongest available combination:
+
+PO
++ line
++ date
++ supplier
++ item
++ quantity
++ price
++ currency
+
+Detect:
+
+- exact duplicates
+- repeated PO lines
+- repeated invoice lines
+- legitimate repeated purchases
+- duplicate uploads
+- duplicate source rows
+
+Do not delete suspected duplicates automatically.
+
+Classify:
+
+DUPLICATE_CONFIRMED
+POSSIBLE_DUPLICATE
+LEGITIMATE_REPEAT
+UNRESOLVED
+
+Show excluded duplicate spend separately.
+
+===============================================================
+8. TOTAL SPEND RECONCILIATION
+===============================================================
+
+Perform the following reconciliation:
+
+RAW SOURCE SPEND
+=
+SUM OF ALL VALIDATED TRANSACTION SPEND
++
+SUM OF EXCLUDED TRANSACTION SPEND
++
+UNRESOLVED / ERROR SPEND
+
+Then:
+
+VALIDATED SPEND
+=
+SUM(ALL INCLUDED TRANSACTION LINE SPEND)
+
+Reconcile at:
+
+1. Total
+2. Currency
+3. Fiscal year
+4. Month
+5. Supplier
+6. Material group
+7. Item
+8. Plant
+9. PO
+10. Category
+
+Variance must be:
+
+₹0.00
+
+or, for non-INR calculations, mathematically equivalent to zero within
+an explicitly defined machine precision tolerance.
+
+Never hide reconciliation differences through rounding.
+
+===============================================================
+9. SCREENSHOT-SPECIFIC VALIDATION
+===============================================================
+
+The current Module 1 screen shows:
+
+31,671 records
+₹5,920.35 Cr evaluated spend
+1,932 unique items
+969 unique vendors
+256 material groups
+26 facilities
+24 billing months
+
+Validate EVERY ONE of these values against the canonical transaction ledger.
+
+Do not hardcode these figures.
+
+The displayed:
+
+TOTAL EVALUATED SPEND
+VALIDATED SPEND
+UNIQUE ITEMS
+UNIQUE VENDORS
+MATERIAL GROUPS
+OPERATING PLANTS
+TOTAL LINE ITEMS
+
+must all be dynamically calculated from the certified ledger.
+
+If the UI says:
+
+"100% Clean Data Reconciled"
+
+that statement is permitted ONLY when:
+
+ALL source rows
++
+all calculations
++
+all FX conversions
++
+all UOM validations
++
+all duplicate checks
++
+all aggregation reconciliations
+
+have passed.
+
+A 30-record preview passing does NOT qualify the entire 31,671-row
+dataset as 100% clean.
+
+===============================================================
+10. SAMPLE / PREVIEW DATA CONTROL
+===============================================================
+
+The visible table currently shows a 30-record sample.
+
+Ensure:
+
+30-record preview ≠ 30-record dataset.
+
+The preview must be generated from the canonical ledger.
+
+Changing pagination, sorting, filtering or preview size must NEVER change
+total spend.
+
+Test:
+
+10 rows
+30 rows
+100 rows
+500 rows
+ALL rows
+
+The total dataset KPI must remain identical.
+
+===============================================================
+11. LINE-SPEND PRECISION TEST
+===============================================================
+
+For every transaction:
+
+Expected Line Spend
+=
+QTY × PRICE × FX
+
+Compare against stored calculated line spend.
+
+Tolerance:
+
+ZERO logical variance before display rounding.
+
+Example:
+
+If the UI displays:
+
+₹5.62 Cr
+
+retain the underlying exact transaction amount.
+
+Never use:
+
+₹5.62 Cr
+
+as an input to subsequent calculations.
+
+All downstream calculations must use exact transaction-level values.
+
+===============================================================
+12. AGGREGATION INVARIANCE TEST
+===============================================================
+
+Verify:
+
+SUM(transaction spend)
+=
+SUM(item spend)
+=
+SUM(supplier spend)
+=
+SUM(material-group spend)
+=
+SUM(plant spend)
+=
+SUM(month spend)
+=
+SUM(fiscal-year spend)
+
+subject to mutually exclusive dimensions.
+
+Changing grouping dimension must never change total spend.
+
+===============================================================
+13. PARETO VALIDATION
+===============================================================
+
+The current UI shows:
+
+Top 80% Spend Pareto Hierarchy
+
+and examples such as:
+
+46 entities
+80.3% of spend
+₹4,752.54 Cr
+
+Validate the Pareto algorithm independently.
+
+Rules:
+
+- Sort descending by spend.
+- Calculate cumulative spend using exact values.
+- Calculate cumulative percentage against the certified total spend.
+- Do not use rounded displayed values.
+- Clearly distinguish:
+  "first entity crossing 80%"
+  from
+  "entities whose cumulative spend is <=80%".
+
+The UI must disclose the exact methodology.
+
+The Pareto subset must reconcile exactly to the source ledger.
+
+===============================================================
+14. TOP-10 MATERIAL GROUP VALIDATION
+===============================================================
+
+The UI currently displays:
+
+Top 10 material groups representing ₹5,380.73 Cr (90.9%)
+out of ₹5,920.35 Cr.
+
+Validate this independently.
+
+Ensure:
+
+TOP 10 SPEND
++
+BALANCE GROUP SPEND
+=
+TOTAL CERTIFIED SPEND
+
+If "0.00 variance / 100% spend accounted for" is displayed,
+the mathematical reconciliation must actually support it.
+
+The percentage must be calculated from exact values and only rounded
+for display.
+
+===============================================================
+15. SUPPLIER PARETO VALIDATION
+===============================================================
+
+Validate all supplier spend values.
+
+For every supplier:
+
+SUM(transaction spend for supplier)
+=
+displayed supplier spend
+
+Normalize supplier names carefully.
+
+Do NOT merge different legal entities merely because their names look similar.
+
+Do NOT split the same supplier merely because of:
+
+PVT LTD
+PRIVATE LIMITED
+LTD
+LIMITED
+punctuation
+spacing
+case
+
+unless the normalization rule is explicit and auditable.
+
+Maintain:
+
+SOURCE_SUPPLIER_NAME
+NORMALIZED_SUPPLIER_NAME
+SUPPLIER_ENTITY_ID
+
+===============================================================
+16. ITEM / MATERIAL GROUP VALIDATION
+===============================================================
+
+The screenshots show some Material Groups with:
+
+UNIQUE ITEMS = 0
+
+while transaction records exist.
+
+Investigate this specifically.
+
+A group containing transactions should not incorrectly report zero unique
+items unless the source genuinely has no identifiable item/SKU.
+
+Test:
+
+COUNT(DISTINCT valid item IDs)
+
+against actual transaction data.
+
+Never manufacture an item count.
+
+===============================================================
+17. FISCAL YEAR VALIDATION
+===============================================================
+
+Current evaluation window:
+
+FY24–FY26
+1 Apr 2023 – 31 Mar 2026
+
+Validate fiscal-year assignment.
+
+Rules:
+
+April–March financial year.
+
+Examples:
+
+31-Mar-2024 → FY24
+01-Apr-2024 → FY25
+31-Mar-2025 → FY25
+01-Apr-2025 → FY26
+31-Mar-2026 → FY26
+
+No date may be assigned to the wrong fiscal year.
+
+Reconcile:
+
+FY24 + FY25 + FY26
+=
+TOTAL SPEND
+
+===============================================================
+18. MONTHLY RECONCILIATION
+===============================================================
+
+For all 24 billing months:
+
+MONTH SPEND
+=
+SUM OF ALL TRANSACTION SPEND IN THAT MONTH
+
+Then:
+
+SUM(24 MONTHS)
+=
+TOTAL CERTIFIED SPEND
+
+No missing months.
+
+No duplicated months.
+
+No date-shift caused by timezone conversion.
+
+===============================================================
+19. PLANT / FACILITY RECONCILIATION
+===============================================================
+
+Validate all 26 facilities.
+
+Supplier and plant dimensions must be independently derived.
+
+Reconcile:
+
+SUM(all plant spend)
+=
+TOTAL CERTIFIED SPEND
+
+Missing plant values must be separately classified.
+
+Never silently assign missing plants to "Unknown" and treat it as a valid
+facility.
+
+===============================================================
+20. FILTER INVARIANCE TEST
+===============================================================
+
+Test every UI filter:
+
+- Material group
+- Supplier
+- Item
+- Plant
+- Fiscal year
+- Month
+- Currency
+- Category
+- Search
+
+For every filter:
+
+FILTERED SPEND
++
+REMAINING SPEND
+=
+TOTAL CERTIFIED SPEND
+
+Changing a filter must not mutate the underlying dataset.
+
+Reset must restore exactly the original certified totals.
+
+===============================================================
+21. CURRENCY DISPLAY VALIDATION
+===============================================================
+
+Validate INR/Cr display.
+
+₹1 Cr = ₹10,000,000.
+
+Ensure no:
+
+lakh/crore conversion error
+million/billion error
+thousand/crore error
+currency symbol duplication
+decimal truncation
+
+Test extremely small and extremely large transactions.
+
+===============================================================
+22. ROUNDING CONTROL
+===============================================================
+
+NEVER:
+
+round transaction values before aggregation
+round FX rates before conversion
+round supplier totals before Pareto
+round category totals before percentage calculation
+round percentages before threshold decisions
+
+Internal calculation precision must be materially higher than UI precision.
+
+UI:
+
+₹5,920.35 Cr
+
+must not become the underlying calculation value.
+
+===============================================================
+23. DATA QUALITY SCORE
+===============================================================
+
+Do NOT define Quality Index as:
+
+validated spend / total spend
+
+alone.
+
+A dataset can have 100% spend value coverage while still containing:
+
+duplicate suppliers
+bad UOMs
+incorrect item mapping
+invalid dates
+duplicate transactions
+wrong FX
+incorrect fiscal-year mapping
+
+Create a multidimensional quality framework:
+
+- Numeric integrity
+- Currency integrity
+- FX integrity
+- UOM integrity
+- Supplier integrity
+- Item integrity
+- Date integrity
+- Duplicate integrity
+- Reconciliation integrity
+- Classification integrity
+
+Display:
+
+QUALITY INDEX = 100%
+
+ONLY when all mandatory controls pass.
+
+Otherwise display the actual score and unresolved exceptions.
+
+===============================================================
+24. EXCEPTION LEDGER
+===============================================================
+
+Every excluded/unresolved transaction must appear in an Exception Ledger.
+
+Fields:
+
+TRANSACTION_ID
+SOURCE_ROW
+ERROR_CODE
+ERROR_DESCRIPTION
+ORIGINAL_VALUE
+EXPECTED_VALUE
+SPEND_IMPACT
+STATUS
+RESOLUTION_REQUIRED
+
+No transaction can disappear silently.
+
+===============================================================
+25. FULL TRANSACTION DRILL-DOWN
+===============================================================
+
+From:
+
+Total Spend
+→ Material Group
+→ Item
+→ Supplier
+→ PO
+→ PO Line
+→ Transaction
+
+the user must be able to reach the exact original source row.
+
+At every level show:
+
+- source transaction count
+- exact spend
+- percentage of parent
+- source-row references
+
+The final transaction detail must show the original values and calculated
+formula.
+
+===============================================================
+26. CALCULATION PROOF
+===============================================================
+
+For every KPI create a machine-readable calculation proof.
+
+Example:
+
+TOTAL_SPEND_PROOF:
+
+transaction_count = 31,671
+included_transaction_count = X
+excluded_transaction_count = Y
+
+sum_line_spend = ₹X
+sum_excluded_spend = ₹Y
+reconciliation_variance = ₹0.00
+
+Every KPI must have:
+
+SOURCE
+FORMULA
+INPUTS
+OUTPUT
+PRECISION
+RECONCILIATION_STATUS
+
+===============================================================
+27. ADVERSARIAL TESTS
+===============================================================
+
+Create automated tests for at least:
+
+A. Duplicate row
+B. Duplicate PO
+C. Duplicate supplier name
+D. Different supplier legal entity with similar name
+E. Zero quantity
+F. Negative quantity
+G. Zero price
+H. Negative price
+I. Missing price
+J. Missing quantity
+K. Missing currency
+L. Invalid currency
+M. Foreign currency
+N. Missing FX
+O. Wrong FX direction
+P. UOM mismatch
+Q. Price-UOM mismatch
+R. Invalid date
+S. Fiscal-year boundary
+T. Leap year
+U. Blank supplier
+V. Blank item
+W. Extremely large amount
+X. Very small amount
+Y. Decimal precision
+Z. Duplicate upload
+AA. Filter reset
+AB. Pagination change
+AC. Sorting change
+AD. Pareto boundary
+AE. 80% threshold crossing
+AF. Missing material group
+AG. Missing plant
+AH. Same PO with multiple lines
+AI. Same item with different prices
+AJ. Same supplier with multiple categories
+
+Every negative test must produce the correct controlled result.
+
+===============================================================
+28. PERFORMANCE / SCALE TEST
+===============================================================
+
+Run Module 1 against the complete 31,671-row dataset.
+
+Do NOT certify using only the 30 displayed records.
+
+Test at:
+
+100 rows
+1,000 rows
+10,000 rows
+31,671 rows
+
+Results must be deterministic.
+
+The same file must produce exactly the same:
+
+transaction count
+spend
+supplier count
+item count
+material-group count
+plant count
+monthly totals
+FY totals
+Pareto totals
+
+on repeated runs.
+
+===============================================================
+29. RE-RUN DETERMINISM
+===============================================================
+
+Upload/process the exact same source file at least 3 times.
+
+Expected:
+
+same source hash
+same transaction IDs
+same calculated spend
+same aggregations
+same exclusions
+same KPIs
+
+No random values.
+
+No timestamp-dependent calculation.
+
+No live FX leakage into historical transactions.
+
+===============================================================
+30. DOWNSTREAM HANDOFF PROTECTION
+===============================================================
+
+Module 2 must consume ONLY the certified Module 1 ledger.
+
+Module 3 / PCBI must remain completely isolated.
+
+Module 4 must consume approved outputs only.
+
+If Module 1 changes:
+
+Module 2 must not retain stale calculations.
+
+Create a dataset/version ID:
+
+MODULE1_DATASET_VERSION
+
+All downstream calculations must reference this version.
+
+===============================================================
+31. UI VS ENGINE RECONCILIATION
+===============================================================
+
+For EVERY number visible on Module 1 UI:
+
+UI VALUE
+=
+ENGINE VALUE
+
+Create automated UI/API reconciliation tests for:
+
+- Total spend
+- line count
+- unique items
+- unique suppliers
+- material groups
+- plants
+- monthly spend
+- FY spend
+- supplier spend
+- Pareto spend
+- filtered spend
+- validated spend
+- excluded spend
+- quality score
+
+The UI must never contain hardcoded business values.
+
+===============================================================
+32. CERTIFICATION REPORT
+===============================================================
+
+Generate these artifacts:
+
+MODULE_1_FINAL_FORENSIC_VALIDATION.md
+
+MODULE_1_TRANSACTION_AUDIT.xlsx
+
+MODULE_1_RECONCILIATION_AUDIT.xlsx
+
+MODULE_1_EXCEPTION_LEDGER.xlsx
+
+MODULE_1_CALCULATION_PROOF.json
+
+MODULE_1_E2E_TEST_RESULTS.json
+
+MODULE_1_DATASET_MANIFEST.json
+
+MODULE_1_UI_ENGINE_RECONCILIATION.md
+
+===============================================================
+33. FINAL ACCEPTANCE GATE
+===============================================================
+
+Module 1 may be marked:
+
+MODULE_1_E2E_CERTIFIED
+
+ONLY IF ALL OF THE FOLLOWING ARE TRUE:
+
+1. Source file preserved.
+2. Every source row accounted for.
+3. Every included transaction traceable.
+4. Every excluded transaction traceable.
+5. Line-level calculation reproducible.
+6. Currency conversion reproducible.
+7. UOM logic validated.
+8. Duplicate logic validated.
+9. Fiscal-year logic validated.
+10. Monthly reconciliation passed.
+11. Supplier reconciliation passed.
+12. Item reconciliation passed.
+13. Material-group reconciliation passed.
+14. Plant reconciliation passed.
+15. Pareto reconciliation passed.
+16. UI/engine values match.
+17. Repeated processing is deterministic.
+18. No hardcoded spend values.
+19. No hidden exclusions.
+20. No unexplained variance.
+21. Module 2 consumes certified Module 1 output.
+22. PCBI remains isolated.
+23. Module 4 receives only valid downstream data.
+24. All adversarial tests pass.
+25. Full-dataset validation passes.
+
+FINAL RECONCILIATION MUST SHOW:
+
+RAW SOURCE SPEND
+= VALIDATED SPEND
++ EXCLUDED SPEND
++ UNRESOLVED SPEND
+
+with:
+
+UNEXPLAINED VARIANCE = ₹0.00
+
+If ANY condition fails:
+
+FINAL_STATUS = MODULE_1_NOT_CERTIFIED
+
+and clearly list every blocking defect.
+
+DO NOT claim "100% Clean Data" or "MODULE_1_E2E_CERTIFIED"
+until the full dataset passes.
+
+===============================================================
+34. CRITICAL BUSINESS RULE
+===============================================================
+
+NEVER tell the customer:
+
+"Your procurement is perfect."
+
+NEVER infer procurement quality merely from absence of detected errors.
+
+Module 1 measures DATA QUALITY and SPEND RECONCILIATION.
+
+Module 2 identifies sourcing and procurement opportunities.
+
+A clean dataset does NOT mean procurement is optimal.
+
+The architecture must preserve this distinction.
+
+===============================================================
+
+FINAL INSTRUCTION
+-----------------
+
+Execute this validation against the REAL uploaded dataset currently used
+by Module 1.
+
+Do not create synthetic data to obtain passing results.
+
+Do not alter source values.
+
+Do not weaken tolerances merely to pass.
+
+Do not hide exceptions.
+
+Do not round before calculation.
+
+Do not use UI-displayed numbers as calculation inputs.
+
+Do not use live FX rates for historical transactions unless explicitly
+supported by the defined methodology.
+
+Do not certify based on the visible 30-row preview.
+
+Validate the complete dataset.
+
+At completion, provide:
+
+1. PASS/FAIL for every gate
+2. Exact transaction count
+3. Exact raw spend
+4. Exact validated spend
+5. Exact excluded spend
+6. Exact unresolved spend
+7. Exact reconciliation variance
+8. Number of duplicates
+9. Number of UOM issues
+10. Number of FX issues
+11. Number of data-quality issues
+12. Number of UI/engine mismatches
+13. Number of failed adversarial tests
+14. Full list of defects, if any
+15. Final certification status
+
+Do not proceed to modify Module 2 based on assumptions.
+
+MODULE 1 must become the mathematically certified foundation for the
+entire procurement intelligence platform.
+
+
+## Prompt 247
+
+MODULE 1 — FINAL FORENSIC DATA, CALCULATION, RECONCILIATION & UI CERTIFICATION
+
+IMPORTANT EXECUTION RULE:
+Do NOT modify, redesign, refactor, or disturb Module 2, Module 3 (PCBI), or Module 4.
+Do NOT alter any existing business logic that has already been validated in Module 2.
+This command is ONLY for Module 1:
+Purchase History Upload → Data Ingestion → Cleansing/Validation → Currency Conversion → Spend Calculation → Aggregation → Pareto → Supplier/Item/Material Group/Plant/Month Analysis → Module 2 Handoff.
+
+OBJECTIVE:
+
+Perform a complete forensic validation of Module 1 at:
+1. Raw transaction level
+2. Mathematical calculation level
+3. Currency/FX level
+4. Aggregation level
+5. Reconciliation level
+6. Duplicate/anomaly level
+7. Date-period level
+8. Supplier/item/material-group level
+9. Pareto level
+10. UI presentation level
+11. Audit/provenance level
+12. Module 2 handoff level
+
+The objective is NOT merely to prove that the software runs.
+
+The objective is to prove:
+
+EVERY NUMBER DISPLAYED IN MODULE 1 IS MATHEMATICALLY DERIVED FROM THE SOURCE DATA AND CAN BE TRACED BACK TO THE ORIGINAL SOURCE ROW.
+
+NO SYNTHETIC VALUES.
+NO ASSUMPTIONS WITHOUT DISCLOSURE.
+NO SILENT ROUNDING.
+NO SILENT EXCLUSIONS.
+NO DOUBLE COUNTING.
+NO DATA LOSS.
+NO DUPLICATION.
+NO FX MISAPPLICATION.
+NO DATE-WINDOW LEAKAGE.
+NO AGGREGATION MISMATCH.
+
+============================================================
+SECTION 1 — FREEZE THE SOURCE DATA
+============================================================
+
+Identify the exact uploaded source file used for Module 1.
+
+Record:
+
+- File name
+- File hash/checksum if available
+- File size
+- Upload timestamp
+- Worksheet names
+- Header row
+- Data start row
+- Data end row
+- Total physical rows
+- Total valid data rows
+- Total excluded rows
+- Exclusion reasons
+
+For the current certified dataset, independently verify whether:
+
+31,671 data records
+₹5,920.35 Cr total evaluated spend
+
+are actually correct.
+
+Do NOT trust the UI values.
+
+Recalculate directly from the source data.
+
+If the values differ, FAIL the validation.
+
+============================================================
+SECTION 2 — SOURCE ROW IMMUTABILITY
+============================================================
+
+Every source transaction must receive a deterministic internal identifier.
+
+Recommended:
+
+SOURCE_ROW_ID
+
+The ID must allow exact tracing to:
+
+File → Worksheet → Excel Row → Transaction → Calculated Spend → Aggregation → KPI.
+
+Never overwrite original source values.
+
+Maintain separate fields:
+
+RAW_VALUE
+NORMALIZED_VALUE
+CALCULATED_VALUE
+DISPLAY_VALUE
+
+The original uploaded value must always remain recoverable.
+
+============================================================
+SECTION 3 — TRANSACTION-LEVEL SPEND FORMULA
+============================================================
+
+The canonical transaction spend formula must be:
+
+LINE_SPEND_INR =
+ORDER_QUANTITY
+×
+NET_PRICE
+×
+FX_RATE_TO_INR
+
+For INR:
+
+FX_RATE_TO_INR = 1.000000...
+
+For foreign currency:
+
+FX_RATE_TO_INR MUST be the historically applicable FX rate for the transaction date unless the dataset explicitly supplies a transaction-specific FX rate.
+
+DO NOT use current/live FX rates to recalculate historical procurement spend.
+
+The live FX banner may be displayed for reference, but it must NEVER silently replace historical transaction FX.
+
+If historical FX is unavailable:
+
+STATUS = FX_DATA_UNAVAILABLE
+
+and the transaction must be excluded from validated spend unless an explicit configured fallback methodology exists.
+
+Never silently use today's FX rate.
+
+============================================================
+SECTION 4 — FULL PRECISION RULE
+============================================================
+
+This is critical.
+
+All calculations must be performed using full precision.
+
+Example:
+
+Quantity = 16
+Price = ₹175
+
+Exact spend:
+
+16 × 175 = ₹2,800
+
+₹2,800 / 10,000,000 = ₹0.00028 Cr
+
+If UI displays:
+
+₹0.00 Cr
+
+that is ONLY a presentation rounding.
+
+The underlying calculation MUST remain ₹0.00028 Cr.
+
+NEVER convert ₹0.00028 Cr to zero internally.
+
+The following must be separate:
+
+RAW_AMOUNT
+INR_AMOUNT_FULL_PRECISION
+INR_AMOUNT_CR_FULL_PRECISION
+DISPLAY_AMOUNT_CR
+
+Display rounding must NEVER feed another calculation.
+
+============================================================
+SECTION 5 — CURRENCY VALIDATION
+============================================================
+
+For every transaction:
+
+Validate:
+
+Currency
+FX Rate
+Transaction Date
+FX Source
+FX Effective Date
+Converted INR Amount
+
+Create an FX audit table:
+
+SOURCE_ROW_ID
+TRANSACTION_DATE
+SOURCE_CURRENCY
+SOURCE_AMOUNT
+FX_RATE
+FX_RATE_DATE
+FX_SOURCE
+INR_AMOUNT
+FX_STATUS
+
+Required statuses:
+
+INR_NATIVE
+FX_CONVERTED
+FX_MISSING
+FX_INVALID
+FX_DATE_MISMATCH
+
+No transaction may silently pass with an invalid FX rate.
+
+============================================================
+SECTION 6 — DATE WINDOW VALIDATION
+============================================================
+
+The current UI states:
+
+Evaluation Window:
+FY24–FY26
+1 Apr 2023 – 31 Mar 2026
+
+The uploaded file is named:
+
+"2 years data.xlsx"
+
+Do NOT rely on the filename.
+
+Calculate the actual minimum and maximum transaction dates from the source dataset.
+
+Report:
+
+MIN_TRANSACTION_DATE
+MAX_TRANSACTION_DATE
+TOTAL_DAYS
+TOTAL_MONTHS
+TOTAL_FY_COVERAGE
+
+Then compare actual dates against the configured evaluation window.
+
+Every row must be classified:
+
+IN_SCOPE
+OUT_OF_SCOPE
+INVALID_DATE
+MISSING_DATE
+
+The system must NOT silently include transactions outside the selected evaluation window.
+
+If the dataset contains FY23/FY27/etc., identify them explicitly.
+
+============================================================
+SECTION 7 — HEADER AND ROW COUNT RECONCILIATION
+============================================================
+
+Verify:
+
+Physical Excel Rows
+-
+Header Rows
+-
+Blank Rows
+-
+Invalid Rows
+-
+Excluded Rows
+=
+Valid Data Rows
+
+Then:
+
+Valid Data Rows
+=
+Number of SOURCE_ROW_ID records.
+
+For the current dataset, independently verify whether:
+
+31,671 records
+
+is exact.
+
+If UI says 31,671 but calculation engine finds another number:
+
+FAIL.
+
+============================================================
+SECTION 8 — TOTAL SPEND RECONCILIATION
+============================================================
+
+Calculate:
+
+TOTAL_TRANSACTION_SPEND =
+SUM(all valid transaction LINE_SPEND_INR)
+
+Then independently calculate:
+
+SUM(Material Group Spend)
+SUM(Plant Spend)
+SUM(Month Spend)
+SUM(Supplier Spend)
+SUM(Item Spend)
+
+All must reconcile exactly to:
+
+TOTAL_TRANSACTION_SPEND
+
+within zero mathematical variance.
+
+Do NOT use rounded ₹ Cr values for reconciliation.
+
+Reconciliation must use full precision INR.
+
+Required result:
+
+DATA_RECONCILIATION_STATUS = PASS
+
+only when:
+
+transaction total
+=
+supplier total
+=
+item total
+=
+material group total
+=
+plant total
+=
+month total
+
+with zero underlying variance.
+
+============================================================
+SECTION 9 — TAX / FREIGHT / OTHER COMPONENT VALIDATION
+============================================================
+
+Inspect source columns for:
+
+GST
+Tax
+Freight
+Insurance
+Discount
+Other Charges
+Landed Cost
+Gross Value
+Net Value
+
+Determine exactly which field is used for procurement spend.
+
+Do NOT assume.
+
+Document:
+
+SPEND_BASE_FIELD = ______
+
+If NET PRICE is the source of spend:
+
+Quantity × Net Price × FX
+
+must be the canonical formula.
+
+If taxes/freight are intentionally excluded, state this explicitly.
+
+Never mix gross and net values.
+
+Never add tax twice.
+
+Never include freight twice.
+
+============================================================
+SECTION 10 — NEGATIVE QUANTITY / PRICE VALIDATION
+============================================================
+
+Detect:
+
+Quantity <= 0
+Price < 0
+Zero price
+Zero quantity
+Missing quantity
+Missing price
+Non-numeric quantity
+Non-numeric price
+
+Do NOT automatically delete these records.
+
+Classify them.
+
+Examples:
+
+VALID_ZERO_VALUE
+RETURN
+CREDIT
+REVERSAL
+DATA_ERROR
+MISSING_VALUE
+NEGATIVE_TRANSACTION
+
+The business rule must be explicit.
+
+Every excluded row must have:
+
+SOURCE_ROW_ID
+REASON_CODE
+ORIGINAL_VALUE
+EXCLUSION_AMOUNT
+
+============================================================
+SECTION 11 — DUPLICATE TRANSACTION VALIDATION
+============================================================
+
+Detect exact duplicates and probable duplicates.
+
+Exact duplicate candidate:
+
+Same PO
++
+Same Line Item
++
+Same Date
++
+Same Vendor
++
+Same Item
++
+Same Quantity
++
+Same Price
++
+Same Currency
+
+Do NOT automatically remove duplicates.
+
+Classify:
+
+EXACT_DUPLICATE
+PROBABLE_DUPLICATE
+LEGITIMATE_REPEAT
+UNRESOLVED_DUPLICATE
+
+Show:
+
+Duplicate Count
+Duplicate Spend
+Excluded Duplicate Spend
+Retained Spend
+
+The final spend must clearly explain whether duplicates were included or excluded.
+
+============================================================
+SECTION 12 — SUPPLIER MASTER VALIDATION
+============================================================
+
+Supplier aggregation must use the canonical supplier identity.
+
+Check:
+
+Case differences
+Spaces
+Punctuation
+LLP / LTD / LIMITED
+PRIVATE LIMITED / PVT LTD
+Special characters
+Trailing spaces
+Duplicate supplier codes
+
+Do NOT merge suppliers merely because names look similar.
+
+Every normalization must have:
+
+RAW_SUPPLIER_NAME
+NORMALIZED_SUPPLIER_NAME
+SUPPLIER_ID
+NORMALIZATION_RULE
+CONFIDENCE
+
+If supplier master mapping does not exist:
+
+do NOT invent one.
+
+============================================================
+SECTION 13 — ITEM / SKU VALIDATION
+============================================================
+
+Validate:
+
+Material Code
+SKU
+Short Text
+Description
+Item ID
+
+Check whether multiple descriptions map to the same item.
+
+Check whether same SKU has multiple descriptions.
+
+Check whether blank SKU exists.
+
+Check whether duplicate item identities exist.
+
+CRITICAL:
+
+The UI currently shows cases such as:
+
+UNIQUE ITEMS = 0
+
+while visible sample records contain item/SKU values.
+
+Investigate this explicitly.
+
+If this is correct because the field means something different, rename the metric so the meaning is unambiguous.
+
+If it is incorrect, FIX IT.
+
+Never allow:
+
+Visible item records > 0
+while Unique Items = 0
+
+unless a documented definition explains the metric.
+
+============================================================
+SECTION 14 — MATERIAL GROUP VALIDATION
+============================================================
+
+For every transaction:
+
+SOURCE_ROW_ID
+→ MATERIAL_GROUP
+
+must be deterministic.
+
+Check:
+
+Missing material group
+Unknown material group
+Multiple material groups for same item
+Manual mapping
+AI mapping
+Source-provided mapping
+
+Do not silently assign a material group.
+
+Create:
+
+MATERIAL_GROUP_STATUS
+
+with:
+
+SOURCE
+MAPPED
+UNMAPPED
+AMBIGUOUS
+EXCLUDED
+
+============================================================
+SECTION 15 — PLANT / FACILITY VALIDATION
+============================================================
+
+Validate:
+
+Plant
+Facility
+Location
+Business Unit
+
+Ensure:
+
+SUM(Plant Spend)
+=
+Total Validated Spend
+
+No transaction may disappear because plant is blank.
+
+Blank plant must be separately classified.
+
+============================================================
+SECTION 16 — MONTHLY SPEND VALIDATION
+============================================================
+
+Calculate monthly spend directly from transaction dates.
+
+Do NOT use uploaded monthly totals if they exist unless independently reconciled.
+
+For every month:
+
+MONTH_SPEND =
+SUM(transaction spend where transaction date belongs to month)
+
+Then:
+
+SUM(all months)
+=
+TOTAL_TRANSACTION_SPEND
+
+Create monthly audit:
+
+Month
+Transaction Count
+Spend INR
+Spend Cr
+Cumulative Spend
+Reconciliation Status
+
+============================================================
+SECTION 17 — FINANCIAL YEAR VALIDATION
+============================================================
+
+For Indian FY:
+
+Apr–Mar.
+
+Validate:
+
+FY24 = 1 Apr 2023 – 31 Mar 2024
+FY25 = 1 Apr 2024 – 31 Mar 2025
+FY26 = 1 Apr 2025 – 31 Mar 2026
+
+Ensure every transaction belongs to exactly one FY.
+
+No overlap.
+No missing month.
+No double allocation.
+
+Then:
+
+SUM(FY24 + FY25 + FY26)
+=
+Total Spend for selected evaluation period.
+
+============================================================
+SECTION 18 — MATERIAL GROUP AGGREGATION
+============================================================
+
+For each Material Group:
+
+Transaction Count
+Unique Items
+Unique Vendors
+Line Items
+Spend INR
+Spend Cr
+Spend Share %
+
+Validate:
+
+SUM(all Material Group Spend)
+=
+Total Spend.
+
+CRITICAL:
+
+Do not calculate percentages using rounded spend.
+
+Spend Share % must be:
+
+Group Full Precision Spend
+/
+Total Full Precision Spend
+× 100
+
+============================================================
+SECTION 19 — SUPPLIER AGGREGATION
+============================================================
+
+For each supplier:
+
+Supplier ID
+Supplier Name
+Transaction Count
+Unique Items
+Line Items
+Spend
+Spend Share
+Cumulative Spend
+Pareto Status
+
+Validate:
+
+SUM(all supplier spend)
+=
+Total Spend.
+
+Supplier ranking must be based on exact spend descending.
+
+============================================================
+SECTION 20 — PARETO 80% VALIDATION
+============================================================
+
+Implement Pareto using full precision.
+
+Sort suppliers by descending spend.
+
+Cumulative Spend =
+running exact spend.
+
+Cumulative % =
+Cumulative Spend / Total Spend × 100.
+
+Define boundary rule explicitly:
+
+Include the first supplier where cumulative spend reaches or crosses 80%.
+
+Do NOT arbitrarily stop before 80%.
+
+Do NOT force exactly 80%.
+
+For the current screenshot:
+
+Total Spend = ₹5,920.35 Cr
+
+Displayed cumulative Pareto spend:
+
+₹4,752.54 Cr
+
+46 entities
+
+Validate independently whether:
+
+4,752.54 / 5,920.35 ≈ 80.3%
+
+is mathematically correct.
+
+If correct, retain it.
+
+If not, correct it.
+
+Also report:
+
+80% Boundary Supplier
+Boundary Spend
+Boundary %
+Number of Suppliers
+Spend Excluded Below Boundary
+
+============================================================
+SECTION 21 — PARETO ITEM VALIDATION
+============================================================
+
+Perform the same exact methodology for:
+
+Items
+Material Groups
+Suppliers
+Supplier + Item combinations where required
+
+Never mix supplier Pareto with item Pareto.
+
+Clearly label the dimension.
+
+============================================================
+SECTION 22 — TOP-N VALIDATION
+============================================================
+
+For every "Top 10", "Top 20", etc.:
+
+Ensure sorting is descending based on exact spend.
+
+Validate displayed Top N sum.
+
+Validate remaining spend.
+
+Top N + Remaining
+=
+Total Spend.
+
+If UI shows:
+
+Top 10 = ₹5,380.73 Cr
+
+and total = ₹5,920.35 Cr,
+
+verify exact reconciliation.
+
+Do not calculate the balance from rounded values.
+
+============================================================
+SECTION 23 — SCREENSHOT-SPECIFIC FORENSIC CHECKS
+============================================================
+
+Validate the following visible examples from the current Module 1 screens.
+
+Example:
+
+REC-8825
+Quantity = 16
+Price = ₹175
+Currency = INR
+
+Expected:
+
+16 × 175 = ₹2,800
+
+Expected Cr representation:
+
+₹0.00028 Cr
+
+Display may show:
+
+₹0.00 Cr
+
+but internal amount MUST remain ₹0.00028 Cr.
+
+Next:
+
+REC-8800
+Quantity = 340
+Price = ₹165,406.50
+Currency = INR
+
+Expected:
+
+340 × 165,406.50
+=
+₹56,238,210
+
+=
+₹5.623821 Cr
+
+UI may display ₹5.62 Cr.
+
+Next:
+
+REC-8801
+160 × ₹165,406.50
+=
+₹26,465,040
+=
+₹2.646504 Cr
+
+Next:
+
+REC-8802
+8 × ₹1,619,761.65
+=
+₹12,958,093.20
+=
+₹1.29580932 Cr
+
+Validate all these values independently.
+
+Do not simply test these examples.
+
+Build automated tests for them.
+
+============================================================
+SECTION 24 — DISPLAY ROUNDING VALIDATION
+============================================================
+
+Every displayed number must be classified:
+
+RAW
+FULL_PRECISION
+DISPLAY_ROUNDED
+
+Examples:
+
+₹5.623821 Cr
+displayed as
+₹5.62 Cr
+
+is acceptable.
+
+But:
+
+₹5.62 Cr
+must NEVER be used to calculate another KPI.
+
+The UI layer must receive:
+
+rawValue
+displayValue
+formattedValue
+
+where necessary.
+
+============================================================
+SECTION 25 — "100% QUALITY INDEX" GOVERNANCE
+============================================================
+
+Do NOT display:
+
+100% Clean Data
+
+merely because all records loaded successfully.
+
+Define Quality Index based on actual validation gates.
+
+Minimum gates:
+
+Row integrity
+Required fields
+Numeric integrity
+Date integrity
+Currency integrity
+FX integrity
+Duplicate integrity
+Supplier integrity
+Item integrity
+Material group integrity
+Spend calculation integrity
+Aggregation integrity
+Reconciliation integrity
+Period integrity
+
+The UI must show:
+
+QUALITY_INDEX
+
+and a drill-down showing exactly why the score is 100%, 99%, etc.
+
+If all records pass, 100% is acceptable.
+
+If any unresolved issue exists, do NOT show 100%.
+
+============================================================
+SECTION 26 — "PASSED CLEAN" STATUS
+============================================================
+
+"Passed Clean" must not mean merely:
+
+row loaded successfully.
+
+It must mean the transaction passed all configured Module 1 validation rules.
+
+Create a deterministic validation status:
+
+PASSED_CLEAN
+PASSED_WITH_WARNING
+EXCLUDED
+FAILED
+REVIEW_REQUIRED
+
+For every record store:
+
+SOURCE_ROW_ID
+VALIDATION_STATUS
+VALIDATION_RULES_PASSED
+VALIDATION_RULES_FAILED
+WARNING_CODES
+EXCLUSION_CODE
+
+============================================================
+SECTION 27 — ACTIVE SPEND
+============================================================
+
+"Active in Spend" must be mathematically defined.
+
+A transaction can only contribute to Active Spend if:
+
+Valid row
++
+Valid quantity
++
+Valid price
++
+Valid currency
++
+Valid FX
++
+Valid date
++
+Not excluded
++
+Not duplicate according to configured rule
+
+Then:
+
+ACTIVE_SPEND =
+SUM(all Active transactions)
+
+Validate:
+
+Active Spend
++
+Excluded Spend
+=
+Raw Source Spend
+
+where applicable and with explicit treatment of duplicates/returns/etc.
+
+============================================================
+SECTION 28 — ZERO-VALUE TRANSACTIONS
+============================================================
+
+Do not hide zero-value transactions.
+
+Report:
+
+Zero Quantity Count
+Zero Price Count
+Zero Spend Count
+
+Separate:
+
+Legitimate zero-value transaction
+Data-quality zero-value transaction
+
+============================================================
+SECTION 29 — DATA LOSS DETECTION
+============================================================
+
+Create a complete conservation check:
+
+SOURCE_ROWS
+=
+VALID_ROWS
++
+EXCLUDED_ROWS
++
+INVALID_ROWS
+
+And:
+
+SOURCE_SPEND
+=
+VALIDATED_SPEND
++
+EXCLUDED_SPEND
++
+UNRESOLVED_SPEND
+
+where applicable.
+
+There must be no unexplained gap.
+
+Required:
+
+UNEXPLAINED_ROW_VARIANCE = 0
+UNEXPLAINED_SPEND_VARIANCE = ₹0.00
+
+============================================================
+SECTION 30 — AGGREGATION CONSISTENCY
+============================================================
+
+The following must all independently reconcile:
+
+Transaction
+Supplier
+Item
+Material Group
+Plant
+Month
+Financial Year
+Pareto
+Top N
+Currency
+Category
+
+No aggregation may use another rounded aggregation as its source.
+
+All must originate from canonical transaction-level data.
+
+============================================================
+SECTION 31 — MODULE 1 → MODULE 2 HANDOFF
+============================================================
+
+Module 2 must consume ONLY the certified Module 1 dataset.
+
+Create an immutable handoff dataset containing:
+
+SOURCE_ROW_ID
+PO
+LINE_ITEM
+DATE
+SUPPLIER_ID
+SUPPLIER_NAME
+ITEM_ID
+ITEM_DESCRIPTION
+MATERIAL_GROUP
+PLANT
+QUANTITY
+UOM
+SOURCE_CURRENCY
+FX_RATE
+INR_UNIT_PRICE
+LINE_SPEND_INR
+IN_SCOPE
+VALIDATION_STATUS
+
+Module 2 must not recalculate Module 1 spend differently.
+
+The Module 1 certified total must equal the Module 2 input total.
+
+============================================================
+SECTION 32 — PROVENANCE / "PROOF AT MINUTE DATA LEVEL"
+============================================================
+
+Every KPI must be traceable.
+
+Required lineage:
+
+EXECUTIVE KPI
+↓
+AGGREGATION
+↓
+SUPPLIER / ITEM / MATERIAL GROUP
+↓
+TRANSACTION
+↓
+SOURCE_ROW_ID
+↓
+ORIGINAL EXCEL ROW
+
+For example:
+
+Total Spend
+→ Ferro Materials
+→ Traf igura India
+→ SKU 110000001320
+→ REC-8800
+→ Excel Row X
+
+The UI should provide a drill-down wherever practical.
+
+============================================================
+SECTION 33 — AUDIT FORMULA LIBRARY
+============================================================
+
+Create a formal Module 1 calculation audit file containing:
+
+Formula ID
+Metric
+Formula
+Input Fields
+Precision
+Rounding Rule
+Source
+Validation Test
+Result
+Status
+
+Examples:
+
+M1-F001
+Line Spend
+
+M1-F002
+Total Spend
+
+M1-F003
+Supplier Spend
+
+M1-F004
+Material Group Spend
+
+M1-F005
+Monthly Spend
+
+M1-F006
+FY Spend
+
+M1-F007
+Spend Share
+
+M1-F008
+Pareto Cumulative Spend
+
+M1-F009
+Pareto Cumulative %
+
+M1-F010
+Quality Index
+
+M1-F011
+Active Spend
+
+M1-F012
+Validated Spend
+
+M1-F013
+Excluded Spend
+
+============================================================
+SECTION 34 — AUTOMATED TEST SUITE
+============================================================
+
+Create a comprehensive automated Module 1 test suite.
+
+Minimum:
+
+100+ deterministic tests where applicable.
+
+Include:
+
+A. Row count tests
+B. Spend formula tests
+C. Currency tests
+D. FX tests
+E. Date tests
+F. Duplicate tests
+G. Negative value tests
+H. Supplier aggregation tests
+I. Item aggregation tests
+J. Material group tests
+K. Plant tests
+L. Monthly tests
+M. FY tests
+N. Pareto tests
+O. Top-N tests
+P. Precision tests
+Q. Rounding tests
+R. Reconciliation tests
+S. Data-loss tests
+T. Module 2 handoff tests
+
+Also create adversarial tests:
+
+- Extremely small spend
+- Extremely large spend
+- Decimal quantities
+- Decimal prices
+- Missing currency
+- Unknown currency
+- Missing FX
+- Zero FX
+- Negative FX
+- Historical FX vs live FX
+- Duplicate PO
+- Duplicate line
+- Blank supplier
+- Blank item
+- Blank material group
+- Same item with different descriptions
+- Same supplier with naming variations
+- Date outside window
+- Invalid date
+- Leap day
+- Month boundary
+- FY boundary
+- Very large numbers
+- Floating point precision
+- Values that round to zero
+- Values that round to ₹0.01 Cr
+- Values exactly at 80% Pareto
+- Values just below 80%
+- Values just above 80%
+
+============================================================
+SECTION 35 — NO SILENT CORRECTIONS
+============================================================
+
+CRITICAL RULE:
+
+The system must NEVER silently correct customer data.
+
+Any normalization must create:
+
+Original Value
+Normalized Value
+Rule Applied
+Reason
+Timestamp
+Transformation ID
+
+The customer must be able to see what changed.
+
+============================================================
+SECTION 36 — UI VALIDATION
+============================================================
+
+Validate every visible KPI against backend calculation.
+
+Screens to validate:
+
+1. Upload Summary
+2. File Details
+3. Multi-Currency Validation
+4. Spend Summary
+5. Material Group Summary
+6. Supplier Pareto
+7. Item Pareto
+8. Plant Summary
+9. Month Summary
+10. FY Summary
+11. Data Quality
+12. Validation Status
+13. Module 2 Handoff
+
+No UI number may be hardcoded.
+
+No UI number may be independently recalculated differently from the canonical backend service.
+
+============================================================
+SECTION 37 — SAMPLE DATA VS FULL DATA
+============================================================
+
+The UI currently shows:
+
+30 Sample Records Evaluated
+₹9.61 Cr
+
+while another screen shows:
+
+31,671 Records
+₹5,920.35 Cr
+
+This is acceptable ONLY if these are clearly different scopes.
+
+The UI must clearly label:
+
+SAMPLE DATASET
+or
+FULL DATASET
+
+Never allow a sample result to appear as the customer's final spend.
+
+Create an explicit:
+
+DATA_SCOPE
+
+field.
+
+============================================================
+SECTION 38 — CURRENT FX BANNER
+============================================================
+
+The UI currently displays:
+
+Live FX Benchmark Conversion Rates to INR.
+
+This must be clearly labeled as:
+
+CURRENT MARKET REFERENCE
+
+unless it is actually used for a transaction.
+
+Historical transaction conversion must use:
+
+TRANSACTION_DATE FX
+
+not:
+
+CURRENT LIVE FX.
+
+Add a tooltip or disclosure explaining this distinction.
+
+============================================================
+SECTION 39 — CERTIFICATION REPORT
+============================================================
+
+Generate:
+
+MODULE_1_FINAL_FORENSIC_VALIDATION.md
+
+containing:
+
+1. Executive Summary
+2. Source File Details
+3. Row Count Reconciliation
+4. Spend Reconciliation
+5. Currency Validation
+6. FX Validation
+7. Date Validation
+8. Duplicate Analysis
+9. Supplier Validation
+10. Item Validation
+11. Material Group Validation
+12. Plant Validation
+13. Monthly Validation
+14. FY Validation
+15. Pareto Validation
+16. Precision Validation
+17. UI Validation
+18. Module 2 Handoff Validation
+19. Negative Tests
+20. Defects
+21. Warnings
+22. Reconciliation Table
+23. Final Certification
+
+============================================================
+SECTION 40 — REQUIRED AUDIT ARTIFACTS
+============================================================
+
+Generate:
+
+1. MODULE_1_FINAL_FORENSIC_VALIDATION.md
+
+2. MODULE_1_TRANSACTION_CALCULATION_AUDIT.xlsx
+
+3. MODULE_1_RECONCILIATION_AUDIT.xlsx
+
+4. MODULE_1_DATA_QUALITY_AUDIT.xlsx
+
+5. MODULE_1_PARETO_AUDIT.xlsx
+
+6. MODULE_1_FX_AUDIT.xlsx
+
+7. MODULE_1_AUDIT.json
+
+8. MODULE_1_TEST_RESULTS.json
+
+9. MODULE_1_CERTIFIED_HANDOFF.json
+
+The transaction calculation workbook must contain at minimum:
+
+SOURCE_ROW_ID
+SOURCE_EXCEL_ROW
+DATE
+PO
+LINE_ITEM
+SUPPLIER
+ITEM
+MATERIAL_GROUP
+PLANT
+QUANTITY
+UOM
+SOURCE_CURRENCY
+SOURCE_PRICE
+FX_RATE
+INR_PRICE
+CALCULATED_SPEND_INR
+CALCULATED_SPEND_CR
+DISPLAY_SPEND_CR
+VALIDATION_STATUS
+EXCLUSION_REASON
+PROVENANCE
+
+============================================================
+SECTION 41 — FINAL ACCEPTANCE GATES
+============================================================
+
+Module 1 may only be certified if ALL are true:
+
+SOURCE_ROW_RECONCILIATION = PASS
+
+SPEND_RECONCILIATION = PASS
+
+CURRENCY_RECONCILIATION = PASS
+
+FX_RECONCILIATION = PASS
+
+DATE_RECONCILIATION = PASS
+
+SUPPLIER_RECONCILIATION = PASS
+
+ITEM_RECONCILIATION = PASS
+
+MATERIAL_GROUP_RECONCILIATION = PASS
+
+PLANT_RECONCILIATION = PASS
+
+MONTH_RECONCILIATION = PASS
+
+FY_RECONCILIATION = PASS
+
+PARETO_RECONCILIATION = PASS
+
+PRECISION_VALIDATION = PASS
+
+ROUNDING_VALIDATION = PASS
+
+DATA_LOSS_CHECK = PASS
+
+DUPLICATE_CHECK = PASS
+
+UI_TO_BACKEND_CHECK = PASS
+
+MODULE_2_HANDOFF_CHECK = PASS
+
+UNEXPLAINED_SPEND_VARIANCE = ₹0.00
+
+UNEXPLAINED_ROW_VARIANCE = 0
+
+============================================================
+SECTION 42 — FAILURE BEHAVIOUR
+============================================================
+
+If ANY gate fails:
+
+DO NOT certify Module 1.
+
+DO NOT show:
+
+MODULE_1_VALIDATED
+
+Instead show:
+
+MODULE_1_VALIDATION_FAILED
+
+and provide:
+
+Failure
+Affected Records
+Affected Spend
+Root Cause
+Calculation
+Expected Value
+Actual Value
+Recommended Fix
+Test Case
+
+Do not hide or suppress failures.
+
+============================================================
+SECTION 43 — FINAL PRINCIPLE
+============================================================
+
+The software must follow this architecture:
+
+SOURCE DATA
+↓
+IMMUTABLE RAW LAYER
+↓
+VALIDATION / CLEANSING LAYER
+↓
+CANONICAL TRANSACTION CALCULATION
+↓
+FULL-PRECISION SPEND LEDGER
+↓
+AGGREGATION LAYER
+↓
+RECONCILIATION ENGINE
+↓
+ANALYTICS
+↓
+UI
+↓
+CERTIFIED MODULE 2 HANDOFF
+
+NOT:
+
+SOURCE DATA
+↓
+UI
+↓
+ROUNDED NUMBERS
+↓
+ANALYTICS
+
+The transaction ledger is the SINGLE SOURCE OF TRUTH.
+
+Every KPI must ultimately derive from that ledger.
+
+============================================================
+FINAL INSTRUCTION
+============================================================
+
+Run the complete validation now.
+
+Do not stop after unit tests.
+
+Execute:
+
+1. Automated tests
+2. Dataset-level reconciliation
+3. Transaction-level forensic checks
+4. UI/backend numerical comparison
+5. Adversarial tests
+6. Precision tests
+7. FX tests
+8. Date-window tests
+9. Pareto tests
+10. Module 2 handoff tests
+
+Then provide:
+
+FINAL_STATUS
+
+PASS / FAIL
+
+TOTAL_TESTS
+PASSED
+FAILED
+WARNINGS
+
+SOURCE_ROWS
+VALID_ROWS
+EXCLUDED_ROWS
+
+SOURCE_SPEND
+VALIDATED_SPEND
+EXCLUDED_SPEND
+UNEXPLAINED_SPEND_VARIANCE
+
+TRANSACTION_RECONCILIATION
+SUPPLIER_RECONCILIATION
+ITEM_RECONCILIATION
+MATERIAL_GROUP_RECONCILIATION
+PLANT_RECONCILIATION
+MONTH_RECONCILIATION
+FY_RECONCILIATION
+PARETO_RECONCILIATION
+
+If everything passes:
+
+FINAL_STATUS = MODULE_1_FORENSICALLY_VALIDATED
+
+Otherwise:
+
+FINAL_STATUS = MODULE_1_VALIDATION_FAILED
+
+Do NOT modify Module 2/3/4.
+Do NOT introduce synthetic data.
+Do NOT fabricate missing FX.
+Do NOT use current FX for historical transactions.
+Do NOT use rounded values for calculations.
+Do NOT silently exclude records.
+Do NOT silently correct source data.
+Do NOT certify until all reconciliation gates pass.
+
+
+## Prompt 248
+
+MODULE 1 — FINAL PRODUCTION CALCULATION INTEGRITY, DATA RECONCILIATION & DOWNSTREAM HANDOFF VALIDATION
+
+OBJECTIVE
+
+Perform a complete forensic, transaction-level and mathematical validation of MODULE 1 — Customer Purchase Data Ingestion & Analysis.
+
+This is NOT a redesign exercise.
+
+This is NOT an opportunity-generation exercise.
+
+This is NOT a Module 2 / Module 3 / Module 4 development exercise.
+
+The objective is to certify that Module 1 can become the immutable upstream source of truth for the complete aiCEV production pipeline:
+
+MODULE 1 → MODULE 2 → MODULE 3 → MODULE 4
+
+and that NO calculation, aggregation, currency, UOM, quantity, supplier, category, date, duplicate, rounding or reconciliation error can silently enter downstream modules.
+
+============================================================
+1. ABSOLUTE MODULE 1 BOUNDARY
+============================================================
+
+Module 1 owns ONLY:
+
+• Customer purchase-history ingestion
+• Raw transaction preservation
+• Data validation
+• Currency identification
+• UOM identification
+• Quantity validation
+• Unit price validation
+• Total transaction value validation
+• Supplier identification
+• Item/material identification
+• Customer category / classification fields as provided by source
+• Transaction date validation
+• Duplicate detection
+• Missing/invalid data detection
+• Spend aggregation
+• Supplier aggregation
+• Item aggregation
+• Category aggregation
+• Time-period aggregation
+• Currency-level aggregation
+• Data-quality reporting
+• Certified dataset creation
+• Downstream handoff
+
+Module 1 MUST NOT:
+
+• Generate procurement savings
+• Generate strategic sourcing opportunities
+• Generate e-auction benefits
+• Generate vendor consolidation benefits
+• Use PCBI
+• Use external benchmarks
+• Use market prices
+• Modify Module 2 classifications
+• Modify PCBI
+• Calculate Module 4 realization
+
+Module 2 remains the sole owner of strategic sourcing intelligence.
+
+Module 3 remains the sole owner of PCBI benchmarking.
+
+Module 4 remains the sole owner of execution / savings realization.
+
+DO NOT modify those modules during this validation.
+
+============================================================
+2. RAW DATA IMMUTABILITY
+============================================================
+
+Every uploaded customer transaction must retain an immutable raw representation.
+
+For every transaction preserve:
+
+• Original row/file identifier
+• Source file name
+• Source sheet
+• Source row number
+• Original transaction date
+• Original supplier
+• Original item description
+• Original quantity
+• Original UOM
+• Original unit price
+• Original currency
+• Original total value
+• Original category/classification if supplied
+• Upload batch ID
+• File checksum
+• Row checksum where applicable
+
+Never overwrite the original customer values.
+
+Any standardized value must exist as a separate derived field.
+
+Example:
+
+RAW_UNIT_PRICE
+STANDARDIZED_UNIT_PRICE
+RAW_CURRENCY
+STANDARDIZED_CURRENCY
+RAW_UOM
+STANDARDIZED_UOM
+
+Do not destroy source evidence.
+
+============================================================
+3. TRANSACTION VALUE MATHEMATICAL INTEGRITY
+============================================================
+
+For every transaction establish the mathematical relationship:
+
+TRANSACTION_VALUE =
+QUANTITY × UNIT_PRICE
+
+subject to the customer's declared pricing basis.
+
+Where tax, freight, discount, rebate or other components exist, explicitly identify:
+
+GROSS_VALUE
+DISCOUNT
+FREIGHT
+TAX
+OTHER_ADJUSTMENTS
+NET_VALUE
+
+Do NOT silently assume whether tax/freight is included.
+
+If the source does not provide enough information:
+
+STATUS = VALUE_BASIS_UNCLEAR
+
+and quarantine the affected calculation rather than inventing a value.
+
+Every transaction must pass:
+
+Calculated Transaction Value
+vs
+Source Transaction Value
+
+with an explicit tolerance policy.
+
+Any discrepancy must be:
+
+• detected
+• displayed
+• classified
+• quarantined
+• traceable
+
+Never silently round away discrepancies.
+
+============================================================
+4. CURRENCY GOVERNANCE
+============================================================
+
+Currency must NEVER be inferred from formatting alone.
+
+Validate:
+
+• Currency code
+• Currency symbol
+• Transaction currency
+• Currency consistency
+• Exchange-rate requirement
+• Conversion date
+• FX source
+• FX methodology
+
+Customer spend must never be displayed as another currency merely because a UI component expects a currency.
+
+Example:
+
+INR transaction MUST NEVER display as £ / $ / €.
+
+If multiple currencies exist:
+
+Maintain:
+
+ORIGINAL_CURRENCY_VALUE
+ORIGINAL_CURRENCY
+FX_RATE
+FX_DATE
+FX_SOURCE
+CONVERTED_VALUE
+CONVERSION_METHOD
+
+Never overwrite the original currency.
+
+If FX conversion is not explicitly governed:
+
+STATUS = FX_CONVERSION_PENDING
+
+============================================================
+5. UOM GOVERNANCE
+============================================================
+
+UOM must remain transaction-specific and must never be guessed.
+
+Examples:
+
+KG ≠ MT
+LITRE ≠ KG
+PIECE ≠ ROLL
+METER ≠ PIECE
+BOX ≠ KG
+
+Maintain:
+
+RAW_UOM
+STANDARDIZED_UOM
+CONVERSION_FACTOR
+CONVERSION_METHOD
+CONVERSION_APPROVAL_STATUS
+
+Only approved deterministic conversions may occur.
+
+If no approved conversion exists:
+
+STATUS = UOM_CONVERSION_PENDING
+
+Do NOT manufacture conversion factors.
+
+============================================================
+6. QUANTITY VALIDATION
+============================================================
+
+Validate:
+
+• Positive quantity
+• Zero quantity
+• Negative quantity
+• Decimal quantity
+• Unit compatibility
+• Quantity × unit price relationship
+
+Negative transactions must be explicitly classified as:
+
+RETURN
+CREDIT
+REVERSAL
+ADJUSTMENT
+
+or another documented transaction type.
+
+Never automatically treat negative values as savings or procurement benefit.
+
+============================================================
+7. DUPLICATE TRANSACTION CONTROL
+============================================================
+
+Create deterministic duplicate detection using appropriate combinations of:
+
+• Supplier
+• Item
+• PO number
+• Invoice number
+• Transaction date
+• Quantity
+• Unit price
+• Currency
+• UOM
+• Source row
+
+Differentiate:
+
+EXACT_DUPLICATE
+POSSIBLE_DUPLICATE
+LEGITIMATE_REPEAT_TRANSACTION
+
+Never delete duplicates automatically.
+
+Duplicate decisions must remain auditable.
+
+============================================================
+8. SPEND RECONCILIATION ENGINE
+============================================================
+
+This is the most important validation.
+
+The following must reconcile EXACTLY:
+
+TOTAL RAW TRANSACTION VALUE
+
+=
+
+TOTAL VALIDATED TRANSACTION VALUE
+
+=
+
+SUM OF CATEGORY SPEND
+
+=
+
+SUM OF ITEM SPEND
+
+=
+
+SUM OF SUPPLIER SPEND
+
+=
+
+SUM OF MONTHLY SPEND
+
+=
+
+SUM OF MODULE 2 HANDOFF SPEND
+
+subject only to explicitly quarantined records.
+
+Create a formal reconciliation matrix:
+
+LEVEL
+COUNT
+SPEND
+PERCENT OF TOTAL
+RECONCILIATION STATUS
+
+Levels:
+
+• Raw upload
+• Valid transactions
+• Invalid transactions
+• Quarantined transactions
+• Category
+• Item
+• Supplier
+• Month
+• Currency
+• Module 2 handoff
+
+Tolerance for unexplained reconciliation variance:
+
+₹0.00
+
+If variance exists:
+
+FINAL_STATUS = BLOCKED_RECONCILIATION_FAILURE
+
+Do not permit production certification.
+
+============================================================
+9. COUNT RECONCILIATION
+============================================================
+
+Transaction counts must reconcile exactly.
+
+Example:
+
+Raw Transactions
+=
+Validated Transactions
++
+Rejected Transactions
++
+Quarantined Transactions
+
+Likewise:
+
+Total Supplier Transaction Count
+must reconcile to transaction-level records.
+
+Total Category Transaction Count
+must reconcile to transaction-level records.
+
+Do not use approximate counts.
+
+============================================================
+10. SUPPLIER AGGREGATION
+============================================================
+
+Supplier-level spend must be generated exclusively from transaction-level records.
+
+For every supplier show:
+
+• Supplier name
+• Supplier ID
+• Transaction count
+• Item count
+• Category count
+• Total spend
+• Currency
+• First transaction date
+• Last transaction date
+• Average transaction value
+• Share of total spend
+
+Supplier totals MUST reconcile exactly to transaction totals.
+
+No supplier should disappear because of normalization.
+
+Potential duplicate supplier names should be flagged rather than silently merged.
+
+============================================================
+11. ITEM / MATERIAL AGGREGATION
+============================================================
+
+For every item:
+
+• Original description
+• Normalized description
+• Item identifier where available
+• Supplier count
+• Category
+• Transaction count
+• Quantity
+• UOM
+• Spend
+• Currency
+• First transaction
+• Last transaction
+
+Do not combine two different specifications merely because their descriptions look similar.
+
+Maintain:
+
+RAW_ITEM_DESCRIPTION
+NORMALIZED_ITEM_DESCRIPTION
+SPECIFICATION
+GRADE
+SIZE
+MODEL
+PART_NUMBER
+
+where available.
+
+============================================================
+12. CATEGORY AGGREGATION
+============================================================
+
+Category spend must be a pure aggregation of validated transaction records.
+
+Do NOT allow Module 1 to independently invent strategic sourcing categories.
+
+Module 2 remains the sole classification authority where applicable.
+
+Every category must drill down:
+
+CATEGORY
+→ ITEM
+→ SUPPLIER
+→ TRANSACTION
+→ ORIGINAL SOURCE ROW
+
+============================================================
+13. DATE / PERIOD VALIDATION
+============================================================
+
+Validate:
+
+• Transaction date
+• Invalid dates
+• Future dates
+• Missing dates
+• Duplicate dates
+• Monthly aggregation
+• Quarterly aggregation
+• Annual aggregation
+
+Monthly totals must reconcile exactly to transaction-level totals.
+
+No transaction may silently disappear because of date parsing.
+
+============================================================
+14. DECIMAL & ROUNDING GOVERNANCE
+============================================================
+
+Do NOT round transaction-level values before aggregation.
+
+Correct sequence:
+
+RAW VALUE
+→ VALIDATION
+→ CALCULATION
+→ AGGREGATION
+→ DISPLAY ROUNDING
+
+NOT:
+
+RAW VALUE
+→ ROUND
+→ AGGREGATE
+
+Store calculation precision separately from display precision.
+
+The UI may display:
+
+₹40.11 Cr
+
+but the underlying calculation must retain the full precision required for exact reconciliation.
+
+============================================================
+15. DASHBOARD KPI FORENSIC VALIDATION
+============================================================
+
+Every KPI displayed on Module 1 screens must have a drill-down.
+
+For every KPI provide:
+
+KPI VALUE
+FORMULA
+SOURCE DATASET
+TRANSACTION COUNT
+SPEND BASIS
+FILTERS APPLIED
+DATE RANGE
+CURRENCY
+UOM
+LAST UPDATED
+RECONCILIATION STATUS
+
+No KPI may be a manually maintained number.
+
+Examples:
+
+Total Spend
+Total Transactions
+Supplier Count
+Category Count
+Average Transaction Value
+Monthly Spend
+Top Supplier
+Top Category
+Top Item
+
+Every displayed number must be generated from the certified transaction dataset.
+
+============================================================
+16. FILTER INTEGRITY
+============================================================
+
+Test every filter combination.
+
+Examples:
+
+Date
+Supplier
+Category
+Item
+Currency
+UOM
+Transaction type
+
+For every filter:
+
+FILTERED_TOTAL
++
+EXCLUDED_TOTAL
+
+must reconcile to the unfiltered total, subject to explicitly defined exclusion logic.
+
+Changing a filter must never mutate underlying data.
+
+============================================================
+17. IMPORT / UPLOAD TEST MATRIX
+============================================================
+
+Test:
+
+• XLSX
+• XLS
+• CSV
+• Multiple sheets
+• Multiple currencies
+• Different date formats
+• Different decimal formats
+• Blank rows
+• Blank columns
+• Duplicate rows
+• Missing values
+• Invalid values
+• Large datasets
+• Mixed UOMs
+• Mixed currencies
+• Negative transactions
+• Zero-value transactions
+
+No valid transaction should be silently dropped.
+
+Every rejected row must receive a reason code.
+
+============================================================
+18. ERROR / QUARANTINE LEDGER
+============================================================
+
+Create a permanent Module 1 data-quality ledger:
+
+ROW_ID
+SOURCE_FILE
+SOURCE_SHEET
+SOURCE_ROW
+ERROR_CODE
+ERROR_DESCRIPTION
+ORIGINAL_VALUE
+EXPECTED_VALUE
+STATUS
+ACTION_REQUIRED
+RESOLUTION_DATE
+
+Examples:
+
+INVALID_DATE
+MISSING_SUPPLIER
+MISSING_ITEM
+INVALID_QUANTITY
+INVALID_UNIT_PRICE
+CURRENCY_MISSING
+UOM_MISSING
+DUPLICATE_TRANSACTION
+VALUE_MISMATCH
+FX_CONVERSION_PENDING
+UOM_CONVERSION_PENDING
+
+============================================================
+19. MODULE 2 HANDOFF CONTRACT
+============================================================
+
+Create and validate an immutable Module 1 → Module 2 handoff.
+
+Module 2 must receive only certified Module 1 transaction records.
+
+Handoff must include:
+
+• Transaction ID
+• Supplier
+• Item
+• Category/source classification
+• Date
+• Quantity
+• UOM
+• Unit price
+• Currency
+• Transaction value
+• Source reference
+• Data-quality status
+
+Module 2 must NOT receive:
+
+• PCBI values
+• External benchmarks
+• Synthetic prices
+• Synthetic savings
+• Strategic sourcing calculations
+
+The handoff spend must reconcile EXACTLY with the certified Module 1 spend.
+
+============================================================
+20. MODULE 3 / MODULE 4 ISOLATION TEST
+============================================================
+
+Verify that Module 1 does not directly calculate or consume:
+
+PCBI
+Benchmark Index
+Market Price
+E-Auction Benefit
+Vendor Consolidation Benefit
+Savings Realization
+
+Module 1 remains upstream source data only.
+
+============================================================
+21. ADVERSARIAL TESTING
+============================================================
+
+Create at least 30 negative tests covering:
+
+A. Duplicate transaction
+B. Missing supplier
+C. Missing item
+D. Missing date
+E. Invalid date
+F. Missing quantity
+G. Zero quantity
+H. Negative quantity
+I. Missing UOM
+J. Invalid UOM
+K. Missing currency
+L. Invalid currency
+M. Mixed currencies
+N. Wrong FX conversion
+O. Missing unit price
+P. Negative unit price
+Q. Transaction value mismatch
+R. Decimal precision issue
+S. Duplicate PO
+T. Duplicate invoice
+U. Same supplier with different spelling
+V. Same item with different spelling
+W. Different specifications with similar description
+X. Filter reconciliation failure
+Y. Category reconciliation failure
+Z. Supplier reconciliation failure
+AA. Monthly reconciliation failure
+AB. Module 2 handoff mismatch
+AC. PCBI leakage
+AD. Synthetic savings leakage
+
+Every negative test must produce the correct BLOCKED / QUARANTINED status.
+
+============================================================
+22. TRANSACTION-LEVEL PROOF
+============================================================
+
+For every executive number provide the complete chain:
+
+EXECUTIVE KPI
+↓
+AGGREGATION
+↓
+CATEGORY
+↓
+ITEM
+↓
+SUPPLIER
+↓
+TRANSACTION
+↓
+SOURCE FILE
+↓
+SOURCE SHEET
+↓
+SOURCE ROW
+
+The user must be able to drill from a dashboard number to the actual source transaction.
+
+No "black box" number is acceptable.
+
+============================================================
+23. GOLDEN DATASET TEST
+============================================================
+
+Create a controlled golden dataset containing:
+
+• Multiple suppliers
+• Multiple categories
+• Multiple items
+• Multiple currencies
+• Multiple UOMs
+• Duplicate rows
+• Invalid rows
+• Negative transactions
+• Different dates
+• Decimal values
+
+Calculate the expected results independently.
+
+Compare application output against expected results.
+
+Require:
+
+EXPECTED VALUE = SYSTEM VALUE
+
+with ₹0.00 unexplained variance.
+
+============================================================
+24. END-TO-END CERTIFICATION
+============================================================
+
+Execute:
+
+MODULE 1
+↓
+CERTIFIED DATASET
+↓
+MODULE 2
+↓
+MODULE 3
+↓
+MODULE 4 HANDOFF
+
+Do not modify business logic merely to make tests pass.
+
+If a discrepancy is discovered:
+
+1. Identify root cause.
+2. Identify affected transactions.
+3. Identify affected KPIs.
+4. Identify affected downstream modules.
+5. Correct the defect.
+6. Add a regression test.
+7. Re-run complete validation.
+
+============================================================
+25. REQUIRED FINAL DELIVERABLES
+============================================================
+
+Generate:
+
+1. MODULE_1_FINAL_E2E_VALIDATION.md
+
+2. MODULE_1_TRANSACTION_CALCULATION_AUDIT.xlsx
+
+3. MODULE_1_RECONCILIATION_AUDIT.xlsx
+
+4. MODULE_1_DATA_QUALITY_LEDGER.xlsx
+
+5. MODULE_1_TRANSACTION_PROVENANCE.json
+
+6. MODULE_1_HANDOFF_VALIDATION.json
+
+7. MODULE_1_NEGATIVE_TEST_RESULTS.json
+
+8. MODULE_1_GOLDEN_DATASET_TEST_RESULTS.json
+
+============================================================
+26. FINAL PRODUCTION GATE
+============================================================
+
+Do NOT declare Module 1 production-ready merely because tests pass.
+
+Production certification requires:
+
+• Transaction reconciliation = PASS
+• Spend reconciliation = PASS
+• Supplier reconciliation = PASS
+• Category reconciliation = PASS
+• Item reconciliation = PASS
+• Monthly reconciliation = PASS
+• Currency integrity = PASS
+• UOM integrity = PASS
+• Duplicate control = PASS
+• Transaction value integrity = PASS
+• Dashboard KPI integrity = PASS
+• Filter integrity = PASS
+• Transaction drill-down = PASS
+• Module 2 handoff = PASS
+• Module 3 isolation = PASS
+• Module 4 isolation = PASS
+• Negative tests = PASS
+• Golden dataset = PASS
+• Typecheck = PASS
+• Lint = PASS
+• Build = PASS
+• Regression tests = PASS
+
+Most importantly:
+
+UNEXPLAINED SPEND VARIANCE = ₹0.00
+
+UNEXPLAINED TRANSACTION COUNT VARIANCE = 0
+
+UNTRACEABLE KPI VALUE = 0
+
+UNTRACEABLE TRANSACTION = 0
+
+SYNTHETIC DATA = 0
+
+SYNTHETIC SAVINGS = 0
+
+PCBI LEAKAGE INTO MODULE 1 = 0
+
+STRATEGIC SOURCING LOGIC INSIDE MODULE 1 = 0
+
+============================================================
+FINAL DECISION RULE
+============================================================
+
+If ALL gates pass:
+
+FINAL_MODULE_1_STATUS = PRODUCTION_READY_CERTIFIED
+
+If ANY gate fails:
+
+FINAL_MODULE_1_STATUS = BLOCKED_DEFECT_REMEDIATION_REQUIRED
+
+Do not downgrade a discrepancy to a warning merely to achieve PASS.
+
+Do not hide, suppress, round away, or automatically correct unexplained financial discrepancies.
+
+Preserve all existing Module 1 functionality unless a proven defect is identified.
+
+Do not modify Module 2, Module 3 or Module 4 business logic during this exercise.
+
+Record this complete instruction in prompts.md and provide the final certification report with exact test counts, failures, reconciliations, defects, files changed, files created, and final gate decision.
+
+## Prompt 249
+
+MODULE 1 — FINAL PRODUCTION HARDENING
+CUSTOMER PURCHASE DATA INGESTION, VALIDATION, RECONCILIATION & DATA-INTEGRITY CERTIFICATION
+VERSION: MODULE_1_PRODUCTION_HARDENING_V1.0
+
+OBJECTIVE
+=========
+Perform a complete end-to-end forensic validation and hardening of MODULE 1 only.
+
+Module 1 is the SINGLE SOURCE OF TRUTH for customer purchase-history data entering the platform.
+
+Do NOT modify the business logic of:
+- Module 2 Strategic Sourcing
+- Module 3 PCBI / Benchmarking
+- Module 4 Savings / Execution
+
+Those modules must remain architecturally isolated.
+
+The purpose of this command is to make Module 1 production-safe so that:
+1. Every customer transaction is preserved.
+2. Every rupee/dollar/euro/etc. is traceable.
+3. No transaction is silently lost.
+4. No transaction is duplicated.
+5. No currency is silently converted.
+6. No UOM is silently converted.
+7. No quantity/value is silently inferred.
+8. No aggregation changes the underlying customer truth.
+9. Every dashboard number reconciles exactly to transaction-level records.
+10. Module 2 receives exactly the certified Module 1 dataset and nothing else.
+
+============================================================
+PART 1 — FREEZE THE MODULE 1 DATA CONTRACT
+============================================================
+
+Identify and formally document the canonical Module 1 transaction schema.
+
+At minimum, preserve wherever available:
+
+TRANSACTION_ID
+PO_NUMBER
+PO_LINE_NUMBER
+PO_DATE
+DOCUMENT_DATE
+SUPPLIER_ID
+SUPPLIER_NAME
+ITEM_ID
+ITEM_DESCRIPTION
+RAW_ITEM_DESCRIPTION
+CATEGORY
+MODULE2_CLASSIFICATION
+UNSPSC
+QUANTITY
+UOM
+UNIT_PRICE
+CURRENCY
+TOTAL_VALUE
+TAX_VALUE
+NET_VALUE
+PLANT
+LOCATION
+CONTRACT_REFERENCE
+PAYMENT_TERMS
+SOURCE_FILE
+SOURCE_ROW
+SOURCE_SHEET
+INGESTION_BATCH_ID
+INGESTION_TIMESTAMP
+
+Do NOT manufacture missing values.
+
+If a field is unavailable in the uploaded source:
+STATUS = MISSING
+and preserve the original transaction.
+
+Never replace missing values with:
+0
+UNKNOWN
+N/A
+synthetic values
+inferred values
+
+unless the source itself explicitly contains those values.
+
+============================================================
+PART 2 — RAW DATA IMMUTABILITY
+============================================================
+
+Create an immutable RAW transaction layer.
+
+The original uploaded customer record must remain unchanged.
+
+Maintain:
+
+RAW_TRANSACTION
+↓
+VALIDATED_TRANSACTION
+↓
+CERTIFIED_TRANSACTION
+
+Never overwrite RAW_TRANSACTION.
+
+Every transformed record must retain:
+
+RAW_RECORD_ID
+SOURCE_FILE
+SOURCE_ROW
+SOURCE_SHEET
+INGESTION_BATCH_ID
+TRANSFORMATION_STATUS
+
+Every certified transaction must be traceable back to exactly one raw source record.
+
+============================================================
+PART 3 — EXACT SPEND RECONCILIATION
+============================================================
+
+Implement mandatory reconciliation at every level.
+
+The following must reconcile exactly:
+
+SOURCE FILE TOTAL
+=
+RAW TRANSACTION TOTAL
+=
+VALID TRANSACTION TOTAL
++
+EXCLUDED TRANSACTION TOTAL
++
+QUARANTINED TRANSACTION TOTAL
+
+No unexplained difference is permitted.
+
+For every upload produce:
+
+TOTAL_SOURCE_RECORDS
+VALID_RECORDS
+INVALID_RECORDS
+QUARANTINED_RECORDS
+DUPLICATE_RECORDS
+TOTAL_SOURCE_VALUE
+VALIDATED_VALUE
+QUARANTINED_VALUE
+EXCLUDED_VALUE
+RECONCILIATION_VARIANCE
+
+RECONCILIATION_VARIANCE MUST = 0.00
+
+If not:
+
+INGESTION_STATUS = FAILED_RECONCILIATION
+
+and the dataset must NOT become certified.
+
+============================================================
+PART 4 — TRANSACTION-LEVEL TRACEABILITY
+============================================================
+
+Every dashboard number must be drillable to transaction level.
+
+Required lineage:
+
+Dashboard KPI
+→ Category
+→ Item
+→ Supplier
+→ PO
+→ PO Line
+→ Transaction
+→ Original Source File
+→ Original Source Row
+
+For every aggregated value provide:
+
+TRANSACTION_COUNT
+TOTAL_VALUE
+UNIQUE_PO_COUNT
+UNIQUE_SUPPLIER_COUNT
+
+The user must be able to click/drill from the highest-level spend number to the exact source transaction.
+
+============================================================
+PART 5 — DUPLICATE DETECTION
+============================================================
+
+Create deterministic duplicate detection.
+
+Detect:
+
+1. Exact duplicate rows
+2. Same PO + PO Line duplicates
+3. Same transaction ID duplicates
+4. Same supplier + item + date + quantity + value duplicates
+5. Re-uploaded identical files
+6. Duplicate ingestion batches
+
+Never silently delete duplicates.
+
+Every duplicate must be classified:
+
+DUPLICATE_EXACT
+DUPLICATE_TRANSACTION_ID
+DUPLICATE_PO_LINE
+POSSIBLE_DUPLICATE
+VALID
+
+Provide duplicate counts and financial value.
+
+============================================================
+PART 6 — CURRENCY GOVERNANCE
+============================================================
+
+Currency is sacred in Module 1.
+
+NEVER silently convert currencies.
+
+Preserve:
+
+RAW_CURRENCY
+RAW_VALUE
+RAW_UNIT_PRICE
+
+If multiple currencies exist:
+
+Display currency-specific totals separately.
+
+Example:
+
+INR Spend
+USD Spend
+EUR Spend
+GBP Spend
+
+Do NOT add:
+
+₹100 +  + €100
+
+into a single financial total.
+
+Any conversion must be explicitly identified as a downstream analytical transformation and must retain:
+
+ORIGINAL_VALUE
+ORIGINAL_CURRENCY
+FX_RATE
+FX_DATE
+FX_SOURCE
+CONVERTED_VALUE
+CONVERTED_CURRENCY
+
+If no approved FX rule exists:
+
+STATUS = CURRENCY_NOT_CONVERTED
+
+============================================================
+PART 7 — UOM GOVERNANCE
+============================================================
+
+NEVER silently convert UOM.
+
+Examples:
+
+KG
+MT
+LITRE
+PIECE
+ROLL
+BOX
+METER
+
+must remain exactly as received.
+
+Never assume:
+
+1 MT = 1000 KG
+1 ROLL = X PIECES
+1 BOX = X PIECES
+
+unless an explicitly approved conversion rule exists.
+
+Maintain:
+
+RAW_UOM
+STANDARD_UOM
+CONVERSION_FACTOR
+CONVERSION_METHOD
+CONVERSION_STATUS
+
+If conversion is not governed:
+
+STATUS = UOM_CONVERSION_PENDING
+
+============================================================
+PART 8 — PRICE CALCULATION SAFETY
+============================================================
+
+Validate:
+
+TOTAL_VALUE
+=
+QUANTITY × UNIT_PRICE
+
+where applicable.
+
+However, do NOT overwrite the customer's TOTAL_VALUE simply because a calculated value differs.
+
+Instead record:
+
+SOURCE_TOTAL_VALUE
+CALCULATED_TOTAL_VALUE
+VARIANCE
+VARIANCE_PERCENT
+CALCULATION_STATUS
+
+Classify:
+
+EXACT_MATCH
+ROUNDING_VARIANCE
+SOURCE_VALUE_VARIANCE
+INSUFFICIENT_DATA
+
+Define explicit tolerance rules.
+
+Any material discrepancy must be quarantined for review.
+
+============================================================
+PART 9 — TAX / GROSS / NET VALUE CONTROL
+============================================================
+
+Clearly distinguish:
+
+GROSS_VALUE
+TAX_VALUE
+DISCOUNT_VALUE
+FREIGHT_VALUE
+OTHER_CHARGES
+NET_VALUE
+
+Do not mix them.
+
+Every Module 1 spend KPI must explicitly state which value basis it uses.
+
+Example:
+
+TOTAL PURCHASE SPEND = NET_VALUE
+
+or
+
+TOTAL PURCHASE SPEND = GROSS_VALUE
+
+Do not allow different screens to use different financial bases without clearly displaying the basis.
+
+============================================================
+PART 10 — DATE GOVERNANCE
+============================================================
+
+Validate:
+
+PO_DATE
+INVOICE_DATE
+DOCUMENT_DATE
+FISCAL_YEAR
+MONTH
+QUARTER
+
+Never silently reinterpret dates.
+
+Handle:
+
+DD/MM/YYYY
+MM/DD/YYYY
+YYYY-MM-DD
+Excel serial dates
+text dates
+
+through explicit parser detection.
+
+Ambiguous dates must be quarantined.
+
+============================================================
+PART 11 — NEGATIVE VALUES
+============================================================
+
+Explicitly handle:
+
+Returns
+Credit notes
+Debit notes
+Reversals
+Cancellations
+Negative quantities
+Negative prices
+Negative values
+
+Never automatically convert negative values to positive.
+
+Create explicit transaction classifications:
+
+PURCHASE
+RETURN
+CREDIT
+DEBIT
+REVERSAL
+CANCELLATION
+OTHER
+
+Financial treatment must be deterministic and auditable.
+
+============================================================
+PART 12 — CATEGORY / ITEM / SUPPLIER AGGREGATION
+============================================================
+
+All aggregation must satisfy:
+
+SUM(transaction values)
+=
+SUM(item values)
+=
+SUM(category values)
+=
+SUM(supplier values)
+=
+TOTAL_CERTIFIED_SPEND
+
+Run reconciliation automatically.
+
+Also validate:
+
+Category spend %
+sum = 100%
+
+Supplier spend %
+sum = 100%
+
+Item spend %
+sum = 100%
+
+subject only to explicitly documented exclusions.
+
+============================================================
+PART 13 — PERCENTAGE CALCULATIONS
+============================================================
+
+Every percentage must have an explicit denominator.
+
+Examples:
+
+Supplier Share
+=
+Supplier Spend / Total Addressable Spend
+
+Category Share
+=
+Category Spend / Total Addressable Spend
+
+Never calculate percentages against a hidden or changing denominator.
+
+Display the denominator in the drill-down/audit view.
+
+============================================================
+PART 14 — ZERO / NULL / MISSING DATA
+============================================================
+
+Strictly distinguish:
+
+ZERO
+NULL
+MISSING
+NOT_APPLICABLE
+NOT_PROVIDED
+
+Example:
+
+Quantity = 0
+
+is NOT the same as
+
+Quantity missing.
+
+Never convert NULL → 0.
+
+============================================================
+PART 15 — FILE INGESTION SAFETY
+============================================================
+
+For every uploaded file record:
+
+FILE_NAME
+FILE_TYPE
+FILE_SIZE
+FILE_HASH
+UPLOAD_TIMESTAMP
+INGESTION_BATCH_ID
+ROW_COUNT
+COLUMN_COUNT
+SOURCE_SYSTEM
+
+If the same file is uploaded again:
+
+detect using checksum.
+
+Do not silently create duplicate customer transactions.
+
+============================================================
+PART 16 — MULTI-FILE CONSOLIDATION
+============================================================
+
+If multiple files are uploaded:
+
+File A
++
+File B
++
+File C
+
+must reconcile to the certified master dataset.
+
+Show:
+
+FILE LEVEL SPEND
+BATCH LEVEL SPEND
+MASTER DATASET SPEND
+
+and reconcile all three.
+
+============================================================
+PART 17 — DATA QUALITY SCORE
+============================================================
+
+Create a transparent Module 1 Data Quality score.
+
+Do NOT use a cosmetic score.
+
+Calculate from objective dimensions:
+
+Completeness
+Uniqueness
+Validity
+Consistency
+Traceability
+Currency integrity
+UOM integrity
+Date integrity
+Financial reconciliation
+
+Every score must show its underlying evidence.
+
+============================================================
+PART 18 — MODULE 1 CERTIFICATION GATE
+============================================================
+
+Create an explicit certification status:
+
+DRAFT
+VALIDATING
+QUARANTINED
+RECONCILIATION_FAILED
+CERTIFIED
+SUPERSEDED
+
+Only:
+
+CERTIFIED
+
+datasets may flow to Module 2.
+
+============================================================
+PART 19 — MODULE 2 HANDOFF CONTRACT
+============================================================
+
+Module 2 must receive:
+
+CERTIFIED_TRANSACTION_DATASET_ID
+CERTIFIED_VERSION
+TOTAL_CERTIFIED_SPEND
+TRANSACTION_COUNT
+SUPPLIER_COUNT
+ITEM_COUNT
+CATEGORY_COUNT
+CURRENCY_SET
+UOM_SET
+CERTIFICATION_TIMESTAMP
+DATA_HASH
+
+Module 2 must never directly read unvalidated/raw Module 1 data.
+
+Module 2 classification remains the sole classification authority once the data enters Module 2.
+
+============================================================
+PART 20 — VERSION CONTROL
+============================================================
+
+Every certified dataset must have:
+
+DATASET_VERSION
+PARENT_VERSION
+CHANGE_REASON
+CHANGE_TYPE
+CREATED_BY
+CREATED_AT
+DATA_HASH
+
+Example:
+
+CUSTOMER_DATASET_V1.0
+CUSTOMER_DATASET_V1.1
+
+Never overwrite historical certified versions.
+
+============================================================
+PART 21 — DASHBOARD FORENSIC DRILL-DOWN
+============================================================
+
+Every major Module 1 KPI must have:
+
+VALUE
+UNIT
+CURRENCY
+DENOMINATOR
+TRANSACTION_COUNT
+SOURCE_DATASET
+VERSION
+LAST_UPDATED
+
+Required KPIs:
+
+Total Spend
+Transaction Count
+Supplier Count
+Item Count
+Category Count
+Average Transaction Value
+Largest Supplier
+Largest Category
+Largest Item
+Monthly Spend
+Yearly Spend
+
+Every KPI must be independently reconcilable.
+
+============================================================
+PART 22 — UI DISPLAY SAFETY
+============================================================
+
+The UI must NEVER display:
+
+₹ as £
+MT as Roll
+Piece as Litre
+USD as INR
+
+Every financial number must carry its currency.
+
+Every quantity must carry its UOM.
+
+Examples:
+
+₹12,500,000 INR
+5.2 MT
+₹2,450 / MT
+
+Never show ambiguous:
+
+12,500,000
+5.2
+2,450
+
+where context could be lost.
+
+============================================================
+PART 23 — ADVERSARIAL TESTING
+============================================================
+
+Create comprehensive negative tests for at least:
+
+A. Duplicate transaction
+B. Duplicate PO
+C. Duplicate file
+D. Mixed currencies
+E. Mixed UOM
+F. Missing quantity
+G. Missing price
+H. Missing value
+I. Invalid date
+J. Ambiguous date
+K. Negative transaction
+L. Credit note
+M. Return
+N. Currency mismatch
+O. UOM mismatch
+P. Tax mismatch
+Q. Quantity × price mismatch
+R. Corrupt file
+S. Empty file
+T. Partial upload
+U. Re-upload
+V. Same PO with multiple lines
+W. Same supplier with multiple categories
+X. Same item with multiple suppliers
+Y. Multiple files with overlapping records
+Z. Dataset version rollback
+
+Every negative test must produce an explicit expected status.
+
+============================================================
+PART 24 — LARGE DATASET TESTING
+============================================================
+
+Test Module 1 against:
+
+10 transactions
+100 transactions
+1,000 transactions
+10,000 transactions
+100,000+ transactions
+
+Validate:
+
+accuracy
+performance
+memory
+aggregation
+reconciliation
+duplicate detection
+UI responsiveness
+
+No calculation drift is acceptable.
+
+============================================================
+PART 25 — ROUNDING & PRECISION
+============================================================
+
+Do not round intermediate calculations.
+
+Maintain full precision internally.
+
+Round ONLY at presentation level.
+
+Reconciliation must use full precision.
+
+Display rounding must never create a false reconciliation difference.
+
+============================================================
+PART 26 — AUDIT ARTIFACTS
+============================================================
+
+Generate:
+
+MODULE_1_FINAL_PRODUCTION_VALIDATION.md
+MODULE_1_CALCULATION_AUDIT.xlsx
+MODULE_1_TRANSACTION_RECONCILIATION.xlsx
+MODULE_1_DATA_QUALITY_AUDIT.json
+MODULE_1_NEGATIVE_TEST_RESULTS.json
+MODULE_1_CERTIFICATION.json
+
+The calculation workbook must allow transaction-level tracing.
+
+============================================================
+PART 27 — FINAL ACCEPTANCE CRITERIA
+============================================================
+
+Module 1 can be declared:
+
+MODULE_1_PRODUCTION_CERTIFIED
+
+ONLY IF:
+
+✓ 100% source-to-certified transaction traceability
+✓ 0 unexplained reconciliation variance
+✓ 0 silent duplicate removal
+✓ 0 silent currency conversion
+✓ 0 silent UOM conversion
+✓ 0 synthetic transaction values
+✓ 0 unexplained transaction loss
+✓ 0 unexplained transaction duplication
+✓ 100% KPI reconciliation
+✓ 100% category reconciliation
+✓ 100% supplier reconciliation
+✓ 100% item reconciliation
+✓ All negative tests passed
+✓ All financial calculations independently verified
+✓ All UI currency/UOM displays verified
+✓ Certified dataset version created
+✓ Module 2 receives only certified data
+
+============================================================
+PART 28 — CRITICAL BUSINESS RULE
+============================================================
+
+DO NOT  FIX CUSTOMER DATA.
+
+Module 1 is an ingestion, validation, preservation and certification layer.
+
+If customer data is wrong:
+
+FLAG IT.
+
+If data is incomplete:
+
+FLAG IT.
+
+If data is inconsistent:
+
+FLAG IT.
+
+If currency is ambiguous:
+
+FLAG IT.
+
+If UOM is ambiguous:
+
+FLAG IT.
+
+If calculation is inconsistent:
+
+FLAG IT.
+
+Never silently correct the customer's historical data.
+
+============================================================
+PART 29 — FINAL REPORT
+============================================================
+
+At completion provide:
+
+1. FINAL_MODULE_1_STATUS
+2. Total records tested
+3. Total spend tested
+4. Total suppliers
+5. Total items
+6. Total categories
+7. Currency breakdown
+8. UOM breakdown
+9. Duplicate findings
+10. Quarantine findings
+11. Reconciliation variance
+12. Data quality findings
+13. Negative test results
+14. Performance results
+15. UI validation results
+16. Module 2 handoff validation
+17. Exact files changed
+18. Exact files created
+19. Any defects discovered
+20. Any unresolved issues
+
+Do NOT modify Module 2, Module 3 or Module 4 business logic.
+
+Do NOT proceed to PCBI research as part of this task.
+
+Do NOT introduce savings calculations into Module 1.
+
+Do NOT introduce external benchmark data into Module 1.
+
+Do NOT introduce synthetic data.
+
+The final objective is:
+
+CUSTOMER SOURCE DATA
+→ IMMUTABLE RAW DATA
+→ VALIDATED DATA
+→ RECONCILED DATA
+→ CERTIFIED MODULE 1 DATASET
+→ CONTROLLED MODULE 2 HANDOFF
+
+with complete transaction-level forensic traceability.
+
+Run the complete validation and report the final gate decision.
+
+## Prompt 250
+
+FINAL ENTERPRISE PRODUCTION HARDENING COMMAND
+aiCEV / Procucev — MODULES 1 → 4
+VERSION: FINAL_PRE_PRODUCTION_SYSTEM_HARDENING_V1.0
+
+OBJECTIVE
+=========
+Perform ONE final comprehensive production-hardening, calculation-integrity,
+workflow-continuity, UI/UX and end-to-end validation pass across the complete
+aiCEV procurement platform.
+
+This is NOT a request to redesign the business logic from scratch.
+
+The objective is to:
+
+1. Freeze and protect all already-certified business logic.
+2. Validate Module 1 calculations and customer-data integrity at transaction level.
+3. Validate Module 2 strategic sourcing calculations and opportunity logic.
+4. Validate Module 3 PCBI isolation and benchmark calculation integrity.
+5. Validate Module 4 downstream continuity and savings-realization handoff.
+6. Validate the complete Module 1 → Module 2 → Module 3 → Module 4 data flow.
+7. Identify and eliminate any possibility of double counting, wrong units,
+   wrong currencies, wrong quantities, wrong aggregations or incorrect displays.
+8. Improve the UI/UX across the entire application to a professional
+   enterprise-grade Procucev experience.
+9. Improve information hierarchy so executives see concise conclusions first
+   and detailed evidence only when expanded.
+10. Produce a final production-readiness certification.
+
+IMPORTANT:
+Do not introduce new synthetic data.
+Do not invent savings.
+Do not fabricate benchmarks.
+Do not silently interpolate PCBI data.
+Do not modify Module 2 classification authority.
+Do not modify PCBI calculation methodology.
+Do not connect Module 4 directly to external benchmarks.
+Do not alter certified historical customer transactions.
+Do not change business formulas simply to make the UI look better.
+
+============================================================
+PART A — ABSOLUTE ARCHITECTURAL FREEZE
+============================================================
+
+Treat the following as protected production contracts:
+
+MODULE 1
+---------
+Customer purchase-data ingestion, normalization, validation and transaction
+repository remain authoritative for customer data.
+
+MODULE 2
+---------
+Module 2 remains the SOLE strategic sourcing intelligence layer.
+
+Module 2 owns:
+- categorization analysis
+- supplier analysis
+- price dispersion
+- price improvement opportunity
+- e-auction opportunity
+- vendor consolidation
+- category specialization
+- volume bundling
+- strategic sourcing opportunity waterfall
+- opportunity confidence
+- opportunity evidence
+- opportunity ranges
+
+MODULE 3
+---------
+PCBI remains the external market/reference benchmarking layer.
+
+PCBI must NEVER overwrite customer transaction prices.
+
+MODULE 4
+---------
+Module 4 remains the downstream execution/savings-realization layer.
+
+No module may bypass another module's authority.
+
+============================================================
+PART B — MODULE 1 FINAL CALCULATION INTEGRITY AUDIT
+============================================================
+
+Perform a forensic validation of every Module 1 screen and calculation.
+
+Validate:
+
+1. Total Spend
+2. Transaction Count
+3. Supplier Count
+4. Category Count
+5. Commodity Count
+6. Monthly Spend
+7. Annual Spend
+8. Supplier Spend
+9. Category Spend
+10. Item Spend
+11. Currency totals
+12. UOM totals
+13. Quantity totals
+14. Average transaction value
+15. Highest transaction
+16. Lowest transaction
+17. Date ranges
+18. Duplicate transactions
+19. Missing transactions
+20. Invalid transactions
+21. Cancelled/reversed transactions
+22. Multi-currency treatment
+23. Multi-UOM treatment
+24. Null/blank values
+25. Negative values
+26. Zero-value transactions
+27. Customer/vendor/item/category relationships
+
+EVERY DISPLAYED NUMBER MUST HAVE A DETERMINISTIC SOURCE.
+
+Required lineage:
+
+SCREEN KPI
+→ AGGREGATION
+→ FILTER STATE
+→ CATEGORY / ITEM / SUPPLIER
+→ TRANSACTION
+→ ORIGINAL CUSTOMER RECORD
+
+No KPI may be calculated independently using a different dataset.
+
+============================================================
+PART C — MODULE 1 RECONCILIATION RULE
+============================================================
+
+Implement/verify the following invariant:
+
+SUM(all valid transaction amounts)
+=
+TOTAL CUSTOMER SPEND
+
+with variance:
+
+₹0.00
+
+If filters are applied:
+
+SUM(filtered transactions)
+=
+filtered KPI total
+
+If category is selected:
+
+SUM(category transactions)
+=
+category spend
+
+If supplier is selected:
+
+SUM(supplier transactions)
+=
+supplier spend
+
+If item is selected:
+
+SUM(item transactions)
+=
+item spend
+
+All drill-down totals must reconcile upward.
+
+Required audit status:
+
+DATA_RECONCILIATION_STATUS =
+PASS / FAIL
+
+FAIL must never be hidden.
+
+============================================================
+PART D — MODULE 1 CURRENCY GOVERNANCE
+============================================================
+
+Never mix currencies in a displayed monetary total.
+
+Every monetary value must retain:
+
+VALUE
+CURRENCY
+SOURCE_CURRENCY
+CONVERSION_STATUS
+CONVERSION_METHOD
+CONVERSION_DATE where applicable
+
+If conversion is required, show:
+
+Original:
+USD 100
+
+Converted:
+INR XXXXX
+
+Never show:
+
+£ / $ / ₹
+
+incorrectly against the same customer transaction.
+
+If a total contains multiple currencies and no approved conversion exists:
+
+STATUS = MULTI_CURRENCY_NOT_AGGREGABLE
+
+Do not calculate a false consolidated total.
+
+============================================================
+PART E — MODULE 1 UNIT / QUANTITY GOVERNANCE
+============================================================
+
+Never aggregate incompatible UOMs.
+
+Examples:
+
+MT ≠ KG
+ROLL ≠ PIECE
+LITRE ≠ KG
+BOX ≠ PIECE
+
+If conversion is governed:
+
+show:
+
+ORIGINAL VALUE
+ORIGINAL UOM
+CONVERSION RULE
+STANDARDIZED VALUE
+STANDARDIZED UOM
+
+If no approved conversion exists:
+
+STATUS = UOM_NOT_AGGREGABLE
+
+Do not silently convert.
+
+============================================================
+PART F — MODULE 1 FILTER CONSISTENCY
+============================================================
+
+Every filter must affect every dependent KPI consistently.
+
+Validate:
+
+Date
+Supplier
+Category
+Commodity
+Item
+Currency
+UOM
+Business Unit
+Plant
+Location
+Contract/Spot
+Recurring/Non-recurring
+
+No stale KPI values.
+
+No stale charts.
+
+No stale tables.
+
+No stale drill-downs.
+
+No mismatch between chart and table.
+
+Add automated tests for filter combinations.
+
+============================================================
+PART G — MODULE 2 FINAL OPPORTUNITY INTEGRITY
+============================================================
+
+Preserve the already-certified Module 2 logic.
+
+Every opportunity must contain:
+
+OPPORTUNITY_ID
+CATEGORY
+ITEM
+SUPPLIER
+TRANSACTION_IDS
+ELIGIBLE_SPEND
+ELIGIBLE_VOLUME
+CURRENT_PRICE_REFERENCE
+TARGET_REFERENCE
+PRICE_DIFFERENCE
+OPPORTUNITY_VALUE
+CONFIDENCE
+QUALIFICATION_RULES
+EXCLUSION_RULES
+BENEFIT_TYPE
+DATA_PERIOD
+CALCULATION_METHOD
+SOURCE_TRANSACTIONS
+
+No opportunity may exist without evidence.
+
+============================================================
+PART H — MODULE 2 E-AUCTION LOGIC
+============================================================
+
+E-auction benefit must NEVER be displayed as guaranteed savings.
+
+Use terminology such as:
+
+POTENTIAL COMPETITIVE BENEFIT
+ILLUSTRATIVE AUCTION OPPORTUNITY
+ESTIMATED COMPETITIVE RANGE
+
+The calculation must be based only on qualifying historical customer data.
+
+Show:
+
+Eligible Spend
+Eligible Suppliers
+Supplier Count
+Historical Price Range
+Current/Weighted Price
+Lowest Credible Historical Price
+Price Dispersion
+Auction-Eligible Spend
+Potential Opportunity Range
+Confidence
+Exclusions
+
+At transaction level show exactly which transactions form the pool.
+
+============================================================
+PART I — MODULE 2 VENDOR CONSOLIDATION LOGIC
+============================================================
+
+Vendor consolidation must be evaluated at:
+
+CATEGORY
+→ ITEM
+→ SPECIFICATION
+→ SUPPLIER
+→ TRANSACTION
+
+level.
+
+Do NOT simply consolidate suppliers because supplier count is high.
+
+Evaluate:
+
+1. Same category
+2. Same item
+3. Same specification
+4. Same UOM
+5. Same geography where relevant
+6. Comparable quality
+7. Comparable delivery requirement
+8. Comparable payment terms where available
+9. Actual spend volume
+10. Supplier capability
+11. Dependency risk
+12. Single-source risk
+13. Switching complexity
+
+For a multi-category supplier:
+
+separate:
+
+CORE CATEGORY SUPPLY
+NON-CORE CATEGORY SUPPLY
+
+and identify whether the opportunity is:
+
+CATEGORY_SPECIALIZATION_OPPORTUNITY
+VOLUME_BUNDLING_OPPORTUNITY
+TAIL_SUPPLIER_CONSOLIDATION
+NO_QUANTIFIABLE_OPPORTUNITY
+INSUFFICIENT_DATA
+
+Never assume one supplier should receive all categories.
+
+============================================================
+PART J — MODULE 2 DOUBLE-COUNTING CONTROL
+============================================================
+
+This is mandatory.
+
+Each transaction may contribute to ONLY ONE final opportunity allocation
+unless explicitly defined as mutually compatible non-overlapping benefit types.
+
+Create:
+
+TRANSACTION_ID
+→ OPPORTUNITY_ID
+→ BENEFIT_TYPE
+→ ALLOCATED_AMOUNT
+→ OVERLAP_GROUP
+
+Total final opportunity must reconcile.
+
+No transaction may be counted simultaneously in:
+
+Price Arbitrage
++
+E-Auction
++
+Vendor Consolidation
++
+Volume Bundling
+
+unless the mathematical methodology explicitly defines the portions as
+non-overlapping.
+
+Required final check:
+
+GROSS OPPORTUNITY
+- OVERLAPPING OPPORTUNITIES
+- EXCLUDED / INELIGIBLE AMOUNTS
+=
+NET DEFENSIBLE OPPORTUNITY
+
+Variance must equal:
+
+₹0.00
+
+============================================================
+PART K — OPPORTUNITY RANGE LOGIC
+============================================================
+
+Never communicate:
+
+ Your procurement has no savings.
+
+Instead distinguish:
+
+1. QUANTIFIABLE OPPORTUNITY
+2. ILLUSTRATIVE OPPORTUNITY RANGE
+3. STRUCTURAL OPPORTUNITY
+4. DATA-LIMITED OPPORTUNITY
+5. NOT QUANTIFIABLE FROM AVAILABLE DATA
+
+Where historical evidence supports a range, show:
+
+LOW CASE
+BASE CASE
+HIGH CASE
+
+Every range must show its mathematical basis.
+
+If no price evidence exists, do NOT manufacture a percentage.
+
+Instead:
+
+OPPORTUNITY_IDENTIFIED
+BENEFIT_NOT_YET_QUANTIFIABLE
+
+and explain exactly what additional evidence is required.
+
+============================================================
+PART L — MODULE 3 ISOLATION
+============================================================
+
+PCBI must remain completely separate from Module 2 historical opportunity
+calculation.
+
+Module 2 may identify procurement opportunities from customer history.
+
+Module 3 may provide market/reference benchmark information.
+
+Neither may silently replace the other.
+
+Customer purchase price:
+
+CUSTOMER_DATA
+
+PCBI benchmark:
+
+MARKET_REFERENCE
+
+Display them separately.
+
+============================================================
+PART M — MODULE 3 DATA LIBRARY
+============================================================
+
+Maintain the new PCBI Data Library architecture.
+
+PCBI Master =
+What the PCBI series is
+
+PCBI Data Library =
+Evidence used to construct/maintain the PCBI series
+
+Commodity upload must NEVER redirect to PCBI Master.
+
+No commodity source data should contaminate customer purchase data.
+
+============================================================
+PART N — MODULE 4 CONTINUITY
+============================================================
+
+Validate:
+
+MODULE 1
+→ MODULE 2
+→ MODULE 3 where applicable
+→ MODULE 4
+
+Module 4 must receive only approved opportunity/handoff packages.
+
+Validate:
+
+Opportunity ID
+Category
+Item
+Supplier
+Transaction IDs
+Eligible Spend
+Opportunity Type
+Calculation
+Evidence
+Confidence
+Approval Status
+
+No unapproved opportunity may reach Module 4.
+
+No PCBI benchmark may become a savings value automatically.
+
+============================================================
+PART O — COMPLETE END-TO-END TRACEABILITY
+============================================================
+
+For every executive number provide a drill-down path:
+
+EXECUTIVE KPI
+↓
+MODULE
+↓
+CALCULATION
+↓
+CATEGORY
+↓
+ITEM
+↓
+SUPPLIER
+↓
+TRANSACTION
+↓
+SOURCE RECORD
+
+The user must be able to reach transaction-level evidence.
+
+Add:
+
+View Calculation
+
+View Transactions
+
+View Evidence
+
+View Formula
+
+View Exclusions
+
+View Audit Trail
+
+where relevant.
+
+============================================================
+PART P — UI/UX ENTERPRISE REDESIGN
+============================================================
+
+Now perform a system-wide UI/UX hardening across Modules 1–4.
+
+Use the existing Procucev visual identity and maintain consistency.
+
+Desired experience:
+
+PROFESSIONAL
+ENTERPRISE
+CLEAN
+EXECUTIVE-FRIENDLY
+DATA-DENSE BUT NOT CLUTTERED
+CONSULTING-GRADE
+AUDITABLE
+FAST TO UNDERSTAND
+
+Use consistent:
+
+Typography
+Spacing
+Cards
+Tables
+Badges
+Status indicators
+Breadcrumbs
+Tabs
+Filters
+Modals
+Drawers
+Tooltips
+Empty states
+Loading states
+Error states
+Success states
+Warning states
+Audit indicators
+
+Do NOT introduce excessive decorative graphics.
+
+Prioritize information hierarchy.
+
+============================================================
+PART Q — EXECUTIVE-FIRST INFORMATION DESIGN
+============================================================
+
+Every major page should follow:
+
+LEVEL 1 — EXECUTIVE SUMMARY
+
+Show only:
+
+What happened?
+Why does it matter?
+What is the opportunity?
+What requires action?
+What is the confidence?
+
+LEVEL 2 — ANALYSIS
+
+Show:
+
+Drivers
+Breakdown
+Comparisons
+Charts
+Supplier/category/item details
+
+LEVEL 3 — EVIDENCE
+
+Show:
+
+Transactions
+Formulas
+Source data
+Audit trail
+Methodology
+Exclusions
+
+This should prevent very long pages.
+
+============================================================
+PART R — EXPANDER / PROGRESSIVE DISCLOSURE
+============================================================
+
+Where analysis is long, NEVER display the entire analysis by default.
+
+Use expandable sections.
+
+Examples:
+
+View Detailed Calculation
+
+View Transaction Evidence
+
+View Supplier Analysis
+
+View Price Distribution
+
+View Opportunity Methodology
+
+View Excluded Transactions
+
+View Audit Trail
+
+View Source Evidence
+
+Default view should show the executive conclusion and key numbers.
+
+Expanded view should reveal complete evidence.
+
+Never remove the underlying data.
+
+Only change the presentation hierarchy.
+
+============================================================
+PART S — UI CONSISTENCY ACROSS MODULES
+============================================================
+
+Create a unified application navigation:
+
+MODULE 1
+Customer Spend Intelligence
+
+MODULE 2
+Strategic Sourcing Intelligence
+
+MODULE 3
+PCBI Market Benchmarking
+
+MODULE 4
+Savings Execution & Realization
+
+Each module should clearly display:
+
+CURRENT MODULE
+CURRENT STAGE
+DATA STATUS
+LAST UPDATED
+DATA PERIOD
+USER / ADMIN ACTIONS
+
+Provide clear next-step navigation.
+
+Example:
+
+Module 1 Complete
+→ Analyze Strategic Sourcing
+
+Module 2 Complete
+→ Review Benchmark Context
+
+Module 3 Available
+→ Execute Savings
+
+Module 4
+→ Track Realization
+
+Do NOT automatically execute downstream actions.
+
+============================================================
+PART T — UI ERROR PREVENTION
+============================================================
+
+Implement strong display-level safeguards.
+
+The UI must reject:
+
+INR displayed as USD/GBP
+MT displayed as ROLL
+PIECE displayed as LITRE
+Customer price displayed as PCBI price
+Opportunity displayed as realized savings
+PCBI index displayed as customer price
+Unapproved methodology displayed as approved
+Unverified source displayed as production-ready
+Filtered KPI inconsistent with filtered transaction table
+
+Add automated tests for these cases.
+
+============================================================
+PART U — LOADING / EMPTY / ERROR STATES
+============================================================
+
+Every module must have professional states for:
+
+Loading
+No data
+Partial data
+Data gap
+Validation required
+Approval pending
+Calculation unavailable
+Calculation blocked
+System error
+Successful completion
+
+Never show blank screens.
+
+Explain what the user needs to do next.
+
+============================================================
+PART V — PERFORMANCE
+============================================================
+
+Ensure large transaction datasets remain responsive.
+
+Use:
+
+Pagination
+Virtualized tables where appropriate
+Lazy-loaded deep dives
+Server-side aggregation where appropriate
+Memoized calculations
+Cached immutable reference data
+
+Do not load thousands of transaction rows unnecessarily.
+
+============================================================
+PART W — FINAL ADVERSARIAL TESTING
+============================================================
+
+Create a complete end-to-end adversarial test suite.
+
+Minimum scenarios:
+
+1. Single transaction
+2. Multiple transactions
+3. Duplicate transaction
+4. Missing transaction
+5. Zero transaction
+6. Negative transaction
+7. Multiple currencies
+8. Multiple UOMs
+9. Currency mismatch
+10. UOM mismatch
+11. Specification mismatch
+12. Date boundary
+13. Supplier duplication
+14. Category duplication
+15. Multi-category supplier
+16. Small supplier consolidation
+17. Large supplier concentration
+18. Single supplier category
+19. Multiple suppliers category
+20. E-auction eligible
+21. E-auction ineligible
+22. Vendor consolidation eligible
+23. Vendor consolidation unsafe
+24. Price opportunity available
+25. Price opportunity unavailable
+26. PCBI available
+27. PCBI unavailable
+28. Partial PCBI history
+29. Methodology pending
+30. Module 4 handoff approved
+31. Module 4 handoff rejected
+32. Filtered dashboard
+33. Drill-down reconciliation
+34. Opportunity overlap
+35. Double-counting attempt
+36. Wrong currency display
+37. Wrong UOM display
+38. Unauthorized downstream execution
+39. Large dataset
+40. Empty dataset
+
+============================================================
+PART X — NUMERICAL INVARIANTS
+============================================================
+
+Create automated invariant checks for:
+
+TOTAL_TRANSACTION_SPEND
+=
+SUM_VALID_TRANSACTION_SPEND
+
+CATEGORY_TOTAL
+=
+SUM_CATEGORY_TRANSACTIONS
+
+SUPPLIER_TOTAL
+=
+SUM_SUPPLIER_TRANSACTIONS
+
+ITEM_TOTAL
+=
+SUM_ITEM_TRANSACTIONS
+
+OPPORTUNITY_TOTAL
+=
+SUM_ELIGIBLE_OPPORTUNITY_TRANSACTIONS
+
+NET_OPPORTUNITY
+=
+GROSS_OPPORTUNITY
+-
+OVERLAPS
+-
+EXCLUSIONS
+
+MODULE_4_HANDOFF_TOTAL
+=
+APPROVED_MODULE_2_OPPORTUNITY_TOTAL
+
+All must reconcile to zero variance.
+
+============================================================
+PART Y — AUDIT ARTIFACTS
+============================================================
+
+Generate final artifacts:
+
+1. FINAL_SYSTEM_E2E_VALIDATION.md
+2. MODULE_1_FINAL_CALCULATION_AUDIT.xlsx
+3. MODULE_2_FINAL_OPPORTUNITY_AUDIT.xlsx
+4. MODULE_3_FINAL_PCIB_INTEGRITY_AUDIT.xlsx
+5. MODULE_4_FINAL_HANDOFF_AUDIT.xlsx
+6. FINAL_MODULE_1_TO_4_RECONCILIATION.xlsx
+7. FINAL_SYSTEM_E2E_AUDIT.json
+8. FINAL_SYSTEM_E2E_TEST_RESULTS.json
+9. FINAL_UI_UX_VALIDATION.md
+10. FINAL_PRODUCTION_READINESS_REPORT.md
+
+============================================================
+PART Z — FINAL QUALITY GATES
+============================================================
+
+Run:
+
+- backend typecheck
+- frontend typecheck
+- backend lint
+- frontend lint
+- complete test suite
+- differential test suite
+- production build
+- UI tests
+- calculation tests
+- reconciliation tests
+- adversarial tests
+- module continuity tests
+
+Require:
+
+0 TypeScript errors
+0 lint errors
+0 unexpected warnings
+0 calculation discrepancies
+0 unexplained reconciliation variance
+0 critical UI defects
+0 unauthorized cross-module data leakage
+0 double-counted final opportunity
+
+Do not declare production ready if any critical gate fails.
+
+============================================================
+FINAL CERTIFICATION
+============================================================
+
+At the end produce:
+
+MODULE_1_STATUS =
+PASS / FAIL
+
+MODULE_2_STATUS =
+PASS / FAIL
+
+MODULE_3_STATUS =
+PASS / FAIL
+
+MODULE_4_STATUS =
+PASS / FAIL
+
+END_TO_END_CONTINUITY =
+PASS / FAIL
+
+CALCULATION_INTEGRITY =
+PASS / FAIL
+
+DATA_RECONCILIATION =
+PASS / FAIL
+
+DOUBLE_COUNTING_CONTROL =
+PASS / FAIL
+
+UI_UX_VALIDATION =
+PASS / FAIL
+
+PRODUCTION_BUILD =
+PASS / FAIL
+
+FINAL_SYSTEM_STATUS =
+PRODUCTION_READY / BLOCKED
+
+IMPORTANT:
+If any defect is discovered, fix it if and only if it is within the
+approved architectural boundaries.
+
+If a proposed fix would alter certified business logic, STOP and report
+the issue instead of silently changing the methodology.
+
+Finally provide a concise executive summary containing:
+
+1. What was tested
+2. What was fixed
+3. What was unchanged/frozen
+4. Total tests
+5. Total passed
+6. Total failed
+7. Calculation reconciliation
+8. Module 1 → 4 continuity status
+9. UI/UX status
+10. Remaining risks, if any
+11. Exact Git files changed
+12. Final production-readiness decision
+
+DO NOT begin any new PCBI commodity research as part of this command.
+PCBI commodity research remains a separate continuous business activity.
+
+DO NOT modify Module 1 customer data.
+DO NOT modify Module 2 classification authority.
+DO NOT modify PCBI Master V1.0 calculation methodology.
+DO NOT modify Module 4 business logic unless a genuine defect is proven.
+
+This is the FINAL SYSTEM HARDENING AND PRODUCTION CERTIFICATION PASS.
+
+## Prompt 251
+FINAL ENTERPRISE PRODUCTION HARDENING COMMAND
+==============================================
+
+SYSTEM: aiCEV / Procucev Enterprise Procurement Intelligence Platform
+
+OBJECTIVE
+---------
+Perform one final end-to-end production hardening, validation, UX improvement and integration
+exercise across MODULE 1 → MODULE 2 → MODULE 3 → MODULE 4.
+
+This is NOT a request to redesign the business architecture.
+
+This is a FINAL PRODUCTION HARDENING command.
+
+Preserve all already-certified business logic unless a genuine defect, inconsistency,
+calculation error, traceability failure, security issue, usability issue, or integration
+defect is discovered.
+
+Do NOT introduce synthetic data.
+Do NOT introduce assumed savings percentages.
+Do NOT fabricate historical benchmark values.
+Do NOT silently interpolate benchmark frequencies.
+Do NOT modify Module 2 classification authority.
+Do NOT allow Module 3 PCBI data to leak into Module 2.
+Do NOT allow Module 4 savings realization to alter Module 2 opportunity calculations.
+Do NOT alter the certified customer transaction data.
+
+============================================================
+PART 1 — GLOBAL ARCHITECTURAL LOCK
+============================================================
+
+Establish and verify the following permanent boundaries:
+
+MODULE 1
+---------
+Customer purchase data ingestion, validation, normalization and transaction truth.
+
+MODULE 2
+---------
+Strategic sourcing intelligence only:
+- spend analysis
+- supplier analysis
+- price dispersion
+- price improvement opportunity
+- e-auction opportunity
+- vendor consolidation
+- category specialization
+- volume bundling
+- supplier fragmentation
+- sourcing strategy
+- opportunity ranges
+- opportunity waterfall
+- transaction-level evidence
+
+MODULE 3
+---------
+PCBI / external benchmark intelligence only.
+
+MODULE 4
+---------
+Execution / realization / approved savings tracking only.
+
+Dependency direction must remain:
+
+MODULE 1
+   ↓
+MODULE 2
+   ↓
+MODULE 3 (reference/benchmark intelligence where explicitly applicable)
+   ↓
+MODULE 4
+
+No circular dependency.
+
+No Module 4 result may rewrite Module 1 or Module 2 historical truth.
+
+No PCBI benchmark may silently become a Module 2 historical price.
+
+============================================================
+PART 2 — MODULE 1 FINAL DATA-INTEGRITY HARDENING
+============================================================
+
+Perform a complete forensic audit of Module 1.
+
+Validate:
+
+A. FILE INGESTION
+-----------------
+- XLSX
+- XLS
+- CSV
+- PDF where supported
+- multi-sheet files
+- large files
+- duplicate uploads
+- repeated uploads
+- malformed files
+- empty files
+- missing headers
+- inconsistent headers
+- mixed data types
+
+B. TRANSACTION IDENTITY
+-----------------------
+Every transaction must have a deterministic unique identity.
+
+Validate:
+- transaction ID
+- source file
+- source sheet
+- source row
+- upload batch
+- ingestion timestamp
+- original raw values
+- normalized values
+
+A transaction must never be duplicated silently.
+
+C. MONEY VALIDATION
+-------------------
+For every transaction verify:
+
+Quantity × Unit Price = Gross Transaction Value
+
+where applicable.
+
+Validate:
+- INR
+- USD
+- EUR
+- GBP
+- other supported currencies
+- currency conversion rules
+- exchange rate provenance
+- conversion date
+- original amount
+- converted amount
+
+Never display a converted value as if it were the original transaction value.
+
+Customer transaction currency and PCBI currency must remain explicitly separated.
+
+D. UOM VALIDATION
+-----------------
+Strictly distinguish:
+
+KG
+MT
+LITRE
+PIECE
+ROLL
+BOX
+SET
+METER
+etc.
+
+Never allow:
+MT → KG without explicit governed conversion.
+PIECE → LITRE.
+ROLL → PIECE.
+Customer UOM → PCBI UOM.
+
+Every conversion must contain:
+- source UOM
+- target UOM
+- conversion factor
+- methodology
+- approval/reference
+
+E. DATE VALIDATION
+------------------
+Validate:
+- PO date
+- delivery date where available
+- invoice date where available
+- contract date where available
+- duplicate dates
+- impossible dates
+- future dates
+- date parsing differences
+
+F. NEGATIVE VALUE / ZERO VALUE CONTROL
+--------------------------------------
+Explicitly classify:
+- zero quantity
+- zero price
+- zero value
+- negative quantity
+- negative price
+- credit/debit transactions
+- cancellations
+- returns
+
+Do not silently remove these records.
+
+Every exclusion must have a reason code.
+
+G. TOTAL RECONCILIATION
+-----------------------
+For every upload establish:
+
+RAW FILE TOTAL
+= VALID TRANSACTION TOTAL
++ EXCLUDED TRANSACTION TOTAL
++ TRANSFORMATION DIFFERENCE
+
+Transformation difference must be ₹0 unless a documented conversion/reconciliation rule
+explicitly explains it.
+
+Final customer spend must reconcile exactly.
+
+H. CATEGORY / ITEM / SUPPLIER HIERARCHY
+---------------------------------------
+Validate:
+
+Supplier
+→ Category
+→ Subcategory
+→ Item
+→ Specification
+→ UOM
+→ Currency
+→ Transaction
+
+No transaction may disappear between hierarchy levels.
+
+I. DISPLAY-LEVEL PROTECTION
+----------------------------
+The UI must never show:
+- wrong currency symbol
+- wrong UOM
+- wrong quantity
+- wrong supplier
+- wrong category
+- wrong transaction count
+
+Every executive KPI must be drillable to the underlying transaction records.
+
+============================================================
+PART 3 — MODULE 2 FINAL BUSINESS LOGIC HARDENING
+============================================================
+
+Preserve the certified MODULE_2_FINAL_E2E_VALIDATION_V1.0 logic.
+
+Strengthen the following:
+
+1. PRICE OPPORTUNITY
+--------------------
+Show:
+
+MIN
+P10
+P25
+MEDIAN
+WEIGHTED AVERAGE
+P75
+P90
+MAX
+IQR
+CV
+PRICE SPREAD
+
+Every number must be drillable to the transactions supporting it.
+
+2. LOWEST CREDIBLE HISTORICAL PRICE
+------------------------------------
+Never simply use MIN.
+
+A credible reference price must satisfy the existing approved qualification rules.
+
+Show exactly which transactions qualified and which were excluded.
+
+3. PRICE OPPORTUNITY RANGE
+---------------------------
+Continue to show:
+
+LOW CASE
+BASE CASE
+HIGH CASE
+
+But explicitly label:
+
+ILLUSTRATIVE / HISTORICAL EVIDENCE-BASED OPPORTUNITY
+
+Never call it guaranteed savings.
+
+4. E-AUCTION
+------------
+For every e-auction recommendation show:
+
+- eligible suppliers
+- eligible spend
+- eligible volume
+- comparable specifications
+- supplier count
+- historical price dispersion
+- current supplier prices
+- reference price
+- potential opportunity range
+- auction suitability
+- recommended auction format
+- reserve-price logic
+- opening-ceiling logic
+- exclusions
+- operational risks
+
+The system must distinguish:
+
+HISTORICAL DEMONSTRATED OPPORTUNITY
+from
+COMPETITIVE EVENT POTENTIAL.
+
+Never guarantee an auction outcome.
+
+5. VENDOR CONSOLIDATION
+-----------------------
+This must be calculated at:
+
+CATEGORY
+→ SUBCATEGORY
+→ ITEM
+→ SPECIFICATION
+→ SUPPLIER
+
+level.
+
+Do NOT simply say:
+
+"10 suppliers → 2 suppliers = savings."
+
+Instead calculate:
+
+Eligible spend
+Eligible volume
+Supplier fragmentation
+Comparable specifications
+Current supplier prices
+Historical best credible prices
+Volume that can realistically be bundled
+Supplier capacity
+Single-source risk
+Dual-source risk
+Switching cost
+Dependency risk
+Concentration risk
+
+Show:
+
+CURRENT STATE
+PROPOSED STATE
+ELIGIBLE SPEND
+ELIGIBLE VOLUME
+POTENTIAL BENEFIT RANGE
+RISK
+EXCLUSIONS
+EVIDENCE
+
+6. MULTI-CATEGORY SUPPLIERS
+---------------------------
+Where one supplier supplies multiple unrelated categories:
+
+analyse each category separately.
+
+Example:
+
+Supplier A
+├── Fasteners
+├── Electrical
+├── MRO
+└── Packaging
+
+Do not assume consolidation benefit simply because one supplier supplies many categories.
+
+Identify:
+
+CORE CATEGORY
+NON-CORE CATEGORY
+SPECIALIST CATEGORY
+TRADER / DISTRIBUTOR POSSIBILITY
+CATEGORY-SPECIALIST ALTERNATIVE
+
+Then calculate the opportunity at category/item level.
+
+7. SMALL SUPPLIER CONSOLIDATION
+-------------------------------
+If multiple small suppliers supply the SAME:
+
+- item
+- specification
+- UOM
+- geography
+- comparable quality
+
+evaluate volume bundling.
+
+Do not assume price reduction.
+
+Use historical transaction evidence.
+
+8. DOUBLE COUNTING
+-------------------
+Every opportunity must have:
+
+OPPORTUNITY_ID
+LEVER_ID
+TRANSACTION_ID
+CATEGORY_ID
+ITEM_ID
+SUPPLIER_ID
+CALCULATION_METHOD
+ELIGIBLE_SPEND
+OPPORTUNITY_VALUE
+
+Every transaction must belong to one mutually exclusive opportunity allocation unless
+explicitly allowed by the approved waterfall methodology.
+
+Final:
+
+SUM(OPPORTUNITY LEDGER)
+must reconcile with:
+
+NET DEFENSIBLE OPPORTUNITY.
+
+9. NO-OPPORTUNITY OUTPUT
+------------------------
+Never say:
+
+"Procurement is perfect."
+
+Instead say:
+
+"NO QUANTIFIABLE OPPORTUNITY IDENTIFIED FROM AVAILABLE HISTORICAL DATA."
+
+Then show:
+
+- sample size
+- supplier count
+- price dispersion
+- data confidence
+- excluded transactions
+- reasons
+- additional data required
+- potential areas requiring further investigation
+
+This prevents a false conclusion of procurement perfection.
+
+============================================================
+PART 4 — MINUTE-LEVEL EVIDENCE / FORENSIC DRILL-DOWN
+============================================================
+
+This is mandatory.
+
+Every important output must be explainable down to the smallest available data level.
+
+For every KPI provide:
+
+EXECUTIVE KPI
+   ↓
+CATEGORY
+   ↓
+ITEM
+   ↓
+SUPPLIER
+   ↓
+TRANSACTION
+   ↓
+ORIGINAL CUSTOMER RECORD
+
+For each calculation show:
+
+INPUT VALUE
+INPUT SOURCE
+FILTER
+EXCLUSION
+FORMULA
+INTERMEDIATE VALUE
+FINAL VALUE
+
+Provide a "Show Calculation" / "View Evidence" expandable panel.
+
+Example:
+
+Potential E-Auction Opportunity
+₹X
+
+EXPAND
+
+Eligible Spend:
+₹X
+
+Eligible Suppliers:
+4
+
+Eligible Transactions:
+27
+
+Reference Price:
+₹X / MT
+
+Current Weighted Price:
+₹X / MT
+
+Price Difference:
+₹X / MT
+
+Eligible Volume:
+X MT
+
+Calculated Opportunity:
+₹X
+
+Formula:
+(Current Weighted Price - Reference Price) × Eligible Volume
+
+Supporting Transactions:
+PO-001
+PO-002
+PO-003
+...
+
+This evidence must be generated from actual data.
+
+============================================================
+PART 5 — MODULE 3 PROTECTION
+============================================================
+
+Do not redesign Module 3.
+
+Verify:
+
+- PCBI Master remains immutable where required.
+- PCBI Data Library remains separate.
+- Commodity research remains separate from customer data.
+- No fabricated historical values.
+- No silent frequency interpolation.
+- Source provenance remains intact.
+- PCBI versioning remains intact.
+- Admin approval remains mandatory.
+- Module 3 benchmark values are never mistaken for customer purchase prices.
+
+Verify the new commodity upload architecture remains isolated from Module 1 uploads.
+
+============================================================
+PART 6 — MODULE 4 CONTINUITY VALIDATION
+============================================================
+
+Validate only the integration contract.
+
+Module 4 must receive only approved Module 2 opportunities.
+
+Each handoff must contain:
+
+OPPORTUNITY_ID
+CATEGORY
+ITEM
+SUPPLIER
+CURRENT BASELINE
+ELIGIBLE SPEND
+ELIGIBLE VOLUME
+REFERENCE BASIS
+OPPORTUNITY RANGE
+CONFIDENCE
+ASSUMPTIONS
+EXCLUSIONS
+SOURCE TRANSACTIONS
+APPROVAL STATUS
+
+Module 4 must NOT invent:
+
+- savings %
+- benchmark prices
+- supplier rankings
+- auction results
+- realized savings
+
+before actual execution evidence exists.
+
+Clearly distinguish:
+
+IDENTIFIED OPPORTUNITY
+TARGET
+NEGOTIATED BENEFIT
+REALIZED SAVING
+REALIZED COST AVOIDANCE
+
+============================================================
+PART 7 — COMPLETE END-TO-END TEST
+============================================================
+
+Create a certified test dataset containing:
+
+- multiple currencies
+- multiple UOMs
+- multiple suppliers
+- multiple categories
+- multi-category suppliers
+- small suppliers
+- duplicate transactions
+- specification mismatches
+- missing values
+- zero values
+- negative/credit transactions
+- different price levels
+- contract and spot transactions
+- recurrent and non-recurrent spend
+- auction-suitable category
+- consolidation-suitable category
+- category with no quantifiable opportunity
+
+Execute:
+
+MODULE 1
+→ MODULE 2
+→ MODULE 3 isolation check
+→ MODULE 4 handoff
+
+Verify:
+
+1. Transaction counts
+2. Spend totals
+3. Category totals
+4. Supplier totals
+5. Currency totals
+6. UOM totals
+7. Opportunity totals
+8. Exclusion totals
+9. Double-counting
+10. Evidence lineage
+11. UI display
+12. API response
+13. Database persistence
+14. Module handoff
+
+Any discrepancy must fail the test.
+
+============================================================
+PART 8 — UI/UX ENTERPRISE FINAL PASS
+============================================================
+
+Improve the UI across ALL FOUR MODULES without changing business calculations.
+
+Design objective:
+
+"Executive-grade enterprise procurement intelligence platform."
+
+Use the existing Procucev design language and brand palette.
+
+Ensure:
+
+- consistent navigation
+- consistent page hierarchy
+- consistent cards
+- consistent typography
+- consistent badges
+- consistent tables
+- consistent filters
+- consistent empty states
+- consistent warnings
+- consistent success/error states
+- consistent drill-down behaviour
+- consistent breadcrumbs
+- consistent action buttons
+
+The user journey should be obvious:
+
+UPLOAD
+→ VALIDATE
+→ ANALYSE
+→ IDENTIFY
+→ DEEP DIVE
+→ APPROVE
+→ EXECUTE
+→ REALIZE
+
+Each module must clearly communicate:
+
+WHERE AM I?
+WHAT AM I LOOKING AT?
+WHAT DOES THIS NUMBER MEAN?
+WHAT CAN I DO NEXT?
+
+============================================================
+PART 9 — LONG ANALYSIS / INFORMATION DENSITY
+============================================================
+
+Do NOT show extremely long analysis blocks by default.
+
+Implement enterprise-friendly progressive disclosure.
+
+Default view:
+
+KEY INSIGHT
+KEY NUMBERS
+STATUS
+RECOMMENDED ACTION
+
+Then:
+
+[+ View Calculation]
+[+ View Evidence]
+[+ View Transactions]
+[+ View Methodology]
+[+ View Exclusions]
+[+ View Audit Trail]
+
+Use accordions / expanders for:
+
+- long explanations
+- calculation details
+- transaction lists
+- methodology
+- audit trails
+- source details
+- exclusions
+- historical observations
+
+Important:
+
+Never hide a critical warning, status, approval requirement or material exception.
+
+Use progressive disclosure, not information removal.
+
+============================================================
+PART 10 — UI DATA INTEGRITY RULE
+============================================================
+
+The UI must never independently calculate business numbers differently from backend services.
+
+Backend = calculation authority.
+
+Frontend = presentation authority.
+
+Any number displayed in the UI must originate from the governed backend response.
+
+No duplicate business formulas in frontend components.
+
+============================================================
+PART 11 — FINAL AUDIT ARTIFACTS
+============================================================
+
+Generate:
+
+1.
+FINAL_ENTERPRISE_E2E_VALIDATION.md
+
+2.
+FINAL_ENTERPRISE_CALCULATION_AUDIT.xlsx
+
+3.
+FINAL_ENTERPRISE_TRANSACTION_TRACEABILITY.xlsx
+
+4.
+FINAL_ENTERPRISE_OPPORTUNITY_LEDGER.xlsx
+
+5.
+FINAL_ENTERPRISE_INTEGRATION_AUDIT.json
+
+6.
+FINAL_ENTERPRISE_UI_UX_AUDIT.md
+
+7.
+FINAL_ENTERPRISE_TEST_RESULTS.json
+
+Include:
+
+- all tests
+- pass/fail
+- calculations
+- reconciliation
+- transaction lineage
+- exclusions
+- opportunity ledger
+- UI validation
+- module boundaries
+- integration validation
+- defects
+- remediation
+- final release decision
+
+============================================================
+PART 12 — FINAL QUALITY GATES
+============================================================
+
+Run:
+
+- typecheck
+- lint
+- build
+- unit tests
+- integration tests
+- end-to-end tests
+- negative tests
+- calculation reconciliation
+- transaction traceability
+- UI regression tests
+- API tests
+- database persistence tests
+- module boundary tests
+
+Require:
+
+ZERO calculation discrepancies
+ZERO unexplained reconciliation variance
+ZERO duplicate opportunity allocation
+ZERO synthetic savings
+ZERO fabricated benchmark data
+ZERO silent interpolation
+ZERO currency/UOM display errors
+ZERO broken transaction lineage
+ZERO critical UI defects
+ZERO Module 1 → Module 2 data loss
+ZERO Module 2 → Module 4 handoff corruption
+
+============================================================
+PART 13 — FROZEN LOGIC PROTECTION
+============================================================
+
+Do not modify certified business logic simply to make tests pass.
+
+If a test exposes a genuine defect:
+
+1. Identify the defect.
+2. Explain the business impact.
+3. Correct only the affected component.
+4. Add regression coverage.
+5. Re-run the complete relevant test suite.
+6. Record the change.
+
+If no defect exists:
+
+DO NOT refactor stable business logic unnecessarily.
+
+============================================================
+PART 14 — FINAL RELEASE GATE
+============================================================
+
+At the end provide exactly:
+
+FINAL_ENTERPRISE_STATUS =
+    PRODUCTION_READY
+OR
+    PRODUCTION_READY_WITH_NON_BLOCKING_ITEMS
+OR
+    BLOCKED
+
+Also provide:
+
+MODULE_1_STATUS =
+MODULE_2_STATUS =
+MODULE_3_STATUS =
+MODULE_4_STATUS =
+
+CALCULATION_INTEGRITY =
+DATA_RECONCILIATION =
+TRANSACTION_TRACEABILITY =
+OPPORTUNITY_TRACEABILITY =
+DOUBLE_COUNTING_CONTROL =
+MODULE_CONTINUITY =
+UI_UX_STATUS =
+SECURITY / GOVERNANCE STATUS =
+
+If anything is BLOCKED, clearly identify:
+
+BLOCKER
+BUSINESS IMPACT
+ROOT CAUSE
+REQUIRED ACTION
+OWNER
+RETEST REQUIRED = YES/NO
+
+Do not declare production readiness merely because tests pass.
+
+Production readiness requires both:
+
+TECHNICAL PASS
+AND
+BUSINESS LOGIC PASS.
+
+Finally append this prompt to prompts.md with the next sequential prompt number.
+
+DO NOT START PCBI COMMODITY RESEARCH IN THIS COMMAND.
+
+PCBI commodity research remains a separate continuous parallel business activity.
+
+The purpose of this command is to make the existing platform production-safe,
+calculation-safe, traceable, integrated and professionally usable before deployment.
+
+## Prompt 252
+PROCUCEV / aiCEV — ENTERPRISE CUSTOMER DATA CONFIDENTIALITY,
+ENCRYPTION, ISOLATION & NON-REUSE CONTROL
+FINAL CROSS-MODULE SECURITY HARDENING — MODULES 1 TO 4
+
+IMPORTANT:
+This is a CROSS-MODULE SECURITY / TRUST / DATA-GOVERNANCE enhancement.
+
+DO NOT modify or weaken any certified business calculation logic in:
+- Module 1
+- Module 2
+- Module 3 / PCBI
+- Module 4
+
+DO NOT change any mathematical formulas, savings logic, benchmark logic,
+classification logic, opportunity logic, or customer-data processing logic.
+
+Do not fabricate security capabilities that are not actually implemented.
+
+============================================================
+1. BUSINESS OBJECTIVE
+============================================================
+
+Procucev / aiCEV must provide enterprise customers with a clear,
+technically enforceable data-confidentiality model.
+
+Customer procurement data is highly sensitive.
+
+The platform must clearly communicate and enforce:
+
+1. Customer data is customer-specific.
+2. Customer data is logically isolated from other customers.
+3. Uploaded customer files are encrypted at rest.
+4. Data transmission must use encrypted transport.
+5. Customer data is used only for the authorized analysis/workflow.
+6. Customer data must NOT become a benchmark, training dataset, reference
+   dataset, sample dataset, or source for another customer's analysis.
+7. One customer's raw transactions must never appear in another customer's
+   environment.
+8. PCBI reference data must remain distinct from customer transactional data.
+9. Module 2 analytical calculations must use only the authorized customer's
+   data and approved internal logic.
+10. Module 3 PCBI data must not silently absorb customer transaction data.
+11. Module 4 outputs must contain only the authorized data required for
+    execution / savings realization.
+12. All sensitive-data access must be auditable.
+
+============================================================
+2. DATA CLASSIFICATION
+============================================================
+
+Introduce explicit data classifications:
+
+CUSTOMER_CONFIDENTIAL
+PCBI_REFERENCE_DATA
+SYSTEM_CONFIGURATION
+ANALYTICAL_DERIVED_DATA
+AUDIT_METADATA
+PUBLIC_REFERENCE_DATA
+
+Customer uploaded purchase history, supplier information, prices,
+quantities, PO information and transaction-level records must be classified:
+
+DATA_CLASSIFICATION = CUSTOMER_CONFIDENTIAL
+
+The classification must follow the data through Modules 1 → 2 → 3 → 4
+without changing ownership or confidentiality.
+
+============================================================
+3. MODULE 1 — CUSTOMER DATA PROTECTION
+============================================================
+
+Module 1 is the primary customer-data ingestion boundary.
+
+On upload:
+
+CUSTOMER FILE
+    ↓
+Encrypted Transport
+    ↓
+Secure Ingestion
+    ↓
+Customer/Tenant Isolation
+    ↓
+Encrypted Storage
+    ↓
+Controlled Processing
+    ↓
+Module 1 Analysis
+
+Implement / verify:
+
+- HTTPS/TLS-only transport in production.
+- Encryption at rest for uploaded customer files and sensitive records.
+- Tenant/customer identifier attached to every customer dataset.
+- Dataset ID generated for every upload.
+- Immutable ingestion timestamp.
+- File checksum/hash.
+- Source filename metadata.
+- Access audit record.
+- Processing status.
+- Retention status.
+
+Never expose raw storage paths to the frontend.
+
+Never place customer raw files in publicly accessible static directories.
+
+============================================================
+4. STRICT TENANT / CUSTOMER ISOLATION
+============================================================
+
+Every customer dataset must carry:
+
+TENANT_ID
+CUSTOMER_ID
+DATASET_ID
+DATA_CLASSIFICATION
+
+Every database query, API request and analytical operation involving
+customer data must enforce tenant/customer scope.
+
+Required invariant:
+
+REQUEST_TENANT_ID === DATASET_TENANT_ID
+
+If mismatch:
+
+BLOCK_REQUEST
+STATUS = TENANT_ACCESS_DENIED
+
+Do not rely only on frontend filtering.
+
+Tenant isolation must be enforced server-side.
+
+Add negative tests proving:
+
+- Customer A cannot retrieve Customer B data.
+- Customer A cannot download Customer B file.
+- Customer A cannot see Customer B suppliers.
+- Customer A cannot see Customer B transaction values.
+- Customer A cannot see Customer B Module 2 opportunities.
+- Customer A cannot see Customer B Module 4 outputs.
+- Customer A cannot use another customer's dataset ID.
+
+============================================================
+5. NO CROSS-CUSTOMER LEARNING / REUSE
+============================================================
+
+Introduce an explicit architectural rule:
+
+CUSTOMER_DATA_REUSE_POLICY = PROHIBITED
+
+Customer transaction data must NOT be used to:
+
+- populate another customer's benchmark;
+- create another customer's price reference;
+- improve another customer's sourcing calculation;
+- populate PCBI historical observations;
+- create shared supplier-price datasets;
+- create training datasets;
+- create demonstration datasets;
+- create sample customer data;
+- expose comparative customer statistics;
+- generate cross-customer recommendations.
+
+If aggregated analytics are ever introduced in the future, they must
+require a separate, explicit governance and contractual mechanism.
+
+Do not implement cross-customer aggregation now.
+
+============================================================
+6. PCBI ISOLATION
+============================================================
+
+Maintain the existing architectural distinction:
+
+PCBI MASTER
+=
+SYSTEM REFERENCE / DEFINITION
+
+PCBI DATA LIBRARY
+=
+APPROVED MARKET / REFERENCE SOURCE DATA
+
+CUSTOMER DATA
+=
+CUSTOMER_CONFIDENTIAL
+
+A customer transaction must NEVER automatically become a PCBI source
+observation.
+
+A customer price must NEVER silently enter the PCBI historical series.
+
+Any future process that proposes customer-derived reference data must be
+explicitly governed and separately approved.
+
+Add negative test:
+
+CUSTOMER_TRANSACTION → PCBI_OBSERVATION
+
+Expected:
+
+BLOCKED_CUSTOMER_DATA_TO_PCBI
+
+============================================================
+7. MODULE 2 CONFIDENTIALITY
+============================================================
+
+Module 2 must calculate strategic sourcing intelligence only from the
+authorized customer's Module 1 dataset.
+
+All outputs must retain:
+
+TENANT_ID
+CUSTOMER_ID
+DATASET_ID
+DATA_CLASSIFICATION
+
+Opportunity ledgers, supplier analysis, price distributions, e-auction
+analysis, vendor consolidation analysis and sourcing recommendations
+must remain customer-scoped.
+
+No Module 2 result may be exposed outside the authorized tenant.
+
+Maintain existing rule:
+
+NO EXTERNAL PCBI DATA IN MODULE 2 CALCULATIONS
+
+unless explicitly governed by the existing architecture.
+
+Do not modify existing Module 2 mathematical logic.
+
+============================================================
+8. MODULE 3 CONFIDENTIALITY
+============================================================
+
+PCBI remains independent of customer transactional data.
+
+Maintain:
+
+PCBI_MASTER = IMMUTABLE REFERENCE CATALOG
+PCBI_DATA_LIBRARY = GOVERNED REFERENCE DATA
+CUSTOMER_DATA = CUSTOMER_CONFIDENTIAL
+
+Customer-specific transaction records must not be written into the
+PCBI Data Library.
+
+PCBI source documents and observations must have their own provenance,
+publisher, source ID and checksum.
+
+============================================================
+9. MODULE 4 CONFIDENTIALITY
+============================================================
+
+Module 4 receives only the authorized handoff package.
+
+Ensure:
+
+MODULE_2_CUSTOMER_SCOPE
+        ↓
+MODULE_4_CUSTOMER_SCOPE
+
+No opportunity package may be retrieved outside its originating tenant.
+
+Add negative tests for cross-tenant Module 4 access.
+
+============================================================
+10. RAW DATA EXPOSURE CONTROL
+============================================================
+
+Review all APIs, logs and frontend responses.
+
+Customer-sensitive fields must NOT accidentally appear in:
+
+- application logs;
+- console logs;
+- error messages;
+- stack traces;
+- API debug responses;
+- browser localStorage;
+- browser sessionStorage;
+- URL query strings;
+- public static files;
+- telemetry;
+- analytics payloads.
+
+Sensitive fields include at minimum:
+
+supplier name
+supplier code
+purchase price
+quantity
+transaction value
+PO number
+invoice number
+customer item code
+customer material description
+contract information
+commercial terms
+
+Use redacted identifiers in logs.
+
+Example:
+
+SUPPLIER_ID = SUP-XXXX
+
+rather than exposing unnecessary commercial information.
+
+============================================================
+11. DOWNLOAD / EXPORT GOVERNANCE
+============================================================
+
+Any customer-data export must be explicitly authenticated and
+tenant-authorized.
+
+Before download:
+
+AUTHENTICATED_USER
++
+AUTHORIZED_TENANT
++
+AUTHORIZED_DATASET
++
+AUTHORIZED_ROLE
+
+All downloads must be auditable.
+
+Record:
+
+USER_ID
+TENANT_ID
+DATASET_ID
+EXPORT_TYPE
+TIMESTAMP
+REASON / ACTION
+RESULT
+
+Do not create unrestricted "download all customer data" endpoints.
+
+============================================================
+12. DATA RETENTION / DELETION MODEL
+============================================================
+
+Create explicit configuration for:
+
+DATA_RETENTION_POLICY
+DATA_RETENTION_PERIOD
+DATA_DELETION_STATUS
+
+Do not invent a retention period if the product/business policy has not
+yet been formally decided.
+
+Instead expose:
+
+RETENTION_POLICY_STATUS = CONFIGURATION_REQUIRED
+
+where no policy exists.
+
+Implement deletion capability only if it is consistent with the
+existing architecture and audit requirements.
+
+Never claim data is permanently deleted unless storage, backups,
+replicas and derived records are actually covered by the deletion policy.
+
+============================================================
+13. CUSTOMER-FACING TRUST CENTER
+============================================================
+
+Add an enterprise-facing "Data Security & Confidentiality" section to
+the product.
+
+Keep the wording factual and technically defensible.
+
+Suggested customer-facing language:
+
+"Your procurement data is treated as Customer Confidential Data."
+
+"Your uploaded procurement data is processed within your authorized
+customer environment and is logically isolated from other customers."
+
+"Customer transaction data is not used as another customer's benchmark,
+reference dataset, or analytical input."
+
+"Customer transaction data does not automatically become part of the
+PCBI reference library."
+
+"Data access is controlled through authentication, authorization and
+customer-level isolation."
+
+"Sensitive customer data is protected using encryption in transit and,
+where implemented, encryption at rest."
+
+Do NOT use absolute claims such as:
+"Nobody can ever access your data."
+"Your data can never be reproduced."
+"Your data can never exist in backups."
+"100% impossible to breach."
+
+unless technically and contractually proven.
+
+============================================================
+14. DATA FLOW VISUALIZATION
+============================================================
+
+Create a clean enterprise UI visual:
+
+CUSTOMER DATA
+      ↓
+ENCRYPTED INGESTION
+      ↓
+CUSTOMER-ISOLATED STORAGE
+      ↓
+MODULE 1
+      ↓
+MODULE 2
+      ↓
+MODULE 3 / PCBI [REFERENCE DATA REMAINS SEPARATE]
+      ↓
+MODULE 4
+      ↓
+CUSTOMER-SCOPED OUTPUT
+
+With a separate protected boundary around:
+
+PCBI MASTER
+PCBI DATA LIBRARY
+
+Clearly show:
+
+CUSTOMER DATA ≠ PCBI DATA
+
+and
+
+CUSTOMER A ≠ CUSTOMER B
+
+============================================================
+15. SECURITY STATUS PANEL
+============================================================
+
+Create an enterprise security status panel showing:
+
+Transport Security
+Storage Encryption
+Tenant Isolation
+Role-Based Access
+Audit Logging
+Data Classification
+PCBI Data Isolation
+Cross-Customer Reuse Protection
+Export Controls
+Retention Policy
+
+Each should display:
+
+ACTIVE
+NOT_CONFIGURED
+REQUIRES_ADMIN_ACTION
+
+Do not display PASS unless an actual technical check confirms it.
+
+============================================================
+16. SECURITY NEGATIVE TEST SUITE
+============================================================
+
+Create comprehensive automated tests including:
+
+SEC-01 Cross-tenant dataset access
+SEC-02 Cross-tenant file download
+SEC-03 Cross-tenant transaction retrieval
+SEC-04 Cross-tenant supplier retrieval
+SEC-05 Cross-tenant Module 2 opportunity access
+SEC-06 Cross-tenant Module 4 handoff access
+SEC-07 Customer transaction to PCBI injection
+SEC-08 Unauthorized dataset export
+SEC-09 Unauthenticated sensitive API access
+SEC-10 Unauthorized role access
+SEC-11 Sensitive data in logs
+SEC-12 Sensitive data in URL parameters
+SEC-13 Sensitive data in browser storage
+SEC-14 Public/static file exposure
+SEC-15 Dataset ID enumeration
+SEC-16 Missing tenant scope
+SEC-17 Invalid tenant scope
+SEC-18 Unauthorized PCBI modification
+SEC-19 Customer A data appearing in Customer B analytical output
+SEC-20 Customer data entering shared/reference storage
+
+Every test must produce explicit BLOCKED / PASS behavior.
+
+============================================================
+17. AUDIT TRAIL
+============================================================
+
+Create immutable/auditable events for:
+
+DATA_UPLOAD
+DATA_ACCESS
+DATA_PROCESSING
+DATA_EXPORT
+DATA_APPROVAL
+DATA_DELETION
+DATASET_SCOPE_CHANGE
+SECURITY_DENIAL
+PCBI_REFERENCE_ACCESS
+
+Every event should include appropriate identifiers without storing
+unnecessary sensitive raw commercial data.
+
+============================================================
+18. UI LANGUAGE — IMPORTANT
+============================================================
+
+Do not overwhelm the customer with security jargon.
+
+Use concise enterprise messaging.
+
+Example Module 1 upload notice:
+
+"Your procurement data is Customer Confidential.
+It is processed within your authorized environment and is not used as
+another customer's benchmark or reference data."
+
+Add an expandable:
+
+"How we protect your data"
+
+containing the detailed explanation.
+
+Use the same trust language consistently across Modules 1–4.
+
+============================================================
+19. ARCHITECTURAL NON-REGRESSION
+============================================================
+
+ABSOLUTE RULE:
+
+DO NOT MODIFY:
+
+Module 1 calculation semantics
+Module 2 strategic sourcing formulas
+Module 2 opportunity waterfall
+Module 2 e-auction logic
+Module 2 vendor consolidation logic
+Module 3 PCBI formulas
+Module 3 governance rules
+Module 4 savings realization logic
+
+This command is security, privacy, isolation and customer-trust
+hardening only.
+
+============================================================
+20. REQUIRED FINAL VALIDATION REPORT
+============================================================
+
+Generate:
+
+PROCUCEV_ENTERPRISE_DATA_SECURITY_VALIDATION.md
+
+Also generate:
+
+PROCUCEV_DATA_SECURITY_AUDIT.json
+
+PROCUCEV_DATA_ISOLATION_TEST_RESULTS.json
+
+The final report must clearly distinguish:
+
+IMPLEMENTED
+VERIFIED
+CONFIGURATION_REQUIRED
+NOT_IMPLEMENTED
+NOT_CLAIMED
+
+Do not mark a security capability as verified merely because the code
+contains a placeholder or configuration setting.
+
+============================================================
+21. FINAL ACCEPTANCE CRITERIA
+============================================================
+
+The final result should demonstrate:
+
+1. Customer data is classified.
+2. Customer datasets are tenant-scoped.
+3. Cross-tenant access is blocked.
+4. Customer files are protected in transit.
+5. Customer files are encrypted at rest where supported/configured.
+6. Raw customer data is not exposed through UI/API/logs unnecessarily.
+7. Customer data does not automatically enter PCBI.
+8. Customer data is not reused for another customer.
+9. Module 2 outputs remain customer-scoped.
+10. Module 4 outputs remain customer-scoped.
+11. Exports are authorized and auditable.
+12. Security failures are logged without exposing sensitive data.
+13. All security claims shown in the UI correspond to actual verified
+    implementation.
+14. Existing Modules 1–4 business calculations remain unchanged.
+
+FINAL STATUS MUST BE ONE OF:
+
+SECURITY_HARDENED_VERIFIED
+
+SECURITY_HARDENED_WITH_CONFIGURATION_REQUIRED
+
+SECURITY_HARDENING_BLOCKED
+
+Do NOT claim full security certification unless the implementation and
+tests actually prove it.
+
+============================================================
+22. GIT / CHANGE CONTROL
+============================================================
+
+Before completing:
+
+- show exact files changed;
+- show exact files created;
+- show all tests executed;
+- show test pass/fail counts;
+- run typecheck;
+- run lint;
+- run build;
+- run relevant regression suites;
+- confirm Modules 1–4 business calculations are unchanged;
+- confirm no PCBI data was contaminated by customer data;
+- confirm no customer data was fabricated or copied into test fixtures.
+
+Do not push to Git automatically.
+
+Return a final implementation and validation report first.
+
+## Prompt 253
+FINAL CROSS-MODULE CUSTOMER DATA SECURITY, CONFIDENTIALITY & NON-REUSE HARDENING
+
+Context:
+The current Module 1–4 validation and enterprise UI hardening work is already in progress/completed. DO NOT redesign or alter any business calculation logic, formulas, classification logic, PCBI methodology, sourcing logic, savings logic, or Module 4 execution logic.
+
+This task is ONLY to add a strong, truthful, enterprise-grade CUSTOMER DATA SECURITY, CONFIDENTIALITY & NON-REUSE layer across the application.
+
+============================================================
+1. CORE CUSTOMER PROMISE
+============================================================
+
+The platform must clearly communicate to customers:
+
+"Your procurement data is used only to perform the analysis requested by your organization. Customer data is not used to train AI models, is not reused for another customer, and is not used to reproduce another customer's analysis."
+
+Use precise language. DO NOT make unsupported claims such as:
+- "100% impossible to breach"
+- "military-grade encryption"
+- "data can never be accessed by anyone"
+- "automatically deleted forever"
+unless the actual implementation and infrastructure prove those claims.
+
+The UI must distinguish between:
+A. Customer transaction data
+B. Derived analytical results
+C. PCBI reference/benchmark data
+D. System configuration and metadata
+
+Customer transaction data must NEVER be represented as PCBI data or reusable benchmark data.
+
+============================================================
+2. DATA LIFECYCLE
+============================================================
+
+Implement and document the following conceptual lifecycle:
+
+CUSTOMER FILE UPLOAD
+        ↓
+SECURE INGESTION
+        ↓
+ENCRYPTED / PROTECTED STORAGE
+        ↓
+CONTROLLED PROCESSING
+        ↓
+MODULE 1 ANALYSIS
+        ↓
+MODULE 2 ANALYSIS
+        ↓
+MODULE 3 MATCHING / PCBI COMPARISON
+        ↓
+MODULE 4 OUTPUT
+        ↓
+CUSTOMER-SPECIFIC RESULTS
+
+Customer source records must retain tenant/customer ownership throughout the entire lifecycle.
+
+Every record or analytical object derived from customer data must carry appropriate tenant/customer isolation.
+
+============================================================
+3. TENANT ISOLATION — CRITICAL
+============================================================
+
+Perform a complete audit to ensure:
+
+customer A data cannot be:
+- queried by customer B
+- displayed to customer B
+- included in customer B calculations
+- included in customer B exports
+- included in customer B dashboards
+- included in PCBI Master
+- included in another customer's benchmark
+- used as historical supplier pricing for another customer
+- used as a training dataset
+- used to generate another customer's opportunity calculation
+
+Add automated negative tests attempting cross-tenant access.
+
+Expected result:
+
+CROSS_TENANT_ACCESS = BLOCKED
+
+============================================================
+4. AI / MODEL NON-TRAINING GUARANTEE
+============================================================
+
+Wherever AI/LLM functionality exists, audit the complete implementation.
+
+Customer procurement data must NOT automatically become:
+- model training data
+- global prompt history
+- reusable knowledge-base content
+- another customer's context
+- global vector-store content
+- global embeddings
+- shared retrieval data
+
+If embeddings/vector storage exists, enforce tenant/customer namespace isolation.
+
+If external AI APIs are used, document the configured data-handling mode and ensure customer data is not intentionally persisted for model training through application configuration.
+
+Do not claim a provider-level guarantee unless supported by the actual provider configuration/contract.
+
+============================================================
+5. CUSTOMER DATA vs PCBI DATA
+============================================================
+
+Enforce a permanent architectural boundary:
+
+CUSTOMER DATA
+= private customer-owned analytical input
+
+PCBI MASTER
+= Procucev system reference definition/catalog
+
+PCBI DATA LIBRARY
+= approved external/public/commercial benchmark source evidence
+
+Customer transaction prices must NEVER automatically become PCBI source data.
+
+A customer's historical purchase price may be used for that customer's Module 2 historical analysis, but it must not become a PCBI benchmark series or another customer's reference price unless an explicit, separately governed business process exists.
+
+============================================================
+6. ENCRYPTION / PROTECTION
+============================================================
+
+Audit the actual implementation for:
+
+- encryption in transit
+- encryption at rest where supported
+- secure file storage
+- secure database access
+- credential/secret handling
+- signed/authenticated API requests
+- session/authentication controls
+- authorization checks
+- secure download/export controls
+
+DO NOT simply add UI language claiming encryption.
+
+Only display:
+
+"Protected in transit and at rest"
+
+if the actual deployment architecture supports it.
+
+Otherwise display the precise protection that is actually implemented.
+
+Create a SECURITY_IMPLEMENTATION_STATUS report showing:
+
+CONTROL
+CURRENT IMPLEMENTATION
+VERIFIED / NOT VERIFIED
+REMAINING ACTION
+OWNER
+
+============================================================
+7. NO REPRODUCTION / NO REUSE
+============================================================
+
+Add customer-facing messaging at appropriate points:
+
+UPLOAD SCREEN:
+
+"Your procurement data is processed within your organization's secure analysis environment. It is not used to train AI models or reused for analysis of other customers."
+
+ANALYSIS SCREEN:
+
+"Your results are generated from your organization's data and approved reference data. Customer transaction data remains isolated to your organization."
+
+EXPORT / RESULTS SCREEN:
+
+"These insights are customer-specific and are not shared with or reused for other customers."
+
+Avoid excessive repetition. Use an information icon / expandable "How your data is protected" section for detailed explanation.
+
+============================================================
+8. DATA PRIVACY INFORMATION PANEL
+============================================================
+
+Create a reusable enterprise component:
+
+CustomerDataProtectionNotice
+
+It should provide:
+
+1. Data Isolation
+2. Encryption / Secure Transfer
+3. No AI Training
+4. No Cross-Customer Reuse
+5. Customer-Specific Analysis
+6. Controlled Access
+7. Auditability
+8. Data Retention / Deletion policy
+
+The component must be reusable across:
+
+Module 1
+Module 2
+Module 3
+Module 4
+Admin upload workflows
+Customer exports
+
+Do not clutter the main UI.
+
+Use an expandable panel/modal.
+
+============================================================
+9. DATA RETENTION & DELETION
+============================================================
+
+Do NOT invent a retention period.
+
+If the application already has a retention/deletion policy, display the actual policy.
+
+If no policy exists, display:
+
+"Data retention and deletion are governed by the organization's configured retention policy."
+
+Add an administrative capability/design placeholder for:
+
+DATA RETENTION POLICY
+DATA DELETION REQUEST
+DATA EXPORT REQUEST
+AUDIT LOG
+
+Do not implement destructive deletion without the appropriate authorization and audit controls.
+
+============================================================
+10. LOGGING & AUDIT
+============================================================
+
+Ensure audit logs record security-sensitive events such as:
+
+- customer data upload
+- processing initiation
+- analysis completion
+- export generation
+- administrative access
+- approval actions
+- deletion actions
+- configuration changes
+
+Logs must NOT expose complete sensitive customer transaction records.
+
+Use identifiers/hashes where appropriate.
+
+============================================================
+11. EXPORT SECURITY
+============================================================
+
+Audit every export generated by Modules 1–4.
+
+Ensure:
+
+- export belongs to the correct customer
+- export cannot accidentally contain another customer's records
+- customer data is not mixed with another tenant
+- PCBI reference data is correctly distinguished
+- exported files contain appropriate confidentiality classification
+
+Add a configurable footer/header:
+
+"CONFIDENTIAL — CUSTOMER-SPECIFIC PROCUREMENT ANALYSIS"
+
+Do not expose internal secrets, credentials, database identifiers, or security metadata.
+
+============================================================
+12. UI / UX
+============================================================
+
+Apply the Procucev enterprise design language already established.
+
+Do not create large warning banners everywhere.
+
+Use:
+
+🔒 Secure Data Processing
+"Your procurement data remains isolated to your organization and is not used to train AI models or analyze other customers."
+
+with an expandable:
+
+"How is my data protected?"
+
+Detailed content appears only when expanded.
+
+Place it strategically:
+
+Module 1 upload
+Customer dashboard
+Module 1 analysis
+Module 2 analysis
+Module 3 customer-facing benchmark comparison
+Module 4 results/export
+
+============================================================
+13. SECURITY TEST SUITE
+============================================================
+
+Create a dedicated security validation suite.
+
+Minimum tests:
+
+SEC-01 Tenant A cannot access Tenant B data
+SEC-02 Tenant B cannot access Tenant A data
+SEC-03 Customer data cannot enter PCBI Master
+SEC-04 Customer data cannot enter PCBI Data Library automatically
+SEC-05 Customer transaction prices cannot become global benchmark data
+SEC-06 Customer data cannot enter another customer's analysis
+SEC-07 Customer data cannot enter global AI context
+SEC-08 Customer data cannot enter global vector namespace
+SEC-09 Export cannot cross tenant boundaries
+SEC-10 Dashboard cannot cross tenant boundaries
+SEC-11 Logs do not expose sensitive transaction payloads
+SEC-12 Unauthorized user cannot download customer files
+SEC-13 Unauthorized admin action is blocked
+SEC-14 Audit trail records security-sensitive actions
+SEC-15 PCBI reference data remains distinguishable from customer data
+SEC-16 Delete/retention controls respect authorization
+SEC-17 Customer-specific derived analytics retain tenant ownership
+SEC-18 No hidden global cache contains customer-specific analytical data
+
+All tests must PASS.
+
+============================================================
+14. SECURITY DATA FLOW AUDIT
+============================================================
+
+Generate:
+
+CUSTOMER_DATA_SECURITY_ARCHITECTURE.md
+
+Include:
+
+1. Upload
+2. Storage
+3. Processing
+4. Module 1
+5. Module 2
+6. Module 3
+7. Module 4
+8. AI/LLM interaction
+9. Database
+10. File storage
+11. Cache
+12. Logs
+13. Exports
+14. Retention
+15. Deletion
+16. Tenant isolation
+
+For every stage identify:
+
+DATA ENTERS
+DATA TRANSFORMATION
+DATA STORED?
+DATA SHARED?
+DATA EXPORTED?
+TENANT BOUNDARY
+SECURITY CONTROL
+
+============================================================
+15. DO NOT CHANGE BUSINESS LOGIC
+============================================================
+
+ABSOLUTE LOCK:
+
+DO NOT modify:
+
+Module 1 calculation logic
+Module 2 classification logic
+Module 2 sourcing calculations
+Module 2 savings/opportunity formulas
+Module 3 PCBI formulas
+Module 3 PCBI Master
+Module 3 PCBI Data Library business logic
+Module 4 savings realization logic
+Customer transaction values
+Supplier values
+Historical prices
+Benchmark values
+
+This is a security/privacy hardening task only.
+
+============================================================
+16. QUALITY GATES
+============================================================
+
+Run:
+
+typecheck
+lint
+build
+quality:fast
+all security tests
+all existing Module 1 tests
+all existing Module 2 tests
+all existing Module 3 tests
+all existing Module 4 tests
+
+Compare pre-change and post-change business outputs.
+
+Expected:
+
+Business calculation variance = ₹0.00
+Unexpected transaction-count variance = 0
+Unexpected customer-spend variance = ₹0.00
+Cross-tenant leakage = 0
+Security test failures = 0
+
+============================================================
+17. FINAL SECURITY CERTIFICATION
+============================================================
+
+Generate:
+
+CUSTOMER_DATA_SECURITY_VALIDATION_REPORT.md
+
+Include:
+
+FINAL_SECURITY_STATUS
+
+TENANT_ISOLATION_STATUS
+
+ENCRYPTION_STATUS
+
+AI_TRAINING_DATA_STATUS
+
+CROSS_CUSTOMER_REUSE_STATUS
+
+PCBI_DATA_ISOLATION_STATUS
+
+EXPORT_ISOLATION_STATUS
+
+AUDIT_LOG_STATUS
+
+RETENTION_STATUS
+
+DELETION_STATUS
+
+SECURITY_TESTS_PASSED
+
+SECURITY_TESTS_FAILED
+
+OPEN_SECURITY_GAPS
+
+IMPORTANT:
+Do not declare a control "PASS" merely because the UI says it exists.
+
+Every PASS must be backed by implementation evidence and automated testing where technically possible.
+
+If any security capability is not actually implemented, clearly mark it:
+
+NOT_IMPLEMENTED
+or
+NOT_VERIFIED
+
+Do not fabricate security guarantees.
+
+============================================================
+FINAL ACCEPTANCE CONDITION
+============================================================
+
+The software must provide customers with a credible enterprise-level explanation of how their procurement data is isolated, protected, processed and prevented from being reused across customers.
+
+The final customer experience should communicate confidence without making unsupported absolute promises.
+
+FINAL STATUS should be one of:
+
+SECURITY_HARDENED_AND_VERIFIED
+
+or
+
+SECURITY_HARDENING_COMPLETE_WITH_OPEN_GAPS
+
+depending strictly on actual implementation evidence.
+
+Append this request to prompts.md chronologically.
+Do not modify previously frozen business logic.

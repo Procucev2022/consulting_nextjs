@@ -1,9 +1,15 @@
 {
-  "timestamp": "2026-09-30T13:42:17.235Z",
-  "finalStatus": "MODULE_1_E2E_VALIDATED",
+  "timestamp": "2026-09-30T18:18:48.218Z",
+  "finalStatus": "PRODUCTION_READY_CERTIFIED",
   "totalScenarios": 34,
   "passedScenarios": 34,
   "failedScenarios": 0,
+  "summary": {
+    "adversarialTotal": 34,
+    "adversarialPassed": 34,
+    "invariantsTotal": 12,
+    "invariantsSatisfied": 12
+  },
   "adversarialScenarios": [
     {
       "scenarioCode": "A",

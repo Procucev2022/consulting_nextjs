@@ -239,148 +239,32 @@ export interface ItemNormalizationRecord {
   totalSpendInr: number;
 }
 
-export interface DimensionSpendSummary {
-  dimensionKey: string;
-  dimensionName: string;
-  recordCount: number;
-  totalSpendInr: number;
-  totalSpendCr: number;
-  sharePct: number;
-}
-
-export interface CrossDimensionReconciliationResult {
-  totalTransactionSpendInr: number;
-  totalSupplierSpendInr: number;
-  totalItemSpendInr: number;
-  totalCategorySpendInr: number;
-  totalMaterialGroupSpendInr: number;
-  totalPlantSpendInr: number;
-  totalMonthlySpendInr: number;
-  maxAbsoluteVarianceInr: number;
-  reconciliationStatus: 'PASS' | 'FAIL';
-}
-
-export interface ParetoAuditResult {
-  totalSpendInr: number;
-  totalSpendCr: number;
-  theoretical80ThresholdInr: number;
-  theoretical80ThresholdCr: number;
-  cutoffEntityIndex: number;
-  cutoffEntityCount: number;
-  cutoffEntityName: string;
-  cutoffCumulativeSpendInr: number;
-  cutoffCumulativeSpendCr: number;
-  cutoffCumulativeSharePct: number;
-  isThresholdCrossingDeterministic: boolean;
-  topEntities: Array<{
-    rank: number;
-    entityName: string;
-    spendInr: number;
-    spendCr: number;
-    sharePct: number;
-    cumulativeSpendInr: number;
-    cumulativeSpendCr: number;
-    cumulativeSharePct: number;
-  }>;
-}
-
-export interface QualityIndexDecomposition {
-  overallQualityIndexPct: number;
-  dataQualityPct: number;
-  dataCompletenessPct: number;
-  dataReconciliationPct: number;
-  procurementPerformanceDisclaimer: string;
-  components: {
-    formatValidityScore: number;
-    schemaConformityScore: number;
-    priceQuantityCompletenessScore: number;
-    supplierStandardizationScore: number;
-    reconciliationIntegrityScore: number;
-  };
-}
-
-export interface ExceptionRegisterEntry {
-  recordId: string;
-  sourceRow: number;
-  field: string;
-  observedValue: string | number;
-  expectedRule: string;
-  status: TransactionInclusionStatus;
-  reason: string;
-  impactOnSpendInr: number;
-  resolution: string;
-  timestamp: string;
-}
-
-export interface AdversarialScenarioResult {
-  scenarioCode: string;
-  scenarioName: string;
-  testInputDescription: string;
-  expectedBehavior: string;
-  actualOutcome: string;
-  status: 'PASS' | 'FAIL';
-  documentedReason: string;
-}
-
-export interface MathematicalInvariantResult {
-  invariantNumber: number;
-  invariantName: string;
-  formalDefinition: string;
-  evaluatedResult: boolean;
-  varianceObserved: number;
-  status: 'PASS' | 'FAIL';
-}
-
-export type Module1FinalStatus = 'MODULE_1_E2E_VALIDATED' | 'MODULE_1_E2E_VALIDATION_BLOCKED';
-
-export interface Module1CertificationReport {
-  generatedAt: string;
-  finalStatus: Module1FinalStatus;
-  datasetScope: {
-    sourceFileName: string;
-    totalRecords: number;
-    evaluatedPeriod: string;
-    actualDateCoverage: string;
-    scopeMismatchDetected: boolean;
-  };
-  financialTotals: {
-    rawSpendInr: number;
-    rawSpendCr: number;
-    validatedSpendInr: number;
-    validatedSpendCr: number;
-    excludedSpendInr: number;
-    excludedSpendCr: number;
-    anomalySpendInr: number;
-    anomalySpendCr: number;
-    spendReconciliationBalanceInr: number;
-  };
-  currencyDistribution: Record<string, number>;
-  fxForensics: {
-    methodology: string;
-    ratesApplied: Record<string, number>;
-    status: string;
-  };
-  reconciliations: {
-    supplier: 'PASS' | 'FAIL';
-    item: 'PASS' | 'FAIL';
-    materialGroup: 'PASS' | 'FAIL';
-    plant: 'PASS' | 'FAIL';
-    monthly: 'PASS' | 'FAIL';
-    crossDimension: 'PASS' | 'FAIL';
-    pareto: 'PASS' | 'FAIL';
-  };
-  sampleTransactions: LineSpendCalculationAudit[];
-  adversarialSuite: {
-    totalScenarios: number;
-    passedScenarios: number;
-    failedScenarios: number;
-  };
-  invariantsSuite: {
-    totalInvariants: number;
-    satisfiedInvariants: number;
-    violatedInvariants: number;
-  };
-  exceptionsCount: number;
-  qualityIndex: QualityIndexDecomposition;
-  remainingRisks: string[];
-}
+export type {
+  DimensionSpendSummary,
+  CrossDimensionReconciliationResult,
+  ParetoAuditResult,
+  QualityIndexDecomposition,
+  ExceptionRegisterEntry,
+  AdversarialScenarioResult,
+  MathematicalInvariantResult,
+  Module1FinalStatus,
+  Module1CertificationReport,
+  GoldenDatasetHash,
+  AggregationReconciliationMatrixEntry,
+  MetamorphicTestResult,
+  GoldenTransactionProofEntry,
+  ReconciliationWaterfallStep,
+  UiBackendReconciliationResult,
+  PartitionInvarianceResult,
+  RowOrderInvarianceResult,
+  DatasetManifest,
+  CalculationProofEntry,
+  UomAuditSummary,
+  Module1HandoffRecord,
+  Module1CertifiedHandoff,
+  DataQualityLedgerRow,
+  TransactionProvenanceEntry,
+  HandoffValidationResult,
+  NegativeTestScenarioResult,
+  GoldenDatasetTestResult
+} from './module1ForensicAudit';

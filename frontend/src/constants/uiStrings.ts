@@ -2718,6 +2718,67 @@ export const UI_STRINGS = {
     btnHandoffToModule4: 'Package for Module 4 Sourcing',
     btnFilterHighMateriality: 'High Materiality',
     btnFilterQuantifiable: 'Quantifiable Only'
+  },
+
+  dataProtection: {
+    bannerTitle: '🔒 Secure Data Processing',
+    bannerNotice:
+      'Your procurement data remains isolated to your organization and is not used to train AI models or analyze other customers.',
+    expandLabel: 'How is my data protected?',
+    collapseLabel: 'Hide security details',
+    corePromise:
+      'Your procurement data is used only to perform the analysis requested by your organization. Customer data is not used to train AI models, is not reused for another customer, and is not used to reproduce another customer\'s analysis.',
+    uploadNotice:
+      'Your procurement data is processed within your organization\'s secure analysis environment. It is not used to train AI models or reused for analysis of other customers.',
+    analysisNotice:
+      'Your results are generated from your organization\'s data and approved reference data. Customer transaction data remains isolated to your organization.',
+    exportNotice:
+      'These insights are customer-specific and are not shared with or reused for other customers.',
+    exportConfidentialHeader: 'CONFIDENTIAL — CUSTOMER-SPECIFIC PROCUREMENT ANALYSIS',
+    retentionNotice:
+      'Data retention and deletion are governed by the organization\'s configured retention policy.',
+    pillars: [
+      {
+        id: 'isolation',
+        title: '1. Data Isolation',
+        desc: 'Customer data is logically isolated by server-side tenant boundary controls.'
+      },
+      {
+        id: 'encryption',
+        title: '2. Encryption & Secure Transfer',
+        desc: 'Protected in transit via TLS 1.3 and at rest via AES-256-GCM.'
+      },
+      {
+        id: 'noAiTraining',
+        title: '3. No AI Training',
+        desc: 'Zero customer transaction data is used to train, fine-tune, or persist foundation AI models.'
+      },
+      {
+        id: 'noReuse',
+        title: '4. No Cross-Customer Reuse',
+        desc: 'Customer transactions are never used to generate benchmarks or reference prices for others.'
+      },
+      {
+        id: 'customerSpecific',
+        title: '5. Customer-Specific Analysis',
+        desc: 'All analytical pipelines, sourcing levers, and opportunity calculations evaluate only your data.'
+      },
+      {
+        id: 'controlledAccess',
+        title: '6. Controlled Access',
+        desc: 'Access is restricted via authenticated, role-based session authorizations.'
+      },
+      {
+        id: 'auditability',
+        title: '7. Auditability',
+        desc: 'Immutable security audit logs record all data ingestion, processing, and export events.'
+      },
+      {
+        id: 'retentionPolicy',
+        title: '8. Retention & Deletion Policy',
+        desc: 'Data retention and deletion are governed by the organization\'s configured retention policy.'
+      }
+    ]
   }
 } as const;
 

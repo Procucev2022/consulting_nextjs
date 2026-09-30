@@ -497,4 +497,10 @@ export interface PCBICommodityDataLabViewProps {
   onNavigateToMaster?: () => void;
 }
 
+export interface CustomerDataProtectionNoticeProps {
+  moduleContext?: 'module1' | 'module2' | 'module3' | 'module4' | 'admin' | 'export';
+  defaultExpanded?: boolean;
+  className?: string;
+}
+
 

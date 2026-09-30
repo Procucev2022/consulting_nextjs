@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-09-30T18:18:54.467Z",
+  "overallScorePct": 92.9,
+  "grade": "CERTIFIED",
+  "dimensions": {
+    "completeness": 99.8,
+    "uniqueness": 100,
+    "validity": 99.9,
+    "consistency": 100,
+    "traceability": 100,
+    "currencyIntegrity": 100,
+    "uomIntegrity": 100,
+    "dateIntegrity": 100,
+    "financialReconciliation": 100
+  },
+  "evidence": {
+    "totalRecordsAudited": 31671,
+    "zeroSpendRecordsQuarantined": 1071,
+    "exactDuplicatesDetected": 0,
+    "legitimateRepeatPurchases": 489,
+    "unexplainedVarianceInr": 0,
+    "currencyConversionDrift": 0,
+    "uomIncompatibleConversions": 0,
+    "invalidDatesEncountered": 0,
+    "module2HandoffTraceabilityPct": 100
+  }
+}
