@@ -20,6 +20,7 @@ import pcbiRoutes from './pcbi.routes';
 import upgradeRoutes from './upgrade.routes';
 import pcbiAdminRoutes from './pcbiAdmin.routes';
 import module2SourcingRoutes from './module2StrategicSourcing.routes';
+import executiveBriefExportRoutes from './executiveBriefExport.routes';
 
 const router = Router();
 
@@ -40,6 +41,7 @@ router.use('/vendors', vendorsRoutes);
 router.use('/savings', savingsRoutes);
 router.use('/conversion', conversionRoutes);
 router.use('/report', reportRoutes);
+router.use('/reports/executive-brief', executiveBriefExportRoutes);
 router.use('/currency', currencyRoutes);
 router.use('/taxonomy', taxonomyRoutes);
 router.use('/logs', logsRoutes);

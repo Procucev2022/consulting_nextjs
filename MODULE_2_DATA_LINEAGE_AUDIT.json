@@ -1,6 +1,6 @@
 {
-  "auditId": "M2-LINEAGE-1790772814092",
-  "auditTimestamp": "2026-09-30T12:53:34.092Z",
+  "auditId": "M2-LINEAGE-1790837730149",
+  "auditTimestamp": "2026-10-01T06:55:30.149Z",
   "engineVersion": "MODULE_2_FINAL_E2E_BUSINESS_VALIDATION_V1.0",
   "datasetStats": {
     "totalTransactions": 33,
@@ -28,7 +28,7 @@
         "TX-SS-008"
       ],
       "confidence": "MEDIUM",
-      "calculationId": "CALC-M2-Structural-1790772814090",
+      "calculationId": "CALC-M2-Structural-1790837730147",
       "pcbiContamination": "NONE",
       "realizedSavingsContamination": "NONE"
     },
@@ -49,7 +49,7 @@
         "TX-IF-006"
       ],
       "confidence": "MEDIUM",
-      "calculationId": "CALC-M2-Industrial-1790772814090",
+      "calculationId": "CALC-M2-Industrial-1790837730147",
       "pcbiContamination": "NONE",
       "realizedSavingsContamination": "NONE"
     },
@@ -67,7 +67,7 @@
         "TX-SE-003"
       ],
       "confidence": "MEDIUM",
-      "calculationId": "CALC-M2-SafetyEqui-1790772814090",
+      "calculationId": "CALC-M2-SafetyEqui-1790837730147",
       "pcbiContamination": "NONE",
       "realizedSavingsContamination": "NONE"
     },
@@ -87,7 +87,7 @@
         "TX-EC-005"
       ],
       "confidence": "MEDIUM",
-      "calculationId": "CALC-M2-Electrical-1790772814091",
+      "calculationId": "CALC-M2-Electrical-1790837730148",
       "pcbiContamination": "NONE",
       "realizedSavingsContamination": "NONE"
     },
@@ -108,7 +108,7 @@
         "TX-LB-006"
       ],
       "confidence": "MEDIUM",
-      "calculationId": "CALC-M2-Lubricants-1790772814091",
+      "calculationId": "CALC-M2-Lubricants-1790837730148",
       "pcbiContamination": "NONE",
       "realizedSavingsContamination": "NONE"
     },
@@ -126,7 +126,7 @@
         "TX-UP-003"
       ],
       "confidence": "MEDIUM",
-      "calculationId": "CALC-M2-PackagingM-1790772814091",
+      "calculationId": "CALC-M2-PackagingM-1790837730148",
       "pcbiContamination": "NONE",
       "realizedSavingsContamination": "NONE"
     }

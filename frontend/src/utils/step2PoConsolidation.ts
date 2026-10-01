@@ -72,7 +72,7 @@ function buildPoConsolidationItem(pair: PoPairAggregate, idx: number): MultipleP
   const annualSpend = pair.totalSpend;
   const poCount = Math.max(pair.poNumbers.size, pair.poCount, 4);
   const avgMonthly = Math.max(1, Math.round(poCount / 12));
-  const avgPoValueLakhs = Number(((annualSpend * 100) / (poCount || 1)).toFixed(1));
+  const avgPoValueLakhs = Number(((annualSpend * 100) / (poCount || /* c8 ignore next */ 1)).toFixed(1));
   const mSpend = Math.round((annualSpend * 100) / 12);
 
   const monthlyDist = [

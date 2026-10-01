@@ -204,6 +204,23 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(lab.workspaceTitle('Ferro Moly', 'PCBI-001')).toBe('Ferro Moly (PCBI-001)');
     expect(lab.approvalSuccessNotice('V2.0')).toBe('Approved data entered into dynamic PCBI catalog version V2.0.');
   });
+
+  it('should call lockedStepRequired parameterized formatter (uiStrings line 118)', () => {
+    const msg = UI_STRINGS.pipeline.lockedStepRequired(1, 2);
+    expect(msg).toContain('Step 1');
+    expect(msg).toContain('Step 2');
+    expect(msg).toMatch(/Please complete Step 1 first to unlock Step 2\./);
+  });
+
+  it('should call netSavingsSummary parameterized formatter (uiStrings line 1272)', () => {
+    // Direct call: UI_STRINGS.module4.overlapDeduplication.netSavingsSummary
+    const { module4 } = UI_STRINGS;
+    const result = module4.overlapDeduplication.netSavingsSummary(10.5, 12.3, 1.8);
+    expect(result).toContain('10.50');
+    expect(result).toContain('12.30');
+    expect(result).toContain('1.80');
+    expect(result).toMatch(/Net Non-Overlapping/);
+  });
 });
 
 

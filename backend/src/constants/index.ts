@@ -28,3 +28,5 @@ export * from './module2StrategicSourcing';
 export * from './module2OpportunityIntelligence';
 export * from './module2EvidenceChain';
 export * from './module1Forensic';
+export * from './executiveBriefConstants';
+export * from './executiveBriefExportConstants';

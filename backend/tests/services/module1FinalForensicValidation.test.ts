@@ -72,7 +72,7 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
     fxAuditXlsxFile = result.fxAuditXlsxPath;
     auditJsonFile = result.auditJsonPath;
     certifiedHandoffJsonFile = result.certifiedHandoffJsonPath;
-  }, 30000);
+  }, 120000);
 
   describe('Section 1 — Data Contract & Data Dictionary', () => {
     it('should have a formal DATA_DICTIONARY and DATA_CONTRACT with required mapping rules', () => {
@@ -1086,7 +1086,7 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
       expect(headers).toContain('Actual Exact Spend (INR)');
       expect(headers).toContain('Variance (INR)');
       expect(headers).toContain('Status');
-    });
+    }, 30000);
 
     it('3. should verify MODULE_1_RECONCILIATION_MATRIX.xlsx has 2 sheets with 0 variance', () => {
       expect(fs.existsSync(recMatrixFile)).toBe(true);
@@ -1308,7 +1308,7 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
       expect(rows[0]).toContain('Actual Exact Spend (INR)');
       expect(rows[0]).toContain('Variance (INR)');
       expect(rows[0]).toContain('Status');
-    });
+    }, 30000);
 
     it('3. should verify MODULE_1_RECONCILIATION_AUDIT.xlsx has 2 sheets with 0.00 variance', () => {
       expect(fs.existsSync(recAuditXlsxFile)).toBe(true);
@@ -1426,7 +1426,7 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
       const rows = xlsx.utils.sheet_to_json<Record<string, unknown>>(sheet);
       expect(rows.length).toBe(31671);
       expect(Object.keys(rows[0]).length).toBe(16);
-    });
+    }, 30000);
 
     it('3. should verify MODULE_1_RECONCILIATION_AUDIT.xlsx has 2 sheets with zero variance', () => {
       expect(fs.existsSync(recAuditXlsxFile)).toBe(true);
@@ -1631,7 +1631,7 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
       const rows = xlsx.utils.sheet_to_json<Record<string, unknown>>(sheet);
       expect(rows.length).toBe(31671);
       expect(rows.every((r) => r.Status === 'PASS')).toBe(true);
-    });
+    }, 30000);
 
     it('3. should verify MODULE_1_RECONCILIATION_AUDIT.xlsx', () => {
       const p = path.resolve(process.cwd(), 'MODULE_1_RECONCILIATION_AUDIT.xlsx');

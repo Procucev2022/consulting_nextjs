@@ -43,7 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   onLogout,
   onOpenClientSetup,
-  onContactSupport
+  onContactSupport,
+  isExecutiveBriefReady = true
 }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -92,6 +93,13 @@ export const Header: React.FC<HeaderProps> = ({
       onContactSupport();
     } else if (typeof window !== 'undefined') {
       window.open('mailto:support@procucev.com?subject=aiCEV%20Enterprise%20Support%20Request', '_blank');
+    }
+  };
+
+  const handleExecutiveBriefClick = (): void => {
+    onOpenReport?.();
+    if (typeof window !== 'undefined' && window.location.pathname !== '/executive-brief') {
+      window.location.href = '/executive-brief';
     }
   };
 
@@ -192,11 +200,23 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Executive Report Button */}
           <button
-            onClick={onOpenReport}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-700 hover:bg-slate-50 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-slate-300 dark:border-slate-600/80 rounded-xl shadow-xs transition-all hover:border-cyan-500 active:scale-95 shrink-0"
+            type="button"
+            data-testid="header-executive-brief-btn"
+            onClick={handleExecutiveBriefClick}
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-700 hover:bg-slate-50 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-slate-300 dark:border-slate-600/80 rounded-xl shadow-xs transition-all hover:border-cyan-500 active:scale-95 shrink-0"
+            title={isExecutiveBriefReady ? 'Executive Brief Ready' : 'Executive Brief not generated yet'}
           >
             <FileText className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
             <span className="hidden sm:inline">{UI_STRINGS.header.executiveBrief}</span>
+            <span
+              className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                isExecutiveBriefReady
+                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/40'
+                  : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800/40'
+              }`}
+            >
+              {isExecutiveBriefReady ? 'Ready' : 'Pending'}
+            </span>
           </button>
 
           {/* Admin Portal Direct Access Button */}

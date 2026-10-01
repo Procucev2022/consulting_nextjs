@@ -19,6 +19,7 @@ import {
 } from '../presentation';
 import { authApiClient } from '../../utils/authApi';
 import { Check, AlertCircle } from 'lucide-react';
+import { ExecutiveBriefExportPanel } from '../ExecutiveBriefExportPanel';
 
 export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   tenant,
@@ -176,8 +177,12 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           </div>
         )}
 
-        {/* Presentation Slide Canvas */}
+        {/* Presentation Slide Canvas & Dual-Format Export Panel */}
         <div className="p-4 sm:p-8 overflow-y-auto bg-slate-100/70 dark:bg-[#070b14] flex-1">
+          <div className="max-w-5xl mx-auto no-print">
+            <ExecutiveBriefExportPanel tenantName={tenant.enterprise_name} />
+          </div>
+
           {isAllSlidesView ? (
             /* All Slides (Handout Deck) View */
             <div className="space-y-8 max-w-5xl mx-auto">

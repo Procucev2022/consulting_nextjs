@@ -42,6 +42,7 @@ export interface HeaderProps {
   onLogout?: () => void;
   onOpenClientSetup?: () => void;
   onContactSupport?: () => void;
+  isExecutiveBriefReady?: boolean;
 }
 
 export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
@@ -502,5 +503,42 @@ export interface CustomerDataProtectionNoticeProps {
   defaultExpanded?: boolean;
   className?: string;
 }
+
+export interface CustomerDataProtectedBadgeProps {
+  className?: string;
+  showTooltip?: boolean;
+}
+
+export interface UploadPrivacyConfirmationBoxProps {
+  isChecked: boolean;
+  onToggle: (checked: boolean) => void;
+  className?: string;
+}
+
+export interface ProgressiveAnalysisAccordionProps {
+  title?: string;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+  summaryCount?: number;
+  className?: string;
+}
+
+export interface AdminDataLifecycleRecordProps {
+  datasetId: string;
+  tenantId: string;
+  datasetName: string;
+  datasetCreated: string;
+  datasetStatus: 'ACTIVE' | 'ARCHIVED' | 'PENDING_VALIDATION';
+  lastProcessed: string;
+  retentionStatus: string;
+  deletionEligibility: string;
+  deletionAuditRecord?: string;
+}
+
+export interface AdminDataLifecyclePanelProps {
+  records?: AdminDataLifecycleRecordProps[];
+  className?: string;
+}
+
 
 

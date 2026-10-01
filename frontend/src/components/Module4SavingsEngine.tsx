@@ -468,20 +468,33 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
       </div>
       )}
 
-      {/* CTA to Module 5 */}
+      {/* CTA to Executive Brief & Conversion Matrix */}
       <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
         <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
           <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>{UI_STRINGS.module4.ctaSubtitle}</span>
         </div>
-        <button
-          type="button"
-          onClick={onProceedToConversion}
-          className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 rounded-xl shadow-md shadow-purple-600/20 transition-all transform active:scale-95 group cursor-pointer"
-        >
-          <span>{UI_STRINGS.module4.ctaProceedButton}</span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onProceedToConversion}
+            className="flex items-center justify-center space-x-1.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all cursor-pointer"
+          >
+            <span>{UI_STRINGS.module4.ctaProceedButton}</span>
+          </button>
+          <a
+            href="/executive-brief"
+            data-testid="module4-open-brief-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              if (typeof window !== 'undefined') window.location.href = '/executive-brief';
+            }}
+            className="flex items-center justify-center space-x-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
+          >
+            <span>Generate Executive Brief</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </a>
+        </div>
       </div>
     </div>
   );

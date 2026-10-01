@@ -61,10 +61,6 @@ const ReassignModal = dynamic(
   () => import('@/components/modals/ReassignModal').then((mod) => mod.ReassignModal),
   { ssr: false }
 );
-const ExecutiveReportModal = dynamic(
-  () => import('@/components/modals/ExecutiveReportModal').then((mod) => mod.ExecutiveReportModal),
-  { ssr: false }
-);
 const ClientIngestionSetupModal = dynamic(
   () => import('@/components/modals/ClientIngestionSetupModal').then((mod) => mod.ClientIngestionSetupModal),
   { ssr: false }
@@ -258,7 +254,6 @@ export default function Home() {
   const [selectedRecordForMergeItem, setSelectedRecordForMergeItem] = useState<ValidationPreCheckRecord | null>(null);
   const [isDataRefreshed, setIsDataRefreshed] = useState<boolean>(false);
   const [selectedItemForReassign, setSelectedItemForReassign] = useState<LineItemMapping | null>(null);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [analyzingLoaderState, setAnalyzingLoaderState] = useState<{
     isOpen: boolean;
     title?: string;
@@ -1629,7 +1624,12 @@ export default function Home() {
             frontendLogger.warn('Backend sync warning for currency update', { error: e });
           });
         }}
-        onOpenReport={() => setIsReportModalOpen(true)}
+        onOpenReport={() => {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/executive-brief';
+          }
+        }}
+        isExecutiveBriefReady={Boolean(opportunities && opportunities.length > 0) || (tenant.total_spend_evaluated_inr ?? 0) > 0}
         theme={theme}
         onSelectTheme={setTheme}
         onStartAnalysis={() => {
@@ -1766,7 +1766,11 @@ export default function Home() {
             categories={categories}
             opportunities={opportunities}
             cleanRecordsCount={uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || validationRecords.filter((v) => v.issue_flag === 'Passed Clean').length || 0)}
-            onOpenReport={() => setIsReportModalOpen(true)}
+            onOpenReport={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/executive-brief';
+              }
+            }}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
           />
@@ -1820,13 +1824,6 @@ export default function Home() {
         onSave={handleSaveReassign}
       />
 
-      <ExecutiveReportModal
-        tenant={tenant}
-        opportunities={opportunities}
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-      />
-
       <ClientIngestionSetupModal
         isOpen={isClientSetupModalOpen}
         onClose={() => setIsClientSetupModalOpen(false)}
@@ -1874,7 +1871,6 @@ export default function Home() {
         <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-cyan-500/40 shadow-xl text-xs font-semibold text-slate-900 dark:text-white animate-in slide-in-from-bottom duration-200">
           <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping" />
           <span>{toastMessage}</span>
-          <span>just for checking</span>
         </div>
       )}
     </div>

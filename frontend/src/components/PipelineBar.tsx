@@ -169,6 +169,18 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
           </div>
           <div className="flex items-center space-x-2">
             <a
+              href="/executive-brief"
+              data-testid="pipeline-executive-brief-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                if (typeof window !== 'undefined') window.location.href = '/executive-brief';
+              }}
+              className="text-xs px-3 py-1 rounded-lg font-bold transition-all inline-flex items-center gap-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-xs hover:from-cyan-500 hover:to-blue-500 cursor-pointer"
+            >
+              <span>{UI_STRINGS.header.executiveBrief}</span>
+              <span className="text-[10px] font-mono bg-white/20 px-1 py-0.5 rounded">CEO/CFO</span>
+            </a>
+            <a
               href="#module5"
               onClick={(e) => {
                 e.preventDefault();

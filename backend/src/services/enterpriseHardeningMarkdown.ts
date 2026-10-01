@@ -80,7 +80,8 @@ All **40 / 40 Adversarial Scenarios PASSED** (${passedScenarios} passed, 0 faile
 
 | Invariant ID | Formula Identity | Left Value | Right Value | Variance | Status |
 |---|---|---|---|---|---|
-${invariants.map((inv) => `| \`${inv.invariantId}\` | ${inv.invariantDescription} | ₹${inv.leftHandValue.toFixed(2)} | ₹${inv.rightHandValue.toFixed(2)} | ₹${inv.variance.toFixed(2)} | **${inv.status}** |`).join('\n')}
+${invariants.map((inv) => `| \`${inv.invariantId}\` | ${inv.invariantDescription} | ${inv.lhsDisplay || '₹' + inv.leftHandValue.toFixed(2)} | ${inv.rhsDisplay || '₹' + inv.rightHandValue.toFixed(2)} | ₹${inv.variance.toFixed(2)} | **${inv.status}** |`).join('\n')}
+
 
 ---
 

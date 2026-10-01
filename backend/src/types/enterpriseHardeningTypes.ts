@@ -35,6 +35,9 @@ export interface NumericalInvariantCheck {
   variance: number;
   tolerance: number;
   status: 'PASS' | 'FAIL';
+  lhsDisplay?: string;
+  rhsDisplay?: string;
+  displayUnit?: string;
 }
 
 export interface EnterpriseCertificationStatus {

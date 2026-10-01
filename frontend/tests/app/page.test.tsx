@@ -450,13 +450,19 @@ describe('Home Page Component', () => {
       expect(screen.getAllByText(UI_STRINGS.module5.heading)[0]).toBeInTheDocument();
     });
 
-    // Open Executive Report Modal
-    const reportBtn = screen.getByRole('button', { name: UI_STRINGS.module5.generateExecutiveReport });
+    // Executive Brief: canonical route navigation (no modal — navigates to /executive-brief)
+    const hrefSpy = vi.spyOn(window, 'location', 'get').mockReturnValue({
+      ...window.location,
+      href: 'http://localhost:3000',
+      pathname: '/',
+      hash: '',
+      assign: vi.fn(),
+      replace: vi.fn()
+    } as Location);
+    const reportBtn = screen.getByRole('button', { name: UI_STRINGS.module5.generateBrief });
+    expect(reportBtn).toBeInTheDocument();
     fireEvent.click(reportBtn);
-    const deckTitles = await screen.findAllByText(UI_STRINGS.presentation.cover.deckTitle, {}, { timeout: 8000 });
-    expect(deckTitles[0]).toBeInTheDocument();
-    const closeReportBtn = screen.getByRole('button', { name: UI_STRINGS.presentation.closeModal });
-    fireEvent.click(closeReportBtn);
+    hrefSpy.mockRestore();
   }, 20000);
 
   it('handles header tenant, currency, and theme switching, including API errors', async () => {
@@ -491,13 +497,19 @@ describe('Home Page Component', () => {
     const inrBtn = screen.getByRole('button', { name: UI_STRINGS.header.currencies.inr });
     fireEvent.click(inrBtn);
 
-    // Open Executive Report from Header button
-    const headerReportBtn = screen.getByRole('button', { name: UI_STRINGS.header.reportButton });
+    // Executive Brief: canonical route navigation from header (no modal — navigates to /executive-brief)
+    const headerReportBtn = screen.getByTestId('header-executive-brief-btn');
+    expect(headerReportBtn).toBeInTheDocument();
+    const hrefSpy2 = vi.spyOn(window, 'location', 'get').mockReturnValue({
+      ...window.location,
+      href: 'http://localhost:3000',
+      pathname: '/',
+      hash: '',
+      assign: vi.fn(),
+      replace: vi.fn()
+    } as Location);
     fireEvent.click(headerReportBtn);
-    const headerDeckTitles = await screen.findAllByText(UI_STRINGS.presentation.cover.deckTitle, {}, { timeout: 8000 });
-    expect(headerDeckTitles[0]).toBeInTheDocument();
-    const closeReportBtn2 = screen.getByRole('button', { name: UI_STRINGS.presentation.closeModal });
-    fireEvent.click(closeReportBtn2);
+    hrefSpy2.mockRestore();
     // Trigger onSelectTenant via tenant badge (rejection path)
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));
     const tenantBadge = screen.getByTestId('tenant-badge');

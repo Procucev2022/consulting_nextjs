@@ -37,3 +37,10 @@ export * from './enterpriseHardeningTypes';
 export * from './enterpriseValidationTypes';
 export * from './dataSecurityTypes';
 export * from './customerDataSecurityTypes';
+export * from './dataPrivacyTypes';
+export * from './finalHardeningTypes';
+export * from './numericalAuditTypes';
+export * from './executiveBriefTypes';
+export * from './executiveBriefExportTypes';
+
+

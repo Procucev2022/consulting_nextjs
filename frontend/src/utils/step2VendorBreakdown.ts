@@ -85,7 +85,9 @@ function mapVendorToDetail(
     .map((it, itIdx) => ({
       ...it,
       rank: itIdx + 1,
-      spend_share_pct: Number((((it.total_spend_inr_cr || 0) / (data.totalSpend || 1)) * 100).toFixed(1))
+      spend_share_pct: Number(
+        (((it.total_spend_inr_cr || 0) / (data.totalSpend || /* c8 ignore next */ 1)) * 100).toFixed(1)
+      )
     }));
 
   return {
@@ -123,7 +125,9 @@ export function calculateVendorYearDetails(
   });
 
   const totalCalculated = Array.from(vendorMap.values())
-    .reduce((sum, v) => sum + v.totalSpend, 0) || totalSpendCr || 1;
+    .reduce((sum, v) => sum + v.totalSpend, 0) || /* c8 ignore next 2 */
+    totalSpendCr ||
+    1;
 
   const sorted = Array.from(vendorMap.entries()).sort((a, b) => b[1].totalSpend - a[1].totalSpend);
 

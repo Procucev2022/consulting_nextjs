@@ -268,4 +268,56 @@ describe('strategicSavingsCalculator', () => {
     expect(formatSavingsAmountCr(120.456)).toBe('₹120.46 Cr');
     expect(formatSavingsAmountCr(0)).toBe('₹0.00 Cr');
   });
+
+  it('covers CATEGORY_SAVINGS_PIPELINE with baseline_spend_inr_cr/estimated_savings_inr_cr fallback (lines 75-76, 86-87)', () => {
+    // Opportunities use baseline_spend_inr_cr and estimated_savings_inr_cr (third fallback in || chain)
+    const oppsWithBaseline: SavingsOpportunity[] = [
+      {
+        opp_id: 'OPP-BASELINE-1',
+        category: 'Indirect Materials',
+        current_spend_inr_cr: 0,
+        current_spend: 0,
+        baseline_spend_inr_cr: 5.0,    // hits line 75 third branch
+        est_savings_inr_cr: 0,
+        est_savings: 0,
+        estimated_savings_inr_cr: 0.9,  // hits line 86 third branch
+        target_savings_pct: 18,
+        status: 'validated',
+        push_to_module: 'proCPX'
+      }
+    ];
+    const result = buildStrategicSavingsSummary({
+      consolidationItems: [],
+      poItems: [],
+      strategicRiskItems: [],
+      opportunities: oppsWithBaseline
+    });
+    const categoryInit = getInitiativeByKey(result.initiatives, 'CATEGORY_SAVINGS_PIPELINE');
+    expect(categoryInit?.spendInrCr).toBeCloseTo(5.0, 1);
+    expect(categoryInit?.savingsInrCr).toBeCloseTo(0.9, 1);
+  });
+
+  it('covers VENDOR_SUPPLY_RATIONALIZATION with non-empty opportunities (line 111 branch)', () => {
+    // opportunities.length > 0 → returns { ...init } without zeroing
+    const opps: SavingsOpportunity[] = [
+      {
+        opp_id: 'OPP-VSR-1',
+        category: 'MRO',
+        current_spend_inr_cr: 8.0,
+        est_savings_inr_cr: 1.2,
+        target_savings_pct: 15,
+        status: 'pending',
+        push_to_module: 'DPS NXT'
+      }
+    ];
+    const result = buildStrategicSavingsSummary({
+      consolidationItems: [],
+      poItems: [],
+      strategicRiskItems: [],
+      opportunities: opps
+    });
+    // VENDOR_SUPPLY_RATIONALIZATION returns { ...init } when opps.length > 0
+    const rationInit = getInitiativeByKey(result.initiatives, 'VENDOR_SUPPLY_RATIONALIZATION');
+    expect(rationInit).toBeDefined();
+  });
 });

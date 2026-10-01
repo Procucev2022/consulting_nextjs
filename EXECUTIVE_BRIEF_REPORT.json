@@ -1,0 +1,53 @@
+{
+  "client": "UltraTech Cement Limited",
+  "reportDate": "2026-10-01",
+  "analysisPeriod": "FY 2021-22 to FY 2024-25 (48 Months)",
+  "modulesIncluded": [
+    "Module 1",
+    "Module 2",
+    "Module 3",
+    "Module 4"
+  ],
+  "transactionCount": 31671,
+  "totalSpendInr": 59203477681.66,
+  "addressableSpendInr": 49310000000,
+  "grossOpportunityInr": 3232700000,
+  "netDefensibleOpportunityInr": 2437500000,
+  "approvedSavingsInr": 479000000,
+  "realizedSavingsInr": 214000000,
+  "opportunityCount": 10,
+  "confidenceSummary": {
+    "high": 7,
+    "medium": 3,
+    "low": 0,
+    "insufficient": 0
+  },
+  "sourceReferences": [
+    {
+      "topic": "Market Leadership",
+      "source": "UltraTech Annual Report FY24",
+      "sourceDate": "May 2024"
+    },
+    {
+      "topic": "Operating Footprint",
+      "source": "Investor Presentation Q4 FY24",
+      "sourceDate": "April 2024"
+    },
+    {
+      "topic": "Production Capacity",
+      "source": "Investor Presentation Q2 FY25",
+      "sourceDate": "October 2024"
+    },
+    {
+      "topic": "Cost Structure",
+      "source": "Audited Financial Results FY24",
+      "sourceDate": "April 2024"
+    },
+    {
+      "topic": "Sustainability & ESG",
+      "source": "Sustainability Report FY24",
+      "sourceDate": "June 2024"
+    }
+  ],
+  "reportVersion": "EXECUTIVE_BRIEF_PDF_V1.0"
+}

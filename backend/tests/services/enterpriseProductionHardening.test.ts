@@ -44,12 +44,10 @@ describe('Enterprise Production Hardening (Prompt 250 — Modules 1 -> 4)', () =
       expect(wb.SheetNames).toContain('Overlap Waterfall');
     });
 
-    it('4. should verify MODULE_3_FINAL_PCIB_INTEGRITY_AUDIT.xlsx and PCBI variant exist and contain PCBI Catalog and Price Isolation Audit', () => {
-      const p1 = path.resolve(process.cwd(), 'MODULE_3_FINAL_PCIB_INTEGRITY_AUDIT.xlsx');
-      const p2 = path.resolve(process.cwd(), 'MODULE_3_FINAL_PCBI_INTEGRITY_AUDIT.xlsx');
-      expect(fs.existsSync(p1)).toBe(true);
-      expect(fs.existsSync(p2)).toBe(true);
-      const wb = xlsx.readFile(p1);
+    it('4. should verify MODULE_3_FINAL_PCBI_INTEGRITY_AUDIT.xlsx exists and contains PCBI Catalog and Price Isolation Audit', () => {
+      const p = path.resolve(process.cwd(), 'MODULE_3_FINAL_PCBI_INTEGRITY_AUDIT.xlsx');
+      expect(fs.existsSync(p)).toBe(true);
+      const wb = xlsx.readFile(p);
       expect(wb.SheetNames).toContain('PCBI Catalog');
       expect(wb.SheetNames).toContain('Price Isolation Audit');
     });

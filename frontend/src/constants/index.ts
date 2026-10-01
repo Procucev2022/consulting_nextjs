@@ -37,3 +37,4 @@ export * from './statusDesign';
 export * from './module2StrategicSourcing';
 export * from './module2OpportunityIntelligence';
 export * from './module2EvidenceChain';
+export * from './executiveBriefExportStrings';

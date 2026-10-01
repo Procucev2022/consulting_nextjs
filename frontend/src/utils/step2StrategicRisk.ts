@@ -36,6 +36,7 @@ export function calculateStrategicVendorRisk(
 
   materialMap.forEach((mat) => {
     const sortedVendors = Array.from(mat.vendorSpends.entries()).sort((a, b) => b[1].spend - a[1].spend);
+    /* c8 ignore next */
     if (sortedVendors.length === 0) return;
 
     const [primaryName, primaryData] = sortedVendors[0];

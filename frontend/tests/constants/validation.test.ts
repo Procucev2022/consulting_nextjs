@@ -19,7 +19,8 @@ import {
   registerFormSchema,
   loginFormSchema,
   adminUserQuerySchema,
-  adminUpdateUserTierSchema
+  adminUpdateUserTierSchema,
+  changePasswordFormSchema
 } from '../../src/constants/validation';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
@@ -310,6 +311,30 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
       expect(adminUpdateUserTierSchema.safeParse({ tier: 'GOLD' }).success).toBe(true);
       expect(adminUpdateUserTierSchema.safeParse({ tier: 'DIAMOND' }).success).toBe(false);
       expect(adminUpdateUserTierSchema.safeParse({}).success).toBe(false);
+    });
+
+    it('should validate changePasswordFormSchema when passwords match', () => {
+      const valid = {
+        currentPassword: 'OldPass@123',
+        newPassword: 'NewPass@456',
+        confirmPassword: 'NewPass@456'
+      };
+      expect(changePasswordFormSchema.safeParse(valid).success).toBe(true);
+    });
+
+    it('should reject changePasswordFormSchema when passwords do not match (refine function)', () => {
+      const mismatch = {
+        currentPassword: 'OldPass@123',
+        newPassword: 'NewPass@456',
+        confirmPassword: 'DifferentPass@789'
+      };
+      const result = changePasswordFormSchema.safeParse(mismatch);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const errors = result.error.flatten();
+        expect(errors.fieldErrors.confirmPassword).toBeDefined();
+        expect(errors.fieldErrors.confirmPassword?.[0]).toBe('New passwords do not match');
+      }
     });
   });
 });

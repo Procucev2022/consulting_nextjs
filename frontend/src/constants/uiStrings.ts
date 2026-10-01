@@ -2721,15 +2721,16 @@ export const UI_STRINGS = {
   },
 
   dataProtection: {
-    bannerTitle: '🔒 Secure Data Processing',
+    bannerTitle: 'YOUR DATA. YOUR WORKSPACE.',
     bannerNotice:
-      'Your procurement data remains isolated to your organization and is not used to train AI models or analyze other customers.',
-    expandLabel: 'How is my data protected?',
+      'Your procurement data is encrypted and processed within your authorized customer environment. It is not used as benchmark data, shared with other customers, or reused for another customer\'s analysis.',
+    expandLabel: 'How we protect your data',
     collapseLabel: 'Hide security details',
     corePromise:
       'Your procurement data is used only to perform the analysis requested by your organization. Customer data is not used to train AI models, is not reused for another customer, and is not used to reproduce another customer\'s analysis.',
     uploadNotice:
-      'Your procurement data is processed within your organization\'s secure analysis environment. It is not used to train AI models or reused for analysis of other customers.',
+      'Your procurement data is encrypted and processed within your authorized customer environment. It is not used as benchmark data, shared with other customers, or reused for another customer\'s analysis.',
+
     analysisNotice:
       'Your results are generated from your organization\'s data and approved reference data. Customer transaction data remains isolated to your organization.',
     exportNotice:
@@ -2779,7 +2780,38 @@ export const UI_STRINGS = {
         desc: 'Data retention and deletion are governed by the organization\'s configured retention policy.'
       }
     ]
+  },
+
+  enterprisePrivacy: {
+    privacyNoticeTitle: 'Your procurement data is private to your organization.',
+    uploadNotice:
+      'Uploaded data is processed within your authorized workspace and is kept separate from PCBI benchmark data and other customer datasets.',
+    nonEnrichmentNotice:
+      'Customer transaction data is not used to create or enrich another customer\'s procurement analysis.',
+    encryptionNotice:
+      'Data is protected through controlled access, secure transmission and encrypted storage where supported by the deployment infrastructure.',
+    pcbiSeparationNotice: 'PCBI benchmark data is maintained separately from customer transaction data.',
+    viewDetailsLink: 'View Data Protection Details',
+    hideDetailsLink: 'Hide Data Protection Details',
+    uploadModalTitle: '🔒 YOUR DATA IS PRIVATE',
+    uploadModalBody:
+      'This dataset will be processed only within your authorized organization workspace. It will not automatically become part of the PCBI benchmark library or another customer\'s dataset.',
+    uploadCheckboxLabel:
+      'I understand that this dataset will be processed within my organization\'s authorized workspace.',
+    resultBadgeLabel: '🔒 Customer Data Protected',
+    resultBadgeTooltip:
+      'These results are generated from your organization\'s authorized dataset. They are not part of the shared PCBI benchmark library.',
+    viewDetailedAnalysis: 'View Detailed Analysis ▾',
+    hideDetailedAnalysis: 'Hide Detailed Analysis ▴',
+    showCalculationEvidence: 'Show Calculation Evidence ▾',
+    hideCalculationEvidence: 'Hide Calculation Evidence ▴',
+    viewFullAuditTrail: 'View Full Audit Trail ▾',
+    hideFullAuditTrail: 'Hide Full Audit Trail ▴',
+    adminLifecycleTitle: 'Organization Data Retention & Deletion Lifecycle',
+    adminLifecyclePolicy:
+      'Data retention and deletion are governed by your organization\'s configured data-retention policy.'
   }
 } as const;
+
 
 
