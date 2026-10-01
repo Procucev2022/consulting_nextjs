@@ -107,7 +107,7 @@ export function renderPptxSlides11To20(
   // Slide 16: E-Auction Opportunities
   const s16 = pptx.addSlide();
   s16.background = { color: '0F172A' };
-  addSlideHeader(s16, 'E-Auction Opportunities: Dynamic Competitive Events', 'Dynamic Sourcing', 16);
+  addSlideHeader(s16, 'E-Auction Opportunities: Dynamic Competitive Events (One Sourcing Lever)', 'Dynamic Sourcing', 16);
   const eaRows: PptxGenJS.TableRow[] = [
     [{ text: 'Category Lot', options: { bold: true } }, { text: 'Eligible Spend', options: { bold: true } }, { text: 'Vendor Pool', options: { bold: true } }, { text: 'Auction Format', options: { bold: true } }, { text: 'Benefit Range', options: { bold: true } }],
     ...BRIEF_E_AUCTIONS.map((ea) => [
@@ -118,13 +118,22 @@ export function renderPptxSlides11To20(
       { text: formatINRCrore(ea.potentialBenefitInr) }
     ])
   ];
-  s16.addTable(eaRows, { x: 0.5, y: 1.1, w: 9.0, h: 3.8, colW: [2.5, 1.6, 1.8, 1.8, 1.3], fontSize: 8.5, color: 'CBD5E1', fill: { color: '182234' } });
+  s16.addTable(eaRows, { x: 0.5, y: 1.1, w: 9.0, h: 2.3, colW: [2.5, 1.6, 1.8, 1.8, 1.3], fontSize: 8.5, color: 'CBD5E1', fill: { color: '182234' } });
+  s16.addShape('rect', { x: 0.5, y: 3.5, w: 9.0, h: 1.4, fill: { color: '1E293B' }, line: { color: 'F59E0B' } });
+  s16.addText('E-AUCTION POSITIONING & REQUISITE CONDITIONS\n\n• E-auction is one of several sourcing mechanisms evaluated and is not assumed to be applicable to the entire addressable spend.\n• Applicable strictly to categories with standardized technical specifications and 5+ qualified, liquid market participants.\n• Non-standardized, sole-source, or highly specialized categories are routed to bilateral negotiation and technical RFQ.', {
+    x: 0.7,
+    y: 3.6,
+    w: 8.6,
+    h: 1.2,
+    fontSize: 8.5,
+    color: 'CBD5E1'
+  });
   addSlideFooter(s16, clientName, 16, totalSlides);
 
   // Slide 17: Vendor Consolidation
   const s17 = pptx.addSlide();
   s17.background = { color: '0F172A' };
-  addSlideHeader(s17, 'Vendor Base Consolidation: Tail Spend Rationalization', 'Vendor Rationalization', 17);
+  addSlideHeader(s17, 'Vendor Base Consolidation: Tail Spend Rationalization (5% Modelling Assumption)', 'Vendor Rationalization', 17);
   const vcRows: PptxGenJS.TableRow[] = [
     [{ text: 'Category Scope', options: { bold: true } }, { text: 'Current State', options: { bold: true } }, { text: 'Target State', options: { bold: true } }, { text: 'Potential Benefit', options: { bold: true } }],
     ...BRIEF_CONSOLIDATION_PLANS.map((cp) => [
@@ -134,7 +143,16 @@ export function renderPptxSlides11To20(
       { text: formatINRCrore(cp.potentialBenefitInr) }
     ])
   ];
-  s17.addTable(vcRows, { x: 0.5, y: 1.1, w: 9.0, h: 3.8, colW: [2.2, 2.8, 2.8, 1.2], fontSize: 8.5, color: 'CBD5E1', fill: { color: '182234' } });
+  s17.addTable(vcRows, { x: 0.5, y: 1.1, w: 9.0, h: 2.3, colW: [2.2, 2.8, 2.8, 1.2], fontSize: 8.5, color: 'CBD5E1', fill: { color: '182234' } });
+  s17.addShape('rect', { x: 0.5, y: 3.5, w: 9.0, h: 1.4, fill: { color: '1E293B' }, line: { color: '10B981' } });
+  s17.addText('CONSOLIDATION MODELLING ASSUMPTION & GOVERNANCE\n\n• Based on supplier fragmentation identified in the analysed spend, consolidation of eligible volumes may create additional purchasing leverage. An indicative 5% volume-discount assumption has been applied for opportunity modelling.\n• Actual realization will depend on supplier negotiations, market conditions, specifications and competitive intensity.\n• Transition preserves emergency supply via localized vendor-managed consignment stocking.', {
+    x: 0.7,
+    y: 3.6,
+    w: 8.6,
+    h: 1.2,
+    fontSize: 8.5,
+    color: 'CBD5E1'
+  });
   addSlideFooter(s17, clientName, 17, totalSlides);
 
   // Slide 18: Multi-Category Supplier Analysis

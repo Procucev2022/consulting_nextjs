@@ -84,5 +84,51 @@ describe('ExecutiveBriefStructureAccordion', () => {
     const drillBtn = screen.getByTestId('drill-evidence-btn-FIND-01');
     fireEvent.click(drillBtn);
     expect(onDrillEvidence).toHaveBeenCalledWith('FIND-01');
+
+    // Click methodology button
+    const methBtn = screen.getByTestId('methodology-btn-FIND-01');
+    fireEvent.click(methBtn);
+    expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.structure.methodologyLabel)).toBeInTheDocument();
+    fireEvent.click(methBtn); // toggle close
+
+    // Click assumptions button
+    const assumpBtn = screen.getByTestId('assumptions-btn-FIND-01');
+    fireEvent.click(assumpBtn);
+    expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.structure.assumptionLabel)).toBeInTheDocument();
+    fireEvent.click(assumpBtn); // toggle close
+
+    // Click action plan button
+    const actionBtn = screen.getByTestId('action-plan-btn-FIND-01');
+    fireEvent.click(actionBtn);
+    expect(screen.getAllByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.structure.actionLabel).length).toBeGreaterThan(1);
+    fireEvent.click(actionBtn); // toggle close
+
+    // Deep dive toggle button
+    const deepDiveBtn = screen.getByTestId('deep-dive-btn-FIND-01');
+    fireEvent.click(deepDiveBtn);
+    expect(onToggleDeepDive).toHaveBeenCalledWith('FIND-01');
+  });
+
+  it('renders correctly without detail cards and handles empty actions gracefully', () => {
+    const emptyCardSections: ExecutiveBriefSlideGroup[] = [
+      {
+        ...mockSections[0],
+        groupId: '02',
+        detailCards: []
+      }
+    ];
+
+    render(
+      <ExecutiveBriefStructureAccordion
+        sections={emptyCardSections}
+        expandedGroupIds={['02']}
+        onToggleGroup={vi.fn()}
+        expandedDeepDives={[]}
+        onToggleDeepDive={vi.fn()}
+        onDrillEvidence={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByTestId('deep-dive-btn-FIND-01')).not.toBeInTheDocument();
   });
 });

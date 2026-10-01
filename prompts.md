@@ -53407,3 +53407,5887 @@ continue
 
 ## Prompt 263
 check again
+
+---
+
+## Prompt 264
+continue
+
+---
+
+## Prompt 265
+The previous 
+px next build has been running for approximately 30 minutes without returning a result.
+
+STOP the current operation safely.
+
+Do NOT modify application code.
+
+Do NOT start another build.
+
+First determine:
+
+1. Is the 
+px next build process still running?
+2. If running, terminate it safely.
+3. Check whether the build process is blocked, waiting, or consuming excessive resources.
+4. Capture the last available build output/error.
+5. Check whether .next contains a partial build.
+6. Check whether there is a lock/process preventing completion.
+7. Check Node.js and npm process status.
+8. Check available memory/CPU if accessible.
+9. Check whether the project has any known Next.js build configuration that could cause the hang.
+
+Then run ONLY a lightweight validation such as:
+
+
+px tsc --noEmit
+
+Do not run 
+ext build again yet.
+
+Do not make any code changes.
+
+Return a concise diagnostic report containing:
+
+BUILD_STATUS:
+LAST_BUILD_OUTPUT:
+PROCESS_STATUS:
+BLOCKING_PROCESS:
+TYPESCRIPT_STATUS:
+ROOT_CAUSE_IF_IDENTIFIED:
+RECOMMENDED_NEXT_STEP:
+
+---
+
+## Prompt 266
+# FINAL BUILD / VALIDATION RECOVERY COMMAND
+
+The previous diagnostic confirms:
+
+- 
+px tsc --noEmit PASSED with exit code 0.
+- 
+px next build was terminated because it stalled during initialization.
+- A background Next.js development server was using the same .next directory.
+- The likely conflict is between 
+ext dev and 
+ext build sharing .next.
+
+Now perform a controlled final validation.
+
+IMPORTANT:
+- Do NOT blindly modify application functionality.
+- Do NOT change business logic.
+- Do NOT redesign anything.
+- Do NOT introduce workarounds such as changing distDir unless absolutely required.
+- Preserve all existing UI, Modules 1�4, Executive Brief, PPT/PDF export, data-security messaging, and previous implementation work.
+
+## STEP 1 � STOP DEVELOPMENT SERVER SAFELY
+
+Identify all processes belonging to this project, including:
+
+- 
+ext dev
+- concurrently
+- Node processes launched by the project
+
+Stop ONLY the project-related development processes that are preventing the production build.
+
+Do not terminate unrelated Node processes.
+
+After termination verify that no project 
+ext dev process remains.
+
+## STEP 2 � VERIFY .next STATE
+
+Inspect:
+
+- .next
+- .next/cache
+- .next/trace
+- any Next.js lock files
+
+If stale build-lock artifacts remain from the terminated build, remove ONLY those stale lock artifacts.
+
+Do NOT delete source code or project configuration.
+
+Do NOT perform a broad destructive cleanup.
+
+## STEP 3 � RUN TYPESCRIPT CHECK
+
+Run:
+
+npx tsc --noEmit
+
+Expected result:
+
+PASS � zero TypeScript errors.
+
+If it fails:
+- STOP.
+- Do not start the production build.
+- Report the exact errors.
+
+## STEP 4 � RUN TEST SUITE
+
+Run the project's existing test suite using the package.json test command.
+
+Also run the previously affected targeted tests for:
+
+- step2VendorConsolidation
+- step2CategoryBreakdown
+- step2StrategicRisk
+- step2Consolidation
+
+IMPORTANT:
+
+Do not weaken coverage requirements merely to make the test pass.
+
+Do not add c8 ignore comments unless the branch is demonstrably unreachable through the public API and there is no legitimate testable path.
+
+If a test fails:
+1. Identify whether the failure is in the TEST itself or APPLICATION CODE.
+2. Fix the test if the application behavior is already correct.
+3. Modify application code only if an actual application defect is demonstrated.
+4. Re-run the affected test.
+
+## STEP 5 � CHECK UI INTEGRATION
+
+Before the production build, verify that the latest implemented functionality is actually connected to the UI.
+
+Specifically verify:
+
+1. Module 1 ? Data Upload / Spend Intelligence
+2. Module 2 ? AI Categorization / Strategic Sourcing
+3. Module 3 ? Trend Analysis / PCBI
+4. Module 4 ? Savings Engine
+5. Executive Brief button
+6. Executive Brief generated report
+7. PPT export
+8. PDF export
+9. Client/company information section
+10. Procucev profile / offerings section
+11. Savings findings and recommendations
+12. Data security / confidentiality messaging
+13. Expanders for long analysis sections
+14. No duplicate displays of the same report
+15. Navigation between modules works correctly
+16. Each UI button calls the intended underlying function
+17. No dead buttons, placeholder buttons, duplicated report containers, or stale components remain
+
+Do NOT redesign anything during this step.
+
+This is an integration verification step.
+
+## STEP 6 � PRODUCTION BUILD
+
+ONLY if:
+
+- TypeScript passes
+- Tests pass
+- No blocking Next.js process exists
+
+run:
+
+npx next build
+
+Do NOT start 
+ext dev while the production build is running.
+
+Wait for the build to actually finish.
+
+If the build succeeds, capture:
+
+- build completion status
+- Next.js version
+- routes generated
+- warnings
+- bundle/build warnings
+- any remaining non-fatal issues
+
+If the build hangs again:
+- DO NOT wait indefinitely.
+- Stop it safely.
+- Capture the exact stage/output where it stopped.
+- Do not make speculative code changes.
+
+## STEP 7 � RESTART DEVELOPMENT SERVER
+
+ONLY AFTER the production build has completed successfully, restart the normal development server using the project's existing command.
+
+Verify that:
+
+- the UI loads
+- no compilation error appears
+- the application starts normally
+- the existing UI remains intact
+
+## STEP 8 � FINAL REPORT
+
+Return exactly this structure:
+
+BUILD_STATUS:
+PASS / FAIL
+
+TYPESCRIPT_STATUS:
+PASS / FAIL
+
+TEST_STATUS:
+PASS / FAIL
+
+TARGETED_TEST_STATUS:
+PASS / FAIL
+
+PRODUCTION_BUILD:
+PASS / FAIL
+
+UI_INTEGRATION_STATUS:
+PASS / FAIL
+
+EXECUTIVE_BRIEF_STATUS:
+PASS / FAIL
+
+PPT_EXPORT_STATUS:
+PASS / FAIL
+
+PDF_EXPORT_STATUS:
+PASS / FAIL
+
+MODULE_1_STATUS:
+PASS / FAIL
+
+MODULE_2_STATUS:
+PASS / FAIL
+
+MODULE_3_STATUS:
+PASS / FAIL
+
+MODULE_4_STATUS:
+PASS / FAIL
+
+SECURITY_MESSAGING_STATUS:
+PASS / FAIL
+
+DUPLICATE_UI_STATUS:
+PASS / FAIL
+
+DEAD_BUTTONS_OR_BROKEN_INTEGRATIONS:
+NONE / LIST
+
+WARNINGS:
+LIST ONLY REAL WARNINGS
+
+ROOT_CAUSE_OF_PREVIOUS_BUILD_HANG:
+SHORT EXPLANATION
+
+CHANGES_MADE:
+LIST ONLY ACTUAL CHANGES
+
+RECOMMENDED_NEXT_STEP:
+ONE CLEAR NEXT STEP
+
+---
+
+## Prompt 267
+## FINAL UI ACCEPTANCE AUDIT � READ ONLY
+## DO NOT MODIFY CODE
+
+The production build and automated validation have now passed.
+
+DO NOT make any code changes.
+DO NOT refactor anything.
+DO NOT redesign anything.
+DO NOT run another production build.
+DO NOT change business logic.
+DO NOT modify tests.
+
+The purpose of this command is ONLY to verify that the functionality that has already been implemented is actually visible and correctly connected in the running UI.
+
+The application is currently running on:
+
+Frontend:
+http://localhost:3001
+
+Backend:
+http://localhost:5000
+
+Perform a complete browser/UI acceptance audit.
+
+==================================================
+1. MAIN APPLICATION UI
+==================================================
+
+Open the application and verify:
+
+- Header
+- Procucev / aiCEV branding
+- Client/company selector
+- Module navigation
+- Module cards
+- Current active module
+- Executive Brief button
+- Admin Portal
+- User/profile controls
+- Any summary KPI cards
+
+Confirm there are no duplicated headers, duplicated cards, duplicated report sections, stale components or old versions of UI being rendered simultaneously.
+
+==================================================
+2. MODULE 1 � DATA UPLOAD / SPEND INTELLIGENCE
+==================================================
+
+Verify that the implemented Module 1 functionality is actually accessible from the UI.
+
+Check:
+
+- File upload
+- Upload status
+- Data ingestion
+- Spend summary
+- Spend classification
+- Data quality/validation information
+- Any analysis summary
+- Long analysis sections use expanders/collapsible sections where appropriate
+- No duplicate results are displayed
+- Buttons actually invoke the intended functions
+
+Do not execute destructive actions or upload customer data.
+
+==================================================
+3. MODULE 2 � AI CATEGORIZATION & STRATEGIC SOURCING
+==================================================
+
+Verify that the UI exposes the implemented functionality for:
+
+- AI categorization
+- UNSPSC/category classification
+- Category breakdown
+- Vendor analysis
+- Vendor consolidation
+- PO consolidation
+- Strategic sourcing opportunities
+- Strategic risk
+- Relevant savings opportunities
+
+Check that each displayed section corresponds to an actual underlying function.
+
+Verify there are no:
+
+- Placeholder sections
+- Dead buttons
+- Duplicate analysis cards
+- Old/obsolete versions of the same analysis
+- Incorrect navigation targets
+
+==================================================
+4. MODULE 3 � TREND ANALYSIS / PCBI
+==================================================
+
+Verify the current UI integration only.
+
+Check:
+
+- Trend Analysis navigation
+- Benchmark/trend presentation
+- Material/index information
+- Charts/tables
+- Expanders for long explanations
+- No duplicate trend-analysis containers
+
+Do not alter the PCBI methodology or benchmark data.
+
+==================================================
+5. MODULE 4 � SAVINGS ENGINE
+==================================================
+
+Verify that the UI correctly exposes:
+
+- Savings opportunity summary
+- Savings categories
+- Consolidated savings
+- Action points
+- Realization/implementation information
+- Opportunity details
+- Long analysis sections through expanders
+- Navigation into detailed findings
+
+Verify that every major displayed savings number is connected to the underlying savings-engine output.
+
+==================================================
+6. EXECUTIVE BRIEF
+==================================================
+
+This is especially important.
+
+Click/open the Executive Brief button.
+
+Verify that the newly implemented Executive Brief/report format is actually what the user sees.
+
+The report should visibly contain the implemented professional structure:
+
+1. Procucev introduction / profile
+2. Procucev experience and offerings
+3. Client/company introduction
+4. Publicly available client information where implemented
+5. Executive summary
+6. Module 1 findings
+7. Module 2 findings
+8. Module 3 findings
+9. Module 4 findings
+10. Savings summary
+11. Detailed findings
+12. Background/context of each finding
+13. Objective
+14. Outcome
+15. Recommended next steps
+16. Savings realization actions
+17. Relevant Procucev offerings
+18. Sector expertise / execution capability
+19. Closing / next-step section
+
+Confirm that this is NOT merely the old Executive Brief layout.
+
+Confirm that there is only ONE Executive Brief presentation/report container.
+
+==================================================
+7. EXECUTIVE BRIEF DOWNLOADS
+==================================================
+
+Verify the actual UI contains working options for:
+
+- PPT download/export
+- PDF download/export
+
+Do not merely inspect the source code.
+
+Verify the buttons are visible and connected to the correct export functions.
+
+If clicking the export would create a real file, perform the minimum safe validation required to confirm that the export function is connected.
+
+Do not modify generated files.
+
+==================================================
+8. DATA SECURITY / CONFIDENTIALITY
+==================================================
+
+Verify that the customer-facing UI visibly communicates the implemented data-security concept.
+
+The messaging should communicate, without making unsupported technical claims, that:
+
+- Customer data is protected/encrypted during processing as implemented.
+- Customer data is used for the analysis requested by the customer.
+- Customer data is not intended to be reproduced as a report/data product for another customer.
+- Customer data is not reused for unrelated customer analysis.
+- Customer data confidentiality is treated as a core principle.
+
+Verify the messaging is professional and customer-facing rather than technical/developer language.
+
+==================================================
+9. LONG CONTENT / EXPANDERS
+==================================================
+
+Check every major module and Executive Brief section for excessively long analysis.
+
+Where analysis is lengthy:
+
+- The UI should show a concise summary first.
+- Detailed analysis should be inside an expander/collapsible section.
+- The page should remain easy to scan.
+- Avoid very large blocks of text occupying the initial viewport.
+
+Verify this across Modules 1�4 and Executive Brief.
+
+==================================================
+10. UI FLOW
+==================================================
+
+Test the navigation flow:
+
+Module 1
+   ?
+Module 2
+   ?
+Module 3
+   ?
+Module 4
+   ?
+Executive Brief
+   ?
+PPT / PDF export
+
+Verify that:
+
+- Navigation works
+- Active states are correct
+- No page unexpectedly resets
+- No duplicate module views appear
+- Back/navigation behaviour is sensible
+- Each button opens the intended destination/function
+
+==================================================
+11. DUPLICATION AUDIT
+==================================================
+
+Search the rendered UI and relevant component structure for duplicate versions of:
+
+- Executive Brief
+- Executive Report
+- Savings Summary
+- Module summaries
+- Download buttons
+- Report containers
+- KPI cards
+- Navigation elements
+
+There must be one authoritative UI representation for each.
+
+If an older implementation exists but is not rendered, report it but DO NOT modify it.
+
+==================================================
+12. FUNCTION ? UI MAPPING
+==================================================
+
+Create a final mapping table:
+
+FUNCTION | UI LOCATION | IMPLEMENTATION STATUS
+
+Include at minimum:
+
+- Module 1 upload
+- Module 1 analysis
+- Module 2 categorization
+- Vendor consolidation
+- PO consolidation
+- Strategic sourcing
+- Strategic risk
+- Module 3 trend analysis
+- Module 4 savings engine
+- Executive Brief
+- PPT export
+- PDF export
+- Security messaging
+- Expanders
+- Client information
+- Procucev profile
+
+For each, determine:
+
+CONNECTED
+NOT CONNECTED
+PARTIALLY CONNECTED
+
+Do not infer CONNECTED merely because the source file exists.
+The UI must actually expose the functionality.
+
+==================================================
+13. FINAL ACCEPTANCE REPORT
+==================================================
+
+Return ONLY this structure:
+
+UI_ACCEPTANCE_STATUS:
+PASS / FAIL
+
+MODULE_1_UI:
+PASS / FAIL
+
+MODULE_2_UI:
+PASS / FAIL
+
+MODULE_3_UI:
+PASS / FAIL
+
+MODULE_4_UI:
+PASS / FAIL
+
+EXECUTIVE_BRIEF_UI:
+PASS / FAIL
+
+EXECUTIVE_BRIEF_NEW_FORMAT_VISIBLE:
+YES / NO
+
+PPT_EXPORT_VISIBLE:
+YES / NO
+
+PDF_EXPORT_VISIBLE:
+YES / NO
+
+SECURITY_MESSAGING_VISIBLE:
+YES / NO
+
+EXPANDERS_VISIBLE:
+YES / NO
+
+DUPLICATE_UI:
+NONE / LIST
+
+DEAD_BUTTONS:
+NONE / LIST
+
+FUNCTION_UI_MAPPING:
+[table]
+
+USER_FLOW:
+PASS / FAIL
+
+VISUAL_ISSUES:
+LIST ONLY REAL ISSUES
+
+FUNCTIONAL_ISSUES:
+LIST ONLY REAL ISSUES
+
+RECOMMENDED_ACTION:
+ONE CLEAR ACTION
+
+IMPORTANT:
+If everything is correctly visible and connected, make NO changes and state:
+
+"UI ACCEPTANCE COMPLETE � NO CODE CHANGES REQUIRED."
+
+If something is not visible or not connected, identify the exact component/page/function responsible. Do NOT fix it in this command.
+
+## Prompt 268
+continue
+
+## Prompt 269
+## FINAL PRODUCTION CERTIFICATION � HARDENING + E2E EVIDENCE AUDIT
+## DO NOT REDESIGN THE UI
+## DO NOT ADD FEATURES
+## PRESERVE CURRENT MODULE 1�4 BUSINESS LOGIC
+
+The UI Acceptance Audit has passed.
+
+The following are already confirmed:
+- Modules 1�4 are connected
+- Executive Brief is visible in the new format
+- PPT export is connected
+- PDF export is connected
+- Security messaging is visible
+- Expanders are implemented
+- No duplicate rendered UI was identified
+- No dead buttons were identified
+- Production build passed
+- TypeScript passed
+- Tests passed
+
+DO NOT repeat the UI acceptance audit.
+
+The purpose of this command is ONLY to perform the final production-hardening and evidence audit.
+
+==================================================
+1. DO NOT CHANGE BUSINESS LOGIC
+==================================================
+
+Do not redesign.
+Do not refactor working modules.
+Do not change savings methodology.
+Do not change benchmark methodology.
+Do not change Module 1�4 calculations unless an actual defect is demonstrated.
+
+If a defect is discovered:
+
+1. Identify the exact defect.
+2. Determine whether it is application code, test code, data mapping, or validation logic.
+3. Fix ONLY the demonstrated defect.
+4. Add/update a regression test.
+5. Re-run the affected test.
+
+==================================================
+2. RAW INR / CURRENCY INVARIANT AUDIT
+==================================================
+
+This is mandatory.
+
+Audit all financial calculations flowing through:
+
+Module 1
+? Module 2
+? Module 3
+? Module 4
+? Executive Brief
+? PPT
+? PDF
+
+Verify that:
+
+- Raw transaction values retain their original unit.
+- INR values are not accidentally multiplied/divided by 100 or 1000.
+- Crores conversion is performed exactly once.
+- Lakhs/Crores/Rupees are never silently mixed.
+- Percentage calculations use the correct denominator.
+- Currency conversion does not alter already-INR values.
+- Display formatting does not modify underlying values.
+- Exported values equal the authoritative application values.
+
+For every financial KPI, identify:
+
+SOURCE VALUE
+UNIT
+TRANSFORMATION
+FINAL DISPLAY VALUE
+FINAL DISPLAY UNIT
+
+Pay special attention to any previously identified INV_06 / INV_07 scale-sensitive scenarios.
+
+Do NOT accept a PASS merely because the UI renders a number.
+
+==================================================
+3. SCALE-DETECTION / UNIT METADATA
+==================================================
+
+Verify whether the application has adequate metadata or validation to distinguish:
+
+?
+? Lakhs
+? Crores
+USD
+EUR
+Other currencies
+
+Check whether uploaded data can accidentally be interpreted at the wrong scale.
+
+Where a scale ambiguity is possible, the application should either:
+
+- derive it reliably from the source metadata, OR
+- explicitly request/confirm the unit, OR
+- flag the data as ambiguous rather than silently accepting it.
+
+Do not invent a scale.
+
+Create regression tests for any demonstrated scale-related defect.
+
+==================================================
+4. SAVINGS EVIDENCE AUDIT
+==================================================
+
+For every savings opportunity generated by Module 4, verify that it can be traced back to transaction-level or source-data evidence.
+
+Each opportunity should have, where applicable:
+
+- Source transaction/item
+- Category
+- Vendor
+- Spend
+- Baseline
+- Benchmark/reference
+- Savings mechanism
+- Calculation
+- Savings value
+- Relevant assumptions
+- Recommended action
+
+Verify that:
+
+- Savings are not fabricated.
+- Savings are not double counted.
+- Overlapping opportunities are reconciled.
+- The same spend is not counted under multiple mutually exclusive opportunities.
+- Executive Brief totals reconcile with Module 4.
+- PPT totals reconcile with Module 4.
+- PDF totals reconcile with Module 4.
+
+==================================================
+5. MODULE RECONCILIATION
+==================================================
+
+Perform these reconciliation checks:
+
+MODULE 1 TOTAL
+=
+MODULE 2 ADDRESSABLE / CLASSIFIED SPEND
+
+MODULE 2 OPPORTUNITY BASE
+=
+MODULE 4 OPPORTUNITY BASE
+
+MODULE 4 TOTAL SAVINGS
+=
+EXECUTIVE BRIEF TOTAL SAVINGS
+
+EXECUTIVE BRIEF
+=
+PPT
+=
+PDF
+
+Any legitimate exclusions must be explicitly documented.
+
+Do not force numbers to match merely to pass validation.
+
+==================================================
+6. EXECUTIVE BRIEF DATA INTEGRITY
+==================================================
+
+Verify that the Executive Brief is generated from actual application outputs and not static/demo values.
+
+For every major section verify its source:
+
+- Client information
+- Executive summary
+- Module 1 findings
+- Module 2 findings
+- Module 3 findings
+- Module 4 findings
+- Savings
+- Recommendations
+- Next steps
+- Procucev offerings
+
+Verify that changing the underlying analysis would change the corresponding report content.
+
+Look specifically for hard-coded client names, hard-coded savings values, hard-coded percentages, or placeholder narrative.
+
+Report every hard-coded production value found.
+
+==================================================
+7. PPT / PDF INTEGRITY
+==================================================
+
+Generate/validate the PPT and PDF export paths using the existing implementation.
+
+Verify:
+
+- Same client
+- Same savings totals
+- Same major findings
+- Same recommendations
+- No stale report content
+- No old Executive Brief format
+- No missing sections
+- No duplicate sections
+- No placeholder content
+- No incorrect currency/unit formatting
+
+Do not redesign the presentation.
+
+==================================================
+8. SECURITY IMPLEMENTATION AUDIT
+==================================================
+
+The UI currently communicates customer-data protection.
+
+Now verify the implementation behind that messaging.
+
+Determine whether the backend actually enforces the relevant controls represented in the UI, including:
+
+- Tenant/client isolation
+- Authentication/authorization
+- Access control
+- Encryption in transit
+- Encryption at rest, where implemented
+- Customer data separation
+- Report access restrictions
+- Data reuse boundaries
+- Logging/audit controls
+- Temporary processing data handling
+- Export access control
+
+IMPORTANT:
+
+Do not claim AES-256-GCM, zero-reuse, tenant isolation, encryption, or deletion guarantees merely because the UI displays those words.
+
+Each claim must be supported by actual implementation/configuration.
+
+For each security claim return:
+
+CLAIM
+IMPLEMENTATION EVIDENCE
+STATUS
+SUPPORTED / PARTIALLY SUPPORTED / NOT SUPPORTED
+
+If a UI statement overstates the actual implementation, identify it.
+
+Do not silently strengthen the claim.
+
+==================================================
+9. DATA REPRODUCTION / REUSE CLAIM
+==================================================
+
+Verify the actual application flow to determine whether customer-uploaded data can:
+
+- appear in another customer's analysis
+- be accessed by another tenant
+- be reused as training/reference data
+- remain in persistent storage after processing
+- be included in generated reports belonging to another client
+
+Do not infer this from frontend messaging.
+
+Inspect the actual backend/data flow.
+
+If the application does not technically guarantee a particular behaviour, report that fact.
+
+==================================================
+10. SECURITY SECRETS / TEST CREDENTIALS
+==================================================
+
+Inspect recent development/test logs and source/configuration for:
+
+- plaintext passwords
+- API keys
+- tokens
+- database credentials
+- test credentials accidentally exposed in logs
+- secrets committed to source
+
+Do NOT print any secret values in the final report.
+
+If a real credential is exposed, report:
+
+SECRET_TYPE
+LOCATION
+RISK
+RECOMMENDED_ROTATION
+
+Do not reproduce the secret.
+
+==================================================
+11. REGRESSION TESTS
+==================================================
+
+Run the existing relevant test suite.
+
+Additionally ensure regression coverage exists for:
+
+- currency/unit conversion
+- raw INR invariants
+- scale detection
+- savings reconciliation
+- duplicate savings prevention
+- Executive Brief data integrity
+- PPT/PDF consistency
+- tenant isolation/security controls where testable
+
+Do not weaken coverage thresholds simply to obtain PASS.
+
+Do not add c8-ignore merely to improve coverage.
+
+Only use ignore directives where a branch is demonstrably unreachable through the public API and document why.
+
+==================================================
+12. FINAL CERTIFICATION DECISION
+==================================================
+
+Use the following rules:
+
+CERTIFIED:
+Only if all critical financial invariants, savings reconciliation, report integrity, and security implementation checks pass.
+
+CONDITIONAL:
+If UI/build/tests pass but one or more production-hardening controls require remediation.
+
+NOT CERTIFIED:
+If financial calculations, savings evidence, tenant isolation, authentication/authorization, or report integrity has a demonstrated defect.
+
+Do not call the system CERTIFIED merely because the build and tests pass.
+
+==================================================
+13. FINAL REPORT
+==================================================
+
+Return exactly:
+
+PRODUCTION_CERTIFICATION:
+CERTIFIED / CONDITIONAL / NOT CERTIFIED
+
+UI_STATUS:
+PASS
+
+BUILD_STATUS:
+PASS / FAIL
+
+TYPESCRIPT_STATUS:
+PASS / FAIL
+
+TEST_STATUS:
+PASS / FAIL
+
+RAW_INR_INVARIANT:
+PASS / FAIL
+
+UNIT_SCALE_HANDLING:
+PASS / FAIL
+
+INV_06_INV_07_VALIDATION:
+PASS / FAIL
+
+SAVINGS_EVIDENCE:
+PASS / FAIL
+
+DOUBLE_COUNTING_CHECK:
+PASS / FAIL
+
+MODULE_RECONCILIATION:
+PASS / FAIL
+
+EXECUTIVE_BRIEF_DATA_INTEGRITY:
+PASS / FAIL
+
+PPT_DATA_INTEGRITY:
+PASS / FAIL
+
+PDF_DATA_INTEGRITY:
+PASS / FAIL
+
+PPT_PDF_RECONCILIATION:
+PASS / FAIL
+
+TENANT_ISOLATION:
+SUPPORTED / PARTIAL / NOT VERIFIED
+
+AUTHORIZATION:
+SUPPORTED / PARTIAL / NOT VERIFIED
+
+ENCRYPTION:
+SUPPORTED / PARTIAL / NOT VERIFIED
+
+DATA_REUSE_CONTROL:
+SUPPORTED / PARTIAL / NOT VERIFIED
+
+DATA_RETENTION_CONTROL:
+SUPPORTED / PARTIAL / NOT VERIFIED
+
+SECURITY_CLAIMS_MATCH_IMPLEMENTATION:
+YES / NO / PARTIAL
+
+SECRET_EXPOSURE:
+NONE / FOUND
+
+REGRESSION_TESTS:
+PASS / FAIL
+
+CRITICAL_DEFECTS:
+LIST
+
+NON_CRITICAL_ISSUES:
+LIST
+
+CHANGES_MADE:
+LIST ONLY ACTUAL CHANGES
+
+FINAL_RECOMMENDATION:
+ONE CLEAR ACTION
+
+IMPORTANT:
+Do not modify anything merely to make the certification PASS.
+
+If everything genuinely passes, state:
+
+"PRODUCTION CERTIFICATION COMPLETE � SYSTEM READY FOR CONTROLLED CUSTOMER PILOT."
+
+If anything fails, clearly identify the exact remediation required.
+## Prompt 270
+## PROMPT 269 � PROFESSIONAL SAVINGS ATTRIBUTION & CFO/CEO EXECUTIVE REPORT REFINEMENT
+
+We need to refine the existing Procucev / aiCEV Executive Brief and Savings Engine.
+
+IMPORTANT:
+- DO NOT create a second Executive Brief.
+- DO NOT create duplicate UI components.
+- DO NOT remove or break any existing Modules 1�4.
+- DO NOT change the existing working UI unnecessarily.
+- Preserve all existing functionality, security messaging, PPT export, PDF export, expanders, navigation and module integrations.
+- Build on the current implementation.
+- First inspect the existing Savings Engine, Executive Brief data model, calculations and report-generation code before making changes.
+- Use the existing architecture wherever possible.
+- The objective is to make the savings analysis professionally defensible for a CFO/CEO audience.
+
+============================================================
+1. CORE BUSINESS CHANGE
+============================================================
+
+CURRENT PROBLEM:
+
+The current report appears to over-emphasize e-auctions as the source of savings.
+
+THIS IS NOT THE INTENDED METHODOLOGY.
+
+Savings must be derived from the COMPLETE PROCUREMENT ANALYSIS across:
+
+MODULE 1:
+Data Upload / Spend Intelligence / Baseline Analysis
+
+MODULE 2:
+AI Categorization
+Vendor Consolidation
+PO Consolidation
+Strategic Sourcing
+Competitive Sourcing / RFQ
+E-Auction where applicable
+Single Vendor / Strategic Risk
+Category opportunities
+Demand / specification / standardization opportunities where identified
+
+MODULE 3:
+Benchmark / PCBI / Price Trend Analysis
+Market-price opportunity
+Benchmark gap
+Price normalization
+Timing of negotiation
+Price movement / trend insights
+
+MODULE 4:
+Consolidated Savings Engine
+Overlap removal
+Prioritization
+Realization roadmap
+Action tracker
+
+E-AUCTION MUST BE TREATED AS ONE POSSIBLE SOURCING LEVER,
+NOT AS THE PRIMARY OR EXCLUSIVE SOURCE OF SAVINGS.
+
+============================================================
+2. NEW SAVINGS ARCHITECTURE
+============================================================
+
+Create a structured "Savings Opportunity Register" behind the Executive Brief.
+
+Every savings opportunity must have:
+
+- Opportunity ID
+- Module
+- Analysis Type
+- Category
+- Sub-category
+- Current Spend
+- Addressable Spend
+- Current Baseline
+- Target / Expected Improvement
+- Savings %
+- Estimated Savings Value
+- Savings Type
+- Confidence Level
+- Calculation Method
+- Key Assumption
+- Evidence / Finding
+- Objective
+- Recommended Action
+- Expected Outcome
+- Implementation Complexity
+- Priority
+- Owner / Function
+- Realization Timeline
+- Overlap Group
+- Included / Excluded from Consolidated Savings
+
+DO NOT simply calculate one generic "Savings %" across total spend.
+
+============================================================
+3. MODULE 1 � BASELINE FIRST
+============================================================
+
+Module 1 should establish the procurement baseline before savings are calculated.
+
+Executive Brief should first explain:
+
+A. Total customer spend
+B. Addressable spend
+C. Non-addressable / quarantined spend
+D. Number of suppliers
+E. Number of POs
+F. Number of categories
+G. Spend concentration
+H. Tail spend
+I. Category concentration
+J. Supplier concentration
+K. Potential fragmentation
+L. Data quality observations
+
+Then identify the "Savings Addressable Base".
+
+IMPORTANT:
+
+Do NOT calculate savings on total customer spend if only a portion is addressable.
+
+For every opportunity:
+
+Savings Base = Relevant Addressable Spend
+
+The report must clearly show:
+
+TOTAL CUSTOMER SPEND
+? ADDRESSABLE SPEND
+? OPPORTUNITY-SPECIFIC ADDRESSABLE SPEND
+? ESTIMATED SAVINGS
+
+============================================================
+4. MODULE 2 � ANALYSIS-WISE SAVINGS
+============================================================
+
+Each Module 2 analysis must have its own savings methodology.
+
+--------------------------------
+4.1 VENDOR CONSOLIDATION
+--------------------------------
+
+Do NOT say:
+
+"Vendor consolidation can generate X% savings."
+
+Instead explain:
+
+Finding:
+Multiple suppliers are supplying the same / similar category or commodity.
+
+Objective:
+Consolidate fragmented demand and improve purchasing leverage.
+
+Methodology:
+Identify suppliers serving the same category / commodity and determine consolidation opportunity.
+
+Default modelling assumption:
+
+Expected volume discount:
+5%
+
+IMPORTANT:
+5% must be treated as a MODELLING ASSUMPTION, not a guaranteed saving.
+
+Formula:
+
+Vendor Consolidation Opportunity
+=
+Eligible Consolidation Spend
+�
+Assumed Volume Discount %
+
+Example:
+
+Eligible Spend = ?100 Cr
+Assumption = 5%
+
+Indicative Opportunity = ?5 Cr
+
+Report wording:
+
+"Based on supplier fragmentation identified in the analysed spend, consolidation of eligible volumes may create additional purchasing leverage. An indicative 5% volume-discount assumption has been applied for opportunity modelling. Actual realization will depend on supplier negotiations, market conditions, specifications and competitive intensity."
+
+Make the 5% assumption configurable.
+
+Show:
+- Eligible Spend
+- Assumption %
+- Indicative Opportunity
+- Confidence
+- Required Action
+
+--------------------------------
+4.2 PO CONSOLIDATION
+--------------------------------
+
+PO consolidation is NOT a procurement-spend saving.
+
+It is primarily an operational efficiency / manpower opportunity.
+
+Example:
+
+Current POs = 100
+Potential POs after consolidation = 80
+
+PO reduction = 20%
+
+Therefore:
+
+Process Effort Reduction %
+=
+(Current PO Count - Target PO Count)
+/
+Current PO Count
+
+= 20%
+
+Do NOT calculate this as 20% of procurement spend.
+
+Instead calculate:
+
+Manpower / Processing Cost Opportunity
+=
+Current Annual PO Processing Effort Cost
+�
+Expected Effort Reduction %
+
+If actual manpower cost is unavailable:
+
+Show:
+
+"20% process-effort reduction potential"
+
+and do NOT convert it to ? unless a valid processing-cost baseline exists.
+
+Report wording:
+
+"PO consolidation indicates an opportunity to reduce transaction workload. The model estimates a 20% reduction in PO-processing effort based on the reduction from 100 to 80 POs. Monetary benefit should only be calculated where the customer's procurement processing cost is available."
+
+Classify this separately as:
+
+SOFT / PRODUCTIVITY BENEFIT
+
+rather than direct procurement savings.
+
+--------------------------------
+4.3 STRATEGIC SOURCING
+--------------------------------
+
+Identify categories where competitive sourcing can create an opportunity.
+
+Possible methodology:
+
+Current Spend
+�
+Expected Competitive Improvement %
+
+The expected improvement should be based on:
+- supplier fragmentation
+- incumbent dependency
+- market competitiveness
+- category characteristics
+- historical pricing
+- benchmark gap
+- sourcing maturity
+
+Do not automatically assign the same percentage to every category.
+
+Where a configurable assumption is used, show it explicitly.
+
+Example:
+
+Addressable Spend = ?50 Cr
+Indicative sourcing improvement = 3%
+
+Opportunity = ?1.5 Cr
+
+Classify as:
+
+"Strategic Sourcing Opportunity"
+
+--------------------------------
+4.4 COMPETITIVE RFQ / MULTI-SUPPLIER SOURCING
+--------------------------------
+
+Where multiple qualified suppliers exist:
+
+Calculate an indicative competitive sourcing opportunity.
+
+Use:
+Eligible Spend � configurable improvement assumption
+
+Clearly distinguish:
+- observed fact
+- analytical finding
+- modelling assumption
+- estimated opportunity
+
+--------------------------------
+4.5 E-AUCTION
+--------------------------------
+
+E-auction must be only ONE sourcing lever.
+
+Do not apply e-auction savings to all addressable spend.
+
+Only identify categories where:
+- specifications are reasonably standardized
+- multiple qualified suppliers exist
+- competitive pricing can be obtained
+- transaction structure supports auction
+- category is suitable for reverse auction
+
+Report:
+
+"E-Auction Suitability"
+
+rather than assuming automatic savings.
+
+Where applicable:
+
+Eligible Auction Spend
+�
+Auction Improvement Assumption
+
+The report must explicitly state:
+
+"E-auction is one of several sourcing mechanisms evaluated and is not assumed to be applicable to the entire addressable spend."
+
+--------------------------------
+4.6 SINGLE-SUPPLIER / STRATEGIC RISK
+--------------------------------
+
+Single supplier risk is not automatically a savings number.
+
+The primary benefit may be:
+- alternate supplier development
+- business continuity
+- negotiation leverage
+- supply assurance
+- risk reduction
+
+Only calculate savings where an alternate-source or competitive sourcing opportunity is supported by data.
+
+Otherwise classify as:
+
+"Risk Mitigation Opportunity"
+
+Do NOT artificially convert every risk finding into savings.
+
+--------------------------------
+4.7 CATEGORY / SPECIFICATION / STANDARDIZATION
+--------------------------------
+
+Where Module 2 identifies:
+- duplicate descriptions
+- multiple specifications
+- similar materials
+- fragmented categories
+- standardization opportunities
+
+calculate potential opportunity only where there is a defensible addressable base.
+
+Show:
+
+Finding
+? Objective
+? Opportunity
+? Assumption
+? Expected Outcome
+? Action
+
+============================================================
+5. MODULE 3 � BENCHMARK / PCBI SAVINGS
+============================================================
+
+This is extremely important.
+
+Module 3 should generate savings opportunities from benchmark and price analysis independently of e-auctions.
+
+For each benchmarkable category/material:
+
+Compare:
+
+Current Purchase Price
+vs
+Relevant Benchmark / PCBI Reference
+
+Where appropriate:
+
+Benchmark Gap %
+=
+(Current Price - Benchmark Price)
+/
+Current Price
+
+Potential Price Opportunity
+=
+Eligible Volume
+�
+(Current Price - Target Price)
+
+OR the appropriate existing PCBI methodology already implemented.
+
+Do not create a benchmark saving if:
+- benchmark quality is weak
+- benchmark is not comparable
+- quantity/unit conversion is unreliable
+- price basis is different
+- the category is non-benchmarkable
+
+Use the existing Quality A/B/C classification.
+
+Show:
+
+Benchmark
+Current Price
+Benchmark Price
+Gap %
+Addressable Spend
+Indicative Opportunity
+Benchmark Quality
+Confidence
+
+The report should explain:
+
+"PCBI analysis identifies price-positioning opportunities independent of the sourcing mechanism. The opportunity may subsequently be realized through negotiation, competitive RFQ, supplier consolidation, contract reset, index-linked pricing or other commercial interventions."
+
+This distinction is critical.
+
+============================================================
+6. MODULE 3 � TREND ANALYSIS
+============================================================
+
+Trend analysis should identify:
+
+- rising price categories
+- falling price categories
+- stable categories
+- price volatility
+- favourable negotiation windows
+- unfavourable timing
+- contract/indexation opportunities
+
+Do not automatically convert trend movement into savings.
+
+Instead identify:
+
+"Negotiation / Timing Opportunity"
+
+where supported.
+
+Example:
+
+Benchmark declining while customer price remains elevated.
+
+Finding:
+Current customer price is not tracking the market trend.
+
+Objective:
+Reset supplier pricing / contract mechanism.
+
+Outcome:
+Potential price correction.
+
+============================================================
+7. SAVINGS CLASSIFICATION
+============================================================
+
+Create clear savings classifications.
+
+A. HARD / PROCUREMENT SAVINGS
+
+Examples:
+- benchmark price gap
+- supplier negotiation
+- vendor consolidation
+- competitive sourcing
+- RFQ
+- e-auction where applicable
+- contract renegotiation
+
+B. COST AVOIDANCE
+
+Examples:
+- index management
+- price escalation prevention
+- market timing
+- contract protection
+
+C. PRODUCTIVITY / SOFT SAVINGS
+
+Examples:
+- PO consolidation
+- process automation
+- manpower effort reduction
+- transaction reduction
+
+D. RISK / STRATEGIC BENEFIT
+
+Examples:
+- dual sourcing
+- supplier risk reduction
+- supply continuity
+- dependency reduction
+
+Do NOT add all four categories together as if they were equivalent cash savings.
+
+The Executive Summary must clearly separate them.
+
+============================================================
+8. OVERLAP CONTROL � CRITICAL
+============================================================
+
+The system MUST prevent double counting.
+
+Example:
+
+If vendor consolidation and benchmark gap both identify the same ?20 Cr spend:
+
+Do not count:
+5% vendor consolidation
++
+benchmark gap
++
+e-auction
+on the same spend independently.
+
+Instead create:
+
+Primary Opportunity
+Secondary Lever
+Realization Mechanism
+
+Example:
+
+Benchmark Gap = primary opportunity
+
+Vendor Consolidation = realization lever
+
+Competitive RFQ = realization lever
+
+E-auction = optional execution mechanism
+
+The savings engine must use an "Overlap Group" or equivalent mechanism.
+
+Every opportunity must be classified:
+
+INCLUDED
+PARTIALLY INCLUDED
+OVERLAPPING
+EXCLUDED FROM CONSOLIDATED TOTAL
+
+The consolidated savings figure must use only non-overlapping opportunities.
+
+============================================================
+9. SAVINGS WATERFALL
+============================================================
+
+Create a professional waterfall:
+
+Total Addressable Spend
+        ?
+Category / Structural Opportunities
+        ?
+Benchmark / Price Opportunities
+        ?
+Vendor Consolidation
+        ?
+Strategic Sourcing
+        ?
+Contract / Commercial Opportunities
+        ?
+Cost Avoidance
+        ?
+Productivity Benefits
+        ?
+Risk / Strategic Benefits
+
+But only count mutually exclusive monetary opportunities in the hard-savings total.
+
+Show:
+
+1. Gross Identified Opportunity
+2. Overlap Adjustment
+3. Confidence Adjustment where appropriate
+4. Net Addressable Opportunity
+5. Hard Savings Opportunity
+6. Cost Avoidance
+7. Productivity Benefit
+8. Strategic / Risk Benefit
+
+============================================================
+10. CONFIDENCE MODEL
+============================================================
+
+Every savings opportunity should have:
+
+HIGH
+MEDIUM
+LOW
+
+based on evidence quality.
+
+For example:
+
+HIGH:
+Actual customer spend + reliable benchmark + clear comparable suppliers
+
+MEDIUM:
+Strong analytical finding + reasonable modelling assumption
+
+LOW:
+Indicative assumption with limited supporting market evidence
+
+Do not hide assumptions.
+
+============================================================
+11. EXECUTIVE BRIEF � NEW PROFESSIONAL STRUCTURE
+============================================================
+
+Revise the Executive Brief to follow this structure:
+
+SLIDE 1
+Cover
+
+"Procurement Spend & Savings Opportunity Assessment"
+
+Client Name
+Prepared by Procucev
+Date
+
+SLIDE 2
+Executive Summary
+
+Show:
+
+Total Spend
+Addressable Spend
+Hard Savings Opportunity
+Cost Avoidance
+Productivity Opportunity
+Strategic / Risk Opportunity
+
+SLIDE 3
+Client Procurement Baseline
+
+Module 1 findings.
+
+SLIDE 4
+Spend & Category Landscape
+
+Top categories
+Top suppliers
+Concentration
+Tail spend
+Addressable base
+
+SLIDE 5
+Savings Opportunity Architecture
+
+Show all identified levers:
+
+Vendor Consolidation
+PO Consolidation
+Strategic Sourcing
+Competitive RFQ
+E-Auction
+Benchmark / PCBI
+Price Trend
+Contract / Commercial
+Risk Mitigation
+
+SLIDE 6
+Savings Opportunity Waterfall
+
+Show gross ? overlap ? net.
+
+SLIDE 7
+Vendor Consolidation
+
+Finding
+Objective
+Eligible Spend
+5% modelling assumption
+Indicative Opportunity
+Action
+Expected Outcome
+
+SLIDE 8
+PO Consolidation
+
+Current POs
+Potential POs
+% effort reduction
+Manpower implication
+No artificial spend saving
+
+SLIDE 9
+Strategic Sourcing
+
+Category-wise opportunity
+Addressable spend
+Assumption
+Potential benefit
+Action
+
+SLIDE 10
+Competitive Sourcing / RFQ
+
+Relevant categories
+Supplier landscape
+Opportunity
+Recommended action
+
+SLIDE 11
+E-Auction
+
+Only auction-suitable categories.
+
+Clearly state:
+
+"E-auction is one execution mechanism within the broader sourcing strategy."
+
+SLIDE 12
+Benchmark / PCBI Opportunity
+
+Current price
+Benchmark
+Gap
+Addressable spend
+Potential opportunity
+Quality
+Confidence
+
+SLIDE 13
+Price Trend & Timing
+
+Trend
+Market movement
+Negotiation implication
+Recommended timing
+
+SLIDE 14
+Savings Consolidation
+
+Separate:
+
+Hard Savings
+Cost Avoidance
+Productivity
+Strategic/Risk
+
+SLIDE 15
+Prioritized Savings Roadmap
+
+0�30 Days
+31�60 Days
+61�90 Days
+90+ Days
+
+SLIDE 16
+Action Plan
+
+Category
+Opportunity
+Action
+Owner
+Timeline
+Expected Benefit
+
+SLIDE 17
+Procucev Recommended Engagement
+
+Show which Procucev offerings are relevant:
+
+Enterprise QUA
+aiCEV
+DPS NXt
+Strategic Sourcing
+Benchmark / PCBI
+Procurement Transformation
+
+Only show offerings relevant to the findings.
+
+SLIDE 18
+Procucev Experience
+
+Sectors
+Capabilities
+Execution experience
+Technology
+Analytics
+Strategic sourcing
+
+SLIDE 19
+Expected Business Impact
+
+Procurement
+Finance
+Operations
+Risk
+Working Capital
+Management visibility
+
+SLIDE 20
+Closing / Next Steps
+
+Professional CTA.
+
+============================================================
+12. EVERY ANALYSIS MUST FOLLOW THIS FORMAT
+============================================================
+
+For every finding displayed in the Executive Brief use:
+
+FINDING
+
+What did the analysis identify?
+
+BACKGROUND
+
+Why does this matter?
+
+OBJECTIVE
+
+What are we trying to achieve?
+
+ADDRESSABLE BASE
+
+What spend / process volume is actually affected?
+
+METHODOLOGY
+
+How was the opportunity calculated?
+
+ASSUMPTION
+
+What assumption was used?
+
+INDICATIVE OPPORTUNITY
+
+What is the estimated benefit?
+
+CONFIDENCE
+
+High / Medium / Low
+
+RECOMMENDED ACTION
+
+What should the customer do?
+
+EXPECTED OUTCOME
+
+What should change if the action is implemented?
+
+NEXT STEP
+
+What should happen next?
+
+This should become the standard presentation pattern across the report.
+
+============================================================
+13. CFO/CEO LANGUAGE
+============================================================
+
+Replace simplistic language such as:
+
+"Potential Savings: ?X Cr"
+
+with:
+
+"Indicative Procurement Opportunity: ?X Cr"
+
+and show:
+
+"Based on analysed addressable spend and stated modelling assumptions."
+
+Use appropriate wording:
+
+- Identified Opportunity
+- Indicative Opportunity
+- Addressable Opportunity
+- Realizable Opportunity
+- Cost Avoidance
+- Productivity Benefit
+- Strategic Benefit
+
+Do not present estimated savings as guaranteed savings.
+
+============================================================
+14. UI REQUIREMENTS
+============================================================
+
+Update the existing Executive Brief UI so that:
+
+1. The first view gives a concise CFO-level summary.
+2. Each savings lever has its own expandable analysis.
+3. Long analysis is collapsed by default.
+4. "View methodology" expands the calculation.
+5. "View assumptions" expands assumptions.
+6. "View evidence" expands supporting findings.
+7. "View action plan" expands next steps.
+
+Avoid huge blocks of text.
+
+Use:
+- cards
+- tables
+- waterfalls
+- opportunity matrices
+- concise callouts
+- expandable sections
+
+Do not duplicate the same data in multiple places unnecessarily.
+
+============================================================
+15. DATA MODEL REQUIREMENT
+============================================================
+
+Do not hard-code savings directly into the Executive Brief.
+
+Create or extend the existing savings data model so every opportunity has structured fields.
+
+For example:
+
+{
+  opportunityId,
+  module,
+  analysisType,
+  category,
+  addressableSpend,
+  baseline,
+  target,
+  improvementPercent,
+  estimatedValue,
+  savingsType,
+  confidence,
+  methodology,
+  assumption,
+  finding,
+  objective,
+  action,
+  expectedOutcome,
+  overlapGroup,
+  consolidationStatus
+}
+
+Use the project's existing TypeScript types where possible.
+
+============================================================
+16. CONFIGURABLE ASSUMPTIONS
+============================================================
+
+Create a centralized assumption configuration.
+
+At minimum:
+
+VENDOR_CONSOLIDATION_DISCOUNT = 5%
+
+Do NOT scatter "5%" throughout the application.
+
+Allow future changes through one configuration source.
+
+All other assumptions should similarly be configurable.
+
+If an assumption cannot be supported by customer-specific evidence, label it:
+
+"Illustrative modelling assumption"
+
+============================================================
+17. TESTING
+============================================================
+
+Add / update tests for:
+
+1. Module 1 addressable spend
+2. Vendor consolidation calculation
+3. PO effort reduction
+4. Strategic sourcing opportunity
+5. Competitive sourcing
+6. E-auction applicability
+7. Benchmark opportunity
+8. Trend opportunity
+9. Cost avoidance
+10. Productivity benefit
+11. Risk benefit
+12. Overlap removal
+13. Consolidated savings
+14. Confidence classification
+15. Assumption display
+16. Executive Brief data generation
+17. PPT export
+18. PDF export
+
+Critical test:
+
+If the same spend appears in:
+Vendor Consolidation
+Benchmark Gap
+E-Auction
+
+the final consolidated hard-savings number MUST NOT count the same opportunity three times.
+
+============================================================
+18. ACCEPTANCE CRITERIA
+============================================================
+
+The implementation is complete only when:
+
+- Savings are NOT represented as e-auction-only.
+- Module 1 establishes the baseline.
+- Module 2 generates analysis-specific opportunities.
+- Module 3 generates benchmark / trend-based opportunities.
+- Module 4 consolidates opportunities.
+- Vendor consolidation uses a configurable 5% illustrative assumption.
+- PO consolidation is represented primarily as productivity / effort reduction.
+- Benchmark opportunities are independently represented.
+- E-auction is only one possible execution mechanism.
+- Risk findings are not artificially converted into savings.
+- Every opportunity has methodology and assumptions.
+- Double counting is prevented.
+- Hard savings, cost avoidance, productivity and strategic benefits are separated.
+- Executive Brief reflects the complete savings architecture.
+- CFO/CEO report reads like a professional procurement transformation assessment.
+- Existing security / confidentiality messaging remains intact.
+- Existing PPT and PDF exports use the improved report structure.
+- Existing UI remains functional.
+- No duplicate Executive Brief implementation is created.
+- TypeScript passes.
+- Existing tests pass.
+- New/updated savings tests pass.
+- Production build passes.
+- UI acceptance passes.
+
+============================================================
+19. FINAL VALIDATION REPORT
+============================================================
+
+Return:
+
+SAVINGS_ARCHITECTURE:
+PASS / FAIL
+
+MODULE_1_BASELINE:
+PASS / FAIL
+
+MODULE_2_ANALYSIS_WISE_SAVINGS:
+PASS / FAIL
+
+MODULE_3_BENCHMARK_SAVINGS:
+PASS / FAIL
+
+PO_PRODUCTIVITY_MODEL:
+PASS / FAIL
+
+VENDOR_CONSOLIDATION_MODEL:
+PASS / FAIL
+
+STRATEGIC_SOURCING_MODEL:
+PASS / FAIL
+
+E_AUCTION_AS_ONE_LEVER:
+PASS / FAIL
+
+OVERLAP_CONTROL:
+PASS / FAIL
+
+HARD_SAVINGS_SEPARATION:
+PASS / FAIL
+
+COST_AVOIDANCE:
+PASS / FAIL
+
+PRODUCTIVITY_BENEFIT:
+PASS / FAIL
+
+STRATEGIC_RISK_BENEFIT:
+PASS / FAIL
+
+EXECUTIVE_BRIEF:
+PASS / FAIL
+
+PPT_EXPORT:
+PASS / FAIL
+
+PDF_EXPORT:
+PASS / FAIL
+
+UI_INTEGRATION:
+PASS / FAIL
+
+TESTS:
+PASS / FAIL
+
+PRODUCTION_BUILD:
+PASS / FAIL
+
+CHANGES_MADE:
+LIST ONLY ACTUAL CHANGES
+
+IMPORTANT:
+Do not stop after modifying the calculation code.
+Verify that the revised savings architecture is actually visible in the Executive Brief UI and in both PPT/PDF outputs.
+
+Do not report PASS unless the functionality has actually been verified.
+
+
+## Prompt 271
+## FINAL COMMAND — CFO/CEO PROFESSIONAL SAVINGS ANALYSIS & EXECUTIVE REPORT REFINEMENT
+
+We have already implemented and validated the Savings Opportunity Register, Module 1 baseline, Module 2 analysis-wise savings, Module 3 benchmark/trend savings, overlap controls, Executive Brief, PPT export and PDF export.
+
+DO NOT rebuild the application.
+
+DO NOT remove existing functionality.
+
+DO NOT change the existing Modules 1–4 architecture.
+
+DO NOT make e-auction the primary or exclusive savings mechanism.
+
+The objective of this command is to make the Savings Engine and Executive Brief professionally communicate the TOTAL PROCUREMENT VALUE CREATION opportunity identified across the complete analysis.
+
+========================================================
+1. CORE BUSINESS PRINCIPLE
+========================================================
+
+The report must communicate:
+
+"Procurement savings are identified from multiple analytical levers across the procurement lifecycle. E-auction is only one possible execution mechanism and must never be presented as the sole or dominant source of savings unless the analysed data specifically supports that conclusion."
+
+The savings story must therefore start from:
+
+MODULE 1
+→ What is the customer's current procurement baseline?
+
+MODULE 2
+→ What procurement improvement opportunities were identified?
+
+MODULE 3
+→ What price/benchmark/trend opportunities were identified?
+
+MODULE 4
+→ What is the consolidated, overlap-controlled value opportunity and how can it be realized?
+
+The report must clearly distinguish:
+
+1. Hard Procurement Savings
+2. Cost Avoidance
+3. Productivity / Soft Benefits
+4. Strategic / Risk Benefits
+
+Do not convert productivity or risk benefits into artificial INR savings unless a defensible monetary basis exists.
+
+========================================================
+2. MODULE 1 — BASELINE FIRST
+========================================================
+
+The Executive Brief must begin the savings analysis with a professional baseline.
+
+Show:
+
+- Total customer spend
+- Addressable spend
+- Non-addressable / quarantined spend
+- Number of suppliers
+- Number of POs
+- Number of categories/materials
+- Concentration of spend
+- Top categories
+- Top suppliers
+- Any other meaningful baseline indicators actually available from Module 1
+
+Then state:
+
+"Module 1 establishes the procurement baseline against which improvement opportunities are identified."
+
+Do not calculate savings simply against total company spend.
+
+Savings must be calculated against the relevant ADDRESSABLE SPEND for each opportunity.
+
+Every savings card must show:
+
+Current Baseline
+→ Addressable Spend
+→ Improvement Opportunity
+→ Modelling Assumption
+→ Indicative Value
+→ Savings Type
+→ Confidence
+→ Action Required
+
+========================================================
+3. MODULE 2 — ANALYSIS-WISE VALUE CREATION
+========================================================
+
+Create a separate professional savings opportunity for EVERY meaningful Module 2 analysis.
+
+Do not combine everything into "E-Auction Savings".
+
+At minimum evaluate and report separately where data supports them:
+
+A. Vendor Consolidation
+
+B. PO Consolidation
+
+C. Strategic Sourcing
+
+D. Competitive RFQ
+
+E. E-Auction
+
+F. Supplier / Vendor Risk
+
+G. Category / Spend Concentration opportunities
+
+H. Any additional Module 2 analytical lever actually present in the application
+
+Each must have its own:
+
+BACKGROUND
+OBJECTIVE
+FINDING
+ANALYSIS
+ADDRESSABLE BASE
+MODELLING METHOD
+ASSUMPTION
+INDICATIVE VALUE
+SAVINGS TYPE
+CONFIDENCE
+RECOMMENDED ACTION
+EXPECTED OUTCOME
+NEXT STEP
+
+========================================================
+4. VENDOR CONSOLIDATION — PROFESSIONAL SAVINGS MODEL
+========================================================
+
+Vendor consolidation should NOT be described as:
+
+"5% savings guaranteed."
+
+Instead use:
+
+"Illustrative volume-discount opportunity: 5% of eligible consolidated spend, subject to supplier negotiation, volume aggregation, competitive intensity and market conditions."
+
+Calculation:
+
+Eligible Consolidation Spend × 5%
+
+Example presentation:
+
+Current eligible spend:
+₹X Cr
+
+Potential supplier consolidation:
+Y suppliers → Z strategic suppliers
+
+Illustrative volume-discount assumption:
+5%
+
+Indicative procurement opportunity:
+₹X × 5% = ₹Y Cr
+
+Savings Type:
+Hard / Procurement Savings — Indicative
+
+Confidence:
+Based on analysed supplier concentration and addressable spend.
+
+Important:
+5% is a MODELLING ASSUMPTION, not a guaranteed saving.
+
+========================================================
+5. PO CONSOLIDATION — PRODUCTIVITY MODEL
+========================================================
+
+PO consolidation must NOT be presented as direct procurement savings.
+
+Use a productivity model.
+
+Example:
+
+Current annual POs:
+4,120
+
+Potential optimized POs:
+3,296
+
+PO reduction:
+824
+
+PO reduction percentage:
+20%
+
+Therefore:
+
+"Approximately 20% reduction in PO-processing workload potential."
+
+Do NOT automatically convert this into ₹ savings.
+
+Present:
+
+Financial Procurement Savings:
+₹0 Cr unless validated manpower cost is available.
+
+Productivity Benefit:
+20% process-effort reduction
+
+Potential operational impact:
+
+- Lower transaction workload
+- Lower processing effort
+- Reduced repetitive activities
+- Improved procurement team capacity
+- Opportunity to redeploy manpower toward strategic sourcing
+
+If manpower cost data becomes available, allow the system to calculate:
+
+Avoided Processing Effort × Validated Cost per PO
+
+But never invent manpower cost.
+
+========================================================
+6. STRATEGIC SOURCING
+========================================================
+
+Strategic sourcing must be independently represented.
+
+Use the analysed addressable category/supplier spend.
+
+Apply the existing configurable strategic sourcing assumption:
+
+3%
+
+BUT clearly label it:
+
+"Illustrative modelling assumption — subject to category strategy, market conditions, supplier competition and negotiation outcome."
+
+Calculation:
+
+Eligible Strategic Sourcing Spend × 3%
+
+Show:
+
+Current state
+→ sourcing opportunity
+→ addressable spend
+→ assumed improvement
+→ indicative value
+→ execution route
+
+Possible execution routes:
+
+- RFQ
+- Competitive bidding
+- Supplier negotiation
+- Should-cost analysis
+- Specification rationalization
+- Contract restructuring
+- Volume aggregation
+
+Do NOT automatically classify every strategic sourcing opportunity as e-auction.
+
+========================================================
+7. COMPETITIVE RFQ
+========================================================
+
+Maintain Competitive RFQ as a separate lever where applicable.
+
+Existing assumption:
+
+4%
+
+Calculation:
+
+Eligible Competitive RFQ Spend × 4%
+
+Clearly state:
+
+"This is an indicative modelling assumption and not a guaranteed outcome."
+
+Show the category/materials covered and explain why competitive RFQ is appropriate.
+
+========================================================
+8. E-AUCTION — ONLY ONE EXECUTION LEVER
+========================================================
+
+E-auction must be repositioned.
+
+Do NOT present:
+
+"E-Auction = Total Savings"
+
+Instead present:
+
+"E-Auction is one potential execution mechanism for selected addressable categories."
+
+Only include categories satisfying the existing criteria where supported:
+
+- Standardized specifications
+- Liquid market
+- Adequate supplier competition
+- Multiple qualified bidders
+- Comparable commercial terms
+- Appropriate procurement governance
+
+Existing modelling assumption:
+
+6%
+
+But clearly label:
+
+"Illustrative e-auction improvement assumption — applicable only to eligible categories and subject to competitive participation and auction outcome."
+
+The report must explicitly state:
+
+"Not all procurement opportunities are suitable for e-auction."
+
+Other execution mechanisms must remain visible.
+
+========================================================
+9. MODULE 3 — PCBI / BENCHMARK OPPORTUNITY
+========================================================
+
+Module 3 must be treated as an INDEPENDENT analytical stream.
+
+Do NOT hide benchmark opportunities under sourcing/e-auction.
+
+For each benchmarkable material/category show:
+
+Current Purchase Position
+→ Relevant Benchmark
+→ Price Gap
+→ Trend Direction
+→ Addressable Spend
+→ Indicative Opportunity
+→ Recommended Procurement Action
+
+Where benchmark gap exists, calculate the opportunity independently.
+
+Example:
+
+Current price:
+₹X
+
+Benchmark:
+₹Y
+
+Gap:
+Z%
+
+Addressable spend:
+₹A Cr
+
+Indicative benchmark opportunity:
+₹B Cr
+
+Recommended action:
+
+- Benchmark-based negotiation
+- Contract reset
+- Indexation review
+- Supplier price challenge
+- Re-bid
+- Alternate source development
+
+Do not automatically classify benchmark opportunity as e-auction.
+
+========================================================
+10. MODULE 3 — TREND / COST AVOIDANCE
+========================================================
+
+Where trend analysis indicates a future price movement opportunity, classify it separately as:
+
+COST AVOIDANCE
+
+Do not represent it as guaranteed cash savings.
+
+Show:
+
+Observed trend
+→ Procurement implication
+→ Timing opportunity
+→ Potential exposure
+→ Recommended action
+
+Use the existing ₹41 Cr cost-avoidance treatment where applicable.
+
+Clearly distinguish:
+
+"Cost Avoidance is not equivalent to realized P&L savings."
+
+========================================================
+11. SINGLE-SUPPLIER / STRATEGIC RISK
+========================================================
+
+Single supplier dependency must NOT automatically become a savings number.
+
+Show separately as:
+
+STRATEGIC / RISK BENEFIT
+
+For each relevant item:
+
+- Supplier dependency
+- Spend exposure
+- Business risk
+- Alternate source requirement
+- Dual sourcing opportunity
+- Qualification requirement
+- Recommended action
+
+Do not manufacture an INR saving from supplier-risk reduction.
+
+========================================================
+12. SAVINGS WATERFALL
+========================================================
+
+Create a professional CFO-level savings waterfall.
+
+The waterfall should show:
+
+TOTAL ADDRESSABLE SPEND
+
+↓
+MODULE 2 OPPORTUNITIES
+
+Vendor Consolidation
+Strategic Sourcing
+Competitive RFQ
+E-Auction
+PO Productivity
+Other applicable sourcing levers
+
++
+
+MODULE 3 OPPORTUNITIES
+
+Benchmark Gap
+Trend / Cost Avoidance
+Other applicable benchmark opportunities
+
+↓
+
+OVERLAP / DOUBLE-COUNTING CONTROL
+
+↓
+
+HARD PROCUREMENT SAVINGS
+
++
+
+COST AVOIDANCE
+
++
+
+PRODUCTIVITY BENEFIT
+
++
+
+STRATEGIC / RISK BENEFIT
+
+↓
+
+TOTAL DEFENSIBLE VALUE OPPORTUNITY
+
+IMPORTANT:
+
+Do NOT simply add every opportunity.
+
+Apply existing overlap groups and consolidationStatus.
+
+The current validated architecture already has overlap control and a consolidated net defensible total. Preserve this logic.
+
+========================================================
+13. DOUBLE-COUNTING CONTROL
+========================================================
+
+This is critical.
+
+The same spend may qualify for:
+
+- Vendor Consolidation
+- Strategic Sourcing
+- Competitive RFQ
+- E-Auction
+- Benchmark Gap
+
+Do NOT add all five independently if they address the same spend.
+
+The system must:
+
+1. Identify overlapping addressable spend.
+2. Assign an overlap group.
+3. Select the appropriate primary savings mechanism OR apply the existing defensible consolidation logic.
+4. Deduct overlapping opportunity.
+5. Show the deduction transparently.
+
+The Executive Brief should include a small section:
+
+"How We Prevent Double Counting"
+
+Example:
+
+Gross identified opportunities:
+₹X Cr
+
+Overlap adjustment:
+₹Y Cr
+
+Net defensible procurement opportunity:
+₹Z Cr
+
+This is essential for CFO credibility.
+
+========================================================
+14. ANALYSIS-WISE EXECUTIVE TABLE
+========================================================
+
+Create a professional table:
+
+| Analysis | Addressable Spend | Assumption / Method | Indicative Opportunity | Benefit Type | Confidence | Primary Action |
+|----------|-------------------|---------------------|-------------------------|--------------|------------|----------------|
+
+Rows should include:
+
+Vendor Consolidation
+PO Consolidation
+Strategic Sourcing
+Competitive RFQ
+E-Auction
+Benchmark Gap
+Cost Avoidance
+Strategic Risk
+Other applicable analyses
+
+PO Consolidation must show:
+
+Indicative INR Savings = ₹0 Cr
+
+Productivity Benefit = XX%
+
+This prevents CFO misunderstanding.
+
+========================================================
+15. EVERY FINDING MUST FOLLOW THIS STRUCTURE
+========================================================
+
+For every major opportunity create a professional card/section:
+
+FINDING
+
+What did the analysis identify?
+
+BACKGROUND
+
+Why does this matter?
+
+OBJECTIVE
+
+What procurement outcome are we trying to achieve?
+
+ANALYSIS
+
+What data/evidence was evaluated?
+
+ADDRESSABLE BASE
+
+What spend/process volume is actually affected?
+
+MODELLING METHOD
+
+How was the opportunity calculated?
+
+ASSUMPTION
+
+What percentage or rule was applied?
+
+INDICATIVE OPPORTUNITY
+
+What is the calculated value?
+
+BENEFIT TYPE
+
+Hard Saving / Cost Avoidance / Productivity / Strategic Risk
+
+CONFIDENCE
+
+High / Medium / Indicative, based on evidence quality.
+
+RECOMMENDED ACTION
+
+What should procurement do?
+
+EXPECTED OUTCOME
+
+What should change?
+
+NEXT STEP
+
+What specific action should happen next?
+
+OWNER
+
+Who should execute it?
+
+REALIZATION TIMELINE
+
+Immediate / 30 days / 60 days / 90 days / etc.
+
+========================================================
+16. CFO / CEO LANGUAGE
+========================================================
+
+Replace simplistic language such as:
+
+"Potential Savings"
+
+with more professional terminology:
+
+"Indicative Procurement Opportunity"
+
+"Defensible Savings Opportunity"
+
+"Addressable Value Opportunity"
+
+"Cost Avoidance Opportunity"
+
+"Productivity Benefit"
+
+"Strategic Risk Mitigation"
+
+Use the following disclaimer throughout the Executive Brief:
+
+"Indicative opportunity values are derived from analysed addressable spend and configurable modelling assumptions. They are not guaranteed savings and require validation through sourcing, negotiation, market testing and implementation."
+
+========================================================
+17. EXECUTIVE SUMMARY
+========================================================
+
+The first savings slide/page must NOT start with e-auction.
+
+Start with:
+
+1. Customer Procurement Baseline
+2. Addressable Spend
+3. Number of Analytical Opportunities
+4. Hard Procurement Savings Opportunity
+5. Cost Avoidance Opportunity
+6. Productivity Opportunity
+7. Strategic/Risk Opportunities
+8. Net Defensible Value Opportunity
+
+Then show:
+
+"Where the opportunity comes from"
+
+with a visual distribution across:
+
+Vendor Consolidation
+Strategic Sourcing
+Competitive RFQ
+E-Auction
+Benchmark Gap
+Cost Avoidance
+Productivity
+Risk Mitigation
+
+No single lever should visually dominate unless the analysed data genuinely warrants it.
+
+========================================================
+18. EXECUTIVE REPORT STORYLINE
+========================================================
+
+Use this storyline:
+
+SLIDE 1
+Executive Summary
+
+SLIDE 2
+Customer Procurement Baseline
+
+SLIDE 3
+Where Value Can Be Created
+
+SLIDE 4
+Module 2 — Procurement Opportunity Map
+
+SLIDE 5
+Vendor Consolidation
+
+SLIDE 6
+PO Consolidation & Productivity
+
+SLIDE 7
+Strategic Sourcing
+
+SLIDE 8
+Competitive RFQ
+
+SLIDE 9
+E-Auction as One Execution Lever
+
+SLIDE 10
+Module 3 — Benchmark & Price Opportunity
+
+SLIDE 11
+Benchmark Gap Analysis
+
+SLIDE 12
+Trend / Cost Avoidance
+
+SLIDE 13
+Strategic Supplier Risk
+
+SLIDE 14
+Savings / Value Waterfall
+
+SLIDE 15
+Overlap & Double-Counting Control
+
+SLIDE 16
+Prioritized 30/60/90 Day Action Plan
+
+SLIDE 17
+Expected Business Outcomes
+
+SLIDE 18
+Procucev Recommended Engagement
+
+Maintain the existing Procucev company profile slides before/after these sections according to the current Executive Brief structure.
+
+========================================================
+19. VISUAL DESIGN
+========================================================
+
+Make the report look like a professional procurement consulting report.
+
+Use:
+
+- Clean executive typography
+- Strong hierarchy
+- Minimal text on primary slides
+- Expanders for methodology and assumptions
+- Executive KPI cards
+- Waterfall charts
+- Opportunity matrix
+- Spend concentration visuals
+- Action roadmap
+- Clear distinction between Hard Savings / Cost Avoidance / Productivity / Risk
+
+Do not overload slides.
+
+Detailed methodology should be available through:
+
+"View Methodology"
+"View Assumptions"
+"View Evidence"
+"View Action Plan"
+
+Preserve the existing expander functionality.
+
+========================================================
+20. UI AND EXPORT CONSISTENCY
+========================================================
+
+The same savings logic must appear consistently in:
+
+1. Module 4 Savings Engine
+2. Executive Brief UI
+3. Executive Brief PPT
+4. Executive Brief PDF
+
+There must be ONE authoritative savings calculation.
+
+Do not duplicate or independently recalculate savings in the frontend, PPT or PDF generators.
+
+All outputs must consume the same Savings Opportunity Register and consolidated savings summary.
+
+========================================================
+21. DO NOT CHANGE VALIDATED VALUES WITHOUT DATA BASIS
+========================================================
+
+The existing validated architecture reports:
+
+Hard / Procurement Savings:
+₹202.75 Cr
+
+Cost Avoidance:
+₹41.00 Cr
+
+Consolidated Net Defensible Total:
+₹243.75 Cr
+
+Overlap Deduction:
+₹62.80 Cr
+
+PO Productivity:
+20% process-effort reduction / 824 POs
+
+These values and their underlying logic must NOT be arbitrarily changed.
+
+If refinement changes a number because the calculation is demonstrably wrong, show:
+
+OLD VALUE
+NEW VALUE
+REASON
+SOURCE / CALCULATION
+
+Otherwise preserve the validated values.
+
+========================================================
+22. QUALITY CONTROL
+========================================================
+
+After implementation run:
+
+1. TypeScript validation
+2. Existing test suite
+3. Savings Opportunity Register tests
+4. Savings Assumption tests
+5. Executive Brief tests
+6. Executive Brief export tests
+7. Production build
+8. UI acceptance validation
+9. PDF export validation
+10. PPT export validation
+
+Verify specifically:
+
+- No e-auction-only savings narrative
+- All applicable Module 2 analyses represented
+- Module 3 benchmark opportunities represented
+- PO consolidation represented as productivity
+- Vendor consolidation represented as volume-discount opportunity
+- Strategic sourcing represented separately
+- Competitive RFQ represented separately
+- Benchmark opportunity represented separately
+- Cost avoidance separated from hard savings
+- Strategic risk separated from savings
+- Double counting prevented
+- Same figures shown across UI/PDF/PPT
+- No duplicate Executive Brief
+- No dead buttons
+- No stale report components
+
+========================================================
+23. FINAL RESPONSE FORMAT
+========================================================
+
+Return:
+
+SAVINGS_ARCHITECTURE:
+PASS / FAIL
+
+MODULE_1_BASELINE:
+PASS / FAIL
+
+VENDOR_CONSOLIDATION:
+PASS / FAIL
+
+PO_PRODUCTIVITY:
+PASS / FAIL
+
+STRATEGIC_SOURCING:
+PASS / FAIL
+
+COMPETITIVE_RFQ:
+PASS / FAIL
+
+E_AUCTION_AS_ONE_LEVER:
+PASS / FAIL
+
+MODULE_3_BENCHMARK:
+PASS / FAIL
+
+COST_AVOIDANCE:
+PASS / FAIL
+
+STRATEGIC_RISK:
+PASS / FAIL
+
+OVERLAP_CONTROL:
+PASS / FAIL
+
+CFO_EXECUTIVE_NARRATIVE:
+PASS / FAIL
+
+EXECUTIVE_BRIEF_UI:
+PASS / FAIL
+
+PPT_EXPORT:
+PASS / FAIL
+
+PDF_EXPORT:
+PASS / FAIL
+
+UI_INTEGRATION:
+PASS / FAIL
+
+TESTS:
+PASS / FAIL
+
+PRODUCTION_BUILD:
+PASS / FAIL
+
+CHANGES_MADE:
+LIST ONLY ACTUAL CHANGES
+
+IMPORTANT:
+Do not claim any savings are guaranteed.
+Do not represent e-auction as the total savings mechanism.
+Do not convert productivity or risk benefits into artificial hard savings.
+Do not double count overlapping opportunities.
+Do not invent data that is not available from the analysed customer dataset.
+
+The final product should read like a professional procurement consulting assessment prepared for a CFO/CEO — evidence-led, analysis-wise, transparent about assumptions, and focused on how the identified opportunity can actually be realized.
+
+
+## Prompt 272
+
+# PROMPT — FINAL PROFESSIONAL SAVINGS METHODOLOGY & EXECUTIVE REPORT UPGRADE
+
+We need to make a major improvement to the Savings Engine and Executive Brief.
+
+IMPORTANT BUSINESS REQUIREMENT:
+
+The current report must NOT imply that identified savings are primarily or exclusively generated through e-auctions.
+
+The system must present savings as a PROFESSIONAL, MULTI-LEVER PROCUREMENT VALUE CREATION ASSESSMENT derived from the complete analysis performed in Modules 1, 2 and 3.
+
+Module 1 establishes the customer's verified spend baseline and spend structure.
+
+Module 2 identifies procurement/process/structural opportunities.
+
+Module 3 identifies price, benchmark, market and trend-related opportunities.
+
+Module 4 consolidates all identified opportunities into a single savings opportunity portfolio, while preventing double counting.
+
+DO NOT remove existing functionality.
+
+DO NOT redesign the entire application.
+
+DO NOT break existing Modules 1–4, Executive Brief, PPT export or PDF export.
+
+First inspect the existing implementation and understand how savings opportunities are currently calculated and displayed.
+
+--------------------------------------------------
+1. NEW SAVINGS FRAMEWORK
+--------------------------------------------------
+
+Create the following professional savings architecture:
+
+MODULE 1
+BASELINE & SPEND DIAGNOSTICS
+
+Purpose:
+Establish the addressable spend baseline against which all subsequent opportunities are evaluated.
+
+Show:
+
+- Total customer spend
+- Addressable spend
+- Direct / Indirect / MRO / Packing / Services where available
+- Category distribution
+- Supplier distribution
+- PO distribution
+- Spend concentration
+- Tail spend
+- Transaction complexity
+- Data quality / coverage
+- Top categories
+- Top suppliers
+- Top material groups
+
+IMPORTANT:
+
+Module 1 itself should generally NOT claim a direct savings percentage.
+
+Instead it should establish:
+
+"Baseline Spend"
+"Addressable Spend"
+"Opportunity-Relevant Spend"
+
+This becomes the denominator for the savings engine.
+
+--------------------------------------------------
+2. MODULE 2 SAVINGS LEVERS
+--------------------------------------------------
+
+Module 2 must generate separate savings opportunities for EACH applicable analysis.
+
+Do not combine everything into "Strategic Sourcing / E-Auction".
+
+Create distinct savings levers.
+
+A. VENDOR CONSOLIDATION
+
+Objective:
+Reduce fragmented supplier base and leverage consolidated volumes.
+
+Methodology:
+
+Identify categories/material groups where multiple suppliers provide similar or comparable products/services.
+
+Calculate:
+
+Current supplier count
+Potential supplier count
+Supplier concentration
+Spend that can potentially be consolidated
+
+Savings methodology:
+
+Estimated Volume Leverage Savings =
+Eligible Consolidation Spend × Applicable Volume Discount %
+
+The discount percentage MUST NOT be hard-coded as guaranteed savings.
+
+Present it as an "Indicative Opportunity Range" or "Planning Assumption".
+
+For example:
+
+Eligible Spend: ₹100 Cr
+Indicative Volume Discount: 3–5%
+Indicative Opportunity: ₹3–5 Cr
+
+Display:
+
+BACKGROUND
+Why this opportunity was identified.
+
+OBJECTIVE
+What procurement action should achieve.
+
+ANALYSIS
+Supplier fragmentation / comparable spend / concentration.
+
+ESTIMATED IMPACT
+Eligible spend and indicative percentage/range.
+
+ACTION REQUIRED
+Supplier rationalization / RFQ / negotiation / allocation strategy.
+
+EXPECTED OUTCOME
+Improved commercial leverage, reduced supplier fragmentation and potential price improvement.
+
+REALIZATION METHOD
+Competitive RFQ / negotiation / strategic allocation / contract consolidation.
+
+IMPORTANT:
+Do not call this "e-auction savings".
+
+--------------------------------------------------
+B. PO CONSOLIDATION
+
+Objective:
+Reduce transaction complexity and procurement processing effort.
+
+This is NOT primarily a price saving.
+
+Calculate:
+
+Current PO count
+Potential optimized PO count
+Reduction in PO count
+Potential transaction reduction %
+
+Example:
+
+Current POs = 100
+Potential POs = 80
+Reduction = 20%
+
+Therefore:
+
+Potential Procurement Processing Effort Reduction = 20%
+
+Where appropriate, translate this into:
+
+Estimated Manpower Effort Saving
+=
+Current Procurement Processing Effort × PO Reduction %
+
+If manpower cost data is available:
+
+Estimated Cost Avoidance
+=
+Current Processing Effort Cost × PO Reduction %
+
+If manpower cost is NOT available:
+
+DO NOT invent a monetary saving.
+
+Instead display:
+
+"20% reduction in PO processing effort"
+
+and label monetary impact as:
+
+"To be quantified using customer's internal processing cost."
+
+This distinction is critical.
+
+--------------------------------------------------
+C. CATEGORY CONSOLIDATION / SPEND AGGREGATION
+
+Objective:
+Aggregate fragmented demand within categories/material groups.
+
+Calculate:
+
+Current category fragmentation
+Addressable spend
+Potential aggregation opportunity
+
+Use an indicative commercial leverage range where appropriate.
+
+Display:
+
+Eligible Spend
+Indicative Leverage %
+Indicative Opportunity
+Recommended sourcing action
+
+--------------------------------------------------
+D. STRATEGIC SOURCING
+
+Objective:
+Identify categories where structured sourcing can improve commercial outcomes.
+
+Assess:
+
+- Supplier competition
+- Spend concentration
+- Category fragmentation
+- Contract coverage
+- sourcing maturity
+- addressable spend
+
+Potential mechanisms:
+
+- Competitive RFQ
+- Negotiation
+- Multi-round sourcing
+- Supplier development
+- Should-cost discussion
+- Strategic allocation
+- Framework agreements
+- e-Auction where appropriate
+
+IMPORTANT:
+
+e-Auction is only ONE possible realization mechanism.
+
+It must NOT be represented as the source of all sourcing savings.
+
+The report should say:
+
+"Competitive sourcing / negotiation / auction, as applicable"
+
+rather than:
+
+"e-Auction savings".
+
+--------------------------------------------------
+E. SINGLE-SOURCE / STRATEGIC RISK
+
+Objective:
+
+Identify categories/materials where dependency on a single supplier creates commercial and supply risk.
+
+This should primarily be presented as:
+
+Risk Reduction Opportunity
+
+rather than automatically converting it into savings.
+
+Show:
+
+- Single-source spend
+- Supplier dependency
+- Category/material
+- Risk level
+- Alternate supplier opportunity
+- Dual-source opportunity
+- Recommended action
+
+If a commercial benefit can reasonably be derived from introducing competition, show:
+
+"Potential Competitive Leverage"
+
+but do not automatically assign a savings percentage unless supported by the methodology.
+
+--------------------------------------------------
+F. TAIL SPEND / LOW-VALUE TRANSACTION OPTIMIZATION
+
+Where Module 1 identifies tail spend:
+
+Analyze:
+
+- Transaction count
+- Supplier count
+- Average transaction value
+- Category fragmentation
+
+Potential levers:
+
+- Cataloguing
+- Framework agreements
+- Blanket POs
+- Supplier consolidation
+- Guided buying
+- Process automation
+
+Where measurable:
+
+show transaction/process efficiency improvement separately from price savings.
+
+--------------------------------------------------
+3. MODULE 3 — MARKET / BENCHMARK SAVINGS
+--------------------------------------------------
+
+Module 3 must have a completely separate savings category.
+
+This is NOT supplier consolidation.
+
+This is NOT e-auction.
+
+It represents:
+
+PRICE / BENCHMARK / MARKET OPPORTUNITY.
+
+For each benchmarkable material/category:
+
+Compare:
+
+Current Purchase Price
+Benchmark Price
+Historical Trend
+Market Movement
+Applicable Benchmark
+Price Variance
+
+Where appropriate:
+
+Potential Price Improvement =
+Current Addressable Spend × Benchmark Opportunity %
+
+OR, where quantity and unit prices are available:
+
+Potential Savings =
+(Current Price - Benchmark Reference Price) × Addressable Quantity
+
+Only calculate where the benchmark is valid and sufficiently comparable.
+
+Show benchmark quality:
+
+Quality A
+Quality B
+Quality C
+
+Also show:
+
+Benchmark Source
+Benchmark Period
+Current Price
+Benchmark Reference
+Variance %
+Addressable Spend
+Indicative Opportunity
+
+IMPORTANT:
+
+Do NOT claim that the entire benchmark variance is automatically realizable.
+
+Use terminology such as:
+
+"Indicative Price Opportunity"
+
+"Benchmark Gap"
+
+"Potential Commercial Opportunity"
+
+"Subject to specification, market conditions, contract terms and negotiation."
+
+--------------------------------------------------
+4. TREND ANALYSIS SAVINGS
+--------------------------------------------------
+
+Where Module 3 identifies a favorable/unfavorable price trend:
+
+Explain:
+
+Historical trend
+Current price position
+Benchmark position
+Potential negotiation timing
+Potential contract reset opportunity
+
+Possible realization mechanisms:
+
+- Contract reset
+- Index-linked pricing
+- Market correction
+- Re-negotiation
+- Alternate sourcing
+- Timing optimization
+
+Again, do NOT automatically call this e-auction savings.
+
+--------------------------------------------------
+5. SAVINGS OPPORTUNITY REGISTER
+--------------------------------------------------
+
+Create a professional consolidated savings register.
+
+Every opportunity must contain:
+
+Opportunity ID
+Module
+Analysis Type
+Category
+Sub-category
+Eligible Spend
+Current Baseline
+Opportunity %
+Opportunity Value
+Opportunity Type
+Confidence
+Methodology
+Background
+Objective
+Finding
+Recommended Action
+Realization Mechanism
+Owner
+Priority
+Timeline
+Dependencies
+Status
+
+Example:
+
+SO-001
+Module 2
+Vendor Consolidation
+Industrial Packaging
+₹100 Cr
+3–5%
+₹3–5 Cr
+Volume Leverage
+Medium
+Supplier fragmentation identified
+Consolidate comparable supplier volumes
+Run structured RFQ / negotiation
+Strategic Sourcing
+Procurement
+90–120 days
+
+--------------------------------------------------
+6. CRITICAL — PREVENT DOUBLE COUNTING
+--------------------------------------------------
+
+This is extremely important.
+
+The system MUST NOT add all identified opportunities blindly.
+
+For example:
+
+Vendor Consolidation
+Category Consolidation
+Strategic Sourcing
+e-Auction
+Benchmark Price Gap
+
+may overlap on the SAME spend.
+
+Create an "Opportunity Overlap / Savings Waterfall" methodology.
+
+For every opportunity:
+
+1. Identify eligible spend.
+2. Identify overlap with other opportunities.
+3. Establish primary lever.
+4. Establish secondary/supporting levers.
+5. Apply only the incremental opportunity.
+
+Example:
+
+Category Spend = ₹100 Cr
+
+Benchmark opportunity = ₹5 Cr
+Vendor consolidation opportunity = ₹3 Cr
+Strategic sourcing opportunity = ₹4 Cr
+
+Do NOT report ₹12 Cr automatically.
+
+Instead determine the incremental opportunity after overlap.
+
+The final report should clearly distinguish:
+
+GROSS IDENTIFIED OPPORTUNITY
+
+LESS:
+Overlap / dependency
+
+EQUALS:
+NET ADDRESSABLE OPPORTUNITY
+
+Then:
+
+REALIZABLE / PRIORITIZED OPPORTUNITY
+
+This will make the report CFO/CEO credible.
+
+--------------------------------------------------
+7. SAVINGS CONFIDENCE LEVEL
+--------------------------------------------------
+
+Every monetary opportunity must have a confidence classification:
+
+HIGH
+MEDIUM
+LOW
+
+Based on:
+
+- Data quality
+- Benchmark quality
+- Spend coverage
+- Supplier comparability
+- Availability of historical price
+- Contract information
+- Market benchmark reliability
+- Assumption dependency
+
+Do not use confidence to arbitrarily inflate or reduce savings.
+
+It should explain the strength of evidence.
+
+--------------------------------------------------
+8. ASSUMPTIONS PANEL
+--------------------------------------------------
+
+Create a professional "Savings Assumptions & Methodology" section.
+
+Clearly distinguish:
+
+FACTUAL BASELINE
+Data directly observed from uploaded customer data.
+
+ANALYTICAL FINDING
+Result calculated from customer data.
+
+BENCHMARK FINDING
+Result compared against external benchmark/reference.
+
+PLANNING ASSUMPTION
+Indicative percentage used to model opportunity.
+
+ESTIMATED OPPORTUNITY
+Calculated value based on an assumption.
+
+VALIDATED SAVING
+Only use this terminology where actual post-action savings have been demonstrated.
+
+Never present planning assumptions as realized savings.
+
+--------------------------------------------------
+9. PROFESSIONAL EXECUTIVE SUMMARY
+--------------------------------------------------
+
+The Executive Brief opening should NOT say:
+
+"Potential Savings from E-Auctions"
+
+Replace with:
+
+"Procurement Value Creation Opportunity"
+
+or:
+
+"Enterprise Procurement Savings & Value Opportunity"
+
+The first executive summary should show:
+
+TOTAL ADDRESSABLE SPEND
+
+NUMBER OF OPPORTUNITIES
+
+GROSS IDENTIFIED OPPORTUNITY
+
+OVERLAP / DUPLICATION
+
+NET ADDRESSABLE OPPORTUNITY
+
+PRIORITIZED OPPORTUNITY
+
+PROCESS / EFFORT IMPROVEMENT
+
+RISK REDUCTION OPPORTUNITIES
+
+BENCHMARK PRICE OPPORTUNITIES
+
+COMMERCIAL LEVERAGE OPPORTUNITIES
+
+--------------------------------------------------
+10. EXECUTIVE WATERFALL
+--------------------------------------------------
+
+Create a professional waterfall:
+
+Customer Addressable Spend
+        ↓
+Module 1 Baseline
+        ↓
+Module 2 Structural / Procurement Opportunities
+        ↓
+Module 3 Market / Benchmark Opportunities
+        ↓
+Gross Opportunity
+        ↓
+Overlap / Double Count Adjustment
+        ↓
+Net Opportunity
+        ↓
+Prioritized Opportunity
+        ↓
+Implementation / Realization Plan
+
+This should be the primary visual for the CFO/CEO.
+
+--------------------------------------------------
+11. ANALYSIS-WISE EXECUTIVE CARDS
+--------------------------------------------------
+
+Create separate cards for:
+
+1. Vendor Consolidation
+2. PO Consolidation
+3. Category Consolidation
+4. Strategic Sourcing
+5. Competitive Sourcing / Negotiation
+6. Single Supplier Risk
+7. Tail Spend Optimization
+8. Benchmark Price Opportunity
+9. Market Trend Opportunity
+10. Process / Manpower Efficiency
+
+Each card should show:
+
+WHY IDENTIFIED
+WHAT THE DATA SHOWS
+OBJECTIVE
+ELIGIBLE SPEND
+INDICATIVE IMPACT
+HOW IT CAN BE REALIZED
+EXPECTED OUTCOME
+NEXT STEP
+
+Use expandable detail sections for long explanations.
+
+--------------------------------------------------
+12. PO CONSOLIDATION — SPECIAL DISPLAY
+--------------------------------------------------
+
+For PO consolidation specifically, create a visual:
+
+CURRENT STATE
+100 POs
+
+OPTIMIZED STATE
+80 POs
+
+TRANSACTION REDUCTION
+20%
+
+Then:
+
+PROCUREMENT PROCESS EFFORT REDUCTION
+~20%
+
+If internal manpower cost is available:
+
+ESTIMATED COST AVOIDANCE
+₹X
+
+Otherwise:
+
+"Financial impact to be quantified using customer-specific processing cost."
+
+Do NOT fabricate the monetary value.
+
+--------------------------------------------------
+13. VENDOR CONSOLIDATION — SPECIAL DISPLAY
+--------------------------------------------------
+
+Show:
+
+CURRENT SUPPLIERS
+12
+
+TARGET / POTENTIAL SUPPLIERS
+6–8
+
+ELIGIBLE SPEND
+₹X Cr
+
+INDICATIVE VOLUME LEVERAGE
+3–5%
+
+INDICATIVE COMMERCIAL OPPORTUNITY
+₹X–₹Y Cr
+
+Then:
+
+REALIZATION PLAN
+
+1. Validate supplier comparability
+2. Consolidate demand
+3. Issue structured RFQ
+4. Negotiate / competitively source
+5. Evaluate quality and service
+6. Award volumes
+7. Track realized savings
+
+--------------------------------------------------
+14. BENCHMARK — SPECIAL DISPLAY
+--------------------------------------------------
+
+Show:
+
+CURRENT PRICE
+₹X
+
+BENCHMARK
+₹Y
+
+PRICE GAP
+X%
+
+ADDRESSABLE SPEND
+₹Z Cr
+
+INDICATIVE OPPORTUNITY
+₹A Cr
+
+BENCHMARK QUALITY
+A / B / C
+
+SOURCE
+Benchmark source
+
+IMPORTANT:
+
+Use "Price Gap" and "Indicative Opportunity".
+
+Do not call the entire gap "Savings".
+
+--------------------------------------------------
+15. REALIZATION ROADMAP
+--------------------------------------------------
+
+At the end of the report create:
+
+0–30 DAYS
+Validate data and opportunities
+
+30–60 DAYS
+Supplier/category validation
+
+60–90 DAYS
+RFQ / negotiation / sourcing
+
+90–120 DAYS
+Award / contract implementation
+
+120+ DAYS
+Savings realization and tracking
+
+Map each opportunity to the appropriate realization mechanism.
+
+--------------------------------------------------
+16. CFO / CEO LANGUAGE
+--------------------------------------------------
+
+The language throughout the Executive Brief must be professional and commercially credible.
+
+Use:
+
+"Opportunity"
+"Addressable Spend"
+"Indicative Impact"
+"Potential Commercial Benefit"
+"Benchmark Gap"
+"Volume Leverage"
+"Process Efficiency"
+"Cost Avoidance"
+"Risk Reduction"
+"Realization Plan"
+"Validated Saving"
+
+Avoid:
+
+"Guaranteed Saving"
+"Instant Saving"
+"100% Saving"
+"E-Auction Saving" as a generic label
+"AI says we can save X%"
+"All identified savings"
+
+unless the data genuinely supports such wording.
+
+--------------------------------------------------
+17. EXECUTIVE BRIEF STRUCTURE
+--------------------------------------------------
+
+Maintain the existing professional report structure but update the savings section to:
+
+01 — Procucev Overview
+02 — Procucev Experience & Offerings
+03 — Client Company Overview
+04 — Executive Summary
+05 — Customer Spend Baseline — Module 1
+06 — Spend & Category Diagnostics
+07 — Module 2 — Strategic Procurement Opportunities
+08 — Vendor Consolidation
+09 — PO Consolidation & Process Efficiency
+10 — Category Consolidation
+11 — Strategic Sourcing
+12 — Supplier Risk
+13 — Tail Spend
+14 — Module 3 — Benchmark & Market Opportunities
+15 — Price Benchmark Analysis
+16 — Trend / Market Opportunity
+17 — Consolidated Savings Waterfall
+18 — Overlap & Double Count Adjustment
+19 — Prioritized Opportunity Portfolio
+20 — Opportunity-wise Action Plan
+21 — Realization Roadmap
+22 — Procucev Recommended Engagement
+23 — Sector Experience & Relevant Expertise
+24 — Conclusion / Next Steps
+
+Maintain PPT and PDF exports.
+
+--------------------------------------------------
+18. UI REQUIREMENT
+--------------------------------------------------
+
+The Executive Brief UI must reflect the same methodology.
+
+Do not create another duplicate report.
+
+The existing Executive Brief remains the single authoritative report.
+
+Add/modify sections within it.
+
+Long sections should use:
+
+"View Analysis"
+"View Methodology"
+"View Calculation"
+"View Action Plan"
+
+expanders.
+
+The default view should remain executive-friendly and concise.
+
+--------------------------------------------------
+19. DATA INTEGRITY
+--------------------------------------------------
+
+All numbers displayed in the report must originate from:
+
+- Module 1 actual analysis
+- Module 2 actual analysis
+- Module 3 actual analysis
+- Module 4 savings calculations
+
+Do not invent customer-specific numbers.
+
+If a required value is unavailable, show:
+
+"To be validated"
+
+or
+
+"Requires customer input"
+
+rather than fabricating a number.
+
+Planning assumptions must be visibly identified as assumptions.
+
+--------------------------------------------------
+20. TESTING
+--------------------------------------------------
+
+After implementation:
+
+1. Run TypeScript validation.
+2. Run existing tests.
+3. Run savings engine tests.
+4. Test each savings lever.
+5. Test overlap/double-count prevention.
+6. Test zero / missing data.
+7. Test PO consolidation calculation.
+8. Test vendor consolidation calculation.
+9. Test benchmark calculation.
+10. Test Executive Brief generation.
+11. Test PPT export.
+12. Test PDF export.
+13. Verify UI reflects the new methodology.
+14. Verify there is no duplicate Executive Brief.
+15. Verify no dead buttons.
+16. Verify all calculations shown in UI are connected to actual backend functions.
+
+Do not weaken tests merely to make them pass.
+
+--------------------------------------------------
+21. FINAL ACCEPTANCE CRITERIA
+--------------------------------------------------
+
+The implementation is complete only when:
+
+- Savings are NOT presented as e-auction-only.
+- Every major Module 2 analysis has its own savings/benefit methodology.
+- Module 3 benchmark opportunities are separately identified.
+- PO consolidation shows process/manpower effort reduction.
+- Vendor consolidation shows indicative volume leverage.
+- Strategic sourcing has its own opportunity.
+- Supplier risk is treated as risk reduction unless commercial benefit is supported.
+- Benchmark gaps are clearly separated from realized savings.
+- Gross opportunity, overlap and net opportunity are clearly distinguished.
+- Double counting is prevented.
+- Every opportunity has Background → Objective → Finding → Impact → Action → Realization → Next Step.
+- CFO/CEO can understand the report without opening every detailed analysis.
+- Detailed users can expand each analysis for methodology and calculations.
+- PPT and PDF use the same professional structure.
+- Existing functionality remains intact.
+- All UI functions are connected to the correct underlying calculations.
+
+DO NOT START BY REWRITING THE APPLICATION.
+
+First inspect the existing savings calculation and Executive Brief implementation.
+
+Then implement the minimum required changes to achieve the above architecture.
+
+At the end provide:
+
+IMPLEMENTATION_STATUS:
+PASS / FAIL
+
+MODULE_1_BASELINE:
+PASS / FAIL
+
+MODULE_2_SAVINGS_LEVERS:
+PASS / FAIL
+
+MODULE_3_BENCHMARK_OPPORTUNITIES:
+PASS / FAIL
+
+MODULE_4_CONSOLIDATION:
+PASS / FAIL
+
+DOUBLE_COUNT_PROTECTION:
+PASS / FAIL
+
+PO_EFFICIENCY_MODEL:
+PASS / FAIL
+
+VENDOR_CONSOLIDATION_MODEL:
+PASS / FAIL
+
+EXECUTIVE_BRIEF:
+PASS / FAIL
+
+PPT_EXPORT:
+PASS / FAIL
+
+PDF_EXPORT:
+PASS / FAIL
+
+UI_INTEGRATION:
+PASS / FAIL
+
+TEST_STATUS:
+PASS / FAIL
+
+ISSUES:
+LIST ONLY REAL ISSUES
+
+CHANGES_MADE:
+LIST ACTUAL CHANGES
+
+RECOMMENDED_NEXT_STEP:
+ONE CLEAR NEXT STEP
+
+
+## Prompt 273
+
+# PROMPT 273 — FINAL CFO SAVINGS MODEL & EXECUTIVE BRIEF REFINEMENT
+
+We need to make one important conceptual improvement to the Executive Brief.
+
+The current implementation is technically complete and the 24-slide Executive Brief, PPT export, PDF export, Modules 1–4 and UI integration are already passing validation.
+
+DO NOT redesign the application from scratch.
+DO NOT remove the existing 24-slide storyline.
+DO NOT break any existing functionality.
+DO NOT make e-auctions the primary or exclusive savings source.
+
+The objective of this prompt is to make the Executive Brief professionally communicate the COMPLETE VALUE / SAVINGS OPPORTUNITY identified across Module 1, Module 2 and Module 3, with Module 4 consolidating the opportunities and protecting against double counting.
+
+========================================================
+1. CORE PRINCIPLE
+========================================================
+
+The Executive Brief must communicate:
+
+CUSTOMER SPEND BASELINE
+        ↓
+MODULE 1 — Spend Diagnostics
+        ↓
+MODULE 2 — Procurement / Process Opportunities
+        ↓
+MODULE 3 — Benchmark / Market Opportunities
+        ↓
+MODULE 4 — Consolidation & Double-Count Protection
+        ↓
+NET OPPORTUNITY PORTFOLIO
+        ↓
+ACTION PLAN + REALIZATION ROADMAP
+
+Do NOT position e-auction as the main savings engine.
+
+E-auction is only ONE possible sourcing mechanism under Strategic Sourcing.
+
+The savings story must be opportunity-led, not tool-led.
+
+========================================================
+2. CLASSIFY EVERY OUTPUT INTO VALUE TYPES
+========================================================
+
+Create a clear value taxonomy.
+
+Every finding must be classified as one of:
+
+A. DIRECT PROCUREMENT SAVING
+   Example:
+   - lower negotiated purchase price
+   - benchmark price gap
+   - supplier consolidation volume leverage
+   - category sourcing opportunity
+
+B. PROCUREMENT PROCESS / PRODUCTIVITY BENEFIT
+   Example:
+   - PO reduction
+   - fewer supplier transactions
+   - reduced processing effort
+   - reduced RFQ administration
+   - reduced manual intervention
+
+C. RISK / COST AVOIDANCE OPPORTUNITY
+   Example:
+   - excessive supplier dependency
+   - price volatility exposure
+   - supply continuity exposure
+
+D. STRATEGIC OPPORTUNITY
+   Example:
+   - category strategy
+   - sourcing redesign
+   - specification standardization
+   - supplier rationalization
+
+E. VALIDATED SAVING
+   Only use this term when an actual realized/validated saving is supported by customer evidence.
+
+IMPORTANT:
+
+Do NOT combine all five categories into one artificial "Savings" number.
+
+Clearly distinguish:
+
+INDICATIVE PROCUREMENT OPPORTUNITY
+PROCESS EFFICIENCY BENEFIT
+RISK / COST AVOIDANCE
+VALIDATED SAVING
+
+========================================================
+3. MODULE 1 — ESTABLISH THE BASELINE
+========================================================
+
+Module 1 must establish:
+
+- Total customer spend
+- Addressable spend
+- Non-addressable / excluded spend
+- Number of transactions / POs where available
+- Number of suppliers
+- Number of categories
+- Spend concentration
+- Tail spend
+- Category concentration
+- Vendor concentration
+- Other relevant diagnostic findings
+
+Every downstream opportunity must reference the relevant Module 1 baseline.
+
+Example:
+
+"Vendor consolidation opportunity is calculated only against the eligible spend identified from Module 1."
+
+Do NOT apply a percentage to total customer spend unless the analysis explicitly supports it.
+
+========================================================
+4. MODULE 2 — MODEL EACH ANALYSIS SEPARATELY
+========================================================
+
+Create a professional savings/value calculation for EACH Module 2 analysis.
+
+--------------------------------------------------------
+4.1 VENDOR CONSOLIDATION
+--------------------------------------------------------
+
+Use the actual eligible spend identified by the analysis.
+
+Display:
+
+Current suppliers
+Eligible suppliers
+Target supplier structure
+Eligible spend
+Planning leverage assumption
+Indicative opportunity
+Calculation methodology
+Realization steps
+
+Example methodology:
+
+Eligible Spend × Planning Leverage %
+
+Use the currently implemented planning range of approximately 3–5% where appropriate.
+
+IMPORTANT:
+
+Do not call this guaranteed savings.
+
+Use wording:
+
+"Indicative Volume Leverage Opportunity"
+
+or
+
+"Planning Opportunity — Subject to RFQ / Negotiation Validation"
+
+Show:
+
+Example:
+₹154.20 Cr eligible spend
+× 3–5% planning leverage
+= ₹4.63–₹7.71 Cr indicative opportunity
+
+If the system has more accurate customer-specific data, use that instead.
+
+========================================================
+4.2 PO CONSOLIDATION
+========================================================
+
+PO consolidation must NOT automatically be treated as direct procurement savings.
+
+Calculate process efficiency.
+
+Example:
+
+Current POs = 4,120
+Potential POs after consolidation = 3,296
+PO reduction = 824
+PO reduction % = 20%
+
+Display:
+
+"20% reduction in PO processing volume"
+
+Then estimate:
+
+Current processing effort = 100%
+Future processing effort = 80%
+Indicative effort reduction = 20%
+
+Where manpower cost data exists:
+
+Annual PO Processing Cost × Effort Reduction %
+
+If manpower cost is NOT available:
+
+DO NOT manufacture a rupee saving.
+
+Instead display:
+
+"20% process effort reduction — monetary benefit to be validated using customer processing-cost data."
+
+Clearly label:
+
+VALUE TYPE:
+Process Productivity Benefit
+
+DIRECT SPEND SAVING:
+₹0 unless independently demonstrated.
+
+========================================================
+4.3 CATEGORY CONSOLIDATION
+========================================================
+
+Analyze Module 2 category results.
+
+For each eligible category:
+
+- Current spend
+- Number of suppliers
+- Fragmentation
+- Consolidation potential
+- Planning leverage assumption
+- Indicative opportunity
+
+Use category-specific assumptions where supported.
+
+Do NOT use a universal percentage blindly.
+
+If no reliable assumption exists:
+
+show the spend as "Opportunity Base" and mark the monetary saving as "To be validated."
+
+========================================================
+4.4 STRATEGIC SOURCING
+========================================================
+
+Strategic sourcing must be broader than e-auctions.
+
+Potential sourcing mechanisms include:
+
+- RFQ / competitive bidding
+- Negotiation
+- Supplier competition
+- Contract restructuring
+- Specification rationalization
+- Alternate supplier development
+- Should-cost analysis
+- Volume bundling
+- Contract term optimization
+- E-auction where appropriate
+
+E-auction must be presented as:
+
+"One sourcing mechanism"
+
+NOT:
+
+"The savings source."
+
+For each strategic sourcing opportunity show:
+
+Category
+Current spend
+Sourcing opportunity
+Recommended sourcing mechanism
+Planning assumption
+Indicative opportunity
+Validation requirement
+Next step
+
+========================================================
+4.5 SUPPLIER RISK
+========================================================
+
+Supplier risk should NOT automatically be converted into savings.
+
+Show:
+
+- Supplier dependency
+- Sole-source exposure
+- Dominant supplier exposure
+- Spend at risk
+- Business impact
+- Recommended mitigation
+
+Where monetary risk avoidance can be credibly calculated, show it separately as:
+
+"Potential Cost Avoidance / Risk Mitigation"
+
+Otherwise show:
+
+"Risk Exposure — Not Monetized"
+
+Do not manufacture a savings number.
+
+========================================================
+4.6 TAIL SPEND
+========================================================
+
+Analyze tail spend from Module 1 / Module 2.
+
+Show:
+
+- Tail spend
+- Number of suppliers / transactions
+- Fragmentation
+- Consolidation potential
+- Transaction reduction
+- Process opportunity
+- Potential sourcing opportunity
+
+Separate:
+
+Procurement opportunity
+
+from
+
+Process efficiency opportunity.
+
+========================================================
+5. MODULE 3 — BENCHMARK / MARKET OPPORTUNITIES
+========================================================
+
+Module 3 should provide a completely separate value stream.
+
+For each benchmarkable category/material:
+
+- Current price
+- Benchmark price
+- Price gap %
+- Eligible spend
+- Indicative opportunity
+- Benchmark quality
+- Source / benchmark basis
+- Validation requirement
+
+Calculation:
+
+Eligible Spend × Benchmark Gap %
+
+Only calculate monetary opportunity where the benchmark is sufficiently reliable.
+
+Clearly label:
+
+"Indicative Benchmark Opportunity"
+
+NOT:
+
+"Guaranteed Savings"
+
+========================================================
+6. MARKET TREND ANALYSIS
+========================================================
+
+Where Module 3 identifies:
+
+- falling prices
+- rising prices
+- favorable market timing
+- unfavorable price exposure
+- contract reset opportunities
+
+show these separately.
+
+Example:
+
+"Market Timing Opportunity"
+
+"Contract Reset Opportunity"
+
+"Price Risk Exposure"
+
+Do not automatically convert trend direction into a savings amount.
+
+========================================================
+7. CREATE A MASTER OPPORTUNITY REGISTER
+========================================================
+
+Create one consolidated table feeding the Executive Brief and Module 4.
+
+Columns:
+
+Opportunity ID
+Module
+Analysis
+Category
+Sub-category
+Customer Spend Base
+Eligible Spend
+Value Type
+Planning Assumption
+Opportunity %
+Indicative Opportunity
+Confidence / Quality
+Overlap Group
+Validation Requirement
+Recommended Action
+Owner
+Timeline
+Status
+
+Example:
+
+OPP-001
+Module 2
+Vendor Consolidation
+Industrial Supplies
+₹154.20 Cr
+₹154.20 Cr
+Direct Procurement Opportunity
+3–5%
+₹4.63–₹7.71 Cr
+Planning
+Vendor Consolidation
+RFQ + negotiation
+90 days
+
+OPP-002
+Module 2
+PO Consolidation
+All Categories
+4,120 POs
+3,296 target POs
+Process Productivity
+20%
+20% effort reduction
+Planning
+PO Efficiency
+Process redesign
+60–90 days
+
+OPP-003
+Module 3
+Benchmark Gap
+Material Category
+₹1,284.50 Cr
+₹1,284.50 Cr
+Benchmark Opportunity
+6.28%
+₹80.57 Cr
+Planning
+Benchmark
+Validate supplier prices
+
+Use actual system-calculated values where available.
+Do not hard-code examples if live customer data provides better values.
+
+========================================================
+8. DOUBLE-COUNTING CONTROL
+========================================================
+
+This is CRITICAL.
+
+The system must identify overlapping opportunities.
+
+For example:
+
+Vendor consolidation
++
+Category consolidation
++
+Strategic sourcing
++
+Benchmark gap
+
+may all affect the same spend.
+
+Do NOT add all four blindly.
+
+Create:
+
+GROSS OPPORTUNITY
+
+LESS:
+Overlap / Double Count
+
+=
+
+NET INDICATIVE PROCUREMENT OPPORTUNITY
+
+Separately show:
+
+PROCESS PRODUCTIVITY BENEFIT
+
+and
+
+RISK / COST AVOIDANCE
+
+This creates a CFO-grade value bridge.
+
+========================================================
+9. CFO SAVINGS WATERFALL
+========================================================
+
+Replace any simplistic "Savings from E-auction" presentation with:
+
+CUSTOMER ADDRESSABLE SPEND
+        ↓
+MODULE 2 PROCUREMENT OPPORTUNITIES
+        ↓
+MODULE 3 BENCHMARK OPPORTUNITIES
+        ↓
+GROSS OPPORTUNITY
+        ↓
+LESS: OVERLAP / DOUBLE COUNT
+        ↓
+NET INDICATIVE PROCUREMENT OPPORTUNITY
+
+Then separately:
+
+PROCESS PRODUCTIVITY BENEFIT
+
+RISK / COST AVOIDANCE
+
+VALIDATED / REALIZED SAVINGS
+
+Do not add process productivity and procurement savings together unless the monetary conversion is actually supported.
+
+========================================================
+10. EXECUTIVE SUMMARY
+========================================================
+
+The Executive Summary slide must answer five CFO questions:
+
+1. How much does the customer spend?
+2. Where are the largest opportunities?
+3. What type of value can be created?
+4. How much is indicative vs validated?
+5. What needs to happen next?
+
+Use a visual summary such as:
+
+ADDRESSABLE SPEND
+₹XXX Cr
+
+INDICATIVE PROCUREMENT OPPORTUNITY
+₹XXX Cr
+
+PROCESS PRODUCTIVITY
+XX%
+
+RISK / COST AVOIDANCE
+₹XXX Cr / Not Monetized
+
+VALIDATED SAVINGS
+₹XXX Cr / To Be Validated
+
+Do not present unvalidated opportunity as achieved savings.
+
+========================================================
+11. EACH OPPORTUNITY MUST HAVE FOUR CFO QUESTIONS
+========================================================
+
+For every major finding show:
+
+BACKGROUND
+Why was this analysis performed?
+
+FINDING
+What did the analysis identify?
+
+VALUE / OPPORTUNITY
+What financial or productivity opportunity does this create?
+
+NEXT STEP
+What must the customer do to realize it?
+
+Example:
+
+VENDOR CONSOLIDATION
+
+BACKGROUND:
+Supplier fragmentation was identified within the eligible category spend.
+
+FINDING:
+912 tail vendors represent ₹154.20 Cr of eligible spend.
+
+VALUE:
+A 3–5% planning leverage indicates ₹4.63–₹7.71 Cr indicative volume opportunity.
+
+NEXT STEP:
+Segment suppliers → issue RFQ → consolidate volumes → negotiate → award → track realized price.
+
+========================================================
+12. ASSUMPTION TAXONOMY
+========================================================
+
+Continue using the existing taxonomy:
+
+FACTUAL BASELINE
+ANALYTICAL FINDING
+BENCHMARK FINDING
+PLANNING ASSUMPTION
+ESTIMATED OPPORTUNITY
+VALIDATED SAVING
+
+Every monetary number in the Executive Brief must carry one of these labels.
+
+This is mandatory.
+
+========================================================
+13. PROFESSIONAL LANGUAGE
+========================================================
+
+Replace language such as:
+
+"Savings from e-auction"
+
+with:
+
+"Strategic Sourcing Opportunity"
+
+and where appropriate:
+
+"Indicative Competitive Sourcing Opportunity"
+
+Replace:
+
+"Expected Savings"
+
+with:
+
+"Indicative Opportunity"
+
+unless independently validated.
+
+Replace:
+
+"Savings"
+
+with:
+
+"Value Opportunity"
+
+where the value is not yet realized.
+
+Use:
+
+"Potential"
+"Indicative"
+"Planning"
+"Subject to Validation"
+
+where appropriate.
+
+========================================================
+14. EXECUTIVE BRIEF SLIDES TO UPDATE
+========================================================
+
+Keep the existing 24-slide structure.
+
+Update the following slides:
+
+04 Executive Summary
+06 Spend & Category Diagnostics
+07 Module 2 — Strategic Procurement Opportunities
+08 Vendor Consolidation
+09 PO Consolidation & Process Efficiency
+10 Category Consolidation
+11 Strategic Sourcing
+12 Supplier Risk
+13 Tail Spend
+14 Module 3 — Benchmark & Market Opportunities
+15 Price Benchmark Analysis
+16 Trend / Market Opportunity
+17 Consolidated Savings Waterfall
+18 Overlap & Double Count Adjustment
+19 Prioritized Opportunity Portfolio
+20 Opportunity-wise Action Plan
+21 Realization Roadmap
+
+Also update the PPTX and PDF exports so the exact same logic appears in both.
+
+========================================================
+15. UI REQUIREMENTS
+========================================================
+
+The Executive Brief UI should show:
+
+TOTAL VALUE OPPORTUNITY
+
+with expandable sections:
+
+1. Procurement Savings Opportunities
+2. Process Productivity Opportunities
+3. Benchmark Opportunities
+4. Risk / Cost Avoidance
+5. Validation Required
+6. Double Count Adjustment
+7. Final Opportunity Portfolio
+
+Long calculations should remain inside expanders.
+
+Do not clutter the initial CFO view.
+
+The first view should communicate the headline value clearly.
+
+========================================================
+16. IMPORTANT — DO NOT INVENT SAVINGS
+========================================================
+
+If the underlying data does not support a monetary calculation:
+
+DO NOT create one.
+
+Instead show:
+
+"Opportunity identified — monetary impact requires customer validation."
+
+This is especially important for:
+
+- supplier risk
+- market trends
+- process productivity
+- specification rationalization
+- contract improvement
+
+========================================================
+17. FINAL PROFESSIONAL OUTPUT
+========================================================
+
+The Executive Brief should ultimately tell this story:
+
+"We analyzed the customer's spend baseline."
+
+"From that baseline, we identified multiple independent value levers."
+
+"Module 2 identifies procurement and process opportunities."
+
+"Module 3 identifies benchmark and market opportunities."
+
+"Module 4 consolidates these opportunities and removes overlaps."
+
+"The resulting figure is an indicative opportunity portfolio — not a promise of savings."
+
+"Realization requires sourcing, negotiation, implementation and tracking."
+
+This should make the report credible to a CFO / CEO and demonstrate that Procucev's value comes from the COMPLETE procurement analytics and execution framework, not from one sourcing technique.
+
+========================================================
+18. VALIDATION
+========================================================
+
+After implementation:
+
+1. Run existing tests.
+2. Add/update tests for:
+   - vendor consolidation calculation
+   - PO productivity calculation
+   - category consolidation
+   - strategic sourcing
+   - benchmark opportunity
+   - risk/non-monetized opportunity
+   - double-count protection
+   - executive summary
+   - PPT export
+   - PDF export
+
+3. Run:
+   npm run typecheck
+   npm run lint
+   npm run quality:fast
+   npm run check:budget
+
+4. Verify:
+   /executive-brief
+   PDF export
+   PPTX export
+
+5. Ensure no regression in Modules 1–4.
+
+6. Ensure no duplicate Executive Brief displays.
+
+7. Ensure all monetary values have a clearly visible classification:
+   FACTUAL / FINDING / ASSUMPTION / OPPORTUNITY / VALIDATED.
+
+8. Do NOT change application functionality unrelated to this requirement.
+
+Return:
+
+IMPLEMENTATION_STATUS:
+MODULE_1_BASELINE:
+MODULE_2_VENDOR_CONSOLIDATION:
+MODULE_2_PO_PRODUCTIVITY:
+MODULE_2_CATEGORY_CONSOLIDATION:
+MODULE_2_STRATEGIC_SOURCING:
+MODULE_2_SUPPLIER_RISK:
+MODULE_2_TAIL_SPEND:
+MODULE_3_BENCHMARK:
+MODULE_3_MARKET_TREND:
+DOUBLE_COUNT_PROTECTION:
+CFO_WATERFALL:
+EXECUTIVE_SUMMARY:
+PPT_EXPORT:
+PDF_EXPORT:
+UI_INTEGRATION:
+TEST_STATUS:
+
+SAVINGS_MODEL:
+- Direct Procurement Opportunity:
+- Process Productivity:
+- Risk / Cost Avoidance:
+- Validated Savings:
+- Double Count Adjustment:
+- Net Indicative Opportunity:
+
+ISSUES:
+CHANGES_MADE:
+RECOMMENDED_NEXT_STEP:
+
+## Prompt 274
+
+## PROMPT — FINAL CFO PROCUREMENT VALUE OPPORTUNITY MODEL
+## Multi-Lever Savings Attribution + Module 1–3 Evidence Chain + Professional Executive Brief
+
+We need to make one final, fundamental refinement to the Executive Brief.
+
+IMPORTANT BUSINESS PRINCIPLE:
+
+DO NOT PRESENT PROCUREMENT SAVINGS AS IF THEY COME PRIMARILY OR EXCLUSIVELY FROM E-AUCTIONS.
+
+E-auction is only ONE possible execution mechanism within Strategic Sourcing.
+
+The Executive Brief must demonstrate that Procucev has analysed the customer's procurement across Modules 1, 2 and 3 and identified value opportunities across multiple independent levers.
+
+The report must therefore become a professional:
+
+"PROCUREMENT VALUE OPPORTUNITY PORTFOLIO"
+
+rather than an "e-auction savings report".
+
+============================================================
+1. OBJECTIVE
+============================================================
+
+Build a complete, evidence-driven value opportunity model covering:
+
+MODULE 1:
+Spend analysis and spend intelligence
+
+MODULE 2:
+AI categorization
+Vendor consolidation
+PO consolidation
+Category consolidation
+Strategic sourcing
+Supplier concentration
+Tail-spend analysis
+Supplier risk
+Multi-supplier / fragmented buying patterns
+Negotiation / RFQ / sourcing opportunities
+E-auction where applicable
+
+MODULE 3:
+Benchmark price gap
+Market trend
+Commodity/index movement
+Contract reset opportunities
+Price dispersion
+Timing opportunities
+Benchmark-supported sourcing opportunities
+
+MODULE 4:
+Savings Engine must consolidate these opportunities without double counting.
+
+EXECUTIVE BRIEF:
+Must present the entire opportunity portfolio professionally to CFO/CEO.
+
+============================================================
+2. NON-NEGOTIABLE RULE
+============================================================
+
+NEVER assume that "savings = e-auction".
+
+NEVER create a universal savings percentage.
+
+NEVER apply the same percentage to every category.
+
+NEVER manufacture savings where the underlying data does not support an opportunity.
+
+NEVER convert process productivity into procurement savings unless an actual manpower/operational cost baseline exists.
+
+NEVER convert supplier-risk exposure into direct procurement savings.
+
+NEVER double count Module 2 and Module 3 opportunities.
+
+Every opportunity must have:
+
+Opportunity ID
+Module
+Analysis Type
+Category
+Item / Material
+Supplier(s)
+Eligible Spend
+Evidence
+Calculation Basis
+Assumption
+Low Case
+Base Case
+High Case
+Expected Value
+Value Type
+Confidence
+Exclusions
+Double-counting Group
+Recommended Execution Mechanism
+Next Step
+
+============================================================
+3. MODULE 1 — BASELINE FIRST
+============================================================
+
+The Executive Brief must begin with the factual procurement baseline.
+
+Show:
+
+Total customer spend
+Addressable spend
+Number of transactions
+Number of POs
+Number of suppliers
+Number of categories
+Tail suppliers
+Tail spend
+Supplier concentration
+Category concentration
+Transaction fragmentation
+PO fragmentation
+Other relevant findings
+
+Do NOT call these savings.
+
+Call them:
+
+"VALUE OPPORTUNITY BASE"
+
+or
+
+"ADDRESSABLE PROCUREMENT BASE"
+
+Clearly distinguish:
+
+BASELINE
+vs
+OPPORTUNITY
+vs
+EXPECTED BENEFIT
+vs
+VALIDATED SAVING
+
+Every executive KPI must drill back to transaction-level evidence.
+
+============================================================
+4. VENDOR CONSOLIDATION
+============================================================
+
+Analyse vendor fragmentation at:
+
+Category
+Item
+Specification
+UOM
+Supplier
+Spend
+
+Where evidence supports supplier consolidation, calculate:
+
+Current supplier count
+Potential supplier count
+Eligible spend
+Tail supplier spend
+Supplier concentration
+Potential volume leverage
+
+Do NOT automatically use one percentage.
+
+Use a defensible planning range only where appropriate.
+
+Example:
+
+Eligible fragmented spend = ₹X Cr
+
+Planning leverage:
+Low = 3%
+Base = 4%
+High = 5%
+
+Potential value:
+
+Low Case = X × 3%
+Base Case = X × 4%
+High Case = X × 5%
+
+Clearly label:
+
+"INDICATIVE VOLUME LEVERAGE — TO BE VALIDATED THROUGH RFQ / NEGOTIATION"
+
+Do not call it guaranteed savings.
+
+If the data does not support a percentage, show:
+
+"Opportunity identified — commercial validation required"
+
+instead of inventing a number.
+
+============================================================
+5. PO CONSOLIDATION / PROCESS PRODUCTIVITY
+============================================================
+
+Treat PO consolidation completely separately from procurement price savings.
+
+Example:
+
+Current POs = 4,120
+Potential target POs = 3,296
+PO reduction = 824
+Reduction = 20%
+
+Show:
+
+"20% PO volume reduction"
+
+and
+
+"20% estimated process effort reduction"
+
+BUT:
+
+Direct procurement saving = ₹0
+
+unless actual manpower / processing cost is available.
+
+If manpower cost is available:
+
+Current annual PO processing cost
+Target annual PO processing cost
+Potential administrative benefit
+
+Otherwise:
+
+"Financial benefit requires customer-specific manpower cost validation."
+
+This distinction is mandatory.
+
+============================================================
+6. CATEGORY CONSOLIDATION
+============================================================
+
+Analyse category fragmentation.
+
+For each eligible category show:
+
+Current spend
+Number of suppliers
+Number of transactions
+Fragmentation
+Common specifications
+Potential aggregation
+Potential volume leverage
+Low/Base/High opportunity if evidence supports it
+
+Do not apply a universal percentage.
+
+Every percentage must have a stated basis.
+
+============================================================
+7. STRATEGIC SOURCING
+============================================================
+
+Strategic sourcing must include multiple execution mechanisms:
+
+RFQ
+Competitive bidding
+Negotiation
+Volume pooling
+Supplier development
+Specification standardisation
+Should-cost modelling
+Contract restructuring
+E-auction
+Dual sourcing
+Multi-year contracting
+Market testing
+
+E-auction must be shown only where the category qualifies.
+
+The report must explicitly state:
+
+"E-auction is an execution mechanism, not the source of all procurement savings."
+
+For each opportunity show the recommended mechanism.
+
+============================================================
+8. E-AUCTION
+============================================================
+
+Where supplier depth, specification comparability and price dispersion support an auction:
+
+Show:
+
+Eligible spend
+Supplier count
+Current price dispersion
+Auction suitability
+Potential competitive compression
+Low/Base/High range
+
+Clearly label:
+
+"POTENTIAL BENEFIT SUBJECT TO COMPETITIVE EVENT"
+
+Do not add the same opportunity again under Strategic Sourcing.
+
+Use the same Double Count Group.
+
+============================================================
+9. PRICE DISPERSION / NEGOTIATION OPPORTUNITY
+============================================================
+
+Analyse:
+
+MIN
+P10
+P25
+MEDIAN
+WEIGHTED AVERAGE
+P75
+P90
+MAX
+IQR
+CV
+Price spread
+
+But only compare transactions that are genuinely comparable by:
+
+Specification
+UOM
+Grade
+Size
+Location where relevant
+Incoterm where relevant
+Quantity basis
+Currency
+Time period
+
+If comparability is insufficient:
+
+EXCLUDE.
+
+Show exclusion reason.
+
+Where supported:
+
+Low Case
+Base Case
+High Case
+
+Example:
+
+Current comparable spend = ₹X Cr
+
+Observed price opportunity range:
+Low = X%
+Base = X%
+High = X%
+
+Expected value calculated transparently.
+
+============================================================
+10. MODULE 3 — BENCHMARK OPPORTUNITY
+============================================================
+
+Module 3 benchmark opportunities must be independently calculated.
+
+Show:
+
+Customer price
+Benchmark price
+Benchmark source
+Benchmark quality
+Period
+Applicable UOM
+Applicable geography
+Price gap
+Eligible spend
+Indicative opportunity
+
+Do not automatically combine benchmark opportunity with:
+
+Vendor consolidation
+Negotiation
+E-auction
+Category consolidation
+
+unless the overlap engine explicitly determines the relationship.
+
+Every Module 3 opportunity must have:
+
+BENCHMARK_ID
+SOURCE
+QUALITY
+DATE
+APPLICABILITY
+CALCULATION
+
+============================================================
+11. MARKET TREND / CONTRACT RESET
+============================================================
+
+Where Module 3 identifies a market trend:
+
+Show:
+
+Commodity/index
+Current customer price
+Trend direction
+Relevant market movement
+Contract exposure
+Reset opportunity
+Potential timing benefit
+
+Do not manufacture savings merely because a commodity price moved.
+
+Show the opportunity as:
+
+"MARKET TIMING / CONTRACT RESET OPPORTUNITY"
+
+and require commercial validation.
+
+============================================================
+12. SUPPLIER RISK
+============================================================
+
+Supplier risk must NOT be presented as direct procurement savings.
+
+Show:
+
+Single-source spend
+Criticality
+Alternative supplier availability
+Risk exposure
+Potential dual-source requirement
+Potential cost avoidance
+
+Value type:
+
+RISK / COST AVOIDANCE
+
+Direct procurement saving:
+
+₹0 unless separately demonstrated.
+
+============================================================
+13. SAVINGS / VALUE TAXONOMY
+============================================================
+
+Every opportunity must belong to exactly one primary value type:
+
+1. DIRECT PROCUREMENT SAVING
+2. PROCESS PRODUCTIVITY BENEFIT
+3. RISK / COST AVOIDANCE
+4. STRATEGIC OPPORTUNITY
+5. VALIDATED SAVING
+
+Never mix them.
+
+The executive report must show separate totals.
+
+============================================================
+14. LOW / BASE / HIGH RANGE
+============================================================
+
+Where a percentage-based opportunity is justified, provide:
+
+LOW CASE
+BASE CASE
+HIGH CASE
+
+BUT:
+
+Do not use arbitrary percentages.
+
+The percentage must be based on:
+
+Historical price dispersion
+Observed supplier variation
+Comparable transactions
+Category characteristics
+Supplier depth
+Market evidence
+Benchmark gap
+Negotiation evidence
+Prior validated customer results where available
+
+Every assumption must have:
+
+ASSUMPTION TYPE
+ASSUMPTION VALUE
+BASIS
+SOURCE
+CONFIDENCE
+VALIDATION REQUIRED
+
+============================================================
+15. MASTER OPPORTUNITY REGISTER
+============================================================
+
+Create one master register.
+
+Columns:
+
+Opportunity ID
+Module
+Analysis
+Category
+Item
+Supplier
+Eligible Spend
+Value Type
+Low %
+Base %
+High %
+Low Value
+Base Value
+High Value
+Confidence
+Evidence
+Calculation
+Assumption
+Execution Mechanism
+Overlap Group
+Exclusion Status
+Next Step
+
+This becomes the single source of truth for:
+
+UI
+Executive Brief
+PDF
+PPT
+Savings Engine
+Module 4
+
+============================================================
+16. DOUBLE COUNTING ENGINE
+============================================================
+
+This is CRITICAL.
+
+Examples:
+
+Vendor consolidation + e-auction
+
+Category consolidation + vendor consolidation
+
+Benchmark gap + negotiation
+
+Market trend + benchmark gap
+
+Strategic sourcing + e-auction
+
+must NOT automatically be added together.
+
+Create:
+
+GROSS OPPORTUNITY
+
+LESS:
+Overlap Adjustment
+
+LESS:
+Excluded / Non-addressable Opportunity
+
+=
+
+NET DEFENSIBLE OPPORTUNITY
+
+Maintain transaction-level and opportunity-level lineage.
+
+Every deduction must show:
+
+Opportunity A
+Opportunity B
+Overlap reason
+Amount deducted
+Remaining opportunity
+
+============================================================
+17. EXECUTIVE CFO WATERFALL
+============================================================
+
+The Executive Brief must show:
+
+ADDRESSABLE PROCUREMENT SPEND
+
+↓
+
+MODULE 1 VALUE OPPORTUNITY BASE
+
+↓
+
+MODULE 2 OPPORTUNITIES
+
+Vendor Consolidation
+PO Productivity
+Category Consolidation
+Strategic Sourcing
+Supplier Risk
+
+↓
+
+MODULE 3 OPPORTUNITIES
+
+Benchmark Gap
+Market Trend
+Contract Reset
+Price Opportunity
+
+↓
+
+GROSS OPPORTUNITY
+
+↓
+
+OVERLAP DEDUCTIONS
+
+↓
+
+EXCLUSIONS
+
+↓
+
+NET DEFENSIBLE DIRECT PROCUREMENT OPPORTUNITY
+
+PLUS
+
+PROCESS PRODUCTIVITY BENEFIT
+
+PLUS
+
+RISK / COST AVOIDANCE
+
+PLUS
+
+VALIDATED SAVINGS
+
+This must be extremely clear to a CFO.
+
+============================================================
+18. CFO EXECUTIVE SUMMARY
+============================================================
+
+The first page must answer:
+
+1. What did we analyse?
+2. What did we find?
+3. Where is the value opportunity?
+4. How much is potentially addressable?
+5. What needs to happen next?
+
+Show separate KPI cards:
+
+Addressable Spend
+Direct Procurement Opportunity
+Process Productivity
+Risk / Cost Avoidance
+Validated Savings
+Net Defensible Opportunity
+
+Do NOT use one misleading "Total Savings" number.
+
+============================================================
+19. FINDING-BY-FINDING FORMAT
+============================================================
+
+Every finding in the Executive Brief must use exactly this structure:
+
+BACKGROUND
+
+Why this analysis was performed.
+
+OBJECTIVE
+
+What the analysis was intended to identify.
+
+DATA / EVIDENCE
+
+What customer data supports the finding.
+
+FINDING
+
+What the analysis identified.
+
+VALUE OPPORTUNITY
+
+Low / Base / High.
+
+CALCULATION
+
+Transparent mathematical calculation.
+
+CONFIDENCE
+
+High / Medium / Low with objective reason.
+
+VALUE TYPE
+
+Direct Procurement / Productivity / Risk / Strategic / Validated.
+
+EXECUTION APPROACH
+
+What Procucev recommends doing operationally.
+
+NEXT STEP
+
+Exact action required from procurement.
+
+VALIDATION REQUIRED
+
+What must be confirmed before treating the value as realized.
+
+============================================================
+20. TRANSACTION-LEVEL PROOF
+============================================================
+
+Every monetary opportunity must be drillable:
+
+Executive KPI
+→ Opportunity
+→ Analysis
+→ Category
+→ Item
+→ Supplier
+→ Transaction
+→ Original uploaded record
+
+The user must be able to see the exact records supporting the opportunity.
+
+No black-box savings.
+
+============================================================
+21. PROFESSIONAL LANGUAGE
+============================================================
+
+Replace:
+
+"you can save ₹X"
+
+with:
+
+"Indicative opportunity identified: ₹X"
+
+Replace:
+
+"guaranteed savings"
+
+with:
+
+"Potential value subject to commercial validation"
+
+Replace:
+
+"e-auction savings"
+
+with:
+
+"Competitive sourcing opportunity — e-auction is one potential execution mechanism"
+
+Replace:
+
+"procurement is inefficient"
+
+with:
+
+"Value opportunity identified from observed procurement patterns"
+
+Replace:
+
+"no savings"
+
+with:
+
+"No quantifiable opportunity identified from the available evidence."
+
+Never state:
+
+"Procurement is perfect."
+
+============================================================
+22. EXECUTIVE BRIEF UI
+============================================================
+
+The UI must remain uncluttered.
+
+Initial screen:
+
+Executive Summary
+KPI cards
+CFO Waterfall
+Opportunity Portfolio
+
+Then expandable sections:
+
+1. Spend Baseline
+2. Vendor Consolidation
+3. PO / Process Productivity
+4. Category Consolidation
+5. Strategic Sourcing
+6. Supplier Risk
+7. Benchmark & Market Opportunities
+8. Master Opportunity Register
+9. Double Count Reconciliation
+10. Execution Roadmap
+
+Long analysis must remain inside expanders.
+
+Use concise executive summaries first.
+
+============================================================
+23. PPT / PDF
+============================================================
+
+PPT and PDF must use the same master opportunity register.
+
+Do not create separate calculations for exports.
+
+The exported report must contain:
+
+Executive Summary
+Customer Procurement Baseline
+Module 1 Findings
+Module 2 Findings
+Module 3 Findings
+Opportunity Portfolio
+Value Waterfall
+Finding-by-Finding Analysis
+Calculation Methodology
+Assumptions
+Confidence
+Double Count Reconciliation
+Execution Roadmap
+Procucev Recommendations
+
+Every monetary figure in PPT/PDF must reconcile exactly with the UI and master register.
+
+============================================================
+24. CRITICAL DATA INTEGRITY
+============================================================
+
+Before completion run automated checks:
+
+SUM(transaction opportunity values)
+=
+SUM(opportunity register)
+
+SUM(opportunity register)
+-
+overlap deductions
+-
+exclusions
+=
+net defensible opportunity
+
+No negative opportunity values unless explicitly classified as adjustment.
+
+No duplicate Opportunity IDs.
+
+No duplicate transaction allocation within the same overlap group.
+
+No opportunity without evidence.
+
+No monetary opportunity without calculation.
+
+No percentage assumption without basis.
+
+No Module 3 benchmark opportunity without benchmark source.
+
+No risk opportunity classified as direct procurement saving.
+
+No process productivity benefit classified as direct procurement saving.
+
+============================================================
+25. FINAL VALIDATION
+============================================================
+
+Run:
+
+TypeScript
+Lint
+Unit tests
+Coverage
+Backend tests
+Frontend tests
+UI integration
+Executive Brief route
+PPT export
+PDF export
+Master Register reconciliation
+Double-counting reconciliation
+Transaction traceability
+Module 1–4 integration
+
+Do not weaken tests to obtain a PASS.
+
+Do not use c8 ignore unless a branch is demonstrably unreachable through the public API.
+
+============================================================
+26. FINAL REPORT
+============================================================
+
+Return:
+
+IMPLEMENTATION_STATUS:
+PASS / FAIL
+
+MODULE_1_BASELINE:
+PASS / FAIL
+
+MODULE_2_VENDOR_CONSOLIDATION:
+PASS / FAIL
+
+MODULE_2_PO_PRODUCTIVITY:
+PASS / FAIL
+
+MODULE_2_CATEGORY_CONSOLIDATION:
+PASS / FAIL
+
+MODULE_2_STRATEGIC_SOURCING:
+PASS / FAIL
+
+MODULE_2_E_AUCTION:
+PASS / FAIL
+
+MODULE_2_SUPPLIER_RISK:
+PASS / FAIL
+
+MODULE_3_BENCHMARK:
+PASS / FAIL
+
+MODULE_3_MARKET_TREND:
+PASS / FAIL
+
+VALUE_TAXONOMY:
+PASS / FAIL
+
+MASTER_OPPORTUNITY_REGISTER:
+PASS / FAIL
+
+DOUBLE_COUNT_PROTECTION:
+PASS / FAIL
+
+TRANSACTION_TRACEABILITY:
+PASS / FAIL
+
+CFO_WATERFALL:
+PASS / FAIL
+
+EXECUTIVE_BRIEF_UI:
+PASS / FAIL
+
+PPT_EXPORT:
+PASS / FAIL
+
+PDF_EXPORT:
+PASS / FAIL
+
+TYPECHECK:
+PASS / FAIL
+
+LINT:
+PASS / FAIL
+
+TESTS:
+PASS / FAIL
+
+FINAL_RECONCILIATION:
+PASS / FAIL
+
+TOTAL_DIRECT_PROCUREMENT_OPPORTUNITY:
+[VALUE]
+
+PROCESS_PRODUCTIVITY:
+[VALUE / %]
+
+RISK_COST_AVOIDANCE:
+[VALUE]
+
+VALIDATED_SAVINGS:
+[VALUE]
+
+NET_DEFENSIBLE_OPPORTUNITY:
+[VALUE]
+
+E_AUCTION_SHARE_OF_TOTAL:
+[VALUE]
+NOTE: This is informational only. Do not position e-auction as the primary or exclusive source of savings.
+
+ISSUES:
+[LIST ONLY REAL ISSUES]
+
+CHANGES_MADE:
+[LIST ACTUAL CHANGES]
+
+RECOMMENDED_NEXT_STEP:
+[ONE CLEAR NEXT STEP]

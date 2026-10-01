@@ -89,14 +89,26 @@ describe('ExecutiveBriefPage', () => {
     expect(mockPush).toHaveBeenCalledWith('/');
   });
 
-  it('handles report response with success: false', async () => {
+  it('handles report response with success: false and default fallback message', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ success: false, message: 'Custom fetch error' })
+        json: async () => ({ success: false })
       })
+    );
+
+    render(<ExecutiveBriefPage />);
+    await waitFor(() => {
+      expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.emptyState.notReadyTitle)).toBeInTheDocument();
+    });
+  });
+
+  it('handles non-Error object thrown during fetch', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValueOnce('Network string failure')
     );
 
     render(<ExecutiveBriefPage />);
@@ -277,4 +289,50 @@ describe('ExecutiveBriefPage', () => {
     fireEvent.click(module1Btn);
     expect(mockPush).toHaveBeenCalledWith('/?tab=module1');
   });
+
+  it('handles custom content-disposition and PPTX artifact endpoint', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/download/')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            headers: new Headers({ 'content-disposition': 'attachment; filename="custom_report.pptx"' }),
+            blob: async () => new Blob(['pptx-bytes'], { type: 'application/vnd.ms-powerpoint' })
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            success: true,
+            data: {
+              ...mockReportData,
+              artifacts: [
+                ...mockReportData.artifacts,
+                {
+                  name: 'PowerPoint Slide Deck',
+                  filename: 'EXECUTIVE_BRIEF.pptx',
+                  description: 'Editable presentation',
+                  endpoint: '/api/reports/executive-brief/download/pptx'
+                }
+              ]
+            }
+          })
+        });
+      })
+    );
+
+    render(<ExecutiveBriefPage />);
+    await waitFor(() => {
+      expect(screen.getByTestId('download-artifact-btn-EXECUTIVE_BRIEF.pptx')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('download-artifact-btn-EXECUTIVE_BRIEF.pptx'));
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pptx');
+    });
+  });
 });
+

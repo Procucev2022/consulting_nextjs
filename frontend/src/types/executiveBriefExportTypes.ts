@@ -77,16 +77,23 @@ export interface ExecutiveBriefSummaryCardItem {
 export interface ExecutiveFindingDetailCard {
   findingId: string;
   title: string;
+  finding?: string;
   background: string;
   objective: string;
+  addressableBase?: string;
   evidence: string;
   analysis: string;
+  methodology?: string;
+  assumption?: string;
   outcome: string;
+  expectedOutcome?: string;
   potentialValueInr: number;
   potentialValueDisplay: string;
+  indicativeOpportunity?: string;
   confidence: string;
   confidenceRationale: string;
   riskConstraint: string;
+  recommendedAction?: string;
   nextStep: string;
   owner: string;
   timeline: string;
@@ -230,3 +237,40 @@ export interface ExecutiveBriefRegenerateConfirmModalProps {
   onConfirm: () => void;
   isRegenerating: boolean;
 }
+
+export interface ExecutiveBriefOpportunityTableRow {
+  analysis: string;
+  addressableSpend: string;
+  assumptionMethod: string;
+  indicativeOpportunity: string;
+  benefitType: string;
+  confidence: string;
+  primaryAction: string;
+}
+
+export interface ExecutiveBriefOpportunityTableProps {
+  onDrillOpportunity?: (analysisKey: string) => void;
+}
+
+export interface AssumptionTaxonomyItem {
+  key: string;
+  badge: string;
+  title: string;
+  definition: string;
+  colorClass: string;
+}
+
+export interface ExecutiveBriefAssumptionsPanelProps {
+  onSelectAssumption?: (key: string) => void;
+}
+
+export interface RealizationRoadmapStage {
+  period: string;
+  title: string;
+  description: string;
+}
+
+export interface ExecutiveBriefSpecialDisplaysProps {
+  onSelectLever?: (leverKey: string) => void;
+}
+

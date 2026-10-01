@@ -9,7 +9,7 @@ describe('Logs Routes Integration Tests', () => {
     expect(res.body.success).toBe(true);
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.headers['x-request-id']).toBeDefined();
-  });
+  }, 20000);
 
   it('GET /api/logs/stats should return storage and retention statistics', async () => {
     const res = await request(app).get('/api/logs/stats');

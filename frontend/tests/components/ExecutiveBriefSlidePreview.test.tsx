@@ -74,7 +74,9 @@ describe('ExecutiveBriefSlidePreview', () => {
 
   it('handles out of range selectedSlideIndex fallback', () => {
     render(<ExecutiveBriefSlidePreview {...defaultProps} selectedSlideIndex={999} />);
-    expect(screen.getByTestId('slide-tab-0')).toHaveTextContent('01. Cover Slide');
+    expect(screen.getByTestId('slide-tab-0')).toHaveTextContent(
+      EXECUTIVE_BRIEF_EXPORT_STRINGS.preview.slides[0].title
+    );
   });
 
   it('triggers onOpenFullReport and onDownloadPdf when buttons clicked', () => {

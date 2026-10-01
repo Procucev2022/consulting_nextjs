@@ -7,6 +7,7 @@ import { ExecutiveBriefHeaderNav } from '@/components/executiveBrief/ExecutiveBr
 import { ExecutiveBriefSummaryCards } from '@/components/executiveBrief/ExecutiveBriefSummaryCards';
 import { ExecutiveBriefFormatCards } from '@/components/executiveBrief/ExecutiveBriefFormatCards';
 import { ExecutiveBriefSlidePreview } from '@/components/executiveBrief/ExecutiveBriefSlidePreview';
+import { ExecutiveBriefOpportunityTable } from '@/components/executiveBrief/ExecutiveBriefOpportunityTable';
 import { ExecutiveBriefStructureAccordion } from '@/components/executiveBrief/ExecutiveBriefStructureAccordion';
 import { ExecutiveBriefTraceabilityModal } from '@/components/executiveBrief/ExecutiveBriefTraceabilityModal';
 import { ExecutiveBriefAuditValidationPanel } from '@/components/executiveBrief/ExecutiveBriefAuditValidationPanel';
@@ -251,6 +252,8 @@ export default function ExecutiveBriefPage() {
           onDownloadPdf={handleDownloadPdf}
           onOpenFullReport={handleOpenFullReport}
         />
+
+        <ExecutiveBriefOpportunityTable />
 
         <ExecutiveBriefStructureAccordion
           sections={reportData.sections}

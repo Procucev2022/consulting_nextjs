@@ -33,16 +33,23 @@ export interface ExecutiveBriefMetadata {
 export interface ExecutiveFindingCard {
   findingId: string;
   title: string;
+  finding?: string;
   background: string;
   objective: string;
+  addressableBase?: string;
   evidence: string;
   analysis: string;
+  methodology?: string;
+  assumption?: string;
   outcome: string;
+  expectedOutcome?: string;
   potentialValueInr: number;
   potentialValueDisplay: string;
+  indicativeOpportunity?: string;
   confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'INSUFFICIENT';
   confidenceRationale: string;
   riskConstraint: string;
+  recommendedAction?: string;
   nextStep: string;
   owner: 'Customer' | 'Procucev' | 'Joint';
   timeline: string;

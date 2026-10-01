@@ -43,7 +43,7 @@ export function renderSlide13SpendFindings(
     let dY = 195;
     details.forEach(([lbl, val]) => {
       canvas.text(lbl, fX + 16, dY, { fontSize: 8, font: 'bold', color: '#38BDF8' });
-      canvas.textBlock(val, fX + 16, dY + 12, 248, { fontSize: 8, font: 'regular', color: '#CBD5E1', lineHeight: 10 });
+      canvas.textBlock(val || '', fX + 16, dY + 12, 248, { fontSize: 8, font: 'regular', color: '#CBD5E1', lineHeight: 10 });
       dY += 40;
     });
 
@@ -184,23 +184,23 @@ export function renderSlide16EAuction(
   canvas.table(55, 125, 850, headers, rows, [140, 100, 100, 160, 170, 95, 85], { headerBg: '#0F172A', rowAltBg: '#182234' });
 
   canvas.rect(55, 340, 850, 130, { fill: '#0F172A', stroke: '#F59E0B', lineWidth: 1 });
-  canvas.text('CRITICAL E-AUCTION GOVERNANCE RULES', 70, 360, { fontSize: 9.5, font: 'bold', color: '#F59E0B' });
+  canvas.text('CRITICAL E-AUCTION POSITIONING & GOVERNANCE RULES', 70, 360, { fontSize: 9.5, font: 'bold', color: '#F59E0B' });
   canvas.textBlock(
-    '1. Mandatory Pre-Qualification: Zero unverified or financially distressed suppliers permitted in dynamic rooms.',
+    'E-auction is one of several sourcing mechanisms evaluated and is not assumed to be applicable to the entire addressable spend. It is restricted to standardized, liquid categories with 5+ pre-qualified bidders.',
     70,
-    380,
+    378,
     820,
     { fontSize: 8.5, color: '#CBD5E1', lineHeight: 12 }
   );
   canvas.textBlock(
-    '2. Strict Lot Indexing: Logistics and packaging lots must feature transparent indexing mechanisms.',
+    '1. Mandatory Pre-Qualification: Zero unverified or financially distressed suppliers permitted in dynamic rooms.',
     70,
     400,
     820,
     { fontSize: 8.5, color: '#CBD5E1', lineHeight: 12 }
   );
   canvas.textBlock(
-    '3. Business Allocation Split: Maximum 60/40 or 70/30 L1/L2 volume allocation to safeguard business continuity.',
+    '2. Business Allocation Split: Maximum 60/40 or 70/30 L1/L2 volume allocation to safeguard business continuity.',
     70,
     420,
     820,
@@ -236,9 +236,9 @@ export function renderSlide17VendorConsolidation(
   canvas.table(55, 125, 850, headers, rows, [140, 180, 180, 90, 90, 170], { headerBg: '#0F172A', rowAltBg: '#182234' });
 
   canvas.rect(55, 340, 850, 130, { fill: '#0F172A', stroke: '#334155', lineWidth: 1 });
-  canvas.text('CONSOLIDATION EXECUTION FRAMEWORK', 70, 360, { fontSize: 9.5, font: 'bold', color: '#10B981' });
+  canvas.text('CONSOLIDATION MODELLING ASSUMPTION & DISCLAIMER', 70, 360, { fontSize: 9.5, font: 'bold', color: '#10B981' });
   canvas.textBlock(
-    'Consolidating 912 tail vendors into 180 certified master channel partners eliminates thousands of individual monthly purchase orders, reduces AP processing drag, and enables tier volume rebates of 8% to 12%.',
+    'Based on supplier fragmentation identified in the analysed spend, consolidation of eligible volumes may create additional purchasing leverage. An indicative 5% volume-discount assumption has been applied for opportunity modelling. Actual realization will depend on supplier negotiations, market conditions, specifications and competitive intensity.',
     70,
     380,
     820,

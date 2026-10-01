@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Gavel, RefreshCw } from 'lucide-react';
 import type {
   CategoryStrategicSourcingProfile,
@@ -25,6 +25,14 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const [howCalculatedData, setHowCalculatedData] = useState<HowCalculatedData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeFilterCard, setActiveFilterCard] = useState<string>('ALL');
+  const isMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const loadData = useCallback(async (refresh = false) => {
     setIsLoading(true);
@@ -33,12 +41,18 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         Module2StrategicSourcingApi.getDashboardSummary(refresh),
         Module2StrategicSourcingApi.getCategoryProfiles(refresh)
       ]);
-      if (sumRes) setSummary(sumRes);
-      if (profRes) setProfiles(profRes);
+      if (isMountedRef.current) {
+        if (sumRes) setSummary(sumRes);
+        if (profRes) setProfiles(profRes);
+      }
     } catch (err) {
-      logger.error('Failed to load Module 2 Strategic Sourcing data', {}, err);
+      if (isMountedRef.current) {
+        logger.error('Failed to load Module 2 Strategic Sourcing data', {}, err);
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 

@@ -42,5 +42,6 @@ export * from './finalHardeningTypes';
 export * from './numericalAuditTypes';
 export * from './executiveBriefTypes';
 export * from './executiveBriefExportTypes';
+export * from './savingsOpportunityRegister';
 
 

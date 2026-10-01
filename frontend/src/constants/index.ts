@@ -38,3 +38,8 @@ export * from './module2StrategicSourcing';
 export * from './module2OpportunityIntelligence';
 export * from './module2EvidenceChain';
 export * from './executiveBriefExportStrings';
+export * from './savingsAssumptions';
+export * from './savingsOpportunityRegisterConstants';
+export * from './executiveBriefOpportunityData';
+export * from './executiveBriefMasterRegister';
+export * from './executiveBriefPortfolioSections';
