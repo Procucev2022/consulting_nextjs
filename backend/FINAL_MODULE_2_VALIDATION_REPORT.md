@@ -26,9 +26,9 @@
 
 ## 3. Double-Counting Reconciliation Ledger
 ```text
-  Gross Strategic Opportunity:  ₹323.27 Cr
+  Gross Strategic Opportunity:  ₹173.12 Cr
 - E-Auction & Price Overlap:   ₹62.80 Cr
 - Contractual Exclusions:      ₹16.72 Cr
 ============================================================
-= Net Defensible Opportunity:   ₹243.75 Cr
+= Net Defensible Opportunity:   ₹93.60 Cr
 ```

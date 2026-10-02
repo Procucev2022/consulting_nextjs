@@ -56,8 +56,8 @@ Every executive KPI maintains full audit lineage:
 - **Total Ingested Spend**: ₹59,20,34,77,681.66
 - **Valid Customer Spend**: ₹59,20,34,77,681.66
 - **Reconciliation Variance**: ₹0.00 (Zero unexplained variance)
-- **Gross Strategic Opportunity**: ₹323.27 Cr
-- **Net Defensible Opportunity**: ₹243.75 Cr (Overlap deduction ₹79.52 Cr)
+- **Gross Strategic Opportunity**: ₹173.12 Cr
+- **Net Defensible Opportunity**: ₹93.60 Cr (Overlap deduction ₹62.80 Cr, Exclusions ₹16.72 Cr)
 - **Approved Wave 1 Handoff**: ₹47.90 Cr
 
 ---

@@ -10,3 +10,4 @@ export * from './Slide7StrategicConcentrationRisk';
 export * from './Slide8PriceCreepContractLeakage';
 export * from './Slide9SavingsLeversRoadmap';
 export * from './Slide10ExecutionGovernance';
+export * from './AiCevLogoLockup';

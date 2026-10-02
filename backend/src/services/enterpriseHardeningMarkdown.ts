@@ -47,10 +47,10 @@ The architectural boundary across all four modules is formally frozen and verifi
 
 ## Part G to K — Module 2 Strategic Sourcing & Double-Counting Control
 
-- **Gross Identified Opportunity**: ₹323.27 Cr
+- **Gross Identified Opportunity**: ₹173.12 Cr
 - **Mutually Compatible Deduplication**: -₹62.80 Cr
 - **Commercial Risk Exclusions**: -₹16.72 Cr
-- **Net Defensible Opportunity**: **₹243.75 Cr** (Variance: **₹0.00**)
+- **Net Defensible Opportunity**: **₹93.60 Cr** (Variance: **₹0.00**)
 - **Double-Counting Control**: Single transaction contributes to exactly one net defensible allocation.
 - **E-Auction Logic**: Framed strictly as potential competitive range with demonstrated historical price dispersion.
 - **Opportunity Range**: Low Case, Base Case, and High Case formally defined with mathematical basis.

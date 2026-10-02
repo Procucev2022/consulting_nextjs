@@ -40,11 +40,11 @@ describe('Numerical Integrity & Scale-Error Defense (Prompt 256)', () => {
       expect(croreToInr(24.375)).toBe(val1);
 
       // Enterprise Production Net Defensible Opportunity
-      const netDefensibleInr = 2437500000;
-      expect(inrToLakh(netDefensibleInr)).toBe(24375.0);
-      expect(lakhToInr(24375.0)).toBe(netDefensibleInr);
-      expect(inrToCrore(netDefensibleInr)).toBe(243.75);
-      expect(croreToInr(243.75)).toBe(netDefensibleInr);
+      const netDefensibleInr = 936000000;
+      expect(inrToLakh(netDefensibleInr)).toBe(9360.0);
+      expect(lakhToInr(9360.0)).toBe(netDefensibleInr);
+      expect(inrToCrore(netDefensibleInr)).toBe(93.60);
+      expect(croreToInr(93.60)).toBe(netDefensibleInr);
 
       // Approved Module 4 Handoff
       const handoffInr = 479000000;
@@ -55,19 +55,19 @@ describe('Numerical Integrity & Scale-Error Defense (Prompt 256)', () => {
     });
 
     it('formats numbers according to Indian grouping without modifying values', () => {
-      expect(formatINR(2437500000)).toBe('₹2,43,75,00,000.00');
+      expect(formatINR(936000000)).toBe('₹93,60,00,000.00');
       expect(formatINR(479000000)).toBe('₹47,90,00,000.00');
       expect(formatINR(-500000)).toBe('-₹5,00,000.00');
       expect(formatINR(500, false)).toBe('₹500');
 
-      expect(formatINRLakh(2437500000)).toBe('₹24,375.00 Lakh');
-      expect(formatINRCrore(2437500000)).toBe('₹243.75 Cr');
+      expect(formatINRLakh(936000000)).toBe('₹9,360.00 Lakh');
+      expect(formatINRCrore(936000000)).toBe('₹93.60 Cr');
       expect(formatINRCrore(479000000)).toBe('₹47.90 Cr');
     });
 
     it('Section 5 — detects 10x, 100x, 1000x, 0.1x, 0.01x, 0.001x scaling errors', () => {
       // 10x error
-      const check10x = detectScaleError(24375000000, 2437500000);
+      const check10x = detectScaleError(9360000000, 936000000);
       expect(check10x.hasScaleError).toBe(true);
       expect(check10x.ratio).toBe(10);
       expect(check10x.description).toContain('10x scaling discrepancy');
@@ -138,10 +138,10 @@ describe('Numerical Integrity & Scale-Error Defense (Prompt 256)', () => {
       expect(inv06).toBeDefined();
       expect(inv06?.lhsRawInr).toBe(RAW_NET_DEFENSIBLE_INR);
       expect(inv06?.rhsRawInr).toBe(RAW_GROSS_OPP_INR - RAW_OVERLAPS_INR - RAW_EXCLUSIONS_INR);
-      expect(inv06?.lhsRawInr).toBe(2437500000);
-      expect(inv06?.rhsRawInr).toBe(2437500000);
-      expect(inv06?.lhsDisplay).toBe('₹243.75 Cr');
-      expect(inv06?.rhsDisplay).toBe('₹243.75 Cr');
+      expect(inv06?.lhsRawInr).toBe(936000000);
+      expect(inv06?.rhsRawInr).toBe(936000000);
+      expect(inv06?.lhsDisplay).toBe('₹93.60 Cr');
+      expect(inv06?.rhsDisplay).toBe('₹93.60 Cr');
 
       // Check INV-07 Module 4 Handoff specifically
       const inv07 = invariants.find((i) => i.invariantId === 'INV-07');
@@ -177,7 +177,7 @@ describe('Numerical Integrity & Scale-Error Defense (Prompt 256)', () => {
 
       const wfNet = waterfall.find((w) => w.stageId === 'WF-06');
       expect(wfNet?.rawInr).toBe(RAW_NET_DEFENSIBLE_INR);
-      expect(wfNet?.displayValue).toBe('₹243.75 Cr');
+      expect(wfNet?.displayValue).toBe('₹93.60 Cr');
       expect(wfNet?.sourceTransactionCount).toBe(11800);
     });
 
@@ -187,7 +187,7 @@ describe('Numerical Integrity & Scale-Error Defense (Prompt 256)', () => {
       expect(handoff.varianceInr).toBe(0);
       expect(handoff.sumApprovedPackagesInr).toBe(479000000);
       expect(handoff.approvedHandoffTotalInr).toBe(479000000);
-      expect(handoff.netDefensibleOpportunityInr).toBe(2437500000);
+      expect(handoff.netDefensibleOpportunityInr).toBe(936000000);
       expect(handoff.isWithinCap).toBe(true);
       expect(handoff.approvedHandoffTotalInr).toBeLessThanOrEqual(handoff.netDefensibleOpportunityInr);
     });
@@ -197,7 +197,7 @@ describe('Numerical Integrity & Scale-Error Defense (Prompt 256)', () => {
       expect(md).toContain('Critical Numerical Invariant Audit');
       expect(md).toContain('INV-06');
       expect(md).toContain('INV-07');
-      expect(md).toContain('₹243.75 Cr');
+      expect(md).toContain('₹93.60 Cr');
       expect(md).toContain('₹47.90 Cr');
       expect(md).toContain('PASS (<= Net Defensible Opportunity)');
     });

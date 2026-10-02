@@ -14,12 +14,14 @@ export const RAW_SPEND_INR = 59203477681.66;
 export const RAW_TOTAL_SPEND_INR = RAW_SPEND_INR;
 export const RAW_ADDRESSABLE_INR = 49310000000.00;
 export const RAW_ADDRESSABLE_SPEND_INR = RAW_ADDRESSABLE_INR;
-export const RAW_GROSS_OPP_INR = 3232700000.00;
-export const RAW_OVERLAPS_INR = 628000000.00;
-export const RAW_EXCLUSIONS_INR = 167200000.00;
-export const RAW_NET_DEFENSIBLE_INR = 2437500000.00;
+// GROSS: bottom-up sum of OPP-001(6.17)+OPP-003(80.67)+OPP-004(71.40)+OPP-006(14.88) Cr
+export const RAW_GROSS_OPP_INR = 1731200000.00;   // ₹173.12 Cr (opportunity register base cases)
+export const RAW_OVERLAPS_INR = 628000000.00;     // ₹62.80 Cr (OPP-003:40.20Cr + OPP-004:22.60Cr)
+export const RAW_EXCLUSIONS_INR = 167200000.00;   // ₹16.72 Cr (govt locked + single-source)
+// NET = GROSS − OVERLAPS − EXCLUSIONS = 173.12 − 62.80 − 16.72 = ₹93.60 Cr
+export const RAW_NET_DEFENSIBLE_INR = 936000000.00; // ₹93.60 Cr
 export const RAW_APPROVED_MODULE4_INR = 479000000.00;
-export const RAW_REALIZED_INR = 214000000.00;
+export const RAW_REALIZED_INR = 680000000.00;     // ₹68.00 Cr (OPP-007 audited actuals)
 
 export const AUDITED_NUMERICAL_INVARIANTS: AuditedNumericalInvariant[] = [
   {

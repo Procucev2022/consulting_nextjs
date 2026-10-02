@@ -52,8 +52,8 @@ export function calculateConsolidatedSavingsSummary(
     overlapInr: RAW_OVERLAPS_INR,
     exclusionInr: RAW_EXCLUSIONS_INR,
     netDefensibleOpportunityInr: RAW_NET_DEFENSIBLE_INR,
-    hardProcurementSavingsInr: RAW_NET_DEFENSIBLE_INR - 410000000.0, // Net hard savings = ₹202.75 Cr
-    costAvoidanceInr: 410000000.0, // Cost avoidance = ₹41.00 Cr
+    hardProcurementSavingsInr: 787200000.0, // Direct procurement savings = ₹78.72 Cr
+    costAvoidanceInr: 148800000.0, // Strategic market value = ₹14.88 Cr
     productivityEffortReductionPercent: poEffortReduction || 20.0,
     productivityPoReductionCount: poCountReduction || 824,
     strategicRiskInitiativesCount: Math.max(strategicRiskCount, 1)

@@ -53481,9 +53481,9 @@ IMPORTANT:
 - Do NOT change business logic.
 - Do NOT redesign anything.
 - Do NOT introduce workarounds such as changing distDir unless absolutely required.
-- Preserve all existing UI, Modules 1�4, Executive Brief, PPT/PDF export, data-security messaging, and previous implementation work.
+- Preserve all existing UI, Modules 1�4, Executive Brief, PPT/PDF export, data-security messaging, and previous implementation work.
 
-## STEP 1 � STOP DEVELOPMENT SERVER SAFELY
+## STEP 1 � STOP DEVELOPMENT SERVER SAFELY
 
 Identify all processes belonging to this project, including:
 
@@ -53499,7 +53499,7 @@ Do not terminate unrelated Node processes.
 After termination verify that no project 
 ext dev process remains.
 
-## STEP 2 � VERIFY .next STATE
+## STEP 2 � VERIFY .next STATE
 
 Inspect:
 
@@ -53514,7 +53514,7 @@ Do NOT delete source code or project configuration.
 
 Do NOT perform a broad destructive cleanup.
 
-## STEP 3 � RUN TYPESCRIPT CHECK
+## STEP 3 � RUN TYPESCRIPT CHECK
 
 Run:
 
@@ -53522,14 +53522,14 @@ npx tsc --noEmit
 
 Expected result:
 
-PASS � zero TypeScript errors.
+PASS � zero TypeScript errors.
 
 If it fails:
 - STOP.
 - Do not start the production build.
 - Report the exact errors.
 
-## STEP 4 � RUN TEST SUITE
+## STEP 4 � RUN TEST SUITE
 
 Run the project's existing test suite using the package.json test command.
 
@@ -53552,7 +53552,7 @@ If a test fails:
 3. Modify application code only if an actual application defect is demonstrated.
 4. Re-run the affected test.
 
-## STEP 5 � CHECK UI INTEGRATION
+## STEP 5 � CHECK UI INTEGRATION
 
 Before the production build, verify that the latest implemented functionality is actually connected to the UI.
 
@@ -53580,7 +53580,7 @@ Do NOT redesign anything during this step.
 
 This is an integration verification step.
 
-## STEP 6 � PRODUCTION BUILD
+## STEP 6 � PRODUCTION BUILD
 
 ONLY if:
 
@@ -53612,7 +53612,7 @@ If the build hangs again:
 - Capture the exact stage/output where it stopped.
 - Do not make speculative code changes.
 
-## STEP 7 � RESTART DEVELOPMENT SERVER
+## STEP 7 � RESTART DEVELOPMENT SERVER
 
 ONLY AFTER the production build has completed successfully, restart the normal development server using the project's existing command.
 
@@ -53623,7 +53623,7 @@ Verify that:
 - the application starts normally
 - the existing UI remains intact
 
-## STEP 8 � FINAL REPORT
+## STEP 8 � FINAL REPORT
 
 Return exactly this structure:
 
@@ -53690,7 +53690,7 @@ ONE CLEAR NEXT STEP
 ---
 
 ## Prompt 267
-## FINAL UI ACCEPTANCE AUDIT � READ ONLY
+## FINAL UI ACCEPTANCE AUDIT � READ ONLY
 ## DO NOT MODIFY CODE
 
 The production build and automated validation have now passed.
@@ -53734,7 +53734,7 @@ Open the application and verify:
 Confirm there are no duplicated headers, duplicated cards, duplicated report sections, stale components or old versions of UI being rendered simultaneously.
 
 ==================================================
-2. MODULE 1 � DATA UPLOAD / SPEND INTELLIGENCE
+2. MODULE 1 � DATA UPLOAD / SPEND INTELLIGENCE
 ==================================================
 
 Verify that the implemented Module 1 functionality is actually accessible from the UI.
@@ -53755,7 +53755,7 @@ Check:
 Do not execute destructive actions or upload customer data.
 
 ==================================================
-3. MODULE 2 � AI CATEGORIZATION & STRATEGIC SOURCING
+3. MODULE 2 � AI CATEGORIZATION & STRATEGIC SOURCING
 ==================================================
 
 Verify that the UI exposes the implemented functionality for:
@@ -53781,7 +53781,7 @@ Verify there are no:
 - Incorrect navigation targets
 
 ==================================================
-4. MODULE 3 � TREND ANALYSIS / PCBI
+4. MODULE 3 � TREND ANALYSIS / PCBI
 ==================================================
 
 Verify the current UI integration only.
@@ -53798,7 +53798,7 @@ Check:
 Do not alter the PCBI methodology or benchmark data.
 
 ==================================================
-5. MODULE 4 � SAVINGS ENGINE
+5. MODULE 4 � SAVINGS ENGINE
 ==================================================
 
 Verify that the UI correctly exposes:
@@ -53896,7 +53896,7 @@ Where analysis is lengthy:
 - The page should remain easy to scan.
 - Avoid very large blocks of text occupying the initial viewport.
 
-Verify this across Modules 1�4 and Executive Brief.
+Verify this across Modules 1�4 and Executive Brief.
 
 ==================================================
 10. UI FLOW
@@ -54043,7 +54043,7 @@ ONE CLEAR ACTION
 IMPORTANT:
 If everything is correctly visible and connected, make NO changes and state:
 
-"UI ACCEPTANCE COMPLETE � NO CODE CHANGES REQUIRED."
+"UI ACCEPTANCE COMPLETE � NO CODE CHANGES REQUIRED."
 
 If something is not visible or not connected, identify the exact component/page/function responsible. Do NOT fix it in this command.
 
@@ -54051,15 +54051,15 @@ If something is not visible or not connected, identify the exact component/page/
 continue
 
 ## Prompt 269
-## FINAL PRODUCTION CERTIFICATION � HARDENING + E2E EVIDENCE AUDIT
+## FINAL PRODUCTION CERTIFICATION � HARDENING + E2E EVIDENCE AUDIT
 ## DO NOT REDESIGN THE UI
 ## DO NOT ADD FEATURES
-## PRESERVE CURRENT MODULE 1�4 BUSINESS LOGIC
+## PRESERVE CURRENT MODULE 1�4 BUSINESS LOGIC
 
 The UI Acceptance Audit has passed.
 
 The following are already confirmed:
-- Modules 1�4 are connected
+- Modules 1�4 are connected
 - Executive Brief is visible in the new format
 - PPT export is connected
 - PDF export is connected
@@ -54083,7 +54083,7 @@ Do not redesign.
 Do not refactor working modules.
 Do not change savings methodology.
 Do not change benchmark methodology.
-Do not change Module 1�4 calculations unless an actual defect is demonstrated.
+Do not change Module 1�4 calculations unless an actual defect is demonstrated.
 
 If a defect is discovered:
 
@@ -54474,18 +54474,18 @@ Do not modify anything merely to make the certification PASS.
 
 If everything genuinely passes, state:
 
-"PRODUCTION CERTIFICATION COMPLETE � SYSTEM READY FOR CONTROLLED CUSTOMER PILOT."
+"PRODUCTION CERTIFICATION COMPLETE � SYSTEM READY FOR CONTROLLED CUSTOMER PILOT."
 
 If anything fails, clearly identify the exact remediation required.
 ## Prompt 270
-## PROMPT 269 � PROFESSIONAL SAVINGS ATTRIBUTION & CFO/CEO EXECUTIVE REPORT REFINEMENT
+## PROMPT 269 � PROFESSIONAL SAVINGS ATTRIBUTION & CFO/CEO EXECUTIVE REPORT REFINEMENT
 
 We need to refine the existing Procucev / aiCEV Executive Brief and Savings Engine.
 
 IMPORTANT:
 - DO NOT create a second Executive Brief.
 - DO NOT create duplicate UI components.
-- DO NOT remove or break any existing Modules 1�4.
+- DO NOT remove or break any existing Modules 1�4.
 - DO NOT change the existing working UI unnecessarily.
 - Preserve all existing functionality, security messaging, PPT export, PDF export, expanders, navigation and module integrations.
 - Build on the current implementation.
@@ -54574,7 +54574,7 @@ Every savings opportunity must have:
 DO NOT simply calculate one generic "Savings %" across total spend.
 
 ============================================================
-3. MODULE 1 � BASELINE FIRST
+3. MODULE 1 � BASELINE FIRST
 ============================================================
 
 Module 1 should establish the procurement baseline before savings are calculated.
@@ -54612,7 +54612,7 @@ TOTAL CUSTOMER SPEND
 ? ESTIMATED SAVINGS
 
 ============================================================
-4. MODULE 2 � ANALYSIS-WISE SAVINGS
+4. MODULE 2 � ANALYSIS-WISE SAVINGS
 ============================================================
 
 Each Module 2 analysis must have its own savings methodology.
@@ -54649,7 +54649,7 @@ Formula:
 Vendor Consolidation Opportunity
 =
 Eligible Consolidation Spend
-�
+�
 Assumed Volume Discount %
 
 Example:
@@ -54704,7 +54704,7 @@ Instead calculate:
 Manpower / Processing Cost Opportunity
 =
 Current Annual PO Processing Effort Cost
-�
+�
 Expected Effort Reduction %
 
 If actual manpower cost is unavailable:
@@ -54734,7 +54734,7 @@ Identify categories where competitive sourcing can create an opportunity.
 Possible methodology:
 
 Current Spend
-�
+�
 Expected Competitive Improvement %
 
 The expected improvement should be based on:
@@ -54770,7 +54770,7 @@ Where multiple qualified suppliers exist:
 Calculate an indicative competitive sourcing opportunity.
 
 Use:
-Eligible Spend � configurable improvement assumption
+Eligible Spend � configurable improvement assumption
 
 Clearly distinguish:
 - observed fact
@@ -54802,7 +54802,7 @@ rather than assuming automatic savings.
 Where applicable:
 
 Eligible Auction Spend
-�
+�
 Auction Improvement Assumption
 
 The report must explicitly state:
@@ -54853,7 +54853,7 @@ Finding
 ? Action
 
 ============================================================
-5. MODULE 3 � BENCHMARK / PCBI SAVINGS
+5. MODULE 3 � BENCHMARK / PCBI SAVINGS
 ============================================================
 
 This is extremely important.
@@ -54879,7 +54879,7 @@ Current Price
 Potential Price Opportunity
 =
 Eligible Volume
-�
+�
 (Current Price - Target Price)
 
 OR the appropriate existing PCBI methodology already implemented.
@@ -54911,7 +54911,7 @@ The report should explain:
 This distinction is critical.
 
 ============================================================
-6. MODULE 3 � TREND ANALYSIS
+6. MODULE 3 � TREND ANALYSIS
 ============================================================
 
 Trend analysis should identify:
@@ -54991,7 +54991,7 @@ Do NOT add all four categories together as if they were equivalent cash savings.
 The Executive Summary must clearly separate them.
 
 ============================================================
-8. OVERLAP CONTROL � CRITICAL
+8. OVERLAP CONTROL � CRITICAL
 ============================================================
 
 The system MUST prevent double counting.
@@ -55098,7 +55098,7 @@ Indicative assumption with limited supporting market evidence
 Do not hide assumptions.
 
 ============================================================
-11. EXECUTIVE BRIEF � NEW PROFESSIONAL STRUCTURE
+11. EXECUTIVE BRIEF � NEW PROFESSIONAL STRUCTURE
 ============================================================
 
 Revise the Executive Brief to follow this structure:
@@ -55236,9 +55236,9 @@ Strategic/Risk
 SLIDE 15
 Prioritized Savings Roadmap
 
-0�30 Days
-31�60 Days
-61�90 Days
+0�30 Days
+31�60 Days
+61�90 Days
 90+ Days
 
 SLIDE 16
@@ -60996,5 +60996,3352 @@ Maintain uniform UI across the software and make sure customer feels it like an 
 ## Prompt 259
 FINAL CUSTOMER DATA UAT - Module 1 through Module 4 CFO Executive Report Final Gate
 
-## Prompt 260
-FINAL RECONCILIATION FIX — Bridge ₹243.75 Cr, fix 48→24 months analysis period, value classification separation, waterfall reconciliation
+## Prompt 278
+## FINAL RECONCILIATION FIX — PROMPT 278
+
+The final UAT has identified two remaining issues that MUST be resolved before the Executive Brief is considered CFO-ready.
+
+DO NOT redesign the UI.
+
+DO NOT change the underlying business methodology unless required to correct a demonstrated mathematical inconsistency.
+
+DO NOT manufacture or increase savings.
+
+===========================================================
+1. RESOLVE THE ₹243.75 Cr NET DEFENSIBLE OPPORTUNITY BRIDGE
+===========================================================
+
+The current Executive Brief reports:
+
+NET_DEFENSIBLE_DIRECT_OPPORTUNITY = ₹243.75 Cr
+
+However, the current opportunity register shows:
+
+OPP-001 Vendor Consolidation
+DIRECT_SAVING = ₹6.17 Cr
+
+OPP-002 PO Productivity
+PROCESS_PRODUCTIVITY = ₹0 direct saving
+20% PO effort reduction
+
+OPP-003 Benchmark Gap
+DIRECT_SAVING = ₹80.67 Cr
+
+OPP-004 Strategic Sourcing
+DIRECT_SAVING = ₹71.40 Cr
+
+OPP-005 Supplier Risk
+COST_AVOIDANCE = ₹0 direct saving
+₹420 Cr spend de-risked
+
+OPP-006 Market Timing
+STRATEGIC_VALUE = ₹14.88 Cr
+
+OPP-007 Realized Savings
+REALIZED_SAVING = ₹68.00 Cr
+
+Therefore:
+
+Direct Saving Base =
+₹6.17 + ₹80.67 + ₹71.40
+= ₹158.24 Cr
+
+Direct Saving + Realized =
+₹226.24 Cr
+
+Direct Saving + Realized + Strategic Value =
+₹241.12 Cr
+
+This does NOT reconcile to ₹243.75 Cr.
+
+DO NOT assume that ₹243.75 Cr is correct merely because the numerical audit currently contains:
+
+Gross Opportunity = ₹323.27 Cr
+Overlap Deduction = ₹62.80 Cr
+Exclusions = ₹16.72 Cr
+Net = ₹243.75 Cr
+
+The source of the ₹323.27 Cr gross opportunity must be traced back to the individual opportunity register.
+
+Perform an independent mathematical reconciliation.
+
+Create this exact bridge:
+
+GROSS_IDENTIFIED_OPPORTUNITY
+LESS: OVERLAP_DEDUCTIONS
+LESS: EXCLUSIONS
+LESS/RECLASSIFIED: NON-DIRECT VALUE
+= NET_DIRECT_SAVINGS_OPPORTUNITY
+
+Then reconcile this independently against:
+
+OPP-001
+OPP-003
+OPP-004
+OPP-006
+OPP-007
+
+IMPORTANT:
+
+Do not count:
+- PROCESS_PRODUCTIVITY as direct savings
+- COST_AVOIDANCE as direct savings
+- STRATEGIC_VALUE as direct savings
+- REALIZED_SAVINGS as new pipeline savings if already included elsewhere
+- E-AUCTION separately where it is only an execution mechanism
+
+Every rupee in the headline must be traceable to an Opportunity ID.
+
+Produce:
+
+OPPORTUNITY_ID
+GROSS_VALUE
+OVERLAP_DEDUCTION
+EXCLUSION
+NET_VALUE
+VALUE_CLASSIFICATION
+INCLUDED_IN_DIRECT_SAVINGS
+INCLUDED_IN_REALIZED_SAVINGS
+INCLUDED_IN_STRATEGIC_VALUE
+FINAL_STATUS
+
+The final Executive Brief must have ONE authoritative mathematical source.
+
+Do not hardcode ₹243.75 Cr.
+
+If the correct mathematically defensible number is different, update the report to the correct number.
+
+If ₹243.75 Cr is actually correct, identify the exact additional opportunity/value components that reconcile the difference and add them to the Master Opportunity Register with full evidence.
+
+===========================================================
+2. FIX THE CUSTOMER ANALYSIS PERIOD
+===========================================================
+
+The actual customer dataset is:
+
+Source: 2 years data.xlsx
+
+Dataset period:
+
+April 2024 – March 2026
+
+Therefore:
+
+ANALYSIS_PERIOD = 24 MONTHS
+
+The current DEFAULT_CLIENT_PROFILE incorrectly says:
+
+48 Months
+
+Correct this to:
+
+24 Months
+
+Do not change the underlying transaction data.
+
+Update all affected:
+
+- Executive Brief
+- Client Overview
+- Dataset Summary
+- Module 1 summary
+- Executive Summary
+- PDF
+- PPTX
+- Any KPI or metadata display
+
+Search the entire application for:
+
+"48 Months"
+"48 month"
+"48 Months Analysis"
+"48-month"
+
+Ensure no stale customer-facing reference remains.
+
+===========================================================
+3. VERIFY ALL VALUE CLASSIFICATIONS
+===========================================================
+
+After the reconciliation, confirm:
+
+DIRECT_SAVING
+PROCESS_PRODUCTIVITY
+COST_AVOIDANCE
+STRATEGIC_VALUE
+VALIDATED_SAVING
+REALIZED_SAVING
+
+are mutually understandable and are not accidentally added together.
+
+The CFO summary must separately display:
+
+A. Direct Savings Opportunity
+B. Process Productivity
+C. Cost Avoidance / Risk Avoidance
+D. Strategic Value
+E. Validated Savings
+F. Realized Savings
+
+Do not create a single misleading "Total Savings" number by adding incompatible classifications.
+
+===========================================================
+4. E-AUCTION LANGUAGE
+===========================================================
+
+Ensure e-auction remains an execution mechanism and NOT the source of all savings.
+
+The report should clearly communicate:
+
+"Potential value has been identified through multiple procurement levers including vendor consolidation, PO productivity, category consolidation, strategic sourcing, benchmark analysis, market intelligence and supplier risk analysis. E-auction is one possible execution mechanism where appropriate."
+
+Do not attribute the entire opportunity portfolio to e-auctions.
+
+===========================================================
+5. FINAL CFO WATERFALL
+===========================================================
+
+The Executive Brief should show a professional waterfall:
+
+CUSTOMER ADDRESSABLE SPEND
+↓
+MODULE 1 BASELINE
+↓
+MODULE 2 IDENTIFIED OPPORTUNITIES
+↓
+MODULE 3 BENCHMARK / MARKET OPPORTUNITIES
+↓
+GROSS OPPORTUNITY
+↓
+OVERLAP DEDUCTIONS
+↓
+EXCLUSIONS / NON-MONETIZED ITEMS
+↓
+NET DEFENSIBLE DIRECT SAVINGS
+↓
+SEPARATE PROCESS PRODUCTIVITY
+↓
+SEPARATE COST AVOIDANCE
+↓
+SEPARATE STRATEGIC VALUE
+↓
+VALIDATED SAVINGS
+↓
+REALIZED SAVINGS
+
+Every stage must mathematically reconcile.
+
+===========================================================
+6. EXPORT RECONCILIATION
+===========================================================
+
+After fixing the calculations, validate:
+
+LIVE UI
+PDF
+PPTX
+
+All three must contain identical:
+
+- Customer name
+- Analysis period
+- Addressable spend
+- Direct savings
+- Process productivity
+- Cost avoidance
+- Strategic value
+- Validated savings
+- Realized savings
+- Net opportunity
+- Assumptions
+
+No stale values.
+
+===========================================================
+7. REGRESSION TESTS
+===========================================================
+
+Add/update tests for:
+
+1. Net opportunity mathematical reconciliation
+2. Opportunity register reconciliation
+3. Value classification separation
+4. No double counting
+5. Analysis period = 24 months
+6. UI/report/export consistency
+
+Then run:
+
+npm run quality:fast
+
+Do not weaken tests.
+
+===========================================================
+8. FINAL RESPONSE
+===========================================================
+
+Return:
+
+RECONCILIATION_STATUS:
+PASS / FAIL
+
+NET_DIRECT_OPPORTUNITY:
+₹___ Cr
+
+DIRECT_SAVINGS_COMPONENTS:
+- OPP-001 = ₹___
+- OPP-003 = ₹___
+- OPP-004 = ₹___
+
+PROCESS_PRODUCTIVITY:
+___ %
+
+COST_AVOIDANCE:
+₹___ / NOT MONETIZED
+
+STRATEGIC_VALUE:
+₹___
+
+VALIDATED_SAVINGS:
+₹___
+
+REALIZED_SAVINGS:
+₹___
+
+GROSS_OPPORTUNITY:
+₹___
+
+OVERLAP_DEDUCTIONS:
+₹___
+
+EXCLUSIONS:
+₹___
+
+MATHEMATICAL_VARIANCE:
+₹___
+
+ANALYSIS_PERIOD:
+24 MONTHS
+
+UI_RECONCILIATION:
+PASS / FAIL
+
+PDF_RECONCILIATION:
+PASS / FAIL
+
+PPTX_RECONCILIATION:
+PASS / FAIL
+
+DOUBLE_COUNTING:
+PASS / FAIL
+
+E_AUCTION_AS_EXCLUSIVE_SAVINGS:
+PASS / FAIL
+
+QUALITY_FAST:
+PASS / FAIL
+
+TYPECHECK:
+PASS / FAIL
+
+LINT:
+PASS / FAIL
+
+CHANGES_MADE:
+List only actual changes.
+
+OPEN_ISSUES:
+List only genuine unresolved issues.
+
+FINAL_CFO_READINESS:
+PASS / FAIL
+
+IMPORTANT:
+
+Do not declare CFO readiness if the ₹243.75 Cr bridge does not mathematically reconcile.
+
+The final objective is an auditable, evidence-based CFO report — not a higher savings number.
+
+## Prompt 279
+## PROMPT 279
+# FINAL CFO / CEO EXECUTIVE REPORT PRESENTATION HARDENING
+# FREEZE CERTIFIED NUMBERS — IMPROVE ONLY THE EXECUTIVE STORY, PRESENTATION & CUSTOMER EXPERIENCE
+
+The financial reconciliation from Prompt 278 is now certified.
+
+DO NOT change the underlying financial calculations unless a presentation defect exposes a genuine calculation inconsistency.
+
+The following values are AUTHORITATIVE and MUST be treated as frozen:
+
+CUSTOMER ADDRESSABLE SPEND:
+₹5,920.35 Cr
+
+ANALYSIS PERIOD:
+April 2024 – March 2026
+24 Months
+
+GROSS IDENTIFIED OPPORTUNITY:
+₹173.12 Cr
+
+OVERLAP DEDUCTIONS:
+₹62.80 Cr
+
+EXCLUSIONS:
+₹16.72 Cr
+
+NET DEFENSIBLE PIPELINE:
+₹93.60 Cr
+
+NET DIRECT SAVINGS OPPORTUNITY:
+₹78.72 Cr
+
+STRATEGIC VALUE:
+₹14.88 Cr
+
+PROCESS PRODUCTIVITY:
+20.0% procurement processing effort reduction
+824 low-value POs
+Direct saving = ₹0.00 Cr until customer-specific manpower/time-motion baseline is validated
+
+COST AVOIDANCE / RISK:
+₹420.00 Cr spend de-risked
+4 dual-source qualified programs
+Direct saving = NOT MONETIZED
+
+VALIDATED SAVINGS:
+₹47.90 Cr
+
+REALIZED SAVINGS:
+₹68.00 Cr
+
+IMPORTANT:
+Do NOT add these categories together into one artificial "Total Savings" number.
+
+Do NOT restore the previous:
+₹323.27 Cr Gross
+₹243.75 Cr Net
+
+Those values are retired.
+
+The current opportunity register and reconciliation are authoritative.
+
+===========================================================
+1. PRIMARY OBJECTIVE
+===========================================================
+
+Transform the existing Executive Brief into a polished:
+
+"PROCUCEV PROCUREMENT VALUE OPPORTUNITY ASSESSMENT"
+
+designed for:
+
+- CFO
+- CEO
+- CPO
+- Procurement Head
+- Finance leadership
+- Business leadership
+
+The report must feel like a professional procurement consulting engagement report.
+
+It should NOT feel like:
+
+- a software screen
+- a technical audit
+- an analytics dashboard
+- an e-auction sales pitch
+- a generic AI report
+
+The r
+<truncated 19165 bytes>
+====================
+
+After implementation:
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run quality:fast
+
+Run Executive Brief tests.
+
+Run PDF export tests.
+
+Run PPTX export tests.
+
+Run data integrity tests.
+
+Verify UI/PDF/PPTX values.
+
+Do not weaken any tests.
+
+===========================================================
+12. FINAL RESPONSE
+===========================================================
+
+Return exactly:
+
+CFO_PRESENTATION_HARDENING:
+PASS / FAIL
+
+FINANCIAL_NUMBERS_FROZEN:
+PASS / FAIL
+
+EXECUTIVE_NARRATIVE:
+PASS / FAIL
+
+MODULE_1_PRESENTATION:
+PASS / FAIL
+
+MODULE_2_PRESENTATION:
+PASS / FAIL
+
+MODULE_3_PRESENTATION:
+PASS / FAIL
+
+MODULE_4_PRESENTATION:
+PASS / FAIL
+
+VALUE_CLASSIFICATION:
+PASS / FAIL
+
+CFO_WATERFALL:
+PASS / FAIL
+
+MASTER_OPPORTUNITY_REGISTER:
+PASS / FAIL
+
+ASSUMPTION_REGISTER:
+PASS / FAIL
+
+CUSTOMER_VALIDATION:
+PASS / FAIL
+
+IMPLEMENTATION_ROADMAP:
+PASS / FAIL
+
+PROCUCEV_POSITIONING:
+PASS / FAIL
+
+UI:
+PASS / FAIL
+
+PDF:
+PASS / FAIL
+
+PPTX:
+PASS / FAIL
+
+UI_PDF_PPTX_CONSISTENCY:
+PASS / FAIL
+
+EXPANDERS:
+PASS / FAIL
+
+TECHNICAL_LANGUAGE_REMOVED:
+PASS / FAIL
+
+E_AUCTION_NOT_PRESENTED_AS_EXCLUSIVE:
+PASS / FAIL
+
+DATA_SECURITY_MESSAGING:
+PASS / FAIL
+
+TYPECHECK:
+PASS / FAIL
+
+LINT:
+PASS / FAIL
+
+TESTS:
+PASS / FAIL
+
+CHANGES_MADE:
+LIST ONLY ACTUAL CHANGES
+
+OPEN_ISSUES:
+LIST ONLY GENUINE ISSUES
+
+FINAL_CFO_PRESENTATION_STATUS:
+PASS / FAIL
+
+IMPORTANT:
+
+This command is presentation hardening only.
+
+Do not increase the savings number.
+
+Do not manufacture opportunities.
+
+Do not change the certified financial reconciliation.
+
+The final report must communicate a defensible procurement value story, not a sales pitch.
+
+
+## PROMPT 280
+PROMPT 280 — FINAL EXECUTIVE BRIEF VISUAL + NARRATIVE REDESIGN
+CFO/CEO SALES-READY EDITION — aiCEV BY PROCUCEV
+
+OBJECTIVE
+
+The current Executive Brief is mathematically hardened but visually too dense, dark, repetitive and audit-report-like.
+
+Redesign the COMPLETE Executive Brief into a premium, highly engaging CFO/CEO presentation that people will actually want to read.
+
+This is NOT merely a colour/theme change.
+
+This is a complete PRESENTATION-LAYER AND NARRATIVE redesign.
+
+The final result must feel like:
+
+• premium procurement consulting
+• modern enterprise SaaS
+• CFO/CEO boardroom presentation
+• visually elegant
+• concise
+• high information value with low cognitive load
+• strong Procucev + aiCEV branding
+• commercially compelling without exaggerating savings
+
+DO NOT change the certified financial calculations.
+
+DO NOT invent new savings.
+
+DO NOT introduce unsupported claims.
+
+DO NOT restore any legacy numbers.
+
+========================================================
+1. CERTIFIED SOURCE OF TRUTH — ABSOLUTE
+========================================================
+
+All customer-facing financial numbers must be sourced from the latest certified constants / reconciliation engine.
+
+FREEZE THESE VALUES:
+
+Addressable Spend:
+₹5,920.35 Cr total customer spend evaluated
+
+Analysis Period:
+April 2024 – March 2026
+24 Months
+
+Gross Identified Opportunity:
+₹173.12 Cr
+
+Multi-Lever Overlap Deductions:
+₹62.80 Cr
+
+Exclusions:
+₹16.72 Cr
+
+Net Defensible Value Pipeline:
+₹93.60 Cr
+
+Net Direct Savings Opportunity:
+₹78.72 Cr
+
+Strategic Market Value:
+₹14.88 Cr
+
+Process Productivity:
+20.0% PO effort reduction
+
+Low-Value POs:
+824
+
+Direct Process Saving:
+₹0.00 until customer manpower/time-motion baseline is validated
+
+Cost Avoidance / Supplier Risk:
+₹420.00 Cr spend de-risked
+
+Dual-Source Qualified Programs:
+4
+
+Cost Avoidance:
+NOT MONETIZED
+
+Validated Savings:
+₹47.90 Cr
+
+Realized Savings:
+₹68.00 Cr
+
+IMPORTANT CLASSIFICATION:
+
+₹78.72 Cr = DIRECT SAVINGS OPPORTUNITY
+
+₹93.60 Cr = NET DEFENSIBLE VALUE PIPELINE INCLUDING STRATEGIC VALUE
+
+₹14.88 Cr = STRATEGIC MARKET VALUE, NOT DIRECT SAVINGS
+
+20% = PROCESS PRODUCTIVITY, NOT DIRECT SAVINGS
+
+₹420 Cr = SPEND DE-RISKED, NOT SAVINGS
+
+₹47.90 Cr = VALIDATED SAVINGS CLASSIFICATION
+
+₹68.00 Cr = REALIZED SAVINGS CLASSIFICATION
+
+NEVER add these classifications together.
+
+NEVER create a headline such as:
+"₹243.75 Cr savings"
+"₹323.27 Cr savings"
+"₹278.40 Cr validated"
+or any other legacy number.
+
+SEARCH THE ENTIRE CODEBASE FOR LEGACY VALUES:
+323.27
+243.75
+278.40
+21.40
+1,482 suppliers
+42 categories
+and any other stale Executive Brief values.
+
+Determine whether each occurrence is:
+A. genuinely required historical/test data
+B. obsolete presentation content
+
+Remove obsolete customer-facing references.
+
+Do NOT modify legitimate historical test fixtures unless required for presentation correctness.
+
+========================================================
+2. FIRST — CREATE A PRESENTATION DATA CONTRACT
+========================================================
+
+Before redesigning the slides, create a single presentation-safe source of truth.
+
+Example:
+
+executiveBriefPresentationConstants.ts
+
+or equivalent existing architecture.
+
+Every Web/PDF/PPTX Executive Brief component must consume this same source.
+
+The presentation layer must NEVER independently hard-code financial numbers.
+
+Create typed classifications:
+
+DIRECT_SAVINGS
+STRATEGIC_VALUE
+PROCESS_PRODUCTIVITY
+COST_AVOIDANCE
+VALIDATED_SAVINGS
+REALIZED_SAVINGS
+
+Add automated tests preventing accidental mixing of these classifications.
+
+========================================================
+3. NEW VISUAL DESIGN SYSTEM
+========================================================
+
+REMOVE THE CURRENT HEAVY DARK-NAVY VISUAL STYLE.
+
+Create a premium LIGHT ENTERPRISE THEME.
+
+BACKGROUND:
+
+Warm white / very light neutral.
+
+Suggested:
+#F7F8FA or equivalent.
+
+Cards:
+Pure white.
+
+Primary text:
+Deep charcoal.
+
+Secondary text:
+Muted slate.
+
+Accent:
+Use existing approved Procucev blue.
+
+Secondary brand accent:
+Use existing approved aiCEV orange/blue palette where appropriate.
+
+Use colour sparingly.
+
+DO NOT create rainbow dashboards.
+
+DO NOT use heavy dark rectangular containers around every section.
+
+DO NOT make every slide look like the same template.
+
+========================================================
+4. aiCEV LOGO — EVERY SLIDE
+========================================================
+
+SEARCH THE EXISTING PROJECT ASSETS FOR THE APPROVED aiCEV LOGO.
+
+Use the EXISTING official asset.
+
+Do NOT redraw the logo.
+
+Do NOT invent a new logo.
+
+Do NOT use an approximate text substitute if the real approved logo exists.
+
+Place the aiCEV logo consistently in the TOP-RIGHT CORNER of EVERY:
+
+• Web Executive Brief page
+• PDF slide
+• PPTX slide
+
+Use a small, elegant size.
+
+It must remain visible but never compete with the slide headline.
+
+Preferred lockup:
+
+aiCEV
+by Procucev
+
+using the existing approved brand asset if available.
+
+Also preserve appropriate Procucev branding.
+
+========================================================
+5. TYPOGRAPHY
+========================================================
+
+Use the existing enterprise font system if already configured.
+
+Prioritize:
+
+• large headlines
+• short subheads
+• generous line spacing
+• readable body text
+• large KPI numbers
+• clear hierarchy
+
+Minimum body font size for exported PDF/PPTX:
+Do not use tiny 7–8px equivalent text.
+
+Tables should not be forced into microscopic typography.
+
+If a table cannot be read comfortably at 100% zoom, redesign it.
+
+========================================================
+6. CORE PRESENTATION PRINCIPLE
+========================================================
+
+Every slide must answer ONE question.
+
+Use:
+
+HEADLINE
+↓
+KEY INSIGHT
+↓
+EVIDENCE
+↓
+BUSINESS IMPLICATION
+
+Avoid:
+
+TITLE
++
+large paragraph
++
+large table
++
+another paragraph
++
+another table
+
+The audience should understand the main point of each slide within approximately 5–8 seconds.
+
+========================================================
+7. REDUCE THE MAIN STORY
+========================================================
+
+Redesign the current 30-page report into approximately:
+
+18–22 MAIN EXECUTIVE SLIDES
+
+PLUS
+
+APPENDIX / EVIDENCE SLIDES
+
+Do not delete evidence.
+
+Move detailed audit tables, transaction traces, methodology and technical material into an Appendix section.
+
+The executive story must remain concise.
+
+Suggested structure:
+
+01 COVER
+
+02 EXECUTIVE OPPORTUNITY
+"₹78.72 Cr of direct savings opportunity identified"
+
+03 THE THREE BIG FINDINGS
+
+04 WHERE THE MONEY IS
+
+05 WHERE VALUE IS LEAKING
+
+06 PROCUCEV + aiCEV
+"From spend visibility to realized value"
+
+07 CUSTOMER PROCUREMENT BASELINE
+
+08 MODULE 1 — SPEND INTELLIGENCE
+
+09 MODULE 2 — STRATEGIC SOURCING
+
+10 VENDOR CONSOLIDATION
+
+11 PO CONSOLIDATION / PROCESS PRODUCTIVITY
+
+12 CATEGORY + VOLUME CONSOLIDATION
+
+13 COMPETITIVE SOURCING / E-AUCTION
+
+14 MODULE 3 — PCBI MARKET INTELLIGENCE
+
+15 MARKET TIMING / INDEX CONTRACTING
+
+16 VALUE WATERFALL
+
+17 WAVE 1 EXECUTION
+
+18 90-DAY ROADMAP
+
+19 WHY PROCUCEV + aiCEV
+
+20 NEXT STEP
+
+APPENDIX:
+Evidence / methodology / detailed opportunity register / security / audit traceability.
+
+========================================================
+8. SLIDE 2 — MAKE IT THE HERO SLIDE
+========================================================
+
+Create a beautiful executive opening.
+
+Headline:
+
+"₹78.72 Cr Direct Savings Opportunity Identified"
+
+Subheadline:
+
+"Across a ₹5,920.35 Cr procurement baseline over 24 months"
+
+Use 3–4 large visual KPI cards:
+
+₹78.72 Cr
+Direct Savings Opportunity
+
+₹93.60 Cr
+Net Defensible Value Pipeline
+
+₹14.88 Cr
+Strategic Market Value
+
+₹5,920.35 Cr
+Spend Evaluated
+
+Then one short sentence:
+
+"Value is concentrated across price harmonization, supplier consolidation, strategic sourcing and benchmark-led market alignment."
+
+Do NOT put a nine-row governance table on this slide.
+
+========================================================
+9. EXECUTIVE STORY — USE BUSINESS LANGUAGE
+========================================================
+
+Replace audit-style headings with more compelling executive language.
+
+Examples:
+
+Instead of:
+"Executive Procurement Audit & Governance Responses"
+
+Use:
+"What the analysis tells us"
+
+Instead of:
+"Scope of Analysis & Forensic Analytical Journey"
+
+Use:
+"From transaction data to procurement value"
+
+Instead of:
+"Opportunity Summary: Where the Value Lies Across 10 Sourcing Levers"
+
+Use:
+"Where the value is concentrated"
+
+Instead of:
+"Financial Reconciliation"
+
+Use:
+"The value bridge — from gross potential to defensible savings"
+
+Instead of:
+"Execution Governance"
+
+Use:
+"Turning identified value into realized savings"
+
+Instead of:
+"Customer Data Protection & Cryptographic Security Architecture"
+
+Use:
+"How customer procurement data is protected"
+
+Use consulting-quality language throughout.
+
+========================================================
+10. MODULE 1 — VISUALIZE, DON'T TABULATE
+========================================================
+
+Replace large tables wherever possible with:
+
+• donut / stacked bars
+• horizontal concentration bars
+• Pareto chart
+• simple plant/category comparison
+• large KPI callouts
+
+Example:
+
+"5 categories account for the majority of procurement value"
+
+Show a clean horizontal Pareto.
+
+Then:
+
+18.5%
+average inter-plant price variance
+
+912
+tail suppliers
+
+41.6%
+spot / non-formal contract spend
+
+Then one concise implication.
+
+Detailed tables go to Appendix.
+
+========================================================
+11. MODULE 2 — MAKE EACH LEVER COMMERCIAL
+========================================================
+
+Each major lever gets a clean visual card:
+
+BACKGROUND
+What we observed
+
+OPPORTUNITY
+What can change
+
+VALUE
+Potential value / classification
+
+ACTION
+What happens next
+
+CONFIDENCE
+High / Medium / assumption-based where applicable
+
+Do NOT show 10 giant rows on one slide.
+
+Group levers into 4 themes:
+
+1. PRICE
+2. SUPPLIER
+3. VOLUME
+4. SOURCING / CONTRACTING
+
+This makes the story much easier to understand.
+
+========================================================
+12. VENDOR CONSOLIDATION
+========================================================
+
+Present:
+
+CURRENT STATE
+Fragmented supplier base
+
+↓
+
+INTERVENTION
+Consolidate eligible volumes
+
+↓
+
+EXPECTED COMMERCIAL EFFECT
+Indicative volume leverage
+
+IMPORTANT:
+
+Where 5% volume-discount modelling is used, explicitly label:
+
+"Indicative modelling assumption — actual realization subject to supplier negotiation, specifications, market conditions and competitive intensity."
+
+Do not present the 5% assumption as guaranteed savings.
+
+========================================================
+13. PO CONSOLIDATION
+========================================================
+
+Make this visually distinct.
+
+Headline:
+
+"Fewer POs. Less transactional effort."
+
+Show:
+
+824
+Low-value POs
+
+20%
+Potential PO processing effort reduction
+
+₹0
+Direct savings monetized today
+
+Then:
+
+"Financial conversion requires customer-specific manpower / time-motion baseline validation."
+
+This is important for CFO credibility.
+
+========================================================
+14. E-AUCTION
+========================================================
+
+Do NOT make e-auction the hero of the entire report.
+
+Headline:
+
+"E-auction is an execution mechanism — not the savings thesis."
+
+Show:
+
+Identify
+→
+Qualify
+→
+Structure
+→
+Run event
+→
+Negotiate
+→
+Contract
+→
+Realize
+
+Explain that e-auction applies only where markets are liquid, specifications are standardized and qualified suppliers exist.
+
+========================================================
+15. MODULE 3 — PCBI
+========================================================
+
+Make this visually sophisticated.
+
+Use:
+
+CUSTOMER PRICE
+vs
+MARKET BENCHMARK
+
+with a simple price-gap visual.
+
+Then explain:
+
+"What changed?"
+
+"Why does it matter?"
+
+"What should procurement do?"
+
+Use index-linked contracting / market timing as the strategic story.
+
+Do not turn this into a technical index-data lecture.
+
+========================================================
+16. VALUE WATERFALL — MAKE THIS THE SECOND HERO SLIDE
+========================================================
+
+Create a beautiful visual waterfall:
+
+₹173.12 Cr
+Gross Opportunity
+
+− ₹62.80 Cr
+Overlap Deductions
+
+− ₹16.72 Cr
+Exclusions
+
+=
+₹93.60 Cr
+Net Defensible Pipeline
+
+Then visually separate:
+
+₹78.72 Cr
+DIRECT SAVINGS
+
++
+
+₹14.88 Cr
+STRATEGIC MARKET VALUE
+
+This slide must make the classification completely obvious.
+
+Do NOT call ₹93.60 Cr "savings".
+
+========================================================
+17. WAVE 1
+========================================================
+
+Create a simple execution board.
+
+Instead of a dense initiative table:
+
+WAVE 1
+
+Validate
+→
+Source
+→
+Negotiate
+→
+Contract
+→
+Realize
+
+Show the major approved initiatives as visual cards.
+
+Keep ₹47.90 Cr clearly labelled:
+
+"Validated / approved Wave-1 opportunity"
+
+Do not imply it is additive to ₹68 Cr realized savings.
+
+========================================================
+18. REALIZED SAVINGS
+========================================================
+
+Create a separate visual treatment:
+
+₹68.00 Cr
+
+REALIZED SAVINGS
+
+"Classified realized savings supported by the current source-of-truth register."
+
+Do not imply:
+
+₹47.90 + ₹68.00 = total savings.
+
+These are separate classifications and must not be added.
+
+========================================================
+19. 90-DAY ROADMAP
+========================================================
+
+Replace dense bullet lists with a horizontal timeline:
+
+0–30 DAYS
+Validate + prioritize
+
+31–60 DAYS
+Source + negotiate
+
+61–90 DAYS
+Contract + implement
+
+90+ DAYS
+Monitor + sustain
+
+Each phase should have only 2–3 key actions.
+
+========================================================
+20. PROCUCEV + aiCEV POSITIONING
+========================================================
+
+Create a premium product positioning slide.
+
+Headline:
+
+"From Procurement Data to Decision to Value"
+
+Visual flow:
+
+MODULE 1
+See
+
+→
+
+MODULE 2
+Decide
+
+→
+
+MODULE 3
+Benchmark
+
+→
+
+MODULE 4
+Realize
+
+→
+
+aiCEV
+Executive Intelligence
+
+Explain briefly that Procucev combines procurement domain expertise, transaction intelligence, market benchmarking and execution support.
+
+Avoid exaggerated claims.
+
+========================================================
+21. FINAL SLIDE
+========================================================
+
+Do not end with a dense paragraph.
+
+Create a premium closing slide:
+
+"THE OPPORTUNITY IS IDENTIFIED.
+NOW IT IS TIME TO CONVERT IT."
+
+Then:
+
+₹78.72 Cr
+Direct savings opportunity
+
+₹93.60 Cr
+Net defensible pipeline
+
+24 months
+of procurement intelligence
+
+Then:
+
+"Recommended next step:
+Joint CFO + Procurement Steering Committee"
+
+Keep contact details small.
+
+========================================================
+22. APPENDIX
+========================================================
+
+Move detailed technical material into Appendix:
+
+• detailed opportunity register
+• transaction traceability
+• percentile tables
+• detailed PCBI tables
+• security controls
+• methodology
+• assumptions
+• validation framework
+• source notes
+
+Appendix can remain more information-dense.
+
+Main deck must remain visually clean.
+
+========================================================
+23. SECURITY MESSAGING
+========================================================
+
+Retain only verified implemented controls.
+
+Do not use unsupported certifications.
+
+Do not claim ISO/SOC certification unless actually verified.
+
+Use the existing verified wording around:
+
+• configured application security controls
+• encryption at rest where implemented
+• tenant isolation
+• PCBI separation
+• logging sanitization
+• customer-data handling
+• AI model retraining restrictions where actually implemented
+
+Keep security content primarily in the Appendix.
+
+========================================================
+24. PDF + PPTX + WEB MUST MATCH
+========================================================
+
+The following must use the same presentation data contract:
+
+• Web Executive Brief
+• PDF
+• PPTX
+
+Same:
+
+numbers
+headlines
+classifications
+analysis period
+branding
+logo
+colour system
+slide titles
+value waterfall
+
+No format-specific hard-coded numbers.
+
+========================================================
+25. RESPONSIVE / VISUAL QA
+========================================================
+
+Render every slide.
+
+Inspect every page visually.
+
+Specifically check:
+
+• no text overflow
+• no tiny unreadable text
+• no clipped tables
+• no overlapping cards
+• no excessive whitespace
+• no inconsistent margins
+• no inconsistent logo position
+• aiCEV logo visible on EVERY slide
+• logo not covering content
+• page number consistent
+• footer consistent
+• customer name consistent
+• confidentiality consistent
+• PDF and PPTX visually aligned
+
+========================================================
+26. REMOVE CLUTTER
+========================================================
+
+Strict rules:
+
+MAXIMUM:
+1 primary message per slide
+3–5 supporting points
+4 KPI cards maximum
+1 major chart / visual per slide
+
+Avoid:
+
+• giant tables
+• repeated management implications
+• repeated confidentiality blocks
+• long paragraphs
+• multiple competing headlines
+• excessive borders
+• dark full-page panels
+• tiny text
+
+Use progressive disclosure.
+
+========================================================
+27. CUSTOMER-FACING LANGUAGE
+========================================================
+
+Remove internal engineering / software terminology.
+
+Do not expose:
+
+• prompt numbers
+• internal test terminology
+• source-code references
+• invariant codes
+• internal implementation names
+• debugging language
+• test suite language
+
+Those belong nowhere in the customer-facing deck.
+
+========================================================
+28. AUTOMATED VALIDATION
+========================================================
+
+After redesign:
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run quality:fast
+
+Run all Executive Brief export tests.
+
+Add / update tests for:
+
+1. frozen financial constants
+2. classification separation
+3. waterfall reconciliation
+4. PDF/PPTX/Web consistency
+5. logo presence
+6. no legacy financial values
+7. analysis period
+8. customer name
+9. slide count / appendix structure
+
+Required:
+
+0 TypeScript errors
+0 lint errors
+100% tests pass
+₹0 mathematical variance
+
+========================================================
+29. FINAL ACCEPTANCE TEST
+========================================================
+
+Before reporting PASS, independently verify:
+
+A. No legacy ₹323.27 Cr
+B. No legacy ₹243.75 Cr
+C. No legacy ₹278.40 Cr
+D. No stale realized ₹21.40 Cr
+E. No stale supplier/category counts unless certified
+F. No unsupported 3.5%–6.5% savings claim
+G. No "₹93.60 Cr savings" wording
+H. No addition of ₹47.90 Cr + ₹68.00 Cr
+I. E-auction is not presented as the sole savings mechanism
+J. Process productivity is not monetized
+K. ₹420 Cr risk exposure is not presented as savings
+L. ₹14.88 Cr strategic value is clearly separated from direct savings
+M. aiCEV logo appears on every slide
+N. Light background is used throughout the main deck
+O. Main deck is visually readable at 100% zoom
+P. PDF/PPTX/Web use the same certified data
+
+========================================================
+30. FINAL OUTPUT
+========================================================
+
+Return a concise implementation report containing:
+
+DESIGN_STATUS
+NARRATIVE_STATUS
+FINANCIAL_STATUS
+LEGACY_VALUE_SCAN
+AI CEV_LOGO_STATUS
+PDF_STATUS
+PPTX_STATUS
+WEB_STATUS
+TYPECHECK
+LINT
+TESTS
+MATHEMATICAL_VARIANCE
+OPEN_ISSUES
+
+Also list:
+
+1. Main deck slide count
+2. Appendix slide count
+3. Major visual changes
+4. Major narrative changes
+5. Any remaining issues
+
+FINAL STATUS MUST BE:
+
+CFO_EXECUTIVE_DESIGN_REDESIGN:
+PASS
+
+ONLY IF ALL ABOVE CONDITIONS ARE SATISFIED.
+
+
+## Prompt 281
+
+PROMPT 281 — FINAL VISUAL CFO/CEO ACCEPTANCE QA
+DO NOT CHANGE THE CERTIFIED FINANCIAL MODEL
+
+The Executive Brief redesign is now implemented.
+
+Perform ONLY a final visual, narrative and terminology acceptance audit.
+
+DO NOT redesign the financial logic.
+DO NOT introduce new opportunity values.
+DO NOT change the certified source-of-truth numbers.
+
+1. TERMINOLOGY CHECK
+
+Search the entire Executive Brief presentation layer for:
+
+"Module 5"
+"Module 5 realized"
+"Module 5 savings"
+
+Replace with the correct terminology:
+
+"Module 4 / Savings Realization"
+or
+"Downstream Savings Realization"
+
+There are only Modules 1–4 in the Procucev architecture.
+
+2. ₹68 CR REALIZED SAVINGS
+
+Where ₹68.00 Cr appears, use:
+
+"₹68.00 Cr
+Classified Realized Savings"
+
+Add a concise qualifier where necessary:
+
+"Separate realized-savings classification; not additive to Wave-1 opportunity."
+
+Do NOT imply:
+₹47.90 Cr + ₹68.00 Cr = ₹115.90 Cr.
+
+3. VISUAL QA
+
+Render the latest PDF and PPTX.
+
+Inspect all 30 slides individually.
+
+Pay particular attention to Slides:
+
+1 Cover
+2 Executive Opportunity
+3 Executive Findings
+4–9 Module 1 / baseline
+10 Value Waterfall
+11–15 Module 2
+16 E-Auction
+17 Vendor Consolidation
+18 PO Productivity
+19–20 Module 3 / strategic value
+21–30 Appendix
+
+Verify:
+
+• light background
+• sufficient whitespace
+• large readable typography
+• no tiny text
+• no text clipping
+• no overlapping objects
+• no excessive tables in main deck
+• no dark legacy panels
+• no repeated paragraphs
+• strong visual hierarchy
+• premium consulting appearance
+• clear CFO-level storytelling
+
+4. aiCEV BRAND QA
+
+Verify the official aiCEV by PROCUCEV logo appears:
+
+• every Web slide
+• every PDF slide
+• every PPTX slide
+
+Position:
+top-right corner
+
+Check that it is:
+
+• visible
+• consistent
+• not oversized
+• not cropped
+• not covering content
+
+5. HERO SLIDE QA
+
+Slide 2 must immediately communicate:
+
+₹78.72 Cr
+DIRECT SAVINGS OPPORTUNITY
+
+with supporting:
+
+₹93.60 Cr
+NET DEFENSIBLE VALUE PIPELINE
+
+₹14.88 Cr
+STRATEGIC MARKET VALUE
+
+₹5,920.35 Cr
+SPEND EVALUATED
+
+No dense governance table on Slide 2.
+
+6. VALUE WATERFALL QA
+
+Slide 10 must visually communicate:
+
+₹173.12 Cr Gross Opportunity
+
+LESS ₹62.80 Cr Overlaps
+
+LESS ₹16.72 Cr Exclusions
+
+=
+
+₹93.60 Cr Net Defensible Pipeline
+
+Then visually split:
+
+₹78.72 Cr Direct Savings
+
++
+
+₹14.88 Cr Strategic Market Value
+
+Ensure ₹93.60 Cr is NEVER labelled simply "Savings".
+
+7. MODULE 2 QA
+
+Confirm that:
+
+Vendor consolidation
+PO productivity
+Category/volume consolidation
+Strategic sourcing
+Competitive sourcing
+
+are all represented.
+
+E-auction must remain ONE execution mechanism, not the overall savings thesis.
+
+8. PO PRODUCTIVITY QA
+
+Clearly show:
+
+824 low-value POs
+20% potential effort reduction
+₹0 direct savings monetized today
+
+with the requirement for customer time-motion/manpower validation.
+
+9. VENDOR CONSOLIDATION QA
+
+Clearly label any 5% volume discount as:
+
+"Indicative modelling assumption"
+
+and not as guaranteed savings.
+
+10. RISK QA
+
+₹420 Cr must be described only as:
+
+"Spend de-risked / cost avoidance"
+
+and NOT as savings.
+
+11. STRATEGIC VALUE QA
+
+₹14.88 Cr must remain separate from direct savings.
+
+12. LEGACY VALUE SCAN
+
+Confirm zero customer-facing occurrences of:
+
+₹323.27 Cr
+₹243.75 Cr
+₹278.40 Cr
+₹21.40 Cr
+
+Also search for stale:
+
+1,482 suppliers
+42 categories
+
+13. BRAND / COPY QA
+
+Check for:
+
+• spelling errors
+• grammar errors
+• inconsistent terminology
+• awkward headings
+• inconsistent capitalization
+• "aiCEV" capitalization
+• Procucev capitalization
+• UltraTech Cement Limited consistency
+
+14. CFO STORY TEST
+
+For each main-deck slide ask:
+
+"Can a CFO understand the primary message in 5–8 seconds?"
+
+If NO:
+
+simplify the slide visually WITHOUT changing the underlying numbers.
+
+Move excessive detail to Appendix.
+
+15. FINAL OUTPUT
+
+Return:
+
+VISUAL_QA: PASS/FAIL
+CFO_READABILITY: PASS/FAIL
+AI CEV_LOGO: PASS/FAIL
+LIGHT_THEME: PASS/FAIL
+WATERFALL: PASS/FAIL
+FINANCIAL_CLASSIFICATION: PASS/FAIL
+MODULE_ARCHITECTURE_TERMINOLOGY: PASS/FAIL
+LEGACY_SCAN: PASS/FAIL
+PDF_RENDER: PASS/FAIL
+PPTX_RENDER: PASS/FAIL
+WEB_RENDER: PASS/FAIL
+
+Also provide a list of every slide that required a visual correction.
+
+Do not report PASS unless the actual rendered PDF/PPTX has been inspected.
+
+FINAL STATUS:
+
+CFO_FINAL_VISUAL_ACCEPTANCE:
+PASS
+
+
+## Prompt 282
+
+PROMPT 282 — FINAL MICRO POLISH — DO NOT REDESIGN
+
+The Executive Brief has passed the final CFO visual acceptance audit.
+
+Do NOT change the certified financial model.
+
+Do NOT change the slide structure.
+
+Do NOT change the light enterprise theme.
+
+Do NOT change the aiCEV branding.
+
+Make ONLY the following two final corrections:
+
+1. E-AUCTION VOLUME ALLOCATION
+
+Remove any customer-facing hard-coded "60/40" or "70/30" volume split rule unless it is directly supported by an existing certified methodology/source.
+
+Replace with:
+
+"Use controlled volume allocation across qualified suppliers based on competition, capacity, risk and commercial outcome."
+
+Do not introduce a new numeric sourcing rule.
+
+2. SLIDE 10 — VALUE WATERFALL SIMPLIFICATION
+
+Reduce visual clutter.
+
+The slide must visually prioritize this sequence:
+
+₹173.12 Cr
+GROSS OPPORTUNITY
+
+− ₹62.80 Cr
+MULTI-LEVER OVERLAPS
+
+− ₹16.72 Cr
+EXCLUSIONS
+
+=
+
+₹93.60 Cr
+NET DEFENSIBLE VALUE PIPELINE
+
+Then create a visually distinct split:
+
+₹78.72 Cr
+DIRECT SAVINGS OPPORTUNITY
+
++
+
+₹14.88 Cr
+STRATEGIC MARKET VALUE
+
+Do NOT use 8 equal-weight KPI cards.
+
+Make the waterfall itself the dominant visual.
+
+The audience should understand the entire financial bridge within 5 seconds.
+
+Keep the existing mathematical reconciliation exactly unchanged.
+
+3. DO NOT CHANGE ANY OTHER CONTENT.
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run quality:fast
+
+Run Executive Brief export validation.
+
+Return only:
+
+SLIDE_10_SIMPLIFICATION: PASS/FAIL
+EAUCTION_RULE_CLEANUP: PASS/FAIL
+FINANCIAL_VARIANCE: ₹0.00 / FAIL
+PDF: PASS/FAIL
+PPTX: PASS/FAIL
+WEB: PASS/FAIL
+TESTS: PASS/FAIL
+OPEN_ISSUES: NONE / LIST
+
+FINAL STATUS:
+
+CFO_FINAL_MICRO_POLISH:
+PASS
+
+
+## Prompt 283
+
+PROMPT 283 — COMPLETE CFO/CEO PRESENTATION REDESIGN
+EXECUTIVE BRIEF — PREMIUM CONSULTING / BOARDROOM EDITION
+aiCEV by Procucev
+
+IMPORTANT:
+The current Executive Brief has passed financial/content QA, but the actual rendered PPTX/PDF has FAILED visual-quality review.
+
+I have personally reviewed the rendered PPTX/PDF.
+
+The current output is NOT acceptable as a CFO/CEO presentation.
+
+DO NOT perform another micro-polish.
+
+DO NOT simply adjust existing boxes.
+
+REBUILD THE PRESENTATION VISUAL LAYER FROM SCRATCH.
+
+The certified financial model, terminology, opportunity mathematics and business logic MUST remain unchanged.
+
+========================================================
+1. NON-NEGOTIABLE OBJECTIVE
+========================================================
+
+Create a premium, boardroom-quality CFO/CEO presentation comparable in visual discipline to a top-tier management consulting / Big-4 strategy presentation.
+
+The presentation must look:
+
+• Premium
+• Minimal
+• Spacious but not empty
+• Financially credible
+• Visually consistent
+• Executive
+• Modern enterprise
+• Easy to scan in 5–8 seconds
+• Strong enough for a CEO/CFO sales meeting
+
+It must NOT look like:
+
+• an Excel report
+• an automatically generated PDF
+• a database export
+• a dashboard screenshot
+• a collection of unrelated cards
+• a document with tables pasted into PowerPoint
+
+========================================================
+2. FIRST — INSPECT THE EXISTING PROJECT
+========================================================
+
+Before editing:
+
+1. Locate the existing official aiCEV / Procucev logo asset in the project.
+2. Identify all presentation rendering utilities.
+3. Identify all presentation constants and certified data contracts.
+4. Identify Web/PDF/PPTX presentation components.
+5. Identify current theme/constants.
+6. Identify all 30 slides.
+7. Identify which slides belong to:
+   MAIN EXECUTIVE STORY
+   APPENDIX / EVIDENCE
+
+Do NOT recreate the logo using text.
+
+The official logo asset MUST be used.
+
+If an official logo asset already exists in the repository, use that exact asset.
+
+If multiple logo assets exist, identify the approved aiCEV lockup already used by the product UI/brand assets and use the same one consistently.
+
+========================================================
+3. FIX THE PRESENTATION GRID FIRST
+========================================================
+
+The deck is 16:9.
+
+Use a strict 10 x 5.625 inch presentation grid.
+
+SAFE AREA:
+
+Left: 0.50"
+Right: 0.50"
+Top: 0.35"
+Bottom: 0.35"
+
+All content must remain inside this safe area.
+
+Create central layout constants:
+
+PAGE_LEFT
+PAGE_RIGHT
+PAGE_TOP
+PAGE_BOTTOM
+CONTENT_LEFT
+CONTENT_RIGHT
+CONTENT_WIDTH
+HEADER_Y
+TITLE_Y
+CONTENT_Y
+FOOTER_Y
+
+Every slide must use these constants.
+
+NO slide may use arbitrary left/right positions.
+
+Maintain:
+
+• identical left alignment for every slide title
+• identical right alignment for logo
+• identical footer position
+• identical page-number position
+• identical content boundaries
+• consistent vertical rhythm
+
+Use an 8-point / 4-point spacing system.
+
+Cards, charts, tables and text must align to this grid.
+
+========================================================
+4. BRAND SYSTEM
+========================================================
+
+Use a restrained enterprise palette.
+
+Canvas:
+#F7F9FC
+
+Primary text:
+#172033
+
+Secondary text:
+#5B6472
+
+Primary Procucev Blue:
+#1769E0
+
+aiCEV Blue:
+use the official brand blue from existing product/logo constants
+
+Accent Green:
+#17A673
+
+Accent Amber:
+#F2A900
+
+Light card:
+#FFFFFF
+
+Borders:
+#DCE3EC
+
+DO NOT use gradients.
+
+DO NOT use heavy shadows.
+
+DO NOT use decorative boxes merely to fill space.
+
+Use color only to communicate hierarchy, status or financial meaning.
+
+========================================================
+5. TYPOGRAPHY — REBUILD COMPLETELY
+========================================================
+
+Use ONE professional font family throughout the deck.
+
+Preferred:
+
+Aptos
+
+If Aptos is unavailable in the rendering environment, use Arial consistently.
+
+Do NOT mix font families.
+
+Typography system:
+
+COVER TITLE:
+30–34 pt
+
+EXECUTIVE SLIDE TITLE:
+22–24 pt
+
+SECTION LABEL:
+9–10 pt uppercase
+
+HERO NUMBER:
+30–36 pt
+
+KEY NUMBER:
+22–28 pt
+
+CARD LABEL:
+9–10 pt
+
+BODY:
+11–12 pt
+
+TABLE:
+9–10 pt minimum
+
+FOOTER:
+7.5–8 pt
+
+Never use 7 pt body text.
+
+Never compress body text to fit a table.
+
+If content does not fit:
+
+REDESIGN THE SLIDE.
+
+Do not shrink the font.
+
+Use font weights consistently:
+
+Regular
+Medium
+Semibold
+Bold
+
+Do not use arbitrary font sizes.
+
+========================================================
+6. LOGO — CRITICAL FIX
+========================================================
+
+REMOVE ALL TEXT-BASED LOGOS.
+
+Do NOT create:
+
+"aiCEV"
+"by PROCUCEV"
+
+as ordinary PowerPoint text.
+
+Use the official aiCEV lockup image asset.
+
+Every slide:
+
+Logo anchored to the same top-right position.
+
+Recommended:
+
+Right edge = 0.50"
+Top = 0.28"
+
+Use the same physical width on every slide.
+
+Do NOT stretch.
+
+Do NOT distort.
+
+Do NOT recolor.
+
+Do NOT create a second competing logo elsewhere.
+
+COVER:
+
+Use the official lockup prominently but elegantly.
+
+Do not place a large text version of aiCEV in the body.
+
+========================================================
+7. FOOTER SYSTEM
+========================================================
+
+Every slide uses exactly one footer system.
+
+Left:
+"Management Confidential — Prepared exclusively for UltraTech Cement Limited"
+
+Center:
+"aiCEV by Procucev"
+
+Right:
+"PAGE X OF 30"
+
+Use the same baseline and typography throughout.
+
+Do not allow footer text to drift.
+
+Do not duplicate confidentiality text elsewhere.
+
+========================================================
+8. DESIGN PRINCIPLE
+========================================================
+
+EVERY SLIDE MUST ANSWER ONE EXECUTIVE QUESTION.
+
+Use this hierarchy:
+
+QUESTION
+↓
+ANSWER
+↓
+EVIDENCE
+↓
+IMPLICATION
+↓
+ACTION
+
+Do NOT put five independent messages on one slide.
+
+========================================================
+9. MAIN DECK STRUCTURE
+========================================================
+
+Keep the existing 30-slide structure if required for content completeness.
+
+However, visually classify:
+
+SLIDES 1–20:
+Executive narrative
+
+SLIDES 21–30:
+Evidence / execution / appendix
+
+Main slides must be highly visual.
+
+Appendix slides may contain more tables.
+
+========================================================
+10. SLIDE-BY-SLIDE REDESIGN
+========================================================
+
+SLIDE 1 — COVER
+
+Create a premium consulting cover.
+
+Large:
+
+Procurement Value
+Opportunity Assessment
+
+Secondary:
+
+UltraTech Cement Limited
+
+Hero metric:
+
+₹78.72 Cr
+Direct Savings Opportunity
+
+Secondary line:
+
+₹93.60 Cr Net Defensible Pipeline
+₹5,920.35 Cr Spend Evaluated
+24 Months
+
+Use substantial whitespace but NOT empty whitespace.
+
+Use one subtle procurement/value visual element:
+for example a thin value-flow line or abstract industrial procurement geometry.
+
+No table.
+
+No large left-side blue vertical bar.
+
+No duplicated logo.
+
+========================================================
+
+SLIDE 2 — EXECUTIVE OPPORTUNITY
+
+This is the most important slide.
+
+Make the four numbers visually dominant:
+
+₹78.72 Cr
+Direct Savings
+
+₹93.60 Cr
+Net Defensible Pipeline
+
+₹14.88 Cr
+Strategic Market Value
+
+₹5,920.35 Cr
+Spend Evaluated
+
+Then one horizontal value statement:
+
+"Value is concentrated across price harmonization, supplier consolidation,
+strategic sourcing and benchmark-led market alignment."
+
+Below that create THREE insight columns:
+
+WHERE VALUE LIES
+MATHEMATICAL INTEGRITY
+EXECUTION READINESS
+
+Each should contain only 2–3 concise points.
+
+No oversized empty cards.
+
+========================================================
+
+SLIDE 3 — WHY PROCUCEV
+
+Do NOT use two giant empty boxes.
+
+Create a 4-pillar horizontal architecture:
+
+DOMAIN EXPERTISE
+FORENSIC DATA
+AI DECISION INTELLIGENCE
+EXECUTION
+
+Use simple icons / visual markers.
+
+Below:
+
+"From transaction data → sourcing decision → execution → realized value"
+
+Integrity principles should appear as four compact trust statements.
+
+========================================================
+
+SLIDE 4 — PROCUREMENT VALUE ARCHITECTURE
+
+Create a horizontal six-stage journey:
+
+DIAGNOSE → STRATEGIZE → SOURCE → EXECUTE → REALIZE → MONITOR
+
+Each stage gets:
+
+number
+short title
+one-line outcome
+
+Below it:
+
+"10 Specialized Procurement Competencies"
+
+Show as a clean 2-row capability matrix.
+
+Do NOT use a giant spreadsheet table.
+
+========================================================
+
+SLIDE 5 — ULTRATECH CONTEXT
+
+Replace the large table with a visual company-scale slide.
+
+Left:
+
+ULTRATECH AT SCALE
+
+Use 4 large facts:
+
+152.7 MTPA
+24 Integrated Plants
+33 Grinding Units
+8 Bulk Terminals
+
+Right:
+
+"Procurement implication"
+
+Show 4 concise implications.
+
+Sources remain as a small evidence footer.
+
+========================================================
+
+SLIDE 6 — STRATEGIC ALIGNMENT
+
+Create a 5-row strategic alignment map.
+
+Industrial characteristic
+→ Procurement implication
+→ Value hypothesis
+
+Make each row visually separated but compact.
+
+Highlight the final executive hypothesis in a single premium callout.
+
+========================================================
+
+SLIDE 7 — DIAGNOSTIC BASELINE
+
+Four hero metrics:
+
+₹5,920.35 Cr
+31,671 Records
+974 Suppliers
+256 Material Groups
+
+Below:
+
+CUSTOMER DATA
+↓
+MODULE 1
+↓
+MODULE 2
+↓
+MODULE 3
+↓
+MODULE 4
+↓
+EXECUTIVE VALUE BRIEF
+
+Use a clean visual process flow.
+
+========================================================
+
+SLIDE 8 — WHAT THE ANALYSIS TELLS US
+
+DO NOT create a 10-row spreadsheet.
+
+Create 5–6 large insight tiles:
+
+100% categorized spend
+81.4% spend concentrated in top 10% suppliers
+18.5% inter-plant price variance
+42.6% spot/ad-hoc spend
+912 tail suppliers
+₹93.60 Cr net defensible pipeline
+
+Each tile:
+
+Metric
+one-line interpretation
+
+========================================================
+
+SLIDE 9 — WHERE VALUE IS CONCENTRATED
+
+Replace the table with a horizontal ranked opportunity visual.
+
+Show:
+
+Direct Price Improvement
+E-Auction
+Vendor Consolidation
+Volume Aggregation
+Payment Terms
+Category Specialization
+Logistics
+Specification
+Contract Compliance
+PCBI
+
+Use horizontal bars.
+
+Show ₹ opportunity at bar-end.
+
+Clearly label:
+
+GROSS OPPORTUNITY
+₹173.12 Cr
+
+Do not imply these are additive after overlap.
+
+========================================================
+
+SLIDE 10 — THE VALUE BRIDGE
+
+THIS MUST BE THE MOST BEAUTIFUL FINANCIAL SLIDE.
+
+Dominant central waterfall:
+
+₹173.12 Cr
+GROSS OPPORTUNITY
+
+↓
+− ₹62.80 Cr
+OVERLAP DEDUCTIONS
+
+↓
+− ₹16.72 Cr
+EXCLUSIONS
+
+↓
+₹93.60 Cr
+NET DEFENSIBLE PIPELINE
+
+Then split visually:
+
+₹78.72 Cr
+DIRECT SAVINGS
+
++
+
+₹14.88 Cr
+STRATEGIC MARKET VALUE
+
+Put the mathematical proof in a compact appendix-style strip at the bottom.
+
+Do NOT show the detailed audit table as the dominant visual.
+
+========================================================
+
+SLIDES 11–13 — MODULE 1
+========================================================
+
+Use visual storytelling:
+
+11:
+Spend architecture — donut / stacked bars / ranked categories.
+
+12:
+Pareto concentration — three visual charts:
+Category
+Supplier
+SKU
+
+13:
+Forensic findings — five findings represented as numbered insight cards.
+
+Do NOT use giant empty boxes.
+
+========================================================
+
+SLIDES 14–19 — MODULE 2
+========================================================
+
+14:
+Strategic sourcing opportunity matrix.
+
+Use 2x2 visual matrix.
+
+15:
+Price dispersion.
+
+Use box/range visual instead of plain table.
+
+16:
+E-auction execution.
+
+Use a process diagram:
+
+Identify
+→ Qualify
+→ Structure
+→ Run
+→ Negotiate
+→ Contract
+→ Realize
+
+17:
+Vendor consolidation.
+
+Use current state → intervention → target state visual.
+
+18:
+PO productivity.
+
+Use 824 POs → 20% effort reduction → ₹0 monetized today.
+
+19:
+Volume aggregation.
+
+Use three high-value examples with before/after visual.
+
+========================================================
+
+SLIDES 20–22 — MODULE 3 / PCBI
+========================================================
+
+20:
+PCBI coverage.
+
+Use four metrics.
+
+21:
+Market benchmark findings.
+
+Use visual comparison bars:
+
+Customer Rate
+vs
+PCBI Reference
+
+22:
+Index contracting.
+
+Show three clean formula cards.
+
+========================================================
+
+SLIDES 23–25 — MODULE 4
+========================================================
+
+23:
+Savings realization pipeline.
+
+Use a horizontal maturity flow.
+
+24:
+Wave 1 initiative ledger.
+
+Keep table, but redesign professionally.
+
+25:
+90-day execution roadmap.
+
+Use a true timeline.
+
+========================================================
+
+SLIDES 26–30
+========================================================
+
+26:
+Strategic roadmap
+
+27:
+Domain authority
+
+28:
+Trust & governance
+
+29:
+NEXT STEP / MANAGEMENT DECISION
+
+30:
+APPENDIX / EVIDENCE
+
+These slides may be more information-dense, but must follow the same grid and typography.
+
+========================================================
+11. TABLE RULES
+========================================================
+
+Tables are allowed only when the table itself is the best way to communicate evidence.
+
+For every table:
+
+• minimum 9 pt
+• generous row height
+• clear header
+• no vertical line overload
+• alternate subtle row treatment only if needed
+• numbers right aligned
+• text left aligned
+• no text touching borders
+• consistent cell padding
+• no table wider than content grid
+
+If a table contains more than 7 rows on a main-story slide:
+
+convert it into a visual.
+
+========================================================
+12. CARD RULES
+========================================================
+
+Cards should NOT dominate every slide.
+
+Use cards only where they improve comprehension.
+
+No more than:
+
+4 cards for hero metrics
+3 cards for insight groups
+6 cards for process stages
+
+All cards must have:
+
+same radius
+same internal padding
+same border
+same title position
+same number hierarchy
+
+========================================================
+13. CHART RULES
+========================================================
+
+Charts must be executive-quality.
+
+No unnecessary legends.
+
+No chart junk.
+
+No 3D.
+
+No gradients.
+
+No tiny labels.
+
+Every chart must have a one-line takeaway.
+
+========================================================
+14. CONTENT PRESERVATION
+========================================================
+
+DO NOT change certified financial values.
+
+SOURCE OF TRUTH:
+
+Spend:
+₹5,920.35 Cr
+
+Gross Opportunity:
+₹173.12 Cr
+
+Overlap:
+₹62.80 Cr
+
+Exclusions:
+₹16.72 Cr
+
+Net Defensible Pipeline:
+₹93.60 Cr
+
+Direct Savings:
+₹78.72 Cr
+
+Strategic Market Value:
+₹14.88 Cr
+
+Validated:
+₹47.90 Cr
+
+Classified Realized:
+₹68.00 Cr
+
+PO:
+824
+
+PO effort reduction:
+20%
+
+Direct process savings today:
+₹0
+
+Supplier count:
+974
+
+Material groups:
+256
+
+Plants:
+26
+
+Analysis period:
+April 2024 – March 2026
+
+Do not alter these numbers.
+
+Do not introduce new savings assumptions.
+
+Do not change the e-auction positioning.
+
+Do not reintroduce 60/40 or 70/30 volume allocation.
+
+Vendor consolidation 5% must remain explicitly an indicative modelling assumption.
+
+₹420 Cr must remain spend de-risked / cost avoidance, not savings.
+
+========================================================
+15. DESIGN VALIDATION
+========================================================
+
+After rebuilding:
+
+Render ALL 30 slides to PDF.
+
+Render PPTX.
+
+Inspect actual rendered output.
+
+DO NOT rely only on unit tests.
+
+Run a visual QA program that checks:
+
+1. Logo is actual image asset.
+2. Logo dimensions identical across slides.
+3. Logo position identical across slides.
+4. No text-based aiCEV logo remains.
+5. All slides use one font family.
+6. No body text below 9 pt.
+7. Main body target 11–12 pt.
+8. Titles use same hierarchy.
+9. All slides share same left/right margins.
+10. All titles align to same x coordinate.
+11. All footers align to same baseline.
+12. No text overlaps.
+13. No text clipped.
+14. No objects outside safe area.
+15. No excessive unused whitespace.
+16. No dense unreadable tables in main-story slides.
+17. Slide 10 waterfall visually dominates.
+18. Cover looks premium.
+19. Slide 2 communicates value within 5 seconds.
+20. Appendix is visually consistent with main deck.
+
+========================================================
+16. AUTOMATED GEOMETRY QA
+========================================================
+
+Add or update presentation validation tests.
+
+Fail if:
+
+• any shape crosses safe area
+• title x-position differs from approved grid
+• footer baseline differs beyond tolerance
+• logo position differs beyond tolerance
+• logo is text instead of image
+• body font < 9 pt
+• more than 7 rows appear in a main-story table
+• duplicated logo appears on a slide
+• more than one font family is used
+• slide contains unexplained large empty region
+
+Use reasonable thresholds, not brittle pixel-perfect equality.
+
+========================================================
+17. EXPORT
+========================================================
+
+Generate:
+
+EXECUTIVE_BRIEF.pdf
+EXECUTIVE_BRIEF.pptx
+
+Web presentation must use the SAME presentation data contract.
+
+PDF and PPTX must visually match the Web presentation.
+
+========================================================
+18. FINAL ACCEPTANCE
+========================================================
+
+The command is NOT complete merely because tests pass.
+
+You must render and inspect the actual output.
+
+Final report must include:
+
+DESIGN_REBUILD: PASS/FAIL
+LOGO_ASSET: PASS/FAIL
+GRID_ALIGNMENT: PASS/FAIL
+TYPOGRAPHY: PASS/FAIL
+VISUAL_HIERARCHY: PASS/FAIL
+MAIN_STORY_READABILITY: PASS/FAIL
+SLIDE_10_WATERFALL: PASS/FAIL
+PDF: PASS/FAIL
+PPTX: PASS/FAIL
+WEB: PASS/FAIL
+TYPECHECK: PASS/FAIL
+LINT: PASS/FAIL
+QUALITY: PASS/FAIL
+OPEN_ISSUES: list
+
+Do NOT report PASS based only on code tests.
+
+If any visual criterion fails, fix it before declaring completion.
+
+FINAL STATUS MUST BE:
+
+CFO_BOARDROOM_DESIGN:
+PASS
+
+only after actual rendered visual inspection passes.
+
+
+## Prompt 284
+
+PROMPT 284 — FINAL RENDERING CORRECTION
+ENCODING + LOGO SCALE ONLY
+DO NOT REDESIGN THE DECK
+
+The redesigned Executive Brief is visually much better.
+
+DO NOT change the layout, slide architecture, financial model, typography hierarchy, cards, charts, colors, margins, content, or narrative.
+
+There are ONLY TWO remaining defects to fix.
+
+========================================================
+ISSUE 1 — CORRUPTED UNICODE / MOJIBAKE CHARACTERS
+========================================================
+
+The generated PDF currently contains incorrectly decoded UTF-8 characters.
+
+Examples visibly appearing in the rendered deck:
+
+â†’
+âˆ’
+â€“
+â€¢
+and related mojibake sequences.
+
+These are appearing in multiple slides, including:
+
+• Slide 10 Value Bridge
+• Slide 14 Opportunity Matrix
+• Slide 25 Execution Roadmap
+• other slides containing arrows, bullets, minus signs, en-dashes or Unicode symbols
+
+This is a GLOBAL RENDERING / ENCODING ISSUE.
+
+DO NOT manually fix only Slide 10 or Slide 14.
+
+Audit the ENTIRE Executive Brief presentation rendering pipeline.
+
+--------------------------------------------------------
+REQUIRED FIX
+--------------------------------------------------------
+
+Use one of the following approaches:
+
+PREFERRED:
+Convert presentation text to safe Unicode strings before passing to the PDF/PPTX rendering layer and ensure the selected font/rendering library supports them correctly.
+
+If the PDF canvas implementation cannot reliably render Unicode:
+
+USE ASCII-SAFE REPLACEMENTS for symbols throughout the deck:
+
+→  replace with  "->"
+−  replace with  "-"
+–  replace with  "-"
+—  replace with  "-"
+•  replace with  "-"
+≥  replace with  ">="
+≤  replace with  "<="
+
+Do NOT use mojibake strings.
+
+IMPORTANT:
+
+Never allow:
+
+"â†"
+"âˆ"
+"â€“"
+"â€¢"
+"Â"
+or any other UTF-8/Latin-1 mojibake sequence
+
+to reach the final rendered PDF/PPTX.
+
+Search the entire presentation source code for mojibake patterns.
+
+Also inspect any shared PDF helper / canvas / text rendering utility responsible for decoding text.
+
+Do NOT introduce a second font.
+
+Continue using the existing Aptos typography system.
+
+========================================================
+ISSUE 2 — REDUCE aiCEV LOGO SIZE
+========================================================
+
+The official aiCEV logo asset is now correct.
+
+DO NOT replace the logo.
+
+DO NOT recreate it as text.
+
+Only reduce its physical size and align it consistently.
+
+CURRENT:
+x = 8.13"
+y = 0.28"
+w = 1.37"
+h = 0.50"
+
+CHANGE TO:
+
+right edge = 0.50"
+top = 0.25"
+
+target width = 1.00"
+
+target height = proportional to the source image.
+
+For a 10" wide slide:
+
+x = 8.50"
+y = 0.25"
+w = 1.00"
+h = proportional
+
+Use the SAME dimensions and position on every slide.
+
+Do not stretch or distort the logo.
+
+Do not allow it to overlap the title.
+
+Do not allow it to touch the title.
+
+The logo must read as a subtle corporate identifier, not a hero element.
+
+COVER:
+Use the same reduced logo size.
+
+ALL OTHER SLIDES:
+Use exactly the same reduced logo size.
+
+========================================================
+GLOBAL LOGO QA
+========================================================
+
+Add validation:
+
+1. Logo must be an image asset.
+2. No text-based aiCEV logo.
+3. Width approximately 1.00".
+4. Same width on every slide.
+5. Same right margin on every slide.
+6. Same top position on every slide.
+7. No overlap with title.
+8. No overlap with content.
+9. No duplicate logos.
+10. No distorted aspect ratio.
+
+========================================================
+GLOBAL ENCODING QA
+========================================================
+
+Before export, scan ALL presentation strings.
+
+FAIL if any of these patterns exist:
+
+â†
+âˆ
+â€“
+â€¢
+Â
+Ã
+ï¿½
+
+Also scan the generated PDF extracted text if possible.
+
+FAIL if any mojibake sequence remains.
+
+========================================================
+IMPORTANT CONTENT PRESERVATION
+========================================================
+
+DO NOT change:
+
+₹78.72 Cr / Rs. 78.72 Cr
+₹93.60 Cr / Rs. 93.60 Cr
+₹14.88 Cr / Rs. 14.88 Cr
+₹173.12 Cr / Rs. 173.12 Cr
+₹62.80 Cr / Rs. 62.80 Cr
+₹16.72 Cr / Rs. 16.72 Cr
+₹47.90 Cr / Rs. 47.90 Cr
+₹68.00 Cr / Rs. 68.00 Cr
+
+Do not change any certified financial value.
+
+Do not change the 24-month period.
+
+Do not change any business logic.
+
+Do not change any slide content except replacing corrupted symbol representations.
+
+========================================================
+EXPORT
+========================================================
+
+Regenerate:
+
+EXECUTIVE_BRIEF.pdf
+EXECUTIVE_BRIEF.pptx
+
+Also regenerate the official client export files.
+
+========================================================
+FINAL VISUAL INSPECTION
+========================================================
+
+Render the PDF to images and inspect at least:
+
+Slide 1
+Slide 2
+Slide 3
+Slide 8
+Slide 10
+Slide 14
+Slide 16
+Slide 25
+Slide 29
+
+Specifically verify:
+
+• no corrupted symbols
+• no mojibake
+• logo is visibly smaller
+• logo has consistent right/top alignment
+• logo does not collide with titles
+• title remains readable
+• no layout changes caused by replacement characters
+
+Then scan ALL 30 slides.
+
+========================================================
+FINAL ACCEPTANCE
+========================================================
+
+ENCODING_FIX: PASS/FAIL
+MOJIBAKE_SCAN: PASS/FAIL
+LOGO_SCALE: PASS/FAIL
+LOGO_ALIGNMENT: PASS/FAIL
+PDF_RENDER: PASS/FAIL
+PPTX_RENDER: PASS/FAIL
+WEB: PASS/FAIL
+TYPECHECK: PASS/FAIL
+LINT: PASS/FAIL
+TESTS: PASS/FAIL
+OPEN_ISSUES: list
+
+Do NOT perform any other redesign.
+
+FINAL STATUS:
+
+FINAL_RENDERING_FIX:
+PASS
+
+only when the actual rendered PDF has zero mojibake/corrupted symbols and the reduced logo is visually aligned on all slides.
+
+
+## Prompt 285
+
+PROMPT 285 — SLIDE 10 TEXT OVERFLOW FIX
+SURGICAL LAYOUT CORRECTION ONLY
+
+The latest Executive Brief is now visually strong and the Unicode/logo corrections are working.
+
+There is ONE remaining visible layout defect on SLIDE 10 — Financial Reconciliation / The Value Bridge.
+
+I have reviewed the actual rendered PDF.
+
+DO NOT redesign Slide 10.
+DO NOT change the financial values.
+DO NOT change the card structure.
+DO NOT change fonts globally.
+DO NOT change margins globally.
+DO NOT change the logo.
+DO NOT change any other slide.
+
+========================================================
+ISSUE — TEXT OVERFLOWING OUTSIDE CARD BOUNDARIES
+========================================================
+
+On Slide 10, the two lower horizontal cards:
+
+1. DIRECT SAVINGS OPPORTUNITY (P&L EBITDA EXPANSION)
+   Rs. 78.72 Cr
+
+2. STRATEGIC MARKET VALUE (COMMODITY & TIMING LEVERS)
+   Rs. 14.88 Cr
+
+have body text that extends horizontally beyond the right edge of the card.
+
+Current visible problem:
+
+DIRECT SAVINGS:
+"Defensible direct cost reduction across rate harmonization, volume pooling, and tenders. Fully monetized."
+
+The final portion of the sentence is crossing/escaping the card boundary.
+
+STRATEGIC MARKET VALUE:
+"Market benchmark alignment, contract index formulas, and commodity timing upside. Tracked separately."
+
+This is also too wide for the available card width.
+
+The text MUST NEVER cross the card border.
+
+========================================================
+REQUIRED FIX
+========================================================
+
+Keep the current card dimensions and positions.
+
+Do NOT make the cards wider.
+
+Instead, make the body copy fit INSIDE the existing card.
+
+Preferred solution:
+
+• Enable proper word wrapping inside the card.
+• Respect the card's internal left/right padding.
+• Use a maximum text width equal to:
+  card width - left padding - right padding.
+• Allow the body copy to use 2 lines if necessary.
+• Keep the existing font family.
+• Keep the existing font size unless reducing it by 1 pt is required.
+• Keep the existing line height.
+• Vertically center or appropriately position the wrapped text within the card.
+
+Recommended copy formatting:
+
+DIRECT SAVINGS OPPORTUNITY:
+
+"Defensible direct cost reduction across rate
+harmonization, volume pooling, and tenders.
+Fully monetized."
+
+OR, preferably, if it fits naturally in 2 lines:
+
+"Defensible direct cost reduction across rate
+harmonization, volume pooling, and tenders.
+Fully monetized."
+
+STRATEGIC MARKET VALUE:
+
+"Market benchmark alignment, contract index
+formulas, and commodity timing upside.
+Tracked separately."
+
+Do NOT force awkward word breaks.
+
+========================================================
+IMPORTANT — CHECK THE ACTUAL RENDERED WIDTH
+========================================================
+
+Do not rely only on source-code coordinates.
+
+After changing the text layout:
+
+1. Generate the PDF.
+2. Render Slide 10 to an image.
+3. Inspect the actual image.
+4. Confirm every character is inside the card boundary.
+5. Confirm no text touches or crosses the right border.
+6. Confirm the two cards remain visually balanced.
+
+The card should have visible whitespace between the final character and the right border.
+
+Target:
+
+┌─────────────────────────────────────┐
+│ DIRECT SAVINGS OPPORTUNITY          │
+│                                     │
+│ Rs. 78.72 Cr                        │
+│                                     │
+│ Defensible direct cost reduction    │
+│ across rate harmonization, volume   │
+│ pooling, and tenders. Fully         │
+│ monetized.                          │
+│                                     │
+└─────────────────────────────────────┘
+
+NOT:
+
+┌─────────────────────────────────────┐
+│ Defensible direct cost reduction ...│TEXT ESCAPES →
+└─────────────────────────────────────┘
+
+========================================================
+SLIDE 10 OTHER CONTENT
+========================================================
+
+Preserve exactly:
+
+Gross Opportunity:
+Rs. 173.12 Cr
+
+Overlap Deductions:
+- Rs. 62.80 Cr
+
+Policy Exclusions:
+- Rs. 16.72 Cr
+
+Net Defensible Pipeline:
+Rs. 93.60 Cr
+
+Direct Savings:
+Rs. 78.72 Cr
+
+Strategic Market Value:
+Rs. 14.88 Cr
+
+Mathematical reconciliation:
+Rs. 173.12 Cr - Rs. 62.80 Cr - Rs. 16.72 Cr
+= Rs. 93.60 Cr
+= Rs. 78.72 Cr + Rs. 14.88 Cr
+
+Variance:
+Rs. 0.00 Cr
+
+DO NOT alter any number.
+
+========================================================
+GLOBAL SAFETY CHECK
+========================================================
+
+Because this is a text-overflow issue, also inspect Slide 10 for:
+
+• text extending outside cards
+• text touching borders
+• text overlapping other elements
+• clipped text
+• unexpected line breaks
+• excessive empty space caused by wrapping
+• inconsistent vertical alignment
+
+Do NOT modify other slides unless the same exact rendering bug is found there.
+
+========================================================
+EXPORT
+========================================================
+
+Regenerate:
+
+EXECUTIVE_BRIEF.pdf
+EXECUTIVE_BRIEF.pptx
+
+and the official client PDF/PPTX exports.
+
+========================================================
+FINAL QA
+========================================================
+
+Render and visually inspect Slide 10.
+
+Return:
+
+SLIDE_10_TEXT_OVERFLOW: PASS/FAIL
+DIRECT_SAVINGS_CARD: PASS/FAIL
+STRATEGIC_VALUE_CARD: PASS/FAIL
+CARD_BOUNDARY_CHECK: PASS/FAIL
+FINANCIAL_VALUES: PASS/FAIL
+UNICODE_ENCODING: PASS/FAIL
+LOGO: UNCHANGED/PASS
+PDF_RENDER: PASS/FAIL
+PPTX_RENDER: PASS/FAIL
+TYPECHECK: PASS/FAIL
+LINT: PASS/FAIL
+TESTS: PASS/FAIL
+OPEN_ISSUES: list
+
+IMPORTANT:
+This is a MICRO-FIX.
+Do not perform any redesign or visual experimentation.

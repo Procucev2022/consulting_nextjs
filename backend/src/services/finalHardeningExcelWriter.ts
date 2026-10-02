@@ -101,11 +101,11 @@ export class FinalHardeningExcelWriter {
     ];
 
     const doubleCountingLedger = [
-      { 'Ledger Component': '1. Gross Strategic Opportunity (All Levers)', 'Amount (₹ Cr)': 323.27, 'Deduction Status': 'SUM_BASE_CASES', 'Reconciliation Status': 'AUDITED' },
+      { 'Ledger Component': '1. Gross Strategic Opportunity (All Levers)', 'Amount (₹ Cr)': 173.12, 'Deduction Status': 'SUM_BASE_CASES', 'Reconciliation Status': 'AUDITED' },
       { 'Ledger Component': '2. E-Auction & Price Arbitrage Overlap', 'Amount (₹ Cr)': -38.40, 'Deduction Status': 'MUTUALLY_EXCLUSIVE_DEDUCTION', 'Reconciliation Status': 'AUDITED' },
       { 'Ledger Component': '3. Vendor Consolidation & Volume Leverage Overlap', 'Amount (₹ Cr)': -24.40, 'Deduction Status': 'MUTUALLY_EXCLUSIVE_DEDUCTION', 'Reconciliation Status': 'AUDITED' },
       { 'Ledger Component': '4. Strategic Sourcing Contractual Exclusions', 'Amount (₹ Cr)': -16.72, 'Deduction Status': 'LOCKED_GOVERNMENT_TARIFF_EXCLUSION', 'Reconciliation Status': 'AUDITED' },
-      { 'Ledger Component': '5. Net Defensible Opportunity', 'Amount (₹ Cr)': 243.75, 'Deduction Status': 'NET_REALIZABLE_SAVINGS_TARGET', 'Reconciliation Status': '100% RECONCILED' }
+      { 'Ledger Component': '5. Net Defensible Opportunity', 'Amount (₹ Cr)': 93.60, 'Deduction Status': 'NET_REALIZABLE_SAVINGS_TARGET', 'Reconciliation Status': '100% RECONCILED' }
     ];
 
     const module4HandoffPackages = [

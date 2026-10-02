@@ -33,7 +33,7 @@ export const DEFAULT_EXPORT_HISTORY = [
     generatedBy: 'Procucev Automated Savings Engine',
     dataVersion: 'MODULE_1_4_CERTIFIED_V1.0',
     clientName: 'UltraTech Cement Limited',
-    analysisPeriod: 'FY 2021-22 to FY 2024-25',
+    analysisPeriod: 'April 2024 – March 2026 (24 Months)',
     pdfFileName: 'Procucev_Procurement_Value_Savings_Diagnostic_UltraTech_Cement_Limited_2026-10-01.pdf',
     pptxFileName: 'Procucev_Procurement_Value_Savings_Diagnostic_UltraTech_Cement_Limited_2026-10-01.pptx',
     pdfPath: 'EXECUTIVE_BRIEF.pdf',

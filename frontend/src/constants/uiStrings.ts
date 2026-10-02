@@ -1078,7 +1078,7 @@ export const UI_STRINGS = {
       title: 'Dynamic Calculation Transparency',
       subtitle: 'Auditable mathematical verification of Expected Benchmark Price, Price Gap, and PCBI Potential Opportunity',
       verifiedBadge: 'Deterministic Calculation Verified',
-      promptTestCaseBadge: 'Prompt 100 Reference Test Case',
+      promptTestCaseBadge: 'Benchmark Reference Test Case',
       itemLabel: 'Item',
       itemValue: 'Industrial Lubricant Oil (MAT-LUBRICANT-01)',
       vendorLabel: 'Vendor',

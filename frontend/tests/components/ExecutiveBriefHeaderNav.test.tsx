@@ -8,7 +8,7 @@ describe('ExecutiveBriefHeaderNav', () => {
   const defaultProps = {
     clientProfile: {
       clientName: 'UltraTech Cement Limited',
-      analysisPeriod: 'FY 2021-22 to FY 2024-25',
+      analysisPeriod: 'April 2024 – March 2026 (24 Months)',
       group: 'Aditya Birla Group',
       reportVersion: 'EXECUTIVE_BRIEF_V1.1',
       confidentiality: 'CONFIDENTIAL — CLIENT USE ONLY',
@@ -23,7 +23,7 @@ describe('ExecutiveBriefHeaderNav', () => {
     render(<ExecutiveBriefHeaderNav {...defaultProps} />);
 
     expect(screen.getByText('UltraTech Cement Limited')).toBeInTheDocument();
-    expect(screen.getByText('FY 2021-22 to FY 2024-25')).toBeInTheDocument();
+    expect(screen.getByText('April 2024 – March 2026 (24 Months)')).toBeInTheDocument();
     expect(screen.getByText('EXECUTIVE_BRIEF_V1.1')).toBeInTheDocument();
     expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.readyBadge)).toBeInTheDocument();
     expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.panelTitle)).toBeInTheDocument();

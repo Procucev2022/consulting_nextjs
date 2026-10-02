@@ -12,10 +12,10 @@ All numbers are evaluated on raw absolute numeric INR values.
 |---|---|---|---|---|
 | Total Spend | `59203477681.66` | ₹5,920.35 Cr | **PASS** | Module 1 INV-01 |
 | Addressable Spend | `49310000000` | ₹4,931.00 Cr | **PASS** | Carveout ledger |
-| Gross Opportunity | `3232700000` | ₹323.27 Cr | **PASS** | Module 2 INV-05 |
-| Net Defensible Opp | `2437500000` | ₹243.75 Cr | **PASS** | Module 2 INV-06 |
+| Gross Opportunity | `1731200000` | ₹173.12 Cr | **PASS** | Module 2 INV-05 |
+| Net Defensible Opp | `936000000` | ₹93.60 Cr | **PASS** | Module 2 INV-06 |
 | Approved Wave 1 | `479000000` | ₹47.90 Cr | **PASS** | Module 4 INV-07 |
-| Realized Benefit | `214000000` | ₹21.40 Cr | **PASS** | Audited vouchers |
+| Realized Benefit | `680000000` | ₹68.00 Cr | **PASS** | Audited vouchers |
 | **Variance** | **0.00** | **₹0.00** | **PASS** | **Zero Discrepancy** |
 
 ---

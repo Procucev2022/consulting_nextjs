@@ -3,6 +3,7 @@ import React from 'react';
 import { ShieldCheck, ChevronRight, Award, Lock } from 'lucide-react';
 import type { ExecutiveBriefHeaderNavProps } from '../../types';
 import { EXECUTIVE_BRIEF_EXPORT_STRINGS } from '../../constants/executiveBriefExportStrings';
+import { AiCevLogoLockup } from '../presentation/AiCevLogoLockup';
 
 export const ExecutiveBriefHeaderNav: React.FC<ExecutiveBriefHeaderNavProps> = ({
   clientProfile,
@@ -42,35 +43,43 @@ export const ExecutiveBriefHeaderNav: React.FC<ExecutiveBriefHeaderNavProps> = (
                 <Award className="w-3.5 h-3.5" />
                 {isReady ? strings.readyBadge : clientProfile.status}
               </span>
+              <div className="ml-auto md:hidden">
+                <AiCevLogoLockup size="sm" />
+              </div>
             </div>
             <h1 className="text-lg sm:text-xl font-extrabold tracking-wide mt-2 text-white">
               {strings.panelTitle}
             </h1>
           </div>
 
-          {/* Quick Context Summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Client</span>
-              <span className="font-bold text-slate-100 truncate block max-w-[140px]" title={clientProfile.clientName}>
-                {clientProfile.clientName}
-              </span>
+          {/* Quick Context Summary and Brand Lockup */}
+          <div className="flex items-center gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Client</span>
+                <span className="font-bold text-slate-100 truncate block max-w-[140px]" title={clientProfile.clientName}>
+                  {clientProfile.clientName}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Analysis Period</span>
+                <span className="font-semibold text-slate-200 block truncate" title={clientProfile.analysisPeriod}>
+                  {clientProfile.analysisPeriod}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Report Version</span>
+                <span className="font-mono text-cyan-400 font-bold block">{clientProfile.reportVersion}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Security</span>
+                <span className="font-bold text-emerald-400 flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Tenant Isolated
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Analysis Period</span>
-              <span className="font-semibold text-slate-200 block truncate" title={clientProfile.analysisPeriod}>
-                {clientProfile.analysisPeriod}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Report Version</span>
-              <span className="font-mono text-cyan-400 font-bold block">{clientProfile.reportVersion}</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Security</span>
-              <span className="font-bold text-emerald-400 flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Tenant Isolated
-              </span>
+            <div className="hidden md:block pl-2 border-l border-slate-800">
+              <AiCevLogoLockup size="md" />
             </div>
           </div>
         </div>

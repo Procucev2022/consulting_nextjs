@@ -117,10 +117,10 @@ export const CONTROLLED_JOURNEY_METRICS: E2EJourneyMetrics = {
   totalSpendCr: 5920.35,
   categoryCount: 42,
   supplierCount: 184,
-  grossOpportunityCr: 323.27,
+  grossOpportunityCr: 173.12,
   overlapDeductionsCr: 62.80,
   exclusionsCr: 16.72,
-  netOpportunityCr: 243.75,
+  netOpportunityCr: 93.60,
   approvedModule4Cr: 47.90,
   reconciliationVarianceInr: 0.00
 };

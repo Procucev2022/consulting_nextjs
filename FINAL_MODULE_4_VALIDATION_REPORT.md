@@ -10,7 +10,7 @@
 - Module 4 cannot invent baseline prices or modify customer transaction ledgers.
 - Explicit conceptual separation maintained:
   1. **IDENTIFIED OPPORTUNITY**: Theoretical opportunity identified across all levers.
-  2. **POTENTIAL BENEFIT**: Net defensible opportunity after overlap deduplication (₹243.75 Cr).
+  2. **POTENTIAL BENEFIT**: Net defensible opportunity after overlap deduplication (₹93.60 Cr).
   3. **APPROVED BENEFIT**: Formally approved Wave 1 handoff packages (₹47.90 Cr).
   4. **REALIZED BENEFIT**: Verified post-execution invoiced savings.
 

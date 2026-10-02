@@ -32,3 +32,4 @@ export * from './executiveBriefConstants';
 export * from './executiveBriefExportConstants';
 export * from './savingsAssumptions';
 export * from './savingsOpportunityRegisterConstants';
+export * from './executiveBriefPresentationConstants';

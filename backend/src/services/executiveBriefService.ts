@@ -87,7 +87,7 @@ export class ExecutiveBriefService {
   public generatePresentationCanvas(clientName = DEFAULT_CLIENT_PROFILE.clientName): PdfCanvas {
     const canvas = new PdfCanvas(960, 540);
     const totalPages = 30;
-    const conf = 'CONFIDENTIAL — Prepared exclusively for ' + clientName;
+    const conf = 'CONFIDENTIAL - Prepared exclusively for ' + clientName;
 
     renderSlide1Cover(canvas, clientName);
     renderSlide2ExecutiveSummary(canvas, clientName, 2, totalPages, conf);

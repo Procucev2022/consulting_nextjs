@@ -1,7 +1,7 @@
 {
   "client": "UltraTech Cement Limited",
   "reportDate": "2026-10-02",
-  "analysisPeriod": "FY 2021-22 to FY 2024-25 (48 Months)",
+  "analysisPeriod": "April 2024 – March 2026 (24 Months)",
   "modulesIncluded": [
     "Module 1",
     "Module 2",
@@ -11,10 +11,10 @@
   "transactionCount": 31671,
   "totalSpendInr": 59203477681.66,
   "addressableSpendInr": 49310000000,
-  "grossOpportunityInr": 3232700000,
-  "netDefensibleOpportunityInr": 2437500000,
+  "grossOpportunityInr": 1731200000,
+  "netDefensibleOpportunityInr": 936000000,
   "approvedSavingsInr": 479000000,
-  "realizedSavingsInr": 214000000,
+  "realizedSavingsInr": 680000000,
   "opportunityCount": 10,
   "confidenceSummary": {
     "high": 7,

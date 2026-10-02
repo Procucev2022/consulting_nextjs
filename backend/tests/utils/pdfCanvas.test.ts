@@ -3,6 +3,12 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { PdfCanvas } from '../../src/utils/pdfCanvas';
+import {
+  getPreparedLogo,
+  paethPredictor,
+  unfilterByte,
+  unfilterScanlines
+} from '../../src/utils/pdfImageHelper';
 
 describe('PdfCanvas Utility Unit Tests (Prompt 257)', () => {
   it('initializes with default and custom 16:9 dimensions', () => {
@@ -46,13 +52,13 @@ describe('PdfCanvas Utility Unit Tests (Prompt 257)', () => {
   it('renders text with different alignments, fonts, and Rupee sanitization', () => {
     const canvas = new PdfCanvas(960, 540);
     // Alignments
-    canvas.text('Left Aligned Text with ₹243.75 Cr', 50, 50, { fontSize: 12, font: 'regular', align: 'left' });
+    canvas.text('Left Aligned Text with ₹93.60 Cr', 50, 50, { fontSize: 12, font: 'regular', align: 'left' });
     canvas.text('Center Aligned (with parens & backslash \\)', 480, 100, { fontSize: 14, font: 'bold', align: 'center' });
     canvas.text('Right Aligned', 900, 150, { fontSize: 10, font: 'italic', align: 'right' });
 
     const buf = canvas.toBuffer();
     const pdfStr = buf.toString('latin1');
-    expect(pdfStr).toContain('Rs. 243.75 Cr'); // Rupee converted to ASCII-safe Rs.
+    expect(pdfStr).toContain('Rs. 93.60 Cr'); // Rupee converted to ASCII-safe Rs.
     expect(pdfStr).toContain('\\(with parens');
   });
 
@@ -89,9 +95,9 @@ describe('PdfCanvas Utility Unit Tests (Prompt 257)', () => {
 
     const buf = canvas.toBuffer();
     const pdfStr = buf.toString('latin1');
-    expect(pdfStr).toContain('PROCUCEV');
+    expect(pdfStr).toContain('aiCEV by Procucev');
     expect(pdfStr).toContain('UltraTech Cement Limited');
-    expect(pdfStr).toContain('Page 1 of 30');
+    expect(pdfStr).toContain('PAGE 1 OF 30');
   });
 
   it('generates valid PDF binary structure and saves to file', () => {
@@ -113,5 +119,43 @@ describe('PdfCanvas Utility Unit Tests (Prompt 257)', () => {
 
     // Cleanup
     fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('loads and caches prepared logo from filesystem asset', () => {
+    const logo1 = getPreparedLogo();
+    expect(logo1).toBeDefined();
+    expect(logo1.width).toBeGreaterThan(0);
+    expect(logo1.height).toBeGreaterThan(0);
+    expect(logo1.compRgb.length).toBeGreaterThan(100);
+    expect(logo1.compAlpha.length).toBeGreaterThan(100);
+
+    const logo2 = getPreparedLogo();
+    expect(logo2).toBe(logo1);
+  });
+
+  it('calculates Paeth predictor correctly across all 3 conditions', () => {
+    expect(paethPredictor(10, 10, 10)).toBe(10);
+    expect(paethPredictor(50, 10, 10)).toBe(50);
+    expect(paethPredictor(10, 50, 10)).toBe(50);
+    expect(paethPredictor(10, 20, 15)).toBe(15);
+  });
+
+  it('unfilters byte across all filter types 0, 1, 2, 3, 4 and default', () => {
+    expect(unfilterByte(0, 42, 10, 20, 5)).toBe(42);
+    expect(unfilterByte(1, 42, 10, 20, 5)).toBe((42 + 10) & 0xff);
+    expect(unfilterByte(2, 42, 10, 20, 5)).toBe((42 + 20) & 0xff);
+    expect(unfilterByte(3, 42, 10, 20, 5)).toBe((42 + Math.floor((10 + 20) / 2)) & 0xff);
+    expect(unfilterByte(4, 42, 10, 20, 5)).toBe((42 + paethPredictor(10, 20, 5)) & 0xff);
+    expect(unfilterByte(99, 42, 10, 20, 5)).toBe(42);
+  });
+
+  it('unfilters scanlines for RGBA raw buffers', () => {
+    const raw = Buffer.from([0, 255, 0, 0, 255, 0, 255, 0, 128]);
+    const { rgb, alpha } = unfilterScanlines(raw, 2, 1);
+    expect(rgb.length).toBe(6);
+    expect(alpha.length).toBe(2);
+    expect(rgb[0]).toBe(255);
+    expect(alpha[0]).toBe(255);
+    expect(alpha[1]).toBe(128);
   });
 });

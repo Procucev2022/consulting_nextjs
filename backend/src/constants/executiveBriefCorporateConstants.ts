@@ -72,7 +72,7 @@ export const PROCUCEV_PROFILE = {
 export const DEFAULT_CLIENT_PROFILE = {
   clientName: 'UltraTech Cement Limited',
   group: 'Aditya Birla Group',
-  analysisPeriod: 'FY 2021-22 to FY 2024-25 (48 Months)',
+  analysisPeriod: 'April 2024 – March 2026 (24 Months)',
   publicFacts: [
     {
       characteristic: 'Market Leadership',

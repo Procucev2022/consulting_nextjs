@@ -1,54 +1,68 @@
 /**
- * Executive Brief PPTX Helper Functions (Prompt 258)
+ * Executive Brief PPTX Helper Functions (Prompt 283 Redesign)
+ * Strictly adheres to 10 x 5.625 inch grid, Aptos/Arial typography, and official image logo embedding.
  */
 
+import fs from 'fs';
+import path from 'path';
 import type PptxGenJS from 'pptxgenjs';
+import { PPTX_LAYOUT, BRAND_COLORS, TYPOGRAPHY } from '../constants/executiveBriefLayoutConstants';
+
+let cachedLogoBase64: string | null = null;
+
+export function getLogoBase64(): string {
+  if (!cachedLogoBase64) {
+    const logoPath = path.resolve(__dirname, '../../assets/aicev-logo.png');
+    if (fs.existsSync(logoPath)) {
+      cachedLogoBase64 = 'image/png;base64,' + fs.readFileSync(logoPath).toString('base64');
+    } else {
+      cachedLogoBase64 = '';
+    }
+  }
+  return cachedLogoBase64;
+}
 
 export function addSlideHeader(
   slide: PptxGenJS.Slide,
   title: string,
   category: string,
-  slideNum: number
+  _slideNum: number
 ): void {
   // Category Pill
   slide.addText(category.toUpperCase(), {
-    x: 0.5,
-    y: 0.25,
-    w: 2.2,
-    h: 0.25,
-    fontSize: 8,
+    x: PPTX_LAYOUT.CONTENT_LEFT,
+    y: PPTX_LAYOUT.HEADER_Y,
+    w: 2.4,
+    h: 0.24,
+    fontSize: TYPOGRAPHY.sectionLabelSize,
     bold: true,
-    color: '38BDF8',
-    fill: { color: '1E293B' },
-    align: 'center',
-    fontFace: 'Arial'
+    color: BRAND_COLORS.procucevBlue.replace('#', ''),
+    fontFace: TYPOGRAPHY.fallbackFont
   });
 
-  // Slide Title
+  // Slide Title (22 pt)
   slide.addText(title, {
-    x: 0.5,
-    y: 0.55,
-    w: 8.5,
-    h: 0.35,
-    fontSize: 14,
+    x: PPTX_LAYOUT.CONTENT_LEFT,
+    y: PPTX_LAYOUT.TITLE_Y,
+    w: 7.5,
+    h: 0.38,
+    fontSize: TYPOGRAPHY.executiveTitleSize,
     bold: true,
-    color: 'F8FAFC',
-    fontFace: 'Arial'
+    color: BRAND_COLORS.primaryText.replace('#', ''),
+    fontFace: TYPOGRAPHY.fallbackFont
   });
 
-  // Slide Number Pill
-  slide.addText(`SLIDE ${slideNum}`, {
-    x: 8.8,
-    y: 0.25,
-    w: 0.8,
-    h: 0.25,
-    fontSize: 8,
-    bold: true,
-    color: '94A3B8',
-    fill: { color: '1E293B' },
-    align: 'center',
-    fontFace: 'Arial'
-  });
+  // Top-Right: Official aiCEV Lockup Image Asset (Zero text-based logo)
+  const logoData = getLogoBase64();
+  if (logoData) {
+    slide.addImage({
+      data: logoData,
+      x: PPTX_LAYOUT.LOGO_X,
+      y: PPTX_LAYOUT.LOGO_Y,
+      w: PPTX_LAYOUT.LOGO_W,
+      h: PPTX_LAYOUT.LOGO_H
+    });
+  }
 }
 
 export function addSlideFooter(
@@ -57,27 +71,54 @@ export function addSlideFooter(
   slideNum: number,
   totalSlides: number
 ): void {
-  const confText = `CONFIDENTIAL — PREPARED EXCLUSIVELY FOR ${clientName.toUpperCase()}`;
-  slide.addText(confText, {
-    x: 0.5,
-    y: 5.25,
-    w: 7.5,
-    h: 0.2,
-    fontSize: 7.5,
-    color: '64748B',
-    fontFace: 'Arial'
+  const y = PPTX_LAYOUT.FOOTER_Y;
+  const fontFace = TYPOGRAPHY.fallbackFont;
+  const color = BRAND_COLORS.secondaryText.replace('#', '');
+
+  // Subtle separator line
+  slide.addShape('rect', {
+    x: PPTX_LAYOUT.CONTENT_LEFT,
+    y: y - 0.08,
+    w: PPTX_LAYOUT.CONTENT_WIDTH,
+    h: 0.01,
+    fill: { color: BRAND_COLORS.border.replace('#', '') }
   });
 
-  slide.addText(`PAGE ${slideNum} OF ${totalSlides}`, {
-    x: 8.2,
-    y: 5.25,
-    w: 1.4,
+  // Left: Confidentiality
+  slide.addText(`Management Confidential - Prepared exclusively for ${clientName}`, {
+    x: PPTX_LAYOUT.CONTENT_LEFT,
+    y,
+    w: 4.8,
     h: 0.2,
-    fontSize: 7.5,
+    fontSize: TYPOGRAPHY.footerSize,
+    color,
+    fontFace
+  });
+
+  // Center: Brand lockup text
+  slide.addText('aiCEV by Procucev', {
+    x: 4.0,
+    y,
+    w: 2.0,
+    h: 0.2,
+    fontSize: TYPOGRAPHY.footerSize,
+    bold: true,
+    align: 'center',
+    color,
+    fontFace
+  });
+
+  // Right: Page Number
+  slide.addText(`PAGE ${slideNum} OF ${totalSlides}`, {
+    x: PPTX_LAYOUT.SAFE_RIGHT - 1.5,
+    y,
+    w: 1.5,
+    h: 0.2,
+    fontSize: TYPOGRAPHY.footerSize,
     bold: true,
     align: 'right',
-    color: '64748B',
-    fontFace: 'Arial'
+    color,
+    fontFace
   });
 }
 
@@ -90,59 +131,56 @@ export function addPptxKpiCard(
   title: string,
   value: string,
   subtitle: string,
-  accentColor: string
+  accentColor: string = BRAND_COLORS.procucevBlue
 ): void {
-  // Card Background
+  const fontFace = TYPOGRAPHY.fallbackFont;
   slide.addShape('rect', {
     x,
     y,
     w,
     h,
-    fill: { color: '1E293B' },
-    line: { color: '334155', width: 1 }
+    fill: { color: BRAND_COLORS.lightCard.replace('#', '') },
+    line: { color: BRAND_COLORS.border.replace('#', ''), width: 1 }
   });
 
-  // Top Accent Bar
+  // Left vertical accent strip
   slide.addShape('rect', {
     x,
     y,
-    w,
-    h: 0.05,
+    w: 0.06,
+    h,
     fill: { color: accentColor.replace('#', '') }
   });
 
-  // Label
   slide.addText(title.toUpperCase(), {
-    x: x + 0.1,
-    y: y + 0.1,
-    w: w - 0.2,
-    h: 0.2,
-    fontSize: 8,
+    x: x + 0.16,
+    y: y + 0.12,
+    w: w - 0.24,
+    h: 0.22,
+    fontSize: TYPOGRAPHY.cardLabelSize,
     bold: true,
-    color: '94A3B8',
-    fontFace: 'Arial'
+    color: BRAND_COLORS.secondaryText.replace('#', ''),
+    fontFace
   });
 
-  // Value
   slide.addText(value, {
-    x: x + 0.1,
-    y: y + 0.3,
-    w: w - 0.2,
-    h: 0.35,
-    fontSize: 16,
+    x: x + 0.16,
+    y: y + 0.36,
+    w: w - 0.24,
+    h: 0.44,
+    fontSize: TYPOGRAPHY.keyNumberSize,
     bold: true,
-    color: accentColor.replace('#', ''),
-    fontFace: 'Arial'
+    color: BRAND_COLORS.primaryText.replace('#', ''),
+    fontFace
   });
 
-  // Subtitle
   slide.addText(subtitle, {
-    x: x + 0.1,
-    y: y + 0.65,
-    w: w - 0.2,
-    h: 0.2,
-    fontSize: 7.5,
-    color: 'CBD5E1',
-    fontFace: 'Arial'
+    x: x + 0.16,
+    y: y + 0.82,
+    w: w - 0.24,
+    h: 0.22,
+    fontSize: TYPOGRAPHY.cardLabelSize,
+    color: accentColor.replace('#', ''),
+    fontFace
   });
 }

@@ -7,7 +7,9 @@ export interface PdfTextOptions {
   font?: 'regular' | 'bold' | 'italic';
   color?: string;
   align?: 'left' | 'center' | 'right';
+  lineHeight?: number;
 }
+
 
 export interface PdfShapeOptions {
   fill?: string;

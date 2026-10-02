@@ -85,12 +85,12 @@ export const EXECUTIVE_BRIEF_OPPORTUNITY_ROWS: readonly ExecutiveBriefOpportunit
 ];
 
 export const EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN = {
-  grossIdentifiedCr: '₹323.27 Cr',
+  grossIdentifiedCr: '₹173.12 Cr',
   overlapAdjustmentCr: '-₹62.80 Cr',
   exclusionsCr: '-₹16.72 Cr',
-  netDefensibleCr: '₹243.75 Cr',
-  hardProcurementSavingsCr: '₹202.75 Cr',
-  costAvoidanceCr: '₹41.00 Cr',
+  netDefensibleCr: '₹93.60 Cr',
+  hardProcurementSavingsCr: '₹78.72 Cr',
+  costAvoidanceCr: '₹14.88 Cr',
   productivityBenefitLabel: '20% process-effort reduction (824 POs saved)',
   strategicRiskLabel: '4 dual-source qualified programs de-risked'
 } as const;

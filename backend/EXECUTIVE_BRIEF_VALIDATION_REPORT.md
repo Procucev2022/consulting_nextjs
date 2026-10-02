@@ -5,7 +5,7 @@
 ---
 
 ## 1. Quality & Completeness Matrix
-- **Total Slides / Pages**: 30 (Target: 25–35 pages: **PASS**)
+- **Total Slides / Pages**: 30 (Target: 25-35 pages: **PASS**)
 - **Total Diagnostic Charts & Cards**: 18
 - **Total Major Findings**: 5
 - **Total Opportunity Levers**: 10

@@ -4,18 +4,18 @@
  */
 
 export const EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS = {
-  headlineTitle: 'PROCUREMENT VALUE OPPORTUNITY PORTFOLIO',
-  headlineSubtitle: 'Multi-Lever Opportunity Attribution, Module 1–3 Evidence Chain & Defensible CFO Bridge',
+  headlineTitle: 'PROCUCEV PROCUREMENT VALUE OPPORTUNITY ASSESSMENT',
+  headlineSubtitle: 'Data-led procurement transformation and value discovery',
   totalAddressableSpend: '₹4,931.00 Cr',
-  netIndicativeOpportunity: '₹243.75 Cr',
-  netOpportunityPercent: '4.94%',
-  hardSavingsCr: '₹202.75 Cr',
-  costAvoidanceCr: '₹41.00 Cr',
+  netIndicativeOpportunity: '₹93.60 Cr',
+  netOpportunityPercent: '1.90%',
+  hardSavingsCr: '₹78.72 Cr',
+  costAvoidanceCr: '₹14.88 Cr',
   overlapDeductionCr: '-₹62.80 Cr',
   exclusionsCr: '-₹16.72 Cr',
-  processProductivity: '20% PO Processing Reduction (824 POs saved, Direct Spend: ₹0.00 Cr)',
-  riskMitigation: '4 Dual-Source Qualified Programs (₹0.00 Cr / Not Monetized)',
-  validatedSavings: '₹143.00 Cr Approved / ₹68.00 Cr Realized',
+  processProductivity: '20% PO Processing Reduction (824 POs saved, Direct Spend: ₹0.00 Cr / Not Monetized)',
+  riskMitigation: '4 Dual-Source Qualified Programs (₹420.00 Cr De-risked / Not Monetized)',
+  validatedSavings: '₹47.90 Cr Validated / ₹68.00 Cr Realized',
   eauctionShareNote: 'E-auction is strictly one execution mechanism under Strategic Sourcing; represents 14.8% of portfolio execution.',
   expanders: {
     sec1Title: '1. Customer Spend Baseline (Module 1 Forensic Base)',

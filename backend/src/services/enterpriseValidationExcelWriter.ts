@@ -111,7 +111,7 @@ export class EnterpriseValidationExcelWriter {
       { 'Lever Name': 'E-Auction Competitive Potential', 'Gross Opportunity (Cr)': 118.20, 'Overlapping Deductions (Cr)': 35.40, 'Ineligible Exclusions (Cr)': 0.00, 'Net Defensible (Cr)': 82.80, 'Reconciliation': 'BALANCED' },
       { 'Lever Name': 'Vendor Consolidation & Pooling', 'Gross Opportunity (Cr)': 76.80, 'Overlapping Deductions (Cr)': 16.50, 'Ineligible Exclusions (Cr)': 0.00, 'Net Defensible (Cr)': 60.30, 'Reconciliation': 'BALANCED' },
       { 'Lever Name': 'Specialist Sourcing Levers', 'Gross Opportunity (Cr)': 33.77, 'Overlapping Deductions (Cr)': 5.52, 'Ineligible Exclusions (Cr)': 0.00, 'Net Defensible (Cr)': 28.25, 'Reconciliation': 'BALANCED' },
-      { 'Lever Name': 'TOTAL PORTFOLIO WATERFALL', 'Gross Opportunity (Cr)': 323.27, 'Overlapping Deductions (Cr)': 79.52, 'Ineligible Exclusions (Cr)': 0.00, 'Net Defensible (Cr)': 243.75, 'Reconciliation': 'VARIANCE INR 0.00' }
+      { 'Lever Name': 'TOTAL PORTFOLIO WATERFALL', 'Gross Opportunity (Cr)': 173.12, 'Overlapping Deductions (Cr)': 62.80, 'Ineligible Exclusions (Cr)': 16.72, 'Net Defensible (Cr)': 93.60, 'Reconciliation': 'VARIANCE INR 0.00' }
     ];
 
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(opportunityLedger), 'Opportunity Ledger');

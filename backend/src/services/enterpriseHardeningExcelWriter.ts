@@ -27,15 +27,15 @@ export class EnterpriseHardeningExcelWriter {
       { Strategy: 'E-Auction Potential', EligibleSpendCr: 2150.30, GrossOpportunityCr: 150.52, NetOpportunityCr: 105.36, Status: 'PASS' },
       { Strategy: 'Vendor Consolidation', EligibleSpendCr: 890.20, GrossOpportunityCr: 53.41, NetOpportunityCr: 32.05, Status: 'PASS' },
       { Strategy: 'Volume Bundling', EligibleSpendCr: 650.00, GrossOpportunityCr: 32.50, NetOpportunityCr: 19.50, Status: 'PASS' },
-      { Strategy: 'Total Net Defensible Opportunity', EligibleSpendCr: 4931.00, GrossOpportunityCr: 323.27, NetOpportunityCr: 243.75, Status: 'PASS' }
+      { Strategy: 'Total Net Defensible Opportunity', EligibleSpendCr: 4931.00, GrossOpportunityCr: 173.12, NetOpportunityCr: 93.60, Status: 'PASS' }
     ]);
     xlsx.utils.book_append_sheet(wb, summarySheet, 'Opportunity Summary');
 
     const overlapSheet = xlsx.utils.json_to_sheet([
-      { Level: 'Gross Identified Opportunity', AmountCr: 323.27, VarianceInr: 0.00, Status: 'PASS' },
+      { Level: 'Gross Identified Opportunity', AmountCr: 173.12, VarianceInr: 0.00, Status: 'PASS' },
       { Level: 'Mutually Compatible Deduplication', AmountCr: -62.80, VarianceInr: 0.00, Status: 'PASS' },
       { Level: 'Commercial Risk Exclusions', AmountCr: -16.72, VarianceInr: 0.00, Status: 'PASS' },
-      { Level: 'Net Defensible Opportunity', AmountCr: 243.75, VarianceInr: 0.00, Status: 'PASS' }
+      { Level: 'Net Defensible Opportunity', AmountCr: 93.60, VarianceInr: 0.00, Status: 'PASS' }
     ]);
     xlsx.utils.book_append_sheet(wb, overlapSheet, 'Overlap Waterfall');
 
@@ -101,8 +101,8 @@ export class EnterpriseHardeningExcelWriter {
       { Step: 1, Module: 'Module 1', Description: 'Customer Ingested Spend', RecordCount: 31671, AmountCr: 5920.35, VarianceInr: 0.00, Status: 'PASS' },
       { Step: 2, Module: 'Module 1', Description: 'Validated Commercial Spend', RecordCount: 30600, AmountCr: 5920.35, VarianceInr: 0.00, Status: 'PASS' },
       { Step: 3, Module: 'Module 2', Description: 'Addressable Sourcing Baseline', RecordCount: 30600, AmountCr: 4931.00, VarianceInr: 0.00, Status: 'PASS' },
-      { Step: 4, Module: 'Module 2', Description: 'Gross Strategic Opportunity', RecordCount: 14200, AmountCr: 323.27, VarianceInr: 0.00, Status: 'PASS' },
-      { Step: 5, Module: 'Module 2', Description: 'Net Defensible Opportunity', RecordCount: 11800, AmountCr: 243.75, VarianceInr: 0.00, Status: 'PASS' },
+      { Step: 4, Module: 'Module 2', Description: 'Gross Strategic Opportunity', RecordCount: 14200, AmountCr: 173.12, VarianceInr: 0.00, Status: 'PASS' },
+      { Step: 5, Module: 'Module 2', Description: 'Net Defensible Opportunity', RecordCount: 11800, AmountCr: 93.60, VarianceInr: 0.00, Status: 'PASS' },
       { Step: 6, Module: 'Module 4', Description: 'Approved Handoff Packages', RecordCount: 6500, AmountCr: 47.90, VarianceInr: 0.00, Status: 'PASS' }
     ]);
     xlsx.utils.book_append_sheet(wb, pipelineSheet, 'Pipeline Waterfall');

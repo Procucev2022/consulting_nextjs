@@ -37,17 +37,17 @@ export function calculateConsolidatedSavingsSummary(
     }
   }
 
-  const netDefensibleOpportunityInr = 2437500000.0; // ₹243.75 Cr
+  const netDefensibleOpportunityInr = 936000000.0; // ₹93.60 Cr
 
   return {
     totalEvaluatedSpendInr: 59203477681.66,
     addressableSpendInr: 49310000000.0,
-    grossOpportunityInr: 3232700000.0,
+    grossOpportunityInr: 1731200000.0,
     overlapInr: 628000000.0,
     exclusionInr: 167200000.0,
     netDefensibleOpportunityInr,
-    hardProcurementSavingsInr: netDefensibleOpportunityInr - 410000000.0, // Net hard savings = ₹202.75 Cr
-    costAvoidanceInr: 410000000.0, // Cost avoidance = ₹41.00 Cr
+    hardProcurementSavingsInr: 787200000.0, // Direct procurement savings = ₹78.72 Cr
+    costAvoidanceInr: 148800000.0, // Strategic market value = ₹14.88 Cr
     productivityEffortReductionPercent: poEffortReduction || 20.0,
     productivityPoReductionCount: poCountReduction || 824,
     strategicRiskInitiativesCount: Math.max(strategicRiskCount, 1)

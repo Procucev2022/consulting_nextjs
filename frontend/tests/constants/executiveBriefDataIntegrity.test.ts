@@ -100,16 +100,16 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
 
   it('12. No overlap group produces double counting with mathematical reconciliation', () => {
     const wb = EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN;
-    expect(wb.grossIdentifiedCr).toBe('₹323.27 Cr');
+    expect(wb.grossIdentifiedCr).toBe('₹173.12 Cr');
     expect(wb.overlapAdjustmentCr).toBe('-₹62.80 Cr');
     expect(wb.exclusionsCr).toBe('-₹16.72 Cr');
-    expect(wb.netDefensibleCr).toBe('₹243.75 Cr');
+    expect(wb.netDefensibleCr).toBe('₹93.60 Cr');
 
-    const gross = 323.27;
+    const gross = 173.12;
     const overlap = 62.80;
     const exclusions = 16.72;
     const net = gross - overlap - exclusions;
-    expect(net).toBeCloseTo(243.75, 2);
+    expect(net).toBeCloseTo(93.60, 2);
   });
 
   it('13. Module 1 → Module 2 → Module 3 → Module 4 lineage remains intact', () => {
@@ -122,9 +122,9 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
 
   it('14. UI values match governed portfolio constants', () => {
     expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.totalAddressableSpend).toBe('₹4,931.00 Cr');
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.netIndicativeOpportunity).toBe('₹243.75 Cr');
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.hardSavingsCr).toBe('₹202.75 Cr');
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.costAvoidanceCr).toBe('₹41.00 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.netIndicativeOpportunity).toBe('₹93.60 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.hardSavingsCr).toBe('₹78.72 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.costAvoidanceCr).toBe('₹14.88 Cr');
   });
 
   it('15. Governance registers and checklist items are fully populated and valid', () => {

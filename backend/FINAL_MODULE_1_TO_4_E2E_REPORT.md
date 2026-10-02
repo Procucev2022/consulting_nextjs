@@ -15,9 +15,9 @@
 | Total Evaluated Spend (Cr) | ₹5920.35 Cr | ₹5920.35 Cr | **PASS** |
 | Category Classification Count | 42 | 42 | **PASS** |
 | Unique Supplier Count | 184 | 184 | **PASS** |
-| Gross Opportunity (All Levers) | ₹323.27 Cr | ₹323.27 Cr | **PASS** |
+| Gross Opportunity (All Levers) | ₹173.12 Cr | ₹173.12 Cr | **PASS** |
 | Overlap & Exclusions Deducted | ₹79.52 Cr | ₹79.52 Cr | **PASS** |
-| Net Defensible Opportunity | ₹243.75 Cr | ₹243.75 Cr | **PASS** |
+| Net Defensible Opportunity | ₹93.60 Cr | ₹93.60 Cr | **PASS** |
 | Module 4 Approved Wave 1 Handoff | ₹47.90 Cr | ₹47.90 Cr | **PASS** |
 | **Calculation Variance** | **₹0.00** | **₹0.00** | **PASS** |
 

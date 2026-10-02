@@ -67,10 +67,10 @@ describe('Savings Opportunity Register & Consolidation Engine (Frontend)', () =>
     const summary = calculateConsolidatedSavingsSummary(SAVINGS_OPPORTUNITY_REGISTER);
     expect(summary.totalEvaluatedSpendInr).toBeGreaterThan(0);
     expect(summary.addressableSpendInr).toBe(49310000000.0);
-    expect(summary.grossOpportunityInr).toBe(3232700000.0);
-    expect(summary.netDefensibleOpportunityInr).toBe(2437500000.0);
-    expect(summary.hardProcurementSavingsInr).toBe(2437500000.0 - 410000000.0);
-    expect(summary.costAvoidanceInr).toBe(410000000.0);
+    expect(summary.grossOpportunityInr).toBe(1731200000.0);
+    expect(summary.netDefensibleOpportunityInr).toBe(936000000.0);
+    expect(summary.hardProcurementSavingsInr).toBe(787200000.0);
+    expect(summary.costAvoidanceInr).toBe(148800000.0);
     expect(summary.productivityEffortReductionPercent).toBe(20.0);
     expect(summary.productivityPoReductionCount).toBe(824);
   });

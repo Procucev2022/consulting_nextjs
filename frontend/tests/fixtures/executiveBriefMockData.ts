@@ -4,7 +4,7 @@ export const mockReportData: ExecutiveBriefReportData = {
   metadata: {
     client: 'UltraTech Cement Limited',
     reportDate: '2026-10-01',
-    analysisPeriod: 'FY 2021-22 to FY 2024-25',
+    analysisPeriod: 'April 2024 – March 2026 (24 Months)',
     modulesIncluded: ['Module 1', 'Module 2', 'Module 3', 'Module 4'],
     transactionCount: 31671,
     totalSpendInr: 57420000000,
@@ -18,7 +18,7 @@ export const mockReportData: ExecutiveBriefReportData = {
   },
   clientProfile: {
     clientName: 'UltraTech Cement Limited',
-    analysisPeriod: 'FY 2021-22 to FY 2024-25',
+    analysisPeriod: 'April 2024 – March 2026 (24 Months)',
     group: 'Aditya Birla Group',
     reportVersion: 'EXECUTIVE_BRIEF_V1.1',
     confidentiality: 'CONFIDENTIAL — CLIENT USE ONLY',

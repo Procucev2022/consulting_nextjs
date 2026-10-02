@@ -132,8 +132,8 @@ describe('Savings Opportunity Register & Consolidation Engine (Prompt 269)', () 
     expect(summary.netDefensibleOpportunityInr).toBe(RAW_NET_DEFENSIBLE_INR);
 
     // Separates hard savings and cost avoidance
-    expect(summary.hardProcurementSavingsInr).toBe(RAW_NET_DEFENSIBLE_INR - 410000000.0);
-    expect(summary.costAvoidanceInr).toBe(410000000.0);
+    expect(summary.hardProcurementSavingsInr).toBe(787200000.0);
+    expect(summary.costAvoidanceInr).toBe(148800000.0);
     expect(summary.hardProcurementSavingsInr + summary.costAvoidanceInr).toBe(summary.netDefensibleOpportunityInr);
 
     // Soft productivity and risk separated from cash savings

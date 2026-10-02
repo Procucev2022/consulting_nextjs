@@ -63,7 +63,7 @@ describe('ExecutiveBriefService Unit Tests (Prompt 257)', () => {
     const md = executiveBriefService.generateAuditMarkdown('UltraTech Cement Limited');
     expect(md).toContain('# EXECUTIVE BRIEF AUDIT TRAIL');
     expect(md).toContain('59203477681.66');
-    expect(md).toContain('2437500000');
+    expect(md).toContain(String(RAW_NET_DEFENSIBLE_INR));
     expect(md).toContain('479000000');
     expect(md).toContain('Zero Discrepancy');
     expect(md).toContain('Lineage & Traceability Audit');

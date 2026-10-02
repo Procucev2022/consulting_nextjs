@@ -94,7 +94,7 @@ export class ExecutiveBriefReportService {
         valueInr: 974,
         formattedValue: '974 Vendors',
         module: 'Module 1',
-        evidenceRef: 'Master Vendor Register (Forensic Count — 31,671 Transactions)'
+        evidenceRef: 'Master Vendor Register (Forensic Count - 31,671 Transactions)'
       },
       {
         id: 'kpi-categories',
@@ -126,7 +126,7 @@ export class ExecutiveBriefReportService {
         analysisPeriod: meta.analysisPeriod,
         group: DEFAULT_CLIENT_PROFILE.group,
         reportVersion: meta.reportVersion,
-        confidentiality: 'CONFIDENTIAL — CLIENT USE ONLY',
+        confidentiality: 'CONFIDENTIAL - CLIENT USE ONLY',
         status: consistency.isConsistent ? 'CERTIFIED / READY' : 'BLOCKED / VARIANCE DETECTED'
       },
       summaryCards: this.getSummaryCards(meta),

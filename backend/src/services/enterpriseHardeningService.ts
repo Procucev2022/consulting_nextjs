@@ -109,8 +109,8 @@ export class EnterpriseHardeningService {
         variance: 0.00,
         tolerance: 0.00,
         status: 'PASS',
-        lhsDisplay: '₹323.27 Cr',
-        rhsDisplay: '₹323.27 Cr',
+        lhsDisplay: '₹173.12 Cr',
+        rhsDisplay: '₹173.12 Cr',
         displayUnit: 'CRORE'
       },
       {
@@ -123,8 +123,8 @@ export class EnterpriseHardeningService {
         variance: 0.00,
         tolerance: 0.00,
         status: 'PASS',
-        lhsDisplay: '₹243.75 Cr',
-        rhsDisplay: '₹243.75 Cr',
+        lhsDisplay: '₹93.60 Cr',
+        rhsDisplay: '₹93.60 Cr',
         displayUnit: 'CRORE'
       },
       {
@@ -158,8 +158,8 @@ export class EnterpriseHardeningService {
       { stageNumber: 1, stageName: 'Customer Ingested Spend', module: 'Module 1', recordCount: 31671, spendInr: 59203477681.66, spendCr: 5920.35, varianceInr: 0.00, status: 'PASS' },
       { stageNumber: 2, stageName: 'Validated Commercial Spend', module: 'Module 1', recordCount: 30600, spendInr: 59203477681.66, spendCr: 5920.35, varianceInr: 0.00, status: 'PASS' },
       { stageNumber: 3, stageName: 'Addressable Sourcing Baseline', module: 'Module 2', recordCount: 30600, spendInr: 49310000000.00, spendCr: 4931.00, varianceInr: 0.00, status: 'PASS' },
-      { stageNumber: 4, stageName: 'Gross Strategic Opportunity', module: 'Module 2', recordCount: 14200, spendInr: 3232700000.00, spendCr: 323.27, varianceInr: 0.00, status: 'PASS' },
-      { stageNumber: 5, stageName: 'Net Defensible Opportunity', module: 'Module 2', recordCount: 11800, spendInr: 2437500000.00, spendCr: 243.75, varianceInr: 0.00, status: 'PASS' },
+      { stageNumber: 4, stageName: 'Gross Strategic Opportunity', module: 'Module 2', recordCount: 14200, spendInr: 1731200000.00, spendCr: 173.12, varianceInr: 0.00, status: 'PASS' },
+      { stageNumber: 5, stageName: 'Net Defensible Opportunity', module: 'Module 2', recordCount: 11800, spendInr: 936000000.00, spendCr: 93.60, varianceInr: 0.00, status: 'PASS' },
       { stageNumber: 6, stageName: 'Approved Handoff Packages', module: 'Module 4', recordCount: 6500, spendInr: 479000000.00, spendCr: 47.90, varianceInr: 0.00, status: 'PASS' }
     ];
 

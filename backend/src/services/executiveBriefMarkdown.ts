@@ -51,7 +51,7 @@ export function formatExecutiveBriefValidationMarkdown(val: ExecutiveBriefValida
 ---
 
 ## 1. Quality & Completeness Matrix
-- **Total Slides / Pages**: ${val.totalPages} (Target: 25–35 pages: **PASS**)
+- **Total Slides / Pages**: ${val.totalPages} (Target: 25-35 pages: **PASS**)
 - **Total Diagnostic Charts & Cards**: ${val.totalCharts}
 - **Total Major Findings**: ${val.totalFindings}
 - **Total Opportunity Levers**: ${val.totalOpportunities}

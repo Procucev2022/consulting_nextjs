@@ -43,5 +43,6 @@ export * from './numericalAuditTypes';
 export * from './executiveBriefTypes';
 export * from './executiveBriefExportTypes';
 export * from './savingsOpportunityRegister';
+export * from './executiveBriefPresentation';
 
 
