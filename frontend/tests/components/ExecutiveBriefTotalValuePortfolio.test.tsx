@@ -104,9 +104,15 @@ describe('ExecutiveBriefTotalValuePortfolio', () => {
     fireEvent.click(sec9Btn!);
     expect(screen.getByText(/Zero-Overlap Double Counting Protection Bridge/i)).toBeInTheDocument();
 
-    // Open Section 10: execution roadmap
+    // Open Section 10: governance registers
     const sec10Btn = screen.getByText(p.expanders.sec10Title).closest('button');
     fireEvent.click(sec10Btn!);
+    expect(screen.getAllByText(/Assumption Register/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Customer Validation Checklist/i).length).toBeGreaterThan(0);
+
+    // Open Section 11: execution roadmap
+    const sec11Btn = screen.getByText(p.expanders.sec11Title).closest('button');
+    fireEvent.click(sec11Btn!);
     expect(screen.getByText(/Procurement Value Realization Roadmap/i)).toBeInTheDocument();
   });
 

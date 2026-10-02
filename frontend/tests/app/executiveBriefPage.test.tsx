@@ -59,7 +59,7 @@ describe('ExecutiveBriefPage', () => {
 
   it('renders loading state and then populates full report workspace', async () => {
     render(<ExecutiveBriefPage />);
-    expect(screen.getByText(/Loading Certified Executive Brief/i)).toBeInTheDocument();
+    expect(screen.getByText(/Preparing Certified Executive Brief/i)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('UltraTech Cement Limited')).toBeInTheDocument();

@@ -264,9 +264,9 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-fade-in">
       {/* Module Title Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-orange-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-rose-950/30 border border-rose-100 dark:border-cyan-500/20 shadow-sm dark:shadow-xl glass-panel">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-orange-50 dark:from-[#130808] dark:via-[#0a0f1c] dark:to-[#120a06] border border-rose-100 dark:border-rose-900/40 shadow-sm glass-panel-glow">
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-xs font-mono font-bold text-rose-800 dark:text-cyan-400 bg-rose-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-rose-300 dark:border-cyan-800">

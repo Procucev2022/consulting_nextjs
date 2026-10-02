@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800/80 shadow-sm dark:shadow-lg dark:shadow-black/20 transition-colors duration-200">
+    <header className="sticky top-0 z-40 w-full bg-white/97 dark:bg-[#080c18]/97 backdrop-blur-2xl border-b border-slate-200 dark:border-slate-800/70 shadow-md dark:shadow-2xl dark:shadow-black/40 transition-colors duration-200">
       {/* Top Advisory Status & Compliance Ribbon */}
       <div className="bg-gradient-to-r from-sky-50 via-slate-50 to-indigo-50 dark:from-cyan-950/60 dark:via-slate-900/80 dark:to-blue-950/60 border-b border-sky-100 dark:border-cyan-500/10 px-4 py-1.5 text-[11px] text-slate-600 dark:text-slate-300 flex items-center justify-between transition-colors">
         <div className="flex items-center space-x-3 overflow-x-auto">
@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         <div className="flex items-center space-x-3 text-[11px]">
           <span className="hidden sm:flex items-center space-x-1.5 text-emerald-700 dark:text-emerald-400 font-mono">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" style={{boxShadow: '0 0 0 3px rgba(16,185,129,0.18)', animation: 'pulse-dot 2.5s infinite'}} />
             <span className="font-semibold">{UI_STRINGS.header.slaText}</span>
           </span>
           <div className="flex items-center space-x-1 text-slate-700 dark:text-slate-300">

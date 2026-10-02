@@ -1,7 +1,7 @@
 {
-  "reportId": "RPT-EXEC-20261001-001",
+  "reportId": "RPT-EXEC-20261002-001",
   "client": "UltraTech Cement Limited",
-  "generationTimestamp": "2026-10-01T17:23:11.811Z",
+  "generationTimestamp": "2026-10-02T03:45:42.160Z",
   "sourceDataVersion": "MODULE_1_4_CERTIFIED_V1.0",
   "pdfGenerated": true,
   "pptxGenerated": true,
@@ -19,7 +19,7 @@
   },
   "checksums": {
     "pdfSha256": "43ddc2190d6c5bf6b35c95cf72691ffb982d3d0297c3975b26445770c32ed919",
-    "pptxSha256": "142fb59008eb3f19e3570f19e602839dbca0a62ad19e0d563f844eddfdb4706c"
+    "pptxSha256": "91dac19a4eec82792b1682c7abbaeed423d63edded8c9b4ecc58afa1897b9581"
   },
   "exportStatus": "EXECUTIVE_BRIEF_EXPORT_READY"
 }

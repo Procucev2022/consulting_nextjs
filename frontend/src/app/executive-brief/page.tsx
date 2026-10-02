@@ -178,33 +178,40 @@ export default function ExecutiveBriefPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-        <p className="text-xs text-slate-400 font-mono tracking-wide">Loading Certified Executive Brief...</p>
+      <div className="min-h-screen bg-[#060b14] bg-grid-pattern text-white flex flex-col items-center justify-center space-y-4">
+        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-slate-900/60 border border-slate-800/60 shadow-xl">
+          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+          <p className="text-xs text-slate-400 font-mono tracking-widest uppercase">Preparing Certified Executive Brief...</p>
+          <div className="flex gap-1 mt-1">
+            {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-600 animate-pulse" style={{animationDelay: `${i*0.2}s`}} />)}
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !reportData) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white p-6 flex flex-col items-center justify-center space-y-4">
-        <AlertTriangle className="w-10 h-10 text-amber-400" />
-        <h2 className="text-base font-bold">{strings.emptyState.notReadyTitle}</h2>
-        <p className="text-xs text-slate-400 text-center max-w-md">{strings.emptyState.notReadyDesc}</p>
-        <button
-          type="button"
-          onClick={handleReturnToPipeline}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-xs font-bold transition-all"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>{strings.emptyState.returnToPipeline}</span>
-        </button>
+      <div className="min-h-screen bg-[#060b14] bg-grid-pattern text-white p-6 flex flex-col items-center justify-center space-y-4">
+        <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-slate-900/70 border border-amber-800/30 shadow-xl max-w-md w-full">
+          <AlertTriangle className="w-10 h-10 text-amber-400" />
+          <h2 className="text-base font-bold font-display">{strings.emptyState.notReadyTitle}</h2>
+          <p className="text-xs text-slate-400 text-center leading-relaxed">{strings.emptyState.notReadyDesc}</p>
+          <button
+            type="button"
+            onClick={handleReturnToPipeline}
+            className="ent-btn-cta text-xs"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{strings.emptyState.returnToPipeline}</span>
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#060b14] bg-grid-pattern text-slate-100 flex flex-col">
       {downloadPayload && (
         <a
           ref={downloadLinkRef}
@@ -284,6 +291,25 @@ export default function ExecutiveBriefPage() {
         onConfirm={handleRegenerate}
         isRegenerating={isRegenerating}
       />
+
+      {/* Enterprise Footer */}
+      <footer className="ent-footer no-print">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+          <div className="flex items-center gap-2 text-slate-400 font-medium">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              AES-256-GCM ENCRYPTED
+            </span>
+            <span className="hidden sm:inline text-slate-600">|</span>
+            <span className="hidden sm:inline text-slate-500">Management Confidential · For Authorised Recipients Only</span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-500 font-mono">
+            <span>Procucev / aiCEV v2.0 · Executive Brief</span>
+            <span className="text-slate-700">·</span>
+            <span>© {new Date().getFullYear()} Procucev Pvt. Ltd.</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

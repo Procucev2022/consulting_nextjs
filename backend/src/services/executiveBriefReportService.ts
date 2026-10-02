@@ -91,18 +91,18 @@ export class ExecutiveBriefReportService {
       {
         id: 'kpi-suppliers',
         label: 'Active Suppliers',
-        valueInr: 1482,
-        formattedValue: '1,482 Vendors',
+        valueInr: 974,
+        formattedValue: '974 Vendors',
         module: 'Module 1',
-        evidenceRef: 'Master Vendor Register'
+        evidenceRef: 'Master Vendor Register (Forensic Count — 31,671 Transactions)'
       },
       {
         id: 'kpi-categories',
-        label: 'Number of Categories',
-        valueInr: 14,
-        formattedValue: '14 Categories',
+        label: 'Material Groups',
+        valueInr: 256,
+        formattedValue: '256 Material Groups',
         module: 'Module 2',
-        evidenceRef: 'UNSPSC Classification'
+        evidenceRef: 'SAP Material Group Classification (rawCustomerLedgerCache)'
       }
     ];
   }

@@ -42,4 +42,7 @@ export * from './savingsAssumptions';
 export * from './savingsOpportunityRegisterConstants';
 export * from './executiveBriefOpportunityData';
 export * from './executiveBriefMasterRegister';
+export * from './executiveBriefMasterRegisterPart1';
+export * from './executiveBriefMasterRegisterPart2';
 export * from './executiveBriefPortfolioSections';
+export * from './executiveBriefGovernance';

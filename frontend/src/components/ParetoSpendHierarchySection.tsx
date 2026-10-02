@@ -77,7 +77,7 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
   const visiblePercentage = totalSpend > 0 ? Number(((visibleParetoSpend / totalSpend) * 100).toFixed(1)) : 0;
 
   return (
-    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden animate-in fade-in duration-300">
+    <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden animate-fade-in">
       {/* Header Bar */}
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-r from-slate-50 via-white to-sky-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-cyan-950/20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

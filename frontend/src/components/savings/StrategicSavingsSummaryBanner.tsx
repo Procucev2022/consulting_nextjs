@@ -100,7 +100,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
   return (
     <div
       data-testid="strategic-savings-summary-banner"
-      className="space-y-6 animate-in fade-in duration-300"
+      className="space-y-6 animate-fade-in"
     >
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-cyan-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-teal-950/40 border border-emerald-200/70 dark:border-emerald-500/30 shadow-sm glass-panel">

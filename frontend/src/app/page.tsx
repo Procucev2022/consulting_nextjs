@@ -1604,7 +1604,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#f8fafc] dark:bg-[#080c16] text-slate-900 dark:text-slate-100 bg-grid-pattern pb-16 transition-colors duration-200 ${theme}`}>
+    <div className={`min-h-screen bg-[#f1f5f9] dark:bg-[#060b14] text-slate-900 dark:text-slate-100 bg-grid-pattern transition-colors duration-200 ${theme}`}>
       {/* Top Header */}
       <Header
         tenant={tenant}
@@ -1657,7 +1657,7 @@ export default function Home() {
       />
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-6">
         {/* Pipeline & Strategic Vision Navigation */}
         <PipelineBar
           activeTab={activeTab}
@@ -1779,6 +1779,25 @@ export default function Home() {
         {activeTab === 'schema' && <DatabaseSchemaView />}
       </main>
 
+      {/* ── Enterprise Footer ── */}
+      <footer className="ent-footer mt-4 no-print">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              AES-256-GCM ENCRYPTED
+            </span>
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
+            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit · ISO 27001 · SOC 2 Type II compliant</span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 font-mono">
+            <span>Procucev / aiCEV v2.0</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span>© {new Date().getFullYear()} Procucev Pvt. Ltd. All rights reserved.</span>
+          </div>
+        </div>
+      </footer>
+
       {/* Interactive Modals */}
       <ProCPXModal
         opportunity={selectedOppForProCPX}
@@ -1868,9 +1887,9 @@ export default function Home() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-cyan-500/40 shadow-xl text-xs font-semibold text-slate-900 dark:text-white animate-in slide-in-from-bottom duration-200">
-          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping" />
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0c1628] border border-slate-200 dark:border-slate-700/80 shadow-2xl text-xs font-semibold text-slate-900 dark:text-white animate-slide-up max-w-sm" style={{boxShadow: '0 20px 60px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(14,165,233,0.15)'}}>
+          <span className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0" style={{boxShadow: '0 0 0 3px rgba(14,165,233,0.20)', animation: 'pulse-dot 2s infinite'}} />
+          <span className="text-slate-700 dark:text-slate-200">{toastMessage}</span>
         </div>
       )}
     </div>

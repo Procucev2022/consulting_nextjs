@@ -26,7 +26,8 @@ export const EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS = {
     sec6Title: '6. Supplier Risk Mitigation (Module 2 Supply Continuity De-Risking)',
     sec7Title: '7. Benchmark & Market Opportunities (Module 3 Index Price Gaps)',
     sec8Title: '8. Master Opportunity Register (Single Source of Truth Table)',
-    sec9Title: '9. Double Count Reconciliation (Zero-Overlap Waterfall Bridge)',
-    sec10Title: '10. Execution Roadmap & Governance (Implementation Plan)'
+    sec9Title: '9. Double Count Reconciliation & CFO Waterfall Bridge',
+    sec10Title: '10. Governance Registers (Assumption & Customer Validation Checklists)',
+    sec11Title: '11. Execution Roadmap & Realization Governance (Implementation Plan)'
   }
 } as const;

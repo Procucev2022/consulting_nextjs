@@ -19,7 +19,10 @@ import type {
 import {
   EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES,
   EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS,
-  EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN
+  EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN,
+  EXECUTIVE_BRIEF_VALUE_CLASSIFICATIONS,
+  EXECUTIVE_BRIEF_ASSUMPTION_REGISTER,
+  EXECUTIVE_BRIEF_VALIDATION_CHECKLIST
 } from '../../constants';
 import { ExecutiveBriefExpanderCard } from './ExecutiveBriefExpanderCard';
 import { ExecutiveBriefMasterRegisterTable } from './ExecutiveBriefMasterRegisterTable';
@@ -58,6 +61,9 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
           <span className="text-[10px] text-slate-400">({item.category} • {item.item})</span>
         </div>
         <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-300">
+            {item.valueClassification}
+          </span>
           {renderBadge(item.classificationLabel)}
           <span className="text-xs font-mono font-bold text-emerald-400">{item.indicativeOpportunity}</span>
         </div>
@@ -66,11 +72,13 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         <div><span className="font-bold text-slate-400 uppercase text-[10px]">Background: </span><span className="text-slate-300">{item.background}</span></div>
         <div><span className="font-bold text-slate-400 uppercase text-[10px]">Objective: </span><span className="text-slate-300">{item.objective}</span></div>
         <div><span className="font-bold text-slate-400 uppercase text-[10px]">Evidence: </span><span className="text-slate-300">{item.dataEvidence} <span className="font-mono text-cyan-400">[{item.transactionSampleId}]</span></span></div>
+        <div><span className="font-bold text-slate-400 uppercase text-[10px]">Current State: </span><span className="text-slate-300">{item.currentState ?? item.whatWeFound}</span></div>
         <div><span className="font-bold text-slate-400 uppercase text-[10px]">Finding: </span><span className="text-slate-300">{item.finding}</span></div>
         <div><span className="font-bold text-emerald-400 uppercase text-[10px]">Range (L/B/H): </span><span className="text-emerald-300 font-mono font-semibold">{item.lowValue} / {item.baseValue} / {item.highValue}</span></div>
         <div><span className="font-bold text-slate-400 uppercase text-[10px]">Calculation: </span><span className="text-slate-300 font-mono">{item.calculation}</span></div>
         <div><span className="font-bold text-indigo-400 uppercase text-[10px]">Approach: </span><span className="text-indigo-300">{item.executionApproach}</span></div>
         <div><span className="font-bold text-cyan-400 uppercase text-[10px]">Next Step: </span><span className="text-slate-300">{item.nextStep}</span></div>
+        <div className="md:col-span-2 lg:col-span-3"><span className="font-bold text-amber-400 uppercase text-[10px]">Validation Required: </span><span className="text-amber-200/90">{item.validationRequired}</span></div>
       </div>
     </div>
   );
@@ -131,6 +139,22 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
           </div>
         </div>
 
+        {/* Visible Value Classification Legend (Prompt 276 Section 10) */}
+        <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+          <div className="text-[11px] font-bold text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            CFO Value Classification Legend &amp; Governance Standard
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px]">
+            {EXECUTIVE_BRIEF_VALUE_CLASSIFICATIONS.map((c) => (
+              <div key={c.code} className="p-1.5 rounded bg-slate-900/90 border border-slate-800">
+                <span className="font-mono font-bold text-cyan-300 block">{c.code}</span>
+                <span className="text-slate-400 leading-tight block mt-0.5">{c.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* E-Auction Sourcing Role Clarification */}
         <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
           <span>{p.eauctionShareNote}</span>
@@ -138,7 +162,7 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         </div>
       </div>
 
-      {/* 10 Expandable Sections per Section 22 */}
+      {/* 11 Expandable Sections per Section 16 */}
       <div className="space-y-2">
         <ExecutiveBriefExpanderCard title={p.expanders.sec1Title} icon={<Database className="w-4 h-4 text-cyan-400" />} isOpen={openSections[1] ?? false} onToggle={() => toggleSection(1)}>
           <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-lg text-xs text-slate-300 leading-relaxed space-y-1.5">
@@ -152,12 +176,12 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec3Title} icon={<Layers className="w-4 h-4 text-indigo-400" />} isOpen={openSections[3] ?? false} onToggle={() => toggleSection(3)}>
-          {opps.filter((o) => o.valueType === 'PROCESS_PRODUCTIVITY_BENEFIT').map(renderFinding19)}
+          {opps.filter((o) => o.valueClassification === 'PROCESS_PRODUCTIVITY').map(renderFinding19)}
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec4Title} icon={<Building2 className="w-4 h-4 text-teal-400" />} isOpen={openSections[4] ?? false} onToggle={() => toggleSection(4)}>
           <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-lg text-xs text-slate-300 leading-relaxed">
-            <span className="font-bold text-teal-300">Category Consolidation & Rationalization: </span>
+            <span className="font-bold text-teal-300">Category Consolidation &amp; Rationalization: </span>
             16 spend categories evaluated. Fragmented MRO, Packaging, and Logistics categories consolidated across standardized specifications.
           </div>
         </ExecutiveBriefExpanderCard>
@@ -167,7 +191,7 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec6Title} icon={<ShieldCheck className="w-4 h-4 text-amber-400" />} isOpen={openSections[6] ?? false} onToggle={() => toggleSection(6)}>
-          {opps.filter((o) => o.valueType === 'RISK_COST_AVOIDANCE').map(renderFinding19)}
+          {opps.filter((o) => o.valueClassification === 'COST_AVOIDANCE').map(renderFinding19)}
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec7Title} icon={<BarChart3 className="w-4 h-4 text-cyan-400" />} isOpen={openSections[7] ?? false} onToggle={() => toggleSection(7)}>
@@ -190,10 +214,43 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
           </div>
         </ExecutiveBriefExpanderCard>
 
-        <ExecutiveBriefExpanderCard title={p.expanders.sec10Title} icon={<Calendar className="w-4 h-4 text-indigo-400" />} isOpen={openSections[10] ?? false} onToggle={() => toggleSection(10)}>
+        <ExecutiveBriefExpanderCard title={p.expanders.sec10Title} icon={<CheckCircle2 className="w-4 h-4 text-cyan-400" />} isOpen={openSections[10] ?? false} onToggle={() => toggleSection(10)}>
+          <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-lg space-y-3 text-xs text-slate-300">
+            <div>
+              <div className="font-bold text-cyan-300 mb-1">Assumption Register (Section 19 Transparency)</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                {EXECUTIVE_BRIEF_ASSUMPTION_REGISTER.map((asm) => (
+                  <div key={asm.assumptionId} className="p-2 rounded bg-slate-900 border border-slate-800">
+                    <span className="font-mono text-cyan-400 font-bold">{asm.assumptionId} ({asm.opportunityId}): </span>
+                    <span className="text-white font-medium">{asm.assumption}</span>
+                    <div className="text-slate-400 text-[10px] mt-0.5">{asm.basis} • Impact: {asm.impact}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="pt-2 border-t border-slate-800/80">
+              <div className="font-bold text-emerald-300 mb-1">Customer Validation Checklist (Section 20 Implementation Gates)</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px]">
+                {EXECUTIVE_BRIEF_VALIDATION_CHECKLIST.map((val) => (
+                  <div key={val.itemId} className="p-2 rounded bg-slate-900 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <span className="font-mono text-slate-400">{val.itemId}: </span>
+                      <span className="text-white">{val.item}</span>
+                    </div>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${val.status === 'VALIDATED' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-amber-950 text-amber-300 border border-amber-800'}`}>
+                      {val.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ExecutiveBriefExpanderCard>
+
+        <ExecutiveBriefExpanderCard title={p.expanders.sec11Title} icon={<Calendar className="w-4 h-4 text-indigo-400" />} isOpen={openSections[11] ?? false} onToggle={() => toggleSection(11)}>
           <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-lg text-xs text-slate-300 leading-relaxed space-y-1">
             <span className="font-bold text-indigo-300">Procurement Value Realization Roadmap: </span>
-            <p>Phase 1 (Day 1–30): Index resets & RFP issuance • Phase 2 (Day 31–90): Volume negotiation & dual-source audits • Phase 3 (Day 91–180): Blanket POs & ERP rate enforcement.</p>
+            <p>Phase 1 (Day 1–30): Index resets &amp; RFP issuance • Phase 2 (Day 31–90): Volume negotiation &amp; dual-source audits • Phase 3 (Day 91–180): Blanket POs &amp; ERP rate enforcement.</p>
           </div>
         </ExecutiveBriefExpanderCard>
       </div>

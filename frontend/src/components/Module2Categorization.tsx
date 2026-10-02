@@ -344,7 +344,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   if (currentTier === 'BRONZE') {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-fade-in">
         <TierMaskOverlay
           requiredTier="SILVER"
           title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module2.badge)}
@@ -356,7 +356,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-fade-in">
       {/* Pictorial Analyzing Loader for UNSPSC AI Categorization */}
       {isCategorizing && (
         <AnalyzingLoader

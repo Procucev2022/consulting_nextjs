@@ -145,7 +145,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
 
   if (currentTier === 'BRONZE') {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-fade-in">
         <TierMaskOverlay
           requiredTier="SILVER"
           title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module5.heading)}
@@ -157,7 +157,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-fade-in">
       {/* Module Title Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-purple-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-purple-950/40 border border-purple-100 dark:border-purple-500/30 shadow-sm dark:shadow-xl glass-panel">
         <div>

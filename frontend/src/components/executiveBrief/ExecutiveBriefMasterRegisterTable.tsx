@@ -24,6 +24,7 @@ export const ExecutiveBriefMasterRegisterTable: React.FC<ExecutiveBriefMasterReg
             <th className="py-2.5 px-2 font-semibold">Supplier</th>
             <th className="py-2.5 px-2 font-semibold">Eligible Spend</th>
             <th className="py-2.5 px-2 font-semibold">Value Type</th>
+            <th className="py-2.5 px-2 font-semibold">Classification</th>
             <th className="py-2.5 px-2 font-semibold">Range (L/B/H)</th>
             <th className="py-2.5 px-2 font-semibold text-right">Expected Opportunity</th>
             <th className="py-2.5 px-2 font-semibold">Mechanism</th>
@@ -48,6 +49,11 @@ export const ExecutiveBriefMasterRegisterTable: React.FC<ExecutiveBriefMasterReg
               <td className="py-2.5 px-2 text-slate-300 text-[11px]">{o.supplier}</td>
               <td className="py-2.5 px-2 font-mono text-slate-400">{o.eligibleSpend}</td>
               <td className="py-2.5 px-2 text-[11px] text-slate-300">{o.valueTypeLabel}</td>
+              <td className="py-2.5 px-2 text-[10px] font-mono font-semibold">
+                <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300">
+                  {o.valueClassification}
+                </span>
+              </td>
               <td className="py-2.5 px-2 text-[10px] font-mono text-slate-400">
                 {o.lowPercent} / {o.basePercent} / {o.highPercent}
               </td>
