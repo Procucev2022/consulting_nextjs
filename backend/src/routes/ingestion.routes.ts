@@ -17,6 +17,7 @@ const router = Router();
 router.get('/', getIngestionData);
 router.post('/', validateBody(addIngestionFileSchema), addIngestionFile);
 router.post('/upload', uploadDocumentToObjectStore);
+router.post('/upload-object', uploadDocumentToObjectStore);
 router.get('/storage/:key', getStoredObject);
 router.patch('/', validateBody(updateValidationRecordSchema), updateValidationRecord);
 router.delete('/', resetValidationRecords);

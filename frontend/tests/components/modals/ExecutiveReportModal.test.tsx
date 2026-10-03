@@ -140,4 +140,32 @@ describe('ExecutiveReportModal Component', () => {
 
     expect(screen.getAllByText(UI_STRINGS.presentation.cover.deckTitle)[0]).toBeInTheDocument();
   });
+
+  it('handles sending email brief and displays status message', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, messageId: 'msg-1' })
+    });
+    global.fetch = mockFetch;
+
+    render(
+      <ExecutiveReportModal
+        isOpen={true}
+        onClose={vi.fn()}
+        tenant={mockTenant}
+        opportunities={mockSavingsOpportunities}
+      />
+    );
+
+    const emailBtn = screen.getByRole('button', { name: /Email Brief/i });
+    fireEvent.click(emailBtn);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/email/executive-brief',
+      expect.objectContaining({
+        method: 'POST'
+      })
+    );
+  });
 });
+
