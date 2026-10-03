@@ -428,7 +428,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     onClick={() => setMgScope('TOP_10')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       mgScope === 'TOP_10'
-                        ? 'bg-white text-white shadow-xs'
+                        ? 'bg-slate-900 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -438,7 +438,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     onClick={() => setMgScope('ALL')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       mgScope === 'ALL'
-                        ? 'bg-white text-white shadow-xs'
+                        ? 'bg-slate-900 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -661,7 +661,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     onClick={() => setPlantScope('TOP_10')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       plantScope === 'TOP_10'
-                        ? 'bg-white text-white shadow-xs'
+                        ? 'bg-slate-900 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -671,7 +671,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     onClick={() => setPlantScope('ALL')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       plantScope === 'ALL'
-                        ? 'bg-white text-white shadow-xs'
+                        ? 'bg-slate-900 text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
