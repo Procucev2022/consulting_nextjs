@@ -1,6 +1,6 @@
 # MODULE 2 — FINAL CERTIFICATION
 **Version**: MODULE_2_FINAL_CERTIFICATION_V2.0
-**Generated**: 2026-10-03T03:51:12.862Z
+**Generated**: 2026-10-03T16:08:11.863Z
 
 ```
 ═══════════════════════════════════════════════════════════
@@ -14,9 +14,9 @@ TRANSACTION COVERAGE:            33 / 33 (100%)
 OPPORTUNITY COVERAGE:            6 / 6 categories
 
 DOUBLE COUNTING STATUS:          ELIMINATED
-  Gross:                         ₹2,91,04,500
+  Gross:                         ₹29,104,500
   Overlap:                       ₹0
-  Net Defensible:                ₹2,91,04,500
+  Net Defensible:                ₹29,104,500
   Reconciliation Discrepancies:  0
 
 FABRICATION STATUS:              ZERO
@@ -26,7 +26,7 @@ FABRICATION STATUS:              ZERO
   Realized Savings Generated:    NULL
 
 MATH RECONCILIATION:             COMPLETE
-  Spend Totals:                  RECONCILED (₹40,10,93,500)
+  Spend Totals:                  RECONCILED (₹401,093,500)
   WAP:                           RECONCILED
   Percentiles:                   RECONCILED
   HHI:                           RECONCILED

@@ -6,7 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "node scripts/generate-client.js && tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "cloudflare:dev": "wrangler dev",
     "cloudflare:deploy": "wrangler deploy",
