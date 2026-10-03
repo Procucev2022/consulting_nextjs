@@ -31,6 +31,7 @@ export interface HeaderProps {
   currency: HeaderCurrency;
   onSelectCurrency: (currency: HeaderCurrency) => void;
   onOpenReport: () => void;
+  onOpenManagementBrief?: () => void;
   theme: 'light' | 'dark';
   onSelectTheme: (theme: 'light' | 'dark') => void;
   onStartAnalysis?: () => void;
@@ -538,6 +539,21 @@ export interface AdminDataLifecycleRecordProps {
 export interface AdminDataLifecyclePanelProps {
   records?: AdminDataLifecycleRecordProps[];
   className?: string;
+}
+
+export interface ExecutiveOpportunityBriefViewProps {
+  readonly clientName?: string;
+  readonly onDownloadPdf?: () => void;
+  readonly onDownloadPptx?: () => void;
+  readonly onBackToWorkspace?: () => void;
+  readonly isFullScreen?: boolean;
+  readonly onToggleFullScreen?: () => void;
+  readonly currentTier?: SubscriptionTier;
+  readonly onExploreSilver?: () => void;
+}
+
+export interface AuthCardProps {
+  initialTab?: 'LOGIN' | 'REGISTER';
 }
 
 

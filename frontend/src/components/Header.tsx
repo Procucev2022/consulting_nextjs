@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Building2,
   FileText,
+  Presentation,
   Sun,
   Moon,
   Sparkles,
@@ -26,6 +27,8 @@ import {
   AICEV_LOGO_SRC
 } from '../constants';
 import { validateInput } from '../utils/validation';
+import { CustomerPlanDisplay } from './subscription/CustomerPlanDisplay';
+import { CommercialEnquiryModal } from './subscription/CommercialEnquiryModal';
 
 export const Header: React.FC<HeaderProps> = ({
   tenant,
@@ -33,6 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
   currency,
   onSelectCurrency,
   onOpenReport,
+  onOpenManagementBrief,
   theme,
   onSelectTheme,
   onStartAnalysis: _onStartAnalysis,
@@ -44,14 +48,19 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onOpenClientSetup,
   onContactSupport,
-  isExecutiveBriefReady = true
+  isExecutiveBriefReady: _isExecutiveBriefReady = true
 }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isMoreReportsOpen, setIsMoreReportsOpen] = useState(false);
+  const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
+  const [enquiryTargetTier, setEnquiryTargetTier] = useState<'SILVER' | 'GOLD'>('SILVER');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const moreReportsRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const rawUser = currentUser || user || null;
-  const activeUser = rawUser && rawUser.role !== 'ADMIN' ? rawUser : null;
+  const isAdmin = rawUser?.role === 'ADMIN';
+  const activeUser = rawUser && !isAdmin ? rawUser : null;
   const displayName = activeUser?.full_name || (activeUser as any)?.name || activeUser?.email || UI_STRINGS.header.userProfile.defaultName;
   const userInitials = displayName
     ? displayName.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase()
@@ -73,10 +82,14 @@ export const Header: React.FC<HeaderProps> = ({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
+      if (moreReportsRef.current && !moreReportsRef.current.contains(event.target as Node)) {
+        setIsMoreReportsOpen(false);
+      }
     };
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
         setIsProfileMenuOpen(false);
+        setIsMoreReportsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -96,11 +109,16 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
+  const handleManagementBriefClick = (): void => {
+    if (onOpenManagementBrief) {
+      onOpenManagementBrief();
+    } else {
+      onOpenReport?.();
+    }
+  };
+
   const handleExecutiveBriefClick = (): void => {
     onOpenReport?.();
-    if (typeof window !== 'undefined' && window.location.pathname !== '/executive-brief') {
-      window.location.href = '/executive-brief';
-    }
   };
 
   return (
@@ -198,26 +216,70 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
           */}
 
-          {/* Executive Report Button */}
+          {/* Primary Management Quick Summary Button */}
           <button
             type="button"
-            data-testid="header-executive-brief-btn"
-            onClick={handleExecutiveBriefClick}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-white bg-white dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-700 hover:bg-slate-50 dark:hover:from-slate-700 dark:hover:to-slate-600 border border-slate-300 dark:border-slate-600/80 rounded-xl shadow-xs transition-all hover:border-cyan-500 active:scale-95 shrink-0"
-            title={isExecutiveBriefReady ? 'Executive Brief Ready' : 'Executive Brief not generated yet'}
+            data-testid="header-management-summary-btn"
+            onClick={handleManagementBriefClick}
+            className="flex items-center space-x-2 px-3 py-1.5 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-700/90 border border-slate-300 dark:border-slate-600/80 hover:border-cyan-500 dark:hover:border-cyan-400 rounded-xl shadow-xs transition-all active:scale-95 text-left shrink-0 cursor-pointer"
+            title={`${UI_STRINGS.header.managementQuickSummary} — ${UI_STRINGS.header.managementQuickSummarySubtitle}`}
           >
-            <FileText className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
-            <span className="hidden sm:inline">{UI_STRINGS.header.executiveBrief}</span>
-            <span
-              className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
-                isExecutiveBriefReady
-                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/40'
-                  : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800/40'
-              }`}
-            >
-              {isExecutiveBriefReady ? 'Ready' : 'Pending'}
-            </span>
+            <div className="w-6 h-6 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200 dark:border-cyan-800/50 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shrink-0">
+              <Presentation className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex flex-col text-left leading-tight pr-1">
+              <span className="text-xs font-bold text-slate-800 dark:text-white">
+                {UI_STRINGS.header.managementQuickSummary}
+              </span>
+              <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-medium hidden sm:inline">
+                {UI_STRINGS.header.managementQuickSummarySubtitle}
+              </span>
+            </div>
           </button>
+
+          {/* Secondary More Reports Dropdown (Boardroom & Evidence Edition) */}
+          <div className="relative shrink-0" ref={moreReportsRef}>
+            <button
+              type="button"
+              data-testid="header-more-reports-btn"
+              onClick={() => setIsMoreReportsOpen((prev) => !prev)}
+              className="flex items-center space-x-1 px-2.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/70 dark:hover:bg-slate-700/80 border border-slate-300 dark:border-slate-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              title={UI_STRINGS.header.moreReports}
+              aria-expanded={isMoreReportsOpen}
+            >
+              <span className="hidden md:inline">{UI_STRINGS.header.moreReports}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            {isMoreReportsOpen && (
+              <div
+                className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl z-50 p-2 text-left"
+                data-testid="header-more-reports-dropdown"
+              >
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">
+                  Advanced Presentations
+                </div>
+                <button
+                  type="button"
+                  data-testid="header-executive-brief-btn"
+                  onClick={() => {
+                    setIsMoreReportsOpen(false);
+                    handleExecutiveBriefClick();
+                  }}
+                  className="w-full flex items-start space-x-2 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all text-left group cursor-pointer"
+                >
+                  <FileText className="w-4 h-4 text-slate-500 group-hover:text-cyan-500 mt-0.5 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-800 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+                      {UI_STRINGS.header.boardroomEvidence}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {UI_STRINGS.header.boardroomEvidenceSubtitle}
+                    </span>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Admin Portal Direct Access Button */}
           <Link
@@ -303,11 +365,22 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
 
-              {/* 2. Subscription Tier Simulation (Demo Switcher) */}
-              {onSelectSimulatedTier && (
-                <div className="py-3 border-b border-slate-200/80 dark:border-slate-800">
-                  <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
-                    {UI_STRINGS.header.userProfile.switchTierTitle}
+              {/* 2. Customer Plan Display (Prompt 288 §12) */}
+              <CustomerPlanDisplay
+                currentTier={currentTier}
+                onRequestUpgrade={(target) => {
+                  setEnquiryTargetTier(target);
+                  setIsEnquiryOpen(true);
+                  setIsProfileMenuOpen(false);
+                }}
+                isAdmin={isAdmin}
+              />
+
+              {/* Admin Only Demo Switcher */}
+              {onSelectSimulatedTier && isAdmin && (
+                <div className="py-2.5 border-b border-slate-200/80 dark:border-slate-800">
+                  <div className="text-[10px] font-semibold text-slate-400 mb-1 uppercase tracking-wider">
+                    Demo Switcher (Admin Only)
                   </div>
                   <div className="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
                     {(['BRONZE', 'SILVER', 'GOLD'] as const).map((tier) => (
@@ -409,19 +482,35 @@ export const Header: React.FC<HeaderProps> = ({
                 </Link>
 
                 {activeUser?.role === 'ADMIN' && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsProfileMenuOpen(false)}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-amber-700 dark:text-amber-300 font-medium transition-colors"
-                  >
-                    <div className="flex items-center space-x-2.5">
-                      <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      <span>Admin User Directory</span>
-                    </div>
-                    <span className="text-[10px] font-mono bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800">
-                      Admin
-                    </span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-amber-700 dark:text-amber-300 font-medium transition-colors"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <span>Admin User Directory</span>
+                      </div>
+                      <span className="text-[10px] font-mono bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800">
+                        Admin
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/admin/subscriptions"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800/80 text-cyan-700 dark:text-cyan-300 font-medium transition-colors"
+                    >
+                      <div className="flex items-center space-x-2.5">
+                        <ShieldCheck className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                        <span>Subscription Management</span>
+                      </div>
+                      <span className="text-[10px] font-mono bg-cyan-100 dark:bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+                        Admin
+                      </span>
+                    </Link>
+                  </>
                 )}
 
                 <Link
@@ -474,6 +563,16 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      <CommercialEnquiryModal
+        isOpen={isEnquiryOpen}
+        onClose={() => setIsEnquiryOpen(false)}
+        currentTier={currentTier}
+        targetTier={enquiryTargetTier}
+        customerName={displayName}
+        customerEmail={activeUser?.email}
+        companyName={tenant?.enterprise_name}
+      />
     </header>
   );
 };

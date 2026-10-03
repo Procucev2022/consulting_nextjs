@@ -46,3 +46,4 @@ export * from './executiveBriefExportTypes';
 export * from './savingsOpportunityRegister';
 export * from './executiveBriefPortfolioTypes';
 export * from './executiveBriefPresentation';
+export * from './subscription';

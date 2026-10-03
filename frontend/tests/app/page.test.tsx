@@ -497,11 +497,15 @@ describe('Home Page Component', () => {
     const inrBtn = screen.getByRole('button', { name: UI_STRINGS.header.currencies.inr });
     fireEvent.click(inrBtn);
 
-    // Executive Brief: canonical route navigation from header (no modal — navigates to /executive-brief)
+    // Executive Brief: More Reports dropdown -> Boardroom & Evidence navigates to /executive-brief
+    const moreReportsBtn = screen.getByTestId('header-more-reports-btn');
+    fireEvent.click(moreReportsBtn);
     const headerReportBtn = screen.getByTestId('header-executive-brief-btn');
     expect(headerReportBtn).toBeInTheDocument();
+    const origHref = window.location.href;
     const hrefSpy2 = vi.spyOn(window, 'location', 'get').mockReturnValue({
       ...window.location,
+      origin: 'http://localhost:3000',
       href: 'http://localhost:3000',
       pathname: '/',
       hash: '',
@@ -510,6 +514,16 @@ describe('Home Page Component', () => {
     } as Location);
     fireEvent.click(headerReportBtn);
     hrefSpy2.mockRestore();
+    window.location.href = origHref && origHref.startsWith('http') ? origHref : 'http://localhost:3000/';
+
+    // Management Quick Summary: opens in-app 10-slide brief
+    const summaryBtn = screen.getByTestId('header-management-summary-btn');
+    fireEvent.click(summaryBtn);
+    const summaryModal = screen.getByTestId('management-quick-summary-modal');
+    expect(summaryModal).toBeInTheDocument();
+    const backBtn = await screen.findByTestId('back-to-workspace-btn');
+    fireEvent.click(backBtn);
+    expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument();
     // Trigger onSelectTenant via tenant badge (rejection path)
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));
     const tenantBadge = screen.getByTestId('tenant-badge');

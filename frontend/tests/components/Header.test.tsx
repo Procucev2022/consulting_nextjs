@@ -77,12 +77,31 @@ describe('Header Component', () => {
     expect(onSelectCurrency).toHaveBeenCalledWith('INR');
   });
 
-  it('triggers onOpenReport when clicking Executive Brief', () => {
+  it('triggers onOpenManagementBrief when clicking Management Quick Summary and onOpenReport from More Reports dropdown', () => {
     const onOpenReport = vi.fn();
-    render(<Header {...defaultProps} onOpenReport={onOpenReport} />);
+    const onOpenManagementBrief = vi.fn();
+    render(
+      <Header
+        {...defaultProps}
+        onOpenReport={onOpenReport}
+        onOpenManagementBrief={onOpenManagementBrief}
+      />
+    );
 
-    const reportBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.header.executiveBrief, 'i') });
-    fireEvent.click(reportBtn);
+    // Primary: Management Quick Summary
+    const summaryBtn = screen.getByTestId('header-management-summary-btn');
+    expect(summaryBtn).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.managementQuickSummary)).toBeInTheDocument();
+    fireEvent.click(summaryBtn);
+    expect(onOpenManagementBrief).toHaveBeenCalledTimes(1);
+
+    // Secondary: More Reports dropdown -> Boardroom & Evidence
+    const moreBtn = screen.getByTestId('header-more-reports-btn');
+    fireEvent.click(moreBtn);
+    const boardroomBtn = screen.getByTestId('header-executive-brief-btn');
+    expect(boardroomBtn).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.boardroomEvidence)).toBeInTheDocument();
+    fireEvent.click(boardroomBtn);
     expect(onOpenReport).toHaveBeenCalledTimes(1);
   });
 
@@ -177,11 +196,13 @@ describe('Header Component', () => {
     expect(signInLink).toHaveAttribute('href', '/login');
   });
 
-  it('renders subscription tier badge and interactive demo switcher', () => {
+  it('renders subscription tier badge and interactive demo switcher for ADMIN users only', () => {
     const onSelectSimulatedTier = vi.fn();
+    const adminUser = { role: 'ADMIN' } as any;
     const { rerender } = render(
       <Header
         {...defaultProps}
+        currentUser={adminUser}
         currentTier="BRONZE"
         onSelectSimulatedTier={onSelectSimulatedTier}
       />
@@ -200,20 +221,29 @@ describe('Header Component', () => {
     rerender(
       <Header
         {...defaultProps}
+        currentUser={adminUser}
         currentTier="GOLD"
         onSelectSimulatedTier={onSelectSimulatedTier}
       />
     );
     expect(screen.getByText(UI_STRINGS.subscription.tierBadge('GOLD'))).toBeInTheDocument();
+  });
 
-    rerender(
+  it('hides subscription tier demo switcher from customer users (role: USER)', () => {
+    const customerUser = { role: 'USER', name: 'Customer User' } as any;
+    render(
       <Header
         {...defaultProps}
+        currentUser={customerUser}
         currentTier="SILVER"
-        onSelectSimulatedTier={onSelectSimulatedTier}
+        onSelectSimulatedTier={vi.fn()}
       />
     );
-    expect(screen.getByText(UI_STRINGS.subscription.tierBadge('SILVER'))).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('user-profile-menu-button'));
+    expect(screen.getByTestId('subscription-tier-badge')).toBeInTheDocument();
+    expect(screen.queryByTestId('demo-tier-silver')).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.header.userProfile.switchTierTitle)).not.toBeInTheDocument();
   });
 
   it('renders logged in user first name when user is passed', () => {

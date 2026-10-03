@@ -47,3 +47,4 @@ export * from './executiveBriefMasterRegisterPart2';
 export * from './executiveBriefPortfolioSections';
 export * from './executiveBriefGovernance';
 export * from './executiveBriefPresentationConstants';
+export * from './subscription';

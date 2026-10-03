@@ -9,6 +9,7 @@ import { executiveBriefReportService } from '../services/executiveBriefReportSer
 import { getOfficialPdfFilename, getOfficialPptxFilename } from '../utils/filenameSanitizer';
 import { DEFAULT_CLIENT_PROFILE } from '../constants/executiveBriefConstants';
 import { REPORT_EXPORT_VERSION } from '../constants/executiveBriefExportConstants';
+import { ExecutiveOpportunityBriefExportService } from '../services/executiveOpportunityBriefExportService';
 import { logger } from '../utils/logger';
 
 export const getExportStatus = async (req: Request, res: Response): Promise<Response | void> => {
@@ -142,3 +143,37 @@ export const regenerateExecutiveBrief = async (req: Request, res: Response): Pro
     return res.status(500).json({ success: false, message });
   }
 };
+
+export const downloadOpportunityBriefPdf = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const clientName = (req.query.client as string) || DEFAULT_CLIENT_PROFILE.clientName;
+    const { pdfBuffer } = await ExecutiveOpportunityBriefExportService.generateOpportunityBrief(clientName);
+    const filename = ExecutiveOpportunityBriefExportService.PDF_FILENAME;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to download Opportunity Brief PDF';
+    logger.error('Failed to download Opportunity Brief PDF', { error: message });
+    return res.status(500).json({ success: false, message });
+  }
+};
+
+export const downloadOpportunityBriefPptx = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const clientName = (req.query.client as string) || DEFAULT_CLIENT_PROFILE.clientName;
+    const { pptxBuffer } = await ExecutiveOpportunityBriefExportService.generateOpportunityBrief(clientName);
+    const filename = ExecutiveOpportunityBriefExportService.PPTX_FILENAME;
+    const contentType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pptxBuffer.length);
+    return res.send(pptxBuffer);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to download Opportunity Brief PPTX';
+    logger.error('Failed to download Opportunity Brief PPTX', { error: message });
+    return res.status(500).json({ success: false, message });
+  }
+};
+

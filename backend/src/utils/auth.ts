@@ -44,13 +44,17 @@ export function generateAuthToken(
   userId: string,
   email: string,
   role: string,
-  tier: string = 'BRONZE'
+  tier: string = 'BRONZE',
+  tenantId?: string,
+  mobileNumber?: string
 ): string {
   const payload: TokenPayload = {
     userId,
     email,
     role,
     tier,
+    tenantId,
+    mobile_number: mobileNumber,
     exp: Date.now() + AUTH_TOKEN_EXPIRY_SECONDS * 1000
   };
   return encryptField(payload);

@@ -11,12 +11,6 @@ export const AUTH_STATUS = {
   PENDING: 'PENDING'
 } as const;
 
-export const SUBSCRIPTION_TIERS = {
-  BRONZE: 'BRONZE',
-  SILVER: 'SILVER',
-  GOLD: 'GOLD'
-} as const;
-
 export const AUTH_STORAGE_KEYS = {
   AUTH_TOKEN: 'procucev_auth_token',
   CURRENT_USER: 'procucev_current_user',
@@ -33,33 +27,36 @@ export const AUTH_API_ENDPOINTS = {
   ADMIN_USER_TIER: (id: string) => `/api/admin/users/${id}/tier`
 } as const;
 
-export const DEV_TEMP_CREDENTIALS: DevTempCredential[] = [
-  {
-    email: 'sriman@procucev.com',
-    password: 'sriman@123',
-    role: 'ADMIN',
-    label: 'Sriman (Admin)',
-    badge: 'Admin',
-    name: 'Sriman Admin',
-    company: 'Procucev Enterprise Solutions Pvt Ltd'
-  },
-  {
-    email: 'admin@procucev.com',
-    password: 'Admin@123456',
-    role: 'ADMIN',
-    label: 'System Administrator',
-    badge: 'Admin',
-    name: 'System Administrator',
-    company: 'aiCEV Procucev Enterprise Inc.'
-  },
-  {
-    email: 'buyer@procucev.com',
-    password: 'User@123456',
-    role: 'USER',
-    label: 'Enterprise Buyer',
-    badge: 'Buyer',
-    name: 'Enterprise Buyer',
-    company: 'Apex Industrial Dynamics Ltd.'
-  }
-];
+export const DEV_TEMP_CREDENTIALS: DevTempCredential[] =
+  process.env.NODE_ENV === 'production'
+    ? []
+    : [
+        {
+          email: 'sriman@procucev.com',
+          password: 'sriman@123',
+          role: 'ADMIN',
+          label: 'Sriman (Admin)',
+          badge: 'Admin',
+          name: 'Sriman Admin',
+          company: 'Procucev Enterprise Solutions Pvt Ltd'
+        },
+        {
+          email: 'admin@procucev.com',
+          password: 'Admin@123456',
+          role: 'ADMIN',
+          label: 'System Administrator',
+          badge: 'Admin',
+          name: 'System Administrator',
+          company: 'aiCEV Procucev Enterprise Inc.'
+        },
+        {
+          email: 'buyer@procucev.com',
+          password: 'User@123456',
+          role: 'USER',
+          label: 'Enterprise Buyer',
+          badge: 'Buyer',
+          name: 'Enterprise Buyer',
+          company: 'Apex Industrial Dynamics Ltd.'
+        }
+      ];
 

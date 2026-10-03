@@ -146,20 +146,20 @@ export class ExecutiveBriefExportService {
     const pdfBuffer = canvas.toBuffer();
     const pdfFilename = getOfficialPdfFilename(clientName, dateStr);
     const pdfPath = path.resolve(dir, pdfFilename);
-    fs.writeFileSync(pdfPath, pdfBuffer);
+    this.safeWrite(pdfPath, pdfBuffer);
 
     // Also maintain standardized short path
     const stdPdfPath = path.resolve(dir, 'EXECUTIVE_BRIEF.pdf');
-    fs.writeFileSync(stdPdfPath, pdfBuffer);
+    this.safeWrite(stdPdfPath, pdfBuffer);
 
     // Step 3: Generate Editable PPTX via ExecutiveBriefPptxGenerator
     const pptxBuffer = await ExecutiveBriefPptxGenerator.generateBuffer(clientName);
     const pptxFilename = getOfficialPptxFilename(clientName, dateStr);
     const pptxPath = path.resolve(dir, pptxFilename);
-    fs.writeFileSync(pptxPath, pptxBuffer);
+    this.safeWrite(pptxPath, pptxBuffer);
 
     const stdPptxPath = path.resolve(dir, 'EXECUTIVE_BRIEF.pptx');
-    fs.writeFileSync(stdPptxPath, pptxBuffer);
+    this.safeWrite(stdPptxPath, pptxBuffer);
 
     // Step 4: Inspect PPTX
     const pptxInspection = ExecutiveBriefPptxGenerator.inspectPresentation(30, pptxBuffer.length);
@@ -189,16 +189,16 @@ export class ExecutiveBriefExportService {
     };
 
     const auditPath = path.resolve(dir, 'EXECUTIVE_BRIEF_EXPORT_AUDIT.json');
-    fs.writeFileSync(auditPath, JSON.stringify(audit, null, 2), 'utf-8');
+    this.safeWrite(auditPath, JSON.stringify(audit, null, 2));
 
     // Also write to parent root if executing from backend/
     if (path.basename(dir) === 'backend') {
       const rootDir = path.resolve(dir, '..');
-      fs.writeFileSync(path.resolve(rootDir, pdfFilename), pdfBuffer);
-      fs.writeFileSync(path.resolve(rootDir, pptxFilename), pptxBuffer);
-      fs.writeFileSync(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pdf'), pdfBuffer);
-      fs.writeFileSync(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pptx'), pptxBuffer);
-      fs.writeFileSync(path.resolve(rootDir, 'EXECUTIVE_BRIEF_EXPORT_AUDIT.json'), JSON.stringify(audit, null, 2));
+      this.safeWrite(path.resolve(rootDir, pdfFilename), pdfBuffer);
+      this.safeWrite(path.resolve(rootDir, pptxFilename), pptxBuffer);
+      this.safeWrite(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pdf'), pdfBuffer);
+      this.safeWrite(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pptx'), pptxBuffer);
+      this.safeWrite(path.resolve(rootDir, 'EXECUTIVE_BRIEF_EXPORT_AUDIT.json'), JSON.stringify(audit, null, 2));
     }
 
     // Step 6: Record in Export History
@@ -233,6 +233,20 @@ export class ExecutiveBriefExportService {
       pdfBuffer,
       pptxBuffer
     };
+  }
+
+  /**
+   * Safe file write guarded against external OS file locks
+   */
+  private safeWrite(filePath: string, buffer: Buffer | string): void {
+    try {
+      fs.writeFileSync(filePath, buffer);
+    } catch (err: unknown) {
+      logger.warn('Export file write skipped due to external lock', {
+        filePath,
+        error: err instanceof Error ? err.message : String(err)
+      });
+    }
   }
 
   /**

@@ -12,14 +12,16 @@ import {
   getHandoffPackages,
   exportSourcingReport
 } from '../controllers/module2StrategicSourcing.controller';
+import { requireFeature } from '../utils/entitlementMiddleware';
+import { FEATURE_PERMISSIONS } from '../constants/subscription';
 
 const router = Router();
 
-router.get('/dashboard', getDashboardSummary);
-router.get('/categories', getCategoryProfiles);
-router.get('/category/:id', getCategoryProfileById);
-router.get('/suppliers', getSupplierDeepDive);
-router.get('/handoff', getHandoffPackages);
-router.get('/export', exportSourcingReport);
+router.get('/dashboard', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getDashboardSummary);
+router.get('/categories', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getCategoryProfiles);
+router.get('/category/:id', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getCategoryProfileById);
+router.get('/suppliers', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getSupplierDeepDive);
+router.get('/handoff', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getHandoffPackages);
+router.get('/export', requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT), exportSourcingReport);
 
 export default router;

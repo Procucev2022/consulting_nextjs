@@ -65,6 +65,10 @@ const ClientIngestionSetupModal = dynamic(
   () => import('@/components/modals/ClientIngestionSetupModal').then((mod) => mod.ClientIngestionSetupModal),
   { ssr: false }
 );
+const ExecutiveOpportunityBriefView = dynamic(
+  () => import('@/components/presentation/ExecutiveOpportunityBriefView').then((mod) => mod.ExecutiveOpportunityBriefView),
+  { ssr: false }
+);
 
 // Mock Data Seed
 import {
@@ -151,6 +155,20 @@ export default function Home() {
     };
   });
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
+  const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
+  const [briefDownloadPayload, setBriefDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
+  const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
+
+  const handleBriefDownload = (format: 'pdf' | 'pptx'): void => {
+    const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
+    const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
+    setBriefDownloadPayload({ url, filename });
+    setTimeout(() => {
+      if (briefDownloadLinkRef.current) {
+        briefDownloadLinkRef.current.click();
+      }
+    }, 50);
+  };
 
   // Application Data States
   const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
@@ -1626,9 +1644,11 @@ export default function Home() {
         }}
         onOpenReport={() => {
           if (typeof window !== 'undefined') {
-            window.location.href = '/executive-brief';
+            const target = window.location.origin ? `${window.location.origin}/executive-brief` : '/executive-brief';
+            window.location.href = target;
           }
         }}
+        onOpenManagementBrief={() => setIsManagementSummaryOpen(true)}
         isExecutiveBriefReady={Boolean(opportunities && opportunities.length > 0) || (tenant.total_spend_evaluated_inr ?? 0) > 0}
         theme={theme}
         onSelectTheme={setTheme}
@@ -1891,6 +1911,37 @@ export default function Home() {
           <span className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0" style={{boxShadow: '0 0 0 3px rgba(14,165,233,0.20)', animation: 'pulse-dot 2s infinite'}} />
           <span className="text-slate-700 dark:text-slate-200">{toastMessage}</span>
         </div>
+      )}
+
+      {/* Management Quick Summary Modal View (Prompt 287) */}
+      {isManagementSummaryOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+          data-testid="management-quick-summary-modal"
+        >
+          <div className="w-full max-w-6xl my-auto">
+            <ExecutiveOpportunityBriefView
+              clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
+              onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
+              onDownloadPdf={() => handleBriefDownload('pdf')}
+              onDownloadPptx={() => handleBriefDownload('pptx')}
+              currentTier={effectiveTier}
+            />
+          </div>
+        </div>
+      )}
+
+      {briefDownloadPayload && (
+        <a
+          ref={briefDownloadLinkRef}
+          href={briefDownloadPayload.url}
+          download={briefDownloadPayload.filename}
+          className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          Download
+        </a>
       )}
     </div>
   );

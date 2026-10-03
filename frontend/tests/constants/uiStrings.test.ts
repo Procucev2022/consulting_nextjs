@@ -179,14 +179,14 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
   it('should correctly provide auth and admin strings and formatters', () => {
     const auth = UI_STRINGS.auth;
     expect(auth.signInTab).toBe('Sign In');
-    expect(auth.createAccountTab).toBe('Create Account');
-    expect(auth.profitHeadline).toBe('Every Penny Saved in Procurement is a Direct Increase in Profit');
-    expect(auth.profitMultiplierBadge).toBe('Bottom-Line Profit Multiplier');
-    expect(auth.benefitCostSavingsTitle).toBe('Cost Savings & Leakage Elimination');
-    expect(auth.benefitStrategicSourcingTitle).toBe('Strategic Sourcing & Category Intelligence');
-    expect(auth.benefitRoadmapTitle).toBe('Procurement Transformation Roadmap');
-    expect(auth.statDirectEbitda).toBe('100%');
-    expect(auth.statSavingsUnlocked).toBe('₹120+ Cr');
+    expect(auth.heroHeadline).toBe('Turn Procurement Data Into Measurable Savings.');
+    expect(auth.profitHeadline).toBe('Turn Procurement Data Into Measurable Savings.');
+    expect(auth.profitMultiplierBadge).toBe('Product Journey');
+    expect(auth.benefitCostSavingsTitle).toBe('Find Procurement Leakage');
+    expect(auth.benefitStrategicSourcingTitle).toBe('See Where Savings Are');
+    expect(auth.benefitRoadmapTitle).toBe('Move From Insight to Action');
+    expect(auth.statDirectEbitda).toBe('Spend Visibility');
+    expect(auth.statSavingsUnlocked).toBe('Opportunity Identification');
     expect(auth.loggedInAs('Rajesh', 'USER')).toBe('Logged in as Rajesh (USER)');
 
     const admin = UI_STRINGS.admin;
@@ -220,6 +220,17 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(result).toContain('12.30');
     expect(result).toContain('1.80');
     expect(result).toMatch(/Net Non-Overlapping/);
+  });
+
+  it('should correctly provide Prompt 292 auth strings and badge constants', () => {
+    const auth = UI_STRINGS.auth;
+    expect(auth.startWithYourDataBadge).toBe('START WITH YOUR DATA');
+    expect(auth.upgradeWhenNeededHeadline).toBe('Upgrade when you need deeper intelligence.');
+    expect(auth.exploreFirstDetail).toContain('Explore the opportunity first.');
+    expect(auth.devTestMode).toBe('Dev & Test Mode');
+    expect(auth.builtForEvidenceQuote).toBe('Built for procurement teams that want evidence before action.');
+    expect(auth.procurementIntelligenceBadge).toBe('Procurement Intelligence');
+    expect(auth.howAiCevCreatesValue).toBe('HOW aiCEV CREATES PROCUREMENT VALUE');
   });
 });
 

@@ -64345,3 +64345,5573 @@ OPEN_ISSUES: list
 IMPORTANT:
 This is a MICRO-FIX.
 Do not perform any redesign or visual experimentation.
+
+
+## Prompt 286
+
+PROMPT 286 — BUILD THE 10-SLIDE CFO/CEO EXECUTIVE OPPORTUNITY BRIEF
+aiCEV by Procucev | UltraTech Cement Limited
+
+IMPORTANT:
+The existing 30-slide Procurement Value Assessment / Boardroom & Evidence Edition is now the detailed master presentation.
+
+DO NOT redesign, shorten, overwrite, or otherwise modify the existing 30-slide deck.
+
+Create a NEW, purpose-built 10-slide executive presentation.
+
+The two decks must share ONE certified presentation data contract and ONE financial source of truth.
+
+========================================================
+1. PURPOSE — THIS IS NOT A SHORTENED 30-SLIDE DECK
+========================================================
+
+The 30-slide deck answers:
+
+"SHOW ME THE EVIDENCE."
+
+The new 10-slide deck answers:
+
+"WHAT IS THE OPPORTUNITY, WHY SHOULD I BELIEVE IT, AND WHAT SHOULD MANAGEMENT DO NEXT?"
+
+The 10-slide deck is intended for:
+
+• CEO
+• CFO
+• CXO
+• Group procurement leadership
+• First senior-management meeting
+• Executive email follow-up
+• Sales presentation
+
+Target presentation duration:
+
+10–15 minutes.
+
+The deck must feel like a premium executive conversation, NOT a condensed consulting report.
+
+========================================================
+2. REQUIRED FILE NAMES
+========================================================
+
+Create:
+
+aiCEV_UltraTech_Executive_Opportunity_Brief.pdf
+
+aiCEV_UltraTech_Executive_Opportunity_Brief.pptx
+
+Do NOT overwrite:
+
+EXECUTIVE_BRIEF.pdf
+EXECUTIVE_BRIEF.pptx
+
+Those remain the 30-slide Boardroom & Evidence Edition.
+
+If the existing 30-slide files use:
+
+EXECUTIVE_BRIEF.pdf
+EXECUTIVE_BRIEF.pptx
+
+continue treating those as the detailed master deck.
+
+========================================================
+3. MASTER DATA ARCHITECTURE
+========================================================
+
+DO NOT duplicate financial constants inside the new deck.
+
+Both presentations must consume the SAME centralized certified presentation data contract.
+
+Architecture:
+
+CERTIFIED PRESENTATION DATA CONTRACT
+              |
+       +------+------+
+       |             |
+       v             v
+10-SLIDE EXECUTIVE   30-SLIDE BOARDROOM
+OPPORTUNITY BRIEF    EVIDENCE EDITION
+
+If a certified value changes, both decks must update from the same source.
+
+Do NOT create a second financial source of truth.
+
+========================================================
+4. CERTIFIED VALUES — DO NOT CHANGE
+========================================================
+
+Use exactly:
+
+Spend Evaluated:
+Rs. 5,920.35 Cr
+
+Analysis Period:
+April 2024 - March 2026
+
+Gross Identified Opportunity:
+Rs. 173.12 Cr
+
+Overlap Deductions:
+Rs. 62.80 Cr
+
+Policy Exclusions:
+Rs. 16.72 Cr
+
+Net Defensible Pipeline:
+Rs. 93.60 Cr
+
+Direct Savings Opportunity:
+Rs. 78.72 Cr
+
+Strategic Market Value:
+Rs. 14.88 Cr
+
+Validated Wave 1:
+Rs. 47.90 Cr
+
+Classified Realized Savings:
+Rs. 68.00 Cr
+
+IMPORTANT:
+Rs. 68.00 Cr remains a separate realized-savings classification.
+It is NOT additive to the opportunity pipeline.
+
+POs:
+824
+
+PO effort reduction:
+20%
+
+Direct process savings currently monetized:
+Rs. 0
+
+Supplier count:
+974
+
+Material groups:
+256
+
+Plants:
+26
+
+Risk / cost avoidance:
+Rs. 420 Cr spend de-risked
+
+DO NOT monetize Rs. 420 Cr as savings.
+
+Vendor consolidation 5%:
+Remain explicitly labelled as an indicative modelling assumption.
+
+E-auction:
+Execution mechanism, NOT the sole savings thesis.
+
+No 60/40 or 70/30 allocation language.
+
+========================================================
+5. EXECUTIVE STORY
+========================================================
+
+The 10 slides must tell this exact story:
+
+01 — THE OPPORTUNITY
+02 — WHAT WE FOUND
+03 — WHERE VALUE IS CONCENTRATED
+04 — THE VALUE BRIDGE
+05 — WHY THE VALUE IS DEFENSIBLE
+06 — HOW VALUE WILL BE CAPTURED
+07 — WAVE 1
+08 — 90-DAY EXECUTION
+09 — WHY PROCUCEV + aiCEV
+10 — MANAGEMENT DECISION
+
+The sequence must feel natural:
+
+OPPORTUNITY
+→
+EVIDENCE
+→
+VALUE
+→
+DEFENSIBILITY
+→
+EXECUTION
+→
+DECISION
+
+========================================================
+6. VISUAL IDENTITY
+========================================================
+
+Use the same core aiCEV / Procucev brand system as the 30-slide deck.
+
+However, the 10-slide deck should be:
+
+• more visual
+• less dense
+• more premium
+• larger numbers
+• stronger whitespace
+• fewer tables
+• fewer words
+• stronger visual storytelling
+
+The deck should NOT look identical to the 30-slide deck.
+
+It should clearly look like the EXECUTIVE EDITION of the same platform.
+
+Use:
+
+Canvas:
+#F7F9FC
+
+Primary:
+#172033
+
+Procucev / aiCEV blue:
+Use existing certified brand constants.
+
+Green:
+for direct savings
+
+Amber:
+for deductions / constraints
+
+White:
+for cards
+
+No gradients.
+
+No unnecessary shadows.
+
+No decorative clutter.
+
+========================================================
+7. EXECUTIVE DECK BRANDING
+========================================================
+
+COVER:
+
+aiCEV
+by Procucev
+
+Procurement Value
+Opportunity Brief
+
+UltraTech Cement Limited
+
+CFO / CEO Discussion Edition
+
+Hero:
+
+Rs. 78.72 Cr
+Direct Savings Opportunity
+
+Secondary:
+
+Rs. 93.60 Cr Net Defensible Pipeline
+Rs. 5,920.35 Cr Spend Evaluated
+
+Use official logo asset.
+
+Do NOT recreate logo using text.
+
+========================================================
+8. LOGO STANDARD
+========================================================
+
+Use the official aiCEV image asset.
+
+Every slide:
+
+Width approximately 1.00"
+
+Right margin:
+0.50"
+
+Top:
+0.25"
+
+Same position and size on all slides.
+
+Do not stretch.
+
+Do not distort.
+
+Do not use text-based logo.
+
+The logo should be a quiet corporate identifier.
+
+========================================================
+9. TYPOGRAPHY
+========================================================
+
+Use the same typography system as the approved 30-slide deck.
+
+Preferred:
+Aptos
+
+Fallback:
+Arial
+
+No font mixing.
+
+Hero number:
+30–38 pt
+
+Slide title:
+22–24 pt
+
+Body:
+11–12 pt
+
+Small evidence:
+8–9 pt
+
+Do NOT shrink text merely to make content fit.
+
+========================================================
+10. SLIDE 1 — THE OPPORTUNITY
+========================================================
+
+Title:
+
+Procurement Value Opportunity
+
+Hero:
+
+Rs. 78.72 Cr
+
+Direct Savings Opportunity
+
+Secondary metrics:
+
+Rs. 93.60 Cr
+Net Defensible Pipeline
+
+Rs. 14.88 Cr
+Strategic Market Value
+
+Rs. 5,920.35 Cr
+Spend Evaluated
+
+Small bottom statement:
+
+"24 months of transaction-level procurement analysis translated into a defensible value pipeline."
+
+Keep the slide visually powerful.
+
+No table.
+
+No long paragraph.
+
+========================================================
+11. SLIDE 2 — WHAT WE FOUND
+========================================================
+
+Title:
+
+What the Procurement Data Tells Us
+
+Create 5 large insight metrics:
+
+81.4%
+Spend concentrated in top 10% of suppliers
+
+18.5%
+Inter-plant price variance
+
+42.6%
+Spot / non-contracted purchases
+
+912
+Tail suppliers
+
+Rs. 93.60 Cr
+Net defensible pipeline
+
+Underneath:
+
+"Value is concentrated in price harmonization, supplier consolidation, strategic sourcing and benchmark-led market alignment."
+
+Do not overload.
+
+========================================================
+12. SLIDE 3 — WHERE VALUE IS CONCENTRATED
+========================================================
+
+Title:
+
+Where the Opportunity Sits
+
+Use a clean ranked horizontal bar visualization.
+
+Show the major opportunity levers from the certified source.
+
+Include:
+
+Direct Price Improvement
+E-Auction
+Vendor Consolidation
+Volume Aggregation
+Payment Terms
+Category Specialization
+Logistics
+Specification
+Contract Compliance
+PCBI
+
+Show opportunity values at the end of each bar where certified.
+
+Clearly label:
+
+GROSS IDENTIFIED OPPORTUNITY
+
+Rs. 173.12 Cr
+
+IMPORTANT:
+
+Do NOT imply that the bars add directly to Rs. 173.12 Cr after overlap.
+
+Add small statement:
+
+"Individual opportunities are deduplicated before the defensible pipeline is established."
+
+========================================================
+13. SLIDE 4 — THE VALUE BRIDGE
+========================================================
+
+This is the financial anchor.
+
+Title:
+
+From Gross Opportunity to Defensible Value
+
+Large waterfall:
+
+Rs. 173.12 Cr
+GROSS OPPORTUNITY
+
+↓
+
+- Rs. 62.80 Cr
+OVERLAP DEDUCTIONS
+
+↓
+
+- Rs. 16.72 Cr
+POLICY EXCLUSIONS
+
+↓
+
+Rs. 93.60 Cr
+NET DEFENSIBLE PIPELINE
+
+Then visually split:
+
+Rs. 78.72 Cr
+DIRECT SAVINGS
+
++
+
+Rs. 14.88 Cr
+STRATEGIC MARKET VALUE
+
+Bottom:
+
+"Mathematical reconciliation variance: Rs. 0.00 Cr"
+
+Do NOT reproduce the detailed audit table from the 30-slide deck.
+
+This slide must be highly visual.
+
+========================================================
+14. SLIDE 5 — WHY THE VALUE IS DEFENSIBLE
+========================================================
+
+Title:
+
+Why Management Can Trust the Number
+
+Create five proof points:
+
+31,671
+Transaction Records
+
+974
+Suppliers
+
+256
+Material Groups
+
+26
+Plants
+
+24 Months
+April 2024 - March 2026
+
+Then a horizontal statement:
+
+"Transaction-level analysis → category intelligence → sourcing opportunities → overlap controls → defensible pipeline"
+
+At the bottom:
+
+"Full methodology and audit trail: Boardroom & Evidence Edition"
+
+This is the first deliberate cross-reference to the 30-slide deck.
+
+========================================================
+15. SLIDE 6 — HOW VALUE WILL BE CAPTURED
+========================================================
+
+Title:
+
+How the Value Will Be Captured
+
+Use three large vertical pillars:
+
+01
+RATE HARMONIZATION
+
+Cross-plant price alignment
+Benchmark-led negotiations
+
+02
+VOLUME AGGREGATION
+
+Pool fragmented demand
+Increase supplier leverage
+
+03
+STRATEGIC SOURCING
+
+Competitive tenders
+Supplier rationalization
+Contract / benchmark alignment
+
+Underneath, smaller execution mechanisms:
+
+E-auction
+Specification
+Payment terms
+Contract compliance
+Category strategy
+
+Important:
+
+Do not position e-auction as the primary value thesis.
+
+========================================================
+16. SLIDE 7 — WAVE 1
+========================================================
+
+Title:
+
+Wave 1 — Immediate Value Capture
+
+Hero:
+
+Rs. 47.90 Cr
+
+Validated Wave 1
+
+Show 5 initiatives:
+
+Packaging Bags
+Grinding Media
+Imported Fuel
+Industrial Lubricants
+Refractory
+
+Use a clean five-item execution strip.
+
+Add:
+
+"Validated Wave 1 initiatives provide the first execution pathway from identified opportunity to realized savings."
+
+Do NOT call Rs. 47.90 Cr the same thing as Rs. 78.72 Cr.
+
+Clearly label:
+
+VALIDATED WAVE 1
+
+========================================================
+17. SLIDE 8 — 90-DAY EXECUTION
+========================================================
+
+Title:
+
+From Opportunity to Execution in 90 Days
+
+Create a horizontal timeline:
+
+DAYS 1–30
+Mobilize
+Baseline
+Supplier Qualification
+Quick Wins
+
+↓
+
+DAYS 31–60
+Market Engagement
+Tenders
+E-Auctions where appropriate
+Commercial Negotiation
+
+↓
+
+DAYS 61–90
+Award
+Contract
+Implementation
+Savings Tracking
+
+Hero callout:
+
+Rs. 47.90 Cr
+Wave 1
+
+Below:
+
+"Direct process savings from 824 POs remain unmonetized until customer time-motion / manpower baseline validation."
+
+This preserves the credibility of the 20% productivity finding.
+
+========================================================
+18. SLIDE 9 — WHY PROCUCEV + aiCEV
+========================================================
+
+Title:
+
+Why Procucev + aiCEV
+
+Create four equal pillars:
+
+PROCUREMENT EXPERTISE
+
+FORensic SPEND INTELLIGENCE
+
+MARKET BENCHMARK INTELLIGENCE
+
+EXECUTION & SAVINGS REALIZATION
+
+Below:
+
+"From transaction data to procurement decision to measurable execution."
+
+Keep it factual.
+
+Avoid unsupported claims such as:
+
+"zero hallucination"
+"guaranteed savings"
+"fully autonomous procurement"
+
+Do not use exaggerated AI language.
+
+========================================================
+19. SLIDE 10 — MANAGEMENT DECISION
+========================================================
+
+Title:
+
+The Opportunity Is Identified.
+Now It Is Time to Convert It.
+
+Three executive decisions:
+
+01
+APPROVE WAVE 1 RFPs
+
+Authorize execution of the validated Rs. 47.90 Cr Wave 1 opportunity.
+
+02
+ESTABLISH WORKING GROUP
+
+Create a joint central procurement + plant execution steering structure.
+
+03
+AUTHORIZE COMPETITIVE SOURCING
+
+Enable controlled competitive sourcing / e-auctions where commercially appropriate.
+
+Hero statement:
+
+Rs. 78.72 Cr
+Direct Savings Opportunity
+
+Secondary:
+
+Rs. 93.60 Cr Net Defensible Pipeline
+
+Final CTA:
+
+"Move from diagnostic to execution."
+
+Contact:
+
+leadership@procucev.com
+
+Do NOT make unsupported claims about guaranteed 90-day realization.
+
+========================================================
+20. CROSS-REFERENCE SYSTEM
+========================================================
+
+This is critical.
+
+The 10-slide deck must explicitly tell the reader where detailed evidence resides.
+
+Use small, subtle references:
+
+Slide 2:
+"Detailed evidence: Boardroom & Evidence Edition — Slides 7–10"
+
+Slide 3:
+"Detailed sourcing evidence: Boardroom & Evidence Edition — Slides 9, 14–19"
+
+Slide 4:
+"Full financial reconciliation: Boardroom & Evidence Edition — Slide 10"
+
+Slide 5:
+"Methodology & audit evidence: Boardroom & Evidence Edition — Slides 7 & 30"
+
+Slide 7:
+"Detailed initiative ledger: Boardroom & Evidence Edition — Slide 24"
+
+Slide 8:
+"Detailed roadmap: Boardroom & Evidence Edition — Slides 24–25"
+
+These references should be small and unobtrusive.
+
+========================================================
+21. DIFFERENTIATE THE TWO DECKS
+========================================================
+
+The 10-slide deck must clearly identify itself as:
+
+aiCEV
+EXECUTIVE OPPORTUNITY BRIEF
+
+CFO / CEO DISCUSSION EDITION
+10-SLIDE EXECUTIVE EDITION
+
+The 30-slide deck remains:
+
+aiCEV
+PROCUREMENT VALUE ASSESSMENT
+
+BOARDROOM & EVIDENCE EDITION
+DETAILED ASSESSMENT | 30 SLIDES
+
+Do not use:
+
+"Executive Brief" for both files.
+
+========================================================
+22. FOOTER DIFFERENTIATION
+========================================================
+
+10-slide deck footer:
+
+Management Confidential
+| CFO / CEO Discussion Edition
+| aiCEV by Procucev
+| PAGE X OF 10
+
+30-slide deck remains unchanged:
+
+Management Confidential
+| Prepared exclusively for UltraTech Cement Limited
+| aiCEV by Procucev
+| PAGE X OF 30
+
+========================================================
+23. SECURITY / GOVERNANCE
+========================================================
+
+DO NOT copy the current detailed Slide 28 security claims into the 10-slide deck.
+
+Do not include:
+
+SOC-2 certification
+ISO 27001 certification
+FIPS-grade
+Air-gapped
+Certified Security
+
+unless these are formally verified and approved for customer-facing use.
+
+The 10-slide deck needs only a small trust statement if necessary:
+
+"Customer procurement data is handled under configured tenant isolation, access controls, confidentiality and data-governance controls."
+
+========================================================
+24. VISUAL RULES
+========================================================
+
+The 10-slide deck must be significantly less dense than the 30-slide deck.
+
+Maximum:
+
+• 5 major numbers on a slide
+• 3 major sections on a slide
+• 2–3 lines per explanatory text block
+• no dense tables
+• no appendix tables
+• no methodology tables
+• no 10-row evidence grids
+
+Every slide must be understandable in approximately 5–8 seconds.
+
+========================================================
+25. DO NOT CHANGE THE 30-SLIDE DECK
+========================================================
+
+The existing 30-slide deck is FROZEN.
+
+Do not:
+
+• change its slide count
+• rename it
+• change its numbers
+• redesign it
+• alter its financial constants
+• remove slides
+• modify its narrative
+
+Only create the new 10-slide executive presentation.
+
+If a shared component is modified, verify that the 30-slide deck remains visually and numerically unchanged.
+
+========================================================
+26. WEB / PDF / PPTX
+========================================================
+
+The new 10-slide presentation must exist consistently in:
+
+WEB
+PDF
+PPTX
+
+All three must consume the same presentation data contract.
+
+Generate:
+
+aiCEV_UltraTech_Executive_Opportunity_Brief.pdf
+
+aiCEV_UltraTech_Executive_Opportunity_Brief.pptx
+
+========================================================
+27. VISUAL QA
+========================================================
+
+Render all 10 slides.
+
+Check:
+
+• no text overflow
+• no clipping
+• no corrupted Unicode
+• no mojibake
+• logo size = approximately 1.00"
+• logo aligned consistently
+• consistent margins
+• consistent typography
+• no oversized tables
+• no excessive empty space
+• no duplicated logo
+• no financial mismatch with 30-slide deck
+• no unsupported claims
+
+Compare all certified financial values between:
+
+10-slide Executive Opportunity Brief
+
+AND
+
+30-slide Boardroom & Evidence Edition.
+
+They must match exactly wherever the same metric appears.
+
+========================================================
+28. AUTOMATED VALIDATION
+========================================================
+
+Create validation checks for:
+
+EXECUTIVE_SLIDE_COUNT = 10
+
+MASTER_SLIDE_COUNT = 30
+
+SHARED_FINANCIAL_SOURCE = PASS
+
+FINANCIAL_VALUES_MATCH = PASS
+
+LOGO_ASSET = PASS
+
+LOGO_POSITION = PASS
+
+LOGO_SIZE = PASS
+
+FONT_CONSISTENCY = PASS
+
+NO_MOJIBAKE = PASS
+
+NO_OVERFLOW = PASS
+
+PDF = PASS
+
+PPTX = PASS
+
+WEB = PASS
+
+TYPECHECK = PASS
+
+LINT = PASS
+
+QUALITY = PASS
+
+========================================================
+29. FINAL REPORT
+========================================================
+
+Return:
+
+EXECUTIVE_DECK_CREATED: PASS/FAIL
+
+SLIDE_COUNT: 10
+
+MASTER_DECK_UNCHANGED: PASS/FAIL
+
+SHARED_DATA_CONTRACT: PASS/FAIL
+
+FINANCIAL_PARITY: PASS/FAIL
+
+LOGO: PASS/FAIL
+
+TYPOGRAPHY: PASS/FAIL
+
+GRID_ALIGNMENT: PASS/FAIL
+
+VISUAL_HIERARCHY: PASS/FAIL
+
+CFO_READABILITY: PASS/FAIL
+
+CROSS_REFERENCES: PASS/FAIL
+
+UNICODE: PASS/FAIL
+
+PDF: PASS/FAIL
+
+PPTX: PASS/FAIL
+
+WEB: PASS/FAIL
+
+TYPECHECK: PASS/FAIL
+
+LINT: PASS/FAIL
+
+QUALITY: PASS/FAIL
+
+OPEN_ISSUES: list
+
+FINAL STATUS:
+
+CFO_EXECUTIVE_EDITION:
+PASS
+
+only after the actual rendered 10-slide PDF/PPTX has been visually inspected.
+
+
+## Prompt 287
+
+PROMPT 287 — MANAGEMENT QUICK SUMMARY UI + FINAL 10-SLIDE CONTENT POLISH
+aiCEV by Procucev
+
+IMPORTANT:
+The 10-slide CFO/CEO Executive Opportunity Brief has now been created successfully.
+
+The 30-slide Boardroom & Evidence Edition remains frozen.
+
+This prompt has TWO objectives:
+
+1. Make the 10-slide Management Quick Summary clearly visible and accessible from the main application UI.
+2. Apply the final small content corrections identified during review.
+
+DO NOT redesign Modules 1–4.
+DO NOT implement Bronze/Silver/Gold subscription logic yet.
+That will be the NEXT major prompt after this one.
+
+========================================================
+PART A — MANAGEMENT QUICK SUMMARY BUTTON
+========================================================
+
+CURRENT PROBLEM:
+
+The main application dashboard currently shows:
+
+"Executive Brief — Pending"
+
+but there is no clearly visible, customer-friendly access point to the newly created 10-slide Executive Opportunity Brief.
+
+A customer should NOT have to search through menus to find the management presentation.
+
+The 10-slide presentation must become a first-class product feature.
+
+========================================================
+REQUIRED CUSTOMER-FACING NAME
+========================================================
+
+Use:
+
+MANAGEMENT QUICK SUMMARY
+
+Primary subtitle:
+
+10-Slide Executive Opportunity Brief
+
+Optional small label:
+
+CFO / CEO Discussion Edition
+
+Do NOT call the customer-facing button simply:
+
+"Executive Brief"
+
+because that creates confusion with the 30-slide Boardroom & Evidence Edition.
+
+========================================================
+DASHBOARD UI
+========================================================
+
+Create a prominent dashboard/header action:
+
+[ Management Quick Summary ]
+
+with a suitable presentation/document icon.
+
+Recommended visual treatment:
+
+• White card/button
+• aiCEV blue accent
+• subtle border
+• clear hover state
+• presentation/document icon
+• highly visible but NOT more prominent than the main application navigation
+
+Recommended button structure:
+
+┌──────────────────────────────────────────┐
+│  ▣  Management Quick Summary             │
+│     10-Slide Executive Opportunity Brief │
+└──────────────────────────────────────────┘
+
+The button must be visible without opening a menu.
+
+Place it in the main application header/action area near the existing Executive Brief control.
+
+========================================================
+IMPORTANT — EXISTING EXECUTIVE BRIEF BUTTON
+========================================================
+
+The existing:
+
+"Executive Brief — Pending"
+
+button should NOT remain as the primary customer-facing label.
+
+Replace or restructure it so that the user sees:
+
+PRIMARY:
+
+Management Quick Summary
+10-Slide Executive Opportunity Brief
+
+SECONDARY / ADVANCED:
+
+Boardroom & Evidence
+30-Slide Procurement Value Assessment
+
+The second option may be placed behind a dropdown or secondary action.
+
+Do NOT show two confusing buttons both called "Executive Brief".
+
+========================================================
+RECOMMENDED HEADER STRUCTURE
+========================================================
+
+Current header contains items similar to:
+
+Customer / Dataset
+Executive Brief
+Admin Portal
+User Profile
+
+Change the executive presentation area to:
+
+[ Management Quick Summary ]
+       10-Slide Executive Brief
+
+and, where appropriate:
+
+[ More Reports ▼ ]
+
+with:
+
+• Boardroom & Evidence
+• Detailed Procurement Value Assessment
+
+The Management Quick Summary should be the obvious first choice for management users.
+
+========================================================
+BUTTON BEHAVIOUR
+========================================================
+
+When the customer clicks:
+
+Management Quick Summary
+
+open the newly created:
+
+aiCEV_UltraTech_Executive_Opportunity_Brief
+
+Do NOT open the 30-slide deck.
+
+The Web presentation should open inside the application using the existing:
+
+ExecutiveOpportunityBriefView.tsx
+
+Do NOT create a second implementation of the 10-slide presentation.
+
+Use the existing Web component.
+
+========================================================
+AVAILABLE ACTIONS
+========================================================
+
+Inside Management Quick Summary, provide:
+
+[ Open Full Screen ]
+
+[ Download PDF ]
+
+[ Download PowerPoint ]
+
+If appropriate:
+
+[ Back to Procurement Workspace ]
+
+Do not clutter the dashboard with these actions.
+
+They belong inside the Management Quick Summary experience.
+
+========================================================
+VISUAL DESIGN
+========================================================
+
+The button must fit naturally into the current aiCEV dashboard.
+
+Use the existing application design system.
+
+Do NOT introduce a new color palette.
+
+Use the existing:
+
+aiCEV blue
+Procucev orange
+white cards
+light enterprise background
+
+Do not make the button look like an advertisement.
+
+It should feel like a core enterprise reporting feature.
+
+========================================================
+RESPONSIVE / DESKTOP
+========================================================
+
+The application is primarily desktop enterprise software.
+
+Ensure:
+
+• button does not overlap other header controls
+• text does not truncate
+• icon and text align correctly
+• tooltip exists if the label must be shortened at smaller widths
+• no horizontal overflow
+• dropdown does not cover critical controls
+
+========================================================
+PART B — 10-SLIDE CONTENT CORRECTIONS
+========================================================
+
+Apply ONLY these corrections to the new 10-slide Executive Opportunity Brief.
+
+DO NOT modify the 30-slide Boardroom & Evidence Edition.
+
+========================================================
+CORRECTION 1 — REMOVE "100% EBITDA ACCRETIVE"
+========================================================
+
+If Slide 1 currently contains:
+
+"₹78.72 Cr Direct Savings Opportunity
+100% EBITDA Accretive"
+
+REMOVE:
+
+"100% EBITDA Accretive"
+
+Keep:
+
+₹78.72 Cr
+Direct Savings Opportunity
+
+Do not make an unsupported accounting conclusion.
+
+========================================================
+CORRECTION 2 — SLIDE 3 LANGUAGE
+========================================================
+
+Slide 3 should NOT say:
+
+"10 sourcing levers totaling ₹173.12 Cr"
+
+because that can imply the ten displayed levers are directly additive.
+
+Use:
+
+WHERE THE OPPORTUNITY IS CONCENTRATED
+
+Primary callout:
+
+₹173.12 Cr
+GROSS IDENTIFIED OPPORTUNITY
+
+Supporting statement:
+
+"Individual opportunities are assessed independently and deduplicated before establishing the net defensible pipeline."
+
+Do not imply direct additivity of the individual opportunity bars.
+
+========================================================
+CORRECTION 3 — SLIDE 10
+========================================================
+
+Change:
+
+MANAGEMENT DECISION
+
+to:
+
+PROPOSED NEXT STEPS
+
+Use:
+
+01 — ALIGN
+Confirm priority Wave 1 categories
+
+02 — MOBILIZE
+Establish joint procurement working group
+
+03 — EXECUTE
+Launch approved competitive sourcing initiatives
+
+Hero:
+
+₹78.72 Cr
+Direct Savings Opportunity
+
+Secondary:
+
+₹93.60 Cr
+Net Defensible Pipeline
+
+Final statement:
+
+"Move from diagnostic to execution."
+
+Do NOT imply guaranteed savings or guaranteed 90-day realization.
+
+========================================================
+CORRECTION 4 — TRUST LANGUAGE
+========================================================
+
+Review Slide 9 of the 10-slide deck.
+
+Do NOT include unsupported claims such as:
+
+"Zero Hallucination"
+"Guaranteed Savings"
+"Fully Autonomous Procurement"
+"SOC-2 Certified"
+"ISO 27001 Certified"
+"FIPS Grade"
+"Air-Gapped"
+
+unless separately verified and formally approved.
+
+Use factual positioning:
+
+"From transaction data to procurement decision to measurable execution."
+
+========================================================
+PART C — 30-SLIDE DECK PROTECTION
+========================================================
+
+The 30-slide deck is FROZEN.
+
+DO NOT:
+
+• change slide count
+• change numbers
+• change its design
+• change its financial model
+• rename the file
+• modify its content
+
+Files that must remain untouched:
+
+EXECUTIVE_BRIEF.pdf
+EXECUTIVE_BRIEF.pptx
+
+The new 10-slide files remain:
+
+aiCEV_UltraTech_Executive_Opportunity_Brief.pdf
+aiCEV_UltraTech_Executive_Opportunity_Brief.pptx
+
+========================================================
+PART D — SINGLE SOURCE OF TRUTH
+========================================================
+
+The Management Quick Summary must continue consuming:
+
+EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+
+Do NOT duplicate financial constants.
+
+The 10-slide Web/PDF/PPTX must remain synchronized.
+
+========================================================
+PART E — FUTURE SUBSCRIPTION ARCHITECTURE
+========================================================
+
+DO NOT implement Bronze/Silver/Gold in this prompt.
+
+However, prepare the UI structure so the Management Quick Summary can later be controlled by the entitlement engine.
+
+Future model:
+
+BRONZE
+→ Limited Management Snapshot
+
+SILVER
+→ Management Quick Summary
+
+GOLD
+→ Full Management Quick Summary + Detailed Boardroom & Evidence
+
+For now, do NOT add fake subscription restrictions.
+
+The current button should work using the existing application permissions.
+
+The entitlement engine will be implemented in the NEXT prompt.
+
+========================================================
+PART F — ADMIN / CUSTOMER SEPARATION
+========================================================
+
+Do not expose:
+
+"Simulate Subscription Tier"
+
+to normal customer users.
+
+If this control is currently visible in the customer profile menu:
+
+move it to Admin-only functionality.
+
+Customers should see their current access state, but should NOT be able to arbitrarily switch Bronze/Silver/Gold from the UI.
+
+Do NOT implement the full subscription system yet.
+
+Just ensure the simulation/control functionality is not exposed as a customer self-service subscription selector.
+
+========================================================
+PART G — QA
+========================================================
+
+Test the following:
+
+UI:
+
+MANAGEMENT_QUICK_SUMMARY_BUTTON = PASS
+
+BUTTON_VISIBLE_ON_DASHBOARD = PASS
+
+BUTTON_LABEL = PASS
+
+BUTTON_ICON = PASS
+
+BUTTON_ALIGNMENT = PASS
+
+BUTTON_NO_OVERFLOW = PASS
+
+BUTTON_ROUTE = PASS
+
+10-SLIDE WEB OPENS = PASS
+
+PDF DOWNLOAD = PASS
+
+PPTX DOWNLOAD = PASS
+
+30-SLIDE MASTER UNCHANGED = PASS
+
+FINANCIAL_PARITY = PASS
+
+NO_UNSUPPORTED_EBITDA_CLAIM = PASS
+
+SLIDE_3_LANGUAGE = PASS
+
+SLIDE_10_NEXT_STEPS = PASS
+
+NO_UNSUPPORTED_SECURITY_CLAIMS = PASS
+
+UNICODE = PASS
+
+TYPECHECK = PASS
+
+LINT = PASS
+
+TESTS = PASS
+
+QUALITY = PASS
+
+========================================================
+VISUAL QA
+========================================================
+
+Render/inspect:
+
+1. Main dashboard
+2. Header
+3. Management Quick Summary button
+4. Management Quick Summary opening view
+5. Slide 1
+6. Slide 3
+7. Slide 4
+8. Slide 9
+9. Slide 10
+
+Verify:
+
+• button is immediately discoverable
+• button doesn't look like a pending/error state
+• no "Executive Brief — Pending" ambiguity remains
+• 10-slide presentation opens correctly
+• no layout changes to Modules 1–4
+• no logo problems
+• no mojibake
+• no text overflow
+
+========================================================
+FINAL REPORT
+========================================================
+
+Return:
+
+MANAGEMENT_QUICK_SUMMARY_BUTTON: PASS/FAIL
+
+DASHBOARD_VISIBILITY: PASS/FAIL
+
+EXECUTIVE_BRIEF_LABELING: PASS/FAIL
+
+WEB_ROUTE: PASS/FAIL
+
+PDF_DOWNLOAD: PASS/FAIL
+
+PPTX_DOWNLOAD: PASS/FAIL
+
+10_SLIDE_CONTENT_FIXES: PASS/FAIL
+
+30_SLIDE_MASTER_UNCHANGED: PASS/FAIL
+
+FINANCIAL_PARITY: PASS/FAIL
+
+SUBSCRIPTION_SIMULATOR_HIDDEN_FROM_CUSTOMER: PASS/FAIL
+
+UNICODE: PASS/FAIL
+
+TYPECHECK: PASS/FAIL
+
+LINT: PASS/FAIL
+
+TESTS: PASS/FAIL
+
+QUALITY: PASS/FAIL
+
+OPEN_ISSUES: list
+
+FINAL STATUS:
+
+MANAGEMENT_QUICK_SUMMARY:
+PASS
+
+Do not begin the Bronze/Silver/Gold implementation in this prompt.
+
+STOP after this prompt is complete.
+
+## Prompt 273
+continue
+
+---
+
+
+## Prompt 274
+PROMPT 287A � FINAL UI ACCEPTANCE CHECK ONLY
+
+Do NOT modify application code unless a clearly identified Prompt 287 requirement is actually missing.
+
+Do NOT redesign anything.
+
+We need to verify the actual rendered application after Prompt 287.
+
+---
+
+
+## Prompt 275
+<USER_REQUEST>
+PROMPT 288 — SUBSCRIPTION, ENTITLEMENT & CONTROLLED ACTIVATION ARCHITECTURE
+aiCEV by Procucev
+
+IMPORTANT:
+This is a CORE PRODUCT ARCHITECTURE implementation.
+
+The existing Modules 1–4, Management Quick Summary, 10-slide Executive Opportunity Brief, and 30-slide Boardroom & Evidence Edition are working and must NOT be functionally redesigned.
+
+Add a new Subscription + Entitlement + Controlled Activation layer ABOVE the existing functionality.
+
+DO NOT rebuild Modules 1–4.
+
+DO NOT change their calculations.
+
+DO NOT change certified financial values.
+
+DO NOT change the PCBI methodology.
+
+DO NOT introduce online checkout.
+
+DO NOT expose subscription tier simulation to customers.
+
+The commercial model is OFFLINE.
+
+Procucev discusses the commercial proposal with the customer, issues quotation/invoice, receives payment offline, and then an authorized Procucev Admin provisions the customer's subscription inside the platform.
+
+========================================================
+1. PRODUCT MODEL
+========================================================
+
+Implement three customer tiers:
+
+BRONZE
+DISCOVER
+
+SILVER
+ASSESS
+
+GOLD
+OPTIMIZE
+
+Customer-facing positioning:
+
+BRONZE:
+"Discover whether meaningful procurement opportunities exist."
+
+SILVER:
+"Understand the size and concentration of the opportunity."
+
+GOLD:
+"Access the full procurement intelligence and execution platform."
+
+Do NOT use language suggesting that Bronze/Silver/Gold are automatically purchasable online.
+
+========================================================
+2. ARCHITECTURE
+========================================================
+
+Implement:
+
+Authentication
+    ↓
+Tenant / Customer
+    ↓
+Subscription
+    ↓
+Entitlement Engine
+    ↓
+Feature Access
+    ↓
+Module / API / Data Scope
+
+The subscription engine must be independent from Modules 1–4.
+
+Architecture:
+
+CUSTOMER
+   ↓
+TENANT
+   ↓
+USER
+   ↓
+SUBSCRIPTION
+   ↓
+ENTITLEMENTS
+   ↓
+MODULES / REPORTS / EXPORTS / APIs
+
+Do not implement access by simply hiding frontend buttons.
+
+Backend authorization MUST enforce entitlements.
+
+========================================================
+3. SUBSCRIPTION DATA MODEL
+========================================================
+
+Create or extend a centralized subscription model.
+
+At minimum support:
+
+customer / tenant ID
+subscription tier
+subscription status
+subscription start date
+subscription end date
+activation status
+activation timestamp
+provisioned by admin
+approved by admin
+commercial reference
+quotation reference
+invoice reference
+payment reference
+payment received date
+activation code status
+renewal status
+suspension reason
+cancellation reason
+created timestamp
+updated timestamp
+
+DO NOT store sensitive activation codes in plaintext.
+
+Store a secure hash.
+
+========================================================
+4. SUBSCRIPTION TIERS
+========================================================
+
+Tier values:
+
+BRONZE
+SILVER
+GOLD
+
+Do NOT hard-code feature checks throughout the application such as:
+
+if tier === GOLD
+
+Instead create a centralized entitlement service.
+
+Example conceptual model:
+
+EntitlementService.can(
+    tenantId,
+    feature
+)
+
+The exact implementation may follow the existing application architecture.
+
+========================================================
+5. SUBSCRIPTION STATES
+========================================================
+
+Support:
+
+FREE
+PENDING_ACTIVATION
+ACTIVE
+SUSPENDED
+EXPIRED
+CANCELLED
+
+Rules:
+
+BRONZE + FREE
+→ normal free customer
+
+SILVER + PENDING_ACTIVATION
+→ payment/provisioning completed but customer has not activated
+
+GOLD + PENDING_ACTIVATION
+→ payment/provisioning completed but customer has not activated
+
+SILVER + ACTIVE
+→ Silver access
+
+GOLD + ACTIVE
+→ Gold access
+
+SUSPENDED
+→ paid features locked
+
+EXPIRED
+→ paid features locked
+
+CANCELLED
+→ paid features locked
+
+Do not delete historical subscription records when status changes.
+
+Maintain an audit/history record.
+
+========================================================
+6. BRONZE — DISCOVER
+========================================================
+
+BRONZE is free.
+
+Customer registers normally.
+
+Default entitlement:
+
+BRONZE / FREE
+
+Customer can:
+
+• Register
+• Login
+• Manage profile
+• Upload procurement data
+• Use Module 1 ingestion
+• Run Module 1 analysis
+• View basic spend summary
+• View transaction count
+• View supplier count
+• View category/material-group count
+• View plant count where available
+• View basic spend distribution
+• View a high-level savings opportunity INDICATOR
+
+IMPORTANT:
+
+Bronze should provide real value.
+
+Do NOT show:
+
+• detailed supplier opportunity
+• supplier-level savings
+• SKU/item-level savings
+• detailed benchmark intelligence
+• detailed PCBI
+• detailed sourcing recommendations
+• detailed savings waterfall
+• full Module 2
+• full Module 3
+• full Module 4
+• detailed Executive Opportunity Brief
+
+The Bronze savings presentation should say something similar to:
+
+"Potential procurement improvement opportunities identified."
+
+or
+
+"Opportunity areas identified across X categories."
+
+Do NOT reveal the complete detailed savings value if Silver/Gold is intended to unlock it.
+
+========================================================
+7. SILVER — ASSESS
+========================================================
+
+Silver is a PAID tier.
+
+Commercial transaction happens OFFLINE.
+
+Silver customers receive:
+
+Everything in Bronze
+
+PLUS:
+
+• Total savings opportunity
+• Broad savings by category
+• Broad savings by sourcing lever
+• Executive opportunity summary
+• Management Quick Summary
+• High-level Module 2 findings
+• High-level strategic sourcing opportunities
+• High-level vendor consolidation opportunity
+• High-level e-auction opportunity
+• High-level benchmark indication
+• High-level Module 4 summary
+
+Do NOT expose full Gold detail.
+
+Silver should NOT expose:
+
+• detailed supplier-level savings
+• detailed SKU/item-level opportunities
+• detailed benchmark source data
+• detailed PCBI data
+• detailed supplier rankings
+• detailed sourcing action plans
+• full Module 2 execution
+• full Module 3
+• full Module 4
+• detailed savings ledger
+• detailed action tracker
+
+Position:
+
+SILVER = "Understand where the opportunity is."
+
+========================================================
+8. GOLD — OPTIMIZE
+========================================================
+
+Gold is the FULL subscription.
+
+Gold receives:
+
+Everything in Silver
+
+PLUS full access to:
+
+MODULE 1
+Full spend intelligence
+
+MODULE 2
+Full strategic sourcing intelligence
+
+MODULE 3
+Full PCBI / benchmark / market intelligence
+
+MODULE 4
+Full savings engine / opportunity / realization
+
+Also:
+
+• Supplier-level analysis
+• Category-level analysis
+• Item-level opportunity where supported
+• Price dispersion
+• Benchmark comparison
+• Strategic sourcing
+• Vendor consolidation
+• PO consolidation
+• E-auction opportunities
+• Savings waterfall
+• Savings realization
+• Action tracker
+• Detailed reports
+• Detailed exports
+• Full Management Quick Summary
+• Full Boardroom & Evidence report where permitted
+• Gold-level PDF/PPTX exports
+
+Position:
+
+GOLD = "Optimize and execute."
+
+========================================================
+9. ENTITLEMENT MATRIX
+========================================================
+
+Create a centralized matrix.
+
+Feature                         Bronze    Silver    Gold
+
+registration                    YES       YES       YES
+login                           YES       YES       YES
+data upload                     YES       YES       YES
+Module 1 summary                YES       YES       YES
+Module 1 detailed               NO        YES       YES
+
+supplier summary                YES       YES       YES
+supplier opportunity            NO        NO        YES
+item-level opportunity          NO        NO        YES
+category summary                YES       YES       YES
+category opportunity            NO        YES       YES
+plant summary                   YES       YES       YES
+price dispersion                NO        SUMMARY   FULL
+
+total savings                   NO        YES       YES
+savings indicator               YES       YES       YES
+broad savings by category       NO        YES       YES
+detailed savings by category    NO        NO        YES
+savings by supplier             NO        NO        YES
+
+Module 2                       NO        SUMMARY   FULL
+vendor consolidation            NO        SUMMARY   FULL
+PO consolidation                NO        SUMMARY   FULL
+strategic sourcing              NO        SUMMARY   FULL
+e-auction                       NO        SUMMARY   FULL
+
+Module 3                       NO        SUMMARY   FULL
+PCBI summary                    NO        SUMMARY   FULL
+PCBI detail                     NO        NO        YES
+benchmark summary               NO        YES       YES
+benchmark source detail         NO        NO        YES
+
+Module 4                       NO        SUMMARY   FULL
+savings waterfall               NO        SUMMARY   FULL
+savings realization             NO        SUMMARY   FULL
+action tracker                  NO        NO        YES
+
+Management Quick Summary       NO        YES       YES
+Boardroom & Evidence            NO        LIMITED   FULL
+
+PDF export                      LIMITED   SUMMARY   FULL
+PPTX export                     NO        SUMMARY   FULL
+detailed data export             NO        NO        YES
+
+IMPORTANT:
+This matrix is the single source of truth.
+
+Do not duplicate tier checks throughout individual modules.
+
+========================================================
+10. MANAGEMENT QUICK SUMMARY ENTITLEMENT
+========================================================
+
+The existing Management Quick Summary button remains visible.
+
+But its content must respect subscription entitlement.
+
+BRONZE:
+
+Button may show:
+
+"Management Quick Summary"
+
+but opening it should show a controlled Bronze snapshot / teaser.
+
+Example:
+
+"Management Quick Summary is available with Silver."
+
+Show only:
+
+• spend analyzed
+• supplier count
+• category count
+• basic opportunity indicator
+
+Provide:
+
+[ Explore Silver ]
+
+Do NOT generate the full 10-slide executive brief.
+
+SILVER:
+
+Management Quick Summary:
+10-slide Executive Opportunity Brief with Silver-approved content.
+
+GOLD:
+
+Full 10-slide Executive Opportunity Brief.
+
+========================================================
+11. BOARDROOM & EVIDENCE REPORT
+========================================================
+
+30-slide Boardroom & Evidence remains a controlled report.
+
+BRONZE:
+LOCKED
+
+SILVER:
+Summary / controlled version only
+
+GOLD:
+Full Boardroom & Evidence access
+
+Do NOT create a separate duplicate implementation.
+
+Use existing report generation and presentation contracts.
+
+========================================================
+12. CUSTOMER UI — CURRENT PLAN
+========================================================
+
+Replace any customer-facing concept of:
+
+"Simulate Subscription Tier"
+
+with:
+
+YOUR PROCUREMENT INTELLIGENCE PLAN
+
+Example:
+
+BRONZE
+DISCOVER
+
+Free Plan
+
+Current access
+
+[ Explore Silver ]
+
+For Silver:
+
+SILVER
+ASSESS
+
+Active
+
+[ Explore Gold ]
+
+For Gold:
+
+GOLD
+OPTIMIZE
+
+Active
+
+Do not show pricing unless explicitly configured.
+
+Do not show an online payment button.
+
+========================================================
+13. COMMERCIAL ENQUIRY
+========================================================
+
+Customer upgrade buttons should NOT activate subscriptions.
+
+Use:
+
+[ Talk to Procucev ]
+
+or:
+
+[ Request Upgrade ]
+
+The request may create a commercial enquiry/lead record if that functionality already exists.
+
+Do not build payment processing.
+
+========================================================
+14. ADMIN SUBSCRIPTION MANAGEMENT
+========================================================
+
+Create:
+
+ADMIN → SUBSCRIPTION MANAGEMENT
+
+Only ADMIN users can access it.
+
+Dashboard should show:
+
+Customer
+Tenant
+Current Tier
+Status
+Commercial Status
+Payment Status
+Start Date
+End Date
+Activation Status
+Last Updated
+
+Actions:
+
+Provision Subscription
+Upgrade
+Downgrade
+Renew
+Suspend
+Reactivate
+Cancel
+Resend Activation
+View Audit Trail
+
+DO NOT permanently delete subscription history.
+
+========================================================
+15. ADMIN PROVISIONING WORKFLOW
+========================================================
+
+Workflow:
+
+ADMIN
+↓
+Select Customer
+↓
+Select SILVER or GOLD
+↓
+Enter commercial details
+↓
+Confirm payment received
+↓
+Click "Provision Subscription"
+↓
+SYSTEM REQUIRES ADMIN OTP
+↓
+OTP sent to ADMIN REGISTERED MOBILE
+↓
+ADMIN ENTERS OTP
+↓
+SYSTEM VERIFIES OTP
+↓
+SUBSCRIPTION CREATED
+↓
+ACTIVATION CODE GENERATED
+↓
+ACTIVATION CODE HASH STORED
+↓
+CUSTOMER EMAIL SENT
+↓
+CUSTOMER STATUS = PENDING_ACTIVATION
+
+DO NOT activate the customer directly merely because admin clicked provision.
+
+========================================================
+16. ADMIN OTP SECURITY
+========================================================
+
+OTP requirements:
+
+• cryptographically secure random OTP
+• short expiry
+• one-time use
+• maximum verification attempts
+• rate limiting
+• audit event
+• never store plaintext OTP longer than necessary
+• do not expose OTP through frontend state
+• invalidate previous OTP when new OTP is generated
+
+Suggested:
+
+6-digit OTP
+
+Expiry:
+10 minutes
+
+Maximum attempts:
+5
+
+After excessive failures:
+temporarily lock the provisioning action
+
+Do not hard-code the admin phone number.
+
+Use the verified Admin account's registered mobile.
+
+========================================================
+17. ACTIVATION CODE
+========================================================
+
+After successful Admin OTP:
+
+Generate a cryptographically secure activation code.
+
+Format may resemble:
+
+PCV-XXXX-XXXX-XXXX
+
+Do not use predictable sequential IDs.
+
+Store only secure hash.
+
+Email the code to the customer's registered email.
+
+Customer status:
+
+PENDING_ACTIVATION
+
+Customer cannot access paid entitlements yet.
+
+========================================================
+18. CUSTOMER ACTIVATION
+========================================================
+
+When customer logs in:
+
+If:
+
+subscription.status = PENDING_ACTIVATION
+
+show:
+
+SUBSCRIPTION ACTIVATION REQUIRED
+
+"Your Procucev subscription has been provisioned."
+
+Input:
+
+Activation Code
+
+[ Activate Subscription ]
+
+The customer must enter the emailed code.
+
+On successful verification:
+
+• mark activation code used
+• activate subscription
+• record activation timestamp
+• record activating user
+• invalidate code permanently
+• unlock entitlement
+• create audit event
+
+========================================================
+19. ACTIVATION CODE SECURITY
+========================================================
+
+Rules:
+
+• one-time use
+• hashed at rest
+• expiry
+• rate limited
+• maximum attempts
+• temporary lockout
+• no plaintext database storage
+• never expose through API response
+• never show in admin list
+• never show in customer profile after activation
+
+Recommended expiry:
+
+72 hours
+
+Maximum attempts:
+
+5
+
+After maximum failures:
+
+activation locked
+
+Admin can issue a new activation code.
+
+Issuing a new code invalidates the previous code.
+
+========================================================
+20. CUSTOMER EMAIL
+========================================================
+
+Create a professional automated email.
+
+Subject:
+
+"Your Procucev Subscription Is Ready for Activation"
+
+Body should contain:
+
+Customer name
+Subscription tier
+Activation instructions
+Activation code
+Activation expiry
+Login URL
+Procucev support/contact
+
+Do NOT include sensitive information beyond what is necessary.
+
+Do not expose internal admin information.
+
+========================================================
+21. RENEWAL
+========================================================
+
+Support subscription end date.
+
+Before expiry:
+
+show customer:
+
+"Subscription renewal required"
+
+Admin can renew offline.
+
+Renewal follows the same commercial authorization process.
+
+Do NOT automatically charge the customer.
+
+========================================================
+22. SUSPENSION / CANCELLATION
+========================================================
+
+Admin can:
+
+SUSPEND
+
+CANCEL
+
+REACTIVATE
+
+Rules:
+
+Suspended/expired/cancelled customers lose paid entitlements.
+
+Historical reports/data remain according to existing retention policy.
+
+Do not delete customer data simply because subscription expires.
+
+========================================================
+23. AUDIT TRAIL
+========================================================
+
+Create immutable audit events for:
+
+subscription created
+subscription provisioned
+OTP requested
+OTP verified
+OTP failed
+activation code generated
+activation email sent
+activation attempted
+activation succeeded
+activation failed
+subscription activated
+subscription upgraded
+subscription downgraded
+subscription renewed
+subscription suspended
+subscription reactivated
+subscription cancelled
+subscription expired
+
+Each event should capture where appropriate:
+
+timestamp
+actor
+actor role
+tenant
+customer
+action
+result
+IP / request metadata where existing audit architecture supports it
+
+Never log:
+
+plaintext OTP
+plaintext activation code
+
+========================================================
+24. DATA LEAKAGE PROTECTION
+========================================================
+
+This is CRITICAL.
+
+Do not rely on frontend visibility.
+
+Every protected API must enforce entitlement.
+
+Examples:
+
+Bronze calling Gold savings endpoint:
+→ 403
+
+Silver calling Gold supplier opportunity endpoint:
+→ 403
+
+Bronze requesting PCBI detail:
+→ 403
+
+Silver requesting detailed benchmark source:
+→ 403
+
+Non-Gold requesting detailed savings export:
+→ 403
+
+Customer from Tenant A requesting Tenant B data:
+→ 403
+
+Unauthorized user requesting another customer's report:
+→ 403
+
+Do not return hidden data and then filter it in frontend.
+
+Return only entitled fields from the backend.
+
+========================================================
+25. TENANT ISOLATION
+========================================================
+
+Subscription must always be associated with the tenant/customer.
+
+Never authorize solely from:
+
+user-selected tier
+frontend state
+URL parameter
+local storage
+cookie value controlled by frontend
+query string
+
+Backend must derive effective entitlement from authenticated user + tenant + subscription.
+
+========================================================
+26. ADMIN SECURITY
+========================================================
+
+Only authorized ADMIN users can:
+
+provision
+upgrade
+downgrade
+suspend
+reactivate
+cancel
+renew
+resend activation
+view commercial subscription records
+
+Do not expose these actions to normal customer users.
+
+If multiple admin roles exist, use the existing RBAC architecture.
+
+Do not create a second competing role system.
+
+========================================================
+27. CUSTOMER CREATION AFTER OFFLINE PAYMENT
+========================================================
+
+Support both workflows.
+
+WORKFLOW A:
+
+Customer already registered as Bronze.
+
+Admin:
+Select existing customer
+→ verify payment
+→ provision Silver/Gold
+→ OTP
+→ activation code
+→ email
+→ customer activates
+
+WORKFLOW B:
+
+Customer does NOT yet exist.
+
+Admin:
+Create customer
+→ create tenant
+→ create authorized customer user
+→ enter commercial details
+→ verify payment
+→ provision Silver/Gold
+→ Admin OTP
+→ activation email
+→ customer activates
+
+Avoid duplicate customer/tenant creation.
+
+Check email/domain/customer identity before creating a new tenant.
+
+========================================================
+28. COMMERCIAL RECORD
+========================================================
+
+Admin provisioning form should capture:
+
+Customer
+Subscription tier
+Quotation number
+Invoice number
+Payment reference
+Payment received date
+Subscription start date
+Subscription end date
+Commercial notes
+
+Quotation/invoice/payment reference should be optional only where existing business process permits.
+
+Do not build accounting functionality.
+
+This is a commercial authorization record, not an ERP.
+
+========================================================
+29. SUBSCRIPTION HISTORY
+========================================================
+
+Maintain a complete history.
+
+Example:
+
+BRONZE / FREE
+↓
+SILVER / PENDING_ACTIVATION
+↓
+SILVER / ACTIVE
+↓
+GOLD / PENDING_ACTIVATION
+↓
+GOLD / ACTIVE
+↓
+GOLD / EXPIRED
+↓
+GOLD / RENEWED
+
+Do not overwrite history.
+
+========================================================
+30. FEATURE LOCK UX
+========================================================
+
+When a customer clicks a locked feature:
+
+DO NOT show a technical error.
+
+Show a professional upgrade message.
+
+Bronze:
+
+"Detailed procurement intelligence is available with Silver."
+
+[ Explore Silver ]
+
+Silver:
+
+"Detailed execution intelligence is available with Gold."
+
+[ Explore Gold ]
+
+Do not reveal restricted underlying values in the locked preview.
+
+========================================================
+31. MODULE-SPECIFIC UX
+========================================================
+
+Do NOT remove existing modules from the application.
+
+Instead:
+
+Bronze:
+Module 1 active.
+Modules 2–4 show locked state with useful explanation.
+
+Silver:
+Module 1 full.
+Module 2/3/4 show summary/high-level access where appropriate.
+Detailed areas show Gold upgrade prompt.
+
+Gold:
+All modules fully active.
+
+The exact existing Module 1–4 calculations and components must remain intact.
+
+Use entitlement wrappers/guards around existing functionality.
+
+========================================================
+32. EXPORT SECURITY
+========================================================
+
+Exports must be entitlement protected.
+
+Bronze:
+No detailed PDF/PPTX.
+
+Silver:
+Silver-approved Management Quick Summary and approved summary exports.
+
+Gold:
+Full permitted PDF/PPTX reports.
+
+Do not expose a Gold export endpoint to Silver and rely on UI hiding.
+
+Backend must enforce.
+
+========================================================
+33. API SECURITY TESTS
+========================================================
+
+Create automated tests for:
+
+Bronze → Gold endpoint = 403
+Silver → Gold endpoint = 403
+Gold → Gold endpoint = 200
+Bronze → Silver summary = according to entitlement matrix
+Silver → Silver summary = 200
+Tenant A → Tenant B = 403
+Unauthenticated → protected endpoint = 401
+Non-admin → admin provisioning = 403
+Admin without OTP → provisioning incomplete
+Wrong OTP → provisioning rejected
+Expired OTP → provisioning rejected
+Used OTP → provisioning rejected
+Wrong activation code → rejected
+Expired activation code → rejected
+Used activation code → rejected
+Valid activation code → activation succeeds
+New activation code → old code invalid
+Expired subscription → paid entitlement denied
+Suspended subscription → paid entitlement denied
+Cancelled subscription → paid entitlement denied
+
+========================================================
+34. FRONTEND TESTS
+========================================================
+
+Test:
+
+Bronze UI
+Silver UI
+Gold UI
+Locked module behavior
+Upgrade CTA
+Management Quick Summary access
+Boardroom & Evidence access
+Admin subscription management
+Provisioning modal
+OTP modal
+Activation screen
+Subscription status display
+
+Do not test only button visibility.
+
+Test actual access behavior.
+
+========================================================
+35. ADMIN UX
+========================================================
+
+Create a professional Admin Subscription Management interface.
+
+Recommended structure:
+
+SUBSCRIPTION MANAGEMENT
+
+[ Search customer ]
+
+Filters:
+
+All
+Bronze
+Silver
+Gold
+Pending Activation
+Active
+Expired
+Suspended
+Cancelled
+
+Table:
+
+Customer
+Tier
+Status
+Payment
+Start
+Expiry
+Activation
+Actions
+
+Use existing admin design system.
+
+Do not create a visually inconsistent admin module.
+
+========================================================
+36. CUSTOMER PROFILE
+========================================================
+
+Customer profile should display:
+
+CURRENT PLAN
+
+Bronze / Silver / Gold
+
+STATUS
+
+Free / Pending Activation / Active / Suspended / Expired
+
+Subscription start
+Subscription end
+
+If pending:
+
+"Activation required"
+
+If active:
+
+"Your subscription is active."
+
+Do not expose internal commercial references unless appropriate.
+
+========================================================
+37. NO ONLINE PAYMENT
+========================================================
+
+Absolutely do NOT implement:
+
+Stripe
+Razorpay
+PayPal
+UPI checkout
+Credit card checkout
+online subscription purchase
+automatic recurring billing
+
+unless separately requested in the future.
+
+Current commercial model:
+
+OFFLINE QUOTATION
+→ OFFLINE PAYMENT
+→ PROCUCEV ADMIN PROVISIONING
+→ ADMIN OTP
+→ CUSTOMER ACTIVATION
+
+========================================================
+38. FUTURE EXTENSIBILITY
+========================================================
+
+Design the subscription engine so future plans can be added without rewriting modules.
+
+Potential future tiers:
+
+ENTERPRISE
+CUSTOM
+TRIAL
+PARTNER
+
+Do not implement these now.
+
+Use configuration/enum architecture rather than scattered conditionals.
+
+========================================================
+39. EXISTING FUNCTIONALITY PROTECTION
+========================================================
+
+Before implementation, create a baseline of:
+
+Module 1
+Module 2
+Module 3
+Module 4
+Management Quick Summary
+Boardroom & Evidence
+PDF export
+PPTX export
+
+After implementation verify:
+
+No regression.
+
+The subscription layer must wrap existing functionality, not rewrite it.
+
+========================================================
+40. MIGRATION / DEFAULT BEHAVIOR
+========================================================
+
+Existing customers/users without a subscription record should receive:
+
+BRONZE
+FREE
+
+unless an existing valid subscription/role configuration already exists.
+
+Do NOT accidentally downgrade an existing paid/test/admin account.
+
+Create a safe migration.
+
+========================================================
+41. SECRETS / CONFIGURATION
+========================================================
+
+OTP/email configuration must use environment configuration.
+
+Do NOT hard-code:
+
+OTP provider credentials
+email credentials
+admin mobile
+activation secrets
+encryption secrets
+
+Use existing application's email infrastructure if available.
+
+If email infrastructure is not configured, create a clean provider abstraction and development-safe fallback.
+
+Do not expose secrets in source code.
+
+========================================================
+42. SECURITY LOGGING
+========================================================
+
+Never log:
+
+OTP values
+activation codes
+passwords
+session tokens
+API keys
+commercial secrets
+
+Log only:
+
+event
+actor
+tenant
+timestamp
+success/failure
+safe metadata
+
+========================================================
+43. IMPLEMENTATION PRINCIPLE
+========================================================
+
+Prefer:
+
+CENTRALIZED ENTITLEMENT SERVICE
+
+over:
+
+Scattered:
+
+if (tier === "GOLD")
+
+Do not create dozens of independent tier checks.
+
+Use named feature permissions such as:
+
+SPEND_SUMMARY
+SPEND_DETAIL
+TOTAL_SAVINGS
+CATEGORY_SAVINGS
+SUPPLIER_OPPORTUNITY
+MODULE_2_SUMMARY
+MODULE_2_FULL
+MODULE_3_SUMMARY
+MODULE_3_FULL
+MODULE_4_SUMMARY
+MODULE_4_FULL
+PCBI_DETAIL
+MANAGEMENT_QUICK_SUMMARY
+BOARDROOM_EVIDENCE
+DETAILED_EXPORT
+ADMIN_SUBSCRIPTION_MANAGEMENT
+
+Then map:
+
+BRONZE → features
+SILVER → features
+GOLD → features
+
+This makes future plan changes safe.
+
+========================================================
+44. IMPORTANT — DO NOT DISTURB CURRENT CERTIFIED DATA
+========================================================
+
+Do NOT change:
+
+₹78.72 Cr
+₹93.60 Cr
+₹14.88 Cr
+₹173.12 Cr
+₹62.80 Cr
+₹16.72 Cr
+₹47.90 Cr
+₹68.00 Cr
+₹420 Cr spend de-risked
+
+Do not alter:
+
+974 suppliers
+256 material groups
+26 plants
+31,671 transactions
+824 low-value POs
+20% PO effort reduction
+₹0 direct process saving until validated
+
+Subscription logic must have ZERO effect on analytical calculations.
+
+========================================================
+45. QA / ACCEPTANCE
+========================================================
+
+Run:
+
+typecheck
+lint
+unit tests
+integration tests
+subscription tests
+authorization tests
+tenant isolation tests
+frontend tests
+quality:fast
+full quality if practical
+
+Test actual API access, not only UI visibility.
+
+========================================================
+46. VISUAL QA
+========================================================
+
+Inspect:
+
+Customer dashboard
+Management Quick Summary
+Module 1 Bronze
+Module 1 Silver
+Module 1 Gold
+Module 2 Bronze/Silver/Gold
+Module 3 Bronze/Silver/Gold
+Module 4 Bronze/Silver/Gold
+Locked feature state
+Customer plan display
+Upgrade CTA
+Admin Subscription Management
+Provisioning workflow
+OTP workflow
+Customer activation workflow
+
+Check:
+
+No clipping
+No broken layouts
+No duplicate controls
+No confusing subscription labels
+No customer-facing "Simulate Subscription Tier"
+No online payment buttons
+No exposed activation codes
+No exposed OTPs
+
+========================================================
+47. ACCEPTANCE REPORT
+========================================================
+
+Return:
+
+SUBSCRIPTION_ARCHITECTURE: PASS/FAIL
+
+ENTITLEMENT_ENGINE: PASS/FAIL
+
+BRONZE: PASS/FAIL
+
+SILVER: PASS/FAIL
+
+GOLD: PASS/FAIL
+
+ADMIN_PROVISIONING: PASS/FAIL
+
+ADMIN_OTP: PASS/FAIL
+
+CUSTOMER_ACTIVATION_CODE: PASS/FAIL
+
+EMAIL_ACTIVATION: PASS/FAIL
+
+RENEWAL: PASS/FAIL
+
+SUSPENSION: PASS/FAIL
+
+CANCELLATION: PASS/FAIL
+
+AUDIT_TRAIL: PASS/FAIL
+
+TENANT_ISOLATION: PASS/FAIL
+
+API_AUTHORIZATION: PASS/FAIL
+
+EXPORT_PROTECTION: PASS/FAIL
+
+MODULE_1_REGRESSION: PASS/FAIL
+
+MODULE_2_REGRESSION: PASS/FAIL
+
+MODULE_3_REGRESSION: PASS/FAIL
+
+MODULE_4_REGRESSION: PASS/FAIL
+
+MANAGEMENT_QUICK_SUMMARY: PASS/FAIL
+
+BOARDROOM_EVIDENCE: PASS/FAIL
+
+CUSTOMER_UI: PASS/FAIL
+
+ADMIN_UI: PASS/FAIL
+
+NO_ONLINE_PAYMENT: PASS/FAIL
+
+NO_CUSTOMER_TIER_SIMULATOR: PASS/FAIL
+
+TYPECHECK: PASS/FAIL
+
+LINT: PASS/FAIL
+
+TESTS: PASS/FAIL
+
+QUALITY: PASS/FAIL
+
+OPEN_ISSUES: list
+
+SECURITY_ISSUES: list
+
+FINAL STATUS:
+
+SUBSCRIPTION_PLATFORM:
+PASS
+
+ONLY report PASS after actual backend authorization tests and UI workflow tests have passed.
+
+Do not claim PASS merely because frontend buttons are hidden.
+
+Do not modify certified procurement calculations.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-02T16:34:15+05:30.
+
+The user's current state is as follows:
+Active Document: c:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs\prompts.md (LANGUAGE_MARKDOWN)
+Cursor is on line: 65881
+</ADDITIONAL_METADATA>
+
+---
+
+
+
+## Prompt 289
+
+PROMPT 289 — aiCEV SUBSCRIPTION SECURITY & ENTITLEMENT HARDENING
+
+OBJECTIVE
+
+Harden and production-validate the Prompt 288 subscription architecture for aiCEV by Procucev.
+
+DO NOT redesign the application.
+DO NOT rewrite Modules 1–4.
+DO NOT modify certified financial calculations.
+DO NOT modify the certified presentation data contract.
+DO NOT introduce online payments.
+DO NOT change the existing Management Quick Summary / Boardroom & Evidence report architecture except where entitlement enforcement requires it.
+
+This is a SECURITY, AUTHORIZATION, ENTITLEMENT, TENANT-ISOLATION AND REGRESSION-HARDENING task.
+
+The final objective is to prove that Bronze/Silver/Gold subscription controls cannot be bypassed through frontend manipulation, query parameters, request bodies, forged tier values, tenant IDs, direct API calls, export endpoints, or reused OTP/activation credentials.
+
+==================================================
+1. NON-NEGOTIABLE ARCHITECTURAL RULES
+==================================================
+
+A. SERVER-SIDE AUTHORIZATION IS THE SOURCE OF TRUTH
+
+Never trust any of the following values supplied by the frontend:
+
+- tenantId
+- tier
+- subscription status
+- role
+- entitlement
+- feature access
+- admin flag
+- activation state
+
+Authorization must derive from the authenticated server-side identity and the server-side subscription record.
+
+If a request contains:
+
+tenantId=TENANT-B
+
+but the authenticated user belongs to TENANT-A,
+
+the backend MUST reject the request.
+
+Do not allow the client to select its own authorization context.
+
+B. FRONTEND HIDING IS NOT SECURITY
+
+A feature being hidden from the UI is insufficient.
+
+Every protected API endpoint must independently enforce:
+
+1. authentication
+2. tenant ownership
+3. subscription state
+4. required entitlement
+5. administrative authorization where applicable
+
+C. PRESERVE CERTIFIED FINANCIAL DATA
+
+The following values are certified and MUST remain unchanged:
+
+₹78.72 Cr Direct Savings Opportunity
+₹93.60 Cr Net Defensible Pipeline
+₹14.88 Cr Strategic Market Value
+₹173.12 Cr Gross Identified Opportunity
+₹62.80 Cr Multi-Lever Overlap Deductions
+₹16.72 Cr Exclusions
+₹47.90 Cr Validated Savings
+₹68.00 Cr Realized Savings
+₹420 Cr Spend De-risked
+974 suppliers
+256 material groups
+26 plants
+31,671 transactions
+824 low-value POs
+
+Never add classifications together unless explicitly supported.
+
+D. NO ONLINE PAYMENT
+
+Confirm there is no:
+
+- Stripe
+- Razorpay
+- PayPal
+- credit-card checkout
+- recurring online billing
+- UPI checkout
+- customer self-service payment
+
+Commercial processing remains offline through Procucev.
+
+==================================================
+2. ADMIN OTP — CORRECT THE DELIVERY CHANNEL
+==================================================
+
+Prompt 288 currently reports OTP delivery to admin email.
+
+Change this so the PRIMARY ADMIN PROVISIONING OTP is sent to the authenticated administrator's REGISTERED MOBILE NUMBER.
+
+Required flow:
+
+Admin logs in
+→ Admin selects customer
+→ Admin selects Silver/Gold
+→ Admin enters commercial details
+→ Admin requests OTP
+→ OTP sent to registered admin mobile
+→ Admin enters OTP
+→ backend validates OTP
+→ provisioning allowed
+
+Email may be used as a supplementary notification, but MUST NOT replace registered-mobile OTP.
+
+Security requirements:
+
+- 6 digit numeric OTP
+- cryptographically secure generation
+- 10-minute expiry
+- maximum 5 verification attempts
+- requesting a new OTP invalidates the previous OTP
+- OTP cannot be reused after successful verification
+- OTP must never be logged in plaintext
+- OTP must never be returned through an API response
+- OTP must never be stored in plaintext if the existing architecture supports secure hashing
+- rate-limit OTP generation and verification
+- use authenticated admin identity to determine destination mobile
+- do not accept an arbitrary mobile number from the frontend
+
+If the current user model does not yet contain a verified admin mobile number, do NOT invent one.
+
+Instead:
+- identify the missing dependency
+- fail securely
+- report it as a production configuration requirement
+
+==================================================
+3. TENANT ISOLATION — HARDEN SERVER-SIDE
+==================================================
+
+Audit every subscription endpoint.
+
+Especially:
+
+/api/subscription/current
+/api/subscription/plan
+/api/subscription/admin/list
+/api/subscription/provision
+/api/subscription/activate
+/api/subscription/status
+/api/subscription/renew
+/api/subscription/suspend
+/api/subscription/cancel
+/api/subscription/audit
+/api/subscription/tier-features
+
+Authenticated customer identity must determine tenant context.
+
+For customer endpoints:
+
+DO NOT trust:
+
+?tenantId=
+body.tenantId
+header.tenantId
+frontend selected tenant
+frontend selected subscription ID
+
+unless the authenticated identity is explicitly authorized for that tenant.
+
+Preferred model:
+
+authenticatedUser.tenantId
+        ↓
+server-side subscription lookup
+        ↓
+entitlement evaluation
+
+Add automated tests for:
+
+TEST 1
+Customer A authenticates.
+Customer A requests Customer A subscription.
+Expected: SUCCESS.
+
+TEST 2
+Customer A authenticates.
+Customer A requests Customer B subscription.
+Expected: HTTP 403 or equivalent secure denial.
+
+TEST 3
+Customer A changes tenantId in query string to Customer B.
+Expected: HTTP 403.
+
+TEST 4
+Customer A changes tenantId in POST body to Customer B.
+Expected: HTTP 403.
+
+TEST 5
+Customer A changes subscriptionId to Customer B subscription.
+Expected: HTTP 403.
+
+TEST 6
+Customer A attempts to access Customer B report/export.
+Expected: HTTP 403.
+
+TEST 7
+Customer A attempts to access Customer B PCBI/savings/module data.
+Expected: HTTP 403.
+
+No cross-tenant data may be returned even partially.
+
+==================================================
+4. ADMIN AUTHORIZATION
+==================================================
+
+Verify every administrative endpoint.
+
+Only authorized ADMIN users may:
+
+- provision subscription
+- request provisioning OTP
+- verify provisioning OTP
+- activate customer subscription on behalf of customer where explicitly supported
+- suspend subscription
+- reactivate subscription
+- renew subscription
+- cancel subscription
+- resend activation code
+- view subscription administration dashboard
+- inspect subscription audit events
+
+Customer users MUST receive HTTP 403.
+
+Test:
+
+CUSTOMER → admin/list = DENIED
+CUSTOMER → provision = DENIED
+CUSTOMER → suspend = DENIED
+CUSTOMER → renew = DENIED
+CUSTOMER → cancel = DENIED
+CUSTOMER → admin audit = DENIED
+
+Do not use frontend role checks as the security mechanism.
+
+==================================================
+5. SUBSCRIPTION STATE MACHINE
+==================================================
+
+Validate the following states:
+
+FREE
+PENDING_ACTIVATION
+ACTIVE
+SUSPENDED
+EXPIRED
+CANCELLED
+
+Validate legal transitions only.
+
+Expected commercial lifecycle:
+
+FREE
+→ QUOTATION / COMMERCIAL PROCESS
+→ PAYMENT RECEIVED
+→ ADMIN PROVISIONED
+→ PENDING_ACTIVATION
+→ CUSTOMER ACTIVATES
+→ ACTIVE
+
+Examples of invalid transitions that must be rejected:
+
+CANCELLED → ACTIVE without explicit admin renewal/provisioning workflow
+EXPIRED → ACTIVE without renewal/provisioning workflow
+FREE → ACTIVE without provisioning/activation
+PENDING_ACTIVATION → ACTIVE without valid activation code
+SUSPENDED → ACTIVE without authorized reactivation
+
+Do not silently mutate historical subscription records.
+
+Maintain subscription history/audit trail.
+
+==================================================
+6. ACTIVATION CODE SECURITY
+==================================================
+
+Retain the existing activation code format:
+
+PCV-XXXX-XXXX-XXXX
+
+Requirements:
+
+- cryptographically secure random generation
+- hash stored at rest
+- plaintext never stored
+- plaintext never logged
+- plaintext never returned except through the controlled customer notification mechanism
+- 72-hour expiry
+- maximum 5 failed attempts
+- one-time use
+- successful activation invalidates the code
+- generating a new activation code invalidates the previous code
+- expired code cannot activate
+- reused code cannot activate
+- wrong code cannot activate
+- activation must be tied to the intended tenant/customer
+- activation must not allow tenant switching
+
+Add/verify tests:
+
+wrong code
+expired code
+five failed attempts
+sixth attempt
+successful activation
+reuse after success
+old code after new code generated
+activation against wrong tenant
+activation after subscription cancellation
+activation after code expiry
+
+==================================================
+7. EXACT BRONZE / SILVER / GOLD ENTITLEMENT AUDIT
+==================================================
+
+Audit the actual constants and backend enforcement against the following intended product architecture.
+
+BRONZE — DISCOVER
+
+Customer can:
+
+- register/login
+- upload data
+- Module 1 summary
+- spend summary
+- supplier summary
+- category summary
+- plant summary
+- savings opportunity indicator
+- limited teaser/report visibility
+
+Customer cannot access:
+
+- detailed supplier opportunity
+- item-level opportunity
+- detailed savings
+- detailed benchmark source data
+- full Module 2
+- full Module 3
+- full Module 4
+- detailed PCBI
+- detailed action tracker
+- detailed exports
+
+SILVER — ASSESS
+
+Customer can access:
+
+- all Bronze capabilities
+- broader savings visibility
+- total savings opportunity
+- broad savings by category
+- category-level opportunity
+- summary-level Module 2 capabilities
+- summary sourcing opportunities
+- summary vendor/PO consolidation opportunities
+- summary Module 3 / PCBI information
+- summary Module 4 / savings waterfall
+- Management Quick Summary
+- controlled summary exports where configured
+
+Silver MUST NOT automatically expose Gold-level:
+
+- item-level savings
+- supplier-level savings
+- detailed supplier rankings
+- detailed PCBI source information
+- full benchmark source detail
+- full action tracker
+- unrestricted detailed data export
+- unrestricted detailed PPTX/boardroom evidence
+
+GOLD — OPTIMIZE
+
+Customer receives the full entitlement set:
+
+- complete Modules 1–4
+- detailed savings
+- supplier-level opportunity
+- item-level opportunity
+- detailed category opportunity
+- full strategic sourcing
+- vendor consolidation
+- PO consolidation
+- e-auction execution support
+- full PCBI
+- benchmark details
+- benchmark sources where licensed/authorized
+- full savings waterfall
+- savings realization
+- action tracker
+- detailed reports
+- Management Quick Summary
+- Boardroom & Evidence
+- PDF export
+- PPTX export
+- detailed data export
+
+Do not alter the existing financial calculation engine.
+
+==================================================
+8. API ENTITLEMENT BYPASS TESTING
+==================================================
+
+For every protected feature, test direct API access.
+
+Do not rely only on UI tests.
+
+At minimum verify:
+
+BRONZE → Gold-only API = 403
+SILVER → Gold-only API = 403
+GOLD → Gold-only API = success
+
+Examples:
+
+PCBI detailed endpoint
+Savings detailed endpoint
+Supplier opportunity endpoint
+Item opportunity endpoint
+Action tracker endpoint
+Detailed export endpoint
+Executive brief export endpoint
+Boardroom report endpoint
+
+Also test:
+
+Bronze user manually changing frontend state to GOLD
+Bronze user modifying local storage
+Bronze user modifying request body tier
+Bronze user adding entitlement=true
+Bronze user modifying query parameters
+
+Expected result in every case:
+
+BACKEND DENIES ACCESS.
+
+==================================================
+9. REPORT / EXPORT SECURITY
+==================================================
+
+Verify entitlement enforcement exists before generating:
+
+- Management Quick Summary
+- Boardroom & Evidence
+- PDF
+- PPTX
+- detailed exports
+- PCBI exports
+- savings exports
+
+A user must not be able to bypass entitlement by directly calling an export URL/API.
+
+Expected:
+
+Bronze:
+limited teaser only
+
+Silver:
+summary-level permitted exports
+
+Gold:
+full permitted exports
+
+Do not modify the existing certified report calculations.
+
+==================================================
+10. ADMIN SIMULATOR
+==================================================
+
+Verify:
+
+"Simulate Subscription Tier"
+
+is ADMIN ONLY.
+
+It must not be visible or executable for customer users.
+
+More importantly, it must not change the real persisted customer subscription.
+
+It is simulation/testing functionality only.
+
+Test:
+
+Customer cannot see simulator.
+Customer cannot invoke simulator API directly.
+Non-admin receives 403.
+Admin can simulate.
+Simulation cannot modify real subscription records.
+
+==================================================
+11. MANAGEMENT QUICK SUMMARY
+==================================================
+
+Preserve the existing:
+
+Management Quick Summary
+10-Slide Executive Opportunity Brief
+
+and existing Boardroom & Evidence separation.
+
+Verify:
+
+Bronze → teaser/controlled access only
+Silver → permitted summary
+Gold → full access
+
+Do not rename or redesign the existing UI.
+
+Do not modify the certified 10-slide presentation data contract.
+
+==================================================
+12. MODULE 1–4 REGRESSION PROTECTION
+==================================================
+
+This is extremely important.
+
+The subscription implementation must sit ABOVE existing modules.
+
+Do not rewrite:
+
+Module 1 calculations
+Module 2 calculations
+Module 3 PCBI calculations
+Module 4 savings calculations
+
+Run regression tests proving existing functionality remains unchanged.
+
+Specifically verify:
+
+- Module 1 forensic validation
+- certified spend baseline
+- supplier counts
+- material group counts
+- plant counts
+- transaction counts
+- low-value PO counts
+- certified opportunity bridge
+- PCBI calculations
+- savings calculations
+- Management Quick Summary
+- Boardroom & Evidence
+
+No mathematical variance is acceptable.
+
+==================================================
+13. FINANCIAL CERTIFICATION REGRESSION
+==================================================
+
+Run an explicit assertion test:
+
+grossOpportunity === 173.12 Cr
+overlapDeduction === 62.80 Cr
+exclusions === 16.72 Cr
+netDefensiblePipeline === 93.60 Cr
+netDirectSavings === 78.72 Cr
+strategicMarketValue === 14.88 Cr
+validatedSavings === 47.90 Cr
+realizedSavings === 68.00 Cr
+deRiskedSpend === 420 Cr
+
+and:
+
+suppliers === 974
+materialGroups === 256
+plants === 26
+transactions === 31671
+lowValuePOs === 824
+
+All assertions must pass.
+
+==================================================
+14. AUDIT TRAIL
+==================================================
+
+Verify audit events exist for:
+
+- OTP requested
+- OTP verified
+- OTP failed
+- provisioning initiated
+- provisioning completed
+- activation code generated
+- activation code failed
+- activation completed
+- subscription activated
+- subscription suspended
+- subscription reactivated
+- subscription renewed
+- subscription cancelled
+- activation code resent
+
+Audit records must include appropriate metadata such as:
+
+timestamp
+actor
+tenant
+action
+result
+correlation/reference ID where available
+
+Never record:
+
+OTP plaintext
+activation-code plaintext
+passwords
+authentication secrets
+
+==================================================
+15. SECURITY LOGGING
+==================================================
+
+Search the codebase for logging of:
+
+OTP
+activationCode
+password
+token
+JWT
+secret
+
+Ensure sensitive values are never logged.
+
+Mask identifiers where appropriate.
+
+Do not print credentials during tests.
+
+==================================================
+16. CONFIGURATION / SECRETS
+==================================================
+
+Confirm:
+
+- no production secrets hard-coded
+- no OTP secret hard-coded
+- no email credentials hard-coded
+- no SMS credentials hard-coded
+- no JWT secret hard-coded
+- no API credentials committed
+- environment variables are used where required
+
+If SMS integration is not configured yet, implement a clean provider abstraction and secure configuration interface without inventing credentials or external service configuration.
+
+==================================================
+17. FILE SIZE / CODE QUALITY
+==================================================
+
+Maintain existing repository rule:
+
+Every modified/new source file <= 300 lines.
+
+Do not split files unnecessarily just to satisfy the rule.
+
+No TypeScript any types.
+
+No ESLint errors/warnings.
+
+No unnecessary dependencies.
+
+==================================================
+18. TESTING REQUIREMENTS
+==================================================
+
+Run:
+
+backend unit tests
+frontend unit tests
+subscription tests
+authorization tests
+tenant isolation tests
+activation tests
+OTP tests
+export entitlement tests
+regression tests
+financial certification tests
+typecheck
+lint
+build
+quality:fast
+
+Do NOT report success merely because a command was launched.
+
+Capture actual exit code and actual test summary.
+
+==================================================
+19. BUILD / LIVE API VERIFICATION
+==================================================
+
+Start backend and frontend if required.
+
+Verify:
+
+frontend HTTP 200
+admin subscriptions route HTTP 200 for authorized admin context
+customer application HTTP 200
+
+Verify protected APIs with:
+
+1. unauthenticated request
+2. Bronze user
+3. Silver user
+4. Gold user
+5. admin user
+6. cross-tenant user
+
+Record actual HTTP response codes.
+
+==================================================
+20. FINAL SECURITY ACCEPTANCE MATRIX
+==================================================
+
+Produce a final report containing:
+
+A. PASS
+B. FAIL
+C. BLOCKED / CONFIGURATION REQUIRED
+
+For each:
+
+- requirement
+- implementation
+- test performed
+- expected result
+- actual result
+- status
+
+Do NOT call something PASS if it was only statically inspected.
+
+Do NOT call something PASS if the test was skipped.
+
+Do NOT call something PASS because frontend hiding exists.
+
+==================================================
+21. CRITICAL PRODUCTION BLOCKERS
+==================================================
+
+If any of these fail, mark the system NOT READY:
+
+1. Cross-tenant access possible
+2. Customer can access admin API
+3. Frontend can override backend tier
+4. Bronze can directly call Gold API successfully
+5. Silver can directly call Gold-only API successfully
+6. OTP can be reused
+7. OTP can be bypassed
+8. Activation code can be reused
+9. Activation code can be bypassed
+10. Expired activation code works
+11. Admin provisioning works without valid OTP
+12. Sensitive credentials are logged
+13. Subscription activation can change another tenant
+14. Gold export accessible by unauthorized tier
+15. Certified financial values changed
+16. Module 1–4 regression detected
+17. Online payment mechanism introduced
+18. Admin simulator can modify real subscription unexpectedly
+
+==================================================
+22. DO NOT MAKE THESE CHANGES
+==================================================
+
+Do NOT:
+
+- redesign the dashboard
+- redesign subscription UI
+- change logo
+- change colors
+- change presentation decks
+- change financial methodology
+- change certified financial numbers
+- rewrite Module 1
+- rewrite Module 2
+- rewrite Module 3
+- rewrite Module 4
+- add online payments
+- add public subscription checkout
+- expose admin controls to customers
+- downgrade existing valid paid/admin accounts
+- delete subscription history
+- delete audit history
+
+Only make changes required to satisfy the security and entitlement requirements above.
+
+==================================================
+23. FINAL DELIVERABLE
+==================================================
+
+At the end provide:
+
+# PROMPT 289 — SECURITY & ENTITLEMENT HARDENING REPORT
+
+1. Overall status:
+   READY / NOT READY
+
+2. OTP:
+   PASS/FAIL
+   Delivery channel
+   TTL
+   attempt limit
+   reuse protection
+
+3. Activation code:
+   PASS/FAIL
+   hashing
+   expiry
+   attempt limit
+   reuse protection
+
+4. Tenant isolation:
+   PASS/FAIL
+   tests performed
+   cross-tenant result
+
+5. Admin authorization:
+   PASS/FAIL
+
+6. Bronze/Silver/Gold entitlement parity:
+   PASS/FAIL
+
+7. API bypass protection:
+   PASS/FAIL
+
+8. Export protection:
+   PASS/FAIL
+
+9. Audit trail:
+   PASS/FAIL
+
+10. Sensitive logging:
+    PASS/FAIL
+
+11. Financial regression:
+    PASS/FAIL
+
+12. Module 1–4 regression:
+    PASS/FAIL
+
+13. Typecheck:
+    PASS/FAIL
+
+14. Lint:
+    PASS/FAIL
+
+15. Build:
+    PASS/FAIL
+
+16. Tests:
+    total files
+    total tests
+    passed
+    failed
+
+17. Remaining blockers:
+    explicit list
+
+18. Files modified:
+    exact list
+
+19. Confirmation:
+    "No online payment introduced"
+    "Certified financial values preserved"
+    "Modules 1–4 calculations preserved"
+
+IMPORTANT:
+
+Do not stop after implementing fixes.
+
+Actually run the tests.
+
+Do not claim browser/UI verification unless an actual browser/UI inspection was performed.
+
+Do not claim production readiness if any critical blocker remains.
+
+END PROMPT 289
+
+
+## Prompt 290
+
+PROMPT 290 — REDESIGN aiCEV LOGIN / REGISTRATION PAGE FOR CUSTOMER CONVERSION
+
+OBJECTIVE
+
+Redesign the current aiCEV login / registration landing page so that it becomes the FIRST CUSTOMER CONVERSION EXPERIENCE for aiCEV.
+
+The current design concept is fundamentally good and MUST NOT be discarded.
+
+KEEP:
+
+- dark premium enterprise theme
+- split-screen concept
+- aiCEV branding
+- left-side value proposition
+- right-side authentication panel
+- blue/orange aiCEV brand language
+- premium enterprise SaaS feel
+- strong visual hierarchy
+- clean rounded cards
+- subtle technology aesthetic
+
+BUT FINETUNE THE PAGE TO ACHIEVE THREE OBJECTIVES:
+
+1. Make a procurement leader immediately understand WHAT aiCEV does.
+2. Make the customer understand HOW aiCEV creates procurement value.
+3. Make a new visitor want to CREATE AN ACCOUNT and start with the FREE BRONZE / DISCOVER experience.
+
+This page should feel like:
+
+"Let me see what aiCEV can find in my procurement data."
+
+NOT:
+
+"Here is another enterprise software login page."
+
+==================================================
+1. CORE CUSTOMER MESSAGE
+==================================================
+
+The primary message should be built around:
+
+"Turn Procurement Data Into Measurable Savings."
+
+Supporting message:
+
+"Upload your procurement spend. aiCEV identifies where value is hiding, what can be improved, and where deeper procurement intelligence can unlock additional savings."
+
+Do not make exaggerated or guaranteed savings claims.
+
+Avoid:
+
+- Guaranteed savings
+- Guaranteed ROI
+- 100% EBITDA conversion
+- Autonomous procurement
+- Zero hallucination
+- 98.7% AI accuracy
+- 8–18% guaranteed spend reduction
+- any unsupported percentage claims
+
+The page should communicate VALUE without overpromising.
+
+==================================================
+2. CUSTOMER CONVERSION STORY
+==================================================
+
+The left side should tell a very simple story:
+
+YOUR DATA
+↓
+DISCOVER
+↓
+ASSESS
+↓
+OPTIMIZE
+
+Use the following conceptual framework:
+
+DISCOVER
+"See where your procurement value is hiding."
+
+ASSESS
+"Understand the opportunity, categories and sourcing levers."
+
+OPTIMIZE
+"Execute with benchmarks, detailed opportunities and action tracking."
+
+This directly connects to the product's Bronze / Silver / Gold commercial model.
+
+Do not make this look like a pricing page.
+
+It is a PRODUCT JOURNEY.
+
+==================================================
+3. HERO SECTION
+==================================================
+
+At the top-left retain the aiCEV logo.
+
+Below it, replace the current large headline:
+
+"Every Penny Saved in Procurement is a Direct Increase in Profit"
+
+with a more customer-centric headline:
+
+"Turn Procurement Data Into Measurable Savings."
+
+Use a strong second line:
+
+"From spend visibility to sourcing intelligence — aiCEV helps procurement teams find, assess and act on value."
+
+Keep the typography large but reduce unnecessary text.
+
+The customer should understand the product within approximately 5 seconds.
+
+==================================================
+4. EXPLAIN THE aiCEV MODEL
+==================================================
+
+Introduce a compact visual section titled:
+
+"How aiCEV Creates Procurement Value"
+
+Show three connected stages:
+
+01 — DISCOVER
+Bronze
+
+"Upload your spend and uncover where value may be hiding."
+
+02 — ASSESS
+Silver
+
+"Understand savings opportunities, categories and sourcing levers."
+
+03 — OPTIMIZE
+Gold
+
+"Go deeper with benchmarks, detailed opportunities and execution tracking."
+
+Use subtle progression arrows or connected nodes.
+
+Do not create three large pricing cards.
+
+This is about understanding the model, not selling price.
+
+==================================================
+5. CONVERSION MESSAGE
+==================================================
+
+Add a small high-impact statement near the authentication area:
+
+"Start with your data. Upgrade when you need deeper intelligence."
+
+Supporting line:
+
+"Explore the opportunity first. Move to deeper analytics and execution when you're ready."
+
+This is critical.
+
+The user should feel that there is LOW FRICTION to starting.
+
+Do not ask them to buy anything on this page.
+
+==================================================
+6. RIGHT-SIDE AUTHENTICATION PANEL
+==================================================
+
+Keep the current right-side authentication card.
+
+However, make the tabs:
+
+SIGN IN
+CREATE ACCOUNT
+
+more prominent and modern.
+
+For CREATE ACCOUNT, make the primary CTA:
+
+"Start Free with aiCEV"
+
+instead of generic:
+
+"Create Account"
+
+For SIGN IN:
+
+"Sign In to Workspace"
+
+Retain enterprise-style wording.
+
+==================================================
+7. CREATE ACCOUNT EXPERIENCE
+==================================================
+
+The Create Account tab should communicate the Bronze entry point.
+
+Heading:
+
+"Start Your Procurement Discovery"
+
+Supporting text:
+
+"Create your free workspace and upload your procurement data to begin."
+
+Show a small reassurance row:
+
+✓ No online payment
+✓ Start with Discover
+✓ Upgrade when you need more
+
+Do NOT say:
+
+"Free forever"
+
+unless that is commercially guaranteed.
+
+Use:
+
+"Start Free"
+
+or:
+
+"Begin with Bronze"
+
+==================================================
+8. BRONZE / SILVER / GOLD VISUALIZATION
+==================================================
+
+Near the bottom of the left panel, introduce a very compact visual:
+
+aiCEV PROCUREMENT INTELLIGENCE MODEL
+
+DISCOVER
+Bronze
+Spend visibility + opportunity indicator
+
+↓
+
+ASSESS
+Silver
+Savings intelligence + sourcing insights
+
+↓
+
+OPTIMIZE
+Gold
+Full intelligence + benchmarks + execution
+
+Keep this compact.
+
+Do not overload the login page with detailed feature lists.
+
+The detailed entitlement matrix belongs inside the application.
+
+==================================================
+9. BENEFITS SECTION
+==================================================
+
+Replace the current "AUTONOMOUS TECHNOLOGY ADVANTAGES" section with:
+
+"WHAT YOU CAN DO WITH aiCEV"
+
+Use 3 or 4 concise benefit cards.
+
+CARD 1
+"Find Procurement Leakage"
+
+"Identify pricing gaps, duplicate spend, fragmented suppliers and other value leakage across procurement data."
+
+CARD 2
+"See Where Savings Are"
+
+"Translate spend patterns into category, supplier and sourcing opportunities."
+
+CARD 3
+"Benchmark & Compare"
+
+"Use procurement benchmarks and market intelligence to support better commercial decisions."
+
+CARD 4
+"Move From Insight to Action"
+
+"Turn identified opportunities into sourcing waves, savings actions and execution tracking."
+
+Keep each card to approximately 2 lines of supporting copy.
+
+Avoid excessive technical terminology.
+
+==================================================
+10. CUSTOMER LANGUAGE
+==================================================
+
+The page should speak to:
+
+CFO
+CPO
+Procurement Head
+Sourcing Head
+Procurement Manager
+Business Owner
+
+Use business language.
+
+Avoid making the page sound like it is selling AI technology.
+
+Do NOT overuse:
+
+AI
+autonomous
+algorithm
+machine learning
+taxonomy
+neural
+automation
+
+The customer buys PROCUREMENT VALUE.
+
+AI is the technology underneath.
+
+==================================================
+11. IMPORTANT — REMOVE DEVELOPMENT ACCESS
+==================================================
+
+The current screenshot contains:
+
+"TEMPORARY DEVELOPMENT ACCESS"
+
+and visible development accounts:
+
+- Sriman (Admin)
+- System Administrator
+- Enterprise Buyer
+- admin credentials / direct admin portal access
+
+THIS MUST NOT APPEAR ON THE CUSTOMER-FACING PRODUCTION LOGIN PAGE.
+
+Remove it entirely from production UI.
+
+Do not simply hide it with CSS.
+
+Ensure it is conditionally available only in an explicit development/test environment.
+
+Production build MUST NOT expose:
+
+- development credentials
+- admin shortcuts
+- test accounts
+- auto-fill credentials
+- "Open Admin Portal Directly"
+- development mode indicators
+
+If a development-only login shortcut is retained for local development, isolate it using a secure environment flag such as:
+
+NODE_ENV === "development"
+
+and verify production build excludes it.
+
+==================================================
+12. SECURITY / AUTHENTICATION
+==================================================
+
+Do not weaken any existing authentication or subscription security.
+
+Preserve:
+
+- server-side authentication
+- tenant isolation
+- Bronze/Silver/Gold entitlement enforcement
+- admin authorization
+- OTP architecture
+- activation code architecture
+- subscription state machine
+- audit trail
+
+The login page is only a presentation-layer improvement.
+
+Do not modify backend authorization logic unless required to remove development-only exposure.
+
+==================================================
+13. REMOVE UNSUPPORTED CLAIMS
+==================================================
+
+The current screenshot contains:
+
+"100% Direct EBITDA Conversion"
+"₹120+ Cr Savings Potential Identified"
+"98.7% AI Taxonomy Accuracy"
+"8% – 18% Typical Spend Reduction"
+"SOC2 Type II / AES-256"
+
+Do NOT retain these automatically.
+
+Replace them with factual, defensible product statements.
+
+Recommended replacement metrics/cards:
+
+"Spend Visibility"
+"Opportunity Identification"
+"Category Intelligence"
+"Execution Tracking"
+
+If certified customer-specific numbers are intentionally displayed, use only the approved certified presentation data contract.
+
+Do not put the customer's ₹78.72 Cr / ₹93.60 Cr numbers on a generic login page unless this is explicitly a customer-specific authenticated experience.
+
+==================================================
+14. TRUST SECTION
+==================================================
+
+At the bottom, add a restrained trust statement:
+
+"Built for procurement teams that want evidence before action."
+
+Supporting line:
+
+"Start with your data. Validate the opportunity. Expand when the value is clear."
+
+Do not claim:
+
+SOC 2
+ISO 27001
+FIPS
+Air-gapped
+Zero Hallucination
+Guaranteed Savings
+
+unless formally verified and approved.
+
+==================================================
+15. VISUAL DESIGN
+==================================================
+
+Keep the current dark theme but make it more refined.
+
+Use:
+
+- deep navy background
+- subtle blue/cyan accents
+- aiCEV blue
+- aiCEV orange
+- restrained green only for positive/value indicators
+- high contrast white typography
+- soft borders
+- subtle gradients
+- generous whitespace
+
+Avoid:
+
+- excessive glowing effects
+- excessive neon
+- too many cards
+- excessive animations
+- crowded text
+- oversized marketing statements
+- unnecessary icons
+
+The page should feel like:
+
+McKinsey-level enterprise software
++
+modern AI product
++
+premium procurement intelligence platform
+
+NOT like a crypto/AI startup landing page.
+
+==================================================
+16. LAYOUT
+==================================================
+
+Desktop:
+
+LEFT ~55%
+RIGHT ~45%
+
+LEFT:
+
+Logo
+↓
+Hero headline
+↓
+One-sentence explanation
+↓
+Discover → Assess → Optimize visual
+↓
+3–4 benefit cards
+↓
+Trust statement
+
+RIGHT:
+
+Sign In / Create Account tabs
+↓
+Authentication form
+↓
+Primary CTA
+↓
+Small Bronze entry reassurance
+↓
+Privacy/security reassurance
+
+Maintain excellent alignment and spacing.
+
+==================================================
+17. MOBILE RESPONSIVENESS
+==================================================
+
+On mobile:
+
+1. aiCEV logo
+2. Hero message
+3. Discover → Assess → Optimize
+4. Authentication
+5. Benefits
+6. Trust statement
+
+Do not force the desktop two-column layout onto mobile.
+
+Avoid excessive scrolling before the authentication CTA.
+
+==================================================
+18. MICROCOPY
+==================================================
+
+Use concise customer-focused language.
+
+Recommended primary CTA:
+
+CREATE ACCOUNT:
+"Start Free with aiCEV"
+
+SIGN IN:
+"Sign In to Workspace"
+
+Secondary link:
+
+"Already have an account? Sign in"
+
+For Bronze explanation:
+
+"Begin with Discover. Upgrade when you need deeper intelligence."
+
+For commercial conversion:
+
+"Need deeper procurement intelligence?"
+"Talk to Procucev"
+
+Do NOT use:
+
+"Buy Now"
+"Subscribe Now"
+"Checkout"
+
+The commercial process remains offline.
+
+==================================================
+19. DO NOT DISTURB EXISTING PRODUCT
+==================================================
+
+This is a LOGIN/PRE-AUTH EXPERIENCE redesign only.
+
+Do not modify:
+
+Module 1
+Module 2
+Module 3
+Module 4
+PCBI
+Savings Engine
+Management Quick Summary
+Boardroom & Evidence
+Subscription backend
+Entitlement middleware
+Tenant isolation
+Financial calculations
+
+Only modify the login/registration presentation and any required development-only visibility logic.
+
+==================================================
+20. ACCEPTANCE CRITERIA
+==================================================
+
+After implementation verify:
+
+[ ] Existing login functionality works
+[ ] Create Account works
+[ ] Bronze registration flow works
+[ ] Sign In works
+[ ] aiCEV logo unchanged
+[ ] Existing authentication security preserved
+[ ] Development credentials completely absent from production UI
+[ ] Admin shortcut completely absent from production UI
+[ ] No unsupported financial claims remain
+[ ] No unsupported security certifications remain
+[ ] Discover → Assess → Optimize clearly communicated
+[ ] Bronze → Silver → Gold relationship understandable
+[ ] Customer understands value within 5 seconds
+[ ] Primary CTA is visually dominant
+[ ] Page does not look like a pricing page
+[ ] Page does not look like a generic login screen
+[ ] Mobile layout validated
+[ ] Desktop layout validated
+[ ] No horizontal overflow
+[ ] No clipped text
+[ ] No excessive scrolling
+[ ] No overlap
+[ ] Existing modules unaffected
+[ ] Typecheck passes
+[ ] Lint passes
+[ ] Existing tests pass
+
+==================================================
+21. FINAL DESIGN PRINCIPLE
+==================================================
+
+The final page must communicate this idea without necessarily displaying it as a quotation:
+
+"Don't ask the customer to believe aiCEV.
+
+Let them start with their own procurement data.
+
+Let aiCEV show them the opportunity.
+
+Then let the value naturally lead them from Bronze → Silver → Gold."
+
+This is the central conversion philosophy of the redesign.
+
+==================================================
+22. FINAL OUTPUT
+==================================================
+
+After implementation provide:
+
+1. Files modified
+2. Exact UI changes
+3. Claims removed/replaced
+4. Confirmation that development credentials are not exposed in production
+5. Confirmation that authentication/security was preserved
+6. Desktop validation result
+7. Mobile validation result
+8. Typecheck result
+9. Lint result
+10. Test result
+11. Confirmation that Modules 1–4 were not modified
+12. Screenshot or browser inspection of the final login page
+
+Do not redesign the application beyond this scope.
+
+END PROMPT 290
+
+## Prompt 291
+
+PROMPT 291 — FINAL PRODUCTION LOGIN SECURITY HARDENING
+
+This is a very small security-only correction to Prompt 290.
+
+DO NOT redesign the login page.
+DO NOT change the UI.
+DO NOT change the customer messaging.
+DO NOT change authentication logic.
+DO NOT modify Modules 1–4.
+DO NOT modify subscription architecture.
+
+OBJECTIVE:
+
+Ensure development login credentials and admin shortcuts can NEVER be enabled through a client/public environment variable in a production build.
+
+CURRENT IMPLEMENTATION:
+
+The current DevLoginBypass logic reportedly uses:
+
+const isDev =
+  process.env.NODE_ENV === 'development' ||
+  process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === 'true';
+
+CHANGE THIS.
+
+REQUIRED IMPLEMENTATION:
+
+Development login UI must ONLY render when:
+
+process.env.NODE_ENV === 'development'
+
+Remove all support for:
+
+NEXT_PUBLIC_ENABLE_DEV_LOGIN
+
+or any other client-controlled/public environment variable that can enable development credentials in production.
+
+REQUIREMENTS:
+
+1. Development credentials render only in local development.
+
+2. Production build MUST return null for DevLoginBypass.
+
+3. Production build MUST NOT contain:
+   - Sriman
+   - System Administrator
+   - Enterprise Buyer
+   - development passwords
+   - auto-fill credentials
+   - Open Admin Portal Directly
+   - Temporary Development Access
+
+4. Search the production frontend source/build output for these development identifiers and confirm they are not included in the production client bundle where technically possible.
+
+5. Add/modify tests proving:
+
+NODE_ENV=development
+→ DevLoginBypass available.
+
+NODE_ENV=production
+→ DevLoginBypass unavailable.
+
+6. Confirm that no public NEXT_PUBLIC_* variable can enable the development login.
+
+7. Run:
+
+npm run typecheck
+npm run lint
+npm run test
+npm run quality:fast
+
+8. Confirm the existing Prompt 290 login UI remains unchanged.
+
+FINAL REPORT:
+
+- Production dev-login exposure: PASS/FAIL
+- Development-only rendering: PASS/FAIL
+- Public environment override removed: PASS/FAIL
+- Production bundle credential scan: PASS/FAIL
+- Typecheck: PASS/FAIL
+- Lint: PASS/FAIL
+- Tests: PASS/FAIL
+- quality:fast: PASS/FAIL
+
+Do not make any other changes.
+
+END PROMPT 291
+
+## Prompt 292
+
+PROMPT 292 — aiCEV LOGIN PAGE VISUAL REFINEMENT, LIGHT THEME & DEVELOPMENT ACCESS
+
+OBJECTIVE
+
+Refine the CURRENT Prompt 290 aiCEV login/registration design based on actual rendered UI review.
+
+IMPORTANT:
+
+The PRODUCT JOURNEY concept is approved and MUST remain:
+
+YOUR DATA
+→ DISCOVER
+→ ASSESS
+→ OPTIMIZE
+
+Bronze → Silver → Gold
+
+Do NOT redesign the concept.
+
+This prompt is primarily for:
+
+1. visual refinement
+2. alignment correction
+3. better space utilization
+4. light premium enterprise theme
+5. improved right-side authentication composition
+6. improved desktop balance
+7. temporary development login restoration for local development/testing
+
+DO NOT modify:
+
+- Modules 1–4
+- subscription architecture
+- entitlement logic
+- financial calculations
+- PCBI
+- savings engine
+- authentication backend
+- tenant isolation
+- production security architecture
+
+==================================================
+1. CHANGE THE OVERALL VISUAL DIRECTION
+==================================================
+
+The current dark navy interface is visually heavy.
+
+Move the LOGIN / REGISTRATION PAGE to a:
+
+LIGHT PREMIUM ENTERPRISE THEME
+
+Primary background:
+
+Very light sky blue / blue-white.
+
+Target visual feeling:
+
+- premium enterprise SaaS
+- modern procurement platform
+- clean
+- trustworthy
+- approachable
+- sophisticated
+- less "developer / AI laboratory"
+- more "executive procurement intelligence"
+
+Suggested background family:
+
+#EEF7FF
+#F5FAFF
+#EAF4FC
+
+Do not use saturated blue as the page background.
+
+Use white for primary content cards.
+
+Use very light blue-grey borders.
+
+Use dark navy text for headings.
+
+Use aiCEV blue for primary actions and accents.
+
+Use aiCEV orange selectively for:
+
+- Gold
+- important highlights
+- secondary visual emphasis
+
+Use green only for:
+
+- positive reassurance
+- verified/status indicators
+
+==================================================
+2. PRESERVE THE aiCEV BRAND
+==================================================
+
+Keep the existing aiCEV logo exactly as supplied.
+
+Do not redesign the logo.
+
+Do not alter the logo proportions.
+
+Place it consistently at:
+
+desktop:
+top-left with approximately 32–40px margin
+
+mobile:
+top-left with approximately 20px margin
+
+Remove unnecessary dark containers behind the logo.
+
+The logo should sit naturally on the light background.
+
+==================================================
+3. PAGE STRUCTURE
+==================================================
+
+Desktop layout:
+
+LEFT: approximately 52%
+RIGHT: approximately 48%
+
+Use a centered maximum-width container:
+
+max-width approximately 1500–1600px
+
+with balanced horizontal margins.
+
+Do not let the left side become excessively wide.
+
+Do not let the right side become narrow.
+
+The two columns should feel like equal partners:
+
+LEFT = VALUE STORY
+
+RIGHT = ACTION / CONVERSION
+
+==================================================
+4. LEFT SIDE — SIMPLIFY THE VISUAL HIERARCHY
+==================================================
+
+The left side should have:
+
+1. Logo / brand
+2. Small "Procurement Intelligence" badge
+3. Hero
+4. Capability ribbon
+5. Product Journey
+6. Benefits
+7. Compact trust statement
+
+But reduce visual clutter.
+
+Do NOT make every section look like a separate heavy dark card.
+
+On the light theme:
+
+- Hero can sit directly on the background or inside a very subtle white card
+- Capability cards should be white
+- Product Journey should be a single cohesive white panel
+- Benefits should be lightweight white cards
+- Borders should be subtle
+- Shadows should be extremely soft
+
+Avoid excessive rounded containers.
+
+Use visual hierarchy rather than boxes everywhere.
+
+==================================================
+5. HERO
+==================================================
+
+Keep the approved headline:
+
+"Turn Procurement Data Into Measurable Savings."
+
+Keep:
+
+"From spend visibility to sourcing intelligence — aiCEV helps procurement teams find, assess and act on value."
+
+Keep the supporting message:
+
+"Upload your procurement spend. aiCEV identifies where value is hiding, what can be improved, and where deeper procurement intelligence can unlock additional savings."
+
+However:
+
+Improve typography and spacing.
+
+Hero heading should be approximately:
+
+40–48px desktop
+
+with strong line height.
+
+Supporting text:
+
+17–19px
+
+Maximum width approximately 680px.
+
+Do not allow awkward line breaks.
+
+==================================================
+6. CAPABILITY RIBBON
+==================================================
+
+Current:
+
+Spend Visibility
+Opportunity Identification
+Category Intelligence
+Execution Tracking
+
+KEEP these four concepts.
+
+Change their presentation from dark cards to:
+
+four clean white cards / tiles.
+
+Use subtle icons.
+
+Use a very light blue background or white.
+
+Keep equal width.
+
+Ensure:
+
+- same height
+- same internal padding
+- same title alignment
+- same description alignment
+- no text clipping
+- no uneven wrapping
+
+Titles can use the aiCEV blue / teal / orange accent system.
+
+==================================================
+7. PRODUCT JOURNEY — MAKE THIS THE VISUAL ANCHOR
+==================================================
+
+Keep:
+
+HOW aiCEV CREATES PROCUREMENT VALUE
+
+YOUR DATA → DISCOVER → ASSESS → OPTIMIZE
+
+Use one large white premium panel.
+
+Inside it:
+
+01
+BRONZE
+DISCOVER
+
+"Upload your spend and uncover where value may be hiding."
+
+↓
+
+02
+SILVER
+ASSESS
+
+"Understand savings opportunities, categories and sourcing levers."
+
+↓
+
+03
+GOLD
+OPTIMIZE
+
+"Go deeper with benchmarks, detailed opportunities and execution tracking."
+
+The three stages should be:
+
+- equal width
+- same height
+- aligned vertically
+- consistent spacing
+
+Use subtle connector arrows.
+
+Bronze:
+warm amber accent
+
+Silver:
+neutral/slate/blue accent
+
+Gold:
+orange/gold accent
+
+Do not make Gold look like a hard sales push.
+
+The visual message is:
+
+"Start here → discover value → go deeper when required."
+
+==================================================
+8. RIGHT SIDE — MAJOR SPACE UTILIZATION IMPROVEMENT
+==================================================
+
+This is the most important visual correction.
+
+The current authentication card occupies only part of the available right-side area and leaves too much empty space.
+
+Change the right side into a deliberate:
+
+"CONVERSION PANEL"
+
+The panel should be vertically centered in the available viewport.
+
+Width:
+
+approximately 520–580px
+
+Do not make it excessively narrow.
+
+The authentication card should use the available vertical space intelligently without becoming unnecessarily tall.
+
+Suggested structure:
+
+------------------------------------------------
+
+START WITH YOUR DATA
+
+"Upgrade when you need deeper intelligence."
+
+Short supporting line.
+
+------------------------------------------------
+
+SIGN IN | CREATE ACCOUNT
+
+------------------------------------------------
+
+Authentication form
+
+------------------------------------------------
+
+Primary CTA
+
+------------------------------------------------
+
+For Sign In:
+
+"New visitor? Start Free with Bronze Discover"
+
+For Create Account:
+
+"Already have an account? Sign In"
+
+------------------------------------------------
+
+Three small reassurance items:
+
+✓ Start with Discover
+✓ No online payment
+✓ Upgrade when you need more
+
+------------------------------------------------
+
+"Built for procurement teams that want evidence before action."
+
+------------------------------------------------
+
+This creates a complete visual conversion block instead of an isolated login form.
+
+==================================================
+9. RIGHT PANEL — SIGN IN
+==================================================
+
+Heading:
+
+"Sign In to Workspace"
+
+Subheading:
+
+"Access your procurement intelligence dashboard and savings opportunities."
+
+Fields:
+
+Organization Email
+Password
+
+CTA:
+
+"Sign In to Workspace"
+
+Make CTA width 100%.
+
+Use a strong aiCEV blue.
+
+Do not use gradients unless extremely subtle.
+
+Password visibility control should remain.
+
+Inputs should be:
+
+- white
+- clear border
+- dark text
+- strong focus state
+- 52–56px height
+- consistent radius
+
+==================================================
+10. RIGHT PANEL — CREATE ACCOUNT
+==================================================
+
+Heading:
+
+"Start Your Procurement Discovery"
+
+Subheading:
+
+"Create your free workspace and upload your procurement data to begin."
+
+CTA:
+
+"Start Free with aiCEV"
+
+Under the CTA:
+
+✓ Start with Discover
+✓ No online payment
+✓ Upgrade when you need more
+
+Do not mention pricing.
+
+Do not ask for payment.
+
+Do not make the customer feel they are committing to a paid subscription.
+
+==================================================
+11. ADD A SMALL CONVERSION REASSURANCE AREA
+==================================================
+
+Below the authentication CTA create a subtle white/light-blue information strip:
+
+"Start with your data. Upgrade when you need deeper intelligence."
+
+Then:
+
+"Explore the opportunity first. Move to deeper analytics and execution when you're ready."
+
+Keep it visually compact.
+
+Do not duplicate the same message multiple times.
+
+==================================================
+12. REMOVE VISUAL DUPLICATION
+==================================================
+
+The current page repeats similar messaging in multiple places.
+
+Avoid repeating:
+
+"Start with your data"
+
+more than necessary.
+
+Avoid repeating:
+
+"Upgrade when you need deeper intelligence"
+
+multiple times.
+
+Each major message should appear once.
+
+The page should feel edited and intentional.
+
+==================================================
+13. RIGHT-SIDE VERTICAL ALIGNMENT
+==================================================
+
+On desktop:
+
+The right authentication panel should be vertically centered relative to the visible viewport.
+
+Use:
+
+display:flex
+align-items:center
+
+or equivalent layout.
+
+Do NOT simply add arbitrary top margins.
+
+The right card should remain centered even if the left side becomes taller.
+
+If the page requires vertical scrolling because of content, the authentication panel can remain naturally positioned but should not appear stuck at the top.
+
+==================================================
+14. DESKTOP SCREEN TARGET
+==================================================
+
+Optimize specifically for:
+
+1440 × 900
+1920 × 1080
+1366 × 768
+
+At 1440 × 900:
+
+The user should immediately see:
+
+Logo
+Hero
+Capability ribbon
+Top of Product Journey
+
+and the right side should show:
+
+Conversion message
+Sign In/Create Account
+Entire form
+CTA
+reassurance
+
+without awkward empty space.
+
+At 1920 × 1080:
+
+Do not stretch cards excessively.
+
+Use max-width.
+
+At 1366 × 768:
+
+Reduce spacing intelligently rather than causing overlap.
+
+==================================================
+15. MOBILE
+==================================================
+
+On mobile:
+
+Do NOT preserve the desktop two-column proportions.
+
+Order:
+
+1. Logo
+2. Hero
+3. Capability summary
+4. Authentication card
+5. Discover → Assess → Optimize
+6. Benefits
+7. Trust
+
+Most importantly:
+
+The authentication CTA should appear early.
+
+Do not force the customer to scroll through the entire marketing story before reaching Create Account.
+
+==================================================
+16. BENEFITS SECTION
+==================================================
+
+Keep the four approved benefits:
+
+Find Procurement Leakage
+See Where Savings Are
+Benchmark & Compare
+Move From Insight to Action
+
+Change them into a clean 2×2 white-card grid on desktop.
+
+All cards:
+
+- same height
+- same width
+- aligned
+- equal padding
+
+No card should have significantly more text than another.
+
+Use concise descriptions.
+
+==================================================
+17. TRUST FOOTER
+==================================================
+
+Keep:
+
+"Built for procurement teams that want evidence before action."
+
+And:
+
+"Start with your data. Validate the opportunity. Expand when the value is clear."
+
+Place this as a clean footer statement.
+
+Do not use unsupported certification claims.
+
+Do not display:
+
+SOC2
+ISO 27001
+FIPS
+AES-256 certification claims
+Air-gapped
+Zero hallucination
+
+unless formally verified.
+
+==================================================
+18. TEMPORARY DEVELOPMENT LOGIN — ENABLE FOR NOW
+==================================================
+
+IMPORTANT:
+
+For the current development/testing phase ONLY, restore the development login panel.
+
+The user explicitly wants the temporary development accounts available while finalizing the UI.
+
+The development panel should work.
+
+Use the EXISTING development credentials already defined in the application.
+
+DO NOT invent new credentials.
+
+DO NOT change production authentication.
+
+DO NOT bypass backend authentication.
+
+DO NOT create fake authentication.
+
+The development panel should support:
+
+- Sriman (Admin)
+- System Administrator
+- Enterprise Buyer
+- existing "Open Admin Portal Directly" development shortcut
+
+If the current development credentials are failing:
+
+1. trace the existing credential definitions
+2. trace the login handler
+3. trace the backend auth endpoint
+4. identify why the current quick-fill credentials do not authenticate
+5. repair only the development/test flow
+6. verify each existing test account actually logs in
+
+The development panel must be visually integrated into the light theme.
+
+Use a clearly visible but professional development-only panel:
+
+"Temporary Development Access"
+"Dev & Test Mode"
+
+Do not make it look like a customer feature.
+
+Use a subtle amber border/background.
+
+==================================================
+19. DEVELOPMENT SECURITY
+==================================================
+
+The development login MUST remain:
+
+NODE_ENV === "development"
+
+only.
+
+Do NOT restore:
+
+NEXT_PUBLIC_ENABLE_DEV_LOGIN
+
+Do NOT use any client-controlled public environment variable to enable it.
+
+Production must remain clean.
+
+This is temporary for local development/testing only.
+
+We will issue a separate final cleanup command after visual approval to remove it.
+
+==================================================
+20. ALIGNMENT REQUIREMENTS
+==================================================
+
+Perform a complete visual alignment audit.
+
+Check:
+
+- logo alignment
+- badge alignment
+- hero left edge
+- capability cards
+- product journey
+- benefit cards
+- right authentication panel
+- tabs
+- labels
+- inputs
+- buttons
+- conversion message
+- development panel
+- footer
+
+All major vertical edges should align to a consistent grid.
+
+Use consistent:
+
+horizontal padding
+vertical rhythm
+card radius
+border thickness
+font hierarchy
+
+Do not use arbitrary margins to solve individual alignment problems.
+
+Use the layout grid.
+
+==================================================
+21. TYPOGRAPHY
+==================================================
+
+Use one consistent typography system.
+
+Heading hierarchy:
+
+H1
+40–48px desktop
+
+H2
+20–26px
+
+Card heading
+16–18px
+
+Body
+15–17px
+
+Small labels
+12–14px
+
+Do not overuse monospace typography.
+
+Monospace can remain only for:
+
+- small technical/product labels
+- "YOUR DATA → DISCOVER → ASSESS → OPTIMIZE"
+
+The customer-facing copy should primarily use the existing premium sans-serif typography.
+
+==================================================
+22. COLORS
+==================================================
+
+Suggested palette:
+
+Page background:
+#EEF7FF
+
+Primary white:
+#FFFFFF
+
+Soft blue:
+#E6F2FF
+
+Primary navy:
+#0B1B33
+
+Secondary navy:
+#203553
+
+aiCEV Blue:
+use existing brand blue
+
+aiCEV Orange:
+use existing brand orange
+
+Bronze:
+warm amber
+
+Silver:
+slate / cool grey
+
+Gold:
+orange/gold
+
+Do not introduce unrelated colors.
+
+==================================================
+23. NO FUNCTIONAL REGRESSION
+==================================================
+
+After changes verify:
+
+- Sign In works
+- Create Account works
+- password visibility works
+- tab switching works
+- Bronze registration works
+- development login works
+- admin development login works
+- enterprise buyer development login works
+- Open Admin Portal development shortcut works
+- production DevLoginBypass remains unavailable
+- subscription architecture unchanged
+- tenant isolation unchanged
+- backend auth unchanged
+- Modules 1–4 unchanged
+
+==================================================
+24. ACTUAL BROWSER VISUAL VALIDATION
+==================================================
+
+This time DO NOT rely only on static inspection or unit tests.
+
+Open the actual login page in the browser.
+
+Inspect at:
+
+1440 × 900
+1920 × 1080
+1366 × 768
+mobile width approximately 390px
+
+Check visually for:
+
+- alignment
+- spacing
+- clipping
+- empty space
+- card proportions
+- typography
+- contrast
+- scrolling
+- button placement
+- authentication usability
+
+If browser tooling is available, capture screenshots.
+
+Do not report "visual validation PASS" without actual browser inspection.
+
+==================================================
+25. TESTING
+==================================================
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run test
+npm run quality:fast
+
+Also run targeted login tests.
+
+Confirm:
+
+0 failures.
+
+==================================================
+26. FINAL REPORT
+==================================================
+
+Return:
+
+# PROMPT 292 — LOGIN VISUAL REFINEMENT REPORT
+
+1. Visual redesign status
+2. Light theme status
+3. Desktop 1440×900 status
+4. Desktop 1920×1080 status
+5. Desktop 1366×768 status
+6. Mobile status
+7. Right-side space utilization status
+8. Alignment audit status
+9. Discover → Assess → Optimize status
+10. Bronze/Silver/Gold presentation status
+11. Development login status
+12. Sriman login status
+13. System Administrator login status
+14. Enterprise Buyer login status
+15. Admin portal shortcut status
+16. Production development-login isolation status
+17. Authentication regression status
+18. Typecheck
+19. Lint
+20. Tests
+21. quality:fast
+22. Files modified
+23. Screenshot/browser inspection evidence
+
+IMPORTANT:
+
+Do not remove the development login in this prompt.
+
+It is intentionally enabled for DEVELOPMENT ONLY so that we can finalize the visual experience.
+
+We will issue a separate final cleanup command after visual approval.
+
+END PROMPT 292
+

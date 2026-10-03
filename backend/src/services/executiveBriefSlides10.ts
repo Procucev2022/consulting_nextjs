@@ -118,19 +118,20 @@ export function renderSlide10ValueBridge(
   canvas.text(
     'DIRECT SAVINGS OPPORTUNITY (P&L EBITDA EXPANSION)',
     PDF_LAYOUT.CONTENT_LEFT + 20,
-    splitY + 26,
+    splitY + 24,
     { fontSize: 9, font: 'bold', color: BRAND_COLORS.accentGreen }
   );
-  canvas.text('₹78.72 Cr', PDF_LAYOUT.CONTENT_LEFT + 20, splitY + 64, {
-    fontSize: 26,
+  canvas.text('₹78.72 Cr', PDF_LAYOUT.CONTENT_LEFT + 20, splitY + 58, {
+    fontSize: 24,
     font: 'bold',
     color: BRAND_COLORS.accentGreen
   });
-  canvas.text(
+  canvas.textBlock(
     'Defensible direct cost reduction across rate harmonization, volume pooling, and tenders. Fully monetized.',
     PDF_LAYOUT.CONTENT_LEFT + 20,
-    splitY + 88,
-    { fontSize: 9.5, color: BRAND_COLORS.secondaryText }
+    splitY + 74,
+    splitW - 40,
+    { fontSize: 8.5, color: BRAND_COLORS.secondaryText, lineHeight: 12 }
   );
 
   // Right Branch: Strategic Market Value
@@ -143,19 +144,20 @@ export function renderSlide10ValueBridge(
   canvas.text(
     'STRATEGIC MARKET VALUE (COMMODITY & TIMING LEVERS)',
     rightSplitX + 20,
-    splitY + 26,
+    splitY + 24,
     { fontSize: 9, font: 'bold', color: '#0284C7' }
   );
-  canvas.text('₹14.88 Cr', rightSplitX + 20, splitY + 64, {
-    fontSize: 26,
+  canvas.text('₹14.88 Cr', rightSplitX + 20, splitY + 58, {
+    fontSize: 24,
     font: 'bold',
     color: '#0284C7'
   });
-  canvas.text(
+  canvas.textBlock(
     'Market benchmark alignment, contract index formulas, and commodity timing upside. Tracked separately.',
     rightSplitX + 20,
-    splitY + 88,
-    { fontSize: 9.5, color: BRAND_COLORS.secondaryText }
+    splitY + 74,
+    splitW - 40,
+    { fontSize: 8.5, color: BRAND_COLORS.secondaryText, lineHeight: 12 }
   );
 
   // Mathematical Proof Strip at Bottom

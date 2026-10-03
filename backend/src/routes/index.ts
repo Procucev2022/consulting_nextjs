@@ -21,6 +21,7 @@ import upgradeRoutes from './upgrade.routes';
 import pcbiAdminRoutes from './pcbiAdmin.routes';
 import module2SourcingRoutes from './module2StrategicSourcing.routes';
 import executiveBriefExportRoutes from './executiveBriefExport.routes';
+import subscriptionRoutes from './subscription.routes';
 
 const router = Router();
 
@@ -55,6 +56,7 @@ router.use('/pcbi', pcbiRoutes);
 router.use('/upgrade', upgradeRoutes);
 router.use('/admin/pcbi', pcbiAdminRoutes);
 router.use('/module2/sourcing', module2SourcingRoutes);
+router.use('/subscription', subscriptionRoutes);
 
 export default router;
 

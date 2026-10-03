@@ -11,6 +11,8 @@ export interface TokenPayload {
   email: string;
   role: string;
   tier?: string;
+  tenantId?: string;
+  mobile_number?: string;
   exp: number;
 }
 
@@ -25,6 +27,7 @@ export interface UserRecord {
   role: string;
   status: string;
   subscription_tier: string;
+  tenant_id?: string;
   created_at: Date;
   updated_at: Date;
 }

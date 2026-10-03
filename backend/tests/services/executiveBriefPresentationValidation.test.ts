@@ -245,5 +245,22 @@ describe('Prompt 280: Executive Brief Sales-Ready Presentation Contract & Invari
     expect(latinStr.includes('/Im1 Do')).toBe(true);
     expect(latinStr.includes('aiCEV by PROCUCEV\n')).toBe(false);
   });
+
+  it('9. should ensure Slide 10 lower cards body text does not overflow card boundaries', () => {
+    const canvas = executiveBriefService.generatePresentationCanvas('UltraTech Cement Limited');
+    const pdfBuf = canvas.toBuffer();
+    const raw = pdfBuf.toString('latin1');
+    const streams = raw.split(/stream[\r\n]+/);
+    const s10Stream = streams.find((s) => s.includes('The Value Bridge: From Gross Potential'));
+    expect(s10Stream).toBeDefined();
+
+    // Verify Direct Savings body text wraps and does not exceed card width
+    expect(s10Stream?.includes('volume pooling, and')).toBe(true);
+    expect(s10Stream?.includes('tenders. Fully monetized.')).toBe(true);
+
+    // Verify Strategic Market Value body text wraps and does not exceed card width
+    expect(s10Stream?.includes('commodity timing upside.')).toBe(true);
+    expect(s10Stream?.includes('Tracked separately.')).toBe(true);
+  });
 });
 

@@ -13,38 +13,54 @@ describe('LoginBenefitsShowcase Component', () => {
     expect(screen.getByText(UI_STRINGS.auth.benefitsBadge)).toBeInTheDocument();
   });
 
-  it('should render the central profit multiplier headline and subtext', () => {
+  it('should render customer-centric hero headline and supporting lines', () => {
     render(<LoginBenefitsShowcase />);
 
-    expect(screen.getByText(UI_STRINGS.auth.profitHeadline)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.profitMultiplierBadge)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.profitSubtext)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.heroHeadline)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.heroSecondLine)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.heroSupportingText)).toBeInTheDocument();
   });
 
-  it('should render all 3 core technology advantage pillars', () => {
+  it('should render the 3 connected product journey stages', () => {
     render(<LoginBenefitsShowcase />);
 
-    // Pillar 1: Cost Savings
+    expect(screen.getByText(UI_STRINGS.auth.modelTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage1Name)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage2Name)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage3Name)).toBeInTheDocument();
+
+    expect(screen.getByText(UI_STRINGS.auth.stage1Tier)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage2Tier)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage3Tier)).toBeInTheDocument();
+  });
+
+  it('should render all 4 concise procurement benefit cards', () => {
+    render(<LoginBenefitsShowcase />);
+
     expect(screen.getByText(UI_STRINGS.auth.benefitCostSavingsTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.benefitCostSavingsDesc)).toBeInTheDocument();
 
-    // Pillar 2: Strategic Sourcing
     expect(screen.getByText(UI_STRINGS.auth.benefitStrategicSourcingTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.benefitStrategicSourcingDesc)).toBeInTheDocument();
 
-    // Pillar 3: Roadmap
+    expect(screen.getByText(UI_STRINGS.auth.benefitBenchmarkTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.benefitBenchmarkDesc)).toBeInTheDocument();
+
     expect(screen.getByText(UI_STRINGS.auth.benefitRoadmapTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.benefitRoadmapDesc)).toBeInTheDocument();
   });
 
-  it('should render quantified ROI metrics ribbon when showMetrics is true', () => {
+  it('should render factual capability metrics ribbon when showMetrics is true', () => {
     render(<LoginBenefitsShowcase showMetrics={true} />);
 
     expect(screen.getByText(UI_STRINGS.auth.statDirectEbitda)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.statDirectEbitdaLabel)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.statSavingsUnlocked)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.statSavingsLabel)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.statAccuracyRate)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.statAccuracyLabel)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.statTypicalRoi)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.statTypicalRoiLabel)).toBeInTheDocument();
   });
 
   it('should hide metrics ribbon when showMetrics is false and apply custom className', () => {
@@ -56,10 +72,11 @@ describe('LoginBenefitsShowcase Component', () => {
     expect(container.firstChild).toHaveClass('custom-test-class');
   });
 
-  it('should render security badge and engine version in footer', () => {
+  it('should render restrained trust statement and engine footer', () => {
     render(<LoginBenefitsShowcase />);
 
-    expect(screen.getByText(UI_STRINGS.header.securityBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.trustTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.trustSubtext)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.header.engineVersion)).toBeInTheDocument();
   });
 });

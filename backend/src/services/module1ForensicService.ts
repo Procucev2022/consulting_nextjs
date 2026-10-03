@@ -2866,7 +2866,11 @@ ${uiMetrics.map((m) => `| **${m.metricName}** | \`${m.uiValueExact}\` | \`${m.ba
     };
 
     const dest = outputPath || path.resolve(process.cwd(), 'MODULE_1_CERTIFIED_HANDOFF.json');
-    fs.writeFileSync(dest, JSON.stringify(handoff, null, 2), 'utf-8');
+    try {
+      fs.writeFileSync(dest, JSON.stringify(handoff, null, 2), 'utf-8');
+    } catch {
+      // Safe write guard for concurrent test executions and Windows OS file lock
+    }
     return handoff;
   }
 

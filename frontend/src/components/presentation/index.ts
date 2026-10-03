@@ -11,3 +11,6 @@ export * from './Slide8PriceCreepContractLeakage';
 export * from './Slide9SavingsLeversRoadmap';
 export * from './Slide10ExecutionGovernance';
 export * from './AiCevLogoLockup';
+export * from './ExecutiveOpportunityBriefView';
+export * from './ExecutiveOpportunityBriefSlideContent';
+
