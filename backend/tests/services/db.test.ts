@@ -10,7 +10,7 @@ describe('DatabaseStore service', () => {
 
   describe('DatabaseStore status and init', () => {
     it('should report connection status boolean', () => {
-      expect(typeof store.isConnected()).toBe('boolean');
+      expect(typeof store.isConnectedToPostgres()).toBe('boolean');
     });
   });
 

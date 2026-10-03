@@ -1,0 +1,115 @@
+{
+  "auditTimestamp": "2026-10-03T03:51:13.174Z",
+  "version": "MODULE_2_VENDOR_CONSOLIDATION_V1.0",
+  "totalCategoriesEvaluated": 6,
+  "categoryEvaluations": [
+    {
+      "categoryId": "CAT-StructuralSt",
+      "categoryName": "Structural Steel",
+      "currentSupplierCount": 4,
+      "hhiScore": 2722,
+      "concentrationRisk": "MODERATE",
+      "tailSpendInr": 134750000,
+      "recommendedStrategy": "MULTI_SUPPLIER_VOLUME_BUNDLING",
+      "diversificationRequirementMet": true,
+      "volumeConsolidationCandidateSpendInr": 134750000,
+      "excludedVolumeReason": "Preserved strategic multi-source allocation to avert single-source supplier lock-in",
+      "consolidationOpportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "dependencyProtectionVerified": true
+    },
+    {
+      "categoryId": "CAT-IndustrialFa",
+      "categoryName": "Industrial Fasteners",
+      "currentSupplierCount": 3,
+      "hhiScore": 3570,
+      "concentrationRisk": "MODERATE",
+      "tailSpendInr": 3480000,
+      "recommendedStrategy": "SINGLE_FEWER_STRATEGY",
+      "diversificationRequirementMet": true,
+      "volumeConsolidationCandidateSpendInr": 3480000,
+      "excludedVolumeReason": "N/A",
+      "consolidationOpportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "dependencyProtectionVerified": true
+    },
+    {
+      "categoryId": "CAT-SafetyEquipm",
+      "categoryName": "Safety Equipment",
+      "currentSupplierCount": 3,
+      "hhiScore": 4046,
+      "concentrationRisk": "MODERATE",
+      "tailSpendInr": 144000,
+      "recommendedStrategy": "MULTI_SUPPLIER_VOLUME_BUNDLING",
+      "diversificationRequirementMet": true,
+      "volumeConsolidationCandidateSpendInr": 144000,
+      "excludedVolumeReason": "N/A",
+      "consolidationOpportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "dependencyProtectionVerified": true
+    },
+    {
+      "categoryId": "CAT-ElectricalCa",
+      "categoryName": "Electrical Cables",
+      "currentSupplierCount": 3,
+      "hhiScore": 3639,
+      "concentrationRisk": "MODERATE",
+      "tailSpendInr": 1140000,
+      "recommendedStrategy": "MULTI_SUPPLIER_VOLUME_BUNDLING",
+      "diversificationRequirementMet": true,
+      "volumeConsolidationCandidateSpendInr": 1140000,
+      "excludedVolumeReason": "N/A",
+      "consolidationOpportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "dependencyProtectionVerified": true
+    },
+    {
+      "categoryId": "CAT-Lubricants",
+      "categoryName": "Lubricants",
+      "currentSupplierCount": 3,
+      "hhiScore": 3419,
+      "concentrationRisk": "MODERATE",
+      "tailSpendInr": 2499000,
+      "recommendedStrategy": "MULTI_SUPPLIER_VOLUME_BUNDLING",
+      "diversificationRequirementMet": true,
+      "volumeConsolidationCandidateSpendInr": 2499000,
+      "excludedVolumeReason": "N/A",
+      "consolidationOpportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "dependencyProtectionVerified": true
+    },
+    {
+      "categoryId": "CAT-PackagingMat",
+      "categoryName": "Packaging Materials",
+      "currentSupplierCount": 3,
+      "hhiScore": 3472,
+      "concentrationRisk": "MODERATE",
+      "tailSpendInr": 150000,
+      "recommendedStrategy": "MULTI_SUPPLIER_VOLUME_BUNDLING",
+      "diversificationRequirementMet": true,
+      "volumeConsolidationCandidateSpendInr": 150000,
+      "excludedVolumeReason": "N/A",
+      "consolidationOpportunityRangeInr": {
+        "min": 0,
+        "base": 0,
+        "max": 0
+      },
+      "dependencyProtectionVerified": true
+    }
+  ]
+}

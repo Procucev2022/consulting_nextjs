@@ -46,6 +46,21 @@ describe('authApiClient and auth utilities', () => {
       localStorage.setItem(AUTH_STORAGE_KEYS.CURRENT_USER, 'invalid-json-{');
       expect(authApiClient.getStoredUser()).toBeNull();
     });
+
+    it('should not throw when sessionStorage.removeItem throws during clearStoredSession', () => {
+      authApiClient.setStoredSession('token-xyz', mockUser);
+      // Simulate sessionStorage.removeItem throwing (e.g., in private mode)
+      const originalRemoveItem = sessionStorage.removeItem.bind(sessionStorage);
+      vi.spyOn(sessionStorage, 'removeItem').mockImplementationOnce(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+      // clearStoredSession should silently swallow the sessionStorage error
+      expect(() => authApiClient.clearStoredSession()).not.toThrow();
+
+      // Restore
+      vi.spyOn(sessionStorage, 'removeItem').mockImplementation(originalRemoveItem);
+    });
   });
 
   describe('buildAdminUserQueryParams', () => {
@@ -72,6 +87,36 @@ describe('authApiClient and auth utilities', () => {
       });
       expect(params.get('role')).toBeNull();
       expect(params.get('status')).toBeNull();
+    });
+  });
+
+  describe('parseResponseJson branch coverage (res.json fallback path)', () => {
+    it('throws "Invalid response received from server" when res has no text() but res.json() throws and res.ok is true', async () => {
+      // Craft a mock Response where typeof res.text !== 'function' (so it goes to else-if res.json)
+      // but res.json() throws and res.ok is true → line 68 path in authApi.ts
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: undefined, // forces the else-if branch
+        json: () => { throw new Error('JSON parse failure'); }
+      });
+
+      await expect(
+        authApiClient.getMe('some-token')
+      ).rejects.toThrow('Invalid response received from server');
+    });
+
+    it('throws Server error message when res has no text() but res.json() throws and res.ok is false', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        text: undefined,
+        json: () => { throw new Error('JSON parse failure'); }
+      });
+
+      await expect(
+        authApiClient.getMe('some-token')
+      ).rejects.toThrow('Server error (503): Please ensure backend is running on port 5000');
     });
   });
 
@@ -151,6 +196,25 @@ describe('authApiClient and auth utilities', () => {
       expect(authApiClient.getStoredToken()).toBe('jwt-login-456');
     });
 
+    it('should support login with email and password as separate string arguments', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: mockUser,
+          token: 'jwt-login-separate'
+        })
+      });
+
+      const res = await authApiClient.login('rajesh.verma@company.com', 'ValidPassword@123');
+      expect(res.success).toBe(true);
+      expect(authApiClient.getStoredToken()).toBe('jwt-login-separate');
+    });
+
+    it('should throw validation error when login is called with email string and no password', async () => {
+      await expect(authApiClient.login('rajesh.verma@company.com')).rejects.toThrow('Validation failed');
+    });
+
     it('should throw error when login credentials fail on server', async () => {
       const loginData: LoginFormData = {
         email: 'rajesh.verma@company.com',
@@ -163,6 +227,34 @@ describe('authApiClient and auth utilities', () => {
       });
 
       await expect(authApiClient.login(loginData)).rejects.toThrow('Invalid credentials');
+    });
+
+    it('should authenticate using dev fallback credentials when server fetch fails', async () => {
+      const loginData: LoginFormData = {
+        email: 'sriman@procucev.com',
+        password: 'sriman@123'
+      };
+
+      // Simulate network/server failure so it falls through to dev credentials
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const res = await authApiClient.login(loginData);
+      expect(res.success).toBe(true);
+      expect(res.user.email).toBe('sriman@procucev.com');
+      expect(res.user.role).toBe('ADMIN');
+      expect(res.token).toMatch(/^dev-temp-token-/);
+    });
+
+    it('should re-throw error when fetch fails and no matching dev credential exists', async () => {
+      const loginData: LoginFormData = {
+        email: 'notadevuser@external.com',
+        password: 'wrong-pass'
+      };
+
+      const networkErr = new Error('Network error');
+      global.fetch = vi.fn().mockRejectedValue(networkErr);
+
+      await expect(authApiClient.login(loginData)).rejects.toThrow('Network error');
     });
 
     it('should fetch current authenticated profile', async () => {

@@ -75,7 +75,7 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
   return (
     <div
       data-testid="vendor-consolidation-section"
-      className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-5"
+      className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-5"
     >
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200/70 dark:border-slate-800/70 pb-4">
@@ -93,14 +93,14 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
         </div>
 
         {/* View Mode Toggle */}
-        <div className="flex items-center space-x-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shrink-0">
+        <div className="flex items-center space-x-1 p-1 rounded-xl bg-slate-100 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 shrink-0">
           <button
             type="button"
             aria-label={strings.viewGrid}
             onClick={() => setViewMode('grid')}
             className={`p-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 ${
               viewMode === 'grid'
-                ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-xs'
+                ? 'bg-white dark:bg-[#EEF4FC] text-cyan-600 dark:text-cyan-400 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
@@ -113,7 +113,7 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
             onClick={() => setViewMode('table')}
             className={`p-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1 ${
               viewMode === 'table'
-                ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-xs'
+                ? 'bg-white dark:bg-[#EEF4FC] text-cyan-600 dark:text-cyan-400 shadow-xs'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
@@ -138,7 +138,7 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 selectedCategory === cat
                   ? 'bg-cyan-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  : 'bg-slate-100 dark:bg-[#F8FBFE] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#EEF4FC]'
               }`}
             >
               {cat === 'ALL' ? strings.filterAll : cat}
@@ -157,12 +157,12 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
               placeholder={strings.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
             />
           </div>
 
           {/* Sort Dropdown */}
-          <div className="flex items-center space-x-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs">
+          <div className="flex items-center space-x-1 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs">
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
             <select
               aria-label={strings.sortByLabel}
@@ -187,7 +187,7 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
 
       {/* Main Content: Card Grid View or Matrix Table View */}
       {filteredItems.length === 0 ? (
-        <div className="p-8 text-center rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-dashed border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
+        <div className="p-8 text-center rounded-2xl bg-slate-50 dark:bg-[#F8FBFE] border border-dashed border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
           {strings.noResultsFound}
         </div>
       ) : viewMode === 'grid' ? (
@@ -204,7 +204,7 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
         /* Matrix Table View */
         <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-semibold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-300 font-semibold uppercase text-[10px] border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-3 px-3.5">{strings.matrixColCategory}</th>
                 <th className="py-3 px-3.5">{strings.matrixColItemGroup}</th>
@@ -220,7 +220,7 @@ export const VendorConsolidationSection: React.FC<VendorConsolidationSectionProp
               {filteredItems.map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                  className="hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                 >
                   <td className="py-2.5 px-3.5">
                     <span className="font-semibold text-slate-800 dark:text-slate-200">

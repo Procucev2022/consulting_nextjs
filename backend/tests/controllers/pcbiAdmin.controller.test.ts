@@ -1014,6 +1014,113 @@ describe('PCBI Admin Controller Tests (backend/src/controllers/pcbiAdmin.control
       })
     );
   });
+
+  it('should handle PCBI Commodity Data Lab endpoints (Prompt 218)', async () => {
+    // 1. Dashboard Metrics
+    await pcbiAdminController.getCommodityDataLabDashboard(req as Request, res as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        metrics: expect.objectContaining({
+          totalCommodities: 10
+        })
+      })
+    );
+
+    // 2. Research Queue
+    await pcbiAdminController.getCommodityResearchQueue(req as Request, res as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        total: 10,
+        queue: expect.any(Array)
+      })
+    );
+
+    // 3. Workspace Detail
+    req.params = { pcbiId: 'PCBI-FEMO-65-001' };
+    req.query = { tab: 'OVERVIEW' };
+    await pcbiAdminController.getCommodityWorkspaceDetail(req as Request, res as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        workspace: expect.objectContaining({
+          overview: expect.objectContaining({
+            commodityName: 'Ferro Molybdenum 65%'
+          })
+        })
+      })
+    );
+
+    // 3b. Workspace Detail 404 for unknown commodity
+    req.params = { pcbiId: 'UNKNOWN-PCBI' };
+    await pcbiAdminController.getCommodityWorkspaceDetail(req as Request, res as Response);
+    expect(statusMock).toHaveBeenCalledWith(404);
+
+    // 4. Domain Detection - Valid
+    req.body = {
+      fileName: 'MMR_Price_Bulletin.pdf',
+      fileContentSnippet: 'raw_observations, source_register',
+      targetArea: 'COMMODITY_DATA_LAB'
+    };
+    await pcbiAdminController.detectUploadDomain(req as Request, res as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        detection: expect.objectContaining({
+          isAllowedInTarget: true
+        })
+      })
+    );
+
+    // 4b. Domain Detection - Schema Failure
+    req.body = { fileName: '' };
+    await pcbiAdminController.detectUploadDomain(req as Request, res as Response);
+    expect(statusMock).toHaveBeenCalledWith(400);
+
+    // 5. Source Upload - Valid
+    req.body = {
+      commodityId: 'COM-MET-FMO',
+      pcbiId: 'PCBI-FEMO-65-001',
+      sourceName: 'Controller Test Source',
+      publisher: 'Test Publisher',
+      documentName: 'Test_Doc.csv',
+      fileType: 'CSV'
+    };
+    await pcbiAdminController.uploadCommoditySource(req as Request, res as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        banner: 'COMMODITY DATA UPLOAD — NOT PCBI MASTER'
+      })
+    );
+
+    // 5b. Source Upload - Schema Failure
+    req.body = { commodityId: '' };
+    await pcbiAdminController.uploadCommoditySource(req as Request, res as Response);
+    expect(statusMock).toHaveBeenCalledWith(400);
+
+    // 6. Approval - Valid
+    req.body = {
+      commodityId: 'COM-MET-FMO',
+      pcbiId: 'PCBI-FEMO-65-001',
+      approverName: 'Controller Admin'
+    };
+    await pcbiAdminController.approveCommodityData(req as Request, res as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        result: expect.objectContaining({
+          approvalStatus: 'ADMIN_APPROVED'
+        })
+      })
+    );
+
+    // 6b. Approval - Schema Failure
+    req.body = { commodityId: '' };
+    await pcbiAdminController.approveCommodityData(req as Request, res as Response);
+    expect(statusMock).toHaveBeenCalledWith(400);
+  });
 });
 
 

@@ -239,10 +239,10 @@ export default function ProfilePage(): React.ReactElement {
 
   if (loading || user?.role === 'ADMIN') {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex items-center justify-center p-4">
         <div className="flex flex-col items-center space-y-3">
-          <div className="w-10 h-10 border-3 border-cyan-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-500 font-mono">
+          <div className="w-10 h-10 border-3 border-[#0284C7] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-[#64748B] font-mono">
             {user?.role === 'ADMIN' ? 'Redirecting to Admin Portal...' : 'Loading enterprise profile credentials...'}
           </p>
         </div>
@@ -276,13 +276,13 @@ export default function ProfilePage(): React.ReactElement {
     : 'Active Member';
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#080c16] text-slate-900 dark:text-slate-100 bg-grid-pattern pb-16 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] bg-grid-pattern pb-16 font-sans transition-colors duration-200">
       {/* Top Navbar */}
       <nav className="sticky top-0 z-30 w-full bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-xl border-b border-slate-200/90 dark:border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-4">
           <Link
             href="/"
-            className="flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+            className="flex items-center space-x-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#EEF4FC] hover:bg-slate-200 dark:hover:bg-[#DCE7F5] border border-slate-200 dark:border-slate-700"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Dashboard</span>
@@ -326,7 +326,7 @@ export default function ProfilePage(): React.ReactElement {
               onClick={() => toggleTheme('dark')}
               className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg transition-all ${
                 theme === 'dark'
-                  ? 'bg-slate-800 text-cyan-400 shadow-xs font-bold border border-slate-700'
+                  ? 'bg-[#EEF4FC] text-cyan-400 shadow-xs font-bold border border-slate-700'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
               title="Switch to Dark Theme"
@@ -401,7 +401,7 @@ export default function ProfilePage(): React.ReactElement {
             </div>
 
             {/* Quick Telemetry Chip */}
-            <div className="flex flex-col sm:items-end space-y-2 bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl sm:min-w-[220px] shadow-xs">
+            <div className="flex flex-col sm:items-end space-y-2 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl sm:min-w-[220px] shadow-xs">
               <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider">
                 Buyer Identifier (ID)
               </span>
@@ -413,7 +413,7 @@ export default function ProfilePage(): React.ReactElement {
                   type="button"
                   onClick={handleCopyBuyerId}
                   title="Copy Buyer ID"
-                  className="p-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
+                  className="p-1 rounded bg-slate-100 dark:bg-[#EEF4FC] hover:bg-slate-200 dark:hover:bg-[#DCE7F5] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
                 >
                   {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -426,7 +426,7 @@ export default function ProfilePage(): React.ReactElement {
         {/* Profile Content Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Card 1: Personal & Contact Credentials */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
+          <div className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
             <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <User className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -469,7 +469,7 @@ export default function ProfilePage(): React.ReactElement {
           </div>
 
           {/* Card 2: Organization & Enterprise Details */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
+          <div className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
             <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
               <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -517,7 +517,7 @@ export default function ProfilePage(): React.ReactElement {
         </div>
 
         {/* Section: Change Password & Security Management */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
+        <div className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
           <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100 dark:border-slate-800">
             <KeyRound className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             <div>
@@ -558,7 +558,7 @@ export default function ProfilePage(): React.ReactElement {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400 pr-9 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400 pr-9 font-mono"
                 />
                 <button
                   type="button"
@@ -584,7 +584,7 @@ export default function ProfilePage(): React.ReactElement {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400 pr-9 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400 pr-9 font-mono"
                 />
                 <button
                   type="button"
@@ -610,7 +610,7 @@ export default function ProfilePage(): React.ReactElement {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400 pr-9 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-cyan-500 dark:focus:border-cyan-400 pr-9 font-mono"
                 />
                 <button
                   type="button"
@@ -648,7 +648,7 @@ export default function ProfilePage(): React.ReactElement {
         </div>
 
         {/* Section: Uploaded Procurement Documents Repository */}
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
+        <div className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800/80 shadow-xs dark:shadow-lg space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center space-x-2.5">
               <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -679,7 +679,7 @@ export default function ProfilePage(): React.ReactElement {
           )}
 
           {ingestionQueue.length === 0 ? (
-            <div className="py-10 text-center flex flex-col items-center justify-center space-y-3 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            <div className="py-10 text-center flex flex-col items-center justify-center space-y-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
               <FileText className="w-10 h-10 text-slate-400 dark:text-slate-600" />
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">No Ingested Documents Found for this Account</p>
@@ -700,7 +700,7 @@ export default function ProfilePage(): React.ReactElement {
               {ingestionQueue.map((item) => (
                 <div
                   key={item.doc_id || item.file_name}
-                  className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                  className="p-4 rounded-xl bg-slate-50/80 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 hover:border-cyan-300 dark:hover:border-cyan-700 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   <div className="flex items-start space-x-3.5">
                     <div className="p-2.5 rounded-xl bg-cyan-100 dark:bg-cyan-950 border border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-400 shrink-0 mt-0.5">
@@ -709,7 +709,7 @@ export default function ProfilePage(): React.ReactElement {
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">{item.file_name}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 uppercase">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-200 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 uppercase">
                           {item.file_type || 'XLSX'}
                         </span>
                         <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">

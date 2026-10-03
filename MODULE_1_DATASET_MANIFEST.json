@@ -1,0 +1,49 @@
+{
+  "filename": "2 years data.xlsx",
+  "fileType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "fileSizeBytes": 5769242,
+  "uploadTimestamp": "2026-09-30T14:20:00.000Z",
+  "sheetNames": [
+    "Sheet1"
+  ],
+  "headerRow": 1,
+  "totalPhysicalRows": 31672,
+  "totalDataRows": 31671,
+  "excludedHeaderRows": 1,
+  "detectedColumns": [
+    "Purch. Doc. Category",
+    "Purchasing Doc. Type",
+    "Purchasing Group",
+    "Purchasing Document",
+    "Item",
+    "Document Date",
+    "Supplier Code",
+    "Supplier Name",
+    "Material",
+    "Short Text",
+    "Material Group",
+    "Plant",
+    "Storage location",
+    "Order Quantity",
+    "Order Unit",
+    "Quantity in SKU",
+    "Stockkeeping unit",
+    "Net Price",
+    "Currency",
+    "Price unit",
+    "Total INR",
+    "Total In Crs",
+    "Deletion indicator",
+    "Item Category",
+    "Acct Assignment Cat."
+  ],
+  "detectedCurrencies": [
+    "INR"
+  ],
+  "detectedDateRange": {
+    "minDate": "2024-04-01",
+    "maxDate": "2026-03-31"
+  },
+  "sourceFileSha256": "8c173c9e65c814530bd8501abc183e9f851b052da603f9c6cc87b88a87e0d9b1",
+  "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED"
+}

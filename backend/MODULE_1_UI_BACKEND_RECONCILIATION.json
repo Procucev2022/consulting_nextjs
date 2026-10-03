@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-10-03T03:51:20.989Z",
+  "status": "PASS",
+  "metrics": [
+    {
+      "metricName": "Total Evaluated Spend (₹ Cr)",
+      "uiValueExact": 5920.35,
+      "backendValueExact": 5920.35,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "SUM(Order Quantity * Net Price * Approved FX across 31,671 rows)"
+    },
+    {
+      "metricName": "Total Ingested Line Items",
+      "uiValueExact": 31671,
+      "backendValueExact": 31671,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(Raw records in source spreadsheet)"
+    },
+    {
+      "metricName": "Active Monetary Spend Line Items",
+      "uiValueExact": 30600,
+      "backendValueExact": 30600,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(Lines where lineSpendInr > 0)"
+    },
+    {
+      "metricName": "Zero-Spend / FOC Line Items",
+      "uiValueExact": 1071,
+      "backendValueExact": 1071,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(Lines where netPrice == 0)"
+    },
+    {
+      "metricName": "Unique Material Master Items",
+      "uiValueExact": 6485,
+      "backendValueExact": 6485,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(DISTINCT Material Code / Description across 31,671 lines)"
+    },
+    {
+      "metricName": "Unique Legal Suppliers",
+      "uiValueExact": 974,
+      "backendValueExact": 974,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(DISTINCT Normalized Supplier Entities)"
+    },
+    {
+      "metricName": "Material Groups (Categories)",
+      "uiValueExact": 256,
+      "backendValueExact": 256,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(DISTINCT Material Group Keys)"
+    },
+    {
+      "metricName": "Operating Plants / Facilities",
+      "uiValueExact": 26,
+      "backendValueExact": 26,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(DISTINCT Plant Facility Codes)"
+    },
+    {
+      "metricName": "Distinct Billing Months Covered",
+      "uiValueExact": 24,
+      "backendValueExact": 24,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "COUNT(DISTINCT YYYY-MM document dates in uploaded workbook)"
+    },
+    {
+      "metricName": "Pareto 80% Threshold Spend (₹ Cr)",
+      "uiValueExact": 4752.54,
+      "backendValueExact": 4752.54,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "Cumulative spend crossing theoretical 80% boundary at Supplier #46"
+    },
+    {
+      "metricName": "Pareto Cutoff Entity Count",
+      "uiValueExact": 46,
+      "backendValueExact": 46,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "Top 46 suppliers by exact spend descending"
+    },
+    {
+      "metricName": "Quality Index Score %",
+      "uiValueExact": 92.9,
+      "backendValueExact": 92.9,
+      "variance": 0,
+      "status": "PASS",
+      "lineageProof": "Decomposed: Data Quality 98.2%, Completeness 96.6%, Reconciliation 100%"
+    }
+  ]
+}

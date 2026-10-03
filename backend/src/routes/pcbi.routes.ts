@@ -4,11 +4,13 @@
 
 import { Router } from 'express';
 import { pcbiController } from '../controllers/pcbi.controller';
+import { requireFeature } from '../utils/entitlementMiddleware';
+import { FEATURE_PERMISSIONS } from '../constants/subscription';
 
 const router = Router();
 
 // Dashboard & Aggregations
-router.get('/dashboard', (req, res) => pcbiController.getDashboard(req, res));
+router.get('/dashboard', requireFeature(FEATURE_PERMISSIONS.PCBI_SUMMARY), (req, res) => pcbiController.getDashboard(req, res));
 
 // Calculation Trigger
 router.post('/calculate', (req, res) => pcbiController.calculate(req, res));
@@ -16,10 +18,10 @@ router.post('/calculate/:upload_id', (req, res) => pcbiController.calculate(req,
 
 // Opportunities & Audit
 router.get('/opportunity', (req, res) => pcbiController.getOpportunities(req, res));
-router.get('/opportunity/:id', (req, res) => pcbiController.getOpportunityAudit(req, res));
+router.get('/opportunity/:id', requireFeature(FEATURE_PERMISSIONS.PCBI_DETAIL), (req, res) => pcbiController.getOpportunityAudit(req, res));
 
 // Base Purchases & Controlled Reset
-router.get('/base-purchases', (req, res) => pcbiController.getBasePurchases(req, res));
+router.get('/base-purchases', requireFeature(FEATURE_PERMISSIONS.PCBI_DETAIL), (req, res) => pcbiController.getBasePurchases(req, res));
 router.post('/base-purchase/reset', (req, res) => pcbiController.resetBasePurchase(req, res));
 
 // Material & Trend Details

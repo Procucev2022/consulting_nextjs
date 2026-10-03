@@ -1,0 +1,12 @@
+{
+  "sourceFileName": "2 years data.xlsx",
+  "fileSizeBytes": 5769242,
+  "sha256Hash": "8c173c9e65c814530bd8501abc183e9f851b052da603f9c6cc87b88a87e0d9b1",
+  "sheetNames": [
+    "Sheet1"
+  ],
+  "totalRowCount": 31671,
+  "totalColumnCount": 32,
+  "sourceDataFingerprint": "ERP-PROCUREMENT-LEDGER-FY24-FY26-31671-ROWS-5920CR",
+  "generatedAt": "2026-10-03T03:51:20.617Z"
+}

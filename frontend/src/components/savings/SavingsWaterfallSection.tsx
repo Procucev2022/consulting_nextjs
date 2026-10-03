@@ -27,7 +27,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
       valueCr: totalSpendCr,
       note: 'Total Operational Spend',
       color: 'from-slate-700 to-slate-900 text-white',
-      barColor: 'bg-slate-700 dark:bg-slate-600',
+      barColor: 'bg-[#DCE7F5] dark:bg-[#C8D8EF]',
       pct: 100.0
     },
     {
@@ -81,7 +81,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
   ];
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -101,7 +101,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
         {waterfallStages.map((st, idx) => (
           <div
             key={idx}
-            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 flex flex-col justify-between space-y-2 hover:border-emerald-500/50 transition-all"
+            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#F8FBFE] flex flex-col justify-between space-y-2 hover:border-emerald-500/50 transition-all"
           >
             <div>
               <span className="text-[9px] font-mono font-bold text-slate-400 uppercase block mb-1">
@@ -119,7 +119,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
               <div className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
                 ₹{st.valueCr.toFixed(2)} Cr
               </div>
-              <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+              <div className="w-full bg-slate-200 dark:bg-[#EEF4FC] h-1.5 rounded-full overflow-hidden mt-1.5">
                 <div
                   className={`h-full rounded-full ${st.barColor}`}
                   style={{ width: `${Math.min(100, st.pct)}%` }}
@@ -133,7 +133,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
         ))}
       </div>
 
-      <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 text-[11px] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+      <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] text-[11px] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
         <span className="font-semibold text-slate-800 dark:text-slate-200">Governance Note: </span>
         {sStrings.note}
       </div>

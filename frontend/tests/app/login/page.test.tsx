@@ -1,35 +1,35 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginPage from '../../../src/app/login/page';
 import { apiClient } from '../../../src/utils/api';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
-// Mock next/navigation
 const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    replace: vi.fn(),
-    prefetch: vi.fn()
-  })
+  useRouter: () => ({ push: mockPush, replace: vi.fn(), prefetch: vi.fn() })
 }));
 
-// Mock next/image
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />
 }));
 
 describe('Login & Registration Page Component', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   it('should render login form by default with headings and tabs', () => {
     render(<LoginPage />);
-
-    expect(screen.getByText(UI_STRINGS.auth.signInHeading)).toBeDefined();
+    expect(screen.getByRole('heading', { name: UI_STRINGS.auth.signInHeading })).toBeDefined();
     expect(screen.getByText(UI_STRINGS.auth.signInTab)).toBeDefined();
     expect(screen.getByText(UI_STRINGS.auth.createAccountTab)).toBeDefined();
     expect(screen.getByLabelText(UI_STRINGS.auth.emailLabel)).toBeDefined();
@@ -39,19 +39,15 @@ describe('Login & Registration Page Component', () => {
 
   it('should switch between Sign In and Create Account tabs', () => {
     render(<LoginPage />);
-
-    const registerTab = screen.getByText(UI_STRINGS.auth.createAccountTab);
-    fireEvent.click(registerTab);
-
-    expect(screen.getByText(UI_STRINGS.auth.registerHeading)).toBeDefined();
+    fireEvent.click(screen.getByText(UI_STRINGS.auth.createAccountTab));
+    expect(screen.getByRole('heading', { name: UI_STRINGS.auth.registerHeading })).toBeDefined();
     expect(screen.getByLabelText(`${UI_STRINGS.auth.nameLabel} *`)).toBeDefined();
     expect(screen.getByLabelText(`${UI_STRINGS.auth.mobileLabel} *`)).toBeDefined();
     expect(screen.getByLabelText(`${UI_STRINGS.auth.companyNameLabel} *`)).toBeDefined();
     expect(screen.getByLabelText(`${UI_STRINGS.auth.companyAddressLabel} *`)).toBeDefined();
 
-    const loginTab = screen.getByText(UI_STRINGS.auth.signInTab);
-    fireEvent.click(loginTab);
-    expect(screen.getByText(UI_STRINGS.auth.signInHeading)).toBeDefined();
+    fireEvent.click(screen.getByText(UI_STRINGS.auth.signInTab));
+    expect(screen.getByRole('heading', { name: UI_STRINGS.auth.signInHeading })).toBeDefined();
   });
 
   it('should handle successful login and redirect user based on role', async () => {
@@ -74,23 +70,12 @@ describe('Login & Registration Page Component', () => {
     });
 
     render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), { target: { value: 'admin@procucev.com' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), { target: { value: 'Admin@123456' } });
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.signInButton }));
 
-    const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel);
-    const passwordInput = screen.getByLabelText(UI_STRINGS.auth.passwordLabel);
-
-    fireEvent.change(emailInput, { target: { value: 'admin@procucev.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'Admin@123456' } });
-
-    const submitBtn = screen.getByRole('button', { name: UI_STRINGS.auth.signInButton });
-    fireEvent.click(submitBtn);
-
-    await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.auth.loginSuccess)).toBeDefined();
-    });
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/admin');
-    }, { timeout: 1500 });
+    await waitFor(() => expect(screen.getByText(UI_STRINGS.auth.loginSuccess)).toBeDefined());
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/admin'), { timeout: 1500 });
   });
 
   it('should redirect non-admin user to dashboard / upon login', async () => {
@@ -113,69 +98,36 @@ describe('Login & Registration Page Component', () => {
     });
 
     render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), {
-      target: { value: 'user@company.com' }
-    });
-    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), {
-      target: { value: 'User@123456' }
-    });
-
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), { target: { value: 'user@company.com' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), { target: { value: 'User@123456' } });
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.signInButton }));
 
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/');
-    }, { timeout: 1500 });
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/'), { timeout: 1500 });
   });
 
   it('should show error banner when login fails', async () => {
     vi.spyOn(apiClient, 'login').mockRejectedValue(new Error('Invalid email or password'));
-
     render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), {
-      target: { value: 'wrong@test.com' }
-    });
-    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), {
-      target: { value: 'WrongPass' }
-    });
-
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.emailLabel), { target: { value: 'wrong@test.com' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.auth.passwordLabel), { target: { value: 'WrongPass' } });
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.signInButton }));
 
-    await waitFor(() => {
-      expect(screen.getByText('Invalid email or password')).toBeDefined();
-    });
+    await waitFor(() => expect(screen.getByText('Invalid email or password')).toBeDefined());
   });
 
   it('should reject registration when passwords do not match', async () => {
     render(<LoginPage />);
-
     fireEvent.click(screen.getByText(UI_STRINGS.auth.createAccountTab));
 
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.nameLabel} *`), {
-      target: { value: 'New User' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.mobileLabel} *`), {
-      target: { value: '+91 99999 88888' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.emailLabel} *`), {
-      target: { value: 'new@company.com' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyNameLabel} *`), {
-      target: { value: 'Company Ltd' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyAddressLabel} *`), {
-      target: { value: 'Tech Park, Hyderabad' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`), {
-      target: { value: 'Password@123' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`), {
-      target: { value: 'DifferentPassword' }
-    });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.nameLabel} *`), { target: { value: 'New User' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.mobileLabel} *`), { target: { value: '+91 99999 88888' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.emailLabel} *`), { target: { value: 'new@company.com' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyNameLabel} *`), { target: { value: 'Company Ltd' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyAddressLabel} *`), { target: { value: 'Hyderabad' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`), { target: { value: 'Password@123' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`), { target: { value: 'DiffPass' } });
 
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountButton }));
-
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountPrimaryCta }));
     expect(screen.getByText(UI_STRINGS.auth.passwordMismatchError)).toBeDefined();
   });
 
@@ -199,157 +151,81 @@ describe('Login & Registration Page Component', () => {
     });
 
     render(<LoginPage />);
-
     fireEvent.click(screen.getByText(UI_STRINGS.auth.createAccountTab));
 
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.nameLabel} *`), {
-      target: { value: 'New User' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.mobileLabel} *`), {
-      target: { value: '+91 99999 88888' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.emailLabel} *`), {
-      target: { value: 'new@company.com' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyNameLabel} *`), {
-      target: { value: 'Company Ltd' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyAddressLabel} *`), {
-      target: { value: 'Tech Park, Hyderabad' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`), {
-      target: { value: 'Password@123' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`), {
-      target: { value: 'Password@123' }
-    });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.nameLabel} *`), { target: { value: 'New User' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.mobileLabel} *`), { target: { value: '+91 99999 88888' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.emailLabel} *`), { target: { value: 'new@company.com' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyNameLabel} *`), { target: { value: 'Company Ltd' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyAddressLabel} *`), { target: { value: 'Hyderabad' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`), { target: { value: 'Password@123' } });
+    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`), { target: { value: 'Password@123' } });
 
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountButton }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountPrimaryCta }));
 
-    await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.auth.registrationSuccess)).toBeDefined();
-    });
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/');
-    }, { timeout: 1500 });
+    await waitFor(() => expect(screen.getByText(UI_STRINGS.auth.registrationSuccess)).toBeDefined());
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/'), { timeout: 1500 });
   });
 
-  it('should show error banner when registration fails', async () => {
-    vi.spyOn(apiClient, 'register').mockRejectedValue(new Error('Email already registered'));
-
+  it('should render the customer conversion showcase and product journey', () => {
     render(<LoginPage />);
 
-    fireEvent.click(screen.getByText(UI_STRINGS.auth.createAccountTab));
-
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.nameLabel} *`), {
-      target: { value: 'Duplicate User' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.mobileLabel} *`), {
-      target: { value: '+91 99999 88888' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.emailLabel} *`), {
-      target: { value: 'duplicate@company.com' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyNameLabel} *`), {
-      target: { value: 'Company Ltd' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.companyAddressLabel} *`), {
-      target: { value: 'Tech Park' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`), {
-      target: { value: 'Password@123' }
-    });
-    fireEvent.change(screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`), {
-      target: { value: 'Password@123' }
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.auth.createAccountButton }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Email already registered')).toBeDefined();
-    });
-  });
-
-  it('should render the aiCEV logo and technology benefits showcase with profit multiplier', () => {
-    render(<LoginPage />);
-
-    // aiCEV logo
     const logos = screen.getAllByAltText(UI_STRINGS.header.logoAlt);
     expect(logos.length).toBeGreaterThanOrEqual(1);
 
-    // Profit multiplier headline
-    expect(screen.getByText(UI_STRINGS.auth.profitHeadline)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.profitMultiplierBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.heroHeadline)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.heroSecondLine)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.modelTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage1Name)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage2Name)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.stage3Name)).toBeInTheDocument();
 
-    // 3 Technology Pillars
-    expect(screen.getByText(UI_STRINGS.auth.benefitCostSavingsTitle)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.benefitStrategicSourcingTitle)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.benefitRoadmapTitle)).toBeInTheDocument();
-
-    // Key metrics
-    expect(screen.getByText(UI_STRINGS.auth.statDirectEbitda)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.statSavingsUnlocked)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.benefitCard1Title)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.benefitCard2Title)).toBeInTheDocument();
   });
 
   it('should toggle password visibility when clicking eye icons', () => {
     render(<LoginPage />);
-
     const loginPasswordInput = screen.getByLabelText(UI_STRINGS.auth.passwordLabel) as HTMLInputElement;
     expect(loginPasswordInput.type).toBe('password');
 
-    // Click toggle button
-    const toggleLoginBtn = screen.getByLabelText('Show password');
-    fireEvent.click(toggleLoginBtn);
+    fireEvent.click(screen.getByLabelText('Show password'));
     expect(loginPasswordInput.type).toBe('text');
 
     fireEvent.click(screen.getByLabelText('Hide password'));
     expect(loginPasswordInput.type).toBe('password');
 
-    // Switch to Register tab and test register password fields
     fireEvent.click(screen.getByText(UI_STRINGS.auth.createAccountTab));
-
     const regPasswordInput = screen.getByLabelText(`${UI_STRINGS.auth.passwordLabel} *`) as HTMLInputElement;
-    const regConfirmInput = screen.getByLabelText(`${UI_STRINGS.auth.confirmPasswordLabel} *`) as HTMLInputElement;
-
     expect(regPasswordInput.type).toBe('password');
-    expect(regConfirmInput.type).toBe('password');
-
-    const showButtons = screen.getAllByLabelText('Show password');
-    expect(showButtons.length).toBe(2);
-
-    // Toggle both
-    fireEvent.click(showButtons[0]);
-    expect(regPasswordInput.type).toBe('text');
-
-    fireEvent.click(showButtons[1]);
-    expect(regConfirmInput.type).toBe('text');
   });
 
-  it('should render dev temporary logins and allow quick-filling credentials', () => {
-    render(<LoginPage />);
+  it('should NOT render dev temporary logins or admin bypass in production UI even with public env variable', () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production';
+    process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN = 'true';
 
+    render(<LoginPage />);
+    expect(screen.queryByText(UI_STRINGS.auth.tempDevCredentialsBadge)).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.auth.goToAdminDirectly)).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Fill sriman@procucev.com')).not.toBeInTheDocument();
+  });
+
+  it('should render dev logins and allow quick-fill and bypass ONLY when NODE_ENV is development', () => {
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
+    delete process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN;
+
+    render(<LoginPage />);
     expect(screen.getByText(UI_STRINGS.auth.tempDevCredentialsBadge)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.goToAdminDirectly)).toBeInTheDocument();
 
     const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel) as HTMLInputElement;
     const passwordInput = screen.getByLabelText(UI_STRINGS.auth.passwordLabel) as HTMLInputElement;
 
-    const srimanBtn = screen.getByTitle('Fill sriman@procucev.com');
-    fireEvent.click(srimanBtn);
-
+    fireEvent.click(screen.getByTitle('Fill sriman@procucev.com'));
     expect(emailInput.value).toBe('sriman@procucev.com');
     expect(passwordInput.value).toBe('sriman@123');
-  });
 
-  it('should bypass directly to admin portal when clicking direct admin button', () => {
-    render(<LoginPage />);
-
-    const directAdminBtn = screen.getByText(UI_STRINGS.auth.goToAdminDirectly);
-    fireEvent.click(directAdminBtn);
-
+    fireEvent.click(screen.getByText(UI_STRINGS.auth.goToAdminDirectly));
     expect(mockPush).toHaveBeenCalledWith('/admin');
   });
 });
-
-

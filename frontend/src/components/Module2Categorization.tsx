@@ -44,6 +44,7 @@ import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
 import { VendorConsolidationSection } from './vendorConsolidation';
 import { PoConsolidationSection } from './poConsolidation';
+import { Module2StrategicSourcingWorkspace } from './module2';
 import { VendorCategorySupplyMatrix } from './VendorCategorySupplyMatrix';
 import dynamic from 'next/dynamic';
 import { AnalyzingLoader } from './AnalyzingLoader';
@@ -343,7 +344,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   if (currentTier === 'BRONZE') {
     return (
-      <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="space-y-6 animate-fade-in">
         <TierMaskOverlay
           requiredTier="SILVER"
           title={UI_STRINGS.subscription.stageMaskedTitle(UI_STRINGS.module2.badge)}
@@ -355,7 +356,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-fade-in">
       {/* Pictorial Analyzing Loader for UNSPSC AI Categorization */}
       {isCategorizing && (
         <AnalyzingLoader
@@ -377,20 +378,20 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       )}
 
       {/* Module Title Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-sky-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-blue-950/40 border border-sky-100 dark:border-cyan-500/20 shadow-sm dark:shadow-xl glass-panel">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-sky-50 via-white to-blue-50 border border-sky-100 shadow-sm glass-panel">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-mono font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+            <span className="text-xs font-mono font-bold text-cyan-800 bg-cyan-100 px-2.5 py-0.5 rounded border border-cyan-300">
               {UI_STRINGS.module2.badge}
             </span>
-            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
               {UI_STRINGS.module2.valuationBadge}
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
             {UI_STRINGS.module2.heading}
           </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
+          <p className="text-xs text-slate-600 mt-1 max-w-2xl">
             {UI_STRINGS.module2.descriptionPrefix}<strong>{UI_STRINGS.module2.descriptionHighlight}</strong>{UI_STRINGS.module2.descriptionSuffix}
           </p>
         </div>
@@ -420,22 +421,22 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       </div>
 
       {/* Industry Sector Lens & Material DNA Profile Card */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="p-5 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20">
               <Factory className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-400 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded border border-cyan-300">
                   {UI_STRINGS.module2.industryContext.badge}
                 </span>
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <span className="text-xs font-semibold text-slate-700">
                   {UI_STRINGS.module2.industryContext.calibratedFor(activeMajorSector, activeMinorSector)}
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+              <h3 className="text-sm font-bold text-slate-900 mt-0.5">
                 {activeMaterialProfile.tagline}
               </h3>
             </div>
@@ -443,13 +444,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
           {/* Major and Minor Sector Dropdowns */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center space-x-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
-              <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+              <Layers className="w-3.5 h-3.5 text-cyan-600" />
               <select
                 aria-label={UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel}
                 value={activeMajorSector}
                 onChange={(e) => handleSectorChange(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
               >
                 {distinctMajorSectors.map((sec) => (
                   <option key={sec} value={sec}>
@@ -459,13 +460,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               </select>
             </div>
 
-            <div className="flex items-center space-x-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 text-xs">
-              <Tag className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+              <Tag className="w-3.5 h-3.5 text-blue-600" />
               <select
                 aria-label={UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel}
                 value={activeMinorSector}
                 onChange={(e) => handleSectorChange(activeMajorSector, e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
               >
                 {availableMinorSectors.map((sub) => (
                   <option key={sub} value={sub}>
@@ -480,13 +481,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         {/* 4 Pictorial Quadrants: Direct, Packaging, Logistics, MRO */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Direct Materials */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <Package className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <Package className="w-3.5 h-3.5 text-emerald-600" />
                 <span>{UI_STRINGS.module2.industryContext.relevancePills.coreDirect}</span>
               </span>
-              <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.2 rounded border border-emerald-300 dark:border-emerald-800">
+              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-300">
                 {activeMaterialProfile.benchmarkSpendSplit.directPct}% Spend
               </span>
             </div>
@@ -494,7 +495,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               {activeMaterialProfile.typicalDirectMaterials.map((mat) => (
                 <span
                   key={mat}
-                  className="text-[10px] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 leading-tight"
+                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
                 >
                   {mat}
                 </span>
@@ -503,13 +504,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           </div>
 
           {/* Packaging Materials */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <Layers className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <Layers className="w-3.5 h-3.5 text-cyan-600" />
                 <span>{UI_STRINGS.module2.industryContext.relevancePills.criticalPackaging}</span>
               </span>
-              <span className="text-[10px] font-mono font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-1.5 py-0.2 rounded border border-cyan-300 dark:border-cyan-800">
+              <span className="text-[10px] font-mono font-bold text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded border border-cyan-300">
                 {activeMaterialProfile.benchmarkSpendSplit.packagingPct}% Spend
               </span>
             </div>
@@ -517,7 +518,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               {activeMaterialProfile.typicalPackagingMaterials.map((pkg) => (
                 <span
                   key={pkg}
-                  className="text-[10px] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 leading-tight"
+                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
                 >
                   {pkg}
                 </span>
@@ -526,13 +527,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           </div>
 
           {/* Logistics & Freight */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <Truck className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <Truck className="w-3.5 h-3.5 text-purple-600" />
                 <span>{UI_STRINGS.module2.industryContext.relevancePills.sectorLogistics}</span>
               </span>
-              <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-400 bg-purple-100 dark:bg-purple-950 px-1.5 py-0.2 rounded border border-purple-300 dark:border-purple-800">
+              <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded border border-purple-300">
                 {activeMaterialProfile.benchmarkSpendSplit.logisticsPct}% Spend
               </span>
             </div>
@@ -540,7 +541,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               {activeMaterialProfile.typicalLogisticsCategories.map((log) => (
                 <span
                   key={log}
-                  className="text-[10px] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 leading-tight"
+                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
                 >
                   {log}
                 </span>
@@ -549,13 +550,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           </div>
 
           {/* Plant MRO Spares */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
-                <Wrench className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                <Wrench className="w-3.5 h-3.5 text-slate-600" />
                 <span>{UI_STRINGS.module2.industryContext.relevancePills.generalMro}</span>
               </span>
-              <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-slate-200 dark:border-slate-700">
+              <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
                 {activeMaterialProfile.benchmarkSpendSplit.mroPct}% Spend
               </span>
             </div>
@@ -563,7 +564,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               {activeMaterialProfile.typicalMroCategories.map((mro) => (
                 <span
                   key={mro}
-                  className="text-[10px] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 leading-tight"
+                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
                 >
                   {mro}
                 </span>
@@ -573,12 +574,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         </div>
 
         {/* AI Categorization Heuristic Guidance Note */}
-        <div className="p-2.5 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 flex items-center justify-between text-xs text-cyan-950 dark:text-cyan-300">
+        <div className="p-2.5 rounded-xl bg-cyan-50/70 border border-cyan-200 flex items-center justify-between text-xs text-cyan-950">
           <div className="flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+            <Sparkles className="w-4 h-4 text-cyan-600 shrink-0" />
             <span>{activeMaterialProfile.categorizationGuidance}</span>
           </div>
-          <span className="text-[10px] font-mono font-bold bg-cyan-200/60 dark:bg-cyan-900/80 px-2 py-0.5 rounded text-cyan-950 dark:text-cyan-200 shrink-0">
+          <span className="text-[10px] font-mono font-bold bg-cyan-200/60 px-2 py-0.5 rounded text-cyan-950 shrink-0">
             {UI_STRINGS.module2.industryContext.sectorBenchmarkPill(
               activeMaterialProfile.benchmarkSpendSplit.directPct,
               activeMaterialProfile.benchmarkSpendSplit.packagingPct
@@ -606,9 +607,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             isSummaryVisible
           />
           {/* CTA to Module 3 */}
-          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
-              <CheckCircle2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
+            <div className="flex items-center space-x-2 text-xs text-slate-500">
+              <CheckCircle2 className="w-4 h-4 text-cyan-600" />
               <span>{UI_STRINGS.module2.taxonomyVerifiedFooter}</span>
             </div>
             <button
@@ -628,20 +629,20 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             ref={vendorSupplyRef}
             id="vendor-category-supply-section"
             data-testid="vendor-category-supply-section"
-            className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4"
+            className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4"
           >
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-300">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 {matrixTab === 'VENDOR_SUPPLY'
                   ? UI_STRINGS.module2.vendorSupply.sectionTitle
                   : UI_STRINGS.module2.matrixTitle}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500">
                 {matrixTab === 'VENDOR_SUPPLY'
                   ? UI_STRINGS.module2.vendorSupply.sectionDesc
                   : UI_STRINGS.module2.matrixDesc}
@@ -651,14 +652,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
           <div className="flex flex-wrap items-center gap-2.5">
             {/* View Switcher Tabs */}
-            <div className="inline-flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
               <button
                 type="button"
                 onClick={() => setMatrixTab('VENDOR_SUPPLY')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 ${
                   matrixTab === 'VENDOR_SUPPLY'
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <span>{UI_STRINGS.module2.tabVendorSupply}</span>
@@ -669,15 +670,15 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 onClick={() => setMatrixTab('CATEGORY_MATRIX')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   matrixTab === 'CATEGORY_MATRIX'
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <span>{UI_STRINGS.module2.matrixTitle}</span>
               </button>
             </div>
 
-            <span className="text-xs font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800">
+            <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg border border-emerald-300">
               {UI_STRINGS.module2.totalEvaluated(totalEvaluatedSpendInrCr)}
             </span>
           </div>
@@ -688,24 +689,24 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           <VendorCategorySupplyMatrix vendors={dynamicVendorSupply} />
         ) : (
           /* Year-Wise Table */
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
                   <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
                   <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
                   <th className="py-3 px-4 text-right" title="1st April 2024 – 31st March 2025">{UI_STRINGS.module2.matrixHeaders.fy25}</th>
                   <th className="py-3 px-4 text-right" title="1st April 2025 – 31st March 2026">{UI_STRINGS.module2.matrixHeaders.fy26}</th>
-                  <th className="py-3 px-4 text-right font-bold text-emerald-700 dark:text-emerald-400">{UI_STRINGS.module2.matrixHeaders.total}</th>
+                  <th className="py-3 px-4 text-right font-bold text-emerald-700">{UI_STRINGS.module2.matrixHeaders.total}</th>
                   <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
                   <th className="py-3 px-4 text-right">{UI_STRINGS.module2.matrixHeaders.targetSavings}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+              <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
                 {dynamicCategoryDetails.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500 dark:text-slate-400 font-sans text-xs">
+                    <td colSpan={8} className="py-8 text-center text-slate-500 font-sans text-xs">
                       Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
                     </td>
                   </tr>
@@ -730,46 +731,46 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   return (
                     <tr
                       key={cat.id || cat.category}
-                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                      className={`hover:bg-slate-50 transition-colors ${
                         cat.is_balance_category
-                          ? 'bg-slate-50/80 dark:bg-slate-900/60 font-semibold'
-                          : 'bg-white dark:bg-slate-900/40'
+                          ? 'bg-slate-50/80 font-semibold'
+                          : 'bg-white'
                       }`}
                     >
-                      <td className="py-3.5 px-4 font-sans font-bold text-slate-900 dark:text-white flex items-center space-x-2.5">
+                      <td className="py-3.5 px-4 font-sans font-bold text-slate-900 flex items-center space-x-2.5">
                         <span className={`w-6 h-5 rounded px-1 text-[10px] font-mono font-bold flex items-center justify-center ${
                           cat.rank && cat.rank <= 3
-                            ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}>
                           {cat.rank ? `#${cat.rank}` : '•'}
                         </span>
                         <span className="truncate max-w-[260px]" title={cat.category}>{cat.category}</span>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="font-mono text-[11px] font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800">
+                        <span className="font-mono text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
                           {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code ? String(cat.sample_column_l_code).split(',')[0] : 'UNSPSC')}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
+                      <td className="py-3.5 px-4 text-right text-slate-800">
                         ₹{(fy24 || 0).toFixed(2)} Cr
                       </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
+                      <td className="py-3.5 px-4 text-right text-slate-800">
                         ₹{(fy25 || 0).toFixed(2)} Cr
                       </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800 dark:text-slate-200">
+                      <td className="py-3.5 px-4 text-right text-slate-800">
                         ₹{(fy26 || 0).toFixed(2)} Cr
                       </td>
-                      <td className="py-3.5 px-4 text-right font-black text-slate-900 dark:text-white">
+                      <td className="py-3.5 px-4 text-right font-black text-slate-900">
                         ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center space-x-1 text-amber-700 dark:text-amber-400 text-xs font-bold">
+                        <span className="inline-flex items-center space-x-1 text-amber-700 text-xs font-bold">
                           <span>+{cat.yoy_growth_pct || 0}%</span>
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        <span className="font-bold text-emerald-600">
                           ₹{targetSavingsInrCr.toFixed(2)} Cr
                         </span>
                       </td>
@@ -783,9 +784,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       </div>
 
       {/* Column L Section: Strategic Single-Vendor Risk Engine (Default) & UNSPSC Catalog */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
         {/* Navigation Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -794,7 +795,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
                 columnLTab === 'strategicRisk'
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
               <ShieldAlert className="w-4 h-4" />
@@ -811,12 +812,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
                 columnLTab === 'catalog'
                   ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
               <FileSpreadsheet className="w-4 h-4" />
               <span>{UI_STRINGS.module2.strategicVendorRisk.tabs.catalog}</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 font-semibold">
                 {UI_STRINGS.module2.catalogRecordsBadge}
               </span>
             </button>
@@ -836,21 +837,21 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
         {/* View 2: Official UNSPSC English File Column L Live Taxonomy Engine & Search (Preserved in DOM) */}
         <div className={columnLTab === 'catalog' ? 'space-y-4' : 'hidden'}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
             <div className="flex items-center space-x-2.5">
-              <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800">
+              <div className="p-2 rounded-xl bg-cyan-100 text-cyan-700 border border-cyan-300">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                     {UI_STRINGS.module2.catalogTitle}
                   </h3>
-                  <span className="text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
+                  <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-300">
                     {UI_STRINGS.module2.catalogRecordsBadge}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500">
                   {UI_STRINGS.module2.catalogDescPrefix}<strong>{UI_STRINGS.module2.catalogDescHighlight}</strong>.
                 </p>
               </div>
@@ -865,13 +866,13 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   placeholder={UI_STRINGS.module2.catalogSearchPlaceholder}
                   value={explorerSearch}
                   onChange={(e) => setExplorerSearch(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-48 sm:w-64"
+                  className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-48 sm:w-64"
                 />
               </div>
               <select
                 value={explorerBucketFilter}
                 onChange={(e) => setExplorerBucketFilter(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
+                className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-cyan-500"
               >
                 <option value="ALL">{UI_STRINGS.module2.categories.all}</option>
                 <option value="Packaging Materials">{UI_STRINGS.module2.categories.packaging}</option>
@@ -897,11 +898,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                     setSelectedUNSPSCRecord(item);
                   }
                 }}
-                className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2 hover:border-cyan-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
+                className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2 hover:border-cyan-400 hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-1">
-                    <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+                    <span className="font-mono text-xs font-bold text-cyan-700 bg-cyan-100 px-2 py-0.5 rounded border border-cyan-300">
                       {UI_STRINGS.module2.colLPrefix(item.commodityCode)}
                     </span>
                     <span className="text-[10px] text-slate-500 font-sans font-semibold truncate">
@@ -910,19 +911,19 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[10px] font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-cyan-700 uppercase tracking-wider block">
                       {UI_STRINGS.module2.commodityTitleLabel}
                     </span>
-                    <h5 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors" title={item.commodityTitle}>
+                    <h5 className="text-xs font-bold text-slate-900 line-clamp-2 group-hover:text-cyan-600 transition-colors" title={item.commodityTitle}>
                       {item.commodityTitle}
                     </h5>
                   </div>
 
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">
                       {UI_STRINGS.module2.classTitleLabel}
                     </span>
-                    <p className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate" title={`${item.classTitle} (${item.classCode})`}>
+                    <p className="text-[11px] text-slate-700 font-medium truncate" title={`${item.classTitle} (${item.classCode})`}>
                       {item.classTitle} <span className="font-mono text-[10px] text-slate-400">({item.classCode})</span>
                     </p>
                     <p className="text-[10px] text-slate-500 font-mono truncate" title={`${item.familyTitle} (${item.familyCode})`}>
@@ -931,11 +932,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-[11px] mt-1">
+                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-[11px] mt-1">
                   <span className="font-mono text-[10px] text-slate-400">
                     {UI_STRINGS.module2.segmentCodeLabel(item.segmentCode)}
                   </span>
-                  <span className="inline-flex items-center space-x-1 font-semibold text-cyan-600 dark:text-cyan-400 group-hover:underline">
+                  <span className="inline-flex items-center space-x-1 font-semibold text-cyan-600 group-hover:underline">
                     <span>{UI_STRINGS.module2.moreDetailsBtn}</span>
                     <ExternalLink className="w-3 h-3 ml-0.5" />
                   </span>
@@ -944,6 +945,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Module 2 Strategic Sourcing Intelligence, E-Auction & Vendor Consolidation Engine */}
+      <div
+        id="module2-strategic-sourcing-workspace-section"
+        data-testid="module2-strategic-sourcing-workspace-container"
+      >
+        <Module2StrategicSourcingWorkspace />
       </div>
 
       {/* High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) */}
@@ -965,14 +974,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       </div>
 
       {/* Machine Learning Line Item Review Workbench */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
-              <Cpu className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+              <Cpu className="w-4 h-4 text-cyan-600" />
               <span>{UI_STRINGS.module2.workbenchTitle}</span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500">
               {UI_STRINGS.module2.workbenchDescPrefix}<strong>{UI_STRINGS.module2.workbenchDescHighlight}</strong>{UI_STRINGS.module2.workbenchDescSuffix}.
             </p>
           </div>
@@ -980,12 +989,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Year Filter */}
-            <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs">
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg px-2 py-1 text-xs">
               <Calendar className="w-3.5 h-3.5 text-cyan-600 mr-1.5" />
               <select
                 value={selectedYearFilter}
                 onChange={(e) => setSelectedYearFilter(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
               >
                 <option value="ALL">{UI_STRINGS.module2.years.all}</option>
                 <option value="2023">{UI_STRINGS.module2.years.y2023}</option>
@@ -999,7 +1008,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             <select
               value={selectedBucket}
               onChange={(e) => setSelectedBucket(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-cyan-500"
             >
               <option value="ALL">{UI_STRINGS.module2.categories.all}</option>
               <option value="Direct Materials">{UI_STRINGS.module2.categories.direct}</option>
@@ -1013,7 +1022,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               aria-label={UI_STRINGS.module2.industryContext.badge}
               value={selectedSectorRelevanceFilter}
               onChange={(e) => setSelectedSectorRelevanceFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500 font-medium"
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-cyan-500 font-medium"
             >
               <option value="ALL">All Sector Alignments</option>
               <option value="CORE_DIRECT">{UI_STRINGS.module2.industryContext.relevancePills.coreDirect}</option>
@@ -1031,17 +1040,17 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 placeholder={UI_STRINGS.module2.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-44 sm:w-56"
+                className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-cyan-500 w-44 sm:w-56"
               />
             </div>
           </div>
         </div>
 
         {/* Line Items Table */}
-        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.lineItemYear}</th>
                   <th className="py-3 px-4">{UI_STRINGS.module2.lineItemHeaders.poNumber}</th>
@@ -1055,7 +1064,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   <th className="py-3 px-4 text-right">{UI_STRINGS.module2.lineItemHeaders.action}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+              <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
                 {filteredItems.map((item) => {
                   const sectorResult = categorizeMaterialWithIndustryContext(
                     item.raw_desc,
@@ -1072,33 +1081,33 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   return (
                     <tr
                       key={item.mapping_id}
-                      className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      className="bg-white hover:bg-slate-50 transition-colors"
                     >
                       <td className="py-3 px-4">
-                        <span className="font-bold text-cyan-700 dark:text-cyan-400 block font-mono">
+                        <span className="font-bold text-cyan-700 block font-mono">
                           {item.line_item_id}
                         </span>
-                        <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded bg-slate-100 text-[10px] font-bold text-slate-700 border border-slate-200">
                           {item.spend_year || 2024}
                         </span>
                       </td>
                       <td className="py-3 px-4 font-mono">
-                        <span className="inline-flex items-center font-semibold text-xs text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                        <span className="inline-flex items-center font-semibold text-xs text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           {item.po_number}
                         </span>
                       </td>
                       <td className="py-3 px-4 font-sans max-w-xs">
                         <div className="flex items-center space-x-1 mb-1">
-                          <span className="text-[10px] font-mono font-bold text-cyan-800 dark:text-cyan-300 bg-cyan-100/70 dark:bg-cyan-950/70 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800">
+                          <span className="text-[10px] font-mono font-bold text-cyan-800 bg-cyan-100/70 px-1.5 py-0.5 rounded border border-cyan-300">
                             {matCode}
                           </span>
                         </div>
-                        <span className="text-slate-900 dark:text-white text-xs font-semibold block leading-tight line-clamp-2">
+                        <span className="text-slate-900 text-xs font-semibold block leading-tight line-clamp-2">
                           {matDesc}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-sans text-slate-700 dark:text-slate-200 font-medium">
-                        <span className="block font-semibold text-xs text-slate-900 dark:text-white">
+                      <td className="py-3 px-4 font-sans text-slate-700 font-medium">
+                        <span className="block font-semibold text-xs text-slate-900">
                           {item.vendor_identified}
                         </span>
                         {item.master_supplier_id && (
@@ -1109,17 +1118,17 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                       </td>
                       <td className="py-3 px-4 max-w-xs">
                         <div className="flex items-center space-x-1.5 mb-1">
-                          <span className="font-mono text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800">
+                          <span className="font-mono text-xs font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
                             {UI_STRINGS.module2.unspscCodeBadge(item.unspsc_code)}
                           </span>
                         </div>
-                        <div className="text-[11px] font-medium text-slate-900 dark:text-slate-100 leading-tight">
-                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mr-1">
+                        <div className="text-[11px] font-medium text-slate-900 leading-tight">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase mr-1">
                             {UI_STRINGS.module2.commodityLabel}
                           </span>
                           {commodityDetails.commodityTitle}
                         </div>
-                        <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                        <div className="text-[10px] text-slate-500 leading-tight mt-0.5">
                           <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">
                             {UI_STRINGS.module2.classLabel}
                           </span>
@@ -1130,12 +1139,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                             item.core_bucket === 'Packaging Materials'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400 border border-blue-300 dark:border-blue-800/40'
+                              ? 'bg-blue-100 text-blue-800 border border-blue-300'
                               : item.core_bucket === 'Direct Materials'
-                              ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800/40'
+                              ? 'bg-cyan-100 text-cyan-800 border border-cyan-300'
                               : item.core_bucket === 'Logistics & Freight'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/40'
-                              : 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-400 border border-purple-300 dark:border-purple-800/40'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : 'bg-purple-100 text-purple-800 border border-purple-300'
                           }`}
                         >
                           {item.core_bucket}
@@ -1146,14 +1155,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                           title={sectorResult.explanation}
                           className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-help inline-flex items-center space-x-1 ${
                             sectorResult.sectorRelevance === 'CORE_DIRECT'
-                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                               : sectorResult.sectorRelevance === 'CRITICAL_PACKAGING'
-                              ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800'
+                              ? 'bg-cyan-100 text-cyan-800 border border-cyan-300'
                               : sectorResult.sectorRelevance === 'SECTOR_LOGISTICS'
-                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-300 dark:border-purple-800'
+                              ? 'bg-purple-100 text-purple-800 border border-purple-300'
                               : sectorResult.sectorRelevance === 'GENERAL_MRO'
-                              ? 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
-                              : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                              ? 'bg-slate-100 text-slate-800 border border-slate-200'
+                              : 'bg-amber-100 text-amber-900 border border-amber-300'
                           }`}
                         >
                           <span>
@@ -1169,8 +1178,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                           </span>
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                        <div className="text-emerald-700 dark:text-emerald-400 font-black">
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        <div className="text-emerald-700 font-black">
                           ₹{(item.inr_crores || item.total_spend / 10000000).toFixed(2)} Cr
                         </div>
                         <span className="text-[10px] text-slate-400 font-mono">
@@ -1179,7 +1188,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                       </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-2">
-                        <div className="w-12 bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div className="w-12 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
                               item.ai_confidence > 90
@@ -1194,10 +1203,10 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                         <span
                           className={`font-mono text-xs font-bold ${
                             item.ai_confidence > 90
-                              ? 'text-emerald-600 dark:text-emerald-400'
+                              ? 'text-emerald-600'
                               : item.ai_confidence > 80
-                              ? 'text-cyan-600 dark:text-cyan-400'
-                              : 'text-amber-600 dark:text-amber-400'
+                              ? 'text-cyan-600'
+                              : 'text-amber-600'
                           }`}
                         >
                           {item.ai_confidence}%
@@ -1207,7 +1216,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                     <td className="py-3 px-4 text-right font-sans">
                       <div className="flex items-center justify-end space-x-1.5">
                         {item.status === 'Confirmed' ? (
-                          <span className="inline-flex items-center space-x-1 text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/40 text-[10px] font-bold">
+                          <span className="inline-flex items-center space-x-1 text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 text-[10px] font-bold">
                             <Check className="w-3 h-3" />
                             <span>{UI_STRINGS.module2.statusConfirmed}</span>
                           </span>
@@ -1221,7 +1230,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                         )}
                         <button
                           onClick={() => onReassignMapping(item)}
-                          className="px-2.5 py-1 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all border border-slate-300 dark:border-slate-700 flex items-center space-x-1"
+                          className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all border border-slate-300 flex items-center space-x-1"
                         >
                           <Edit3 className="w-3 h-3" />
                           <span>{UI_STRINGS.module2.btnReassign}</span>
@@ -1237,9 +1246,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         </div>
 
         {/* CTA to Module 3 */}
-        <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
-            <CheckCircle2 className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+        <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
+          <div className="flex items-center space-x-2 text-xs text-slate-500">
+            <CheckCircle2 className="w-4 h-4 text-cyan-600" />
             <span>{UI_STRINGS.module2.taxonomyVerifiedFooter}</span>
           </div>
           <button

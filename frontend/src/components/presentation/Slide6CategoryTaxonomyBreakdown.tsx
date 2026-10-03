@@ -18,7 +18,7 @@ export const Slide6CategoryTaxonomyBreakdown: React.FC<PresentationSlideProps> =
   ];
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -41,7 +41,7 @@ export const Slide6CategoryTaxonomyBreakdown: React.FC<PresentationSlideProps> =
       <div className="my-auto py-4">
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-300 font-semibold uppercase text-[11px] border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-300 font-semibold uppercase text-[11px] border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-3 px-4">{strings.headers.category}</th>
                 <th className="py-3 px-4">{strings.headers.baseline}</th>
@@ -52,7 +52,7 @@ export const Slide6CategoryTaxonomyBreakdown: React.FC<PresentationSlideProps> =
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 font-mono text-slate-700 dark:text-slate-300">
               {categories.map((cat) => (
-                <tr key={cat.name} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                <tr key={cat.name} className="hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors">
                   <td className="py-3.5 px-4 font-sans font-bold text-slate-900 dark:text-white">
                     {cat.name}
                   </td>

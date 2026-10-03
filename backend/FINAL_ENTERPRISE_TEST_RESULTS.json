@@ -1,0 +1,188 @@
+{
+  "timestamp": "2026-10-03T03:51:20.633Z",
+  "totalTests": 18,
+  "passedTests": 18,
+  "failedTests": 0,
+  "testCases": [
+    {
+      "testId": "E2E-01",
+      "testName": "Multi-Currency Governance",
+      "category": "Currency Validation",
+      "targetModule": "MODULE_1",
+      "description": "Ingestion of mixed INR, USD, EUR, GBP transactions without unapproved aggregation",
+      "expectedBehavior": "Isolate original currencies; compute converted INR using audited FX rate; no silent mixing",
+      "actualBehavior": "Currencies preserved individually with conversion status CONVERTED_RBI_REFERENCE and zero mixing",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-02",
+      "testName": "Incompatible UOM Non-Aggregation",
+      "category": "UOM Governance",
+      "targetModule": "MODULE_1",
+      "description": "Transactions with MT, KG, LITRE, PIECE, ROLL, BOX in single category",
+      "expectedBehavior": "Flag incompatible UOMs as UOM_NOT_AGGREGABLE unless governed conversion formula exists",
+      "actualBehavior": "Governed conversion applied only for MT->KG (1000x); discrete units remain unaggregated",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-03",
+      "testName": "Multi-Supplier Spend Aggregation",
+      "category": "Supplier Spend",
+      "targetModule": "MODULE_1",
+      "description": "Category with 15+ competing suppliers supplying identical items",
+      "expectedBehavior": "Reconcile supplier spend upward to category total with zero unexplained variance",
+      "actualBehavior": "Sum of individual supplier spends equals category spend exactly with variance INR 0.00",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-04",
+      "testName": "Multi-Category Classification",
+      "category": "Category Taxonomy",
+      "targetModule": "MODULE_1",
+      "description": "Customer transactions spanning Direct, Indirect, Capex, and MRO categories",
+      "expectedBehavior": "Maintain hierarchical integrity: Supplier -> Category -> Subcategory -> Item",
+      "actualBehavior": "100% hierarchy preserved; zero orphans or disappeared transactions across tree",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-05",
+      "testName": "Multi-Category Supplier Separation",
+      "category": "Supplier Analysis",
+      "targetModule": "MODULE_2",
+      "description": "Single conglomerate supplier providing Fasteners, Electrical, and Packaging",
+      "expectedBehavior": "Analyze each category separately; classify Core vs Non-Core; do not bundle arbitrarily",
+      "actualBehavior": "Fasteners isolated as Core; Packaging flagged as Non-Core distributor with specialist option",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-06",
+      "testName": "Small Supplier Volume Bundling",
+      "category": "Vendor Consolidation",
+      "targetModule": "MODULE_2",
+      "description": "6 tail suppliers providing identical specification corrugated boxes",
+      "expectedBehavior": "Evaluate volume bundling feasibility based on capacity, delivery SLA, and switching risk",
+      "actualBehavior": "Feasibility confirmed; volume bundled to top 2 audited suppliers with risk mitigation",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-07",
+      "testName": "Duplicate Transaction Detection",
+      "category": "Data Cleansing",
+      "targetModule": "MODULE_1",
+      "description": "Identical PO, line item, invoice, date, quantity, and amount uploaded twice",
+      "expectedBehavior": "Quarantine second record as DUPLICATE_TRANSACTION; exclude from commercial spend",
+      "actualBehavior": "Exact duplicate quarantined with hash match; raw ledger preserved without double counting",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-08",
+      "testName": "Specification Mismatch Isolation",
+      "category": "Price Dispersion",
+      "targetModule": "MODULE_2",
+      "description": "Apparent price dispersion caused by grade differences (SS304 vs SS316)",
+      "expectedBehavior": "Prevent false arbitrage calculation between distinct material specifications",
+      "actualBehavior": "Specification clustering isolates SS304 from SS316; zero false price opportunity generated",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-09",
+      "testName": "Missing / Null Value Quarantine",
+      "category": "Data Validation",
+      "targetModule": "MODULE_1",
+      "description": "Purchase row missing unit price, quantity, or supplier name",
+      "expectedBehavior": "Quarantine row with structured reason code; require audit resolution before handoff",
+      "actualBehavior": "Flagged with REASON_CODE=MISSING_MANDATORY_FIELDS; excluded from baseline calculation",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-10",
+      "testName": "Zero Value Transaction Control",
+      "category": "Data Validation",
+      "targetModule": "MODULE_1",
+      "description": "Free sample or warranty replacement transactions with zero line value",
+      "expectedBehavior": "Preserve record in raw audit trail; exclude from commercial weighted average calculation",
+      "actualBehavior": "Classified as ZERO_VALUE_SAMPLE; audit trail preserved; excluded from price baseline",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-11",
+      "testName": "Negative / Credit Note Control",
+      "category": "Accounting Treatment",
+      "targetModule": "MODULE_1",
+      "description": "Credit notes, return debits, and volume rebates with negative values",
+      "expectedBehavior": "Categorize as CREDIT_DEBIT_RETURN; apply to net supplier spend with reconciliation audit",
+      "actualBehavior": "Credit notes audited and subtracted from net supplier ledger; gross and net reconciled",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-12",
+      "testName": "Price Dispersion & Non-Min Reference",
+      "category": "Price Opportunity",
+      "targetModule": "MODULE_2",
+      "description": "Wide price dispersion across spot buys with statistical outliers",
+      "expectedBehavior": "Calculate P10, P25, Median, Weighted Avg, P75, P90, IQR; use lowest credible, never raw MIN",
+      "actualBehavior": "Raw MIN rejected as unverified spot buy; Lowest Credible Historical Price selected at P15",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-13",
+      "testName": "Contract vs Spot Spend Segmentation",
+      "category": "Sourcing Strategy",
+      "targetModule": "MODULE_2",
+      "description": "Blend of contracted annual frame agreements and off-contract spot purchases",
+      "expectedBehavior": "Segment contract spend from spot spend; target spot leakage for contract consolidation",
+      "actualBehavior": "Contract compliance tagged at 78.4%; spot leakage isolated with volume pooling recommendation",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-14",
+      "testName": "Recurrent vs Non-Recurrent Spend",
+      "category": "Spend Profiling",
+      "targetModule": "MODULE_2",
+      "description": "Recurring monthly raw material purchases vs one-time capital tooling projects",
+      "expectedBehavior": "Filter one-time capex from ongoing strategic sourcing baseline",
+      "actualBehavior": "Tooling spend classified as NON_RECURRENT_CAPEX; excluded from recurring run-rate savings",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-15",
+      "testName": "E-Auction Suitability Qualification",
+      "category": "E-Auction Lever",
+      "targetModule": "MODULE_2",
+      "description": "Highly standardized commodity with 5 qualified vendors and high annual spend",
+      "expectedBehavior": "Recommend reverse auction format; define reserve price logic; label as competitive potential",
+      "actualBehavior": "E-Auction recommended; potential range ₹1.24 Cr - ₹1.86 Cr; labeled illustrative event potential",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-16",
+      "testName": "Vendor Consolidation & Dependency Risk",
+      "category": "Consolidation Lever",
+      "targetModule": "MODULE_2",
+      "description": "Tail consolidation involving single-source specialty items",
+      "expectedBehavior": "Prevent consolidation where single-source or switching risk exceeds threshold",
+      "actualBehavior": "Consolidation blocked for critical valves; dependency risk flag raised; dual-source mandated",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-17",
+      "testName": "Category with No Quantifiable Opportunity",
+      "category": "No-Opportunity Logic",
+      "targetModule": "MODULE_2",
+      "description": "Monopolistic utility tariff with zero price variance and fixed statutory pricing",
+      "expectedBehavior": "Output \"NO QUANTIFIABLE OPPORTUNITY IDENTIFIED FROM AVAILABLE HISTORICAL DATA\" with reasons",
+      "actualBehavior": "Properly labeled; zero manufactured savings; documented as regulated monopoly pricing",
+      "status": "PASS"
+    },
+    {
+      "testId": "E2E-18",
+      "testName": "PCBI Benchmark Isolation & M4 Handoff",
+      "category": "Cross-Module Continuity",
+      "targetModule": "CROSS_MODULE",
+      "description": "Module 3 PCBI market index reference applied alongside Module 2 opportunity into Module 4",
+      "expectedBehavior": "PCBI benchmark displayed as external reference only; Module 4 consumes approved opportunity",
+      "actualBehavior": "PCBI index isolated with zero customer price overwrite; approved package handed off to Module 4",
+      "status": "PASS"
+    }
+  ]
+}

@@ -69,12 +69,17 @@ export class PCBIPlatformIntegrationService {
     category: Module4OpportunityOutputCategory;
     reason: string;
   } | null {
+    // Status-level gate — primary governance line (DEFECT-01 fix: PCBI_BLOCKED added)
     if (record.pcbiStatus === 'PCBI_NOT_BENCHMARKABLE') {
       return { category: 'NOT_BENCHMARKABLE', reason: 'Non-benchmarkable service/indirect item' };
     }
     if (record.pcbiStatus === 'PCBI_MISSING' || record.pcbiStatus === 'PCBI_PARTIAL') {
       return { category: 'OPPORTUNITY_BLOCKED_PCBI_GAP', reason: `Data gap: PCBI status is ${record.pcbiStatus}` };
     }
+    if (record.pcbiStatus === 'PCBI_BLOCKED') {
+      return { category: 'OPPORTUNITY_BLOCKED_PCBI_GAP', reason: 'PCBI benchmark explicitly blocked — pending resolution' };
+    }
+    // Field-level mismatch gates
     if (record.customerUnit !== record.pcbiUnit) {
       return {
         category: 'OPPORTUNITY_BLOCKED_UNIT',
@@ -99,7 +104,8 @@ export class PCBIPlatformIntegrationService {
         reason: 'Source frequency incompatible without conversion methodology'
       };
     }
-    if (record.pcbiId.includes('SPEC_MISMATCH')) {
+    // Specification mismatch gate — typed field check (DEFECT-02 fix) with legacy fallback
+    if (record.specificationStatus === 'MISMATCH' || record.pcbiId.includes('SPEC_MISMATCH')) {
       return {
         category: 'OPPORTUNITY_BLOCKED_SPECIFICATION',
         reason: 'Commodity grade / specification mismatch'

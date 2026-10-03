@@ -21,26 +21,26 @@ export const PCBIColumnMappingSection: React.FC<PCBIColumnMappingSectionProps> =
   onOverrideColumnMapping
 }) => {
   return (
-    <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+    <div className="p-5 bg-white border border-[#DCE7F5] rounded-xl space-y-4 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h4 className="text-sm font-bold text-white flex items-center gap-2">
-            <Settings2 size={16} className="text-cyan-400" />
+          <h4 className="text-sm font-bold text-[#0B1B33] flex items-center gap-2">
+            <Settings2 size={16} className="text-[#0284C7]" />
             {UI_STRINGS.pcbiAdmin.columnMappingTitle}
           </h4>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-[#475569]">
             {UI_STRINGS.pcbiAdmin.columnMappingSubtitle}
           </p>
         </div>
 
         {/* Dataset Selector for Mapping */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Target Dataset:</span>
+          <span className="text-xs text-[#475569]">Target Dataset:</span>
           <select
             value={selectedSheetForMapping}
             onChange={(e) => onSelectSheetForMapping(e.target.value)}
             aria-label="Select dataset for column mapping"
-            className="bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-cyan-500 font-medium"
+            className="bg-white border border-[#DCE7F5] text-[#0B1B33] rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7] font-medium"
           >
             {Object.keys(mappings).map((typeKey) => (
               <option key={typeKey} value={typeKey}>
@@ -54,17 +54,17 @@ export const PCBIColumnMappingSection: React.FC<PCBIColumnMappingSectionProps> =
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400">
+            <tr className="border-b border-[#DCE7F5] bg-[#F8FBFE] text-[#475569]">
               <th className="py-2 px-3 font-semibold">{UI_STRINGS.pcbiAdmin.excelColHeader}</th>
               <th className="py-2 px-3 font-semibold">{UI_STRINGS.pcbiAdmin.mappedFieldHeader}</th>
               <th className="py-2 px-3 font-semibold">{UI_STRINGS.pcbiAdmin.confidenceHeader}</th>
               <th className="py-2 px-3 font-semibold">{UI_STRINGS.pcbiAdmin.statusHeader}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 text-slate-200">
+          <tbody className="divide-y divide-[#DCE7F5] text-[#0B1B33]">
             {(mappings[selectedSheetForMapping] || []).map((m) => (
-              <tr key={m.excelColumn} className="hover:bg-slate-800/30">
-                <td className="py-2 px-3 font-mono font-medium text-white">{m.excelColumn}</td>
+              <tr key={m.excelColumn} className="hover:bg-[#EEF7FF] transition-colors">
+                <td className="py-2 px-3 font-mono font-medium text-[#0B1B33]">{m.excelColumn}</td>
                 <td className="py-2 px-3">
                   <select
                     value={m.mappedField}
@@ -72,7 +72,7 @@ export const PCBIColumnMappingSection: React.FC<PCBIColumnMappingSectionProps> =
                       onOverrideColumnMapping(selectedSheetForMapping, m.excelColumn, e.target.value)
                     }
                     aria-label={`Map column ${m.excelColumn}`}
-                    className="bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-cyan-500"
+                    className="bg-white border border-[#DCE7F5] text-[#0B1B33] rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7]"
                   >
                     <option value="">(Unmapped / Ignore)</option>
                     {(PCBI_TARGET_FIELDS[selectedSheetForMapping as keyof typeof PCBI_TARGET_FIELDS] || []).map(
@@ -85,17 +85,17 @@ export const PCBIColumnMappingSection: React.FC<PCBIColumnMappingSectionProps> =
                   </select>
                 </td>
                 <td className="py-2 px-3">
-                  <span className={m.confidence >= 90 ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
+                  <span className={m.confidence >= 90 ? 'text-emerald-600 font-bold tabular-nums' : 'text-amber-600 tabular-nums'}>
                     {m.confidence}%
                   </span>
                 </td>
                 <td className="py-2 px-3">
                   {m.mappedField ? (
-                    <span className="px-2 py-0.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 rounded text-[10px] font-bold">
+                    <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-bold">
                       MAPPED
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded text-[10px]">
+                    <span className="px-2 py-0.5 bg-slate-100 text-[#64748B] border border-slate-200 rounded text-[10px] font-medium">
                       OPTIONAL
                     </span>
                   )}

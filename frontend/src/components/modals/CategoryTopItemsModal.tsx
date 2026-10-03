@@ -103,12 +103,12 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
         aria-hidden="true"
         tabIndex={-1}
       />
-      <div className="relative w-full max-w-6xl max-h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-emerald-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col glass-panel">
+      <div className="relative w-full max-w-6xl max-h-[92vh] bg-white dark:bg-white border border-slate-200 dark:border-emerald-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col glass-panel">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 gap-3 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#F8FBFE] gap-3 shrink-0">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <span className="text-[11px] font-mono font-black px-2.5 py-0.5 rounded-lg bg-slate-900 dark:bg-slate-800 text-amber-300 border border-slate-700 flex items-center space-x-1 shadow-xs">
+              <span className="text-[11px] font-mono font-black px-2.5 py-0.5 rounded-lg bg-white dark:bg-[#EEF4FC] text-amber-300 border border-slate-700 flex items-center space-x-1 shadow-xs">
                 <Award className="w-3.5 h-3.5 text-amber-400" />
                 <span>{UI_STRINGS.modals.topItems.categoryRank(category.rank || 1)}</span>
               </span>
@@ -130,14 +130,14 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
           <div className="flex items-center space-x-2 self-end sm:self-auto">
             <button
               onClick={handleExportCSV}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl border border-slate-300 dark:border-slate-700 transition-colors shadow-xs active:scale-95 cursor-pointer"
+              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-[#EEF4FC] hover:bg-slate-100 dark:hover:bg-[#DCE7F5] rounded-xl border border-slate-300 dark:border-slate-700 transition-colors shadow-xs active:scale-95 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
               <span>{UI_STRINGS.modals.topItems.exportCSV}</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#EEF4FC] rounded-xl transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -145,27 +145,27 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
         </div>
 
         {/* KPI Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-3.5 bg-slate-100/70 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800 shrink-0 font-mono text-xs">
-          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 px-6 py-3.5 bg-slate-100/70 dark:bg-[#F8FBFE] border-b border-slate-200 dark:border-slate-800 shrink-0 font-mono text-xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.totalCategorySpend}</span>
             <p className="text-base font-black text-slate-900 dark:text-white">
               ₹{categorySpendCr.toFixed(2)} Cr
             </p>
           </div>
-          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.activeLineItems}</span>
             <p className="text-base font-black text-cyan-700 dark:text-cyan-400">
               {UI_STRINGS.modals.topItems.activeItemsCount(category.line_items_count)}
             </p>
           </div>
-          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.priceCreepRiskItems}</span>
             <p className="text-base font-black text-rose-600 dark:text-rose-400 flex items-center space-x-1">
               <span>{UI_STRINGS.modals.topItems.itemsCount(highCreepCount)}</span>
               <span className="text-[10px] font-normal text-rose-500">{UI_STRINGS.modals.topItems.highCreepBadge}</span>
             </p>
           </div>
-          <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.quantifiedSavingsPotential}</span>
             <p className="text-base font-black text-emerald-600 dark:text-emerald-400">
               ₹{(totalPotentialLakhs / 100).toFixed(2)} Cr
@@ -174,7 +174,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 gap-2 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-white gap-2 shrink-0">
           <div className="relative flex-1 max-w-md">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
             <input
@@ -182,7 +182,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
               placeholder={UI_STRINGS.modals.topItems.searchPlaceholderCategory}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -192,8 +192,8 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
               onClick={() => setTrendFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 trendFilter === 'ALL'
-                  ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-white text-white dark:bg-emerald-600 dark:text-white'
+                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.modals.topItems.filterAllTop10}
@@ -203,7 +203,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 trendFilter === 'HIGH_CREEP'
                   ? 'bg-rose-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.modals.topItems.filterHighCreep}
@@ -213,7 +213,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 trendFilter === 'STEADY'
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.modals.topItems.filterSteady}
@@ -226,7 +226,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
           <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+                <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                   <tr>
                     <th className="py-3 px-3">{UI_STRINGS.modals.topItems.tableHeaders.itemId}</th>
                     <th className="py-3 px-3">{UI_STRINGS.modals.topItems.tableHeaders.description}</th>
@@ -253,7 +253,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
                       return (
                         <tr
                           key={item.item_id || itemIdx}
-                          className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                          className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                         >
                           <td className="py-3 px-3 font-bold text-cyan-700 dark:text-cyan-400">
                             #{itemIdx + 1}
@@ -335,7 +335,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
           </div>
 
           {/* Mathematical Footnote */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-slate-600 dark:text-slate-400">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-slate-600 dark:text-slate-400">
             <div>
               <span>{UI_STRINGS.modals.topItems.priceTrendFormulaNote}</span>
             </div>
@@ -346,13 +346,13 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/80 shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#F8FBFE] shrink-0">
           <span className="text-xs text-slate-500 font-mono">
             {UI_STRINGS.modals.topItems.showingCategoryItems(filteredItems.length, rawItems.length, category.category)}
           </span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-all shadow-xs cursor-pointer"
+            className="px-4 py-1.5 text-xs font-bold text-white bg-white dark:bg-[#EEF4FC] hover:bg-[#EEF4FC] dark:hover:bg-[#DCE7F5] rounded-xl transition-all shadow-xs cursor-pointer"
           >
             {UI_STRINGS.modals.topItems.closePopUp}
           </button>

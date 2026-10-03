@@ -32,7 +32,7 @@ export const VendorSupplyAlarmBanner: React.FC<VendorSupplyAlarmBannerProps> = (
           </div>
         </div>
 
-        <div className="flex items-center space-x-4 bg-white/80 dark:bg-slate-900/80 px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-800/80">
+        <div className="flex items-center space-x-4 bg-white/80 dark:bg-white px-4 py-2.5 rounded-xl border border-rose-200 dark:border-rose-800/80">
           <div className="text-right">
             <span className="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">
               {strings.statHighSpendShareLabel}

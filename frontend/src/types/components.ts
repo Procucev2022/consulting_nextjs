@@ -31,6 +31,7 @@ export interface HeaderProps {
   currency: HeaderCurrency;
   onSelectCurrency: (currency: HeaderCurrency) => void;
   onOpenReport: () => void;
+  onOpenManagementBrief?: () => void;
   theme: 'light' | 'dark';
   onSelectTheme: (theme: 'light' | 'dark') => void;
   onStartAnalysis?: () => void;
@@ -42,6 +43,7 @@ export interface HeaderProps {
   onLogout?: () => void;
   onOpenClientSetup?: () => void;
   onContactSupport?: () => void;
+  isExecutiveBriefReady?: boolean;
 }
 
 export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
@@ -483,5 +485,76 @@ export interface PCBIPublishModalProps {
   onConfirmPublish: () => Promise<void>;
   onClose: () => void;
 }
+
+export interface CommodityWorkspaceModalProps {
+  isOpen: boolean;
+  pcbiId: string | null;
+  onClose: () => void;
+  onSourceUploaded?: () => void;
+  onDataApproved?: (version: string) => void;
+}
+
+export interface PCBICommodityDataLabViewProps {
+  onOpenWorkspaceModal?: (pcbiId: string) => void;
+  onNavigateToMaster?: () => void;
+}
+
+export interface CustomerDataProtectionNoticeProps {
+  moduleContext?: 'module1' | 'module2' | 'module3' | 'module4' | 'admin' | 'export';
+  defaultExpanded?: boolean;
+  className?: string;
+}
+
+export interface CustomerDataProtectedBadgeProps {
+  className?: string;
+  showTooltip?: boolean;
+}
+
+export interface UploadPrivacyConfirmationBoxProps {
+  isChecked: boolean;
+  onToggle: (checked: boolean) => void;
+  className?: string;
+}
+
+export interface ProgressiveAnalysisAccordionProps {
+  title?: string;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+  summaryCount?: number;
+  className?: string;
+}
+
+export interface AdminDataLifecycleRecordProps {
+  datasetId: string;
+  tenantId: string;
+  datasetName: string;
+  datasetCreated: string;
+  datasetStatus: 'ACTIVE' | 'ARCHIVED' | 'PENDING_VALIDATION';
+  lastProcessed: string;
+  retentionStatus: string;
+  deletionEligibility: string;
+  deletionAuditRecord?: string;
+}
+
+export interface AdminDataLifecyclePanelProps {
+  records?: AdminDataLifecycleRecordProps[];
+  className?: string;
+}
+
+export interface ExecutiveOpportunityBriefViewProps {
+  readonly clientName?: string;
+  readonly onDownloadPdf?: () => void;
+  readonly onDownloadPptx?: () => void;
+  readonly onBackToWorkspace?: () => void;
+  readonly isFullScreen?: boolean;
+  readonly onToggleFullScreen?: () => void;
+  readonly currentTier?: SubscriptionTier;
+  readonly onExploreSilver?: () => void;
+}
+
+export interface AuthCardProps {
+  initialTab?: 'LOGIN' | 'REGISTER';
+}
+
 
 

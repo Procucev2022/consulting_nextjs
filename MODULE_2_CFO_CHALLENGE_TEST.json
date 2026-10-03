@@ -1,0 +1,46 @@
+{
+  "opportunityId": "OPP-CAT-StructuralSt",
+  "categoryId": "CAT-StructuralSt",
+  "categoryName": "Structural Steel",
+  "opportunityAmountInr": 8400000,
+  "q1_whyExists": "Identified ₹84.00L commercial opportunity across 4 active suppliers.",
+  "q2_provingTransactions": [
+    "TX-VAL-001",
+    "TX-VAL-002",
+    "TX-VAL-003",
+    "TX-VAL-004"
+  ],
+  "q3_opportunitySuppliers": [
+    "Tata Steel Ltd",
+    "JSW Steel Ltd",
+    "Jindal Steel & Power",
+    "Steel Authority of India Ltd"
+  ],
+  "q4_referencePrice": 58500,
+  "q5_whyReferenceCredible": "Reference price ₹58500 represents lowest credible historical benchmark meeting 5% volume share.",
+  "q6_assumptionsMade": [
+    "Supplier specifications and commercial UOMs are strictly comparable",
+    "Demonstrated historical pricing reflects achievable commercial terms",
+    "Switching and operational transition feasibility evaluated"
+  ],
+  "q7_assumptionsNotMade": [
+    "Zero synthetic or market index discounts assumed",
+    "Zero unverified volume growth assumed",
+    "Zero realized savings claimed prior to Module 4 confirmation"
+  ],
+  "q8_addressableSpendInr": 219000000,
+  "q9_demonstratedHistoricalPortionInr": 8400000,
+  "q10_requiresFutureValidationPortionInr": 0,
+  "q11_doubleCountingProtection": "Single highest-yield commercial lever selected; cross-lever overlap deducted.",
+  "q12_requiredOperationalAction": "Negotiate volume consolidation master agreement with primary competitive supplier.",
+  "q13_realizationRisks": [
+    "Supplier capacity constraints on increased volume allocation",
+    "Contractual transition timing and existing term commitments",
+    "Secondary plant logistics or delivery lead time variations"
+  ],
+  "q14_evidenceThatWouldChangeConclusion": [
+    "Discovery of undisclosed proprietary technical specification differences",
+    "Supplier refusal of historical tier terms upon volume bundling",
+    "Enactment of binding multi-year fixed price contract"
+  ]
+}

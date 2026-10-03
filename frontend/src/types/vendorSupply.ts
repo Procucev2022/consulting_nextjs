@@ -9,6 +9,20 @@ export type VendorSupplyCategoryType = 'SINGLE_CATEGORY' | 'MULTI_CATEGORY';
 
 export type VendorSupplyRiskLevel = 'HIGH_RISK' | 'MEDIUM_RISK' | 'OPTIMAL';
 
+export type CategorySupplyStructureIndicator =
+  | 'BALANCED'
+  | 'CONCENTRATED'
+  | 'FRAGMENTED'
+  | 'MULTI_CATEGORY_DEPENDENT'
+  | 'SINGLE_SOURCE_DEPENDENT'
+  | 'INSUFFICIENT_DATA'
+  | 'CATEGORY_SPECIALIST_DOMINANCE'
+  | 'GENERALIST_SUPPLIER_DOMINANCE'
+  | 'TAIL_FRAGMENTATION'
+  | 'SINGLE_SUPPLIER_CONCENTRATION'
+  | 'MULTI_SUPPLIER_PRICE_DISPERSION'
+  | 'CROSS_CATEGORY_SUPPLIER_DEPENDENCY';
+
 export interface VendorItemYoYDetail {
   material_code: string;
   material_description: string;
@@ -86,6 +100,8 @@ export interface VendorSupplyOverview {
   multi_category_spend_pct: number;
   high_spend_multi_category_alarm: boolean;
   alarm_details: VendorSupplyAlarmDetails;
+  supply_structure_indicator?: CategorySupplyStructureIndicator;
+  indicator_rationale?: string;
   tiers: VendorSupplyTierSummary[];
 }
 

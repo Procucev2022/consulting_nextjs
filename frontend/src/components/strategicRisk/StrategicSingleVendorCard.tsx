@@ -24,7 +24,7 @@ export const StrategicSingleVendorCard: React.FC<StrategicSingleVendorCardProps>
           onSelectDetails(item);
         }
       }}
-      className={`p-4 rounded-xl bg-white dark:bg-slate-950/80 border transition-all cursor-pointer group flex flex-col justify-between hover:shadow-lg ${
+      className={`p-4 rounded-xl bg-white dark:bg-[#F8FBFE] border transition-all cursor-pointer group flex flex-col justify-between hover:shadow-lg ${
         isSoleSource
           ? 'border-rose-200 dark:border-rose-900/60 hover:border-rose-400 dark:hover:border-rose-600'
           : 'border-amber-200 dark:border-amber-900/60 hover:border-amber-400 dark:hover:border-amber-600'
@@ -33,7 +33,7 @@ export const StrategicSingleVendorCard: React.FC<StrategicSingleVendorCardProps>
       <div className="space-y-3">
         {/* Top Header: Material Code & Category */}
         <div className="flex items-center justify-between gap-1">
-          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
+          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-white px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
             {item.material_code}
           </span>
           <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate">
@@ -60,7 +60,7 @@ export const StrategicSingleVendorCard: React.FC<StrategicSingleVendorCardProps>
         </div>
 
         {/* Vendor Concentration Breakdown */}
-        <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-white border border-slate-100 dark:border-slate-800 space-y-2">
           {/* Primary Vendor */}
           <div className="space-y-1">
             <div className="flex items-center justify-between text-[11px]">
@@ -72,7 +72,7 @@ export const StrategicSingleVendorCard: React.FC<StrategicSingleVendorCardProps>
               </span>
             </div>
             {/* Concentration Bar */}
-            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
+            <div className="w-full bg-slate-200 dark:bg-[#EEF4FC] h-1.5 rounded-full overflow-hidden flex">
               <div
                 className={`h-full ${isSoleSource ? 'bg-rose-500' : 'bg-rose-500'}`}
                 style={{ width: `${item.primary_vendor.share_percentage}%` }}

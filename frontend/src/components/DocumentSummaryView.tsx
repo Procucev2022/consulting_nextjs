@@ -142,46 +142,46 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   return (
     <div
       id="document-summary-section"
-      className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-6"
+      className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-6"
     >
       {/* Top Banner: Ingested File Details & Currency Switcher */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-[11px] font-mono font-bold text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-2.5 py-1 rounded-md border border-cyan-300 dark:border-cyan-800/80 shrink-0 flex items-center space-x-1.5">
+            <span className="text-[11px] font-mono font-bold text-cyan-800 bg-cyan-100 px-2.5 py-1 rounded-md border border-cyan-300 shrink-0 flex items-center space-x-1.5">
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>{UI_STRINGS.documentSummary.badge}</span>
             </span>
-            <span className="text-[11px] font-mono font-bold text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md border border-emerald-300 dark:border-emerald-800/80 shrink-0">
+            <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-300 shrink-0">
               {UI_STRINGS.documentSummary.valuationBadge}
             </span>
             {isDataRefreshed && (
-              <span className="text-[11px] font-mono font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-2.5 py-0.5 rounded-md border border-amber-300 dark:border-amber-700/80 shrink-0 flex items-center space-x-1 shadow-xs animate-pulse">
-                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="text-[11px] font-mono font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-300 shrink-0 flex items-center space-x-1 shadow-xs animate-pulse">
+                <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
                 <span>{UI_STRINGS.documentSummary.revisedNumbersBadge}</span>
               </span>
             )}
-            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-black text-slate-900">
               {UI_STRINGS.documentSummary.heading}
             </h3>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="text-xs text-slate-500 leading-relaxed">
             {UI_STRINGS.documentSummary.subheading(resolvedFileName, resolvedRecordsCount)}
           </p>
         </div>
 
         {/* Currency Switcher Toggle: INR vs USD */}
         <div className="flex items-center space-x-2 shrink-0">
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <span className="text-xs font-semibold text-slate-600">
             {UI_STRINGS.documentSummary.currencyToggleLabel}
           </span>
-          <div className="flex items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-1 text-xs font-mono shadow-xs">
+          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono shadow-xs">
             <button
               onClick={() => setSpendCurrency('INR')}
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 spendCurrency === 'INR'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.documentSummary.currencies.inr}
@@ -191,7 +191,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
               className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                 spendCurrency === 'USD'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.documentSummary.currencies.usd}
@@ -203,11 +203,11 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
       {/* 6 High-Level Key Performance Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {/* Total Spend */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
             {UI_STRINGS.documentSummary.totalSpendEvaluated}
           </span>
-          <p className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+          <p className="text-xl sm:text-2xl font-black font-mono text-emerald-600">
             {totalSpendFormatted}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
@@ -216,11 +216,11 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
 
         {/* Total Line Items */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
             {UI_STRINGS.documentSummary.evaluatedRecords}
           </span>
-          <p className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white">
+          <p className="text-xl sm:text-2xl font-black font-mono text-slate-900">
             {resolvedRecordsCount.toLocaleString()}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
@@ -229,14 +229,14 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
 
         {/* Unique Items */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
               {UI_STRINGS.documentSummary.uniqueItems}
             </span>
-            <Package className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 opacity-80" />
+            <Package className="w-3.5 h-3.5 text-cyan-600 opacity-80" />
           </div>
-          <p className="text-xl sm:text-2xl font-black font-mono text-cyan-600 dark:text-cyan-400">
+          <p className="text-xl sm:text-2xl font-black font-mono text-cyan-600">
             {resolvedUniqueItems.toLocaleString()}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
@@ -245,14 +245,14 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
 
         {/* Unique Vendors */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
               {UI_STRINGS.documentSummary.uniqueVendors}
             </span>
-            <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 opacity-80" />
+            <Users className="w-3.5 h-3.5 text-indigo-600 opacity-80" />
           </div>
-          <p className="text-xl sm:text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">
+          <p className="text-xl sm:text-2xl font-black font-mono text-indigo-600">
             {resolvedUniqueVendors.toLocaleString()}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
@@ -261,11 +261,11 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
 
         {/* Material Groups */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
             {UI_STRINGS.documentSummary.materialGroupsCount}
           </span>
-          <p className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white">
+          <p className="text-xl sm:text-2xl font-black font-mono text-slate-900">
             {UI_STRINGS.documentSummary.dynamicGroupsCount(resolvedMaterialGroupsCount)}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
@@ -274,11 +274,11 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
 
         {/* Operating Plants */}
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
             {UI_STRINGS.documentSummary.operatingPlants}
           </span>
-          <p className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white">
+          <p className="text-xl sm:text-2xl font-black font-mono text-slate-900">
             {UI_STRINGS.documentSummary.dynamicFacilitiesCount(resolvedPlantsCount)}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
@@ -290,7 +290,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
       {/* Navigation Dimension Tabs & Search Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         {/* Dimension Switcher Tabs */}
-        <div className="flex flex-wrap items-center bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-1 text-xs font-mono shadow-xs">
+        <div className="flex flex-wrap items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono shadow-xs">
           <button
             onClick={() => {
               setActiveDimension('MATERIAL_GROUP');
@@ -298,8 +298,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
               activeDimension === 'MATERIAL_GROUP'
-                ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -313,8 +313,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
               activeDimension === 'PLANT'
-                ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
@@ -328,8 +328,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
               activeDimension === 'MONTH'
-                ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -339,13 +339,13 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
         {/* Month View Fiscal Year Filter Buttons */}
         {activeDimension === 'MONTH' && (
-          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-1 text-xs font-mono">
+          <div className="flex items-center space-x-1 bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono">
             <button
               onClick={() => setSelectedMonthFy('ALL')}
               className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 selectedMonthFy === 'ALL'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.documentSummary.month.filterAll}
@@ -355,7 +355,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
               className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 selectedMonthFy === 'FY24'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.documentSummary.month.filterFy24}
@@ -365,7 +365,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
               className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 selectedMonthFy === 'FY25'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.documentSummary.month.filterFy25}
@@ -375,7 +375,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
               className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 selectedMonthFy === 'FY26'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {UI_STRINGS.documentSummary.month.filterFy26}
@@ -397,7 +397,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                 ? UI_STRINGS.documentSummary.plant.searchPlaceholder
                 : UI_STRINGS.documentSummary.month.searchPlaceholder
             }
-            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 font-mono placeholder:text-slate-400"
+            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono placeholder:text-slate-400"
           />
         </div>
       </div>
@@ -406,14 +406,14 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
       {activeDimension === 'MATERIAL_GROUP' && (
         <div className="space-y-4">
           {/* Material Group Reconciliation & Scope Note Banner */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-mono font-bold text-slate-700 flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>{UI_STRINGS.documentSummary.reconciliation.mgScopeHeading}</span>
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
                 </span>
               </div>
@@ -423,13 +423,13 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                 <span className="text-[11px] font-mono text-slate-500 font-semibold">
                   {UI_STRINGS.documentSummary.reconciliation.scopeToggleLabel}
                 </span>
-                <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 text-xs font-mono shadow-2xs">
+                <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 text-xs font-mono shadow-2xs">
                   <button
                     onClick={() => setMgScope('TOP_10')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       mgScope === 'TOP_10'
-                        ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {UI_STRINGS.documentSummary.reconciliation.top10Scope}
@@ -438,8 +438,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     onClick={() => setMgScope('ALL')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       mgScope === 'ALL'
-                        ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {UI_STRINGS.documentSummary.reconciliation.allScope(sortedMgs.length)}
@@ -448,9 +448,9 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-              <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                <span className="font-bold text-slate-800 dark:text-slate-200">Scope Details: </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono pt-1 border-t border-slate-200/60">
+              <div className="text-slate-600 leading-relaxed">
+                <span className="font-bold text-slate-800">Scope Details: </span>
                 {mgScope === 'TOP_10'
                   ? UI_STRINGS.documentSummary.reconciliation.top10MgNote(
                       top10Mgs.length,
@@ -464,32 +464,32 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                       spendCurrency === 'INR' ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : `$${(effectiveTotalMgSpend / 0.838).toFixed(2)} M`
                     )}
               </div>
-              <div className="text-slate-600 dark:text-slate-400 leading-relaxed flex items-center md:justify-end space-x-1.5">
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">Deviation / Gap: </span>
-                <span className="font-bold text-slate-900 dark:text-white">₹{mgDeviationCr.toFixed(2)} Cr (0.00%)</span>
+              <div className="text-slate-600 leading-relaxed flex items-center md:justify-end space-x-1.5">
+                <span className="font-bold text-emerald-700">Deviation / Gap: </span>
+                <span className="font-bold text-slate-900">₹{mgDeviationCr.toFixed(2)} Cr (0.00%)</span>
                 <span className="text-[11px] text-slate-400">— 100% spend accounted for</span>
               </div>
             </div>
           </div>
 
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
             <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-100 text-slate-600 uppercase text-[10px] font-semibold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.materialGroup.headers.code}</th>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.materialGroup.headers.name}</th>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.materialGroup.headers.sampleItem}</th>
-                  <th className="py-3 px-3 text-right font-bold text-cyan-700 dark:text-cyan-400">{UI_STRINGS.documentSummary.materialGroup.headers.uniqueItems}</th>
-                  <th className="py-3 px-3 text-right font-bold text-indigo-700 dark:text-indigo-400">{UI_STRINGS.documentSummary.materialGroup.headers.uniqueVendors}</th>
+                  <th className="py-3 px-3 text-right font-bold text-cyan-700">{UI_STRINGS.documentSummary.materialGroup.headers.uniqueItems}</th>
+                  <th className="py-3 px-3 text-right font-bold text-indigo-700">{UI_STRINGS.documentSummary.materialGroup.headers.uniqueVendors}</th>
                   <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.materialGroup.headers.records}</th>
-                  <th className="py-3 px-3.5 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                  <th className="py-3 px-3.5 text-right font-bold text-emerald-700">
                     {UI_STRINGS.documentSummary.materialGroup.headers.spend(spendCurrency === 'INR' ? '₹ Cr' : '$ M')}
                   </th>
                   <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.materialGroup.headers.share}</th>
                   <th className="py-3 px-3.5 text-left">{UI_STRINGS.documentSummary.materialGroup.headers.trend}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {displayedMgs.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="py-6 text-center text-slate-500 font-sans">
@@ -515,29 +515,29 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     const uniqueVendors = mg.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.05));
 
                     return (
-                      <tr key={`mg-${groupCode}-${mgIdx}`} className="bg-white dark:bg-slate-950/60 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
-                        <td className="py-3 px-3.5 font-bold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
+                      <tr key={`mg-${groupCode}-${mgIdx}`} className="bg-white hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-3.5 font-bold text-cyan-700 whitespace-nowrap">
                           {groupCode}
                         </td>
-                        <td className="py-3 px-3.5 font-sans font-medium text-slate-900 dark:text-white">
+                        <td className="py-3 px-3.5 font-sans font-medium text-slate-900">
                           {groupName}
                         </td>
                         <td className="py-3 px-3.5 text-slate-500 text-[11px] truncate max-w-xs" title={mg.sample_item || mg.primary_segment}>
                           {mg.sample_item || mg.primary_segment || `${groupCode} Item`}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-cyan-700 dark:text-cyan-400">
+                        <td className="py-3 px-3 text-right font-bold text-cyan-700">
                           {uniqueItems.toLocaleString()}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-indigo-700 dark:text-indigo-400">
+                        <td className="py-3 px-3 text-right font-bold text-indigo-700">
                           {uniqueVendors.toLocaleString()}
                         </td>
                         <td className="py-3 px-3 text-right font-sans">
                           {recordsCount.toLocaleString()}
                         </td>
-                        <td className="py-3 px-3.5 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        <td className="py-3 px-3.5 text-right font-black text-slate-900 whitespace-nowrap">
                           {spendVal}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                        <td className="py-3 px-3 text-right font-bold text-slate-700">
                           {sharePct.toFixed(1)}%
                         </td>
                         <td className="py-3 px-3.5 w-44">
@@ -547,7 +547,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                               <span>FY25: ₹{fy25.toFixed(1)}</span>
                               <span>FY26: ₹{fy26.toFixed(1)}</span>
                             </div>
-                            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 flex overflow-hidden">
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 flex overflow-hidden">
                               <div
                                 className="bg-sky-400 h-full"
                                 style={{ width: `${spendInrCr > 0 ? (fy24 / spendInrCr) * 100 : 33}%` }}
@@ -568,32 +568,32 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   })
                 )}
               </tbody>
-              <tfoot className="bg-slate-50 dark:bg-slate-950/90 text-slate-900 dark:text-white text-xs font-mono font-bold border-t-2 border-slate-200 dark:border-slate-700">
+              <tfoot className="bg-slate-50 text-slate-900 text-xs font-mono font-bold border-t-2 border-slate-200">
                 {/* Balance Row if in Top 10 Scope */}
                 {mgScope === 'TOP_10' && balanceMgsCount > 0 && (
-                  <tr className="bg-slate-50/70 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400 italic">
+                  <tr className="bg-slate-50/70 text-slate-600 italic">
                     <td className="py-2.5 px-3.5 font-bold text-slate-500 whitespace-nowrap">
                       BAL-{balanceMgsCount}
                     </td>
-                    <td className="py-2.5 px-3.5 font-sans font-medium text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3.5 font-sans font-medium text-slate-700">
                       {UI_STRINGS.documentSummary.reconciliation.balanceMgRowLabel(balanceMgsCount)}
                     </td>
                     <td className="py-2.5 px-3.5 text-[11px] text-slate-500">
                       {UI_STRINGS.documentSummary.reconciliation.balanceMgDesc(balanceMgsCount)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-cyan-600 dark:text-cyan-400">
+                    <td className="py-2.5 px-3 text-right font-bold text-cyan-600">
                       —
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                    <td className="py-2.5 px-3 text-right font-bold text-indigo-600">
                       —
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans">
                       —
                     </td>
-                    <td className="py-2.5 px-3.5 text-right font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    <td className="py-2.5 px-3.5 text-right font-black text-slate-800 whitespace-nowrap">
                       {spendCurrency === 'INR' ? `₹${balanceMgsSpendInrCr.toFixed(2)} Cr` : `$${(balanceMgsSpendInrCr / 0.838).toFixed(2)} M`}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right font-bold text-slate-700">
                       {balanceMgsSharePct.toFixed(1)}%
                     </td>
                     <td className="py-2.5 px-3.5 text-[10px] text-slate-400">
@@ -603,29 +603,29 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                 )}
 
                 {/* Grand Total Row */}
-                <tr className="bg-slate-100/90 dark:bg-slate-900 border-t border-slate-300 dark:border-slate-700">
-                  <td className="py-3 px-3.5 font-black text-emerald-700 dark:text-emerald-400">
+                <tr className="bg-slate-100/90 border-t border-slate-300">
+                  <td className="py-3 px-3.5 font-black text-emerald-700">
                     {UI_STRINGS.documentSummary.reconciliation.grandTotalLabel}
                   </td>
-                  <td className="py-3 px-3.5 font-sans font-black text-slate-900 dark:text-white" colSpan={2}>
+                  <td className="py-3 px-3.5 font-sans font-black text-slate-900" colSpan={2}>
                     {UI_STRINGS.documentSummary.reconciliation.grandTotalMgDesc(sortedMgs.length)}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-cyan-700 dark:text-cyan-400">
+                  <td className="py-3 px-3 text-right font-black text-cyan-700">
                     {resolvedUniqueItems.toLocaleString()}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-indigo-700 dark:text-indigo-400">
+                  <td className="py-3 px-3 text-right font-black text-indigo-700">
                     {resolvedUniqueVendors.toLocaleString()}
                   </td>
                   <td className="py-3 px-3 text-right font-sans font-black">
                     {resolvedRecordsCount.toLocaleString()}
                   </td>
-                  <td className="py-3 px-3.5 text-right font-black text-emerald-700 dark:text-emerald-400 whitespace-nowrap text-sm">
+                  <td className="py-3 px-3.5 text-right font-black text-emerald-700 whitespace-nowrap text-sm">
                     {spendCurrency === 'INR' ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : `$${(effectiveTotalMgSpend / 0.838).toFixed(2)} M`}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-white">
+                  <td className="py-3 px-3 text-right font-black text-slate-900">
                     100.0%
                   </td>
-                  <td className="py-3 px-3.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <td className="py-3 px-3.5 text-[10px] font-bold text-emerald-600">
                     {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
                   </td>
                 </tr>
@@ -639,14 +639,14 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
       {activeDimension === 'PLANT' && (
         <div className="space-y-4">
           {/* Operating Plants Reconciliation & Scope Note Banner */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center space-x-2">
-                <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-xs font-mono font-bold text-slate-700 flex items-center space-x-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>{UI_STRINGS.documentSummary.reconciliation.plantScopeHeading}</span>
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
                 </span>
               </div>
@@ -656,13 +656,13 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                 <span className="text-[11px] font-mono text-slate-500 font-semibold">
                   {UI_STRINGS.documentSummary.reconciliation.scopeToggleLabel}
                 </span>
-                <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-0.5 text-xs font-mono shadow-2xs">
+                <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 text-xs font-mono shadow-2xs">
                   <button
                     onClick={() => setPlantScope('TOP_10')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       plantScope === 'TOP_10'
-                        ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {UI_STRINGS.documentSummary.reconciliation.top10Scope}
@@ -671,8 +671,8 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     onClick={() => setPlantScope('ALL')}
                     className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
                       plantScope === 'ALL'
-                        ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {UI_STRINGS.documentSummary.reconciliation.allScope(sortedPlants.length)}
@@ -681,9 +681,9 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-              <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                <span className="font-bold text-slate-800 dark:text-slate-200">Scope Details: </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono pt-1 border-t border-slate-200/60">
+              <div className="text-slate-600 leading-relaxed">
+                <span className="font-bold text-slate-800">Scope Details: </span>
                 {plantScope === 'TOP_10'
                   ? UI_STRINGS.documentSummary.reconciliation.top10PlantNote(
                       top10Plants.length,
@@ -700,33 +700,33 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                       spendCurrency === 'INR' ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : `$${(totalPlantsSpendInrCr / 0.838).toFixed(2)} M`
                     )}
               </div>
-              <div className="text-slate-600 dark:text-slate-400 leading-relaxed flex items-center md:justify-end space-x-1.5">
-                <span className="font-bold text-emerald-700 dark:text-emerald-400">Deviation / Gap: </span>
-                <span className="font-bold text-slate-900 dark:text-white">₹{plantDeviationCr.toFixed(2)} Cr (0.00%)</span>
+              <div className="text-slate-600 leading-relaxed flex items-center md:justify-end space-x-1.5">
+                <span className="font-bold text-emerald-700">Deviation / Gap: </span>
+                <span className="font-bold text-slate-900">₹{plantDeviationCr.toFixed(2)} Cr (0.00%)</span>
                 <span className="text-[11px] text-slate-400">— 100% spend reconciled perfectly</span>
               </div>
             </div>
           </div>
 
-          <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
             <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-100 text-slate-600 uppercase text-[10px] font-semibold border-b border-slate-200">
                 <tr>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.plant.headers.code}</th>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.plant.headers.name}</th>
                   <th className="py-3 px-3">{UI_STRINGS.documentSummary.plant.headers.region}</th>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.plant.headers.location}</th>
-                  <th className="py-3 px-3 text-right font-bold text-cyan-700 dark:text-cyan-400">{UI_STRINGS.documentSummary.plant.headers.uniqueItems}</th>
-                  <th className="py-3 px-3 text-right font-bold text-indigo-700 dark:text-indigo-400">{UI_STRINGS.documentSummary.plant.headers.vendors}</th>
+                  <th className="py-3 px-3 text-right font-bold text-cyan-700">{UI_STRINGS.documentSummary.plant.headers.uniqueItems}</th>
+                  <th className="py-3 px-3 text-right font-bold text-indigo-700">{UI_STRINGS.documentSummary.plant.headers.vendors}</th>
                   <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.plant.headers.records}</th>
-                  <th className="py-3 px-3.5 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                  <th className="py-3 px-3.5 text-right font-bold text-emerald-700">
                     {UI_STRINGS.documentSummary.plant.headers.spend(spendCurrency === 'INR' ? '₹ Cr' : '$ M')}
                   </th>
                   <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.plant.headers.share}</th>
                   <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.plant.headers.primaryGroup}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-slate-700">
                 {displayedPlants.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-6 text-center text-slate-500 font-sans">
@@ -749,38 +749,38 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     const uniqueVendors = p.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.05));
 
                     return (
-                      <tr key={`plant-${plantCode}-${pIdx}`} className="bg-white dark:bg-slate-950/60 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
-                        <td className="py-3 px-3.5 font-bold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">
+                      <tr key={`plant-${plantCode}-${pIdx}`} className="bg-white hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-3.5 font-bold text-cyan-700 whitespace-nowrap">
                           {plantCode}
                         </td>
-                        <td className="py-3 px-3.5 font-sans font-medium text-slate-900 dark:text-white">
+                        <td className="py-3 px-3.5 font-sans font-medium text-slate-900">
                           {plantName}
                         </td>
                         <td className="py-3 px-3">
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
                             {p.region || 'West'}
                           </span>
                         </td>
                         <td className="py-3 px-3.5 text-slate-500 text-[11px] truncate max-w-xs" title={p.location}>
                           {p.location || `Hub ${plantCode}`}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-cyan-700 dark:text-cyan-400">
+                        <td className="py-3 px-3 text-right font-bold text-cyan-700">
                           {uniqueItems.toLocaleString()}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-indigo-700 dark:text-indigo-400">
+                        <td className="py-3 px-3 text-right font-bold text-indigo-700">
                           {uniqueVendors.toLocaleString()}
                         </td>
                         <td className="py-3 px-3 text-right font-sans">
                           {recordsCount.toLocaleString()}
                         </td>
-                        <td className="py-3 px-3.5 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        <td className="py-3 px-3.5 text-right font-black text-slate-900 whitespace-nowrap">
                           {spendVal}
                         </td>
-                        <td className="py-3 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                        <td className="py-3 px-3 text-right font-bold text-slate-700">
                           {sharePct.toFixed(1)}%
                         </td>
                         <td className="py-3 px-3.5">
-                          <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
+                          <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                             {p.primary_material_group || 'General Procurement'}
                           </span>
                         </td>
@@ -789,37 +789,37 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   })
                 )}
               </tbody>
-              <tfoot className="bg-slate-50 dark:bg-slate-950/90 text-slate-900 dark:text-white text-xs font-mono font-bold border-t-2 border-slate-200 dark:border-slate-700">
+              <tfoot className="bg-slate-50 text-slate-900 text-xs font-mono font-bold border-t-2 border-slate-200">
                 {/* Balance Row if in Top 10 Scope */}
                 {plantScope === 'TOP_10' && balancePlantsCount > 0 && (
-                  <tr className="bg-slate-50/70 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400 italic">
+                  <tr className="bg-slate-50/70 text-slate-600 italic">
                     <td className="py-2.5 px-3.5 font-bold text-slate-500 whitespace-nowrap">
                       BAL-{balancePlantsCount}
                     </td>
-                    <td className="py-2.5 px-3.5 font-sans font-medium text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3.5 font-sans font-medium text-slate-700">
                       {UI_STRINGS.documentSummary.reconciliation.balanceRowLabel(balancePlantsCount)}
                     </td>
                     <td className="py-2.5 px-3">
-                      <span className="px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-[10px]">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-200/60 text-[10px]">
                         Multi-Zone
                       </span>
                     </td>
                     <td className="py-2.5 px-3.5 text-[11px] text-slate-500">
                       {UI_STRINGS.documentSummary.reconciliation.balanceDesc(balancePlantsCount)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-cyan-600 dark:text-cyan-400">
+                    <td className="py-2.5 px-3 text-right font-bold text-cyan-600">
                       —
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                    <td className="py-2.5 px-3 text-right font-bold text-indigo-600">
                       —
                     </td>
                     <td className="py-2.5 px-3 text-right font-sans">
                       —
                     </td>
-                    <td className="py-2.5 px-3.5 text-right font-black text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                    <td className="py-2.5 px-3.5 text-right font-black text-slate-800 whitespace-nowrap">
                       {spendCurrency === 'INR' ? `₹${balancePlantsSpendInrCr.toFixed(2)} Cr` : `$${(balancePlantsSpendInrCr / 0.838).toFixed(2)} M`}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right font-bold text-slate-700">
                       {balancePlantsSharePct.toFixed(1)}%
                     </td>
                     <td className="py-2.5 px-3.5 text-[10px] text-slate-400">
@@ -829,29 +829,29 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                 )}
 
                 {/* Grand Total Row */}
-                <tr className="bg-slate-100/90 dark:bg-slate-900 border-t border-slate-300 dark:border-slate-700">
-                  <td className="py-3 px-3.5 font-black text-emerald-700 dark:text-emerald-400">
+                <tr className="bg-slate-100/90 border-t border-slate-300">
+                  <td className="py-3 px-3.5 font-black text-emerald-700">
                     {UI_STRINGS.documentSummary.reconciliation.grandTotalLabel}
                   </td>
-                  <td className="py-3 px-3.5 font-sans font-black text-slate-900 dark:text-white" colSpan={3}>
+                  <td className="py-3 px-3.5 font-sans font-black text-slate-900" colSpan={3}>
                     {UI_STRINGS.documentSummary.reconciliation.grandTotalDesc(sortedPlants.length)}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-cyan-700 dark:text-cyan-400">
+                  <td className="py-3 px-3 text-right font-black text-cyan-700">
                     {resolvedUniqueItems.toLocaleString()}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-indigo-700 dark:text-indigo-400">
+                  <td className="py-3 px-3 text-right font-black text-indigo-700">
                     {resolvedUniqueVendors.toLocaleString()}
                   </td>
                   <td className="py-3 px-3 text-right font-sans font-black">
                     {resolvedRecordsCount.toLocaleString()}
                   </td>
-                  <td className="py-3 px-3.5 text-right font-black text-emerald-700 dark:text-emerald-400 whitespace-nowrap text-sm">
+                  <td className="py-3 px-3.5 text-right font-black text-emerald-700 whitespace-nowrap text-sm">
                     {spendCurrency === 'INR' ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : `$${(totalPlantsSpendInrCr / 0.838).toFixed(2)} M`}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-white">
+                  <td className="py-3 px-3 text-right font-black text-slate-900">
                     100.0%
                   </td>
-                  <td className="py-3 px-3.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <td className="py-3 px-3.5 text-[10px] font-bold text-emerald-600">
                     {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
                   </td>
                 </tr>
@@ -877,24 +877,24 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
           {/* Detailed Monthly Data Table (shown in CHART_AND_TABLE and TABLE_ONLY modes) */}
           {monthViewMode !== 'CHART_ONLY' && (
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+                <thead className="bg-slate-100 text-slate-600 uppercase text-[10px] font-semibold border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.month.headers.month}</th>
                     <th className="py-3 px-3">{UI_STRINGS.documentSummary.month.headers.fy}</th>
-                    <th className="py-3 px-3.5 text-right font-bold text-emerald-700 dark:text-emerald-400">
+                    <th className="py-3 px-3.5 text-right font-bold text-emerald-700">
                       {UI_STRINGS.documentSummary.month.headers.spend(spendCurrency === 'INR' ? '₹ Cr' : '$ M')}
                     </th>
-                    <th className="py-3 px-3 text-right font-bold text-cyan-700 dark:text-cyan-400">{UI_STRINGS.documentSummary.month.headers.uniqueItems}</th>
-                    <th className="py-3 px-3 text-right font-bold text-indigo-700 dark:text-indigo-400">{UI_STRINGS.documentSummary.month.headers.uniqueVendors}</th>
+                    <th className="py-3 px-3 text-right font-bold text-cyan-700">{UI_STRINGS.documentSummary.month.headers.uniqueItems}</th>
+                    <th className="py-3 px-3 text-right font-bold text-indigo-700">{UI_STRINGS.documentSummary.month.headers.uniqueVendors}</th>
                     <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.month.headers.records}</th>
                     <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.month.headers.topGroup}</th>
                     <th className="py-3 px-3.5">{UI_STRINGS.documentSummary.month.headers.topPlant}</th>
                     <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.month.headers.mom}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-300">
+                <tbody className="divide-y divide-slate-100 text-slate-700">
                   {filteredMonths.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="py-6 text-center text-slate-500 font-sans">
@@ -918,34 +918,34 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                       const uniqueVendors = m.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.15));
 
                       return (
-                        <tr key={`month-${m.month_key}-${mIdx}`} className="bg-white dark:bg-slate-950/60 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors">
-                          <td className="py-2.5 px-3.5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                        <tr key={`month-${m.month_key}-${mIdx}`} className="bg-white hover:bg-slate-50 transition-colors">
+                          <td className="py-2.5 px-3.5 font-bold text-slate-900 whitespace-nowrap">
                             {m.month_label}
                           </td>
                           <td className="py-2.5 px-3">
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
                               {m.fiscal_year}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3.5 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
+                          <td className="py-2.5 px-3.5 text-right font-black text-slate-900 whitespace-nowrap">
                             {spendVal}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-bold text-cyan-700 dark:text-cyan-400">
+                          <td className="py-2.5 px-3 text-right font-bold text-cyan-700">
                             {uniqueItems.toLocaleString()}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-bold text-indigo-700 dark:text-indigo-400">
+                          <td className="py-2.5 px-3 text-right font-bold text-indigo-700">
                             {uniqueVendors.toLocaleString()}
                           </td>
                           <td className="py-2.5 px-3 text-right font-sans">
                             {recordsCount.toLocaleString()}
                           </td>
                           <td className="py-2.5 px-3.5">
-                            <span className="px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-bold">
                               {m.top_material_group}
                             </span>
                           </td>
                           <td className="py-2.5 px-3.5">
-                            <span className="px-2 py-0.5 rounded bg-purple-50 dark:purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800 text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-bold">
                               {m.top_plant}
                             </span>
                           </td>
@@ -953,10 +953,10 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                             <span
                               className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                 isZero
-                                  ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                  ? 'bg-slate-100 text-slate-600'
                                   : isPositive
-                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-400'
-                                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-400'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-emerald-100 text-emerald-800'
                               }`}
                             >
                               {isPositive ? `+${momChange.toFixed(1)}%` : `${momChange.toFixed(1)}%`}
@@ -975,9 +975,9 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
       {/* Footer Navigation CTA to AI Categorization */}
       {onNavigateToCategorization && (
-        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
+          <div className="flex items-center space-x-2 text-xs text-slate-500">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{UI_STRINGS.documentSummary.footerValidation(activeDoc.records_count)}</span>
           </div>
         </div>

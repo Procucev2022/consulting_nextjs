@@ -94,10 +94,10 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
   }
 
   function getChecklistColor(key: string): string {
-    if (key === 'blockingErrors') return 'text-emerald-400';
-    if (key === 'validRecords') return 'text-cyan-400';
-    if (key === 'warnings') return 'text-amber-400';
-    return 'text-emerald-400';
+    if (key === 'blockingErrors') return 'text-emerald-600';
+    if (key === 'validRecords') return 'text-[#0284C7]';
+    if (key === 'warnings') return 'text-amber-600';
+    return 'text-emerald-600';
   }
 
   return (
@@ -117,26 +117,26 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
 
       {!importResult ? (
         <div className="space-y-6 max-w-2xl mx-auto">
-          <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-2xl backdrop-blur-md">
+          <div className="p-6 bg-white border border-[#DCE7F5] rounded-2xl shadow-sm">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
                 <ShieldCheck size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-white tracking-tight">
+                <h3 className="text-sm font-bold text-[#0B1B33] tracking-tight">
                   {UI_STRINGS.pcbiAdmin.importConfirmTitle}
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[#475569] mt-0.5">
                   {UI_STRINGS.pcbiAdmin.importConfirmSubtitle}
                 </p>
               </div>
             </div>
             <div className="space-y-2">
               {PRE_IMPORT_CHECKLIST.map((item) => (
-                <div key={item.key} className="flex items-start gap-3 p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-xs text-slate-200 flex-1">{item.label}</span>
-                  <span className={`text-xs font-bold font-mono shrink-0 ${getChecklistColor(item.key)}`}>
+                <div key={item.key} className="flex items-start gap-3 p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">
+                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <span className="text-xs text-[#475569] flex-1">{item.label}</span>
+                  <span className={`text-xs font-bold tabular-nums shrink-0 ${getChecklistColor(item.key)}`}>
                     {getChecklistValue(item.key)}
                   </span>
                 </div>
@@ -146,7 +146,7 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
 
           <div className="text-center space-y-3">
             {!canImport && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-rose-950/50 border border-rose-800/50 rounded-xl text-xs text-rose-300">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700">
                 <AlertTriangle size={13} />
                 <span>{UI_STRINGS.pcbiAdmin.importDisabledTooltip}</span>
               </div>
@@ -157,7 +157,7 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
                 type="button"
                 onClick={onExecuteImport}
                 disabled={isImporting || !canImport}
-                className={`px-10 py-3.5 text-white rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 inline-flex items-center gap-2.5 ${canImport ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30' : 'bg-slate-700 opacity-50 cursor-not-allowed'}`}
+                className={`px-10 py-3.5 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 inline-flex items-center gap-2.5 ${canImport ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-200 text-slate-400 opacity-60 cursor-not-allowed'}`}
               >
                 {isImporting ? (
                   <><RefreshCw size={15} className="animate-spin" /><span>{UI_STRINGS.pcbiAdmin.importingState}</span></>
@@ -167,7 +167,7 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
               </button>
             </div>
             {canImport && !isImporting && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#64748B]">
                 This will create a VALIDATED version. The version must be manually published.
               </p>
             )}
@@ -176,25 +176,24 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
       ) : (
         <div className="space-y-6">
           {/* Success Banner */}
-          <div className="p-6 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl relative overflow-hidden backdrop-blur-md">
-            <div className="absolute top-0 left-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="p-6 bg-white border border-emerald-200 rounded-2xl relative overflow-hidden shadow-sm">
             <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
               <div className="space-y-2">
-                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit">
-                  <CheckCircle2 size={13} className="text-emerald-400" />
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit">
+                  <CheckCircle2 size={13} className="text-emerald-600" />
                   Import Completed
                 </span>
-                <h3 className="text-xl font-extrabold text-white tracking-tight">
+                <h3 className="text-xl font-extrabold text-[#0B1B33] tracking-tight">
                   {UI_STRINGS.pcbiAdmin.importSummaryTitle} — Version {importResult.version}
                 </h3>
-                <p className="text-xs text-slate-300 max-w-xl">{UI_STRINGS.pcbiAdmin.importSummarySubtitle}</p>
+                <p className="text-xs text-[#475569] max-w-xl">{UI_STRINGS.pcbiAdmin.importSummarySubtitle}</p>
               </div>
               {/* Publish Button — explicit user action only */}
               <button
                 id="pcbi-publish-btn"
                 type="button"
                 onClick={onOpenPublishModal}
-                className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-black flex items-center gap-2 shadow-lg shadow-amber-500/30 transition-all active:scale-95 shrink-0"
+                className="px-6 py-3 bg-[#F97316] hover:bg-[#EA580C] text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-sm transition-all active:scale-95 shrink-0"
               >
                 <Rocket size={15} />
                 <span>{UI_STRINGS.pcbiAdmin.publishVersionButton(importResult.version)}</span>
@@ -204,93 +203,93 @@ export const PCBIImportTab: React.FC<PCBIImportTabProps> = ({
 
           {/* Dataset Record Counts */}
           <div>
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+            <h4 className="text-xs font-bold text-[#475569] uppercase tracking-wider mb-3">
               {UI_STRINGS.pcbiAdmin.datasetBreakdownTitle}
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              <div className="p-3 bg-slate-900/60 border border-emerald-900/40 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><Database size={11} className="text-emerald-400" /><span className="text-slate-400 font-semibold">PCBI MASTER</span></div>
-                <p className="text-lg font-bold text-emerald-400">{importResult.pcbi_records.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><Database size={11} className="text-emerald-600" /><span className="text-[#64748B] font-semibold">PCBI MASTER</span></div>
+                <p className="text-lg font-bold text-emerald-600 tabular-nums">{importResult.pcbi_records.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-slate-900/60 border border-cyan-900/40 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><Activity size={11} className="text-cyan-400" /><span className="text-slate-400 font-semibold">WEEKLY INDEX</span></div>
-                <p className="text-lg font-bold text-cyan-400">{importResult.weekly_index_records.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><Activity size={11} className="text-[#0284C7]" /><span className="text-[#64748B] font-semibold">WEEKLY INDEX</span></div>
+                <p className="text-lg font-bold text-[#0284C7] tabular-nums">{importResult.weekly_index_records.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-slate-900/60 border border-purple-900/40 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><FileCheck size={11} className="text-purple-400" /><span className="text-slate-400 font-semibold">CONSTITUENTS</span></div>
-                <p className="text-lg font-bold text-purple-400">{importResult.constituent_records.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><FileCheck size={11} className="text-[#0284C7]" /><span className="text-[#64748B] font-semibold">CONSTITUENTS</span></div>
+                <p className="text-lg font-bold text-[#0B1B33] tabular-nums">{importResult.constituent_records.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-slate-900/60 border border-sky-900/40 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><ShieldCheck size={11} className="text-sky-400" /><span className="text-slate-400 font-semibold">SOURCES</span></div>
-                <p className="text-lg font-bold text-sky-400">{importResult.source_records.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><ShieldCheck size={11} className="text-[#0284C7]" /><span className="text-[#64748B] font-semibold">SOURCES</span></div>
+                <p className="text-lg font-bold text-[#0284C7] tabular-nums">{importResult.source_records.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-slate-900/60 border border-amber-900/30 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><Hash size={11} className="text-amber-300" /><span className="text-slate-400 font-semibold">UNSPSC</span></div>
-                <p className="text-lg font-bold text-amber-300">{importResult.unspsc_mapping_records.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><Hash size={11} className="text-[#F97316]" /><span className="text-[#64748B] font-semibold">UNSPSC</span></div>
+                <p className="text-lg font-bold text-[#F97316] tabular-nums">{importResult.unspsc_mapping_records.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-slate-900/60 border border-amber-900/40 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><AlertTriangle size={11} className="text-amber-400" /><span className="text-slate-400 font-semibold">WARNINGS</span></div>
-                <p className="text-lg font-bold text-amber-400">{importResult.warning_records.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><AlertTriangle size={11} className="text-amber-600" /><span className="text-[#64748B] font-semibold">WARNINGS</span></div>
+                <p className="text-lg font-bold text-amber-600 tabular-nums">{importResult.warning_records.toLocaleString()}</p>
               </div>
-              <div className="p-3 bg-slate-900/60 border border-slate-700 rounded-xl text-xs">
-                <div className="flex items-center gap-1.5 mb-1"><CheckCircle2 size={11} className="text-slate-400" /><span className="text-slate-400 font-semibold">EXCLUDED</span></div>
-                <p className="text-lg font-bold text-slate-300">{importResult.records_excluded.toLocaleString()}</p>
+              <div className="p-3 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
+                <div className="flex items-center gap-1.5 mb-1"><CheckCircle2 size={11} className="text-[#64748B]" /><span className="text-[#64748B] font-semibold">EXCLUDED</span></div>
+                <p className="text-lg font-bold text-[#64748B] tabular-nums">{importResult.records_excluded.toLocaleString()}</p>
               </div>
             </div>
           </div>
 
           {/* Import Metadata */}
-          <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-2xl">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Import Record</h4>
+          <div className="p-5 bg-white border border-[#DCE7F5] rounded-2xl shadow-sm">
+            <h4 className="text-xs font-bold text-[#475569] uppercase tracking-wider mb-4">Import Record</h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 flex items-center gap-1"><Hash size={10} />{UI_STRINGS.pcbiAdmin.uploadIdLabel}</span>
-                <p className="text-xs font-mono font-bold text-cyan-300 break-all">{importResult.upload_id}</p>
+                <span className="text-xs text-[#64748B] flex items-center gap-1"><Hash size={10} />{UI_STRINGS.pcbiAdmin.uploadIdLabel}</span>
+                <p className="text-xs font-mono font-bold text-[#0284C7] break-all">{importResult.upload_id}</p>
               </div>
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 flex items-center gap-1"><Calendar size={10} />{UI_STRINGS.pcbiAdmin.importDateLabel}</span>
-                <p className="text-xs font-semibold text-white">{formatImportDate(importResult.import_date)}</p>
+                <span className="text-xs text-[#64748B] flex items-center gap-1"><Calendar size={10} />{UI_STRINGS.pcbiAdmin.importDateLabel}</span>
+                <p className="text-xs font-semibold text-[#0B1B33]">{formatImportDate(importResult.import_date)}</p>
               </div>
               <div className="space-y-1">
-                <span className="text-xs text-slate-500 flex items-center gap-1"><Activity size={10} />{UI_STRINGS.pcbiAdmin.importStatusLabel}</span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                <span className="text-xs text-[#64748B] flex items-center gap-1"><Activity size={10} />{UI_STRINGS.pcbiAdmin.importStatusLabel}</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <CheckCircle2 size={10} />{importResult.status}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="text-xs text-slate-500">PCBI VERSION</span>
-                <p className="text-base font-mono font-extrabold text-white">{importResult.version}</p>
+                <span className="text-xs text-[#64748B]">PCBI VERSION</span>
+                <p className="text-base font-mono font-extrabold text-[#0B1B33]">{importResult.version}</p>
               </div>
             </div>
           </div>
 
           {/* Action Bar */}
-          <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 bg-white border border-[#DCE7F5] rounded-xl flex flex-wrap items-center justify-between gap-4 shadow-sm">
             <div className="flex flex-wrap items-center gap-3">
               <button id="pcbi-download-validation-report-btn" type="button" onClick={handleDownloadValidationReport}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95">
-                <Download size={13} className="text-cyan-400" />
+                className="px-4 py-2 bg-white hover:bg-slate-50 text-[#475569] border border-[#DCE7F5] rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 shadow-xs">
+                <Download size={13} className="text-[#0284C7]" />
                 <span>{UI_STRINGS.pcbiAdmin.downloadValidationReport}</span>
               </button>
               <button id="pcbi-download-error-records-btn" type="button" onClick={handleDownloadErrorRecords}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95">
-                <Download size={13} className="text-amber-400" />
+                className="px-4 py-2 bg-white hover:bg-slate-50 text-[#475569] border border-[#DCE7F5] rounded-xl text-xs font-bold flex items-center gap-2 transition-all active:scale-95 shadow-xs">
+                <Download size={13} className="text-amber-600" />
                 <span>{UI_STRINGS.pcbiAdmin.downloadErrorRecords}</span>
               </button>
             </div>
             <button id="pcbi-view-imported-master-btn" type="button" onClick={onViewImportedMaster}
-              className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-cyan-600/20 transition-all active:scale-95">
+              className="px-6 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95">
               <Eye size={14} />
               <span>{UI_STRINGS.pcbiAdmin.viewImportedMaster}</span>
             </button>
           </div>
 
           {/* No-Auto-Publish Notice */}
-          <div className="p-3 bg-amber-950/30 border border-amber-800/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-200/80">
-            <AlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
+            <AlertTriangle size={13} className="text-amber-600 shrink-0 mt-0.5" />
             <p>
-              <strong className="text-amber-300">Pending Review:</strong> PCBI {importResult.version} is in <strong>VALIDATED</strong> state — not yet published.
-              Use the <span className="font-mono text-amber-300">Publish {importResult.version}</span> button above only after confirming this Import Summary is correct.
+              <strong className="text-amber-900">Pending Review:</strong> PCBI {importResult.version} is in <strong>VALIDATED</strong> state — not yet published.
+              Use the <span className="font-mono text-amber-900 font-bold">Publish {importResult.version}</span> button above only after confirming this Import Summary is correct.
             </p>
           </div>
         </div>

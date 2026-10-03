@@ -10,6 +10,7 @@ import { PCBIVersionsTab } from '../../../src/components/admin/pcbi/PCBIVersions
 import { PCBIPublishModal } from '../../../src/components/admin/pcbi/PCBIPublishModal';
 import { PCBIAdminMasterView } from '../../../src/components/admin/pcbi/PCBIAdminMasterView';
 import { pcbiAdminApi } from '../../../src/utils/pcbiAdminApi';
+import { pcbiCommodityDataLabApi } from '../../../src/utils/pcbiCommodityDataLabApi';
 import { UI_STRINGS } from '../../../src/constants';
 import type {
   PCBIVersionRecord,
@@ -48,6 +49,15 @@ const mockVersion: PCBIVersionRecord = {
 describe('PCBI Admin UI Components Unit Tests', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(pcbiCommodityDataLabApi, 'detectUploadDomain').mockResolvedValue({
+      success: true,
+      detection: {
+        detectedDomain: 'PCBI_MASTER_SYSTEM_DATA',
+        isAllowedInTarget: true,
+        targetArea: 'PCBI_MASTER',
+        matchedSignatures: []
+      }
+    });
   });
 
   it('PCBIDashboardTab renders metrics and navigation buttons', () => {
@@ -1007,6 +1017,91 @@ describe('PCBI Admin UI Components Unit Tests', () => {
       expect(screen.getByText(/Currently active baseline dataset powering customer opportunity calculations/i)).toBeInTheDocument();
     });
   });
+
+  it('PCBIUploadTab displays domain mismatch warning when commodity research file is uploaded', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'detectUploadDomain').mockResolvedValueOnce({
+      success: true,
+      detection: {
+        detectedDomain: 'COMMODITY_RESEARCH_EVIDENCE',
+        isAllowedInTarget: false,
+        targetArea: 'PCBI_MASTER',
+        matchedSignatures: ['raw_observations'],
+        errorMessage: 'COMMODITY RESEARCH DATA DETECTED',
+        guidanceMessage: 'This file belongs in PCBI Commodity Data Lab.'
+      }
+    });
+
+    const onUpload = vi.fn();
+    render(
+      <PCBIUploadTab
+        uploadedFile={null}
+        fileMetadata={null}
+        worksheets={[]}
+        mappings={{}}
+        onFileUpload={onUpload}
+        onOverrideWorksheet={vi.fn()}
+        onOverrideColumnMapping={vi.fn()}
+        onProceedToValidate={vi.fn()}
+      />
+    );
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const researchFile = new File(['raw_observations,source_register'], 'FerroMoly_Research_Pack.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    fireEvent.change(fileInput, { target: { files: [researchFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('COMMODITY RESEARCH DATA DETECTED')).toBeInTheDocument();
+      expect(screen.getByText('This file belongs in PCBI Commodity Data Lab.')).toBeInTheDocument();
+    });
+    // Ensure onFileUpload was NOT called
+    expect(onUpload).not.toHaveBeenCalled();
+  });
+
+  it('PCBIUploadTab displays domain mismatch warning when customer purchase history file is uploaded', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'detectUploadDomain').mockResolvedValueOnce({
+      success: true,
+      detection: {
+        detectedDomain: 'CUSTOMER_PURCHASE_HISTORY',
+        isAllowedInTarget: false,
+        targetArea: 'PCBI_MASTER',
+        matchedSignatures: ['po number'],
+        errorMessage: 'CUSTOMER DATA DETECTED',
+        guidanceMessage: 'Customer purchase history must be uploaded through Module 1.'
+      }
+    });
+
+    const onUpload = vi.fn();
+    render(
+      <PCBIUploadTab
+        uploadedFile={null}
+        fileMetadata={null}
+        worksheets={[]}
+        mappings={{}}
+        onFileUpload={onUpload}
+        onOverrideWorksheet={vi.fn()}
+        onOverrideColumnMapping={vi.fn()}
+        onProceedToValidate={vi.fn()}
+      />
+    );
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const customerFile = new File(['po number,line item,vendor name'], 'Customer_PO_History_2025.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    fireEvent.change(fileInput, { target: { files: [customerFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('CUSTOMER DATA DETECTED')).toBeInTheDocument();
+      expect(screen.getByText('Customer purchase history must be uploaded through Module 1.')).toBeInTheDocument();
+    });
+    // Ensure onFileUpload was NOT called
+    expect(onUpload).not.toHaveBeenCalled();
+  });
 });
+
 
 

@@ -85,6 +85,8 @@ export function computeVendorSupplyOverview(
     buildTierSummary(tier3Vendors, VENDOR_SUPPLY_TIERS.TIER_3_BASE)
   ];
 
+  const { indicator, indicatorRationale } = resolveSupplyStructureIndicator(vendors, multiCategorySpendPct);
+
   return {
     total_vendors: totalVendors,
     total_spend_cr: totalSpendCr,
@@ -95,6 +97,8 @@ export function computeVendorSupplyOverview(
     multi_category_spend_cr: multiCategorySpendCr,
     multi_category_spend_pct: multiCategorySpendPct,
     high_spend_multi_category_alarm: highSpendMultiAlarm,
+    supply_structure_indicator: indicator,
+    indicator_rationale: indicatorRationale,
     alarm_details: {
       title: 'High-Spend Multi-Category Supply Disparity & Maverick Leakage Detected',
       observation: `Analysis of top spend tiers reveals that among high-spend suppliers (> ₹${VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR} Cr), ${tier1Summary.multi_category_spend_pct.toFixed(1)}% of spend (₹${tier1Summary.multi_category_spend_cr.toFixed(2)} Cr) is captured by Multi-Category Vendors supplying disparate, unrelated material categories.`,
@@ -106,5 +110,45 @@ export function computeVendorSupplyOverview(
       recommendation: 'Initiate priority category unbundling audits, restrict multi-category PO issuance, and issue targeted RFPs to consolidate volume with dedicated Single-Category specialists.'
     },
     tiers
+  };
+}
+
+function resolveSupplyStructureIndicator(
+  vendors: VendorSupplyRecord[],
+  multiCategorySpendPct: number
+): { indicator: import('../types/vendorSupply').CategorySupplyStructureIndicator; indicatorRationale: string } {
+  if (vendors.length === 0) {
+    return {
+      indicator: 'INSUFFICIENT_DATA',
+      indicatorRationale: 'Insufficient supplier transaction history to qualify supply structure.'
+    };
+  }
+  if (vendors.length === 1) {
+    return {
+      indicator: 'SINGLE_SOURCE_DEPENDENT',
+      indicatorRationale: 'Sole supplier configuration captures 100% of analyzed portfolio spend.'
+    };
+  }
+  if ((vendors[0]?.spend_share_pct || 0) >= 60) {
+    return {
+      indicator: 'SINGLE_SUPPLIER_CONCENTRATION',
+      indicatorRationale: `Dominant supplier ${vendors[0].vendor_name} captures ${(vendors[0]?.spend_share_pct || 0).toFixed(1)}% of spend.`
+    };
+  }
+  if (multiCategorySpendPct >= 40) {
+    return {
+      indicator: 'CROSS_CATEGORY_SUPPLIER_DEPENDENCY',
+      indicatorRationale: `${multiCategorySpendPct.toFixed(1)}% of spend is held by multi-category generalists supplying across unrelated domains.`
+    };
+  }
+  if (vendors.length >= 8) {
+    return {
+      indicator: 'TAIL_FRAGMENTATION',
+      indicatorRationale: `Supply base is fragmented across ${vendors.length} vendors with high tail dispersion.`
+    };
+  }
+  return {
+    indicator: 'BALANCED',
+    indicatorRationale: 'Healthy competitive balance across qualified category specialists.'
   };
 }

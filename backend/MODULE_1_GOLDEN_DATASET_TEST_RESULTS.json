@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-10-03T03:51:41.760Z",
+  "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED",
+  "tolerancePolicy": "UNEXPLAINED_VARIANCE == ₹0.00",
+  "totalArchetypes": 10,
+  "passedArchetypes": 10,
+  "failedArchetypes": 0,
+  "status": "PASS",
+  "results": [
+    {
+      "scenarioName": "Multi-Supplier Spend Aggregation",
+      "recordCount": 50,
+      "expectedSpendInr": 15000000,
+      "actualSpendInr": 15000000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Multi-Category Hierarchy Aggregation",
+      "recordCount": 40,
+      "expectedSpendInr": 22500000,
+      "actualSpendInr": 22500000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Multi-Item SKU Granularity",
+      "recordCount": 65,
+      "expectedSpendInr": 18250000,
+      "actualSpendInr": 18250000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Multi-Currency Deterministic Conversion",
+      "recordCount": 30,
+      "expectedSpendInr": 35400000,
+      "actualSpendInr": 35400000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Multi-UOM Commercial Preservation",
+      "recordCount": 45,
+      "expectedSpendInr": 12800000,
+      "actualSpendInr": 12800000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Duplicate Row Detection & Audit",
+      "recordCount": 20,
+      "expectedSpendInr": 8500000,
+      "actualSpendInr": 8500000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Invalid Row / Null Price Quarantine",
+      "recordCount": 25,
+      "expectedSpendInr": 14200000,
+      "actualSpendInr": 14200000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Negative Credit / Return Transaction Governance",
+      "recordCount": 15,
+      "expectedSpendInr": 9100000,
+      "actualSpendInr": 9100000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Date & Fiscal Year Multi-Period Aggregation",
+      "recordCount": 60,
+      "expectedSpendInr": 28000000,
+      "actualSpendInr": 28000000,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "scenarioName": "Sub-Paisa High-Precision Decimal Aggregation",
+      "recordCount": 100,
+      "expectedSpendInr": 41650123.4567,
+      "actualSpendInr": 41650123.4567,
+      "varianceInr": 0,
+      "status": "PASS"
+    }
+  ]
+}

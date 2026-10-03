@@ -154,7 +154,15 @@ export const authApiClient = {
   },
 
   // Login
-  async login(data: LoginFormData): Promise<AuthSessionResponse> {
+  async login(
+    dataOrEmail: LoginFormData | string,
+    passwordArg?: string
+  ): Promise<AuthSessionResponse> {
+    const data: LoginFormData =
+      typeof dataOrEmail === 'string'
+        ? { email: dataOrEmail, password: passwordArg || '' }
+        : dataOrEmail;
+
     frontendLogger.info('Logging in enterprise user', { email: data.email });
     const validation = validateInput(loginFormSchema, data);
     if (!validation.success) {

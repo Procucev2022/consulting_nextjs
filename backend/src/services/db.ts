@@ -1,3 +1,4 @@
+import { PrismaClient } from '@prisma/client';
 import {
   mockTenant,
   initialIngestionQueue,
@@ -44,6 +45,12 @@ import {
 import { PCBICalculationEngine } from './pcbiCalculationEngine';
 import { StrategicSourcingEngine } from './strategicSourcingEngine';
 import { SavingsDeduplicationEngine } from './savingsDeduplicationEngine';
+import { Module2StrategicSourcingEngine } from './module2StrategicSourcingEngine';
+import type {
+  CategoryStrategicSourcingProfile,
+  Module2StrategicSourcingDashboardSummary,
+  Module2ToModule4HandoffPackage
+} from '../types/module2StrategicSourcing';
 import type {
   SavingsOpportunityItem,
   SavingsWaterfallMetrics,
@@ -59,7 +66,12 @@ import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';
 import { CACHE_KEYS } from '../constants/db';
 
+export const prisma = new PrismaClient({
+  log: ['warn', 'error']
+});
+
 export class DatabaseStore {
+  private isPostgresConnected: boolean = false;
   private tenant: TenantMaster = {
     ...mockTenant,
     total_spend_evaluated: 0,
@@ -96,6 +108,10 @@ export class DatabaseStore {
   private cachedConsolidatedOpportunities: SavingsOpportunityItem[] = [];
   private cachedOverlaps: OpportunityOverlapGroup[] = [];
   private cachedWaterfallMetrics: SavingsWaterfallMetrics | null = null;
+  // Module 2 Strategic Sourcing Cache (V1.0)
+  private cachedModule2Profiles: CategoryStrategicSourcingProfile[] = [];
+  private cachedModule2Summary: Module2StrategicSourcingDashboardSummary | null = null;
+  private cachedModule2Handoff: Module2ToModule4HandoffPackage[] = [];
 
   // Upgrade Request State (Prompt 81)
   private upgradeRequests: UpgradeRequestRecord[] = [];
@@ -108,11 +124,39 @@ export class DatabaseStore {
       this.pcbiIndices,
       this.pcbiUnspscMappings
     );
-    logger.info('⚡ High-performance Cloudflare Edge Datastore initialized', { source: 'DatabaseStore' });
+    this.initPostgres();
   }
 
-  public isConnected(): boolean {
-    return true;
+  private async initPostgres() {
+    try {
+      await prisma.$connect();
+      this.isPostgresConnected = true;
+      logger.info('🐘 PostgreSQL connected successfully via Prisma', { source: 'DatabaseStore' });
+      
+      // Optionally hydrate from PostgreSQL if data exists
+      const dbTenant = await prisma.tenantMaster.findFirst();
+      if (dbTenant) {
+        this.tenant = {
+          tenant_id: dbTenant.tenant_id,
+          enterprise_name: dbTenant.enterprise_name,
+          region: dbTenant.region as any,
+          base_currency: dbTenant.base_currency as any,
+          status: dbTenant.status as any,
+          total_spend_evaluated: 0,
+          total_spend_evaluated_inr: 0
+        };
+      }
+    } catch (err: any) {
+      this.isPostgresConnected = false;
+      logger.warn('⚠️  PostgreSQL connection unavailable - running with active high-performance datastore', {
+        source: 'DatabaseStore',
+        reason: err instanceof Error ? err.message.split('\n')[0] : String(err)
+      });
+    }
+  }
+
+  public isConnectedToPostgres(): boolean {
+    return this.isPostgresConnected;
   }
 
   // Tenant
@@ -139,6 +183,32 @@ export class DatabaseStore {
   public updateTenant(updates: Partial<TenantMaster>): TenantMaster {
     this.tenant = { ...this.tenant, ...updates };
     queryCache.invalidateCache(CACHE_KEYS.TENANT);
+    if (this.isPostgresConnected) {
+      prisma.tenantMaster.upsert({
+        where: { tenant_id: this.tenant.tenant_id },
+        create: {
+          tenant_id: this.tenant.tenant_id,
+          enterprise_name: this.tenant.enterprise_name,
+          region: this.tenant.region,
+          base_currency: this.tenant.base_currency,
+          status: this.tenant.status,
+          total_spend_evaluated: this.tenant.total_spend_evaluated,
+          total_spend_evaluated_inr: this.tenant.total_spend_evaluated_inr,
+          major_sector: this.tenant.major_sector,
+          minor_sector: this.tenant.minor_sector
+        },
+        update: {
+          enterprise_name: updates.enterprise_name ?? this.tenant.enterprise_name,
+          region: (updates.region as any) ?? this.tenant.region,
+          base_currency: (updates.base_currency as any) ?? this.tenant.base_currency,
+          status: (updates.status as any) ?? this.tenant.status,
+          total_spend_evaluated: updates.total_spend_evaluated ?? this.tenant.total_spend_evaluated,
+          total_spend_evaluated_inr: updates.total_spend_evaluated_inr ?? this.tenant.total_spend_evaluated_inr,
+          major_sector: updates.major_sector ?? this.tenant.major_sector,
+          minor_sector: updates.minor_sector ?? this.tenant.minor_sector
+        }
+      }).catch((e: any) => logger.error('Error syncing tenant to PostgreSQL', { source: 'DatabaseStore' }, e));
+    }
     return { ...this.tenant };
   }
 
@@ -221,16 +291,58 @@ export class DatabaseStore {
     if (fullItem.tenant_id) {
       queryCache.invalidateCache(`${CACHE_KEYS.INGESTION_QUEUE}_${fullItem.tenant_id}`);
     }
+    if (this.isPostgresConnected) {
+      prisma.rawDocumentIngestion.create({
+        data: {
+          doc_id: fullItem.doc_id,
+          tenant_id: fullItem.tenant_id,
+          file_name: fullItem.file_name,
+          file_type: fullItem.file_type,
+          file_size_mb: fullItem.file_size_mb,
+          ocr_status: fullItem.ocr_status,
+          progress: fullItem.progress,
+          uploaded_at: new Date(fullItem.uploaded_at),
+          records_count: fullItem.records_count,
+          detected_currencies: fullItem.detected_currencies,
+          converted_inr_crores: fullItem.converted_inr_crores
+        }
+      }).catch((e: any) => {
+        logger.warn('PostgreSQL sync skipped - running with active in-memory store', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
+        this.isPostgresConnected = false;
+      });
+    }
     return this.getIngestionQueue(fullItem.tenant_id);
   }
 
   public deleteIngestionItem(docId?: string, tenantId?: string): RawDocumentIngestion[] {
     if (docId) {
       this.ingestionQueue = this.ingestionQueue.filter((item) => item.doc_id !== docId);
+      if (this.isPostgresConnected) {
+        prisma.rawDocumentIngestion.deleteMany({
+          where: { doc_id: docId }
+        }).catch((e: any) => {
+          logger.warn('PostgreSQL delete skipped', { source: 'DatabaseStore', docId, reason: e?.message?.split('\n')[0] });
+          this.isPostgresConnected = false;
+        });
+      }
     } else if (tenantId) {
       this.ingestionQueue = this.ingestionQueue.filter((item) => item.tenant_id !== tenantId);
+      if (this.isPostgresConnected) {
+        prisma.rawDocumentIngestion.deleteMany({
+          where: { tenant_id: tenantId }
+        }).catch((e: any) => {
+          logger.warn('PostgreSQL delete skipped', { source: 'DatabaseStore', tenantId, reason: e?.message?.split('\n')[0] });
+          this.isPostgresConnected = false;
+        });
+      }
     } else {
       this.ingestionQueue = [];
+      if (this.isPostgresConnected) {
+        prisma.rawDocumentIngestion.deleteMany({}).catch((e: any) => {
+          logger.warn('PostgreSQL clear skipped', { source: 'DatabaseStore', reason: e?.message?.split('\n')[0] });
+          this.isPostgresConnected = false;
+        });
+      }
     }
     queryCache.invalidateCache(CACHE_KEYS.INGESTION_QUEUE);
     if (tenantId) {
@@ -278,6 +390,13 @@ export class DatabaseStore {
     });
 
     queryCache.invalidateCache(CACHE_KEYS.VALIDATION_RECORDS);
+
+    if (this.isPostgresConnected && updated) {
+      prisma.validationPreCheckRecord.update({
+        where: { record_id: recordId },
+        data: { ...updates }
+      }).catch((e: any) => logger.error('Error syncing validation record to PostgreSQL', { source: 'DatabaseStore' }, e));
+    }
     return updated;
   }
 
@@ -628,13 +747,17 @@ export class DatabaseStore {
     return result;
   }
 
-  // Users & Authentication (High-performance Edge Store)
-  public getUsers(): UserRecord[] {
-    return [...this.users];
-  }
-
+  // Users & Authentication (PostgreSQL with resilient in-memory fallback)
   public async getUserByEmail(email: string): Promise<UserRecord | null> {
     const normalizedEmail = email.trim().toLowerCase();
+    if (this.isPostgresConnected) {
+      try {
+        const u = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in getUserByEmail, falling back to local store', { email: normalizedEmail, error: err.message });
+      }
+    }
     const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail);
     return found ? { ...found } : null;
   }
@@ -642,11 +765,34 @@ export class DatabaseStore {
   public async getUserByEmailOrBuyerId(identifier: string): Promise<UserRecord | null> {
     const clean = identifier.trim();
     const normalizedEmail = clean.toLowerCase();
+    if (this.isPostgresConnected) {
+      try {
+        const u = await (prisma as any).user.findFirst({
+          where: {
+            OR: [
+              { email: normalizedEmail },
+              { id: clean }
+            ]
+          }
+        });
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in getUserByEmailOrBuyerId, falling back to local store', { identifier: clean, error: err.message });
+      }
+    }
     const found = this.users.find((u) => u.email.toLowerCase() === normalizedEmail || u.id === clean);
     return found ? { ...found } : null;
   }
 
   public async getUserById(id: string): Promise<UserRecord | null> {
+    if (this.isPostgresConnected) {
+      try {
+        const u = await (prisma as any).user.findUnique({ where: { id } });
+        if (u) return u as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in getUserById, falling back to local store', { id, error: err.message });
+      }
+    }
     const found = this.users.find((u) => u.id === id);
     return found ? { ...found } : null;
   }
@@ -659,11 +805,43 @@ export class DatabaseStore {
       created_at: now,
       updated_at: now
     };
+    if (this.isPostgresConnected) {
+      try {
+        const created = await (prisma as any).user.create({
+          data: {
+            id: newUser.id,
+            name: newUser.name,
+            mobile_number: newUser.mobile_number,
+            email: newUser.email,
+            company_name: newUser.company_name,
+            company_address: newUser.company_address,
+            password_hash: newUser.password_hash,
+            role: newUser.role,
+            status: newUser.status,
+            subscription_tier: newUser.subscription_tier || 'BRONZE'
+          }
+        });
+        return created as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in createUser, saving to local store', { email: data.email, error: err.message });
+      }
+    }
     this.users.push(newUser);
     return newUser;
   }
 
   public async updateUserPassword(id: string, passwordHash: string): Promise<boolean> {
+    if (this.isPostgresConnected) {
+      try {
+        await (prisma as any).user.update({
+          where: { id },
+          data: { password_hash: passwordHash, updated_at: new Date() }
+        });
+        return true;
+      } catch (err: any) {
+        logger.warn('Database query failed in updateUserPassword, updating local store', { id, error: err.message });
+      }
+    }
     const idx = this.users.findIndex((u) => u.id === id);
     if (idx !== -1) {
       this.users[idx].password_hash = passwordHash;
@@ -676,6 +854,40 @@ export class DatabaseStore {
   public async getAllUsers(
     query?: { search?: string; role?: string; status?: string; tier?: string }
   ): Promise<UserRecord[]> {
+    if (this.isPostgresConnected) {
+      try {
+        const whereClause: any = {};
+        if (query?.role && query.role !== 'ALL') {
+          whereClause.role = query.role.toUpperCase();
+        }
+        if (query?.status && query.status !== 'ALL') {
+          whereClause.status = query.status.toUpperCase();
+        }
+        if (query?.tier && query.tier !== 'ALL') {
+          whereClause.subscription_tier = query.tier.toUpperCase();
+        }
+        if (query?.search && query.search.trim() !== '') {
+          const q = query.search.trim();
+          whereClause.OR = [
+            { name: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { company_name: { contains: q, mode: 'insensitive' } },
+            { mobile_number: { contains: q } }
+          ];
+        }
+
+        const users = await (prisma as any).user.findMany({
+          where: whereClause,
+          orderBy: { created_at: 'desc' }
+        });
+        if (users && users.length > 0) {
+          return users as UserRecord[];
+        }
+      } catch (err: any) {
+        logger.warn('Database query failed in getAllUsers, falling back to local store', { query, error: err.message });
+      }
+    }
+
     let filtered = [...this.users];
     if (query?.role && query.role !== 'ALL') {
       filtered = filtered.filter((u) => u.role.toUpperCase() === query.role?.toUpperCase());
@@ -700,6 +912,18 @@ export class DatabaseStore {
 
   public async updateUserStatus(id: string, status: string): Promise<UserRecord | null> {
     const validStatus = status.toUpperCase();
+    if (this.isPostgresConnected) {
+      try {
+        const updated = await (prisma as any).user.update({
+          where: { id },
+          data: { status: validStatus }
+        });
+        if (updated) return updated as UserRecord;
+      } catch (err: any) {
+        logger.warn('Database query failed in updateUserStatus, falling back to local store', { id, status: validStatus, error: err.message });
+      }
+    }
+
     const idx = this.users.findIndex((u) => u.id === id);
     if (idx === -1) return null;
     this.users[idx] = {
@@ -712,6 +936,20 @@ export class DatabaseStore {
 
   public async updateUserTier(id: string, tier: string): Promise<UserRecord | null> {
     const validTier = tier.toUpperCase();
+    if (this.isPostgresConnected) {
+      try {
+        const updated = await (prisma as any).user.update({
+          where: { id },
+          data: { subscription_tier: validTier }
+        });
+        const idx = this.users.findIndex((u) => u.id === id);
+        if (idx !== -1) this.users[idx] = { ...updated } as UserRecord;
+        return updated as UserRecord;
+      } catch (err: any) {
+        logger.warn('Failed to update user tier in PostgreSQL, falling back to local memory store', { id, tier: validTier, error: err.message });
+      }
+    }
+
     const found = this.users.find((u) => u.id === id);
     if (!found) return null;
     found.subscription_tier = validTier;
@@ -1167,6 +1405,340 @@ export class DatabaseStore {
     if (!opp) return null;
     opp.status = status;
     return { ...opp };
+  }
+
+  // =========================================================================
+  // MODULE 2 STRATEGIC SOURCING INTELLIGENCE (V1.0)
+  // =========================================================================
+
+  public getModule2StrategicTransactions(): StrategicInputTransaction[] {
+    const validationList = this.getValidationRecords();
+    if (validationList.length >= 10) {
+      return validationList.map((v, i) => ({
+        id: v.record_id || `TX-M2-${i + 1}`,
+        po_number: v.po_number || `PO-${1000 + i}`,
+        po_date: v.transaction_date || (v.spend_year ? `${v.spend_year}-05-15` : '2023-06-01'),
+        vendor_name: v.vendor_name || 'Generic Vendor',
+        material_code: v.column_l_code || `MAT-${1000 + (i % 25)}`,
+        material_desc: v.raw_desc || 'Industrial Material Line Item',
+        quantity: v.order_quantity && v.order_quantity > 0 ? v.order_quantity : 100,
+        uom: 'EA',
+        unit_price: v.net_price && v.net_price > 0 ? v.net_price : (v.amount ? v.amount / 100 : 1500),
+        total_spend_inr: v.amount_inr || (v.inr_crores ? v.inr_crores * 10000000 : 150000),
+        currency: v.raw_currency || 'INR',
+        plant: 'Main Plant 1',
+        spend_category: v.core_category || 'DIRECT MATERIALS',
+        unspsc_code: '44101500',
+        unspsc_commodity: v.core_category || 'Direct Materials'
+      }));
+    }
+
+    // Default validated enterprise purchase transaction baseline
+    return [
+      // 1. Structural Steel Plates (High dispersion, e-auction & consolidation)
+      {
+        id: 'TX-STL-01',
+        po_number: 'PO-STL-2023-01',
+        po_date: '2023-01-15',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'Tata Steel Ltd',
+        quantity: 50,
+        uom: 'MT',
+        unit_price: 60000,
+        total_spend_inr: 3000000,
+        currency: 'INR',
+        plant: 'Jamshedpur',
+        spend_category: 'Structural Steel Plates'
+      },
+      {
+        id: 'TX-STL-02',
+        po_number: 'PO-STL-2023-04',
+        po_date: '2023-04-10',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'Tata Steel Ltd',
+        quantity: 60,
+        uom: 'MT',
+        unit_price: 60500,
+        total_spend_inr: 3630000,
+        currency: 'INR',
+        plant: 'Jamshedpur',
+        spend_category: 'Structural Steel Plates'
+      },
+      {
+        id: 'TX-STL-03',
+        po_number: 'PO-STL-2023-06',
+        po_date: '2023-06-20',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'JSW Steel Ltd',
+        quantity: 40,
+        uom: 'MT',
+        unit_price: 63500,
+        total_spend_inr: 2540000,
+        currency: 'INR',
+        plant: 'Bellary',
+        spend_category: 'Structural Steel Plates'
+      },
+      {
+        id: 'TX-STL-04',
+        po_number: 'PO-STL-2023-09',
+        po_date: '2023-09-05',
+        material_code: 'MAT-STL-PLT-12',
+        material_desc: 'Structural Steel Plate 12mm IS 2062 E250',
+        vendor_name: 'Jindal Steel & Power',
+        quantity: 30,
+        uom: 'MT',
+        unit_price: 65000,
+        total_spend_inr: 1950000,
+        currency: 'INR',
+        plant: 'Angul',
+        spend_category: 'Structural Steel Plates'
+      },
+
+      // 2. Hex Head Fasteners (High fragmentation, multiple vendors)
+      {
+        id: 'TX-FST-01',
+        po_number: 'PO-FST-2023-02',
+        po_date: '2023-02-10',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'Unbrako Fasteners',
+        quantity: 20000,
+        uom: 'PCS',
+        unit_price: 45,
+        total_spend_inr: 900000,
+        currency: 'INR',
+        plant: 'Plant 1',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+      {
+        id: 'TX-FST-02',
+        po_number: 'PO-FST-2023-05',
+        po_date: '2023-05-12',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'TVS Fasteners',
+        quantity: 15000,
+        uom: 'PCS',
+        unit_price: 48,
+        total_spend_inr: 720000,
+        currency: 'INR',
+        plant: 'Plant 1',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+      {
+        id: 'TX-FST-03',
+        po_number: 'PO-FST-2023-07',
+        po_date: '2023-07-22',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'Sundaram Fasteners Ltd',
+        quantity: 10000,
+        uom: 'PCS',
+        unit_price: 52,
+        total_spend_inr: 520000,
+        currency: 'INR',
+        plant: 'Plant 2',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+      {
+        id: 'TX-FST-04',
+        po_number: 'PO-FST-2023-10',
+        po_date: '2023-10-18',
+        material_code: 'MAT-FST-M16',
+        material_desc: 'Hex Head High Tensile Bolt M16x65 Gr 8.8',
+        vendor_name: 'Precision Industrial Bolts',
+        quantity: 5000,
+        uom: 'PCS',
+        unit_price: 58,
+        total_spend_inr: 290000,
+        currency: 'INR',
+        plant: 'Plant 2',
+        spend_category: 'Hex Head Fasteners & Bolts'
+      },
+
+      // 3. Corrugated Packaging (E-Auction Candidate)
+      {
+        id: 'TX-PKG-01',
+        po_number: 'PO-PKG-2023-03',
+        po_date: '2023-03-01',
+        material_code: 'MAT-PKG-BOX-5P',
+        material_desc: 'Corrugated Shipping Box 5-Ply 400x300x250mm',
+        vendor_name: 'Packwell Industries',
+        quantity: 25000,
+        uom: 'BOX',
+        unit_price: 140,
+        total_spend_inr: 3500000,
+        currency: 'INR',
+        plant: 'Main Warehouse',
+        spend_category: 'Corrugated Packaging Boxes'
+      },
+      {
+        id: 'TX-PKG-02',
+        po_number: 'PO-PKG-2023-06',
+        po_date: '2023-06-15',
+        material_code: 'MAT-PKG-BOX-5P',
+        material_desc: 'Corrugated Shipping Box 5-Ply 400x300x250mm',
+        vendor_name: 'Boxmakers Corp',
+        quantity: 20000,
+        uom: 'BOX',
+        unit_price: 145,
+        total_spend_inr: 2900000,
+        currency: 'INR',
+        plant: 'Main Warehouse',
+        spend_category: 'Corrugated Packaging Boxes'
+      },
+      {
+        id: 'TX-PKG-03',
+        po_number: 'PO-PKG-2023-09',
+        po_date: '2023-09-20',
+        material_code: 'MAT-PKG-BOX-5P',
+        material_desc: 'Corrugated Shipping Box 5-Ply 400x300x250mm',
+        vendor_name: 'Amber Packaging Ltd',
+        quantity: 15000,
+        uom: 'BOX',
+        unit_price: 152,
+        total_spend_inr: 2280000,
+        currency: 'INR',
+        plant: 'Main Warehouse',
+        spend_category: 'Corrugated Packaging Boxes'
+      },
+
+      // 4. Industrial Valves (Demonstrates unit mismatch and exclusions)
+      {
+        id: 'TX-VLV-01',
+        po_number: 'PO-VLV-2023-04',
+        po_date: '2023-04-12',
+        material_code: 'MAT-VLV-BALL-50',
+        material_desc: 'Forged Steel Ball Valve DN50 Class 300',
+        vendor_name: 'Audco Valves Ltd',
+        quantity: 20,
+        uom: 'EA',
+        unit_price: 12000,
+        total_spend_inr: 240000,
+        currency: 'INR',
+        plant: 'Process Unit',
+        spend_category: 'Industrial Process Valves'
+      },
+      {
+        id: 'TX-VLV-02',
+        po_number: 'PO-VLV-2023-08',
+        po_date: '2023-08-14',
+        material_code: 'MAT-VLV-BALL-50',
+        material_desc: 'Forged Steel Ball Valve DN50 Class 300',
+        vendor_name: 'L&T Valves Ltd',
+        quantity: 15,
+        uom: 'EA',
+        unit_price: 12500,
+        total_spend_inr: 187500,
+        currency: 'INR',
+        plant: 'Process Unit',
+        spend_category: 'Industrial Process Valves'
+      },
+      {
+        id: 'TX-VLV-03',
+        po_number: 'PO-VLV-2023-11',
+        po_date: '2023-11-02',
+        material_code: 'MAT-VLV-BALL-50',
+        material_desc: 'Forged Steel Ball Valve DN50 Class 300 Set of 2',
+        vendor_name: 'Microfinish Valves',
+        quantity: 5,
+        uom: 'SET', // UNIT_MISMATCH exclusion trigger
+        unit_price: 25000,
+        total_spend_inr: 125000,
+        currency: 'INR',
+        plant: 'Process Unit',
+        spend_category: 'Industrial Process Valves'
+      },
+
+      // 5. Specialty Lubricants (Single Supplier)
+      {
+        id: 'TX-LUB-01',
+        po_number: 'PO-LUB-2023-02',
+        po_date: '2023-02-18',
+        material_code: 'MAT-LUB-SYN-46',
+        material_desc: 'Synthetic Industrial Gear Oil ISO VG 46',
+        vendor_name: 'Shell India Markets',
+        quantity: 50,
+        uom: 'DRUM',
+        unit_price: 32000,
+        total_spend_inr: 1600000,
+        currency: 'INR',
+        plant: 'Maintenance Shop',
+        spend_category: 'Specialty Lubricants & Greases'
+      },
+      {
+        id: 'TX-LUB-02',
+        po_number: 'PO-LUB-2023-07',
+        po_date: '2023-07-15',
+        material_code: 'MAT-LUB-SYN-46',
+        material_desc: 'Synthetic Industrial Gear Oil ISO VG 46',
+        vendor_name: 'Shell India Markets',
+        quantity: 40,
+        uom: 'DRUM',
+        unit_price: 32000,
+        total_spend_inr: 1280000,
+        currency: 'INR',
+        plant: 'Maintenance Shop',
+        spend_category: 'Specialty Lubricants & Greases'
+      },
+
+      // 6. One-off Turbine Overhaul (Non-recurring Capex)
+      {
+        id: 'TX-CPX-01',
+        po_number: 'PO-CPX-2023-05',
+        po_date: '2023-05-30',
+        material_code: 'SRV-TRB-OVRHL',
+        material_desc: 'Turbine Rotor Major Overhaul & Reblading Service',
+        vendor_name: 'Siemens Energy India',
+        quantity: 1,
+        uom: 'JOB',
+        unit_price: 7500000,
+        total_spend_inr: 7500000,
+        currency: 'INR',
+        plant: 'Power Plant',
+        spend_category: 'Turbine Capital Overhaul'
+      }
+    ];
+  }
+
+  public getModule2StrategicSourcingAnalysis(forceRefresh = false): {
+    profiles: CategoryStrategicSourcingProfile[];
+    summary: Module2StrategicSourcingDashboardSummary;
+    handoffPackages: Module2ToModule4HandoffPackage[];
+  } {
+    if (!forceRefresh && this.cachedModule2Profiles.length > 0 && this.cachedModule2Summary) {
+      return {
+        profiles: this.cachedModule2Profiles,
+        summary: this.cachedModule2Summary,
+        handoffPackages: this.cachedModule2Handoff
+      };
+    }
+
+    const txs = this.getModule2StrategicTransactions();
+    const result = Module2StrategicSourcingEngine.analyze(txs);
+    this.cachedModule2Profiles = result.profiles;
+    this.cachedModule2Summary = result.summary;
+    this.cachedModule2Handoff = result.handoffPackages;
+
+    return result;
+  }
+
+  public getModule2StrategicProfile(categoryIdOrName: string): CategoryStrategicSourcingProfile | null {
+    const analysis = this.getModule2StrategicSourcingAnalysis();
+    const normalized = categoryIdOrName.trim().toLowerCase();
+    return analysis.profiles.find(
+      (p) =>
+        p.categoryId.toLowerCase() === normalized ||
+        p.categoryName.toLowerCase() === normalized
+    ) || null;
+  }
+
+  public getModule2HandoffPackages(): Module2ToModule4HandoffPackage[] {
+    const analysis = this.getModule2StrategicSourcingAnalysis();
+    return analysis.handoffPackages;
   }
 }
 

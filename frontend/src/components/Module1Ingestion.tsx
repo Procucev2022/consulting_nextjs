@@ -16,6 +16,7 @@ import { DocumentSummaryView } from './DocumentSummaryView';
 import { ParetoSpendHierarchySection } from './ParetoSpendHierarchySection';
 import { ValidationPreCheckSection } from './ValidationPreCheckSection';
 import { IngestionUploadSection } from './IngestionUploadSection';
+import { PCBIModuleWarningBanner } from './admin/pcbi/PCBIModuleWarningBanner';
 import { UI_STRINGS } from '../constants';
 
 export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
@@ -168,7 +169,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-fade-in">
       {/* Module Title Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-sky-50 via-white to-cyan-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-cyan-950/40 border border-sky-100 dark:border-cyan-500/20 shadow-sm dark:shadow-xl glass-panel">
         <div>
@@ -200,8 +201,11 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         </div>
       </div>
 
+      {/* Part D Clear User Warning for Customer Purchase Data */}
+      <PCBIModuleWarningBanner moduleContext="MODULE_1" />
+
       {/* Live FX Rates Bar */}
-      <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div className="p-3.5 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 shrink-0">
           <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxRatesLabel}</span>
@@ -222,7 +226,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
               .map(([curr, fx]) => (
                 <span
                   key={curr}
-                  className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
+                  className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
                   title={`${fx.name || curr} live rate to INR`}
                 >
                   <span className="font-bold text-cyan-700 dark:text-cyan-400">{curr}/INR:</span>
@@ -236,7 +240,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
       </div>
 
       {/* Ingestion Meta Dashboard Strip */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+      <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">{UI_STRINGS.module1.activeTenant}</span>
@@ -263,6 +267,17 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             <span className="text-slate-500 font-medium">Evaluation Window:</span>
             <span className="font-semibold text-slate-800 dark:text-slate-200">{spendPeriod}</span>
           </div>
+          {monthWiseSummaries && monthWiseSummaries.length > 0 && (
+            <>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <div className="flex items-center space-x-2" title="Actual Verified Transaction Date Coverage from ERP file">
+                <span className="text-slate-500 font-medium">Actual Coverage:</span>
+                <span className="font-bold text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800/60 font-mono text-[11px]">
+                  {monthWiseSummaries.length} Billing Months ({monthWiseSummaries[0]?.month_label} – {monthWiseSummaries[monthWiseSummaries.length - 1]?.month_label})
+                </span>
+              </div>
+            </>
+          )}
           <span className="text-slate-300 dark:text-slate-700">|</span>
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">Reporting Base:</span>
@@ -368,7 +383,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           />
         </>
       ) : (
-        <div className="p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-3 glass-card">
+        <div className="p-8 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 text-center space-y-3 glass-card">
           <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
             <FileSpreadsheet className="w-6 h-6" />
           </div>

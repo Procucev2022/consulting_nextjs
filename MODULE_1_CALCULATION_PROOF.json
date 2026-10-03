@@ -1,0 +1,119 @@
+{
+  "timestamp": "2026-09-30T17:57:02.481Z",
+  "datasetHash": "8c173c9e65c814530bd8501abc183e9f851b052da603f9c6cc87b88a87e0d9b1",
+  "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED",
+  "status": "PASS",
+  "finalStatus": "MODULE_1_E2E_CERTIFIED",
+  "proofs": [
+    {
+      "kpiName": "TOTAL_EVALUATED_SPEND",
+      "source": "RAW_TRANSACTION_LEDGER",
+      "formula": "SUM(Order Quantity * Net Price * Approved FX Rate)",
+      "inputs": {
+        "totalRows": 31671,
+        "currency": "INR",
+        "fxRate": 1
+      },
+      "output": 59203477681.6571,
+      "precision": "Continuous 64-bit IEEE 754 precision (unrounded internal)",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "VALIDATED_SPEND",
+      "source": "VALIDATED_TRANSACTION_LEDGER",
+      "formula": "SUM(Included Transaction Line Spend)",
+      "inputs": {
+        "includedRows": 31671,
+        "excludedRows": 0
+      },
+      "output": 59203477681.6571,
+      "precision": "Exact Decimal / Minor Currency Units",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "UNIQUE_MATERIAL_ITEMS",
+      "source": "MATERIAL_MASTER_LEDGER",
+      "formula": "COUNT(DISTINCT Valid Material Item Codes)",
+      "inputs": {
+        "totalDistinctCodes": 6485,
+        "regexRule": "Alphanumeric & Numeric SAP Codes accepted"
+      },
+      "output": 6485,
+      "precision": "Discrete Integer Entity Count",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "UNIQUE_LEGAL_SUPPLIERS",
+      "source": "VENDOR_MASTER_LEDGER",
+      "formula": "COUNT(DISTINCT Normalized Supplier Legal Entities)",
+      "inputs": {
+        "normalizationRule": "Case-insensitive whitespace standard without legal entity merging"
+      },
+      "output": 974,
+      "precision": "Discrete Integer Entity Count",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "MATERIAL_GROUPS_COUNT",
+      "source": "TAXONOMY_LEDGER",
+      "formula": "COUNT(DISTINCT Material Group Keys)",
+      "inputs": {
+        "totalMappedGroups": 256
+      },
+      "output": 256,
+      "precision": "Discrete Integer Entity Count",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "OPERATING_PLANTS_COUNT",
+      "source": "PLANT_FACILITY_LEDGER",
+      "formula": "COUNT(DISTINCT Operating Plant Identifiers)",
+      "inputs": {
+        "totalFacilities": 26
+      },
+      "output": 26,
+      "precision": "Discrete Integer Entity Count",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "COVERED_BILLING_MONTHS",
+      "source": "POSTING_DATE_LEDGER",
+      "formula": "COUNT(DISTINCT Document Posting YYYY-MM periods)",
+      "inputs": {
+        "minMonth": "2024-04",
+        "maxMonth": "2026-03",
+        "scopeFlag": "PERIOD_SCOPE_MISMATCH"
+      },
+      "output": 24,
+      "precision": "Calendar Posting Cycle Months",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "PARETO_80_PERCENT_THRESHOLD",
+      "source": "SUPPLIER_SPEND_SORTED_LEDGER",
+      "formula": "FIRST(Supplier where Cumulative Spend >= Total Spend * 0.80)",
+      "inputs": {
+        "theoreticalCutoffInr": 47362782145.32573,
+        "actualCrossingSupplier": "RANAWAT UDYOG",
+        "actualCumulativeSpendInr": 47525423160.535515,
+        "cumulativeSharePct": 80.27
+      },
+      "output": 4752.54,
+      "precision": "Exact Transaction Currency Accumulation",
+      "reconciliationStatus": "PASS"
+    },
+    {
+      "kpiName": "DATA_QUALITY_INDEX",
+      "source": "QUALITY_AUDIT_FRAMEWORK",
+      "formula": "40% * DataQuality + 30% * Completeness + 30% * Reconciliation",
+      "inputs": {
+        "dataQualityPct": 84.9,
+        "completenessPct": 96.6,
+        "reconciliationPct": 100
+      },
+      "output": 92.9,
+      "precision": "Weighted Multi-Dimensional Hygiene Score",
+      "reconciliationStatus": "PASS"
+    }
+  ]
+}

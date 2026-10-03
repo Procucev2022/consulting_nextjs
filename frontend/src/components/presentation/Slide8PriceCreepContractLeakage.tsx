@@ -11,7 +11,7 @@ export const Slide8PriceCreepContractLeakage: React.FC<PresentationSlideProps> =
   const strings = UI_STRINGS.presentation.priceCreep;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -40,7 +40,7 @@ export const Slide8PriceCreepContractLeakage: React.FC<PresentationSlideProps> =
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             {strings.indexDriftDesc}
           </p>
-          <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/80 text-[11px] font-mono font-bold text-amber-700 dark:text-amber-400">
+          <div className="p-2 rounded-lg bg-white/80 dark:bg-white text-[11px] font-mono font-bold text-amber-700 dark:text-amber-400">
             Identified Leak: ₹8.72 Cr
           </div>
         </div>
@@ -53,7 +53,7 @@ export const Slide8PriceCreepContractLeakage: React.FC<PresentationSlideProps> =
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             {strings.bracketLeakageDesc}
           </p>
-          <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/80 text-[11px] font-mono font-bold text-rose-700 dark:text-rose-400">
+          <div className="p-2 rounded-lg bg-white/80 dark:bg-white text-[11px] font-mono font-bold text-rose-700 dark:text-rose-400">
             Identified Leak: ₹6.45 Cr
           </div>
         </div>
@@ -66,7 +66,7 @@ export const Slide8PriceCreepContractLeakage: React.FC<PresentationSlideProps> =
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
             {strings.maverickDesc}
           </p>
-          <div className="p-2 rounded-lg bg-white/80 dark:bg-slate-900/80 text-[11px] font-mono font-bold text-blue-700 dark:text-blue-400">
+          <div className="p-2 rounded-lg bg-white/80 dark:bg-white text-[11px] font-mono font-bold text-blue-700 dark:text-blue-400">
             Identified Leak: ₹5.36 Cr
           </div>
         </div>

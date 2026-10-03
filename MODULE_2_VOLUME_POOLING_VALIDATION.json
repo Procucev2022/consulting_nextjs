@@ -1,0 +1,119 @@
+{
+  "auditTimestamp": "2026-10-03T03:51:13.444Z",
+  "version": "MODULE_2_VOLUME_POOLING_VALIDATION_V1.0",
+  "totalPoolingInitiativesEvaluated": 3,
+  "allSpecificationsComparable": true,
+  "poolingOpportunities": [
+    {
+      "poolingId": "POOL-LUBRICANTS-001",
+      "category": "Lubricants",
+      "item": "Hydraulic Oil ISO VG 46",
+      "specification": "ISO VG 46 Hydraulic Oil",
+      "uom": "LTR",
+      "currentFragmentedVolume": 57000,
+      "currentSupplierCount": 3,
+      "supplierBreakdown": [
+        {
+          "supplier": "Castrol India Ltd",
+          "volume": 19000,
+          "currentRate": 179,
+          "totalSpendInr": 3402000
+        },
+        {
+          "supplier": "Gulf Oil Corporation",
+          "volume": 15000,
+          "currentRate": 166.6,
+          "totalSpendInr": 2499000
+        },
+        {
+          "supplier": "IOC SERVO Lubricants",
+          "volume": 23000,
+          "currentRate": 161,
+          "totalSpendInr": 3704000
+        }
+      ],
+      "potentialPooledVolume": 57000,
+      "referenceRate": 160,
+      "historicalComparableRate": 168.5,
+      "potentialOpportunityInr": 485000,
+      "economicDefensibility": "Aggregating periodic 7k-12k L drums into consolidated annual off-take contract yields tier-1 refinery bulk pricing",
+      "comparableSpecificationVerified": true
+    },
+    {
+      "poolingId": "POOL-FASTENERS-001",
+      "category": "Industrial Fasteners",
+      "item": "Hex Bolt & Nut M20 Grade 8.8",
+      "specification": "M20 Grade 8.8 High Tensile",
+      "uom": "EA",
+      "currentFragmentedVolume": 220000,
+      "currentSupplierCount": 3,
+      "supplierBreakdown": [
+        {
+          "supplier": "Bolt Masters India",
+          "volume": 100000,
+          "currentRate": 63.5,
+          "totalSpendInr": 6350000
+        },
+        {
+          "supplier": "Fastek Components",
+          "volume": 60000,
+          "currentRate": 58,
+          "totalSpendInr": 3480000
+        },
+        {
+          "supplier": "Harsco Fasteners",
+          "volume": 60000,
+          "currentRate": 68,
+          "totalSpendInr": 4080000
+        }
+      ],
+      "potentialPooledVolume": 220000,
+      "referenceRate": 58,
+      "historicalComparableRate": 63.2,
+      "potentialOpportunityInr": 1140000,
+      "economicDefensibility": "Pooling high-volume M20 bolts and nuts across fabrication works delivers significant manufacturing lot economics",
+      "comparableSpecificationVerified": true
+    },
+    {
+      "poolingId": "POOL-STEEL-001",
+      "category": "Structural Steel",
+      "item": "Carbon Steel Plate 12mm IS2062",
+      "specification": "12mm Carbon Steel IS2062 E250BR",
+      "uom": "MT",
+      "currentFragmentedVolume": 6100,
+      "currentSupplierCount": 4,
+      "supplierBreakdown": [
+        {
+          "supplier": "Tata Steel Ltd",
+          "volume": 2100,
+          "currentRate": 63571.4,
+          "totalSpendInr": 133500000
+        },
+        {
+          "supplier": "JSW Steel Ltd",
+          "volume": 1700,
+          "currentRate": 60411.8,
+          "totalSpendInr": 102700000
+        },
+        {
+          "supplier": "Jindal Steel & Power",
+          "volume": 1200,
+          "currentRate": 58000,
+          "totalSpendInr": 69600000
+        },
+        {
+          "supplier": "Steel Authority of India",
+          "volume": 1100,
+          "currentRate": 59227.3,
+          "totalSpendInr": 65150000
+        }
+      ],
+      "potentialPooledVolume": 6100,
+      "referenceRate": 57000,
+      "historicalComparableRate": 60811.5,
+      "potentialOpportunityInr": 23250000,
+      "economicDefensibility": "Aggregating plant requirements into quarterly rake shipments achieves primary mill direct-dispatch pricing",
+      "comparableSpecificationVerified": true
+    }
+  ]
+}

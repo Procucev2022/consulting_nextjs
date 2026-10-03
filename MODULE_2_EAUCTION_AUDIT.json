@@ -1,0 +1,24 @@
+[
+  {
+    "categoryId": "CAT-StructuralSt",
+    "categoryName": "Structural Steel",
+    "auctionSuitability": "AUCTION_ELIGIBLE",
+    "currentBaselineSpendInr": 219000000,
+    "eligibleSpendInr": 219000000,
+    "eligibleVolume": 3600,
+    "supplierCount": 4,
+    "priceDispersionPct": 9,
+    "referencePrice": 58500,
+    "targetRangeInr": {
+      "min": 6720000,
+      "base": 8400000,
+      "max": 10500000
+    },
+    "reserveRangeInr": {
+      "min": 4200000,
+      "max": 7560000
+    },
+    "expectedCompetitiveResponse": "High competitive tension across 3+ qualified bidders",
+    "exclusionOrQualificationReason": "Sufficient supplier liquidity and price variance"
+  }
+]

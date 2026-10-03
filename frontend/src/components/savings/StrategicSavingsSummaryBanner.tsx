@@ -100,7 +100,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
   return (
     <div
       data-testid="strategic-savings-summary-banner"
-      className="space-y-6 animate-in fade-in duration-300"
+      className="space-y-6 animate-fade-in"
     >
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-cyan-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-teal-950/40 border border-emerald-200/70 dark:border-emerald-500/30 shadow-sm glass-panel">
@@ -123,7 +123,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <div className="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-2">
+          <div className="px-3 py-1.5 rounded-xl bg-white/80 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 shadow-xs flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200">
               {strings.overallSavingsPctLabel(metrics.overallSavingsPct)}
@@ -216,7 +216,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
             <div
               key={init.key}
               data-testid={`initiative-card-${init.key}`}
-              className={`relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 ${accent.bgHover} shadow-xs hover:shadow-lg transition-all flex flex-col justify-between group space-y-4`}
+              className={`relative overflow-hidden p-5 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 ${accent.bgHover} shadow-xs hover:shadow-lg transition-all flex flex-col justify-between group space-y-4`}
             >
               <div className="space-y-3">
                 {/* Header Row: Badge & Source */}
@@ -231,7 +231,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
 
                 {/* Title & Icon */}
                 <div className="flex items-start space-x-2.5">
-                  <div className={`p-2 rounded-xl bg-slate-100 dark:bg-slate-800 ${accent.text} border border-slate-200 dark:border-slate-700 shrink-0`}>
+                  <div className={`p-2 rounded-xl bg-slate-100 dark:bg-[#EEF4FC] ${accent.text} border border-slate-200 dark:border-slate-700 shrink-0`}>
                     {renderIcon(init.iconName)}
                   </div>
                   <div>
@@ -245,7 +245,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
                 </div>
 
                 {/* Metrics Row: Spend Baseline & Target % */}
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-xs font-mono">
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-xs font-mono">
                   <div>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase block">
                       Evaluated Spend
@@ -291,7 +291,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
                 <span className="font-mono text-slate-500 dark:text-slate-400 text-[10px] truncate max-w-[170px]" title={init.lever}>
                   {init.lever}
                 </span>
-                <span className="font-mono text-[10px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                <span className="font-mono text-[10px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#EEF4FC] px-2 py-0.5 rounded">
                   {init.executionPlatform}
                 </span>
               </div>
@@ -301,7 +301,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
       </div>
 
       {/* Comparison & Review Action Breakdown Table */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+      <div className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -317,7 +317,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
         <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-3 px-4">{strings.tableHeaders.initiative}</th>
                   <th className="py-3 px-4 text-right">{strings.tableHeaders.evaluatedSpend}</th>
@@ -333,11 +333,11 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
                   return (
                     <tr
                       key={init.key}
-                      className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                     >
                       <td className="py-3.5 px-4 font-sans">
                         <div className="flex items-center space-x-2">
-                          <span className={`p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 ${accent.text}`}>
+                          <span className={`p-1.5 rounded-lg bg-slate-100 dark:bg-[#EEF4FC] ${accent.text}`}>
                             {renderIcon(init.iconName)}
                           </span>
                           <div>

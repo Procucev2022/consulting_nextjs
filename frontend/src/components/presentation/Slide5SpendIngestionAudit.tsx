@@ -11,7 +11,7 @@ export const Slide5SpendIngestionAudit: React.FC<PresentationSlideProps> = ({
   const strings = UI_STRINGS.presentation.ingestion;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -32,28 +32,28 @@ export const Slide5SpendIngestionAudit: React.FC<PresentationSlideProps> = ({
 
       {/* 4 Ingestion Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-auto py-6">
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1">
           <FileSpreadsheet className="w-5 h-5 text-blue-600 mb-1" />
           <p className="text-2xl font-black font-mono text-slate-900 dark:text-white">{strings.recordsAudited}</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{strings.recordsAuditedLabel}</p>
           <span className="text-[10px] text-slate-400 block">Parsed across FY23, FY24, FY25 & FY26</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1">
           <Users className="w-5 h-5 text-cyan-600 mb-1" />
           <p className="text-2xl font-black font-mono text-slate-900 dark:text-white">{strings.vendorsHarmonized}</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{strings.vendorsHarmonizedLabel}</p>
           <span className="text-[10px] text-slate-400 block">Aliases unified under Master Parent IDs</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1">
           <ShieldCheck className="w-5 h-5 text-emerald-600 mb-1" />
           <p className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">{strings.cleanRecordRate}</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{strings.cleanRecordRateLabel}</p>
           <span className="text-[10px] text-emerald-600/80 block">Zero unmapped anomalies</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1">
           <Database className="w-5 h-5 text-indigo-600 mb-1" />
           <p className="text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">{strings.currenciesNormalized}</p>
           <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{strings.currenciesNormalizedLabel}</p>
@@ -62,7 +62,7 @@ export const Slide5SpendIngestionAudit: React.FC<PresentationSlideProps> = ({
       </div>
 
       {/* Forensic Audit Capabilities */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs flex flex-col md:flex-row justify-between items-center gap-3">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 text-xs flex flex-col md:flex-row justify-between items-center gap-3">
         <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
           <CheckCheck className="w-4 h-4 text-cyan-600 shrink-0" />
           <span>Automated Pre-Check Validation: Resolves currency mismatches, tax drifts, and duplicates prior to taxonomy mapping.</span>

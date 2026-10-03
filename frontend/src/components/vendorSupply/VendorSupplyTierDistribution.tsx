@@ -7,7 +7,7 @@ export const VendorSupplyTierDistribution: React.FC<VendorSupplyTierDistribution
   const strings = UI_STRINGS.module2.vendorSupply;
 
   return (
-    <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+    <div className="p-5 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
       <div>
         <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
           {strings.spendTierTrendTitle}
@@ -45,7 +45,7 @@ export const VendorSupplyTierDistribution: React.FC<VendorSupplyTierDistribution
             </div>
 
             {/* Stacked Progress Bar */}
-            <div className="w-full h-3.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex border border-slate-200 dark:border-slate-700">
+            <div className="w-full h-3.5 bg-slate-100 dark:bg-[#EEF4FC] rounded-full overflow-hidden flex border border-slate-200 dark:border-slate-700">
               <div
                 style={{ width: `${tier.multi_category_spend_pct}%` }}
                 className={`h-full transition-all duration-500 ${

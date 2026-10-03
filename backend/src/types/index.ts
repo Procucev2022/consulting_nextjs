@@ -27,3 +27,23 @@ export * from './pcbiProductionReady';
 export * from './pcbiCommodityCoverage';
 export * from './certification';
 export * from './pcbiPlatformIntegration';
+export * from './pcbiCommodityDataLab';
+export * from './module2StrategicSourcing';
+export * from './module2AuditDossier';
+export * from './module1Forensic';
+export * from './module1ForensicAudit';
+export * from './module1HardeningTypes';
+export * from './enterpriseHardeningTypes';
+export * from './enterpriseValidationTypes';
+export * from './dataSecurityTypes';
+export * from './customerDataSecurityTypes';
+export * from './dataPrivacyTypes';
+export * from './finalHardeningTypes';
+export * from './numericalAuditTypes';
+export * from './executiveBriefTypes';
+export * from './executiveBriefExportTypes';
+export * from './savingsOpportunityRegister';
+export * from './executiveBriefPresentation';
+export * from './subscription';
+
+

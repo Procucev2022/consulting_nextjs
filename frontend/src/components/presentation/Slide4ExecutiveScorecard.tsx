@@ -13,7 +13,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
   const strings = UI_STRINGS.presentation.scorecard;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -34,12 +34,12 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
 
       {/* 4 Hero KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-auto py-6">
-        <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
             <Target className="w-4 h-4 text-cyan-600" />
             <span className="text-xs font-semibold uppercase">{strings.kpiBaselineSpend}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-slate-900 dark:text-white">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-slate-900 dark:text-white">
             ₹{totalSpendInrCr.toFixed(2)} Cr
           </p>
           <span className="text-[11px] text-cyan-700 dark:text-cyan-400 font-medium block">
@@ -52,7 +52,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <TrendingDown className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase">{strings.kpiIdentifiedSavings}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
             ₹{totalSavingsInrCr.toFixed(2)} Cr
           </p>
           <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium block">
@@ -65,7 +65,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <AlertTriangle className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase">{strings.kpiPriceCreep}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-amber-600 dark:text-amber-400">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
             {strings.kpiPriceCreepVal}
           </p>
           <span className="text-[11px] text-amber-700 dark:text-amber-300 font-medium block">
@@ -78,7 +78,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <Zap className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase">{strings.kpiVelocity}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-blue-600 dark:text-blue-400">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-blue-600 dark:text-blue-400">
             {strings.kpiVelocityVal}
           </p>
           <span className="text-[11px] text-blue-700 dark:text-blue-300 font-medium block">
@@ -88,7 +88,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
       </div>
 
       {/* Strategic Takeaways List */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
         <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
           Management Takeaways & Strategic Summary:
         </h4>

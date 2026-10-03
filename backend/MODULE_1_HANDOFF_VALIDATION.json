@@ -1,0 +1,15 @@
+{
+  "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED",
+  "sourceSha256": "8c173c9e65c814530bd8501abc183e9f851b052da603f9c6cc87b88a87e0d9b1",
+  "generatedAt": "2026-10-03T03:51:41.730Z",
+  "totalSpendInr": 59203477681.6571,
+  "totalSpendCr": 5920.3478,
+  "totalRecords": 31671,
+  "reconciliationStatus": "PASS",
+  "unexplainedSpendVariance": "₹0.00",
+  "unexplainedCountVariance": 0,
+  "pcbiLeakage": 0,
+  "syntheticSavings": 0,
+  "strategicSourcingLogic": 0,
+  "status": "PASS"
+}

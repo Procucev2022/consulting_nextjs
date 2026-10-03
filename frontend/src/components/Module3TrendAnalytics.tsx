@@ -264,33 +264,33 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-fade-in">
       {/* Module Title Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-orange-50 dark:from-slate-900 dark:via-slate-900/90 dark:to-rose-950/30 border border-rose-100 dark:border-cyan-500/20 shadow-sm dark:shadow-xl glass-panel">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-white to-orange-50 border border-rose-100 shadow-sm glass-panel-glow">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs font-mono font-bold text-rose-800 dark:text-cyan-400 bg-rose-100 dark:bg-cyan-950 px-2.5 py-0.5 rounded border border-rose-300 dark:border-cyan-800">
+            <span className="text-xs font-mono font-bold text-rose-800 bg-rose-100 px-2.5 py-0.5 rounded border border-rose-300">
               {UI_STRINGS.module3.badge}
             </span>
-            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800/60">
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
               {UI_STRINGS.module3.valuationBadge}
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
             {UI_STRINGS.module3.heading}
           </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-2xl">
+          <p className="text-xs text-slate-600 mt-1 max-w-2xl">
             {UI_STRINGS.module3.description}
           </p>
         </div>
 
         {/* Commodity Benchmark Dropdown */}
-        <div className="flex items-center space-x-2 bg-slate-50 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-700/80 px-3 py-1.5 rounded-xl shrink-0">
-          <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module3.benchmarkLabel}</span>
+        <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl shrink-0">
+          <span className="text-xs text-slate-500">{UI_STRINGS.module3.benchmarkLabel}</span>
           <select
             value={selectedCommodity}
             onChange={(e) => setSelectedCommodity(e.target.value as any)}
-            className="bg-transparent text-xs font-bold text-cyan-700 dark:text-cyan-400 focus:outline-none cursor-pointer"
+            className="bg-transparent text-xs font-bold text-cyan-700 focus:outline-none cursor-pointer"
           >
             <option value={UI_STRINGS.module3.commodities.icis}>{UI_STRINGS.module3.commodities.icis}</option>
             <option value={UI_STRINGS.module3.commodities.lme}>{UI_STRINGS.module3.commodities.lme}</option>
@@ -315,23 +315,23 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
       {/* 5. 36-Month Dynamic Trend Chart + Price Creep Leakage Box */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Chart (8 cols) */}
-        <div className="lg:col-span-8 p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+        <div className="lg:col-span-8 p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
-                <LineChartIcon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                <LineChartIcon className="w-4 h-4 text-rose-600" />
                 <span>{UI_STRINGS.module3.chartHeading}</span>
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500">
                 {UI_STRINGS.module3.chartSubheading}
               </p>
             </div>
             <div className="flex items-center space-x-3 text-xs font-mono">
-              <span className="flex items-center space-x-1 text-cyan-700 dark:text-cyan-400 font-bold">
+              <span className="flex items-center space-x-1 text-cyan-700 font-bold">
                 <TrendingDown className="w-3.5 h-3.5" />
                 <span>Market: {marketDeltaText}</span>
               </span>
-              <span className="flex items-center space-x-1 text-rose-600 dark:text-rose-400 font-bold">
+              <span className="flex items-center space-x-1 text-rose-600 font-bold">
                 <TrendingUp className="w-3.5 h-3.5" />
                 <span>Invoiced: {invoicedDeltaText}</span>
               </span>
@@ -341,9 +341,9 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
           {/* Dynamic Chart Container */}
           <div className="h-72 w-full pt-2">
             {vendorRankings.length === 0 ? (
-              <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center p-6 space-y-2">
-                <LineChartIcon className="w-8 h-8 text-slate-400 dark:text-slate-600" />
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Awaiting Dataset Ingestion</p>
+              <div className="h-full w-full flex flex-col items-center justify-center border border-dashed border-slate-200 rounded-xl text-center p-6 space-y-2">
+                <LineChartIcon className="w-8 h-8 text-slate-400" />
+                <p className="text-xs font-bold text-slate-700">Awaiting Dataset Ingestion</p>
                 <p className="text-[11px] text-slate-500 max-w-sm">
                   Upload your procurement spend file in Step 1 to generate live 36-month pricing trends and market index comparisons.
                 </p>
@@ -354,23 +354,23 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
           </div>
 
           {/* Unjustified Price Creep Highlight Banner in INR Crores */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 via-white to-rose-50 dark:from-rose-950/70 dark:via-slate-950 dark:to-rose-950/70 border border-rose-200 dark:border-rose-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-4 rounded-xl bg-gradient-to-r from-rose-50 via-white to-rose-50 border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-500/30">
+              <div className="p-2 rounded-lg bg-rose-100 text-rose-600 border border-rose-300">
                 <AlertOctagon className="w-5 h-5" />
               </div>
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-700">
                   {UI_STRINGS.module3.leakageBoxTitle}
                 </span>
-                <p className="text-xs text-slate-600 dark:text-slate-300">
+                <p className="text-xs text-slate-600">
                   {UI_STRINGS.module3.leakageBoxDesc}
                 </p>
               </div>
             </div>
             <div className="text-right sm:pl-4 shrink-0">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono uppercase">{UI_STRINGS.module3.varianceLeakageLabel}</span>
-              <p className="text-2xl font-black font-mono text-rose-600 dark:text-rose-400 tracking-tight">
+              <span className="text-[10px] text-slate-500 font-mono uppercase">{UI_STRINGS.module3.varianceLeakageLabel}</span>
+              <p className="text-2xl font-black font-mono text-rose-600 tracking-tight">
                 ₹{totalLeakageCr.toFixed(2)} Cr
               </p>
               <span className="text-[10px] text-slate-400 font-mono">
@@ -381,39 +381,39 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
         </div>
 
         {/* Creep Anomaly Stats & Insight (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col justify-between p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-card space-y-4">
+        <div className="lg:col-span-4 flex flex-col justify-between p-6 rounded-2xl bg-white border border-slate-200 glass-card space-y-4">
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
-                <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600" />
                 <span>{UI_STRINGS.module3.creepAnomalyTitle}</span>
               </h3>
-              <span className="text-xs font-mono font-bold text-rose-800 dark:text-rose-400 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded border border-rose-300 dark:border-rose-800/60">
+              <span className="text-xs font-mono font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded border border-rose-300">
                 {highCreepCount > 0 ? `${highCreepCount} HIGH RISK` : UI_STRINGS.module3.creepAnomalyBadge}
               </span>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
+            <p className="text-xs text-slate-600">
               {UI_STRINGS.module3.creepAnomalyDesc}
             </p>
 
             <div className="space-y-3 mt-4">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module3.avgMarkupLabel}</span>
-                <p className="text-xl font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">+{avgMarkupPct}%</p>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">{UI_STRINGS.module3.avgMarkupSub}</span>
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs text-slate-500">{UI_STRINGS.module3.avgMarkupLabel}</span>
+                <p className="text-xl font-bold font-mono text-rose-600 mt-0.5">+{avgMarkupPct}%</p>
+                <span className="text-[10px] text-slate-400">{UI_STRINGS.module3.avgMarkupSub}</span>
               </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.module3.highCreepVendorsLabel}</span>
-                <p className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">{highCreepCount} Vendors</p>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs text-slate-500">{UI_STRINGS.module3.highCreepVendorsLabel}</span>
+                <p className="text-xl font-bold font-mono text-amber-600 mt-0.5">{highCreepCount} Vendors</p>
+                <span className="text-[10px] text-slate-400">
                   {highCreepCount > 0 ? `Accounting for ₹${highCreepLeakageCr.toFixed(2)} Cr of total variance` : 'No high-creep anomalies flagged'}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-900/40 text-xs text-slate-700 dark:text-slate-300">
-            <span className="text-cyan-800 dark:text-cyan-400 font-bold block mb-1">{UI_STRINGS.module3.advisoryPlayLabel}</span>
+          <div className="p-3.5 rounded-xl bg-cyan-50 border border-cyan-200 text-xs text-slate-700">
+            <span className="text-cyan-800 font-bold block mb-1">{UI_STRINGS.module3.advisoryPlayLabel}</span>
             {UI_STRINGS.module3.advisoryPlayDesc}
           </div>
         </div>
@@ -434,13 +434,13 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
       ) : (
         <div className="space-y-6">
           {/* Detailed Vendor Rankings Table */}
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                   {UI_STRINGS.module3.rankingsTableTitle}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500">
                   {UI_STRINGS.module3.rankingsTableDesc}
                 </p>
               </div>
@@ -452,8 +452,8 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                   onClick={() => setFilterRisk('ALL')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     filterRisk === 'ALL'
-                      ? 'bg-slate-900 text-white dark:bg-cyan-500 dark:text-slate-950 shadow-xs'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
+                      ? 'bg-white text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
                   {UI_STRINGS.module3.filterAllVendors(vendorRankings.length)}
@@ -463,8 +463,8 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                   onClick={() => setFilterRisk('CREEP_ANOMALY')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     filterRisk === 'CREEP_ANOMALY'
-                      ? 'bg-rose-100 text-rose-800 border border-rose-300 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/40'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
+                      ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
                   {`Creep Anomaly (${vendorRankings.filter((v) => v.risk_status === 'HIGH CREEP' || (v.price_creep_pct && v.price_creep_pct > 0)).length})`}
@@ -474,8 +474,8 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                   onClick={() => setFilterRisk('ALIGNED')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     filterRisk === 'ALIGNED'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-950 dark:text-slate-400 border border-slate-200 dark:border-slate-800'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
                   {`Aligned (${vendorRankings.filter((v) => v.risk_status === 'ALIGNED' || (v.price_creep_pct && v.price_creep_pct <= 0)).length})`}
@@ -484,10 +484,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             </div>
 
             {/* Rankings Table */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+            <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+                  <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.vendorName}</th>
                       <th className="py-3 px-4">{UI_STRINGS.module3.tableHeaders.category}</th>
@@ -498,10 +498,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                       <th className="py-3 px-4 text-right">{UI_STRINGS.module3.tableHeaders.riskStatus}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+                  <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
                     {filteredRankings.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-8 text-center text-slate-500 dark:text-slate-400 font-sans text-xs">
+                        <td colSpan={7} className="py-8 text-center text-slate-500 font-sans text-xs">
                           Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate supplier price volatility.
                         </td>
                       </tr>
@@ -509,35 +509,35 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                       filteredRankings.map((vendor, vIdx) => (
                         <tr
                           key={vendor.master_id || `${vendor.vendor_name}-${vIdx}`}
-                          className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                          className="bg-white hover:bg-slate-50 transition-colors"
                         >
-                          <td className="py-3.5 px-4 font-sans font-bold text-slate-900 dark:text-white">
+                          <td className="py-3.5 px-4 font-sans font-bold text-slate-900">
                             <div>{vendor.vendor_name}</div>
                             <span className="text-[10px] font-mono text-slate-400">{vendor.master_id}</span>
                           </td>
-                          <td className="py-3.5 px-4 font-sans text-slate-600 dark:text-slate-300">
+                          <td className="py-3.5 px-4 font-sans text-slate-600">
                             {vendor.category}
                           </td>
-                          <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
+                          <td className="py-3.5 px-4 font-bold text-slate-900">
                             ₹{vendor.total_spend_inr_cr?.toFixed(2) || (vendor.total_spend * 83.8 / 10000000).toFixed(2)} Cr
                           </td>
-                          <td className="py-3.5 px-4 font-sans text-xs text-cyan-700 dark:text-cyan-400">
+                          <td className="py-3.5 px-4 font-sans text-xs text-cyan-700">
                             {vendor.benchmark_index}
                           </td>
                           <td className="py-3.5 px-4">
                             <span
                               className={`font-bold ${
                                 vendor.price_creep_pct > 5
-                                  ? 'text-rose-600 dark:text-rose-400'
+                                  ? 'text-rose-600'
                                   : vendor.price_creep_pct > 0
-                                  ? 'text-amber-600 dark:text-amber-400'
-                                  : 'text-emerald-600 dark:text-emerald-400'
+                                  ? 'text-amber-600'
+                                  : 'text-emerald-600'
                               }`}
                             >
                               {vendor.price_creep_pct > 0 ? `+${vendor.price_creep_pct}%` : `${vendor.price_creep_pct}%`}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 font-bold text-rose-600 dark:text-rose-400">
+                          <td className="py-3.5 px-4 font-bold text-rose-600">
                             {vendor.variance_leakage_usd > 0 || (vendor.variance_leakage_inr_cr && vendor.variance_leakage_inr_cr > 0)
                               ? `₹${(vendor.variance_leakage_inr_cr || (vendor.variance_leakage_usd * 83.8 / 10000000)).toFixed(2)} Cr`
                               : UI_STRINGS.module3.alignedLeakageVal}
@@ -546,10 +546,10 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold font-sans tracking-wide ${
                                 vendor.risk_status === 'HIGH CREEP'
-                                  ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-400 border border-rose-300 dark:border-rose-800/60'
+                                  ? 'bg-rose-100 text-rose-800 border border-rose-300'
                                   : vendor.risk_status === 'REVIEW'
-                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/60'
-                                  : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                               }`}
                             >
                               {vendor.risk_status}
@@ -574,9 +574,9 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
       )}
 
       {/* CTA to Savings Engine */}
-      <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800">
-        <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+      <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
+        <div className="flex items-center space-x-2 text-xs text-slate-500">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           <span>{UI_STRINGS.module3.ctaBadge}</span>
         </div>
         <button

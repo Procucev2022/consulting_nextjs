@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2026-10-03T03:51:12.930Z",
+  "version": "MODULE_2_OPPORTUNITY_RECONCILIATION_V2.0",
+  "spendReconciliation": {
+    "sumOfTransactionValues": 401093500,
+    "certifiedModule1Spend": 401093500,
+    "addressableSpendInr": 400531000,
+    "excludedSpendInr": 0,
+    "totalSpendInr": 401093500,
+    "spendReconciled": true
+  },
+  "waterfallStages": [
+    {
+      "stage": "ADDRESSABLE_SPEND",
+      "amountInr": 400531000
+    },
+    {
+      "stage": "DATA_ELIGIBLE_SPEND",
+      "amountInr": 400531000
+    },
+    {
+      "stage": "COMPARABLE_SPEND",
+      "amountInr": 400531000
+    },
+    {
+      "stage": "GROSS_OPPORTUNITY",
+      "amountInr": 29104500
+    },
+    {
+      "stage": "OVERLAP_DEDUCTION",
+      "amountInr": 0
+    },
+    {
+      "stage": "FINAL_DEFENSIBLE_OPPORTUNITY",
+      "amountInr": 29104500
+    }
+  ],
+  "populationUnionReconciliation": {
+    "populationA_PriceEAuctionInr": 29104500,
+    "populationB_VendorConsolidationInr": 0,
+    "populationC_VolumeSpecialistInr": 0,
+    "overlapInr": 0,
+    "unionNetDefensibleInr": 29104500,
+    "doubleCountingEliminated": true
+  },
+  "categoryReconciliations": [
+    {
+      "categoryName": "Structural Steel",
+      "grossOpportunityInr": 23250000,
+      "overlapInr": 0,
+      "netOpportunityInr": 23250000,
+      "reconciled": true
+    },
+    {
+      "categoryName": "Industrial Fasteners",
+      "grossOpportunityInr": 5110000,
+      "overlapInr": 0,
+      "netOpportunityInr": 5110000,
+      "reconciled": true
+    },
+    {
+      "categoryName": "Safety Equipment",
+      "grossOpportunityInr": 33000,
+      "overlapInr": 0,
+      "netOpportunityInr": 33000,
+      "reconciled": true
+    },
+    {
+      "categoryName": "Electrical Cables",
+      "grossOpportunityInr": 226500,
+      "overlapInr": 0,
+      "netOpportunityInr": 226500,
+      "reconciled": true
+    },
+    {
+      "categoryName": "Lubricants",
+      "grossOpportunityInr": 485000,
+      "overlapInr": 0,
+      "netOpportunityInr": 485000,
+      "reconciled": true
+    },
+    {
+      "categoryName": "Packaging Materials",
+      "grossOpportunityInr": 0,
+      "overlapInr": 0,
+      "netOpportunityInr": 0,
+      "reconciled": true
+    }
+  ],
+  "reconciliationDiscrepancies": 0,
+  "status": "RECONCILED"
+}

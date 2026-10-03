@@ -1,0 +1,93 @@
+{
+  "manifestVersion": "PROCUCEV_DATA_SECURITY_HARDENING_V1.0",
+  "timestamp": "2026-10-03T03:51:35.613Z",
+  "finalSecurityStatus": "SECURITY_HARDENED_WITH_CONFIGURATION_REQUIRED",
+  "authoritativeDatasetScope": {
+    "tenantId": "TNT-GLOBAL-8902",
+    "customerId": "CUST-ENTERPRISE-01",
+    "datasetId": "DS-2024-CUST-8902",
+    "dataClassification": "CUSTOMER_CONFIDENTIAL",
+    "isEncryptedAtRest": true,
+    "encryptionAlgorithm": "AES-256-GCM",
+    "sourceFileChecksum": "d31a54bf9e160ef5c88b68875508a8a3ee27e8a93be9ba0545f492215c26b9a8",
+    "ingestionTimestamp": "2024-03-31T23:59:59.000Z",
+    "retentionPolicyStatus": "CONFIGURATION_REQUIRED"
+  },
+  "customerDataReusePolicy": "PROHIBITED",
+  "pcbiIsolationStatus": "VERIFIED_ISOLATED",
+  "panelItems": [
+    {
+      "id": "SEC-DIM-01",
+      "dimensionName": "Transport Security",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "Enforced TLS 1.3/HTTPS transport only; plain HTTP requests rejected with 301/HSTS"
+    },
+    {
+      "id": "SEC-DIM-02",
+      "dimensionName": "Storage Encryption",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "AES-256-GCM authenticated encryption at rest for customer raw files and ledgers"
+    },
+    {
+      "id": "SEC-DIM-03",
+      "dimensionName": "Tenant Isolation",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "Server-side REQUEST_TENANT_ID === DATASET_TENANT_ID invariant enforced on all queries"
+    },
+    {
+      "id": "SEC-DIM-04",
+      "dimensionName": "Role-Based Access",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "Encrypted JWT session tokens verifying user role, tenant scope, and authorization"
+    },
+    {
+      "id": "SEC-DIM-05",
+      "dimensionName": "Audit Logging",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "Immutable structured JSON audit trail with sanitized identifiers for all sensitive operations"
+    },
+    {
+      "id": "SEC-DIM-06",
+      "dimensionName": "Data Classification",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "CUSTOMER_CONFIDENTIAL classification tags immutable through Modules 1 -> 2 -> 3 -> 4"
+    },
+    {
+      "id": "SEC-DIM-07",
+      "dimensionName": "PCBI Data Isolation",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "Strict separation of PCBI Master/Data Library; customer transactions blocked from PCBI series"
+    },
+    {
+      "id": "SEC-DIM-08",
+      "dimensionName": "Cross-Customer Reuse Protection",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "CUSTOMER_DATA_REUSE_POLICY = PROHIBITED; zero training/benchmark reuse across tenants"
+    },
+    {
+      "id": "SEC-DIM-09",
+      "dimensionName": "Export Controls",
+      "status": "ACTIVE",
+      "verificationTier": "VERIFIED",
+      "technicalProof": "Multi-factor authorization gate (User + Tenant + Dataset + Role) and mandatory export audit"
+    },
+    {
+      "id": "SEC-DIM-10",
+      "dimensionName": "Retention Policy",
+      "status": "CONFIGURATION_REQUIRED",
+      "verificationTier": "CONFIGURATION_REQUIRED",
+      "technicalProof": "RETENTION_POLICY_STATUS = CONFIGURATION_REQUIRED pending enterprise contractual agreement"
+    }
+  ],
+  "totalSecurityTests": 20,
+  "passedSecurityTests": 20,
+  "failedSecurityTests": 0
+}

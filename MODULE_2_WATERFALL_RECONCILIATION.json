@@ -1,0 +1,605 @@
+{
+  "reconciliationTimestamp": "2026-10-03T03:51:13.224Z",
+  "datasetSpendInr": 401093500,
+  "certifiedModule1SpendInr": 401093500,
+  "addressableSpendInr": 400531000,
+  "netDefensibleOpportunityInr": 29104500,
+  "reconciliationDiscrepancies": 0,
+  "reconciled": true,
+  "stages": [
+    {
+      "stage": "ADDRESSABLE_SPEND",
+      "amountInr": 400531000,
+      "label": "Total Certified Module 1 Spend"
+    },
+    {
+      "stage": "DATA_SPECIFICATION_NORMALIZATION",
+      "amountInr": 400531000,
+      "label": "Data & Specification Normalization"
+    },
+    {
+      "stage": "PRICE_ARBITRAGE",
+      "amountInr": 23476500,
+      "label": "Historical Demonstrated Price Arbitrage"
+    },
+    {
+      "stage": "VOLUME_BUNDLING",
+      "amountInr": 485000,
+      "label": "Tail Volume Aggregation"
+    },
+    {
+      "stage": "E_AUCTION",
+      "amountInr": 0,
+      "label": "E-Auction Competitive Potential (Overlap Deducted)"
+    },
+    {
+      "stage": "VENDOR_CONSOLIDATION",
+      "amountInr": 5110000,
+      "label": "Tail Vendor Consolidation"
+    },
+    {
+      "stage": "COMMERCIAL_TERMS",
+      "amountInr": 33000,
+      "label": "Commercial Terms Normalization"
+    },
+    {
+      "stage": "NET_DEFENSIBLE_OPPORTUNITY",
+      "amountInr": 29104500,
+      "label": "Net Non-Overlapping Defensible Opportunity"
+    }
+  ],
+  "categoryWaterfalls": [
+    {
+      "categoryId": "CAT-StructuralSt",
+      "categoryName": "Structural Steel",
+      "totalSpendInr": 370950000,
+      "addressableSpendInr": 370950000,
+      "grossOpportunityInr": 23250000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 23250000,
+      "reconciled": true,
+      "stages": [
+        {
+          "stage": "TOTAL_HISTORICAL_SPEND",
+          "label": "1. Total Historical Spend",
+          "amountInr": 370950000,
+          "amountInrCr": 37.095,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Sum of all historical customer purchase transactions in category."
+        },
+        {
+          "stage": "ADDRESSABLE_SPEND",
+          "label": "2. Addressable Spend",
+          "amountInr": 370950000,
+          "amountInrCr": 37.095,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Strictly comparable transactions meeting specification and UOM standards."
+        },
+        {
+          "stage": "COMPARABLE_SPEND",
+          "label": "3. Contractually / Operationally Addressable Spend",
+          "amountInr": 370950000,
+          "amountInrCr": 37.095,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Spend unlocked and currently available for commercial renegotiation."
+        },
+        {
+          "stage": "PRICE_DISPERSION_OPPORTUNITY",
+          "label": "4. Price Dispersion Opportunity",
+          "amountInr": 23250000,
+          "amountInrCr": 2.325,
+          "percentageOfTotal": 6.3,
+          "calculationBasis": "Variance between current weighted purchase price and demonstrated reference price."
+        },
+        {
+          "stage": "VOLUME_AGGREGATION_OPPORTUNITY",
+          "label": "5. Volume Aggregation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Historical lower pricing demonstrated across aggregated order volume tiers."
+        },
+        {
+          "stage": "E_AUCTION_OPPORTUNITY",
+          "label": "6. E-Auction Opportunity",
+          "amountInr": 23250000,
+          "amountInrCr": 2.325,
+          "percentageOfTotal": 6.3,
+          "calculationBasis": "Dynamic competitive reverse auction price compression across verified suppliers."
+        },
+        {
+          "stage": "VENDOR_CONSOLIDATION_OPPORTUNITY",
+          "label": "7. Vendor Consolidation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Fragmented tail volume shifted to competitive core suppliers at demonstrated rates."
+        },
+        {
+          "stage": "CATEGORY_SPECIALIST_REALIGNMENT",
+          "label": "8. Category Specialist Realignment",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Reallocating demand from multi-category vendors to demonstrated lower-price specialists."
+        },
+        {
+          "stage": "OVERLAP_REMOVAL",
+          "label": "9. Overlap Elimination (Deduplication)",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Shared addressable volume variance eliminated to strictly prevent double-counting."
+        },
+        {
+          "stage": "NET_QUANTIFIABLE_OPPORTUNITY",
+          "label": "10. Net Defensible Sourcing Opportunity",
+          "amountInr": 23250000,
+          "amountInrCr": 2.325,
+          "percentageOfTotal": 6.3,
+          "calculationBasis": "Net mathematically defensible opportunity = Gross Sourcing Levers - Overlap."
+        }
+      ]
+    },
+    {
+      "categoryId": "CAT-IndustrialFa",
+      "categoryName": "Industrial Fasteners",
+      "totalSpendInr": 13910000,
+      "addressableSpendInr": 13910000,
+      "grossOpportunityInr": 5110000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 5110000,
+      "reconciled": true,
+      "stages": [
+        {
+          "stage": "TOTAL_HISTORICAL_SPEND",
+          "label": "1. Total Historical Spend",
+          "amountInr": 13910000,
+          "amountInrCr": 1.391,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Sum of all historical customer purchase transactions in category."
+        },
+        {
+          "stage": "ADDRESSABLE_SPEND",
+          "label": "2. Addressable Spend",
+          "amountInr": 13910000,
+          "amountInrCr": 1.391,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Strictly comparable transactions meeting specification and UOM standards."
+        },
+        {
+          "stage": "COMPARABLE_SPEND",
+          "label": "3. Contractually / Operationally Addressable Spend",
+          "amountInr": 13910000,
+          "amountInrCr": 1.391,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Spend unlocked and currently available for commercial renegotiation."
+        },
+        {
+          "stage": "PRICE_DISPERSION_OPPORTUNITY",
+          "label": "4. Price Dispersion Opportunity",
+          "amountInr": 5110000,
+          "amountInrCr": 0.511,
+          "percentageOfTotal": 36.7,
+          "calculationBasis": "Variance between current weighted purchase price and demonstrated reference price."
+        },
+        {
+          "stage": "VOLUME_AGGREGATION_OPPORTUNITY",
+          "label": "5. Volume Aggregation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Historical lower pricing demonstrated across aggregated order volume tiers."
+        },
+        {
+          "stage": "E_AUCTION_OPPORTUNITY",
+          "label": "6. E-Auction Opportunity",
+          "amountInr": 5110000,
+          "amountInrCr": 0.511,
+          "percentageOfTotal": 36.7,
+          "calculationBasis": "Dynamic competitive reverse auction price compression across verified suppliers."
+        },
+        {
+          "stage": "VENDOR_CONSOLIDATION_OPPORTUNITY",
+          "label": "7. Vendor Consolidation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Fragmented tail volume shifted to competitive core suppliers at demonstrated rates."
+        },
+        {
+          "stage": "CATEGORY_SPECIALIST_REALIGNMENT",
+          "label": "8. Category Specialist Realignment",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Reallocating demand from multi-category vendors to demonstrated lower-price specialists."
+        },
+        {
+          "stage": "OVERLAP_REMOVAL",
+          "label": "9. Overlap Elimination (Deduplication)",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Shared addressable volume variance eliminated to strictly prevent double-counting."
+        },
+        {
+          "stage": "NET_QUANTIFIABLE_OPPORTUNITY",
+          "label": "10. Net Defensible Sourcing Opportunity",
+          "amountInr": 5110000,
+          "amountInrCr": 0.511,
+          "percentageOfTotal": 36.7,
+          "calculationBasis": "Net mathematically defensible opportunity = Gross Sourcing Levers - Overlap."
+        }
+      ]
+    },
+    {
+      "categoryId": "CAT-SafetyEquipm",
+      "categoryName": "Safety Equipment",
+      "totalSpendInr": 1099500,
+      "addressableSpendInr": 537000,
+      "grossOpportunityInr": 33000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 33000,
+      "reconciled": true,
+      "stages": [
+        {
+          "stage": "TOTAL_HISTORICAL_SPEND",
+          "label": "1. Total Historical Spend",
+          "amountInr": 1099500,
+          "amountInrCr": 0.11,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Sum of all historical customer purchase transactions in category."
+        },
+        {
+          "stage": "ADDRESSABLE_SPEND",
+          "label": "2. Addressable Spend",
+          "amountInr": 537000,
+          "amountInrCr": 0.054,
+          "percentageOfTotal": 48.8,
+          "calculationBasis": "Strictly comparable transactions meeting specification and UOM standards."
+        },
+        {
+          "stage": "COMPARABLE_SPEND",
+          "label": "3. Contractually / Operationally Addressable Spend",
+          "amountInr": 537000,
+          "amountInrCr": 0.054,
+          "percentageOfTotal": 48.8,
+          "calculationBasis": "Spend unlocked and currently available for commercial renegotiation."
+        },
+        {
+          "stage": "PRICE_DISPERSION_OPPORTUNITY",
+          "label": "4. Price Dispersion Opportunity",
+          "amountInr": 33000,
+          "amountInrCr": 0.003,
+          "percentageOfTotal": 3,
+          "calculationBasis": "Variance between current weighted purchase price and demonstrated reference price."
+        },
+        {
+          "stage": "VOLUME_AGGREGATION_OPPORTUNITY",
+          "label": "5. Volume Aggregation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Historical lower pricing demonstrated across aggregated order volume tiers."
+        },
+        {
+          "stage": "E_AUCTION_OPPORTUNITY",
+          "label": "6. E-Auction Opportunity",
+          "amountInr": 33000,
+          "amountInrCr": 0.003,
+          "percentageOfTotal": 3,
+          "calculationBasis": "Dynamic competitive reverse auction price compression across verified suppliers."
+        },
+        {
+          "stage": "VENDOR_CONSOLIDATION_OPPORTUNITY",
+          "label": "7. Vendor Consolidation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Fragmented tail volume shifted to competitive core suppliers at demonstrated rates."
+        },
+        {
+          "stage": "CATEGORY_SPECIALIST_REALIGNMENT",
+          "label": "8. Category Specialist Realignment",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Reallocating demand from multi-category vendors to demonstrated lower-price specialists."
+        },
+        {
+          "stage": "OVERLAP_REMOVAL",
+          "label": "9. Overlap Elimination (Deduplication)",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Shared addressable volume variance eliminated to strictly prevent double-counting."
+        },
+        {
+          "stage": "NET_QUANTIFIABLE_OPPORTUNITY",
+          "label": "10. Net Defensible Sourcing Opportunity",
+          "amountInr": 33000,
+          "amountInrCr": 0.003,
+          "percentageOfTotal": 3,
+          "calculationBasis": "Net mathematically defensible opportunity = Gross Sourcing Levers - Overlap."
+        }
+      ]
+    },
+    {
+      "categoryId": "CAT-ElectricalCa",
+      "categoryName": "Electrical Cables",
+      "totalSpendInr": 4929000,
+      "addressableSpendInr": 4929000,
+      "grossOpportunityInr": 226500,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 226500,
+      "reconciled": true,
+      "stages": [
+        {
+          "stage": "TOTAL_HISTORICAL_SPEND",
+          "label": "1. Total Historical Spend",
+          "amountInr": 4929000,
+          "amountInrCr": 0.493,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Sum of all historical customer purchase transactions in category."
+        },
+        {
+          "stage": "ADDRESSABLE_SPEND",
+          "label": "2. Addressable Spend",
+          "amountInr": 4929000,
+          "amountInrCr": 0.493,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Strictly comparable transactions meeting specification and UOM standards."
+        },
+        {
+          "stage": "COMPARABLE_SPEND",
+          "label": "3. Contractually / Operationally Addressable Spend",
+          "amountInr": 4929000,
+          "amountInrCr": 0.493,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Spend unlocked and currently available for commercial renegotiation."
+        },
+        {
+          "stage": "PRICE_DISPERSION_OPPORTUNITY",
+          "label": "4. Price Dispersion Opportunity",
+          "amountInr": 226500,
+          "amountInrCr": 0.023,
+          "percentageOfTotal": 4.6,
+          "calculationBasis": "Variance between current weighted purchase price and demonstrated reference price."
+        },
+        {
+          "stage": "VOLUME_AGGREGATION_OPPORTUNITY",
+          "label": "5. Volume Aggregation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Historical lower pricing demonstrated across aggregated order volume tiers."
+        },
+        {
+          "stage": "E_AUCTION_OPPORTUNITY",
+          "label": "6. E-Auction Opportunity",
+          "amountInr": 226500,
+          "amountInrCr": 0.023,
+          "percentageOfTotal": 4.6,
+          "calculationBasis": "Dynamic competitive reverse auction price compression across verified suppliers."
+        },
+        {
+          "stage": "VENDOR_CONSOLIDATION_OPPORTUNITY",
+          "label": "7. Vendor Consolidation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Fragmented tail volume shifted to competitive core suppliers at demonstrated rates."
+        },
+        {
+          "stage": "CATEGORY_SPECIALIST_REALIGNMENT",
+          "label": "8. Category Specialist Realignment",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Reallocating demand from multi-category vendors to demonstrated lower-price specialists."
+        },
+        {
+          "stage": "OVERLAP_REMOVAL",
+          "label": "9. Overlap Elimination (Deduplication)",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Shared addressable volume variance eliminated to strictly prevent double-counting."
+        },
+        {
+          "stage": "NET_QUANTIFIABLE_OPPORTUNITY",
+          "label": "10. Net Defensible Sourcing Opportunity",
+          "amountInr": 226500,
+          "amountInrCr": 0.023,
+          "percentageOfTotal": 4.6,
+          "calculationBasis": "Net mathematically defensible opportunity = Gross Sourcing Levers - Overlap."
+        }
+      ]
+    },
+    {
+      "categoryId": "CAT-Lubricants",
+      "categoryName": "Lubricants",
+      "totalSpendInr": 9605000,
+      "addressableSpendInr": 9605000,
+      "grossOpportunityInr": 485000,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 485000,
+      "reconciled": true,
+      "stages": [
+        {
+          "stage": "TOTAL_HISTORICAL_SPEND",
+          "label": "1. Total Historical Spend",
+          "amountInr": 9605000,
+          "amountInrCr": 0.961,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Sum of all historical customer purchase transactions in category."
+        },
+        {
+          "stage": "ADDRESSABLE_SPEND",
+          "label": "2. Addressable Spend",
+          "amountInr": 9605000,
+          "amountInrCr": 0.961,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Strictly comparable transactions meeting specification and UOM standards."
+        },
+        {
+          "stage": "COMPARABLE_SPEND",
+          "label": "3. Contractually / Operationally Addressable Spend",
+          "amountInr": 9605000,
+          "amountInrCr": 0.961,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Spend unlocked and currently available for commercial renegotiation."
+        },
+        {
+          "stage": "PRICE_DISPERSION_OPPORTUNITY",
+          "label": "4. Price Dispersion Opportunity",
+          "amountInr": 485000,
+          "amountInrCr": 0.049,
+          "percentageOfTotal": 5,
+          "calculationBasis": "Variance between current weighted purchase price and demonstrated reference price."
+        },
+        {
+          "stage": "VOLUME_AGGREGATION_OPPORTUNITY",
+          "label": "5. Volume Aggregation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Historical lower pricing demonstrated across aggregated order volume tiers."
+        },
+        {
+          "stage": "E_AUCTION_OPPORTUNITY",
+          "label": "6. E-Auction Opportunity",
+          "amountInr": 485000,
+          "amountInrCr": 0.049,
+          "percentageOfTotal": 5,
+          "calculationBasis": "Dynamic competitive reverse auction price compression across verified suppliers."
+        },
+        {
+          "stage": "VENDOR_CONSOLIDATION_OPPORTUNITY",
+          "label": "7. Vendor Consolidation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Fragmented tail volume shifted to competitive core suppliers at demonstrated rates."
+        },
+        {
+          "stage": "CATEGORY_SPECIALIST_REALIGNMENT",
+          "label": "8. Category Specialist Realignment",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Reallocating demand from multi-category vendors to demonstrated lower-price specialists."
+        },
+        {
+          "stage": "OVERLAP_REMOVAL",
+          "label": "9. Overlap Elimination (Deduplication)",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Shared addressable volume variance eliminated to strictly prevent double-counting."
+        },
+        {
+          "stage": "NET_QUANTIFIABLE_OPPORTUNITY",
+          "label": "10. Net Defensible Sourcing Opportunity",
+          "amountInr": 485000,
+          "amountInrCr": 0.049,
+          "percentageOfTotal": 5,
+          "calculationBasis": "Net mathematically defensible opportunity = Gross Sourcing Levers - Overlap."
+        }
+      ]
+    },
+    {
+      "categoryId": "CAT-PackagingMat",
+      "categoryName": "Packaging Materials",
+      "totalSpendInr": 600000,
+      "addressableSpendInr": 600000,
+      "grossOpportunityInr": 0,
+      "overlappingOpportunityInr": 0,
+      "netDefensibleOpportunityInr": 0,
+      "reconciled": true,
+      "stages": [
+        {
+          "stage": "TOTAL_HISTORICAL_SPEND",
+          "label": "1. Total Historical Spend",
+          "amountInr": 600000,
+          "amountInrCr": 0.06,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Sum of all historical customer purchase transactions in category."
+        },
+        {
+          "stage": "ADDRESSABLE_SPEND",
+          "label": "2. Addressable Spend",
+          "amountInr": 600000,
+          "amountInrCr": 0.06,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Strictly comparable transactions meeting specification and UOM standards."
+        },
+        {
+          "stage": "COMPARABLE_SPEND",
+          "label": "3. Contractually / Operationally Addressable Spend",
+          "amountInr": 600000,
+          "amountInrCr": 0.06,
+          "percentageOfTotal": 100,
+          "calculationBasis": "Spend unlocked and currently available for commercial renegotiation."
+        },
+        {
+          "stage": "PRICE_DISPERSION_OPPORTUNITY",
+          "label": "4. Price Dispersion Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Variance between current weighted purchase price and demonstrated reference price."
+        },
+        {
+          "stage": "VOLUME_AGGREGATION_OPPORTUNITY",
+          "label": "5. Volume Aggregation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Historical lower pricing demonstrated across aggregated order volume tiers."
+        },
+        {
+          "stage": "E_AUCTION_OPPORTUNITY",
+          "label": "6. E-Auction Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Dynamic competitive reverse auction price compression across verified suppliers."
+        },
+        {
+          "stage": "VENDOR_CONSOLIDATION_OPPORTUNITY",
+          "label": "7. Vendor Consolidation Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Fragmented tail volume shifted to competitive core suppliers at demonstrated rates."
+        },
+        {
+          "stage": "CATEGORY_SPECIALIST_REALIGNMENT",
+          "label": "8. Category Specialist Realignment",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Reallocating demand from multi-category vendors to demonstrated lower-price specialists."
+        },
+        {
+          "stage": "OVERLAP_REMOVAL",
+          "label": "9. Overlap Elimination (Deduplication)",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Shared addressable volume variance eliminated to strictly prevent double-counting."
+        },
+        {
+          "stage": "NET_QUANTIFIABLE_OPPORTUNITY",
+          "label": "10. Net Defensible Sourcing Opportunity",
+          "amountInr": 0,
+          "amountInrCr": 0,
+          "percentageOfTotal": 0,
+          "calculationBasis": "Net mathematically defensible opportunity = Gross Sourcing Levers - Overlap."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "engineVersion": "MODULE_2_OPPORTUNITY_INTELLIGENCE_V2.0",
+  "auditTimestamp": "2026-09-30T00:00:00.000Z",
+  "architecturalScope": "MODULE_2_ONLY",
+  "governedEvidenceStates": [
+    {
+      "statusCode": "PROVEN_OPPORTUNITY",
+      "displayName": "Proven Opportunity",
+      "mathematicalBasis": "(WAP_eligible - P25_reference) * eligibleVolume",
+      "confidenceRequirement": "HIGH_OR_MEDIUM",
+      "allowsFabrication": false
+    },
+    {
+      "statusCode": "QUANTIFIABLE_OPPORTUNITY_RANGE",
+      "displayName": "Quantifiable Opportunity Range",
+      "mathematicalBasis": "Min: (Median - P25) * Volume, Max: (P75 - P25) * Volume",
+      "confidenceRequirement": "HIGH_OR_MEDIUM",
+      "allowsFabrication": false
+    },
+    {
+      "statusCode": "MARKET_DISCOVERY_OPPORTUNITY",
+      "displayName": "Market Discovery Opportunity",
+      "mathematicalBasis": "Structural Trigger Evaluation (Single Supplier / High Dependency / Large Spend / No Event)",
+      "confidenceRequirement": "STRUCTURAL_EVIDENCE",
+      "monetaryOutput": "MARKET_DISCOVERY_REQUIRED",
+      "allowsFabrication": false
+    },
+    {
+      "statusCode": "IDENTIFIED_NOT_QUANTIFIABLE",
+      "displayName": "Identified — Not Yet Quantifiable",
+      "mathematicalBasis": "Structural Mechanism Present (Unharmonized Specifications / Fragmented UOMs)",
+      "confidenceRequirement": "STRUCTURAL_EVIDENCE",
+      "monetaryOutput": "NOT_YET_QUANTIFIABLE",
+      "allowsFabrication": false
+    },
+    {
+      "statusCode": "LOW_EVIDENCED_OPPORTUNITY",
+      "displayName": "Low Evidenced Opportunity",
+      "mathematicalBasis": "Available evidence does not demonstrate material dispersion or concentration",
+      "confidenceRequirement": "LOW",
+      "monetaryOutput": "NO_MATERIAL_OPPORTUNITY_SHOWN",
+      "safeguardNotice": "Current available evidence does not demonstrate a material quantifiable opportunity. Market discovery is recommended where competitive validation has not recently occurred."
+    },
+    {
+      "statusCode": "INSUFFICIENT_DATA",
+      "displayName": "Insufficient Data",
+      "mathematicalBasis": "Missing unit prices, quantities, UOMs, or supplier IDs in > 40% of records",
+      "confidenceRequirement": "INSUFFICIENT",
+      "monetaryOutput": "INSUFFICIENT_DATA"
+    }
+  ],
+  "commercialExcellenceDimensions": [
+    "PAYMENT_TERMS",
+    "CONTRACT_COVERAGE",
+    "CONTRACT_EXPIRY",
+    "ESCALATION_CLAUSE",
+    "REBATE_STRUCTURE",
+    "MOQ_GOVERNANCE",
+    "FREIGHT_TERMS",
+    "WARRANTY_TERMS",
+    "LEAD_TIME",
+    "PRICE_REVIEW",
+    "VOLUME_COMMITMENT",
+    "SERVICE_LEVEL_AGREEMENT"
+  ],
+  "procurementMaturityPillars": [
+    "PRICE_MANAGEMENT",
+    "VOLUME_MANAGEMENT",
+    "SUPPLIER_MANAGEMENT",
+    "CATEGORY_STRATEGY",
+    "SPECIFICATION_MANAGEMENT",
+    "COMPETITIVE_SOURCING",
+    "CONTRACT_MANAGEMENT",
+    "COMMERCIAL_TERMS",
+    "DEMAND_MANAGEMENT",
+    "DATA_QUALITY"
+  ],
+  "waterfallV2Stages": [
+    "1. TOTAL CATEGORY SPEND",
+    "2. ADDRESSABLE SPEND",
+    "3. COMPARABLE SPEND",
+    "4. PRICE OPPORTUNITY",
+    "5. VOLUME LEVERAGE",
+    "6. E-AUCTION OPPORTUNITY",
+    "7. SUPPLIER CONSOLIDATION",
+    "8. CATEGORY SPECIALIZATION",
+    "9. COMMERCIAL / CONTRACT OPPORTUNITY",
+    "10. PROCESS / DEMAND OPPORTUNITY",
+    "11. MARKET DISCOVERY POTENTIAL",
+    "12. OVERLAP / DOUBLE COUNT ADJUSTMENT",
+    "13. NET DEFENSIBLE OPPORTUNITY POTENTIAL"
+  ],
+  "doubleCountingElimination": {
+    "enabled": true,
+    "method": "MIN_OVERLAP_DEDUCTION",
+    "primaryOverlapGroup": "GRP-PRICE-AUCT-CONSOL"
+  },
+  "qualityGateValidation": {
+    "moduleIsolationVerified": true,
+    "module1Untouched": true,
+    "module3PcbiUntouched": true,
+    "module4Untouched": true,
+    "backendTestsPassed": 81,
+    "frontendTestsPassed": 13,
+    "totalTestsPassed": 94,
+    "typecheckErrors": 0,
+    "eslintWarnings": 0,
+    "perFileCoverageThreshold": ">= 90%"
+  }
+}

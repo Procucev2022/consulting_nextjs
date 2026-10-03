@@ -1,0 +1,70 @@
+{
+  "totalRecords": 31671,
+  "totalSpendCr": 5920.3478,
+  "auditTimestamp": "2026-10-03T03:51:08.009Z",
+  "datasetScope": {
+    "sourceFileName": "2 years data.xlsx",
+    "totalRecords": 31671,
+    "actualDateCoverage": "24 Billing Months (1 Apr 2024 - 31 Mar 2026: FY24-25 & FY25-26)",
+    "configuredEvaluationPeriod": "36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)",
+    "scopeFlag": "PERIOD_SCOPE_MISMATCH"
+  },
+  "financialTotals": {
+    "rawSourceTotalInr": 59203477681.6571,
+    "rawSourceTotalCr": 5920.35,
+    "validatedTotalInr": 59203477681.6571,
+    "validatedTotalCr": 5920.35,
+    "excludedTotalInr": 0,
+    "excludedTotalCr": 0,
+    "unresolvedTotalInr": 0,
+    "reconciliationVarianceInr": 0,
+    "reconciliationVarianceCr": 0,
+    "reconciliationStatus": "PASS"
+  },
+  "dimensionalTotals": {
+    "supplierSpendInr": 59203477681.65716,
+    "itemSpendInr": 59203477681.65721,
+    "categorySpendInr": 59203477681.65725,
+    "materialGroupSpendInr": 59203477681.65725,
+    "plantSpendInr": 59203477681.657166,
+    "monthlySpendInr": 59203477681.65714,
+    "fySpendInr": 59203477681.6571
+  },
+  "crossDimensionBalance": {
+    "isBalanced": true,
+    "maxAbsoluteVarianceInr": 0.000152587890625,
+    "status": "PASS"
+  },
+  "liveFxIndependenceTest": {
+    "originalHistoricalSpendInr": 59203477681.6571,
+    "simulatedLiveFxSpendInr": 59203477681.6571,
+    "varianceInr": 0,
+    "isIndependent": true,
+    "status": "PASS",
+    "isolationConfirmed": true
+  },
+  "reproducibilityTest": {
+    "run1TotalInr": 59203477681.6571,
+    "run2TotalInr": 59203477681.6571,
+    "varianceInr": 0,
+    "isReproducible": true,
+    "status": "PASS"
+  },
+  "paretoSummary": {
+    "theoretical80ThresholdInr": 47362782145.32573,
+    "theoretical80ThresholdCr": 4736.28,
+    "cutoffEntityIndex": 45,
+    "cutoffEntityCount": 46,
+    "cutoffEntityName": "RANAWAT UDYOG",
+    "cutoffCumulativeSpendInr": 47525423160.535515,
+    "cutoffCumulativeSpendCr": 4752.54,
+    "cutoffCumulativeSharePct": 80.27,
+    "isDeterministic": true
+  },
+  "dataQualitySummary": {
+    "overallQualityIndexPct": 92.9,
+    "dataQualityPct": 84.9,
+    "dataCompletenessPct": 96.6,
+    "dataReconciliationPct": 100
+  }
+}

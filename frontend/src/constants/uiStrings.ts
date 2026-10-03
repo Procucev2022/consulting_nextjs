@@ -70,6 +70,12 @@ export const UI_STRINGS = {
     dark: 'Dark',
     executiveBrief: 'Executive Brief',
     reportButton: 'Executive Brief',
+    managementQuickSummary: 'Management Quick Summary',
+    managementQuickSummarySubtitle: '10-Slide Executive Opportunity Brief',
+    cfoDiscussionEdition: 'CFO / CEO Discussion Edition',
+    moreReports: 'More Reports',
+    boardroomEvidence: 'Boardroom & Evidence',
+    boardroomEvidenceSubtitle: '30-Slide Procurement Value Assessment',
     adminPortal: 'Admin Portal',
     currencies: {
       inr: '₹ INR (Cr)',
@@ -90,7 +96,7 @@ export const UI_STRINGS = {
       defaultRole: 'Guest',
       defaultEmail: 'Sign in to access account',
       userDetailsTitle: 'Account & Subscription',
-      switchTierTitle: 'Simulate Subscription Tier',
+      switchTierTitle: 'Your Procurement Intelligence Plan',
       currencyTitle: 'Display Currency',
       themeTitle: 'Theme Mode',
       adminLinkTitle: 'Admin Directory & User Management',
@@ -1078,7 +1084,7 @@ export const UI_STRINGS = {
       title: 'Dynamic Calculation Transparency',
       subtitle: 'Auditable mathematical verification of Expected Benchmark Price, Price Gap, and PCBI Potential Opportunity',
       verifiedBadge: 'Deterministic Calculation Verified',
-      promptTestCaseBadge: 'Prompt 100 Reference Test Case',
+      promptTestCaseBadge: 'Benchmark Reference Test Case',
       itemLabel: 'Item',
       itemValue: 'Industrial Lubricant Oil (MAT-LUBRICANT-01)',
       vendorLabel: 'Vendor',
@@ -2228,10 +2234,10 @@ export const UI_STRINGS = {
     pageTitle: 'Account Access & Registration',
     signInTab: 'Sign In',
     createAccountTab: 'Create Account',
-    signInHeading: 'Enterprise Sign In',
-    signInSubheading: 'Access your procurement intelligence dashboard and savings opportunities',
-    registerHeading: 'Create New Enterprise Account',
-    registerSubheading: 'Register your organization to unlock AI-powered spend analytics and supplier optimization',
+    signInHeading: 'Sign In to Workspace',
+    signInSubheading: 'Access your procurement intelligence dashboard and savings opportunities.',
+    registerHeading: 'Start Your Procurement Discovery',
+    registerSubheading: 'Create your free workspace and upload your procurement data to begin.',
     nameLabel: 'Full Name',
     namePlaceholder: 'e.g., Rajesh Verma',
     mobileLabel: 'Mobile Number',
@@ -2253,48 +2259,109 @@ export const UI_STRINGS = {
     changePasswordButton: 'Update Password',
     passwordChangedSuccess: 'Your password has been successfully updated.',
     signInButton: 'Sign In to Workspace',
-    createAccountButton: 'Create Enterprise Account',
+    signInPrimaryCta: 'Sign In to Workspace',
+    createAccountButton: 'Start Free with aiCEV',
+    createAccountPrimaryCta: 'Start Free with aiCEV',
     signingIn: 'Authenticating...',
-    registering: 'Creating Account...',
+    registering: 'Creating Free Workspace...',
     registrationSuccess: 'Account created successfully! Welcome to aiCEV.',
     loginSuccess: 'Login successful. Redirecting...',
     alreadyHaveAccount: 'Already have an account? Sign In',
-    dontHaveAccount: 'New user? Create your organization account',
-    quickTestLogins: 'Quick Test Accounts:',
-    tempDevCredentialsBadge: 'Temporary Development Access',
-    quickDevAdmin: 'Sriman (Admin): sriman@procucev.com',
-    quickAdmin: 'Admin: admin@procucev.com',
-    quickUser: 'Buyer: buyer@procucev.com',
-    goToAdminDirectly: '🛡️ Open Admin Portal Directly',
-    devBypassNotice: 'Development Mode: Click any account below to auto-fill credentials or enter the admin portal directly.',
+    dontHaveAccount: 'New visitor? Start Free with Bronze Discover',
+    benefitCard1Title: 'Find Procurement Leakage',
+    benefitCard2Title: 'See Where Savings Are',
+    benefitCard3Title: 'Benchmark & Compare',
+    benefitCard4Title: 'Move From Insight to Action',
+    quickTestLogins: process.env.NODE_ENV !== 'production' ? 'Quick Test Accounts:' : '',
+    tempDevCredentialsBadge: process.env.NODE_ENV !== 'production' ? 'Temporary Development Access' : '',
+    quickDevAdmin: process.env.NODE_ENV !== 'production' ? 'Sriman (Admin): sriman@procucev.com' : '',
+    quickAdmin: process.env.NODE_ENV !== 'production' ? 'Admin: admin@procucev.com' : '',
+    quickUser: process.env.NODE_ENV !== 'production' ? 'Buyer: buyer@procucev.com' : '',
+    goToAdminDirectly: process.env.NODE_ENV !== 'production' ? '🛡️ Open Admin Portal Directly' : '',
+    devBypassNotice:
+      process.env.NODE_ENV !== 'production'
+        ? 'Development Mode: Click any account below to auto-fill credentials or enter the admin portal directly.'
+        : '',
     logout: 'Sign Out',
     loggedInAs: (name: string, role: string) => `Logged in as ${name} (${role})`,
     passwordMismatchError: 'Passwords do not match. Please re-enter identical passwords.',
-    // Technology Benefits & Direct Profit Multiplier
-    benefitsBadge: 'Strategic Procurement Intelligence',
-    profitMultiplierBadge: 'Bottom-Line Profit Multiplier',
-    profitHeadline: 'Every Penny Saved in Procurement is a Direct Increase in Profit',
+    
+    // Core Customer Message & Hero (Prompt 290)
+    profitHeadline: 'Turn Procurement Data Into Measurable Savings.',
+    heroHeadline: 'Turn Procurement Data Into Measurable Savings.',
+    heroSecondLine: 'From spend visibility to sourcing intelligence — aiCEV helps procurement teams find, assess and act on value.',
+    heroSupportingText:
+      'Upload your procurement spend. aiCEV identifies where value is hiding, what can be improved, and where deeper procurement intelligence can unlock additional savings.',
     profitSubtext:
-      'Unlike top-line revenue where each incremental rupee carries direct production, logistics, and selling overheads, 100% of procurement savings flows directly to EBITDA — delivering a powerful bottom-line multiplier.',
-    benefitsTitle: 'Autonomous Technology Advantages',
-    benefitsSubtitle: 'AI-driven spend diagnostics, real-time contract leakage prevention, and strategic wave execution',
-    benefitCostSavingsTitle: 'Cost Savings & Leakage Elimination',
+      'From spend visibility to sourcing intelligence — aiCEV helps procurement teams find, assess and act on value.',
+    
+    // Low Friction Conversion Messages (Prompt 290 & 292)
+    startWithYourDataBadge: 'START WITH YOUR DATA',
+    upgradeWhenNeededHeadline: 'Upgrade when you need deeper intelligence.',
+    exploreFirstDetail: 'Explore the opportunity first. Move to deeper analytics and execution when you\'re ready.',
+    conversionTitle: 'Start with your data. Upgrade when you need deeper intelligence.',
+    conversionSubtitle: 'Explore the opportunity first. Move to deeper analytics and execution when you\'re ready.',
+    reassuranceNoPayment: 'No online payment',
+    reassuranceStartDiscover: 'Start with Discover',
+    reassuranceUpgradeLater: 'Upgrade when you need more',
+    devTestMode: 'Dev & Test Mode',
+    builtForEvidenceQuote: 'Built for procurement teams that want evidence before action.',
+    procurementIntelligenceBadge: 'Procurement Intelligence',
+    howAiCevCreatesValue: 'HOW aiCEV CREATES PROCUREMENT VALUE',
+
+    // How aiCEV Creates Procurement Value (3 Connected Stages) (Prompt 290)
+    modelTitle: 'HOW aiCEV CREATES PROCUREMENT VALUE',
+    modelSubtitle: 'YOUR DATA → DISCOVER → ASSESS → OPTIMIZE',
+    stage1Number: '01',
+    stage1Name: 'DISCOVER',
+    stage1Tier: 'Bronze',
+    stage1Desc: 'Upload your spend and uncover where value may be hiding.',
+    stage2Number: '02',
+    stage2Name: 'ASSESS',
+    stage2Tier: 'Silver',
+    stage2Desc: 'Understand savings opportunities, categories and sourcing levers.',
+    stage3Number: '03',
+    stage3Name: 'OPTIMIZE',
+    stage3Tier: 'Gold',
+    stage3Desc: 'Go deeper with benchmarks, detailed opportunities and execution tracking.',
+
+    // Benefits Section: What You Can Do With aiCEV (Prompt 290)
+    benefitsTitle: 'WHAT YOU CAN DO WITH aiCEV',
+    benefitsSubtitle: 'Translate spend patterns into tangible procurement improvements',
+    benefitCostSavingsTitle: 'Find Procurement Leakage',
     benefitCostSavingsDesc:
-      'Autonomous algorithms detect pricing drift, invoice discrepancies, duplicate vendor payouts, and rogue off-contract spend across 36-month transaction histories.',
-    benefitStrategicSourcingTitle: 'Strategic Sourcing & Category Intelligence',
+      'Identify pricing gaps, duplicate spend, fragmented suppliers and other value leakage across procurement data.',
+    benefitStrategicSourcingTitle: 'See Where Savings Are',
     benefitStrategicSourcingDesc:
-      'Automated UNSPSC taxonomy mapping (98.7% accuracy), supplier base consolidation, and cross-facility volume aggregation for maximum negotiation leverage.',
-    benefitRoadmapTitle: 'Procurement Transformation Roadmap',
+      'Translate spend patterns into category, supplier and sourcing opportunities.',
+    benefitBenchmarkTitle: 'Benchmark & Compare',
+    benefitBenchmarkDesc:
+      'Use procurement benchmarks and market intelligence to support better commercial decisions.',
+    benefitRoadmapTitle: 'Move From Insight to Action',
     benefitRoadmapDesc:
-      'Structured multi-year savings waves, competitive benchmarking, continuous supplier scorecards, and verifiable executive governance.',
-    statSavingsUnlocked: '₹120+ Cr',
-    statSavingsLabel: 'Savings Potential Identified',
-    statAccuracyRate: '98.7%',
-    statAccuracyLabel: 'AI Taxonomy Accuracy',
-    statDirectEbitda: '100%',
-    statDirectEbitdaLabel: 'Direct EBITDA Conversion',
-    statTypicalRoi: '8% – 18%',
-    statTypicalRoiLabel: 'Typical Spend Reduction'
+      'Turn identified opportunities into sourcing waves, savings actions and execution tracking.',
+
+    // Trust Section (Prompt 290)
+    trustTitle: 'Built for procurement teams that want evidence before action.',
+    trustSubtext: 'Start with your data. Validate the opportunity. Expand when the value is clear.',
+
+    // Compact Model Visualization (Prompt 290)
+    compactModelTitle: 'aiCEV PROCUREMENT INTELLIGENCE MODEL',
+    compactDiscover: 'Spend visibility + opportunity indicator',
+    compactAssess: 'Savings intelligence + sourcing insights',
+    compactOptimize: 'Full intelligence + benchmarks + execution',
+
+    // Replacement factual / defensible metrics
+    statDirectEbitda: 'Spend Visibility',
+    statDirectEbitdaLabel: 'Diagnostic Spend Baseline',
+    statSavingsUnlocked: 'Opportunity Identification',
+    statSavingsLabel: 'Categorized Sourcing Levers',
+    statAccuracyRate: 'Category Intelligence',
+    statAccuracyLabel: 'Benchmark & Market Context',
+    statTypicalRoi: 'Execution Tracking',
+    statTypicalRoiLabel: 'Action Waves to Realization',
+    benefitsBadge: 'Procurement Intelligence',
+    profitMultiplierBadge: 'Product Journey'
   },
 
   admin: {
@@ -2377,7 +2444,25 @@ export const UI_STRINGS = {
     resetSimulation: 'Reset Simulation',
     bronzeBadgeText: 'BRONZE',
     silverBadgeText: 'SILVER',
-    goldBadgeText: 'GOLD'
+    goldBadgeText: 'GOLD',
+    planSectionTitle: 'YOUR PROCUREMENT INTELLIGENCE PLAN',
+    currentAccess: 'Current access',
+    activePlan: 'Active',
+    freePlan: 'Free Plan',
+    exploreSilver: 'Explore Silver',
+    exploreGold: 'Explore Gold',
+    talkToProcucev: 'Talk to Procucev',
+    requestUpgrade: 'Request Upgrade',
+    commercialEnquiryTitle: 'Commercial Upgrade Enquiry',
+    activationRequired: 'Subscription Activation Required',
+    activateSubscription: 'Activate Subscription',
+    activationModalTitle: 'Subscription Activation Required',
+    activationModalSubtitle: 'Your Procucev subscription has been provisioned. Enter your emailed activation code.',
+    activationCodeLabel: 'One-Time Activation Code (PCV-XXXX-XXXX-XXXX)',
+    activationCodePlaceholder: 'PCV-XXXX-XXXX-XXXX',
+    activationSuccess: 'Subscription successfully activated. Welcome to your upgraded tier!',
+    adminSubscriptionTitle: 'Subscription Management',
+    adminSubscriptionSubtitle: 'Controlled offline commercial provisioning, OTP validation and customer activation lifecycle'
   },
 
   pcbiAdmin: {
@@ -2549,7 +2634,304 @@ export const UI_STRINGS = {
     adminRejectButton: 'REJECT',
     adminApproveAndAddButton: 'APPROVE & ADD TO PCBI CATALOG',
     methodologyApprovalRequiredNotice: 'METHODOLOGY_APPROVAL_REQUIRED'
+  },
+  pcbiCommodityDataLab: {
+    navPcbiMaster: 'PCBI Master',
+    navCommodityDataLab: 'PCBI Data Library',
+    navPcbiDashboard: 'PCBI Dashboard',
+    btnResearchUploadData: '+ Research / Upload Commodity Data',
+    btnUploadPcbiMaster: '+ Upload / Update Master',
+    pageTitle: 'PCBI Data Library',
+    pageSubtitle: 'Historical source data library and operational workspace used to build and maintain PCBI series',
+    researchDashboardTitle: 'A. Research Dashboard',
+    researchQueueTitle: 'B. Commodity Research Queue',
+    commodityWorkspaceTitle: 'COMMODITY PCBI WORKSPACE',
+    uploadBannerText: 'COMMODITY DATA UPLOAD — NOT PCBI MASTER',
+    zeroProductionWritesNotice: 'Research data must NOT automatically become production PCBI. There are zero production writes before Admin approval.',
+    customerDataDetectedTitle: 'CUSTOMER DATA DETECTED',
+    customerDataDetectedMsg: 'Customer purchase history must be uploaded through Module 1.',
+    commodityResearchDetectedTitle: 'COMMODITY RESEARCH DATA DETECTED',
+    commodityResearchDetectedMsg: 'This file belongs in PCBI Commodity Data Lab.',
+    masterDataDetectedTitle: 'PCBI MASTER DATA DETECTED',
+    masterDataDetectedMsg: 'System-level PCBI Master files must be managed in ADMIN → PCBI MASTER.',
+    thCommodity: 'Commodity',
+    thModule2Classification: 'Module 2 Classification',
+    thUnspsc: 'UNSPSC',
+    thCustomerSpend: 'Customer Spend',
+    thTxnCount: 'Transaction Count',
+    thPcbiId: 'PCBI ID',
+    thCurrentStatus: 'Current Status',
+    thRequiredHistory: 'Required History',
+    thAvailableHistory: 'Available History',
+    thRequiredFrequency: 'Required Frequency',
+    thAvailableFrequency: 'Available Frequency',
+    thSourceStatus: 'Source Status',
+    thMethodologyStatus: 'Methodology Status',
+    thPriority: 'Priority',
+    thResearchStatus: 'Research Status',
+    thLastUpdated: 'Last Updated',
+    thAction: 'Action',
+    metricTotalCommodities: 'Total Commodities',
+    metricProductionReady: 'Production Ready',
+    metricPartialHistory: 'Partial History',
+    metricNoHistory: 'No History',
+    metricMissing: 'Missing',
+    metricSourceUnverified: 'Source Unverified',
+    metricMethodologyPending: 'Methodology Pending',
+    metricSpecificationMismatch: 'Specification Mismatch',
+    metricFrequencyMismatch: 'Frequency Mismatch',
+    metricHighImpactGaps: 'High-Impact Gaps',
+    metricP1Critical: 'P1 Critical',
+    metricP2High: 'P2 High',
+    metricP3Medium: 'P3 Medium',
+    metricP4Low: 'P4 Low',
+    tabOverview: '1. Overview',
+    tabResearchQueue: '2. Research Queue',
+    tabUploadData: '3. Upload Data',
+    tabSourceRegister: '4. Source Register',
+    tabExtractedObservations: '5. Extracted Observations',
+    tabStandardizationPreview: '6. Standardization Preview',
+    tabSourceComparison: '7. Source Comparison',
+    tabMethodology: '8. Methodology',
+    tabValidation: '9. Validation',
+    tabApproval: '10. Approval',
+    tabVersionHistory: '11. Version History',
+    tabPcbiHistory: '12. PCBI History',
+    workspaceTitle: (commodity: string, pcbiId: string) => `${commodity} (${pcbiId})`,
+    sourcesCoexistenceNotice: 'Multiple sources for the same commodity coexist. Existing sources are never overwritten.',
+    adminApproveButton: 'ADMIN APPROVAL — PROMOTE TO PCBI CATALOG',
+    approvalSuccessNotice: (version: string) => `Approved data entered into dynamic PCBI catalog version ${version}.`
+  },
+
+  module2Sourcing: {
+    title: 'STRATEGIC SOURCING INTELLIGENCE & OPPORTUNITY ENGINE',
+    subtitle: 'Module 2: Strategic Sourcing Opportunity Intelligence, Market Discovery & Procurement Maturity (V2.0)',
+    versionBadge: 'VERSION: MODULE_2_OPPORTUNITY_INTELLIGENCE_V2.0',
+    disclaimer: 'Indicative opportunity potential based on customer historical comparable transactions — NOT realized savings.',
+    noFabricationNotice: 'Calculated strictly from internal customer purchase history without external market benchmarks.',
+    notQuantifiableText: 'Opportunity Identified — Benefit Not Yet Quantifiable',
+
+    // Evidence States
+    provenOpp: 'Proven Opportunity',
+    quantifiableRange: 'Quantifiable Opportunity Range',
+    marketDiscoveryOpp: 'Market Discovery Opportunity',
+    identifiedNotQuantifiable: 'Opportunity Identified — Benefit Not Yet Quantifiable',
+    lowEvidencedOpp: 'Low Evidenced Opportunity',
+    insufficientData: 'Insufficient Data',
+    safeguardNoMaterialEvidence:
+      'Current available evidence does not demonstrate a material quantifiable opportunity. Market discovery is recommended where competitive validation has not recently occurred.',
+    safeguardMarketDiscovery:
+      'Market opportunity cannot be established from internal historical transactions alone. Competitive sourcing is required to discover market price.',
+
+    // Executive KPI Summary Cards
+    cardAddressableSpend: 'TOTAL ADDRESSABLE SPEND',
+    cardProvenOpp: 'PROVEN OPPORTUNITY',
+    cardQuantifiableRange: 'QUANTIFIABLE OPPORTUNITY RANGE',
+    cardMarketDiscovery: 'MARKET DISCOVERY CANDIDATES',
+    cardEAuctionOpp: 'POTENTIAL E-AUCTION OPPORTUNITY',
+    cardConsolidationOpp: 'POTENTIAL VENDOR CONSOLIDATION OPPORTUNITY',
+    cardOverlapOpp: 'OVERLAPPING OPPORTUNITY (REMOVED)',
+    cardNetOpp: 'NET QUANTIFIABLE OPPORTUNITY',
+    cardNetDefensibleRange: 'NET DEFENSIBLE OPPORTUNITY POTENTIAL',
+    cardReadyCategories: 'CATEGORIES READY FOR SOURCING',
+    cardEAuctionCandidates: 'E-AUCTION CANDIDATES',
+    cardConsolidationCandidates: 'CONSOLIDATION CANDIDATES',
+    cardNotQuantifiable: 'OPPORTUNITIES NOT YET QUANTIFIABLE',
+    cardLowEvidenced: 'LOW EVIDENCED OPPORTUNITIES',
+    cardDataConfidence: 'OVERALL DATA CONFIDENCE',
+
+    // Table Headers
+    colCategory: 'Category / Spend Cluster',
+    colSpend: 'Total Spend',
+    colTransactions: 'Txns',
+    colSuppliers: 'Suppliers',
+    colConcentration: 'HHI Concentration',
+    colFragmentation: 'Fragmentation',
+    colAddressableSpend: 'Addressable Spend',
+    colEvidenceState: 'Evidence State',
+    colEAuctionSuitability: 'E-Auction Suitability',
+    colEAuctionOpp: 'E-Auction Opp',
+    colConsolSuitability: 'Consol. Suitability',
+    colConsolOpp: 'Consolidation Opp',
+    colOverlap: 'Overlap Deducted',
+    colNetOpp: 'Net Quantifiable Opp',
+    colOppRange: 'Governed Range',
+    colOppPct: 'Opp %',
+    colConfidence: 'Confidence',
+    colRecommendedLever: 'Recommended Sourcing Lever',
+    colNextAction: 'Next Strategic Action',
+
+    // Waterfall
+    waterfallTitle: 'OPPORTUNITY WATERFALL — ZERO DOUBLE COUNTING',
+    waterfallSubtitle: 'Strict deduplication of shared price variance across E-Auction and Vendor Consolidation',
+
+    // Scorecard & Levers
+    scorecardTitle: '10-DIMENSION STRATEGIC SOURCING SCORECARD',
+    leversTitle: '15-LEVER STRATEGIC SOURCING MATRIX',
+
+    // Deep Dive Modal Sections
+    deepDiveTitle: 'CATEGORY STRATEGIC SOURCING DEEP DIVE',
+    sectionOverview: 'SECTION A: CATEGORY OVERVIEW',
+    sectionPurchaseBehaviour: 'SECTION B: PURCHASE BEHAVIOUR & CADENCE',
+    sectionSupplierStructure: 'SECTION C: SUPPLIER STRUCTURE & CONCENTRATION',
+    sectionFragmentation: 'SECTION D: SUPPLIER FRAGMENTATION ANALYSIS',
+    sectionComparability: 'SECTION E: TRANSACTION COMPARABILITY & NORMALIZATION',
+    sectionPriceDispersion: 'SECTION F: PRICE DISPERSION & PERCENTILE ANALYSIS',
+    sectionCredibleReference: 'SECTION G: CREDIBLE LOW-PRICE REFERENCE RULE',
+    sectionEAuctionAssessment: 'SECTION H: E-AUCTION SUITABILITY & PRICE GAP CALCULATION',
+    sectionConsolidationAssessment: 'SECTION I: VENDOR CONSOLIDATION & OPERATIONAL REDUCTION',
+    sectionOverlapDeduplication: 'SECTION J: OVERLAP REMOVAL & NET QUANTIFIABLE OPPORTUNITY',
+    sectionScenarioAnalysis: 'SECTION K: SCENARIO RANGE (CONSERVATIVE, BASE, STRETCH)',
+    sectionOpportunityWaterfall: 'SECTION L: TRANSPARENT OPPORTUNITY WATERFALL',
+    sectionLeverMatrix: 'SECTION M: 15-LEVER SOURCING MATRIX',
+    sectionScorecard: 'SECTION N: 10-DIMENSION SOURCING SCORECARD',
+    sectionRisksConstraints: 'SECTION O: RISKS, CONSTRAINTS & DEPENDENCIES',
+    sectionDataQuality: 'SECTION P: DATA QUALITY & MISSING INFORMATION',
+    sectionRecommendedAction: 'SECTION Q: RECOMMENDED PROCUREMENT STRATEGY',
+    sectionTransactionEvidence: 'SECTION R: TRANSACTION-LEVEL EVIDENCE AUDIT',
+    sectionExclusions: 'SECTION S: EXPLICIT TRANSACTION EXCLUSIONS LOG',
+    sectionAuditHandoff: 'SECTION T: AUDIT TRAIL & MODULE 4 HANDOFF PACKAGE',
+    sectionMarketDiscovery: 'SECTION U: MARKET DISCOVERY & COMPETITIVE SOURCING ASSESSMENT',
+    sectionCommercialExcellence: 'SECTION V: COMMERCIAL EXCELLENCE & CONTRACT TERMS HARMONIZATION',
+    sectionProcurementMaturity: 'SECTION W: 10-DIMENSION PROCUREMENT MATURITY SCORECARD',
+    sectionActionPlan: 'SECTION X: ACTION-ORIENTED CATEGORY SOURCING ROADMAP',
+    sectionWaterfallV2: 'SECTION Y: 13-STAGE OPPORTUNITY WATERFALL V2',
+
+    // Buttons
+    btnViewDeepDive: 'Deep Dive Workspace',
+    btnExportAudit: 'Export Audit Dossier (JSON)',
+    btnHandoffToModule4: 'Package for Module 4 Sourcing',
+    btnFilterHighMateriality: 'High Materiality',
+    btnFilterQuantifiable: 'Quantifiable Only'
+  },
+
+  dataProtection: {
+    bannerTitle: 'YOUR DATA. YOUR WORKSPACE.',
+    bannerNotice:
+      'Your procurement data is encrypted and processed within your authorized customer environment. It is not used as benchmark data, shared with other customers, or reused for another customer\'s analysis.',
+    expandLabel: 'How we protect your data',
+    collapseLabel: 'Hide security details',
+    corePromise:
+      'Your procurement data is used only to perform the analysis requested by your organization. Customer data is not used to train AI models, is not reused for another customer, and is not used to reproduce another customer\'s analysis.',
+    uploadNotice:
+      'Your procurement data is encrypted and processed within your authorized customer environment. It is not used as benchmark data, shared with other customers, or reused for another customer\'s analysis.',
+
+    analysisNotice:
+      'Your results are generated from your organization\'s data and approved reference data. Customer transaction data remains isolated to your organization.',
+    exportNotice:
+      'These insights are customer-specific and are not shared with or reused for other customers.',
+    exportConfidentialHeader: 'CONFIDENTIAL — CUSTOMER-SPECIFIC PROCUREMENT ANALYSIS',
+    retentionNotice:
+      'Data retention and deletion are governed by the organization\'s configured retention policy.',
+    pillars: [
+      {
+        id: 'isolation',
+        title: '1. Data Isolation',
+        desc: 'Customer data is logically isolated by server-side tenant boundary controls.'
+      },
+      {
+        id: 'encryption',
+        title: '2. Encryption & Secure Transfer',
+        desc: 'Protected in transit via TLS 1.3 and at rest via AES-256-GCM.'
+      },
+      {
+        id: 'noAiTraining',
+        title: '3. No AI Training',
+        desc: 'Zero customer transaction data is used to train, fine-tune, or persist foundation AI models.'
+      },
+      {
+        id: 'noReuse',
+        title: '4. No Cross-Customer Reuse',
+        desc: 'Customer transactions are never used to generate benchmarks or reference prices for others.'
+      },
+      {
+        id: 'customerSpecific',
+        title: '5. Customer-Specific Analysis',
+        desc: 'All analytical pipelines, sourcing levers, and opportunity calculations evaluate only your data.'
+      },
+      {
+        id: 'controlledAccess',
+        title: '6. Controlled Access',
+        desc: 'Access is restricted via authenticated, role-based session authorizations.'
+      },
+      {
+        id: 'auditability',
+        title: '7. Auditability',
+        desc: 'Immutable security audit logs record all data ingestion, processing, and export events.'
+      },
+      {
+        id: 'retentionPolicy',
+        title: '8. Retention & Deletion Policy',
+        desc: 'Data retention and deletion are governed by the organization\'s configured retention policy.'
+      }
+    ]
+  },
+
+  enterprisePrivacy: {
+    privacyNoticeTitle: 'Your procurement data is private to your organization.',
+    uploadNotice:
+      'Uploaded data is processed within your authorized workspace and is kept separate from PCBI benchmark data and other customer datasets.',
+    nonEnrichmentNotice:
+      'Customer transaction data is not used to create or enrich another customer\'s procurement analysis.',
+    encryptionNotice:
+      'Data is protected through controlled access, secure transmission and encrypted storage where supported by the deployment infrastructure.',
+    pcbiSeparationNotice: 'PCBI benchmark data is maintained separately from customer transaction data.',
+    viewDetailsLink: 'View Data Protection Details',
+    hideDetailsLink: 'Hide Data Protection Details',
+    uploadModalTitle: '🔒 YOUR DATA IS PRIVATE',
+    uploadModalBody:
+      'This dataset will be processed only within your authorized organization workspace. It will not automatically become part of the PCBI benchmark library or another customer\'s dataset.',
+    uploadCheckboxLabel:
+      'I understand that this dataset will be processed within my organization\'s authorized workspace.',
+    resultBadgeLabel: '🔒 Customer Data Protected',
+    resultBadgeTooltip:
+      'These results are generated from your organization\'s authorized dataset. They are not part of the shared PCBI benchmark library.',
+    viewDetailedAnalysis: 'View Detailed Analysis ▾',
+    hideDetailedAnalysis: 'Hide Detailed Analysis ▴',
+    showCalculationEvidence: 'Show Calculation Evidence ▾',
+    hideCalculationEvidence: 'Hide Calculation Evidence ▴',
+    viewFullAuditTrail: 'View Full Audit Trail ▾',
+    hideFullAuditTrail: 'Hide Full Audit Trail ▴',
+    adminLifecycleTitle: 'Organization Data Retention & Deletion Lifecycle',
+    adminLifecyclePolicy:
+      'Data retention and deletion are governed by your organization\'s configured data-retention policy.'
+  },
+
+  opportunityBrief: {
+    title: 'Procurement Value Opportunity Brief',
+    tenSlideEdition: '10-Slide Executive Edition',
+    cfoDiscussionBadge: 'CFO / CEO Discussion Edition',
+    openFullScreen: 'Open Full Screen',
+    exitFullScreen: 'Exit Full Screen',
+    downloadPdf: 'Download PDF (10 Slides)',
+    downloadPptx: 'Download PPTX (Editable)',
+    backToWorkspace: 'Back to Procurement Workspace',
+    primaryValueThesis: 'Primary Value Thesis',
+    directSavingsOpportunity: 'Direct Savings Opportunity',
+    valueBridgeTitle: 'The Value Bridge',
+    netDefensiblePipeline: 'NET DEFENSIBLE PIPELINE',
+    strategicMarketValue: 'STRATEGIC MARKET VALUE',
+    spendEvaluated: 'SPEND EVALUATED',
+    slideCounter: (curr: number, total: number) => `Slide ${curr} of ${total}:`,
+    slidePage: (curr: number, total: number) => `PAGE ${curr} OF ${total}`,
+    previous: 'Previous',
+    next: 'Next',
+    whereConcentrated: 'WHERE THE OPPORTUNITY IS CONCENTRATED',
+    grossIdentifiedOpp: 'Gross Identified Opportunity',
+    grossCalloutSubtitle:
+      'Individual opportunities are assessed independently and deduplicated before establishing the net defensible pipeline.',
+    proposedNextSteps: 'PROPOSED NEXT STEPS',
+    alignStep: '01 — ALIGN',
+    alignSub: 'Confirm priority Wave 1 categories',
+    mobilizeStep: '02 — MOBILIZE',
+    mobilizeSub: 'Establish joint procurement working group',
+    executeStep: '03 — EXECUTE',
+    executeSub: 'Launch approved competitive sourcing initiatives',
+    moveFromDiag: 'Move from diagnostic to execution.',
+    contactEmail: 'Contact: leadership@procucev.com',
+    confidentialFooter: 'Management Confidential | CFO / CEO Discussion Edition'
   }
 } as const;
+
 
 

@@ -55,9 +55,9 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-purple-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-white border border-slate-200 dark:border-purple-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-purple-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-purple-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border border-purple-300 dark:border-purple-500/40">
               <FileCheck className="w-5 h-5" />
@@ -76,7 +76,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -97,7 +97,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
           ) : (
             <>
               {/* Opportunity Summary Card */}
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700/60 space-y-2">
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-xs font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide">
@@ -134,7 +134,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                         step="0.1"
                         value={maxPriceCreepCap}
                         onChange={(e) => setMaxPriceCreepCap(Number(e.target.value))}
-                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-purple-500"
+                        className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-purple-500"
                       />
                       <span className="absolute right-3 top-2.5 text-xs text-slate-500 font-mono">{UI_STRINGS.modals.dpsNXT.percentMax}</span>
                     </div>
@@ -147,7 +147,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                     <select
                       value={indexPegging}
                       onChange={(e) => setIndexPegging(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
+                      className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
                     >
                       <option value={UI_STRINGS.modals.dpsNXT.benchmarks.lme}>{UI_STRINGS.modals.dpsNXT.benchmarks.lme}</option>
                       <option value={UI_STRINGS.modals.dpsNXT.benchmarks.platts}>{UI_STRINGS.modals.dpsNXT.benchmarks.platts}</option>
@@ -158,7 +158,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                 </div>
 
                 {/* Automation Rules */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-purple-900/30 space-y-2.5">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-purple-900/30 space-y-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-800 dark:text-slate-200 font-medium">{UI_STRINGS.modals.dpsNXT.rules.invoicePriceMatch}</span>
                     <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-400 rounded border border-emerald-300 dark:border-emerald-800/40 text-[10px] font-bold">{UI_STRINGS.modals.dpsNXT.rules.statusActive}</span>
@@ -173,7 +173,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                       type="button"
                       onClick={() => setAutoRebateTier(!autoRebateTier)}
                       className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                        autoRebateTier ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-950/80 dark:text-cyan-400 dark:border-cyan-800/40' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        autoRebateTier ? 'bg-cyan-100 text-cyan-800 border border-cyan-300 dark:bg-cyan-950/80 dark:text-cyan-400 dark:border-cyan-800/40' : 'bg-slate-200 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400'
                       }`}
                     >
                       {autoRebateTier ? UI_STRINGS.modals.dpsNXT.rules.statusEnforced : UI_STRINGS.modals.dpsNXT.rules.statusOff}
@@ -183,7 +183,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
               </div>
 
               {/* Security Lock Note */}
-              <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-[#F8FBFE] p-3 rounded-lg border border-slate-200 dark:border-slate-800">
                 <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                 <span>
                   {UI_STRINGS.modals.dpsNXT.securityNote}
@@ -195,10 +195,10 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
 
         {/* Footer Actions */}
         {!executedSuccess && (
-          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-slate-100 dark:border-purple-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-slate-100 dark:border-purple-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
             >
               {UI_STRINGS.modals.dpsNXT.cancel}
             </button>

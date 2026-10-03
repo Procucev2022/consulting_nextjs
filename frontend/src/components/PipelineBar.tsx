@@ -140,34 +140,45 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
         {kpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 p-4 transition-all duration-300 hover:border-cyan-500/40 glass-card"
+            className="ent-kpi-card group"
           >
             <div className="relative z-10 flex flex-col">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                {kpi.label}
-              </span>
-              <div className="flex items-baseline space-x-2 mt-1">
-                <span className={`text-3xl font-black font-mono tracking-tight ${kpi.color}`}>
-                  {kpi.value}
-                </span>
+              <span className="ent-kpi-label">{kpi.label}</span>
+              <div className={`ent-kpi-value ${kpi.color} mt-1.5`}>
+                {kpi.value}
               </div>
-              <span className="text-[11px] text-slate-500 mt-0.5">{kpi.sub}</span>
+              <span className="ent-kpi-sub">{kpi.sub}</span>
             </div>
-            <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800/30 blur-xl pointer-events-none" />
+            {/* Decorative accent line at top */}
+            <div className={`absolute top-0 left-0 right-0 h-0.5 rounded-t-xl ${kpi.border.replace('border-', 'bg-').replace('/30', '/60')}`} />
+            <div className="absolute -right-3 -bottom-3 w-16 h-16 rounded-full opacity-40 blur-2xl pointer-events-none bg-current" />
           </div>
         ))}
       </div>
 
       {/* 2. End-to-End Data Pipeline Architecture & Step Navigator */}
-      <div className="rounded-2xl bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 glass-panel">
-        <div className="flex items-center justify-between mb-3 px-1">
+      <div className="rounded-2xl bg-white/98 dark:bg-[#0a0f1c]/95 border border-slate-200/80 dark:border-slate-800/60 shadow-sm overflow-hidden">
+        {/* Navigator Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-white dark:from-[#080d1a] dark:to-[#0c1220] border-b border-slate-100 dark:border-slate-800/60">
           <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-            <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-700 dark:text-slate-300">
+            <span className="w-2 h-2 rounded-full bg-cyan-500" style={{boxShadow: '0 0 0 3px rgba(14,165,233,0.20)', animation: 'pulse-dot 2s infinite'}} />
+            <h3 className="text-xs font-bold font-mono uppercase tracking-widest text-slate-600 dark:text-slate-300">
               {UI_STRINGS.pipeline.endToEndArchitecture}
             </h3>
           </div>
           <div className="flex items-center space-x-2">
+            <a
+              href="/executive-brief"
+              data-testid="pipeline-executive-brief-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                if (typeof window !== 'undefined') window.location.href = '/executive-brief';
+              }}
+              className="ent-btn-primary text-[11px] px-3 py-1.5"
+            >
+              <span>{UI_STRINGS.header.executiveBrief}</span>
+              <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.5 rounded">CEO/CFO</span>
+            </a>
             <a
               href="#module5"
               onClick={(e) => {
@@ -183,12 +194,12 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                 onSelectTab('module5');
                 if (typeof window !== 'undefined') window.location.hash = 'module5';
               }}
-              className={`text-xs px-3 py-1 rounded-lg font-semibold transition-all inline-block ${
+              className={`text-[11px] px-3 py-1.5 rounded-lg font-semibold transition-all inline-flex items-center gap-1 ${
                 isModule5Locked
-                  ? 'opacity-60 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'
+                  ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-[#EEF4FC] text-slate-400 border border-slate-200 dark:border-slate-700'
                   : activeTab === 'module5'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 border border-purple-500 cursor-pointer'
-                  : 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer'
+                  ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20 border border-purple-500 cursor-pointer'
+                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer'
               }`}
             >
               {UI_STRINGS.pipeline.conversionMatrixTab}
@@ -197,11 +208,12 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
         </div>
 
         {/* 4 Steps Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
-          {stages.map((stage) => {
+        <div className="grid grid-cols-1 md:grid-cols-4 p-3 gap-2.5">
+          {stages.map((stage, stageIdx) => {
             const Icon = stage.icon;
             const isActive = activeTab === stage.id;
             const isLocked = isStageLocked(stage.id);
+            const isDone = [isStep1Done, isStep2Done, isStep3Done, isStep4Done][stageIdx];
 
             return (
               <a
@@ -218,32 +230,48 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                   onSelectTab(stage.id);
                   if (typeof window !== 'undefined') window.location.hash = stage.id;
                 }}
-                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between no-underline block ${
+                className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between no-underline block overflow-hidden ${
                   isLocked
-                    ? 'opacity-65 cursor-not-allowed bg-slate-100/50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800/60'
+                    ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-[#F8FBFE] border-slate-200 dark:border-slate-800/50'
                     : isActive
-                    ? 'cursor-pointer bg-gradient-to-b from-cyan-50 to-white dark:from-cyan-950/80 dark:to-slate-900 border-cyan-500 shadow-md shadow-cyan-500/10 dark:shadow-cyan-500/15'
-                    : 'cursor-pointer bg-slate-50/50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/60'
+                    ? 'cursor-pointer bg-gradient-to-b from-sky-50 to-white dark:from-[#001a2e] dark:to-[#0a1020] border-sky-400 dark:border-cyan-600/70 shadow-md'
+                    : 'cursor-pointer bg-slate-50/60 dark:bg-[#F8FBFE] border-slate-200/80 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-white'
                 }`}
               >
+                {/* Active accent stripe */}
+                {isActive && (
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-sky-400 via-cyan-400 to-blue-400" />
+                )}
+                {/* Completed accent stripe */}
+                {isDone && !isActive && !isLocked && (
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-400 to-teal-400 opacity-70" />
+                )}
+
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center space-x-1.5">
                       <span
                         className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center border ${
                           isLocked
-                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
+                            ? 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
                             : isActive
-                            ? 'bg-cyan-600 dark:bg-cyan-400 text-white dark:text-slate-950 border-cyan-500 dark:border-cyan-300 shadow-xs'
-                            : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700 group-hover:text-slate-900 dark:group-hover:text-white'
+                            ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm'
+                            : isDone
+                            ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
+                            : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                         }`}
                       >
                         {stage.step}
                       </span>
                       {isLocked && (
-                        <span className="flex items-center space-x-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900/60">
+                        <span className="flex items-center space-x-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/70 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900/50">
                           <Lock className="w-2.5 h-2.5" />
                           <span>{UI_STRINGS.pipeline.stepLockedBadge}</span>
+                        </span>
+                      )}
+                      {isDone && !isActive && !isLocked && (
+                        <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50">
+                          Done
                         </span>
                       )}
                     </div>
@@ -253,6 +281,8 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                           ? 'text-slate-300 dark:text-slate-600'
                           : isActive
                           ? 'text-cyan-600 dark:text-cyan-400'
+                          : isDone
+                          ? 'text-emerald-600 dark:text-emerald-500'
                           : 'text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-400'
                       }`}
                     />
@@ -260,7 +290,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                   <h4
                     className={`text-sm font-bold tracking-tight ${
                       isLocked
-                        ? 'text-slate-500 dark:text-slate-400'
+                        ? 'text-slate-400 dark:text-slate-500'
                         : isActive
                         ? 'text-slate-900 dark:text-white'
                         : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
@@ -273,13 +303,15 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                   </p>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/60 text-[10px]">
+                <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/50 text-[10px]">
                   <span
                     className={
                       isLocked
                         ? 'text-amber-600 dark:text-amber-500 font-medium'
                         : isActive
                         ? 'text-cyan-700 dark:text-cyan-400 font-semibold'
+                        : isDone
+                        ? 'text-emerald-700 dark:text-emerald-500 font-medium'
                         : 'text-slate-400 dark:text-slate-500'
                     }
                   >
@@ -287,6 +319,8 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                       ? UI_STRINGS.pipeline.lockedStage
                       : isActive
                       ? UI_STRINGS.pipeline.currentActiveView
+                      : isDone
+                      ? 'Completed'
                       : UI_STRINGS.pipeline.exploreModule}
                   </span>
                   {isLocked ? (

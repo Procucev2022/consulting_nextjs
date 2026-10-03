@@ -25,7 +25,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
       valueCr: totalSpendCr,
       pctOfTotal: 100.0,
       color: 'from-slate-700 to-slate-900 text-white',
-      barColor: 'bg-slate-700 dark:bg-slate-600',
+      barColor: 'bg-[#DCE7F5] dark:bg-[#C8D8EF]',
       note: 'Total Gross Evaluated Spend'
     },
     {
@@ -79,7 +79,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
   ];
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -101,7 +101,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
       <div className="grid grid-cols-1 md:grid-cols-7 gap-2 items-stretch">
         {steps.map((step, idx) => (
           <React.Fragment key={idx}>
-            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 flex flex-col justify-between space-y-2 hover:border-cyan-500/50 transition-all">
+            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#F8FBFE] flex flex-col justify-between space-y-2 hover:border-cyan-500/50 transition-all">
               <div>
                 <span className="text-[9px] font-mono font-bold text-slate-400 uppercase block mb-1">
                   Step {idx + 1}
@@ -118,7 +118,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
                 <div className="text-base font-black font-mono text-slate-900 dark:text-white">
                   ₹{step.valueCr.toFixed(2)} Cr
                 </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+                <div className="w-full bg-slate-200 dark:bg-[#EEF4FC] h-1.5 rounded-full overflow-hidden mt-1.5">
                   <div
                     className={`h-full rounded-full ${step.barColor}`}
                     style={{ width: `${Math.min(100, step.pctOfTotal)}%` }}

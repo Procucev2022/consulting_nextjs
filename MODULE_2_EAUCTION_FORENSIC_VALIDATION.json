@@ -1,0 +1,153 @@
+{
+  "auditTimestamp": "2026-10-03T03:51:13.405Z",
+  "version": "MODULE_2_EAUCTION_FORENSIC_VALIDATION_V1.0",
+  "totalCategoriesEvaluated": 6,
+  "recommendedCategoriesCount": 5,
+  "notRecommendedCategoriesCount": 1,
+  "categoryEvaluations": [
+    {
+      "categoryId": "CAT-StructuralSt",
+      "categoryName": "Structural Steel",
+      "supplierCount": 4,
+      "qualifiedSupplierCount": 4,
+      "comparableSpecification": true,
+      "comparableUOM": true,
+      "historicalPriceDispersionPct": 11.510985307992991,
+      "historicalParticipation": "HIGH",
+      "volumeAvailableForAuction": 6100,
+      "currentReferencePrice": 57000,
+      "openingCeilingPrice": 64000,
+      "targetReservePrice": 57000,
+      "auctionMechanism": "REVERSE_ENGLISH_AUCTION",
+      "potentialBenefitRangeInr": {
+        "low": 16275000,
+        "base": 23250000,
+        "stretch": 30225000
+      },
+      "executionDependencies": "Supplier pre-qualification, SLA acceptance, and dynamic bidding ceiling",
+      "eauctionStatus": "AUCTION_RECOMMENDED",
+      "whyRecommendedOrNot": "Qualified with 4 suppliers and 11.510985307992991% historical price dispersion",
+      "overlapWithPriceArbitrageDeducted": true
+    },
+    {
+      "categoryId": "CAT-IndustrialFa",
+      "categoryName": "Industrial Fasteners",
+      "supplierCount": 3,
+      "qualifiedSupplierCount": 3,
+      "comparableSpecification": true,
+      "comparableUOM": true,
+      "historicalPriceDispersionPct": 74.33501078360891,
+      "historicalParticipation": "HIGH",
+      "volumeAvailableForAuction": 220000,
+      "currentReferencePrice": 40,
+      "openingCeilingPrice": 85,
+      "targetReservePrice": 40,
+      "auctionMechanism": "REVERSE_ENGLISH_AUCTION",
+      "potentialBenefitRangeInr": {
+        "low": 3577000,
+        "base": 5110000,
+        "stretch": 6643000
+      },
+      "executionDependencies": "Supplier pre-qualification, SLA acceptance, and dynamic bidding ceiling",
+      "eauctionStatus": "AUCTION_RECOMMENDED",
+      "whyRecommendedOrNot": "Qualified with 3 suppliers and 74.33501078360891% historical price dispersion",
+      "overlapWithPriceArbitrageDeducted": true
+    },
+    {
+      "categoryId": "CAT-SafetyEquipm",
+      "categoryName": "Safety Equipment",
+      "supplierCount": 3,
+      "qualifiedSupplierCount": 3,
+      "comparableSpecification": true,
+      "comparableUOM": true,
+      "historicalPriceDispersionPct": 13.40782122905028,
+      "historicalParticipation": "HIGH",
+      "volumeAvailableForAuction": 1200,
+      "currentReferencePrice": 420,
+      "openingCeilingPrice": 480,
+      "targetReservePrice": 420,
+      "auctionMechanism": "REVERSE_ENGLISH_AUCTION",
+      "potentialBenefitRangeInr": {
+        "low": 23100,
+        "base": 33000,
+        "stretch": 42900
+      },
+      "executionDependencies": "Supplier pre-qualification, SLA acceptance, and dynamic bidding ceiling",
+      "eauctionStatus": "AUCTION_RECOMMENDED",
+      "whyRecommendedOrNot": "Qualified with 3 suppliers and 13.40782122905028% historical price dispersion",
+      "overlapWithPriceArbitrageDeducted": true
+    },
+    {
+      "categoryId": "CAT-ElectricalCa",
+      "categoryName": "Electrical Cables",
+      "supplierCount": 3,
+      "qualifiedSupplierCount": 3,
+      "comparableSpecification": true,
+      "comparableUOM": true,
+      "historicalPriceDispersionPct": 8.368837492391966,
+      "historicalParticipation": "HIGH",
+      "volumeAvailableForAuction": 16500,
+      "currentReferencePrice": 285,
+      "openingCeilingPrice": 310,
+      "targetReservePrice": 285,
+      "auctionMechanism": "REVERSE_ENGLISH_AUCTION",
+      "potentialBenefitRangeInr": {
+        "low": 158550,
+        "base": 226500,
+        "stretch": 294450
+      },
+      "executionDependencies": "Supplier pre-qualification, SLA acceptance, and dynamic bidding ceiling",
+      "eauctionStatus": "AUCTION_RECOMMENDED",
+      "whyRecommendedOrNot": "Qualified with 3 suppliers and 8.368837492391966% historical price dispersion",
+      "overlapWithPriceArbitrageDeducted": true
+    },
+    {
+      "categoryId": "CAT-Lubricants",
+      "categoryName": "Lubricants",
+      "supplierCount": 3,
+      "qualifiedSupplierCount": 3,
+      "comparableSpecification": true,
+      "comparableUOM": true,
+      "historicalPriceDispersionPct": 11.868818323789695,
+      "historicalParticipation": "HIGH",
+      "volumeAvailableForAuction": 57000,
+      "currentReferencePrice": 160,
+      "openingCeilingPrice": 180,
+      "targetReservePrice": 160,
+      "auctionMechanism": "REVERSE_ENGLISH_AUCTION",
+      "potentialBenefitRangeInr": {
+        "low": 339500,
+        "base": 485000,
+        "stretch": 630500
+      },
+      "executionDependencies": "Supplier pre-qualification, SLA acceptance, and dynamic bidding ceiling",
+      "eauctionStatus": "AUCTION_RECOMMENDED",
+      "whyRecommendedOrNot": "Qualified with 3 suppliers and 11.868818323789695% historical price dispersion",
+      "overlapWithPriceArbitrageDeducted": true
+    },
+    {
+      "categoryId": "CAT-PackagingMat",
+      "categoryName": "Packaging Materials",
+      "supplierCount": 3,
+      "qualifiedSupplierCount": 3,
+      "comparableSpecification": true,
+      "comparableUOM": true,
+      "historicalPriceDispersionPct": 0,
+      "historicalParticipation": "HIGH",
+      "volumeAvailableForAuction": 0,
+      "currentReferencePrice": 25,
+      "openingCeilingPrice": 25,
+      "targetReservePrice": 25,
+      "auctionMechanism": "NONE",
+      "potentialBenefitRangeInr": {
+        "low": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "executionDependencies": "N/A",
+      "eauctionStatus": "NOT_RECOMMENDED",
+      "whyRecommendedOrNot": "Low historical price dispersion (< 5%)",
+      "overlapWithPriceArbitrageDeducted": false
+    }
+  ]
+}

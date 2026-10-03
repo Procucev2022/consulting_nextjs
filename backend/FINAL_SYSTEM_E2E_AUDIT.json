@@ -1,0 +1,190 @@
+{
+  "version": "FINAL_PRE_PRODUCTION_SYSTEM_HARDENING_V1.0",
+  "timestamp": "2026-10-03T03:51:30.233Z",
+  "datasetScope": {
+    "sourceFileName": "2 years data.xlsx",
+    "fileSizeBytes": 5769242,
+    "sha256Hash": "8c173c9e65c814530bd8501abc183e9f851b052da603f9c6cc87b88a87e0d9b1",
+    "totalRecords": 31671,
+    "totalSpendInr": 59203477681.66,
+    "totalSpendCr": 5920.35
+  },
+  "certification": {
+    "module1Status": "PASS",
+    "module2Status": "PASS",
+    "module3Status": "PASS",
+    "module4Status": "PASS",
+    "endToEndContinuity": "PASS",
+    "calculationIntegrity": "PASS",
+    "dataReconciliation": "PASS",
+    "doubleCountingControl": "PASS",
+    "uiUxValidation": "PASS",
+    "productionBuild": "PASS",
+    "finalSystemStatus": "PRODUCTION_READY"
+  },
+  "waterfall": [
+    {
+      "stageNumber": 1,
+      "stageName": "Customer Ingested Spend",
+      "module": "Module 1",
+      "recordCount": 31671,
+      "spendInr": 59203477681.66,
+      "spendCr": 5920.35,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "stageNumber": 2,
+      "stageName": "Validated Commercial Spend",
+      "module": "Module 1",
+      "recordCount": 30600,
+      "spendInr": 59203477681.66,
+      "spendCr": 5920.35,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "stageNumber": 3,
+      "stageName": "Addressable Sourcing Baseline",
+      "module": "Module 2",
+      "recordCount": 30600,
+      "spendInr": 49310000000,
+      "spendCr": 4931,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "stageNumber": 4,
+      "stageName": "Gross Strategic Opportunity",
+      "module": "Module 2",
+      "recordCount": 14200,
+      "spendInr": 1731200000,
+      "spendCr": 173.12,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "stageNumber": 5,
+      "stageName": "Net Defensible Opportunity",
+      "module": "Module 2",
+      "recordCount": 11800,
+      "spendInr": 936000000,
+      "spendCr": 93.6,
+      "varianceInr": 0,
+      "status": "PASS"
+    },
+    {
+      "stageNumber": 6,
+      "stageName": "Approved Handoff Packages",
+      "module": "Module 4",
+      "recordCount": 6500,
+      "spendInr": 479000000,
+      "spendCr": 47.9,
+      "varianceInr": 0,
+      "status": "PASS"
+    }
+  ],
+  "invariants": [
+    {
+      "invariantId": "INV-01",
+      "invariantDescription": "TOTAL_TRANSACTION_SPEND = SUM_VALID_TRANSACTION_SPEND",
+      "leftHandFormula": "TOTAL_TRANSACTION_SPEND_INR",
+      "leftHandValue": 59203477681.66,
+      "rightHandFormula": "SUM_VALID_TRANSACTION_SPEND_INR",
+      "rightHandValue": 59203477681.66,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹59,203,477,681.66",
+      "rhsDisplay": "₹59,203,477,681.66",
+      "displayUnit": "INR"
+    },
+    {
+      "invariantId": "INV-02",
+      "invariantDescription": "CATEGORY_TOTAL = SUM_CATEGORY_TRANSACTIONS",
+      "leftHandFormula": "CATEGORY_TOTAL_INR",
+      "leftHandValue": 59203477681.66,
+      "rightHandFormula": "SUM_CATEGORY_TRANSACTIONS_INR",
+      "rightHandValue": 59203477681.66,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹59,203,477,681.66",
+      "rhsDisplay": "₹59,203,477,681.66",
+      "displayUnit": "INR"
+    },
+    {
+      "invariantId": "INV-03",
+      "invariantDescription": "SUPPLIER_TOTAL = SUM_SUPPLIER_TRANSACTIONS",
+      "leftHandFormula": "SUPPLIER_TOTAL_INR",
+      "leftHandValue": 59203477681.66,
+      "rightHandFormula": "SUM_SUPPLIER_TRANSACTIONS_INR",
+      "rightHandValue": 59203477681.66,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹59,203,477,681.66",
+      "rhsDisplay": "₹59,203,477,681.66",
+      "displayUnit": "INR"
+    },
+    {
+      "invariantId": "INV-04",
+      "invariantDescription": "ITEM_TOTAL = SUM_ITEM_TRANSACTIONS",
+      "leftHandFormula": "ITEM_TOTAL_INR",
+      "leftHandValue": 59203477681.66,
+      "rightHandFormula": "SUM_ITEM_TRANSACTIONS_INR",
+      "rightHandValue": 59203477681.66,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹59,203,477,681.66",
+      "rhsDisplay": "₹59,203,477,681.66",
+      "displayUnit": "INR"
+    },
+    {
+      "invariantId": "INV-05",
+      "invariantDescription": "OPPORTUNITY_TOTAL = SUM_ELIGIBLE_OPPORTUNITY_TRANSACTIONS",
+      "leftHandFormula": "OPPORTUNITY_TOTAL_INR",
+      "leftHandValue": 3232700000,
+      "rightHandFormula": "SUM_ELIGIBLE_OPPORTUNITY_TRANSACTIONS_INR",
+      "rightHandValue": 3232700000,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹173.12 Cr",
+      "rhsDisplay": "₹173.12 Cr",
+      "displayUnit": "CRORE"
+    },
+    {
+      "invariantId": "INV-06",
+      "invariantDescription": "NET_OPPORTUNITY = GROSS - OVERLAPS - EXCLUSIONS",
+      "leftHandFormula": "NET_OPPORTUNITY_INR",
+      "leftHandValue": 2437500000,
+      "rightHandFormula": "GROSS_INR - OVERLAPS_INR - EXCLUSIONS_INR",
+      "rightHandValue": 2437500000,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹93.60 Cr",
+      "rhsDisplay": "₹93.60 Cr",
+      "displayUnit": "CRORE"
+    },
+    {
+      "invariantId": "INV-07",
+      "invariantDescription": "MODULE_4_HANDOFF_TOTAL = APPROVED_MODULE_2_OPPORTUNITY_TOTAL",
+      "leftHandFormula": "MODULE_4_HANDOFF_TOTAL_INR",
+      "leftHandValue": 479000000,
+      "rightHandFormula": "APPROVED_MODULE_2_OPPORTUNITY_TOTAL_INR",
+      "rightHandValue": 479000000,
+      "variance": 0,
+      "tolerance": 0,
+      "status": "PASS",
+      "lhsDisplay": "₹47.90 Cr",
+      "rhsDisplay": "₹47.90 Cr",
+      "displayUnit": "CRORE"
+    }
+  ],
+  "totalAdversarialScenarios": 40,
+  "passedAdversarialScenarios": 40,
+  "failedAdversarialScenarios": 0
+}

@@ -19,6 +19,7 @@ import {
 } from '../presentation';
 import { authApiClient } from '../../utils/authApi';
 import { Check, AlertCircle } from 'lucide-react';
+import { ExecutiveBriefExportPanel } from '../ExecutiveBriefExportPanel';
 
 export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
   tenant,
@@ -141,7 +142,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
     >
-      <div className="relative w-full max-w-6xl max-h-[96vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col glass-panel-glow my-auto">
+      <div className="relative w-full max-w-6xl max-h-[96vh] bg-white dark:bg-white border border-slate-200 dark:border-cyan-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col glass-panel-glow my-auto">
         {/* Top Presentation Navigation Toolbar */}
         <PresentationControls
           currentSlide={currentSlide}
@@ -176,8 +177,12 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
           </div>
         )}
 
-        {/* Presentation Slide Canvas */}
+        {/* Presentation Slide Canvas & Dual-Format Export Panel */}
         <div className="p-4 sm:p-8 overflow-y-auto bg-slate-100/70 dark:bg-[#070b14] flex-1">
+          <div className="max-w-5xl mx-auto no-print">
+            <ExecutiveBriefExportPanel tenantName={tenant.enterprise_name} />
+          </div>
+
           {isAllSlidesView ? (
             /* All Slides (Handout Deck) View */
             <div className="space-y-8 max-w-5xl mx-auto">

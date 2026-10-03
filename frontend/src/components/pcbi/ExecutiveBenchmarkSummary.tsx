@@ -42,7 +42,7 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
       label: s.totalSpend,
       value: `₹${totalSpendCr.toFixed(2)} Cr`,
       badge: '100% Base',
-      color: 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900',
+      color: 'border-slate-300 dark:border-slate-700 bg-white dark:bg-white',
       textColor: 'text-slate-900 dark:text-white',
       icon: <DollarSign className="w-4 h-4 text-slate-600 dark:text-slate-400" />
     },
@@ -114,7 +114,7 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
       label: s.notBenchmarkableSpend,
       value: `₹${notBenchmarkableCr.toFixed(2)} Cr`,
       badge: 'Excluded',
-      color: 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50',
+      color: 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-white',
       textColor: 'text-slate-600 dark:text-slate-400',
       icon: <HelpCircle className="w-4 h-4 text-slate-400" />
     },
@@ -163,7 +163,7 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
               {item.value}
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/70 dark:bg-slate-950/70 text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
+              <span className="text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded bg-white/70 dark:bg-[#F8FBFE] text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50">
                 {item.badge}
               </span>
             </div>

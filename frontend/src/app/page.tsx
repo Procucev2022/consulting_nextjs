@@ -61,12 +61,12 @@ const ReassignModal = dynamic(
   () => import('@/components/modals/ReassignModal').then((mod) => mod.ReassignModal),
   { ssr: false }
 );
-const ExecutiveReportModal = dynamic(
-  () => import('@/components/modals/ExecutiveReportModal').then((mod) => mod.ExecutiveReportModal),
-  { ssr: false }
-);
 const ClientIngestionSetupModal = dynamic(
   () => import('@/components/modals/ClientIngestionSetupModal').then((mod) => mod.ClientIngestionSetupModal),
+  { ssr: false }
+);
+const ExecutiveOpportunityBriefView = dynamic(
+  () => import('@/components/presentation/ExecutiveOpportunityBriefView').then((mod) => mod.ExecutiveOpportunityBriefView),
   { ssr: false }
 );
 
@@ -155,6 +155,20 @@ export default function Home() {
     };
   });
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
+  const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
+  const [briefDownloadPayload, setBriefDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
+  const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
+
+  const handleBriefDownload = (format: 'pdf' | 'pptx'): void => {
+    const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
+    const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
+    setBriefDownloadPayload({ url, filename });
+    setTimeout(() => {
+      if (briefDownloadLinkRef.current) {
+        briefDownloadLinkRef.current.click();
+      }
+    }, 50);
+  };
 
   // Application Data States
   const [ingestionQueue, setIngestionQueue] = useState<RawDocumentIngestion[]>([]);
@@ -258,7 +272,6 @@ export default function Home() {
   const [selectedRecordForMergeItem, setSelectedRecordForMergeItem] = useState<ValidationPreCheckRecord | null>(null);
   const [isDataRefreshed, setIsDataRefreshed] = useState<boolean>(false);
   const [selectedItemForReassign, setSelectedItemForReassign] = useState<LineItemMapping | null>(null);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [analyzingLoaderState, setAnalyzingLoaderState] = useState<{
     isOpen: boolean;
     title?: string;
@@ -1021,8 +1034,8 @@ export default function Home() {
                 : `Item-${idx + 1}`;
             const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || '';
 
-            const isValidVendor = Boolean(rowVendor && !/^\d+$/.test(rowVendor) && rowVendor.length > 2);
-            const isValidItem = Boolean(rowItem && !/^\d+$/.test(rowItem) && rowItem.length > 1);
+            const isValidVendor = Boolean(rowVendor && rowVendor.trim().length > 1);
+            const isValidItem = Boolean(rowItem && rowItem.trim().length > 0 && rowItem !== '0');
 
             if (isValidItem) uniqueItemsSet.add(rowItem);
             if (isValidVendor) uniqueVendorsSet.add(rowVendor);
@@ -1030,12 +1043,20 @@ export default function Home() {
             // Grouping by Material Group
             let rowMg = (mgKey && r[mgKey] != null ? String(r[mgKey]).trim() : '') || 'DIRECT';
             rowMg = rowMg.toUpperCase();
-            const existingMg = mgMap.get(rowMg) || { count: 0, spendCr: 0, items: new Set<string>(), vendors: new Set<string>(), sampleItem: rowItem };
+            const existingMg = mgMap.get(rowMg) || {
+              count: 0,
+              spendCr: 0,
+              items: new Set<string>(),
+              vendors: new Set<string>(),
+              sampleItem: isValidItem ? rowItem : ''
+            };
             existingMg.count++;
             existingMg.spendCr += lineTotalCr;
-            if (isValidItem) existingMg.items.add(rowItem);
+            if (isValidItem) {
+              existingMg.items.add(rowItem);
+              if (!existingMg.sampleItem) existingMg.sampleItem = rowItem;
+            }
             if (isValidVendor) existingMg.vendors.add(rowVendor);
-            if (!existingMg.sampleItem && isValidItem) existingMg.sampleItem = rowItem;
             mgMap.set(rowMg, existingMg);
 
             // Grouping by Plant
@@ -1601,7 +1622,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#f8fafc] dark:bg-[#080c16] text-slate-900 dark:text-slate-100 bg-grid-pattern pb-16 transition-colors duration-200 ${theme}`}>
+    <div className={`min-h-screen bg-[#EEF7FF] text-[#0B1B33] bg-grid-pattern transition-colors duration-200 ${theme}`}>
       {/* Top Header */}
       <Header
         tenant={tenant}
@@ -1621,7 +1642,14 @@ export default function Home() {
             frontendLogger.warn('Backend sync warning for currency update', { error: e });
           });
         }}
-        onOpenReport={() => setIsReportModalOpen(true)}
+        onOpenReport={() => {
+          if (typeof window !== 'undefined') {
+            const target = window.location.origin ? `${window.location.origin}/executive-brief` : '/executive-brief';
+            window.location.href = target;
+          }
+        }}
+        onOpenManagementBrief={() => setIsManagementSummaryOpen(true)}
+        isExecutiveBriefReady={Boolean(opportunities && opportunities.length > 0) || (tenant.total_spend_evaluated_inr ?? 0) > 0}
         theme={theme}
         onSelectTheme={setTheme}
         onStartAnalysis={() => {
@@ -1649,7 +1677,7 @@ export default function Home() {
       />
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-6">
         {/* Pipeline & Strategic Vision Navigation */}
         <PipelineBar
           activeTab={activeTab}
@@ -1758,7 +1786,11 @@ export default function Home() {
             categories={categories}
             opportunities={opportunities}
             cleanRecordsCount={uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || validationRecords.filter((v) => v.issue_flag === 'Passed Clean').length || 0)}
-            onOpenReport={() => setIsReportModalOpen(true)}
+            onOpenReport={() => {
+              if (typeof window !== 'undefined') {
+                window.location.href = '/executive-brief';
+              }
+            }}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
           />
@@ -1766,6 +1798,25 @@ export default function Home() {
 
         {activeTab === 'schema' && <DatabaseSchemaView />}
       </main>
+
+      {/* ── Enterprise Footer ── */}
+      <footer className="ent-footer mt-4 no-print">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              AES-256-GCM ENCRYPTED
+            </span>
+            <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
+            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit · ISO 27001 · SOC 2 Type II compliant</span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 font-mono">
+            <span>Procucev / aiCEV v2.0</span>
+            <span className="text-slate-300 dark:text-slate-600">·</span>
+            <span>© {new Date().getFullYear()} Procucev Pvt. Ltd. All rights reserved.</span>
+          </div>
+        </div>
+      </footer>
 
       {/* Interactive Modals */}
       <ProCPXModal
@@ -1812,13 +1863,6 @@ export default function Home() {
         onSave={handleSaveReassign}
       />
 
-      <ExecutiveReportModal
-        tenant={tenant}
-        opportunities={opportunities}
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-      />
-
       <ClientIngestionSetupModal
         isOpen={isClientSetupModalOpen}
         onClose={() => setIsClientSetupModalOpen(false)}
@@ -1863,11 +1907,41 @@ export default function Home() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-2 px-4 py-3 rounded-xl bg-white dark:bg-slate-900 border border-cyan-500/40 shadow-xl text-xs font-semibold text-slate-900 dark:text-white animate-in slide-in-from-bottom duration-200">
-          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping" />
-          <span>{toastMessage}</span>
-          <span>just for checking</span>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3 px-4 py-3 rounded-xl bg-white dark:bg-[#0c1628] border border-slate-200 dark:border-slate-700/80 shadow-2xl text-xs font-semibold text-slate-900 dark:text-white animate-slide-up max-w-sm" style={{boxShadow: '0 20px 60px -10px rgba(0,0,0,0.18), 0 0 0 1px rgba(14,165,233,0.15)'}}>
+          <span className="w-2 h-2 rounded-full bg-cyan-500 flex-shrink-0" style={{boxShadow: '0 0 0 3px rgba(14,165,233,0.20)', animation: 'pulse-dot 2s infinite'}} />
+          <span className="text-slate-700 dark:text-slate-200">{toastMessage}</span>
         </div>
+      )}
+
+      {/* Management Quick Summary Modal View (Prompt 287) */}
+      {isManagementSummaryOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm overflow-y-auto"
+          data-testid="management-quick-summary-modal"
+        >
+          <div className="w-full max-w-6xl my-auto">
+            <ExecutiveOpportunityBriefView
+              clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
+              onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
+              onDownloadPdf={() => handleBriefDownload('pdf')}
+              onDownloadPptx={() => handleBriefDownload('pptx')}
+              currentTier={effectiveTier}
+            />
+          </div>
+        </div>
+      )}
+
+      {briefDownloadPayload && (
+        <a
+          ref={briefDownloadLinkRef}
+          href={briefDownloadPayload.url}
+          download={briefDownloadPayload.filename}
+          className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          Download
+        </a>
       )}
     </div>
   );

@@ -14,6 +14,12 @@ import { pcbiProductionPilotService } from '../services/pcbiProductionPilotServi
 import { PCBIProductionReadyService } from '../services/pcbiProductionReadyService';
 import { PCBICommodityCoverageService } from '../services/pcbiCommodityCoverageService';
 import { PCBIPlatformIntegrationService } from '../services/pcbiPlatformIntegrationService';
+import { pcbiCommodityDataLabService } from '../services/pcbiCommodityDataLabService';
+import {
+  detectUploadDomainSchema,
+  uploadCommoditySourceSchema,
+  approveCommodityDataSchema
+} from '../constants/validation';
 import logger from '../utils/logger';
 
 const pcbiProductionReadyService = PCBIProductionReadyService.getInstance();
@@ -21,6 +27,7 @@ const pcbiCommodityCoverageService = PCBICommodityCoverageService.getInstance();
 const pcbiPlatformIntegrationService = PCBIPlatformIntegrationService.getInstance();
 import type { PCBIImportPayload } from '../types/pcbiAdmin';
 import type { PCBIExtractionFormat } from '../types/pcbiDynamicE2E';
+import type { CommodityWorkspaceTabKey } from '../types/pcbiCommodityDataLab';
 
 export class PCBIAdminController {
   public async getVersions(_req: Request, res: Response): Promise<void> {
@@ -928,6 +935,131 @@ export class PCBIAdminController {
     } catch (err: unknown) {
       logger.error('Failed to generate audit JSON', { error: err instanceof Error ? err.message : String(err) });
       res.status(500).json({ success: false, message: 'Failed to generate audit JSON' });
+    }
+  }
+
+  // ==========================================
+  // PCBI COMMODITY DATA LAB (Prompt 218)
+  // ==========================================
+
+  public async getCommodityDataLabDashboard(_req: Request, res: Response): Promise<void> {
+    try {
+      const metrics = pcbiCommodityDataLabService.getDashboardMetrics();
+      res.json({ success: true, metrics });
+    } catch (err: unknown) {
+      logger.error('Failed to retrieve Commodity Data Lab dashboard metrics', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+      res.status(500).json({ success: false, message: 'Failed to retrieve Data Lab dashboard metrics' });
+    }
+  }
+
+  public async getCommodityResearchQueue(_req: Request, res: Response): Promise<void> {
+    try {
+      const queue = pcbiCommodityDataLabService.getCommodityResearchQueue();
+      res.json({ success: true, total: queue.length, queue });
+    } catch (err: unknown) {
+      logger.error('Failed to retrieve Commodity Research Queue', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+      res.status(500).json({ success: false, message: 'Failed to retrieve Commodity Research Queue' });
+    }
+  }
+
+  public async getCommodityWorkspaceDetail(req: Request, res: Response): Promise<void> {
+    try {
+      const { pcbiId } = req.params;
+      const tab = (req.query.tab as CommodityWorkspaceTabKey) || 'OVERVIEW';
+      const workspace = pcbiCommodityDataLabService.getCommodityWorkspace(pcbiId, tab);
+      res.json({ success: true, workspace });
+    } catch (err: unknown) {
+      logger.error('Failed to retrieve Commodity PCBI Workspace detail', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+      res.status(404).json({ success: false, message: err instanceof Error ? err.message : 'Workspace not found' });
+    }
+  }
+
+  public async detectUploadDomain(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = detectUploadDomainSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid input schema for domain detection',
+          errors: parsed.error.issues
+        });
+        return;
+      }
+
+      const { fileName, fileContentSnippet, targetArea } = parsed.data;
+      const detection = pcbiCommodityDataLabService.validateUploadDomain(
+        fileName,
+        fileContentSnippet,
+        targetArea
+      );
+
+      res.json({ success: true, detection });
+    } catch (err: unknown) {
+      logger.error('Failed to detect upload file domain', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+      res.status(500).json({ success: false, message: 'Domain detection failed' });
+    }
+  }
+
+  public async uploadCommoditySource(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = uploadCommoditySourceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid input schema for commodity source upload',
+          errors: parsed.error.issues
+        });
+        return;
+      }
+
+      const source = pcbiCommodityDataLabService.uploadCommoditySource(parsed.data);
+      res.json({
+        success: true,
+        source,
+        banner: 'COMMODITY DATA UPLOAD — NOT PCBI MASTER',
+        message: 'Source evidence object successfully staged in Commodity Data Lab'
+      });
+    } catch (err: unknown) {
+      logger.error('Failed to upload commodity research source', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+      res.status(400).json({
+        success: false,
+        message: err instanceof Error ? err.message : 'Failed to upload source'
+      });
+    }
+  }
+
+  public async approveCommodityData(req: Request, res: Response): Promise<void> {
+    try {
+      const parsed = approveCommodityDataSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid input schema for commodity approval',
+          errors: parsed.error.issues
+        });
+        return;
+      }
+
+      const result = pcbiCommodityDataLabService.approveCommodityData(parsed.data);
+      res.json({ success: true, result });
+    } catch (err: unknown) {
+      logger.error('Failed to execute commodity data approval', {
+        error: err instanceof Error ? err.message : String(err)
+      });
+      res.status(400).json({
+        success: false,
+        message: err instanceof Error ? err.message : 'Approval failed'
+      });
     }
   }
 }

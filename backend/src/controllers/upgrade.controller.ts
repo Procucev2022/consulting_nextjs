@@ -130,14 +130,16 @@ export class UpgradeController {
         verified: false
       });
 
-      logger.info(`Admin mobile OTP generated for upgrade request [${requestId}]: OTP = ${otpCode}`);
+      logger.info(`Admin mobile OTP generated for upgrade request [${requestId}]`, {
+        requestId,
+        destination: `${adminMobile.slice(0, 7)}****`
+      });
 
       res.json({
         success: true,
         message: `OTP sent to Admin linked mobile (${adminMobile.slice(0, 7)}****). Please verify to generate unique code.`,
         request_id: requestId,
-        admin_mobile: adminMobile,
-        otp_hint: process.env.NODE_ENV !== 'production' ? otpCode : undefined // Display in dev mode
+        admin_mobile: `${adminMobile.slice(0, 7)}****`
       });
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -199,7 +201,7 @@ export class UpgradeController {
 
       logger.info('Admin verified OTP and issued unique upgrade code', {
         requestId,
-        code: uniqueCode,
+        codePrefix: `${uniqueCode.slice(0, 4)}****`,
         customerEmail: upgReq.customer_email
       });
 

@@ -1,0 +1,228 @@
+{
+  "timestamp": "2026-09-30T18:49:06.575Z",
+  "totalSecurityTests": 20,
+  "passedSecurityTests": 20,
+  "failedSecurityTests": 0,
+  "securityTestCases": [
+    {
+      "testId": "SEC-01",
+      "testName": "Cross-Tenant Dataset Access",
+      "targetCategory": "Tenant Isolation",
+      "description": "Tenant A attempts to query Tenant B purchase datasets",
+      "attackVector": "GET /api/v1/datasets/DS-TNT-B-001 with Header X-Tenant-ID: TNT-A",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-02",
+      "testName": "Cross-Tenant File Download",
+      "targetCategory": "Tenant Isolation",
+      "description": "Tenant A requests download of Tenant B raw customer workbook",
+      "attackVector": "GET /api/v1/storage/download/TNT-B/raw.xlsx",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-03",
+      "testName": "Cross-Tenant Transaction Retrieval",
+      "targetCategory": "Data Confidentiality",
+      "description": "Tenant A requests individual transaction row belonging to Tenant B",
+      "attackVector": "GET /api/v1/transactions/TXN-TNT-B-99881",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-04",
+      "testName": "Cross-Tenant Supplier Retrieval",
+      "targetCategory": "Supplier Confidentiality",
+      "description": "Tenant A attempts to list vendor master of Tenant B",
+      "attackVector": "GET /api/v1/suppliers?tenantId=TNT-B",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-05",
+      "testName": "Cross-Tenant Module 2 Opportunity Access",
+      "targetCategory": "Analytical Isolation",
+      "description": "Tenant A attempts to read Module 2 sourcing opportunities generated for Tenant B",
+      "attackVector": "GET /api/v1/sourcing/opportunities?datasetId=DS-TNT-B-001",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-06",
+      "testName": "Cross-Tenant Module 4 Handoff Access",
+      "targetCategory": "Execution Isolation",
+      "description": "Tenant A requests Module 4 approved handoff packages of Tenant B",
+      "attackVector": "GET /api/v1/savings/handoff?tenantId=TNT-B",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-07",
+      "testName": "Customer Transaction to PCBI Injection",
+      "targetCategory": "PCBI Isolation",
+      "description": "Direct ingestion script attempts to write customer PO price into PCBI Observation series",
+      "attackVector": "POST /api/v1/pcbi/observations with source: CUSTOMER_TRANSACTION",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 422,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-08",
+      "testName": "Unauthorized Dataset Export",
+      "targetCategory": "Export Governance",
+      "description": "Viewer role user attempts to initiate full transaction CSV export",
+      "attackVector": "POST /api/v1/export/transactions with Role: VIEWER",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-09",
+      "testName": "Unauthenticated Sensitive API Access",
+      "targetCategory": "Authentication",
+      "description": "Unauthenticated HTTP request without Authorization bearer token",
+      "attackVector": "GET /api/v1/procurement/spend-summary",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 401,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-10",
+      "testName": "Unauthorized Role Access to Audit Trail",
+      "targetCategory": "Authorization",
+      "description": "Standard buyer role attempts to access security audit access logs",
+      "attackVector": "GET /api/v1/security/audit-trail with Role: BUYER",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-11",
+      "testName": "Sensitive Data in Logs Prevention",
+      "targetCategory": "Data Sanitization",
+      "description": "Logger execution intercepts commercial terms and applies redaction masks",
+      "attackVector": "logger.info() payload containing supplierName, rawPrice, poNumber",
+      "expectedOutcome": "PASS",
+      "actualOutcome": "PASS",
+      "httpStatusExpected": 200,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-12",
+      "testName": "Sensitive Data in URL Parameters Prevention",
+      "targetCategory": "Transport Security",
+      "description": "Rejection of raw prices or tax identifiers embedded in URL query parameters",
+      "attackVector": "GET /api/v1/search?price=12000000&taxId=GSTIN12345",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 400,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-13",
+      "testName": "Sensitive Data in Browser Storage Prevention",
+      "targetCategory": "Client Security",
+      "description": "Audit checks frontend storage mechanisms for unencrypted customer transactions",
+      "attackVector": "localStorage.setItem(\"customerTransactions\", rawData)",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 200,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-14",
+      "testName": "Public/Static File Exposure Guard",
+      "targetCategory": "Storage Protection",
+      "description": "Attempt to request customer dataset through public static server directory",
+      "attackVector": "GET /static/uploads/Customer_Purchase_History.xlsx",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 404,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-15",
+      "testName": "Dataset ID Enumeration Prevention",
+      "targetCategory": "Access Control",
+      "description": "Attacker probes sequential dataset IDs (DS-0001, DS-0002, DS-0003)",
+      "attackVector": "Sequential query against non-owned tenant datasets",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-16",
+      "testName": "Missing Tenant Scope Rejection",
+      "targetCategory": "Tenant Validation",
+      "description": "API request payload omitted mandatory tenant scope header",
+      "attackVector": "POST /api/v1/ingest/file without x-tenant-id header",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 400,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-17",
+      "testName": "Invalid Tenant Scope Rejection",
+      "targetCategory": "Tenant Validation",
+      "description": "API request submitted malformed or non-existent tenant UUID",
+      "attackVector": "GET /api/v1/dashboard with x-tenant-id: SQL_INJECTION_OR_INVALID",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 400,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-18",
+      "testName": "Unauthorized PCBI Master Modification",
+      "targetCategory": "PCBI Protection",
+      "description": "Tenant user attempts to overwrite official PCBI Master benchmark series",
+      "attackVector": "PUT /api/v1/pcbi/master/CR-STEEL-HR with user token",
+      "expectedOutcome": "BLOCKED",
+      "actualOutcome": "BLOCKED",
+      "httpStatusExpected": 403,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-19",
+      "testName": "Customer A Data in Customer B Analytics Guard",
+      "targetCategory": "Analytical Isolation",
+      "description": "Module 2 analytical engine query filters strictly by authenticated tenant",
+      "attackVector": "Cross-tenant joins or shared table scans in sourcing calculation",
+      "expectedOutcome": "PASS",
+      "actualOutcome": "PASS",
+      "httpStatusExpected": 200,
+      "status": "PASS"
+    },
+    {
+      "testId": "SEC-20",
+      "testName": "Customer Data in Shared Reference Storage Guard",
+      "targetCategory": "Storage Isolation",
+      "description": "Verify customer purchase rows never enter public reference or sample tables",
+      "attackVector": "SELECT count(*) FROM pcbi_public_samples WHERE source_type = \"CUSTOMER_TXN\"",
+      "expectedOutcome": "PASS",
+      "actualOutcome": "PASS",
+      "httpStatusExpected": 200,
+      "status": "PASS"
+    }
+  ]
+}

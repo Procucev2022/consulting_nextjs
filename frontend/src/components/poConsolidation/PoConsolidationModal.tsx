@@ -27,10 +27,10 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-4xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-8 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm overflow-y-auto">
+      <div className="relative w-full max-w-4xl rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-8 max-h-[92vh] flex flex-col">
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-slate-950/40">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-[#F8FBFE]">
           <div>
             <div className="flex items-center space-x-2">
               <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
@@ -49,7 +49,7 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#EEF4FC]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -58,7 +58,7 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Metadata Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/70 dark:border-slate-800 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl border border-slate-200/70 dark:border-slate-800 text-xs">
             <div>
               <div className="text-[10px] font-semibold text-slate-400 uppercase">{UI_STRINGS.poConsolidation.vendorLabel}</div>
               <div className="font-bold text-slate-900 dark:text-white truncate">{item.vendor_name}</div>
@@ -100,7 +100,7 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
                     className={`p-3 rounded-xl border text-left transition-all relative ${
                       active
                         ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 ring-2 ring-emerald-500/20'
-                        : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        : 'bg-white dark:bg-[#EEF4FC] border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-[#EEF4FC]'
                     }`}
                   >
                     {isRec && (
@@ -165,7 +165,7 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
             </h4>
             <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5 text-center">
               {item.monthly_distribution.map((m) => (
-                <div key={m.month} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200/80 dark:border-slate-800 text-[11px]">
+                <div key={m.month} className="p-2 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/80 dark:border-slate-800 text-[11px]">
                   <div className="font-bold text-slate-600 dark:text-slate-300">{m.month}</div>
                   <div className="font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">{m.po_count} POs</div>
                   <div className="text-[10px] text-slate-400 font-mono mt-0.5">₹{m.spend_inr_lakhs.toFixed(0)}L</div>
@@ -181,7 +181,7 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
             </h4>
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
               <table className="w-full text-left">
-                <thead className="bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-[11px] font-semibold">
+                <thead className="bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 text-[11px] font-semibold">
                   <tr>
                     <th className="p-2.5">{UI_STRINGS.poConsolidation.tierColCadence}</th>
                     <th className="p-2.5 text-center">{UI_STRINGS.poConsolidation.tierColPosPerYear}</th>
@@ -231,19 +231,19 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
               {UI_STRINGS.poConsolidation.strategyTitle}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/70 dark:border-slate-800">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800">
                 <div className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.poConsolidation.step1Title}</div>
                 <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">{UI_STRINGS.poConsolidation.step1Desc}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/70 dark:border-slate-800">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800">
                 <div className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.poConsolidation.step2Title}</div>
                 <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">{UI_STRINGS.poConsolidation.step2Desc}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/70 dark:border-slate-800">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800">
                 <div className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.poConsolidation.step3Title}</div>
                 <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">{UI_STRINGS.poConsolidation.step3Desc}</p>
               </div>
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/70 dark:border-slate-800">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800">
                 <div className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.poConsolidation.step4Title}</div>
                 <p className="text-slate-500 dark:text-slate-400 text-[11px] mt-1">{UI_STRINGS.poConsolidation.step4Desc}</p>
               </div>
@@ -259,11 +259,11 @@ export const PoConsolidationModal: React.FC<PoConsolidationModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#F8FBFE] flex flex-col sm:flex-row items-center justify-between gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#EEF4FC] transition-colors"
           >
             {UI_STRINGS.poConsolidation.closeModalBtn}
           </button>

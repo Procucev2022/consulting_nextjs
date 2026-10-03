@@ -1,0 +1,279 @@
+{
+  "timestamp": "2026-10-03T03:51:41.745Z",
+  "totalScenarios": 30,
+  "passedScenarios": 30,
+  "failedScenarios": 0,
+  "status": "PASS",
+  "scenarios": [
+    {
+      "scenarioCode": "NEG-A",
+      "scenarioName": "Duplicate Transaction",
+      "description": "Two identical rows with identical PO, line, supplier, SKU, date, quantity, and price",
+      "expectedBehavior": "Detect EXACT_DUPLICATE; isolate from double-counting and quarantine",
+      "actualBehavior": "Exact duplicate flagged, logged to duplicate ledger, double-counting prevented",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-B",
+      "scenarioName": "Missing Supplier",
+      "description": "Transaction row with empty or null vendor name and vendor code",
+      "expectedBehavior": "Reject row from clean spend baseline; mark MISSING_SUPPLIER",
+      "actualBehavior": "Row rejected with HTTP 400 / validation error; isolated in Exception Register",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-C",
+      "scenarioName": "Missing Item",
+      "description": "Transaction row with missing material code and missing description",
+      "expectedBehavior": "Reject row; do not invent synthetic SKU description",
+      "actualBehavior": "Row quarantined with MISSING_ITEM status; zero impact on item spend",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-D",
+      "scenarioName": "Missing Date",
+      "description": "Transaction row with missing or undefined document date",
+      "expectedBehavior": "Reject row; do not guess date from neighboring rows",
+      "actualBehavior": "Record quarantined under MISSING_DATE; excluded from monthly aggregations",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-E",
+      "scenarioName": "Invalid Date",
+      "description": "Transaction row with date in distant future or invalid string",
+      "expectedBehavior": "Reject row; trigger INVALID_DATE exception",
+      "actualBehavior": "Row blocked; recorded with INVALID_DATE status in Data Quality Ledger",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-F",
+      "scenarioName": "Missing Quantity",
+      "description": "Transaction row with undefined or null order quantity",
+      "expectedBehavior": "Reject calculation; do not default quantity to 1",
+      "actualBehavior": "Multiplication blocked; record placed in quarantine ledger",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-G",
+      "scenarioName": "Zero Quantity",
+      "description": "Transaction row with quantity = 0",
+      "expectedBehavior": "Quarantine zero-quantity transaction as non-commercial sample",
+      "actualBehavior": "Identified as ZERO_VALUE_LINE; spend INR evaluated to 0.00; quarantined",
+      "quarantineStatus": "QUARANTINED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-H",
+      "scenarioName": "Negative Quantity",
+      "description": "Transaction row with negative quantity representing credit or return",
+      "expectedBehavior": "Explicitly classify as RETURN / CREDIT / REVERSAL; do not treat as savings",
+      "actualBehavior": "Classified as credit reversal; quarantined from standard procurement baseline",
+      "quarantineStatus": "QUARANTINED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-I",
+      "scenarioName": "Missing UOM",
+      "description": "Transaction row with blank unit of measure",
+      "expectedBehavior": "Reject row; do not assume default UOM (e.g. PCS)",
+      "actualBehavior": "Blocked under UOM_MISSING; quarantined until verified",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-J",
+      "scenarioName": "Invalid UOM",
+      "description": "Incompatible UOM conversion attempted without approved technical factor (e.g. BOX to KG)",
+      "expectedBehavior": "Reject conversion; mark UOM_CONVERSION_PENDING; preserve raw UOM",
+      "actualBehavior": "Conversion refused; status set to UOM_CONVERSION_PENDING; zero synthetic factors",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-K",
+      "scenarioName": "Missing Currency",
+      "description": "Transaction row without currency code or symbol",
+      "expectedBehavior": "Reject row; never infer currency from user locale or formatting",
+      "actualBehavior": "Blocked under CURRENCY_MISSING; quarantined",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-L",
+      "scenarioName": "Invalid Currency",
+      "description": "Transaction row with unrecognized non-ISO currency code (e.g. XYZ)",
+      "expectedBehavior": "Reject currency; halt foreign exchange calculation",
+      "actualBehavior": "Blocked with FX_UNSUPPORTED_CURRENCY status; quarantined",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-M",
+      "scenarioName": "Mixed Currencies",
+      "description": "Foreign currency transactions without approved central bank fixing rate",
+      "expectedBehavior": "Set FX_CONVERSION_PENDING; isolate from base currency aggregation",
+      "actualBehavior": "Preserved in original currency; marked FX_CONVERSION_PENDING",
+      "quarantineStatus": "FLAGGED_EXCLUDED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-N",
+      "scenarioName": "Wrong FX Conversion",
+      "description": "Live daily market FX rate applied to historical transaction",
+      "expectedBehavior": "Reject live rate; enforce immutable approved historical fixing rate",
+      "actualBehavior": "Live FX independence verified; historical rates remain completely isolated",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-O",
+      "scenarioName": "Missing Unit Price",
+      "description": "Transaction row with undefined or blank net price",
+      "expectedBehavior": "Reject row; do not invent synthetic price or average price",
+      "actualBehavior": "Blocked under MISSING_UNIT_PRICE; quarantined",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-P",
+      "scenarioName": "Negative Unit Price",
+      "description": "Transaction row with negative commercial unit price",
+      "expectedBehavior": "Reject row; negative commercial price is invalid without credit memo flag",
+      "actualBehavior": "Blocked under INVALID_UNIT_PRICE; quarantined",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-Q",
+      "scenarioName": "Transaction Value Mismatch",
+      "description": "Declared total transaction value differs from Quantity * Unit Price",
+      "expectedBehavior": "Flag VALUE_MISMATCH; set VALUE_BASIS_UNCLEAR; quarantine discrepancy",
+      "actualBehavior": "Mismatch detected; flagged as VALUE_BASIS_UNCLEAR; zero silent rounding",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-R",
+      "scenarioName": "Decimal Precision Issue",
+      "description": "Premature line-level rounding to 2 decimals before dataset aggregation",
+      "expectedBehavior": "Enforce continuous 64-bit float precision; restrict rounding to final display",
+      "actualBehavior": "Calculations maintain continuous precision; 0.000000 INR unexplained drift",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-S",
+      "scenarioName": "Duplicate PO",
+      "description": "Same PO number appears with distinct line numbers (e.g. PO 4500001 Line 10 vs Line 20)",
+      "expectedBehavior": "Validate as distinct purchasing line items; preserve both in ledger",
+      "actualBehavior": "Preserved as distinct line items; verified in duplicate audit ledger",
+      "quarantineStatus": "FLAGGED_EXCLUDED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-T",
+      "scenarioName": "Duplicate Invoice",
+      "description": "Duplicate invoice reference number with identical vendor and amount",
+      "expectedBehavior": "Detect potential duplicate invoice; quarantine second instance for audit",
+      "actualBehavior": "Flagged under DUPLICATE_INVOICE_AUDIT; quarantined",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-U",
+      "scenarioName": "Same Supplier with Different Spelling",
+      "description": "Vendor name variations (e.g. \"Jindal Steel\" vs \"Jindal Steel Ltd.\")",
+      "expectedBehavior": "Flag for human review; do not silently merge distinct vendor codes",
+      "actualBehavior": "Flagged with normalization confidence score; distinct codes preserved",
+      "quarantineStatus": "FLAGGED_EXCLUDED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-V",
+      "scenarioName": "Same Item with Different Spelling",
+      "description": "Material text variations without identical material master code",
+      "expectedBehavior": "Preserve raw descriptions; do not combine distinct SKUs",
+      "actualBehavior": "Raw short texts preserved; distinct material codes maintained",
+      "quarantineStatus": "FLAGGED_EXCLUDED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-W",
+      "scenarioName": "Different Specifications with Similar Description",
+      "description": "Materials sharing generic description but differing in grade, size, or alloy",
+      "expectedBehavior": "Keep items strictly separate; do not merge distinct specifications",
+      "actualBehavior": "Specification preservation confirmed; distinct line items audited",
+      "quarantineStatus": "FLAGGED_EXCLUDED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-X",
+      "scenarioName": "Filter Reconciliation Failure",
+      "description": "Filtered total spend + Excluded total spend != Unfiltered total spend",
+      "expectedBehavior": "Reject filter state if sum does not balance to unfiltered total",
+      "actualBehavior": "Filter invariance confirmed; filtered + excluded = 100.00% total spend",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-Y",
+      "scenarioName": "Category Reconciliation Failure",
+      "description": "Category / Material Group spend sum != Total transaction spend",
+      "expectedBehavior": "Fail reconciliation gate; block production certification",
+      "actualBehavior": "Category spend ₹5,920.35 Cr reconciles with ₹0.000000 variance",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-Z",
+      "scenarioName": "Supplier Reconciliation Failure",
+      "description": "Sum of all supplier spends != Total transaction spend",
+      "expectedBehavior": "Fail reconciliation gate; trigger BLOCKED_RECONCILIATION_FAILURE",
+      "actualBehavior": "Supplier spend ₹5,920.35 Cr reconciles with ₹0.000000 variance",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-AA",
+      "scenarioName": "Monthly Reconciliation Failure",
+      "description": "Sum of all monthly spend totals != Total transaction spend",
+      "expectedBehavior": "Fail reconciliation gate; halt monthly analytics",
+      "actualBehavior": "Monthly spend ₹5,920.35 Cr reconciles with ₹0.000000 variance across 24 months",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-AB",
+      "scenarioName": "Module 2 Handoff Mismatch",
+      "description": "Module 2 handoff record spend does not match certified Module 1 spend",
+      "expectedBehavior": "Block downstream handoff until spend balances to ₹0.00 variance",
+      "actualBehavior": "Handoff balances exactly to ₹5,920.35 Cr across 31,671 records",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-AC",
+      "scenarioName": "PCBI Leakage into Module 1",
+      "description": "PCBI benchmark index or market price injected into Module 1 calculation",
+      "expectedBehavior": "Strictly isolate Module 1; throw error on PCBI parameter detection",
+      "actualBehavior": "Zero PCBI references found in Module 1 ingestion or aggregation engine",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    },
+    {
+      "scenarioCode": "NEG-AD",
+      "scenarioName": "Synthetic Savings Leakage",
+      "description": "Module 1 calculating procurement savings, e-auction benefits, or vendor consolidation",
+      "expectedBehavior": "Prohibit savings calculation; Module 1 must remain pure factual spend history",
+      "actualBehavior": "Zero savings calculation logic detected; Module 1 owns factual spend only",
+      "quarantineStatus": "BLOCKED",
+      "status": "PASS"
+    }
+  ]
+}

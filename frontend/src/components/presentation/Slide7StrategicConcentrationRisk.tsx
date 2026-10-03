@@ -11,7 +11,7 @@ export const Slide7StrategicConcentrationRisk: React.FC<PresentationSlideProps> 
   const strings = UI_STRINGS.presentation.strategicRisk;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -33,27 +33,27 @@ export const Slide7StrategicConcentrationRisk: React.FC<PresentationSlideProps> 
 
       {/* 4 Risk KPI Highlights */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-auto py-4">
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1">
           <p className="text-xs font-bold text-slate-500 uppercase">{strings.totalAtRiskLabel}</p>
-          <p className="text-2xl font-black font-mono text-slate-900 dark:text-white">{strings.totalAtRisk}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-slate-900 dark:text-white">{strings.totalAtRisk}</p>
           <span className="text-[10px] text-slate-400 block">Identified across 16 strategic commodities</span>
         </div>
 
         <div className="p-4 rounded-xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800/60 space-y-1">
           <p className="text-xs font-bold text-rose-700 dark:text-rose-400 uppercase">{strings.soleSourceItemsLabel}</p>
-          <p className="text-2xl font-black font-mono text-rose-600 dark:text-rose-400">{strings.soleSourceItems}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-rose-600 dark:text-rose-400">{strings.soleSourceItems}</p>
           <span className="text-[10px] text-rose-700 dark:text-rose-300 block">Critical single point of failure (100% volume)</span>
         </div>
 
         <div className="p-4 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800/60 space-y-1">
           <p className="text-xs font-bold text-amber-700 dark:text-amber-400 uppercase">{strings.dominantSecondaryLabel}</p>
-          <p className="text-2xl font-black font-mono text-amber-600 dark:text-amber-400">{strings.dominantSecondary}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-amber-600 dark:text-amber-400">{strings.dominantSecondary}</p>
           <span className="text-[10px] text-amber-700 dark:text-amber-300 block">Secondary vendor lacks capacity to absorb shocks</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1">
           <p className="text-xs font-bold text-slate-500 uppercase">{strings.avgConcentrationLabel}</p>
-          <p className="text-2xl font-black font-mono text-cyan-700 dark:text-cyan-400">{strings.avgConcentration}</p>
+          <p className="text-2xl font-black tabular-nums tracking-tight text-cyan-700 dark:text-cyan-400">{strings.avgConcentration}</p>
           <span className="text-[10px] text-slate-400 block">Extreme primary supplier dependency</span>
         </div>
       </div>
@@ -70,7 +70,7 @@ export const Slide7StrategicConcentrationRisk: React.FC<PresentationSlideProps> 
           </p>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-cyan-700 dark:text-cyan-400 font-bold">
             <SplitSquareVertical className="w-4 h-4 shrink-0" />
             <span>Immediate Sourcing Mitigation Roadmap</span>

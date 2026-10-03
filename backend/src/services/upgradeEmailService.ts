@@ -195,6 +195,68 @@ export class UpgradeEmailService {
     }
     return true;
   }
+
+  /**
+   * 3. Send Subscription Activation Code Email to Customer (Prompt 288 §20)
+   */
+  public async sendCustomerActivationEmail(params: {
+    customerName: string;
+    customerEmail: string;
+    tier: string;
+    activationCode: string;
+    expiresAt: string;
+  }): Promise<boolean> {
+    const subject = 'Your Procucev Subscription Is Ready for Activation';
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const htmlContent = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 650px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 12px; overflow: hidden; border: 1px solid #334155;">
+        <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 24px; text-align: left;">
+          <h2 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 800;">PROCUCEV SUBSCRIPTION ACTIVATION</h2>
+          <p style="margin: 4px 0 0 0; color: #e0f2fe; font-size: 13px;">Enterprise Procurement Intelligence Platform</p>
+        </div>
+        <div style="padding: 24px;">
+          <p style="font-size: 14px; color: #cbd5e1;">Dear <strong>${params.customerName}</strong>,</p>
+          <p style="font-size: 14px; color: #cbd5e1;">
+            Your Procucev subscription for <strong>${params.tier} Tier</strong> has been provisioned following confirmation of offline commercial terms.
+          </p>
+          <div style="background: #1e293b; border: 2px dashed #0284c7; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; text-transform: uppercase; color: #94a3b8; font-weight: 700;">One-Time Activation Code</p>
+            <div style="font-size: 26px; font-family: monospace; font-weight: 900; color: #38bdf8; letter-spacing: 2px;">
+              ${params.activationCode}
+            </div>
+            <p style="margin: 8px 0 0 0; font-size: 11px; color: #64748b;">Expires: ${new Date(params.expiresAt).toUTCString()}</p>
+          </div>
+          <p style="font-size: 13px; color: #94a3b8;">
+            To activate your subscription, log in to the portal at <a href="${loginUrl}" style="color: #38bdf8;">${loginUrl}</a> and enter this activation code when prompted.
+          </p>
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #334155; font-size: 12px; color: #64748b;">
+            Procucev Client Support: support@procucev.com
+          </div>
+        </div>
+      </div>
+    `;
+
+    logger.info('Customer subscription activation email dispatched', {
+      customerEmail: params.customerEmail,
+      tier: params.tier
+    });
+
+    if (this.transporter) {
+      try {
+        await this.transporter.sendMail({
+          from: process.env.SMTP_FROM || '"PROCUCEV" <support@procucev.com>',
+          to: params.customerEmail,
+          subject,
+          html: htmlContent
+        });
+      } catch (err: unknown) {
+        logger.error('Failed to send subscription activation email via SMTP', {
+          error: err instanceof Error ? err.message : String(err)
+        });
+      }
+    }
+    return true;
+  }
 }
 
 export const upgradeEmailService = new UpgradeEmailService();

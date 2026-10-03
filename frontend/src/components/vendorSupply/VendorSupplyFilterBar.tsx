@@ -22,7 +22,7 @@ export const VendorSupplyFilterBar: React.FC<VendorSupplyFilterBarProps> = ({
   const hasActiveFilters = Boolean(searchQuery || categoryFilter !== 'ALL' || highSpendOnly || riskOnly);
 
   return (
-    <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+    <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
@@ -33,7 +33,7 @@ export const VendorSupplyFilterBar: React.FC<VendorSupplyFilterBarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={strings.tableSearchPlaceholder}
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white"
           />
         </div>
 
@@ -45,8 +45,8 @@ export const VendorSupplyFilterBar: React.FC<VendorSupplyFilterBarProps> = ({
             onClick={() => onCategoryFilterChange('ALL')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
               categoryFilter === 'ALL'
-                ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                ? 'bg-white text-white dark:bg-white dark:text-slate-900'
+                : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 hover:bg-slate-200'
             }`}
           >
             {strings.filterAll}
@@ -82,7 +82,7 @@ export const VendorSupplyFilterBar: React.FC<VendorSupplyFilterBarProps> = ({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1 ${
               highSpendOnly
                 ? 'bg-purple-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-300 hover:bg-slate-200'
             }`}
           >
             <Filter className="w-3 h-3" />
@@ -95,7 +95,7 @@ export const VendorSupplyFilterBar: React.FC<VendorSupplyFilterBarProps> = ({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center space-x-1 ${
               riskOnly
                 ? 'bg-rose-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-300 hover:bg-slate-200'
             }`}
           >
             <AlertTriangle className="w-3 h-3" />

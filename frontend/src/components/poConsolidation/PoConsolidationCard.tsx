@@ -17,7 +17,7 @@ export const PoConsolidationCard: React.FC<PoConsolidationCardProps> = ({
   const currentOption = item.cadence_options[selectedCadence];
 
   return (
-    <div className="flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+    <div className="flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-white border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
       <div className="space-y-3.5">
         {/* Top Badges */}
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -26,7 +26,7 @@ export const PoConsolidationCard: React.FC<PoConsolidationCardProps> = ({
             <span>{UI_STRINGS.poConsolidation.monthlyPoBadge(item.avg_pos_per_month)}</span>
           </span>
 
-          <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-slate-100 text-slate-700 dark:bg-[#EEF4FC] dark:text-slate-300">
             {item.category}
           </span>
         </div>
@@ -47,7 +47,7 @@ export const PoConsolidationCard: React.FC<PoConsolidationCardProps> = ({
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-100 dark:border-slate-800/80 text-xs">
+        <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl border border-slate-100 dark:border-slate-800/80 text-xs">
           <div>
             <div className="text-[10px] font-medium text-slate-400 uppercase">
               {UI_STRINGS.poConsolidation.annualSpendLabel}
@@ -87,7 +87,7 @@ export const PoConsolidationCard: React.FC<PoConsolidationCardProps> = ({
                   className={`py-1.5 px-1 rounded text-[10px] font-semibold text-center transition-all ${
                     active
                       ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                      : 'bg-white dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#DCE7F5] border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   <div className="truncate">
@@ -139,7 +139,7 @@ export const PoConsolidationCard: React.FC<PoConsolidationCardProps> = ({
         <button
           type="button"
           onClick={() => onOpenModal(item)}
-          className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
+          className="w-full py-2 px-3 rounded-xl bg-white hover:bg-[#EEF4FC] dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-colors"
         >
           <span>{UI_STRINGS.poConsolidation.exploreConsolidationBtn}</span>
           <ArrowUpRight className="w-3.5 h-3.5" />

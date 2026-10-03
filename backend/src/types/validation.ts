@@ -20,7 +20,10 @@ import type {
   logsPurgeSchema,
   graphQLRequestSchema,
   encryptRequestSchema,
-  decryptRequestSchema
+  decryptRequestSchema,
+  detectUploadDomainSchema,
+  uploadCommoditySourceSchema,
+  approveCommodityDataSchema
 } from '../constants/validation';
 
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
@@ -38,6 +41,9 @@ export type LogsPurgeInput = z.infer<typeof logsPurgeSchema>;
 export type GraphQLRequestInput = z.infer<typeof graphQLRequestSchema>;
 export type EncryptRequestInput = z.infer<typeof encryptRequestSchema>;
 export type DecryptRequestInput = z.infer<typeof decryptRequestSchema>;
+export type DetectUploadDomainInput = z.infer<typeof detectUploadDomainSchema>;
+export type UploadCommoditySourceInput = z.infer<typeof uploadCommoditySourceSchema>;
+export type ApproveCommodityDataInput = z.infer<typeof approveCommodityDataSchema>;
 
 export interface ValidationErrorDetail {
   path: string;

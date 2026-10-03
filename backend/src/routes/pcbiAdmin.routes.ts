@@ -103,5 +103,13 @@ router.get('/platform/acceptance-tests', (req, res) => pcbiAdminController.runPl
 router.get('/platform/dashboard', (req, res) => pcbiAdminController.getPlatformManagementDashboard(req, res));
 router.post('/platform/generate-audit-json', (req, res) => pcbiAdminController.generatePlatformAuditJson(req, res));
 
+// PCBI Commodity Data Lab (Prompt 218: Dedicated Commodity Research Workspace)
+router.get('/data-lab/dashboard', (req, res) => pcbiAdminController.getCommodityDataLabDashboard(req, res));
+router.get('/data-lab/queue', (req, res) => pcbiAdminController.getCommodityResearchQueue(req, res));
+router.get('/data-lab/commodity/:pcbiId', (req, res) => pcbiAdminController.getCommodityWorkspaceDetail(req, res));
+router.post('/data-lab/detect-domain', (req, res) => pcbiAdminController.detectUploadDomain(req, res));
+router.post('/data-lab/upload-source', (req, res) => pcbiAdminController.uploadCommoditySource(req, res));
+router.post('/data-lab/approve', (req, res) => pcbiAdminController.approveCommodityData(req, res));
+
 export default router;
 

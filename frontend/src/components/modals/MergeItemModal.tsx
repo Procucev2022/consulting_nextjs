@@ -66,9 +66,9 @@ export const MergeItemModal: React.FC<MergeItemModalProps & {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-indigo-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
+      <div className="relative w-full max-w-lg bg-white dark:bg-white border border-slate-200 dark:border-indigo-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-indigo-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-indigo-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-300 dark:border-indigo-500/30">
               <Package className="w-5 h-5" />
@@ -92,7 +92,7 @@ export const MergeItemModal: React.FC<MergeItemModalProps & {
 
         {/* Body */}
         <div className="p-5 space-y-4">
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
             <div className="flex items-start justify-between gap-2">
               <div className="space-y-1">
                 <span className="text-slate-500 dark:text-slate-400 block font-medium">
@@ -114,7 +114,7 @@ export const MergeItemModal: React.FC<MergeItemModalProps & {
                 type="button"
                 onClick={handleIgnore}
                 title={UI_STRINGS.modals.mergeItem.ignoreButtonTooltip}
-                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer shadow-2xs hover:shadow-xs"
+                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-200/80 dark:bg-[#EEF4FC] hover:bg-slate-300 dark:hover:bg-[#DCE7F5] rounded-lg border border-slate-300 dark:border-slate-700 transition-colors flex items-center space-x-1.5 shrink-0 cursor-pointer shadow-2xs hover:shadow-xs"
               >
                 <EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 <span>{UI_STRINGS.modals.mergeItem.ignoreButton}</span>
@@ -149,14 +149,14 @@ export const MergeItemModal: React.FC<MergeItemModalProps & {
                     className={`p-3 rounded-xl border cursor-pointer transition-all ${
                       isSelected
                         ? 'bg-indigo-50 border-indigo-500 shadow-sm dark:bg-indigo-950/40 dark:border-indigo-500 dark:shadow-indigo-500/10'
-                        : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        : 'bg-slate-50 dark:bg-[#F8FBFE] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-sm text-slate-900 dark:text-white">
                         {master.name}
                       </span>
-                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-indigo-800 dark:text-indigo-400">
+                      <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-slate-200 dark:bg-[#EEF4FC] text-indigo-800 dark:text-indigo-400">
                         {master.code}
                       </span>
                     </div>
@@ -169,7 +169,7 @@ export const MergeItemModal: React.FC<MergeItemModalProps & {
                       {master.aliases.map((alias, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-400 px-2 py-0.5 rounded"
+                          className="text-[10px] bg-slate-200 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-400 px-2 py-0.5 rounded"
                         >
                           {alias}
                         </span>
@@ -187,7 +187,7 @@ export const MergeItemModal: React.FC<MergeItemModalProps & {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-indigo-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+        <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-indigo-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <button
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg cursor-pointer"

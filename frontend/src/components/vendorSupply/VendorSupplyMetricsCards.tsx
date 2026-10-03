@@ -9,7 +9,7 @@ export const VendorSupplyMetricsCards: React.FC<VendorSupplyMetricsCardsProps> =
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Card 1: Total Top 50 Spend */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
+      <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
           <span className="text-xs font-semibold uppercase tracking-wider">{strings.kpiTotalSpend}</span>
           <TrendingUp className="w-4 h-4 text-emerald-600" />
@@ -23,7 +23,7 @@ export const VendorSupplyMetricsCards: React.FC<VendorSupplyMetricsCardsProps> =
       </div>
 
       {/* Card 2: Multi-Category Vendors */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-amber-200 dark:border-amber-800/80 shadow-xs">
+      <div className="p-4 rounded-2xl bg-white dark:bg-white border border-amber-200 dark:border-amber-800/80 shadow-xs">
         <div className="flex items-center justify-between text-amber-700 dark:text-amber-400 mb-1">
           <span className="text-xs font-semibold uppercase tracking-wider">{strings.kpiMultiVendors}</span>
           <Layers className="w-4 h-4 text-amber-600" />
@@ -42,7 +42,7 @@ export const VendorSupplyMetricsCards: React.FC<VendorSupplyMetricsCardsProps> =
       </div>
 
       {/* Card 3: Single-Category Specialists */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-800/80 shadow-xs">
+      <div className="p-4 rounded-2xl bg-white dark:bg-white border border-emerald-200 dark:border-emerald-800/80 shadow-xs">
         <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 mb-1">
           <span className="text-xs font-semibold uppercase tracking-wider">{strings.kpiSingleVendors}</span>
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
@@ -65,7 +65,7 @@ export const VendorSupplyMetricsCards: React.FC<VendorSupplyMetricsCardsProps> =
         className={`p-4 rounded-2xl border shadow-xs ${
           overview.high_spend_multi_category_alarm
             ? 'bg-rose-50/60 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800'
-            : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800'
+            : 'bg-white dark:bg-white border-slate-200 dark:border-slate-800'
         }`}
       >
         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">

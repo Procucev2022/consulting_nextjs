@@ -1,0 +1,161 @@
+{
+  "auditTimestamp": "2026-10-03T03:51:13.106Z",
+  "version": "MODULE_2_OPPORTUNITY_ATTRIBUTION_LEDGER_V1.0",
+  "totalGrossOpportunityInr": 29104500,
+  "totalOverlapDeductedInr": 0,
+  "totalNetDefensibleOpportunityInr": 29104500,
+  "sumOfNetAttributedInr": 29104500,
+  "reconciled": true,
+  "benefitMechanismsCovered": [
+    "PRICE_ARBITRAGE",
+    "SUPPLIER_COMPETITION",
+    "E_AUCTION",
+    "VOLUME_BUNDLING",
+    "VENDOR_CONSOLIDATION",
+    "TAIL_SUPPLIER_REDUCTION",
+    "SPECIFICATION_STANDARDIZATION",
+    "ORDER_LOT_OPTIMIZATION",
+    "CONTRACT_VS_SPOT_OPTIMIZATION",
+    "COMMERCIAL_TERM_OPPORTUNITY"
+  ],
+  "ledgerEntries": [
+    {
+      "OPPORTUNITY_ID": "OPP-STEEL-001",
+      "CATEGORY": "Structural Steel",
+      "ITEM": "Carbon Steel Plate 12mm IS2062",
+      "SUPPLIER": "Tata Steel / JSW Steel Pool",
+      "TRANSACTION_SCOPE": [
+        "TX-SS-001",
+        "TX-SS-002",
+        "TX-SS-005",
+        "TX-SS-006"
+      ],
+      "OPPORTUNITY_TYPE": "PRICE_ARBITRAGE",
+      "CURRENT_SPEND": 373450000,
+      "REFERENCE_SPEND": 350200000,
+      "GROSS_OPPORTUNITY": 23250000,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_STEEL",
+      "ATTRIBUTION_STATUS": "ATTRIBUTED",
+      "NET_ATTRIBUTED_OPPORTUNITY": 23250000
+    },
+    {
+      "OPPORTUNITY_ID": "OPP-STEEL-002",
+      "CATEGORY": "Structural Steel",
+      "ITEM": "Carbon Steel Plate 12mm IS2062",
+      "SUPPLIER": "Competitive Steel Suppliers",
+      "TRANSACTION_SCOPE": [
+        "TX-SS-001",
+        "TX-SS-002",
+        "TX-SS-003",
+        "TX-SS-004"
+      ],
+      "OPPORTUNITY_TYPE": "E_AUCTION",
+      "CURRENT_SPEND": 373450000,
+      "REFERENCE_SPEND": 350200000,
+      "GROSS_OPPORTUNITY": 23250000,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_STEEL",
+      "ATTRIBUTION_STATUS": "OVERLAPPING_DEDUCTED",
+      "NET_ATTRIBUTED_OPPORTUNITY": 0
+    },
+    {
+      "OPPORTUNITY_ID": "OPP-FASTENERS-001",
+      "CATEGORY": "Industrial Fasteners",
+      "ITEM": "Hex Bolt & Nut M20 Grade 8",
+      "SUPPLIER": "Bolt Masters India / Fastek Pool",
+      "TRANSACTION_SCOPE": [
+        "TX-IF-001",
+        "TX-IF-002",
+        "TX-IF-003",
+        "TX-IF-004",
+        "TX-IF-005",
+        "TX-IF-006"
+      ],
+      "OPPORTUNITY_TYPE": "VENDOR_CONSOLIDATION",
+      "CURRENT_SPEND": 12710000,
+      "REFERENCE_SPEND": 7600000,
+      "GROSS_OPPORTUNITY": 5110000,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_FASTENERS",
+      "ATTRIBUTION_STATUS": "ATTRIBUTED",
+      "NET_ATTRIBUTED_OPPORTUNITY": 5110000
+    },
+    {
+      "OPPORTUNITY_ID": "OPP-LUBRICANTS-001",
+      "CATEGORY": "Lubricants",
+      "ITEM": "Hydraulic Oil ISO VG 46",
+      "SUPPLIER": "Castrol / Gulf / SERVO",
+      "TRANSACTION_SCOPE": [
+        "TX-LB-001",
+        "TX-LB-002",
+        "TX-LB-003",
+        "TX-LB-004",
+        "TX-LB-005",
+        "TX-LB-006"
+      ],
+      "OPPORTUNITY_TYPE": "VOLUME_BUNDLING",
+      "CURRENT_SPEND": 9605000,
+      "REFERENCE_SPEND": 9120000,
+      "GROSS_OPPORTUNITY": 485000,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_LUBRICANTS",
+      "ATTRIBUTION_STATUS": "ATTRIBUTED",
+      "NET_ATTRIBUTED_OPPORTUNITY": 485000
+    },
+    {
+      "OPPORTUNITY_ID": "OPP-CABLES-001",
+      "CATEGORY": "Electrical Cables",
+      "ITEM": "Armoured Cable 6 sqmm IS1554",
+      "SUPPLIER": "Polycab / Havells / KEI Pool",
+      "TRANSACTION_SCOPE": [
+        "TX-EC-001",
+        "TX-EC-002",
+        "TX-EC-003",
+        "TX-EC-004",
+        "TX-EC-005"
+      ],
+      "OPPORTUNITY_TYPE": "E_AUCTION",
+      "CURRENT_SPEND": 4929000,
+      "REFERENCE_SPEND": 4702500,
+      "GROSS_OPPORTUNITY": 226500,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_CABLES",
+      "ATTRIBUTION_STATUS": "ATTRIBUTED",
+      "NET_ATTRIBUTED_OPPORTUNITY": 226500
+    },
+    {
+      "OPPORTUNITY_ID": "OPP-SAFETY-001",
+      "CATEGORY": "Safety Equipment",
+      "ITEM": "Safety Helmet & Gloves",
+      "SUPPLIER": "3M / Karam / Honeywell Pool",
+      "TRANSACTION_SCOPE": [
+        "TX-SE-001",
+        "TX-SE-002",
+        "TX-SE-003",
+        "TX-SE-004",
+        "TX-SE-005"
+      ],
+      "OPPORTUNITY_TYPE": "COMMERCIAL_TERM_OPPORTUNITY",
+      "CURRENT_SPEND": 1099500,
+      "REFERENCE_SPEND": 1066500,
+      "GROSS_OPPORTUNITY": 33000,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_SAFETY",
+      "ATTRIBUTION_STATUS": "ATTRIBUTED",
+      "NET_ATTRIBUTED_OPPORTUNITY": 33000
+    },
+    {
+      "OPPORTUNITY_ID": "OPP-PACKAGING-001",
+      "CATEGORY": "Packaging Materials",
+      "ITEM": "Standard Corrugated Box B-Flute",
+      "SUPPLIER": "Alpha / Beta / Gamma Packaging",
+      "TRANSACTION_SCOPE": [
+        "TX-UP-001",
+        "TX-UP-002",
+        "TX-UP-003"
+      ],
+      "OPPORTUNITY_TYPE": "PRICE_ARBITRAGE",
+      "CURRENT_SPEND": 600000,
+      "REFERENCE_SPEND": 600000,
+      "GROSS_OPPORTUNITY": 0,
+      "OVERLAP_GROUP": "OVERLAP_GROUP_PACKAGING",
+      "ATTRIBUTION_STATUS": "NOT_QUANTIFIABLE",
+      "NET_ATTRIBUTED_OPPORTUNITY": 0
+    }
+  ]
+}

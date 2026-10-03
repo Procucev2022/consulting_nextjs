@@ -32,5 +32,20 @@ export * from './pcbiProductionPilot';
 export * from './pcbiProductionReady';
 export * from './pcbiCommodityCoverage';
 export * from './pcbiPlatformIntegration';
-
-
+export * from './pcbiCommodityDataLab';
+export * from './statusDesign';
+export * from './module2StrategicSourcing';
+export * from './module2OpportunityIntelligence';
+export * from './module2EvidenceChain';
+export * from './executiveBriefExportStrings';
+export * from './savingsAssumptions';
+export * from './savingsOpportunityRegisterConstants';
+export * from './executiveBriefOpportunityData';
+export * from './executiveBriefMasterRegister';
+export * from './executiveBriefMasterRegisterPart1';
+export * from './executiveBriefMasterRegisterPart2';
+export * from './executiveBriefPortfolioSections';
+export * from './executiveBriefGovernance';
+export * from './executiveBriefPresentationConstants';
+export * from './subscription';
+export * from './theme';

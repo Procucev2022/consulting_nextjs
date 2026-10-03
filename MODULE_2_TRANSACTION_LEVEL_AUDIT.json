@@ -1,0 +1,1201 @@
+{
+  "auditTimestamp": "2026-10-03T03:51:13.049Z",
+  "version": "MODULE_2_TRANSACTION_LEVEL_AUDIT_V3.0",
+  "totalTransactions": 33,
+  "totalSpendInr": 401093500,
+  "threeLayerModelSummary": {
+    "layerA_ObservedFacts": "Verified historical customer transactions including PO, date, quantity, UOM, currency, and unit price",
+    "layerB_CalculatedOpportunities": "Mathematically demonstrated price arbitrage and volume leverage based exclusively on comparable transactions",
+    "layerC_ExecutionDependentPotential": "Competitive event and negotiation ranges dependent on market execution without realized savings guarantees"
+  },
+  "transactions": [
+    {
+      "transactionId": "TX-SS-001",
+      "poNumber": "PO-SS-001",
+      "date": "2025-01-10",
+      "supplier": "Tata Steel Ltd",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 1200,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 64000,
+      "totalValue": 76800000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 1200,
+      "opportunityCalculation": "(64000 - 57000) * 1200 = 8400000",
+      "finalOpportunityRange": {
+        "conservative": 5880000,
+        "base": 8400000,
+        "stretch": 10920000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 1200 MT at ₹64000/MT on 2025-01-10",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹8400000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-002",
+      "poNumber": "PO-SS-002",
+      "date": "2025-01-15",
+      "supplier": "JSW Steel Ltd",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 1000,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 60000,
+      "totalValue": 60000000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 1000,
+      "opportunityCalculation": "(60000 - 57000) * 1000 = 3000000",
+      "finalOpportunityRange": {
+        "conservative": 2100000,
+        "base": 3000000,
+        "stretch": 3900000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 1000 MT at ₹60000/MT on 2025-01-15",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹3000000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-003",
+      "poNumber": "PO-SS-003",
+      "date": "2025-02-20",
+      "supplier": "Jindal Steel & Power",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 800,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 58500,
+      "totalValue": 46800000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 800,
+      "opportunityCalculation": "(58500 - 57000) * 800 = 1200000",
+      "finalOpportunityRange": {
+        "conservative": 840000,
+        "base": 1200000,
+        "stretch": 1560000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 800 MT at ₹58500/MT on 2025-02-20",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹1200000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-004",
+      "poNumber": "PO-SS-004",
+      "date": "2025-02-25",
+      "supplier": "Steel Authority of India",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 600,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 59000,
+      "totalValue": 35400000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 600,
+      "opportunityCalculation": "(59000 - 57000) * 600 = 1200000",
+      "finalOpportunityRange": {
+        "conservative": 840000,
+        "base": 1200000,
+        "stretch": 1560000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 600 MT at ₹59000/MT on 2025-02-25",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹1200000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-005",
+      "poNumber": "PO-SS-005",
+      "date": "2025-03-10",
+      "supplier": "Tata Steel Ltd",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 900,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 63000,
+      "totalValue": 56700000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 900,
+      "opportunityCalculation": "(63000 - 57000) * 900 = 5400000",
+      "finalOpportunityRange": {
+        "conservative": 3780000,
+        "base": 5400000,
+        "stretch": 7020000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 900 MT at ₹63000/MT on 2025-03-10",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹5400000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-006",
+      "poNumber": "PO-SS-006",
+      "date": "2025-03-15",
+      "supplier": "JSW Steel Ltd",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 700,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 61000,
+      "totalValue": 42700000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 700,
+      "opportunityCalculation": "(61000 - 57000) * 700 = 2800000",
+      "finalOpportunityRange": {
+        "conservative": 1960000,
+        "base": 2800000,
+        "stretch": 3640000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 700 MT at ₹61000/MT on 2025-03-15",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹2800000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-007",
+      "poNumber": "PO-SS-007",
+      "date": "2025-04-05",
+      "supplier": "Steel Authority of India",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 500,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 59500,
+      "totalValue": 29750000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 500,
+      "opportunityCalculation": "(59500 - 57000) * 500 = 1250000",
+      "finalOpportunityRange": {
+        "conservative": 875000,
+        "base": 1250000,
+        "stretch": 1625000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 500 MT at ₹59500/MT on 2025-04-05",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹1250000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SS-008",
+      "poNumber": "PO-SS-008",
+      "date": "2025-04-20",
+      "supplier": "Jindal Steel & Power",
+      "category": "Structural Steel",
+      "commodity": "Structural Steel",
+      "specification": "Carbon Steel Plate 12mm IS2062",
+      "quantity": 400,
+      "uom": "MT",
+      "currency": "INR",
+      "unitPrice": 57000,
+      "totalValue": 22800000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 57000,
+      "targetPrice": 57000,
+      "volume": 400,
+      "opportunityCalculation": "(57000 - 57000) * 400 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 400 MT at ₹57000/MT on 2025-04-20",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-IF-001",
+      "poNumber": "PO-IF-001",
+      "date": "2025-01-08",
+      "supplier": "Bolt Masters India",
+      "category": "Industrial Fasteners",
+      "commodity": "Industrial Fasteners",
+      "specification": "Hex Bolt M20 Grade 8.8",
+      "quantity": 50000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 85,
+      "totalValue": 4250000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 40,
+      "targetPrice": 40,
+      "volume": 50000,
+      "opportunityCalculation": "(85 - 40) * 50000 = 2250000",
+      "finalOpportunityRange": {
+        "conservative": 1575000,
+        "base": 2250000,
+        "stretch": 2925000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 50000 EA at ₹85/EA on 2025-01-08",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹2250000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-IF-002",
+      "poNumber": "PO-IF-002",
+      "date": "2025-01-22",
+      "supplier": "Fastek Components",
+      "category": "Industrial Fasteners",
+      "commodity": "Industrial Fasteners",
+      "specification": "Hex Bolt M20 Grade 8.8",
+      "quantity": 30000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 78,
+      "totalValue": 2340000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 40,
+      "targetPrice": 40,
+      "volume": 30000,
+      "opportunityCalculation": "(78 - 40) * 30000 = 1140000",
+      "finalOpportunityRange": {
+        "conservative": 798000,
+        "base": 1140000,
+        "stretch": 1482000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 30000 EA at ₹78/EA on 2025-01-22",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹1140000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-IF-003",
+      "poNumber": "PO-IF-003",
+      "date": "2025-02-10",
+      "supplier": "Harsco Fasteners",
+      "category": "Industrial Fasteners",
+      "commodity": "Industrial Fasteners",
+      "specification": "Hex Bolt M20 Grade 8.8",
+      "quantity": 40000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 82,
+      "totalValue": 3280000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 40,
+      "targetPrice": 40,
+      "volume": 40000,
+      "opportunityCalculation": "(82 - 40) * 40000 = 1680000",
+      "finalOpportunityRange": {
+        "conservative": 1176000,
+        "base": 1680000,
+        "stretch": 2184000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 40000 EA at ₹82/EA on 2025-02-10",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹1680000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-IF-004",
+      "poNumber": "PO-IF-004",
+      "date": "2025-02-25",
+      "supplier": "Bolt Masters India",
+      "category": "Industrial Fasteners",
+      "commodity": "Industrial Fasteners",
+      "specification": "Hex Nut M20 Grade 8",
+      "quantity": 50000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 42,
+      "totalValue": 2100000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 40,
+      "targetPrice": 40,
+      "volume": 50000,
+      "opportunityCalculation": "(42 - 40) * 50000 = 100000",
+      "finalOpportunityRange": {
+        "conservative": 70000,
+        "base": 100000,
+        "stretch": 130000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 50000 EA at ₹42/EA on 2025-02-25",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹100000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-IF-005",
+      "poNumber": "PO-IF-005",
+      "date": "2025-03-12",
+      "supplier": "Fastek Components",
+      "category": "Industrial Fasteners",
+      "commodity": "Industrial Fasteners",
+      "specification": "Hex Nut M20 Grade 8",
+      "quantity": 30000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 38,
+      "totalValue": 1140000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 40,
+      "targetPrice": 40,
+      "volume": 30000,
+      "opportunityCalculation": "(38 - 40) * 30000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 30000 EA at ₹38/EA on 2025-03-12",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-IF-006",
+      "poNumber": "PO-IF-006",
+      "date": "2025-03-28",
+      "supplier": "Harsco Fasteners",
+      "category": "Industrial Fasteners",
+      "commodity": "Industrial Fasteners",
+      "specification": "Hex Nut M20 Grade 8",
+      "quantity": 20000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 40,
+      "totalValue": 800000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 40,
+      "targetPrice": 40,
+      "volume": 20000,
+      "opportunityCalculation": "(40 - 40) * 20000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 20000 EA at ₹40/EA on 2025-03-28",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SE-001",
+      "poNumber": "PO-SE-001",
+      "date": "2025-01-05",
+      "supplier": "3M Safety Products",
+      "category": "Safety Equipment",
+      "commodity": "Safety Equipment",
+      "specification": "Safety Helmet HDPE Class C",
+      "quantity": 500,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 450,
+      "totalValue": 225000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 420,
+      "targetPrice": 420,
+      "volume": 500,
+      "opportunityCalculation": "(450 - 420) * 500 = 15000",
+      "finalOpportunityRange": {
+        "conservative": 10500,
+        "base": 15000,
+        "stretch": 19500
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 500 EA at ₹450/EA on 2025-01-05",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹15000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SE-002",
+      "poNumber": "PO-SE-002",
+      "date": "2025-02-15",
+      "supplier": "Honeywell Safety",
+      "category": "Safety Equipment",
+      "commodity": "Safety Equipment",
+      "specification": "Safety Helmet HDPE Class C",
+      "quantity": 300,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 480,
+      "totalValue": 144000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 420,
+      "targetPrice": 420,
+      "volume": 300,
+      "opportunityCalculation": "(480 - 420) * 300 = 18000",
+      "finalOpportunityRange": {
+        "conservative": 12600,
+        "base": 18000,
+        "stretch": 23400
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 300 EA at ₹480/EA on 2025-02-15",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹18000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SE-003",
+      "poNumber": "PO-SE-003",
+      "date": "2025-03-20",
+      "supplier": "Karam Industries",
+      "category": "Safety Equipment",
+      "commodity": "Safety Equipment",
+      "specification": "Safety Helmet HDPE Class C",
+      "quantity": 400,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 420,
+      "totalValue": 168000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 420,
+      "targetPrice": 420,
+      "volume": 400,
+      "opportunityCalculation": "(420 - 420) * 400 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 400 EA at ₹420/EA on 2025-03-20",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SE-004",
+      "poNumber": "PO-SE-004",
+      "date": "2025-01-18",
+      "supplier": "3M Safety Products",
+      "category": "Safety Equipment",
+      "commodity": "Safety Equipment",
+      "specification": "Leather Safety Gloves IS6994",
+      "quantity": 2000,
+      "uom": "PR",
+      "currency": "INR",
+      "unitPrice": 165,
+      "totalValue": 330000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 420,
+      "targetPrice": 420,
+      "volume": 2000,
+      "opportunityCalculation": "(165 - 420) * 2000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 2000 PR at ₹165/PR on 2025-01-18",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-SE-005",
+      "poNumber": "PO-SE-005",
+      "date": "2025-02-28",
+      "supplier": "Karam Industries",
+      "category": "Safety Equipment",
+      "commodity": "Safety Equipment",
+      "specification": "Leather Safety Gloves IS6994",
+      "quantity": 1500,
+      "uom": "PR",
+      "currency": "INR",
+      "unitPrice": 155,
+      "totalValue": 232500,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 420,
+      "targetPrice": 420,
+      "volume": 1500,
+      "opportunityCalculation": "(155 - 420) * 1500 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 1500 PR at ₹155/PR on 2025-02-28",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-EC-001",
+      "poNumber": "PO-EC-001",
+      "date": "2025-01-12",
+      "supplier": "Polycab India Ltd",
+      "category": "Electrical Cables",
+      "commodity": "Electrical Cables",
+      "specification": "Armoured Cable 6 sqmm IS1554",
+      "quantity": 5000,
+      "uom": "MTR",
+      "currency": "INR",
+      "unitPrice": 310,
+      "totalValue": 1550000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 285,
+      "targetPrice": 285,
+      "volume": 5000,
+      "opportunityCalculation": "(310 - 285) * 5000 = 125000",
+      "finalOpportunityRange": {
+        "conservative": 87500,
+        "base": 125000,
+        "stretch": 162500
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 5000 MTR at ₹310/MTR on 2025-01-12",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹125000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-EC-002",
+      "poNumber": "PO-EC-002",
+      "date": "2025-01-28",
+      "supplier": "Havells India Ltd",
+      "category": "Electrical Cables",
+      "commodity": "Electrical Cables",
+      "specification": "Armoured Cable 6 sqmm IS1554",
+      "quantity": 3000,
+      "uom": "MTR",
+      "currency": "INR",
+      "unitPrice": 295,
+      "totalValue": 885000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 285,
+      "targetPrice": 285,
+      "volume": 3000,
+      "opportunityCalculation": "(295 - 285) * 3000 = 30000",
+      "finalOpportunityRange": {
+        "conservative": 21000,
+        "base": 30000,
+        "stretch": 39000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 3000 MTR at ₹295/MTR on 2025-01-28",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹30000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-EC-003",
+      "poNumber": "PO-EC-003",
+      "date": "2025-02-14",
+      "supplier": "KEI Industries Ltd",
+      "category": "Electrical Cables",
+      "commodity": "Electrical Cables",
+      "specification": "Armoured Cable 6 sqmm IS1554",
+      "quantity": 4000,
+      "uom": "MTR",
+      "currency": "INR",
+      "unitPrice": 285,
+      "totalValue": 1140000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 285,
+      "targetPrice": 285,
+      "volume": 4000,
+      "opportunityCalculation": "(285 - 285) * 4000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 4000 MTR at ₹285/MTR on 2025-02-14",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-EC-004",
+      "poNumber": "PO-EC-004",
+      "date": "2025-03-08",
+      "supplier": "Polycab India Ltd",
+      "category": "Electrical Cables",
+      "commodity": "Electrical Cables",
+      "specification": "Armoured Cable 6 sqmm IS1554",
+      "quantity": 2500,
+      "uom": "MTR",
+      "currency": "INR",
+      "unitPrice": 308,
+      "totalValue": 770000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 285,
+      "targetPrice": 285,
+      "volume": 2500,
+      "opportunityCalculation": "(308 - 285) * 2500 = 57500",
+      "finalOpportunityRange": {
+        "conservative": 40250,
+        "base": 57500,
+        "stretch": 74750
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 2500 MTR at ₹308/MTR on 2025-03-08",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹57500",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-EC-005",
+      "poNumber": "PO-EC-005",
+      "date": "2025-03-22",
+      "supplier": "Havells India Ltd",
+      "category": "Electrical Cables",
+      "commodity": "Electrical Cables",
+      "specification": "Armoured Cable 6 sqmm IS1554",
+      "quantity": 2000,
+      "uom": "MTR",
+      "currency": "INR",
+      "unitPrice": 292,
+      "totalValue": 584000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 285,
+      "targetPrice": 285,
+      "volume": 2000,
+      "opportunityCalculation": "(292 - 285) * 2000 = 14000",
+      "finalOpportunityRange": {
+        "conservative": 9800,
+        "base": 14000,
+        "stretch": 18200
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 2000 MTR at ₹292/MTR on 2025-03-22",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹14000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-LB-001",
+      "poNumber": "PO-LB-001",
+      "date": "2025-01-06",
+      "supplier": "Castrol India Ltd",
+      "category": "Lubricants",
+      "commodity": "Lubricants",
+      "specification": "Hydraulic Oil ISO VG 46",
+      "quantity": 10000,
+      "uom": "LTR",
+      "currency": "INR",
+      "unitPrice": 180,
+      "totalValue": 1800000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 160,
+      "targetPrice": 160,
+      "volume": 10000,
+      "opportunityCalculation": "(180 - 160) * 10000 = 200000",
+      "finalOpportunityRange": {
+        "conservative": 140000,
+        "base": 200000,
+        "stretch": 260000
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 10000 LTR at ₹180/LTR on 2025-01-06",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹200000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-LB-002",
+      "poNumber": "PO-LB-002",
+      "date": "2025-01-20",
+      "supplier": "Gulf Oil Corporation",
+      "category": "Lubricants",
+      "commodity": "Lubricants",
+      "specification": "Hydraulic Oil ISO VG 46",
+      "quantity": 8000,
+      "uom": "LTR",
+      "currency": "INR",
+      "unitPrice": 168,
+      "totalValue": 1344000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 160,
+      "targetPrice": 160,
+      "volume": 8000,
+      "opportunityCalculation": "(168 - 160) * 8000 = 64000",
+      "finalOpportunityRange": {
+        "conservative": 44800,
+        "base": 64000,
+        "stretch": 83200
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 8000 LTR at ₹168/LTR on 2025-01-20",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹64000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-LB-003",
+      "poNumber": "PO-LB-003",
+      "date": "2025-02-08",
+      "supplier": "IOC SERVO Lubricants",
+      "category": "Lubricants",
+      "commodity": "Lubricants",
+      "specification": "Hydraulic Oil ISO VG 46",
+      "quantity": 12000,
+      "uom": "LTR",
+      "currency": "INR",
+      "unitPrice": 162,
+      "totalValue": 1944000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 160,
+      "targetPrice": 160,
+      "volume": 12000,
+      "opportunityCalculation": "(162 - 160) * 12000 = 24000",
+      "finalOpportunityRange": {
+        "conservative": 16800,
+        "base": 24000,
+        "stretch": 31200
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 12000 LTR at ₹162/LTR on 2025-02-08",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹24000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-LB-004",
+      "poNumber": "PO-LB-004",
+      "date": "2025-02-22",
+      "supplier": "Castrol India Ltd",
+      "category": "Lubricants",
+      "commodity": "Lubricants",
+      "specification": "Hydraulic Oil ISO VG 46",
+      "quantity": 9000,
+      "uom": "LTR",
+      "currency": "INR",
+      "unitPrice": 178,
+      "totalValue": 1602000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 160,
+      "targetPrice": 160,
+      "volume": 9000,
+      "opportunityCalculation": "(178 - 160) * 9000 = 162000",
+      "finalOpportunityRange": {
+        "conservative": 113400,
+        "base": 162000,
+        "stretch": 210600
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 9000 LTR at ₹178/LTR on 2025-02-22",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹162000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-LB-005",
+      "poNumber": "PO-LB-005",
+      "date": "2025-03-10",
+      "supplier": "Gulf Oil Corporation",
+      "category": "Lubricants",
+      "commodity": "Lubricants",
+      "specification": "Hydraulic Oil ISO VG 46",
+      "quantity": 7000,
+      "uom": "LTR",
+      "currency": "INR",
+      "unitPrice": 165,
+      "totalValue": 1155000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 160,
+      "targetPrice": 160,
+      "volume": 7000,
+      "opportunityCalculation": "(165 - 160) * 7000 = 35000",
+      "finalOpportunityRange": {
+        "conservative": 24500,
+        "base": 35000,
+        "stretch": 45500
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 7000 LTR at ₹165/LTR on 2025-03-10",
+        "layerB_CalculatedOpportunity": "Calculated demonstrated arbitrage of ₹35000",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-LB-006",
+      "poNumber": "PO-LB-006",
+      "date": "2025-03-25",
+      "supplier": "IOC SERVO Lubricants",
+      "category": "Lubricants",
+      "commodity": "Lubricants",
+      "specification": "Hydraulic Oil ISO VG 46",
+      "quantity": 11000,
+      "uom": "LTR",
+      "currency": "INR",
+      "unitPrice": 160,
+      "totalValue": 1760000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 160,
+      "targetPrice": 160,
+      "volume": 11000,
+      "opportunityCalculation": "(160 - 160) * 11000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 11000 LTR at ₹160/LTR on 2025-03-25",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-UP-001",
+      "poNumber": "PO-UP-001",
+      "date": "2025-01-10",
+      "supplier": "Alpha Packaging",
+      "category": "Packaging Materials",
+      "commodity": "Packaging Materials",
+      "specification": "Standard Corrugated Box B-Flute",
+      "quantity": 10000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 25,
+      "totalValue": 250000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 25,
+      "targetPrice": 25,
+      "volume": 10000,
+      "opportunityCalculation": "(25 - 25) * 10000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 10000 EA at ₹25/EA on 2025-01-10",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-UP-002",
+      "poNumber": "PO-UP-002",
+      "date": "2025-02-05",
+      "supplier": "Beta Packaging",
+      "category": "Packaging Materials",
+      "commodity": "Packaging Materials",
+      "specification": "Standard Corrugated Box B-Flute",
+      "quantity": 8000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 25,
+      "totalValue": 200000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 25,
+      "targetPrice": 25,
+      "volume": 8000,
+      "opportunityCalculation": "(25 - 25) * 8000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 8000 EA at ₹25/EA on 2025-02-05",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    },
+    {
+      "transactionId": "TX-UP-003",
+      "poNumber": "PO-UP-003",
+      "date": "2025-03-01",
+      "supplier": "Gamma Packaging",
+      "category": "Packaging Materials",
+      "commodity": "Packaging Materials",
+      "specification": "Standard Corrugated Box B-Flute",
+      "quantity": 6000,
+      "uom": "EA",
+      "currency": "INR",
+      "unitPrice": 25,
+      "totalValue": 150000,
+      "comparabilityFilter": {
+        "specMatch": true,
+        "uomMatch": true,
+        "currencyMatch": true,
+        "nonOutlier": true
+      },
+      "eligibilityStatus": "ELIGIBLE",
+      "exclusionReason": null,
+      "referencePrice": 25,
+      "targetPrice": 25,
+      "volume": 6000,
+      "opportunityCalculation": "(25 - 25) * 6000 = 0",
+      "finalOpportunityRange": {
+        "conservative": 0,
+        "base": 0,
+        "stretch": 0
+      },
+      "threeLayerClassification": {
+        "layerA_ObservedFact": "Observed purchase of 6000 EA at ₹25/EA on 2025-03-01",
+        "layerB_CalculatedOpportunity": "Zero price difference against reference",
+        "layerC_ExecutionDependentPotential": "Requires supplier renegotiation or competitive sourcing event"
+      }
+    }
+  ]
+}

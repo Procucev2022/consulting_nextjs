@@ -19,6 +19,9 @@ import aiRoutes from './ai.routes';
 import pcbiRoutes from './pcbi.routes';
 import upgradeRoutes from './upgrade.routes';
 import pcbiAdminRoutes from './pcbiAdmin.routes';
+import module2SourcingRoutes from './module2StrategicSourcing.routes';
+import executiveBriefExportRoutes from './executiveBriefExport.routes';
+import subscriptionRoutes from './subscription.routes';
 
 const router = Router();
 
@@ -39,6 +42,7 @@ router.use('/vendors', vendorsRoutes);
 router.use('/savings', savingsRoutes);
 router.use('/conversion', conversionRoutes);
 router.use('/report', reportRoutes);
+router.use('/reports/executive-brief', executiveBriefExportRoutes);
 router.use('/currency', currencyRoutes);
 router.use('/taxonomy', taxonomyRoutes);
 router.use('/logs', logsRoutes);
@@ -51,6 +55,8 @@ router.use('/ai', aiRoutes);
 router.use('/pcbi', pcbiRoutes);
 router.use('/upgrade', upgradeRoutes);
 router.use('/admin/pcbi', pcbiAdminRoutes);
+router.use('/module2/sourcing', module2SourcingRoutes);
+router.use('/subscription', subscriptionRoutes);
 
 export default router;
 

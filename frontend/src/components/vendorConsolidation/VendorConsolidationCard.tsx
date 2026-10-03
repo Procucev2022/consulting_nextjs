@@ -28,7 +28,7 @@ export const VendorConsolidationCard: React.FC<VendorConsolidationCardProps> = (
   return (
     <div
       data-testid={`consolidation-card-${item.id}`}
-      className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-lg hover:border-cyan-500/50 transition-all flex flex-col justify-between group space-y-4"
+      className="p-5 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-lg hover:border-cyan-500/50 transition-all flex flex-col justify-between group space-y-4"
     >
       {/* Top Header: Category, Cadence Badge, Vendor Count */}
       <div className="space-y-2.5">
@@ -56,7 +56,7 @@ export const VendorConsolidationCard: React.FC<VendorConsolidationCardProps> = (
             {item.item_group_title}
           </h4>
           <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            <span className="font-mono text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+            <span className="font-mono text-[10px] font-semibold bg-slate-100 dark:bg-[#EEF4FC] px-1.5 py-0.5 rounded">
               {item.item_group_code}
             </span>
             <span className="truncate">UNSPSC: {item.unspsc_family}</span>
@@ -65,7 +65,7 @@ export const VendorConsolidationCard: React.FC<VendorConsolidationCardProps> = (
 
         {/* Financial & Cadence Metrics */}
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/70">
-          <div className="bg-slate-50 dark:bg-slate-950/60 p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/50">
+          <div className="bg-slate-50 dark:bg-[#F8FBFE] p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/50">
             <span className="text-[10px] uppercase font-semibold text-slate-400 block">
               Annual Spend
             </span>
@@ -73,7 +73,7 @@ export const VendorConsolidationCard: React.FC<VendorConsolidationCardProps> = (
               ₹{item.total_spend_inr_cr.toFixed(2)} Cr
             </span>
           </div>
-          <div className="bg-slate-50 dark:bg-slate-950/60 p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/50">
+          <div className="bg-slate-50 dark:bg-[#F8FBFE] p-2 rounded-xl border border-slate-200/70 dark:border-slate-800/50">
             <span className="text-[10px] uppercase font-semibold text-slate-400 block">
               Order Velocity
             </span>

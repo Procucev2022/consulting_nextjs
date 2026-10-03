@@ -3,7 +3,9 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'PROCUCEV Platform Engine | AI Procurement Advisory & Analytics',
-  description: 'PROCUCEV Platform Engine - Tech-Enabled Procurement Advisory, AI Analytics Engine & Real-Time Savings Suite',
+  description: 'PROCUCEV Platform Engine - Tech-Enabled Procurement Advisory, AI Analytics Engine & Real-Time Savings Suite. Enterprise-grade procurement intelligence for CFO & CEO decision making.',
+  keywords: 'procurement analytics, AI sourcing, savings identification, spend analysis, e-auction, aiCEV, Procucev',
+  authors: [{ name: 'Procucev Enterprise Solutions Pvt Ltd' }],
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230284c7' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/></svg>"
   }
@@ -16,11 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="light" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
-      <body className="bg-[#f8fafc] text-slate-800 font-sans antialiased selection:bg-cyan-500/20 selection:text-cyan-900 min-h-screen">
+      <body className="bg-[#EEF7FF] text-[#0B1B33] antialiased selection:bg-sky-500/20 selection:text-sky-900 min-h-screen" style={{fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"}}>
         {children}
       </body>
     </html>
