@@ -245,6 +245,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           color: '#ffffff',
           fontWeight: 700,
           fontSize: '15px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
           cursor: loading ? 'not-allowed' : 'pointer',
           opacity: loading ? 0.7 : 1,
           boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',

@@ -39,7 +39,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <Target className="w-4 h-4 text-cyan-600" />
             <span className="text-xs font-semibold uppercase">{strings.kpiBaselineSpend}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-slate-900 dark:text-white">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-slate-900 dark:text-white">
             ₹{totalSpendInrCr.toFixed(2)} Cr
           </p>
           <span className="text-[11px] text-cyan-700 dark:text-cyan-400 font-medium block">
@@ -52,7 +52,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <TrendingDown className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase">{strings.kpiIdentifiedSavings}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
             ₹{totalSavingsInrCr.toFixed(2)} Cr
           </p>
           <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium block">
@@ -65,7 +65,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <AlertTriangle className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase">{strings.kpiPriceCreep}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-amber-600 dark:text-amber-400">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-amber-600 dark:text-amber-400">
             {strings.kpiPriceCreepVal}
           </p>
           <span className="text-[11px] text-amber-700 dark:text-amber-300 font-medium block">
@@ -78,7 +78,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
             <Zap className="w-4 h-4" />
             <span className="text-xs font-semibold uppercase">{strings.kpiVelocity}</span>
           </div>
-          <p className="text-3xl font-black font-mono text-blue-600 dark:text-blue-400">
+          <p className="text-3xl font-black tabular-nums tracking-tight text-blue-600 dark:text-blue-400">
             {strings.kpiVelocityVal}
           </p>
           <span className="text-[11px] text-blue-700 dark:text-blue-300 font-medium block">

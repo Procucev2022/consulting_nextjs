@@ -27,8 +27,8 @@ describe('AuthCard Component', () => {
   it('renders initial tab, conversion banner, and reassurance footer', () => {
     render(<AuthCard initialTab="LOGIN" />);
 
-    expect(screen.getByText(UI_STRINGS.auth.conversionTitle)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.conversionSubtitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.startWithYourDataBadge)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.upgradeWhenNeededHeadline)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: UI_STRINGS.auth.signInHeading })).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.auth.reassuranceNoPayment)).toBeInTheDocument();
   });

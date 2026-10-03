@@ -221,17 +221,17 @@ export const PCBIAdminMasterView: React.FC = () => {
       <PCBIModuleWarningBanner moduleContext="PCBI_MASTER" />
 
       {/* Top Banner & Header */}
-      <div className="p-6 bg-slate-900/90 border border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+      <div className="p-6 bg-white border border-[#DCE7F5] rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase font-mono">
+            <span className="text-xs font-bold text-[#0284C7] tracking-wider uppercase font-mono">
               {UI_STRINGS.pcbiAdmin.sectionTitle}
             </span>
           </div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight">
+          <h2 className="text-xl font-extrabold text-[#0B1B33] tracking-tight">
             {UI_STRINGS.pcbiAdmin.title}
           </h2>
-          <p className="text-xs text-slate-400 max-w-2xl">
+          <p className="text-xs text-[#475569] max-w-2xl">
             {UI_STRINGS.pcbiAdmin.subtitle}
           </p>
         </div>
@@ -240,7 +240,7 @@ export const PCBIAdminMasterView: React.FC = () => {
         <button
           type="button"
           onClick={() => setActiveTab('UPLOAD')}
-          className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all active:scale-95 shrink-0"
+          className="px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95 shrink-0"
         >
           <UploadCloud size={16} />
           <span>Upload / Update Master</span>
@@ -248,7 +248,7 @@ export const PCBIAdminMasterView: React.FC = () => {
       </div>
 
       {/* Workflow Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto text-xs font-semibold">
+      <div className="flex items-center gap-2 border-b border-[#DCE7F5] pb-3 overflow-x-auto text-xs font-semibold">
         {[
           { key: 'DASHBOARD', label: UI_STRINGS.pcbiAdmin.tabDashboard, icon: Database },
           { key: 'UPLOAD', label: UI_STRINGS.pcbiAdmin.tabUpload, icon: UploadCloud },
@@ -267,11 +267,11 @@ export const PCBIAdminMasterView: React.FC = () => {
               onClick={() => setActiveTab(tab.key as PCBISubTab)}
               className={`px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 font-bold shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-sky-50 text-[#0284C7] border border-sky-200 font-bold shadow-xs'
+                  : 'text-[#475569] hover:text-[#0B1B33] hover:bg-slate-50'
               }`}
             >
-              <Icon size={14} className={isActive ? 'text-cyan-400' : 'text-slate-400'} />
+              <Icon size={14} className={isActive ? 'text-[#0284C7]' : 'text-[#64748B]'} />
               <span>{tab.label}</span>
             </button>
           );

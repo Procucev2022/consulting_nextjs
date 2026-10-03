@@ -19,18 +19,18 @@ export const PCBIConstituentReviewTable: React.FC<PCBIConstituentReviewTableProp
   }
 
   return (
-    <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-xl space-y-3">
+    <div className="p-4 bg-white border border-[#DCE7F5] rounded-xl space-y-3 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <Layers size={14} className="text-purple-400" />
+          <h4 className="text-xs font-bold text-[#0B1B33] uppercase tracking-wider flex items-center gap-2">
+            <Layers size={14} className="text-[#0284C7]" />
             {UI_STRINGS.pcbiAdmin.constituentReviewTitle}
           </h4>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-[#475569] mt-0.5">
             {UI_STRINGS.pcbiAdmin.constituentReviewSubtitle}
           </p>
         </div>
-        <span className="text-[11px] font-mono text-slate-400">
+        <span className="text-[11px] font-medium tabular-nums text-[#475569]">
           {constituentTotals.length} PCBI Series Evaluated
         </span>
       </div>
@@ -38,7 +38,7 @@ export const PCBIConstituentReviewTable: React.FC<PCBIConstituentReviewTableProp
       <div className="overflow-x-auto max-h-60 overflow-y-auto">
         <table className="w-full text-left text-xs">
           <thead>
-            <tr className="border-b border-slate-800 text-slate-400 sticky top-0 bg-slate-900">
+            <tr className="border-b border-[#DCE7F5] text-[#475569] sticky top-0 bg-[#F8FBFE]">
               <th className="py-2 px-3 font-semibold">{UI_STRINGS.pcbiAdmin.colConstituentPcbiId}</th>
               <th className="py-2 px-3 font-semibold">{UI_STRINGS.pcbiAdmin.colConstituentName}</th>
               <th className="py-2 px-3 font-semibold text-right">{UI_STRINGS.pcbiAdmin.colConstituentTotal}</th>
@@ -46,23 +46,21 @@ export const PCBIConstituentReviewTable: React.FC<PCBIConstituentReviewTableProp
               <th className="py-2 px-3 font-semibold text-center">{UI_STRINGS.pcbiAdmin.colConstituentStatus}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60 text-slate-200">
+          <tbody className="divide-y divide-[#DCE7F5] text-[#0B1B33]">
             {constituentTotals.map((item) => {
               const isPass = item.status === 'PASS';
               return (
-                <tr key={item.pcbiId} className="hover:bg-slate-800/30">
-                  <td className="py-2 px-3 font-mono font-bold text-white">{item.pcbiId}</td>
-                  <td className="py-2 px-3 text-slate-300">{item.benchmarkName || '—'}</td>
-                  <td className="py-2 px-3 font-mono text-right font-bold text-slate-100">
+                <tr key={item.pcbiId} className="hover:bg-[#EEF7FF] transition-colors">
+                  <td className="py-2 px-3 font-mono font-bold text-[#0B1B33]">{item.pcbiId}</td>
+                  <td className="py-2 px-3 text-[#475569]">{item.benchmarkName || '—'}</td>
+                  <td className="py-2 px-3 tabular-nums text-right font-bold text-[#0B1B33]">
                     {item.totalWeight}%
                   </td>
                   <td
-                    className={`py-2 px-3 font-mono text-right ${
+                    className={`py-2 px-3 tabular-nums text-right ${
                       isPass
-                        ? 'text-emerald-400'
-                        : item.differenceFrom100 > 0
-                        ? 'text-amber-400 font-bold'
-                        : 'text-amber-400 font-bold'
+                        ? 'text-emerald-600 font-semibold'
+                        : 'text-amber-600 font-bold'
                     }`}
                   >
                     {item.differenceFrom100 === 0
@@ -75,18 +73,18 @@ export const PCBIConstituentReviewTable: React.FC<PCBIConstituentReviewTableProp
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-extrabold uppercase ${
                         isPass
-                          ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
-                          : 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}
                     >
                       {isPass ? (
                         <>
-                          <CheckCircle2 size={11} className="text-emerald-400" />
+                          <CheckCircle2 size={11} className="text-emerald-600" />
                           {UI_STRINGS.pcbiAdmin.badgePass}
                         </>
                       ) : (
                         <>
-                          <AlertTriangle size={11} className="text-amber-400" />
+                          <AlertTriangle size={11} className="text-amber-600" />
                           {UI_STRINGS.pcbiAdmin.badgeRequiresReview}
                         </>
                       )}

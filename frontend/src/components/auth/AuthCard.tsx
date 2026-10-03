@@ -105,25 +105,30 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
   };
 
   return (
-    <div className="w-full max-w-[560px] bg-white border border-[#DCE7F5] rounded-3xl p-6 sm:p-8 shadow-[0_20px_45px_rgba(11,27,51,0.07),0_4px_12px_rgba(11,27,51,0.04)] transition-all">
-      {/* Top Conversion Badge (Section 8 & 12: Single non-duplicated occurrence) */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
-          <Sparkles size={12} className="text-sky-600" />
-          <span>{UI_STRINGS.auth.startWithYourDataBadge}</span>
-        </span>
-        <span className="text-[11px] text-slate-400 font-medium">
-          {UI_STRINGS.header.engineVersion}
-        </span>
+    <div className="w-full max-w-[560px] bg-white border border-[#DCE7F5] rounded-3xl p-6 sm:p-7 shadow-[0_20px_45px_rgba(11,27,51,0.07),0_4px_12px_rgba(11,27,51,0.04)] transition-all">
+      {/* Top Conversion Anchor (Prompt 293 Section 4) */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="inline-flex items-center gap-1.5 text-xs font-extrabold tracking-wider text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+            <Sparkles size={12} className="text-sky-600" />
+            <span>{UI_STRINGS.auth.startWithYourDataBadge}</span>
+          </span>
+          <span className="text-[11px] text-slate-400 font-mono">
+            {UI_STRINGS.header.engineVersion}
+          </span>
+        </div>
+        <h3 className="m-0 text-base font-extrabold text-[#0B1B33] leading-snug">
+          {UI_STRINGS.auth.upgradeWhenNeededHeadline}
+        </h3>
       </div>
 
       {/* Navigation Tabs (SIGN IN | CREATE ACCOUNT) */}
-      <div className="grid grid-cols-2 bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200">
+      <div className="grid grid-cols-2 bg-slate-100 p-1 rounded-xl mb-4 border border-slate-200">
         <button
           type="button"
           id="tab-login"
           onClick={() => { setActiveTab('LOGIN'); setErrorMessage(null); }}
-          className={`py-2.5 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all border-none cursor-pointer ${
+          className={`py-2 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all border-none cursor-pointer ${
             activeTab === 'LOGIN' ? 'bg-white text-[#0B1B33] shadow-xs' : 'bg-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -133,7 +138,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
           type="button"
           id="tab-register"
           onClick={() => { setActiveTab('REGISTER'); setErrorMessage(null); }}
-          className={`py-2.5 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all border-none cursor-pointer ${
+          className={`py-2 px-3 rounded-lg font-bold text-xs sm:text-sm transition-all border-none cursor-pointer ${
             activeTab === 'REGISTER' ? 'bg-white text-[#0B1B33] shadow-xs' : 'bg-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -142,8 +147,8 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
       </div>
 
       {/* Heading */}
-      <div className="mb-4">
-        <h2 className="m-0 mb-1 text-xl font-extrabold text-[#0B1B33]">
+      <div className="mb-3.5">
+        <h2 className="m-0 mb-1 text-lg sm:text-xl font-extrabold text-[#0B1B33]">
           {activeTab === 'LOGIN' ? UI_STRINGS.auth.signInHeading : UI_STRINGS.auth.registerHeading}
         </h2>
         <p className="m-0 text-xs sm:text-sm text-slate-500 leading-normal">
@@ -153,13 +158,13 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
 
       {/* Alerts */}
       {errorMessage && (
-        <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium">
+        <div className="mb-3.5 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-medium">
           {errorMessage}
         </div>
       )}
 
       {successMessage && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-medium">
+        <div className="mb-3.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-xs font-medium">
           {successMessage}
         </div>
       )}
@@ -183,18 +188,8 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
         />
       )}
 
-      {/* Conversion Reassurance Area (Section 11) */}
-      <div className="mt-4 p-3 bg-sky-50/70 border border-sky-100 rounded-xl text-center">
-        <div className="text-xs font-bold text-[#0B1B33]">
-          {UI_STRINGS.auth.conversionTitle}
-        </div>
-        <div className="text-[11px] text-slate-500 mt-0.5 leading-normal">
-          {UI_STRINGS.auth.conversionSubtitle}
-        </div>
-      </div>
-
-      {/* Three Small Reassurance Items */}
-      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-600 font-medium">
+      {/* Three Small Reassurance Items (Prompt 293 Section 4) */}
+      <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2 text-xs text-slate-600 font-medium">
         <span className="inline-flex items-center gap-1.5">
           <ShieldCheck size={14} className="text-emerald-600" />
           <span>{UI_STRINGS.auth.reassuranceStartDiscover}</span>
@@ -210,7 +205,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
       </div>
 
       {/* Compact Reassurance Quote Strip */}
-      <div className="mt-3 py-2 px-3 bg-slate-50 border border-slate-200 rounded-lg text-center text-[11px] text-slate-500 leading-snug font-medium">
+      <div className="mt-2.5 py-1.5 px-3 bg-slate-50 border border-slate-200 rounded-lg text-center text-[11px] text-slate-500 leading-snug font-medium">
         {UI_STRINGS.auth.builtForEvidenceQuote}
       </div>
 

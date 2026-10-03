@@ -118,11 +118,11 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
     <div className="space-y-6">
       {/* Domain Error Banner (Accidental Wrong Upload Protection) */}
       {domainError && (
-        <div className="p-4 bg-rose-950/70 border border-rose-800 rounded-2xl flex items-start space-x-3 text-rose-200">
-          <ShieldAlert size={20} className="text-rose-400 shrink-0 mt-0.5" />
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start space-x-3 text-rose-800 shadow-sm">
+          <ShieldAlert size={20} className="text-rose-600 shrink-0 mt-0.5" />
           <div>
-            <div className="font-bold text-sm text-white">{domainError.title}</div>
-            <div className="text-xs text-rose-300 mt-1">{domainError.message}</div>
+            <div className="font-bold text-sm text-rose-900">{domainError.title}</div>
+            <div className="text-xs text-rose-700 mt-1">{domainError.message}</div>
           </div>
         </div>
       )}
@@ -130,7 +130,7 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
       {/* File Dropzone / Upload Box */}
       <div
         onClick={() => fileInputRef.current?.click()}
-        className="p-8 border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-2xl bg-slate-900/40 hover:bg-slate-900/60 cursor-pointer text-center space-y-4 transition-all duration-200"
+        className="p-8 border-2 border-dashed border-[#DCE7F5] hover:border-[#0284C7] rounded-2xl bg-white hover:bg-[#F8FBFE] cursor-pointer text-center space-y-4 transition-all duration-200 shadow-sm"
       >
         <input
           ref={fileInputRef}
@@ -141,15 +141,15 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
           className="hidden"
         />
 
-        <div className="w-16 h-16 mx-auto rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+        <div className="w-16 h-16 mx-auto rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center text-[#0284C7]">
           <UploadCloud size={32} />
         </div>
 
         <div>
-          <h3 className="text-base font-bold text-white tracking-tight">
+          <h3 className="text-base font-bold text-[#0B1B33] tracking-tight">
             {UI_STRINGS.pcbiAdmin.uploadScreenTitle}
           </h3>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#475569] mt-1">
             {UI_STRINGS.pcbiAdmin.dropzonePrompt}
           </p>
         </div>
@@ -157,7 +157,7 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
         <button
           type="button"
           disabled={isParsing}
-          className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-md shadow-cyan-600/30 transition-all active:scale-95"
+          className="px-5 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] disabled:opacity-50 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-sm transition-all active:scale-95"
         >
           <FileSpreadsheet size={15} />
           {isParsing ? 'Parsing Datasets...' : UI_STRINGS.pcbiAdmin.uploadButton}
@@ -168,30 +168,30 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
       {uploadedFile && fileMetadata && (
         <div className="space-y-6">
           {/* Metadata Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-xl text-xs">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 p-4 bg-white border border-[#DCE7F5] rounded-xl text-xs shadow-sm">
             <div>
-              <span className="text-slate-400">{UI_STRINGS.pcbiAdmin.fileNameLabel}:</span>
-              <p className="text-white font-bold truncate">{fileMetadata.name}</p>
+              <span className="text-[#64748B]">{UI_STRINGS.pcbiAdmin.fileNameLabel}:</span>
+              <p className="text-[#0B1B33] font-bold truncate">{fileMetadata.name}</p>
             </div>
             <div>
-              <span className="text-slate-400">{UI_STRINGS.pcbiAdmin.fileSizeLabel}:</span>
-              <p className="text-cyan-300 font-bold">{fileMetadata.sizeMb.toFixed(2)} MB</p>
+              <span className="text-[#64748B]">{UI_STRINGS.pcbiAdmin.fileSizeLabel}:</span>
+              <p className="text-[#0284C7] font-bold tabular-nums">{fileMetadata.sizeMb.toFixed(2)} MB</p>
             </div>
             <div>
-              <span className="text-slate-400">{UI_STRINGS.pcbiAdmin.uploadDateLabel}:</span>
-              <p className="text-slate-200">{new Date(fileMetadata.uploadDate).toLocaleDateString()}</p>
+              <span className="text-[#64748B]">{UI_STRINGS.pcbiAdmin.uploadDateLabel}:</span>
+              <p className="text-[#0B1B33]">{new Date(fileMetadata.uploadDate).toLocaleDateString()}</p>
             </div>
             <div>
-              <span className="text-slate-400">{UI_STRINGS.pcbiAdmin.uploadedByLabel}:</span>
-              <p className="text-slate-200 font-medium">{fileMetadata.uploadedBy}</p>
+              <span className="text-[#64748B]">{UI_STRINGS.pcbiAdmin.uploadedByLabel}:</span>
+              <p className="text-[#0B1B33] font-medium">{fileMetadata.uploadedBy}</p>
             </div>
             <div>
-              <span className="text-slate-400">{UI_STRINGS.pcbiAdmin.worksheetsCountLabel}:</span>
-              <p className="text-emerald-400 font-bold">{fileMetadata.worksheetCount}</p>
+              <span className="text-[#64748B]">{UI_STRINGS.pcbiAdmin.worksheetsCountLabel}:</span>
+              <p className="text-emerald-600 font-bold tabular-nums">{fileMetadata.worksheetCount}</p>
             </div>
             <div>
-              <span className="text-slate-400">{UI_STRINGS.pcbiAdmin.recordsCountLabel}:</span>
-              <p className="text-purple-400 font-bold">{fileMetadata.totalRecords.toLocaleString()}</p>
+              <span className="text-[#64748B]">{UI_STRINGS.pcbiAdmin.recordsCountLabel}:</span>
+              <p className="text-[#0B1B33] font-bold tabular-nums">{fileMetadata.totalRecords.toLocaleString()}</p>
             </div>
           </div>
 
@@ -214,7 +214,7 @@ export const PCBIUploadTab: React.FC<PCBIUploadTabProps> = ({
             <button
               type="button"
               onClick={onProceedToValidate}
-              className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-cyan-600/30 transition-all active:scale-95"
+              className="px-6 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95"
             >
               <span>{UI_STRINGS.common.proceed} to {UI_STRINGS.pcbiAdmin.tabValidate}</span>
               <ArrowRight size={14} />

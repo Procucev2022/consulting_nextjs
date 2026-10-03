@@ -1622,7 +1622,7 @@ export default function Home() {
   };
 
   return (
-    <div className={`min-h-screen bg-[#f1f5f9] dark:bg-[#060b14] text-slate-900 dark:text-slate-100 bg-grid-pattern transition-colors duration-200 ${theme}`}>
+    <div className={`min-h-screen bg-[#EEF7FF] text-[#0B1B33] bg-grid-pattern transition-colors duration-200 ${theme}`}>
       {/* Top Header */}
       <Header
         tenant={tenant}

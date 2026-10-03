@@ -33,17 +33,17 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
   const strings = UI_STRINGS.presentation;
 
   return (
-    <div className="no-print flex flex-col md:flex-row md:items-center justify-between gap-3 px-6 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur-md shrink-0">
+    <div className="no-print flex flex-col md:flex-row md:items-center justify-between gap-3 px-6 py-3.5 border-b border-[#DCE7F5] bg-white/95 backdrop-blur-md shrink-0">
       {/* Left: Title & Slide Counter */}
       <div className="flex items-center space-x-3">
-        <div className="p-2 rounded-xl bg-cyan-600 text-white shadow-xs">
+        <div className="p-2 rounded-xl bg-[#0284C7] text-white shadow-xs">
           <Layers className="w-4 h-4" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h2 className="text-sm font-bold text-[#0B1B33]">
             {strings.modalTitle}
           </h2>
-          <span className="text-[11px] font-mono text-cyan-700 dark:text-cyan-400 font-semibold">
+          <span className="text-[11px] font-mono text-[#0284C7] font-semibold">
             {strings.slideOf(currentSlide, totalSlides)}
           </span>
         </div>
@@ -51,7 +51,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
 
       {/* Middle: Quick Jump Slide Select */}
       <div className="flex items-center space-x-2">
-        <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+        <span className="text-xs text-[#64748B] font-medium hidden sm:inline">
           {strings.jumpToSlide}
         </span>
         <select
@@ -59,7 +59,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           value={currentSlide}
           onChange={(e) => onSelectSlide(Number(e.target.value))}
           disabled={isAllSlidesView}
-          className="text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer disabled:opacity-50"
+          className="text-xs bg-white border border-[#DCE7F5] rounded-lg px-2.5 py-1.5 font-semibold text-[#0B1B33] focus:outline-none focus:border-[#0284C7] cursor-pointer disabled:opacity-50"
         >
           {PRESENTATION_SLIDES_LIST.map((slide) => (
             <option key={slide.id} value={slide.slideNumber}>
@@ -78,7 +78,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
             aria-label={strings.navPrev}
             onClick={onPrevSlide}
             disabled={currentSlide <= 1 || isAllSlidesView}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-lg border border-[#DCE7F5] bg-white text-[#0B1B33] hover:bg-[#F8FBFE] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -87,7 +87,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
             aria-label={strings.navNext}
             onClick={onNextSlide}
             disabled={currentSlide >= totalSlides || isAllSlidesView}
-            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-lg border border-[#DCE7F5] bg-white text-[#0B1B33] hover:bg-[#F8FBFE] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -98,9 +98,9 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           type="button"
           aria-label={isAllSlidesView ? strings.viewSingle : strings.viewAll}
           onClick={onToggleViewMode}
-          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-[#DCE7F5] bg-white text-xs font-semibold text-[#0B1B33] hover:bg-[#F8FBFE] transition-colors"
         >
-          <Layout className="w-3.5 h-3.5 text-cyan-600" />
+          <Layout className="w-3.5 h-3.5 text-[#0284C7]" />
           <span className="hidden sm:inline">
             {isAllSlidesView ? strings.viewSingle : strings.viewAll}
           </span>
@@ -112,7 +112,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
             type="button"
             onClick={onEmailBrief}
             disabled={isSendingEmail}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all disabled:opacity-50 cursor-pointer"
           >
             {isSendingEmail ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -127,7 +127,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
         <button
           type="button"
           onClick={onPrint}
-          className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+          className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
         >
           <Printer className="w-3.5 h-3.5" />
           <span>{strings.exportPdf}</span>
@@ -138,7 +138,7 @@ export const PresentationControls: React.FC<PresentationControlsProps> = ({
           type="button"
           aria-label={strings.closeModal}
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+          className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0B1B33] hover:bg-[#EEF7FF] transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>

@@ -153,20 +153,15 @@ export default function ExecutiveBriefPage() {
   };
 
   const toggleGroup = (groupId: string): void => {
-    setExpandedGroupIds((prev) =>
-      prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
-    );
+    setExpandedGroupIds((p) => p.includes(groupId) ? p.filter((id) => id !== groupId) : [...p, groupId]);
   };
 
   const toggleDeepDive = (deepDiveId: string): void => {
-    setExpandedDeepDives((prev) =>
-      prev.includes(deepDiveId) ? prev.filter((id) => id !== deepDiveId) : [...prev, deepDiveId]
-    );
+    setExpandedDeepDives((p) => p.includes(deepDiveId) ? p.filter((id) => id !== deepDiveId) : [...p, deepDiveId]);
   };
 
   const handleNavigateModule = (moduleKey: string): void => {
-    if (moduleKey === 'brief') return;
-    router.push(`/?tab=${moduleKey}`);
+    if (moduleKey !== 'brief') router.push(`/?tab=${moduleKey}`);
   };
 
   const handleReturnToPipeline = (): void => router.push('/');
@@ -178,12 +173,14 @@ export default function ExecutiveBriefPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#060b14] bg-grid-pattern text-white flex flex-col items-center justify-center space-y-4">
-        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-slate-900/60 border border-slate-800/60 shadow-xl">
-          <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
-          <p className="text-xs text-slate-400 font-mono tracking-widest uppercase">Preparing Certified Executive Brief...</p>
+      <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex flex-col items-center justify-center space-y-4">
+        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-white border border-[#DCE7F5] shadow-sm">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0284c7]" />
+          <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">Preparing Certified Executive Brief...</p>
           <div className="flex gap-1 mt-1">
-            {[0,1,2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full bg-cyan-600 animate-pulse" style={{animationDelay: `${i*0.2}s`}} />)}
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+            ))}
           </div>
         </div>
       </div>
@@ -192,16 +189,12 @@ export default function ExecutiveBriefPage() {
 
   if (error || !reportData) {
     return (
-      <div className="min-h-screen bg-[#060b14] bg-grid-pattern text-white p-6 flex flex-col items-center justify-center space-y-4">
-        <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-slate-900/70 border border-amber-800/30 shadow-xl max-w-md w-full">
-          <AlertTriangle className="w-10 h-10 text-amber-400" />
-          <h2 className="text-base font-bold font-display">{strings.emptyState.notReadyTitle}</h2>
-          <p className="text-xs text-slate-400 text-center leading-relaxed">{strings.emptyState.notReadyDesc}</p>
-          <button
-            type="button"
-            onClick={handleReturnToPipeline}
-            className="ent-btn-cta text-xs"
-          >
+      <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] p-6 flex flex-col items-center justify-center space-y-4">
+        <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white border border-amber-200 shadow-sm max-w-md w-full">
+          <AlertTriangle className="w-10 h-10 text-amber-500" />
+          <h2 className="text-base font-bold font-display text-[#0B1B33]">{strings.emptyState.notReadyTitle}</h2>
+          <p className="text-xs text-slate-600 text-center leading-relaxed">{strings.emptyState.notReadyDesc}</p>
+          <button type="button" onClick={handleReturnToPipeline} className="ent-btn-cta text-xs">
             <ArrowLeft className="w-4 h-4" />
             <span>{strings.emptyState.returnToPipeline}</span>
           </button>
@@ -211,27 +204,16 @@ export default function ExecutiveBriefPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#060b14] bg-grid-pattern text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex flex-col">
       {downloadPayload && (
-        <a
-          ref={downloadLinkRef}
-          href={downloadPayload.url}
-          download={downloadPayload.filename}
-          className="hidden"
-          aria-hidden="true"
-        >
+        <a ref={downloadLinkRef} href={downloadPayload.url} download={downloadPayload.filename} className="hidden" aria-hidden="true">
           Download Target
         </a>
       )}
 
       <Header
-        tenant={mockTenant}
-        onSelectTenant={NOOP}
-        currency={'INR' as HeaderCurrency}
-        onSelectCurrency={NOOP}
-        onOpenReport={NOOP}
-        theme="dark"
-        onSelectTheme={NOOP}
+        tenant={mockTenant} onSelectTenant={NOOP} currency={'INR' as HeaderCurrency}
+        onSelectCurrency={NOOP} onOpenReport={NOOP} theme="light" onSelectTheme={NOOP}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 w-full flex-1">
@@ -246,43 +228,32 @@ export default function ExecutiveBriefPage() {
 
         <ExecutiveBriefFormatCards
           clientName={reportData.clientProfile.clientName}
-          pdfAvailable
-          pptxAvailable
-          isGenerating={isGeneratingDownload}
-          onDownload={handleDownload}
-          onOpenRegenerateModal={handleOpenRegenerate}
+          pdfAvailable pptxAvailable isGenerating={isGeneratingDownload}
+          onDownload={handleDownload} onOpenRegenerateModal={handleOpenRegenerate}
         />
 
         <ExecutiveBriefSlidePreview
-          selectedSlideIndex={selectedSlideIndex}
-          onSelectSlideIndex={setSelectedSlideIndex}
-          onDownloadPdf={handleDownloadPdf}
-          onOpenFullReport={handleOpenFullReport}
+          selectedSlideIndex={selectedSlideIndex} onSelectSlideIndex={setSelectedSlideIndex}
+          onDownloadPdf={handleDownloadPdf} onOpenFullReport={handleOpenFullReport}
         />
 
         <ExecutiveBriefOpportunityTable />
 
         <ExecutiveBriefStructureAccordion
-          sections={reportData.sections}
-          expandedGroupIds={expandedGroupIds}
-          onToggleGroup={toggleGroup}
-          expandedDeepDives={expandedDeepDives}
-          onToggleDeepDive={toggleDeepDive}
-          onDrillEvidence={handleDrillEvidence}
+          sections={reportData.sections} expandedGroupIds={expandedGroupIds}
+          onToggleGroup={toggleGroup} expandedDeepDives={expandedDeepDives}
+          onToggleDeepDive={toggleDeepDive} onDrillEvidence={handleDrillEvidence}
         />
 
         <ExecutiveBriefAuditValidationPanel
-          checklist={reportData.validationChecklist}
-          artifacts={reportData.artifacts}
+          checklist={reportData.validationChecklist} artifacts={reportData.artifacts}
           onDownloadArtifact={handleDownloadArtifact}
         />
       </main>
 
       <ExecutiveBriefTraceabilityModal
-        isOpen={isTraceabilityOpen}
-        onClose={handleCloseTraceability}
-        activeItem={activeTraceItem}
-        items={reportData.traceabilityLineage}
+        isOpen={isTraceabilityOpen} onClose={handleCloseTraceability}
+        activeItem={activeTraceItem} items={reportData.traceabilityLineage}
       />
 
       <ExecutiveBriefRegenerateConfirmModal
@@ -292,20 +263,19 @@ export default function ExecutiveBriefPage() {
         isRegenerating={isRegenerating}
       />
 
-      {/* Enterprise Footer */}
-      <footer className="ent-footer no-print">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
-          <div className="flex items-center gap-2 text-slate-400 font-medium">
-            <span className="inline-flex items-center gap-1.5 bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
+      <footer className="ent-footer mt-6 bg-white border-t border-[#DCE7F5] py-4 no-print">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px]">
+          <div className="flex items-center gap-2 text-slate-500 font-medium">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
               AES-256-GCM ENCRYPTED
             </span>
-            <span className="hidden sm:inline text-slate-600">|</span>
+            <span className="hidden sm:inline text-slate-300">|</span>
             <span className="hidden sm:inline text-slate-500">Management Confidential · For Authorised Recipients Only</span>
           </div>
-          <div className="flex items-center gap-3 text-slate-500 font-mono">
+          <div className="flex items-center gap-3 text-slate-400 font-mono">
             <span>Procucev / aiCEV v2.0 · Executive Brief</span>
-            <span className="text-slate-700">·</span>
+            <span className="text-slate-300">·</span>
             <span>© {new Date().getFullYear()} Procucev Pvt. Ltd.</span>
           </div>
         </div>

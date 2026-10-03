@@ -13,11 +13,11 @@ import type { PCBIBreadcrumbProps } from '../../../types/pcbiDataLibraryComponen
 export const PCBIBreadcrumb: React.FC<PCBIBreadcrumbProps> = ({ items, className = '' }) => {
   return (
     <nav aria-label="Breadcrumb" className={`flex items-center text-xs font-semibold ${className}`}>
-      <ol className="flex items-center flex-wrap gap-1.5 text-slate-400">
+      <ol className="flex items-center flex-wrap gap-1.5 text-[#64748B]">
         <li className="flex items-center">
           <Link
             href="/"
-            className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors"
+            className="flex items-center gap-1 text-[#64748B] hover:text-[#0284C7] transition-colors"
             title="Home"
           >
             <Home size={13} />
@@ -29,28 +29,28 @@ export const PCBIBreadcrumb: React.FC<PCBIBreadcrumbProps> = ({ items, className
           const isLast = idx === items.length - 1 || Boolean(item.isCurrent);
           return (
             <li key={`${item.label}-${idx}`} className="flex items-center gap-1.5">
-              <ChevronRight size={12} className="text-slate-600 shrink-0" aria-hidden="true" />
+              <ChevronRight size={12} className="text-[#94A3B8] shrink-0" aria-hidden="true" />
               {isLast ? (
-                <span className="text-white font-bold bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700/80" aria-current="page">
+                <span className="text-[#0B1B33] font-bold bg-[#F8FBFE] px-2 py-0.5 rounded border border-[#DCE7F5]" aria-current="page">
                   {item.label}
                 </span>
               ) : item.onClick ? (
                 <button
                   type="button"
                   onClick={item.onClick}
-                  className="hover:text-cyan-400 hover:underline transition-colors focus:outline-hidden focus:text-cyan-300"
+                  className="hover:text-[#0284C7] hover:underline transition-colors focus:outline-hidden focus:text-[#0369A1]"
                 >
                   {item.label}
                 </button>
               ) : item.href ? (
                 <Link
                   href={item.href}
-                  className="hover:text-cyan-400 hover:underline transition-colors focus:outline-hidden focus:text-cyan-300"
+                  className="hover:text-[#0284C7] hover:underline transition-colors focus:outline-hidden focus:text-[#0369A1]"
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span className="text-slate-400">{item.label}</span>
+                <span className="text-[#64748B]">{item.label}</span>
               )}
             </li>
           );

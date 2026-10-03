@@ -69915,3 +69915,2553 @@ We will issue a separate final cleanup command after visual approval.
 
 END PROMPT 292
 
+
+
+## Prompt 293
+
+PROMPT 293 — FINAL VISUAL POLISH OF aiCEV LOGIN PAGE
+
+Prompt 292 engineering implementation is approved.
+
+DO NOT redesign the concept.
+DO NOT change the messaging strategy.
+DO NOT change authentication.
+DO NOT change Bronze/Silver/Gold logic.
+DO NOT change backend.
+DO NOT change Modules 1–4.
+DO NOT change subscription architecture.
+
+This is ONLY a final visual-polish pass.
+
+OBJECTIVE:
+
+Make the login page look like a premium enterprise SaaS product rather than a collection of cards.
+
+==================================================
+1. VISUAL HIERARCHY
+==================================================
+
+The page must communicate in this order:
+
+1. WHAT IS aiCEV?
+   "Turn Procurement Data Into Measurable Savings."
+
+2. HOW DOES IT WORK?
+   "YOUR DATA → DISCOVER → ASSESS → OPTIMIZE"
+
+3. WHAT CAN IT DO?
+   Four concise benefits.
+
+4. WHAT SHOULD I DO?
+   "Start Free with Bronze"
+
+The authentication panel is the primary conversion action.
+
+==================================================
+2. LIGHT CANVAS
+==================================================
+
+Keep the Prompt 292 light theme.
+
+Use:
+
+#EEF7FF / #F8FBFE family
+
+White content surfaces.
+
+Dark navy typography.
+
+aiCEV blue for CTA.
+
+aiCEV orange for selective emphasis.
+
+Do not return to dark navy.
+
+==================================================
+3. REDUCE CARD NESTING
+==================================================
+
+Do NOT put every section inside a large rounded container.
+
+Use:
+
+- page background
+- white surface where needed
+- subtle borders
+- minimal shadow
+- whitespace
+
+Avoid:
+
+card inside card
+inside another card.
+
+The page should breathe.
+
+==================================================
+4. RIGHT CONVERSION PANEL
+==================================================
+
+Make the right authentication panel the strongest visual anchor on the right side.
+
+Width:
+520–580px.
+
+Vertically centered.
+
+Use the available vertical space intelligently.
+
+The panel should feel deliberate rather than floating.
+
+Top:
+
+START WITH YOUR DATA
+
+"Upgrade when you need deeper intelligence."
+
+Then:
+
+SIGN IN | CREATE ACCOUNT
+
+Then form.
+
+Then:
+
+SIGN IN TO WORKSPACE
+
+Primary CTA:
+
+SIGN IN TO WORKSPACE
+
+Below CTA:
+
+"New visitor? Start Free with Bronze Discover"
+
+Then compact reassurance:
+
+✓ Start with Discover
+✓ No online payment
+✓ Upgrade when you need more
+
+Do not add unnecessary additional sections.
+
+==================================================
+5. LEFT SIDE
+==================================================
+
+Keep:
+
+Logo
+Procurement Intelligence badge
+Hero
+Four capabilities
+Product Journey
+Benefits
+Trust statement
+
+BUT reduce vertical gaps and excessive containers.
+
+Hero should have strongest visual hierarchy.
+
+The four capability tiles should be compact.
+
+==================================================
+6. PRODUCT JOURNEY
+==================================================
+
+Make this the main explanatory visual.
+
+Use:
+
+YOUR DATA
+↓
+01 DISCOVER — Bronze
+↓
+02 ASSESS — Silver
+↓
+03 OPTIMIZE — Gold
+
+Use subtle connector lines/arrows.
+
+Make all three stages:
+
+- equal width
+- equal height
+- aligned
+- consistent padding
+
+Avoid excessive descriptions.
+
+The customer should understand the commercial progression instantly.
+
+==================================================
+7. BRONZE / SILVER / GOLD
+==================================================
+
+Keep the current non-aggressive presentation.
+
+Bronze = Discover
+
+Silver = Assess
+
+Gold = Optimize
+
+Do NOT present these as pricing cards.
+
+They represent increasing levels of intelligence.
+
+==================================================
+8. BENEFITS
+==================================================
+
+Keep the four approved benefits:
+
+Find Procurement Leakage
+See Where Savings Are
+Benchmark & Compare
+Move From Insight to Action
+
+Use a clean 2×2 grid.
+
+All four cards must:
+
+- have identical dimensions
+- identical padding
+- identical title position
+- identical icon position
+- similar text length/line count
+
+==================================================
+9. ALIGNMENT AUDIT
+==================================================
+
+Perform an actual visual grid audit.
+
+These left edges MUST align:
+
+Logo
+Hero
+Capability section
+Product Journey
+Benefits
+Trust footer
+
+These right edges MUST align:
+
+Authentication panel
+Inputs
+CTA
+Reassurance section
+Development panel
+
+Use consistent horizontal padding.
+
+Do not solve alignment with arbitrary individual margins.
+
+==================================================
+10. SCREEN HEIGHT OPTIMIZATION
+==================================================
+
+Optimize for:
+
+1440×900
+1366×768
+1920×1080
+
+At 1440×900:
+
+The right side should show the entire authentication experience comfortably.
+
+At 1366×768:
+
+Reduce vertical spacing rather than allowing clipping.
+
+At 1920×1080:
+
+Do not stretch content excessively.
+
+Use max-width.
+
+==================================================
+11. MOBILE
+==================================================
+
+Keep Prompt 292 mobile ordering:
+
+Logo
+Hero
+Capabilities
+Authentication
+Product Journey
+Benefits
+Trust
+
+The CTA should appear early.
+
+No horizontal scrolling.
+
+==================================================
+12. DEVELOPMENT ACCESS
+==================================================
+
+KEEP Temporary Development Access ENABLED FOR NOW.
+
+This is intentional.
+
+Development-only:
+
+NODE_ENV === "development"
+
+The following must continue to work:
+
+Sriman (Admin)
+System Administrator
+Enterprise Buyer
+Open Admin Portal Directly
+
+Do NOT restore any NEXT_PUBLIC_ENABLE_DEV_LOGIN mechanism.
+
+Do NOT weaken production isolation.
+
+We will remove the development panel in a separate final cleanup command after visual approval.
+
+==================================================
+13. IMPORTANT — ACTUAL VISUAL INSPECTION
+==================================================
+
+Do not claim visual PASS based only on DOM inspection.
+
+Actually render the page in the browser and inspect:
+
+1440×900
+1366×768
+1920×1080
+390px mobile
+
+Check:
+
+- alignment
+- whitespace
+- visual balance
+- typography
+- card proportions
+- right-side space utilization
+- CTA prominence
+- scrolling
+- clipping
+- overlap
+- mobile ordering
+
+If screenshot capture is available, capture the final rendered page.
+
+==================================================
+14. DO NOT CHANGE FUNCTIONALITY
+==================================================
+
+After visual changes verify:
+
+npm run typecheck
+npm run lint
+npm run test
+npm run quality:fast
+
+All existing tests must remain passing.
+
+==================================================
+FINAL DESIGN PRINCIPLE
+
+The final page should feel like:
+
+LEFT:
+"Here is why aiCEV matters."
+
+RIGHT:
+"Here is where you start."
+
+The customer should understand:
+
+YOUR DATA
+→ DISCOVER VALUE
+→ ASSESS OPPORTUNITY
+→ OPTIMIZE PROCUREMENT
+
+within seconds.
+
+Do not add more content.
+
+Improve hierarchy, spacing, alignment and visual balance.
+
+END PROMPT 293
+
+
+## Prompt 294
+
+PROMPT 294 — aiCEV APPLICATION-WIDE DESIGN SYSTEM & THEME UNIFICATION
+
+OBJECTIVE
+
+Create and apply ONE unified visual design system across the ENTIRE aiCEV application.
+
+The Login / Registration page was recently redesigned using a light premium enterprise theme.
+
+Now extend that same visual language consistently across the complete application:
+
+LOGIN
+→ REGISTRATION
+→ DASHBOARD
+→ MODULE 1
+→ MODULE 2
+→ MODULE 3 / PCBI
+→ MODULE 4
+→ SAVINGS
+→ BENCHMARKING
+→ REPORTS
+→ MANAGEMENT QUICK SUMMARY
+→ BOARDROOM & EVIDENCE
+→ EXECUTIVE BRIEF PAGE
+→ ADMIN
+→ SUBSCRIPTION MANAGEMENT
+→ CUSTOMER PROFILE / SETTINGS
+→ OTHER APPLICATION PAGES
+
+IMPORTANT:
+
+This is an APPLICATION-WIDE DESIGN SYSTEM AND CONSISTENCY PROJECT.
+
+Do NOT independently redesign each module.
+
+Do NOT change business logic.
+
+Do NOT change financial calculations.
+
+Do NOT change subscription entitlements.
+
+Do NOT change API contracts.
+
+Do NOT change Modules 1–4 functionality.
+
+Do NOT change certified financial values.
+
+Do NOT change report methodology.
+
+The goal is to make the entire product look like ONE professionally designed enterprise SaaS platform.
+
+==================================================
+1. CORE DESIGN PRINCIPLE
+==================================================
+
+The customer should never feel that different screens were built by different teams at different times.
+
+From login to the final report:
+
+- same font
+- same colors
+- same spacing system
+- same card language
+- same button language
+- same border treatment
+- same icon language
+- same table language
+- same chart language
+- same page headers
+- same navigation
+- same interaction states
+- same responsive behavior
+
+The visual identity must be unmistakably:
+
+aiCEV by Procucev.
+
+==================================================
+2. APPROVED VISUAL DIRECTION
+==================================================
+
+Use the NEW LOGIN PAGE as the starting reference.
+
+PRIMARY STYLE:
+
+LIGHT PREMIUM ENTERPRISE PROCUREMENT INTELLIGENCE
+
+Do NOT revert the application to the previous dark-only visual system.
+
+Primary canvas:
+
+#EEF7FF
+#F8FBFE
+
+Use subtle blue-white gradients only where appropriate.
+
+Do NOT use heavy gradients.
+
+Do NOT use neon/glowing AI aesthetics.
+
+Do NOT use excessive dark navy panels.
+
+==================================================
+3. MASTER COLOR TOKENS
+==================================================
+
+Create a CENTRALIZED DESIGN TOKEN SYSTEM.
+
+Do not hard-code different shades independently inside each component.
+
+Create global tokens such as:
+
+--aicev-bg
+--aicev-surface
+--aicev-surface-muted
+--aicev-primary
+--aicev-primary-hover
+--aicev-secondary
+--aicev-accent
+--aicev-text
+--aicev-text-secondary
+--aicev-border
+--aicev-success
+--aicev-warning
+--aicev-error
+--aicev-info
+
+Recommended base palette:
+
+Background:
+#EEF7FF
+
+Secondary background:
+#F8FBFE
+
+Surface:
+#FFFFFF
+
+Primary text:
+#0B1B33
+
+Secondary text:
+#475569
+
+Muted text:
+#64748B
+
+Border:
+#DCE7F5
+
+Primary aiCEV Blue:
+#0284C7
+
+Primary blue hover:
+use a consistent darker blue token
+
+aiCEV Orange:
+use the existing official brand orange
+
+Success:
+restrained enterprise green
+
+Warning:
+amber
+
+Error:
+restrained red
+
+Do not introduce random colors elsewhere.
+
+If the existing official aiCEV logo palette has an approved exact orange/blue value, use those exact brand values.
+
+==================================================
+4. TYPOGRAPHY SYSTEM
+==================================================
+
+Standardize the ENTIRE APPLICATION on one professional sans-serif font.
+
+Preferred:
+
+INTER
+
+If Inter is already installed/loaded, use it globally.
+
+If another officially approved product font already exists, use it consistently instead.
+
+Do NOT mix multiple unrelated fonts.
+
+Typography scale:
+
+Display:
+40–48px
+
+H1:
+32–40px
+
+H2:
+24–30px
+
+H3:
+20–24px
+
+Section heading:
+18–20px
+
+Body:
+14–16px
+
+Large KPI:
+28–40px
+
+Small label:
+11–13px
+
+Table:
+13–14px
+
+Use:
+
+400 body
+500 supporting
+600 labels/headings
+700 major headings
+800 only for major KPI/hero emphasis
+
+Do not use excessive bold text.
+
+Monospace ONLY for:
+
+- PCBI IDs
+- technical IDs
+- activation codes
+- data identifiers
+- deliberate technical labels
+
+Never use monospace for ordinary customer-facing prose.
+
+==================================================
+5. SPACING SYSTEM
+==================================================
+
+Create one spacing scale and use it globally.
+
+Preferred base:
+
+4px / 8px spacing system.
+
+Use:
+
+4
+8
+12
+16
+20
+24
+32
+40
+48
+64
+
+Do not use random values such as:
+
+13px
+17px
+27px
+31px
+
+unless technically required.
+
+Page-level spacing should be consistent across all modules.
+
+==================================================
+6. BORDER RADIUS
+==================================================
+
+Standardize:
+
+Small controls:
+8px
+
+Inputs:
+10–12px
+
+Cards:
+12–16px
+
+Major panels:
+16–20px
+
+Avoid excessive pill-shaped containers.
+
+Pills should be reserved for:
+
+- statuses
+- tiers
+- categories
+- tags
+- compact badges
+
+==================================================
+7. SHADOW SYSTEM
+==================================================
+
+Use restrained enterprise shadows.
+
+Avoid heavy floating/glowing effects.
+
+Recommended hierarchy:
+
+No shadow:
+standard cards where borders are sufficient.
+
+Soft shadow:
+major white panels.
+
+Medium shadow:
+active modal/dialog.
+
+Do not use different shadow styles on every page.
+
+==================================================
+8. GLOBAL APPLICATION SHELL
+==================================================
+
+Create a consistent application shell.
+
+All authenticated pages should share:
+
+TOP / HEADER
+
+- aiCEV logo
+- page title / breadcrumb
+- workspace/customer context
+- notification/user controls
+- consistent profile menu
+
+LEFT NAVIGATION
+
+Use one navigation style across:
+
+Module 1
+Module 2
+Module 3
+Module 4
+Reports
+Executive Brief
+Settings
+
+Do not create different navigation systems for different modules.
+
+==================================================
+9. PAGE HEADER STANDARD
+==================================================
+
+Every major page should use the same structure:
+
+Page title
+
+One-line description
+
+Optional:
+
+breadcrumb
+status
+date range
+filters
+primary action
+
+Example:
+
+PROCUREMENT SPEND INTELLIGENCE
+
+"Understand your current procurement baseline and identify value opportunities."
+
+Then:
+
+[Date Range] [Plant] [Category] [Export]
+
+Use the same alignment across all pages.
+
+==================================================
+10. DASHBOARD
+==================================================
+
+Bring the Dashboard into the same light theme.
+
+Use:
+
+- white KPI cards
+- light blue background
+- dark navy text
+- aiCEV blue highlights
+- restrained green for positive value
+- consistent chart styling
+
+KPI cards must have:
+
+same height
+same padding
+same number hierarchy
+same label hierarchy
+
+Do not use oversized decorative cards.
+
+==================================================
+11. MODULE 1
+==================================================
+
+Apply the unified design system.
+
+Preserve all existing functionality.
+
+Keep:
+
+- spend analysis
+- supplier analysis
+- category analysis
+- plant analysis
+- transaction analysis
+- forensic validation
+- existing certified calculations
+
+Change ONLY visual presentation:
+
+- page background
+- cards
+- typography
+- tables
+- filters
+- charts
+- tabs
+- spacing
+- buttons
+
+==================================================
+12. MODULE 2
+==================================================
+
+Apply the same system.
+
+Preserve:
+
+- UNSPSC categorization
+- strategic sourcing
+- vendor consolidation
+- PO consolidation
+- e-auction
+- savings opportunity logic
+
+Visual language must match Module 1.
+
+Do NOT invent new UX patterns.
+
+==================================================
+13. MODULE 3 / PCBI
+==================================================
+
+This is especially important.
+
+PCBI must look like part of the same application.
+
+Use:
+
+- consistent table
+- consistent KPI cards
+- consistent filter controls
+- consistent chart styling
+- consistent badges
+- consistent benchmark indicators
+
+Quality labels:
+
+A
+B
+C
+
+should use a consistent badge/status system.
+
+PCBI IDs may use monospace.
+
+Do not use the old dark theme independently here.
+
+==================================================
+14. MODULE 4
+==================================================
+
+Apply the same design language.
+
+Preserve:
+
+- savings waterfall
+- savings realization
+- action tracker
+- savings initiatives
+- execution tracking
+
+Use a consistent visual distinction between:
+
+Identified
+Validated
+Approved
+Realized
+
+Do not change financial meaning.
+
+==================================================
+15. EXECUTIVE BRIEF PAGE
+==================================================
+
+THIS IS A PRIORITY.
+
+The current Executive Brief / Management Quick Summary experience reportedly still uses the old dark visual theme.
+
+Bring it into the SAME light aiCEV design system.
+
+It must visually match:
+
+Login
+Dashboard
+Modules 1–4
+
+The Executive Brief should feel like the executive layer of the SAME PRODUCT.
+
+Use:
+
+light background
+white content panels
+dark navy typography
+aiCEV blue
+aiCEV orange
+same font
+same spacing
+same card radius
+same KPI treatment
+same chart treatment
+
+IMPORTANT:
+
+Do NOT change the certified Executive Brief content.
+
+Do NOT change:
+
+₹78.72 Cr Direct Savings Opportunity
+₹93.60 Cr Net Defensible Pipeline
+₹173.12 Cr Gross Identified Opportunity
+₹62.80 Cr overlap
+₹16.72 Cr exclusions
+₹14.88 Cr Strategic Market Value
+₹47.90 Cr Validated Savings
+₹68.00 Cr Realized Savings
+
+Only change visual presentation.
+
+==================================================
+16. BOARDROOM & EVIDENCE REPORT
+==================================================
+
+Bring the WEB VIEW / REPORT EXPERIENCE into the same visual system.
+
+Do not alter:
+
+- methodology
+- calculations
+- financial bridge
+- evidence
+- initiative ledger
+- appendix
+- certified values
+
+Use the same:
+
+font
+colors
+spacing
+headers
+tables
+KPI style
+
+The report should feel like the detailed evidence layer of the same aiCEV product.
+
+==================================================
+17. PDF / PPTX OUTPUT
+==================================================
+
+IMPORTANT:
+
+Review the generated Executive Brief PDF/PPTX and Boardroom & Evidence PDF/PPTX templates.
+
+They should use the same visual design language:
+
+- light enterprise background
+- aiCEV logo
+- same typography family
+- same navy text
+- same blue/orange brand accents
+- same KPI hierarchy
+- same table language
+
+Do NOT redesign the actual report content.
+
+Do NOT alter certified financial values.
+
+Do NOT change the existing 10-slide / 30-slide story architecture.
+
+Only unify the visual design system.
+
+If PDF/PPTX generation uses separate style constants, centralize those constants as well.
+
+==================================================
+18. TABLE DESIGN SYSTEM
+==================================================
+
+All application tables should use one style.
+
+Header:
+
+light blue/grey background
+
+Text:
+
+dark navy
+
+Rows:
+
+white
+
+Hover:
+
+very light blue
+
+Borders:
+
+subtle
+
+Numbers:
+
+right aligned
+
+Currency:
+
+consistent ₹ Cr formatting
+
+Percentages:
+
+consistent formatting
+
+Status:
+
+standard badges
+
+Do not use different table designs in different modules.
+
+==================================================
+19. CHART DESIGN SYSTEM
+==================================================
+
+Create standard chart rules.
+
+Use the same palette across all charts.
+
+Primary series:
+aiCEV blue
+
+Secondary:
+aiCEV orange
+
+Positive:
+green
+
+Neutral:
+slate
+
+Warning:
+amber
+
+Negative:
+red
+
+Do not use random chart colors.
+
+Avoid 8–12 unrelated colors in one chart.
+
+Use consistent:
+
+axis typography
+tooltip
+legend
+grid lines
+number formatting
+
+==================================================
+20. BUTTON SYSTEM
+==================================================
+
+Create standardized button variants:
+
+Primary:
+aiCEV blue
+
+Secondary:
+white / outlined
+
+Tertiary:
+text / ghost
+
+Danger:
+red
+
+All buttons must share:
+
+same height
+same radius
+same font
+same hover behavior
+same focus state
+
+Primary CTA language should remain action-oriented.
+
+==================================================
+21. FORM SYSTEM
+==================================================
+
+All forms must use:
+
+same input height
+same border
+same radius
+same focus ring
+same label typography
+same error state
+same helper text
+
+The Login page's input styling should become the reference.
+
+==================================================
+22. FILTER SYSTEM
+==================================================
+
+All modules should use one filter pattern.
+
+Example:
+
+[Date Range]
+[Plant]
+[Category]
+[Supplier]
+[Status]
+[Apply]
+
+Do not create a different filter control style for every module.
+
+==================================================
+23. STATUS / BADGE SYSTEM
+==================================================
+
+Standardize badges.
+
+Examples:
+
+ACTIVE
+IN REVIEW
+VALIDATED
+REALIZED
+PENDING
+EXPIRED
+SUSPENDED
+A
+B
+C
+BRONZE
+SILVER
+GOLD
+
+Use the same badge dimensions and typography.
+
+==================================================
+24. MODALS / DRAWERS
+==================================================
+
+All modals and drawers must use:
+
+same overlay
+same white surface
+same header
+same close button
+same radius
+same shadow
+same footer/button structure
+
+Do not redesign dialogs individually.
+
+==================================================
+25. EMPTY / LOADING / ERROR STATES
+==================================================
+
+Create a standard system for:
+
+Loading
+No Data
+Upload Required
+Access Restricted
+Error
+Success
+
+All modules must use the same patterns.
+
+==================================================
+26. SUBSCRIPTION / ENTITLEMENT UI
+==================================================
+
+Bring Bronze / Silver / Gold UI into the same design language.
+
+Bronze:
+amber accent
+
+Silver:
+slate/blue
+
+Gold:
+orange/gold
+
+Do not make subscription UI look like a separate application.
+
+Maintain existing entitlement behavior.
+
+Do NOT change access controls.
+
+==================================================
+27. ADMIN AREA
+==================================================
+
+Admin pages must use the same design system.
+
+They can remain visually more operational, but must still share:
+font
+colors
+spacing
+tables
+buttons
+forms
+badges
+navigation
+headers
+
+Do not create a separate dark admin product.
+
+==================================================
+28. RESPONSIVE DESIGN
+==================================================
+
+Standardize responsive behavior across all pages.
+
+Desktop:
+
+1440 × 900
+1920 × 1080
+1366 × 768
+
+Mobile:
+
+390px
+430px
+
+Tablet:
+
+768px
+1024px
+
+Ensure:
+
+no horizontal scrolling
+no clipped text
+no overlapping cards
+no inconsistent margins
+no broken tables
+
+Tables may scroll horizontally where data density requires it, but the page itself must not overflow.
+
+==================================================
+29. ACCESSIBILITY
+==================================================
+
+Maintain:
+
+WCAG-conscious contrast
+
+Visible focus states
+
+Keyboard navigation
+
+Proper labels
+
+ARIA where appropriate
+
+Do not sacrifice accessibility for visual styling.
+
+==================================================
+30. CENTRALIZE THE DESIGN SYSTEM
+==================================================
+
+Do NOT solve this by editing hundreds of components independently.
+
+First identify the existing styling architecture.
+
+Then create/reuse a central design system such as:
+
+/frontend/src/design-system/
+/frontend/src/styles/
+/frontend/src/theme/
+
+Use centralized:
+
+colors
+typography
+spacing
+radii
+shadows
+buttons
+inputs
+cards
+badges
+tables
+charts
+layout primitives
+
+Use existing component library where present.
+
+Avoid duplicate implementations.
+
+==================================================
+31. AUDIT THE ENTIRE CODEBASE FIRST
+==================================================
+
+Before changing UI:
+
+Search for:
+
+bg-slate
+bg-gray
+bg-zinc
+bg-neutral
+dark:
+text-white
+text-gray
+border-gray
+rounded
+shadow
+font-mono
+hard-coded colors
+page-specific fonts
+dark theme wrappers
+
+Identify pages/components that use the old visual system.
+
+Create an inventory:
+
+PAGE
+CURRENT THEME
+TARGET THEME
+COMPONENTS AFFECTED
+RISK
+
+Do not blindly replace all colors.
+
+==================================================
+32. IMPORTANT — PRESERVE DATA VISUAL MEANING
+==================================================
+
+Do NOT change color semantics where colors communicate business meaning.
+
+For example:
+
+Savings positive
+Risk
+Exception
+Warning
+Benchmark quality
+Subscription status
+
+Map those meanings into the new design system rather than simply replacing colors.
+
+==================================================
+33. DO NOT MODIFY BUSINESS LOGIC
+==================================================
+
+The following are FROZEN:
+
+Module 1 calculations
+Module 2 calculations
+Module 3 / PCBI calculations
+Module 4 savings calculations
+Certified financial bridge
+Subscription entitlements
+Tenant isolation
+Authentication
+Admin authorization
+OTP
+Activation code
+Financial data
+Report methodology
+
+Only presentation layer changes are allowed.
+
+If a component mixes UI and business logic, refactor ONLY if necessary to safely separate styling.
+
+Do not change calculations.
+
+==================================================
+34. MANAGEMENT QUICK SUMMARY
+==================================================
+
+Keep:
+
+Management Quick Summary
+
+as the 10-slide executive experience.
+
+Its navigation and entitlement rules remain unchanged.
+
+Only visual theme changes.
+
+It must visually match the rest of the application.
+
+==================================================
+35. LOGO
+==================================================
+
+Use the official aiCEV logo consistently.
+
+Same:
+
+size
+placement
+clear space
+aspect ratio
+
+Do not use multiple logo variants without reason.
+
+==================================================
+36. DESIGN CONSISTENCY ACCEPTANCE TEST
+==================================================
+
+Create a design-system audit.
+
+For each major page verify:
+
+[ ] same font
+[ ] same page background
+[ ] same heading hierarchy
+[ ] same body text
+[ ] same card style
+[ ] same button style
+[ ] same input style
+[ ] same table style
+[ ] same badge style
+[ ] same spacing
+[ ] same border radius
+[ ] same shadow language
+[ ] same navigation
+[ ] same header
+[ ] same responsive behavior
+
+==================================================
+37. VISUAL PAGES TO REVIEW
+==================================================
+
+At minimum inspect:
+
+1. Login
+2. Registration
+3. Dashboard
+4. Module 1
+5. Module 2
+6. Module 3
+7. PCBI
+8. Module 4
+9. Savings
+10. Reports
+11. Management Quick Summary
+12. Boardroom & Evidence
+13. Executive Brief
+14. Admin Dashboard
+15. Subscription Management
+16. Customer/Profile/Settings
+17. Any remaining major customer-facing page
+
+==================================================
+38. ACTUAL BROWSER VALIDATION
+==================================================
+
+IMPORTANT:
+
+Do NOT claim visual validation based only on DOM inspection.
+
+If browser automation is available:
+
+actually render and inspect the pages.
+
+If Playwright/browser tooling is unavailable because of an infrastructure error:
+
+clearly report:
+
+BROWSER VISUAL VALIDATION BLOCKED
+
+Do not falsely report visual PASS.
+
+In that case:
+
+- complete static design-system audit
+- run all automated tests
+- provide exact pages requiring manual visual review
+
+==================================================
+39. SCREENSHOT MATRIX
+==================================================
+
+Where browser inspection is available, inspect at:
+
+1440×900
+1920×1080
+1366×768
+390px mobile
+
+For each major page verify:
+
+alignment
+spacing
+font consistency
+color consistency
+card consistency
+table consistency
+chart consistency
+navigation consistency
+responsive behavior
+
+==================================================
+40. QUALITY GATES
+==================================================
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run test
+npm run quality:fast
+
+Do not report PASS unless the actual commands complete successfully.
+
+Run existing full regression suite.
+
+No business logic regression is acceptable.
+
+==================================================
+41. FILE SIZE
+==================================================
+
+Maintain the existing architectural requirement:
+
+No source file above 300 lines.
+
+If a file needs to be split:
+
+do so logically.
+
+Do not create unnecessary micro-components merely to satisfy the limit.
+
+==================================================
+42. FINAL REPORT
+==================================================
+
+Produce:
+
+# PROMPT 294 — APPLICATION-WIDE DESIGN SYSTEM REPORT
+
+1. Design system created/reused
+2. Global theme
+3. Typography
+4. Color tokens
+5. Spacing system
+6. Component system
+7. Navigation system
+8. Dashboard
+9. Module 1
+10. Module 2
+11. Module 3
+12. PCBI
+13. Module 4
+14. Savings
+15. Management Quick Summary
+16. Executive Brief
+17. Boardroom & Evidence
+18. Admin
+19. Subscription
+20. Login
+21. Mobile
+22. PDF/PPTX report styling
+23. Old dark-theme areas remaining
+24. Files modified
+25. Business logic files untouched
+26. Financial calculations untouched
+27. Typecheck
+28. Lint
+29. Full tests
+30. quality:fast
+31. Browser visual validation status
+32. Remaining visual inconsistencies
+
+==================================================
+43. FINAL ACCEPTANCE STANDARD
+==================================================
+
+The application should feel like ONE product.
+
+A user moving from:
+
+LOGIN
+→ DASHBOARD
+→ MODULE 1
+→ MODULE 2
+→ PCBI
+→ MODULE 4
+→ EXECUTIVE BRIEF
+
+should never think:
+
+"This screen looks like a different application."
+
+The final product should communicate:
+
+aiCEV by Procucev
+Strategic Procurement Intelligence
+
+with one consistent premium enterprise design language.
+
+The login page is the reference.
+
+The Executive Brief is NOT allowed to retain an unrelated dark visual language.
+
+END PROMPT 294
+
+
+## Prompt 295
+
+PROMPT 295 — FINAL aiCEV DESIGN SYSTEM AUDIT & VISUAL CONSISTENCY HARDENING
+
+PROMPT 294 DESIGN SYSTEM IMPLEMENTATION IS ACCEPTED AS THE BASELINE.
+
+DO NOT REDESIGN THE APPLICATION.
+
+DO NOT CHANGE THE CURRENT LIGHT ENTERPRISE CONCEPT.
+
+DO NOT CHANGE BUSINESS LOGIC.
+
+DO NOT CHANGE:
+
+- Module 1
+- Module 2
+- Module 3
+- PCBI
+- Module 4
+- Savings calculations
+- Certified financial figures
+- Subscription architecture
+- Entitlement logic
+- Authentication
+- Tenant isolation
+- API contracts
+- Report methodology
+
+This is the FINAL DESIGN SYSTEM AUDIT AND HARDENING PASS.
+
+==================================================
+1. OBJECTIVE
+==================================================
+
+Verify that the application-wide design system introduced in Prompt 294 is genuinely consistent across:
+
+Login
+Registration
+Dashboard
+Module 1
+Module 2
+Module 3
+PCBI
+Module 4
+Savings
+Benchmarking
+Management Quick Summary
+Executive Brief
+Boardroom & Evidence
+Reports
+Admin
+Subscriptions
+Profile
+Settings
+All other major authenticated pages
+
+The goal is NOT to create another visual redesign.
+
+The goal is:
+
+ONE aiCEV PRODUCT
+ONE VISUAL LANGUAGE
+ONE DESIGN SYSTEM
+
+==================================================
+2. DESIGN SYSTEM IS THE SINGLE SOURCE OF TRUTH
+==================================================
+
+Verify that the following are centralized:
+
+- colors
+- typography
+- spacing
+- border radius
+- shadows
+- buttons
+- inputs
+- badges
+- tables
+- navigation
+- modals
+- charts
+
+Search for page-specific hard-coded styles that contradict the design system.
+
+Identify remaining:
+
+- dark backgrounds
+- unrelated fonts
+- unrelated colors
+- inconsistent borders
+- inconsistent radii
+- inconsistent shadows
+- inconsistent button styles
+- inconsistent input styles
+- inconsistent headers
+- inconsistent navigation
+
+Do NOT blindly replace legitimate semantic colors.
+
+Produce an exception list before modifying anything.
+
+==================================================
+3. TYPOGRAPHY CORRECTION
+==================================================
+
+Use Inter as the primary application font.
+
+Use the same font hierarchy everywhere.
+
+IMPORTANT:
+
+Do NOT use JetBrains Mono for all monetary or financial KPI values.
+
+Use Inter for:
+
+- ₹78.72 Cr
+- ₹93.60 Cr
+- ₹173.12 Cr
+- ₹47.90 Cr
+- ₹68.00 Cr
+- percentages
+- KPI values
+- executive metrics
+
+Monospace should be reserved for:
+
+- PCBI IDs
+- transaction IDs
+- contract IDs
+- activation codes
+- technical identifiers
+- audit references
+- machine-readable codes
+
+If tabular numerical alignment is needed, use appropriate font-variant/tabular-number styling with Inter rather than switching to monospace.
+
+==================================================
+4. COLOR DISCIPLINE
+==================================================
+
+Keep the centralized palette from Prompt 294.
+
+However, treat the chart palette as a semantic maximum, NOT a requirement to use all colors.
+
+Preferred chart hierarchy:
+
+Primary:
+aiCEV Blue
+
+Secondary:
+aiCEV Orange
+
+Positive:
+Green
+
+Neutral:
+Slate
+
+Warning:
+Amber
+
+Risk:
+Red
+
+Purple / Indigo / Teal should only be used for genuine multi-category visualizations where additional colors are necessary.
+
+Do not create rainbow charts.
+
+==================================================
+5. EXECUTIVE BRIEF
+==================================================
+
+Perform a detailed visual consistency audit of:
+
+/executive-brief
+
+and all:
+
+frontend/src/components/executiveBrief/*
+
+Verify:
+
+- same page background
+- same font
+- same heading hierarchy
+- same cards
+- same buttons
+- same tables
+- same badges
+- same spacing
+- same modal system
+- same navigation
+- same logo treatment
+
+The Executive Brief must feel like the executive layer of the same aiCEV application.
+
+Do not change its content.
+
+==================================================
+6. MANAGEMENT QUICK SUMMARY
+==================================================
+
+Verify:
+
+Management Quick Summary
+
+10-slide executive experience.
+
+It must visually connect to:
+
+Login
+Dashboard
+Modules 1–4
+Executive Brief
+
+Use the same:
+
+- logo
+- typography
+- color language
+- KPI treatment
+- buttons
+- navigation
+- spacing
+
+Do not change the certified content.
+
+==================================================
+7. ACTUAL GENERATED PDF/PPTX
+==================================================
+
+IMPORTANT.
+
+Do not limit validation to web preview cards.
+
+Inspect the ACTUAL PDF/PPTX generation code.
+
+Verify that the generated:
+
+1. aiCEV Executive Opportunity Brief
+2. Boardroom & Evidence report
+
+use the approved aiCEV visual identity.
+
+The generated documents should share:
+
+- aiCEV logo treatment
+- Inter / compatible professional sans-serif typography
+- navy text
+- aiCEV blue
+- aiCEV orange
+- consistent KPI hierarchy
+- consistent table styling
+- consistent spacing
+
+BUT:
+
+Do NOT turn the presentations into web pages.
+
+The PPTX should remain a professional executive presentation.
+
+The PDF should remain a professional executive report.
+
+Preserve the existing slide/report architecture.
+
+==================================================
+8. CERTIFIED FINANCIAL CONTENT — ABSOLUTELY FROZEN
+==================================================
+
+Do not change any financial values.
+
+Verify:
+
+Gross Identified Opportunity:
+₹173.12 Cr
+
+Overlap:
+₹62.80 Cr
+
+Exclusions:
+₹16.72 Cr
+
+Net Defensible Pipeline:
+₹93.60 Cr
+
+Net Direct Savings Opportunity:
+₹78.72 Cr
+
+Strategic Market Value:
+₹14.88 Cr
+
+Validated Savings:
+₹47.90 Cr
+
+Realized Savings:
+₹68.00 Cr
+
+De-risked Spend:
+₹420 Cr
+
+Suppliers:
+974
+
+Material Groups:
+256
+
+Plants:
+26
+
+Transactions:
+31,671
+
+Low-value POs:
+824
+
+Do not alter classification or mathematical relationships.
+
+==================================================
+9. GLOBAL HEADER / NAVIGATION
+==================================================
+
+Verify every authenticated page uses the same application shell.
+
+Standardize:
+
+- logo
+- navigation
+- active state
+- breadcrumbs
+- user menu
+- notifications
+- page title
+- page actions
+
+No module should have an unrelated navigation/header style.
+
+==================================================
+10. PAGE GRID
+==================================================
+
+Standardize:
+
+max content width
+page margins
+header height
+horizontal padding
+vertical rhythm
+
+Verify desktop:
+
+1366×768
+1440×900
+1920×1080
+
+Do not allow pages to become excessively stretched on large monitors.
+
+==================================================
+11. DATA TABLES
+==================================================
+
+Verify all major tables use:
+
+white surface
+light header
+subtle border
+dark navy text
+consistent row height
+consistent hover
+right-aligned financial numbers
+consistent pagination/filter controls
+
+PCBI tables and procurement tables should look like they belong to the same system.
+
+==================================================
+12. FORMS
+==================================================
+
+Verify:
+
+Login
+Registration
+Filters
+Admin forms
+Subscription forms
+Profile
+Settings
+PCBI controls
+
+all use the same:
+
+input height
+radius
+border
+focus state
+label
+helper text
+error state
+
+==================================================
+13. MODALS
+==================================================
+
+Verify all modals share:
+
+white surface
+same border
+same radius
+same shadow
+same backdrop
+same header
+same footer
+same button placement
+
+==================================================
+14. SUBSCRIPTION UI
+==================================================
+
+Verify:
+
+Bronze
+Silver
+Gold
+
+use consistent semantic accents.
+
+Bronze:
+Amber
+
+Silver:
+Slate / cool blue
+
+Gold:
+Orange / gold
+
+Do not turn subscription cards into a separate visual system.
+
+==================================================
+15. ADMIN UI
+==================================================
+
+Admin can remain operationally denser.
+
+However it must still use the same:
+
+font
+colors
+buttons
+tables
+inputs
+badges
+modals
+navigation
+
+Do not allow a separate dark admin application.
+
+==================================================
+16. RESPONSIVE AUDIT
+==================================================
+
+Verify:
+
+390px
+430px
+768px
+1024px
+1366px
+1440px
+1920px
+
+Check:
+
+- no horizontal page overflow
+- no clipped text
+- no overlapping cards
+- no broken headers
+- no inaccessible buttons
+- no broken tables
+- no excessive whitespace
+- no accidental scroll traps
+
+==================================================
+17. ACCESSIBILITY
+==================================================
+
+Verify:
+
+- contrast
+- keyboard focus
+- labels
+- button states
+- form errors
+- interactive elements
+- readable text
+
+Do not use color as the only indicator of status.
+
+==================================================
+18. VISUAL VALIDATION — BE HONEST
+==================================================
+
+Attempt actual browser rendering.
+
+If browser automation works:
+
+inspect the major pages visually.
+
+If browser automation fails because of Playwright/environment infrastructure:
+
+DO NOT report visual PASS.
+
+Instead report:
+
+BROWSER VISUAL VALIDATION BLOCKED
+
+and clearly identify the pages requiring manual inspection.
+
+DOM tests are NOT equivalent to visual validation.
+
+==================================================
+19. FULL REGRESSION
+==================================================
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run test
+npm run quality:fast
+
+Also run the COMPLETE frontend/backend regression suite, not only the design-system tests.
+
+Report:
+
+test files
+total tests
+passed
+failed
+skipped
+
+==================================================
+20. SEARCH FOR REMAINING DARK-THEME EXCEPTIONS
+==================================================
+
+Search the entire frontend source tree for:
+
+bg-slate-900
+bg-slate-950
+bg-[#0
+text-white
+text-slate-300
+text-slate-400
+border-slate-700
+border-slate-800
+
+Do NOT automatically remove legitimate:
+
+- modal backdrops
+- charts
+- dark presentation elements where semantically required
+- code blocks
+- technical displays
+
+Produce an exception report.
+
+==================================================
+21. FINAL CONSISTENCY SCORECARD
+==================================================
+
+Create:
+
+PAGE | THEME | FONT | HEADER | CARDS | TABLES | BUTTONS | MODALS | STATUS
+
+For:
+
+Login
+Dashboard
+Module 1
+Module 2
+Module 3
+PCBI
+Module 4
+Savings
+Benchmarking
+Management Quick Summary
+Executive Brief
+Boardroom & Evidence
+Admin
+Subscriptions
+Profile
+Settings
+
+Every row should be consistent or have an documented intentional exception.
+
+==================================================
+22. DO NOT KEEP MODIFYING RANDOM PAGES
+==================================================
+
+If a page is already compliant:
+
+DO NOT TOUCH IT.
+
+Only modify actual inconsistencies.
+
+This is a hardening pass, not a redesign.
+
+==================================================
+23. FINAL REPORT
+==================================================
+
+Return:
+
+# PROMPT 295 — FINAL DESIGN SYSTEM AUDIT
+
+1. Global design system status
+2. Typography status
+3. Color status
+4. Spacing status
+5. Component status
+6. Navigation status
+7. Login status
+8. Dashboard status
+9. Module 1 status
+10. Module 2 status
+11. Module 3 status
+12. PCBI status
+13. Module 4 status
+14. Savings status
+15. Management Quick Summary status
+16. Executive Brief status
+17. Boardroom & Evidence status
+18. Admin status
+19. Subscription status
+20. Profile/settings status
+21. PDF generation status
+22. PPTX generation status
+23. Remaining dark-theme exceptions
+24. Remaining font exceptions
+25. Remaining component inconsistencies
+26. Full regression results
+27. Browser visual validation result
+28. Screens/pages requiring manual visual inspection
+29. Files modified
+30. Business logic untouched confirmation
+
+FINAL PRINCIPLE:
+
+DO NOT MAKE THE APPLICATION LOOK IDENTICAL.
+
+MAKE IT FEEL CONSISTENT.
+
+Each module can have its own information density and business-specific visualizations.
+
+But the customer must always recognize:
+
+"THIS IS aiCEV."
+
+END PROMPT 295
+
+
+## Prompt 296
+
+PROMPT 296 — FINAL BRAND CONSISTENCY & LIGHT-THEME CLOSURE
+
+PROMPT 295 HAS BEEN COMPLETED.
+
+THIS IS NOT A REDESIGN.
+
+THIS IS THE FINAL BRAND-CONSISTENCY CLOSURE PASS.
+
+The objective is to make the entire aiCEV ecosystem feel like ONE PROFESSIONAL ENTERPRISE PRODUCT:
+
+LOGIN
+→ REGISTRATION
+→ DASHBOARD
+→ MODULE 1
+→ MODULE 2
+→ MODULE 3
+→ PCBI
+→ MODULE 4
+→ SAVINGS
+→ BENCHMARKING
+→ MANAGEMENT QUICK SUMMARY
+→ EXECUTIVE BRIEF
+→ BOARDROOM & EVIDENCE
+→ ADMIN
+→ SUBSCRIPTIONS
+→ PROFILE
+→ SETTINGS
+→ PDF
+→ PPTX
+
+==================================================
+1. ABSOLUTE FREEZE
+==================================================
+
+DO NOT CHANGE:
+
+- business logic
+- financial calculations
+- certified figures
+- subscription logic
+- entitlement logic
+- authentication
+- tenant isolation
+- API contracts
+- Module 1 functionality
+- Module 2 functionality
+- Module 3 functionality
+- PCBI calculations
+- Module 4 functionality
+- savings methodology
+- report methodology
+- customer workflows
+
+Do not redesign pages that are already compliant.
+
+Only fix the specific inconsistencies identified below.
+
+==================================================
+2. LIGHT ENTERPRISE THEME IS THE PRODUCTION THEME
+==================================================
+
+aiCEV is currently a LIGHT ENTERPRISE application.
+
+Treat this as the single production theme.
+
+Do NOT introduce or preserve an independently switchable dark production theme.
+
+Remove or isolate unused Tailwind dark: variants where they have no functional purpose.
+
+Before removing anything:
+
+- identify all 759 reported dark: variants
+- classify them
+- preserve only variants that are genuinely required by:
+  - charts
+  - technical displays
+  - code blocks
+  - intentional presentation artifacts
+
+For normal application UI:
+
+NO DARK MODE.
+
+The following must remain light:
+
+- Login
+- Registration
+- Dashboard
+- Modules
+- PCBI
+- Savings
+- Reports
+- Executive Brief
+- Management Quick Summary
+- Admin
+- Subscription
+- Profile
+- Settings
+
+==================================================
+3. PCBI DARK CARDS MUST BE REMOVED
+==================================================
+
+The Prompt 295 report identified:
+
+5 dark cards in:
+
+frontend/src/components/admin/pcbi/PCBICommodityDataLabView.tsx
+
+These are NOT acceptable as permanent visual exceptions.
+
+Convert these five cards to the same light enterprise design language.
+
+==================================================
+4. APPLICATION BRAND TOKENS
+==================================================
+
+Canvas: #EEF7FF
+Canvas Subtle: #F8FBFE
+Surface: #FFFFFF
+Border: #DCE7F5
+Primary Text: #0B1B33
+Secondary Text: #475569
+Muted: #64748B
+Brand Blue: #0284C7
+Brand Blue Hover: #0369A1
+Brand Orange: #F97316
+Success: #10B981
+Warning: #F59E0B
+Danger: #EF4444
+
+==================================================
+5. PDF BRAND ALIGNMENT
+==================================================
+
+Align PDF brand identity to canonical aiCEV tokens.
+
+==================================================
+6. PPTX BRAND ALIGNMENT
+==================================================
+
+Align PPTX brand identity to canonical aiCEV tokens.
+Preferred presentation font: Inter. Fallback: Arial.
+
+==================================================
+7. LOGO CONSISTENCY
+==================================================
+
+Verify official aiCEV logo is used consistently.
+
+==================================================
+8. TYPOGRAPHY
+==================================================
+
+Primary: Inter
+Use tabular-nums for aligned numbers.
+Use monospace ONLY for technical identifiers.
+Do not use monospace for financial KPIs.
+
+==================================================
+9. CHART DISCIPLINE
+==================================================
+
+Priority: aiCEV Blue > aiCEV Orange > Green > Slate > Amber > Red
+Use Indigo/Violet/Teal only when categorical distinction requires it.
+Do not create rainbow charts.
+
+==================================================
+10. COMPONENT CONSISTENCY
+==================================================
+
+All components must share the centralized design language.
+
+==================================================
+11. PAGE GRID CONSISTENCY
+==================================================
+
+max-width: 7xl, px-4 sm:px-6 lg:px-8, py-6, 4px/8px system
+
+==================================================
+12. EXECUTIVE EXPERIENCE
+==================================================
+
+Management Quick Summary, Executive Brief, and Boardroom & Evidence must feel like different views of the SAME PRODUCT.
+
+==================================================
+13. SUBSCRIPTION EXPERIENCE
+==================================================
+
+Bronze: Amber, Silver: Slate/cool blue, Gold: aiCEV Orange/Gold
+
+==================================================
+14. AUTHENTICATION EXPERIENCE
+==================================================
+
+Login and Registration remain the visual reference baseline.
+
+==================================================
+15. SECURITY / TECHNICAL UI
+==================================================
+
+Dark surfaces allowed only for code blocks, SQL, raw telemetry, cryptographic data, machine-readable diagnostics.
+
+==================================================
+16. FINANCIAL VALUES — FROZEN
+==================================================
+
+₹173.12 Cr, ₹62.80 Cr, ₹16.72 Cr, ₹93.60 Cr, ₹78.72 Cr, ₹14.88 Cr, ₹47.90 Cr, ₹68.00 Cr, ₹420 Cr, 974 Suppliers, 256 Material Groups, 26 Plants, 31,671 Transactions, 824 Low-value POs
+
+==================================================
+17. CODE QUALITY
+==================================================
+
+Run: npm run typecheck, npm run lint, npm run test, npm run quality:fast
+
+==================================================
+18. SOURCE AUDIT
+==================================================
+
+Search entire frontend/src for: bg-slate-950, bg-slate-900, bg-[#0, dark:bg-, dark:text-, font-mono, text-white
+Classify every occurrence as LEGITIMATE or UNINTENTIONAL.
+ZERO unintentional dark production UI.
+
+==================================================
+19. IMPORTANT — DO NOT CLAIM VISUAL PASS
+==================================================
+
+If browser automation does NOT work, report: BROWSER VISUAL VALIDATION BLOCKED
+
+==================================================
+20. MANUAL VISUAL CHECKLIST
+==================================================
+
+If browser validation is unavailable, provide concise manual checklist.
+
+==================================================
+21. DO NOT CLAIM ALL SOURCE FILES <=300 LINES
+==================================================
+
+All modified TS/TSX application components remain <=300 lines where the project component-size rule applies. CSS files may exceed 300 lines.
+
+==================================================
+22. FINAL REPORT
+==================================================
+
+Return: # PROMPT 296 — FINAL BRAND CONSISTENCY CLOSURE
+
+FINAL ACCEPTANCE CRITERIA:
+A. ZERO unintended dark application UI
+B. ONE canonical aiCEV light theme
+C. ONE canonical application font
+D. ONE canonical brand palette
+E. ONE canonical component language
+F. Financial KPIs use Inter + tabular-nums
+G. Monospace only for technical identifiers
+H. PDF and PPTX visibly belong to the same aiCEV brand
+I. Executive Brief and Management Quick Summary belong to the same product family
+J. PCBI does not have unrelated dark cards
+K. No business logic changed
+L. No financial figures changed
+M. No subscription/security behavior changed
+N. Browser validation is reported honestly
+
+FINAL PRINCIPLE:
+ONE PRODUCT. ONE BRAND. ONE DESIGN SYSTEM.
+
+END PROMPT 296

@@ -26,7 +26,7 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
     <section aria-labelledby="preview-section-heading" className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h2 id="preview-section-heading" className="text-xs font-black uppercase tracking-wider text-slate-400">
+          <h2 id="preview-section-heading" className="text-xs font-black uppercase tracking-wider text-slate-500">
             {strings.preview.sectionTitle}
           </h2>
           <span className="text-[11px] text-slate-500 font-mono">16:9 Presentation Canvas Preview</span>
@@ -38,7 +38,7 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
               type="button"
               data-testid="preview-open-full-btn"
               onClick={onOpenFullReport}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white hover:bg-slate-50 text-[#0284c7] border border-[#DCE7F5] shadow-xs transition-all cursor-pointer"
             >
               <Maximize2 className="w-3.5 h-3.5" />
               <span>{strings.preview.openFullReport}</span>
@@ -49,7 +49,7 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
               type="button"
               data-testid="preview-download-pdf-btn"
               onClick={onDownloadPdf}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white shadow-xs transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>{strings.preview.downloadPdf}</span>
@@ -68,8 +68,8 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
             onClick={() => onSelectSlideIndex(idx)}
             className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               selectedSlideIndex === idx
-                ? 'bg-cyan-600 text-white shadow-sm'
-                : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                ? 'bg-[#0284C7] text-white shadow-xs font-bold'
+                : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-[#0B1B33] border border-[#DCE7F5]'
             }`}
           >
             {slide.title}
@@ -78,16 +78,16 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
       </div>
 
       {/* 16:9 Preview Viewport */}
-      <div className="relative aspect-video w-full max-h-[460px] bg-slate-950 border border-slate-800 rounded-2xl p-6 sm:p-8 flex flex-col justify-between overflow-hidden shadow-2xl text-white">
+      <div className="relative aspect-video w-full max-h-[460px] bg-white border border-[#DCE7F5] rounded-2xl p-6 sm:p-8 flex flex-col justify-between overflow-hidden shadow-xs text-[#0B1B33]">
         {/* Slide Header Ribbon */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
+        <div className="flex items-center justify-between border-b border-[#DCE7F5] pb-3">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold text-cyan-400 bg-cyan-950 px-2 py-0.5 rounded border border-cyan-800">
+            <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
               SLIDE {String(currentSlide.page).padStart(2, '0')} / 30
             </span>
-            <span className="text-sm font-extrabold text-slate-100">{currentSlide.title}</span>
+            <span className="text-sm font-extrabold text-[#0B1B33]">{currentSlide.title}</span>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest hidden sm:inline">
+          <span className="text-[10px] font-mono text-[#64748B] uppercase tracking-widest hidden sm:inline">
             PROCUCEV AI EXECUTIVE BRIEF
           </span>
         </div>
@@ -95,50 +95,50 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
         {/* Slide Content Simulator */}
         <div className="my-auto py-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
-              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+            <div className="bg-[#F8FBFE] border border-[#DCE7F5] p-4 rounded-xl">
+              <span className="text-[10px] font-bold text-[#0284C7] uppercase tracking-wider block">
                 Diagnostic Finding
               </span>
-              <p className="text-xs text-slate-200 mt-1 leading-relaxed">
+              <p className="text-xs text-[#475569] mt-1 leading-relaxed">
                 Comprehensive data forensics verified across transaction ledgers with full provenance and lineage.
               </p>
             </div>
-            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
-              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+            <div className="bg-[#F8FBFE] border border-[#DCE7F5] p-4 rounded-xl">
+              <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
                 Defensible Opportunity
               </span>
-              <p className="text-xs text-slate-200 mt-1 leading-relaxed">
+              <p className="text-xs text-[#475569] mt-1 leading-relaxed">
                 Multi-lever overlap elimination ensures accounting-compliant savings without double-counting.
               </p>
             </div>
-            <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl">
-              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+            <div className="bg-[#F8FBFE] border border-[#DCE7F5] p-4 rounded-xl">
+              <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
                 Turnkey Execution
               </span>
-              <p className="text-xs text-slate-200 mt-1 leading-relaxed">
+              <p className="text-xs text-[#475569] mt-1 leading-relaxed">
                 On-site category sourcing specialists manage dynamic e-auctions and master contract negotiation.
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800/80 p-3 rounded-xl flex items-center justify-between text-xs">
-            <span className="text-slate-400 font-mono">
+          <div className="bg-[#F8FBFE] border border-[#DCE7F5] p-3 rounded-xl flex items-center justify-between text-xs">
+            <span className="text-[#64748B] font-mono">
               Audit Footprint: Reconciled with ₹0.00 Variance against Module 1–4 Certified Data
             </span>
-            <span className="text-cyan-400 font-semibold flex items-center gap-1">
+            <span className="text-[#0284C7] font-semibold flex items-center gap-1">
               <Eye className="w-3.5 h-3.5" /> Certified Presentation Format
             </span>
           </div>
         </div>
 
         {/* Slide Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800/80 pt-3 text-[11px] text-slate-500">
+        <div className="flex items-center justify-between border-t border-[#DCE7F5] pt-3 text-[11px] text-[#64748B]">
           <div className="flex items-center gap-2">
             <button
               type="button"
               data-testid="preview-prev-btn"
               onClick={handlePrev}
-              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 transition-colors"
+              className="p-1.5 rounded-lg bg-white hover:bg-slate-50 text-[#475569] border border-[#DCE7F5] transition-colors"
               aria-label="Previous Slide"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -147,16 +147,16 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
               type="button"
               data-testid="preview-next-btn"
               onClick={handleNext}
-              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 transition-colors"
+              className="p-1.5 rounded-lg bg-white hover:bg-slate-50 text-[#475569] border border-[#DCE7F5] transition-colors"
               aria-label="Next Slide"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-            <span className="text-slate-400 font-mono ml-2">
+            <span className="text-[#64748B] font-mono ml-2">
               Slide {selectedSlideIndex + 1} of {slides.length} Preview Highlights
             </span>
           </div>
-          <span className="text-[10px] text-slate-400">CONFIDENTIAL — CLIENT USE ONLY</span>
+          <span className="text-[10px] text-[#64748B]">CONFIDENTIAL — CLIENT USE ONLY</span>
         </div>
       </div>
     </section>

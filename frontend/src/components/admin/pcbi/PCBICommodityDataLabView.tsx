@@ -126,20 +126,20 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       />
 
       {/* Top Header & Prominent Action Button */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-[#DCE7F5] p-5 rounded-2xl shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] font-mono tracking-widest uppercase bg-teal-950/80 text-teal-400 border border-teal-800/60 px-2.5 py-0.5 rounded">
+            <span className="text-[10px] font-sans tracking-widest uppercase bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 rounded">
               ADMIN → PCBI DATA LIBRARY
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-[#475569]">
               PROCUCEV ENTERPRISE SUITE
             </span>
           </div>
-          <h1 className="text-xl font-extrabold text-white tracking-tight mt-1">
+          <h1 className="text-xl font-extrabold text-[#0B1B33] tracking-tight mt-1">
             PCBI Data Library — Commodity Research Workspace
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-[#475569] mt-0.5">
             Operational repository for multi-source market evidence, empirical observations, and PCBI series population.
           </p>
         </div>
@@ -149,7 +149,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
             type="button"
             onClick={loadData}
             disabled={loading}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all flex items-center gap-1.5 text-xs font-semibold"
+            className="p-2.5 rounded-xl bg-white hover:bg-[#EEF7FF] text-[#475569] border border-[#DCE7F5] transition-all flex items-center gap-1.5 text-xs font-semibold"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             <span>Refresh</span>
@@ -159,7 +159,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
           <button
             type="button"
             onClick={() => handleOpenUploadWorkflow(queue[0])}
-            className="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-900/30 transition-all flex items-center gap-2"
+            className="px-4 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-sm transition-all flex items-center gap-2"
           >
             <UploadCloud size={15} />
             <span>Upload Commodity PCBI Source Data</span>
@@ -168,7 +168,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       </div>
 
       {/* Part C: 9 Sub-Navigation Views for PCBI Data Library */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto text-xs font-semibold">
+      <div className="flex items-center gap-2 border-b border-[#DCE7F5] pb-3 overflow-x-auto text-xs font-semibold">
         {[
           { key: 'COVERAGE_DASHBOARD', label: 'Coverage Dashboard', icon: Layers },
           { key: 'RESEARCH_QUEUE', label: 'Research Queue', icon: FileSpreadsheet },
@@ -195,11 +195,11 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
               }}
               className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 font-bold shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-sky-50 text-[#0284C7] border border-sky-200 font-bold'
+                  : 'text-[#475569] hover:text-[#0B1B33] hover:bg-[#EEF7FF]'
               }`}
             >
-              <Icon size={13} className={isActive ? 'text-cyan-400' : 'text-slate-400'} />
+              <Icon size={13} className={isActive ? 'text-[#0284C7]' : 'text-[#64748B]'} />
               <span>{tab.label}</span>
             </button>
           );
@@ -212,69 +212,69 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
           {/* SECTION A: RESEARCH DASHBOARD */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white tracking-wide uppercase flex items-center gap-2">
-                <Layers size={16} className="text-cyan-400" />
+              <h2 className="text-sm font-bold text-[#0B1B33] tracking-wide uppercase flex items-center gap-2">
+                <Layers size={16} className="text-[#0284C7]" />
                 <span>{UI_STRINGS.pcbiCommodityDataLab.researchDashboardTitle}</span>
               </h2>
-              <span className="text-[11px] text-slate-400 font-mono">
+              <span className="text-[11px] text-[#475569] tabular-nums">
                 {metrics?.totalCommodities || 0} Total Commodities in Scope
               </span>
             </div>
 
             {metrics && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl">
-                  <div className="text-[10px] text-slate-400 uppercase font-mono">{UI_STRINGS.pcbiCommodityDataLab.metricTotalCommodities}</div>
-                  <div className="text-lg font-extrabold text-white mt-1">{metrics.totalCommodities}</div>
-                  <div className="text-[10px] text-cyan-400 font-mono mt-0.5">100% Tracked</div>
+                <div className="p-3.5 bg-white border border-[#DCE7F5] rounded-xl">
+                  <div className="text-[10px] text-[#475569] uppercase tracking-wide">{UI_STRINGS.pcbiCommodityDataLab.metricTotalCommodities}</div>
+                  <div className="text-lg font-extrabold text-[#0B1B33] mt-1 tabular-nums">{metrics.totalCommodities}</div>
+                  <div className="text-[10px] text-[#0284C7] mt-0.5">100% Tracked</div>
                 </div>
 
-                <div className="p-3.5 bg-slate-900/80 border border-emerald-900/40 rounded-xl">
-                  <div className="text-[10px] text-emerald-400 uppercase font-mono">{UI_STRINGS.pcbiCommodityDataLab.metricProductionReady}</div>
-                  <div className="text-lg font-extrabold text-emerald-400 mt-1">{metrics.productionReadyCount}</div>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">Catalog Active</div>
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <div className="text-[10px] text-emerald-700 uppercase tracking-wide">{UI_STRINGS.pcbiCommodityDataLab.metricProductionReady}</div>
+                  <div className="text-lg font-extrabold text-emerald-700 mt-1 tabular-nums">{metrics.productionReadyCount}</div>
+                  <div className="text-[10px] text-emerald-600 mt-0.5">Catalog Active</div>
                 </div>
 
-                <div className="p-3.5 bg-slate-900/80 border border-amber-900/40 rounded-xl">
-                  <div className="text-[10px] text-amber-400 uppercase font-mono">{UI_STRINGS.pcbiCommodityDataLab.metricPartialHistory}</div>
-                  <div className="text-lg font-extrabold text-amber-400 mt-1">{metrics.partialHistoryCount}</div>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">Under Review</div>
+                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="text-[10px] text-amber-700 uppercase tracking-wide">{UI_STRINGS.pcbiCommodityDataLab.metricPartialHistory}</div>
+                  <div className="text-lg font-extrabold text-amber-700 mt-1 tabular-nums">{metrics.partialHistoryCount}</div>
+                  <div className="text-[10px] text-amber-600 mt-0.5">Under Review</div>
                 </div>
 
-                <div className="p-3.5 bg-slate-900/80 border border-rose-900/40 rounded-xl">
-                  <div className="text-[10px] text-rose-400 uppercase font-mono">{UI_STRINGS.pcbiCommodityDataLab.metricNoHistory}</div>
-                  <div className="text-lg font-extrabold text-rose-400 mt-1">{metrics.noHistoryCount}</div>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">Queue Critical</div>
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl">
+                  <div className="text-[10px] text-rose-700 uppercase tracking-wide">{UI_STRINGS.pcbiCommodityDataLab.metricNoHistory}</div>
+                  <div className="text-lg font-extrabold text-rose-700 mt-1 tabular-nums">{metrics.noHistoryCount}</div>
+                  <div className="text-[10px] text-rose-600 mt-0.5">Queue Critical</div>
                 </div>
 
-                <div className="p-3.5 bg-slate-900/80 border border-slate-800 rounded-xl">
-                  <div className="text-[10px] text-slate-400 uppercase font-mono">{UI_STRINGS.pcbiCommodityDataLab.metricMethodologyPending}</div>
-                  <div className="text-lg font-extrabold text-purple-400 mt-1">{metrics.methodologyPendingCount}</div>
-                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">Review Required</div>
+                <div className="p-3.5 bg-purple-50 border border-purple-200 rounded-xl">
+                  <div className="text-[10px] text-purple-700 uppercase tracking-wide">{UI_STRINGS.pcbiCommodityDataLab.metricMethodologyPending}</div>
+                  <div className="text-lg font-extrabold text-purple-700 mt-1 tabular-nums">{metrics.methodologyPendingCount}</div>
+                  <div className="text-[10px] text-purple-600 mt-0.5">Review Required</div>
                 </div>
 
-                <div className="p-3.5 bg-slate-900/80 border border-rose-900/60 rounded-xl bg-rose-950/10">
-                  <div className="text-[10px] text-rose-400 uppercase font-mono">{UI_STRINGS.pcbiCommodityDataLab.metricHighImpactGaps}</div>
-                  <div className="text-lg font-extrabold text-rose-300 mt-1">{metrics.highImpactGapsCount}</div>
-                  <div className="text-[10px] text-rose-400/80 font-mono mt-0.5">P1 Priority</div>
+                <div className="p-3.5 bg-rose-50 border border-rose-300 rounded-xl">
+                  <div className="text-[10px] text-rose-700 uppercase tracking-wide">{UI_STRINGS.pcbiCommodityDataLab.metricHighImpactGaps}</div>
+                  <div className="text-lg font-extrabold text-rose-700 mt-1 tabular-nums">{metrics.highImpactGapsCount}</div>
+                  <div className="text-[10px] text-rose-600 mt-0.5">P1 Priority</div>
                 </div>
               </div>
             )}
 
             {/* Priority Sub-bar */}
             {metrics && (
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-slate-900/40 border border-slate-800/80 rounded-xl text-xs font-mono">
-                <span className="text-slate-400 uppercase text-[10px]">Queue by Priority:</span>
-                <span className="px-2 py-0.5 rounded bg-rose-950/60 text-rose-400 border border-rose-900/50">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-[#EEF7FF] border border-[#DCE7F5] rounded-xl text-xs">
+                <span className="text-[#475569] uppercase text-[10px] font-semibold">Queue by Priority:</span>
+                <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">
                   {UI_STRINGS.pcbiCommodityDataLab.metricP1Critical}: {metrics.queueByPriority.p1Critical}
                 </span>
-                <span className="px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-900/50">
+                <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
                   {UI_STRINGS.pcbiCommodityDataLab.metricP2High}: {metrics.queueByPriority.p2High}
                 </span>
-                <span className="px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-900/50">
+                <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-700 border border-sky-200">
                   {UI_STRINGS.pcbiCommodityDataLab.metricP3Medium}: {metrics.queueByPriority.p3Medium}
                 </span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                <span className="px-2 py-0.5 rounded bg-slate-100 text-[#475569] border border-[#DCE7F5]">
                   {UI_STRINGS.pcbiCommodityDataLab.metricP4Low}: {metrics.queueByPriority.p4Low}
                 </span>
               </div>
@@ -306,10 +306,10 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       {/* VIEW 3: COMMODITY PCBI (Drilldown / Workspace) */}
       {activeSubTab === 'COMMODITY_PCBI' && (
         <div className="space-y-4">
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between">
+          <div className="bg-white border border-[#DCE7F5] p-5 rounded-2xl flex items-center justify-between shadow-sm">
             <div>
-              <h3 className="font-extrabold text-white text-base">Select Commodity to Open Workspace</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-extrabold text-[#0B1B33] text-base">Select Commodity to Open Workspace</h3>
+              <p className="text-xs text-[#475569] mt-1">
                 Choose any tracked commodity to inspect its 12-tab workspace and evidence registry.
               </p>
             </div>
@@ -325,7 +325,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       {/* VIEW 4: VALIDATION QUEUE (Filtered Queue) */}
       {activeSubTab === 'VALIDATION_QUEUE' && (
         <div className="space-y-4">
-          <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300">
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
             Displaying commodities with pending validations, continuity audits, or active research gaps.
           </div>
           <PCBICommodityResearchQueueTable
@@ -339,7 +339,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       {/* VIEW 5: PENDING APPROVAL (Filtered Queue) */}
       {activeSubTab === 'PENDING_APPROVAL' && (
         <div className="space-y-4">
-          <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300">
+          <div className="p-4 bg-[#EEF7FF] border border-[#DCE7F5] rounded-xl text-xs text-[#475569]">
             Displaying commodities where source observations have been staged and await Admin governance sign-off.
           </div>
           <PCBICommodityResearchQueueTable
@@ -353,7 +353,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       {/* VIEW 6: ACTIVE PCBI SERIES (Filtered Queue) */}
       {activeSubTab === 'ACTIVE_PCBI_SERIES' && (
         <div className="space-y-4">
-          <div className="p-4 bg-slate-900 border border-emerald-800/40 rounded-xl text-xs text-emerald-300">
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800">
             Displaying active production-ready PCBI series promoted to the Dynamic PCBI Catalog.
           </div>
           <PCBICommodityResearchQueueTable
@@ -366,32 +366,32 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
 
       {/* VIEW 7: VERSION HISTORY (Audit Trail) */}
       {activeSubTab === 'VERSION_HISTORY' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl text-xs font-mono">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="bg-white border border-[#DCE7F5] rounded-2xl p-6 space-y-4 shadow-sm text-xs">
+          <div className="flex items-center justify-between border-b border-[#DCE7F5] pb-3">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-cyan-400" />
-              <span className="font-extrabold text-white text-sm font-sans">PCBI Data Library — Promotion Audit Trail</span>
+              <ShieldCheck size={16} className="text-[#0284C7]" />
+              <span className="font-extrabold text-[#0B1B33] text-sm">PCBI Data Library — Promotion Audit Trail</span>
             </div>
-            <span className="text-slate-400">Master Authority V1.0 Intact</span>
+            <span className="text-[#475569]">Master Authority V1.0 Intact</span>
           </div>
 
           <div className="space-y-3">
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-              <div className="flex justify-between text-slate-300 font-bold">
+            <div className="p-4 rounded-xl bg-[#EEF7FF] border border-[#DCE7F5] space-y-1">
+              <div className="flex justify-between text-[#0B1B33] font-bold">
                 <span>Dynamic Catalog Promotion: COM-CHM-CSL</span>
-                <span className="text-emerald-400">V1.7-APPROVED</span>
+                <span className="text-emerald-700">V1.7-APPROVED</span>
               </div>
-              <p className="text-slate-400 text-[11px]">Caustic Soda Lye 48% promoted by Sriman Admin with 75 verified monthly observations.</p>
-              <div className="text-[10px] text-slate-500 pt-1">Timestamp: 2026-09-28T12:00:00.000Z</div>
+              <p className="text-[#475569] text-[11px]">Caustic Soda Lye 48% promoted by Sriman Admin with 75 verified monthly observations.</p>
+              <div className="text-[10px] text-[#64748B] pt-1 tabular-nums">Timestamp: 2026-09-28T12:00:00.000Z</div>
             </div>
 
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-              <div className="flex justify-between text-slate-300 font-bold">
+            <div className="p-4 rounded-xl bg-[#EEF7FF] border border-[#DCE7F5] space-y-1">
+              <div className="flex justify-between text-[#0B1B33] font-bold">
                 <span>Dynamic Catalog Promotion: COM-STEEL-HRC</span>
-                <span className="text-emerald-400">V1.7-APPROVED</span>
+                <span className="text-emerald-700">V1.7-APPROVED</span>
               </div>
-              <p className="text-slate-400 text-[11px]">Hot Rolled Steel Coils IS 2062 promoted by Sriman Admin with 75 verified weekly observations.</p>
-              <div className="text-[10px] text-slate-500 pt-1">Timestamp: 2026-09-28T12:00:00.000Z</div>
+              <p className="text-[#475569] text-[11px]">Hot Rolled Steel Coils IS 2062 promoted by Sriman Admin with 75 verified weekly observations.</p>
+              <div className="text-[10px] text-[#64748B] pt-1 tabular-nums">Timestamp: 2026-09-28T12:00:00.000Z</div>
             </div>
           </div>
         </div>

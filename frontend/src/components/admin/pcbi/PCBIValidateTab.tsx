@@ -24,10 +24,10 @@ export const PCBIValidateTab: React.FC<PCBIValidateTabProps> = ({
 }) => {
   if (!validationSummary) {
     return (
-      <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
-        <Info size={32} className="mx-auto text-slate-500" />
-        <h4 className="text-sm font-bold text-slate-300">No Validation Data Available</h4>
-        <p className="text-xs text-slate-500">
+      <div className="p-12 text-center bg-[#EEF7FF] border border-[#DCE7F5] rounded-2xl space-y-3">
+        <Info size={32} className="mx-auto text-[#64748B]" />
+        <h4 className="text-sm font-bold text-[#0B1B33]">No Validation Data Available</h4>
+        <p className="text-xs text-[#475569]">
           Upload a PCBI Master file to execute automated structural validation.
         </p>
       </div>
@@ -55,27 +55,27 @@ export const PCBIValidateTab: React.FC<PCBIValidateTabProps> = ({
       />
 
       {/* Gate Enforcement Banner & Proceed Action */}
-      <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-4 bg-white border border-[#DCE7F5] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         {hasBlockingErrors ? (
-          <div className="flex items-center gap-2.5 text-xs text-rose-300">
-            <ShieldAlert size={18} className="text-rose-400 shrink-0" />
+          <div className="flex items-center gap-2.5 text-xs text-rose-700">
+            <ShieldAlert size={18} className="text-rose-600 shrink-0" />
             <div>
-              <p className="font-bold text-rose-200">
+              <p className="font-bold text-rose-800">
                 {UI_STRINGS.pcbiAdmin.blockingGateNotice}
               </p>
-              <p className="text-[11px] text-rose-400/80">
+              <p className="text-[11px] text-rose-600">
                 Resolve {validationSummary.blockingErrorCount} blocking error(s) before file import can be executed.
               </p>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2.5 text-xs text-emerald-300">
-            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-2.5 text-xs text-emerald-700">
+            <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
             <div>
-              <p className="font-bold text-emerald-200">
+              <p className="font-bold text-emerald-800">
                 {UI_STRINGS.pcbiAdmin.readyForImport}
               </p>
-              <p className="text-[11px] text-emerald-400/80">
+              <p className="text-[11px] text-emerald-600">
                 {validationSummary.warningCount} audit warnings recorded. Import is fully authorized.
               </p>
             </div>
@@ -85,7 +85,7 @@ export const PCBIValidateTab: React.FC<PCBIValidateTabProps> = ({
         <button
           type="button"
           onClick={onProceedToPreview}
-          className="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/30 transition-all active:scale-95 shrink-0"
+          className="px-6 py-2.5 bg-[#0284C7] hover:bg-[#0369A1] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 shrink-0"
         >
           <span>{UI_STRINGS.pcbiAdmin.proceedToPreview}</span>
           <ArrowRight size={14} />

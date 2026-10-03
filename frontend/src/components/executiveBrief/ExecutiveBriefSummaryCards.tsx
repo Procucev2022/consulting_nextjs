@@ -42,7 +42,7 @@ export const ExecutiveBriefSummaryCards: React.FC<ExecutiveBriefSummaryCardsProp
   return (
     <section aria-labelledby="summary-cards-heading" className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 id="summary-cards-heading" className="text-xs font-black uppercase tracking-wider text-slate-400">
+        <h2 id="summary-cards-heading" className="text-xs font-black uppercase tracking-wider text-slate-500">
           {strings.summaryCards.title}
         </h2>
         <span className="text-[11px] text-slate-500 font-mono">100% Certified Data Lineage</span>
@@ -58,26 +58,26 @@ export const ExecutiveBriefSummaryCards: React.FC<ExecutiveBriefSummaryCardsProp
           return (
             <div
               key={card.id}
-              className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 text-white hover:border-slate-700 transition-all flex flex-col justify-between shadow-md"
+              className="bg-white border border-[#DCE7F5] rounded-2xl p-4 text-[#0B1B33] hover:border-sky-300 transition-all flex flex-col justify-between shadow-xs"
             >
               <div>
                 <div className="flex items-center justify-between text-xs mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-slate-800/80">{getCardIcon(card.id)}</div>
-                    <span className="text-xs font-semibold text-slate-300">{card.label}</span>
+                    <div className="p-1.5 rounded-lg bg-sky-50">{getCardIcon(card.id)}</div>
+                    <span className="text-xs font-semibold text-slate-600">{card.label}</span>
                   </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-50 text-slate-500 border border-slate-200">
                     {card.module}
                   </span>
                 </div>
 
-                <div className="text-xl sm:text-2xl font-black text-white tracking-tight mt-1">
+                <div className="text-xl sm:text-2xl font-black text-[#0B1B33] tracking-tight mt-1">
                   {card.formattedValue}
                 </div>
               </div>
 
-              <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400 truncate max-w-[170px]" title={card.evidenceRef}>
+              <div className="mt-3 pt-2.5 border-t border-[#DCE7F5] flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 truncate max-w-[170px]" title={card.evidenceRef}>
                   {card.evidenceRef}
                 </span>
 
@@ -85,7 +85,7 @@ export const ExecutiveBriefSummaryCards: React.FC<ExecutiveBriefSummaryCardsProp
                   type="button"
                   data-testid={`evidence-btn-${card.id}`}
                   onClick={() => onViewEvidence(card)}
-                  className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                  className="text-[#0284c7] hover:text-[#0369a1] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <span>
                     {isFinancial ? strings.summaryCards.viewCalculation : strings.summaryCards.viewEvidence}

@@ -239,10 +239,10 @@ export default function ProfilePage(): React.ReactElement {
 
   if (loading || user?.role === 'ADMIN') {
     return (
-      <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex items-center justify-center p-4">
         <div className="flex flex-col items-center space-y-3">
-          <div className="w-10 h-10 border-3 border-cyan-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-500 font-mono">
+          <div className="w-10 h-10 border-3 border-[#0284C7] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-[#64748B] font-mono">
             {user?.role === 'ADMIN' ? 'Redirecting to Admin Portal...' : 'Loading enterprise profile credentials...'}
           </p>
         </div>
@@ -276,7 +276,7 @@ export default function ProfilePage(): React.ReactElement {
     : 'Active Member';
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#080c16] text-slate-900 dark:text-slate-100 bg-grid-pattern pb-16 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] bg-grid-pattern pb-16 font-sans transition-colors duration-200">
       {/* Top Navbar */}
       <nav className="sticky top-0 z-30 w-full bg-white/95 dark:bg-[#080c16]/95 backdrop-blur-xl border-b border-slate-200/90 dark:border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-xs">
         <div className="flex items-center space-x-4">

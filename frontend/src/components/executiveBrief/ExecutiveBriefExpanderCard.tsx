@@ -19,21 +19,21 @@ export const ExecutiveBriefExpanderCard: React.FC<ExecutiveBriefExpanderCardProp
   children
 }) => {
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+    <div className="bg-white border border-[#DCE7F5] rounded-xl overflow-hidden shadow-sm">
       <button
         type="button"
-        className="w-full px-4 py-2.5 bg-slate-950/60 hover:bg-slate-800/50 transition-colors flex items-center justify-between text-left"
+        className="w-full px-4 py-2.5 bg-[#F8FBFE] hover:bg-[#EEF7FF] transition-colors flex items-center justify-between text-left"
         onClick={onToggle}
         aria-expanded={isOpen}
       >
-        <span className="text-xs font-bold text-white flex items-center gap-2">
+        <span className="text-xs font-bold text-[#0B1B33] flex items-center gap-2">
           {icon}
           {title}
         </span>
-        {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+        {isOpen ? <ChevronDown className="w-4 h-4 text-[#64748B]" /> : <ChevronRight className="w-4 h-4 text-[#64748B]" />}
       </button>
       {isOpen && (
-        <div className="p-3.5 space-y-2.5 border-t border-slate-800/80 bg-slate-900/40">
+        <div className="p-3.5 space-y-2.5 border-t border-[#DCE7F5] bg-white">
           {children}
         </div>
       )}

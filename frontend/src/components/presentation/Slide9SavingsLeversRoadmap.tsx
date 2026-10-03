@@ -113,7 +113,7 @@ export const Slide9SavingsLeversRoadmap: React.FC<PresentationSlideProps> = ({
                   <td className="py-3 px-3 text-[11px] text-slate-600 dark:text-slate-300 max-w-xs">
                     {item.action}
                   </td>
-                  <td className="py-3 px-3 font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm text-right">
+                  <td className="py-3 px-3 tabular-nums font-black text-emerald-600 dark:text-emerald-400 text-sm text-right">
                     {item.savings}
                   </td>
                   <td className="py-3 px-3 text-right">

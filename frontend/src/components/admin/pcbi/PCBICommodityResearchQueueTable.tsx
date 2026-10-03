@@ -67,24 +67,24 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
   return (
     <div className="space-y-4">
       {/* Search and Filters Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-xl">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white border border-[#DCE7F5] p-3.5 rounded-xl shadow-sm">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B]" />
           <input
             type="text"
             placeholder="Search by commodity name, PCBI ID, or UNSPSC..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-1.5 text-xs text-white placeholder-slate-500 font-medium focus:border-cyan-500 focus:outline-hidden"
+            className="w-full bg-white border border-[#DCE7F5] rounded-lg pl-9 pr-4 py-1.5 text-xs text-[#0B1B33] placeholder-[#64748B] font-medium focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7]"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <Filter size={13} className="text-slate-500" />
+          <Filter size={13} className="text-[#64748B]" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white font-medium focus:border-cyan-500 focus:outline-hidden"
+            className="bg-white border border-[#DCE7F5] rounded-lg px-3 py-1.5 text-xs text-[#0B1B33] font-medium focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7]"
           >
             <option value="ALL">All Statuses</option>
             <option value="PRODUCTION_READY">Production Ready</option>
@@ -100,22 +100,22 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
       </div>
 
       {/* 17-Column Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+      <div className="bg-white border border-[#DCE7F5] rounded-2xl overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-[#DCE7F5] flex items-center justify-between bg-[#F8FBFE]">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet size={15} className="text-cyan-400" />
-            <h3 className="font-extrabold text-white text-xs tracking-wide uppercase">
+            <FileSpreadsheet size={15} className="text-[#0284C7]" />
+            <h3 className="font-extrabold text-[#0B1B33] text-xs tracking-wide uppercase">
               {UI_STRINGS.pcbiCommodityDataLab.researchQueueTitle}
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400 font-mono">
+          <span className="text-[11px] text-[#475569] font-medium tabular-nums">
             {filteredQueue.length} of {queue.length} Commodities
           </span>
         </div>
 
         <div className="overflow-x-auto max-h-[600px]">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="sticky top-0 bg-slate-950 border-b border-slate-800 text-[10px] uppercase font-mono text-slate-400 z-10">
+            <thead className="sticky top-0 bg-[#F8FBFE] border-b border-[#DCE7F5] text-[10px] uppercase font-semibold text-[#475569] z-10">
               <tr>
                 <th className="py-3 px-3 font-bold whitespace-nowrap">#</th>
                 <th className="py-3 px-3 font-bold whitespace-nowrap">{UI_STRINGS.pcbiCommodityDataLab.thCommodity}</th>
@@ -137,10 +137,10 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                 <th className="py-3 px-3 font-bold whitespace-nowrap text-right">{UI_STRINGS.pcbiCommodityDataLab.thAction}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/80">
+            <tbody className="divide-y divide-[#DCE7F5]">
               {filteredQueue.length === 0 ? (
                 <tr>
-                  <td colSpan={18} className="py-12 text-center text-slate-500 font-mono text-xs">
+                  <td colSpan={18} className="py-12 text-center text-[#64748B] text-xs">
                     No commodities match your current search and filter criteria.
                   </td>
                 </tr>
@@ -151,32 +151,32 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                     <tr
                       key={row.commodityId}
                       onClick={() => onOpenWorkspace(row.pcbiId)}
-                      className="hover:bg-slate-800/40 cursor-pointer transition-colors"
+                      className="hover:bg-[#EEF7FF] cursor-pointer transition-colors"
                     >
-                      <td className="py-3 px-3 font-mono text-[10px] text-slate-500">{idx + 1}</td>
-                      <td className="py-3 px-3 font-bold text-white whitespace-nowrap">{row.commodity}</td>
-                      <td className="py-3 px-3 font-mono text-[11px] text-cyan-400">{row.commodityId}</td>
-                      <td className="py-3 px-3 text-slate-300 text-[11px] whitespace-nowrap">{row.module2Classification}</td>
-                      <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{row.unspsc}</td>
-                      <td className="py-3 px-3 font-bold text-emerald-400 font-mono whitespace-nowrap">{row.customerSpendCr}</td>
-                      <td className="py-3 px-3 text-slate-300 font-mono">{row.transactionCount}</td>
-                      <td className="py-3 px-3 font-mono text-cyan-300 font-bold whitespace-nowrap">{row.pcbiId}</td>
-                      <td className="py-3 px-3 font-mono text-slate-400 text-[11px] whitespace-nowrap">{row.seriesId}</td>
+                      <td className="py-3 px-3 text-[10px] tabular-nums text-[#64748B]">{idx + 1}</td>
+                      <td className="py-3 px-3 font-bold text-[#0B1B33] whitespace-nowrap">{row.commodity}</td>
+                      <td className="py-3 px-3 font-mono text-[11px] text-[#0284C7]">{row.commodityId}</td>
+                      <td className="py-3 px-3 text-[#475569] text-[11px] whitespace-nowrap">{row.module2Classification}</td>
+                      <td className="py-3 px-3 font-mono text-[#64748B] text-[11px]">{row.unspsc}</td>
+                      <td className="py-3 px-3 font-bold text-emerald-600 tabular-nums whitespace-nowrap">{row.customerSpendCr}</td>
+                      <td className="py-3 px-3 text-[#475569] tabular-nums">{row.transactionCount}</td>
+                      <td className="py-3 px-3 font-mono text-[#0284C7] font-bold whitespace-nowrap">{row.pcbiId}</td>
+                      <td className="py-3 px-3 font-mono text-[#64748B] text-[11px] whitespace-nowrap">{row.seriesId}</td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <PCBIStatusBadge status={row.currentStatus} size="sm" />
                       </td>
-                      <td className="py-3 px-3 text-slate-400 text-[11px] whitespace-nowrap">{row.requiredHistory}</td>
-                      <td className="py-3 px-3 text-slate-300 text-[11px] whitespace-nowrap">{row.availableHistory}</td>
-                      <td className="py-3 px-3 font-mono text-slate-300">{row.requiredFrequency}</td>
-                      <td className="py-3 px-3 font-mono text-slate-400">{row.availableFrequency}</td>
-                      <td className="py-3 px-3 text-[11px] font-mono text-slate-400 whitespace-nowrap">{row.sourceStatus}</td>
-                      <td className="py-3 px-3 text-[11px] font-mono text-purple-400 whitespace-nowrap">{row.methodologyStatus}</td>
+                      <td className="py-3 px-3 text-[#64748B] text-[11px] whitespace-nowrap">{row.requiredHistory}</td>
+                      <td className="py-3 px-3 text-[#475569] text-[11px] whitespace-nowrap">{row.availableHistory}</td>
+                      <td className="py-3 px-3 text-[#475569]">{row.requiredFrequency}</td>
+                      <td className="py-3 px-3 text-[#64748B]">{row.availableFrequency}</td>
+                      <td className="py-3 px-3 text-[11px] text-[#64748B] whitespace-nowrap">{row.sourceStatus}</td>
+                      <td className="py-3 px-3 text-[11px] text-[#0284C7] whitespace-nowrap">{row.methodologyStatus}</td>
                       <td className="py-3 px-3 font-mono text-[11px] whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] ${
                             row.priority.startsWith('P1')
-                              ? 'bg-rose-950/70 text-rose-300 border border-rose-800'
-                              : 'bg-slate-800 text-slate-300 border border-slate-700'
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-slate-100 text-[#475569] border border-slate-200'
                           }`}
                         >
                           {row.priority}
@@ -191,7 +191,7 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                                 e.stopPropagation();
                                 onUploadSource(row);
                               }}
-                              className="px-2 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] transition-all inline-flex items-center gap-1 shadow-xs"
+                              className="px-2 py-0.5 rounded bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-[10px] transition-all inline-flex items-center gap-1 shadow-xs"
                             >
                               <UploadCloud size={10} />
                               <span>Upload</span>
@@ -203,7 +203,7 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                               e.stopPropagation();
                               onOpenWorkspace(row.pcbiId);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 text-[11px] font-bold transition-all inline-flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-[#0284C7] text-[#0284C7] hover:text-white border border-sky-200 text-[11px] font-bold transition-all inline-flex items-center gap-1"
                           >
                             <span>{contextualAction.label}</span>
                             <ExternalLink size={11} />

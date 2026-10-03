@@ -18,15 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="light" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="bg-[#f1f5f9] text-slate-900 antialiased selection:bg-cyan-500/20 selection:text-cyan-900 min-h-screen" style={{fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"}}>
+      <body className="bg-[#EEF7FF] text-[#0B1B33] antialiased selection:bg-sky-500/20 selection:text-sky-900 min-h-screen" style={{fontFamily: "'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"}}>
         {children}
       </body>
     </html>

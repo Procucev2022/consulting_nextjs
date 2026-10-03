@@ -16,7 +16,7 @@ export const ExecutiveBriefMasterRegisterTable: React.FC<ExecutiveBriefMasterReg
     <div className="overflow-x-auto">
       <table className="w-full text-left text-xs border-collapse">
         <thead>
-          <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider bg-slate-950/60">
+          <tr className="border-b border-[#DCE7F5] text-[#0B1B33] uppercase text-[10px] tracking-wider bg-[#F8FBFE]">
             <th className="py-2.5 px-2 font-semibold">ID</th>
             <th className="py-2.5 px-2 font-semibold">Module</th>
             <th className="py-2.5 px-2 font-semibold">Analysis</th>
@@ -32,38 +32,38 @@ export const ExecutiveBriefMasterRegisterTable: React.FC<ExecutiveBriefMasterReg
             <th className="py-2.5 px-2 font-semibold">Traceability Proof</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-800/60 text-slate-300">
+        <tbody className="divide-y divide-[#DCE7F5] text-[#0B1B33]">
           {opportunities.map((o) => (
             <tr
               key={o.opportunityId}
-              className="hover:bg-slate-800/40 cursor-pointer"
+              className="hover:bg-[#EEF7FF] cursor-pointer transition-colors bg-white"
               onClick={() => onSelectOpportunity?.(o.opportunityId)}
             >
-              <td className="py-2.5 px-2 font-mono font-bold text-cyan-400">{o.opportunityId}</td>
-              <td className="py-2.5 px-2 text-slate-300">{o.module}</td>
-              <td className="py-2.5 px-2 font-semibold text-white">{o.analysis}</td>
+              <td className="py-2.5 px-2 font-mono font-bold text-[#0284C7]">{o.opportunityId}</td>
+              <td className="py-2.5 px-2 text-[#475569]">{o.module}</td>
+              <td className="py-2.5 px-2 font-semibold text-[#0B1B33]">{o.analysis}</td>
               <td className="py-2.5 px-2 text-[11px]">
-                <div className="font-semibold text-slate-200">{o.category}</div>
-                <div className="text-[10px] text-slate-400">{o.item}</div>
+                <div className="font-semibold text-[#0B1B33]">{o.category}</div>
+                <div className="text-[10px] text-[#64748B]">{o.item}</div>
               </td>
-              <td className="py-2.5 px-2 text-slate-300 text-[11px]">{o.supplier}</td>
-              <td className="py-2.5 px-2 font-mono text-slate-400">{o.eligibleSpend}</td>
-              <td className="py-2.5 px-2 text-[11px] text-slate-300">{o.valueTypeLabel}</td>
-              <td className="py-2.5 px-2 text-[10px] font-mono font-semibold">
-                <span className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300">
+              <td className="py-2.5 px-2 text-[#475569] text-[11px]">{o.supplier}</td>
+              <td className="py-2.5 px-2 tabular-nums text-[#64748B]">{o.eligibleSpend}</td>
+              <td className="py-2.5 px-2 text-[11px] text-[#475569]">{o.valueTypeLabel}</td>
+              <td className="py-2.5 px-2 text-[10px] font-semibold">
+                <span className="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-[#0284C7]">
                   {o.valueClassification}
                 </span>
               </td>
-              <td className="py-2.5 px-2 text-[10px] font-mono text-slate-400">
+              <td className="py-2.5 px-2 text-[10px] tabular-nums text-[#64748B]">
                 {o.lowPercent} / {o.basePercent} / {o.highPercent}
               </td>
-              <td className="py-2.5 px-2 font-mono font-bold text-right text-emerald-400">
+              <td className="py-2.5 px-2 tabular-nums font-bold text-right text-emerald-600">
                 {o.indicativeOpportunity}
               </td>
-              <td className="py-2.5 px-2 text-[10px] text-slate-300">{o.executionMechanism}</td>
-              <td className="py-2.5 px-2 text-[10px] font-mono text-amber-300">{o.overlapGroup}</td>
+              <td className="py-2.5 px-2 text-[10px] text-[#475569]">{o.executionMechanism}</td>
+              <td className="py-2.5 px-2 text-[10px] font-mono text-amber-700">{o.overlapGroup}</td>
               <td className="py-2.5 px-2">
-                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" title={o.dataEvidence}>
+                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-50 text-[#0284C7] border border-sky-200" title={o.dataEvidence}>
                   {o.transactionSampleId}
                 </span>
               </td>

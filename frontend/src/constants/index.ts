@@ -48,3 +48,4 @@ export * from './executiveBriefPortfolioSections';
 export * from './executiveBriefGovernance';
 export * from './executiveBriefPresentationConstants';
 export * from './subscription';
+export * from './theme';
