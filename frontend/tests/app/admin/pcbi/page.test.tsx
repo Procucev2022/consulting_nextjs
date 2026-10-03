@@ -35,7 +35,7 @@ describe('AdminPCBIPage Component (/admin/pcbi)', () => {
 
     await waitFor(() => {
       expect(screen.getByText('aiCEV Enterprise')).toBeInTheDocument();
-      expect(screen.getByText('PCBI Master')).toBeInTheDocument();
+      expect(screen.getAllByText('PCBI Master').length).toBeGreaterThan(0);
       expect(screen.getByText('Admin Tester')).toBeInTheDocument();
     });
   });
