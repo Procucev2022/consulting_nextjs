@@ -63,11 +63,11 @@ export const ActivationModal: React.FC<ActivationModalProps> = ({
   return (
     <div
       data-testid="activation-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8FBFE] backdrop-blur-md p-4"
     >
       <div
         data-testid="activation-modal"
-        className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8"
+        className="relative w-full max-w-md bg-white border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8"
       >
         <button
           type="button"
@@ -125,7 +125,7 @@ export const ActivationModal: React.FC<ActivationModalProps> = ({
               value={activationCode}
               onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
               placeholder={UI_STRINGS.subscription.activationCodePlaceholder}
-              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-cyan-400 text-base focus:border-cyan-500 focus:outline-none"
+              className="w-full px-4 py-2.5 bg-[#F8FBFE] border border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-cyan-400 text-base focus:border-cyan-500 focus:outline-none"
               disabled={isLoading || Boolean(successMessage)}
             />
           </div>

@@ -25,14 +25,14 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* Upload Zone (5 cols) */}
-      <div className="lg:col-span-5 flex flex-col justify-between p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-card">
+      <div className="lg:col-span-5 flex flex-col justify-between p-6 rounded-2xl bg-white border border-slate-200 glass-card">
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
-              <UploadCloud className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+              <UploadCloud className="w-4 h-4 text-cyan-600" />
               <span>Upload {activeDatasetType} (Multi-Currency)</span>
             </h3>
-            <span className="text-[10px] font-mono text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950 px-2 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/40">
+            <span className="text-[10px] font-mono text-cyan-800 bg-cyan-100 px-2 py-0.5 rounded border border-cyan-300">
               Max 2GB
             </span>
           </div>
@@ -47,8 +47,8 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
             }}
             className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
               dragActive
-                ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-950/40 scale-[1.01]'
-                : 'border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/60 hover:border-cyan-500 hover:bg-cyan-50/30 dark:hover:bg-slate-900/60'
+                ? 'border-cyan-500 bg-cyan-50 scale-[1.01]'
+                : 'border-slate-300 bg-slate-50/50 hover:border-cyan-500 hover:bg-cyan-50/30'
             }`}
           >
             <input
@@ -59,13 +59,13 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
               onChange={onFileChange}
             />
             <div className="cursor-pointer block">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3 group-hover:scale-110 transition-transform">
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-600 mb-3 group-hover:scale-110 transition-transform">
                 <UploadCloud className="w-7 h-7" />
               </div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+              <h4 className="text-sm font-bold text-slate-900 mb-1">
                 Upload {activeDatasetType} for {tenant.enterprise_name.split('(')[0].trim()}
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+              <p className="text-xs text-slate-500 mb-3">
                 AI automatically detects currencies & converts to <strong>INR in Crores (₹ Cr)</strong>
               </p>
               <div className="flex items-center justify-center space-x-2 pt-2">
@@ -76,7 +76,7 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                       e.stopPropagation();
                       onOpenSetupModal();
                     }}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+                    className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-300 transition-colors cursor-pointer"
                   >
                     {UI_STRINGS.module1.setupDetails}
                   </button>
@@ -98,40 +98,40 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
       </div>
 
       {/* Uploaded File Details & Ingestion Status (7 cols) */}
-      <div className="lg:col-span-7 p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-card space-y-4">
+      <div className="lg:col-span-7 p-6 rounded-2xl bg-white border border-slate-200 glass-card space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
-              <FileCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
+              <FileCheck className="w-4 h-4 text-emerald-600" />
               <span>{UI_STRINGS.module1.uploadedFileDetails}</span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500">
               Verified dataset with record count strictly excluding header row
             </p>
           </div>
-          <span className="text-xs font-mono text-emerald-800 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-300 dark:border-emerald-800/50 font-bold">
+          <span className="text-xs font-mono text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 font-bold">
             ₹{totalEvaluatedSpendInrCr.toFixed(2)} Cr Evaluated
           </span>
         </div>
 
         <div className="space-y-3 pt-1">
           {ingestionQueue.length === 0 ? (
-            <div className="p-8 rounded-xl border border-dashed border-slate-300 dark:border-slate-800 text-center text-xs text-slate-500">
+            <div className="p-8 rounded-xl border border-dashed border-slate-300 text-center text-xs text-slate-500">
               {UI_STRINGS.module1.noFileUploaded}. Click &quot;{UI_STRINGS.module1.selectFile}&quot; or drop your dataset to begin ingestion.
             </div>
           ) : (
             ingestionQueue.slice(0, 1).map((doc, idx) => (
               <div
                 key={`ingestion-doc-${doc.doc_id || doc.file_name || 'doc'}-${idx}`}
-                className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors shadow-xs"
+                className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 hover:border-slate-300 transition-colors shadow-xs"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                   <div className="flex items-center space-x-2">
-                    <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/60">
+                    <div className="p-2 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-300">
                       <FileSpreadsheet className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="font-mono font-bold text-slate-900 dark:text-white text-sm block">
+                      <span className="font-mono font-bold text-slate-900 text-sm block">
                         {doc.file_name}
                       </span>
                       <span className="text-[10px] text-slate-500 font-mono">
@@ -144,8 +144,8 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                     <span
                       className={`text-xs font-bold font-mono px-2.5 py-1 rounded-full ${
                         (doc.ocr_status || 'Completed') === 'Completed'
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/50'
-                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400 border border-amber-300 dark:border-amber-800/50 animate-pulse'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          : 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
                       }`}
                     >
                       {(doc.ocr_status || 'Completed') === 'Completed'
@@ -161,7 +161,7 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                           onDeleteDocument(doc.doc_id);
                         }}
                         title="Delete uploaded dataset"
-                        className="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/80 border border-rose-200 dark:border-rose-800/60 transition-colors shadow-xs cursor-pointer"
+                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 border border-rose-200 transition-colors shadow-xs cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -170,17 +170,17 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                 </div>
 
                 {/* Highlighted Total Records & Formula Calculation Box */}
-                <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+                <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-2.5 text-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                       <span className="text-[10px] text-slate-400 font-medium uppercase font-mono block">
                         Total Ingested Records (Data Rows):
                       </span>
                       <div className="flex items-baseline space-x-2">
-                        <span className="text-xl font-black font-mono text-emerald-700 dark:text-emerald-400">
+                        <span className="text-xl font-black font-mono text-emerald-700">
                           {(doc.records_count ?? 0).toLocaleString()} Records
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           Excluding Header Row
                         </span>
                       </div>
@@ -190,23 +190,23 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                       <span className="text-[10px] text-slate-400 font-medium uppercase font-mono block">
                         Calculated Total Spend from File:
                       </span>
-                      <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-lg">
+                      <span className="font-mono font-black text-emerald-700 text-lg">
                         ₹{(doc.converted_inr_crores != null ? doc.converted_inr_crores : 0).toFixed(2)} Cr
                       </span>
                     </div>
                   </div>
 
                   {/* Mathematical Formula Footnote */}
-                  <div className="p-2 rounded bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-600 dark:text-slate-300 font-mono flex items-center justify-between">
+                  <div className="p-2 rounded bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-mono flex items-center justify-between">
                     <span className="text-slate-500">Spend Formula:</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
+                    <span className="font-bold text-slate-900">
                       &sum; (Order Quantity &times; Net Price &times; Currency in INR)
                     </span>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-300/50 dark:border-slate-800">
+                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300/50">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       (doc.progress ?? 100) === 100
@@ -221,7 +221,7 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                   <div className="flex items-center space-x-1.5">
                     <span>Detected Currencies:</span>
                     {(doc.detected_currencies || ['USD', 'EUR', 'INR']).map((c, cIdx) => (
-                      <span key={`${c}-${cIdx}`} className="px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-cyan-800 dark:text-cyan-400 font-bold">
+                      <span key={`${c}-${cIdx}`} className="px-1.5 py-0.2 rounded bg-slate-200 text-[10px] text-cyan-800 font-bold">
                         {c}
                       </span>
                     ))}

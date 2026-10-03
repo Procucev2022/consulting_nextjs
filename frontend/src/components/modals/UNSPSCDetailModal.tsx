@@ -23,9 +23,9 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
       aria-labelledby="unspsc-detail-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150"
     >
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-white border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow max-h-[92vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE] shrink-0">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-xl bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30">
               <Layers className="w-5 h-5" />
@@ -48,7 +48,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label={UI_STRINGS.modals.unspscDetail.closeBtn}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -69,7 +69,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
                 </h4>
               </div>
               <div className="shrink-0 flex items-center space-x-2">
-                <span className="text-xs font-mono font-bold bg-white dark:bg-slate-900 text-cyan-800 dark:text-cyan-300 px-3 py-1 rounded-lg border border-cyan-300 dark:border-cyan-700 shadow-sm">
+                <span className="text-xs font-mono font-bold bg-white dark:bg-white text-cyan-800 dark:text-cyan-300 px-3 py-1 rounded-lg border border-cyan-300 dark:border-cyan-700 shadow-sm">
                   {record.commodityCode}
                 </span>
                 {record.coreBucket && (
@@ -107,7 +107,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
 
             <div className="space-y-2.5">
               {/* Level 1: Segment */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex items-start space-x-3">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-start space-x-3">
                 <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-300 dark:border-blue-800">
                   L1
                 </div>
@@ -130,7 +130,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
               </div>
 
               {/* Level 2: Family */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex items-start space-x-3">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-start space-x-3">
                 <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 font-bold text-xs flex items-center justify-center shrink-0 border border-indigo-300 dark:border-indigo-800">
                   L2
                 </div>
@@ -153,7 +153,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
               </div>
 
               {/* Level 3: Class */}
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 flex items-start space-x-3">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-start space-x-3">
                 <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400 font-bold text-xs flex items-center justify-center shrink-0 border border-purple-300 dark:border-purple-800">
                   L3
                 </div>
@@ -186,7 +186,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
                       <span>{UI_STRINGS.modals.unspscDetail.level4Name}</span>
                       <ShieldCheck className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                     </span>
-                    <span className="font-mono text-xs font-bold text-cyan-800 dark:text-cyan-300 bg-white dark:bg-slate-900 px-2 py-0.5 rounded border border-cyan-400 dark:border-cyan-700">
+                    <span className="font-mono text-xs font-bold text-cyan-800 dark:text-cyan-300 bg-white dark:bg-white px-2 py-0.5 rounded border border-cyan-400 dark:border-cyan-700">
                       {record.commodityCode}
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
           </div>
 
           {/* Enterprise Procurement Standards & 8-Digit Structure */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-2.5">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2.5">
             <h5 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>{UI_STRINGS.modals.unspscDetail.digitBreakdownTitle}</span>
@@ -231,11 +231,11 @@ export const UNSPSCDetailModal: React.FC<UNSPSCDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-slate-50/80 dark:bg-slate-950/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end shrink-0">
+        <div className="px-6 py-3.5 bg-slate-50/80 dark:bg-[#F8FBFE] border-t border-slate-100 dark:border-slate-800 flex items-center justify-end shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold transition-colors"
+            className="px-4 py-2 bg-slate-200 dark:bg-[#EEF4FC] text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-[#DCE7F5] rounded-xl text-xs font-semibold transition-colors"
           >
             {UI_STRINGS.modals.unspscDetail.closeBtn}
           </button>

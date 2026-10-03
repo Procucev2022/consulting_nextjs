@@ -42,51 +42,51 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
   return (
     <div className="space-y-4">
       {/* Chart Header & Color Legends */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-          <span className="text-slate-600 dark:text-slate-400 font-bold">
+          <span className="text-slate-600 font-bold">
             {UI_STRINGS.documentSummary.month.graph.fiscalYearsLabel}
           </span>
           <button
             onClick={() => onSelectFy('ALL')}
             className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'ALL' ? 'bg-slate-100 dark:bg-slate-800 font-bold' : ''
+              selectedFy === 'ALL' ? 'bg-slate-100 font-bold' : ''
             }`}
           >
-            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+            <span className="text-slate-600 text-[11px]">
               {UI_STRINGS.documentSummary.month.graph.all36Months}
             </span>
           </button>
           <button
             onClick={() => onSelectFy('FY24')}
             className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'FY24' ? 'bg-cyan-50 dark:bg-cyan-950/60 font-bold' : ''
+              selectedFy === 'FY24' ? 'bg-cyan-50 font-bold' : ''
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500" />
-            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+            <span className="text-slate-600 text-[11px]">
               {UI_STRINGS.documentSummary.month.graph.legends.fy24}
             </span>
           </button>
           <button
             onClick={() => onSelectFy('FY25')}
             className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'FY25' ? 'bg-emerald-50 dark:bg-emerald-950/60 font-bold' : ''
+              selectedFy === 'FY25' ? 'bg-emerald-50 font-bold' : ''
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+            <span className="text-slate-600 text-[11px]">
               {UI_STRINGS.documentSummary.month.graph.legends.fy25}
             </span>
           </button>
           <button
             onClick={() => onSelectFy('FY26')}
             className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'FY26' ? 'bg-indigo-50 dark:bg-indigo-950/60 font-bold' : ''
+              selectedFy === 'FY26' ? 'bg-indigo-50 font-bold' : ''
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500" />
-            <span className="text-slate-600 dark:text-slate-400 text-[11px]">
+            <span className="text-slate-600 text-[11px]">
               {UI_STRINGS.documentSummary.month.graph.legends.fy26}
             </span>
           </button>
@@ -105,7 +105,7 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
       ) : (
         <div className="relative pt-6 pb-2">
           {/* Bars Canvas Grid */}
-          <div className="h-64 flex items-end justify-between gap-1 sm:gap-1.5 overflow-x-auto pb-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="h-64 flex items-end justify-between gap-1 sm:gap-1.5 overflow-x-auto pb-6 border-b border-slate-200">
             {filteredMonths.map((m) => {
               const spend = spendCurrency === 'INR' ? m.spend_inr_cr : m.spend_usd_m;
               const heightPct = Math.max(8, Math.min(100, Math.round((spend / maxSpend) * 100)));
@@ -132,10 +132,10 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
                       isHovered ? 'opacity-100 scale-110 shadow-xs' : 'opacity-0 sm:opacity-75 group-hover:opacity-100'
                     } ${
                       m.mom_change_pct > 0
-                        ? 'text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80'
+                        ? 'text-amber-700 bg-amber-100'
                         : m.mom_change_pct < 0
-                        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80'
-                        : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'
+                        ? 'text-emerald-700 bg-emerald-100'
+                        : 'text-slate-600 bg-slate-100'
                     }`}
                   >
                     {m.mom_change_pct > 0
@@ -147,16 +147,16 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
                   <div
                     style={{ height: `${heightPct}%` }}
                     className={`w-full rounded-t-md transition-all duration-200 ${barColor} ${
-                      isHovered ? 'ring-2 ring-slate-900 dark:ring-white scale-105 z-10' : 'opacity-90'
+                      isHovered ? 'ring-2 ring-slate-900 scale-105 z-10' : 'opacity-90'
                     }`}
                   />
 
                   {/* Month Label below bar */}
                   <div className="mt-2 text-center">
-                    <span className="text-[9px] sm:text-[10px] font-mono text-slate-500 dark:text-slate-400 block whitespace-nowrap">
+                    <span className="text-[9px] sm:text-[10px] font-mono text-slate-500 block whitespace-nowrap">
                       {m.month_label.split(' ')[0]}
                     </span>
-                    <span className="text-[8px] font-mono font-bold text-slate-400 dark:text-slate-500 block">
+                    <span className="text-[8px] font-mono font-bold text-slate-400 block">
                       {m.month_label.split(' ')[1]?.slice(2)}
                     </span>
                   </div>
@@ -169,31 +169,31 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
 
       {/* Detailed Inspection Card for Currently Selected / Hovered Month */}
       {activeMonth && (
-        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 transition-all shadow-2xs">
+        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 transition-all shadow-2xs">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Left Column: Month Title, FY Badge, Spend */}
             <div className="space-y-1.5">
               <div className="flex items-center space-x-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-emerald-600">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-white">
                   {activeMonth.fiscal_year}
                 </span>
-                <h5 className="text-sm font-black font-mono text-slate-900 dark:text-white">
+                <h5 className="text-sm font-black font-mono text-slate-900">
                   {UI_STRINGS.documentSummary.month.graph.performanceTitle(activeMonth.month_label)}
                 </h5>
                 <span
                   className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
                     activeMonth.mom_change_pct > 0
-                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-400'
+                      ? 'bg-amber-100 text-amber-800'
                       : activeMonth.mom_change_pct < 0
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-400'
-                      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {UI_STRINGS.documentSummary.month.graph.momSuffix(activeMonth.mom_change_pct)}
                 </span>
               </div>
               <div className="flex items-baseline space-x-2">
-                <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                <span className="text-xl font-black font-mono text-emerald-600">
                   ₹{activeMonth.spend_inr_cr.toFixed(2)} Cr
                 </span>
                 <span className="text-xs font-mono text-slate-400">
@@ -204,49 +204,49 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
 
             {/* Right Column: Unique Items, Unique Vendors, Top Group, Top Plant */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white border border-slate-200">
                 <Package className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block">
                     {UI_STRINGS.documentSummary.month.graph.itemsCardLabel}
                   </span>
-                  <span className="font-bold text-cyan-700 dark:text-cyan-400">
+                  <span className="font-bold text-cyan-700">
                     {(activeMonth.unique_items_count || activeMonth.records_count).toLocaleString()}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white border border-slate-200">
                 <Users className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
                 <div>
                   <span className="text-[10px] text-slate-400 block">
                     {UI_STRINGS.documentSummary.month.graph.vendorsCardLabel}
                   </span>
-                  <span className="font-bold text-indigo-700 dark:text-indigo-400">
+                  <span className="font-bold text-indigo-700">
                     {(activeMonth.unique_vendors_count || Math.max(1, Math.round(activeMonth.records_count * 0.15))).toLocaleString()}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white border border-slate-200">
                 <Layers className="w-3.5 h-3.5 text-sky-600 shrink-0" />
                 <div className="truncate">
                   <span className="text-[10px] text-slate-400 block">
                     {UI_STRINGS.documentSummary.month.graph.topGroupCardLabel}
                   </span>
-                  <span className="font-bold text-slate-900 dark:text-white truncate block" title={activeMonth.top_material_group}>
+                  <span className="font-bold text-slate-900 truncate block" title={activeMonth.top_material_group}>
                     {activeMonth.top_material_group}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2 p-2 rounded-lg bg-white border border-slate-200">
                 <Building2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                 <div className="truncate">
                   <span className="text-[10px] text-slate-400 block">
                     {UI_STRINGS.documentSummary.month.graph.topPlantCardLabel}
                   </span>
-                  <span className="font-bold text-slate-900 dark:text-white truncate block" title={activeMonth.top_plant}>
+                  <span className="font-bold text-slate-900 truncate block" title={activeMonth.top_plant}>
                     {activeMonth.top_plant}
                   </span>
                 </div>

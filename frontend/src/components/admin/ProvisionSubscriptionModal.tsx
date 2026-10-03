@@ -98,29 +98,29 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
   };
 
   return (
-    <div data-testid="provision-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-      <div data-testid="provision-modal" className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8">
-        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white" title="Close">
+    <div data-testid="provision-modal-backdrop" className="fixed inset-0 z-50 flex items-center justify-center bg-[#0B1B33]/50 backdrop-blur-xs p-4">
+      <div data-testid="provision-modal" className="relative w-full max-w-lg bg-white border border-[#DCE7F5] rounded-2xl shadow-2xl p-6 sm:p-8">
+        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-[#64748B] hover:text-[#0B1B33]" title="Close">
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 text-[#0284C7] flex items-center justify-center">
             {step === 'DETAILS' ? <ShieldCheck className="w-5 h-5" /> : <KeyRound className="w-5 h-5" />}
           </div>
           <div>
-            <h3 className="text-lg font-black text-white">
+            <h3 className="text-lg font-black text-[#0B1B33]">
               {step === 'DETAILS' ? 'Provision Customer Subscription' : 'Admin OTP Verification'}
             </h3>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#64748B]">
               {step === 'DETAILS' ? 'Controlled offline commercial setup' : 'Enter the 6-digit OTP sent to admin registered mobile'}
             </p>
           </div>
         </div>
 
         {errorMessage && (
-          <div className="mb-4 p-2.5 rounded-lg bg-red-950/60 border border-red-800 text-xs text-red-200 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+          <div className="mb-4 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -129,23 +129,23 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
           <form onSubmit={handleRequestOtp} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="provision-company-name" className="block text-[11px] font-bold text-slate-400 mb-1">Company Name</label>
-                <input id="provision-company-name" type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white" />
+                <label htmlFor="provision-company-name" className="block text-[11px] font-bold text-[#475569] mb-1">Company Name</label>
+                <input id="provision-company-name" type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]" />
               </div>
               <div>
-                <label htmlFor="provision-customer-name" className="block text-[11px] font-bold text-slate-400 mb-1">Customer Name</label>
-                <input id="provision-customer-name" type="text" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white" />
+                <label htmlFor="provision-customer-name" className="block text-[11px] font-bold text-[#475569] mb-1">Customer Name</label>
+                <input id="provision-customer-name" type="text" required value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="provision-customer-email" className="block text-[11px] font-bold text-slate-400 mb-1">Customer Email</label>
-                <input id="provision-customer-email" type="email" required value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white" />
+                <label htmlFor="provision-customer-email" className="block text-[11px] font-bold text-[#475569] mb-1">Customer Email</label>
+                <input id="provision-customer-email" type="email" required value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]" />
               </div>
               <div>
-                <label htmlFor="provision-tier" className="block text-[11px] font-bold text-slate-400 mb-1">Subscription Tier</label>
-                <select id="provision-tier" value={tier} onChange={(e) => setTier(e.target.value as 'SILVER' | 'GOLD')} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white">
+                <label htmlFor="provision-tier" className="block text-[11px] font-bold text-[#475569] mb-1">Subscription Tier</label>
+                <select id="provision-tier" value={tier} onChange={(e) => setTier(e.target.value as 'SILVER' | 'GOLD')} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]">
                   <option value="SILVER">Silver — Assess</option>
                   <option value="GOLD">Gold — Optimize</option>
                 </select>
@@ -154,23 +154,23 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="provision-tenant-id" className="block text-[11px] font-bold text-slate-400 mb-1">Tenant ID</label>
-                <input id="provision-tenant-id" type="text" required placeholder="TNT-..." value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white" />
+                <label htmlFor="provision-tenant-id" className="block text-[11px] font-bold text-[#475569] mb-1">Tenant ID</label>
+                <input id="provision-tenant-id" type="text" required placeholder="TNT-..." value={tenantId} onChange={(e) => setTenantId(e.target.value)} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]" />
               </div>
               <div>
-                <label htmlFor="provision-customer-id" className="block text-[11px] font-bold text-slate-400 mb-1">Customer ID</label>
-                <input id="provision-customer-id" type="text" required placeholder="usr-..." value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white" />
+                <label htmlFor="provision-customer-id" className="block text-[11px] font-bold text-[#475569] mb-1">Customer ID</label>
+                <input id="provision-customer-id" type="text" required placeholder="usr-..." value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="provision-payment-ref" className="block text-[11px] font-bold text-slate-400 mb-1">Offline Invoice / Payment Reference</label>
-              <input id="provision-payment-ref" type="text" required placeholder="INV-2026-..." value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white" />
+              <label htmlFor="provision-payment-ref" className="block text-[11px] font-bold text-[#475569] mb-1">Offline Invoice / Payment Reference</label>
+              <input id="provision-payment-ref" type="text" required placeholder="INV-2026-..." value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} className="w-full px-3 py-2 bg-white border border-[#DCE7F5] rounded-lg text-xs text-[#0B1B33] focus:outline-none focus:border-[#0284C7]" />
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center gap-3">
-              <input type="checkbox" id="payment-confirmed-check" checked={paymentConfirmed} onChange={(e) => setPaymentConfirmed(e.target.checked)} className="w-4 h-4 rounded text-cyan-600 focus:ring-0" />
-              <label htmlFor="payment-confirmed-check" className="text-xs text-slate-300 font-medium cursor-pointer">
+            <div className="p-3 rounded-lg bg-[#F8FBFE] border border-[#DCE7F5] flex items-center gap-3">
+              <input type="checkbox" id="payment-confirmed-check" checked={paymentConfirmed} onChange={(e) => setPaymentConfirmed(e.target.checked)} className="w-4 h-4 rounded text-[#0284C7] focus:ring-0" />
+              <label htmlFor="payment-confirmed-check" className="text-xs text-[#475569] font-medium cursor-pointer">
                 I certify that offline payment/quotation has been verified by the commercial desk.
               </label>
             </div>
@@ -179,7 +179,7 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
               type="submit"
               data-testid="request-admin-otp-btn"
               disabled={isSubmitting || !paymentConfirmed}
-              className="w-full py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-lg transition-all disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold text-xs shadow-sm transition-all disabled:opacity-50"
             >
               {isSubmitting ? 'Requesting OTP...' : 'Proceed to Admin OTP Authorization'}
             </button>
@@ -187,7 +187,7 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
         ) : (
           <form onSubmit={handleVerifyAndProvision} className="space-y-4">
             <div>
-              <label htmlFor="admin-otp-input" className="block text-xs font-bold text-slate-300 mb-1.5">
+              <label htmlFor="admin-otp-input" className="block text-xs font-bold text-[#475569] mb-1.5">
                 Admin 6-Digit Verification OTP
               </label>
               <input
@@ -198,10 +198,10 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
                 placeholder="000000"
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-700 rounded-xl text-center font-mono font-bold tracking-widest text-cyan-400 text-lg"
+                className="w-full px-4 py-3 bg-white border border-[#DCE7F5] rounded-xl text-center font-mono font-bold tracking-widest text-[#0284C7] text-lg focus:outline-none focus:border-[#0284C7]"
               />
               {otpHint && (
-                <p className="text-[11px] text-slate-500 mt-1">Dev Hint: {otpHint}</p>
+                <p className="text-[11px] text-[#64748B] mt-1">Dev Hint: {otpHint}</p>
               )}
             </div>
 
@@ -209,7 +209,7 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
               <button
                 type="button"
                 onClick={() => setStep('DETAILS')}
-                className="w-1/3 py-2.5 px-4 rounded-xl border border-slate-700 text-slate-300 text-xs font-bold"
+                className="w-1/3 py-2.5 px-4 rounded-xl border border-[#DCE7F5] bg-white text-[#475569] hover:bg-[#EEF7FF] text-xs font-bold transition-colors"
               >
                 Back
               </button>
@@ -217,7 +217,7 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
                 type="submit"
                 data-testid="authorize-provision-btn"
                 disabled={isSubmitting || otpCode.length !== 6}
-                className="w-2/3 py-2.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs shadow-lg disabled:opacity-50"
+                className="w-2/3 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm disabled:opacity-50 transition-colors"
               >
                 {isSubmitting ? 'Authorizing...' : 'Authorize & Provision'}
               </button>

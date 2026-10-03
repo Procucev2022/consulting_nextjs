@@ -27,7 +27,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
   const pcbiOpportunityCr = Number((pcbiOpportunity / 10000000).toFixed(2));
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <div className="flex items-center space-x-2">
@@ -53,7 +53,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Step-by-Step Mathematical Flow */}
-        <div className="lg:col-span-8 p-5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs space-y-4">
+        <div className="lg:col-span-8 p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 font-mono text-xs space-y-4">
           {/* Metadata */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pb-3 border-b border-slate-200 dark:border-slate-800 text-[11px]">
             <div>
@@ -77,7 +77,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
           {/* Formulas */}
           <div className="space-y-3">
             {/* Step 1: Expected Benchmark Price */}
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Step 1: Expected Benchmark Price</span>
                 <span className="text-slate-600 dark:text-slate-300">
@@ -94,7 +94,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
             </div>
 
             {/* Step 2: Price Gap */}
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Step 2: Actual Purchase Price Gap</span>
                 <span className="text-slate-600 dark:text-slate-300">
@@ -111,7 +111,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
             </div>
 
             {/* Step 3: Gross Opportunity */}
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase block">Step 3: Gross Opportunity</span>
                 <span className="text-slate-600 dark:text-slate-300">
@@ -159,7 +159,7 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
         </div>
 
         {/* Live Parameter Controls */}
-        <div className="lg:col-span-4 p-5 rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 space-y-3">
+        <div className="lg:col-span-4 p-5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
               <Sliders className="w-3.5 h-3.5 text-cyan-600" />

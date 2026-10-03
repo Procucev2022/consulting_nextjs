@@ -28,7 +28,7 @@ const BADGE_CLASSES: Record<string, string> = {
 };
 
 function getStatusBadgeClass(status: string): string {
-  return BADGE_CLASSES[status] || 'bg-slate-800 text-slate-400 border border-slate-700';
+  return BADGE_CLASSES[status] || 'bg-[#EEF4FC] text-slate-400 border border-slate-700';
 }
 
 export default function AdminSubscriptionsPage() {
@@ -258,7 +258,7 @@ export default function AdminSubscriptionsPage() {
         </div>
 
         {selectedAuditSubId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white backdrop-blur-md p-4 animate-in fade-in">
             <div className="relative w-full max-w-2xl bg-white border border-[#DCE7F5] rounded-2xl shadow-2xl p-6 text-[#0B1B33]">
               <button
                 type="button"

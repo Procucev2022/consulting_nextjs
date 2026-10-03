@@ -12,7 +12,7 @@ export const StrategicSourcingOpportunityWaterfall: React.FC<StrategicSourcingOp
 
   const stageColors: Record<string, { bg: string; text: string; border: string }> = {
     TOTAL_CATEGORY_SPEND: {
-      bg: 'bg-slate-100 dark:bg-slate-800',
+      bg: 'bg-slate-100 dark:bg-[#EEF4FC]',
       text: 'text-slate-900 dark:text-white',
       border: 'border-slate-300 dark:border-slate-700'
     },
@@ -49,7 +49,7 @@ export const StrategicSourcingOpportunityWaterfall: React.FC<StrategicSourcingOp
   };
 
   return (
-    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+    <div className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center space-x-2">

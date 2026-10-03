@@ -220,7 +220,7 @@ export default function AdminDashboardPage(): React.ReactElement {
       case 'GOLD':
         return 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700/60';
       case 'SILVER':
-        return 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+        return 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-[#EEF4FC] dark:text-slate-300 dark:border-slate-700';
       case 'BRONZE':
       default:
         return 'bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-950/80 dark:text-orange-300 dark:border-orange-800/60';
@@ -277,7 +277,7 @@ export default function AdminDashboardPage(): React.ReactElement {
               </span>
               <Link
                 href="/admin/pcbi"
-                className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#EEF4FC] transition-all flex items-center gap-1.5"
               >
                 <Layers size={13} />
                 <span>PCBI Master</span>
@@ -313,7 +313,7 @@ export default function AdminDashboardPage(): React.ReactElement {
             </button>
             <Link
               href="/"
-              className="flex items-center space-x-1 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-all"
+              className="flex items-center space-x-1 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-[#EEF4FC] dark:hover:bg-[#DCE7F5] rounded-xl transition-all"
             >
               <span>Main Workspace</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -359,7 +359,7 @@ export default function AdminDashboardPage(): React.ReactElement {
             <button
               onClick={loadDirectory}
               disabled={refreshing}
-              className="flex items-center space-x-2 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              className="flex items-center space-x-2 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#EEF4FC] hover:bg-slate-50 dark:hover:bg-[#DCE7F5] border border-slate-200 dark:border-slate-700 rounded-xl shadow-xs transition-all cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-cyan-600' : ''}`} />
               <span>{refreshing ? 'Syncing...' : 'Refresh'}</span>
@@ -389,7 +389,7 @@ export default function AdminDashboardPage(): React.ReactElement {
 
         {/* Top 4 KPI Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Registered Users</span>
               <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
@@ -398,7 +398,7 @@ export default function AdminDashboardPage(): React.ReactElement {
             <span className="text-[10px] text-cyan-700 dark:text-cyan-400 font-mono">Platform Identity Registry</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Active Buyers</span>
               <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -407,7 +407,7 @@ export default function AdminDashboardPage(): React.ReactElement {
             <span className="text-[10px] text-slate-400 font-mono">Authenticated & Live</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Client Enterprises</span>
               <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -416,7 +416,7 @@ export default function AdminDashboardPage(): React.ReactElement {
             <span className="text-[10px] text-slate-400 font-mono">Distinct Organizations</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
+          <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Database Health</span>
               <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -427,7 +427,7 @@ export default function AdminDashboardPage(): React.ReactElement {
         </div>
 
         {/* Filter Controls Bar */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
@@ -435,7 +435,7 @@ export default function AdminDashboardPage(): React.ReactElement {
               placeholder="Search by name, email, company, or Buyer ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-cyan-500 text-slate-900 dark:text-white"
             />
           </div>
 
@@ -445,7 +445,7 @@ export default function AdminDashboardPage(): React.ReactElement {
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value as any)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
+                className="bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
               >
                 <option value="ALL">All Roles</option>
                 <option value="USER">USER</option>
@@ -458,7 +458,7 @@ export default function AdminDashboardPage(): React.ReactElement {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
+                className="bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
               >
                 <option value="ALL">All Status</option>
                 <option value="ACTIVE">ACTIVE</option>
@@ -471,7 +471,7 @@ export default function AdminDashboardPage(): React.ReactElement {
               <select
                 value={tierFilter}
                 onChange={(e) => setTierFilter(e.target.value as any)}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
+                className="bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
               >
                 <option value="ALL">All Tiers</option>
                 <option value="BRONZE">BRONZE</option>
@@ -483,7 +483,7 @@ export default function AdminDashboardPage(): React.ReactElement {
         </div>
 
         {/* User Directory Table */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+        <div className="rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
           <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
               <Users className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
@@ -493,7 +493,7 @@ export default function AdminDashboardPage(): React.ReactElement {
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+              <thead className="bg-slate-50 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
                 <tr>
                   <th className="py-3 px-4">User & Buyer ID</th>
                   <th className="py-3 px-4">Company & Location</th>
@@ -521,7 +521,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                   users.map((user) => (
                     <tr
                       key={user.id}
-                      className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                     >
                       <td className="py-3.5 px-4 font-sans">
                         <div className="font-bold text-slate-900 dark:text-white text-xs">{user.full_name || 'Enterprise User'}</div>
@@ -553,7 +553,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
                             user.role === 'ADMIN'
                               ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border border-purple-300 dark:border-purple-800'
-                              : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                              : 'bg-slate-100 text-slate-700 dark:bg-[#EEF4FC] dark:text-slate-300'
                           }`}>
                             {user.role}
                           </span>
@@ -584,7 +584,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                       <td className="py-3.5 px-4 text-right font-sans space-x-2">
                         <button
                           onClick={() => setSelectedUserForDetails(user)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-all cursor-pointer"
+                          className="px-2.5 py-1 text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-[#EEF4FC] dark:hover:bg-[#DCE7F5] rounded-lg transition-all cursor-pointer"
                         >
                           Details
                         </button>
@@ -610,8 +610,8 @@ export default function AdminDashboardPage(): React.ReactElement {
 
       {/* User Details Modal */}
       {selectedUserForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center space-x-2">
                 <Shield className="w-5 h-5 text-cyan-600" />
@@ -626,34 +626,34 @@ export default function AdminDashboardPage(): React.ReactElement {
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl space-y-1">
+              <div className="p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl space-y-1">
                 <span className="text-slate-500 block text-[10px] uppercase font-mono">Buyer Identifier</span>
                 <span className="font-mono font-bold text-cyan-700 dark:text-cyan-400">{selectedUserForDetails.id}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                <div className="p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl">
                   <span className="text-slate-500 block text-[10px] uppercase font-mono">Full Name</span>
                   <span className="font-bold text-slate-900 dark:text-white">{selectedUserForDetails.full_name || '—'}</span>
                 </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                <div className="p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl">
                   <span className="text-slate-500 block text-[10px] uppercase font-mono">Email Address</span>
                   <span className="font-bold text-slate-900 dark:text-white">{selectedUserForDetails.email}</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl space-y-1">
+              <div className="p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl space-y-1">
                 <span className="text-slate-500 block text-[10px] uppercase font-mono">Enterprise Company</span>
                 <span className="font-bold text-slate-900 dark:text-white">{selectedUserForDetails.company_name || '—'}</span>
                 <span className="text-slate-500 block text-[11px]">{selectedUserForDetails.company_address || 'No registered physical address'}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                <div className="p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl">
                   <span className="text-slate-500 block text-[10px] uppercase font-mono">Mobile Number</span>
                   <span className="font-bold text-slate-900 dark:text-white">{selectedUserForDetails.phone || '—'}</span>
                 </div>
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl">
+                <div className="p-3 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl">
                   <span className="text-slate-500 block text-[10px] uppercase font-mono">Registered At</span>
                   <span className="font-mono text-slate-700 dark:text-slate-300">
                     {selectedUserForDetails.created_at ? new Date(selectedUserForDetails.created_at).toLocaleString() : '—'}
@@ -676,8 +676,8 @@ export default function AdminDashboardPage(): React.ReactElement {
 
       {/* Change Password Modal */}
       {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-950 flex items-center justify-center text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-800">
@@ -695,7 +695,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                   setPasswordError(null);
                   setPasswordSuccess(null);
                 }}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
@@ -728,7 +728,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter current master password"
                     required
-                    className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono"
+                    className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono"
                   />
                   <button
                     type="button"
@@ -753,7 +753,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                     placeholder="Enter new strong password"
                     required
                     minLength={8}
-                    className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono"
+                    className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono"
                   />
                   <button
                     type="button"
@@ -778,7 +778,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                     placeholder="Re-enter new password"
                     required
                     minLength={8}
-                    className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono"
+                    className="w-full px-3 py-2 pr-10 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-all font-mono"
                   />
                   <button
                     type="button"
@@ -799,7 +799,7 @@ export default function AdminDashboardPage(): React.ReactElement {
                     setPasswordError(null);
                     setPasswordSuccess(null);
                   }}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#EEF4FC] rounded-xl transition-all cursor-pointer"
                 >
                   Cancel
                 </button>

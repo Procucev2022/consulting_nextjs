@@ -73,7 +73,7 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
   }, [items, selectedCategory, searchQuery, sortBy, cardCadences, globalCadence]);
 
   return (
-    <div data-testid="po-consolidation-section" className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-6">
+    <div data-testid="po-consolidation-section" className="p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-6">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
@@ -93,13 +93,13 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
 
         {/* View Switcher */}
         <div className="flex items-center space-x-2 self-start lg:self-center">
-          <div className="flex items-center bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+          <div className="flex items-center bg-slate-100 dark:bg-[#F8FBFE] p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
             <button
               type="button"
               onClick={() => setViewMode('grid')}
               className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg font-medium transition-colors ${
                 viewMode === 'grid'
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-[#EEF4FC] text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -111,7 +111,7 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
               onClick={() => setViewMode('table')}
               className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg font-medium transition-colors ${
                 viewMode === 'table'
-                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                  ? 'bg-white dark:bg-[#EEF4FC] text-slate-900 dark:text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -140,8 +140,8 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 selectedCategory === cat
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200'
+                  ? 'bg-white text-white dark:bg-white dark:text-slate-900'
+                  : 'bg-slate-100 text-slate-600 dark:bg-[#EEF4FC] dark:text-slate-300 hover:bg-slate-200'
               }`}
             >
               {cat === 'ALL' ? UI_STRINGS.poConsolidation.filterAll : cat}
@@ -158,11 +158,11 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={UI_STRINGS.poConsolidation.searchPlaceholder}
-              className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs w-60 sm:w-72 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#F8FBFE] text-xs w-60 sm:w-72 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
-          <div className="flex items-center space-x-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs">
+          <div className="flex items-center space-x-1.5 bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-1.5 text-xs">
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={sortBy}
@@ -181,7 +181,7 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
 
       {/* Grid or Table */}
       {filteredItems.length === 0 ? (
-        <div className="p-8 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
+        <div className="p-8 text-center text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#F8FBFE] rounded-xl border border-dashed border-slate-200 dark:border-slate-800">
           {UI_STRINGS.poConsolidation.noResultsFound}
         </div>
       ) : viewMode === 'grid' ? (
@@ -199,7 +199,7 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-600 dark:text-slate-300 text-[11px] font-semibold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-50 dark:bg-[#F8FBFE] text-slate-600 dark:text-slate-300 text-[11px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-3">{UI_STRINGS.poConsolidation.matrixColSupplier}</th>
                 <th className="p-3">{UI_STRINGS.poConsolidation.matrixColCategory}</th>
@@ -216,7 +216,7 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
                 const cadence = cardCadences[item.id] || globalCadence;
                 const opt = item.cadence_options[cadence];
                 return (
-                  <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                  <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-[#EEF4FC]">
                     <td className="p-3 font-semibold text-slate-900 dark:text-white">
                       <div>{item.vendor_name}</div>
                       <div className="text-[11px] text-slate-400 font-mono mt-0.5">{item.material_code}</div>
@@ -245,7 +245,7 @@ export const PoConsolidationSection: React.FC<PoConsolidationSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => handleOpenModal(item)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[11px] font-semibold"
+                        className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#EEF4FC] dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-[11px] font-semibold"
                       >
                         Consolidate
                       </button>

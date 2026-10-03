@@ -48,9 +48,9 @@ export const PCBIPreviewTab: React.FC<PCBIPreviewTabProps> = ({
 
         <div className="flex items-center gap-3 shrink-0 text-[11px] font-mono bg-white px-3 py-2 rounded-xl border border-amber-200 shadow-xs">
           <span className="text-[#64748B]">Prod Writes: <strong className="text-emerald-600">0</strong></span>
-          <span className="text-slate-300">|</span>
+          <span className="text-[#CBD5E1]">|</span>
           <span className="text-[#64748B]">Savings: <strong className="text-emerald-600">0</strong></span>
-          <span className="text-slate-300">|</span>
+          <span className="text-[#CBD5E1]">|</span>
           <span className="text-[#64748B]">Mod 4: <strong className="text-amber-600">DISCONNECTED</strong></span>
         </div>
       </div>

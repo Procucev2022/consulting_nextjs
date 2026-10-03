@@ -10,7 +10,7 @@ export interface MarketDiscoveryPanelProps {
 export const MarketDiscoveryPanel: React.FC<MarketDiscoveryPanelProps> = ({ marketDiscovery }) => {
   if (!marketDiscovery) {
     return (
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-white text-xs text-slate-500">
         Market Discovery Assessment not available for this category.
       </div>
     );
@@ -40,7 +40,7 @@ export const MarketDiscoveryPanel: React.FC<MarketDiscoveryPanelProps> = ({ mark
           </div>
         </div>
         <div className="shrink-0">
-          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-current shadow-sm">
+          <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-white dark:bg-white border border-current shadow-sm">
             {marketDiscovery.recommendedSourcingVehicle.replace(/_/g, ' ')}
           </span>
         </div>
@@ -54,7 +54,7 @@ export const MarketDiscoveryPanel: React.FC<MarketDiscoveryPanelProps> = ({ mark
         </h4>
 
         {marketDiscovery.triggers.length === 0 ? (
-          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-500">
+          <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-white text-xs text-slate-500">
             No adverse structural triggers identified. Internal competitive density provides sufficient historical baseline pricing.
           </div>
         ) : (
@@ -62,7 +62,7 @@ export const MarketDiscoveryPanel: React.FC<MarketDiscoveryPanelProps> = ({ mark
             {marketDiscovery.triggers.map((trigger) => (
               <div
                 key={trigger.triggerKey}
-                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5 shadow-sm"
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-white space-y-1.5 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">

@@ -36,16 +36,16 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
       role="dialog"
       aria-modal="true"
       aria-labelledby="strategic-risk-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-slate-950/40">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-[#F8FBFE]">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <span
@@ -71,7 +71,7 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -80,7 +80,7 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
         {/* Content Body */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* Key Metrics Strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-100 dark:border-slate-800 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Spend</span>
               <span className="font-mono font-bold text-slate-900 dark:text-white">₹{item.total_spend_inr_cr.toFixed(2)} Cr</span>
@@ -107,7 +107,7 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
             </h4>
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
               <table className="w-full text-xs">
-                <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 text-left">
+                <thead className="bg-slate-50 dark:bg-[#F8FBFE] text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-800 text-left">
                   <tr>
                     <th className="py-2 px-3">{modalStrings.vendorCol}</th>
                     <th className="py-2 px-3 text-right">{modalStrings.spendCol}</th>
@@ -117,7 +117,7 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {/* Primary Vendor Row */}
-                  <tr className="bg-white dark:bg-slate-900">
+                  <tr className="bg-white dark:bg-white">
                     <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
                       {item.primary_vendor.vendor_name}
                     </td>
@@ -192,7 +192,7 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
               {item.suggested_action_plan.map((step, idx) => (
                 <div
                   key={idx}
-                  className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex items-start space-x-2 text-xs"
+                  className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-start space-x-2 text-xs"
                 >
                   <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400 flex-shrink-0">
                     Step {idx + 1}:
@@ -207,10 +207,10 @@ export const StrategicRiskMitigationModal: React.FC<StrategicRiskMitigationModal
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end space-x-2 bg-slate-50/50 dark:bg-slate-950/40">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end space-x-2 bg-slate-50/50 dark:bg-[#F8FBFE]">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition-opacity"
+            className="px-4 py-2 rounded-xl bg-white dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-semibold hover:opacity-90 transition-opacity"
           >
             {modalStrings.closeBtn}
           </button>

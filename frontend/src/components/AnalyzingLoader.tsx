@@ -140,7 +140,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
   };
 
   const content = (
-    <div className="relative w-full max-w-4xl bg-slate-900/95 text-white rounded-3xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60 backdrop-blur-2xl overflow-hidden p-6 sm:p-8 flex flex-col gap-6">
+    <div className="relative w-full max-w-4xl bg-[#0B1B33]/95 text-white rounded-3xl border border-cyan-500/30 shadow-2xl shadow-cyan-950/60 backdrop-blur-2xl overflow-hidden p-6 sm:p-8 flex flex-col gap-6">
       {/* Background Animated Ambience */}
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none animate-pulse" />
@@ -174,7 +174,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
             type="button"
             onClick={onCancel}
             aria-label={UI_STRINGS.analyzingLoader.cancelButton}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#EEF4FC] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -184,7 +184,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
       {/* Middle Pictorial Section: AI Core & Orbital Satellites Diagram */}
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
         {/* Left: Pictorial Radar & Constellation Artwork */}
-        <div className="lg:col-span-6 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 relative overflow-hidden min-h-[300px]">
+        <div className="lg:col-span-6 flex flex-col items-center justify-center p-4 rounded-2xl bg-[#0B1B33]/60 border border-cyan-500/20 relative overflow-hidden min-h-[300px]">
           {/* SVG Orbital Canvas */}
           <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
             <svg
@@ -240,7 +240,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                         ? 'bg-emerald-600 text-white shadow-emerald-500/30'
                         : isCurrent
                         ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-cyan-500/50 ring-2 ring-cyan-300'
-                        : 'bg-slate-800 text-slate-400 border border-slate-700'
+                        : 'bg-white/10 text-slate-400 border border-slate-700'
                     }`}
                   >
                     {isDone ? (
@@ -270,7 +270,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
             {/* Central Pulsating AI Core */}
             <div className="relative z-20 flex flex-col items-center justify-center">
               <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 p-1 shadow-xl shadow-cyan-500/30 animate-pulse">
-                <div className="w-full h-full bg-slate-950 rounded-full flex flex-col items-center justify-center text-center p-2">
+                <div className="w-full h-full bg-[#0B1B33] rounded-full flex flex-col items-center justify-center text-center p-2">
                   <Activity className="w-5 h-5 text-cyan-400 animate-spin" style={{ animationDuration: '4s' }} />
                   <span className="text-[9px] font-black uppercase text-cyan-300 tracking-tighter mt-0.5">
                     {UI_STRINGS.analyzingLoader.orbitHubLabel}
@@ -298,10 +298,10 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                   key={phase.id}
                   className={`p-3.5 rounded-2xl border transition-all duration-300 flex items-start space-x-3 ${
                     isActive
-                      ? 'bg-slate-800/90 border-cyan-500 shadow-md shadow-cyan-950/50'
+                      ? 'bg-[#0B2240]/80 border-cyan-500 shadow-md shadow-cyan-950/50'
                       : isPast
-                      ? 'bg-slate-900/50 border-emerald-500/30 text-slate-300'
-                      : 'bg-slate-950/40 border-slate-800/60 opacity-60 text-slate-500'
+                      ? 'bg-white border-emerald-500/30 text-slate-300'
+                      : 'bg-white/5 border-slate-800/60 opacity-60 text-slate-500'
                   }`}
                 >
                   <div
@@ -310,7 +310,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : isActive
                         ? 'bg-cyan-500/20 text-cyan-400 ring-1 ring-cyan-500'
-                        : 'bg-slate-800 text-slate-500'
+                        : 'bg-white/10 text-slate-500'
                     }`}
                   >
                     {isPast ? (
@@ -334,7 +334,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                           : isActive
                           ? 'bg-cyan-950 text-cyan-300 border border-cyan-700 animate-pulse'
-                          : 'bg-slate-800 text-slate-500'
+                          : 'bg-[#EEF4FC] text-slate-500'
                       }`}>
                         {isPast
                           ? UI_STRINGS.analyzingLoader.statusText.completed
@@ -360,7 +360,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
               </span>
               <span className="font-bold text-cyan-400">{internalProgress}%</span>
             </div>
-            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5 border border-slate-700">
+            <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5 border border-slate-700">
               <div
                 className="h-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 rounded-full transition-all duration-150 ease-out shadow-xs shadow-cyan-500"
                 style={{ width: `${internalProgress}%` }}
@@ -372,7 +372,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
 
       {/* Bottom Telemetry Metrics Strip */}
       <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-800">
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+        <div className="p-3 rounded-xl bg-white/5 border border-slate-800/80">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {UI_STRINGS.analyzingLoader.metrics.recordsAnalyzed}
           </span>
@@ -381,7 +381,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+        <div className="p-3 rounded-xl bg-white/5 border border-slate-800/80">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {UI_STRINGS.analyzingLoader.metrics.spendEvaluated}
           </span>
@@ -390,7 +390,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+        <div className="p-3 rounded-xl bg-white/5 border border-slate-800/80">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {UI_STRINGS.analyzingLoader.metrics.uniqueVendors}
           </span>
@@ -399,7 +399,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
+        <div className="p-3 rounded-xl bg-white/5 border border-slate-800/80">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
             {UI_STRINGS.analyzingLoader.metrics.confidenceScore}
           </span>
@@ -430,7 +430,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
       <div
         role="dialog"
         aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0B1B33]/80 backdrop-blur-md animate-in fade-in duration-200"
       >
         {content}
       </div>

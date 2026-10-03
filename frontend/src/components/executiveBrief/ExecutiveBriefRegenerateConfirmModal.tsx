@@ -19,7 +19,7 @@ export const ExecutiveBriefRegenerateConfirmModal: React.FC<ExecutiveBriefRegene
       role="dialog"
       aria-modal="true"
       aria-labelledby="regenerate-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white backdrop-blur-sm animate-in fade-in"
     >
       <div className="relative w-full max-w-md bg-white border border-[#DCE7F5] rounded-2xl shadow-2xl overflow-hidden text-[#0B1B33] p-6 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-[#DCE7F5]">

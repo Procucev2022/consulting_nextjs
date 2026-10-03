@@ -35,7 +35,7 @@ export const CustomerDataProtectedBadge: React.FC<CustomerDataProtectedBadgeProp
       {showTooltip && isTooltipVisible && (
         <div
           role="tooltip"
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 text-xs leading-normal bg-slate-900 text-slate-200 border border-slate-700 rounded shadow-lg z-50 pointer-events-none"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-2 text-xs leading-normal bg-white text-slate-200 border border-slate-700 rounded shadow-lg z-50 pointer-events-none"
         >
           {UI_STRINGS.enterprisePrivacy.resultBadgeTooltip}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />

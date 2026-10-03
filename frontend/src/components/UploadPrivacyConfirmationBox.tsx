@@ -17,7 +17,7 @@ export const UploadPrivacyConfirmationBox: React.FC<UploadPrivacyConfirmationBox
 
   return (
     <div
-      className={`rounded-lg border border-slate-700 bg-slate-900/90 p-4 text-slate-200 shadow-sm backdrop-blur ${className}`}
+      className={`rounded-lg border border-slate-700 bg-white p-4 text-slate-200 shadow-sm backdrop-blur ${className}`}
       data-testid="upload-privacy-confirmation-box"
     >
       <div className="flex items-start gap-3">
@@ -47,7 +47,7 @@ export const UploadPrivacyConfirmationBox: React.FC<UploadPrivacyConfirmationBox
           {showDetails && (
             <div
               id="upload-data-protection-details"
-              className="mt-3 pt-3 border-t border-slate-800 text-xs text-slate-400 space-y-2 bg-slate-950/50 p-3 rounded"
+              className="mt-3 pt-3 border-t border-slate-800 text-xs text-slate-400 space-y-2 bg-[#F8FBFE] p-3 rounded"
             >
               <p>• {UI_STRINGS.enterprisePrivacy.uploadNotice}</p>
               <p>• {UI_STRINGS.enterprisePrivacy.nonEnrichmentNotice}</p>
@@ -62,7 +62,7 @@ export const UploadPrivacyConfirmationBox: React.FC<UploadPrivacyConfirmationBox
               type="checkbox"
               checked={isChecked}
               onChange={(e) => onToggle(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 cursor-pointer"
+              className="h-4 w-4 rounded border-slate-700 bg-[#EEF4FC] text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 cursor-pointer"
             />
             <label
               htmlFor="privacy-acknowledgment-checkbox"

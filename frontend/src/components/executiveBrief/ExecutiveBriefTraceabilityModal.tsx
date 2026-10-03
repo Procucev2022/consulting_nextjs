@@ -32,7 +32,7 @@ export const ExecutiveBriefTraceabilityModal: React.FC<ExecutiveBriefTraceabilit
       role="dialog"
       aria-modal="true"
       aria-labelledby="traceability-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white backdrop-blur-sm animate-in fade-in"
     >
       <div className="relative w-full max-w-2xl bg-white border border-[#DCE7F5] rounded-2xl shadow-2xl overflow-hidden text-[#0B1B33] flex flex-col max-h-[90vh]">
         {/* Modal Header */}

@@ -123,7 +123,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   return (
     <div
       data-testid="module2-strategic-sourcing-workspace"
-      className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6"
+      className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-sm space-y-6"
     >
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -149,7 +149,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           <button
             type="button"
             onClick={() => loadData(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
+            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-[#EEF4FC] hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh Engine</span>

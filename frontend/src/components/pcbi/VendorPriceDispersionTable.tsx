@@ -91,7 +91,7 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
       ];
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -110,7 +110,7 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-3 px-4">{headers.vendor}</th>
                 <th className="py-3 px-4">{headers.item}</th>
@@ -128,7 +128,7 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
               {rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                 >
                   <td className="py-3 px-4 font-sans font-bold text-slate-900 dark:text-white">
                     {row.vendor}

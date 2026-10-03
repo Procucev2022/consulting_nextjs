@@ -142,7 +142,7 @@ export const ExecutiveReportModal: React.FC<ExecutiveReportModalProps> = ({
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto"
     >
-      <div className="relative w-full max-w-6xl max-h-[96vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col glass-panel-glow my-auto">
+      <div className="relative w-full max-w-6xl max-h-[96vh] bg-white dark:bg-white border border-slate-200 dark:border-cyan-500/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col glass-panel-glow my-auto">
         {/* Top Presentation Navigation Toolbar */}
         <PresentationControls
           currentSlide={currentSlide}

@@ -48,7 +48,7 @@ export const Slide1Cover: React.FC<PresentationSlideProps> = ({
 
       {/* Slide Footer: Metadata Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-6 border-t border-slate-200 dark:border-slate-800/80 text-xs relative z-10">
-        <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+        <div className="p-3 rounded-xl bg-white/80 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <Building2 className="w-3.5 h-3.5 text-cyan-600" />
             <span>{strings.preparedForLabel}</span>
@@ -58,7 +58,7 @@ export const Slide1Cover: React.FC<PresentationSlideProps> = ({
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+        <div className="p-3 rounded-xl bg-white/80 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <Calendar className="w-3.5 h-3.5 text-blue-600" />
             <span>{strings.dateLabel}</span>
@@ -68,7 +68,7 @@ export const Slide1Cover: React.FC<PresentationSlideProps> = ({
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+        <div className="p-3 rounded-xl bg-white/80 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
             <span>{strings.authorLabel}</span>
@@ -78,7 +78,7 @@ export const Slide1Cover: React.FC<PresentationSlideProps> = ({
           </p>
         </div>
 
-        <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+        <div className="p-3 rounded-xl bg-white/80 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800">
           <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 font-semibold mb-1">
             <FileCode className="w-3.5 h-3.5 text-emerald-600" />
             <span>{strings.docRefLabel}</span>

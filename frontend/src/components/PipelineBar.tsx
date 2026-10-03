@@ -196,10 +196,10 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               }}
               className={`text-[11px] px-3 py-1.5 rounded-lg font-semibold transition-all inline-flex items-center gap-1 ${
                 isModule5Locked
-                  ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800/60 text-slate-400 border border-slate-200 dark:border-slate-700'
+                  ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-[#EEF4FC] text-slate-400 border border-slate-200 dark:border-slate-700'
                   : activeTab === 'module5'
                   ? 'bg-purple-600 text-white shadow-sm shadow-purple-500/20 border border-purple-500 cursor-pointer'
-                  : 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer'
+                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 cursor-pointer'
               }`}
             >
               {UI_STRINGS.pipeline.conversionMatrixTab}
@@ -232,10 +232,10 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                 }}
                 className={`group relative text-left p-3.5 rounded-xl transition-all duration-200 border flex flex-col justify-between no-underline block overflow-hidden ${
                   isLocked
-                    ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800/50'
+                    ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-[#F8FBFE] border-slate-200 dark:border-slate-800/50'
                     : isActive
                     ? 'cursor-pointer bg-gradient-to-b from-sky-50 to-white dark:from-[#001a2e] dark:to-[#0a1020] border-sky-400 dark:border-cyan-600/70 shadow-md'
-                    : 'cursor-pointer bg-slate-50/60 dark:bg-slate-950/40 border-slate-200/80 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900/50'
+                    : 'cursor-pointer bg-slate-50/60 dark:bg-[#F8FBFE] border-slate-200/80 dark:border-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-white'
                 }`}
               >
                 {/* Active accent stripe */}
@@ -253,12 +253,12 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
                       <span
                         className={`w-6 h-6 rounded-lg text-xs font-mono font-bold flex items-center justify-center border ${
                           isLocked
-                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
+                            ? 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'
                             : isActive
                             ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm'
                             : isDone
                             ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                            : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                         }`}
                       >
                         {stage.step}

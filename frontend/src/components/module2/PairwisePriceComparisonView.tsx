@@ -10,7 +10,7 @@ interface PairwisePriceComparisonViewProps {
 export const PairwisePriceComparisonView: React.FC<PairwisePriceComparisonViewProps> = ({ proofs }) => {
   if (!proofs || proofs.length === 0) {
     return (
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-500 italic text-center">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-800 text-xs text-slate-500 italic text-center">
         No pairwise multi-supplier price comparisons available for this category.
       </div>
     );
@@ -31,7 +31,7 @@ export const PairwisePriceComparisonView: React.FC<PairwisePriceComparisonViewPr
           return (
             <div
               key={`${supplierA.supplierId}-${supplierB.supplierId}-${idx}`}
-              className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs"
+              className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                 <div className="flex items-center space-x-2 text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -75,7 +75,7 @@ export const PairwisePriceComparisonView: React.FC<PairwisePriceComparisonViewPr
               </div>
 
               {/* Comparability Checklist */}
-              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-[11px] flex flex-wrap items-center gap-3">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-800 text-[11px] flex flex-wrap items-center gap-3">
                 <span className="font-bold text-slate-700 dark:text-slate-300">Comparability Checklist:</span>
                 <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                   <CheckCircle2 className="w-3 h-3" /> Spec: MATCH

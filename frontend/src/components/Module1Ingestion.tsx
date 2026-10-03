@@ -205,7 +205,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
       <PCBIModuleWarningBanner moduleContext="MODULE_1" />
 
       {/* Live FX Rates Bar */}
-      <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div className="p-3.5 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 shrink-0">
           <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxRatesLabel}</span>
@@ -226,7 +226,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
               .map(([curr, fx]) => (
                 <span
                   key={curr}
-                  className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
+                  className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
                   title={`${fx.name || curr} live rate to INR`}
                 >
                   <span className="font-bold text-cyan-700 dark:text-cyan-400">{curr}/INR:</span>
@@ -240,7 +240,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
       </div>
 
       {/* Ingestion Meta Dashboard Strip */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+      <div className="p-4 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">{UI_STRINGS.module1.activeTenant}</span>
@@ -383,7 +383,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           />
         </>
       ) : (
-        <div className="p-8 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-3 glass-card">
+        <div className="p-8 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 text-center space-y-3 glass-card">
           <div className="w-12 h-12 mx-auto rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
             <FileSpreadsheet className="w-6 h-6" />
           </div>

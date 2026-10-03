@@ -196,7 +196,7 @@ export const StrategicSourcingDashboardCards: React.FC<StrategicSourcingDashboar
       </div>
 
       {/* Executive Governance & Candidate Pipeline Summary */}
-      <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div className="flex items-center space-x-1.5 text-slate-600 dark:text-slate-400 font-medium text-[11px]">
           <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>Based exclusively on qualified historical customer transactions. Not realized savings.</span>

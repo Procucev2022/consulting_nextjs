@@ -21,7 +21,7 @@ export const OpportunityExclusionLedgerView: React.FC<OpportunityExclusionLedger
 
   if (ledger.length === 0) {
     return (
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-xs text-slate-400 italic text-center">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-800 text-xs text-slate-400 italic text-center">
         Zero transaction exclusions. 100% of historical transactions are comparable and eligible.
       </div>
     );
@@ -43,7 +43,7 @@ export const OpportunityExclusionLedgerView: React.FC<OpportunityExclusionLedger
           <select
             value={filterCode}
             onChange={(e) => setFilterCode(e.target.value)}
-            className="p-1.5 rounded-lg text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium"
+            className="p-1.5 rounded-lg text-xs bg-white dark:bg-white border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium"
           >
             <option value="ALL">All Exclusion Reasons ({ledger.length})</option>
             {uniqueCodes.map((code) => {
@@ -61,7 +61,7 @@ export const OpportunityExclusionLedgerView: React.FC<OpportunityExclusionLedger
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto max-h-72">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold z-10">
+            <thead className="sticky top-0 bg-slate-100 dark:bg-white border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold z-10">
               <tr>
                 <th className="py-2.5 px-3">PO Number</th>
                 <th className="py-2.5 px-3">Supplier</th>
@@ -74,7 +74,7 @@ export const OpportunityExclusionLedgerView: React.FC<OpportunityExclusionLedger
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-sans">
               {filteredEntries.map((entry) => (
-                <tr key={entry.transactionId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                <tr key={entry.transactionId} className="hover:bg-slate-50/50 dark:hover:bg-[#EEF4FC]">
                   <td className="py-2 px-3 font-mono text-[11px] text-slate-800 dark:text-slate-200 font-bold">
                     {entry.poNumber}
                   </td>

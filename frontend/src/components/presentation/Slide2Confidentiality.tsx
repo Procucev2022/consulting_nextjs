@@ -11,7 +11,7 @@ export const Slide2Confidentiality: React.FC<PresentationSlideProps> = ({
   const strings = UI_STRINGS.presentation.confidentiality;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -36,7 +36,7 @@ export const Slide2Confidentiality: React.FC<PresentationSlideProps> = ({
       {/* 4 Governance Pillars Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 my-auto py-6">
         {/* Section 1 */}
-        <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-rose-700 dark:text-rose-400 font-bold text-sm">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <h3>{strings.section1Title}</h3>
@@ -47,7 +47,7 @@ export const Slide2Confidentiality: React.FC<PresentationSlideProps> = ({
         </div>
 
         {/* Section 2 */}
-        <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
             <Lock className="w-4 h-4 shrink-0" />
             <h3>{strings.section2Title}</h3>
@@ -58,7 +58,7 @@ export const Slide2Confidentiality: React.FC<PresentationSlideProps> = ({
         </div>
 
         {/* Section 3 */}
-        <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400 font-bold text-sm">
             <Scale className="w-4 h-4 shrink-0" />
             <h3>{strings.section3Title}</h3>
@@ -69,7 +69,7 @@ export const Slide2Confidentiality: React.FC<PresentationSlideProps> = ({
         </div>
 
         {/* Section 4 */}
-        <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-emerald-700 dark:text-emerald-400 font-bold text-sm">
             <FileText className="w-4 h-4 shrink-0" />
             <h3>{strings.section4Title}</h3>

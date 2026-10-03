@@ -96,7 +96,7 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
   ];
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -120,7 +120,7 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-3 px-4">{headers.overlapGroup}</th>
                 <th className="py-3 px-4">{headers.primaryEngine}</th>
@@ -139,7 +139,7 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
                 return (
                   <tr
                     key={group.overlap_id}
-                    className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                    className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                   >
                     <td className="py-3.5 px-4 font-sans font-bold text-slate-900 dark:text-white">
                       <div>{group.item}</div>
@@ -162,7 +162,7 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
                           .map((o, i) => (
                             <span
                               key={i}
-                              className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+                              className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
                             >
                               {o.source_engine.replace('_', ' ')}: ₹{(o.gross_savings_inr / 10000000).toFixed(2)} Cr
                             </span>
@@ -184,7 +184,7 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
                         onChange={(e) =>
                           onUpdateStatus?.(group.primary_opportunity_id, e.target.value as SavingsOpportunityStatus)
                         }
-                        className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 font-bold focus:outline-none focus:border-cyan-500 cursor-pointer"
+                        className="bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 font-bold focus:outline-none focus:border-cyan-500 cursor-pointer"
                       >
                         {statuses.map((st) => (
                           <option key={st} value={st}>

@@ -10,7 +10,7 @@ export const StrategicSourcingScorecardView: React.FC<StrategicSourcingScorecard
   const strings = UI_STRINGS.module2Sourcing;
 
   return (
-    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+    <div className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div>
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center space-x-2">
@@ -23,7 +23,7 @@ export const StrategicSourcingScorecardView: React.FC<StrategicSourcingScorecard
         </div>
 
         {/* Overall Score Badge */}
-        <div className="flex items-center space-x-3 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div className="flex items-center space-x-3 bg-slate-50 dark:bg-[#EEF4FC] px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
           <div>
             <div className="text-[10px] text-slate-400 font-bold uppercase">Overall Score</div>
             <div className="text-xl font-black font-mono text-cyan-600 dark:text-cyan-400">
@@ -45,7 +45,7 @@ export const StrategicSourcingScorecardView: React.FC<StrategicSourcingScorecard
           return (
             <div
               key={dim.dimension}
-              className="p-2.5 rounded-lg bg-slate-50/60 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-2"
+              className="p-2.5 rounded-lg bg-slate-50/60 dark:bg-[#EEF4FC] border border-slate-200/60 dark:border-slate-800 flex items-center justify-between gap-2"
             >
               <div className="flex items-start space-x-2">
                 <span className="text-[10px] font-mono text-slate-400 font-bold shrink-0 mt-0.5">

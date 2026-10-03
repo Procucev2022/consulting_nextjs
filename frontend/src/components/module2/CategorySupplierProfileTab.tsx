@@ -11,7 +11,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
     <div className="space-y-5">
       {/* Overview & Purchase Cadence */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700">
           <div className="text-[10px] uppercase font-bold text-slate-400">Total Spend</div>
           <div className="text-base font-black font-mono text-slate-900 dark:text-white mt-1">
             ₹{profile.totalSpendInrCr.toFixed(2)} Cr
@@ -21,7 +21,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700">
           <div className="text-[10px] uppercase font-bold text-slate-400">Active Cadence</div>
           <div className="text-base font-black text-cyan-600 dark:text-cyan-400 mt-1">
             {profile.activeMonthsCount} Active Months
@@ -31,7 +31,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700">
           <div className="text-[10px] uppercase font-bold text-slate-400">Supplier HHI</div>
           <div className="text-base font-black font-mono text-slate-900 dark:text-white mt-1">
             {profile.hhiScore}
@@ -41,7 +41,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
           </div>
         </div>
 
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700">
           <div className="text-[10px] uppercase font-bold text-slate-400">Fragmentation</div>
           <div className="text-base font-black text-purple-600 dark:text-purple-400 mt-1">
             {profile.fragmentationLevel.replace(/_/g, ' ')}
@@ -54,7 +54,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
 
       {/* Supplier Structure & Concentration Table */}
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-        <div className="p-3 bg-slate-100 dark:bg-slate-950 font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between">
+        <div className="p-3 bg-slate-100 dark:bg-[#F8FBFE] font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center justify-between">
           <span>Supplier Structure & Concentration Matrix</span>
           <span className="text-[10px] font-normal text-slate-500">
             Top Supplier: {profile.topSupplierSharePct}% • Top 3: {profile.top3SupplierSharePct}% • Long Tail: {profile.longTailSupplierSharePct}%
@@ -62,7 +62,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-500">
+            <thead className="bg-slate-50 dark:bg-white border-b border-slate-200 dark:border-slate-800 text-slate-500">
               <tr>
                 <th className="py-2.5 px-3">Supplier Name</th>
                 <th className="py-2.5 px-3 text-right">Spend (INR)</th>
@@ -75,7 +75,7 @@ export const CategorySupplierProfileTab: React.FC<CategorySupplierProfileTabProp
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {profile.suppliers.map((s) => (
-                <tr key={s.supplierId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                <tr key={s.supplierId} className="hover:bg-slate-50/50 dark:hover:bg-[#EEF4FC]">
                   <td className="py-2 px-3 font-medium text-slate-900 dark:text-white">
                     {s.supplierName}
                     {s.isTopSupplier && (

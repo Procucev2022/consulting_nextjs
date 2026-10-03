@@ -23,7 +23,7 @@ export const ProgressiveAnalysisAccordion: React.FC<ProgressiveAnalysisAccordion
 
   return (
     <div
-      className={`rounded-lg border border-slate-800 bg-slate-900/60 transition-all ${className}`}
+      className={`rounded-lg border border-slate-800 bg-white transition-all ${className}`}
       data-testid="progressive-analysis-accordion"
     >
       <div className="flex items-center justify-between p-3">
@@ -35,7 +35,7 @@ export const ProgressiveAnalysisAccordion: React.FC<ProgressiveAnalysisAccordion
         >
           <span>{displayTitle}</span>
           {typeof summaryCount === 'number' && (
-            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-300 font-mono">
+            <span className="rounded-full bg-[#EEF4FC] px-2 py-0.5 text-[10px] text-slate-300 font-mono">
               {summaryCount}
             </span>
           )}

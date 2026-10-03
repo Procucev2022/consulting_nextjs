@@ -105,11 +105,11 @@ export const HowCalculatedModal: React.FC<HowCalculatedModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="how-calculated-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400">
               <Calculator className="w-5 h-5" />
@@ -127,7 +127,7 @@ export const HowCalculatedModal: React.FC<HowCalculatedModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -149,13 +149,13 @@ export const HowCalculatedModal: React.FC<HowCalculatedModalProps> = ({
                   className={`p-3.5 rounded-xl border transition-all ${
                     s.isHighlight
                       ? 'bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700/80 shadow-sm'
-                      : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-750'
+                      : 'bg-slate-50 dark:bg-[#EEF4FC] border-slate-200 dark:border-slate-750'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                        s.isHighlight ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                        s.isHighlight ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300' : 'bg-slate-200 dark:bg-[#DCE7F5] text-slate-700 dark:text-slate-300'
                       }`}>
                         STEP {s.step}
                       </span>
@@ -187,7 +187,7 @@ export const HowCalculatedModal: React.FC<HowCalculatedModalProps> = ({
               <span>Evidence Confidence: <strong className="text-slate-800 dark:text-slate-200">{data.confidence}</strong></span>
             </div>
             {data.opportunityId && (
-              <span className="font-mono text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+              <span className="font-mono text-[10px] bg-slate-100 dark:bg-[#EEF4FC] px-2 py-0.5 rounded">
                 ID: {data.opportunityId}
               </span>
             )}
@@ -195,11 +195,11 @@ export const HowCalculatedModal: React.FC<HowCalculatedModalProps> = ({
         </div>
 
         {/* Action Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex justify-end">
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-[#F8FBFE] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900 transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-[#EEF4FC] text-white dark:bg-slate-100 dark:text-slate-900 transition-colors"
           >
             Close Calculation Breakdown
           </button>

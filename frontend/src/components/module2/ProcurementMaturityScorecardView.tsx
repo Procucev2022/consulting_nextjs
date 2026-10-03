@@ -12,7 +12,7 @@ export const ProcurementMaturityScorecardView: React.FC<ProcurementMaturityScore
 }) => {
   if (!procurementMaturity) {
     return (
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-white text-xs text-slate-500">
         Procurement Maturity Scorecard not available for this category.
       </div>
     );
@@ -36,7 +36,7 @@ export const ProcurementMaturityScorecardView: React.FC<ProcurementMaturityScore
   return (
     <div className="space-y-4">
       {/* Header Banner */}
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="p-2.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/50 border border-cyan-200 dark:border-cyan-800 text-cyan-600 dark:text-cyan-400">
             <Gauge className="w-6 h-6" />
@@ -74,7 +74,7 @@ export const ProcurementMaturityScorecardView: React.FC<ProcurementMaturityScore
           </div>
           <div className="space-y-1.5">
             {procurementMaturity.topWeaknesses.map((w) => (
-              <div key={w.dimensionKey} className="text-xs p-2 rounded bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-900/30 flex justify-between items-center">
+              <div key={w.dimensionKey} className="text-xs p-2 rounded bg-white dark:bg-white border border-rose-100 dark:border-rose-900/30 flex justify-between items-center">
                 <span className="font-medium text-slate-800 dark:text-slate-200">{w.dimensionLabel}</span>
                 <span className="font-mono font-bold text-rose-600 dark:text-rose-400">{w.score}/10</span>
               </div>
@@ -90,7 +90,7 @@ export const ProcurementMaturityScorecardView: React.FC<ProcurementMaturityScore
           </div>
           <div className="space-y-1.5">
             {procurementMaturity.topStrengths.map((s) => (
-              <div key={s.dimensionKey} className="text-xs p-2 rounded bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-900/30 flex justify-between items-center">
+              <div key={s.dimensionKey} className="text-xs p-2 rounded bg-white dark:bg-white border border-emerald-100 dark:border-emerald-900/30 flex justify-between items-center">
                 <span className="font-medium text-slate-800 dark:text-slate-200">{s.dimensionLabel}</span>
                 <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{s.score}/10</span>
               </div>
@@ -100,13 +100,13 @@ export const ProcurementMaturityScorecardView: React.FC<ProcurementMaturityScore
       </div>
 
       {/* 10 Diagnostic Dimensions Detail Table */}
-      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
-        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 font-bold text-xs text-slate-700 dark:text-slate-300">
+      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-white shadow-sm">
+        <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#EEF4FC] border-b border-slate-200 dark:border-slate-800 font-bold text-xs text-slate-700 dark:text-slate-300">
           Complete 10-Dimension Diagnostic Breakdown
         </div>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {procurementMaturity.dimensions.map((dim) => (
-            <div key={dim.dimensionKey} className="p-3 space-y-1 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <div key={dim.dimensionKey} className="p-3 space-y-1 hover:bg-slate-50/50 dark:hover:bg-[#EEF4FC] transition-colors">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-xs text-slate-900 dark:text-white">{dim.dimensionLabel}</span>
                 <div className="flex items-center gap-2">

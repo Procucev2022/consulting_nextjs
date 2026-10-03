@@ -13,7 +13,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
   const strings = UI_STRINGS.presentation.scorecard;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -34,7 +34,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
 
       {/* 4 Hero KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-auto py-6">
-        <div className="p-5 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
             <Target className="w-4 h-4 text-cyan-600" />
             <span className="text-xs font-semibold uppercase">{strings.kpiBaselineSpend}</span>
@@ -88,7 +88,7 @@ export const Slide4ExecutiveScorecard: React.FC<PresentationSlideProps> = ({
       </div>
 
       {/* Strategic Takeaways List */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
         <h4 className="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">
           Management Takeaways & Strategic Summary:
         </h4>

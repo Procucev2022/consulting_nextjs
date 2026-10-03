@@ -31,7 +31,7 @@ export const CustomerDataProtectionNotice: React.FC<CustomerDataProtectionNotice
 
   return (
     <div
-      className={`rounded-lg border border-slate-700 bg-slate-900/80 p-4 text-slate-200 shadow-sm backdrop-blur transition-all ${className}`}
+      className={`rounded-lg border border-slate-700 bg-white p-4 text-slate-200 shadow-sm backdrop-blur transition-all ${className}`}
       data-testid="customer-data-protection-notice"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -62,7 +62,7 @@ export const CustomerDataProtectionNotice: React.FC<CustomerDataProtectionNotice
 
       {isExpanded && (
         <div id="data-protection-details" className="mt-4 pt-4 border-t border-slate-800 text-xs">
-          <div className="rounded bg-slate-950/60 p-3 border border-slate-800/80 mb-4">
+          <div className="rounded bg-[#F8FBFE] p-3 border border-slate-800/80 mb-4">
             <span className="font-semibold text-emerald-400 block mb-1">
               {UI_STRINGS.dataProtection.bannerTitle}
             </span>
@@ -75,7 +75,7 @@ export const CustomerDataProtectionNotice: React.FC<CustomerDataProtectionNotice
             {UI_STRINGS.dataProtection.pillars.map((pillar) => (
               <div
                 key={pillar.id}
-                className="rounded border border-slate-800 bg-slate-950/40 p-2.5 transition-colors hover:border-slate-700"
+                className="rounded border border-slate-800 bg-[#F8FBFE] p-2.5 transition-colors hover:border-slate-700"
               >
                 <div className="font-medium text-slate-100">{pillar.title}</div>
                 <div className="mt-1 text-slate-400 leading-normal text-[11px]">{pillar.desc}</div>
@@ -85,7 +85,7 @@ export const CustomerDataProtectionNotice: React.FC<CustomerDataProtectionNotice
 
           <div className="mt-3 text-[11px] text-slate-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-slate-800/60">
             <span>{UI_STRINGS.dataProtection.retentionNotice}</span>
-            <span className="font-mono text-emerald-400/80 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+            <span className="font-mono text-emerald-400/80 bg-[#F8FBFE] px-2 py-0.5 rounded border border-slate-800">
               {UI_STRINGS.dataProtection.exportConfidentialHeader}
             </span>
           </div>

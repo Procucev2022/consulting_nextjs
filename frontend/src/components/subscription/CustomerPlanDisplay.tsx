@@ -42,7 +42,7 @@ export const CustomerPlanDisplay: React.FC<CustomerPlanDisplayProps> = ({
             ? 'bg-gradient-to-br from-amber-500/10 via-slate-900/60 to-amber-950/20 border-amber-500/30'
             : isSilver
               ? 'bg-gradient-to-br from-slate-800/80 to-slate-900/90 border-slate-700'
-              : 'bg-slate-50 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800'
+              : 'bg-slate-50 dark:bg-white border-slate-200 dark:border-slate-800'
         }`}
       >
         <div className="flex items-center justify-between mb-1.5">
@@ -57,7 +57,7 @@ export const CustomerPlanDisplay: React.FC<CustomerPlanDisplayProps> = ({
             <span className="text-xs font-black tracking-wider text-slate-900 dark:text-white uppercase">
               {config.name}
             </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider bg-slate-200/80 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400">
               {config.edition}
             </span>
           </div>
@@ -68,7 +68,7 @@ export const CustomerPlanDisplay: React.FC<CustomerPlanDisplayProps> = ({
                 ? 'bg-amber-100 dark:bg-amber-950 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
                 : isSilver
                   ? 'bg-sky-100 dark:bg-sky-950 text-sky-900 dark:text-sky-300 border border-sky-300 dark:border-sky-800'
-                  : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  : 'bg-slate-200 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-300'
             }`}
           >
             {planInfo?.is_pending_activation

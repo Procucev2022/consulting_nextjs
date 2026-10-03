@@ -11,7 +11,7 @@ export const Slide10ExecutionGovernance: React.FC<PresentationSlideProps> = ({
   const strings = UI_STRINGS.presentation.governance;
 
   return (
-    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
+    <div className="presentation-slide flex flex-col justify-between h-full min-h-[580px] p-8 sm:p-12 bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl relative overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -32,7 +32,7 @@ export const Slide10ExecutionGovernance: React.FC<PresentationSlideProps> = ({
 
       {/* 3-Wave Roadmap Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 my-auto py-6">
-        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-3 relative">
+        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-3 relative">
           <div className="flex items-center space-x-2 text-cyan-700 dark:text-cyan-400 font-bold text-sm">
             <CalendarClock className="w-5 h-5 shrink-0" />
             <h3>{strings.wave1Title}</h3>
@@ -45,7 +45,7 @@ export const Slide10ExecutionGovernance: React.FC<PresentationSlideProps> = ({
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-3 relative">
+        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-3 relative">
           <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-400 font-bold text-sm">
             <CalendarClock className="w-5 h-5 shrink-0" />
             <h3>{strings.wave2Title}</h3>
@@ -58,7 +58,7 @@ export const Slide10ExecutionGovernance: React.FC<PresentationSlideProps> = ({
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-3 relative">
+        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-3 relative">
           <div className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-400 font-bold text-sm">
             <CalendarClock className="w-5 h-5 shrink-0" />
             <h3>{strings.wave3Title}</h3>
@@ -73,7 +73,7 @@ export const Slide10ExecutionGovernance: React.FC<PresentationSlideProps> = ({
       </div>
 
       {/* Executive Sign-off Footer Banner */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
         <div className="space-y-0.5">
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{strings.leadershipTitle}</p>
           <p className="font-bold text-slate-900 dark:text-white text-sm">{strings.ceoName}</p>

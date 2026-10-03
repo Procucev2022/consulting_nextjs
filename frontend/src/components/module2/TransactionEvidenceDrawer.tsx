@@ -34,10 +34,10 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-[#F8FBFE] backdrop-blur-xs">
+      <div className="bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/50">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-700 dark:text-cyan-400">
               <FileText className="w-5 h-5" />
@@ -54,14 +54,14 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#EEF4FC]"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-950/30 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="p-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-[#F8FBFE] flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center space-x-2 flex-1 max-w-sm">
             <div className="relative w-full">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
@@ -70,7 +70,7 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search PO, Item, or Supplier..."
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg text-xs bg-white dark:bg-white border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200"
               />
             </div>
           </div>
@@ -80,7 +80,7 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
             <select
               value={selectedSupplier}
               onChange={(e) => setSelectedSupplier(e.target.value)}
-              className="p-1.5 rounded-lg text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium"
+              className="p-1.5 rounded-lg text-xs bg-white dark:bg-white border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-medium"
             >
               <option value="ALL">All Suppliers ({records.length})</option>
               {suppliers.map((s) => (
@@ -97,7 +97,7 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
           {/* Table */}
           <div className="lg:col-span-2 overflow-y-auto max-h-[60vh] lg:max-h-full">
             <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold z-10">
+              <thead className="sticky top-0 bg-slate-100 dark:bg-white border-b border-slate-200 dark:border-slate-800 text-slate-500 font-bold z-10">
                 <tr>
                   <th className="py-2.5 px-3">PO Number</th>
                   <th className="py-2.5 px-3">Date</th>
@@ -116,7 +116,7 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
                     className={`cursor-pointer transition-colors ${
                       selectedRecord?.transactionId === r.transactionId
                         ? 'bg-cyan-50/70 dark:bg-cyan-950/40'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                        : 'hover:bg-slate-50 dark:hover:bg-[#EEF4FC]'
                     }`}
                   >
                     <td className="py-2 px-3 font-mono text-[11px] font-bold text-slate-800 dark:text-slate-200">
@@ -151,7 +151,7 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
           </div>
 
           {/* Record Detail Inspector (24 Fields) */}
-          <div className="p-4 bg-slate-50/50 dark:bg-slate-950/30 overflow-y-auto space-y-3 text-xs max-h-[32vh] lg:max-h-full">
+          <div className="p-4 bg-slate-50/50 dark:bg-[#F8FBFE] overflow-y-auto space-y-3 text-xs max-h-[32vh] lg:max-h-full">
             <h4 className="font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px] border-b border-slate-200 dark:border-slate-800 pb-2">
               Source Record Traceability Proof
             </h4>
@@ -214,12 +214,12 @@ export const TransactionEvidenceDrawer: React.FC<TransactionEvidenceDrawerProps>
         </div>
 
         {/* Footer */}
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 flex items-center justify-between text-xs text-slate-500">
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#F8FBFE] flex items-center justify-between text-xs text-slate-500">
           <span>Showing {filteredRecords.length} of {records.length} transactions</span>
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold transition-colors"
+            className="px-3.5 py-1.5 rounded-lg bg-slate-200 dark:bg-[#EEF4FC] hover:bg-slate-300 dark:hover:bg-[#DCE7F5] text-slate-800 dark:text-slate-200 font-bold transition-colors"
           >
             Close Drawer
           </button>

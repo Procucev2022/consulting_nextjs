@@ -66,7 +66,7 @@ export const TierMaskOverlay: React.FC<TierMaskOverlayProps> = ({
           className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shadow-xl border ${
             isGold
               ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/10'
-              : 'bg-slate-800/80 border-slate-600/40 text-slate-300 shadow-sky-500/5'
+              : 'bg-[#EEF4FC] border-slate-600/40 text-slate-300 shadow-sky-500/5'
           }`}
         >
           <Lock className="w-8 h-8" />
@@ -84,7 +84,7 @@ export const TierMaskOverlay: React.FC<TierMaskOverlayProps> = ({
 
         {/* Summary Visibility Notice */}
         {isSummaryVisible && (
-          <div className="w-full mb-6 p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 text-xs text-cyan-300 font-medium flex items-center justify-center gap-2">
+          <div className="w-full mb-6 p-3 rounded-xl bg-[#EEF4FC] border border-slate-700/60 text-xs text-cyan-300 font-medium flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400" />
             <span>{UI_STRINGS.subscription.savingsAvailableSummaryOnly}</span>
           </div>

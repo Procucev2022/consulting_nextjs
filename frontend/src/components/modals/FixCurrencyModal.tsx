@@ -55,8 +55,8 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+      <div className="relative w-full max-w-lg bg-white dark:bg-white border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">
               <TrendingUp className="w-5 h-5" />
@@ -79,7 +79,7 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
             <div className="flex justify-between">
               <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.fixCurrency.recordIdLabel}</span>
               <span className="font-mono text-cyan-700 dark:text-cyan-400 font-semibold">{record.record_id} ({year})</span>
@@ -120,7 +120,7 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
                   className={`py-2 px-2 rounded-lg text-xs font-bold font-mono transition-all border ${
                     selectedCurrency === curr
                       ? 'bg-emerald-100 text-emerald-900 border-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500 shadow-xs'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                      : 'bg-slate-50 dark:bg-[#F8FBFE] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                   }`}
                 >
                   {curr}
@@ -156,7 +156,7 @@ export const FixCurrencyModal: React.FC<FixCurrencyModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+        <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <button
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"

@@ -19,11 +19,11 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
       role="dialog"
       aria-modal="true"
       aria-labelledby="vendor-item-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-white rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-slate-950/40">
+        <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/50 dark:bg-[#F8FBFE]">
           <div className="space-y-1">
             <div className="flex items-center space-x-2">
               <span className="text-[11px] font-mono font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
@@ -54,7 +54,7 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
             type="button"
             id="btn-close-vendor-item-modal"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
             aria-label={strings.modalCloseBtn}
           >
             <X className="w-5 h-5" />
@@ -62,7 +62,7 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
         </div>
 
         {/* Vendor Summary Bar */}
-        <div className="p-4 bg-slate-100/70 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="p-4 bg-slate-100/70 dark:bg-[#F8FBFE] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex items-center space-x-4">
             <div>
               <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">
@@ -72,7 +72,7 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
                 ₹{vendor.total_spend_inr_cr.toFixed(2)} Cr
               </span>
             </div>
-            <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
+            <div className="h-6 w-px bg-slate-300 dark:bg-[#DCE7F5]" />
             <div>
               <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-bold">
                 {strings.tableHeaders.primaryCategory}
@@ -84,7 +84,7 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
           </div>
 
           <div className="flex items-center space-x-3">
-            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center space-x-1">
+            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-white dark:bg-white px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 flex items-center space-x-1">
               <Package className="w-3.5 h-3.5 text-slate-400" />
               <span>{strings.itemCountBadge(items.length)}</span>
             </span>
@@ -94,7 +94,7 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
         {/* Items Table */}
         <div className="overflow-y-auto p-5 space-y-4">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-2.5 px-3">{strings.itemHeaders.materialCode}</th>
                 <th className="py-2.5 px-3">{strings.itemHeaders.materialDescription}</th>
@@ -108,7 +108,7 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 text-slate-700 dark:text-slate-300 font-mono">
               {items.map((item) => (
-                <tr key={`${item.material_code}-${item.po_number}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <tr key={`${item.material_code}-${item.po_number}`} className="hover:bg-slate-50 dark:hover:bg-[#EEF4FC]">
                   <td className="py-3 px-3 font-bold text-slate-900 dark:text-white">
                     {item.material_code}
                   </td>
@@ -149,12 +149,12 @@ export const VendorSupplyItemDetailsModal: React.FC<VendorSupplyItemDetailsModal
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex justify-end">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#F8FBFE] flex justify-end">
           <button
             type="button"
             id="btn-dismiss-vendor-item-modal"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 rounded-xl bg-white text-white dark:bg-white dark:text-slate-900 text-xs font-semibold hover:bg-[#EEF4FC] dark:hover:bg-slate-100 transition-colors"
           >
             {strings.modalCloseBtn}
           </button>

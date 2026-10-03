@@ -66,14 +66,14 @@ export const BenchmarkQualityDashboard: React.FC<BenchmarkQualityDashboardProps>
       matCount: summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.1)) : 4,
       oppCr: 0.0,
       accentBorder: 'border-slate-300 dark:border-slate-800',
-      accentBg: 'bg-slate-50 dark:bg-slate-900/40',
-      badgeColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300',
+      accentBg: 'bg-slate-50 dark:bg-white',
+      badgeColor: 'bg-slate-100 text-slate-700 dark:bg-[#EEF4FC] dark:text-slate-300 border-slate-300',
       icon: <AlertCircle className="w-5 h-5 text-slate-400" />
     }
   ];
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">

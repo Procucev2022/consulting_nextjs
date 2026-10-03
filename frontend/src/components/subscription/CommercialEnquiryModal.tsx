@@ -70,11 +70,11 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
   return (
     <div
       data-testid="commercial-enquiry-modal-backdrop"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8FBFE] backdrop-blur-md p-4"
     >
       <div
         data-testid="commercial-enquiry-modal"
-        className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8"
+        className="relative w-full max-w-lg bg-white border border-slate-800 rounded-2xl shadow-2xl p-6 sm:p-8"
       >
         <button
           type="button"
@@ -127,7 +127,7 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white"
+                  className="w-full px-3 py-2 bg-[#F8FBFE] border border-slate-700 rounded-lg text-xs text-white"
                 />
               </div>
               <div>
@@ -138,7 +138,7 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
                   required
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white"
+                  className="w-full px-3 py-2 bg-[#F8FBFE] border border-slate-700 rounded-lg text-xs text-white"
                 />
               </div>
             </div>
@@ -152,7 +152,7 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white"
+                  className="w-full px-3 py-2 bg-[#F8FBFE] border border-slate-700 rounded-lg text-xs text-white"
                 />
               </div>
               <div>
@@ -163,7 +163,7 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+91 ..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white"
+                  className="w-full px-3 py-2 bg-[#F8FBFE] border border-slate-700 rounded-lg text-xs text-white"
                 />
               </div>
             </div>
@@ -176,11 +176,11 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Number of spend categories, custom taxonomy, ERP source..."
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white"
+                className="w-full px-3 py-2 bg-[#F8FBFE] border border-slate-700 rounded-lg text-xs text-white"
               />
             </div>
 
-            <div className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
+            <div className="p-2.5 rounded-lg bg-[#F8FBFE] border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <span>
                 Offline Commercial Model: Quotations and tax invoices are issued offline. No payment details required online.

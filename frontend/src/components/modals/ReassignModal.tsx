@@ -42,8 +42,8 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+      <div className="relative w-full max-w-xl bg-white dark:bg-white border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/30">
               <FileSpreadsheet className="w-5 h-5" />
@@ -66,7 +66,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
             <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.reassign.targetLineItemLabel}</span>
             <p className="font-semibold text-slate-900 dark:text-white text-sm">{item.raw_desc}</p>
             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
@@ -83,13 +83,13 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
                 placeholder={UI_STRINGS.modals.reassign.searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
+                className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-cyan-500"
               />
             </div>
             <select
               value={selectedBucketFilter}
               onChange={(e) => setSelectedBucketFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
+              className="bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
             >
               <option value="ALL">All Core Buckets</option>
               <option value="Packaging Materials">Packaging</option>
@@ -109,14 +109,14 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
                   className={`p-2.5 rounded-xl border cursor-pointer transition-all ${
                     isSelected
                       ? 'bg-cyan-50 border-cyan-500 shadow-sm dark:bg-cyan-950/40 dark:border-cyan-500 dark:shadow-cyan-500/10'
-                      : 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      : 'bg-slate-50 dark:bg-[#F8FBFE] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-xs text-slate-900 dark:text-white font-mono">
                       {rec.commodityCode}
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-200 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-300 font-medium">
                       {rec.coreBucket}
                     </span>
                   </div>
@@ -132,7 +132,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+        <div className="flex items-center justify-end space-x-2 px-5 py-3.5 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <button
             onClick={onClose}
             className="px-3.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg"
@@ -145,7 +145,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
             className={`flex items-center space-x-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-colors shadow-xs ${
               selectedRecord
                 ? 'bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer'
-                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-200 dark:bg-[#EEF4FC] text-slate-400 cursor-not-allowed'
             }`}
           >
             <Check className="w-3.5 h-3.5" />

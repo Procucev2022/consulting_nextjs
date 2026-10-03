@@ -83,7 +83,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
   return (
     <div className="space-y-3">
       {/* Controls Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white border border-slate-200 dark:border-slate-800">
         <div className="flex items-center space-x-2 flex-1 max-w-md">
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -92,7 +92,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
               placeholder="Search category or UNSPSC commodity..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-cyan-500"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-white dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-1 focus:ring-cyan-500"
             />
           </div>
         </div>
@@ -102,7 +102,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
           <select
             value={filterMateriality}
             onChange={(e) => setFilterMateriality(e.target.value)}
-            className="px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+            className="px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
           >
             <option value="ALL">All Materiality</option>
             <option value="HIGH">High Spend Materiality</option>
@@ -114,7 +114,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
           <select
             value={filterSuitability}
             onChange={(e) => setFilterSuitability(e.target.value)}
-            className="px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+            className="px-2.5 py-1.5 text-xs rounded-lg bg-white dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
           >
             <option value="ALL">All Opportunities</option>
             <option value="E_AUCTION">E-Auction Eligible</option>
@@ -137,10 +137,10 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
       </div>
 
       {/* 17-Column Strategic Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs">
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-white shadow-xs">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="bg-slate-100/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-400">
+            <tr className="bg-slate-100/80 dark:bg-[#F8FBFE] border-b border-slate-200 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-400">
               <th className="py-2.5 px-3 whitespace-nowrap">{strings.colCategory}</th>
               <th
                 onClick={() => handleSort('totalSpendInr')}
@@ -198,7 +198,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
                 <tr
                   key={p.categoryId}
                   onClick={() => onSelectCategory(p)}
-                  className={`hover:bg-cyan-50/50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors ${
+                  className={`hover:bg-cyan-50/50 dark:hover:bg-[#EEF4FC] cursor-pointer transition-colors ${
                     isSelected ? 'bg-cyan-50/70 dark:bg-cyan-950/40 font-medium' : ''
                   }`}
                 >
@@ -251,7 +251,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
                           ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                           : p.fragmentationLevel === 'MODERATE_FRAGMENTATION'
                           ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                          : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                          : 'bg-slate-100 text-slate-800 dark:bg-[#EEF4FC] dark:text-slate-300'
                       }`}
                     >
                       {p.fragmentationLevel.replace('_FRAGMENTATION', '')}
@@ -271,7 +271,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
                           ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300'
                           : p.eauctionSuitability === 'MEDIUM'
                           ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          : 'bg-slate-100 text-slate-600 dark:bg-[#EEF4FC] dark:text-slate-400'
                       }`}
                     >
                       {p.eauctionSuitability}
@@ -293,7 +293,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
                           ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
                           : p.consolidationSuitability === 'MEDIUM'
                           ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
-                          : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          : 'bg-slate-100 text-slate-600 dark:bg-[#EEF4FC] dark:text-slate-400'
                       }`}
                     >
                       {p.consolidationSuitability}

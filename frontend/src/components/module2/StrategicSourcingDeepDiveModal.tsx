@@ -30,11 +30,11 @@ export const StrategicSourcingDeepDiveModal: React.FC<StrategicSourcingDeepDiveM
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/80 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-white backdrop-blur-xs overflow-y-auto"
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-6xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 bg-slate-50/70 dark:bg-slate-950/60">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 bg-slate-50/70 dark:bg-[#F8FBFE]">
           <div>
             <div className="flex items-center space-x-2">
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 font-bold">
@@ -64,7 +64,7 @@ export const StrategicSourcingDeepDiveModal: React.FC<StrategicSourcingDeepDiveM
               <button
                 type="button"
                 onClick={() => onOpenHowCalculated(profile)}
-                className="px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors flex items-center space-x-1"
+                className="px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-[#EEF4FC] dark:hover:bg-[#DCE7F5] border border-slate-300 dark:border-slate-700 rounded-lg transition-colors flex items-center space-x-1"
                 title="View step-by-step mathematical traceability"
               >
                 <span>How calculated?</span>
@@ -82,7 +82,7 @@ export const StrategicSourcingDeepDiveModal: React.FC<StrategicSourcingDeepDiveM
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -90,7 +90,7 @@ export const StrategicSourcingDeepDiveModal: React.FC<StrategicSourcingDeepDiveM
         </div>
 
         {/* Workspace Navigation Tabs */}
-        <div className="flex items-center space-x-1 px-4 sm:px-6 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-950/40 text-xs overflow-x-auto">
+        <div className="flex items-center space-x-1 px-4 sm:px-6 border-b border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-[#F8FBFE] text-xs overflow-x-auto">
           {[
             { key: 'profile', label: '1. Category & Supplier Profile (Sec A-E)' },
             { key: 'price', label: '2. Price & Dispersion (Sec F-H)' },
@@ -105,7 +105,7 @@ export const StrategicSourcingDeepDiveModal: React.FC<StrategicSourcingDeepDiveM
               onClick={() => setActiveTab(tab.key as any)}
               className={`py-3 px-3.5 font-bold transition-all border-b-2 whitespace-nowrap ${
                 activeTab === tab.key
-                  ? 'border-cyan-600 text-cyan-700 dark:text-cyan-400 bg-white dark:bg-slate-900'
+                  ? 'border-cyan-600 text-cyan-700 dark:text-cyan-400 bg-white dark:bg-white'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -130,26 +130,26 @@ export const StrategicSourcingDeepDiveModal: React.FC<StrategicSourcingDeepDiveM
                 categoryName={profile.categoryName}
               />
               {profile.scenarios.isAvailable && (
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700">
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
                     {strings.sectionScenarioAnalysis}
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800">
                       <span className="text-[10px] font-bold text-slate-400 uppercase">Conservative</span>
                       <div className="text-base font-black font-mono text-slate-800 dark:text-slate-200 mt-1">
                         ₹{((profile.scenarios.conservativeOpportunityInr || 0) / 100000).toFixed(2)}L
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{profile.scenarios.conservativeMethodology}</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-cyan-300 dark:border-cyan-800 ring-1 ring-cyan-500/20">
+                    <div className="p-3 rounded-lg bg-white dark:bg-white border border-cyan-300 dark:border-cyan-800 ring-1 ring-cyan-500/20">
                       <span className="text-[10px] font-bold text-cyan-600 uppercase">Base Case</span>
                       <div className="text-base font-black font-mono text-cyan-600 mt-1">
                         ₹{((profile.scenarios.baseOpportunityInr || 0) / 100000).toFixed(2)}L
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">{profile.scenarios.baseMethodology}</div>
                     </div>
-                    <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800">
                       <span className="text-[10px] font-bold text-emerald-600 uppercase">Stretch</span>
                       <div className="text-base font-black font-mono text-emerald-600 mt-1">
                         ₹{((profile.scenarios.stretchOpportunityInr || 0) / 100000).toFixed(2)}L

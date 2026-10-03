@@ -48,10 +48,10 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
       ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950">
+        <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#F8FBFE]">
           <div>
             <div className="flex items-center space-x-2">
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-300 border border-cyan-300">
@@ -71,7 +71,7 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -80,7 +80,7 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
         {/* Content */}
         <div className="p-6 space-y-5 overflow-y-auto text-xs">
           {/* Item & Benchmark Identity */}
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2.5">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-2.5">
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-[10px] font-mono text-slate-400 uppercase block">{fields.benchmarkName}</span>
@@ -121,7 +121,7 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
 
             <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold">
+                <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold">
                   <tr>
                     <th className="py-2.5 px-3">Constituent Name</th>
                     <th className="py-2.5 px-3">Weight %</th>
@@ -132,7 +132,7 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
                   {constituents.map((c, idx) => (
-                    <tr key={idx} className="bg-white dark:bg-slate-900/60">
+                    <tr key={idx} className="bg-white dark:bg-white">
                       <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-white">
                         {c.name}
                       </td>
@@ -143,7 +143,7 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
                         {c.source}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-[#EEF4FC]">
                           {c.quality}
                         </span>
                       </td>
@@ -210,11 +210,11 @@ export const PCBIExplainabilityModal: React.FC<PCBIExplainabilityModalProps> = (
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex justify-end">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#F8FBFE] flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl transition-all cursor-pointer"
+            className="px-5 py-2 text-xs font-bold text-white bg-[#EEF4FC] hover:bg-[#DCE7F5] dark:bg-[#DCE7F5] dark:hover:bg-[#C8D8EF] rounded-xl transition-all cursor-pointer"
           >
             {UI_STRINGS.common.close}
           </button>

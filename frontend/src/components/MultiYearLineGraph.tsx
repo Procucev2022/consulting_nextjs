@@ -130,7 +130,7 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
             className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-all ${
               visibleYears.FY24
                 ? 'bg-sky-100 text-sky-900 dark:bg-sky-950/80 dark:text-sky-300 ring-1 ring-sky-400'
-                : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 opacity-60'
+                : 'bg-slate-100 text-slate-400 dark:bg-[#EEF4FC] dark:text-slate-500 opacity-60'
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
@@ -143,7 +143,7 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
             className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-all ${
               visibleYears.FY25
                 ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300 ring-1 ring-emerald-400'
-                : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 opacity-60'
+                : 'bg-slate-100 text-slate-400 dark:bg-[#EEF4FC] dark:text-slate-500 opacity-60'
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -156,7 +156,7 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
             className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-all ${
               visibleYears.FY26
                 ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-300 ring-1 ring-purple-400'
-                : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 opacity-60'
+                : 'bg-slate-100 text-slate-400 dark:bg-[#EEF4FC] dark:text-slate-500 opacity-60'
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />

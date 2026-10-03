@@ -1916,7 +1916,7 @@ export default function Home() {
       {/* Management Quick Summary Modal View (Prompt 287) */}
       {isManagementSummaryOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#F8FBFE] backdrop-blur-sm overflow-y-auto"
           data-testid="management-quick-summary-modal"
         >
           <div className="w-full max-w-6xl my-auto">

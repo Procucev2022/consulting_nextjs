@@ -120,7 +120,7 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
   const isBlocked = exportStatus === 'EXECUTIVE_BRIEF_EXPORT_BLOCKED';
 
   return (
-    <div className="bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 text-white shadow-xl mb-4">
+    <div className="bg-white border border-cyan-500/30 rounded-2xl p-4 sm:p-5 text-white shadow-xl mb-4">
       {/* Declarative Download Element */}
       {downloadUrl && (
         <a
@@ -152,22 +152,22 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
 
           {/* Checklist Verification Badges */}
           <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] text-slate-300">
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+            <span className="px-2 py-0.5 rounded bg-[#EEF4FC] border border-slate-700">
               {strings.checklists.dataValidated}
             </span>
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+            <span className="px-2 py-0.5 rounded bg-[#EEF4FC] border border-slate-700">
               {strings.checklists.financialReconciliation}
             </span>
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+            <span className="px-2 py-0.5 rounded bg-[#EEF4FC] border border-slate-700">
               {strings.checklists.module1}
             </span>
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+            <span className="px-2 py-0.5 rounded bg-[#EEF4FC] border border-slate-700">
               {strings.checklists.module2}
             </span>
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+            <span className="px-2 py-0.5 rounded bg-[#EEF4FC] border border-slate-700">
               {strings.checklists.module3}
             </span>
-            <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700">
+            <span className="px-2 py-0.5 rounded bg-[#EEF4FC] border border-slate-700">
               {strings.checklists.module4}
             </span>
           </div>
@@ -284,7 +284,7 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
 
       {/* Expandable Section 1: Report Details (Auditability) */}
       {isDetailsOpen && (
-        <div className="mt-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300 animate-in fade-in">
+        <div className="mt-3 p-3 rounded-xl bg-[#F8FBFE] border border-slate-800 text-xs text-slate-300 animate-in fade-in">
           <div className="font-semibold text-cyan-400 mb-2">{strings.details.title}</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <div>
@@ -319,7 +319,7 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
 
       {/* Expandable Section 2: Report History */}
       {isHistoryOpen && (
-        <div className="mt-3 p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300 animate-in fade-in overflow-x-auto">
+        <div className="mt-3 p-3 rounded-xl bg-[#F8FBFE] border border-slate-800 text-xs text-slate-300 animate-in fade-in overflow-x-auto">
           <div className="font-semibold text-slate-200 mb-2">{strings.history.title}</div>
           <table className="w-full text-left border-collapse">
             <thead>
@@ -334,7 +334,7 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
             </thead>
             <tbody>
               {(statusData?.history || []).map((h, i) => (
-                <tr key={`${h.reportVersion}-${i}`} className="border-b border-slate-800/50 hover:bg-slate-900/50">
+                <tr key={`${h.reportVersion}-${i}`} className="border-b border-slate-800/50 hover:bg-white">
                   <td className="py-1.5 px-2 font-mono text-cyan-400">{h.reportVersion}</td>
                   <td className="py-1.5 px-2">{h.generatedDate}</td>
                   <td className="py-1.5 px-2">{h.generatedBy}</td>

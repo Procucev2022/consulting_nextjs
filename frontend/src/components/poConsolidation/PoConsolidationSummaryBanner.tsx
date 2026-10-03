@@ -20,7 +20,7 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
   return (
     <div className="space-y-4">
       {/* Simulation Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-white rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
         <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-300">
           <Calculator className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span className="font-semibold">{UI_STRINGS.poConsolidation.cadenceSelectorLabel}</span>
@@ -37,7 +37,7 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
                 className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
                   isActive
                     ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-500/30'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
+                    : 'bg-white dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#DCE7F5] border border-slate-200 dark:border-slate-700'
                 }`}
               >
                 {opt.label}
@@ -50,7 +50,7 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
       {/* 4 Hero KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Fragmented Spend */}
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
             <span className="text-xs font-semibold uppercase tracking-wider">
               {UI_STRINGS.poConsolidation.kpiTotalSpendLabel}
@@ -68,7 +68,7 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
         </div>
 
         {/* KPI 2: Current Fragmented POs */}
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
             <span className="text-xs font-semibold uppercase tracking-wider">
               {UI_STRINGS.poConsolidation.kpiTotalCurrentPosLabel}
@@ -88,7 +88,7 @@ export const PoConsolidationSummaryBanner: React.FC<PoConsolidationSummaryBanner
         </div>
 
         {/* KPI 3: Target POs */}
-        <div className="p-4 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
             <span className="text-xs font-semibold uppercase tracking-wider">
               {UI_STRINGS.poConsolidation.kpiTargetPosLabel}

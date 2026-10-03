@@ -10,7 +10,7 @@ export const StrategicSourcingLeverMatrixView: React.FC<StrategicSourcingLeverMa
   const strings = UI_STRINGS.module2Sourcing;
 
   return (
-    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+    <div className="p-4 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-3">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center space-x-2">
           <Target className="w-4 h-4 text-cyan-600" />
@@ -26,8 +26,8 @@ export const StrategicSourcingLeverMatrixView: React.FC<StrategicSourcingLeverMa
               key={item.lever}
               className={`p-3 rounded-xl border transition-all ${
                 item.isApplicable
-                  ? 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:border-cyan-500'
-                  : 'bg-slate-100/40 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-800/50 opacity-60'
+                  ? 'bg-slate-50/70 dark:bg-[#EEF4FC] border-slate-200 dark:border-slate-700 hover:border-cyan-500'
+                  : 'bg-slate-100/40 dark:bg-white border-slate-200/50 dark:border-slate-800/50 opacity-60'
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -42,7 +42,7 @@ export const StrategicSourcingLeverMatrixView: React.FC<StrategicSourcingLeverMa
                     Applicable
                   </span>
                 ) : (
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 shrink-0">
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-200 text-slate-600 dark:bg-[#EEF4FC] dark:text-slate-400 shrink-0">
                     Deferred
                   </span>
                 )}

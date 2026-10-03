@@ -23,7 +23,7 @@ export const CategoryEvidenceAuditTab: React.FC<CategoryEvidenceAuditTabProps> =
   return (
     <div className="space-y-5">
       {/* Audit Header Banner & Trace Action Buttons */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-3 text-xs">
+      <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700 space-y-3 text-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <span className="text-[10px] font-bold tracking-wider uppercase text-cyan-600 dark:text-cyan-400">
@@ -47,7 +47,7 @@ export const CategoryEvidenceAuditTab: React.FC<CategoryEvidenceAuditTabProps> =
             <button
               type="button"
               onClick={() => setIsDrawerOpen(true)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-white border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-[#EEF4FC] text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors"
             >
               <FileText className="w-3.5 h-3.5 text-cyan-600" />
               <span>View All {totalTxns} Transactions</span>

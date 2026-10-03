@@ -17,7 +17,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
   const currUnit = spendCurrency === 'INR' ? 'Cr' : 'M';
 
   return (
-    <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-3">
+    <div className="p-4 rounded-xl bg-slate-50 dark:bg-white border border-slate-200 dark:border-slate-800 space-y-3">
       <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center space-x-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
@@ -33,7 +33,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
       {/* 3 Year Comparison Columns: FY24, FY25, FY26 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* FY24 Card */}
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-sky-200 dark:border-sky-900/60 space-y-2">
+        <div className="p-3 rounded-lg bg-white dark:bg-[#F8FBFE] border border-sky-200 dark:border-sky-900/60 space-y-2">
           <div className="flex items-center justify-between">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
               FY24
@@ -62,7 +62,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
         </div>
 
         {/* FY25 Card */}
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
+        <div className="p-3 rounded-lg bg-white dark:bg-[#F8FBFE] border border-emerald-200 dark:border-emerald-900/60 space-y-2">
           <div className="flex items-center justify-between">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
               FY25
@@ -100,7 +100,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
         </div>
 
         {/* FY26 Card */}
-        <div className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-purple-200 dark:border-purple-900/60 space-y-2">
+        <div className="p-3 rounded-lg bg-white dark:bg-[#F8FBFE] border border-purple-200 dark:border-purple-900/60 space-y-2">
           <div className="flex items-center justify-between">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
               FY26

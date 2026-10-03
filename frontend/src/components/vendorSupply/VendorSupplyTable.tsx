@@ -17,10 +17,10 @@ export const VendorSupplyTable: React.FC<VendorSupplyTableProps> = ({
   const strings = UI_STRINGS.module2.vendorSupply;
 
   return (
-    <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs bg-white dark:bg-slate-900/80">
+    <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs bg-white dark:bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+          <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
             <tr>
               <th className="py-3 px-3.5">{strings.tableHeaders.rank}</th>
               <th className="py-3 px-3.5">{strings.tableHeaders.vendor}</th>
@@ -64,7 +64,7 @@ export const VendorSupplyTable: React.FC<VendorSupplyTableProps> = ({
                   <tr
                     key={vendor.master_vendor_id}
                     onClick={() => onSelectVendor(vendor)}
-                    className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 cursor-pointer transition-colors ${
+                    className={`hover:bg-slate-50/80 dark:hover:bg-[#EEF4FC] cursor-pointer transition-colors ${
                       isMulti && isHighSpend
                         ? 'bg-amber-50/30 dark:bg-amber-950/20'
                         : ''
@@ -76,7 +76,7 @@ export const VendorSupplyTable: React.FC<VendorSupplyTableProps> = ({
                         className={`inline-flex items-center justify-center w-6 h-6 rounded-lg text-xs font-black ${
                           isTopRank
                             ? 'bg-amber-100 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
-                            : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                            : 'bg-slate-100 text-slate-700 dark:bg-[#EEF4FC] dark:text-slate-300'
                         }`}
                       >
                         #{vendor.rank}
@@ -134,7 +134,7 @@ export const VendorSupplyTable: React.FC<VendorSupplyTableProps> = ({
                               className={`text-[9px] px-1.5 py-0.2 rounded border font-medium truncate max-w-[180px] ${
                                 isDisparate
                                   ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border-rose-300 dark:border-rose-800 font-bold'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                               }`}
                               title={isDisparate ? `Disparate Cross-Supply: ${cat}` : cat}
                             >
@@ -196,7 +196,7 @@ export const VendorSupplyTable: React.FC<VendorSupplyTableProps> = ({
                           e.stopPropagation();
                           onViewItems(vendor);
                         }}
-                        className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 dark:bg-slate-800 dark:hover:bg-emerald-950/50 dark:text-slate-300 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors"
+                        className="inline-flex items-center space-x-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 dark:bg-[#EEF4FC] dark:hover:bg-emerald-950/50 dark:text-slate-300 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 transition-colors"
                         title={strings.btnViewItems}
                       >
                         <span>{strings.btnViewItems}</span>

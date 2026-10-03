@@ -68,7 +68,7 @@ export const SpendCategoryView: React.FC<SpendCategoryViewProps> = ({
       benchmarkableSpendCr: 0.0,
       benchmarkabilityPct: 0.0,
       potentialOpportunityCr: 0.0,
-      statusColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-300',
+      statusColor: 'bg-slate-100 text-slate-700 dark:bg-[#EEF4FC] dark:text-slate-300 border-slate-300',
       note: 'Rule 6: Excluded from Material PCBI'
     },
     {
@@ -86,7 +86,7 @@ export const SpendCategoryView: React.FC<SpendCategoryViewProps> = ({
   ];
 
   return (
-    <div className={`p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+    <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2">
@@ -105,7 +105,7 @@ export const SpendCategoryView: React.FC<SpendCategoryViewProps> = ({
       <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-950 text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="py-3 px-4">{headers.category}</th>
                 <th className="py-3 px-4">{headers.spendCr}</th>
@@ -121,7 +121,7 @@ export const SpendCategoryView: React.FC<SpendCategoryViewProps> = ({
               {categories.map((cat, idx) => (
                 <tr
                   key={idx}
-                  className="bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                  className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
                 >
                   <td className="py-3 px-4 font-sans font-bold text-slate-900 dark:text-white">
                     <div className="flex items-center space-x-2">

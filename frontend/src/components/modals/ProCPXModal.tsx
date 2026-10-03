@@ -65,9 +65,9 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-white border border-slate-200 dark:border-cyan-500/40 rounded-2xl shadow-2xl overflow-hidden glass-panel-glow">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-500/40">
               <Layers className="w-5 h-5" />
@@ -86,7 +86,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -107,7 +107,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
           ) : (
             <>
               {/* Opportunity Summary Card */}
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 space-y-2">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#EEF4FC] border border-slate-200 dark:border-slate-700/60 space-y-2">
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-400 uppercase tracking-wide">
@@ -139,7 +139,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                   <select
                     value={eventType}
                     onChange={(e) => setEventType(e.target.value as ProCPXEventType)}
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-cyan-500"
                   >
                     <option value="Multi-Stage RFP">{UI_STRINGS.modals.proCPX.mechanisms.multiStageRFP}</option>
                     <option value="Reverse Auction">{UI_STRINGS.modals.proCPX.mechanisms.reverseAuction}</option>
@@ -154,7 +154,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                     type="number"
                     value={targetBaseline}
                     onChange={(e) => setTargetBaseline(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-cyan-500"
+                    className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
@@ -167,7 +167,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                 </label>
                 <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                   {invitedSuppliers.map((supplier, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                    <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
                       <span className="font-medium text-slate-900 dark:text-white">{supplier}</span>
                       <span className="text-[10px] text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/40">{UI_STRINGS.modals.proCPX.verifiedVendor}</span>
                     </div>
@@ -176,7 +176,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               </div>
 
               {/* Footer Note */}
-              <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+              <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-[#F8FBFE] p-3 rounded-lg border border-slate-200 dark:border-slate-800">
                 <Shield className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
                 <span>
                   {UI_STRINGS.modals.proCPX.complianceNote}
@@ -188,10 +188,10 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
 
         {/* Footer Actions */}
         {!deployedSuccess && (
-          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-slate-950/60">
+          <div className="flex items-center justify-end space-x-3 px-6 py-4 border-t border-slate-100 dark:border-cyan-500/20 bg-slate-50/80 dark:bg-[#F8FBFE]">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-[#EEF4FC] transition-colors"
             >
               {UI_STRINGS.modals.proCPX.cancel}
             </button>

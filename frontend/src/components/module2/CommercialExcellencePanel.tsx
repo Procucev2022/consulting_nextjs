@@ -10,7 +10,7 @@ export interface CommercialExcellencePanelProps {
 export const CommercialExcellencePanel: React.FC<CommercialExcellencePanelProps> = ({ commercialExcellence }) => {
   if (!commercialExcellence) {
     return (
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-white text-xs text-slate-500">
         Commercial Excellence Profile not available.
       </div>
     );
@@ -25,14 +25,14 @@ export const CommercialExcellencePanel: React.FC<CommercialExcellencePanelProps>
       case 'OPPORTUNITY_IDENTIFIED':
         return 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300';
       default:
-        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border-slate-300';
+        return 'bg-slate-100 text-slate-800 dark:bg-[#EEF4FC] dark:text-slate-300 border-slate-300';
     }
   };
 
   return (
     <div className="space-y-4">
       {/* Overview Banner */}
-      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+      <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
         <div>
           <div className="flex items-center space-x-2">
             <Briefcase className="w-5 h-5 text-indigo-500" />
@@ -67,7 +67,7 @@ export const CommercialExcellencePanel: React.FC<CommercialExcellencePanelProps>
         {commercialExcellence.dimensions.map((dim) => (
           <div
             key={dim.dimensionKey}
-            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2 shadow-sm"
+            className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-white space-y-2 shadow-sm"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">
