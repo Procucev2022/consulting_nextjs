@@ -72473,3 +72473,105 @@ continue
 
 ---
 
+
+## Prompt 298
+FINALIZE THE CURRENT DESIGN HARDENING TASK — DO NOT START ANOTHER BROAD AUDIT
+
+We have already completed the application-wide design-system audit. The current task has been running for more than 30 minutes and is stuck in repeated scanning/quality-check activity.
+
+STOP broad repository scanning immediately.
+
+OBJECTIVE:
+Finish only the currently identified UI/readability issue(s), run targeted validation, and terminate.
+
+STRICT FREEZE — DO NOT MODIFY:
+- Business logic
+- Financial calculations or certified financial values
+- Modules 1, 2, 3, or 4 functionality
+- PCBI calculations/data
+- Subscription tiers, entitlements, activation, OTP, authentication or authorization
+- APIs/backend contracts
+- Savings calculations
+- Executive Brief content/data
+- Boardroom & Evidence content/data
+- PDF/PPTX financial content
+- Database schema
+- Customer/admin workflows
+
+CURRENT ISSUE:
+The agent identified AnalyzingLoader.tsx containing a conflicting combination such as:
+
+g-white text-white
+
+This can make loader text invisible.
+
+FIX ONLY THIS ISSUE:
+1. Inspect AnalyzingLoader.tsx.
+2. The component is a full-screen analyzing/loading overlay.
+3. It is acceptable for this temporary overlay to have a deliberate dark aesthetic.
+4. If keeping it dark, make the background, text, spinner, labels and controls intentionally readable and internally consistent.
+5. Remove any contradictory styling such as g-white text-white.
+6. Do NOT convert the loader into a normal light application card.
+7. Do NOT use this component as a reason to reopen the global theme audit.
+
+IMPORTANT THEME RULE:
+Do NOT attempt to eliminate every occurrence of:
+- dark:
+- 	ext-white
+- dark backgrounds
+- dark modal/backdrop styles
+
+Some temporary technical/diagnostic/loading surfaces may legitimately remain dark.
+
+Only fix an occurrence if it creates an actual user-facing readability or contrast problem.
+
+DO NOT:
+- scan the entire repository again
+- perform another global dark-theme search
+- refactor unrelated components
+- redesign any page
+- regenerate all reports
+- rewrite globals.css
+- change theme tokens
+- change typography globally
+- modify presentation layouts
+- wait for browser visual validation indefinitely
+
+VALIDATION:
+After the minimal fix, run ONLY:
+1. Frontend typecheck
+2. Backend typecheck
+3. Targeted test(s) related to the changed component, if available
+
+If those pass, STOP immediately.
+
+If browser visual validation is unavailable, report:
+Browser visual validation: BLOCKED by environment
+Do not keep retrying the browser indefinitely.
+
+CHANGE CONTROL:
+Report exactly:
+- Files changed
+- What was changed
+- Frontend typecheck result
+- Backend typecheck result
+- Targeted test result
+- Any remaining issue
+- Browser validation status
+
+Do not continue after the final report.
+
+COMPLETION CRITERION:
+The current readability issue is fixed, validation passes, no unrelated functionality is changed, and the agent terminates.
+
+---
+
+## Prompt 299
+run locally on chrome
+
+---
+
+## Prompt 300
+Unable to login with these logins. Plz check and rectify
+
+---

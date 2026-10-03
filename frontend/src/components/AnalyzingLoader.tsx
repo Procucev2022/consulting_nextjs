@@ -174,7 +174,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
             type="button"
             onClick={onCancel}
             aria-label={UI_STRINGS.analyzingLoader.cancelButton}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#EEF4FC] transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -300,7 +300,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                     isActive
                       ? 'bg-[#0B2240]/80 border-cyan-500 shadow-md shadow-cyan-950/50'
                       : isPast
-                      ? 'bg-white border-emerald-500/30 text-slate-300'
+                      ? 'bg-emerald-950/30 border-emerald-500/30 text-slate-300'
                       : 'bg-white/5 border-slate-800/60 opacity-60 text-slate-500'
                   }`}
                 >
@@ -334,7 +334,7 @@ export const AnalyzingLoader: React.FC<AnalyzingLoaderProps> = ({
                           ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                           : isActive
                           ? 'bg-cyan-950 text-cyan-300 border border-cyan-700 animate-pulse'
-                          : 'bg-[#EEF4FC] text-slate-500'
+                          : 'bg-slate-900/80 text-slate-400 border border-slate-800'
                       }`}>
                         {isPast
                           ? UI_STRINGS.analyzingLoader.statusText.completed

@@ -43,7 +43,7 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
 
     try {
       frontendLogger.info('Submitting user login form', { email: loginForm.email });
-      const response = await apiClient.login(loginForm.email, loginForm.password);
+      const response = await apiClient.login(loginForm);
       setSuccessMessage(UI_STRINGS.auth.loginSuccess);
 
       setTimeout(() => {

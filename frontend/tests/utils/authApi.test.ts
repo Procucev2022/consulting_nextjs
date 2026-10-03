@@ -196,6 +196,25 @@ describe('authApiClient and auth utilities', () => {
       expect(authApiClient.getStoredToken()).toBe('jwt-login-456');
     });
 
+    it('should support login with email and password as separate string arguments', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          success: true,
+          user: mockUser,
+          token: 'jwt-login-separate'
+        })
+      });
+
+      const res = await authApiClient.login('rajesh.verma@company.com', 'ValidPassword@123');
+      expect(res.success).toBe(true);
+      expect(authApiClient.getStoredToken()).toBe('jwt-login-separate');
+    });
+
+    it('should throw validation error when login is called with email string and no password', async () => {
+      await expect(authApiClient.login('rajesh.verma@company.com')).rejects.toThrow('Validation failed');
+    });
+
     it('should throw error when login credentials fail on server', async () => {
       const loginData: LoginFormData = {
         email: 'rajesh.verma@company.com',
