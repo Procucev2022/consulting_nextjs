@@ -72575,3 +72575,36 @@ run locally on chrome
 Unable to login with these logins. Plz check and rectify
 
 ---
+
+## Prompt 301
+Bundling middleware function...
+Bundling static assets...
+Bundling cache assets...
+node:fs:440
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/home/runner/work/consulting_nextjs/consulting_nextjs/frontend/.next/standalone/.next/server/pages-manifest.json'
+    at Object.readFileSync (node:fs:440:20)
+    at Module.getHtmlPages (file:///home/runner/work/consulting_nextjs/consulting_nextjs/frontend/node_modules/@opennextjs/aws/dist/build/helper.js:193:25)
+    at createCacheAssets (file:///home/runner/work/consulting_nextjs/consulting_nextjs/frontend/node_modules/@opennextjs/aws/dist/build/createAssets.js:78:35)
+    at build (file:///home/runner/work/consulting_nextjs/consulting_nextjs/frontend/node_modules/@opennextjs/cloudflare/dist/cli/build/build.js:85:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async buildCommand (file:///home/runner/work/consulting_nextjs/consulting_nextjs/frontend/node_modules/@opennextjs/cloudflare/dist/cli/commands/build.js:40:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/home/runner/work/consulting_nextjs/consulting_nextjs/frontend/.next/standalone/.next/server/pages-manifest.json'
+}
+
+Node.js v22.23.3
+Error: Process completed with exit code 1.
+
+fix all the bugs so that it can get deploy on couldflare
+
+---
+
+## Prompt 302
+so if i deploy it on cloudlfare it should work right?
+
+---

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-03T03:51:41.679Z",
+  "timestamp": "2026-10-03T16:08:21.184Z",
   "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED",
   "provenanceHierarchy": "EXECUTIVE_KPI -> AGGREGATION -> CATEGORY -> ITEM -> SUPPLIER -> TRANSACTION -> SOURCE_FILE -> SOURCE_SHEET -> SOURCE_ROW",
   "totalProvenanceChains": 36,

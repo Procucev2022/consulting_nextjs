@@ -910,6 +910,10 @@ export class DatabaseStore {
     return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
 
+  public getUsers(): UserRecord[] {
+    return [...this.users];
+  }
+
   public async updateUserStatus(id: string, status: string): Promise<UserRecord | null> {
     const validStatus = status.toUpperCase();
     if (this.isPostgresConnected) {
