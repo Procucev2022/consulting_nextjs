@@ -209,4 +209,50 @@ describe('Admin Controller Integration Tests', () => {
 
     expect(res.status).toBe(404);
   });
+
+  it('should create or update admin details for admin@procucev.com with Procucev@123', async () => {
+    const res = await request(app)
+      .post('/api/admin/create-admin')
+      .send({
+        name: 'System Administrator',
+        email: 'admin@procucev.com',
+        password: 'Procucev@123',
+        mobile_number: '+91 98765 43210',
+        company_name: 'aiCEV Procucev Enterprise Inc.',
+        company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
+        role: 'ADMIN',
+        subscription_tier: 'GOLD'
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.user.email).toBe('admin@procucev.com');
+    expect(res.body.user.role).toBe('ADMIN');
+    expect(res.body.user.status).toBe('ACTIVE');
+
+    // Verify login with newly created admin credentials
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'admin@procucev.com',
+        password: 'Procucev@123'
+      });
+
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.success).toBe(true);
+    expect(loginRes.body.user.role).toBe('ADMIN');
+    expect(loginRes.body.token).toBeDefined();
+  });
+
+  it('should reject admin creation with invalid email or invalid payload', async () => {
+    const res = await request(app)
+      .post('/api/admin/create-admin')
+      .send({
+        email: 'not-an-email',
+        password: '123'
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
 });

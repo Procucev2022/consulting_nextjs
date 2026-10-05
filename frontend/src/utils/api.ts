@@ -11,6 +11,7 @@ import type { PCBIExplainabilityAudit } from '../types/pcbi';
 import frontendLogger from './logger';
 import { aiApiClient } from './aiApi';
 import { authApiClient } from './authApi';
+import { adminAuthApiClient } from './adminAuthApi';
 import { dbApiClient } from './dbApi';
 import { savingsApiClient } from './savingsApi';
 import { pcbiApiClient } from './pcbiApi';
@@ -194,6 +195,7 @@ export const apiClient = {
   register: authApiClient.register.bind(authApiClient),
   login: authApiClient.login.bind(authApiClient),
   getMe: authApiClient.getMe.bind(authApiClient),
+  createAdminUser: adminAuthApiClient.createAdminUser.bind(adminAuthApiClient),
   getAdminUsers: authApiClient.getAdminUsers.bind(authApiClient),
   updateAdminUserStatus: authApiClient.updateAdminUserStatus.bind(authApiClient),
   updateAdminUserTier: authApiClient.updateAdminUserTier.bind(authApiClient),

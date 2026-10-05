@@ -76425,3 +76425,8 @@ And that Excel must contain enough evidence to independently validate the answer
 
 ## Prompt 310
 continue
+
+---
+
+## Prompt 311
+create /admin page where an admin can login and create admin details of admin@procucev.com password is Procucev@123

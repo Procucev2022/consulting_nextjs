@@ -59,3 +59,5 @@ export interface ValidationFailureResult {
 }
 
 export type ValidationResult<T> = ValidationSuccessResult<T> | ValidationFailureResult;
+
+export type { AdminLoginFormInput, CreateAdminDetailsInput } from '../constants/adminValidation';

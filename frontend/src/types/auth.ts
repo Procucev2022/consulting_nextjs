@@ -81,3 +81,21 @@ export interface DevTempCredential {
   name: string;
   company: string;
 }
+
+export interface CreateAdminDetailsPayload {
+  name: string;
+  email: string;
+  mobile_number: string;
+  company_name: string;
+  company_address: string;
+  password: string;
+  confirm_password?: string;
+  role?: UserRole | string;
+  subscription_tier?: SubscriptionTier | string;
+}
+
+export interface CreateAdminResponse {
+  success: boolean;
+  message: string;
+  user: UserProfile;
+}

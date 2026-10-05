@@ -851,6 +851,99 @@ export class DatabaseStore {
     return false;
   }
 
+  public async createOrUpdateAdminUser(data: {
+    name: string;
+    email: string;
+    mobile_number: string;
+    company_name: string;
+    company_address: string;
+    password_hash: string;
+    role?: string;
+    status?: string;
+    subscription_tier?: string;
+  }): Promise<UserRecord> {
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const now = new Date();
+
+    if (this.isPostgresConnected) {
+      try {
+        const existing = await (prisma as any).user.findUnique({ where: { email: normalizedEmail } });
+        if (existing) {
+          const updated = await (prisma as any).user.update({
+            where: { email: normalizedEmail },
+            data: {
+              name: data.name,
+              mobile_number: data.mobile_number,
+              company_name: data.company_name,
+              company_address: data.company_address,
+              password_hash: data.password_hash,
+              role: data.role || 'ADMIN',
+              status: data.status || 'ACTIVE',
+              subscription_tier: data.subscription_tier || 'GOLD',
+              updated_at: now
+            }
+          });
+          return updated as UserRecord;
+        } else {
+          const created = await (prisma as any).user.create({
+            data: {
+              id: `usr-admin-${Date.now()}`,
+              name: data.name,
+              email: normalizedEmail,
+              mobile_number: data.mobile_number,
+              company_name: data.company_name,
+              company_address: data.company_address,
+              password_hash: data.password_hash,
+              role: data.role || 'ADMIN',
+              status: data.status || 'ACTIVE',
+              subscription_tier: data.subscription_tier || 'GOLD'
+            }
+          });
+          return created as UserRecord;
+        }
+      } catch (err: any) {
+        logger.warn('Database query failed in createOrUpdateAdminUser, updating local store', {
+          email: normalizedEmail,
+          error: err.message
+        });
+      }
+    }
+
+    const idx = this.users.findIndex((u) => u.email.toLowerCase() === normalizedEmail);
+    if (idx !== -1) {
+      this.users[idx] = {
+        ...this.users[idx],
+        name: data.name,
+        mobile_number: data.mobile_number,
+        company_name: data.company_name,
+        company_address: data.company_address,
+        password_hash: data.password_hash,
+        role: data.role || 'ADMIN',
+        status: data.status || 'ACTIVE',
+        subscription_tier: data.subscription_tier || 'GOLD',
+        updated_at: now
+      };
+      return { ...this.users[idx] };
+    }
+
+    const newUser: UserRecord = {
+      id: `usr-admin-${Date.now()}`,
+      name: data.name,
+      email: normalizedEmail,
+      mobile_number: data.mobile_number,
+      company_name: data.company_name,
+      company_address: data.company_address,
+      password_hash: data.password_hash,
+      role: data.role || 'ADMIN',
+      status: data.status || 'ACTIVE',
+      subscription_tier: data.subscription_tier || 'GOLD',
+      created_at: now,
+      updated_at: now
+    };
+    this.users.push(newUser);
+    return newUser;
+  }
+
   public async getAllUsers(
     query?: { search?: string; role?: string; status?: string; tier?: string }
   ): Promise<UserRecord[]> {

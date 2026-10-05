@@ -84,7 +84,7 @@ async function main() {
       email: 'admin@procucev.com',
       company_name: 'aiCEV Procucev Enterprise Inc.',
       company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
-      password_hash: hashPw('Admin@123456', 'a1b2c3d4e5f60718293a4b5c6d7e8f90'),
+      password_hash: hashPw('Procucev@123', 'a1b2c3d4e5f60718293a4b5c6d7e8f90'),
       role: 'ADMIN',
       status: 'ACTIVE'
     },

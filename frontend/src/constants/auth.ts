@@ -23,8 +23,20 @@ export const AUTH_API_ENDPOINTS = {
   ME: '/api/auth/me',
   CHANGE_PASSWORD: '/api/auth/change-password',
   ADMIN_USERS: '/api/admin/users',
+  CREATE_ADMIN: '/api/admin/create-admin',
   ADMIN_USER_STATUS: (id: string) => `/api/admin/users/${id}/status`,
   ADMIN_USER_TIER: (id: string) => `/api/admin/users/${id}/tier`
+} as const;
+
+export const DEFAULT_ADMIN_DETAILS = {
+  name: 'System Administrator',
+  email: 'admin@procucev.com',
+  password: 'Procucev@123',
+  mobile_number: '+91 98765 43210',
+  company_name: 'aiCEV Procucev Enterprise Inc.',
+  company_address: 'Floor 14, Brigade Gateway, Malleshwaram, Bengaluru, Karnataka 560055, India',
+  role: 'ADMIN',
+  subscription_tier: 'GOLD'
 } as const;
 
 export const DEV_TEMP_CREDENTIALS: DevTempCredential[] =

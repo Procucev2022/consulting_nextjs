@@ -4,8 +4,9 @@
 
 import type { Request, Response } from 'express';
 import { db } from '../services/db';
-import { sanitizeUserProfile, verifyAuthToken } from '../utils/auth';
+import { sanitizeUserProfile, verifyAuthToken, hashPassword } from '../utils/auth';
 import { adminUserQuerySchema, adminUpdateUserStatusSchema, adminUpdateUserTierSchema } from '../constants/validation';
+import { createAdminSchema } from '../constants/adminValidation';
 import { AUTH_MESSAGES, AUTH_STATUS } from '../constants/auth';
 import logger from '../utils/logger';
 
@@ -168,6 +169,66 @@ export class AdminController {
       success: true,
       message: AUTH_MESSAGES.TIER_UPDATED,
       user: sanitizeUserProfile(updated)
+    });
+  }
+
+  /**
+   * Provision or update enterprise administrator credentials and details
+   */
+  public async createAdmin(req: Request, res: Response): Promise<void> {
+    const start = Date.now();
+    const requestId = req.headers['x-request-id'] as string | undefined;
+
+    const parseResult = createAdminSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      logger.warn('Admin creation validation failed', {
+        errors: parseResult.error.format(),
+        requestId
+      });
+      res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: parseResult.error.issues
+      });
+      return;
+    }
+
+    const {
+      name,
+      email,
+      mobile_number: mobileNumber,
+      company_name: companyName,
+      company_address: companyAddress,
+      password,
+      role,
+      subscription_tier: subscriptionTier
+    } = parseResult.data;
+
+    const passwordHash = hashPassword(password);
+    const user = await db.createOrUpdateAdminUser({
+      name,
+      email,
+      mobile_number: mobileNumber,
+      company_name: companyName,
+      company_address: companyAddress,
+      password_hash: passwordHash,
+      role,
+      status: AUTH_STATUS.ACTIVE,
+      subscription_tier: subscriptionTier
+    });
+
+    logger.info('Administrator credentials provisioned successfully', {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      durationMs: Date.now() - start,
+      requestId
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin details created and verified successfully',
+      user: sanitizeUserProfile(user)
     });
   }
 }

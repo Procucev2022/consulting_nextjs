@@ -51,3 +51,4 @@ export * from './theme';
 export * from './analysisOrchestration';
 export * from './evidenceWorkbook';
 export * from './savingsEvidence';
+export * from './adminGateway';
