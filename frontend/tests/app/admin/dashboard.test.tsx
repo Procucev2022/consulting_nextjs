@@ -144,7 +144,7 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
       expect(screen.getByText('System Administrator')).toBeInTheDocument();
     });
 
-    const tierSelect = screen.getByDisplayValue('GOLD');
+    const tierSelect = await screen.findByDisplayValue('GOLD');
     fireEvent.change(tierSelect, { target: { value: 'SILVER' } });
 
     await waitFor(() => {

@@ -51,11 +51,10 @@ const nextConfig = {
   },
   webpack(config, { isServer }) {
     if (!isServer) {
-      config.performance = {
-        hints: 'warning',
-        maxAssetSize: 350 * 1024,
-        maxEntrypointSize: 450 * 1024,
-      };
+      // Disable webpack's built-in performance hints — Next.js 15.5+ promotes
+      // these warnings to exit code 1, which conflicts with our authoritative
+      // budget enforcement in scripts/check-budget.js (250 KB shared JS limit).
+      config.performance = { hints: false };
     }
     return config;
   },

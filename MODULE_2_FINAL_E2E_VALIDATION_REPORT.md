@@ -1,5 +1,5 @@
 # MODULE 2 - FINAL END-TO-END BUSINESS LOGIC & CALCULATION TRACEABILITY REPORT
-**Generated**: 2026-10-03T16:08:11.975Z
+**Generated**: 2026-10-04T11:49:56.833Z
 **Audited Version**: MODULE_2_PRODUCTION_CANDIDATE_V3.0
 **Dataset**: Customer Certified Procurement Dataset (33 Transactions, ₹40.11 Cr Total Spend)
 
@@ -7,11 +7,11 @@
 
 ## 1. Executive Summary & Production Gate Status
 - **FINAL_STATUS**: MODULE_2_FINAL_E2E_VALIDATED
-- **Total Certified Dataset Spend**: ₹401,093,500 (₹40.11 Cr)
+- **Total Certified Dataset Spend**: ₹40,10,93,500 (₹40.11 Cr)
 - **Total Transactions**: 33 across 6 categories
 - **Gross Quantifiable Opportunity**: ₹5,23,54,500
 - **Overlapping Levers Deducted**: ₹2,32,50,000 (Zero double counting)
-- **Net Defensible Opportunity**: ₹29,104,500 (₹2.91 Cr / 7.26% of spend)
+- **Net Defensible Opportunity**: ₹2,91,04,500 (₹2.91 Cr / 7.26% of spend)
 - **Unexplained Rupee Variance**: ₹0.00 (Zero discrepancy)
 - **Synthetic / Fabricated Savings**: ₹0.00 (Zero assumed percentages)
 

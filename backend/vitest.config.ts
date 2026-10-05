@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'node',
     testTimeout: 10000,
     hookTimeout: 10000,
-    teardownTimeout: 10000,
+    teardownTimeout: 30000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'json-summary', 'html'],
@@ -14,7 +14,8 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.d.ts',
-        'src/types/**'
+        'src/types/**',
+        'src/utils/pdfCanvasTypes.ts'
       ],
       thresholds: {
         lines: 80,

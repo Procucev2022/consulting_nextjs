@@ -5,8 +5,20 @@ import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
 import { Module1Ingestion } from '@/components/Module1Ingestion';
-import { Module2Categorization } from '@/components/Module2Categorization';
 import dynamic from 'next/dynamic';
+
+const Module2Categorization = dynamic(
+  () => import('@/components/Module2Categorization').then((mod) => mod.Module2Categorization)
+);
+
+const CustomerAnalysisStatusCard = dynamic(
+  () => import('@/components/orchestration/CustomerAnalysisStatusCard').then((mod) => mod.CustomerAnalysisStatusCard),
+  { ssr: false }
+);
+const ReportAcknowledgementSection = dynamic(
+  () => import('@/components/orchestration/ReportAcknowledgementSection').then((mod) => mod.ReportAcknowledgementSection),
+  { ssr: false }
+);
 
 const Module3TrendAnalytics = dynamic(
   () => import('@/components/Module3TrendAnalytics').then((mod) => mod.Module3TrendAnalytics)
@@ -1698,7 +1710,12 @@ export default function Home() {
 
         {/* Tab Modules */}
         {activeTab === 'module1' && (
-          <Module1Ingestion
+          <>
+            <CustomerAnalysisStatusCard
+              onViewSpendSummary={() => setActiveTab('module1')}
+              onViewReport={() => setIsManagementSummaryOpen(true)}
+            />
+            <Module1Ingestion
             tenant={tenant}
             onUpdateTenant={handleUpdateTenant}
             ingestionQueue={ingestionQueue}
@@ -1726,6 +1743,7 @@ export default function Home() {
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
           />
+          </>
         )}
 
         {activeTab === 'module2' && (
@@ -1926,6 +1944,10 @@ export default function Home() {
               onDownloadPdf={() => handleBriefDownload('pdf')}
               onDownloadPptx={() => handleBriefDownload('pptx')}
               currentTier={effectiveTier}
+            />
+            <ReportAcknowledgementSection
+              jobId="job-init-default-001"
+              reportVersionId="RPT-v1"
             />
           </div>
         </div>
