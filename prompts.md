@@ -72608,3 +72608,3820 @@ fix all the bugs so that it can get deploy on couldflare
 so if i deploy it on cloudlfare it should work right?
 
 ---
+## Prompt 303
+Please checkout the origin/main branch and pull the latest updates.
+Create a new branch named consulting from the updated origin/main branch and checkout. If the branch already exists, delete it prior to creation.
+
+---
+
+
+## Prompt 304
+## PROMPT 302 — PROCUCEV ANALYSIS ORCHESTRATION, PCBI QUALITY GATE & ADMIN REANALYSIS WORKFLOW
+
+We are now implementing the production workflow for procurement analysis after customer data upload.
+
+CURRENT BUSINESS REQUIREMENT:
+
+PCBI coverage is still being progressively built. Therefore, the system must NOT automatically expose a complete procurement opportunity report immediately after customer upload.
+
+The correct workflow is:
+
+CUSTOMER UPLOAD
+→ MODULE 1 IMMEDIATE
+→ ANALYSIS QUEUED
+→ PCBI / DATA QUALITY REVIEW
+→ ADMIN RESEARCH / CORRECTION / EXCLUSION
+→ FULL ANALYSIS
+→ REPORT GENERATED
+→ ADMIN REVIEW
+→ ADMIN APPROVAL
+→ SUBMIT TO CUSTOMER
+→ AUTOMATED CUSTOMER EMAIL
+→ CUSTOMER VIEW
+→ CUSTOMER ACKNOWLEDGEMENT
+
+The architecture must support progressively reducing the current 24–48 hour turnaround as PCBI coverage improves.
+
+IMPORTANT:
+This is an orchestration/workflow layer around the existing application.
+
+DO NOT rewrite or alter the core calculations of Modules 1–4.
+
+DO NOT change certified financial values.
+
+DO NOT change existing subscription tiers or entitlement definitions.
+
+DO NOT change authentication, OTP, activation or authorization rules except where required to securely authorize this new Admin workflow.
+
+DO NOT redesign the application globally.
+
+DO NOT perform another design-system audit.
+
+DO NOT modify unrelated functionality.
+
+==================================================
+1. CUSTOMER UPLOAD → IMMEDIATE MODULE 1
+==================================================
+
+When ANY authenticated customer tier uploads procurement/spend data:
+
+1. Accept the existing supported upload format(s).
+2. Process the upload through the existing Module 1 pipeline.
+3. Immediately make the Module 1 Spend Data Summary available to the customer once processing succeeds.
+
+Module 1 must NOT wait for PCBI coverage.
+
+The immediate customer summary should use the existing Module 1 calculations/components and may include:
+
+- Total Spend
+- Supplier Count
+- Transaction Count
+- Category Count
+- Material Group Count
+- Plant Count
+- Spend by Category
+- Spend by Supplier
+- Spend by Plant
+- Data quality observations
+- Existing Module 1 KPIs and charts
+
+Do not invent new financial calculations.
+
+Use the existing Module 1 outputs.
+
+==================================================
+2. CUSTOMER MESSAGE AFTER MODULE 1
+==================================================
+
+After Module 1 becomes available, show a clear customer-facing status message:
+
+TITLE:
+"Your Detailed Procurement Analysis is in Progress"
+
+MESSAGE:
+
+"Your uploaded procurement data has been successfully processed and your Spend Summary is available.
+
+Our detailed analysis requires validation of commodity classification, benchmark availability, PCBI coverage, supplier/category mapping and other analytical parameters.
+
+Typical analysis time is 24–48 hours.
+
+We will notify you when your reviewed report is ready."
+
+Do NOT promise an exact completion time.
+
+Use wording such as:
+"Typical analysis time: 24–48 hours."
+
+Do not expose internal PCBI research details to Bronze customers unless permitted by the existing entitlement model.
+
+==================================================
+3. CREATE PERSISTENT ANALYSIS JOB
+==================================================
+
+After successful upload, create a persistent backend Analysis Job.
+
+The job MUST NOT depend on the customer keeping the browser open.
+
+Customer may:
+- upload
+- view Module 1
+- close browser
+- return later
+
+Admin must be able to continue processing independently.
+
+Suggested lifecycle:
+
+UPLOADED
+MODULE_1_READY
+ANALYSIS_QUEUED
+PCBI_REVIEW_REQUIRED
+PCBI_REVIEW_IN_PROGRESS
+READY_FOR_GENERATION
+REPORT_GENERATED
+ADMIN_REVIEW
+ADMIN_APPROVED
+SUBMITTED_TO_CUSTOMER
+CUSTOMER_VIEWED
+CUSTOMER_ACKNOWLEDGED
+
+Exception state:
+
+ANALYSIS_BLOCKED
+
+Use a proper backend state machine/enumeration rather than scattered boolean flags.
+
+==================================================
+4. ANALYSIS JOB DATA MODEL
+==================================================
+
+Create an auditable Analysis Job / Analysis Run model or extend the existing appropriate model.
+
+At minimum track:
+
+- analysisJobId
+- tenant/customerId
+- uploadedBy
+- originalUploadId
+- currentDataVersionId
+- module1VersionId
+- reportVersionId
+- status
+- createdAt
+- queuedAt
+- module1ReadyAt
+- pcbiReviewStartedAt
+- pcbiReviewCompletedAt
+- reportGeneratedAt
+- adminReviewedAt
+- approvedAt
+- submittedAt
+- customerViewedAt
+- acknowledgedAt
+- assignedAdminId
+- lastUpdatedAt
+- failureReason if blocked
+- adminNotes
+- customerNotes where appropriate
+
+Do NOT overwrite historical states.
+
+Maintain an audit trail.
+
+==================================================
+5. AUTOMATIC PCBI COVERAGE GAP ANALYSIS
+==================================================
+
+After Module 1 processing, automatically compare the customer's classified items/categories/material groups against the current PCBI master/index.
+
+Identify:
+
+A. PCBI COVERED
+B. PCBI REQUIRED / MISSING
+C. NOT BENCHMARKABLE
+D. SERVICE / NON-COMMODITY
+E. OTHER EXCLUDED / MANUAL REVIEW
+
+For every missing or review-required category, show Admin:
+
+- Customer item/category
+- Relevant classification
+- Customer spend
+- Transaction count
+- Supplier count if available
+- Plant count if available
+- Existing PCBI mapping if any
+- Required PCBI series
+- Benchmark source if known
+- PCBI quality/status
+- Reason for review
+- Estimated spend impact
+- Current resolution status
+
+Example:
+
+PCBI GAP REVIEW
+
+Category:
+Specialty Chemical
+
+Customer Spend:
+₹8.70 Cr
+
+Transactions:
+342
+
+Status:
+PCBI DATA REQUIRED
+
+Action:
+[Research / Add PCBI]
+[Exclude]
+
+==================================================
+6. ADMIN NOTIFICATION
+==================================================
+
+When a new Analysis Job requires PCBI review, create an Admin notification.
+
+Example:
+
+"New Procurement Analysis Requires Review"
+
+Customer:
+ABC Industries
+
+Spend:
+₹XXX Cr
+
+PCBI Categories Requiring Action:
+18
+
+Spend Potentially Affected:
+₹XX Cr
+
+Status:
+ACTION REQUIRED
+
+Do not send this notification to the customer.
+
+Admin notification should appear in:
+- Admin notification area
+- Analysis Control Center
+- appropriate activity/audit log
+
+If the application already has a notification abstraction, use it.
+
+Do not create duplicate notification infrastructure unnecessarily.
+
+==================================================
+7. ADMIN ANALYSIS CONTROL CENTER
+==================================================
+
+Create an Admin-only area:
+
+"Analysis Control Center"
+
+Provide a list of customer analysis jobs with:
+
+- Customer
+- Upload
+- Analysis period
+- Spend
+- Module 1 status
+- PCBI coverage
+- PCBI gaps
+- Data quality status
+- Current workflow status
+- Assigned admin
+- Age / elapsed time
+- Last activity
+- Action
+
+Useful status filters:
+
+ALL
+ACTION REQUIRED
+PCBI REVIEW
+DATA CORRECTION
+READY FOR GENERATION
+GENERATED
+ADMIN REVIEW
+SUBMITTED
+ACKNOWLEDGED
+BLOCKED
+
+Provide search and filtering.
+
+Do not expose this page to normal customers.
+
+==================================================
+8. ANALYSIS READINESS
+==================================================
+
+For every analysis job calculate a transparent readiness summary.
+
+Example:
+
+ANALYSIS READINESS
+
+PCBI Coverage
+92%
+
+Spend Coverage
+97%
+
+Categories Requiring Review
+7
+
+Items Excluded
+3
+
+Data Corrections Pending
+2
+
+Overall:
+ACTION REQUIRED
+
+or:
+
+Overall:
+READY TO GENERATE
+
+Important:
+
+Do NOT treat PCBI coverage as a simple percentage if the underlying calculation would be misleading.
+
+Where possible distinguish:
+
+- Category coverage
+- Spend coverage
+- Item coverage
+
+The most important indicator should be spend coverage because a small number of high-spend categories can materially affect the report.
+
+Do not create unsupported savings calculations from these percentages.
+
+==================================================
+9. ADMIN PCBI RESOLUTION
+==================================================
+
+For every PCBI gap, Admin can:
+
+A. ADD / MAP PCBI DATA
+B. MAP TO EXISTING PCBI SERIES
+C. EXCLUDE FROM BENCHMARKING
+D. MARK NOT BENCHMARKABLE
+E. MARK AS SERVICE / NON-COMMODITY
+F. REQUEST DATA RESEARCH
+
+If Admin excludes something, a mandatory reason is required.
+
+Allowed examples:
+
+- Not benchmarkable
+- Custom engineered item
+- Service
+- No reliable market benchmark
+- Insufficient market data
+- Customer-specific specification
+- Below materiality threshold
+- Other
+
+If "Other" is selected, require explanatory text.
+
+Never silently ignore an item.
+
+Maintain audit history for every PCBI resolution.
+
+==================================================
+10. PCBI DATA RESEARCH / ADDITION
+==================================================
+
+Admin must be able to use the existing PCBI management functionality to:
+
+- research a benchmark
+- add/update PCBI mapping
+- associate benchmark source
+- assign quality rating
+- enter applicable historical/weekly/monthly data according to existing PCBI model
+- save the PCBI resolution
+- return to the Analysis Job
+
+Do not redesign the existing PCBI calculation engine.
+
+The Analysis Job should simply consume the current certified PCBI data after resolution.
+
+==================================================
+11. ADMIN DATA CORRECTION / REANALYSIS
+==================================================
+
+THIS IS A CRITICAL REQUIREMENT.
+
+If Admin discovers that the uploaded customer data is incorrect, incomplete, wrongly categorized, or otherwise requires correction, Admin must be able to download the working dataset.
+
+Provide:
+
+"Download Data for Correction"
+
+Supported correction workflow should allow:
+
+1. Download current analysis dataset.
+2. Admin edits the Excel file or supported text/data format offline.
+3. Admin uploads the corrected dataset.
+4. System validates the new upload.
+5. System creates a NEW DATA VERSION.
+6. Original customer upload remains immutable.
+7. System runs Module 1 again against the corrected dataset.
+8. Module 1 summary is regenerated.
+9. PCBI gap analysis is regenerated.
+10. Existing analysis/report becomes SUPERSEDED.
+11. New Analysis Job/Run continues from the corrected version.
+
+CRITICAL:
+Do NOT overwrite the original customer upload.
+
+==================================================
+12. DATA VERSIONING
+==================================================
+
+Every uploaded/corrected dataset must have a version.
+
+Example:
+
+Customer Dataset
+v1 — Customer Original Upload
+v2 — Admin Corrected
+v3 — Admin Corrected
+v4 — Customer Re-upload
+
+Each version must track:
+
+- versionId
+- parentVersionId
+- uploadedBy
+- uploaderRole
+- uploadedAt
+- file name
+- file type
+- file size
+- checksum/hash
+- source
+- correction reason
+- notes
+- processing status
+- validation status
+
+The original upload must remain immutable.
+
+==================================================
+13. ADMIN CORRECTION REASON
+==================================================
+
+When Admin uploads a corrected dataset, require:
+
+"Reason for Reanalysis"
+
+Examples:
+
+- Incorrect category mapping
+- Missing transactions
+- Duplicate transactions
+- Incorrect supplier mapping
+- Incorrect plant mapping
+- Incorrect quantity/value
+- Incorrect material description
+- Customer clarification
+- PCBI mapping correction
+- Other
+
+Require explanatory notes when "Other" is selected.
+
+==================================================
+14. CORRECTION DIFFERENCE SUMMARY
+==================================================
+
+After an Admin uploads a corrected dataset, automatically compare the previous and new versions.
+
+Show:
+
+DATA VERSION CHANGE
+
+Previous Version:
+v1
+
+New Version:
+v2
+
+Changes:
+
+Transactions:
+31,671 → 31,702
+
+Suppliers:
+974 → 978
+
+Spend:
+₹5,920.35 Cr → ₹5,923.10 Cr
+
+Categories:
+256 → 258
+
+Plants:
+26 → 26
+
+Changed records:
+XX
+
+Added records:
+XX
+
+Removed records:
+XX
+
+Modified records:
+XX
+
+Do not invent differences.
+
+Only show metrics that can actually be calculated from the datasets.
+
+==================================================
+15. RE-RUN MODULE 1
+==================================================
+
+Every corrected/re-uploaded dataset MUST re-run Module 1.
+
+This is important.
+
+Do NOT retain the old Module 1 summary when the underlying source dataset has changed.
+
+The new Module 1 result must be tied to the new data version.
+
+The customer should eventually see:
+
+"Module 1 updated after data revision."
+
+But only the approved/current version should become the active customer-visible version according to the workflow.
+
+==================================================
+16. RE-RUN COMPLETE ANALYSIS
+==================================================
+
+After data correction or PCBI updates, Admin can trigger:
+
+"Re-run Analysis"
+
+This should run the existing analysis pipeline:
+
+Module 1
+→ Categorization
+→ Module 2
+→ PCBI / Benchmarking
+→ Module 4
+→ Financial validation
+→ Report generation
+
+Do NOT rewrite these modules.
+
+The orchestration layer should call the existing engines.
+
+Every analysis run must be linked to:
+
+- dataset version
+- PCBI version/state
+- analysis job
+- report version
+
+==================================================
+17. REPORT VERSIONING
+==================================================
+
+Reports must also be versioned.
+
+Example:
+
+Report v1
+→ generated from Dataset v1 + PCBI state A
+
+Report v2
+→ generated from Dataset v2 + PCBI state B
+
+Report v3
+→ generated after Admin correction
+
+Never silently overwrite a previously generated report.
+
+Previous versions remain in the audit trail.
+
+Only the latest approved/submitted report should be customer-visible.
+
+==================================================
+18. REPORT GENERATION GATE
+==================================================
+
+The full report must NOT be generated automatically for customer viewing immediately after upload.
+
+Before generation, require:
+
+- Module 1 complete
+- PCBI review complete
+- Required PCBI mappings resolved
+- Exclusions documented
+- Data corrections completed
+- Analysis readiness = READY
+- No blocking errors
+
+Then Admin can select:
+
+"Generate Report"
+
+The report is generated but initially becomes:
+
+REPORT GENERATED — PENDING ADMIN REVIEW
+
+==================================================
+19. FIRST REPORT VISIBILITY = ADMIN ONLY
+==================================================
+
+This is mandatory.
+
+After generation:
+
+Customer:
+CANNOT see report.
+
+Admin:
+CAN see report.
+
+Admin reviews:
+
+- Module 1
+- Module 2
+- PCBI
+- Module 4
+- Savings calculations
+- Opportunity bridge
+- exclusions
+- benchmark coverage
+- executive report
+- consistency of totals
+
+==================================================
+20. ADMIN QUALITY GATE
+==================================================
+
+Create a formal checklist:
+
+DATA QUALITY
+[ ] Source data validated
+[ ] Spend reconciles
+[ ] Duplicate checks completed
+[ ] Classification reviewed
+
+PCBI
+[ ] Required PCBI categories resolved
+[ ] Benchmark sources validated
+[ ] Exclusions documented
+[ ] PCBI coverage acceptable
+
+FINANCIAL
+[ ] Savings calculations validated
+[ ] No double counting
+[ ] Overlaps handled
+[ ] Exclusions applied
+[ ] Totals reconcile
+
+REPORT
+[ ] Module 1 reviewed
+[ ] Module 2 reviewed
+[ ] Module 3/PCBI reviewed
+[ ] Module 4 reviewed
+[ ] Executive summary reviewed
+
+Admin must explicitly confirm the required checklist before submission.
+
+==================================================
+21. APPROVE & SUBMIT
+==================================================
+
+After Admin review:
+
+Button:
+
+"APPROVE & SUBMIT TO CUSTOMER"
+
+This action:
+
+1. Changes report status to APPROVED.
+2. Creates a submission record.
+3. Makes the approved report customer-visible according to existing subscription entitlements.
+4. Records admin identity and timestamp.
+5. Triggers customer notification.
+6. Triggers automated email.
+
+Do not make the report customer-visible before this action.
+
+==================================================
+22. CUSTOMER REPORT STATUS
+==================================================
+
+Customer should see appropriate status:
+
+While processing:
+
+"Detailed Analysis in Progress"
+
+After Admin approval:
+
+"Your Procurement Analysis is Ready"
+
+After customer opens:
+
+"Report Viewed"
+
+After acknowledgement:
+
+"Report Acknowledged"
+
+Do not expose internal statuses such as:
+- PCBI research pending
+- internal admin notes
+- internal quality exceptions
+- internal benchmark research comments
+
+unless explicitly designed as customer-facing information.
+
+==================================================
+23. AUTOMATED EMAIL
+==================================================
+
+After Admin clicks APPROVE & SUBMIT TO CUSTOMER, automatically send an email using the application's existing email service/abstraction.
+
+Do NOT introduce hard-coded credentials.
+
+Do NOT place SMTP/API secrets in source code.
+
+If an email provider already exists, reuse it.
+
+If there is no configured provider, implement the email service behind a clean provider abstraction and use environment configuration.
+
+Email subject:
+
+"Your Procucev Procurement Analysis is Ready"
+
+Suggested content:
+
+Dear [Customer Name],
+
+Your procurement analysis has been completed and reviewed by the Procucev team.
+
+Your report is now available in your Procucev workspace.
+
+Analysis Period: [period]
+Spend Analysed: [spend]
+Report Status: Ready for Review
+
+View Your Report:
+[Secure Workspace Link]
+
+Please review the report and acknowledge receipt through your Procucev workspace.
+
+Regards,
+Procucev Enterprise Solutions
+
+IMPORTANT:
+Prefer a secure authenticated workspace link rather than attaching sensitive procurement data to the email.
+
+Do not email passwords, activation codes, raw procurement data, or confidential benchmark data.
+
+Record email delivery status.
+
+Track:
+- queued
+- sent
+- delivered if provider supports it
+- failed
+- retry count
+- last error
+
+Do not expose email provider secrets.
+
+==================================================
+24. CUSTOMER ACKNOWLEDGEMENT
+==================================================
+
+At the end of the approved report:
+
+"Report Acknowledgement"
+
+Button:
+
+"I HAVE REVIEWED AND ACKNOWLEDGE THIS REPORT"
+
+Record:
+
+- customer user
+- tenant
+- report version
+- date/time
+- acknowledgement status
+
+IMPORTANT:
+This is an acknowledgement of receipt/review.
+
+Do NOT describe it as contractual acceptance of savings or commercial terms.
+
+==================================================
+25. CUSTOMER RE-SUBMISSION / CORRECTION REQUEST
+==================================================
+
+Allow the customer, where appropriate, to request a correction.
+
+Button:
+
+"Request Correction"
+
+Customer provides:
+
+- correction category
+- description
+- optional supporting file
+
+This creates an Admin notification.
+
+Do NOT automatically overwrite the report.
+
+Admin reviews the request and decides whether:
+
+- data correction is required
+- PCBI correction is required
+- report clarification is sufficient
+- no change is required
+
+If a new dataset is required, use the versioned reanalysis workflow above.
+
+==================================================
+26. ADMIN DATA DOWNLOAD SECURITY
+==================================================
+
+Downloaded procurement data is sensitive.
+
+Ensure:
+
+- Admin-only authorization
+- tenant isolation
+- audit logging
+- secure download authorization
+- no public/static URL exposure
+- no cross-customer access
+- appropriate expiration for generated download links if applicable
+- download event recorded
+
+Never allow Customer A to download Customer B's data.
+
+==================================================
+27. ADMIN REANALYSIS SECURITY
+==================================================
+
+Only authorized Procucev Admin users can:
+
+- download source/working data
+- upload corrected data
+- modify PCBI mappings
+- exclude benchmark categories
+- trigger reanalysis
+- generate reports
+- approve reports
+- submit reports
+
+Customer users cannot perform these actions.
+
+Do not rely only on frontend button hiding.
+
+Backend authorization is mandatory.
+
+==================================================
+28. TENANT ISOLATION
+==================================================
+
+Every:
+
+- Analysis Job
+- Dataset Version
+- PCBI Review
+- Analysis Run
+- Report Version
+- Submission
+- Acknowledgement
+- Correction Request
+
+must be tenant-scoped.
+
+Backend must enforce tenant ownership.
+
+Never trust a customerId/tenantId supplied only by the frontend.
+
+Derive authorization from authenticated identity/session.
+
+==================================================
+29. AUDIT TRAIL
+==================================================
+
+Create a complete audit history.
+
+Track events such as:
+
+DATA_UPLOADED
+MODULE1_COMPLETED
+ANALYSIS_QUEUED
+PCBI_GAP_IDENTIFIED
+PCBI_MAPPING_ADDED
+PCBI_MAPPING_UPDATED
+PCBI_ITEM_EXCLUDED
+DATA_DOWNLOADED_FOR_CORRECTION
+CORRECTED_DATA_UPLOADED
+DATA_VERSION_CREATED
+MODULE1_REANALYZED
+ANALYSIS_RERUN
+REPORT_GENERATED
+REPORT_REVIEWED
+REPORT_APPROVED
+REPORT_SUBMITTED
+CUSTOMER_NOTIFIED
+REPORT_VIEWED
+REPORT_ACKNOWLEDGED
+CORRECTION_REQUESTED
+
+Record:
+
+- actor
+- actor role
+- tenant
+- timestamp
+- entity
+- entity ID
+- previous state
+- new state
+- relevant metadata
+
+Do not log passwords, OTPs, activation codes, or sensitive secrets.
+
+==================================================
+30. FAILED ANALYSIS / ERROR HANDLING
+==================================================
+
+If processing fails:
+
+Status:
+ANALYSIS_BLOCKED
+
+Show Admin:
+
+- error category
+- safe technical message
+- affected dataset version
+- affected analysis run
+- recommended action
+
+Do not expose stack traces to customers.
+
+Customer should see:
+
+"We encountered an issue while processing your analysis. Our team is reviewing it."
+
+Admin should have enough diagnostics to resolve it.
+
+==================================================
+31. REPORT READINESS SHOULD BE DETERMINISTIC
+==================================================
+
+Do NOT allow an Admin to accidentally generate a report when mandatory analysis prerequisites are incomplete.
+
+The backend must validate the readiness conditions before allowing report generation.
+
+Frontend buttons are not sufficient.
+
+For example:
+
+generateReport(jobId)
+
+must verify server-side:
+
+- authorized Admin
+- correct tenant
+- Module 1 completed
+- current data version valid
+- PCBI review complete
+- mandatory exclusions resolved
+- no blocking errors
+- analysis state ready
+
+==================================================
+32. DO NOT CHANGE THE EXISTING SAVINGS LOGIC
+==================================================
+
+The orchestration system must call the existing savings/analysis engines.
+
+Do not recreate or duplicate:
+
+- savings calculations
+- opportunity bridge
+- overlap logic
+- exclusions
+- PCBI formulas
+- financial reconciliation
+
+The new workflow is an orchestration and quality-control layer.
+
+The certified financial values remain the existing source of truth.
+
+==================================================
+33. SUBSCRIPTION ENTITLEMENTS
+==================================================
+
+Respect the existing Bronze/Silver/Gold entitlement model.
+
+All tiers can upload data and receive the appropriate Module 1 experience according to the existing subscription definition.
+
+Do not automatically unlock detailed reports merely because an analysis has completed.
+
+The report visibility and detail must still respect the existing entitlement service.
+
+Do not create a second entitlement system.
+
+==================================================
+34. MANAGEMENT QUICK SUMMARY / BOARDROOM REPORT
+==================================================
+
+Do not bypass the existing subscription controls.
+
+The approved report may expose:
+
+Management Quick Summary
+Boardroom & Evidence
+Detailed reports
+
+according to the existing Bronze/Silver/Gold entitlements.
+
+Do not modify the existing certified report financial content.
+
+==================================================
+35. CUSTOMER DASHBOARD STATUS
+==================================================
+
+Add a simple status card to the customer dashboard:
+
+"Procurement Analysis"
+
+Possible statuses:
+
+MODULE 1 READY
+ANALYSIS IN PROGRESS
+REPORT UNDER REVIEW
+REPORT READY
+REPORT ACKNOWLEDGED
+CORRECTION REQUESTED
+
+Show:
+
+- upload date
+- analysis period
+- current report version where appropriate
+- last updated date
+- next action
+
+Do not overwhelm the customer with internal technical details.
+
+==================================================
+36. ADMIN DASHBOARD KPI
+==================================================
+
+Admin dashboard should show:
+
+New Analyses
+PCBI Reviews Pending
+Data Corrections Pending
+Reports Pending Review
+Reports Ready to Submit
+Customer Acknowledgements Pending
+Blocked Analyses
+
+This should help Procucev operations manage the 24–48 hour SLA.
+
+==================================================
+37. SLA / TURNAROUND TRACKING
+==================================================
+
+Track:
+
+- upload → Module 1 completion
+- upload → admin review
+- upload → report generation
+- upload → approval
+- approval → customer notification
+
+Display:
+
+"Elapsed Analysis Time"
+
+for Admin.
+
+Do not automatically promise an SLA to customers beyond:
+
+"Typical analysis time: 24–48 hours."
+
+The architecture should allow Procucev to later change the customer-facing target to:
+
+24 hours
+12 hours
+Same Day
+
+without redesigning the workflow.
+
+==================================================
+38. NOTIFICATION DEDUPLICATION
+==================================================
+
+Prevent duplicate notifications when:
+
+- an admin repeatedly opens a job
+- PCBI data is updated
+- report is regenerated
+
+Notifications should be event-driven and idempotent.
+
+Email sending must also be idempotent.
+
+Do not send multiple "Report Ready" emails for the same report version unless Admin explicitly chooses resend.
+
+==================================================
+39. ADMIN RESEND EMAIL
+==================================================
+
+Admin should have:
+
+"Resend Report Notification"
+
+for an already submitted report.
+
+This should:
+
+- not create a new report version
+- not change financial data
+- send the existing approved report link
+- record the resend event
+
+==================================================
+40. REPORT WITHDRAWAL / SUPERSESSION
+==================================================
+
+If an approved report is later found to contain an error:
+
+Admin must be able to:
+
+"Supersede Report"
+
+This must NOT delete the previous report.
+
+Workflow:
+
+Approved Report v1
+→ Error identified
+→ v1 marked SUPERSEDED
+→ correction/reanalysis
+→ v2 generated
+→ Admin review
+→ v2 approved
+→ customer notified
+
+Customer should see only the latest active approved version, while the audit history retains v1.
+
+==================================================
+41. UI REQUIREMENTS
+==================================================
+
+Use the existing light enterprise design system.
+
+Do not redesign the application.
+
+Use existing:
+- typography
+- colors
+- cards
+- buttons
+- badges
+- tables
+- modals
+- navigation
+- spacing
+
+Admin pages should feel like a natural extension of the existing Admin portal.
+
+Customer pages should remain simple and reassuring.
+
+Use clear statuses rather than excessive technical information.
+
+==================================================
+42. DATABASE / MIGRATION SAFETY
+==================================================
+
+Before modifying schema:
+
+Inspect existing models.
+
+Reuse existing entities where appropriate.
+
+Create only the minimum required tables/entities.
+
+Potential entities:
+
+AnalysisJob
+DatasetVersion
+AnalysisRun
+PCBIReviewItem
+ReportVersion
+ReportSubmission
+ReportAcknowledgement
+CorrectionRequest
+AnalysisAuditEvent
+Notification
+
+Do not duplicate existing customer/user/subscription/PCBI entities.
+
+Use migrations.
+
+Do not destroy existing production/dev data.
+
+Provide safe defaults for existing records.
+
+==================================================
+43. BACKWARD COMPATIBILITY
+==================================================
+
+Existing customers and existing uploads must continue to work.
+
+If historical records do not have the new orchestration metadata:
+
+- migrate safely
+- do not delete them
+- do not change certified historical financial values
+- do not unexpectedly downgrade customer subscription access
+
+==================================================
+44. TESTING REQUIREMENTS
+==================================================
+
+Add targeted automated tests for:
+
+A. Customer upload
+- upload succeeds
+- Module 1 becomes available
+- analysis job created
+
+B. PCBI gap detection
+- missing PCBI category identified
+- spend impact calculated correctly
+- covered category not incorrectly flagged
+
+C. Admin PCBI resolution
+- map PCBI
+- exclude item with mandatory reason
+- cannot generate report while mandatory gaps remain
+
+D. Data correction
+- admin downloads data
+- original version remains immutable
+- corrected version created
+- version linkage correct
+- Module 1 re-runs
+- PCBI gaps re-run
+
+E. Reanalysis
+- full existing pipeline invoked
+- new analysis run created
+- new report version created
+- previous report marked superseded where applicable
+
+F. Report approval
+- generated report is Admin-only
+- customer cannot see unapproved report
+- approval makes correct report visible
+- entitlement restrictions remain enforced
+
+G. Email
+- submission triggers email once
+- duplicate submission does not duplicate email
+- resend works
+- failure recorded
+
+H. Customer acknowledgement
+- acknowledgement recorded
+- correct report version linked
+
+I. Tenant isolation
+- Customer A cannot access Customer B data
+- Customer A cannot access Customer B reports
+- Customer cannot invoke Admin endpoints
+
+J. Security
+- unauthorized users cannot download source data
+- unauthorized users cannot upload corrected datasets
+- unauthorized users cannot generate/approve reports
+
+K. Regression
+- existing Module 1–4 tests pass
+- existing subscription tests pass
+- existing authentication tests pass
+- existing financial calculation tests pass
+
+==================================================
+45. CRITICAL FINANCIAL VALIDATION
+==================================================
+
+For every report generation/reanalysis:
+
+Verify existing financial reconciliation mechanisms.
+
+Do not allow the orchestration layer to silently change financial values.
+
+If an existing certified financial source of truth is used, preserve it.
+
+Do not introduce new savings formulas.
+
+If financial validation fails:
+
+STATUS = ANALYSIS_BLOCKED
+
+and require Admin review.
+
+==================================================
+46. DO NOT AUTO-GENERATE CUSTOMER REPORT
+==================================================
+
+This is a hard requirement.
+
+Customer upload:
+YES → Module 1
+
+Customer upload:
+NO → automatic customer-visible detailed report
+
+Detailed report:
+ONLY after Admin review and approval.
+
+==================================================
+47. DO NOT EXPOSE INTERNAL PCBI RESEARCH
+==================================================
+
+Customers should not see:
+
+- internal PCBI research notes
+- benchmark sourcing notes
+- admin comments
+- unresolved internal categories
+- internal data corrections
+- internal validation flags
+
+unless explicitly approved for customer presentation.
+
+==================================================
+48. EMAIL / REPORT SECURITY
+==================================================
+
+Never place sensitive procurement data directly into the email body.
+
+Use authenticated application links.
+
+Do not create publicly accessible report URLs.
+
+Use authorization checks on every report retrieval.
+
+A report URL must not be sufficient by itself to access another tenant's report.
+
+==================================================
+49. IMPLEMENTATION APPROACH
+==================================================
+
+Before coding:
+
+1. Inspect existing Module 1 upload pipeline.
+2. Inspect existing Modules 2–4 execution paths.
+3. Inspect existing PCBI management.
+4. Inspect existing report generation.
+5. Inspect existing subscription/entitlement service.
+6. Inspect existing notification/email abstraction.
+7. Inspect existing Admin architecture.
+8. Identify reusable entities/services.
+
+Then implement the orchestration layer around them.
+
+Do NOT duplicate existing business logic.
+
+==================================================
+50. STRICT SCOPE CONTROL
+==================================================
+
+DO NOT:
+- redesign UI globally
+- change theme
+- change typography
+- change logo
+- modify financial calculations
+- modify Module 1 calculation logic
+- modify Module 2 calculation logic
+- modify Module 3 calculation logic
+- modify Module 4 calculation logic
+- modify PCBI formulas
+- modify Bronze/Silver/Gold definitions
+- modify authentication logic
+- modify OTP
+- modify activation codes
+- modify existing certified report content
+
+Only build the orchestration, quality gate, versioning, admin correction/reanalysis, report approval, notification and audit workflow.
+
+==================================================
+51. FINAL ACCEPTANCE FLOW
+==================================================
+
+The complete flow must work as follows:
+
+CUSTOMER:
+
+1. Login
+2. Upload procurement data
+3. Module 1 processes
+4. Module 1 summary becomes available
+5. Customer sees:
+   "Detailed Analysis in Progress — Typical analysis time 24–48 hours."
+6. Customer can leave the application.
+
+ADMIN:
+
+7. Admin receives new analysis notification.
+8. Admin opens Analysis Control Center.
+9. Admin sees PCBI/data gaps.
+10. Admin researches and adds PCBI data OR excludes items with mandatory reasons.
+11. If data is wrong:
+    - Download dataset
+    - Correct Excel/text
+    - Upload corrected version
+    - New dataset version created
+    - Module 1 re-runs
+    - PCBI gap analysis re-runs
+12. Admin repeats until ready.
+13. Admin clicks Generate Report.
+14. Full existing analysis pipeline runs.
+15. Report becomes Admin-only.
+16. Admin reviews report.
+17. Admin approves.
+18. Report becomes customer-visible according to subscription entitlement.
+19. Customer email automatically sent.
+20. Customer opens report.
+21. Customer acknowledges report.
+
+IF ERROR FOUND:
+
+22. Admin or customer requests correction.
+23. New data version / PCBI correction is created.
+24. Existing report remains historically preserved.
+25. Reanalysis creates a new analysis/report version.
+26. New report goes through Admin review again.
+27. Old report is marked SUPERSEDED.
+28. Customer receives notification of the new approved version.
+
+==================================================
+52. FINAL VALIDATION AND REPORT
+==================================================
+
+After implementation, run:
+
+- backend typecheck
+- frontend typecheck
+- targeted orchestration tests
+- upload tests
+- Module 1 regression tests
+- PCBI tests
+- report generation tests
+- subscription/entitlement tests
+- authentication tests
+- tenant-isolation tests
+- notification/email tests
+- relevant existing regression suite
+
+Do NOT run another design-system audit.
+
+Do NOT perform endless repository-wide scanning.
+
+If browser automation is available, test the critical workflow.
+
+If browser automation is unavailable, state:
+
+"Browser validation: BLOCKED by environment"
+
+Do not repeatedly retry a broken browser environment.
+
+FINAL REPORT MUST INCLUDE:
+
+1. Architecture implemented
+2. Database entities/migrations
+3. Customer workflow
+4. Admin workflow
+5. PCBI gap workflow
+6. Data correction/re-upload workflow
+7. Module 1 reanalysis behavior
+8. Report versioning
+9. Admin approval gate
+10. Customer submission
+11. Email notification
+12. Customer acknowledgement
+13. Security/tenant isolation
+14. Tests passed
+15. Tests failed
+16. Browser validation status
+17. Files changed
+18. Any remaining risks
+
+STOP AFTER THE FINAL REPORT.
+
+DO NOT START ANOTHER GLOBAL UI/DESIGN AUDIT.
+
+---
+
+## Prompt 305
+IMPLEMENTATION COMMAND — OUTPUT EVIDENCE & VALIDATION WORKBOOKS
+
+Project: aiCEV / Procucev Procurement Analytics Platform
+
+OBJECTIVE
+Build a comprehensive “Output Evidence & Validation Workbook” framework.
+
+IMPORTANT:
+This is NOT a simple Excel export of the data visible on the UI.
+
+The Excel workbook must act as the EVIDENCE / BACKUP WORKBOOK behind every important summary output.
+
+The required relationship is:
+
+UI SUMMARY
+      ↓
+EVIDENCE WORKBOOK
+      ↓
+CALCULATION / DERIVATION
+      ↓
+SUPPORTING ANALYSIS
+      ↓
+SOURCE RECORDS
+
+The workbook must explain WHY the UI result is what it is and allow an Admin/analyst to independently validate the result.
+
+Do not rewrite existing Module 1, Module 2, PCBI, Module 4, financial-validation or savings calculations. Reuse the existing calculation engines and source-of-truth data.
+
+==================================================
+1. CORE PRINCIPLE
+==================================================
+
+Every important financial/KPI output shown in aiCEV must have a corresponding evidence workbook.
+
+Example:
+
+UI:
+Net Direct Savings Opportunity = ₹78.72 Cr
+
+The workbook must prove:
+
+Gross Identified Opportunity        ₹173.12 Cr
+Less: Multi-Lever Overlap           ₹62.80 Cr
+Less: Exclusions                    ₹16.72 Cr
+                                      --------
+Net Defensible Pipeline              ₹93.60 Cr
+
+Less: Strategic Market Value         ₹14.88 Cr
+                                      --------
+Net Direct Savings Opportunity       ₹78.72 Cr
+
+The workbook must contain the initiative-level and supporting analysis required to reproduce these values.
+
+DO NOT simply place ₹78.72 Cr in an Excel cell because the UI says ₹78.72 Cr.
+
+==================================================
+2. WORKBOOK ARCHITECTURE
+==================================================
+
+Create a reusable backend Evidence Workbook Service.
+
+Suggested conceptual structure:
+
+EvidenceWorkbookService
+EvidenceWorkbookBuilder
+EvidenceWorkbookValidator
+EvidenceCalculationTrace
+EvidenceExportController
+EvidenceExportRoutes
+
+Use the existing Excel generation library/framework already present in the project where possible.
+
+Do not introduce unnecessary new dependencies.
+
+Each workbook must be generated from the SAME backend calculation/source-of-truth objects used by the UI.
+
+Never scrape rendered UI values.
+
+==================================================
+3. STANDARD WORKBOOK STRUCTURE
+==================================================
+
+Every evidence workbook should use this logical sheet structure where applicable:
+
+01_README
+02_EXECUTIVE_SUMMARY
+03_CALCULATION_BRIDGE
+04_SUPPORTING_ANALYSIS
+05_SOURCE_RECORDS
+06_RECONCILIATION
+07_ASSUMPTIONS
+08_EXCLUSIONS
+09_AUDIT_TRAIL
+
+Not every module needs every sheet, but the workbook must contain the relevant evidence layers.
+
+==================================================
+4. SHEET 01 — README
+==================================================
+
+Include:
+
+- Customer name
+- Analysis Run ID
+- Data Version ID
+- Report Version ID if applicable
+- Module / output name
+- Workbook generation timestamp
+- Generated by
+- Source calculation version if available
+- Number of source records
+- Total source spend
+- Purpose of workbook
+- Validation instructions
+- Definitions of important KPIs
+- Warning that the workbook is evidence/validation material, not merely a data dump
+
+Clearly state:
+
+“This workbook provides the calculation and evidence trail supporting the corresponding aiCEV output. It is generated from the same backend source of truth used by the application.”
+
+==================================================
+5. SHEET 02 — EXECUTIVE SUMMARY
+==================================================
+
+Show the key outputs displayed by the relevant module.
+
+Columns should include, where relevant:
+
+KPI
+UI VALUE
+EVIDENCE VALUE
+UNIT
+CALCULATION METHOD
+SUPPORTING SHEET
+RECONCILIATION STATUS
+
+Example:
+
+Net Direct Savings Opportunity | ₹78.72 Cr | ₹78.72 Cr | INR Cr | Net Defensible − Strategic Market Value | 03_CALCULATION_BRIDGE | PASS
+
+The UI value and evidence value must be programmatically compared.
+
+If they differ:
+- mark FAIL
+- do not silently continue
+- expose the variance
+
+==================================================
+6. SHEET 03 — CALCULATION BRIDGE
+==================================================
+
+This is one of the MOST IMPORTANT sheets.
+
+It must show how the summary KPI is mathematically derived.
+
+For the certified financial source of truth, preserve these values:
+
+Addressable / Spend Evaluated: ₹5,920.35 Cr
+Analysis Period: April 2024 – March 2026
+Gross Identified Opportunity: ₹173.12 Cr
+Multi-Lever Overlap Deductions: ₹62.80 Cr
+Exclusions: ₹16.72 Cr
+Net Defensible Pipeline: ₹93.60 Cr
+Net Direct Savings Opportunity: ₹78.72 Cr
+Strategic Market Value: ₹14.88 Cr
+Realized Savings: ₹68.00 Cr — separate classification, never additive to Wave-1 opportunity
+Cost Avoidance / Supplier Risk: ₹420 Cr spend de-risked — NOT monetized as savings
+
+Financial bridge:
+
+OPP-001 Vendor Consolidation
+Gross = ₹6.17 Cr
+Overlap = ₹0.00 Cr
+Net = ₹6.17 Cr
+
+OPP-003 Benchmark Price Gap
+Gross = ₹80.67 Cr
+Overlap = ₹40.20 Cr
+Net after overlap = ₹40.47 Cr
+Exclusion-adjusted = ₹29.73 Cr
+
+OPP-004 Strategic Sourcing
+Gross = ₹71.40 Cr
+Overlap = ₹22.60 Cr
+Net after overlap = ₹48.80 Cr
+Exclusion-adjusted = ₹42.82 Cr
+
+OPP-006 Strategic Market Value
+₹14.88 Cr
+
+Gross:
+₹6.17 + ₹80.67 + ₹71.40 + ₹14.88
+= ₹173.12 Cr
+
+Net defensible:
+₹173.12 − ₹62.80 − ₹16.72
+= ₹93.60 Cr
+
+Net direct:
+₹93.60 − ₹14.88
+= ₹78.72 Cr
+
+Mathematical variance = ₹0.00 Cr
+
+Do NOT alter these calculations.
+
+==================================================
+7. MODULE 1 EVIDENCE WORKBOOK
+==================================================
+
+Create an evidence workbook for Module 1.
+
+The workbook must allow validation of summary outputs such as:
+
+- Total spend
+- Supplier count
+- Material group count
+- Plant count
+- Transaction count
+- Spend by supplier
+- Spend by material/category
+- Spend by plant
+- Direct / MRO / Packing / Indirect where applicable
+- Top spend concentration
+- Other Module 1 KPIs actually used by the application
+
+Required evidence:
+
+A. Executive Summary
+B. KPI Calculation Bridge
+C. Supplier Analysis
+D. Material / Category Analysis
+E. Plant Analysis
+F. Transaction-level supporting records
+G. Reconciliation
+
+The Supplier Analysis should allow an analyst to independently reproduce supplier concentration.
+
+The Category Analysis should allow independent reproduction of category spend.
+
+The Plant Analysis should allow independent reproduction of plant spend.
+
+The transaction sheet should contain the actual records supporting the calculations.
+
+Do not merely export the UI cards.
+
+==================================================
+8. MODULE 2 EVIDENCE WORKBOOK
+==================================================
+
+Create evidence workbook for AI categorization / strategic sourcing analysis.
+
+Include, where applicable:
+
+- Original description
+- Supplier
+- Original category
+- AI category
+- UNSPSC
+- UNSPSC confidence
+- Material/service classification
+- Direct/MRO/Packing/Indirect classification
+- Consolidation indicators
+- Supplier consolidation indicators
+- PO consolidation indicators
+- E-auction applicability
+- Strategic sourcing indicators
+- Any other actual Module 2 decision fields
+
+Include summary calculation sheets showing:
+
+- how many records were categorized
+- spend by category
+- spend by sourcing lever
+- supplier/category concentration
+- records contributing to each opportunity indicator
+
+Every summary number must trace to supporting records.
+
+==================================================
+9. PCBI / BENCHMARKING EVIDENCE WORKBOOK
+==================================================
+
+Create a dedicated PCBI evidence workbook.
+
+It must support validation of:
+
+- PCBI IDs
+- PCBI category
+- Customer spend
+- Benchmark series
+- Benchmark source
+- Benchmark quality
+- Benchmark frequency
+- Customer price where applicable
+- Benchmark value
+- Price gap
+- Addressable percentage
+- Addressable spend
+- PCBI status
+- Coverage classification
+- Exclusions
+
+The workbook must support the existing certified PCBI register.
+
+Certified totals include:
+
+290 PCBI Technical IDs
+₹5,524.92 Cr PCBI addressable spend
+₹113.39 Cr quarantined industrial services
+₹282.05 Cr quarantined non-benchmarkable spares/tail spend
+₹5,920.35 Cr total customer baseline spend
+
+Coverage/access classifications must not be altered.
+
+Include separate evidence sheets for:
+
+- PCBI Summary
+- PCBI ID-level calculation
+- Benchmark Mapping
+- Benchmark Source
+- Covered
+- Missing / Required
+- Not Benchmarkable
+- Service / Non-Commodity
+- Other Excluded / Manual Review
+
+For benchmark price-gap calculations, show the actual calculation behind the gap and resulting opportunity.
+
+Do not invent benchmark data.
+
+==================================================
+10. MODULE 4 / SAVINGS ENGINE EVIDENCE WORKBOOK
+==================================================
+
+Create a workbook that proves the savings engine output.
+
+Required:
+
+01_README
+02_EXECUTIVE_SUMMARY
+03_INITIATIVE_LEDGER
+04_LEVER_CALCULATIONS
+05_OVERLAP_DEDUCTIONS
+06_EXCLUSIONS
+07_SUPPORTING_RECORDS
+08_RECONCILIATION
+09_ASSUMPTIONS
+10_AUDIT_TRAIL
+
+The Initiative Ledger must include:
+
+- Initiative ID
+- Initiative name
+- Lever
+- Gross opportunity
+- Overlap
+- Net opportunity
+- Exclusion
+- Final contribution
+- Supporting categories
+- Supporting suppliers
+- Supporting transactions/records
+- Assumptions
+- Confidence/quality if already available
+
+Do not create new savings assumptions.
+
+Preserve the distinction:
+
+- Vendor consolidation
+- Benchmark price gap
+- Strategic sourcing
+- Strategic market value
+- Process productivity
+- Cost avoidance / supplier risk
+- Realized savings
+
+Do not sum classifications that are not additive.
+
+Explicitly preserve:
+
+Vendor consolidation 5% = indicative modelling assumption, not guaranteed saving.
+
+E-auction = execution mechanism, not the sole savings thesis.
+
+Process productivity = 20% PO effort reduction, but direct process saving remains ₹0 until customer manpower/time-motion baseline is validated.
+
+==================================================
+11. FINANCIAL VALIDATION WORKBOOK
+==================================================
+
+Create a dedicated financial validation workbook.
+
+It must include:
+
+- Addressable spend
+- Gross opportunity
+- Overlap deductions
+- Exclusions
+- Net defensible pipeline
+- Strategic market value
+- Net direct savings
+- Realized savings
+- Cost avoidance/risk
+- Reconciliation checks
+
+Include formulas where appropriate so an analyst can inspect the mathematical bridge.
+
+Mandatory automated checks:
+
+CHECK 1:
+Gross opportunity = ₹173.12 Cr
+
+CHECK 2:
+Overlap = ₹62.80 Cr
+
+CHECK 3:
+Exclusions = ₹16.72 Cr
+
+CHECK 4:
+Net defensible = ₹93.60 Cr
+
+CHECK 5:
+Strategic market value = ₹14.88 Cr
+
+CHECK 6:
+Net direct = ₹78.72 Cr
+
+CHECK 7:
+Mathematical variance = ₹0.00 Cr
+
+CHECK 8:
+Realized savings is NOT added to Wave-1 opportunity
+
+CHECK 9:
+₹420 Cr risk/de-risked spend is NOT monetized as savings
+
+All checks must return PASS/FAIL.
+
+==================================================
+12. DATA CORRECTION / VERSION EVIDENCE
+==================================================
+
+Integrate with the existing Analysis Orchestration / Data Version architecture.
+
+When an Admin uploads corrected data:
+
+Version 1 remains immutable.
+
+Version 2 creates a new analysis run.
+
+Generate an evidence workbook showing:
+
+- Data Version 1
+- Data Version 2
+- records added
+- records removed
+- records changed
+- fields changed
+- spend changes
+- supplier changes
+- category changes
+- PCBI mapping changes
+- Module 1 KPI changes
+- downstream KPI changes where applicable
+
+Only show actual calculable differences.
+
+Do not fabricate differences.
+
+==================================================
+13. REPORT EVIDENCE WORKBOOK
+==================================================
+
+For every generated report version, create a corresponding evidence workbook.
+
+The workbook must be tied to:
+
+- reportVersionId
+- dataVersionId
+- analysisRunId
+- pcbiStateHash where available
+- generatedAt
+- generatedBy
+
+If a report is superseded, its evidence workbook remains immutable.
+
+The new report gets a new evidence workbook.
+
+==================================================
+14. MANAGEMENT QUICK SUMMARY EVIDENCE
+==================================================
+
+The 10-slide Management Quick Summary must have a corresponding evidence workbook.
+
+For every major slide KPI, provide:
+
+- slide number
+- KPI
+- displayed value
+- evidence value
+- source calculation
+- supporting sheet
+- reconciliation status
+
+The workbook should allow a CFO/CEO reviewer to trace the major headline numbers without needing to inspect the application code.
+
+==================================================
+15. EXPORT CONTROLS
+==================================================
+
+Add an Admin-only:
+
+“Download Evidence Workbook”
+
+button wherever appropriate.
+
+Also add:
+
+“Download Complete Analysis Evidence Package”
+
+This should generate a ZIP containing the relevant workbooks for the selected Analysis Run.
+
+Suggested package:
+
+01_Module_1_Evidence.xlsx
+02_Module_2_Evidence.xlsx
+03_PCBI_Evidence.xlsx
+04_Savings_Engine_Evidence.xlsx
+05_Financial_Validation.xlsx
+06_Data_Version_Diff.xlsx
+07_Report_Evidence.xlsx
+08_Management_Quick_Summary_Evidence.xlsx
+09_Analysis_Run_Control.xlsx
+
+If a particular module has no applicable evidence workbook, do not create an empty fake file.
+
+==================================================
+16. ANALYSIS RUN CONTROL WORKBOOK
+==================================================
+
+Create:
+
+09_Analysis_Run_Control.xlsx
+
+Include:
+
+- Customer
+- Analysis Run ID
+- Data Version ID
+- Report Version ID
+- upload timestamp
+- Module 1 completion
+- Module 2 completion
+- PCBI status
+- Module 4 completion
+- Financial validation status
+- report generation status
+- Admin approval status
+- customer submission status
+- record counts
+- spend totals
+- reconciliation checks
+- warnings
+- blocking errors
+- generated timestamps
+- generated by
+- version/hash information where available
+
+This workbook is the master QA/control document.
+
+==================================================
+17. CRITICAL DATA-INTEGRITY RULE
+==================================================
+
+The export must use backend source-of-truth calculations.
+
+DO NOT:
+
+- scrape DOM values
+- scrape charts
+- reconstruct calculations from formatted UI strings
+- independently calculate different financial logic
+- create an Excel-only version of the savings model
+- introduce alternate formulas
+
+The UI and workbook must reference the same canonical calculation results.
+
+==================================================
+18. AUTOMATED PARITY VALIDATION
+==================================================
+
+Build automated validation that compares:
+
+UI/backend KPI
+vs
+Evidence Workbook KPI
+vs
+Source calculation
+
+At minimum validate:
+
+- total spend
+- supplier count
+- material group count
+- plant count
+- transaction count
+- PCBI addressable spend
+- gross opportunity
+- overlap
+- exclusions
+- net defensible pipeline
+- strategic market value
+- net direct savings
+- other major module-specific KPIs
+
+Any mismatch must be surfaced.
+
+Do not silently round away meaningful differences.
+
+For financial values, establish a consistent precision/tolerance policy and document it.
+
+==================================================
+19. SECURITY
+==================================================
+
+Evidence workbooks contain sensitive procurement information.
+
+Therefore:
+
+- Admin-only generation where required
+- authenticated API endpoints
+- tenant isolation
+- no public download URLs
+- authorization enforced server-side
+- verify Analysis Run belongs to authenticated tenant
+- never trust tenant/customer ID supplied only by frontend
+- audit every download
+- do not expose another customer's evidence package
+- do not put raw procurement data in notification emails
+- secure download mechanism
+- respect subscription entitlements where applicable
+
+Customer downloads must obey Bronze/Silver/Gold entitlement rules.
+
+Do not weaken existing security.
+
+==================================================
+20. AUDIT TRAIL
+==================================================
+
+Record:
+
+- who generated workbook
+- role
+- customer/tenant
+- analysis run
+- report version
+- data version
+- timestamp
+- workbook type
+- download event
+
+Do not log sensitive raw procurement values unnecessarily.
+
+==================================================
+21. TESTS
+==================================================
+
+Add backend tests for:
+
+- workbook generation
+- workbook structure
+- summary/evidence parity
+- calculation bridge
+- financial reconciliation
+- Module 1 evidence
+- Module 2 evidence
+- PCBI evidence
+- savings evidence
+- report evidence
+- data-version evidence
+- tenant isolation
+- admin authorization
+- non-admin denial
+- superseded report handling
+- immutable previous evidence
+- ZIP package generation
+
+Add tests that intentionally introduce a mismatch and verify that validation returns FAIL.
+
+Test that:
+
+₹173.12 Cr
+− ₹62.80 Cr
+− ₹16.72 Cr
+= ₹93.60 Cr
+
+and:
+
+₹93.60 Cr
+− ₹14.88 Cr
+= ₹78.72 Cr
+
+with zero mathematical variance.
+
+==================================================
+22. FILE CONTENT VALIDATION
+==================================================
+
+Do not stop at “file generated successfully.”
+
+Tests must inspect workbook contents.
+
+Verify:
+
+- expected sheets exist
+- expected columns exist
+- row counts are correct
+- formulas/values are present
+- summary values reconcile
+- supporting records exist
+- reconciliation checks pass
+- workbook opens successfully
+- no empty placeholder sheets
+- no broken formulas
+- no #REF!, #VALUE!, #DIV/0!, #N/A caused by implementation
+- financial totals reconcile
+
+==================================================
+23. NO UI REDESIGN
+==================================================
+
+Do not redesign the application.
+
+Do not modify:
+
+- current enterprise light theme
+- existing navigation
+- Management Quick Summary
+- existing Modules 1–4
+- subscription UI
+- Analysis Control Center
+- PCBI UI
+- report UI
+
+Only add the minimum export controls necessary.
+
+==================================================
+24. PERFORMANCE
+==================================================
+
+Large datasets must be handled safely.
+
+Do not load enormous transaction datasets unnecessarily into browser memory.
+
+Excel generation should be server-side.
+
+For large workbooks:
+
+- stream where supported
+- use efficient workbook generation
+- avoid browser-side Excel construction
+- enforce reasonable export limits
+- provide progress/status for long-running exports if required
+
+Do not block the main application request unnecessarily.
+
+==================================================
+25. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+The implementation is complete only when:
+
+1. Every major output has a corresponding Evidence Workbook.
+2. Workbook is NOT merely a UI data dump.
+3. Workbook explains how the summary result was calculated.
+4. Workbook contains supporting analysis.
+5. Workbook contains underlying records where required.
+6. Workbook contains reconciliation checks.
+7. UI/backend KPI equals Evidence KPI.
+8. Financial bridge reconciles to zero variance.
+9. Data Version is tied to the workbook.
+10. Analysis Run is tied to the workbook.
+11. Report Version is tied to the workbook where applicable.
+12. Previous evidence remains immutable after reanalysis.
+13. Admin-only controls are enforced server-side.
+14. Tenant isolation is tested.
+15. Complete Analysis Evidence Package can be downloaded.
+16. Workbook contents are programmatically tested.
+17. No existing Module 1–4 calculation logic is changed.
+18. No subscription/auth/security regression occurs.
+19. Production build passes.
+20. Typecheck passes.
+21. Lint passes.
+22. All existing tests pass.
+23. New evidence/export tests pass.
+
+==================================================
+26. REQUIRED FINAL EXECUTION REPORT
+==================================================
+
+At the end, report:
+
+A. Files created/modified
+B. Backend services created
+C. API endpoints created
+D. UI export controls added
+E. Workbook types created
+F. Sheets created for each workbook
+G. Validation/parity mechanism
+H. Security controls
+I. Test results
+J. Typecheck result
+K. Lint result
+L. Production build result
+M. Any browser validation performed
+N. Any environment limitations
+O. Any unresolved issues
+
+IMPORTANT:
+Do not claim browser/E2E validation if the environment prevents it.
+
+If browser validation is blocked, explicitly state:
+“Browser validation blocked by environment; backend/workbook validation completed.”
+
+DO NOT change existing financial source-of-truth numbers.
+DO NOT change Modules 1–4 calculations.
+DO NOT redesign the UI.
+DO NOT introduce unsupported assumptions.
+DO NOT claim the workbook is validated merely because the file was successfully generated.
+
+The objective is:
+
+EVERY IMPORTANT aiCEV MANAGEMENT NUMBER
+→ HAS A TRACEABLE EVIDENCE WORKBOOK
+→ THAT EXPLAINS THE CALCULATION
+→ SUPPORTS IT WITH ANALYSIS
+→ AND CAN BE RECONCILED TO SOURCE RECORDS.
+
+
+
+## Prompt 306
+
+PROMPT 306 — MODULE 4 SAVINGS ENGINE: PER-SAVINGS-TYPE EVIDENCE EXCEL + DATA PARITY HARDENING
+
+PROJECT:
+aiCEV / Procucev Procurement Analytics Platform
+
+CONTEXT:
+Prompt 305 implemented the Output Evidence & Validation Workbook framework.
+
+The current implementation successfully created:
+- EvidenceWorkbookService
+- EvidenceWorkbookBuilder
+- EvidenceCalculationTrace
+- EvidenceWorkbookValidator
+- EvidenceFinancialWorkbookBuilder
+- EvidenceGovernanceWorkbookBuilder
+- Evidence export APIs
+- Complete Evidence Package ZIP
+- Analysis Control Center Evidence Workbooks tab
+- 3-way parity validation
+- Savings Engine Evidence workbook
+
+The current Savings Engine Evidence workbook contains:
+01_README
+02_EXECUTIVE_SUMMARY
+03_INITIATIVE_LEDGER
+04_LEVER_CALCULATIONS
+05_OVERLAP_DEDUCTIONS
+06_EXCLUSIONS
+07_SUPPORTING_RECORDS
+08_RECONCILIATION
+09_ASSUMPTIONS
+10_AUDIT_TRAIL
+
+DO NOT REMOVE OR BREAK THIS.
+
+============================================================
+PRIMARY NEW REQUIREMENT
+============================================================
+
+The Evidence Excel functionality must also be visible DIRECTLY INSIDE:
+
+MODULE 4 → SAVINGS ENGINE
+
+The user must be able to see the evidence/download option against EACH SAVINGS TYPE / OPPORTUNITY TYPE.
+
+The requirement is:
+
+UI SAVINGS TYPE
+        ↓
+"View Evidence" / "Download Evidence Excel"
+        ↓
+DEDICATED EVIDENCE WORKBOOK
+        ↓
+CALCULATION
+        ↓
+SUPPORTING ANALYSIS
+        ↓
+SUPPORTING RECORDS
+
+This must NOT simply download the generic Savings Engine workbook every time.
+
+Each savings type must have evidence specific to that savings type.
+
+============================================================
+1. SAVINGS TYPES
+============================================================
+
+Use the actual canonical savings/opportunity classifications already present in the existing Savings Engine.
+
+At minimum, explicitly support the following classifications where they exist in the current calculation model:
+
+1. Vendor Consolidation
+   Initiative: OPP-001
+   Gross Opportunity: ₹6.17 Cr
+   Overlap: ₹0.00 Cr
+   Net: ₹6.17 Cr
+
+2. Benchmark Price Gap
+   Initiative: OPP-003
+   Gross Opportunity: ₹80.67 Cr
+   Overlap: ₹40.20 Cr
+   Net after overlap: ₹40.47 Cr
+   Exclusion-adjusted: ₹29.73 Cr
+
+3. Strategic Sourcing
+   Initiative: OPP-004
+   Gross Opportunity: ₹71.40 Cr
+   Overlap: ₹22.60 Cr
+   Net after overlap: ₹48.80 Cr
+   Exclusion-adjusted: ₹42.82 Cr
+
+4. Strategic Market Value
+   Initiative: OPP-006
+   Value: ₹14.88 Cr
+
+5. Process Productivity
+   Current classification:
+   20% PO effort reduction.
+   Direct process saving must remain ₹0 until customer manpower/time-motion baseline is validated.
+
+6. Cost Avoidance / Supplier Risk
+   Current classification:
+   ₹420 Cr spend de-risked.
+   This is NOT monetized as savings.
+
+7. Realized Savings
+   Current classification:
+   ₹68.00 Cr.
+   This is a separate classification and must NEVER be added to Wave-1 opportunity.
+
+IMPORTANT:
+Do not invent additional savings types.
+Read the canonical Savings Engine classification from the existing backend and support every actual type dynamically.
+
+If the application has more savings types than the above, they must also receive evidence support.
+
+============================================================
+2. MODULE 4 UI REQUIREMENT
+============================================================
+
+Inside the Module 4 Savings Engine screen, wherever each savings type/opportunity is displayed, add a compact evidence control.
+
+Example:
+
+----------------------------------------------------
+Vendor Consolidation
+₹6.17 Cr
+[View Details] [Evidence Excel ↓]
+----------------------------------------------------
+
+----------------------------------------------------
+Benchmark Price Gap
+₹29.73 Cr
+[View Details] [Evidence Excel ↓]
+----------------------------------------------------
+
+----------------------------------------------------
+Strategic Sourcing
+₹42.82 Cr
+[View Details] [Evidence Excel ↓]
+----------------------------------------------------
+
+----------------------------------------------------
+Strategic Market Value
+₹14.88 Cr
+[View Details] [Evidence Excel ↓]
+----------------------------------------------------
+
+The control must be visually subordinate to the primary financial result.
+
+Do not redesign Module 4.
+
+Do not clutter cards.
+
+Use the existing enterprise design system.
+
+Use the same button/icon conventions already used by the application.
+
+============================================================
+3. EVIDENCE WORKBOOK PER SAVINGS TYPE
+============================================================
+
+Each individual savings type must have an evidence workbook.
+
+Examples:
+
+01_Vendor_Consolidation_Evidence.xlsx
+
+02_Benchmark_Price_Gap_Evidence.xlsx
+
+03_Strategic_Sourcing_Evidence.xlsx
+
+04_Strategic_Market_Value_Evidence.xlsx
+
+05_Process_Productivity_Evidence.xlsx
+
+06_Cost_Avoidance_Risk_Evidence.xlsx
+
+07_Realized_Savings_Evidence.xlsx
+
+Do not generate a fake workbook if a savings type genuinely has no supporting evidence.
+
+Instead show the reason clearly.
+
+============================================================
+4. STRUCTURE OF EACH SAVINGS-TYPE WORKBOOK
+============================================================
+
+Each workbook should contain, where applicable:
+
+01_README
+
+02_EXECUTIVE_SUMMARY
+
+03_CALCULATION_BRIDGE
+
+04_SUPPORTING_ANALYSIS
+
+05_SUPPLIER_ANALYSIS
+
+06_CATEGORY_ANALYSIS
+
+07_ITEM_OR_TRANSACTION_EVIDENCE
+
+08_OVERLAP
+
+09_EXCLUSIONS
+
+10_ASSUMPTIONS
+
+11_RECONCILIATION
+
+12_AUDIT_TRAIL
+
+Sheets may be omitted when genuinely not applicable.
+
+Do not create empty sheets just to satisfy a template.
+
+============================================================
+5. VENDOR CONSOLIDATION EVIDENCE
+============================================================
+
+The workbook must explain how ₹6.17 Cr was derived.
+
+Show:
+
+- affected categories
+- affected suppliers
+- current supplier count
+- current supplier spend
+- consolidation opportunity
+- applicable modelling assumption
+- calculation
+- resulting opportunity
+
+Explicitly label:
+
+"5% vendor consolidation is an indicative modelling assumption, not a guaranteed saving."
+
+Show supporting supplier/category records.
+
+The workbook must allow an analyst to independently reproduce ₹6.17 Cr.
+
+============================================================
+6. BENCHMARK PRICE GAP EVIDENCE
+============================================================
+
+This is especially important.
+
+Show:
+
+- affected PCBI/category
+- item/material
+- supplier
+- current/customer price
+- benchmark price
+- price gap
+- applicable quantity/spend
+- gross opportunity
+- overlap allocation
+- exclusion allocation
+- net contribution
+
+The workbook must allow the analyst to trace:
+
+₹80.67 Cr Gross
+→ ₹40.20 Cr overlap
+→ ₹40.47 Cr after overlap
+→ ₹29.73 Cr exclusion-adjusted
+
+Do not simply display these four numbers.
+
+Show the underlying evidence that creates them.
+
+Where benchmark source data is involved, reference the actual benchmark/source fields already stored by PCBI.
+
+Do not invent benchmark values.
+
+============================================================
+7. STRATEGIC SOURCING EVIDENCE
+============================================================
+
+Show the supporting evidence behind:
+
+₹71.40 Cr Gross
+₹22.60 Cr Overlap
+₹48.80 Cr after overlap
+₹42.82 Cr exclusion-adjusted
+
+Show, where applicable:
+
+- category
+- supplier
+- spend
+- sourcing opportunity
+- sourcing lever
+- consolidation opportunity
+- RFQ opportunity
+- negotiation opportunity
+- e-auction applicability
+- strategic sourcing logic
+- supporting transactions
+
+Important:
+
+E-auction is an execution mechanism, not the sole savings thesis.
+
+Do not convert every e-auction indicator into an independent savings amount unless the existing calculation engine explicitly does so.
+
+============================================================
+8. STRATEGIC MARKET VALUE EVIDENCE
+============================================================
+
+Provide evidence for:
+
+₹14.88 Cr Strategic Market Value
+
+Clearly distinguish this from:
+
+Net Direct Savings Opportunity = ₹78.72 Cr
+
+The workbook must explicitly show:
+
+Net Defensible Pipeline = ₹93.60 Cr
+Strategic Market Value = ₹14.88 Cr
+Net Direct Savings = ₹78.72 Cr
+
+Do not double count Strategic Market Value.
+
+============================================================
+9. PROCESS PRODUCTIVITY EVIDENCE
+============================================================
+
+Show:
+
+- low-value PO count
+- PO-related effort indicator
+- 20% PO effort reduction assumption/result
+- supporting PO population
+- methodology
+- current monetized value = ₹0 until customer manpower/time-motion baseline is validated
+
+Do not manufacture a rupee savings value.
+
+The workbook must explicitly state:
+
+"Process productivity is currently expressed as a 20% PO effort reduction. Direct monetary saving is not recognized until the customer manpower/time-motion baseline is validated."
+
+============================================================
+10. COST AVOIDANCE / SUPPLIER RISK EVIDENCE
+============================================================
+
+Show the evidence behind:
+
+₹420 Cr spend de-risked.
+
+Do NOT classify this as savings.
+
+The workbook must clearly label:
+
+"Spend De-Risked — Not Monetized as Savings"
+
+Show:
+
+- affected suppliers/categories
+- risk indicator
+- affected spend
+- risk/de-risking methodology already used by the application
+- supporting records
+
+Do not convert ₹420 Cr into a savings figure.
+
+============================================================
+11. REALIZED SAVINGS EVIDENCE
+============================================================
+
+If displayed by Module 4, provide:
+
+₹68.00 Cr Realized Savings
+
+with its supporting evidence.
+
+IMPORTANT:
+
+Realized Savings must remain a separate classification.
+
+Never add:
+
+₹68.00 Cr
+
+to:
+
+₹173.12 Cr Gross Opportunity
+
+or
+
+₹78.72 Cr Net Direct Savings Opportunity.
+
+The workbook must explicitly show its classification as separate.
+
+============================================================
+12. PER-SAVINGS-TYPE API
+============================================================
+
+Add a backend endpoint along the lines of:
+
+GET
+/api/evidence/jobs/:jobId/savings/:savingsType/inventory
+
+and:
+
+GET
+/api/evidence/jobs/:jobId/savings/:savingsType/download
+
+Use the project's existing naming conventions if different.
+
+The endpoint must:
+
+- resolve Analysis Job server-side
+- resolve tenant server-side
+- resolve canonical savings type
+- retrieve canonical calculation data
+- generate the evidence workbook
+- validate the workbook
+- stream XLSX
+- audit the download
+
+Never trust a frontend-supplied customer/tenant ID.
+
+============================================================
+13. REUSE EXISTING EVIDENCE FRAMEWORK
+============================================================
+
+Do NOT create an independent Excel engine.
+
+Extend:
+
+EvidenceWorkbookService
+EvidenceWorkbookBuilder
+EvidenceCalculationTrace
+EvidenceWorkbookValidator
+EvidenceFinancialWorkbookBuilder
+
+where appropriate.
+
+Create a dedicated builder such as:
+
+SavingsTypeEvidenceWorkbookBuilder
+
+if that is cleaner.
+
+The individual workbook must use the same canonical calculation trace as the existing Savings Engine Evidence workbook.
+
+============================================================
+14. THREE-WAY PARITY
+============================================================
+
+For every savings type:
+
+UI VALUE
+=
+EVIDENCE WORKBOOK VALUE
+=
+CANONICAL SOURCE CALCULATION
+
+Examples:
+
+Vendor Consolidation:
+₹6.17 Cr = ₹6.17 Cr = ₹6.17 Cr
+
+Benchmark Price Gap:
+gross ₹80.67 Cr
+overlap ₹40.20 Cr
+net ₹40.47 Cr
+exclusion-adjusted ₹29.73 Cr
+
+Strategic Sourcing:
+gross ₹71.40 Cr
+overlap ₹22.60 Cr
+net ₹48.80 Cr
+exclusion-adjusted ₹42.82 Cr
+
+Strategic Market Value:
+₹14.88 Cr
+
+Financial totals must continue to reconcile:
+
+Gross Opportunity = ₹173.12 Cr
+Overlap = ₹62.80 Cr
+Exclusions = ₹16.72 Cr
+Net Defensible = ₹93.60 Cr
+Strategic Market Value = ₹14.88 Cr
+Net Direct Savings = ₹78.72 Cr
+Variance = ₹0.00 Cr
+
+============================================================
+15. CRITICAL DATA PARITY INVESTIGATION
+============================================================
+
+IMPORTANT:
+
+The Prompt 305 execution report currently reports:
+
+Supplier Count = 974
+Material Group Count = 142
+Plant Count = 24
+Transaction Count = 31,241
+
+However, the certified aiCEV source of truth currently expected for this analysis is:
+
+Supplier Count = 974
+Material Groups = 256
+Plants = 26
+Transactions = 31,671
+
+Total Spend remains:
+₹5,920.35 Cr
+
+Before declaring this implementation complete:
+
+TRACE THE SOURCE OF THESE THREE DISCREPANCIES.
+
+Do not simply overwrite the numbers.
+
+Determine whether:
+
+- the parity test is using a filtered dataset
+- the evidence workbook is using a different analysis run
+- a normalization/deduplication step is changing counts
+- the certified baseline uses a different population
+- some records are excluded from the count
+- a regression exists
+
+Document the exact reason.
+
+If the certified source-of-truth dataset is the correct population, correct the implementation so the evidence and UI use the correct population.
+
+The target certified values are:
+
+256 material groups
+26 plants
+31,671 transactions
+
+unless the current canonical source explicitly proves that these values belong to a different analysis population.
+
+DO NOT change numbers merely to make tests pass.
+
+============================================================
+16. MODULE 4 SUMMARY + INDIVIDUAL EVIDENCE
+============================================================
+
+Keep both levels:
+
+LEVEL 1:
+Module 4 → "Download Savings Engine Evidence"
+
+This remains the comprehensive workbook.
+
+LEVEL 2:
+Each savings type → "Evidence Excel"
+
+This downloads only the evidence for that savings type.
+
+Both must be based on the same calculation engine.
+
+============================================================
+17. COMPLETE EVIDENCE PACKAGE
+============================================================
+
+The existing Complete Analysis Evidence Package must remain.
+
+Add the individual savings-type workbooks where appropriate.
+
+Recommended package:
+
+01_Module_1_Evidence.xlsx
+02_Module_2_Evidence.xlsx
+03_PCBI_Evidence.xlsx
+04_Savings_Engine_Evidence.xlsx
+04A_Vendor_Consolidation_Evidence.xlsx
+04B_Benchmark_Price_Gap_Evidence.xlsx
+04C_Strategic_Sourcing_Evidence.xlsx
+04D_Strategic_Market_Value_Evidence.xlsx
+04E_Process_Productivity_Evidence.xlsx
+04F_Cost_Avoidance_Risk_Evidence.xlsx
+04G_Realized_Savings_Evidence.xlsx
+05_Financial_Validation.xlsx
+06_Data_Version_Diff.xlsx
+07_Report_Evidence.xlsx
+08_Management_Quick_Summary_Evidence.xlsx
+09_Analysis_Run_Control.xlsx
+
+Only include applicable savings-type workbooks.
+
+============================================================
+18. MODULE 4 DOWNLOAD UX
+============================================================
+
+Do not add a large new panel that makes Module 4 cluttered.
+
+Preferred presentation:
+
+Savings type row/card:
+
+Vendor Consolidation
+₹6.17 Cr
+[View Details] [Evidence Excel]
+
+or:
+
+Vendor Consolidation     ₹6.17 Cr     Evidence Excel ↓
+
+Use tooltips if necessary:
+
+"Download calculation and supporting evidence for this savings type."
+
+The user must be able to understand that the Excel is the backup/evidence for THAT specific number.
+
+============================================================
+19. TESTING
+============================================================
+
+Add tests for each savings type.
+
+Minimum:
+
+- Vendor Consolidation workbook generation
+- Benchmark Price Gap workbook generation
+- Strategic Sourcing workbook generation
+- Strategic Market Value workbook generation
+- Process Productivity workbook generation
+- Cost Avoidance/Risk workbook generation
+- Realized Savings workbook generation where applicable
+
+Test:
+
+- correct sheets
+- correct summary values
+- correct calculation bridge
+- supporting records present
+- reconciliation
+- UI/API parity
+- tenant isolation
+- authorization
+- audit logging
+- download endpoint
+- invalid savings type
+- missing savings type
+- no evidence scenario
+
+Add negative tests:
+
+If canonical value is deliberately changed, parity must FAIL.
+
+============================================================
+20. WORKBOOK CONTENT TESTING
+============================================================
+
+Do not only test that XLSX bytes exist.
+
+Open/inspect generated workbook structures in tests.
+
+Verify:
+
+- workbook opens
+- required sheets exist
+- expected headers exist
+- expected values exist
+- formulas/values are valid
+- no #REF!
+- no #VALUE!
+- no #DIV/0!
+- reconciliation passes
+- evidence records are non-empty where expected
+
+============================================================
+21. SECURITY
+============================================================
+
+Maintain Prompt 305 security model.
+
+Only authorized roles may access sensitive evidence.
+
+Customer entitlements must be respected.
+
+Admin/Consultant permissions remain server-side.
+
+Tenant isolation remains server-side.
+
+Every download must be audited.
+
+No public static workbook URLs.
+
+No raw procurement data in emails.
+
+============================================================
+22. DO NOT CHANGE
+============================================================
+
+Do NOT change:
+
+- Modules 1–4 calculation logic except where correcting a proven data-population bug
+- certified financial source-of-truth methodology
+- subscription logic
+- authentication
+- Analysis Orchestration
+- PCBI methodology
+- existing UI theme
+- Management Quick Summary
+- Boardroom report
+- report approval workflow
+
+Do not redesign Module 4.
+
+============================================================
+23. REQUIRED FINAL REPORT
+============================================================
+
+Report:
+
+A. Files created/modified
+B. APIs added
+C. Module 4 UI changes
+D. Savings types supported
+E. Workbook generated for each savings type
+F. Sheets in each workbook
+G. Evidence-to-calculation trace
+H. 3-way parity results
+I. Data-count discrepancy investigation
+J. Supplier/material/plant/transaction final counts
+K. Financial reconciliation
+L. Backend tests
+M. Frontend tests
+N. Typecheck
+O. Lint
+P. Production build
+Q. Browser validation status
+R. Security validation
+S. Unresolved issues
+
+IMPORTANT:
+
+Do not report "complete" merely because the code compiles.
+
+The implementation is complete only when:
+
+1. Each Module 4 savings type has a visible Evidence Excel control.
+2. Each Evidence Excel contains the backup/evidence behind that specific savings type.
+3. The workbook is NOT merely a copy of UI data.
+4. The calculation bridge is traceable.
+5. Supporting records are traceable.
+6. UI = Evidence = Canonical calculation.
+7. Financial totals reconcile to zero variance.
+8. Data population/count discrepancies are understood and resolved/documented.
+9. Existing evidence package continues to work.
+10. All tests pass.
+11. Security tests pass.
+12. No existing module regression occurs.
+
+FINAL PRINCIPLE:
+
+Every savings number shown in Module 4 must answer:
+
+"SHOW ME THE EVIDENCE."
+
+And the user should be able to click:
+
+Evidence Excel ↓
+
+DIRECTLY BESIDE THAT SAVINGS TYPE
+and obtain the calculation + supporting analysis + evidence behind that exact number.
+
+---
+
+## Prompt 307
+continue
+
+---
+
+## Prompt 308
+continue
+
+---
+
+## Prompt 309
+PROMPT 309 — FINAL EVIDENCE WORKBOOK VALIDATION & MODULE 4 SAVINGS DRILL-DOWN
+
+IMPORTANT CONTEXT
+
+Prompt 305 implemented the Output Evidence & Validation Workbook framework.
+
+Prompt 306 added per-savings-type Evidence Excel functionality to Module 4 / Savings Engine.
+
+Prompt 308 subsequently completed the full monorepo quality gate:
+
+- Backend: 1,495 / 1,495 tests PASS
+- Frontend: 1,244 / 1,244 tests PASS
+- Backend typecheck: PASS
+- Frontend typecheck: PASS
+- Backend lint: PASS
+- Frontend lint: PASS
+- Production build: PASS
+- Performance budgets: PASS
+
+DO NOT unnecessarily rerun the complete monorepo quality suite.
+
+This task is specifically for FINAL VALIDATION of the ACTUAL EVIDENCE WORKBOOKS and Module 4 per-savings-type evidence.
+
+============================================================
+PRIMARY OBJECTIVE
+============================================================
+
+Prove that the Excel files generated by aiCEV are genuine EVIDENCE / BACKUP WORKBOOKS behind the numbers shown in the application.
+
+The workbook must NOT merely reproduce the UI data.
+
+The required evidence chain is:
+
+UI SUMMARY
+    ↓
+CALCULATION
+    ↓
+SUPPORTING ANALYSIS
+    ↓
+SUPPORTING RECORDS
+    ↓
+RECONCILIATION
+
+The final question this validation must answer is:
+
+"If I see a savings number in Module 4, can I click Evidence Excel and independently understand and validate how that number was derived?"
+
+============================================================
+1. ACTUALLY GENERATE THE XLSX FILES
+============================================================
+
+Use a representative completed Analysis Job / Analysis Run already available in the project.
+
+Actually generate the XLSX files.
+
+Do NOT validate only the TypeScript builders.
+
+Generate and inspect:
+
+1. Vendor Consolidation Evidence
+2. Benchmark Price Gap Evidence
+3. Strategic Sourcing Evidence
+4. Strategic Market Value Evidence
+5. Process Productivity Evidence
+6. Cost Avoidance / Supplier Risk Evidence
+7. Realized Savings Evidence, if applicable
+8. Complete Savings Engine Evidence
+9. Complete Analysis Evidence Package ZIP
+
+Use the existing Evidence Workbook Service and canonical calculation engine.
+
+Do not create a parallel calculation engine.
+
+============================================================
+2. INSPECT THE ACTUAL XLSX CONTENT
+============================================================
+
+Programmatically open the generated XLSX files and inspect their actual contents.
+
+For every workbook verify:
+
+- workbook opens successfully
+- expected sheets exist
+- sheet names are correct
+- expected headers exist
+- rows contain actual evidence
+- summary values exist
+- calculation bridge exists
+- supporting analysis exists
+- supporting records exist where applicable
+- assumptions are documented
+- exclusions are documented
+- reconciliation exists
+- audit information exists
+- no broken formulas
+- no #REF!
+- no #VALUE!
+- no #DIV/0!
+- no meaningless empty evidence sheets
+
+DO NOT accept:
+
+"Workbook generated successfully"
+
+as evidence of correctness.
+
+The actual workbook contents must be inspected.
+
+============================================================
+3. MODULE 4 UI VALIDATION
+============================================================
+
+Verify that Module 4 / Savings Engine visibly provides an Evidence Excel action against EACH applicable savings type.
+
+Expected concept:
+
+Vendor Consolidation       ₹6.17 Cr       [Evidence Excel]
+Benchmark Price Gap        ₹xx.xx Cr      [Evidence Excel]
+Strategic Sourcing         ₹xx.xx Cr      [Evidence Excel]
+Strategic Market Value     ₹14.88 Cr      [Evidence Excel]
+Process Productivity       20% effort     [Evidence Excel]
+Cost Avoidance / Risk      ₹420 Cr        [Evidence Excel]
+Realized Savings           ₹68.00 Cr      [Evidence Excel]
+
+Use the actual UI values from the canonical Savings Engine.
+
+The control should clearly communicate:
+
+"This Excel contains the supporting evidence for this specific savings type."
+
+Do not redesign Module 4.
+
+============================================================
+4. VERIFY EACH SAVINGS-TYPE WORKBOOK
+============================================================
+
+------------------------------------------------------------
+A. VENDOR CONSOLIDATION
+------------------------------------------------------------
+
+Verify:
+
+Gross Opportunity = ₹6.17 Cr
+Overlap = ₹0.00 Cr
+Net = ₹6.17 Cr
+
+The workbook must show the supporting:
+
+- suppliers
+- categories/material groups
+- current spend
+- supplier concentration
+- applicable consolidation logic
+- calculation
+- resulting opportunity
+
+Explicitly retain:
+
+"5% vendor consolidation is an indicative modelling assumption, not a guaranteed saving."
+
+The workbook must allow an analyst to independently reproduce ₹6.17 Cr.
+
+------------------------------------------------------------
+B. BENCHMARK PRICE GAP
+------------------------------------------------------------
+
+Verify:
+
+Gross = ₹80.67 Cr
+Overlap = ₹40.20 Cr
+Net after overlap = ₹40.47 Cr
+Exclusion-adjusted = ₹29.73 Cr
+
+The workbook must contain supporting evidence such as:
+
+- item/material
+- category
+- supplier
+- customer price where applicable
+- benchmark price
+- benchmark source
+- benchmark series
+- quantity/spend
+- price gap
+- gross opportunity
+- overlap allocation
+- exclusions
+- final contribution
+
+The workbook must explain how the opportunity was derived.
+
+Do NOT merely show the four headline numbers.
+
+------------------------------------------------------------
+C. STRATEGIC SOURCING
+------------------------------------------------------------
+
+Verify:
+
+Gross = ₹71.40 Cr
+Overlap = ₹22.60 Cr
+Net after overlap = ₹48.80 Cr
+Exclusion-adjusted = ₹42.82 Cr
+
+Show the supporting:
+
+- categories
+- suppliers
+- spend
+- sourcing opportunity
+- sourcing lever
+- supporting records
+- applicable strategic sourcing logic
+
+IMPORTANT:
+
+E-auction is an execution mechanism, not the sole savings thesis.
+
+Do not create additional savings simply because e-auction is applicable.
+
+------------------------------------------------------------
+D. STRATEGIC MARKET VALUE
+------------------------------------------------------------
+
+Verify:
+
+Strategic Market Value = ₹14.88 Cr
+
+Clearly distinguish it from:
+
+Net Direct Savings Opportunity = ₹78.72 Cr
+
+The workbook must demonstrate:
+
+Net Defensible Pipeline = ₹93.60 Cr
+Less Strategic Market Value = ₹14.88 Cr
+Net Direct Savings = ₹78.72 Cr
+
+Do not double count Strategic Market Value.
+
+------------------------------------------------------------
+E. PROCESS PRODUCTIVITY
+------------------------------------------------------------
+
+Verify the workbook shows:
+
+20% PO effort reduction
+
+and:
+
+Direct monetary saving = ₹0
+
+until customer manpower/time-motion baseline is validated.
+
+Include:
+
+- low-value PO population
+- PO count
+- methodology
+- effort reduction logic
+- assumptions
+- current monetization status
+
+Do not manufacture a rupee savings number.
+
+------------------------------------------------------------
+F. COST AVOIDANCE / SUPPLIER RISK
+------------------------------------------------------------
+
+Verify:
+
+₹420 Cr spend de-risked
+
+This MUST remain:
+
+"Spend De-Risked — Not Monetized as Savings"
+
+Show the underlying risk/de-risking evidence.
+
+Do NOT convert ₹420 Cr into a savings figure.
+
+------------------------------------------------------------
+G. REALIZED SAVINGS
+------------------------------------------------------------
+
+If displayed:
+
+Realized Savings = ₹68.00 Cr
+
+Show its supporting evidence.
+
+It must remain a separate classification.
+
+NEVER add ₹68.00 Cr to:
+
+- Gross Opportunity
+- Net Defensible Pipeline
+- Net Direct Savings
+
+============================================================
+5. VERIFY THE FINANCIAL BRIDGE
+============================================================
+
+The actual evidence must reconcile:
+
+Gross Identified Opportunity = ₹173.12 Cr
+
+Less Multi-Lever Overlap = ₹62.80 Cr
+
+Less Exclusions = ₹16.72 Cr
+
+Net Defensible Pipeline = ₹93.60 Cr
+
+Less Strategic Market Value = ₹14.88 Cr
+
+Net Direct Savings Opportunity = ₹78.72 Cr
+
+Verify mathematically:
+
+₹173.12 − ₹62.80 − ₹16.72 = ₹93.60
+
+₹93.60 − ₹14.88 = ₹78.72
+
+Mathematical variance = ₹0.00 Cr
+
+Also verify:
+
+Realized Savings ₹68.00 Cr is NOT added.
+
+₹420 Cr de-risked spend is NOT monetized.
+
+============================================================
+6. THREE-WAY PARITY
+============================================================
+
+For every savings type compare:
+
+A. UI value
+B. Evidence workbook value
+C. Canonical backend calculation
+
+Required:
+
+UI = Workbook = Canonical Source
+
+Do not simply compare the workbook to itself.
+
+Produce a table:
+
+Savings Type
+UI Value
+Workbook Value
+Canonical Value
+Variance
+Status
+
+Every variance must be explicitly reported.
+
+============================================================
+7. CRITICAL DATA POPULATION INVESTIGATION
+============================================================
+
+THIS IS MANDATORY.
+
+A previous execution report showed:
+
+Supplier Count = 974
+Material Groups = 142
+Plants = 24
+Transactions = 31,241
+
+The certified baseline for this analysis is:
+
+Supplier Count = 974
+Material Groups = 256
+Plants = 26
+Transactions = 31,671
+
+Total Spend = ₹5,920.35 Cr
+
+Do NOT simply change test expectations.
+
+Trace the actual population used by:
+
+- Module 1
+- Module 2
+- PCBI
+- Module 4
+- Evidence Workbooks
+- Analysis Run
+- Financial Validation
+
+Determine exactly why the counts differ.
+
+Possible explanations may include:
+
+- deduplication
+- filtering
+- excluded records
+- service records
+- non-benchmarkable records
+- different analysis version
+- different dataset
+- aggregation logic
+- bug/regression
+
+But do not assume any explanation.
+
+PROVE the explanation from the code/data.
+
+If the certified baseline belongs to the same Analysis Run, the implementation must reconcile to:
+
+256 Material Groups
+26 Plants
+31,671 Transactions
+
+If the lower counts belong to a different valid population, document precisely:
+
+- which population
+- why it differs
+- why the financial totals remain valid
+- which count should be displayed in each context
+
+DO NOT silently overwrite either set of numbers.
+
+============================================================
+8. ACTUAL SUPPORTING-RECORD VALIDATION
+============================================================
+
+For every savings type where transaction/category/supplier evidence exists:
+
+Verify that the workbook contains actual supporting records.
+
+For example:
+
+Vendor Consolidation:
+
+Supplier → Category → Spend → Consolidation Logic → Opportunity
+
+Benchmark Price Gap:
+
+Item → Supplier → Customer Price → Benchmark → Gap → Spend → Opportunity
+
+Strategic Sourcing:
+
+Category → Supplier → Spend → Sourcing Lever → Opportunity
+
+The evidence should be sufficient for an analyst to perform an independent reconciliation.
+
+============================================================
+9. COMPLETE SAVINGS ENGINE WORKBOOK
+============================================================
+
+The existing:
+
+04_Savings_Engine_Evidence.xlsx
+
+must continue to exist.
+
+Verify it contains:
+
+01_README
+02_EXECUTIVE_SUMMARY
+03_INITIATIVE_LEDGER
+04_LEVER_CALCULATIONS
+05_OVERLAP_DEDUCTIONS
+06_EXCLUSIONS
+07_SUPPORTING_RECORDS
+08_RECONCILIATION
+09_ASSUMPTIONS
+10_AUDIT_TRAIL
+
+The comprehensive workbook and individual savings-type workbooks must reference the SAME canonical calculation source.
+
+============================================================
+10. COMPLETE EVIDENCE PACKAGE
+============================================================
+
+Verify the ZIP contains the applicable files:
+
+01_Module_1_Evidence.xlsx
+02_Module_2_Evidence.xlsx
+03_PCBI_Evidence.xlsx
+04_Savings_Engine_Evidence.xlsx
+
+04A_Vendor_Consolidation_Evidence.xlsx
+04B_Benchmark_Price_Gap_Evidence.xlsx
+04C_Strategic_Sourcing_Evidence.xlsx
+04D_Strategic_Market_Value_Evidence.xlsx
+04E_Process_Productivity_Evidence.xlsx
+04F_Cost_Avoidance_Risk_Evidence.xlsx
+04G_Realized_Savings_Evidence.xlsx
+
+05_Financial_Validation.xlsx
+06_Data_Version_Diff.xlsx
+07_Report_Evidence.xlsx
+08_Management_Quick_Summary_Evidence.xlsx
+09_Analysis_Run_Control.xlsx
+
+Only include files that are applicable.
+
+Open every workbook in the ZIP programmatically and verify it is valid.
+
+============================================================
+11. DOWNLOAD API VALIDATION
+============================================================
+
+Test the actual Module 4 download routes.
+
+For every savings type verify:
+
+- correct Analysis Job
+- correct tenant
+- correct savings type
+- correct workbook
+- correct filename
+- XLSX content
+- authorization
+- audit logging
+
+Verify invalid savings types are rejected.
+
+Verify invalid job IDs are rejected.
+
+Verify cross-tenant access is rejected.
+
+============================================================
+12. SECURITY
+============================================================
+
+Maintain existing security.
+
+Verify:
+
+- CUSTOMER_VIEWER cannot access unauthorized evidence
+- CUSTOMER_ANALYST cannot access unauthorized evidence
+- authorized Admin/Consultant access works
+- tenant is resolved server-side
+- no public static workbook URLs
+- downloads are audited
+- another tenant's workbook cannot be accessed
+
+Do not weaken existing authorization.
+
+============================================================
+13. DO NOT CHANGE
+============================================================
+
+Do NOT redesign the UI.
+
+Do NOT change:
+
+- Module 1
+- Module 2
+- PCBI
+- Module 4 financial calculation logic
+- subscriptions
+- authentication
+- Analysis Orchestration
+- report approval
+- Management Quick Summary
+- Boardroom report
+
+unless the population investigation proves an actual defect.
+
+Do not change financial source-of-truth values merely to make tests pass.
+
+============================================================
+14. TESTING
+============================================================
+
+Prompt 308 already passed the complete monorepo quality suite.
+
+Do NOT rerun all 2,739 tests unless changes made during this validation require regression testing.
+
+Run only targeted tests necessary for:
+
+- actual workbook generation
+- workbook content inspection
+- Module 4 savings-type downloads
+- parity
+- population investigation
+- security
+- ZIP package
+
+If you make code changes, run the relevant regression tests.
+
+============================================================
+15. FINAL REPORT
+============================================================
+
+Return a factual final report containing:
+
+A. Actual XLSX files generated
+B. Actual sheets inspected
+C. Evidence-content validation
+D. Per-savings-type validation
+E. UI vs Workbook vs Canonical parity
+F. Financial reconciliation
+G. Population discrepancy investigation
+H. Module 4 download validation
+I. Complete ZIP validation
+J. Security validation
+K. Targeted test results
+L. Any code changes made
+M. Typecheck/lint/build status if rerun
+N. Browser validation status
+O. Remaining issues
+
+MOST IMPORTANT:
+
+Do NOT say "fully validated" simply because tests pass.
+
+The final acceptance criterion is:
+
+EVERY IMPORTANT SAVINGS NUMBER IN MODULE 4
+→ HAS A VISIBLE EVIDENCE EXCEL
+→ THAT CONTAINS THE CALCULATION BEHIND THAT NUMBER
+→ SUPPORTING ANALYSIS
+→ SUPPORTING RECORDS WHERE APPLICABLE
+→ RECONCILIATION
+→ AND TRACEABILITY TO THE CANONICAL SOURCE.
+
+If browser automation is unavailable, explicitly state:
+
+"Browser validation blocked by environment; actual workbook generation and content validation completed."
+
+FINAL PRINCIPLE:
+
+When a CFO asks:
+
+"Why is this savings opportunity ₹X Cr?"
+
+the answer must be:
+
+"Click Evidence Excel."
+
+And that Excel must contain enough evidence to independently validate the answer.
+
+---
+
+## Prompt 310
+continue

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { RawDocumentIngestion } from '../types';
 import { db } from '../services/db';
 import { objectStore } from '../services/objectStoreService';
+import { analysisOrchestrationService } from '../services/analysisOrchestrationService';
 import logger from '../utils/logger';
 
 export const getIngestionData = async (req: Request, res: Response): Promise<Response | void> => {
@@ -39,35 +40,62 @@ export const getIngestionData = async (req: Request, res: Response): Promise<Res
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to fetch ingestion data';
     logger.error('Failed to fetch ingestion data', {}, error);
-    return res.status(500).json({
-      success: false,
-      message
-    });
+    return res.status(500).json({ success: false, message });
   }
+};
+
+const resolveTenantId = (bodyTenant?: string, bodyBuyer?: string, req?: Request): string => {
+  if (bodyTenant) return bodyTenant;
+  if (bodyBuyer) return bodyBuyer;
+  if (req?.headers?.['x-buyer-id']) return req.headers['x-buyer-id'] as string;
+  if (req?.headers?.['x-tenant-id']) return req.headers['x-tenant-id'] as string;
+  return 'DEFAULT_TENANT';
+};
+
+const spawnAnalysisJob = (
+  tenantId: string, uploadId: string, fileName: string, fileType: string | undefined,
+  fileSizeMb: number | undefined, spendCr: number | undefined, txCount: number | undefined,
+  req: Request, fileBuffer?: Buffer
+): ReturnType<typeof analysisOrchestrationService.createAnalysisJob> => {
+  return analysisOrchestrationService.createAnalysisJob({
+    tenantId,
+    customerName: (req?.headers?.['x-company-name'] as string) || 'Enterprise Client',
+    uploadedBy: (req?.headers?.['x-user-email'] as string) || 'customer@procucev.com',
+    originalUploadId: uploadId,
+    fileName: fileName || 'spend_data.xlsx',
+    fileType: fileType || 'XLSX',
+    fileSizeMb: fileSizeMb || 1.0,
+    fileBuffer,
+    totalSpendCr: spendCr || 428.5,
+    totalTransactions: txCount || 100
+  });
 };
 
 export const addIngestionFile = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const body = req?.body || {};
     const updatedQueue = db.addIngestionItem(body);
-    logger.info('File ingested into queue', {
+    const tenantId = resolveTenantId(body?.tenant_id, body?.buyer_id, req);
+    const analysisJob = spawnAnalysisJob(
+      tenantId, `upload-${Date.now()}`, body.file_name, body.file_type,
+      body.file_size_mb, body.converted_inr_crores, body.records_count, req
+    );
+    logger.info('File ingested into queue and Analysis Job created', {
       fileName: body.file_name,
       fileType: body.file_type,
-      fileSizeMb: body.file_size_mb
+      fileSizeMb: body.file_size_mb,
+      jobId: analysisJob.analysisJobId
     });
     return res.json({
       success: true,
-      data: updatedQueue,
+      data: { queue: updatedQueue, analysisJob },
       message: 'File ingested successfully into queue',
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to add ingestion file';
     logger.error('Failed to add ingestion file', { body: req?.body }, error);
-    return res.status(400).json({
-      success: false,
-      message
-    });
+    return res.status(400).json({ success: false, message });
   }
 };
 
@@ -158,14 +186,6 @@ const resolveContentType = (fileType?: string): string => {
   return 'text/csv';
 };
 
-const resolveTenantId = (bodyTenant?: string, bodyBuyer?: string, req?: Request): string => {
-  if (bodyTenant) return bodyTenant;
-  if (bodyBuyer) return bodyBuyer;
-  if (req?.headers['x-buyer-id']) return req.headers['x-buyer-id'] as string;
-  if (req?.headers['x-tenant-id']) return req.headers['x-tenant-id'] as string;
-  return 'DEFAULT_TENANT';
-};
-
 export const uploadDocumentToObjectStore = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const {
@@ -210,54 +230,53 @@ export const uploadDocumentToObjectStore = async (req: Request, res: Response): 
     };
 
     const updatedQueue = db.addIngestionItem(ingestionItem);
+    const analysisJob = spawnAnalysisJob(
+      effectiveTenantId,
+      objectMeta.key,
+      fileName,
+      fileType,
+      calculatedSizeMb,
+      convertedInrCrores,
+      recordsCount,
+      req,
+      buffer
+    );
 
-    logger.info('Dataset uploaded and registered in Object Store', {
+    logger.info('Dataset uploaded, registered in Object Store and Analysis Job created', {
       key: objectMeta.key,
       fileName,
       recordsCount,
-      tenantId: effectiveTenantId
+      tenantId: effectiveTenantId,
+      jobId: analysisJob.analysisJobId
     });
 
     return res.json({
       success: true,
-      data: {
-        objectMeta,
-        ingestionQueue: updatedQueue
-      },
+      data: { objectMeta, ingestionQueue: updatedQueue, analysisJob },
       message: 'Dataset uploaded and persisted in Object Store successfully',
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to upload document to Object Store';
     logger.error('Failed to upload document to Object Store', {}, error);
-    return res.status(500).json({
-      success: false,
-      message
-    });
+    return res.status(500).json({ success: false, message });
   }
 };
 
 export const getStoredObject = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const key = req.params.key;
-    if (!key) {
-      return res.status(400).json({ success: false, message: 'Missing object key' });
-    }
+    if (!key) return res.status(400).json({ success: false, message: 'Missing object key' });
     const decodedKey = decodeURIComponent(key);
     const obj = await objectStore.getObject(decodedKey);
-    if (!obj) {
-      return res.status(404).json({ success: false, message: 'Object not found in Object Store' });
-    }
+    if (!obj) return res.status(404).json({ success: false, message: 'Object not found in Object Store' });
     res.setHeader('Content-Type', obj.metadata.contentType);
     res.setHeader('Content-Disposition', `inline; filename="${obj.metadata.filename}"`);
     return res.send(obj.buffer);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to retrieve object';
     logger.error('Failed to retrieve object', { params: req.params }, error);
-    return res.status(500).json({
-      success: false,
-      message
-    });
+    return res.status(500).json({ success: false, message });
   }
 };
 
@@ -276,9 +295,6 @@ export const deleteIngestionDocument = async (req: Request, res: Response): Prom
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to delete ingestion document';
     logger.error('Failed to delete ingestion document', { params: req.params }, error);
-    return res.status(500).json({
-      success: false,
-      message
-    });
+    return res.status(500).json({ success: false, message });
   }
 };

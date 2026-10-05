@@ -49,3 +49,5 @@ export * from './executiveBriefGovernance';
 export * from './executiveBriefPresentationConstants';
 export * from './subscription';
 export * from './theme';
+export * from './analysisOrchestration';
+export * from './evidenceWorkbook';

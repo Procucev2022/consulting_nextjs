@@ -17,6 +17,7 @@ import { StrategicSavingsSummaryBanner } from './savings/StrategicSavingsSummary
 import { SavingsWaterfallSection } from './savings/SavingsWaterfallSection';
 import { OverlapDeduplicationTable } from './savings/OverlapDeduplicationTable';
 import { ActionPlanTracker } from './savings/ActionPlanTracker';
+import { SavingsTypeEvidenceSection } from './savings/SavingsTypeEvidenceSection';
 import { buildStrategicSavingsSummary } from '../utils/strategicSavingsCalculator';
 import { apiClient } from '../utils/api';
 import type {
@@ -317,6 +318,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 5B. Dedicated Per-Savings-Type Evidence Workbooks (Prompt 306) */}
+      <SavingsTypeEvidenceSection />
 
       {/* 6. Savings Opportunities Action Pipeline Table */}
       {currentTier === 'SILVER' ? (

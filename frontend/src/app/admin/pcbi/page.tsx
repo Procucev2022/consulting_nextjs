@@ -132,6 +132,14 @@ export default function AdminPCBIPage(): React.ReactElement {
             </div>
 
             <Link
+              href="/admin/analysis"
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#F8FBFE] text-[#0B1B33] border border-[#DCE7F5] font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+            >
+              <Layers size={13} className="text-[#0284C7]" />
+              <span>Analysis Control Center</span>
+            </Link>
+
+            <Link
               href="/admin/dashboard"
               className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#F8FBFE] text-[#0B1B33] border border-[#DCE7F5] font-semibold flex items-center gap-1.5 transition-all shadow-xs"
             >

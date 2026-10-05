@@ -1,14 +1,14 @@
 # MODULE 2 - FINAL END-TO-END BUSINESS VALIDATION REPORT
 **Version**: MODULE_2_FINAL_E2E_VALIDATION_V1.0
-**Generated**: 2026-10-03T16:08:12.006Z
+**Generated**: 2026-10-04T11:49:56.989Z
 **Baseline Dataset**: Customer Certified Transaction Records (33 Transactions, ₹40.11 Cr Total Spend)
 
 ---
 
 ## 1. Data Reconciliation (Section 2)
 - **DATA_RECONCILIATION_STATUS**: PASS
-- Total Customer Spend: ₹401,093,500 (₹40.11 Cr)
-- Sum of valid transaction values: ₹401,093,500 (100% reconciled)
+- Total Customer Spend: ₹40,10,93,500 (₹40.11 Cr)
+- Sum of valid transaction values: ₹40,10,93,500 (100% reconciled)
 - Unexplained variance: ₹0.00 across all 6 categories and 19 suppliers.
 
 ---

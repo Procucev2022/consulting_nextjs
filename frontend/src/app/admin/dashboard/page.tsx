@@ -276,6 +276,13 @@ export default function AdminDashboardPage(): React.ReactElement {
                 <span>User Directory</span>
               </span>
               <Link
+                href="/admin/analysis"
+                className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#EEF4FC] transition-all flex items-center gap-1.5"
+              >
+                <Layers size={13} />
+                <span>Analysis Control Center</span>
+              </Link>
+              <Link
                 href="/admin/pcbi"
                 className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-[#EEF4FC] transition-all flex items-center gap-1.5"
               >

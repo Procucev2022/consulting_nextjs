@@ -244,7 +244,9 @@ describe('Home Page Component', () => {
     // Navigate to Module 2
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
-    expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
+    });
 
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);
@@ -388,7 +390,9 @@ describe('Home Page Component', () => {
     // Module 1 -> Module 2
     const proceedToCat = await screen.findByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
     fireEvent.click(proceedToCat);
-    expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
+    });
 
     // Line item confirm and reassign in Module 2
     const confirmBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module2.btnConfirm });

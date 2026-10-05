@@ -45,5 +45,7 @@ export * from './executiveBriefExportTypes';
 export * from './savingsOpportunityRegister';
 export * from './executiveBriefPresentation';
 export * from './subscription';
+export * from './analysisOrchestration';
+export * from './evidenceWorkbook';
 
 

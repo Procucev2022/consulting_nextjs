@@ -1,0 +1,641 @@
+{
+  "timestamp": "2026-10-04T13:44:21.594Z",
+  "status": "COMPLETE_SUCCESS",
+  "generatedWorkbooksCount": 16,
+  "zipSizeBytes": 100208,
+  "threeWayParity": [
+    {
+      "type": "Vendor Consolidation",
+      "ui": "₹6.17 Cr",
+      "wb": "₹6.17 Cr",
+      "canonical": "₹6.17 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Benchmark Price Gap (Gross)",
+      "ui": "₹80.67 Cr",
+      "wb": "₹80.67 Cr",
+      "canonical": "₹80.67 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Benchmark Price Gap (Excl-Adj Net)",
+      "ui": "₹29.73 Cr",
+      "wb": "₹29.73 Cr",
+      "canonical": "₹29.73 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Strategic Sourcing (Gross)",
+      "ui": "₹71.40 Cr",
+      "wb": "₹71.40 Cr",
+      "canonical": "₹71.40 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Strategic Sourcing (Excl-Adj Net)",
+      "ui": "₹42.82 Cr",
+      "wb": "₹42.82 Cr",
+      "canonical": "₹42.82 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Strategic Market Value",
+      "ui": "₹14.88 Cr",
+      "wb": "₹14.88 Cr",
+      "canonical": "₹14.88 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Process Productivity",
+      "ui": "20% PO Effort",
+      "wb": "20% PO Effort",
+      "canonical": "20% PO Effort",
+      "var": "0%",
+      "status": "PASS"
+    },
+    {
+      "type": "Cost Avoidance / Risk",
+      "ui": "₹420.00 Cr",
+      "wb": "₹420.00 Cr",
+      "canonical": "₹420.00 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    },
+    {
+      "type": "Realized Savings (Historical)",
+      "ui": "₹68.00 Cr",
+      "wb": "₹68.00 Cr",
+      "canonical": "₹68.00 Cr",
+      "var": "₹0.00 Cr",
+      "status": "PASS"
+    }
+  ],
+  "financialBridge": {
+    "grossOpportunityCr": 173.12,
+    "overlapDeductionsCr": 62.8,
+    "exclusionsCr": 16.72,
+    "netDefensiblePipelineCr": 93.6,
+    "strategicMarketValueCr": 14.88,
+    "netDirectSavingsCr": 78.72,
+    "varianceCr": 0
+  },
+  "workbooks": [
+    {
+      "filename": "04A_Vendor_Consolidation_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 6,
+          "colCount": 3
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 5,
+          "colCount": 3
+        },
+        {
+          "name": "04_SUPPLIER_ANALYSIS",
+          "rowCount": 3,
+          "colCount": 5
+        },
+        {
+          "name": "05_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 5
+        }
+      ]
+    },
+    {
+      "filename": "04B_Benchmark_Price_Gap_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 5,
+          "colCount": 3
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 5,
+          "colCount": 3
+        },
+        {
+          "name": "04_ITEM_EVIDENCE",
+          "rowCount": 2,
+          "colCount": 8
+        },
+        {
+          "name": "05_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 5
+        }
+      ]
+    },
+    {
+      "filename": "04C_Strategic_Sourcing_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 5,
+          "colCount": 3
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 5,
+          "colCount": 3
+        },
+        {
+          "name": "04_SOURCING_LEVERS",
+          "rowCount": 3,
+          "colCount": 5
+        },
+        {
+          "name": "05_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 5
+        }
+      ]
+    },
+    {
+      "filename": "04D_Strategic_Market_Value_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 4,
+          "colCount": 3
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 4,
+          "colCount": 3
+        },
+        {
+          "name": "04_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 3
+        }
+      ]
+    },
+    {
+      "filename": "04E_Process_Productivity_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 4,
+          "colCount": 3
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 4,
+          "colCount": 3
+        },
+        {
+          "name": "04_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 4
+        }
+      ]
+    },
+    {
+      "filename": "04F_Cost_Avoidance_Risk_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 3,
+          "colCount": 3
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 4,
+          "colCount": 3
+        },
+        {
+          "name": "04_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 3
+        }
+      ]
+    },
+    {
+      "filename": "04G_Realized_Savings_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 16,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 3,
+          "colCount": 3
+        },
+        {
+          "name": "03_AUDITED_LEDGER",
+          "rowCount": 4,
+          "colCount": 4
+        },
+        {
+          "name": "04_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 3
+        }
+      ]
+    },
+    {
+      "filename": "04_Savings_Engine_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 10,
+          "colCount": 8
+        },
+        {
+          "name": "03_INITIATIVE_LEDGER",
+          "rowCount": 4,
+          "colCount": 10
+        },
+        {
+          "name": "04_LEVER_CALCULATIONS",
+          "rowCount": 3,
+          "colCount": 3
+        },
+        {
+          "name": "05_OVERLAP_DEDUCTIONS",
+          "rowCount": 3,
+          "colCount": 3
+        },
+        {
+          "name": "06_EXCLUSIONS",
+          "rowCount": 3,
+          "colCount": 3
+        },
+        {
+          "name": "07_SUPPORTING_RECORDS",
+          "rowCount": 2,
+          "colCount": 5
+        },
+        {
+          "name": "08_RECONCILIATION",
+          "rowCount": 7,
+          "colCount": 3
+        },
+        {
+          "name": "09_ASSUMPTIONS",
+          "rowCount": 4,
+          "colCount": 2
+        },
+        {
+          "name": "10_AUDIT_TRAIL",
+          "rowCount": 1,
+          "colCount": 4
+        }
+      ]
+    },
+    {
+      "filename": "01_Module_1_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 10,
+          "colCount": 8
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 5,
+          "colCount": 11
+        },
+        {
+          "name": "04_SUPPLIER_ANALYSIS",
+          "rowCount": 6,
+          "colCount": 8
+        },
+        {
+          "name": "05_CATEGORY_ANALYSIS",
+          "rowCount": 5,
+          "colCount": 6
+        },
+        {
+          "name": "06_PLANT_ANALYSIS",
+          "rowCount": 4,
+          "colCount": 5
+        },
+        {
+          "name": "07_SOURCE_RECORDS",
+          "rowCount": 3,
+          "colCount": 10
+        },
+        {
+          "name": "08_RECONCILIATION",
+          "rowCount": 4,
+          "colCount": 5
+        }
+      ]
+    },
+    {
+      "filename": "02_Module_2_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 10,
+          "colCount": 8
+        },
+        {
+          "name": "03_CATEGORY_CONCENTRATION",
+          "rowCount": 4,
+          "colCount": 5
+        },
+        {
+          "name": "04_SOURCING_LEVERS",
+          "rowCount": 4,
+          "colCount": 6
+        },
+        {
+          "name": "05_SOURCE_RECORDS",
+          "rowCount": 2,
+          "colCount": 6
+        },
+        {
+          "name": "06_RECONCILIATION",
+          "rowCount": 2,
+          "colCount": 5
+        }
+      ]
+    },
+    {
+      "filename": "03_PCBI_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 10,
+          "colCount": 8
+        },
+        {
+          "name": "03_PCBI_SUMMARY",
+          "rowCount": 4,
+          "colCount": 5
+        },
+        {
+          "name": "04_PCBI_ID_CALCULATION",
+          "rowCount": 3,
+          "colCount": 7
+        },
+        {
+          "name": "05_BENCHMARK_MAPPING",
+          "rowCount": 2,
+          "colCount": 5
+        },
+        {
+          "name": "06_BENCHMARK_SOURCES",
+          "rowCount": 2,
+          "colCount": 4
+        },
+        {
+          "name": "07_COVERED",
+          "rowCount": 1,
+          "colCount": 4
+        },
+        {
+          "name": "08_MISSING_REQUIRED",
+          "rowCount": 1,
+          "colCount": 4
+        },
+        {
+          "name": "09_NOT_BENCHMARKABLE",
+          "rowCount": 1,
+          "colCount": 3
+        },
+        {
+          "name": "10_SERVICE_NON_COMMODITY",
+          "rowCount": 1,
+          "colCount": 3
+        },
+        {
+          "name": "11_EXCLUDED_MANUAL_REVIEW",
+          "rowCount": 1,
+          "colCount": 3
+        }
+      ]
+    },
+    {
+      "filename": "05_Financial_Validation.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_EXECUTIVE_SUMMARY",
+          "rowCount": 10,
+          "colCount": 8
+        },
+        {
+          "name": "03_CALCULATION_BRIDGE",
+          "rowCount": 5,
+          "colCount": 11
+        },
+        {
+          "name": "04_MANDATORY_9_CHECKS",
+          "rowCount": 9,
+          "colCount": 7
+        },
+        {
+          "name": "05_ISOLATION_CHECKS",
+          "rowCount": 4,
+          "colCount": 5
+        },
+        {
+          "name": "06_RECONCILIATION",
+          "rowCount": 7,
+          "colCount": 3
+        }
+      ]
+    },
+    {
+      "filename": "06_Data_Version_Diff.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_VERSION_SUMMARY",
+          "rowCount": 6,
+          "colCount": 5
+        },
+        {
+          "name": "03_SPEND_CHANGES",
+          "rowCount": 2,
+          "colCount": 5
+        },
+        {
+          "name": "04_TRANSACTION_CHANGES",
+          "rowCount": 2,
+          "colCount": 5
+        },
+        {
+          "name": "05_AUDIT_TRAIL",
+          "rowCount": 1,
+          "colCount": 4
+        }
+      ]
+    },
+    {
+      "filename": "07_Report_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_REPORT_LINEAGE",
+          "rowCount": 2,
+          "colCount": 6
+        },
+        {
+          "name": "03_SECTION_BREAKDOWN",
+          "rowCount": 4,
+          "colCount": 4
+        },
+        {
+          "name": "04_APPROVAL_GATE",
+          "rowCount": 4,
+          "colCount": 4
+        },
+        {
+          "name": "05_CUSTOMER_VISIBILITY",
+          "rowCount": 3,
+          "colCount": 4
+        },
+        {
+          "name": "06_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 5
+        }
+      ]
+    },
+    {
+      "filename": "08_Management_Quick_Summary_Evidence.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_SLIDE_KPI_MATRIX",
+          "rowCount": 10,
+          "colCount": 7
+        },
+        {
+          "name": "03_HEADLINE_TOTALS",
+          "rowCount": 3,
+          "colCount": 4
+        },
+        {
+          "name": "04_GOVERNANCE_NOTES",
+          "rowCount": 1,
+          "colCount": 2
+        },
+        {
+          "name": "05_RECONCILIATION",
+          "rowCount": 1,
+          "colCount": 3
+        }
+      ]
+    },
+    {
+      "filename": "09_Analysis_Run_Control.xlsx",
+      "sheets": [
+        {
+          "name": "01_README",
+          "rowCount": 18,
+          "colCount": 3
+        },
+        {
+          "name": "02_RUN_METADATA",
+          "rowCount": 7,
+          "colCount": 2
+        },
+        {
+          "name": "03_EXECUTION_TIMINGS",
+          "rowCount": 6,
+          "colCount": 4
+        },
+        {
+          "name": "04_GATE_CHECKLISTS",
+          "rowCount": 4,
+          "colCount": 3
+        },
+        {
+          "name": "05_EXCEPTION_LOG",
+          "rowCount": 1,
+          "colCount": 3
+        },
+        {
+          "name": "06_FINAL_SIGN_OFF",
+          "rowCount": 1,
+          "colCount": 4
+        }
+      ]
+    }
+  ]
+}

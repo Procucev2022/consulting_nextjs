@@ -33,6 +33,15 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
   const [downloadFilename, setDownloadFilename] = useState<string>('');
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
+  const isMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const strings = EXECUTIVE_BRIEF_EXPORT_STRINGS;
 
   const fetchStatus = useCallback(async (): Promise<void> => {
@@ -43,7 +52,9 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
         throw new Error(`Status HTTP ${res.status}`);
       }
       const data: ExecutiveBriefExportStatusResponse = await res.json();
-      setStatusData(data);
+      if (isMountedRef.current) {
+        setStatusData(data);
+      }
     } catch (err: unknown) {
       frontendLogger.warn('Failed to load export status', { error: String(err) });
     }
@@ -54,6 +65,7 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
   }, [fetchStatus]);
 
   const triggerDownload = (url: string, filename: string): void => {
+    if (!isMountedRef.current) return;
     setDownloadUrl(url);
     setDownloadFilename(filename);
     setTimeout(() => {
@@ -69,10 +81,12 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
 
     try {
       await new Promise((r) => setTimeout(r, 120));
+      if (!isMountedRef.current) return;
       setExportStatus(format === 'pdf' ? 'GENERATING_PDF' : 'GENERATING_PPTX');
       setStatusMessage(format === 'pdf' ? strings.states.generatingPdf : strings.states.generatingPptx);
 
       await new Promise((r) => setTimeout(r, 150));
+      if (!isMountedRef.current) return;
       setExportStatus('VALIDATING');
       setStatusMessage(strings.states.validating);
 
@@ -80,11 +94,15 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
       const endpoint = `/api/reports/executive-brief/download/${format}${q}`;
       const res = await fetch(endpoint);
 
+      if (!isMountedRef.current) return;
+
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({ message: `Export failed (${res.status})` }));
         const reason = errJson.message || `HTTP ${res.status}`;
-        setExportStatus('EXECUTIVE_BRIEF_EXPORT_BLOCKED');
-        setStatusMessage(reason);
+        if (isMountedRef.current) {
+          setExportStatus('EXECUTIVE_BRIEF_EXPORT_BLOCKED');
+          setStatusMessage(reason);
+        }
         onExportFailure?.(format, reason);
         return;
       }
@@ -97,6 +115,8 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
         filename = match[1];
       }
 
+      if (!isMountedRef.current) return;
+
       const url = window.URL.createObjectURL(blob);
       triggerDownload(url, filename);
       setExportStatus('EXECUTIVE_BRIEF_EXPORT_READY');
@@ -104,6 +124,7 @@ export const ExecutiveBriefExportPanel: React.FC<ExecutiveBriefExportPanelProps>
       onExportSuccess?.(format, filename);
       fetchStatus();
     } catch (err: unknown) {
+      if (!isMountedRef.current) return;
       const msg = err instanceof Error ? err.message : String(err);
       setExportStatus('EXECUTIVE_BRIEF_EXPORT_BLOCKED');
       setStatusMessage(msg);

@@ -626,3 +626,165 @@ model AuditLog {
   @@index([entity_id])
 }
 
+// ==========================================
+// ANALYSIS ORCHESTRATION & PCBI QUALITY GATE
+// ==========================================
+
+model AnalysisJob {
+  analysis_job_id         String    @id
+  tenant_id               String
+  customer_name           String
+  uploaded_by             String
+  original_upload_id      String
+  current_data_version_id String
+  module1_version_id      String
+  report_version_id       String?
+  status                  String    @default("UPLOADED")
+  total_spend_cr          Float     @default(0)
+  total_transactions      Int       @default(0)
+  analysis_period         String    @default("FY 2023 - FY 2026")
+  sla_hours_target        Int       @default(48)
+  failure_reason          String?
+  admin_notes             String?
+  customer_notes          String?
+  created_at              DateTime  @default(now())
+  queued_at               DateTime?
+  module1_ready_at        DateTime?
+  pcbi_review_started_at  DateTime?
+  pcbi_review_completed_at DateTime?
+  report_generated_at     DateTime?
+  admin_reviewed_at       DateTime?
+  approved_at             DateTime?
+  submitted_at            DateTime?
+  customer_viewed_at      DateTime?
+  acknowledged_at         DateTime?
+  assigned_admin_id       String?
+  last_updated_at         DateTime  @updatedAt
+
+  @@index([tenant_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model DatasetVersion {
+  version_id              String   @id
+  analysis_job_id         String
+  parent_version_id       String?
+  tenant_id               String
+  uploaded_by             String
+  uploader_role           String   @default("CUSTOMER")
+  file_name               String
+  file_type               String   @default("XLSX")
+  file_size_mb            Float    @default(0)
+  checksum                String
+  source                  String   @default("CUSTOMER_ORIGINAL")
+  correction_reason       String?
+  notes                   String?
+  processing_status       String   @default("PROCESSED")
+  validation_status       String   @default("VALID")
+  transaction_count       Int      @default(0)
+  supplier_count          Int      @default(0)
+  spend_inr_cr            Float    @default(0)
+  category_count          Int      @default(0)
+  plant_count             Int      @default(0)
+  uploaded_at             DateTime @default(now())
+
+  @@index([analysis_job_id])
+  @@index([tenant_id])
+}
+
+model PCBIGapReviewItem {
+  gap_id                  String   @id
+  analysis_job_id         String
+  tenant_id               String
+  item_category           String
+  relevant_classification String
+  customer_spend_inr_cr   Float
+  transaction_count       Int
+  supplier_count          Int
+  plant_count             Int
+  existing_pcbi_mapping   String?
+  required_pcbi_series    String?
+  benchmark_source        String?
+  pcbi_quality_rating     String?
+  status                  String   @default("PCBI_REQUIRED")
+  reason_for_review       String
+  estimated_spend_impact_cr Float
+  resolution_status       String   @default("PENDING")
+  exclusion_reason        String?
+  exclusion_notes         String?
+  resolved_by             String?
+  resolved_at             DateTime?
+
+  @@index([analysis_job_id])
+  @@index([tenant_id])
+  @@index([status])
+  @@index([resolution_status])
+}
+
+model ReportVersionRecord {
+  report_version_id       String   @id
+  analysis_job_id         String
+  dataset_version_id      String
+  pcbi_state_version      String   @default("V1.0")
+  status                  String   @default("GENERATED_PENDING_ADMIN_REVIEW")
+  is_customer_visible     Boolean  @default(false)
+  generated_by            String
+  approved_by             String?
+  approved_at             DateTime?
+  submitted_at            DateTime?
+  summary_metrics         Json?
+  generated_at            DateTime @default(now())
+
+  @@index([analysis_job_id])
+  @@index([status])
+  @@index([is_customer_visible])
+}
+
+model ReportAcknowledgementRecord {
+  acknowledgement_id      String   @id
+  report_version_id       String
+  analysis_job_id         String
+  tenant_id               String
+  user_id                 String
+  user_name               String
+  status                  String   @default("ACKNOWLEDGED")
+  notes                   String?
+  acknowledged_at         DateTime @default(now())
+
+  @@index([analysis_job_id])
+  @@index([tenant_id])
+}
+
+model CustomerCorrectionRequestRecord {
+  request_id              String   @id
+  analysis_job_id         String
+  tenant_id               String
+  user_id                 String
+  category                String
+  description             String
+  supporting_file_name    String?
+  status                  String   @default("OPEN")
+  reviewed_by             String?
+  admin_response          String?
+  created_at              DateTime @default(now())
+
+  @@index([analysis_job_id])
+  @@index([tenant_id])
+  @@index([status])
+}
+
+model OrchestrationNotificationRecord {
+  notification_id         String   @id
+  recipient_type          String   @default("ADMIN")
+  tenant_id               String
+  title                   String
+  message                 String
+  severity                String   @default("INFO")
+  read                    Boolean  @default(false)
+  created_at              DateTime @default(now())
+
+  @@index([recipient_type])
+  @@index([tenant_id])
+}
+
