@@ -133,4 +133,42 @@ describe('OrchestrationApiClient Unit Tests', () => {
     const trail = await client.getAuditTrail();
     expect(trail.length).toBe(1);
   });
+
+  it('should handle headers when user is admin without explicit tenantId', async () => {
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
+      role: 'ADMIN',
+      name: 'System Admin'
+    } as any);
+
+    mockFetchResponse({ success: true, data: [] });
+    await client.getJobs();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/orchestration/jobs'),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-user-role': 'ADMIN',
+          'x-tenant-id': 'DEFAULT_TENANT'
+        })
+      })
+    );
+  });
+
+  it('should handle headers when user is null', async () => {
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue(null as any);
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue(null as any);
+
+    mockFetchResponse({ success: true, data: [] });
+    await client.getJobs();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/orchestration/jobs'),
+      expect.objectContaining({
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+    );
+  });
 });
+

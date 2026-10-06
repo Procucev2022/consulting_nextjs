@@ -5,6 +5,7 @@
 import crypto from 'crypto';
 import type {
   AnalysisJob,
+  AnalysisJobStatus,
   DatasetVersion,
   DataVersionDiffSummary,
   PCBIGapCategory,
@@ -26,6 +27,7 @@ import {
 } from '../constants/analysisOrchestration';
 import { db } from './db';
 import { orchestrationEmailService } from './orchestrationEmailService';
+import { fxReferenceService } from './fxReferenceService';
 import logger from '../utils/logger';
 
 export class AnalysisOrchestrationService {
@@ -67,7 +69,11 @@ export class AnalysisOrchestrationService {
       totalSpendCr: tenant.total_spend_evaluated_inr || 428.5,
       totalTransactions: 31671,
       analysisPeriod: 'FY 2023 - FY 2026',
-      slaHoursTarget: DEFAULT_SLA_HOURS
+      slaHoursTarget: DEFAULT_SLA_HOURS,
+      fxMasterVersion: 'v2.0',
+      fxMasterFileName: 'aiCEV_FX_Master_2020_2026_v2.xlsx',
+      fxMasterChecksum: '7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f',
+      fxMasterAsOfDate: '2026-10-05'
     };
 
     const initialVersion: DatasetVersion = {
@@ -127,10 +133,12 @@ export class AnalysisOrchestrationService {
     fileBuffer?: Buffer;
     totalSpendCr?: number;
     totalTransactions?: number;
+    status?: AnalysisJobStatus;
   }): AnalysisJob {
     const jobId = `job-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
     const versionId = 'v1';
+    const initialStatus = params.status || 'PCBI_REVIEW_REQUIRED';
 
     const rawBuffer = params.fileBuffer || Buffer.from(params.fileName, 'utf-8');
     const checksum = crypto.createHash('sha256').update(rawBuffer).digest('hex');
@@ -143,7 +151,7 @@ export class AnalysisOrchestrationService {
       originalUploadId: params.originalUploadId,
       currentDataVersionId: versionId,
       module1VersionId: `m1-${versionId}`,
-      status: 'PCBI_REVIEW_REQUIRED',
+      status: initialStatus,
       createdAt: now,
       queuedAt: now,
       module1ReadyAt: now,
@@ -151,7 +159,11 @@ export class AnalysisOrchestrationService {
       totalSpendCr: params.totalSpendCr || 428.5,
       totalTransactions: params.totalTransactions || 100,
       analysisPeriod: 'FY 2023 - FY 2026',
-      slaHoursTarget: DEFAULT_SLA_HOURS
+      slaHoursTarget: DEFAULT_SLA_HOURS,
+      fxMasterVersion: fxReferenceService.getMasterVersion(),
+      fxMasterFileName: fxReferenceService.getMasterFileName(),
+      fxMasterChecksum: fxReferenceService.getMasterChecksum(),
+      fxMasterAsOfDate: fxReferenceService.getMasterAsOfDate()
     };
 
     const datasetVersion: DatasetVersion = {
@@ -353,7 +365,7 @@ export class AnalysisOrchestrationService {
   }
 
   /**
-   * 3. Get Analysis Jobs with role and tenant filtering
+   * 3. Get Analysis Jobs with role and tenant filtering (with First-Upload Guard)
    */
   public getJobs(options: {
     tenantId?: string;
@@ -363,11 +375,51 @@ export class AnalysisOrchestrationService {
   }): AnalysisJob[] {
     let result = Array.from(this.jobs.values());
 
-    // Tenant isolation: Non-admin users ONLY see their tenant's jobs
-    if (options.role !== 'ADMIN' && options.tenantId) {
-      result = result.filter((j) => j.tenantId === options.tenantId);
-    } else if (options.tenantId) {
-      result = result.filter((j) => j.tenantId === options.tenantId);
+    // Role-based filtering & First-Upload Guard
+    if (options.role === 'ADMIN') {
+      if (options.tenantId) {
+        result = result.filter((j) => j.tenantId === options.tenantId);
+      }
+    } else if (options.role === 'USER') {
+      // Non-admin customer access: STRICT FIRST-UPLOAD GUARD & TENANT ISOLATION
+      // 1. Authenticated customer tenant must be present and not empty or unauthenticated default
+      if (!options.tenantId || options.tenantId === 'DEFAULT_TENANT') {
+        return [];
+      }
+
+      result = result.filter((j) => {
+        // 2. Job must belong strictly to this customer tenant
+        if (j.tenantId !== options.tenantId) return false;
+
+        // 3. Valid Data Version must exist and be associated with this job
+        const versions = this.datasetVersions.get(j.analysisJobId) || [];
+        const hasValidDataVersion = versions.some(
+          (v) =>
+            v.versionId === j.currentDataVersionId &&
+            v.validationStatus === 'VALID' &&
+            v.tenantId === options.tenantId
+        );
+
+        if (!hasValidDataVersion) {
+          logger.warn('Filtered out orphan/invalid Analysis Job lacking valid Data Version for customer', {
+            jobId: j.analysisJobId,
+            tenantId: options.tenantId
+          });
+          return false;
+        }
+
+        // 4. Module 1 processing has actually started/completed
+        if (!j.module1ReadyAt && j.status === 'UPLOADED') {
+          return false;
+        }
+
+        return true;
+      });
+    } else {
+      // Internal or testing call where role is omitted
+      if (options.tenantId) {
+        result = result.filter((j) => j.tenantId === options.tenantId);
+      }
     }
 
     if (options.status && options.status !== 'ALL') {
@@ -389,7 +441,7 @@ export class AnalysisOrchestrationService {
   }
 
   /**
-   * 4. Get specific Analysis Job by ID
+   * 4. Get specific Analysis Job by ID (with First-Upload Guard)
    */
   public getJobById(jobId: string, tenantId?: string, role?: 'ADMIN' | 'USER'): {
     job: AnalysisJob;
@@ -412,6 +464,21 @@ export class AnalysisOrchestrationService {
         actualTenant: job.tenantId
       });
       return null;
+    }
+
+    // Customer first-upload & orphan guard in getJobById
+    if (role === 'USER') {
+      const jobVersions = this.datasetVersions.get(jobId) || [];
+      const hasValidVersion = jobVersions.some(
+        (v) =>
+          v.versionId === job.currentDataVersionId &&
+          v.validationStatus === 'VALID' &&
+          (!tenantId || v.tenantId === tenantId)
+      );
+      if (!hasValidVersion) {
+        logger.warn('Filtered out orphan job in getJobById for customer', { jobId, tenantId });
+        return null;
+      }
     }
 
     const versions = this.datasetVersions.get(jobId) || [];

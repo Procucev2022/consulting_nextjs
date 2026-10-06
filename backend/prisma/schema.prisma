@@ -788,3 +788,24 @@ model OrchestrationNotificationRecord {
   @@index([tenant_id])
 }
 
+model FxReferenceRate {
+  id                   String   @id @default(cuid())
+  currency             String
+  rate_date            String
+  raw_rate             Float?
+  raw_unit             Float?
+  raw_quote_convention String?
+  inr_per_unit         Float
+  source_id            String
+  source_name          String
+  rate_type            String
+  conversion_method    String
+  rate_status          String
+  fx_master_version    String
+  created_at           DateTime @default(now())
+
+  @@index([currency, rate_date])
+  @@index([currency])
+  @@index([rate_date])
+}
+

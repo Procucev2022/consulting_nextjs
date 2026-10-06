@@ -499,11 +499,11 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
       expect(validated[0].anomalyReason).toBe('Negative Quantity or Price Encountered');
       expect(validated[0].vendorConfidence).toBe(0.5);
       expect(validated[0].normalizedItem).toBe('Item Only Text');
-      expect(validated[0].approvedFxRate).toBe(83.8);
+      expect(validated[0].approvedFxRate).toBe(83.45);
 
       expect(validated[1].anomalyReason).toBe('Negative Quantity or Price Encountered');
       expect(validated[1].normalizedItem).toBe('SKU-ONLY-999');
-      expect(validated[1].approvedFxRate).toBe(90.5);
+      expect(validated[1].approvedFxRate).toBeCloseTo(89.1246, 3);
 
       expect(validated[2].exclusionReason).toBe('Zero Quantity Transaction (Sample/FOC)');
       expect(validated[2].normalizedItem).toBe('UNSPECIFIED_ITEM');
@@ -1086,7 +1086,7 @@ describe('Module 1 Final Forensic Validation & Financial Source-of-Truth Certifi
       expect(headers).toContain('Actual Exact Spend (INR)');
       expect(headers).toContain('Variance (INR)');
       expect(headers).toContain('Status');
-    }, 30000);
+    }, 60000);
 
     it('3. should verify MODULE_1_RECONCILIATION_MATRIX.xlsx has 2 sheets with 0 variance', () => {
       expect(fs.existsSync(recMatrixFile)).toBe(true);

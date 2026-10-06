@@ -89,7 +89,9 @@ describe('EvidenceWorkbookBuilder Unit Tests', () => {
       '05_CATEGORY_ANALYSIS',
       '06_PLANT_ANALYSIS',
       '07_SOURCE_RECORDS',
-      '08_RECONCILIATION'
+      '08_RECONCILIATION',
+      '09_FX_SUMMARY',
+      '10_FX_TRANSACTIONS'
     ]);
   });
 

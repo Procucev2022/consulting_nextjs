@@ -366,4 +366,108 @@ describe('AnalysisOrchestrationService Unit Tests', () => {
     const auditTrail = service.getAuditTrail();
     expect(auditTrail.length).toBeGreaterThan(0);
   });
+
+  // Prompt 313: First-Upload Guard & Lifecycle Tests
+  describe('Prompt 313 First-Upload Guard & Lifecycle Tests', () => {
+    it('TEST 1: brand new user with no uploaded dataset returns empty jobs array', () => {
+      const jobs = service.getJobs({
+        tenantId: 'tenant-brand-new-999',
+        role: 'USER'
+      });
+      expect(jobs).toEqual([]);
+
+      // Anonymous / DEFAULT_TENANT for non-admin also returns empty
+      const defaultJobs = service.getJobs({
+        tenantId: 'DEFAULT_TENANT',
+        role: 'USER'
+      });
+      expect(defaultJobs).toEqual([]);
+    });
+
+    it('TEST 2: customer upload creates analysis job with valid Data Version and MODULE_1_READY status', () => {
+      const job = service.createAnalysisJob({
+        tenantId: 'tenant-cust-first-upload',
+        customerName: 'First Upload Corp',
+        uploadedBy: 'first@corp.com',
+        originalUploadId: 'upl-first-001',
+        fileName: 'Customer_Spend_2026.xlsx',
+        status: 'MODULE_1_READY'
+      });
+
+      expect(job.status).toBe('MODULE_1_READY');
+      expect(job.currentDataVersionId).toBe('v1');
+      expect(job.module1ReadyAt).toBeDefined();
+
+      const customerJobs = service.getJobs({
+        tenantId: 'tenant-cust-first-upload',
+        role: 'USER'
+      });
+      expect(customerJobs.length).toBe(1);
+      expect(customerJobs[0].analysisJobId).toBe(job.analysisJobId);
+      expect(customerJobs[0].status).toBe('MODULE_1_READY');
+    });
+
+    it('TEST 5: customer A cannot see customer B analysis jobs (strict tenant isolation)', () => {
+      service.createAnalysisJob({
+        tenantId: 'tenant-customer-a',
+        customerName: 'Customer A Inc',
+        uploadedBy: 'a@corp.com',
+        originalUploadId: 'upl-a',
+        fileName: 'A.xlsx'
+      });
+
+      service.createAnalysisJob({
+        tenantId: 'tenant-customer-b',
+        customerName: 'Customer B Inc',
+        uploadedBy: 'b@corp.com',
+        originalUploadId: 'upl-b',
+        fileName: 'B.xlsx'
+      });
+
+      const customerAJobs = service.getJobs({ tenantId: 'tenant-customer-a', role: 'USER' });
+      expect(customerAJobs.length).toBe(1);
+      expect(customerAJobs[0].tenantId).toBe('tenant-customer-a');
+
+      const customerBJobs = service.getJobs({ tenantId: 'tenant-customer-b', role: 'USER' });
+      expect(customerBJobs.length).toBe(1);
+      expect(customerBJobs[0].tenantId).toBe('tenant-customer-b');
+    });
+
+    it('TEST 6: stale or orphan job without valid Data Version is safely filtered out and not shown to customer', () => {
+      const orphanJobId = 'job-orphan-stale-001';
+      // Inject orphan job without associated datasetVersions
+      (service as any).jobs.set(orphanJobId, {
+        analysisJobId: orphanJobId,
+        tenantId: 'tenant-orphan-test',
+        customerName: 'Orphan Corp',
+        uploadedBy: 'orphan@test.com',
+        originalUploadId: 'upl-orphan',
+        currentDataVersionId: 'v1',
+        module1VersionId: 'm1-v1',
+        status: 'PCBI_REVIEW_REQUIRED',
+        createdAt: new Date().toISOString(),
+        lastUpdatedAt: new Date().toISOString(),
+        totalSpendCr: 100,
+        totalTransactions: 50,
+        analysisPeriod: 'FY 2024-25',
+        slaHoursTarget: 48,
+        module1ReadyAt: new Date().toISOString()
+      });
+
+      // Customer should NOT see orphan job
+      const customerJobs = service.getJobs({ tenantId: 'tenant-orphan-test', role: 'USER' });
+      expect(customerJobs).toEqual([]);
+
+      const customerJobDetails = service.getJobById(orphanJobId, 'tenant-orphan-test', 'USER');
+      expect(customerJobDetails).toBeNull();
+    });
+
+    it('TEST 7: admin can query all jobs across tenants and view complete pipeline', () => {
+      const allJobs = service.getJobs({ role: 'ADMIN' });
+      expect(allJobs.length).toBeGreaterThanOrEqual(1);
+
+      const specificAdminView = service.getJobs({ role: 'ADMIN', tenantId: 'tenant-customer-a' });
+      expect(specificAdminView.every((j) => j.tenantId === 'tenant-customer-a')).toBe(true);
+    });
+  });
 });

@@ -40,3 +40,4 @@ export * from './orchestrationValidation';
 export * from './evidenceWorkbook';
 export * from './evidenceValidation';
 export * from './adminValidation';
+export * from './fxReference';

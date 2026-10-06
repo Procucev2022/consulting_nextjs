@@ -47,5 +47,6 @@ export * from './executiveBriefPresentation';
 export * from './subscription';
 export * from './analysisOrchestration';
 export * from './evidenceWorkbook';
-
+export * from './fxReference';
+export * from './vgt';
 

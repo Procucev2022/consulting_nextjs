@@ -45,6 +45,7 @@ import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { frontendLogger } from '@/utils/logger';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '@/data/unspscTaxonomy';
+import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 
@@ -81,6 +82,10 @@ const ExecutiveOpportunityBriefView = dynamic(
   () => import('@/components/presentation/ExecutiveOpportunityBriefView').then((mod) => mod.ExecutiveOpportunityBriefView),
   { ssr: false }
 );
+const DetailedAnalysisModal = dynamic(
+  () => import('@/components/modals/DetailedAnalysisModal').then((mod) => mod.DetailedAnalysisModal),
+  { ssr: false }
+);
 
 // Mock Data Seed
 import {
@@ -107,7 +112,8 @@ import type {
   ParetoRawRecord,
   SpendCategorySummary,
   UserProfile,
-  SubscriptionTier
+  SubscriptionTier,
+  AnalysisJob
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
@@ -213,6 +219,36 @@ export default function Home() {
     step3: false,
     step4: false
   });
+
+  const [activeAnalysisJob, setActiveAnalysisJob] = useState<AnalysisJob | null>(null);
+  const [isDetailedAnalysisModalOpen, setIsDetailedAnalysisModalOpen] = useState(false);
+
+  // Explicit lifecycle predicates (Prompt 313)
+  const hasValidDataVersion = Boolean(
+    (ingestionQueue?.length ?? 0) > 0 ||
+    (tenant?.total_spend_evaluated_inr ?? 0) > 0 ||
+    (uploadedMaterialGroups?.length ?? 0) > 0
+  );
+
+  const hasModule1Result = Boolean(
+    hasValidDataVersion &&
+    (
+      completedSteps.step1 ||
+      (uploadedMaterialGroups?.length ?? 0) > 0 ||
+      (validationRecords?.length ?? 0) > 0 ||
+      ingestionQueue?.some((doc) => (doc.records_count ?? 0) > 0)
+    )
+  );
+
+  const hasActiveDetailedAnalysis = Boolean(
+    activeAnalysisJob?.analysisJobId &&
+    activeAnalysisJob.analysisJobId !== 'job-init-default-001'
+  );
+
+  const shouldShowDetailedAnalysisStatus = Boolean(
+    hasValidDataVersion &&
+    hasActiveDetailedAnalysis
+  );
 
   const isStep1Complete = Boolean(
     completedSteps.step1 ||
@@ -443,6 +479,18 @@ export default function Home() {
               setOpportunities(savingsData.value.opportunities || []);
             }
           }
+        }
+
+        // Fetch authenticated customer's analysis state from the backend
+        try {
+          const jobs = await orchestrationApi.getJobs();
+          if (jobs.length > 0) {
+            setActiveAnalysisJob(jobs[0]);
+          } else {
+            setActiveAnalysisJob(null);
+          }
+        } catch {
+          setActiveAnalysisJob(null);
         }
       } catch (err) {
         frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
@@ -1432,7 +1480,7 @@ export default function Home() {
         // Base64 conversion fallback
       }
 
-      await apiClient.uploadDocumentToObjectStore({
+      const uploadRes: any = await apiClient.uploadDocumentToObjectStore({
         fileName: file.name,
         fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
         fileBase64: fileBase64 || undefined,
@@ -1444,6 +1492,17 @@ export default function Home() {
         buyer_id: loggedUser.id,
         tenant_id: loggedUser.id
       });
+      if (uploadRes?.data?.analysisJob) {
+        setActiveAnalysisJob(uploadRes.data.analysisJob);
+      } else {
+        try {
+          const jobs = await orchestrationApi.getJobs();
+          if (jobs.length > 0) setActiveAnalysisJob(jobs[0]);
+        } catch {
+          // safe fallback
+        }
+      }
+      setIsDetailedAnalysisModalOpen(true);
     } catch (e) {
       frontendLogger.warn('Backend sync warning for document upload', { error: e });
     }
@@ -1711,10 +1770,17 @@ export default function Home() {
         {/* Tab Modules */}
         {activeTab === 'module1' && (
           <>
-            <CustomerAnalysisStatusCard
-              onViewSpendSummary={() => setActiveTab('module1')}
-              onViewReport={() => setIsManagementSummaryOpen(true)}
-            />
+            {shouldShowDetailedAnalysisStatus && (
+              <CustomerAnalysisStatusCard
+                tenantId={tenant.tenant_id}
+                hasValidDataVersion={hasValidDataVersion}
+                hasModule1Result={hasModule1Result}
+                activeJob={activeAnalysisJob}
+                compact
+                onViewSpendSummary={() => setActiveTab('module1')}
+                onViewReport={() => setIsManagementSummaryOpen(true)}
+              />
+            )}
             <Module1Ingestion
             tenant={tenant}
             onUpdateTenant={handleUpdateTenant}
@@ -1930,6 +1996,44 @@ export default function Home() {
           <span className="text-slate-700 dark:text-slate-200">{toastMessage}</span>
         </div>
       )}
+
+      {/* Post-Module-1 Detailed Analysis Notification Modal (Prompt 313) */}
+      <DetailedAnalysisModal
+        isOpen={isDetailedAnalysisModalOpen}
+        onClose={() => {
+          setIsDetailedAnalysisModalOpen(false);
+          if (activeAnalysisJob?.analysisJobId) {
+            try {
+              sessionStorage.setItem(`procucev_analysis_popup_ack_${activeAnalysisJob.analysisJobId}`, 'true');
+            } catch {
+              // safe fallback
+            }
+          }
+        }}
+        onContinueToModule1={() => {
+          setIsDetailedAnalysisModalOpen(false);
+          setActiveTab('module1');
+          if (activeAnalysisJob?.analysisJobId) {
+            try {
+              sessionStorage.setItem(`procucev_analysis_popup_ack_${activeAnalysisJob.analysisJobId}`, 'true');
+            } catch {
+              // safe fallback
+            }
+          }
+        }}
+        onViewSpendSummary={() => {
+          setIsDetailedAnalysisModalOpen(false);
+          setActiveTab('module1');
+          if (activeAnalysisJob?.analysisJobId) {
+            try {
+              sessionStorage.setItem(`procucev_analysis_popup_ack_${activeAnalysisJob.analysisJobId}`, 'true');
+            } catch {
+              // safe fallback
+            }
+          }
+        }}
+        job={activeAnalysisJob}
+      />
 
       {/* Management Quick Summary Modal View (Prompt 287) */}
       {isManagementSummaryOpen && (

@@ -218,6 +218,10 @@ export interface AnalysisJob {
   totalTransactions: number;
   analysisPeriod: string;
   slaHoursTarget: number;
+  fxMasterVersion?: string;
+  fxMasterFileName?: string;
+  fxMasterChecksum?: string;
+  fxMasterAsOfDate?: string;
 }
 
 export interface CustomerReportAcknowledgement {
