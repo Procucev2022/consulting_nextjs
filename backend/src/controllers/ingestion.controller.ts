@@ -3,19 +3,12 @@ import type { RawDocumentIngestion } from '../types';
 import { db } from '../services/db';
 import { objectStore } from '../services/objectStoreService';
 import { analysisOrchestrationService } from '../services/analysisOrchestrationService';
+import { sanitizeAndRecomputeFxUpdates } from '../utils/validationRecordHelper';
 import logger from '../utils/logger';
 
 export const getIngestionData = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const tenantId =
-      (req?.query?.buyerId as string) ||
-      (req?.query?.buyer_id as string) ||
-      (req?.query?.tenantId as string) ||
-      (req?.query?.tenant_id as string) ||
-      (req?.headers?.['x-buyer-id'] as string) ||
-      (req?.headers?.['X-Buyer-Id'] as string) ||
-      (req?.headers?.['x-tenant-id'] as string) ||
-      (req?.headers?.['X-Tenant-Id'] as string);
+    const tenantId = (req?.query?.buyerId || req?.query?.tenantId || req?.headers?.['x-buyer-id'] || req?.headers?.['x-tenant-id']) as string;
     const queue = db.getIngestionQueue(tenantId);
     const validationRecords = db.getValidationRecords();
     logger.debug('Fetched ingestion data', {
@@ -67,7 +60,8 @@ const spawnAnalysisJob = (
     fileSizeMb: fileSizeMb || 1.0,
     fileBuffer,
     totalSpendCr: spendCr || 428.5,
-    totalTransactions: txCount || 100
+    totalTransactions: txCount || 100,
+    status: 'MODULE_1_READY'
   });
 };
 
@@ -106,6 +100,10 @@ export const updateValidationRecord = async (req: Request, res: Response): Promi
       logger.warn('Validation update rejected: Missing record_id');
       return res.status(400).json({ success: false, message: 'Missing record_id' });
     }
+
+    const existing = db.getValidationRecords().find((r) => r.record_id === recordId);
+    sanitizeAndRecomputeFxUpdates(updates, existing);
+
     const updated = db.updateValidationRecord(recordId, updates);
     if (!updated) {
       logger.warn('Validation record not found for update', { recordId });

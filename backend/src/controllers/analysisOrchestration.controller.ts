@@ -21,7 +21,7 @@ const extractAuthContext = (req: Request): { role: 'ADMIN' | 'USER'; tenantId: s
     (req.headers['x-tenant-id'] as string) ||
     (req.headers['x-buyer-id'] as string) ||
     (req.query.tenantId as string) ||
-    'DEFAULT_TENANT';
+    (role === 'ADMIN' ? 'DEFAULT_TENANT' : '');
   const userId = (req.headers['x-user-id'] as string) || 'usr-anonymous';
   const userName = (req.headers['x-user-name'] as string) || 'Customer Representative';
 

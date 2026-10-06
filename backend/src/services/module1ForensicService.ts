@@ -63,6 +63,8 @@ import {
   PARETO_TARGET_PERCENTAGE,
   APPROVED_HISTORICAL_FX_RATES
 } from '../constants/module1Forensic';
+import { fxReferenceService } from './fxReferenceService';
+import type { FxSpendSummary, FxTransactionInput } from '../types/fxReference';
 import logger from '../utils/logger';
 import { module1HardeningHelper } from './module1HardeningHelper';
 import { generatePrompt249Markdown } from './module1HardeningMarkdown';
@@ -157,31 +159,31 @@ export class Module1ForensicService {
         recordId,
         sourceRow,
         sourceFile: path.basename(targetPath),
-        purchasingDocCategory: r['Purch. Doc. Category'] ? String(r['Purch. Doc. Category']).trim() : undefined,
-        purchasingDocType: r['Purchasing Doc. Type'] ? String(r['Purchasing Doc. Type']).trim() : undefined,
+        purchasingDocCategory: (r['Purch. Doc. Category'] ?? r['Purch. doc. category']) ? String(r['Purch. Doc. Category'] ?? r['Purch. doc. category']).trim() : undefined,
+        purchasingDocType: (r['Purchasing Doc. Type'] ?? r['Purchasing Doc Type']) ? String(r['Purchasing Doc. Type'] ?? r['Purchasing Doc Type']).trim() : undefined,
         purchasingGroup: r['Purchasing Group'],
         poNumber: String(r['Purchasing Document'] || `PO-${idx + 1}`).trim(),
         poLine: r['Item'] != null ? r['Item'] : 10,
         documentDateRaw: r['Document Date'],
-        supplierCode: String(r['Supplier Code'] || '').trim(),
-        supplierName: String(r['Supplier Name'] || 'UNMAPPED_SUPPLIER').trim(),
+        supplierCode: String(r['Supplier Code'] ?? r['Vendor Code'] ?? '').trim(),
+        supplierName: String(r['Supplier Name'] ?? r['Vendor Name'] ?? r['Name of Vendor'] ?? 'UNMAPPED_SUPPLIER').trim(),
         materialCode: String(r['Material'] || '').trim(),
-        shortText: String(r['Short Text'] || '').trim(),
+        shortText: String(r['Short Text'] ?? r['Material Description'] ?? '').trim(),
         materialGroup: String(r['Material Group'] || 'DIRECT').trim().toUpperCase(),
         plant: String(r['Plant'] || '1000').trim(),
-        storageLocation: r['Storage location'] != null ? String(r['Storage location']).trim() : undefined,
+        storageLocation: (r['Storage location'] ?? r['Storage Location']) != null ? String(r['Storage location'] ?? r['Storage Location']).trim() : undefined,
         orderQuantity: Number(r['Order Quantity']) || 0,
         orderUnit: String(r['Order Unit'] || 'NOS').trim().toUpperCase(),
-        quantityInSku: r['Quantity in SKU'] != null ? Number(r['Quantity in SKU']) : undefined,
-        sku: r['Stockkeeping unit'] ? String(r['Stockkeeping unit']).trim() : undefined,
-        netPrice: Number(r['Net Price']) || 0,
+        quantityInSku: (r['Quantity in SKU'] ?? r['Quantity in Sku']) != null ? Number(r['Quantity in SKU'] ?? r['Quantity in Sku']) : undefined,
+        sku: (r['Stockkeeping unit'] ?? r['Stockkeeping Unit']) ? String(r['Stockkeeping unit'] ?? r['Stockkeeping Unit']).trim() : undefined,
+        netPrice: Number(r['Net Price'] ?? r['Net price']) || 0,
         currency: String(r['Currency'] || 'INR').trim().toUpperCase(),
-        totalInrRaw: Number(r['Total INR']) || 0,
-        totalInCrsRaw: Number(r['Total In Crs']) || 0,
-        priceUnit: r['Price unit'] != null ? Number(r['Price unit']) : 1,
-        deletionIndicator: r['Deletion indicator'] ? String(r['Deletion indicator']).trim() : undefined,
-        itemCategory: r['Item Category'] ? String(r['Item Category']).trim() : undefined,
-        acctAssignmentCat: r['Acct Assignment Cat.'] ? String(r['Acct Assignment Cat.']).trim() : undefined
+        totalInrRaw: Number(r['Total INR'] ?? r['Net Value in INR']) || 0,
+        totalInCrsRaw: Number(r['Total In Crs'] ?? r['Net Value in Crs']) || 0,
+        priceUnit: (r['Price unit'] ?? r['Price Unit']) != null ? Number(r['Price unit'] ?? r['Price Unit']) : 1,
+        deletionIndicator: (r['Deletion indicator'] ?? r['Deletion Indicator']) ? String(r['Deletion indicator'] ?? r['Deletion Indicator']).trim() : undefined,
+        itemCategory: (r['Item Category'] ?? r['Item category']) ? String(r['Item Category'] ?? r['Item category']).trim() : undefined,
+        acctAssignmentCat: (r['Acct Assignment Cat.'] ?? r['Acct Assignment Cat']) ? String(r['Acct Assignment Cat.'] ?? r['Acct Assignment Cat']).trim() : undefined
       });
     });
     if (!filePath) {
@@ -201,8 +203,9 @@ export class Module1ForensicService {
       const monthNum = parseInt(billingMonth.substring(5, 7), 10);
       const fiscalYear = monthNum >= 4 ? `FY${String(yearNum).slice(2)}-FY${String(yearNum + 1).slice(2)}` : `FY${String(yearNum - 1).slice(2)}-FY${String(yearNum).slice(2)}`;
 
+      const fxRes = fxReferenceService.resolveFxRate(raw.currency, txDate);
       const fxInfo = APPROVED_HISTORICAL_FX_RATES[raw.currency] || { rate: 1.0, date: txDate, source: 'DEFAULT_HISTORICAL' };
-      const approvedFxRate = fxInfo.rate;
+      const approvedFxRate = fxRes.rate !== null ? fxRes.rate : fxInfo.rate;
       const inrUnitPrice = raw.netPrice * approvedFxRate;
       const lineSpendInr = raw.orderQuantity * inrUnitPrice;
       const lineSpendCr = lineSpendInr / CRORE_CONVERSION_DIVISOR;
@@ -222,6 +225,9 @@ export class Module1ForensicService {
       } else if (raw.orderQuantity < 0 || raw.netPrice < 0) {
         inclusionStatus = 'ANOMALY';
         anomalyReason = 'Negative Quantity or Price Encountered';
+      } else if (fxRes.status === 'PENDING') {
+        inclusionStatus = 'REQUIRES_REVIEW';
+        anomalyReason = `Pending FX conversion: ${fxRes.notes || 'No approved historical rate'}`;
       }
 
       const normalizedVendor = raw.supplierName.toUpperCase().replace(/\s+/g, ' ').trim();
@@ -251,8 +257,8 @@ export class Module1ForensicService {
         netPrice: raw.netPrice,
         currency: raw.currency,
         approvedFxRate,
-        fxRateDate: fxInfo.date,
-        fxRateSource: fxInfo.source,
+        fxRateDate: fxRes.rateDateUsed || fxInfo.date,
+        fxRateSource: fxRes.sourceName || fxInfo.source,
         inrUnitPrice,
         lineSpendInr,
         lineSpendCr,
@@ -262,6 +268,22 @@ export class Module1ForensicService {
         duplicateStatus: 'LEGITIMATE_REPEAT_TRANSACTION'
       };
     });
+  }
+
+  /**
+   * Calculate Module 1 FX Spend Summary across validated transactions
+   */
+  public calculateModule1FxSpendSummary(validatedLedger: ValidatedTransactionLedgerRecord[]): FxSpendSummary {
+    const txInputs: FxTransactionInput[] = validatedLedger.map((r) => ({
+      transactionId: r.recordId,
+      originalValue: r.quantity * r.netPrice,
+      originalCurrency: r.currency,
+      transactionDate: r.transactionDate,
+      poNumber: r.poNumber,
+      supplierName: r.vendorName,
+      materialDescription: r.itemDescription
+    }));
+    return fxReferenceService.normalizeTransactions(txInputs).summary;
   }
 
   /**

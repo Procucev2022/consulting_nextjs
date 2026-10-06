@@ -35,8 +35,12 @@ export class OrchestrationApiClient {
     if (user?.role) headers['x-user-role'] = user.role;
     if (user?.id) headers['x-user-id'] = user.id;
     if (user?.name) headers['x-user-name'] = user.name;
-    if (user?.company_name) headers['x-company-name'] = user.company_name;
-    headers['x-tenant-id'] = user?.id || 'DEFAULT_TENANT';
+    const effectiveTenantId = (user as { tenant_id?: string })?.tenant_id || user?.id;
+    if (effectiveTenantId) {
+      headers['x-tenant-id'] = effectiveTenantId;
+    } else if (user?.role === 'ADMIN') {
+      headers['x-tenant-id'] = 'DEFAULT_TENANT';
+    }
     return headers;
   }
 

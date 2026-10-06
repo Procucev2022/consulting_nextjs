@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Customer Analysis Status Card (Prompt 302, Sections 2 & 35)
+ * Customer Analysis Status Card (Prompt 302, Prompt 313)
  * Reassuring enterprise status card tracking 24-48 hour turnaround SLA
  */
 
@@ -18,38 +18,48 @@ import {
 } from 'lucide-react';
 import { UI_STRINGS } from '../../constants';
 import { orchestrationApi } from '../../utils/orchestrationApi';
+import type { CustomerAnalysisStatusCardProps } from '../../types';
 import type { AnalysisJob, AnalysisJobStatus } from '../../types/analysisOrchestration';
-
-export interface CustomerAnalysisStatusCardProps {
-  tenantId?: string;
-  onViewSpendSummary?: () => void;
-  onViewReport?: () => void;
-}
 
 export function CustomerAnalysisStatusCard({
   tenantId,
+  hasValidDataVersion,
+  activeJob,
+  compact = false,
   onViewSpendSummary,
   onViewReport
-}: CustomerAnalysisStatusCardProps): React.ReactElement {
-  const [job, setJob] = useState<AnalysisJob | null>(null);
-  const [loading, setLoading] = useState(true);
+}: CustomerAnalysisStatusCardProps): React.ReactElement | null {
+  const [job, setJob] = useState<AnalysisJob | null>(activeJob || null);
+  const [loading, setLoading] = useState<boolean>(!activeJob);
 
   const loadJob = useCallback(async () => {
     try {
       const jobs = await orchestrationApi.getJobs();
       if (jobs.length > 0) {
         setJob(jobs[0]);
+      } else {
+        setJob(null);
       }
     } catch {
-      // Fallback silently if offline or initial load
+      setJob(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadJob();
-  }, [loadJob, tenantId]);
+    if (activeJob) {
+      setJob(activeJob);
+      setLoading(false);
+    } else {
+      loadJob();
+    }
+  }, [activeJob, loadJob, tenantId]);
+
+  // FIRST-UPLOAD GUARD: If loading, or no active persisted job, or explicitly no valid data version, return null
+  if (loading || !job?.analysisJobId || hasValidDataVersion === false) {
+    return null;
+  }
 
   const getStatusBadge = (status?: AnalysisJobStatus): { label: string; bg: string; text: string; icon: React.ReactElement } => {
     switch (status) {
@@ -101,27 +111,91 @@ export function CustomerAnalysisStatusCard({
     }
   };
 
-  const statusConfig = getStatusBadge(job?.status);
+  const statusConfig = getStatusBadge(job.status);
   const isReportAvailable =
-    job?.status === 'SUBMITTED_TO_CUSTOMER' ||
-    job?.status === 'CUSTOMER_VIEWED' ||
-    job?.status === 'CUSTOMER_ACKNOWLEDGED';
+    job.status === 'SUBMITTED_TO_CUSTOMER' ||
+    job.status === 'CUSTOMER_VIEWED' ||
+    job.status === 'CUSTOMER_ACKNOWLEDGED';
 
-  const formattedUploadDate = job?.createdAt
+  const formattedUploadDate = job.createdAt
     ? new Date(job.createdAt).toLocaleDateString(undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric'
       })
-    : 'Oct 04, 2026';
+    : '';
 
-  const formattedUpdatedDate = job?.lastUpdatedAt
+  const formattedUpdatedDate = job.lastUpdatedAt
     ? new Date(job.lastUpdatedAt).toLocaleDateString(undefined, {
         day: '2-digit',
         month: 'short',
         year: 'numeric'
       })
     : formattedUploadDate;
+
+  // Compact persistent status bar mode (post-popup acknowledgment)
+  if (compact) {
+    return (
+      <div
+        data-testid="customer-analysis-status-card"
+        className="bg-white rounded-xl border border-[#DCE7F5] shadow-xs px-4 py-3 transition-all mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#0284C7]/10 flex items-center justify-center text-[#0284C7] shrink-0">
+            <Sparkles size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#0B1B33]">
+                {UI_STRINGS.orchestration.compactBadgeDetailedAnalysisInProgress}
+              </span>
+              <div
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${statusConfig.bg} ${statusConfig.text}`}
+              >
+                {statusConfig.icon}
+                <span>{statusConfig.label}</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-[#64748B]">
+              {UI_STRINGS.orchestration.typicalAnalysisTime}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onViewSpendSummary && (
+            <button
+              type="button"
+              onClick={onViewSpendSummary}
+              className="px-3 py-1.5 rounded-lg border border-[#0284C7] text-[#0284C7] bg-white hover:bg-[#F0F7FF] text-xs font-bold transition-all shadow-xs"
+            >
+              {UI_STRINGS.orchestration.btnViewSpendSummary}
+            </button>
+          )}
+
+          {isReportAvailable && onViewReport && (
+            <button
+              type="button"
+              onClick={onViewReport}
+              className="px-3.5 py-1.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            >
+              <Eye size={14} />
+              <span>{UI_STRINGS.orchestration.btnViewApprovedReport}</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={loadJob}
+            aria-label="Refresh status"
+            className="p-1.5 rounded-lg border border-[#DCE7F5] text-[#64748B] hover:text-[#0B1B33] hover:bg-[#F8FBFE] transition-colors"
+          >
+            <RefreshCw size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -157,7 +231,7 @@ export function CustomerAnalysisStatusCard({
             aria-label="Refresh status"
             className="p-1.5 rounded-lg border border-[#DCE7F5] text-[#64748B] hover:text-[#0B1B33] hover:bg-[#F8FBFE] transition-colors"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} />
           </button>
         </div>
       </div>
@@ -181,7 +255,7 @@ export function CustomerAnalysisStatusCard({
           <span className="text-[#64748B] block font-medium mb-1">
             {UI_STRINGS.orchestration.labelUploadDate}
           </span>
-          <span className="text-[#0B1B33] font-bold">{formattedUploadDate}</span>
+          <span className="text-[#0B1B33] font-bold">{formattedUploadDate || '—'}</span>
         </div>
 
         <div className="p-3 bg-[#F8FBFE] rounded-lg border border-[#E2E8F0]">
@@ -189,7 +263,7 @@ export function CustomerAnalysisStatusCard({
             {UI_STRINGS.orchestration.labelAnalysisPeriod}
           </span>
           <span className="text-[#0B1B33] font-bold">
-            {job?.analysisPeriod || 'FY 2023 - FY 2026'}
+            {job.analysisPeriod || 'FY 2023 - FY 2026'}
           </span>
         </div>
 
@@ -198,7 +272,7 @@ export function CustomerAnalysisStatusCard({
             {UI_STRINGS.orchestration.labelReportVersion}
           </span>
           <span className="text-[#0B1B33] font-bold font-mono">
-            {job?.reportVersionId || (job?.currentDataVersionId ? `Data ${job.currentDataVersionId}` : 'v1')}
+            {job.reportVersionId || (job.currentDataVersionId ? `Data ${job.currentDataVersionId}` : 'v1')}
           </span>
         </div>
 
@@ -206,7 +280,7 @@ export function CustomerAnalysisStatusCard({
           <span className="text-[#64748B] block font-medium mb-1">
             {UI_STRINGS.orchestration.labelLastUpdated}
           </span>
-          <span className="text-[#0B1B33] font-bold">{formattedUpdatedDate}</span>
+          <span className="text-[#0B1B33] font-bold">{formattedUpdatedDate || '—'}</span>
         </div>
       </div>
 

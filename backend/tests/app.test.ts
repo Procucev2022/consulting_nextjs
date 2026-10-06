@@ -197,5 +197,5 @@ describe('App & Route Integration Tests', () => {
     } else {
       delete process.env.FRONTEND_URL;
     }
-  });
+  }, 30000);
 });

@@ -76430,3 +76430,4634 @@ continue
 
 ## Prompt 311
 create /admin page where an admin can login and create admin details of admin@procucev.com password is Procucev@123
+
+---
+
+## Prompt 312
+run locally on chrome
+
+---
+
+## Prompt 313
+URGENT BUG FIX — FIRST-TIME CUSTOMER UPLOAD IS BLOCKED BY ANALYSIS-IN-PROGRESS STATE
+
+Context:
+A brand-new customer/user has logged into aiCEV and is trying to upload procurement data for the first time.
+
+Current incorrect behavior:
+The customer is immediately shown the "YOUR DETAILED PROCUREMENT ANALYSIS IS IN PROGRESS" panel before the customer has successfully uploaded/processed the first dataset. The UI is behaving as though an Analysis Job already exists and is in progress, which prevents the first data upload / Module 1 flow.
+
+Screenshot evidence:
+The customer sees:
+"YOUR DETAILED PROCUREMENT ANALYSIS IS IN PROGRESS"
+"Your uploaded procurement data has been successfully processed and your Spend Summary is available."
+"Typical analysis time is 24–48 hours."
+even though this is a NEW USER who is attempting the FIRST DATA UPLOAD.
+
+This is incorrect.
+
+DO NOT redesign the UI.
+DO NOT change the existing Module 1–4 calculations.
+DO NOT change the analysis orchestration architecture already implemented.
+DO NOT remove the 24–48 hour message.
+Only correct the lifecycle/state/visibility logic so that the first upload works correctly.
+
+REQUIRED CORRECT USER FLOW:
+
+STATE 0 — NEW CUSTOMER / NO DATASET
+
+After a new customer logs in:
+- No Analysis Job should be treated as active.
+- No "Analysis in Progress" panel should be shown.
+- No artificial/stale Analysis Job should be created merely because the customer logged in.
+- Customer must land on the normal Module 1 / Data Upload experience.
+- Upload control must be enabled.
+- Customer must be able to select and upload Excel/CSV data.
+
+STATE 1 — CUSTOMER UPLOADS FIRST DATASET
+
+When the customer uploads the file:
+- Accept the upload normally.
+- Create the first immutable Data Version.
+- Validate the uploaded dataset.
+- Create the Analysis Job only AFTER the upload has been successfully accepted/processed.
+- Run Module 1 immediately.
+- Module 1 must not wait for the 24–48 hour detailed analysis.
+- Module 1 results / Spend Summary must become available to the customer immediately after successful processing.
+
+IMPORTANT:
+"Module 1 READY" must be a valid customer-visible state immediately after the first upload.
+
+STATE 2 — MODULE 1 COMPLETES
+
+After Module 1 has successfully completed:
+- Show the Module 1 results on the first page.
+- Show the Spend Summary / relevant Module 1 KPIs.
+- Do not block Module 1 because detailed analysis is still running.
+- Do not replace the Module 1 page with the detailed-analysis waiting message.
+
+ONLY AFTER MODULE 1 IS READY:
+Show a clearly visible but non-blocking popup/modal/status notification:
+
+"YOUR DETAILED PROCUREMENT ANALYSIS IS IN PROGRESS"
+
+Message:
+
+"Your uploaded procurement data has been successfully processed and your Spend Summary is available.
+
+Our detailed analysis requires validation of commodity classification, benchmark availability, PCBI coverage, supplier/category mapping and other analytical parameters.
+
+Typical analysis time is 24–48 hours.
+
+We will notify you when your reviewed report is ready."
+
+This message should appear AFTER the first successful Module 1 processing.
+
+It must NOT prevent the customer from viewing Module 1 results.
+
+Recommended UX:
+- Show the message as a modal/popup once after Module 1 becomes ready.
+- Provide a clear "Continue to Module 1" / "View Spend Summary" button.
+- Also show a compact persistent status badge/card such as:
+  "Detailed Analysis: In Progress"
+  after the popup has been dismissed.
+- The customer must remain able to use all features permitted by their subscription.
+
+STATE 3 — DETAILED ANALYSIS
+
+After Module 1 is ready:
+- Analysis orchestration continues independently.
+- Existing states must continue to work:
+  UPLOADED
+  MODULE_1_READY
+  ANALYSIS_QUEUED
+  PCBI_REVIEW_REQUIRED
+  PCBI_REVIEW_IN_PROGRESS
+  READY_FOR_GENERATION
+  REPORT_GENERATED
+  ADMIN_REVIEW
+  ADMIN_APPROVED
+  SUBMITTED_TO_CUSTOMER
+  CUSTOMER_VIEWED
+  CUSTOMER_ACKNOWLEDGED
+  ANALYSIS_BLOCKED
+
+Do not bypass the existing orchestration.
+
+IMPORTANT STATE RULE:
+
+The customer-facing "Detailed Procurement Analysis is in progress" UI must be derived from an actual persisted Analysis Job belonging to the authenticated customer's tenant.
+
+Do NOT use:
+- hardcoded true
+- default in-progress state
+- demo job
+- previous customer's job
+- global/shared job
+- stale browser/localStorage state
+- arbitrary fallback job
+- "analysis in progress" merely because the user has logged in
+
+If there is:
+NO DATA VERSION
+AND
+NO ACTIVE ANALYSIS JOB
+
+then:
+- show Data Upload experience
+- enable upload
+- hide detailed-analysis-in-progress panel.
+
+If:
+DATA VERSION EXISTS
+AND
+MODULE 1 IS READY
+AND
+DETAILED ANALYSIS IS ACTIVE
+
+then:
+- show Module 1 results
+- show detailed-analysis status
+- allow customer to continue using Module 1
+- do not block upload/review unless the existing product rules explicitly require it.
+
+If:
+NO DATA VERSION
+BUT an orphan/stale Analysis Job exists:
+- do NOT show it to the customer.
+- resolve the orphan safely on the server side.
+- ensure tenant isolation.
+- do not delete historical valid jobs.
+- mark only invalid/orphaned records appropriately if necessary.
+
+FIRST-UPLOAD GUARD:
+
+Backend:
+Before creating or returning a customer-visible active analysis state, verify:
+1. authenticated tenant/customer
+2. valid Data Version exists
+3. Analysis Job belongs to that tenant
+4. Analysis Job is associated with that Data Version
+5. Module 1 processing has actually started/completed
+
+Frontend:
+Do not infer analysis status from UI defaults.
+Fetch the actual authenticated customer's analysis state from the backend.
+
+UPLOAD BUTTON:
+The first-time customer must always be able to initiate the first upload when:
+- authenticated
+- tenant is valid
+- no active blocking upload exists
+
+Do not disable the upload control merely because the Analysis status component is mounted.
+
+MODULE 1 REQUIREMENT:
+The first upload must follow:
+
+UPLOAD
+→ VALIDATE
+→ CREATE DATA VERSION
+→ CREATE ANALYSIS JOB
+→ MODULE 1 PROCESSING
+→ MODULE_1_READY
+→ DISPLAY MODULE 1
+→ SHOW DETAILED ANALYSIS POPUP
+→ CONTINUE BACKGROUND DETAILED ANALYSIS
+
+Do NOT do:
+
+LOGIN
+→ ANALYSIS IN PROGRESS
+→ BLOCK UPLOAD
+→ WAIT 24–48 HOURS
+→ MODULE 1
+
+Also check whether the current implementation accidentally initializes a customer Analysis Job on:
+- customer login
+- dashboard initialization
+- customer profile creation
+- tenant creation
+- subscription creation
+- dashboard data fetching
+
+If so, remove that behavior. Analysis Job creation must be tied to successful data upload / ingestion, not login.
+
+IMPORTANT:
+Do not break Admin Analysis Control Center.
+Admin must still see the Analysis Job after the customer uploads data.
+Admin must still see Module 1 status, PCBI gaps, corrections, report generation and approval workflow.
+
+Do not break:
+- Data Versioning
+- Module 1 rerun
+- PCBI review
+- Report versioning
+- Admin approval
+- Customer submission
+- Management Quick Summary
+- Evidence Excel
+- Subscription entitlement
+- tenant isolation
+- audit trail
+
+TEST CASES — MUST IMPLEMENT AND RUN:
+
+TEST 1 — BRAND NEW USER
+Create/login with a completely new customer.
+Expected:
+- no analysis-in-progress message
+- upload control visible
+- upload enabled
+- no Analysis Job before upload
+
+TEST 2 — FIRST UPLOAD
+Upload valid Excel.
+Expected:
+- upload succeeds
+- Data Version created
+- Analysis Job created
+- Module 1 executes
+- Module 1 becomes READY
+- Spend Summary displayed
+
+TEST 3 — POST-MODULE-1 POPUP
+After Module 1 becomes ready:
+Expected:
+- detailed analysis popup appears
+- popup contains the existing 24–48 hour message
+- customer can dismiss/continue
+- Module 1 remains visible
+- popup does not block Module 1 after dismissal
+
+TEST 4 — REFRESH
+Refresh the customer page after Module 1 is ready.
+Expected:
+- Module 1 results remain visible
+- detailed analysis status is shown only because a real Analysis Job exists
+- upload is not incorrectly blocked by the status panel
+
+TEST 5 — NEW CUSTOMER TENANT ISOLATION
+Customer A must never inherit Customer B's Analysis Job or status.
+Expected:
+- no cross-tenant analysis state
+- no cross-tenant data
+- no cross-tenant Module 1 result
+
+TEST 6 — STALE/ORPHAN JOB
+Create an Analysis Job without a valid Data Version association.
+Expected:
+- customer does not see "Analysis in Progress"
+- first upload remains available
+- server safely handles orphan job
+
+TEST 7 — ADMIN
+After customer uploads:
+- Admin Analysis Control Center sees the correct job
+- correct tenant
+- correct data version
+- Module 1 status
+- detailed analysis status
+- PCBI workflow remains available
+
+TEST 8 — EXISTING CUSTOMER
+Existing customer with a real active Analysis Job:
+Expected:
+- detailed-analysis status continues to display correctly
+- Module 1 remains accessible
+- no regression to existing orchestration.
+
+TEST 9 — NO REGRESSION
+Run all relevant existing frontend/backend tests for:
+- ingestion
+- Module 1
+- orchestration
+- customer status card
+- admin control center
+- data versioning
+- subscriptions
+- evidence
+- report approval
+
+Also run:
+- frontend typecheck
+- backend typecheck
+- lint
+- production build
+
+IMPLEMENTATION APPROACH:
+
+First inspect the existing code paths for:
+- customer dashboard initialization
+- DataUpload component/page
+- Module 1 page/component
+- ProcurementAnalysis/status card
+- analysis orchestration service/controller
+- ingestion controller
+- AnalysisJob creation
+- customer status API
+- tenant resolution
+- any demo/seed/default AnalysisJob logic
+
+Identify the exact root cause before modifying code.
+
+Then implement the smallest safe fix.
+
+Add explicit lifecycle predicates such as:
+
+hasValidDataVersion
+hasModule1Result
+hasActiveDetailedAnalysis
+shouldShowDetailedAnalysisStatus
+
+The UI should conceptually follow:
+
+shouldShowUpload =
+  authenticated &&
+  tenantResolved &&
+  !blockingFirstUpload
+
+shouldShowModule1 =
+  hasValidDataVersion &&
+  hasModule1Result
+
+shouldShowDetailedAnalysisPopup =
+  hasValidDataVersion &&
+  hasModule1Result &&
+  hasActiveDetailedAnalysis &&
+  !popupAlreadyAcknowledgedForThisDataVersion
+
+Do not use a simple global `analysisInProgress = true`.
+
+IMPORTANT UX DETAIL:
+The "YOUR DETAILED PROCUREMENT ANALYSIS IS IN PROGRESS" message is a POST-MODULE-1 notification, not the landing-page state.
+
+The user must first experience:
+"Upload your procurement data"
+
+then:
+"Your Spend Summary is ready"
+
+then:
+"Your detailed procurement analysis is in progress."
+
+Please produce an execution report containing:
+1. Root cause identified
+2. Files/components changed
+3. Backend state/lifecycle changes
+4. Frontend visibility changes
+5. Tests added
+6. Test results
+7. Typecheck/lint/build results
+8. Confirmation that existing Modules 1–4 and orchestration were not functionally changed
+9. Any browser/E2E validation performed
+10. Any remaining issue
+
+Do not perform a global UI redesign.
+This is a focused lifecycle/first-upload bug fix.
+
+---
+
+## Prompt 314
+I have uploaded a new Excel reference file:
+
+aiCEV_FX_Master_2020_2026_v1.xlsx
+
+Please locate this file in the project and inspect its contents and sheet structure.
+
+IMPORTANT:
+Do not modify any application code yet.
+
+First confirm:
+
+1. The file is accessible.
+2. The workbook opens successfully.
+3. List all sheets.
+4. Confirm the columns in each sheet.
+5. Confirm the date range currently populated in FX_MASTER_DAILY.
+6. Confirm which currencies are defined in FX_CURRENCY_MASTER.
+7. Confirm which currencies/dates actually have populated FX rates.
+8. Confirm that the workbook is suitable to be used as the foundation for a global aiCEV FX reference master.
+
+Then stop and give me the inspection result.
+
+Do not fabricate or populate any missing FX rates.
+Do not change Module 1 yet.
+
+---
+
+## Prompt 315
+COMMAND 2 — BUILD THE COMPLETE HISTORICAL aiCEV FX MASTER
+==========================================================
+
+The inspection of aiCEV_FX_Master_2020_2026_v1.xlsx is complete.
+
+The workbook is confirmed as a valid foundation/control workbook, but it currently contains only a few populated FX anchor rates.
+
+DO NOT integrate FX into Module 1 yet.
+
+The immediate objective is to build the COMPLETE historical FX reference dataset first.
+
+==========================================================
+OBJECTIVE
+==========================================================
+
+Create a production-ready historical FX master covering:
+
+1 April 2020
+through
+5 October 2026
+
+using the latest available published business-day rate.
+
+Do NOT fabricate rates.
+
+Do NOT interpolate missing rates.
+
+Do NOT create artificial daily rates.
+
+Do NOT use today's rate for historical transactions.
+
+Do NOT modify Module 1 yet.
+
+==========================================================
+1. PRESERVE THE ORIGINAL WORKBOOK
+==========================================================
+
+Keep:
+
+aiCEV_FX_Master_2020_2026_v1.xlsx
+
+immutable.
+
+Create a new version:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+or an equivalent versioned master.
+
+Never overwrite v1.
+
+==========================================================
+2. CURRENCY COVERAGE
+==========================================================
+
+Populate the 24 currencies already defined in:
+
+FX_CURRENCY_MASTER
+
+including:
+
+INR
+USD
+EUR
+GBP
+JPY
+AED
+SAR
+QAR
+OMR
+KWD
+BHD
+SGD
+HKD
+CNY
+CHF
+AUD
+CAD
+ZAR
+BRL
+MXN
+NOK
+SEK
+DKK
+TWD
+
+Do not remove currencies from the master.
+
+If a currency cannot be populated from an approved source, clearly mark it as:
+
+PENDING_SOURCE
+
+rather than inventing a value.
+
+==========================================================
+3. PRIMARY SOURCE HIERARCHY
+==========================================================
+
+Use the following source hierarchy.
+
+Priority 1:
+RBI / FBIL official reference rates where a direct INR reference is available.
+
+Priority 2:
+Federal Reserve H.10 official historical FX data for currencies covered by H.10.
+
+Priority 3:
+Approved secondary public datasets ONLY for validation or controlled backfill where the primary source is genuinely unavailable.
+
+Every record must retain:
+
+Source ID
+Source Name
+Source Type
+Source Date
+Rate Type
+Conversion Method
+
+Do not mix primary and secondary sources without identifying them.
+
+==========================================================
+4. HISTORICAL DATA
+==========================================================
+
+Populate all available business-day observations from:
+
+2020-04-01
+
+through the latest available source date on or before:
+
+2026-10-05
+
+For every currency/date combination actually supported by the source:
+
+Date
+Currency
+Raw Rate
+Raw Unit
+Raw Quote Convention
+INR per Unit
+Rate Status
+Source ID
+Source Name
+Notes
+
+must be populated.
+
+Do not create weekend observations merely to make the date sequence continuous.
+
+==========================================================
+5. INR NORMALIZATION
+==========================================================
+
+The canonical stored value must be:
+
+INR per 1 unit of foreign currency.
+
+Examples:
+
+USD:
+INR per 1 USD
+
+EUR:
+INR per 1 EUR
+
+GBP:
+INR per 1 GBP
+
+JPY:
+INR per 1 JPY
+
+If the source quotes:
+
+INR per 100 JPY
+
+divide by 100 before storing:
+
+INR per Unit.
+
+This must be explicitly tested.
+
+==========================================================
+6. DERIVED CURRENCIES
+==========================================================
+
+For currencies without a direct INR reference:
+
+use approved USD triangulation only when reliable source legs are available.
+
+Formula:
+
+INR per foreign currency
+=
+INR per USD
+/
+USD per foreign currency
+
+Mark:
+
+Conversion Method = DERIVED_CROSS_RATE
+
+Do NOT label these as direct RBI/FBIL rates.
+
+Retain the underlying source information.
+
+==========================================================
+7. RATE DATE RULE
+==========================================================
+
+For the master itself:
+
+store only actual published observation dates.
+
+Do NOT manufacture rates for:
+
+Saturday
+Sunday
+Indian holidays
+US holidays
+source-specific non-publication days
+
+The transaction-level lookup engine can later apply:
+
+PRIOR_BUSINESS_DAY
+
+when a customer's transaction occurs on a non-rate date.
+
+==========================================================
+8. DATA QUALITY TESTS
+==========================================================
+
+Run automated validation for:
+
+A. Duplicate
+No duplicate:
+
+Currency + Rate Date + Source
+
+B. Missing
+Identify missing expected business-day observations.
+
+C. Zero
+No zero or negative FX rates.
+
+D. Null
+No null INR per Unit where status is VERIFIED.
+
+E. JPY
+Verify per-100 → per-1 normalization.
+
+F. Extreme movements
+Flag abnormal daily movements for review.
+
+Do not automatically reject legitimate market movements.
+
+G. Cross-rate
+Validate derived currencies against source legs.
+
+H. INR
+INR must always equal 1.
+
+==========================================================
+9. COVERAGE REPORT
+==========================================================
+
+Generate a coverage report showing for EACH currency:
+
+Currency
+First Rate Date
+Last Rate Date
+Number of Rate Records
+Expected Business Days
+Coverage %
+Direct/Derived
+Primary Source
+Secondary Source
+Missing Dates
+Status
+
+Status values:
+
+COMPLETE
+PARTIAL
+PENDING_SOURCE
+BLOCKED
+
+Do not call a currency COMPLETE unless the actual source coverage supports that conclusion.
+
+==========================================================
+10. MASTER VALIDATION
+==========================================================
+
+Create a new sheet:
+
+FX_COVERAGE_AUDIT
+
+with the above coverage information.
+
+Create another sheet:
+
+FX_MISSING_DATES
+
+containing:
+
+Currency
+Missing Date
+Reason
+Expected Source
+Action Required
+
+Create another sheet:
+
+FX_SOURCE_RECONCILIATION
+
+showing where the same currency/date exists in more than one source and whether the rates agree within an acceptable tolerance.
+
+==========================================================
+11. MONTHLY AVERAGES
+==========================================================
+
+Create:
+
+FX_MONTHLY_AVERAGE
+
+containing:
+
+Year
+Month
+Currency
+Average INR per Unit
+Number of Daily Observations
+Source Basis
+Calculation Method
+
+Only calculate monthly averages from actual available daily observations.
+
+Do not calculate an average where there is insufficient data without marking it.
+
+==========================================================
+12. VERSION CONTROL
+==========================================================
+
+Add:
+
+FX_MASTER_VERSION
+
+containing:
+
+Version ID
+Workbook Name
+Created Date
+Coverage Start
+Coverage End
+Currencies
+Total Records
+Source Mix
+Created By
+SHA-256 Checksum
+Validation Status
+
+Version must be immutable after release.
+
+==========================================================
+13. IMPORTANT — DO NOT MODIFY APPLICATION CODE
+==========================================================
+
+At this stage:
+
+DO NOT modify:
+
+Module 1
+Module 2
+Module 3
+Module 4
+Analysis Orchestration
+Savings Engine
+PCBI
+Reports
+Evidence Workbooks
+Subscription
+Authentication
+Frontend
+
+This command is ONLY for completing and validating the FX reference master.
+
+==========================================================
+14. DO NOT FABRICATE
+==========================================================
+
+If an approved source does not provide a historical rate:
+
+leave it missing.
+
+Report:
+
+PENDING_SOURCE
+
+Do not:
+
+estimate
+interpolate
+copy the nearest currency
+copy today's rate
+invent historical values
+generate synthetic values
+
+The integrity of this master is more important than achieving 100% coverage.
+
+==========================================================
+15. FINAL VALIDATION
+==========================================================
+
+After population run:
+
+1. Workbook integrity test
+2. Duplicate test
+3. Null test
+4. Date test
+5. Currency test
+6. JPY unit test
+7. Cross-rate test
+8. Source reconciliation
+9. Coverage calculation
+10. Monthly-average calculation
+11. SHA-256 checksum
+12. Full audit report
+
+==========================================================
+FINAL RESPONSE REQUIRED
+==========================================================
+
+STOP after completing the FX master.
+
+Do NOT integrate it into Module 1.
+
+Report:
+
+1. Final workbook filename
+2. Total FX records
+3. Total currencies
+4. Date range actually populated
+5. Coverage % by currency
+6. Number of missing dates
+7. Number of COMPLETE currencies
+8. Number of PARTIAL currencies
+9. Number of PENDING_SOURCE currencies
+10. Primary sources used
+11. Secondary sources used
+12. JPY normalization result
+13. Cross-rate validation result
+14. Duplicate validation result
+15. Final SHA-256 checksum
+16. Any limitations
+
+Most importantly:
+
+DO NOT claim the FX master is production-ready unless the actual historical records and validation checks support that conclusion.
+
+---
+
+## Prompt 316
+COMMAND 3 — FINALIZE AND FREEZE FX MASTER COVERAGE CLASSIFICATION
+================================================================
+
+Review the newly created:
+
+backend/aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Do NOT modify Module 1 or any application calculation.
+
+The historical FX population itself is acceptable.
+
+However, correct the coverage terminology before this master is used by the application.
+
+IMPORTANT:
+Do not classify a currency as COMPLETE merely because it has high coverage.
+
+Use these status definitions:
+
+FULL_DIRECT
+-----------
+100% expected source coverage using an approved direct reference source.
+
+HIGH_COVERAGE_DERIVED
+---------------------
+High but not 100% coverage, where the rate is derived from approved source legs.
+
+PARTIAL
+-------
+Some historical data exists but material periods are missing.
+
+PENDING_SOURCE
+--------------
+No approved historical source currently available.
+
+BLOCKED
+-------
+A data integrity or validation problem prevents safe use.
+
+Apply this classification to FX_COVERAGE_AUDIT.
+
+Specifically:
+
+INR
+USD
+EUR
+GBP
+JPY
+
+may be FULL_DIRECT only if their actual expected-source coverage is complete.
+
+SGD
+HKD
+CNY
+CHF
+AUD
+CAD
+ZAR
+BRL
+MXN
+NOK
+SEK
+DKK
+TWD
+
+must NOT be called COMPLETE/FULL_DIRECT if their actual coverage is 95.47%.
+
+Classify them appropriately as:
+
+HIGH_COVERAGE_DERIVED
+
+unless there is another documented reason for a different status.
+
+AED:
+
+PARTIAL
+
+SAR:
+QAR:
+OMR:
+KWD:
+BHD:
+
+PENDING_SOURCE
+
+Do not change the actual FX records.
+
+Do not fabricate missing records.
+
+Do not add synthetic rates.
+
+Update the README / coverage documentation so that these definitions are explicit.
+
+Add a production-use rule:
+
+"Coverage status must be evaluated independently for every currency and transaction date. The existence of a currency in FX_CURRENCY_MASTER does not imply that an FX rate exists for every historical date."
+
+Add another rule:
+
+"Module 1 must never treat HIGH_COVERAGE_DERIVED, PARTIAL or PENDING_SOURCE as equivalent to FULL_DIRECT."
+
+Re-run:
+
+1. Coverage audit
+2. Missing-date audit
+3. Duplicate validation
+4. JPY validation
+5. Cross-rate validation
+6. Workbook integrity
+7. SHA-256 checksum
+
+Do NOT modify any application code.
+
+Do NOT integrate FX into Module 1.
+
+At the end report:
+
+- final status of all 24 currencies
+- total records
+- coverage %
+- validation results
+- new SHA-256
+- confirmation that v2 is frozen
+- confirmation that Module 1 remains untouched
+
+---
+
+## Prompt 317
+COMMAND 4 — INTEGRATE FROZEN FX MASTER INTO MODULE 1
+====================================================
+
+The aiCEV FX Master has now been completed, audited and frozen.
+
+AUTHORITATIVE FX MASTER:
+
+backend/aiCEV_FX_Master_2020_2026_v2.xlsx
+
+SHA-256:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+DO NOT modify the FX master.
+
+DO NOT fabricate missing FX rates.
+
+DO NOT change the existing financial calculations.
+
+The objective now is to integrate this frozen reference master safely into Module 1.
+
+====================================================
+1. FIRST — BACK UP CURRENT MODULE 1 BEHAVIOUR
+====================================================
+
+Before changing application code:
+
+Identify the existing Module 1 calculation path for:
+
+Customer Upload
+→ Data Version
+→ Transaction Parsing
+→ Currency Detection
+→ Spend Calculation
+→ Module 1 Spend Summary
+
+Create regression tests against the existing INR-only behaviour.
+
+Do not change any calculation unrelated to currency normalization.
+
+====================================================
+2. IMPORT THE FROZEN FX MASTER
+====================================================
+
+Create a backend reference-data import/service layer.
+
+Prefer the existing reference-data/database architecture if available.
+
+Do NOT read the Excel file from the frontend during customer analysis.
+
+The backend must be authoritative.
+
+Create/use:
+
+fx_reference_rates
+
+or an equivalent reference table.
+
+Import:
+
+FX_MASTER_DAILY
+
+from:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Also import the relevant:
+
+FX_CURRENCY_MASTER
+FX_SOURCE_MASTER
+FX_RATE_RULES
+FX_MASTER_VERSION
+
+metadata.
+
+Store:
+
+currency
+rateDate
+rawRate
+rawUnit
+rawQuoteConvention
+inrPerUnit
+sourceId
+sourceName
+rateType
+conversionMethod
+rateStatus
+fxMasterVersion
+
+Add an index on:
+
+(currency, rateDate)
+
+====================================================
+3. FX MASTER VERSION CONTROL
+====================================================
+
+Every Module 1 analysis run must record:
+
+fxMasterVersion
+fxMasterFileName
+fxMasterChecksum
+fxMasterAsOfDate
+
+For this integration the checksum must equal:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Do not allow frontend users to select or override the FX master version.
+
+Backend determines the version.
+
+====================================================
+4. CREATE FX REFERENCE SERVICE
+====================================================
+
+Create:
+
+fxReferenceService
+
+or integrate with the existing reference-data service architecture.
+
+Required function:
+
+resolveFxRate(currency, transactionDate)
+
+Return:
+
+{
+  currency,
+  rate,
+  rateDateUsed,
+  sourceId,
+  sourceName,
+  rateType,
+  conversionMethod,
+  coverageStatus,
+  fxMasterVersion,
+  status
+}
+
+====================================================
+5. RATE RESOLUTION RULES
+====================================================
+
+RULE A — INR
+
+If currency = INR:
+
+rate = 1
+
+status = CONVERTED
+
+conversionMethod = BASE_CURRENCY
+
+RULE B — EXACT DATE
+
+If an FX observation exists for:
+
+currency + transactionDate
+
+use it.
+
+RULE C — WEEKEND / HOLIDAY
+
+If there is no observation on the transaction date:
+
+use the most recent approved rate BEFORE transactionDate.
+
+Set:
+
+conversionMethod = PRIOR_BUSINESS_DAY
+
+Store both:
+
+transactionDate
+rateDateUsed
+
+Never hide this adjustment.
+
+RULE D — DERIVED CURRENCY
+
+For currencies classified:
+
+HIGH_COVERAGE_DERIVED
+
+use the already calculated INR-per-unit value from the frozen master.
+
+DO NOT recalculate the cross rate independently inside Module 1.
+
+The frozen master is authoritative.
+
+RULE E — PARTIAL CURRENCY
+
+For AED:
+
+only use dates where the frozen master contains a valid approved rate.
+
+For earlier dates:
+
+do not fabricate a rate.
+
+status = PENDING
+
+RULE F — PENDING_SOURCE
+
+For:
+
+SAR
+QAR
+OMR
+KWD
+BHD
+
+there is currently no approved historical FX rate.
+
+If these currencies occur in customer data:
+
+DO NOT convert them.
+
+DO NOT use USD/current FX.
+
+DO NOT use an external random API.
+
+status = PENDING
+
+====================================================
+6. ORIGINAL TRANSACTION DATA MUST NEVER BE OVERWRITTEN
+====================================================
+
+Preserve:
+
+originalValue
+originalCurrency
+transactionDate
+
+Add:
+
+fxRate
+fxRateDate
+fxSource
+fxSourceId
+fxRateType
+fxConversionMethod
+fxConversionStatus
+inrNormalizedValue
+fxMasterVersion
+
+The original customer amount must remain unchanged.
+
+====================================================
+7. NORMALIZATION FORMULA
+====================================================
+
+For converted transactions:
+
+INR Normalized Value
+=
+Original Value × FX Rate
+
+For INR:
+
+Original Value × 1
+
+For JPY:
+
+Use the already normalized:
+
+INR per 1 JPY
+
+value from the FX master.
+
+Never apply a per-100 JPY value directly.
+
+====================================================
+8. MODULE 1 SPEND CALCULATION
+====================================================
+
+Module 1 must calculate separately:
+
+A. Original spend by currency
+
+B. FX-converted INR spend
+
+C. Pending FX spend
+
+D. Blocked FX spend
+
+E. FX Coverage %
+
+Formula:
+
+FX Coverage %
+=
+Converted Spend
+/
+Total Uploaded Spend
+× 100
+
+Do not treat pending FX spend as INR spend.
+
+====================================================
+9. CRITICAL TOTAL-VALUE CONTROL
+====================================================
+
+This is the primary reason for this integration.
+
+The system must NOT produce an apparently complete INR total if some currencies remain unconverted.
+
+Example:
+
+Uploaded spend:
+
+USD = ₹ equivalent after conversion
+EUR = ₹ equivalent after conversion
+AED = pending for historical dates
+SAR = pending
+
+Module 1 must NOT simply show a single consolidated INR total.
+
+Instead show:
+
+FX Validated Spend
+Pending FX Conversion
+FX Coverage %
+
+The actual UI wording can follow the existing aiCEV design system.
+
+====================================================
+10. MODULE 1 STATUS LOGIC
+====================================================
+
+Create:
+
+FX_VALIDATION_STATUS
+
+with:
+
+PASS
+PARTIAL
+BLOCKED
+
+PASS:
+
+100% of uploaded spend has a valid FX conversion.
+
+PARTIAL:
+
+Some spend remains pending FX conversion.
+
+BLOCKED:
+
+FX data is required but the system cannot safely calculate the normalized spend.
+
+Important:
+
+A currency being listed in FX_CURRENCY_MASTER does NOT mean the currency has a usable rate for every date.
+
+Use the frozen FX coverage status.
+
+====================================================
+11. TRANSACTION-LEVEL AUDITABILITY
+====================================================
+
+For every converted transaction the system must be able to answer:
+
+What was the original amount?
+What currency was it?
+What was the transaction date?
+What FX rate was used?
+What date was that rate published?
+Which source supplied it?
+Was it direct or derived?
+Which FX master version was used?
+What was the resulting INR amount?
+
+This information must be available to the evidence/audit layer.
+
+====================================================
+12. MODULE 1 EVIDENCE WORKBOOK
+====================================================
+
+Extend the existing Module 1 Evidence Workbook.
+
+Do not create a disconnected FX calculation.
+
+Add an FX section containing:
+
+Transaction ID
+Original Value
+Original Currency
+Transaction Date
+FX Rate
+FX Rate Date
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+FX Master Version
+
+Also include an FX summary:
+
+Total Uploaded Spend
+Converted Spend
+Pending FX Spend
+FX Coverage %
+Currencies Detected
+Currencies Converted
+Currencies Pending
+FX Validation Status
+
+The UI and evidence workbook MUST use the same backend calculation.
+
+====================================================
+13. RECONCILIATION
+====================================================
+
+Calculate:
+
+SUM(transaction INR normalized values)
+
+and reconcile against:
+
+Module 1 INR Validated Spend
+
+Variance must be:
+
+₹0
+
+If variance is non-zero:
+
+FX_VALIDATION_STATUS = BLOCKED
+
+Do not round away the variance.
+
+====================================================
+14. CUSTOMER UPLOAD — IMPORTANT
+====================================================
+
+Do not break the existing upload flow.
+
+Current expected flow:
+
+Customer Upload
+→ Data Version
+→ Module 1
+→ Analysis Job
+→ Detailed Analysis
+
+Keep this flow intact.
+
+FX validation happens inside the Module 1 data-processing/calculation stage.
+
+Do NOT make FX processing a reason for the customer's initial upload to become blocked unless the uploaded data genuinely cannot be safely normalized.
+
+====================================================
+15. INR-ONLY REGRESSION
+====================================================
+
+Existing INR-only customer datasets must behave exactly as before.
+
+For an INR-only dataset:
+
+FX Coverage = 100%
+
+FX Status = PASS
+
+FX Rate = 1
+
+Module 1 total must equal the existing total exactly.
+
+No savings calculations may change.
+
+====================================================
+16. MIXED-CURRENCY TEST DATA
+====================================================
+
+Create a controlled test dataset containing:
+
+INR
+USD
+EUR
+GBP
+JPY
+AED
+SAR
+
+Use transaction dates including:
+
+A normal business day
+A Saturday
+A Sunday
+A known market holiday
+
+Expected behaviour:
+
+INR → direct base conversion
+USD/EUR/GBP/JPY → approved master rates
+Weekend/holiday → PRIOR_BUSINESS_DAY
+AED → converted only where master has an approved rate
+SAR → PENDING
+No synthetic conversion
+
+====================================================
+17. SECURITY
+====================================================
+
+FX rate resolution must be backend controlled.
+
+Frontend cannot submit:
+
+fxRate
+inrNormalizedValue
+fxSource
+fxMasterVersion
+
+and have the backend blindly trust them.
+
+If frontend sends these fields:
+
+ignore/recalculate them.
+
+Backend resolves FX from:
+
+transaction currency
+transaction date
+frozen FX master
+
+Tenant isolation must remain unchanged.
+
+====================================================
+18. PERFORMANCE
+====================================================
+
+Do NOT perform an Excel lookup for every transaction.
+
+Load/reference the FX master efficiently.
+
+Use:
+
+(currency, rateDate)
+
+indexing and/or an in-memory/cache layer where appropriate.
+
+A 30,000+ transaction dataset must not suffer unacceptable performance degradation.
+
+====================================================
+19. EXISTING MODULES MUST NOT CHANGE
+====================================================
+
+Do NOT modify the calculation logic of:
+
+Module 2
+Module 3
+PCBI
+Module 4
+Savings Engine
+Vendor Consolidation
+Benchmark Price Gap
+Strategic Sourcing
+Strategic Market Value
+Process Productivity
+Cost Avoidance
+Realized Savings
+
+The only intended downstream change is that Module 1's normalized spend becomes more accurate when original transactions contain foreign currencies.
+
+====================================================
+20. FINANCIAL VALIDATION
+====================================================
+
+After Module 1 normalization:
+
+The existing financial validation layer must continue to work.
+
+Do not alter certified financial bridge values for existing INR datasets.
+
+For a new mixed-currency dataset, financial outputs must be based on the validated INR spend only.
+
+Pending FX spend must never silently enter savings calculations.
+
+====================================================
+21. TESTS — MANDATORY
+====================================================
+
+Add tests for:
+
+1. INR
+2. USD
+3. EUR
+4. GBP
+5. JPY
+6. JPY scaling
+7. SGD derived
+8. AED valid date
+9. AED historical unavailable date
+10. SAR pending
+11. QAR pending
+12. Weekend fallback
+13. Holiday fallback
+14. Missing FX rate
+15. Mixed currency
+16. 100% FX coverage
+17. Partial FX coverage
+18. Zero FX coverage
+19. INR reconciliation
+20. FX master checksum/version
+21. Tenant isolation
+22. Frontend cannot override FX
+23. Evidence workbook parity
+24. INR-only regression
+25. 30,000+ transaction performance test
+
+====================================================
+22. RUN FULL QUALITY GATE
+====================================================
+
+Run:
+
+Backend tests
+Frontend tests
+Typecheck
+Lint
+Production build
+Module 1 tests
+FX tests
+Evidence tests
+Financial validation tests
+Performance tests
+
+Report:
+
+FX IMPORT
+PASS / FAIL
+
+FX LOOKUP
+PASS / FAIL
+
+FX NORMALIZATION
+PASS / FAIL
+
+JPY NORMALIZATION
+PASS / FAIL
+
+WEEKEND/HOLIDAY FALLBACK
+PASS / FAIL
+
+PARTIAL FX HANDLING
+PASS / FAIL
+
+PENDING CURRENCY HANDLING
+PASS / FAIL
+
+MODULE 1 RECONCILIATION
+PASS / FAIL
+
+EVIDENCE PARITY
+PASS / FAIL
+
+INR REGRESSION
+PASS / FAIL
+
+TENANT ISOLATION
+PASS / FAIL
+
+TYPECHECK
+PASS / FAIL
+
+LINT
+PASS / FAIL
+
+BUILD
+PASS / FAIL
+
+PERFORMANCE
+PASS / FAIL
+
+====================================================
+23. CRITICAL STOP CONDITION
+====================================================
+
+DO NOT automatically process a real customer dataset after implementation.
+
+First run the controlled mixed-currency test.
+
+Show the complete result:
+
+Original Spend by Currency
+FX Validated Spend
+Pending FX Spend
+FX Coverage %
+Rate Date Used
+FX Source
+Conversion Method
+INR Normalized Spend
+Reconciliation Variance
+
+Only after this controlled test passes should the integration be considered ready for a real customer upload.
+
+====================================================
+FINAL RESPONSE
+====================================================
+
+At the end provide:
+
+1. Files created/modified
+2. Database changes
+3. FX master import statistics
+4. Test results
+5. Controlled mixed-currency test result
+6. Module 1 reconciliation
+7. Evidence workbook parity
+8. Performance result
+9. Any limitations
+10. Confirmation that no Modules 2–4 / PCBI / Savings calculations were changed
+
+DO NOT claim production readiness unless all mandatory controls pass.
+
+---
+
+## Prompt 318
+COMMAND 5 — FORENSIC FX INTEGRATION RECONCILIATION
+===================================================
+
+DO NOT process any real customer dataset.
+
+DO NOT change the frozen FX master:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+DO NOT change Modules 2–4, PCBI, Savings Engine or financial calculations.
+
+The Command 4 implementation passed its major quality gates, but two inconsistencies must be resolved before production approval.
+
+===================================================
+ISSUE 1 — FX CURRENCY MASTER VS DATABASE IMPORT
+===================================================
+
+The frozen FX Master defines 24 canonical currencies.
+
+However, the Command 4 import reports only 19 currencies indexed:
+
+USD
+EUR
+GBP
+JPY
+AED
+AUD
+CAD
+CHF
+CNY
+DKK
+HKD
+MXN
+MYR
+NOK
+NZD
+SEK
+SGD
+THB
+ZAR
+
+Perform a forensic reconciliation between:
+
+A. FX_CURRENCY_MASTER in the frozen v2 workbook
+B. FX_MASTER_DAILY in the frozen v2 workbook
+C. FX_REFERENCE_RATE database records
+D. FX reference service supported currency list
+E. Module 1 currency validation list
+
+Produce a table:
+
+Currency
+In FX_CURRENCY_MASTER?
+In FX_MASTER_DAILY?
+Daily record count
+In database?
+In service?
+Coverage status
+Expected production behaviour
+
+There must be NO unexplained mismatch.
+
+IMPORTANT:
+
+The five currencies:
+
+SAR
+QAR
+OMR
+KWD
+BHD
+
+are PENDING_SOURCE and do not require FX rate records.
+
+However, the system must still know that they are supported canonical currencies with status PENDING_SOURCE.
+
+Do not silently remove them from the currency master.
+
+Also investigate why:
+
+MYR
+NZD
+THB
+
+appear in the imported database list if they are not part of the final 24-currency taxonomy reported by Command 3.
+
+Do not delete anything yet.
+
+First explain the discrepancy.
+
+===================================================
+ISSUE 2 — HOLIDAY / PRIOR-BUSINESS-DAY TEST
+===================================================
+
+The Command 4 controlled test reported:
+
+JPY
+Transaction Date: 2024-08-15
+Status: CONVERTED
+Rate Date Used: 2024-08-15
+Conversion Method: DERIVED_CROSS_RATE
+
+The test description called this date a market holiday.
+
+Determine exactly why a rate exists for 2024-08-15.
+
+Check:
+
+1. Does FX_MASTER_DAILY contain a JPY observation on 2024-08-15?
+2. What is its Source ID?
+3. What is its Source Name?
+4. Is it an actual published source observation?
+5. Is 2024-08-15 absent from RBI but present in H.10/FRED?
+6. Is the stored JPY rate derived from an actual H.10 observation?
+7. Was any synthetic rate created? This must be NO.
+
+IMPORTANT DESIGN RULE:
+
+Do NOT implement a generic "Indian holiday = always use prior business day" rule.
+
+The correct logic is:
+
+IF an approved FX source has an actual observation on transaction date:
+    use that observation.
+
+ELSE:
+    use the most recent approved observation before transaction date.
+
+Therefore, the test should distinguish:
+
+SOURCE OBSERVATION EXISTS
+vs
+NO SOURCE OBSERVATION → PRIOR_BUSINESS_DAY
+
+Create two separate tests:
+
+TEST A:
+Transaction date where approved source has an actual rate.
+
+Expected:
+EXACT_DATE / DIRECT_REFERENCE or DERIVED_CROSS_RATE
+
+TEST B:
+Transaction date where no approved source has an observation.
+
+Expected:
+PRIOR_BUSINESS_DAY
+
+Verify that Rate Date Used < Transaction Date in TEST B.
+
+===================================================
+ISSUE 3 — DO NOT RELY ON CALENDAR HOLIDAY LABELS
+===================================================
+
+The FX master stores actual published source observations.
+
+The application must NOT maintain a manually hardcoded holiday list as the authority for whether an FX rate exists.
+
+Source observation availability is authoritative.
+
+Holiday calendars may be used for diagnostics only.
+
+===================================================
+ISSUE 4 — DATABASE IMPORT INTEGRITY
+===================================================
+
+Verify that the database contains exactly the records that should be imported from:
+
+FX_MASTER_DAILY
+
+No missing records.
+
+No extra records.
+
+No duplicate records.
+
+Run:
+
+Workbook FX_MASTER_DAILY count
+=
+Database FxReferenceRate count
+
+Expected:
+
+29,716
+
+If the counts differ, explain every difference.
+
+Also verify:
+
+Currency + Rate Date + Source ID
+
+has zero duplicates.
+
+===================================================
+ISSUE 5 — FROZEN MASTER CHECKSUM
+===================================================
+
+Verify again:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+The workbook must remain byte-for-byte unchanged.
+
+===================================================
+ISSUE 6 — MODULE 1 SERVICE COVERAGE
+===================================================
+
+Inspect the FX reference service.
+
+Confirm that:
+
+FULL_DIRECT
+HIGH_COVERAGE_DERIVED
+PARTIAL
+PENDING_SOURCE
+
+are all represented correctly.
+
+For PENDING_SOURCE currencies:
+
+SAR
+QAR
+OMR
+KWD
+BHD
+
+the service must return:
+
+status = PENDING
+rate = null
+inrNormalizedValue = null
+
+It must NOT throw an unsupported-currency error merely because the currency is present in the canonical currency master.
+
+===================================================
+ISSUE 7 — CONTROLLED TEST CORRECTION
+===================================================
+
+Do NOT change the existing production calculation merely to make the test pass.
+
+Instead create corrected test cases that accurately represent the source data.
+
+Required controlled tests:
+
+1. INR exact date
+2. USD exact date
+3. EUR exact date
+4. GBP exact date
+5. JPY exact date
+6. Derived currency exact source date
+7. Weekend with no source observation
+8. Date with no approved source observation
+9. AED valid 2026 date
+10. AED pre-2026 pending
+11. SAR pending
+12. Mixed currency
+13. 100% FX coverage
+14. Partial FX coverage
+15. Zero FX coverage
+
+For the prior-business-day tests verify:
+
+Rate Date Used < Transaction Date
+
+and:
+
+Conversion Method = PRIOR_BUSINESS_DAY
+
+===================================================
+ISSUE 8 — PRODUCTION READINESS MUST REMAIN BLOCKED
+===================================================
+
+Until these discrepancies are resolved:
+
+DO NOT:
+
+- process a real customer dataset
+- change the production customer upload behaviour
+- mark FX integration production-ready
+- alter certified customer financial numbers
+
+===================================================
+FINAL REPORT
+===================================================
+
+Return:
+
+1. Currency reconciliation table
+2. Workbook record count
+3. Database record count
+4. Record-level difference, if any
+5. Database currency list
+6. Canonical currency list
+7. Explanation of MYR/NZD/THB if present
+8. Explanation of JPY 2024-08-15
+9. Corrected holiday/source tests
+10. Exact-date test result
+11. Prior-business-day test result
+12. Pending-source test result
+13. Frozen master checksum verification
+14. Full test results
+15. Confirmation that no real customer data was processed
+16. Final production readiness:
+    APPROVED
+    or
+    BLOCKED
+
+Do not declare APPROVED unless every discrepancy above is resolved and explained.
+
+---
+
+## Prompt 318 — FINAL FX MASTER ↔ DATABASE ↔ MODULE 1 FORENSIC RECONCILIATION
+
+OBJECTIVE
+Perform one final forensic reconciliation of the frozen aiCEV FX Master v2.0 against the database FX reference table, FX service supported currencies, and Module 1 currency validation BEFORE any real customer dataset is processed.
+
+THIS IS A VALIDATION-ONLY COMMAND.
+
+DO NOT:
+- modify the frozen Excel master
+- modify Modules 2–4
+- modify PCBI
+- modify Savings Engine
+- modify existing savings calculations
+- process any real customer dataset
+- create synthetic FX rates
+- change FX rates
+- redesign UI
+- change customer-facing workflows
+
+AUTHORITATIVE MASTER
+File:
+backend/aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Expected SHA-256:
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Expected version:
+v2.0
+
+Expected as-of date:
+2026-10-05
+
+==================================================
+1. RECONCILE THE CURRENCY POPULATION
+==================================================
+
+Extract the canonical currency list from:
+FX_CURRENCY_MASTER
+
+Separately extract:
+
+A. currencies appearing in FX_MASTER_DAILY
+B. currencies inserted into FxReferenceRate
+C. currencies recognized by fxReferenceService
+D. currencies accepted by Module 1 validation
+E. currencies listed as PENDING_SOURCE
+
+Produce a table:
+
+Currency | Canonical Master | Daily Rate Rows | DB Rows | Service Supported | Module1 Accepted | Coverage Status | Expected Behaviour
+
+There must be a clear explanation for every difference.
+
+IMPORTANT:
+A currency may legitimately exist in FX_CURRENCY_MASTER while having zero daily observations if it is PENDING_SOURCE.
+
+Do NOT treat zero observations as an error when the currency is explicitly classified PENDING_SOURCE.
+
+==================================================
+2. SPECIFICALLY INVESTIGATE MYR / NZD / THB
+==================================================
+
+The previous integration reported 19 indexed currencies.
+
+Explicitly identify every currency in the 19-currency DB/index population.
+
+Pay particular attention to:
+
+MYR
+NZD
+THB
+
+Confirm whether these are:
+
+- legitimately present in the frozen v2 master,
+- legacy/import artifacts,
+- derived currencies,
+- or accidental additions.
+
+If they are legitimately present, document their source and coverage classification.
+
+If they are not legitimately part of the frozen canonical master, DO NOT silently delete or modify anything.
+
+Report the discrepancy and classify it as BLOCKING or NON-BLOCKING with evidence.
+
+Do not change the database unless a separate explicit remediation command is issued.
+
+==================================================
+3. VERIFY THE FIVE PENDING GCC CURRENCIES
+==================================================
+
+Verify:
+
+SAR
+QAR
+OMR
+KWD
+BHD
+
+Expected:
+
+- canonical currency exists
+- coverage status = PENDING_SOURCE
+- no fabricated rate
+- no interpolated rate
+- no cross-rate unless explicitly authorized by the frozen master
+- Module 1 marks transaction PENDING / UNRESOLVED
+- INR normalized value remains null
+- pending spend is preserved in original currency
+- consolidated validated INR spend excludes the pending amount
+- FX coverage reflects the unresolved transaction
+
+Test each currency with one synthetic controlled transaction.
+
+DO NOT use real customer data.
+
+==================================================
+4. VERIFY AED INCEPTION LOGIC
+==================================================
+
+AED is special.
+
+Test:
+
+AED transaction before 2026-01-05
+AED transaction on/after 2026-01-05
+
+Expected:
+
+Before inception:
+PENDING / UNRESOLVED
+
+On/after inception:
+CONVERTED if authoritative source observation is available
+
+No interpolation across the inception boundary.
+
+Report both results.
+
+==================================================
+5. VERIFY DATE FALLBACK LOGIC
+==================================================
+
+The authority must be SOURCE OBSERVATION AVAILABILITY.
+
+Do NOT introduce a hardcoded generic holiday calendar.
+
+Run three controlled cases:
+
+A. Exact source observation exists
+Expected:
+EXACT_DATE / DIRECT_REFERENCE or appropriate source method
+
+B. No source observation exists on transaction date but prior approved observation exists
+Expected:
+PRIOR_BUSINESS_DAY
+rateDateUsed < transactionDate
+
+C. No approved prior observation exists
+Expected:
+UNRESOLVED / PENDING
+
+Specifically test JPY around 2024-08-15.
+
+If an approved source has an observation on 2024-08-15, it is acceptable to use that date.
+
+If no observation exists, prior-date fallback must occur.
+
+Do not force a holiday classification merely because the date is an Indian public holiday.
+
+==================================================
+6. VERIFY JPY UNIT NORMALIZATION
+==================================================
+
+Confirm:
+
+JPY source quote basis
+→ normalized to INR per 1 JPY
+→ Module 1 multiplication uses INR/JPY
+
+Controlled test:
+
+1,000,000 JPY
+
+Verify the normalized INR result against the authoritative master observation.
+
+No 100x or 0.01x error permitted.
+
+==================================================
+7. VERIFY MODULE 1 CURRENCY ACCEPTANCE
+==================================================
+
+For every canonical currency, test:
+
+- valid converted case
+- pending case where applicable
+- missing-date case
+- unsupported currency case
+
+Expected:
+
+SUPPORTED + AUTHORITATIVE RATE
+→ CONVERTED
+
+SUPPORTED + NO APPROVED RATE
+→ PENDING / UNRESOLVED
+
+UNKNOWN / NON-CANONICAL CURRENCY
+→ VALIDATION ERROR or explicit manual-review state
+
+Never silently assume INR.
+
+==================================================
+8. VERIFY DATABASE ↔ EXCEL ROW PARITY
+==================================================
+
+Expected frozen master:
+
+29,716 daily observation rows.
+
+Compare:
+
+Excel observation count
+DB observation count
+Service indexed observation count
+
+Report:
+
+Excel rows:
+DB rows:
+Difference:
+Duplicate rows:
+Missing DB rows:
+Unexpected DB rows:
+
+Expected difference = 0 for published observations that are intended to be imported.
+
+If pending-source currencies have zero rows, document that separately.
+
+==================================================
+9. VERIFY CHECKSUM
+==================================================
+
+Recalculate SHA-256 of:
+
+backend/aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Expected:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+If mismatch:
+BLOCK immediately.
+
+==================================================
+10. VERIFY MODULE 1 REGRESSION
+==================================================
+
+Run:
+
+fxReferenceService tests
+module1FinalForensicValidation tests
+evidenceWorkbookBuilder tests
+analysisOrchestrationService tests
+
+Expected:
+
+0 failures
+0 regressions
+
+INR-only golden datasets must remain unchanged.
+
+==================================================
+11. VERIFY NO DOWNSTREAM IMPACT
+==================================================
+
+Confirm no modifications to:
+
+Module 2
+Module 3 / PCBI
+Module 4
+Savings calculations
+Vendor Consolidation
+Benchmark Price Gap
+Strategic Sourcing
+Strategic Market Value
+Process Productivity
+Cost Avoidance / Supplier Risk
+Realized Savings
+Executive reports
+Subscription entitlements
+
+==================================================
+12. FINAL STATUS
+==================================================
+
+Return exactly one final status:
+
+FX INTEGRATION RECONCILIATION = APPROVED
+
+OR
+
+FX INTEGRATION RECONCILIATION = BLOCKED
+
+APPROVED only if:
+
+- currency population is fully reconciled
+- 19-vs-24 difference is explained
+- MYR/NZD/THB discrepancy is explained
+- all pending currencies behave correctly
+- AED inception works correctly
+- JPY normalization passes
+- source-observation date fallback passes
+- Excel ↔ DB observation counts reconcile
+- checksum matches
+- Module 1 regression passes
+- no downstream modules changed
+
+If BLOCKED:
+provide exact blocking discrepancy and recommended remediation.
+
+MOST IMPORTANT:
+Do not process any real customer data in this command.
+
+The next step after APPROVED will be a separate controlled real-customer Module 1 validation.
+
+---
+
+## Prompt 319
+PROMPT 319 — CONTROLLED REAL CUSTOMER MODULE 1 FX VALIDATION
+
+OBJECTIVE
+
+Now perform a controlled Module 1 validation using the newly supplied customer dataset.
+
+IMPORTANT:
+This is NOT permission to run Modules 2, 3 or 4.
+
+Run ONLY:
+Customer Data Ingestion
+→ FX Detection
+→ FX Normalization
+→ Module 1 Spend Diagnostics
+→ Module 1 Evidence Workbook
+
+DO NOT:
+- run Module 2
+- run PCBI
+- run Benchmarking
+- run Module 4
+- calculate savings
+- modify the frozen FX master
+- modify FX rates
+- modify existing customer source values
+- overwrite original transaction values
+- fabricate missing FX
+- use browser/localStorage/demo data
+- change any UI
+- modify the customer's source Excel
+
+==================================================
+1. PRESERVE ORIGINAL DATA
+==================================================
+
+Create an immutable raw-data snapshot/version.
+
+For every transaction preserve:
+
+Transaction ID
+Original Value
+Original Currency
+Transaction Date
+Original Supplier
+Original Plant
+Original Category
+Original Source Row
+
+DO NOT replace Original Value with INR.
+
+==================================================
+2. DETECT CURRENCIES
+==================================================
+
+Produce:
+
+Currency | Transaction Count | Original Spend | % of Transactions | % of Original Currency Spend
+
+Identify every currency appearing in the uploaded file.
+
+If a currency is unknown to the canonical FX registry:
+
+STATUS = FX_REVIEW_REQUIRED
+
+Do not assume INR.
+
+==================================================
+3. RUN FROZEN FX NORMALIZATION
+==================================================
+
+Use ONLY:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Expected checksum:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+For every transaction record:
+
+Original Value
+Original Currency
+Transaction Date
+FX Rate
+FX Rate Date Used
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+
+==================================================
+4. PRODUCE FX COVERAGE
+==================================================
+
+Report:
+
+Total transactions
+Converted transactions
+Pending transactions
+Blocked/invalid transactions
+
+Total original spend by currency
+
+Converted INR spend
+
+Pending spend by currency
+
+FX Coverage %
+
+FX Validation Status
+
+==================================================
+5. IMPORTANT — DO NOT MISLEAD WITH TOTALS
+==================================================
+
+If FX coverage is less than 100%:
+
+DO NOT present one consolidated INR customer spend as the final total.
+
+Instead show:
+
+FX Validated Spend = ₹X
+
+Pending FX Spend:
+Currency A = X
+Currency B = X
+
+FX Coverage = X%
+
+Status = PARTIAL
+
+If FX coverage = 100%, then show:
+
+Validated Total Spend = ₹X
+
+==================================================
+6. FORENSIC RECONCILIATION
+==================================================
+
+Calculate:
+
+SUM(transaction-level INR normalized values)
+
+versus
+
+Module 1 convertedSpendInr
+
+Expected:
+
+Variance = ₹0.00
+
+Also reconcile:
+
+Original source transaction count
+=
+ingested transaction count
+=
+normalized transaction count + excluded/pending records
+
+No silent record loss.
+
+==================================================
+7. INVESTIGATE THE ORIGINAL TOTAL-VALUE PROBLEM
+==================================================
+
+This is particularly important.
+
+Determine whether the previously incorrect total could be explained by:
+
+A. Foreign currency values treated as INR
+
+B. Multiple currencies summed without conversion
+
+C. Wrong FX rate
+
+D. Wrong FX rate date
+
+E. JPY per-100 quote incorrectly treated as per-1 JPY
+
+F. Weekend/holiday date handling
+
+G. Historical currency pending status
+
+H. Duplicate transactions
+
+I. Decimal/precision conversion issue
+
+J. Currency field parsing issue
+
+K. Other
+
+Return:
+
+ROOT CAUSE = [A/B/C/...]
+
+or
+
+ROOT CAUSE = NOT FX-RELATED
+
+Do not speculate. Only report a root cause when demonstrated from the actual dataset.
+
+==================================================
+8. CREATE MODULE 1 EVIDENCE
+==================================================
+
+Generate the normal Module 1 evidence workbook.
+
+Ensure these sheets are populated:
+
+01_COVER_EXECUTIVE_SUMMARY
+02_TRANSACTION_LEDGER
+03_DATA_CLEANING_EXCLUSIONS
+04_CATEGORY_TAXONOMY
+05_VENDOR_NORMALIZATION
+06_SPEND_RECONCILIATION
+07_FINANCIAL_CONTROLS
+08_AUDIT_TRAIL_METRICS
+09_FX_SUMMARY
+10_FX_TRANSACTIONS
+
+The FX transaction sheet must contain the actual customer transactions and:
+
+Original Currency
+Original Value
+FX Rate
+FX Rate Date
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+
+==================================================
+9. STOP CONDITIONS
+==================================================
+
+STOP immediately if:
+
+- source transaction count changes unexpectedly
+- source total changes unexpectedly
+- currency parsing is ambiguous
+- unknown currencies appear
+- FX master checksum mismatch
+- FX rate is missing unexpectedly
+- negative/zero values behave unexpectedly
+- duplicate transactions are introduced
+- reconciliation variance is not zero
+- Module 1 modifies original source values
+- any Module 2/3/4 processing starts
+
+==================================================
+10. DO NOT SEND CUSTOMER DATA TO DOWNSTREAM MODULES
+==================================================
+
+This run must terminate after:
+
+MODULE 1 + FX VALIDATION + EVIDENCE
+
+Do not create:
+
+Module 2 results
+PCBI results
+Savings Engine results
+Opportunity calculations
+Executive report
+
+==================================================
+11. FINAL OUTPUT
+
+Return a concise executive forensic report containing:
+
+1. Dataset filename
+2. Data version
+3. Source transaction count
+4. Source total by currency
+5. Currency population
+6. Converted transaction count
+7. Pending transaction count
+8. FX coverage %
+9. Validated INR spend
+10. Pending FX spend
+11. Module 1 reconciliation variance
+12. FX master version
+13. FX master checksum
+14. Root cause of the earlier total-value issue, if demonstrable
+15. Evidence workbook path
+16. Whether Module 1 is APPROVED
+
+Final status must be exactly one of:
+
+MODULE 1 FX VALIDATION = APPROVED
+
+or
+
+MODULE 1 FX VALIDATION = BLOCKED
+
+Do not proceed beyond Module 1.
+
+---
+
+## Prompt 320
+PROMPT 320 — PROCESS THE ACTUAL NEW CUSTOMER DATASET — MODULE 1 FX FORENSIC ONLY
+
+OBJECTIVE
+
+The FX infrastructure and controlled tests have already passed.
+
+NOW process the ACTUAL NEW CUSTOMER DATASET that was supplied for this analysis.
+
+This is the first real-customer validation.
+
+IMPORTANT:
+Run ONLY Module 1.
+
+DO NOT run:
+- Module 2
+- PCBI
+- Benchmarking
+- Module 4
+- Savings Engine
+- Strategic Sourcing
+- Opportunity calculations
+- Executive report generation
+
+==================================================
+1. IDENTIFY THE ACTUAL CUSTOMER FILE
+==================================================
+
+Locate the newly supplied customer procurement dataset.
+
+Do NOT use:
+- controlled FX test data
+- golden datasets
+- demo datasets
+- previous customer datasets
+- seed data
+- cached/localStorage data
+
+Print:
+
+Filename
+File type
+File size
+SHA-256
+Number of sheets
+Source sheet names
+
+==================================================
+2. CREATE IMMUTABLE DATA VERSION
+==================================================
+
+Create a new Data Version for this actual customer upload.
+
+Preserve the source file unchanged.
+
+Record:
+
+dataVersionId
+tenantId
+uploadedBy
+filename
+checksum
+uploadedAt
+source
+
+==================================================
+3. RUN MODULE 1 INGESTION ONLY
+==================================================
+
+Process the actual customer file through the normal production ingestion path.
+
+Do not bypass ingestion.
+
+Do not manually construct transactions.
+
+Do not use synthetic data.
+
+==================================================
+4. CURRENCY FORENSIC
+==================================================
+
+Extract the actual currency population.
+
+Report:
+
+Currency
+Transaction Count
+Original Spend
+% Transactions
+% Original Spend
+
+IMPORTANT:
+
+DO NOT ASSUME INR.
+
+If currency is blank:
+report Blank / Missing Currency.
+
+If currency is unknown:
+report Unknown Currency.
+
+Do not silently convert either to INR.
+
+==================================================
+5. FX NORMALIZATION
+==================================================
+
+Use ONLY the frozen:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Checksum:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+For every transaction retain:
+
+Original Value
+Original Currency
+Transaction Date
+FX Rate
+FX Rate Date
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+
+Never overwrite the original value.
+
+==================================================
+6. PRODUCE THE ACTUAL MODULE 1 SPEND RESULT
+==================================================
+
+Report:
+
+Original Spend by Currency
+
+Converted INR Spend
+
+Pending FX Spend
+
+Unknown/Missing Currency Spend
+
+FX Coverage %
+
+FX Validation Status
+
+Total source transaction count
+
+Total ingested transaction count
+
+Excluded transaction count
+
+Converted transaction count
+
+Pending transaction count
+
+==================================================
+7. CRITICAL TOTAL-VALUE INVESTIGATION
+==================================================
+
+The reason for this validation is that the customer's previous analysis produced an incorrect total value.
+
+Determine from the actual dataset whether the problem was caused by:
+
+A. Foreign currency treated as INR
+
+B. Different currencies summed without FX conversion
+
+C. Wrong FX rate
+
+D. Wrong FX rate date
+
+E. JPY 100-unit scaling error
+
+F. Weekend/holiday FX handling
+
+G. Historical currency with no approved rate
+
+H. Currency field parsing
+
+I. Duplicate transactions
+
+J. Decimal/precision issue
+
+K. Transaction exclusion
+
+L. Other
+
+Only identify a ROOT CAUSE if it is demonstrated from actual transaction-level evidence.
+
+If insufficient evidence exists:
+
+ROOT CAUSE = NOT YET DETERMINED
+
+Do not speculate.
+
+==================================================
+8. RECONCILIATION
+
+==================================================
+
+Prove:
+
+SUM(source transaction values by currency)
+
+and
+
+SUM(normalized INR transaction values)
+
+and
+
+Module 1 convertedSpendInr
+
+are mathematically consistent.
+
+For INR:
+
+Original INR = Normalized INR.
+
+For foreign currencies:
+
+Original Value × approved FX rate = Normalized INR.
+
+Expected:
+
+Reconciliation variance = ₹0.00
+
+If not:
+
+STOP.
+
+==================================================
+9. EVIDENCE WORKBOOK
+
+==================================================
+
+Generate actual Module 1 evidence workbook for THIS CUSTOMER DATASET.
+
+Include:
+
+01_COVER_EXECUTIVE_SUMMARY
+02_TRANSACTION_LEDGER
+03_DATA_CLEANING_EXCLUSIONS
+04_CATEGORY_TAXONOMY
+05_VENDOR_NORMALIZATION
+06_SPEND_RECONCILIATION
+07_FINANCIAL_CONTROLS
+08_AUDIT_TRAIL_METRICS
+09_FX_SUMMARY
+10_FX_TRANSACTIONS
+
+The workbook must contain actual customer records, not controlled-test records.
+
+==================================================
+10. CUSTOMER UI RESULT
+
+==================================================
+
+Populate the actual Module 1 result only.
+
+If FX coverage < 100%:
+
+DO NOT show a misleading single consolidated INR customer spend.
+
+Show:
+
+FX Validated Spend: ₹X
+Pending FX Spend: [currency-wise]
+FX Coverage: X%
+Status: FX VALIDATION REQUIRED / PARTIAL
+
+If FX coverage = 100%:
+
+Show:
+
+Validated Total Spend: ₹X
+FX Coverage: 100%
+Status: PASS
+
+==================================================
+11. STOP BEFORE MODULE 2
+
+==================================================
+
+After Module 1 finishes:
+
+STOP.
+
+Do not automatically continue to Module 2.
+
+Do not generate savings.
+
+Do not generate PCBI.
+
+Do not generate Benchmark Price Gap.
+
+Do not generate Strategic Sourcing.
+
+Do not generate any executive report.
+
+==================================================
+12. FINAL REPORT
+
+==================================================
+
+Return:
+
+ACTUAL CUSTOMER DATASET VALIDATION
+
+1. Filename
+2. Data Version ID
+3. SHA-256
+4. Tenant ID
+5. Transaction count
+6. Currency population
+7. Original spend by currency
+8. Converted INR spend
+9. Pending FX spend
+10. FX coverage
+11. FX validation status
+12. Module 1 reconciliation variance
+13. Evidence workbook path
+14. Root cause of previous total-value discrepancy, if demonstrable
+15. Module 1 status
+
+Final status:
+
+MODULE 1 REAL CUSTOMER VALIDATION = APPROVED
+
+OR
+
+MODULE 1 REAL CUSTOMER VALIDATION = BLOCKED
+
+MOST IMPORTANT:
+
+This run must use the ACTUAL newly supplied customer dataset.
+
+Do not substitute controlled data.
+
+Do not substitute a golden dataset.
+
+Do not proceed to Module 2.
+
+---
+
+## Prompt 321
+URGENT — DO NOT RUN ANY ANALYSIS
+
+We need to process the ACTUAL NEW CUSTOMER DATASET, but the previous execution again ran only the controlled 8-transaction FX test.
+
+STOP all FX tests and all Module 1 processing.
+
+Your ONLY task now is FILE IDENTIFICATION.
+
+1. Find the actual customer procurement Excel/CSV file that was newly supplied for the current analysis.
+
+2. Do NOT use:
+- FxControlledTestRunner
+- controlled 8-transaction dataset
+- golden dataset
+- previous customer dataset
+- demo/seed data
+- cached dataset
+- test fixtures
+
+3. Return ONLY:
+
+ACTUAL CUSTOMER FILE FOUND
+Filename:
+Full project path:
+File size:
+SHA-256:
+File type:
+Sheet names:
+Row count per sheet:
+Header row / detected columns:
+
+4. Confirm whether this file is the newly supplied customer dataset.
+
+5. Do NOT modify any code.
+6. Do NOT modify the FX master.
+7. Do NOT create a Data Version.
+8. Do NOT run Module 1.
+9. Do NOT run FX normalization.
+10. Do NOT run Modules 2–4.
+11. Do NOT run PCBI.
+12. Do NOT run savings calculations.
+
+If you cannot identify the actual customer file, return:
+
+ACTUAL CUSTOMER FILE = NOT FOUND
+
+and list the candidate filenames you found, without processing any of them.
+
+STOP after file identification.
+
+---
+
+## Prompt 321 (Re-issued)
+PROMPT 321 — IDENTIFY AND PROCESS EXACT CUSTOMER DATASET: "VGT Testing Data"
+
+The actual customer dataset is:
+
+VGT Testing Data
+
+IMPORTANT:
+The previous runs repeatedly executed the controlled 8-transaction FX test instead of the actual customer dataset.
+
+This time, DO NOT use the controlled test.
+
+==================================================
+STEP 1 — IDENTIFY THE EXACT FILE
+==================================================
+
+Search the Antigravity project for the file whose filename contains:
+
+"VGT Testing Data"
+
+Accept the actual extension, e.g.:
+.xlsx
+.xls
+.csv
+
+Do NOT select:
+- any FX controlled-test file
+- golden dataset
+- demo dataset
+- test fixture
+- previous customer dataset
+- seed data
+
+If multiple files match "VGT Testing Data", STOP and list all matching files with:
+filename
+full path
+file size
+modified date
+
+Do not process until the exact file is unambiguous.
+
+==================================================
+STEP 2 — VERIFY FILE
+==================================================
+
+Once the exact file is identified, report:
+
+Filename
+Full path
+File size
+SHA-256
+File type
+Sheet names
+Rows per sheet
+Detected header columns
+
+DO NOT modify the file.
+
+==================================================
+STEP 3 — PROCESS ONLY THIS FILE
+==================================================
+
+After the file is positively identified, process ONLY:
+
+"VGT Testing Data"
+
+through the normal Module 1 ingestion pipeline.
+
+Create a new Data Version.
+
+Use the frozen FX master:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+SHA-256:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+==================================================
+STEP 4 — FX FORENSIC
+==================================================
+
+For the actual VGT data report:
+
+Currency
+Transaction Count
+Original Spend
+Converted INR Spend
+Pending FX Spend
+FX Coverage %
+FX Status
+
+Do NOT assume INR.
+
+Preserve:
+
+Original Value
+Original Currency
+Transaction Date
+
+and append:
+
+FX Rate
+FX Rate Date
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+
+==================================================
+STEP 5 — INVESTIGATE THE TOTAL-VALUE ISSUE
+==================================================
+
+Compare the actual VGT dataset before and after FX normalization.
+
+Determine whether the original total-value problem is caused by:
+
+A. Foreign currency treated as INR
+B. Multiple currencies summed without conversion
+C. Wrong FX rate
+D. Wrong FX date
+E. JPY scaling
+F. Weekend/holiday handling
+G. Historical currency without approved FX
+H. Currency parsing
+I. Duplicate transactions
+J. Precision/decimal issue
+K. Other
+
+Only identify a root cause if demonstrated from actual VGT transaction-level evidence.
+
+==================================================
+STEP 6 — RECONCILIATION
+==================================================
+
+Verify:
+
+SUM(transaction-level normalized INR values)
+=
+Module 1 converted INR spend
+
+Expected:
+
+Variance = ₹0.00
+
+Also reconcile:
+
+source rows
+→ ingested transactions
+→ converted transactions
+→ pending transactions
+→ excluded transactions
+
+No silent data loss.
+
+==================================================
+STEP 7 — EVIDENCE WORKBOOK
+==================================================
+
+Generate the Module 1 Evidence Workbook for VGT Testing Data.
+
+Populate:
+
+01_COVER_EXECUTIVE_SUMMARY
+02_TRANSACTION_LEDGER
+03_DATA_CLEANING_EXCLUSIONS
+04_CATEGORY_TAXONOMY
+05_VENDOR_NORMALIZATION
+06_SPEND_RECONCILIATION
+07_FINANCIAL_CONTROLS
+08_AUDIT_TRAIL_METRICS
+09_FX_SUMMARY
+10_FX_TRANSACTIONS
+
+The workbook must contain ACTUAL VGT DATA.
+
+Do NOT use controlled-test transactions.
+
+==================================================
+STEP 8 — STOP
+==================================================
+
+DO NOT RUN:
+
+Module 2
+PCBI
+Benchmarking
+Module 4
+Savings Engine
+Strategic Sourcing
+Savings calculations
+Executive reports
+
+This is a Module 1 validation only.
+
+==================================================
+FINAL RESPONSE
+==================================================
+
+Return:
+
+VGT TESTING DATA — MODULE 1 FX FORENSIC RESULT
+
+1. Exact filename
+2. Full path
+3. SHA-256
+4. Data Version ID
+5. Sheets
+6. Source transaction count
+7. Currency population
+8. Original spend by currency
+9. Converted INR spend
+10. Pending FX spend
+11. FX coverage %
+12. Module 1 reconciliation variance
+13. Root cause of previous total-value discrepancy, if demonstrable
+14. Evidence workbook path
+15. Module 1 status
+
+Final status must be exactly:
+
+MODULE 1 VGT VALIDATION = APPROVED
+
+or
+
+MODULE 1 VGT VALIDATION = BLOCKED
+
+CRITICAL:
+If the exact "VGT Testing Data" file cannot be found, STOP and report NOT FOUND.
+
+Do not substitute another file.
+Do not run the controlled test.
+Do not guess.
+
+---
+
+## Prompt 322
+PROMPT 322 — PROCESS THE ACTUAL VGT TESTING DATASET NOW
+
+IMPORTANT:
+This is NOT another FX controlled-test request.
+
+The actual customer testing dataset is named:
+
+VGT Testing Data
+
+The previous verification report incorrectly stopped after executing the synthetic
+FxControlledTestRunner.
+
+DO NOT RUN FxControlledTestRunner.
+
+DO NOT USE:
+- controlled test data
+- golden dataset
+- demo dataset
+- seed data
+- baseline 31,671 transaction dataset
+- any synthetic FX transactions
+
+==================================================
+1. FIND THE ACTUAL FILE
+==================================================
+
+Search the entire project for the exact filename/name:
+
+"VGT Testing Data"
+
+Identify the actual Excel/CSV file.
+
+If there is exactly ONE matching customer file:
+continue.
+
+If there are multiple matches:
+STOP and list:
+- filename
+- full path
+- file size
+- modified date
+- SHA-256
+
+Do not guess which one is correct.
+
+If no exact match exists:
+STOP and report NOT FOUND.
+
+==================================================
+2. VERIFY THE FILE BEFORE PROCESSING
+==================================================
+
+Report:
+
+- Exact filename
+- Full path
+- SHA-256
+- File type
+- Excel sheet names
+- Row count per sheet
+- Header columns
+- Date range
+- Currency column detected
+- Value/spend column detected
+
+Do not modify the source file.
+
+==================================================
+3. PROCESS ONLY VGT TESTING DATA
+==================================================
+
+Create a NEW Data Version for this exact file.
+
+Run ONLY:
+
+Customer File
+→ Ingestion
+→ Data Validation
+→ FX Normalization
+→ Module 1
+→ Module 1 Reconciliation
+→ Module 1 Evidence Workbook
+
+DO NOT RUN:
+
+Module 2
+PCBI
+Benchmarking
+Module 4
+Savings Engine
+Strategic Sourcing
+Savings calculations
+Executive Report
+
+==================================================
+4. USE THE FROZEN FX MASTER
+==================================================
+
+Use ONLY:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Version:
+v2.0
+
+SHA-256:
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Do not modify the FX master.
+
+==================================================
+5. CRITICAL — ACTUAL CURRENCY FORENSICS
+==================================================
+
+For VGT Testing Data calculate:
+
+Currency
+Transaction Count
+Original Currency Spend
+Converted INR Spend
+Pending FX Spend
+FX Coverage %
+FX Status
+
+Preserve every transaction's:
+
+Transaction ID
+Original Value
+Original Currency
+Transaction Date
+FX Rate
+FX Rate Date
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+
+==================================================
+6. FIND THE TOTAL-VALUE PROBLEM
+==================================================
+
+The purpose of this run is specifically to determine why the total value
+was previously going wrong.
+
+Perform transaction-level forensic checks for:
+
+A. Foreign currency incorrectly treated as INR
+B. Multiple currencies summed without conversion
+C. Incorrect FX rate
+D. Incorrect FX rate date
+E. JPY 100-unit vs 1-unit conversion
+F. Weekend/holiday fallback
+G. Missing historical currency
+H. Currency text parsing
+I. Duplicate transactions
+J. Decimal/precision problem
+K. Negative/sign handling
+L. Any other demonstrated issue
+
+Do NOT claim a root cause unless the VGT transaction data itself proves it.
+
+==================================================
+7. RECONCILIATION
+==================================================
+
+Calculate:
+
+Source file total records
+→ Ingested records
+→ Valid records
+→ Converted records
+→ Pending FX records
+→ Excluded records
+
+Then:
+
+SUM(all converted transaction INR values)
+=
+Module 1 Converted INR Spend
+
+Required:
+
+Variance = ₹0.00
+
+If variance is not zero:
+
+STOP.
+
+Do not continue to Module 2.
+
+==================================================
+8. IMPORTANT — DO NOT HIDE PENDING FX
+==================================================
+
+If any VGT currency cannot be converted:
+
+DO NOT force a rate.
+
+DO NOT use an approximate rate.
+
+DO NOT silently treat it as INR.
+
+Report:
+
+Converted INR Spend
++
+Pending FX Spend
++
+FX Coverage %
+
+If FX coverage is incomplete, Module 1 must clearly show:
+
+FX VALIDATION REQUIRED
+
+rather than presenting a misleading consolidated INR total.
+
+==================================================
+9. MODULE 1 EVIDENCE WORKBOOK
+==================================================
+
+Generate the actual VGT Module 1 Evidence Workbook.
+
+It must contain actual VGT records.
+
+Include:
+
+01_COVER_EXECUTIVE_SUMMARY
+02_TRANSACTION_LEDGER
+03_DATA_CLEANING_EXCLUSIONS
+04_CATEGORY_TAXONOMY
+05_VENDOR_NORMALIZATION
+06_SPEND_RECONCILIATION
+07_FINANCIAL_CONTROLS
+08_AUDIT_TRAIL_METRICS
+09_FX_SUMMARY
+10_FX_TRANSACTIONS
+
+NO CONTROLLED-TEST TRANSACTIONS.
+
+==================================================
+10. FINAL RESPONSE
+==================================================
+
+Return exactly:
+
+VGT TESTING DATA — ACTUAL MODULE 1 VALIDATION
+
+1. Exact filename
+2. Full path
+3. SHA-256
+4. Data Version ID
+5. Sheet names
+6. Source record count
+7. Ingested record count
+8. Currency breakdown
+9. Original spend by currency
+10. Converted INR spend
+11. Pending FX spend
+12. FX coverage %
+13. Excluded records and reason
+14. Reconciliation variance
+15. Root cause of total-value issue
+16. Evidence workbook path
+17. Module 1 status
+
+FINAL STATUS:
+
+MODULE 1 VGT VALIDATION = APPROVED
+
+OR
+
+MODULE 1 VGT VALIDATION = BLOCKED
+
+CRITICAL:
+
+The final report MUST contain actual VGT Testing Data numbers.
+
+If the report contains the synthetic 8-transaction ledger
+TX-CTRL-001 through TX-CTRL-008, that means the WRONG DATASET was processed.
+
+STOP and report that failure.
+
+Do not process Module 2 or any downstream module.
+
+---
+
+## Prompt 323
+PROMPT 323 — FRESH VGT TESTING DATA UPLOAD & ACTUAL MODULE 1 RETEST
+
+I have freshly uploaded the actual customer testing dataset:
+
+VGT Testing Data
+
+This is a NEW UPLOAD and must be treated as the authoritative test file for this run.
+
+IMPORTANT:
+The previous attempts repeatedly ran the synthetic FxControlledTestRunner instead of the actual customer dataset.
+
+DO NOT RUN THE CONTROLLED FX TEST.
+
+DO NOT USE:
+- TXN-001 through TXN-008
+- TX-CTRL-001 through TX-CTRL-008
+- golden dataset
+- demo dataset
+- seed data
+- previous VGT data
+- 31,671 baseline transactions as the input
+- any synthetic dataset
+
+==================================================
+1. IDENTIFY THE FRESHLY UPLOADED FILE
+==================================================
+
+Find the newly uploaded file whose filename contains:
+
+VGT Testing Data
+
+Report immediately:
+
+- exact filename
+- full path
+- file size
+- SHA-256
+- file type
+- upload/modified timestamp
+- Excel sheet names
+- row count per sheet
+- header row / detected columns
+
+The file MUST be the freshly uploaded customer file.
+
+If the file cannot be found:
+
+STOP.
+
+Do NOT substitute another file.
+
+Report:
+
+VGT TEST FILE = NOT FOUND
+
+==================================================
+2. DO NOT MODIFY THE SOURCE FILE
+==================================================
+
+The uploaded VGT source file is immutable.
+
+Do not edit it.
+Do not overwrite it.
+Do not convert it and replace it.
+
+Create a separate Data Version for processing.
+
+==================================================
+3. CREATE A NEW DATA VERSION
+==================================================
+
+Create a new customer Data Version specifically for this fresh VGT upload.
+
+Record:
+
+dataVersionId
+filename
+SHA-256
+uploadedAt
+uploadedBy
+row count
+source type
+
+Do not reuse the previous VGT Data Version.
+
+==================================================
+4. RUN ACTUAL MODULE 1
+==================================================
+
+Process THIS FILE ONLY:
+
+VGT Testing Data
+
+Pipeline:
+
+Fresh VGT File
+→ ingestion
+→ validation
+→ currency detection
+→ FX normalization
+→ Module 1
+→ reconciliation
+→ Module 1 Evidence Workbook
+
+DO NOT RUN:
+
+Module 2
+PCBI
+Benchmarking
+Module 4
+Savings Engine
+Strategic Sourcing
+Savings calculations
+Executive reports
+
+==================================================
+5. FROZEN FX MASTER
+==================================================
+
+Use:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+Version: v2.0
+As-of: 2026-10-05
+
+SHA-256:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Do not modify the FX master.
+
+==================================================
+6. ACTUAL VGT FX FORENSICS
+==================================================
+
+For the actual VGT file calculate:
+
+Currency
+Transaction Count
+Original Currency Spend
+Converted INR Spend
+Pending FX Spend
+FX Coverage %
+FX Status
+
+At transaction level retain:
+
+Transaction ID
+Original Value
+Original Currency
+Transaction Date
+FX Rate
+FX Rate Date
+FX Source
+FX Method
+FX Status
+INR Normalized Value
+
+==================================================
+7. INVESTIGATE THE ORIGINAL TOTAL-VALUE PROBLEM
+==================================================
+
+Use the ACTUAL VGT DATA to determine whether the previous total-value problem
+was caused by:
+
+1. Foreign currency treated as INR
+2. Multiple currencies summed without conversion
+3. Wrong FX rate
+4. Wrong FX date
+5. JPY 100-unit scaling
+6. Weekend/holiday handling
+7. Missing historical FX
+8. Currency parsing
+9. Duplicate transactions
+10. Decimal/precision issue
+11. Sign/negative-value issue
+12. Other demonstrated issue
+
+Do not speculate.
+
+Every root-cause conclusion must be supported by actual VGT transaction data.
+
+==================================================
+8. STRICT FX RULE
+==================================================
+
+Never fabricate an FX rate.
+
+Never use an approximate rate.
+
+Never silently treat an unresolved foreign currency as INR.
+
+If any transactions remain unresolved:
+
+show separately:
+
+Converted INR Spend
+Pending FX Spend
+FX Coverage %
+
+and set:
+
+FX Validation Status = PARTIAL
+
+Do not present an apparently complete INR total.
+
+==================================================
+9. RECONCILIATION
+==================================================
+
+Perform:
+
+Source rows
+→ ingested rows
+→ valid rows
+→ converted rows
+→ pending rows
+→ excluded rows
+
+Then verify:
+
+SUM(transaction-level INR normalized values)
+=
+Module 1 Converted Spend
+
+Required:
+
+Variance = ₹0.00
+
+If variance ≠ ₹0.00:
+
+STOP.
+
+==================================================
+10. GENERATE ACTUAL VGT EVIDENCE
+==================================================
+
+Generate:
+
+VGT_Module_1_Evidence.xlsx
+
+Include:
+
+01_COVER_EXECUTIVE_SUMMARY
+02_TRANSACTION_LEDGER
+03_DATA_CLEANING_EXCLUSIONS
+04_CATEGORY_TAXONOMY
+05_VENDOR_NORMALIZATION
+06_SPEND_RECONCILIATION
+07_FINANCIAL_CONTROLS
+08_AUDIT_TRAIL_METRICS
+09_FX_SUMMARY
+10_FX_TRANSACTIONS
+
+The workbook MUST contain actual VGT transactions.
+
+Do not include controlled-test transactions.
+
+==================================================
+11. FINAL REPORT
+==================================================
+
+Return:
+
+VGT ACTUAL DATA — MODULE 1 RETEST
+
+A. File identity
+- filename
+- path
+- SHA-256
+- Data Version ID
+
+B. Dataset
+- sheets
+- source rows
+- ingested rows
+- valid rows
+- excluded rows
+
+C. Currency
+- currency list
+- transaction count by currency
+- original spend by currency
+- converted INR by currency
+- pending FX by currency
+- FX coverage %
+
+D. Financial validation
+- converted INR spend
+- pending spend
+- reconciliation variance
+
+E. Root cause
+- exact reason previous total was wrong
+- transaction-level evidence supporting the conclusion
+
+F. Evidence
+- VGT Module 1 Evidence workbook
+- workbook SHA-256
+
+G. Final status
+
+MODULE 1 VGT VALIDATION = APPROVED
+
+OR
+
+MODULE 1 VGT VALIDATION = BLOCKED
+
+==================================================
+ABSOLUTE STOP RULE
+==================================================
+
+If the final report contains ANY of the following:
+
+TXN-001
+TXN-002
+TXN-003
+TXN-004
+TXN-005
+TXN-006
+TXN-007
+TXN-008
+
+or
+
+TX-CTRL-001
+TX-CTRL-002
+TX-CTRL-003
+TX-CTRL-004
+TX-CTRL-005
+TX-CTRL-006
+TX-CTRL-007
+TX-CTRL-008
+
+then the wrong dataset was processed.
+
+STOP and report:
+
+ACTUAL VGT DATASET WAS NOT PROCESSED.
+
+Do not claim success.
+
+==================================================
+FINAL STOP
+==================================================
+
+After Module 1 validation, STOP.
+
+Do not proceed to Module 2 until I review the actual VGT result.
+
+
+
+
+---
+
+## Prompt 324
+PROMPT 324 — PROCESS THE FRESHLY UPLOADED VGT FILE — NO MORE FX CONTROLLED TESTS
+
+STOP running FX certification and FxControlledTestRunner.
+
+The FX integration has already been certified.
+
+I have JUST uploaded the actual customer testing Excel file.
+
+The file is:
+
+VGT Testing Data
+
+Your ONLY task now is to locate THIS freshly uploaded file and process it through Module 1.
+
+==================================================
+1. LOCATE THE FRESH UPLOAD
+==================================================
+
+Search the project workspace for the most recently uploaded Excel/CSV file matching:
+
+VGT Testing Data
+
+Identify:
+
+- exact filename
+- absolute path
+- file size
+- SHA-256
+- modified/upload timestamp
+- sheet names
+- row count
+- headers
+
+If the exact VGT file is found, continue.
+
+If it is NOT found:
+
+STOP.
+
+Do not run any other test.
+
+Report:
+
+VGT FILE NOT FOUND
+
+and list the closest filename matches.
+
+==================================================
+2. ABSOLUTE PROHIBITION
+==================================================
+
+DO NOT RUN:
+
+FxControlledTestRunner
+runControlledTest
+runControlledMixedCurrencyTest
+
+DO NOT use:
+
+TX-CTRL-001...
+TX-CTRL-008
+
+DO NOT use:
+
+TXN-001...
+TXN-008
+
+DO NOT use:
+
+golden dataset
+demo dataset
+seed dataset
+baseline 31,671 dataset
+
+The final numbers MUST come from the actual VGT Excel file.
+
+==================================================
+3. PROCESS THE ACTUAL FILE
+==================================================
+
+Create a NEW Data Version.
+
+Then run ONLY:
+
+VGT Excel
+→ ingestion
+→ validation
+→ FX normalization
+→ Module 1
+→ reconciliation
+→ Module 1 evidence workbook
+
+Do NOT run Module 2, PCBI, Module 3, Module 4, Savings Engine or reports.
+
+==================================================
+4. USE THE FROZEN FX MASTER
+==================================================
+
+Use the already certified:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+SHA256:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Do not modify the master.
+
+==================================================
+5. RETURN ACTUAL VGT RESULTS
+==================================================
+
+Report:
+
+FILE
+- filename
+- path
+- SHA256
+
+DATA
+- sheet names
+- source row count
+- ingested row count
+- valid row count
+- excluded row count
+
+CURRENCY
+- currencies detected
+- transaction count by currency
+- original spend by currency
+- converted INR spend by currency
+- pending FX spend by currency
+- FX coverage %
+
+MODULE 1
+- total converted INR spend
+- pending spend
+- reconciliation variance
+- duplicate count
+- excluded count
+
+ROOT CAUSE
+Determine from actual VGT transactions whether the original total-value
+problem was caused by FX conversion, currency parsing, duplicate records,
+date handling, JPY scaling, precision, or another demonstrated issue.
+
+Do not guess.
+
+EVIDENCE
+- actual VGT Module 1 Evidence workbook path
+- workbook SHA256
+
+==================================================
+6. MANDATORY PROOF THAT THIS IS THE REAL FILE
+==================================================
+
+Before declaring success, print:
+
+VGT SOURCE FILE:
+<exact filename>
+
+VGT SOURCE SHA256:
+<hash>
+
+VGT SOURCE ROW COUNT:
+<number>
+
+VGT SOURCE SHEETS:
+<names>
+
+These values must come from the freshly uploaded file.
+
+==================================================
+7. FINAL STATUS
+==================================================
+
+If actual VGT data was processed:
+
+MODULE 1 VGT VALIDATION = COMPLETED
+
+If the file could not be found:
+
+MODULE 1 VGT VALIDATION = BLOCKED — VGT FILE NOT FOUND
+
+Do NOT say APPROVED yet.
+
+Do NOT proceed to Module 2.
+
+==================================================
+IMPORTANT
+==================================================
+
+The previous reports repeatedly returned:
+
+₹4,115,821.99
+8 transactions
+7 currencies
+75% FX coverage
+
+Those are CONTROLLED TEST RESULTS and must NOT appear as the VGT result.
+
+If those numbers appear again, you have processed the wrong dataset.
+
+STOP.
+
+---
+
+## Prompt 325
+PROMPT 325 — FINAL VGT MODULE 1 FINANCIAL FORENSIC RECONCILIATION
+
+The actual VGT dataset has now been successfully processed:
+
+VGT Testing Data.xlsx
+20,505 source rows
+20,241 valid transactions
+252 excluded rows
+12 anomaly rows
+100% FX coverage
+₹4,182.53 Cr converted INR spend
+
+DO NOT rerun the FX controlled test.
+DO NOT modify the FX master.
+DO NOT modify Modules 2–4.
+DO NOT process another dataset.
+
+This is a FINAL FORENSIC VALIDATION ONLY.
+
+==================================================
+1. ANOMALY TREATMENT
+==================================================
+
+For the 12 anomaly rows identified as negative price/quantity:
+
+Provide:
+
+- transaction IDs
+- original quantity
+- original price
+- original currency
+- transaction value
+- treatment:
+  INCLUDED / EXCLUDED / QUARANTINED
+
+If excluded, give the exact exclusion amount.
+
+If included, explain why.
+
+Confirm that:
+
+Source Rows
+=
+Valid Transactions
++
+Excluded Rows
++
+Anomaly Rows
+
+and that the financial calculation treatment is explicitly documented.
+
+==================================================
+2. FINANCIAL RECONCILIATION
+==================================================
+
+Build this exact bridge:
+
+Gross source transaction value
+LESS: ERP deletion exclusions
+LESS: zero quantity / FOC exclusions
+LESS: anomaly treatment
+=
+Module 1 validated transaction population
+
+Then calculate:
+
+INR transactions
++
+USD transactions after FX
++
+EUR transactions after FX
++
+CNY transactions after FX
+=
+₹4,182.53 Cr
+
+Show the exact INR amount for each currency.
+
+Required:
+
+SUM(currency-level converted INR)
+=
+Module 1 validated spend
+
+Variance must be ₹0.00.
+
+==================================================
+3. PROVE THE ₹18.5 CR ERP DIFFERENCE
+==================================================
+
+Do NOT use an approximation.
+
+For every USD/EUR/CNY transaction:
+
+Calculate:
+
+Customer ERP INR value
+VS
+aiCEV FX-normalized INR value
+
+Then show:
+
+Currency
+Transaction Count
+ERP INR Value
+aiCEV INR Value
+Difference
+Difference %
+
+Produce:
+
+TOTAL ERP FOREIGN-CURRENCY VALUE
+TOTAL aiCEV FOREIGN-CURRENCY VALUE
+TOTAL DIFFERENCE
+
+The total difference must be mathematically derived from actual VGT records.
+
+If it is not ₹18.5 Cr, report the actual number.
+
+==================================================
+4. FX RATE FORENSICS
+==================================================
+
+For USD, EUR and CNY show:
+
+Minimum FX rate
+Maximum FX rate
+Average FX rate
+Transaction-weighted average FX rate
+ERP static rate
+Difference between ERP static rate and transaction-weighted rate
+
+This must be based on actual VGT transactions.
+
+==================================================
+5. FINAL SPEND BRIDGE
+==================================================
+
+Produce:
+
+Source rows
+20,505
+
+Valid transactions
+20,241
+
+Excluded
+252
+
+Anomalies
+12
+
+Final financial population
+[exact number]
+
+Then:
+
+Final validated INR spend
+₹[exact]
+
+Reconciliation variance
+₹0.00
+
+==================================================
+6. EVIDENCE
+==================================================
+
+Update:
+
+MODULE_1_VGT_EVIDENCE.xlsx
+
+Add/verify a sheet:
+
+11_FX_ERP_FORENSIC_BRIDGE
+
+It must contain the transaction-level calculation proving the ERP-vs-aiCEV FX difference.
+
+Do not overwrite the original source file.
+
+==================================================
+7. FINAL DECISION
+==================================================
+
+Return exactly:
+
+VGT MODULE 1 FINANCIAL FORENSIC STATUS
+
+Dataset:
+VGT Testing Data.xlsx
+
+Source Rows:
+20,505
+
+Validated Rows:
+[exact]
+
+Excluded Rows:
+252
+
+Anomaly Rows:
+12
+
+FX Coverage:
+100%
+
+Validated INR Spend:
+₹[exact]
+
+ERP-vs-aiCEV FX Difference:
+₹[exact]
+
+Reconciliation Variance:
+₹0.00
+
+Root Cause:
+[exact demonstrated cause]
+
+Evidence Workbook:
+[path]
+
+FINAL STATUS:
+
+MODULE 1 VGT = APPROVED
+
+OR
+
+MODULE 1 VGT = BLOCKED
+
+Do not proceed to Module 2.
+
+---
+
+## Prompt 326
+PROMPT 326 — FINALIZE EXISTING VGT RESULT — DO NOT RUN FX CERTIFICATION
+
+IMPORTANT:
+
+STOP running the generic FX certification workflow.
+
+STOP running FxControlledTestRunner.
+
+STOP running the 8-transaction controlled test.
+
+The FX engine is already certified.
+
+The actual VGT dataset WAS successfully processed in the previous run.
+
+Use THAT existing VGT result.
+
+==================================================
+AUTHORITATIVE VGT RESULT
+==================================================
+
+Dataset:
+
+VGT Testing Data.xlsx
+
+SHA-256:
+
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Previously established:
+
+Source rows: 20,505
+Valid transactions: 20,241
+Excluded rows: 252
+Anomaly rows: 12
+Duplicate rows: 0
+
+Currencies:
+
+INR
+USD
+CNY
+EUR
+
+FX coverage: 100%
+
+Validated Module 1 spend:
+
+₹41,825,301,574.94
+= ₹4,182.53 Cr
+
+Pending FX: ₹0
+Blocked FX: ₹0
+Reconciliation variance: ₹0.00
+
+==================================================
+TASK
+==================================================
+
+Do NOT ingest another file.
+
+Do NOT run a controlled test.
+
+Do NOT rerun FX certification.
+
+Do NOT modify the FX master.
+
+Do NOT modify Modules 2–4.
+
+Use the EXISTING VGT transaction ledger/result and perform ONLY:
+
+1. 12 anomaly forensic review
+2. ERP-vs-aiCEV FX comparison
+3. exact financial reconciliation
+4. evidence workbook finalization
+
+==================================================
+1. ANOMALY REVIEW
+==================================================
+
+Identify all 12 anomaly transactions.
+
+For each:
+
+Transaction ID
+Date
+Currency
+Quantity
+Net Price
+Original Value
+Reason flagged
+Treatment:
+INCLUDED / EXCLUDED / QUARANTINED
+
+Then prove:
+
+20,505
+=
+20,241 valid
++
+252 excluded
++
+12 anomaly
+
+==================================================
+2. ERP VS aiCEV FX
+==================================================
+
+For every foreign-currency transaction:
+
+USD
+EUR
+CNY
+
+compare:
+
+Customer ERP Net Value in INR
+VS
+aiCEV FX-normalized INR value
+
+Produce:
+
+Currency
+Transaction Count
+ERP INR Value
+aiCEV INR Value
+Difference
+Difference %
+
+Then calculate the exact aggregate difference.
+
+DO NOT use the previously stated approximate
+"₹18.5 Cr"
+unless the actual VGT ledger mathematically proves it.
+
+==================================================
+3. FINAL FINANCIAL RECONCILIATION
+==================================================
+
+Show:
+
+INR converted spend
++
+USD converted spend
++
+CNY converted spend
++
+EUR converted spend
+
+=
+
+₹41,825,301,574.94
+
+Required:
+
+Variance = ₹0.00
+
+==================================================
+4. EVIDENCE WORKBOOK
+==================================================
+
+Use the existing:
+
+MODULE_1_VGT_EVIDENCE.xlsx
+
+Add:
+
+11_FX_ERP_FORENSIC_BRIDGE
+
+Containing the actual VGT transaction-level ERP-vs-aiCEV comparison.
+
+Do NOT replace or alter the original VGT source file.
+
+==================================================
+5. FINAL OUTPUT
+==================================================
+
+Return:
+
+VGT MODULE 1 FINAL FORENSIC
+
+Dataset:
+VGT Testing Data.xlsx
+
+SHA256:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Source Rows:
+20,505
+
+Valid:
+20,241
+
+Excluded:
+252
+
+Anomalies:
+12
+
+FX Coverage:
+100%
+
+Validated Spend:
+₹41,825,301,574.94
+
+Validated Spend:
+₹4,182.53 Cr
+
+ERP-vs-aiCEV FX Difference:
+₹[ACTUAL]
+
+Reconciliation:
+₹0.00
+
+Evidence Workbook:
+[path]
+
+FINAL STATUS:
+
+VGT MODULE 1 FINAL FORENSIC = APPROVED
+
+OR
+
+VGT MODULE 1 FINAL FORENSIC = BLOCKED
+
+==================================================
+ABSOLUTE RULE
+==================================================
+
+If you execute FxControlledTestRunner or produce:
+
+₹4,115,821.9923
+8 transactions
+75% coverage
+
+STOP.
+
+That is the synthetic test and NOT VGT.
+
+Do not report it as VGT.
+
+Do not ask for another confirmation.
+
+Use the existing actual VGT result.

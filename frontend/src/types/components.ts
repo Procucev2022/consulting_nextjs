@@ -556,5 +556,23 @@ export interface AuthCardProps {
   initialTab?: 'LOGIN' | 'REGISTER';
 }
 
+export interface CustomerAnalysisStatusCardProps {
+  tenantId?: string;
+  hasValidDataVersion?: boolean;
+  hasModule1Result?: boolean;
+  activeJob?: import('./analysisOrchestration').AnalysisJob | null;
+  compact?: boolean;
+  onViewSpendSummary?: () => void;
+  onViewReport?: () => void;
+}
+
+export interface DetailedAnalysisModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onContinueToModule1?: () => void;
+  onViewSpendSummary?: () => void;
+  job?: import('./analysisOrchestration').AnalysisJob | null;
+}
+
 
 
