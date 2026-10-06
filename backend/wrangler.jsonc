@@ -32,7 +32,15 @@
 			"name": "consulting-nextjs-backend",
 			"vars": {
 				"AUTH_SECRET": "a1b2c3d4e5f60718293a4b5c6d7e8f90_procucev_secret_key_2026",
-				"FRONTEND_URL": "https://consulting-frontend.mukul93028.workers.dev"
+				"FRONTEND_URL": "https://consulting-frontend.mukul93028.workers.dev",
+				"GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",
+				"GEMINI_PRIMARY_MODEL": "gemini-3.5-flash",
+				"GEMINI_FALLBACK_MODELS": "gemini-flash-latest,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.7-flash",
+				"GEMINI_REQUEST_TIMEOUT_MS": 20000,
+				"GEMINI_TOTAL_BUDGET_MS": 45000,
+				"GEMINI_MIN_ATTEMPT_MS": 3000,
+				"GEMINI_MAX_DOCUMENT_BYTES": 10485760,
+				"GEMINI_MAX_DOCUMENT_TEXT_CHARS": 120000
 			},
 			"d1_databases": [
 				{
@@ -52,7 +60,15 @@
 			"name": "consulting-nextjs-backend",
 			"vars": {
 				"AUTH_SECRET": "a1b2c3d4e5f60718293a4b5c6d7e8f90_procucev_secret_key_2026",
-				"FRONTEND_URL": "https://consulting-frontend.mukul93028.workers.dev"
+				"FRONTEND_URL": "https://consulting-frontend.mukul93028.workers.dev",
+				"GEMINI_BASE_URL": "https://generativelanguage.googleapis.com/v1beta/models",
+				"GEMINI_PRIMARY_MODEL": "gemini-3.5-flash",
+				"GEMINI_FALLBACK_MODELS": "gemini-flash-latest,gemini-3.5-flash-lite,gemini-3.6-flash,gemini-3.7-flash",
+				"GEMINI_REQUEST_TIMEOUT_MS": 20000,
+				"GEMINI_TOTAL_BUDGET_MS": 45000,
+				"GEMINI_MIN_ATTEMPT_MS": 3000,
+				"GEMINI_MAX_DOCUMENT_BYTES": 10485760,
+				"GEMINI_MAX_DOCUMENT_TEXT_CHARS": 120000
 			},
 			"d1_databases": [
 				{
