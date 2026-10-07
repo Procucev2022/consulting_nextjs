@@ -9,7 +9,8 @@ const encodeBase64Url = (bytes: Uint8Array): string => {
 };
 
 const decodeBase64Url = (value: string): Uint8Array => {
-  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
+  let cleanValue = value.replace(/[\s=]/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  const padded = cleanValue + '==='.slice((cleanValue.length + 3) % 4);
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
 };
 
