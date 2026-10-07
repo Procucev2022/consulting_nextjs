@@ -74,7 +74,7 @@
 				{
 					"binding": "DB",
 					"database_name": "consulting-db",
-					"database_id": "4e7c2ba7-5cd2-4028-a630-2b5ae88625db"
+					"database_id": "9286122b-f5e3-413a-9061-a36a84a8787a"
 				}
 			],
 			"r2_buckets": [
@@ -94,7 +94,7 @@
 				{
 					"binding": "DB",
 					"database_name": "consulting-db",
-					"database_id": "4e7c2ba7-5cd2-4028-a630-2b5ae88625db"
+					"database_id": "9286122b-f5e3-413a-9061-a36a84a8787a"
 				}
 			],
 			"r2_buckets": [
