@@ -355,7 +355,7 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
 
   if (environment.OBJECTS && body.fileBase64) {
     try {
-      const cleanBase64 = String(body.fileBase64).replace(/^data:[^;]+;base64,/, '');
+      const cleanBase64 = String(body.fileBase64).replace(/^data:[^;]+;base64,/, '').replace(/\s+/g, '');
       const binaryString = atob(cleanBase64);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
