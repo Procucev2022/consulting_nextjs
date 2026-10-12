@@ -156,7 +156,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
               onClick={() => setBreakdownMode('CATEGORY')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
                 breakdownMode === 'CATEGORY'
-                  ? 'bg-white text-white shadow-xs'
+                  ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -167,7 +167,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
               onClick={() => setBreakdownMode('VENDOR')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
                 breakdownMode === 'VENDOR'
-                  ? 'bg-white text-white shadow-xs'
+                  ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -176,7 +176,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
             </button>
           </div>
 
-          {/* Fiscal Year Switcher Pills */}
+          {/* Fiscal Year Switcher Pills (only if multi-year data exists) */}
           <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono shrink-0 shadow-xs">
             <button
               onClick={() => setSelectedYearView('ALL')}
@@ -188,36 +188,40 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
             >
               {UI_STRINGS.module2.breakdown.allFy}
             </button>
-            <button
-              onClick={() => setSelectedYearView('FY24')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
-                selectedYearView === 'FY24'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {UI_STRINGS.module2.breakdown.fy24}
-            </button>
-            <button
-              onClick={() => setSelectedYearView('FY25')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
-                selectedYearView === 'FY25'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {UI_STRINGS.module2.breakdown.fy25}
-            </button>
-            <button
-              onClick={() => setSelectedYearView('FY26')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
-                selectedYearView === 'FY26'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {UI_STRINGS.module2.breakdown.fy26}
-            </button>
+            {Boolean(categoriesList.some((c) => (c.spend_fy24_cr || 0) > 0 && (c.spend_fy25_cr || 0) > 0)) && (
+              <>
+                <button
+                  onClick={() => setSelectedYearView('FY24')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    selectedYearView === 'FY24'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {UI_STRINGS.module2.breakdown.fy24}
+                </button>
+                <button
+                  onClick={() => setSelectedYearView('FY25')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    selectedYearView === 'FY25'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {UI_STRINGS.module2.breakdown.fy25}
+                </button>
+                <button
+                  onClick={() => setSelectedYearView('FY26')}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    selectedYearView === 'FY26'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {UI_STRINGS.module2.breakdown.fy26}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -330,7 +334,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                 >
                   <div className="space-y-1.5 w-full">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-white text-white border border-slate-700 shadow-xs flex items-center space-x-1">
+                      <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-slate-900 text-white border border-slate-700 shadow-xs flex items-center space-x-1">
                         <Award className="w-3 h-3 text-amber-400" />
                         <span>Rank #{idx + 1}</span>
                       </span>
@@ -568,7 +572,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                 >
                   <div className="space-y-1.5 w-full">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-white text-white border border-slate-700 shadow-xs flex items-center space-x-1">
+                      <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-md bg-slate-900 text-white border border-slate-700 shadow-xs flex items-center space-x-1">
                         <Award className="w-3 h-3 text-amber-400" />
                         <span>Rank #{idx + 1}</span>
                       </span>

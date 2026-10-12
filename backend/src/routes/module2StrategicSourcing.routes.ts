@@ -12,6 +12,16 @@ import {
   getHandoffPackages,
   exportSourcingReport
 } from '../controllers/module2StrategicSourcing.controller';
+import {
+  getOpportunityLedger,
+  getBridge as getMathematicalBridge,
+  getCanonicalInput,
+  getTop50Vendors,
+  getSupplierRisk,
+  getPoConsolidation,
+  getRecurringSpend,
+  getLineItems
+} from '../controllers/module2Canonical.controller';
 import { requireFeature } from '../utils/entitlementMiddleware';
 import { FEATURE_PERMISSIONS } from '../constants/subscription';
 
@@ -24,4 +34,14 @@ router.get('/suppliers', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getS
 router.get('/handoff', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getHandoffPackages);
 router.get('/export', requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT), exportSourcingReport);
 
+router.get('/opportunity-ledger', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getOpportunityLedger);
+router.get('/bridge', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getMathematicalBridge);
+router.get('/canonical-input', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getCanonicalInput);
+router.get('/top50-vendors', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getTop50Vendors);
+router.get('/supplier-risk', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getSupplierRisk);
+router.get('/po-consolidation', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getPoConsolidation);
+router.get('/recurring-spend', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getRecurringSpend);
+router.get('/line-items', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getLineItems);
+
 export default router;
+

@@ -1,0 +1,142 @@
+[
+  {
+    "testId": "NEG-001",
+    "name": "Invalid file format",
+    "payload": "corrupt.txt",
+    "expectedStatus": 400,
+    "expectedError": "INVALID_FILE_TYPE"
+  },
+  {
+    "testId": "NEG-002",
+    "name": "Corrupted Excel workbook",
+    "payload": "corrupted_bytes.xlsx",
+    "expectedStatus": 400,
+    "expectedError": "CORRUPTED_WORKBOOK"
+  },
+  {
+    "testId": "NEG-003",
+    "name": "Missing mandatory column Purchasing Document",
+    "missingCol": "Purchasing Document",
+    "expectedStatus": 400,
+    "expectedError": "SCHEMA_VALIDATION_FAILED"
+  },
+  {
+    "testId": "NEG-004",
+    "name": "Wrong data type in Net Price string instead of number",
+    "badField": "Net Price",
+    "expectedStatus": 400,
+    "expectedError": "INVALID_DATA_TYPE"
+  },
+  {
+    "testId": "NEG-005",
+    "name": "Duplicate upload of identical file hash",
+    "action": "DUPLICATE_FILE_HASH",
+    "expectedStatus": 409,
+    "expectedError": "IDENTICAL_CHECKSUM_DETECTED"
+  },
+  {
+    "testId": "NEG-006",
+    "name": "Duplicate transaction line injection",
+    "action": "DUPLICATE_TXN",
+    "expectedStatus": 200,
+    "expectedHandling": "ANOMALY_QUARANTINED"
+  },
+  {
+    "testId": "NEG-007",
+    "name": "Invalid currency code XYZ",
+    "currency": "XYZ",
+    "expectedStatus": 400,
+    "expectedError": "UNRECOGNIZED_CURRENCY"
+  },
+  {
+    "testId": "NEG-008",
+    "name": "Missing FX rate for unmapped exotic currency",
+    "currency": "ZMK",
+    "expectedStatus": 400,
+    "expectedError": "MISSING_FX_CONVERSION_RATE"
+  },
+  {
+    "testId": "NEG-009",
+    "name": "Invalid benchmark index reference",
+    "index": "INVALID-PCBI-999",
+    "expectedStatus": 400,
+    "expectedError": "BENCHMARK_INDEX_NOT_FOUND"
+  },
+  {
+    "testId": "NEG-010",
+    "name": "Unauthorized Module 4 access by external guest",
+    "role": "GUEST_USER",
+    "expectedStatus": 403,
+    "expectedError": "INSUFFICIENT_ROLE_PERMISSIONS"
+  },
+  {
+    "testId": "NEG-011",
+    "name": "Unauthorized evidence download from another tenant",
+    "tenant": "ATTACKER_TENANT",
+    "expectedStatus": 403,
+    "expectedError": "TENANT_ACCESS_DENIED"
+  },
+  {
+    "testId": "NEG-012",
+    "name": "Cross-assessment access attempt",
+    "target": "AIC-2026-0001",
+    "expectedStatus": 403,
+    "expectedError": "TENANT_ACCESS_DENIED"
+  },
+  {
+    "testId": "NEG-013",
+    "name": "Analysis run on stale superseded Data Version",
+    "versionId": "DV-SUPERSEDED",
+    "expectedStatus": 400,
+    "expectedError": "DATA_VERSION_SUPERSEDED"
+  },
+  {
+    "testId": "NEG-014",
+    "name": "Action execution on superseded Analysis Run",
+    "runId": "RUN-SUPERSEDED",
+    "expectedStatus": 400,
+    "expectedError": "ANALYSIS_RUN_SUPERSEDED"
+  },
+  {
+    "testId": "NEG-015",
+    "name": "Premature report approval before review gates pass",
+    "action": "APPROVE_RUN",
+    "expectedStatus": 400,
+    "expectedError": "MANDATORY_REVIEW_GATES_FAILED"
+  },
+  {
+    "testId": "NEG-016",
+    "name": "Premature delivery package dispatch before approval",
+    "action": "DELIVER_PACKAGE",
+    "expectedStatus": 400,
+    "expectedError": "ASSESSMENT_NOT_APPROVED"
+  },
+  {
+    "testId": "NEG-017",
+    "name": "Tampered evidence workbook checksum mismatch",
+    "action": "MODIFY_WORKBOOK",
+    "expectedStatus": 400,
+    "expectedError": "CHECKSUM_INTEGRITY_MISMATCH"
+  },
+  {
+    "testId": "NEG-018",
+    "name": "Tampered source file post-upload",
+    "action": "MODIFY_SOURCE",
+    "expectedStatus": 400,
+    "expectedError": "SOURCE_FILE_TAMPERED"
+  },
+  {
+    "testId": "NEG-019",
+    "name": "Deleted source file retrieval attempt",
+    "action": "FETCH_DELETED",
+    "expectedStatus": 404,
+    "expectedError": "DATASET_FILE_NOT_FOUND"
+  },
+  {
+    "testId": "NEG-020",
+    "name": "Browser refresh during active analysis execution",
+    "action": "CONCURRENT_REFRESH",
+    "expectedStatus": 200,
+    "expectedHandling": "STATE_RESUMED_FROM_STORE"
+  }
+]

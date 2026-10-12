@@ -268,25 +268,24 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       const suppliedCategories = Array.from(data.categories);
       const isMulti = suppliedCategories.length > 1;
 
-      const hasYearData = data.spendFy24 > 0 || data.spendFy25 > 0 || data.spendFy26 > 0;
-      const spendFy24 = Number((hasYearData && data.spendFy24 > 0 ? data.spendFy24 : data.spend * 0.28).toFixed(2));
-      const spendFy25 = Number((hasYearData && data.spendFy25 > 0 ? data.spendFy25 : data.spend * 0.34).toFixed(2));
-      const spendFy26 = Number((hasYearData && data.spendFy26 > 0 ? data.spendFy26 : data.spend * 0.38).toFixed(2));
-      const yoy = spendFy25 > 0 ? Number((((spendFy26 - spendFy25) / spendFy25) * 100).toFixed(1)) : 7.2;
+      const spendFy24 = Number(data.spendFy24.toFixed(2));
+      const spendFy25 = Number(data.spendFy25.toFixed(2));
+      const spendFy26 = Number(data.spendFy26.toFixed(2));
+      const yoy = spendFy25 > 0 ? Number((((spendFy26 - spendFy25) / spendFy25) * 100).toFixed(1)) : 0;
 
       const vendorTopItems = data.items.slice(0, 10).map((it) => {
-        const unitRate = it.unitPrice || (it.volume > 0 ? Number(((it.spend_inr_cr * 10000000) / it.volume).toFixed(2)) : 100);
+        const unitRate = it.unitPrice || (it.volume > 0 ? Number(((it.spend_inr_cr * 10000000) / it.volume).toFixed(2)) : 0);
         return {
           material_code: it.material_code,
           material_description: it.item_name,
-          po_number: it.po_number || 'PO-2024-SYS',
+          po_number: it.po_number || 'PO IDENTIFIER NOT AVAILABLE',
           unspsc_code: it.unspsc_code || '10000000',
           unspsc_title: it.unspsc_title || it.category,
-          spend_yoy_pct: 7.5,
-          qty_yoy_pct: 4.2,
-          price_yoy_pct: 3.1,
+          spend_yoy_pct: 0,
+          qty_yoy_pct: 0,
+          price_yoy_pct: 0,
           observation_mark: isMulti ? 'Cross-category item line' : undefined,
-          remark: `Unit Rate: ₹${unitRate.toLocaleString()}`
+          remark: unitRate > 0 ? `Unit Rate: ₹${unitRate.toLocaleString()}` : 'Actual Transaction Line'
         };
       });
 

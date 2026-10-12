@@ -52,3 +52,5 @@ export * from './analysisOrchestration';
 export * from './evidenceWorkbook';
 export * from './savingsEvidence';
 export * from './adminGateway';
+export * from './module1Canonical';
+export * from './assessment';

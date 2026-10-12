@@ -80,13 +80,13 @@ describe('MonthTimelineBarChart Component', () => {
     searchQuery: ''
   };
 
-  it('renders all 36 month bars and fiscal year legend buttons', () => {
+  it('renders all month bars and dynamic fiscal year legend buttons', () => {
     render(<MonthTimelineBarChart {...defaultProps} />);
 
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.all36Months)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy24)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy25)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy26)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.documentSummary.month.allMonthsFilter(sampleMonths.length))).toBeInTheDocument();
+    expect(screen.getAllByText('FY24').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('FY25').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('FY26').length).toBeGreaterThan(0);
 
     // Default inspection card for first month (Apr 2023 with 0% MoM)
     expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.performanceTitle('Apr 2023'))).toBeInTheDocument();
@@ -96,27 +96,49 @@ describe('MonthTimelineBarChart Component', () => {
     const onSelectFy = vi.fn();
     const { rerender } = render(<MonthTimelineBarChart {...defaultProps} onSelectFy={onSelectFy} />);
 
-    fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.graph.all36Months));
+    fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.allMonthsFilter(sampleMonths.length)));
     expect(onSelectFy).toHaveBeenCalledWith('ALL');
 
-    fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy24));
+    fireEvent.click(screen.getAllByText('FY24')[0]);
     expect(onSelectFy).toHaveBeenCalledWith('FY24');
 
-    fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy25));
+    fireEvent.click(screen.getAllByText('FY25')[0]);
     expect(onSelectFy).toHaveBeenCalledWith('FY25');
 
-    fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy26));
+    fireEvent.click(screen.getAllByText('FY26')[0]);
     expect(onSelectFy).toHaveBeenCalledWith('FY26');
 
     // Rerender with each active FY
     rerender(<MonthTimelineBarChart {...defaultProps} selectedFy="FY24" />);
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy24).closest('button')).toHaveClass('font-bold');
+    expect(screen.getAllByText('FY24')[0].closest('button')).toHaveClass('font-bold');
 
     rerender(<MonthTimelineBarChart {...defaultProps} selectedFy="FY25" />);
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy25).closest('button')).toHaveClass('font-bold');
+    expect(screen.getAllByText('FY25')[0].closest('button')).toHaveClass('font-bold');
 
     rerender(<MonthTimelineBarChart {...defaultProps} selectedFy="FY26" />);
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.legends.fy26).closest('button')).toHaveClass('font-bold');
+    expect(screen.getAllByText('FY26')[0].closest('button')).toHaveClass('font-bold');
+  });
+
+  it('renders correctly with VGT single-year data displaying FY22 only without FY24/25/26', () => {
+    const vgt10 = [
+      {
+        month_key: '2021-04',
+        month_label: 'Apr 2021',
+        fiscal_year: 'FY22',
+        spend_inr_cr: 254.68,
+        spend_usd_m: 3.1,
+        records_count: 2304,
+        po_count: 50,
+        top_material_group: 'RAW',
+        top_plant: '1000',
+        mom_change_pct: 0
+      }
+    ];
+    render(<MonthTimelineBarChart {...defaultProps} months={vgt10} />);
+    expect(screen.getAllByText('FY22').length).toBeGreaterThan(0);
+    expect(screen.queryByText('FY24')).toBeNull();
+    expect(screen.queryByText('FY25')).toBeNull();
+    expect(screen.queryByText('FY26')).toBeNull();
   });
 
   it('handles hovering and clicking on a bar, and displays active hoveredMonth', () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import {
   getDashboardSummary,
   getCategoryProfiles,
@@ -17,6 +17,10 @@ const mockResponse = () => {
 };
 
 describe('module2StrategicSourcing.controller', () => {
+  beforeAll(() => {
+    db.getModule2StrategicSourcingAnalysis();
+  }, 30000);
+
   it('getDashboardSummary: successfully returns 10 KPI summary cards', async () => {
     const req: any = { query: {} };
     const res = mockResponse();

@@ -29,12 +29,14 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   uniqueItemsCount,
   uniqueVendorsCount,
   isDataRefreshed,
-  onNavigateToCategorization
+  onNavigateToCategorization,
+  periodMetadata,
+  canonicalViewModel
 }) => {
   const [activeDimension, setActiveDimension] = useState<DocumentSummaryDimension>('MATERIAL_GROUP');
   const [spendCurrency, setSpendCurrency] = useState<DocumentSpendCurrency>('INR');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedMonthFy, setSelectedMonthFy] = useState<'ALL' | 'FY24' | 'FY25' | 'FY26'>('ALL');
+  const [selectedMonthFy, setSelectedMonthFy] = useState<string>('ALL');
   const [monthViewMode, setMonthViewMode] = useState<MonthGraphViewMode>('CHART_AND_TABLE');
   const [plantScope, setPlantScope] = useState<SummaryScopeMode>('TOP_10');
   const [mgScope, setMgScope] = useState<SummaryScopeMode>('TOP_10');
@@ -205,7 +207,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         {/* Total Spend */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
-            {UI_STRINGS.documentSummary.totalSpendEvaluated}
+            {UI_STRINGS.documentSummary.validFxNormalizedSpend}
           </span>
           <p className="text-xl sm:text-2xl font-black font-mono text-emerald-600">
             {totalSpendFormatted}
@@ -287,6 +289,28 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
       </div>
 
+      {/* Explanatory Historical FX Information Element & Data-Quality Impact Indicator */}
+      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
+        <div className="flex items-center space-x-2 text-slate-700">
+          <span className="font-medium">
+            {UI_STRINGS.documentSummary.fxHistoricalNormalizationNote}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <span
+            className="px-2.5 py-1 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-800 font-bold"
+            title={UI_STRINGS.documentSummary.fxMethodologyImpactNote}
+          >
+            {canonicalViewModel?.fxNormalizationImpactCr !== undefined
+              ? `FX normalization impact vs profile rates: ₹${canonicalViewModel.fxNormalizationImpactCr.toFixed(2)} Cr`
+              : UI_STRINGS.documentSummary.fxMethodologyImpactLabel}
+          </span>
+          <span className="text-[10px] text-slate-400 font-sans">
+            ({UI_STRINGS.documentSummary.fxMethodologyImpactNote})
+          </span>
+        </div>
+      </div>
+
       {/* Navigation Dimension Tabs & Search Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
         {/* Dimension Switcher Tabs */}
@@ -298,7 +322,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
               activeDimension === 'MATERIAL_GROUP'
-                ? 'bg-white text-white shadow-xs'
+                ? 'bg-slate-900 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -313,7 +337,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
               activeDimension === 'PLANT'
-                ? 'bg-white text-white shadow-xs'
+                ? 'bg-slate-900 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -328,7 +352,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             }}
             className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg font-bold transition-all cursor-pointer ${
               activeDimension === 'MONTH'
-                ? 'bg-white text-white shadow-xs'
+                ? 'bg-slate-900 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -348,38 +372,25 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {UI_STRINGS.documentSummary.month.filterAll}
+              {months.length === 10
+                ? 'All 10 Months'
+                : months.length === 36
+                ? 'All 36 Months'
+                : UI_STRINGS.documentSummary.month.allMonthsFilter(months.length)}
             </button>
-            <button
-              onClick={() => setSelectedMonthFy('FY24')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                selectedMonthFy === 'FY24'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {UI_STRINGS.documentSummary.month.filterFy24}
-            </button>
-            <button
-              onClick={() => setSelectedMonthFy('FY25')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                selectedMonthFy === 'FY25'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {UI_STRINGS.documentSummary.month.filterFy25}
-            </button>
-            <button
-              onClick={() => setSelectedMonthFy('FY26')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                selectedMonthFy === 'FY26'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {UI_STRINGS.documentSummary.month.filterFy26}
-            </button>
+            {Array.from(new Set(months.map((m) => m.fiscal_year))).filter(Boolean).map((fy) => (
+              <button
+                key={fy}
+                onClick={() => setSelectedMonthFy(fy)}
+                className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+                  selectedMonthFy === fy
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {fy}
+              </button>
+            ))}
           </div>
         )}
 
@@ -486,7 +497,13 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     {UI_STRINGS.documentSummary.materialGroup.headers.spend(spendCurrency === 'INR' ? '₹ Cr' : '$ M')}
                   </th>
                   <th className="py-3 px-3 text-right">{UI_STRINGS.documentSummary.materialGroup.headers.share}</th>
-                  <th className="py-3 px-3.5 text-left">{UI_STRINGS.documentSummary.materialGroup.headers.trend}</th>
+                  <th className="py-3 px-3.5 text-left">
+                    {periodMetadata?.hasMultiYearComparison
+                      ? UI_STRINGS.documentSummary.materialGroup.headers.trend
+                      : UI_STRINGS.documentSummary.materialGroup.headers.trendSingleFy(
+                          periodMetadata?.actualFiscalYears?.[0] || 'FY22'
+                        )}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -541,27 +558,42 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                           {sharePct.toFixed(1)}%
                         </td>
                         <td className="py-3 px-3.5 w-44">
-                          <div className="space-y-1">
-                            <div className="flex justify-between text-[9px] text-slate-400">
-                              <span>FY24: ₹{fy24.toFixed(1)}</span>
-                              <span>FY25: ₹{fy25.toFixed(1)}</span>
-                              <span>FY26: ₹{fy26.toFixed(1)}</span>
+                          {periodMetadata?.hasMultiYearComparison ? (
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] text-slate-400">
+                                <span>FY24: ₹{fy24.toFixed(1)}</span>
+                                <span>FY25: ₹{fy25.toFixed(1)}</span>
+                                <span>FY26: ₹{fy26.toFixed(1)}</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-1.5 flex overflow-hidden">
+                                <div
+                                  className="bg-sky-400 h-full"
+                                  style={{ width: `${spendInrCr > 0 ? (fy24 / spendInrCr) * 100 : 33}%` }}
+                                />
+                                <div
+                                  className="bg-blue-500 h-full"
+                                  style={{ width: `${spendInrCr > 0 ? (fy25 / spendInrCr) * 100 : 33}%` }}
+                                />
+                                <div
+                                  className="bg-indigo-600 h-full"
+                                  style={{ width: `${spendInrCr > 0 ? (fy26 / spendInrCr) * 100 : 34}%` }}
+                                />
+                              </div>
                             </div>
-                            <div className="w-full bg-slate-100 rounded-full h-1.5 flex overflow-hidden">
-                              <div
-                                className="bg-sky-400 h-full"
-                                style={{ width: `${spendInrCr > 0 ? (fy24 / spendInrCr) * 100 : 33}%` }}
-                              />
-                              <div
-                                className="bg-blue-500 h-full"
-                                style={{ width: `${spendInrCr > 0 ? (fy25 / spendInrCr) * 100 : 33}%` }}
-                              />
-                              <div
-                                className="bg-indigo-600 h-full"
-                                style={{ width: `${spendInrCr > 0 ? (fy26 / spendInrCr) * 100 : 34}%` }}
-                              />
+                          ) : (
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[9px] font-mono text-slate-500">
+                                <span>{periodMetadata?.actualFiscalYears?.[0] || 'FY22'}: ₹{spendInrCr.toFixed(1)} Cr</span>
+                                <span className="text-cyan-700 font-bold">{sharePct.toFixed(1)}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-1.5 flex overflow-hidden">
+                                <div
+                                  className="bg-cyan-500 h-full"
+                                  style={{ width: `${Math.min(100, Math.max(5, sharePct * 2))}%` }}
+                                />
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -873,6 +905,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             viewMode={monthViewMode}
             onChangeViewMode={setMonthViewMode}
             searchQuery={searchQuery}
+            periodMetadata={periodMetadata}
           />
 
           {/* Detailed Monthly Data Table (shown in CHART_AND_TABLE and TABLE_ONLY modes) */}

@@ -9,12 +9,14 @@ import {
   getStoredObject,
   deleteIngestionDocument
 } from '../controllers/ingestion.controller';
+import { getCanonicalModule1 } from '../controllers/module1Canonical.controller';
 import { validateBody } from '../utils/validation';
 import { addIngestionFileSchema, updateValidationRecordSchema } from '../constants/validation';
 
 const router = Router();
 
 router.get('/', getIngestionData);
+router.get('/canonical', getCanonicalModule1);
 router.post('/', validateBody(addIngestionFileSchema), addIngestionFile);
 router.post('/upload', uploadDocumentToObjectStore);
 router.post('/upload-object', uploadDocumentToObjectStore);

@@ -19,6 +19,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import type { HeaderProps } from '../types';
+import { isAssessmentFinancialDisplayEligible } from '../utils/assessmentFinancialDisplayGate';
 import {
   UI_STRINGS,
   SUPPORTED_HEADER_CURRENCIES,
@@ -48,7 +49,11 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onOpenClientSetup,
   onContactSupport,
-  isExecutiveBriefReady: _isExecutiveBriefReady = true
+  isExecutiveBriefReady: _isExecutiveBriefReady = true,
+  operatingMode,
+  onToggleAssessmentMode,
+  activeAssessment,
+  activeCustomer
 }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMoreReportsOpen, setIsMoreReportsOpen] = useState(false);
@@ -57,6 +62,153 @@ export const Header: React.FC<HeaderProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const moreReportsRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Customer Identity & Spend Indicator Evaluation (Prompt 370 Phase 3)
+  const isInternal = operatingMode
+    ? Boolean(operatingMode.isInternalAssessment)
+    : Boolean(activeAssessment || activeCustomer);
+
+  let customerDisplayName: string = UI_STRINGS.header.noActiveCustomer;
+  let statusBadge: React.ReactNode = null;
+  let spendBadge: React.ReactNode = null;
+
+  if (isInternal) {
+    if (activeAssessment) {
+      customerDisplayName = activeAssessment.customerName || UI_STRINGS.header.noActiveCustomer;
+
+      // Has a file been uploaded?
+      const hasUploadedFile = Boolean(
+        activeAssessment.activeDataVersionId ||
+        activeAssessment.currentDataVersionId ||
+        (activeAssessment.dataStatus && activeAssessment.dataStatus !== 'AWAITING_DATA')
+      );
+
+      // Has dataset been validated?
+      const isDatasetValidated = activeAssessment.dataStatus === 'VALIDATED';
+
+      // Has Module 1 completed successfully?
+      // Verify assessment ID, data-version ID, run ID, and successful Module 1 status
+      const hasDataVersionId = Boolean(activeAssessment.activeDataVersionId || activeAssessment.currentDataVersionId);
+      const hasRunId = Boolean(activeAssessment.activeAnalysisRunId);
+      const isModule1Completed = Boolean(
+        activeAssessment.status !== 'DRAFT' &&
+        activeAssessment.status !== 'DATA_AWAITING' &&
+        activeAssessment.status !== 'BLOCKED' &&
+        activeAssessment.validatedSpendCr !== undefined &&
+        activeAssessment.validatedSpendCr > 0
+      );
+
+      const isValidModule1Run = Boolean(
+        activeAssessment.assessmentId &&
+        hasDataVersionId &&
+        hasRunId &&
+        isModule1Completed
+      );
+
+      const isFinancialDisplayEligible = isAssessmentFinancialDisplayEligible(activeAssessment);
+
+      if (isFinancialDisplayEligible) {
+        // Formally accepted assessment with completed modules & consolidated results
+        spendBadge = (
+          <span
+            data-testid="assessment-spend-badge"
+            className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300 shrink-0 font-bold"
+          >
+            ₹{(activeAssessment.validatedSpendCr ?? 0).toFixed(2)} Cr
+          </span>
+        );
+      } else if (isDatasetValidated && !isValidModule1Run) {
+        // Rule E: Dataset validated, but Module 1 not run
+        statusBadge = (
+          <span
+            data-testid="assessment-status-badge"
+            className="text-[10px] font-mono bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded border border-sky-300 shrink-0"
+          >
+            {UI_STRINGS.header.validatedBadge}
+          </span>
+        );
+      } else if (isValidModule1Run) {
+        // Analysis completed but not yet formally accepted (Prompt 373)
+        statusBadge = (
+          <span
+            data-testid="assessment-status-badge"
+            className="text-[10px] font-mono bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded border border-sky-300 shrink-0"
+          >
+            {activeAssessment.status ? activeAssessment.status.replace(/_/g, ' ') : UI_STRINGS.header.validatedBadge}
+          </span>
+        );
+      } else if (hasUploadedFile) {
+        // Rule D: File uploaded but not validated
+        statusBadge = (
+          <span
+            data-testid="assessment-status-badge"
+            className="text-[10px] font-mono bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-300 shrink-0"
+          >
+            {UI_STRINGS.header.awaitingValidationBadge}
+          </span>
+        );
+      } else {
+        // Rule C: Assessment open, but no file uploaded
+        statusBadge = (
+          <span
+            data-testid="assessment-status-badge"
+            className="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-300 shrink-0"
+          >
+            {UI_STRINGS.header.dataNotUploadedBadge}
+          </span>
+        );
+      }
+    } else if (activeCustomer) {
+      // Rule B: Customer selected, but no assessment open
+      customerDisplayName = activeCustomer.customerName;
+      // Do not display spend or savings figures
+    } else {
+      // Rule A: No customer or assessment selected
+      customerDisplayName = UI_STRINGS.header.noActiveCustomer;
+      // Do not display any customer-specific spend
+    }
+  } else {
+    customerDisplayName = tenant.enterprise_name;
+    spendBadge = (
+      <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300 shrink-0">
+        ₹{tenant.total_spend_evaluated_inr ?? DEFAULT_SPEND_BASELINE_INR_CR} Cr
+      </span>
+    );
+  }
+
+  // Management Quick Summary availability (Prompt 370 Phase 4)
+  const isManagementSummaryEligible = Boolean(
+    !isInternal ||
+    (
+      activeAssessment?.activeAnalysisRunId &&
+      (
+        activeAssessment.status === 'APPROVED' ||
+        activeAssessment.status === 'DELIVERED' ||
+        (
+          activeAssessment.netDefensibleOpportunityCr !== undefined &&
+          activeAssessment.netDefensibleOpportunityCr > 0 &&
+          activeAssessment.provenOpportunityCr !== undefined &&
+          activeAssessment.provenOpportunityCr > 0
+        )
+      )
+    )
+  );
+
+  // More Reports availability (Prompt 370 Phase 4)
+  const isMoreReportsEligible = Boolean(
+    !isInternal ||
+    (
+      activeAssessment?.activeAnalysisRunId &&
+      (
+        activeAssessment.status === 'APPROVED' ||
+        activeAssessment.status === 'DELIVERED' ||
+        (
+          activeAssessment.deliveryRangeMaxCr !== undefined &&
+          activeAssessment.deliveryRangeMaxCr > 0
+        )
+      )
+    )
+  );
 
   const rawUser = currentUser || user || null;
   const isAdmin = rawUser?.role === 'ADMIN';
@@ -110,6 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleManagementBriefClick = (): void => {
+    if (!isManagementSummaryEligible) return;
     if (onOpenManagementBrief) {
       onOpenManagementBrief();
     } else {
@@ -118,13 +271,14 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleExecutiveBriefClick = (): void => {
+    if (!isMoreReportsEligible) return;
     onOpenReport?.();
   };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/97 backdrop-blur-2xl border-b border-slate-200 shadow-md transition-colors duration-200">
       {/* Top Advisory Status & Compliance Ribbon */}
-      <div className="bg-gradient-to-r from-sky-50 via-slate-50 to-indigo-50 border-b border-sky-100 px-4 py-1.5 text-[11px] text-slate-600 flex items-center justify-between transition-colors">
+      <div className="w-full bg-gradient-to-r from-sky-50 via-slate-50 to-indigo-50 border-b border-sky-100 px-3 sm:px-5 lg:px-6 py-1.5 text-[11px] text-slate-600 flex items-center justify-between transition-colors">
         <div className="flex items-center space-x-3 overflow-x-auto">
           <span className="flex items-center space-x-1 font-mono text-cyan-700 font-bold bg-cyan-100/80 px-2 py-0.5 rounded border border-cyan-300">
             <span>{UI_STRINGS.header.docRefLabel}</span>
@@ -159,7 +313,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main App Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+      <div className="w-full px-3 sm:px-5 lg:px-6 py-2.5 flex items-center justify-between gap-2.5 sm:gap-3">
         {/* Left: Brand Logo & Title */}
         <div className="flex items-center space-x-3 shrink-0">
           <Link href="/" className="flex items-center space-x-2.5 group">
@@ -179,56 +333,66 @@ export const Header: React.FC<HeaderProps> = ({
               </p>
             </div>
           </Link>
+          {operatingMode?.isInternalAssessment && (
+            <div className="flex items-center gap-2">
+              <span className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                INTERNAL ASSESSMENT MODE
+              </span>
+              {onToggleAssessmentMode && (
+                <button
+                  type="button"
+                  onClick={onToggleAssessmentMode}
+                  className="hidden lg:inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-50 border border-cyan-300 text-cyan-800 hover:bg-cyan-100 transition-colors"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5" />
+                  <span>Assessment Centre</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Center / Action Controls & Utilities */}
         <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
-          {/* Tenant Selector */}
+          {/* Tenant / Assessment Context Badge */}
           <div
             data-testid="tenant-badge"
             onClick={() => (onOpenClientSetup ? onOpenClientSetup() : onSelectTenant?.(tenant))}
             className="relative flex items-center space-x-1.5 sm:space-x-2 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 shadow-xs transition-colors cursor-pointer hover:border-cyan-500/50 shrink-0"
-            title="Configure Enterprise Client & Baseline Spend"
+            title={activeAssessment ? `Active Assessment: ${activeAssessment.customerName} (${activeAssessment.assessmentId})` : 'Configure Enterprise Client & Baseline Spend'}
           >
             <Building2 className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
             <span className="font-semibold text-slate-900 truncate max-w-[110px] sm:max-w-[150px]">
-              {tenant.enterprise_name}
+              {customerDisplayName}
             </span>
-            <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300 shrink-0">
-              ₹{tenant.total_spend_evaluated_inr ?? DEFAULT_SPEND_BASELINE_INR_CR} Cr
-            </span>
+            {statusBadge}
+            {spendBadge}
           </div>
-
-          {/* Deep Spend Scan Trigger (Primary Action) - Commented out */}
-          {/*
-          <button
-            type="button"
-            onClick={onStartAnalysis}
-            title={UI_STRINGS.analyzingLoader.triggerTooltip}
-            className={`flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 border shrink-0 ${
-              isAnalyzing
-                ? 'bg-cyan-700 text-cyan-100 border-cyan-500 animate-pulse'
-                : 'bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white border-cyan-400/30 shadow-cyan-600/20'
-            }`}
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{UI_STRINGS.analyzingLoader.triggerButton}</span>
-          </button>
-          */}
 
           {/* Primary Management Quick Summary Button */}
           <button
             type="button"
             data-testid="header-management-summary-btn"
             onClick={handleManagementBriefClick}
-            className="flex items-center space-x-2 px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 hover:border-cyan-500 rounded-xl shadow-xs transition-all active:scale-95 text-left shrink-0 cursor-pointer"
-            title={`${UI_STRINGS.header.managementQuickSummary} — ${UI_STRINGS.header.managementQuickSummarySubtitle}`}
+            disabled={!isManagementSummaryEligible}
+            className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl shadow-xs transition-all text-left shrink-0 ${
+              isManagementSummaryEligible
+                ? 'bg-white hover:bg-slate-50 border border-slate-300 hover:border-cyan-500 cursor-pointer active:scale-95'
+                : 'bg-slate-50 border border-slate-200 opacity-50 cursor-not-allowed'
+            }`}
+            title={
+              isManagementSummaryEligible
+                ? `${UI_STRINGS.header.managementQuickSummary} — ${UI_STRINGS.header.managementQuickSummarySubtitle}`
+                : UI_STRINGS.header.managementQuickSummaryUnavailable
+            }
           >
-            <div className="w-6 h-6 rounded-lg bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-600 shrink-0">
+            <div className={`w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 ${
+              isManagementSummaryEligible ? 'bg-cyan-50 border-cyan-200 text-cyan-600' : 'bg-slate-100 border-slate-200 text-slate-400'
+            }`}>
               <Presentation className="w-3.5 h-3.5" />
             </div>
             <div className="flex flex-col text-left leading-tight pr-1">
-              <span className="text-xs font-bold text-slate-800">
+              <span className={`text-xs font-bold ${isManagementSummaryEligible ? 'text-slate-800' : 'text-slate-500'}`}>
                 {UI_STRINGS.header.managementQuickSummary}
               </span>
               <span className="text-[10px] text-cyan-700 font-medium hidden sm:inline">
@@ -258,25 +422,31 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">
                   Advanced Presentations
                 </div>
-                <button
-                  type="button"
-                  data-testid="header-executive-brief-btn"
-                  onClick={() => {
-                    setIsMoreReportsOpen(false);
-                    handleExecutiveBriefClick();
-                  }}
-                  className="w-full flex items-start space-x-2 p-2 hover:bg-slate-100 rounded-lg transition-all text-left group cursor-pointer"
-                >
-                  <FileText className="w-4 h-4 text-slate-500 group-hover:text-cyan-500 mt-0.5 shrink-0" />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-slate-800 group-hover:text-cyan-600">
-                      {UI_STRINGS.header.boardroomEvidence}
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      {UI_STRINGS.header.boardroomEvidenceSubtitle}
-                    </span>
+                {isMoreReportsEligible ? (
+                  <button
+                    type="button"
+                    data-testid="header-executive-brief-btn"
+                    onClick={() => {
+                      setIsMoreReportsOpen(false);
+                      handleExecutiveBriefClick();
+                    }}
+                    className="w-full flex items-start space-x-2 p-2 hover:bg-slate-100 rounded-lg transition-all text-left group cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-slate-500 group-hover:text-cyan-500 mt-0.5 shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-slate-800 group-hover:text-cyan-600">
+                        {UI_STRINGS.header.boardroomEvidence}
+                      </span>
+                      <span className="text-[10px] text-slate-500">
+                        {UI_STRINGS.header.boardroomEvidenceSubtitle}
+                      </span>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-2 text-xs text-slate-400 italic" data-testid="no-reports-available">
+                    {UI_STRINGS.header.moreReportsUnavailable}
                   </div>
-                </button>
+                )}
               </div>
             )}
           </div>

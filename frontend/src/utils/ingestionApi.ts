@@ -1,4 +1,4 @@
-import type { RawDocumentIngestion, ValidationPreCheckRecord } from '../types';
+import type { RawDocumentIngestion, ValidationPreCheckRecord, Module1CanonicalViewModel } from '../types';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
 import {
@@ -9,6 +9,21 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const ingestionApiClient = {
+  async getCanonicalModule1(filePath?: string, assessmentId?: string): Promise<Module1CanonicalViewModel | null> {
+    frontendLogger.debug('Fetching authoritative Module 1 canonical view model', { filePath, assessmentId });
+    const params = new URLSearchParams();
+    if (filePath) params.set('filePath', filePath);
+    if (assessmentId) params.set('assessmentId', assessmentId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const headers: Record<string, string> = {};
+    if (assessmentId) {
+      headers['x-assessment-id'] = assessmentId;
+    }
+    const res = await fetch(`${API_BASE}/api/ingestion/canonical${query}`, { headers });
+    const json = await res.json();
+    return json.data ?? null;
+  },
+
   async getIngestionData(buyerId?: string): Promise<{
     queue: RawDocumentIngestion[];
     validationRecords: ValidationPreCheckRecord[];

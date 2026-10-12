@@ -1,0 +1,113 @@
+import { z } from 'zod';
+import {
+  NDA_STATUSES,
+  DATA_STATUSES,
+  ASSESSMENT_STATUSES
+} from './assessment';
+
+export const createCustomerSchema = z.object({
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
+  industry: z.string().min(2, 'Industry is required'),
+  businessUnit: z.string().optional(),
+  region: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export const updateCustomerSchema = z.object({
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters').optional(),
+  industry: z.string().min(2, 'Industry is required').optional(),
+  businessUnit: z.string().optional(),
+  region: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  status: z.enum(['ACTIVE', 'ARCHIVED', 'ONBOARDING']).optional(),
+  notes: z.string().optional()
+});
+
+export const createAssessmentSchema = z.object({
+  customerId: z.string().optional(),
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
+  industry: z.string().min(2, 'Industry is required'),
+  businessUnit: z.string().optional(),
+  assessmentOwner: z.string().optional(),
+  assessmentPeriodStart: z.string().min(4, 'Assessment period start is required'),
+  assessmentPeriodEnd: z.string().min(4, 'Assessment period end is required'),
+  assignedAnalyst: z.string().email('Assigned analyst must be a valid email').default('analyst@procucev.com'),
+  currency: z.string().default('INR'),
+  dataReceivedDate: z.string().optional(),
+  ndaStatus: z.enum([
+    NDA_STATUSES.PENDING,
+    NDA_STATUSES.SIGNED,
+    NDA_STATUSES.NOT_REQUIRED
+  ]).default(NDA_STATUSES.PENDING),
+  notes: z.string().optional(),
+  initialNotes: z.string().optional(),
+  isTestData: z.boolean().optional().default(false)
+});
+
+export const updateNdaStatusSchema = z.object({
+  ndaStatus: z.enum([
+    NDA_STATUSES.PENDING,
+    NDA_STATUSES.SIGNED,
+    NDA_STATUSES.NOT_REQUIRED
+  ]),
+  notes: z.string().optional()
+});
+
+export const updateDataStatusSchema = z.object({
+  dataStatus: z.enum([
+    DATA_STATUSES.NOT_RECEIVED,
+    DATA_STATUSES.RECEIVED,
+    DATA_STATUSES.VALIDATION_IN_PROGRESS,
+    DATA_STATUSES.VALIDATED,
+    DATA_STATUSES.REQUIRES_CLARIFICATION
+  ]),
+  notes: z.string().optional()
+});
+
+export const updateAssessmentStatusSchema = z.object({
+  status: z.enum([
+    ASSESSMENT_STATUSES.CREATED,
+    ASSESSMENT_STATUSES.NDA_PENDING,
+    ASSESSMENT_STATUSES.DATA_PENDING,
+    ASSESSMENT_STATUSES.DATA_RECEIVED,
+    ASSESSMENT_STATUSES.MODULE_1_READY,
+    ASSESSMENT_STATUSES.ANALYSIS_IN_PROGRESS,
+    ASSESSMENT_STATUSES.PCBI_REVIEW,
+    ASSESSMENT_STATUSES.REPORT_GENERATION,
+    ASSESSMENT_STATUSES.ANALYST_REVIEW,
+    ASSESSMENT_STATUSES.APPROVED,
+    ASSESSMENT_STATUSES.DELIVERED,
+    ASSESSMENT_STATUSES.CLOSED,
+    ASSESSMENT_STATUSES.BLOCKED
+  ]),
+  reason: z.string().optional()
+});
+
+export const uploadDataVersionSchema = z.object({
+  fileName: z.string().min(1, 'File name is required'),
+  fileSize: z.number().positive('File size must be positive'),
+  checksum: z.string().min(8, 'Valid checksum is required'),
+  expectedChecksum: z.string().optional(),
+  recordCount: z.number().int().nonnegative().optional().default(0),
+  filePath: z.string().optional().default(''),
+  notes: z.string().optional(),
+  fileBase64: z.string().optional(),
+  runAnalysisImmediately: z.boolean().optional().default(false)
+});
+
+export const analystApprovalSchema = z.object({
+  approvalComment: z.string().min(5, 'Approval comment must be at least 5 characters'),
+  analysisRunId: z.string().optional(),
+  dataVersionId: z.string().optional()
+});
+
+export const deliverPackageSchema = z.object({
+  deliveredToEmail: z.string().email('Valid recipient email required'),
+  deliveryNotes: z.string().optional(),
+  isTestDelivery: z.boolean().optional().default(false)
+});

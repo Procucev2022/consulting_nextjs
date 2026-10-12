@@ -1,8 +1,9 @@
 import type { Request, Response } from 'express';
-import type { RawDocumentIngestion } from '../types';
+import type { RawDocumentIngestion, Module1CanonicalViewModel } from '../types';
 import { db } from '../services/db';
 import { objectStore } from '../services/objectStoreService';
 import { analysisOrchestrationService } from '../services/analysisOrchestrationService';
+import { Module1CanonicalService } from '../services/module1CanonicalService';
 import { sanitizeAndRecomputeFxUpdates } from '../utils/validationRecordHelper';
 import logger from '../utils/logger';
 
@@ -37,13 +38,8 @@ export const getIngestionData = async (req: Request, res: Response): Promise<Res
   }
 };
 
-const resolveTenantId = (bodyTenant?: string, bodyBuyer?: string, req?: Request): string => {
-  if (bodyTenant) return bodyTenant;
-  if (bodyBuyer) return bodyBuyer;
-  if (req?.headers?.['x-buyer-id']) return req.headers['x-buyer-id'] as string;
-  if (req?.headers?.['x-tenant-id']) return req.headers['x-tenant-id'] as string;
-  return 'DEFAULT_TENANT';
-};
+const resolveTenantId = (bodyTenant?: string, bodyBuyer?: string, req?: Request): string =>
+  bodyTenant || bodyBuyer || (req?.headers?.['x-buyer-id'] as string) || (req?.headers?.['x-tenant-id'] as string) || 'DEFAULT_TENANT';
 
 const spawnAnalysisJob = (
   tenantId: string, uploadId: string, fileName: string, fileType: string | undefined,
@@ -110,19 +106,11 @@ export const updateValidationRecord = async (req: Request, res: Response): Promi
       return res.status(404).json({ success: false, message: 'Record not found' });
     }
     logger.info('Validation record updated', { recordId, updates });
-    return res.json({
-      success: true,
-      data: updated,
-      message: `Record ${recordId} updated successfully`,
-      timestamp: new Date().toISOString()
-    });
+    return res.json({ success: true, data: updated, message: `Record ${recordId} updated successfully`, timestamp: new Date().toISOString() });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update validation record';
     logger.error('Failed to update validation record', { body: req.body }, error);
-    return res.status(400).json({
-      success: false,
-      message
-    });
+    return res.status(400).json({ success: false, message });
   }
 };
 
@@ -130,19 +118,11 @@ export const resetValidationRecords = async (_req: Request, res: Response): Prom
   try {
     const reset = db.resetValidationRecords();
     logger.info('Validation records reset to baseline', { recordCount: reset.length });
-    return res.json({
-      success: true,
-      data: reset,
-      message: 'Validation records reset to baseline',
-      timestamp: new Date().toISOString()
-    });
+    return res.json({ success: true, data: reset, message: 'Validation records reset to baseline', timestamp: new Date().toISOString() });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to reset records';
     logger.error('Failed to reset validation records', {}, error);
-    return res.status(500).json({
-      success: false,
-      message
-    });
+    return res.status(500).json({ success: false, message });
   }
 };
 
@@ -178,11 +158,37 @@ const parseUploadBuffer = (fileBase64?: string, fileName?: string): Buffer => {
 };
 
 const resolveContentType = (fileType?: string): string => {
-  if (fileType === 'XLSX') {
-    return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-  }
+  if (fileType === 'XLSX') return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
   return 'text/csv';
 };
+
+const resolveCanonicalViewModel = (assessmentId?: string): Module1CanonicalViewModel | null => {
+  if (!assessmentId) return null;
+  return Module1CanonicalService.getCanonicalViewModelForAssessment(assessmentId);
+};
+
+const createIngestionItem = (
+  tenantId: string,
+  fileName: string,
+  fileType: string | undefined,
+  sizeMb: number,
+  recordsCount: number | undefined,
+  convertedInrCrores: number | undefined,
+  detectedCurrencies: string[] | undefined
+): Omit<RawDocumentIngestion, 'doc_id' | 'uploaded_at'> => ({
+  tenant_id: tenantId,
+  file_name: fileName,
+  file_type: (fileType || 'XLSX') as RawDocumentIngestion['file_type'],
+  file_size_mb: sizeMb,
+  records_count: recordsCount || 0,
+  converted_inr_crores: convertedInrCrores || 0,
+  detected_currencies: detectedCurrencies || ['INR'],
+  ocr_status: 'Completed',
+  progress: 100
+});
+
+const resolveEffectiveAssessmentId = (req: Request): string | undefined =>
+  (req.body?.assessmentId as string) || (req.headers?.['x-assessment-id'] as string) || undefined;
 
 export const uploadDocumentToObjectStore = async (req: Request, res: Response): Promise<Response | void> => {
   try {
@@ -215,17 +221,15 @@ export const uploadDocumentToObjectStore = async (req: Request, res: Response): 
 
     const effectiveTenantId = resolveTenantId(bodyTenantId, bodyBuyerId, req);
 
-    const ingestionItem = {
-      tenant_id: effectiveTenantId,
-      file_name: fileName,
-      file_type: (fileType || 'XLSX') as RawDocumentIngestion['file_type'],
-      file_size_mb: calculatedSizeMb,
-      records_count: recordsCount || 0,
-      converted_inr_crores: convertedInrCrores || 0,
-      detected_currencies: detectedCurrencies || ['INR'],
-      ocr_status: 'Completed' as const,
-      progress: 100
-    };
+    const ingestionItem = createIngestionItem(
+      effectiveTenantId,
+      fileName,
+      fileType,
+      calculatedSizeMb,
+      recordsCount,
+      convertedInrCrores,
+      detectedCurrencies
+    );
 
     const updatedQueue = db.addIngestionItem(ingestionItem);
     const analysisJob = spawnAnalysisJob(
@@ -248,9 +252,12 @@ export const uploadDocumentToObjectStore = async (req: Request, res: Response): 
       jobId: analysisJob.analysisJobId
     });
 
+    const effectiveAssessmentId = resolveEffectiveAssessmentId(req);
+    const canonical = resolveCanonicalViewModel(effectiveAssessmentId);
+
     return res.json({
       success: true,
-      data: { objectMeta, ingestionQueue: updatedQueue, analysisJob },
+      data: { objectMeta, ingestionQueue: updatedQueue, analysisJob, canonical },
       message: 'Dataset uploaded and persisted in Object Store successfully',
       timestamp: new Date().toISOString()
     });

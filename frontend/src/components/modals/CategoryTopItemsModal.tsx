@@ -192,7 +192,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
               onClick={() => setTrendFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 trendFilter === 'ALL'
-                  ? 'bg-white text-white dark:bg-emerald-600 dark:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white'
                   : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >

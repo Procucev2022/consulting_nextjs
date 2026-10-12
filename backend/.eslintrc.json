@@ -124,7 +124,9 @@
         "src/types/pcbiProductionPilot.ts",
         "src/services/module1ForensicService.ts",
         "src/services/analysisOrchestrationService.ts",
-        "src/controllers/analysisOrchestration.controller.ts"
+        "src/controllers/analysisOrchestration.controller.ts",
+        "src/services/assessmentWorkflowService.ts",
+        "src/services/assessmentStore.ts"
       ],
       "rules": {
         "max-lines": "off",

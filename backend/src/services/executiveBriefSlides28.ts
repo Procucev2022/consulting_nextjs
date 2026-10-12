@@ -35,7 +35,7 @@ export function renderSlide28DataTrust(
       sub: 'Cryptographic Standard',
       desc: 'All sensitive transactional line items, unit rates, supplier names, and plant identifiers are ' +
             'encrypted with AES-256-GCM using unique per-tenant keys.',
-      badge: 'FIPS-Grade Security',
+      badge: 'AEAD Authenticated',
       color: BRAND_COLORS.procucevBlue
     },
     {
@@ -59,10 +59,10 @@ export function renderSlide28DataTrust(
     {
       num: '04',
       title: 'Enterprise Compliance',
-      sub: 'SOC-2 & ISO 27001',
+      sub: 'Hardened Infrastructure',
       desc: 'Platform runs on hardened infrastructure with role-based access control (RBAC), multi-factor ' +
             'authentication, and automated audit logging on all data queries.',
-      badge: 'Certified Security',
+      badge: 'Enterprise Architecture',
       color: BRAND_COLORS.accentAmber
     }
   ];

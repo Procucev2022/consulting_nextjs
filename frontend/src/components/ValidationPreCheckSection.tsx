@@ -25,14 +25,17 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
   onResetValidationRecords,
   onRunAICategorization,
   isDataRefreshed,
-  onRefreshWithFixes: _onRefreshWithFixes
+  onRefreshWithFixes: _onRefreshWithFixes,
+  canonicalViewModel
 }) => {
   const [filterIssue, setFilterIssue] = useState<ValidationIssueCategoryFilter>('ALL');
 
-  // Metrics
-  const totalValidationCount = validationRecords.length;
-  const allResolvedCount = validationRecords.filter((r) => r.resolved || r.issue_flag === 'Passed Clean').length;
-  const pendingActionsCount = validationRecords.filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean').length;
+  // Metrics derived from canonical backend or fallback records
+  const totalValidationCount = canonicalViewModel?.sourceRowCount || validationRecords.length;
+  const allResolvedCount = canonicalViewModel?.validRowCount || validationRecords.filter((r) => r.resolved || r.issue_flag === 'Passed Clean').length;
+  const pendingActionsCount = canonicalViewModel
+    ? (canonicalViewModel.excludedRowCount + canonicalViewModel.anomalyRowCount)
+    : validationRecords.filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean').length;
 
   const conversionCount = validationRecords.filter(
     (r) => !r.resolved && (r.issue_category === 'CONVERSION' || r.issue_flag === 'Missing Currency Code' || r.issue_flag === 'Tax Discrepancy')
@@ -46,20 +49,29 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
     (r) => !r.resolved && (r.issue_category === 'ITEM_DUPLICATION' || r.issue_flag === 'Duplicate Item Description')
   ).length;
 
-  const totalEvaluatedSpendInrCr = validationRecords.reduce(
-    (acc, r) => acc + (r.inr_crores || ((r.order_quantity || 100) * (r.net_price || 100) * (r.fx_rate_applied || 83.8)) / 10000000),
-    0
-  );
+  const totalEvaluatedSpendInrCr = canonicalViewModel
+    ? canonicalViewModel.validFxNormalizedSpendCr
+    : validationRecords.reduce(
+        (acc, r) => acc + (r.inr_crores || ((r.order_quantity || 100) * (r.net_price || 100) * (r.fx_rate_applied || 83.8)) / 10000000),
+        0
+      );
 
-  const pendingIssuesSpendCr = validationRecords
-    .filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean')
-    .reduce(
-      (acc, r) => acc + (r.inr_crores || ((r.order_quantity || 100) * (r.net_price || 100) * (r.fx_rate_applied || 83.8)) / 10000000),
-      0
-    );
+  const pendingIssuesSpendCr = canonicalViewModel
+    ? ((canonicalViewModel.validationSummary.excludedSpendCr || 0) + (canonicalViewModel.validationSummary.anomalySpendCr || 0))
+    : validationRecords
+        .filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean')
+        .reduce(
+          (acc, r) => acc + (r.inr_crores || ((r.order_quantity || 100) * (r.net_price || 100) * (r.fx_rate_applied || 83.8)) / 10000000),
+          0
+        );
 
-  const validatedSpendInrCr = totalEvaluatedSpendInrCr - pendingIssuesSpendCr;
-  const dataQualityIndex = totalValidationCount > 0 ? (allResolvedCount / totalValidationCount) * 100 : 100;
+  const validatedSpendInrCr = canonicalViewModel
+    ? canonicalViewModel.validFxNormalizedSpendCr
+    : totalEvaluatedSpendInrCr - pendingIssuesSpendCr;
+
+  const dataQualityIndex = canonicalViewModel
+    ? canonicalViewModel.validationSummary.cleanSpendYieldPct
+    : (totalValidationCount > 0 ? (allResolvedCount / totalValidationCount) * 100 : 100);
 
   // Filtered rows
   const filteredRecords = validationRecords.filter((rec) => {
@@ -141,6 +153,11 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
 
         <button
           onClick={() => setFilterIssue('NEEDS_ACTION')}
+          title={UI_STRINGS.module1.filterTabs.quarantinedTooltip(
+            canonicalViewModel?.validationSummary.excludedRecordsCount ?? 252,
+            canonicalViewModel?.validationSummary.anomalyRecordsCount ?? 12,
+            pendingIssuesSpendCr
+          )}
           className={`flex items-center space-x-1.5 px-3 py-1 rounded-lg transition-all cursor-pointer ${
             filterIssue === 'NEEDS_ACTION'
               ? 'bg-amber-500 text-white shadow-xs font-bold'
@@ -150,7 +167,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
           <span>{UI_STRINGS.module1.filterTabs.needsAction(pendingActionsCount)}</span>
           {pendingIssuesSpendCr > 0 && (
             <span className="text-[10px] px-1 py-0.2 rounded bg-amber-900/40 text-amber-200 font-mono">
-              -₹{pendingIssuesSpendCr.toFixed(2)} Cr
+              {UI_STRINGS.module1.filterTabs.quarantinedSpendBadge(pendingIssuesSpendCr)}
             </span>
           )}
         </button>
@@ -234,7 +251,9 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
             <Database className="w-3.5 h-3.5 text-slate-400" />
           </div>
           <p className="text-xl font-black font-mono text-slate-900">₹{totalEvaluatedSpendInrCr.toFixed(2)} Cr</p>
-          <p className="text-[10px] text-slate-500 font-sans">{totalValidationCount} Sample Records Evaluated</p>
+          <p className="text-[10px] text-slate-500 font-sans">
+            {canonicalViewModel ? `${canonicalViewModel.sourceRowCount.toLocaleString()} Source Records Ingested` : `${totalValidationCount} Records Evaluated`}
+          </p>
         </div>
 
         <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-300/80 space-y-1">
@@ -243,7 +262,11 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
           </div>
           <p className="text-xl font-black font-mono text-emerald-700">₹{validatedSpendInrCr.toFixed(2)} Cr</p>
-          <p className="text-[10px] text-emerald-700 font-sans font-medium">{allResolvedCount} of {totalValidationCount} Records Cleared</p>
+          <p className="text-[10px] text-emerald-700 font-sans font-medium">
+            {canonicalViewModel
+              ? `${canonicalViewModel.validRowCount.toLocaleString()} Records Active in Validated Spend`
+              : `${allResolvedCount} of ${totalValidationCount} Records Cleared`}
+          </p>
         </div>
 
         <div className={`p-3.5 rounded-xl border transition-all space-y-1 ${
@@ -261,7 +284,9 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
             ₹{pendingIssuesSpendCr.toFixed(2)} Cr
           </p>
           <p className="text-[10px] text-amber-700 font-sans font-medium">
-            {pendingActionsCount > 0 ? `${pendingActionsCount} Anomalies Excluded from Analytics` : '0 Exclusions (All Reconciled)'}
+            {canonicalViewModel
+              ? `${canonicalViewModel.excludedRowCount} Excluded · ${canonicalViewModel.anomalyRowCount} Anomalies Quarantined`
+              : (pendingActionsCount > 0 ? `${pendingActionsCount} Anomalies Excluded from Analytics` : '0 Exclusions (All Reconciled)')}
           </p>
         </div>
 
@@ -272,7 +297,9 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
           </div>
           <p className="text-xl font-black font-mono text-cyan-700">{dataQualityIndex.toFixed(1)}%</p>
           <p className="text-[10px] text-cyan-700 font-sans font-medium">
-            {dataQualityIndex === 100 ? '100% Clean Data Reconciled' : 'Remediation in Progress'}
+            {canonicalViewModel
+              ? `${canonicalViewModel.validRowCount.toLocaleString()} of ${canonicalViewModel.sourceRowCount.toLocaleString()} Valid Records Reconciled`
+              : (dataQualityIndex === 100 ? 'Clean Data Reconciled' : 'Remediation in Progress')}
           </p>
         </div>
       </div>

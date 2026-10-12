@@ -49,4 +49,16 @@ export * from './analysisOrchestration';
 export * from './evidenceWorkbook';
 export * from './fxReference';
 export * from './vgt';
+export * from './module1Canonical';
+export * from './assessment';
+export * from './assessmentValidation';
+export * from './module2Canonical';
+export * from './module2FinancialSanity';
+export * from './module2FinancialTraceability';
+export * from './module3PcbiForensic';
+export * from './module4SavingsForensic';
+export * from './module4LineageReconciliation';
+export * from './desktop';
+
+
 

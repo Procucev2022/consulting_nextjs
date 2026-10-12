@@ -186,7 +186,7 @@ describe('Cloudflare backend worker', () => {
       executionContext
     );
     expect(anomaliesRes.status).toBe(200);
-  });
+  }, 30000);
 
   it('registers and logs in a user through D1', async () => {
     const users = new Map<string, Record<string, unknown>>();

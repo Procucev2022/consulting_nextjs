@@ -81061,3 +81061,17271 @@ Do not report it as VGT.
 Do not ask for another confirmation.
 
 Use the existing actual VGT result.
+
+---
+
+## Prompt 327
+kill all the ports and run locally both frontend and backend
+
+
+---
+
+## Prompt 328
+FINAL VGT MODULE 1 FIX — HISTORICAL FX + VALID-SPEND RECONCILIATION
+
+This is the FINAL implementation command for the VGT FX issue.
+
+IMPORTANT:
+The forensic reconciliation has already been completed outside Antigravity using:
+
+1. Actual customer dataset:
+   VGT Testing Data.xlsx
+   SHA-256:
+   59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+2. Frozen FX Master:
+   aiCEV_FX_Master_2020_2026_v2.xlsx
+   SHA-256:
+   7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+DO NOT:
+- rerun generic FX certification
+- create another FX master
+- modify the frozen FX master
+- run the synthetic 8-transaction controlled test as the VGT result
+- process another customer file
+- change Modules 2, 3 or 4
+- change PCBI
+- change Savings Engine calculations
+- change subscription/authentication
+- redesign the UI
+
+============================================================
+AUTHORITATIVE FORENSIC FINDINGS
+============================================================
+
+The VGT source file contains:
+
+20,505 source rows
+
+Population:
+
+20,241 VALID transactions
+252 EXCLUDED transactions
+12 ANOMALY transactions
+
+Exact population reconciliation:
+
+20,505 = 20,241 + 252 + 12
+
+The original customer-profile FX methodology is embedded in the source data through:
+
+INR = 1.00
+USD = 75.00
+EUR = 85.00
+CNY = 6.50
+
+The original customer-profile calculation basis is:
+
+Order Quantity × Net Price × Customer Profile FX Rate
+
+For the 20,241 VALID transactions:
+
+Customer Profile FX Spend:
+₹3,920.3277 Cr
+
+Historical FX Master Spend:
+₹4,073.8307 Cr
+
+Pure FX methodology impact:
+₹153.5029 Cr
+
+FX impact percentage:
+3.91%
+
+Currency-level impact:
+
+INR:
+Profile = ₹2,275.510 Cr
+Historical = ₹2,275.510 Cr
+Impact = ₹0
+
+USD:
+Profile = ₹1,444.504 Cr
+Historical = ₹1,446.241 Cr
+Impact = approximately ₹1.737 Cr
+
+EUR:
+Profile = ₹2.414 Cr
+Historical = ₹2.444 Cr
+Impact = approximately ₹0.031 Cr
+
+CNY:
+Profile = ₹197.900 Cr
+Historical = ₹349.635 Cr
+Impact = approximately ₹151.735 Cr
+
+TOTAL:
+Profile = ₹3,920.3277 Cr
+Historical = ₹4,073.8307 Cr
+FX impact = ₹153.5029 Cr
+
+CNY is therefore the dominant driver of the FX difference.
+
+============================================================
+CRITICAL BUG IDENTIFIED
+============================================================
+
+The existing Antigravity VGT result reported:
+
+₹4,182.530157494 Cr
+
+That number is reproducible using the historical FX calculation across ALL 20,505 source rows.
+
+Therefore:
+
+₹4,182.53 Cr is NOT the valid customer spend KPI.
+
+It includes:
+
+- 20,241 valid rows
+- 252 excluded rows
+- 12 anomaly rows
+
+The correct Module 1 VALID FX-normalized spend is:
+
+₹4,073.8307 Cr
+≈ ₹4,073.83 Cr
+
+The ₹4,182.53 Cr all-row value may remain available internally as a forensic/raw-population reconciliation figure, but MUST NOT be displayed as the validated customer spend.
+
+============================================================
+REQUIRED IMPLEMENTATION
+============================================================
+
+1. VALID-SPEND FILTER
+
+Module 1 FX-normalized spend must use ONLY records classified as VALID.
+
+Use the existing authoritative VGT classification rules.
+
+Do not silently delete excluded/anomaly rows.
+
+They must remain available for evidence/audit.
+
+2. EXCLUDED RECORDS
+
+The 252 excluded records must remain classified as EXCLUDED.
+
+The 12 anomaly records must remain classified as ANOMALY / QUARANTINED according to the existing implementation.
+
+Do not move them into valid spend merely to reconcile a total.
+
+3. HISTORICAL FX CALCULATION
+
+For every VALID foreign-currency transaction:
+
+Original transaction value
+×
+authoritative historical FX rate for the transaction date
+=
+historical INR normalized value
+
+Use the frozen FX Master v2.
+
+Do not use customer-profile fixed FX rates for the new validated spend.
+
+Customer-profile FX rates remain only as the comparison baseline.
+
+4. CUSTOMER PROFILE FX BASELINE
+
+Preserve the original customer-profile FX methodology:
+
+INR 1.00
+USD 75.00
+EUR 85.00
+CNY 6.50
+
+This baseline is required for the forensic bridge.
+
+Do not overwrite or delete the profile configuration.
+
+5. FX IMPACT
+
+Calculate:
+
+Historical FX Valid Spend
+−
+Customer Profile FX Valid Spend
+=
+FX Methodology Impact
+
+Authoritative result:
+
+₹4,073.8307 Cr
+−
+₹3,920.3277 Cr
+=
+₹153.5029 Cr
+
+Do not call this procurement savings.
+
+Do not add it to the Savings Engine.
+
+This is a spend-normalization / data-quality impact only.
+
+============================================================
+EVIDENCE WORKBOOK
+============================================================
+
+Update the EXISTING:
+
+MODULE_1_VGT_EVIDENCE.xlsx
+
+Do not create a separate disconnected evidence workbook.
+
+Add:
+
+11_FX_ERP_FORENSIC_BRIDGE
+
+Rename the concept internally if necessary to:
+
+11_FX_PROFILE_HISTORICAL_BRIDGE
+
+because the fixed rates came from the aiCEV customer profile, not necessarily from the customer's ERP.
+
+The sheet must contain:
+
+A. DATASET IDENTITY
+
+- VGT Testing Data.xlsx
+- source SHA-256
+- FX Master v2
+- FX Master SHA-256
+- processing timestamp
+- analysis/data version
+
+B. POPULATION BRIDGE
+
+Source Rows: 20,505
+Valid: 20,241
+Excluded: 252
+Anomalies: 12
+
+Mathematical check:
+
+20,505 - 20,241 - 252 - 12 = 0
+
+C. PROFILE FX BASELINE
+
+Currency
+Profile FX Rate
+Valid Transaction Count
+Original Currency Value
+Profile INR Value
+
+D. HISTORICAL FX
+
+Currency
+Valid Transaction Count
+Historical FX INR Value
+
+E. FX IMPACT
+
+Currency
+Profile FX INR
+Historical FX INR
+FX Impact INR
+FX Impact Cr
+Impact %
+
+F. TRANSACTION-LEVEL FORENSIC BRIDGE
+
+For every valid USD/EUR/CNY transaction:
+
+Transaction ID
+Document Date
+Currency
+Original Transaction Value
+Customer Profile FX Rate
+Profile INR Value
+Historical FX Rate
+Historical FX Rate Date
+Historical INR Value
+FX Impact INR
+FX Impact %
+
+G. FINAL RECONCILIATION
+
+Profile FX Valid Spend
+₹3,920.3277 Cr
+
+Historical FX Valid Spend
+₹4,073.8307 Cr
+
+FX Methodology Impact
+₹153.5029 Cr
+
+Reconciliation variance
+₹0.00
+
+============================================================
+MODULE 1 DISPLAY REQUIREMENT
+============================================================
+
+The customer-facing Module 1 spend KPI must show:
+
+VALID FX-NORMALIZED SPEND
+₹4,073.83 Cr
+
+NOT:
+
+₹4,182.53 Cr
+
+The excluded/anomaly population must be visible through the appropriate data-quality/evidence mechanism, but must not inflate validated spend.
+
+Add an explanatory FX information element:
+
+"Spend normalized using transaction-date historical FX rates. Customer-profile fixed FX rates are retained as the baseline for comparison."
+
+If the UI has a data-quality indicator, show the FX methodology impact separately:
+
+"FX normalization impact vs profile rates: ₹153.50 Cr"
+
+Do NOT label this as savings.
+
+============================================================
+RECONCILIATION CONTROLS
+============================================================
+
+The following must all pass:
+
+1. 20,505 source rows
+2. 20,241 valid
+3. 252 excluded
+4. 12 anomalies
+5. population variance = 0
+6. valid historical FX spend = ₹4,073.8307 Cr
+7. profile FX valid spend = ₹3,920.3277 Cr
+8. FX impact = ₹153.5029 Cr
+9. financial reconciliation variance = ₹0
+10. no synthetic FX rate
+11. frozen FX master checksum unchanged
+12. INR transactions unchanged
+13. Modules 2–4 unchanged
+14. PCBI unchanged
+15. Savings Engine unchanged
+
+============================================================
+TESTS REQUIRED
+============================================================
+
+Add/update automated tests covering:
+
+- VGT valid-row filtering
+- excluded-row exclusion
+- anomaly-row exclusion
+- population reconciliation
+- customer-profile FX baseline
+- historical FX calculation
+- profile-vs-historical FX bridge
+- CNY impact
+- final Module 1 total
+- zero variance
+- evidence workbook parity
+- regression for INR-only data
+- no impact to Modules 2–4
+
+Expected authoritative assertions:
+
+validRows = 20,241
+
+excludedRows = 252
+
+anomalyRows = 12
+
+historicalFxValidSpend ≈ 40738306838.02 INR
+
+profileFxValidSpend ≈ 39203277300 INR
+
+fxImpact ≈ 1535029538.02 INR
+
+Do not loosen assertions merely to make tests pass.
+
+============================================================
+FINAL VALIDATION REPORT
+============================================================
+
+At the end produce:
+
+VGT MODULE 1 STATUS
+
+APPROVED
+
+only if all above controls pass.
+
+The final report MUST clearly distinguish:
+
+1. Customer Profile FX Spend
+2. Historical FX Normalized Spend
+3. FX Methodology Impact
+4. Excluded Spend
+5. Anomaly Spend
+6. Raw all-row FX calculation
+
+The raw all-row historical FX figure:
+
+₹4,182.530157494 Cr
+
+must NOT be presented as the customer validated spend.
+
+It may be shown only as:
+
+"Raw population historical FX value — before exclusions/anomaly quarantine"
+
+============================================================
+STOP CONDITION
+============================================================
+
+After implementing and testing this correction:
+
+DO NOT:
+- run another generic FX certification
+- regenerate the FX Master
+- run the 8-row controlled test as the primary result
+- process another dataset
+- modify downstream savings calculations
+
+Return only:
+
+1. implementation summary
+2. exact VGT financial bridge
+3. final Module 1 validated spend
+4. FX impact
+5. evidence workbook path
+6. test results
+7. final status
+
+VGT MODULE 1 — APPROVED / BLOCKED
+
+## Prompt 329
+
+P0 RELEASE-BLOCKING FIX — MODULE 1 SINGLE SOURCE OF TRUTH + VGT GOLDEN DATA VALIDATION
+
+Module 1 is the first customer-facing product experience.
+
+The current VGT Testing screen is NOT acceptable for customer release.
+
+The screenshots show multiple contradictory/stale calculation sources:
+
+- Header spend: ₹817670.04 Cr
+- Module 1 valid FX-normalized spend: ₹817670.04 Cr
+- Material-group total: ₹817670.04 Cr
+- Pareto: ₹803482.78 Cr
+- Bottom validation component: ₹0.01 Cr based on "30 Sample Records"
+- Detected currencies: INR only
+- Modules 2/3/4 shown as Completed while Detailed Analysis is still In Progress
+- Historical Ingestion shown as 3 Yrs while Actual Coverage is 10 billing months
+- Avg Identified Savings displayed in Module 1
+- Live FX strip displayed despite transaction-date historical FX being the authoritative normalization method
+
+This is a RELEASE BLOCKER.
+
+DO NOT PATCH INDIVIDUAL NUMBERS OR ADD HARDCODED UI VALUES.
+
+FIX THE ROOT ARCHITECTURE:
+
+MODULE 1 MUST HAVE ONE CANONICAL BACKEND OUTPUT / VIEW MODEL.
+
+Every Module 1 customer-facing KPI and every Module 1 breakdown must derive from that same canonical validated transaction ledger.
+
+============================================================
+1. AUTHORITATIVE VGT GOLDEN DATASET
+============================================================
+
+Use the existing real VGT dataset only as the golden regression fixture:
+
+VGT Testing Data.xlsx
+
+SHA-256:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Source rows:
+20,505
+
+Valid:
+20,241
+
+Excluded:
+252
+
+Anomaly:
+12
+
+Population reconciliation:
+
+20,505 - 20,241 - 252 - 12 = 0
+
+Frozen FX Master:
+
+aiCEV_FX_Master_2020_2026_v2.xlsx
+
+SHA-256:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+============================================================
+2. AUTHORITATIVE VGT MODULE 1 FINANCIAL VALUES
+============================================================
+
+These are golden-test assertions, NOT production hardcoded values.
+
+For VGT:
+
+Customer Profile FX valid spend:
+₹3,920.3277 Cr
+
+Historical FX valid spend:
+₹4,073.8307 Cr
+
+FX normalization impact:
+₹153.5029 Cr
+
+FX impact:
++3.91%
+
+The official Module 1 customer-facing spend KPI for this VGT dataset MUST be:
+
+₹4,073.83 Cr
+
+NOT:
+
+₹817670.04 Cr
+NOT:
+₹4182.53 Cr
+
+₹4,182.5302 Cr is only the raw all-row historical FX population figure before exclusions/anomaly quarantine.
+
+It must never be the validated spend KPI.
+
+============================================================
+3. CREATE ONE CANONICAL MODULE 1 VIEW MODEL
+============================================================
+
+Create/use one authoritative backend response such as:
+
+Module1CanonicalViewModel
+
+It must contain at minimum:
+
+datasetId
+dataVersionId
+analysisJobId
+sourceFileName
+sourceRowCount
+validRowCount
+excludedRowCount
+anomalyRowCount
+
+validFxNormalizedSpendInr
+validFxNormalizedSpendCr
+
+profileFxBaselineSpendInr
+profileFxBaselineSpendCr
+
+fxNormalizationImpactInr
+fxNormalizationImpactCr
+fxNormalizationImpactPct
+
+detectedCurrencies[]
+
+currencyBreakdown[]
+
+uniqueItems
+uniqueVendors
+materialGroups
+operatingPlants
+billingMonths
+
+configuredEvaluationWindow
+actualDataCoverage
+
+supplierSpend[]
+materialGroupSpend[]
+plantSpend[]
+monthlySpend[]
+
+reconciliationVarianceInr
+reconciliationStatus
+
+fxMasterVersion
+fxMasterChecksum
+
+All Module 1 UI sections must consume this model.
+
+NO Module 1 UI component may independently calculate total spend from raw rows.
+
+NO Module 1 UI component may read mockData.ts/demoData/static fixtures after a real customer dataset has been uploaded.
+
+============================================================
+4. REMOVE ALL DEMO / SAMPLE DATA FROM CUSTOMER MODULE 1
+============================================================
+
+The current screen contains:
+
+"30 Sample Records Evaluated"
+
+"₹0.01 Cr"
+
+"100% Clean Data Reconciled"
+
+This is demo/test content leaking into the customer experience.
+
+For an actual uploaded customer dataset:
+
+NEVER display sample/demo records.
+
+The data-quality section must use the actual uploaded dataset.
+
+For VGT it must show:
+
+20,505 source records
+20,241 valid
+252 excluded
+12 anomaly/quarantined
+
+If the component is intended only as a developer fixture, hide it completely from production/customer rendering.
+
+Do not simply change 30 to 20,505.
+
+Wire it to the canonical backend result.
+
+============================================================
+5. FIX CURRENCY DETECTION
+============================================================
+
+The VGT source contains:
+
+INR
+USD
+EUR
+CNY
+
+The current UI incorrectly says:
+
+Detected Currencies: INR
+
+Fix currency detection so that it comes from the actual uploaded ledger.
+
+For VGT the UI must display:
+
+INR
+USD
+EUR
+CNY
+
+Do not display unrelated currencies merely because the FX master supports them.
+
+Live market rates must not replace the historical transaction-date FX methodology.
+
+If live benchmark rates are retained as informational UI, clearly label them as:
+
+"Reference Market Rates — Informational Only"
+
+and do not use them for Module 1 historical normalization.
+
+============================================================
+6. FIX THE PRIMARY SPEND KPI
+============================================================
+
+The primary Module 1 card must display:
+
+VALID FX-NORMALIZED SPEND
+
+For VGT:
+
+₹4,073.83 Cr
+
+It must come from:
+
+canonical.validFxNormalizedSpendCr
+
+not from:
+
+raw uploaded rows
+mockData
+old document summary
+customer profile fixed FX calculation
+live FX
+frontend aggregation
+demo fixture
+
+The header customer dataset badge must use the same canonical value.
+
+The uploaded-file summary must use the same canonical value.
+
+The Document Summary must use the same canonical value.
+
+Material Group totals must use the same canonical ledger.
+
+Plant totals must use the same canonical ledger.
+
+Month totals must use the same canonical ledger.
+
+Supplier/Pareto totals must use the same canonical ledger.
+
+============================================================
+7. FIX THE "CALCULATED TOTAL SPEND FROM FILE"
+============================================================
+
+Current screen shows:
+
+₹817670.04 Cr
+
+This is WRONG.
+
+Do not patch the displayed value.
+
+Trace the complete calculation path.
+
+Find exactly where ₹817670.04 Cr is generated.
+
+Remove/disable the incorrect legacy calculation path.
+
+The uploaded-file card must show:
+
+Validated FX-normalized spend:
+₹4,073.83 Cr
+
+with clear distinction:
+
+Source rows: 20,505
+Valid: 20,241
+Excluded: 252
+Anomalies: 12
+
+The original customer-profile FX baseline must not replace the historical FX result.
+
+============================================================
+8. FIX MATERIAL GROUP RECONCILIATION
+============================================================
+
+Material group spend must be generated by grouping the SAME VALID ledger.
+
+For VGT:
+
+SUM(all material-group valid spend)
+=
+₹4,073.8307 Cr
+
+Variance:
+₹0.00
+
+The current:
+
+₹817613.13 Cr
+
+is invalid.
+
+Do not allow reconciliation to pass simply because two incorrect calculations agree.
+
+Reconciliation must compare against the canonical Module 1 spend.
+
+Required invariant:
+
+SUM(materialGroupSpend)
+-
+canonical.validFxNormalizedSpendCr
+=
+0
+
+within approved rounding tolerance.
+
+Same rule for:
+
+Supplier
+Plant
+Month
+Currency
+Category
+Pareto
+
+============================================================
+9. FIX PARETO 80/20
+============================================================
+
+Pareto must use the same canonical valid-spend ledger.
+
+The denominator must equal:
+
+₹4,073.8307 Cr
+
+The cumulative Pareto amount must never exceed the canonical total.
+
+For VGT:
+
+SUM(all supplier spend)
+=
+₹4,073.8307 Cr
+
+The 80% cutoff must be calculated dynamically.
+
+Do not use static/demo supplier values.
+
+Do not use a separate dataset.
+
+Do not display:
+
+₹8,03,482.78 Cr
+
+unless that exact value can be mathematically reconciled to the canonical dataset—which it currently cannot.
+
+============================================================
+10. FIX DATA COVERAGE LANGUAGE
+============================================================
+
+Do NOT display:
+
+"HISTORICAL INGESTION — 3 Yrs"
+
+unless the actual transaction dates span three years.
+
+Separate:
+
+Configured Evaluation Window
+
+from:
+
+Actual Data Coverage
+
+For the current VGT dataset, the UI must dynamically calculate actual billing-month coverage from the uploaded transaction dates.
+
+Display conceptually:
+
+Evaluation Window:
+[configured window]
+
+Actual Data Coverage:
+[number of actual billing months]
+[actual start date – actual end date]
+
+Never infer coverage from the configured evaluation window.
+
+============================================================
+11. REMOVE SAVINGS FROM MODULE 1
+============================================================
+
+Current Module 1 shows:
+
+AVG IDENTIFIED SAVINGS
+₹40919.06 Cr
+
+This must be removed from Module 1.
+
+Module 1 is:
+
+DATA INGESTION & SPEND INTELLIGENCE
+
+It must not display savings calculated by Module 4.
+
+Do not calculate savings in Module 1.
+
+Do not import Savings Engine KPI values into Module 1.
+
+The only FX impact allowed in Module 1 is:
+
+"FX normalization impact vs profile rates"
+
+For VGT:
+
+₹153.50 Cr
+
+and it must explicitly say:
+
+"Data-quality / spend-normalization impact only — not procurement savings."
+
+============================================================
+12. REMOVE UNSUPPORTED "3X FASTER CONVERSION"
+============================================================
+
+The current Module 1 top card says:
+
+"FASTER CONVERSION — 3x"
+
+Remove this from the financial KPI area unless there is a formally measured benchmark stored in the backend.
+
+Do not display unsupported performance/marketing claims as customer analysis results.
+
+If a performance metric is retained, label it separately as a platform benchmark and ensure it comes from measured telemetry.
+
+============================================================
+13. FIX MODULE STATUS CARDS
+============================================================
+
+Current screen says:
+
+Module 2 — Completed
+Module 3 — Completed
+Module 4 — Completed
+
+while:
+
+Detailed Analysis — In Progress
+
+This is contradictory.
+
+Module status must be derived from the actual tenant-scoped Analysis Job.
+
+For a newly uploaded customer dataset:
+
+Module 1:
+READY when Module 1 has completed.
+
+Module 2:
+PENDING / IN PROGRESS until actually completed.
+
+Module 3:
+PENDING / IN PROGRESS until actually completed.
+
+Module 4:
+PENDING / IN PROGRESS until actually completed.
+
+Never show "Completed" merely because the module exists in the application.
+
+For subscription-gated modules, show the appropriate entitlement state:
+
+LOCKED
+or
+AVAILABLE AFTER ANALYSIS
+or
+COMPLETED
+
+according to actual subscription and job state.
+
+Never use static completion flags.
+
+============================================================
+14. DETAILED ANALYSIS STATUS
+============================================================
+
+The existing:
+
+"Detailed Analysis: In Progress"
+
+is acceptable ONLY if there is a real persisted tenant-scoped Analysis Job.
+
+It must not conflict with Module 2/3/4 statuses.
+
+Module 1 remains immediately available.
+
+Detailed analysis can run in background.
+
+The status must come from the persisted Analysis Job, not mock state/localStorage/demo state.
+
+============================================================
+15. FX INFORMATION
+============================================================
+
+Keep the existing valid FX message:
+
+"Spend normalized using transaction-date historical FX rates. Customer-profile fixed FX rates are retained as the baseline for comparison."
+
+Keep:
+
+"FX normalization impact vs profile rates: ₹153.50 Cr"
+
+for VGT.
+
+Do not call this savings.
+
+Do not pass this value into Module 4.
+
+============================================================
+16. LINE-ITEM / DATA QUALITY SECTION
+============================================================
+
+The current line-item component showing:
+
+30 Sample Records
+₹0.01 Cr
+100% Clean
+
+must be replaced with actual dataset-backed information.
+
+For VGT:
+
+Total source records = 20,505
+Valid = 20,241
+Excluded = 252
+Anomaly = 12
+
+Quality percentage must be defined clearly.
+
+Do not call the entire dataset "100% Clean" because 252 exclusions and 12 anomalies exist.
+
+Instead show something such as:
+
+"20,241 records active in validated spend"
+"252 excluded"
+"12 anomalies quarantined"
+
+The exact UI wording may be improved, but it must not falsely imply all 20,505 records are clean.
+
+============================================================
+17. SINGLE-SOURCE FINANCIAL INVARIANTS
+============================================================
+
+Implement backend validation assertions.
+
+For every Module 1 dataset:
+
+SUM(valid transaction normalized INR)
+=
+canonical valid spend
+
+SUM(currency breakdown)
+=
+canonical valid spend
+
+SUM(supplier breakdown)
+=
+canonical valid spend
+
+SUM(material group breakdown)
+=
+canonical valid spend
+
+SUM(plant breakdown)
+=
+canonical valid spend
+
+SUM(month breakdown)
+=
+canonical valid spend
+
+SUM(Pareto included + excluded tail)
+=
+canonical valid spend
+
+No negative/duplicate inflation.
+
+No double conversion.
+
+No currency conversion applied twice.
+
+No frontend recalculation.
+
+No stale local cache.
+
+No mock fallback after successful real ingestion.
+
+If any invariant fails:
+
+DO NOT display the KPI as reconciled.
+
+Display:
+
+"Module 1 reconciliation requires review"
+
+and expose the actual variance.
+
+Never display "0.00 Variance Reconciled" for a wrong total.
+
+============================================================
+18. GOLDEN VGT ACCEPTANCE TEST
+============================================================
+
+Create a single end-to-end golden test using:
+
+VGT Testing Data.xlsx
+
+Expected:
+
+sourceRows = 20,505
+validRows = 20,241
+excludedRows = 252
+anomalyRows = 12
+
+validSpendCr = approximately 4073.8307
+
+profileSpendCr = approximately 3920.3277
+
+fxImpactCr = approximately 153.5029
+
+detectedCurrencies =
+[INR, USD, EUR, CNY]
+
+All breakdown totals must reconcile to:
+
+4073.8307 Cr
+
+The test must inspect the actual API response/view model used by the frontend.
+
+It is NOT enough for backend unit tests to pass.
+
+============================================================
+19. FRONTEND REGRESSION TESTS
+============================================================
+
+Add tests that render the actual Module 1 customer screen with the VGT canonical response.
+
+Assert:
+
+- Header spend = ₹4,073.83 Cr
+- Main spend KPI = ₹4,073.83 Cr
+- Uploaded file spend = ₹4,073.83 Cr
+- Material group grand total = ₹4,073.83 Cr
+- Supplier/Pareto denominator = ₹4,073.83 Cr
+- no ₹817670.04 Cr
+- no ₹803482.78 Cr
+- no ₹40919.06 Cr savings
+- no "30 Sample Records"
+- detected currencies include INR/USD/EUR/CNY
+- valid = 20,241
+- excluded = 252
+- anomalies = 12
+- Module 2/3/4 are not falsely marked Completed
+- configured evaluation window is separated from actual data coverage
+
+============================================================
+20. SEARCH FOR STALE / DEMO DATA SOURCES
+============================================================
+
+Before finishing, search the entire frontend for:
+
+817670
+803482
+40919
+Sample Records
+30 Sample
+mockData
+demoData
+seed data
+static spend
+documentSummary
+totalSpendEvaluated
+converted_inr_crores
+sampleRecords
+
+Trace every result.
+
+If any of these feed customer-facing Module 1 after real ingestion, remove the dependency or replace it with the canonical backend view model.
+
+Do NOT simply delete strings.
+
+Fix the underlying data source.
+
+============================================================
+21. GOLDEN RULE FOR FUTURE CUSTOMERS
+============================================================
+
+Do NOT hardcode VGT numbers into production.
+
+The VGT numbers are golden regression assertions only.
+
+For every future customer:
+
+UPLOAD
+→ INGEST
+→ VALIDATE
+→ FX NORMALIZE
+→ CREATE CANONICAL MODULE 1 LEDGER
+→ CREATE CANONICAL MODULE 1 VIEW MODEL
+→ ALL UI COMPONENTS READ THAT VIEW MODEL
+
+There must be exactly one financial source of truth.
+
+============================================================
+22. DO NOT CHANGE DOWNSTREAM CALCULATIONS
+============================================================
+
+Do not modify:
+
+Module 2 calculations
+Module 3 / PCBI calculations
+Module 4 Savings Engine
+Vendor Consolidation
+Benchmark Price Gap
+Strategic Sourcing
+Strategic Market Value
+Process Productivity
+Cost Avoidance
+Realized Savings
+
+This task is Module 1 data-source/KPI/reconciliation stabilization.
+
+However, ensure downstream modules receive the corrected canonical Module 1 valid spend only when their analysis stage actually runs.
+
+============================================================
+23. FINAL QUALITY GATE
+============================================================
+
+Do not mark this task complete merely because:
+
+typecheck passes
+lint passes
+unit tests pass
+
+The final gate requires:
+
+A. Backend tests PASS
+B. Frontend tests PASS
+C. Golden VGT E2E calculation PASS
+D. API/view-model parity PASS
+E. UI KPI parity PASS
+F. Financial reconciliation PASS
+G. No demo/sample leakage
+H. No stale financial values
+I. Currency detection PASS
+J. Module status consistency PASS
+
+If browser automation is available, run the actual local browser flow:
+
+1. Clear previous customer dataset/state.
+2. Login as customer.
+3. Upload VGT Testing Data.xlsx.
+4. Wait for Module 1 READY.
+5. Inspect every Module 1 section.
+6. Refresh.
+7. Reopen Module 1.
+8. Verify values remain identical.
+9. Verify no demo data appears.
+10. Verify detailed-analysis status does not block Module 1.
+11. Verify Module 2–4 statuses remain truthful.
+12. Verify evidence download matches UI.
+
+If browser automation is NOT available, state that explicitly and perform the closest possible API/rendered-component validation.
+
+============================================================
+24. FINAL ACCEPTANCE NUMBERS FOR VGT
+============================================================
+
+The final customer-facing Module 1 screen must reconcile to:
+
+VALID FX-NORMALIZED SPEND
+₹4,073.83 Cr
+
+SOURCE RECORDS
+20,505
+
+VALID RECORDS
+20,241
+
+EXCLUDED
+252
+
+ANOMALIES
+12
+
+PROFILE FX BASELINE
+₹3,920.33 Cr
+
+FX NORMALIZATION IMPACT
+₹153.50 Cr
+
+CURRENCIES
+INR / USD / EUR / CNY
+
+No customer-facing KPI may show:
+
+₹817670.04 Cr
+₹803482.78 Cr
+₹40919.06 Cr
+₹0.01 Cr
+30 Sample Records
+
+unless it is clearly inside a developer-only test fixture and not rendered to the customer.
+
+============================================================
+25. FINAL REPORT
+============================================================
+
+Return:
+
+1. Root cause of ₹817670.04 Cr
+2. All stale/demo data sources found
+3. Canonical Module 1 source implemented
+4. VGT golden calculation
+5. Financial reconciliation
+6. Currency detection result
+7. Data-quality population result
+8. Module status correction
+9. Frontend/API parity result
+10. Browser/E2E result
+11. Test results
+12. Exact files changed
+13. Any remaining BLOCKERS
+
+FINAL STATUS MUST BE ONE OF:
+
+MODULE 1 — APPROVED FOR CUSTOMER TESTING
+
+OR
+
+MODULE 1 — BLOCKED
+
+Do not declare APPROVED unless the actual rendered customer Module 1 screen passes the golden VGT acceptance test.
+
+IMPORTANT:
+This is a release-blocking financial/data-integrity task.
+
+Do not perform a cosmetic redesign.
+Do not change the established aiCEV visual design.
+Do not modify Modules 2–4 calculations.
+Fix the data lineage and reconciliation first.
+
+---
+
+## Prompt 330
+P0 FINAL ACCEPTANCE GATE — MODULE 1 LIVE BROWSER + DIMENSIONAL RECONCILIATION
+
+The previous Prompt 329 implementation reports that Module 1 has been fixed and internally tested.
+
+DO NOT redesign Module 1.
+DO NOT rewrite the canonical architecture.
+DO NOT change Modules 2, 3 or 4.
+DO NOT create another FX certification.
+DO NOT create synthetic test data.
+
+This task is now a RELEASE ACCEPTANCE / FORENSIC VALIDATION ONLY.
+
+The customer-facing browser screen must be proven correct.
+
+============================================================
+1. GOLDEN VGT DATASET
+============================================================
+
+Use ONLY:
+
+VGT Testing Data.xlsx
+
+SHA-256:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Expected:
+
+Source rows: 20,505
+Valid: 20,241
+Excluded: 252
+Anomalies: 12
+
+Valid Historical FX Spend:
+
+₹40,738,306,838.02
+= ₹4,073.8307 Cr
+
+Profile FX Baseline:
+
+₹39,203,277,294.75
+= ₹3,920.3277 Cr
+
+FX Methodology Impact:
+
+₹153.5029 Cr
++3.91%
+
+Currencies:
+
+INR / USD / EUR / CNY
+
+============================================================
+2. DO NOT CHANGE THE CALCULATION ENGINE
+============================================================
+
+Assume the canonical Module 1 calculation is now authoritative.
+
+The purpose of this task is to prove that the RUNNING CUSTOMER UI consumes it correctly.
+
+============================================================
+3. LIVE BROWSER TEST IS MANDATORY
+============================================================
+
+Open the actual running application.
+
+Do not rely only on unit tests.
+
+Perform the actual customer journey:
+
+1. Login as VGT customer.
+2. Open Module 1.
+3. Load the existing VGT dataset.
+4. Wait until Module 1 READY.
+5. Refresh the browser.
+6. Open Module 1 again.
+7. Scroll through the entire Module 1 page.
+8. Capture/inspect every financial KPI and table.
+9. Verify all numbers against the canonical API response.
+
+If browser automation is available, use it.
+
+If browser automation is not available, manually open the running localhost application and record that limitation.
+
+Do NOT declare APPROVED without actual rendered-browser verification.
+
+============================================================
+4. REQUIRED CUSTOMER-FACING NUMBERS
+============================================================
+
+The browser MUST show:
+
+VALID FX-NORMALIZED SPEND
+₹4,073.83 Cr
+
+SOURCE RECORDS
+20,505
+
+VALID RECORDS
+20,241
+
+EXCLUDED
+252
+
+ANOMALIES
+12
+
+PROFILE FX BASELINE
+₹3,920.33 Cr
+
+FX NORMALIZATION IMPACT
+₹153.50 Cr
+
+CURRENCIES:
+
+INR
+USD
+EUR
+CNY
+
+============================================================
+5. FORBIDDEN VALUES
+============================================================
+
+Search the rendered browser page and API payload for:
+
+₹817670.04 Cr
+₹803482.78 Cr
+₹40919.06 Cr
+₹0.01 Cr
+30 Sample Records
+
+None of these may appear in the customer-facing Module 1.
+
+Also search source code for stale paths that could regenerate these values.
+
+============================================================
+6. HEADER TEST
+============================================================
+
+Customer header dataset spend badge must equal:
+
+₹4,073.83 Cr
+
+It must not have an independent calculation.
+
+Record the exact API property feeding the header.
+
+============================================================
+7. UPLOAD CARD TEST
+============================================================
+
+"Calculated Total Spend From File" must equal:
+
+₹4,073.83 Cr
+
+It must NOT use:
+
+Price Unit
+Live Yahoo FX
+frontend raw-row recalculation
+
+It must consume the canonical backend value.
+
+============================================================
+8. PIPELINE BAR TEST
+============================================================
+
+Pipeline Bar must show:
+
+Module 1 = READY
+
+Module 2 = PENDING
+Module 3 = PENDING
+Module 4 = PENDING
+
+Detailed Analysis = IN_PROGRESS
+
+Do not show Modules 2–4 as Completed unless their actual tenant Analysis Job state says completed.
+
+============================================================
+9. EVALUATION WINDOW TEST
+============================================================
+
+Separate:
+
+Configured Evaluation Window
+
+from:
+
+Actual Data Coverage.
+
+Calculate actual coverage directly from transaction dates.
+
+Do not hardcode:
+
+3 Yrs
+2021-04 to 2022-01
+Apr 2024 to Jan 2025
+
+unless those dates are proven from the actual source data.
+
+Record:
+
+MIN(transaction/document date)
+MAX(transaction/document date)
+distinct billing months
+
+and compare them with the UI.
+
+============================================================
+10. CURRENCY TEST
+============================================================
+
+The UI must show the actual detected currencies:
+
+INR
+USD
+EUR
+CNY
+
+It must NOT show:
+
+INR only
+
+and it must not claim that unrelated supported FX currencies exist in the customer data.
+
+Historical transaction-date FX must remain authoritative.
+
+Live market rates may be displayed only as:
+
+"Reference Market Rates — Informational Only"
+
+They must not be represented as the rates used for historical spend normalization.
+
+============================================================
+11. DATA QUALITY TEST
+============================================================
+
+The customer must NOT see:
+
+30 Sample Records
+₹0.01 Cr
+100% Clean Data
+
+The actual dataset-backed quality section must show:
+
+20,505 source
+20,241 valid
+252 excluded
+12 quarantined anomalies
+
+If a percentage is shown, make sure its denominator and meaning are explicit.
+
+Do not call the whole file 100% clean.
+
+============================================================
+12. MATERIAL GROUP RECONCILIATION
+============================================================
+
+Verify:
+
+SUM(all material-group spend)
+=
+₹4,073.8307 Cr
+
+Variance = ₹0.00
+
+The grand total must match the canonical ledger.
+
+============================================================
+13. SUPPLIER RECONCILIATION
+============================================================
+
+Verify:
+
+SUM(all supplier spend)
+=
+₹4,073.8307 Cr
+
+Variance = ₹0.00
+
+Do NOT merely test the displayed Pareto top rows.
+
+Test the complete supplier population.
+
+============================================================
+14. PLANT RECONCILIATION
+============================================================
+
+Verify:
+
+SUM(all plant spend)
+=
+₹4,073.8307 Cr
+
+Variance = ₹0.00
+
+============================================================
+15. MONTH RECONCILIATION
+============================================================
+
+Verify:
+
+SUM(all billing-month spend)
+=
+₹4,073.8307 Cr
+
+Variance = ₹0.00
+
+============================================================
+16. PARETO RECONCILIATION
+============================================================
+
+The Pareto denominator MUST be:
+
+₹4,073.8307 Cr
+
+not:
+
+₹8,03,482.78 Cr
+
+The complete supplier Pareto ledger must reconcile to the canonical spend.
+
+Verify:
+
+SUM(all supplier Pareto spend)
+=
+₹4,073.8307 Cr
+
+Calculate the 80% cutoff dynamically.
+
+No static supplier or spend values.
+
+============================================================
+17. IMPORTANT DIMENSIONAL DISCREPANCY
+============================================================
+
+The previous VGT report used different population counts from the latest canonical report.
+
+Previous reported VGT population:
+
+534 vendors
+61 material groups
+21 plants
+
+Latest canonical report:
+
+632 vendors
+30 material groups
+35 plants
+
+DO NOT silently accept either number.
+
+Determine the exact reason.
+
+For each dimension document:
+
+A. Raw source distinct count
+B. Valid-ledger distinct count
+C. Excluded/anomaly distinct count
+D. Master/enriched distinct count, if applicable
+E. Customer-facing count
+F. Definition of the count
+
+For example:
+
+UNIQUE VENDORS
+
+Raw source:
+X
+
+Valid:
+Y
+
+Excluded:
+Z
+
+Customer UI:
+N
+
+Why:
+[definition]
+
+Do the same for:
+
+Material Groups
+Operating Plants
+
+The final UI count must have a documented and defensible definition.
+
+============================================================
+18. TRANSACTION POPULATION PROOF
+============================================================
+
+Prove:
+
+20,505
+=
+20,241 valid
++
+252 excluded
++
+12 anomalies
+
+Variance = 0.
+
+Then prove the financial bridge:
+
+₹4,182.5302 Cr raw historical FX population
+=
+₹4,073.8307 Cr valid
++
+₹109.0760 Cr anomaly quarantine
+-
+₹0.3765 Cr excluded
+
+Variance = ₹0.00.
+
+============================================================
+19. REFRESH / REOPEN TEST
+============================================================
+
+After Module 1 displays correctly:
+
+1. Refresh browser.
+2. Navigate away.
+3. Return to Module 1.
+4. Refresh again.
+5. Log out.
+6. Log back in.
+7. Open Module 1.
+
+The numbers must remain identical.
+
+No fallback/demo state may appear.
+
+============================================================
+20. TENANT ISOLATION
+============================================================
+
+Verify that the canonical endpoint:
+
+GET /api/ingestion/canonical
+
+returns only the authenticated tenant's dataset.
+
+Do not trust tenantId supplied from frontend.
+
+Verify:
+
+Customer A cannot see Customer B's canonical Module 1 data.
+
+============================================================
+21. API/UI PARITY
+============================================================
+
+Capture the actual canonical API response.
+
+Create a parity table:
+
+API value | UI value | Variance | Status
+
+At minimum:
+
+validFxNormalizedSpendCr
+profileFxBaselineSpendCr
+fxNormalizationImpactCr
+sourceRowCount
+validRowCount
+excludedRowCount
+anomalyRowCount
+detectedCurrencies
+supplier total
+material group total
+plant total
+monthly total
+Pareto total
+
+Every financial variance must be:
+
+₹0.00
+
+within documented display rounding.
+
+============================================================
+22. NO SAVINGS IN MODULE 1
+============================================================
+
+Module 1 must NOT display:
+
+AVG IDENTIFIED SAVINGS
+
+or any Module 4 savings amount.
+
+Only display FX normalization impact where appropriate.
+
+Explicitly label it:
+
+"Data-quality / spend-normalization impact only — not procurement savings."
+
+============================================================
+23. NO UNSUPPORTED PERFORMANCE CLAIMS
+============================================================
+
+Remove "3x Faster Conversion" from Module 1 unless backed by measured production telemetry.
+
+Do not present unsupported marketing claims as customer financial analysis.
+
+============================================================
+24. FULL SOURCE SEARCH
+============================================================
+
+Search frontend/backend for:
+
+817670
+803482
+40919
+Sample Records
+30 Sample
+0.01 Cr
+mockData
+demoData
+staticSpend
+Yahoo Finance
+liveFxRates
+Price unit
+totalSpendEvaluated
+
+For every result determine:
+
+SAFE TEST FIXTURE
+or
+PRODUCTION DATA PATH
+
+Any production path that can contaminate Module 1 must be removed/fixed.
+
+============================================================
+25. FINAL BROWSER SCREENSHOT CHECKLIST
+============================================================
+
+Inspect these specific visible areas:
+
+A. Header
+B. Pipeline
+C. Detailed Analysis status
+D. Evaluation window / actual coverage
+E. Upload card
+F. Validated spend KPI
+G. Currency display
+H. Data-quality section
+I. Material-group reconciliation
+J. Supplier/Pareto
+K. Plant view
+L. Month view
+M. Grand total
+N. Module status
+O. Any bottom-of-page validation sections
+
+Every visible financial total must reconcile.
+
+============================================================
+26. TEST RESULTS
+============================================================
+
+Run:
+
+typecheck
+lint
+build
+
+Run the targeted Module 1 backend/frontend tests.
+
+Then perform the actual browser validation.
+
+Do not report only unit-test success.
+
+============================================================
+27. FINAL ACCEPTANCE DECISION
+============================================================
+
+There are only two allowed final statuses:
+
+MODULE 1 — APPROVED FOR CUSTOMER TESTING
+
+OR
+
+MODULE 1 — BLOCKED
+
+APPROVED is allowed ONLY when:
+
+✓ Backend canonical calculation passes
+✓ VGT golden dataset passes
+✓ Financial reconciliation passes
+✓ Dimension reconciliation passes
+✓ Currency detection passes
+✓ No demo data leakage
+✓ No stale financial values
+✓ Module status is truthful
+✓ API/UI parity passes
+✓ Refresh/reopen passes
+✓ Tenant isolation passes
+✓ Actual browser screen visually verified
+
+If ANY of these are not proven:
+
+FINAL STATUS = MODULE 1 — BLOCKED
+
+Do not use "approved" merely because unit tests pass.
+
+FINAL REPORT MUST INCLUDE:
+
+1. Browser screenshots/observations
+2. Root cause confirmation
+3. API/UI parity table
+4. Financial reconciliation
+5. Vendor/material/plant population reconciliation
+6. Date coverage proof
+7. Currency proof
+8. Demo leakage search
+9. Refresh/reopen result
+10. Tenant isolation result
+11. Test results
+12. Exact files changed, if any
+13. Remaining blockers
+
+DO NOT make further architectural changes unless a failed acceptance test requires one.
+
+THIS IS THE FINAL CUSTOMER-READINESS GATE FOR MODULE 1.
+
+---
+
+## Prompt 331
+resume
+
+---
+
+## Prompt 332
+FINAL MODULE 1 POPULATION DEFINITIONS — DOCUMENTATION / VERIFICATION ONLY
+
+Module 1 has now passed live browser acceptance and is APPROVED FOR CUSTOMER TESTING.
+
+DO NOT modify the canonical financial calculation.
+DO NOT modify FX logic.
+DO NOT modify the UI.
+DO NOT modify Modules 2, 3 or 4.
+DO NOT rerun the FX certification.
+DO NOT introduce new data.
+
+There is only one remaining documentation question.
+
+Previous VGT outputs reported different dimension populations:
+
+Earlier VGT result:
+- 534 vendors
+- 61 material groups
+- 21 plants
+
+Latest canonical result:
+- 632 vendors
+- 30 material groups
+- 35 plants
+
+The latest acceptance report says these dimensions are reconciled, but does not explicitly document the population definitions/count bridge.
+
+Perform a forensic definition check only.
+
+For each dimension:
+
+1. SUPPLIERS
+2. MATERIAL GROUPS
+3. OPERATING PLANTS
+
+document:
+
+A. Raw source distinct count
+B. Valid-ledger distinct count
+C. Excluded/anomaly distinct count
+D. Master/enriched distinct count, if applicable
+E. Customer-facing Module 1 count
+F. Exact definition of the customer-facing count
+G. Reason previous reports had a different count, if applicable
+
+Do NOT change the customer-facing number merely to match an older report.
+
+The objective is to determine which count is authoritative for the current Module 1 definition.
+
+Also verify that:
+
+SUM(customer-facing dimension spend)
+=
+₹4,073.8307 Cr
+
+for each financial dimension.
+
+The final report must clearly state:
+
+"Financial population is authoritative at 20,241 valid transactions and ₹4,073.8307 Cr. Dimension counts are defined independently and reconciled to the same financial ledger."
+
+If the difference is due to definitions such as:
+- raw vs valid
+- master vs transaction entity
+- indexed vs all material groups
+- operating vs transactional plant codes
+
+document that explicitly.
+
+If no discrepancy remains, state the final authoritative counts.
+
+Do not make functional changes unless an actual calculation error is discovered.
+
+FINAL STATUS:
+
+MODULE 1 — CUSTOMER TESTING READY
+
+Then freeze the Module 1 calculation/UI unless a future real-customer test identifies an actual defect.
+
+---
+
+## Prompt 333
+P0 MODULE 1 — FIX SUPPLIER ↔ SHORT TEXT HIERARCHY / REVERSE INDEX
+
+The financial Module 1 canonical spend issue has now been fixed and live browser acceptance has passed.
+
+However, during live customer testing I identified another serious Module 1 defect in the "Top 80% Spend Pareto Hierarchy".
+
+DO NOT change the canonical financial calculation.
+DO NOT change FX logic.
+DO NOT change the validated spend total.
+DO NOT change Modules 2, 3 or 4.
+DO NOT create demo/sample data.
+DO NOT hardcode VGT item values.
+
+This task is specifically to repair the Supplier ↔ Short Text dimensional relationship and its reverse hierarchy.
+
+============================================================
+1. CURRENT DEFECT
+============================================================
+
+Current UI:
+
+"Top 80% Spend Pareto Hierarchy"
+
+Mode 1:
+
+Supplier Name → Short Text
+
+Example:
+
+HONG KONG RESISTORS
+Spend: ₹1,192.27 Cr
+
+but expanded hierarchy shows:
+
+0 items
+
+WINSUN ELECTRONIC TECHNOLOGY
+Spend: ₹331.48 Cr
+
+but shows:
+
+0 items
+
+HINDALCO INDUSTRIES LTD.
+Spend: ₹236.06 Cr
+
+but shows:
+
+0 items
+
+Other suppliers also show:
+
+0 items
+or
+[+] 0 items
+
+This is incorrect.
+
+A supplier having valid spend but zero associated Short Text records indicates that the dimensional relationship/index is broken.
+
+============================================================
+2. REVERSE VIEW IS ALSO BROKEN
+============================================================
+
+When switching to:
+
+"Short Text → Supplier Name"
+
+the UI currently shows:
+
+"No records matching search filter."
+
+and:
+
+"Showing 0 entities (0% of spend)"
+
+This is also incorrect for a dataset containing 20,241 valid procurement transactions.
+
+The reverse hierarchy must be generated from the SAME canonical valid transaction ledger used by Module 1.
+
+Do not create a second independent data source.
+
+============================================================
+3. WHAT "SHORT TEXT" MEANS
+============================================================
+
+First inspect the actual uploaded VGT Testing Data.xlsx schema and the canonical normalized transaction object.
+
+Identify the authoritative source column currently representing:
+
+Short Text / Item Description / Material Description / PO Line Description
+
+Do NOT assume the field name.
+
+Trace the actual ingestion mapping.
+
+Document:
+
+source Excel column
+→ normalized transaction field
+→ canonical Module 1 field
+→ Pareto hierarchy field
+
+If multiple possible source columns exist, determine the correct mapping from the existing ingestion/normalization rules.
+
+Do not arbitrarily select a column merely because it contains text.
+
+============================================================
+4. SHORT TEXT MUST COME FROM THE REAL TRANSACTION LEDGER
+============================================================
+
+For every valid transaction:
+
+20,241 valid records
+
+the hierarchy should have, where the source contains a valid item description:
+
+Supplier
++
+Short Text
++
+Spend
+
+relationship.
+
+Example conceptual structure:
+
+Supplier A
+  Item/Short Text 1
+  Item/Short Text 2
+  Item/Short Text 3
+
+with:
+
+SUM(Item Spend)
+=
+Supplier Spend
+
+within rounding tolerance.
+
+Do NOT use a separate mock/demo item list.
+
+Do NOT use the supplier master alone.
+
+Do NOT generate artificial descriptions.
+
+============================================================
+5. PRESERVE REAL BLANKS
+============================================================
+
+If the original uploaded transaction genuinely has:
+
+blank Short Text
+
+then preserve it as:
+
+[Blank / Unspecified]
+
+or equivalent clearly labelled value.
+
+Do NOT silently discard such records.
+
+But if Short Text exists in the uploaded data and is being lost during normalization, FIX THE MAPPING.
+
+The objective is:
+
+SOURCE DATA → CANONICAL LEDGER → PARETO HIERARCHY
+
+with no silent loss.
+
+============================================================
+6. SUPPLIER → SHORT TEXT HIERARCHY
+============================================================
+
+Rebuild the first hierarchy dynamically from canonical valid transactions.
+
+For every supplier included in Pareto:
+
+Supplier total spend
+=
+SUM(all associated Short Text spend)
+
+The expandable item count must represent the number of distinct Short Text values associated with that supplier.
+
+Do NOT show:
+
+"0 items"
+
+when valid item descriptions exist.
+
+If a supplier genuinely has no Short Text, show:
+
+"Short Text unavailable"
+
+rather than falsely presenting an empty hierarchy.
+
+============================================================
+7. REVERSE SHORT TEXT → SUPPLIER HIERARCHY
+============================================================
+
+The reverse mode must use the same relationship index.
+
+For each Short Text:
+
+Short Text
+  Supplier A
+  Supplier B
+  Supplier C
+
+with corresponding spend.
+
+The reverse hierarchy must not depend on the search box.
+
+When the user first switches to:
+
+Short Text → Supplier Name
+
+there must be NO stale search filter.
+
+Clear:
+
+searchTerm
+selectedSupplier
+selectedShortText
+previous mode filters
+
+when switching hierarchy modes unless intentionally preserved by the user.
+
+The initial reverse view must show the available Pareto entities.
+
+It must NOT display:
+
+"No records matching search filter."
+
+unless an actual user-entered search produces zero matches.
+
+============================================================
+8. SEARCH BEHAVIOUR
+============================================================
+
+Audit the search component.
+
+The current behaviour suggests a stale/incorrect filter may be surviving when switching modes.
+
+Required behaviour:
+
+Initial Supplier → Short Text:
+show Pareto entities.
+
+Switch to Short Text → Supplier:
+clear previous search/filter state.
+
+Initial Short Text → Supplier:
+show Pareto entities.
+
+Enter search:
+filter only the currently selected hierarchy.
+
+Clear search:
+restore full hierarchy.
+
+Switch hierarchy again:
+reset incompatible filters.
+
+Refresh:
+restore the default hierarchy state.
+
+Do not retain a search term that produces an empty result after switching modes unless the user explicitly entered it.
+
+============================================================
+9. PARETO LOGIC MUST REMAIN CORRECT
+============================================================
+
+Do not confuse:
+
+Pareto supplier/entity selection
+
+with:
+
+hierarchical child records.
+
+The parent Pareto spend must continue to be calculated from canonical valid spend.
+
+For VGT:
+
+Canonical valid spend:
+₹4,073.8307 Cr
+
+The Pareto parent population and complete hierarchy must reconcile to the same canonical ledger.
+
+The child Short Text rows are a dimensional decomposition only.
+
+They must NOT change the financial total.
+
+============================================================
+10. CHILD-TO-PARENT RECONCILIATION
+============================================================
+
+Implement validation for every displayed supplier.
+
+For each supplier:
+
+SUM(child Short Text spend)
+=
+supplier spend
+
+If there are blank/unmapped Short Text records:
+
+supplier spend
+=
+named Short Text spend
++
+[Blank / Unspecified] spend
+
+Variance must be:
+
+₹0.00
+
+within documented rounding tolerance.
+
+Never display a supplier as reconciled if child records do not explain its spend.
+
+============================================================
+11. REVERSE RECONCILIATION
+============================================================
+
+For every Short Text:
+
+SUM(child Supplier spend)
+=
+Short Text spend
+
+Again:
+
+Variance = ₹0.00
+
+The two views must represent the SAME underlying relationship:
+
+Supplier → Short Text
+
+and
+
+Short Text → Supplier
+
+They are simply opposite traversals of the same relationship graph.
+
+Do NOT maintain two separate datasets.
+
+============================================================
+12. IMPORTANT: DISTINCT ITEM COUNT
+============================================================
+
+Determine exactly what "items" means.
+
+It must be one of:
+
+A. distinct Short Text values
+OR
+B. transaction line items
+
+Choose the definition consistent with the existing Module 1 design.
+
+Then label it clearly.
+
+If it means distinct Short Text values:
+
+Supplier:
+HONG KONG RESISTORS
+
+Items:
+[N] distinct Short Text values
+
+not:
+
+0 items
+
+unless genuinely zero.
+
+Do not mix transaction count and distinct item count.
+
+============================================================
+13. ITEM DESCRIPTION NORMALIZATION
+============================================================
+
+Inspect whether Short Text values are being lost because of:
+
+- incorrect Excel header mapping
+- whitespace
+- null/undefined conversion
+- numeric-to-string conversion
+- field rename
+- column alias mismatch
+- parser schema mismatch
+- canonical serializer omission
+- API DTO omission
+- frontend property-name mismatch
+- Pareto grouping key mismatch
+
+Trace the COMPLETE path.
+
+Do not fix only the React component.
+
+============================================================
+14. REQUIRED GOLDEN-DATA CHECK
+============================================================
+
+Use the actual:
+
+VGT Testing Data.xlsx
+
+SHA-256:
+
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Do NOT ingest another file.
+
+Do NOT create synthetic data.
+
+Build a diagnostic report from the 20,505 source rows:
+
+Source rows:
+20,505
+
+Valid:
+20,241
+
+Excluded:
+252
+
+Anomalies:
+12
+
+For valid rows determine:
+
+Rows with nonblank Short Text:
+X
+
+Rows with blank Short Text:
+Y
+
+Distinct Short Text values:
+Z
+
+Distinct suppliers:
+N
+
+Supplier–Short Text relationships:
+M
+
+These values must be calculated from the actual file.
+
+============================================================
+15. VERIFY THE FIRST THREE EXAMPLES
+============================================================
+
+Specifically inspect the suppliers currently visible in the screenshot:
+
+HONG KONG RESISTORS
+WINSUN ELECTRONIC TECHNOLOGY
+HINDALCO INDUSTRIES LTD., UNIT:
+
+For each supplier determine:
+
+valid transaction count
+supplier spend
+distinct Short Text count
+sample Short Text values
+sum of Short Text spend
+reconciliation variance
+
+The UI must then display the actual relationship.
+
+Do NOT hardcode these suppliers.
+
+============================================================
+16. "0 ITEMS" MUST NEVER BE A FALLBACK
+============================================================
+
+Search the codebase for:
+
+"0 items"
+"0 Items"
+"items: 0"
+"itemCount"
+"shortText"
+"short_text"
+"Short Text"
+"children"
+"expandable"
+"pareto"
+
+Determine whether zero is being used as a fallback when child data is unavailable.
+
+If child data is unavailable because of an API/schema problem:
+
+DO NOT silently show 0.
+
+Show:
+
+"Unable to load item details"
+
+and log the underlying error.
+
+Zero means genuinely zero.
+
+============================================================
+17. PARETO SEARCH STATE
+============================================================
+
+Audit all state related to:
+
+searchTerm
+searchQuery
+selectedMode
+hierarchyMode
+supplierFilter
+shortTextFilter
+
+Ensure that switching:
+
+Supplier → Short Text
+
+to:
+
+Short Text → Supplier
+
+cannot leave the second view filtered to an empty state.
+
+Add regression test:
+
+1. Open Supplier → Short Text.
+2. Confirm entities > 0.
+3. Switch to Short Text → Supplier.
+4. Confirm entities > 0.
+5. Search.
+6. Confirm filtering.
+7. Clear search.
+8. Confirm entities restored.
+9. Switch back.
+10. Confirm entities restored.
+
+============================================================
+18. FIX THE "NEEDS ACTION -₹108.70 Cr" DISPLAY TOO
+============================================================
+
+The same screenshot shows:
+
+Needs Action (264)
+-₹108.70 Cr
+
+Do not automatically change this value.
+
+Trace exactly what the ₹108.70 Cr represents.
+
+Determine whether it is:
+
+- excluded rows
+- anomaly rows
+- negative transaction values
+- reversal/debit memo values
+- a combination
+
+The customer UI must never make this look like:
+
+negative procurement spend
+or
+negative savings.
+
+If it represents excluded/anomaly population, label it clearly, for example:
+
+"Excluded / Quarantined Value"
+
+and show:
+
+row count
+gross value
+reason breakdown
+
+The total financial Module 1 KPI must remain based on the canonical valid ledger.
+
+Do not alter the ₹4,073.8307 Cr validated spend because of this display issue.
+
+============================================================
+19. NO IMPACT ON CANONICAL FINANCIAL KPI
+============================================================
+
+After fixing the hierarchy:
+
+The primary Module 1 spend MUST remain:
+
+₹4,073.8307 Cr
+
+No change to:
+
+FX normalization
+valid rows
+excluded rows
+anomalies
+canonical spend
+
+unless a genuine underlying source-data defect is discovered.
+
+============================================================
+20. API CONTRACT
+============================================================
+
+Ensure the canonical/Pareto API contains enough information to build both views.
+
+Do not have frontend reconstruct the relationship from partial data.
+
+Preferred conceptual response:
+
+paretoHierarchy: {
+  supplierToShortText: [...],
+  shortTextToSupplier: [...],
+  reconciliation: {...}
+}
+
+Each node should contain:
+
+id/key
+displayName
+spend
+childCount
+children
+rowCount where appropriate
+
+The API must be tenant-scoped.
+
+============================================================
+21. FRONTEND CONTRACT
+============================================================
+
+React must render the API hierarchy directly.
+
+Do not independently aggregate raw transactions in the frontend.
+
+Do not calculate child spend using a different formula.
+
+Do not use mock data.
+
+Do not use stale cached hierarchy data.
+
+============================================================
+22. TESTS
+============================================================
+
+Add targeted tests for:
+
+A. Supplier → Short Text
+B. Short Text → Supplier
+C. Parent/child reconciliation
+D. Blank Short Text
+E. Multiple suppliers for same Short Text
+F. Multiple Short Text values for same supplier
+G. Search
+H. Clear search
+I. Mode switching
+J. Refresh
+K. VGT golden dataset
+L. Tenant isolation
+M. API/UI parity
+
+Required assertions:
+
+- supplier child count > 0 wherever valid source data contains Short Text
+- reverse hierarchy entities > 0
+- no false "No records matching search filter"
+- parent spend = child spend
+- reverse parent spend = child spend
+- canonical total remains ₹4,073.8307 Cr
+
+============================================================
+23. BROWSER ACCEPTANCE
+============================================================
+
+After implementation, actually open the live browser.
+
+Perform:
+
+1. Login as VGT customer.
+2. Open Module 1.
+3. Scroll to Pareto.
+4. Verify Supplier → Short Text.
+5. Expand HONG KONG RESISTORS.
+6. Verify actual Short Text children appear.
+7. Expand WINSUN ELECTRONIC TECHNOLOGY.
+8. Verify actual Short Text children appear.
+9. Expand HINDALCO INDUSTRIES LTD., UNIT:
+10. Verify actual Short Text children appear.
+11. Switch to Short Text → Supplier Name.
+12. Verify entities appear.
+13. Verify NOT "0 entities".
+14. Verify NOT "No records matching search filter".
+15. Search for a real Short Text.
+16. Verify matching suppliers.
+17. Clear search.
+18. Verify all entities restored.
+19. Switch back to Supplier → Short Text.
+20. Verify hierarchy still works.
+21. Refresh browser.
+22. Verify hierarchy remains correct.
+
+============================================================
+24. FINANCIAL SCREENSHOT ACCEPTANCE
+============================================================
+
+The following must remain unchanged after this fix:
+
+Valid FX-normalized spend:
+₹4,073.83 Cr
+
+Source:
+20,505
+
+Valid:
+20,241
+
+Excluded:
+252
+
+Anomalies:
+12
+
+FX normalization impact:
+₹153.50 Cr
+
+No stale values:
+
+₹817670.04 Cr
+₹803482.78 Cr
+₹40919.06 Cr
+₹0.01 Cr
+30 Sample Records
+
+============================================================
+25. FINAL REPORT
+============================================================
+
+Return:
+
+1. Root cause of Short Text = 0
+2. Root cause of reverse hierarchy = 0 entities
+3. Actual source column used for Short Text
+4. Canonical field used
+5. Number of valid rows with Short Text
+6. Number of blank Short Text rows
+7. Distinct Short Text count
+8. Distinct supplier count
+9. Supplier–Short Text relationship count
+10. Parent/child reconciliation
+11. Reverse hierarchy reconciliation
+12. Needs Action ₹108.70 Cr root cause
+13. API changes
+14. Frontend changes
+15. Tests
+16. Live browser validation
+17. Screenshots/observations
+18. Remaining blockers
+
+FINAL STATUS:
+
+MODULE 1 — PARETO HIERARCHY VERIFIED
+
+OR
+
+MODULE 1 — BLOCKED
+
+Do NOT say verified based only on unit tests.
+
+The actual live browser hierarchy must work in both directions.
+
+IMPORTANT:
+
+The Pareto hierarchy is a core procurement analysis feature.
+
+A customer must be able to move:
+
+Supplier
+→
+Item / Short Text
+→
+Spend
+
+and also:
+
+Item / Short Text
+→
+Supplier
+→
+Spend
+
+with complete traceability back to the same validated transaction ledger.
+
+Fix the data lineage, not just the display.
+
+---
+
+## Prompt 334
+P0 MODULE 1 — FINAL CUSTOMER-FACING PERIOD / FY / VISIBILITY CORRECTION
+
+We have now corrected the canonical Module 1 financial ledger and Supplier ↔ Short Text Pareto hierarchy.
+
+DO NOT modify the canonical financial calculations, FX engine, validated spend, exclusions, anomalies, supplier counts, material groups, plants, Pareto calculations, or Modules 2–4.
+
+This task is ONLY to correct the Module 1 customer-facing time-period logic, FY presentation, empty UI controls, chart visibility, and insufficient-data states.
+
+AUTHORITATIVE VGT DATASET
+- File: VGT Testing Data.xlsx
+- Source rows: 20,505
+- Valid records: 20,241
+- Excluded: 252
+- Anomalies: 12
+- Canonical valid FX-normalized spend: ₹4,073.8307 Cr
+- Actual billing-month coverage: 10 months
+- Actual coverage: April 2021 through January 2022
+- Therefore this dataset represents FY22 only, with 10 of 12 FY22 months available.
+- DO NOT infer FY24/FY25/FY26 from the product/reporting framework.
+- DO NOT fabricate missing months.
+- DO NOT extrapolate or create 36-month history.
+
+==================================================
+1. AUTHORITATIVE PERIOD LOGIC
+==================================================
+
+Create ONE canonical period metadata object derived exclusively from the validated transaction ledger:
+
+periodMetadata:
+- minTransactionDate
+- maxTransactionDate
+- actualBillingMonths
+- actualFiscalYears
+- actualMonthKeys
+- fiscalMonthCoverage
+- availableMonthsByFiscalYear
+- missingMonthsByFiscalYear
+- hasMultiYearComparison
+- has36MonthCoverage
+
+For VGT this must resolve to:
+
+min date = April 2021
+max date = January 2022
+actualBillingMonths = 10
+actualFiscalYears = FY22
+availableMonths = 10
+missing FY22 months = February 2022, March 2022
+hasMultiYearComparison = false
+has36MonthCoverage = false
+
+ALL Module 1 time-series components must consume this canonical period metadata.
+
+Do not maintain separate hardcoded FY labels in frontend components.
+
+==================================================
+2. REMOVE FALSE 36-MONTH PRESENTATION
+==================================================
+
+For the VGT dataset:
+
+REMOVE:
+- "All 36 Months"
+- FY24
+- FY25
+- FY26
+- "3-Year Month-Wise Comparative Line Graph"
+- "3-Year Trajectory"
+- "FY24 Base → FY26 Run Rate"
+- any FY24/FY25/FY26 comparison cards
+- any implied 36-month coverage language
+
+REPLACE with:
+
+"All 10 Months"
+
+and:
+
+"Actual Month-Wise Spend Trend"
+
+Subtitle:
+"Actual monthly spend based on the 10 billing months available in the uploaded dataset."
+
+Coverage label:
+
+"Actual Coverage: Apr 2021 – Jan 2022 | 10 Billing Months"
+
+Fiscal label:
+
+"FY22 | 10 of 12 months available"
+
+If a standard reporting-period selector is required, it must dynamically display only periods actually present in the data.
+
+==================================================
+3. FISCAL YEAR LOGIC
+==================================================
+
+Implement proper Indian fiscal year logic:
+
+April 2021 through March 2022 = FY22.
+
+For any dataset:
+- Apr 2021–Mar 2022 => FY22
+- Apr 2022–Mar 2023 => FY23
+etc.
+
+Never use:
+- calendar year as fiscal year
+- current system date to invent fiscal periods
+- hardcoded FY24/FY25/FY26
+- product template period as dataset period
+
+The FY selector must be generated from actual transaction dates.
+
+==================================================
+4. INSUFFICIENT YEAR-OVER-YEAR DATA
+==================================================
+
+The current screen displays:
+
+"December Year-Over-Year Spend Comparison"
+FY24 N/A
+FY25 N/A
+FY26 N/A
+
+This is NOT acceptable.
+
+For VGT, because only one fiscal year is represented:
+
+DO NOT render the YoY comparison card.
+
+Instead either hide it completely or render a compact informational state:
+
+"Year-over-Year comparison unavailable"
+"At least two comparable fiscal years are required."
+
+Prefer HIDE for customer-facing Module 1 to avoid visual clutter.
+
+Similarly:
+- no 3-year trajectory
+- no FY24 → FY26 comparison
+- no YoY percentage
+unless the dataset actually supports it.
+
+==================================================
+5. CHART MUST NEVER BE EMPTY
+==================================================
+
+The current chart displays axes/grid/month labels but no visible spend series.
+
+Fix the chart binding.
+
+For VGT it must render the actual 10 monthly spend values from the canonical ledger:
+
+Apr 2021
+May 2021
+Jun 2021
+Jul 2021
+Aug 2021
+Sep 2021
+Oct 2021
+Nov 2021
+Dec 2021
+Jan 2022
+
+The chart must use the exact canonical monthly spend aggregation.
+
+Do NOT invent values.
+
+Do NOT use placeholder series.
+
+Do NOT use a 36-month array padded with zeroes.
+
+Do NOT render an empty chart.
+
+If a chart truly has insufficient data, show an explicit empty-state message rather than an empty plotting canvas.
+
+For VGT, there IS enough data for a 10-month actual trend, so the actual line must render.
+
+==================================================
+6. REMOVE ALL EMPTY / BLANK UI CONTROLS
+==================================================
+
+Audit the entire Module 1 rendered DOM.
+
+There are currently blank rounded controls around:
+
+- Material Group Wise / Plant Wise section
+- 36-Month Bar View area
+- other chart/table control groups
+
+Find the source of every blank interactive element.
+
+RULE:
+
+NO empty:
+- button
+- tab
+- pill
+- toggle
+- dropdown
+- selector
+- segmented control
+- chart mode
+- toolbar item
+
+may render.
+
+If a feature is not applicable:
+HIDE the control completely.
+
+If a feature is applicable:
+render its complete label and functionality.
+
+No invisible text caused by white-on-white styling.
+No zero-width labels.
+No placeholder controls.
+
+==================================================
+7. TIME-SERIES CONTROL DESIGN
+==================================================
+
+Create controls dynamically from available data.
+
+For VGT, the time control should be something like:
+
+[ All 10 Months ] [ FY22 ]
+
+If monthly filtering is useful:
+
+[ All 10 Months ] [ Apr ] [ May ] ... [ Jan ]
+
+Do not show:
+FY24
+FY25
+FY26
+36 Months
+
+For a dataset with 36 actual months, the UI may dynamically show:
+
+[ All 36 Months ] [ FY24 ] [ FY25 ] [ FY26 ]
+
+But ONLY when those periods genuinely exist.
+
+==================================================
+8. REMOVE FALSE "3-YEAR TRAJECTORY"
+==================================================
+
+The current:
+
+"3-YEAR TRAJECTORY -12.0%"
+"FY24 Base → FY26 Run Rate"
+
+must not render for VGT.
+
+Replace with:
+
+"DATASET COVERAGE"
+"10 Months"
+
+or:
+
+"ACTUAL COVERAGE"
+"Apr 2021 – Jan 2022"
+
+Do not create another growth metric unless it is directly supported by the actual ledger.
+
+==================================================
+9. KPI CARDS MUST BE DATA-AWARE
+==================================================
+
+Keep valid KPIs such as:
+- Peak Spend Month
+- Lowest Spend Month
+- Average Monthly Spend
+
+but ensure they are calculated only across the actual available months.
+
+For VGT:
+- Peak month must come from the 10 actual months.
+- Lowest month must come from the 10 actual months.
+- Average monthly spend must use the 10 actual months.
+- Do not divide by 36.
+- Do not include missing months as zero unless explicitly labelled and analytically required.
+
+If a KPI requires unavailable periods, hide it.
+
+==================================================
+10. MONTHLY TABLE
+==================================================
+
+The monthly table must contain ONLY actual billing months.
+
+For VGT:
+10 rows maximum:
+
+Apr 2021
+May 2021
+Jun 2021
+Jul 2021
+Aug 2021
+Sep 2021
+Oct 2021
+Nov 2021
+Dec 2021
+Jan 2022
+
+Fiscal Year must show FY22 for each.
+
+Do not create Feb/Mar rows with zero.
+
+Do not create FY24/FY25/FY26 rows.
+
+All monthly spend must reconcile to:
+
+₹4,073.8307 Cr
+
+with zero variance.
+
+==================================================
+11. ACTUAL VS MISSING PERIOD DISCLOSURE
+==================================================
+
+Add a subtle but clear customer-facing coverage statement near the trend section:
+
+"Actual data coverage: 10 billing months (Apr 2021 – Jan 2022). 
+2 FY22 months are not present in the uploaded dataset."
+
+Do not call missing months "zero spend".
+
+Do not assume the customer had no spend in those months.
+
+The correct interpretation is:
+"Not provided / not present in uploaded dataset."
+
+==================================================
+12. DATA LINEAGE
+==================================================
+
+All of the following must use the SAME canonical monthly ledger:
+
+- KPI cards
+- period selector
+- FY selector
+- chart
+- monthly table
+- peak month
+- lowest month
+- average monthly spend
+- MoM change
+- coverage metadata
+
+There must be ONE source of truth.
+
+Do not maintain separate frontend calculations.
+
+==================================================
+13. CUSTOMER-FACING VISUAL AUDIT
+==================================================
+
+Perform an actual browser acceptance test after implementation.
+
+Check the entire Module 1 page at normal desktop resolution.
+
+Verify:
+- no blank controls
+- no clipped text
+- no hidden white text
+- no empty chart
+- no incorrect FY labels
+- no false 36-month claim
+- no N/A FY comparison cards
+- no overlapping controls
+- no truncated headings
+- no horizontal overflow
+- no content disappearing because of container height/overflow
+- all table columns visible
+- all actual data rows visible
+- chart tooltip works
+- period filters work
+- refresh preserves correct dataset state
+
+Test at:
+- 1440px desktop
+- 1920px desktop
+- 1280px desktop
+
+Do not redesign the page globally.
+
+==================================================
+14. REGRESSION TESTS
+==================================================
+
+Add tests for:
+
+A. VGT 10-month dataset:
+- period = Apr 2021–Jan 2022
+- FY = FY22
+- 10 months
+- no FY24/FY25/FY26
+- no 36-month label
+- no YoY comparison
+- chart has 10 actual points
+
+B. Full 36-month synthetic fixture:
+- only if 36 actual months exist, 36-month UI becomes available
+- fiscal selectors are derived from actual dates
+
+C. Partial 2-year dataset:
+- only actual fiscal years appear
+- missing periods never become zero
+
+D. No-data state:
+- clean empty-state UI
+- no blank controls
+
+E. Financial invariant:
+- VGT canonical valid spend remains ₹4,073.8307 Cr
+- no change to FX calculations
+- no change to exclusions/anomalies
+- no change to Pareto hierarchy
+
+==================================================
+15. DO NOT TOUCH
+==================================================
+
+DO NOT modify:
+- FX master
+- FX rates
+- FX conversion formulas
+- canonical valid spend
+- 20,505 source population
+- 20,241 valid records
+- 252 exclusions
+- 12 anomalies
+- ₹108.70 Cr quarantined value
+- Supplier ↔ Short Text Pareto
+- Module 2
+- Module 3
+- Module 4
+- subscription logic
+- authentication
+- entitlement logic
+- evidence workbook architecture
+
+This is a Module 1 presentation/data-period correction only.
+
+==================================================
+16. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+Do not report "fixed" based only on unit tests.
+
+Provide a final acceptance report containing:
+
+1. Actual dataset period detected
+2. Actual fiscal year(s)
+3. Actual billing month count
+4. Missing months
+5. Screenshot/evidence of corrected period selector
+6. Screenshot/evidence of corrected chart
+7. Screenshot/evidence that no false FY24/FY25/FY26 labels remain
+8. Screenshot/evidence that no 36-month claim remains for VGT
+9. Screenshot/evidence that no blank controls remain
+10. Screenshot/evidence that monthly table contains only actual months
+11. Financial reconciliation to ₹4,073.8307 Cr
+12. Backend tests passed
+13. Frontend tests passed
+14. Typecheck passed
+15. Lint passed
+16. Browser acceptance passed
+
+FINAL STATUS MUST BE:
+
+MODULE 1 — PERIOD / FY PRESENTATION VERIFIED
+
+Do not claim production certification for the entire product. This acceptance applies only to the Module 1 period/time-series presentation and visibility fixes.
+
+---
+
+## Prompt 335
+P0 — aiCEV INTERNAL ASSESSMENT MODE
+PROCUCEV — 30-DAY INTERNAL VALIDATION PHASE
+
+OBJECTIVE
+Convert the current aiCEV application into an INTERNAL ASSESSMENT MODE for the next 30-day Procucev validation phase.
+
+IMPORTANT:
+This is NOT a new product and NOT a separate codebase.
+
+The existing aiCEV calculation engine, Modules 1–4, FX Master, PCBI, canonical financial engine, Pareto hierarchy, evidence engine and report generation must remain the single source of truth.
+
+We will use aiCEV internally on 1–2 Procucev company desktops/laptops to process customer procurement data after NDA/data receipt.
+
+CUSTOMERS WILL NOT DIRECTLY ACCESS THE SOFTWARE DURING THIS PHASE.
+
+DO NOT rebuild or fork the application.
+
+==================================================
+1. OPERATING MODE
+==================================================
+
+Introduce a persisted/configurable application operating mode:
+
+INTERNAL_ASSESSMENT
+
+Keep architecture ready for future:
+
+PUBLIC_SAAS
+
+Do NOT implement PUBLIC_SAAS now.
+
+Do NOT delete or redesign the existing SaaS architecture.
+
+The operating mode must be environment/configuration driven and must not change any financial calculation.
+
+Example:
+
+APP_OPERATING_MODE=INTERNAL_ASSESSMENT
+
+Do not hardcode this in multiple frontend components.
+
+Create one central server-side operating-mode/configuration service.
+
+Frontend must consume the authoritative backend mode.
+
+==================================================
+2. INTERNAL ASSESSMENT WORKSPACE
+==================================================
+
+Create an internal landing/workspace:
+
+"aiCEV — Procurement Assessment Centre"
+
+Primary action:
+
+"+ New Assessment"
+
+Each assessment must receive an immutable unique Assessment ID.
+
+Suggested format:
+
+AIC-YYYY-XXXX
+
+Example:
+
+AIC-2026-0001
+
+Do not use customer name as the primary key.
+
+==================================================
+3. ASSESSMENT MASTER RECORD
+==================================================
+
+Create a persistent Assessment entity with at least:
+
+assessmentId
+customerName
+industry
+assessmentPeriodStart
+assessmentPeriodEnd
+dataReceivedAt
+ndaStatus
+dataStatus
+assignedAnalyst
+status
+createdAt
+updatedAt
+
+NDA status:
+
+PENDING
+SIGNED
+NOT_REQUIRED
+
+Data status:
+
+NOT_RECEIVED
+RECEIVED
+VALIDATION_IN_PROGRESS
+VALIDATED
+REQUIRES_CLARIFICATION
+
+Assessment status:
+
+CREATED
+NDA_PENDING
+DATA_PENDING
+DATA_RECEIVED
+MODULE_1_READY
+ANALYSIS_IN_PROGRESS
+PCBI_REVIEW
+REPORT_GENERATION
+ANALYST_REVIEW
+APPROVED
+DELIVERED
+CLOSED
+BLOCKED
+
+Do not allow arbitrary frontend status manipulation.
+
+Backend owns status transitions.
+
+==================================================
+4. CUSTOMER DATA ISOLATION
+==================================================
+
+Every customer assessment must remain isolated.
+
+Assessment ID must be linked to:
+
+Data Version
+Analysis Job
+Analysis Run
+Module 1 result
+Module 2 result
+PCBI review
+Module 4 result
+Evidence workbooks
+Reports
+Audit records
+
+Do NOT allow customer assessment data to modify:
+
+Global FX Master
+Global PCBI Master
+Global benchmark master
+Global UNSPSC master
+Global methodology/configuration
+
+Customer corrections must create a new immutable Data Version.
+
+==================================================
+5. EXISTING MODULES — DO NOT CHANGE CALCULATIONS
+==================================================
+
+Preserve the existing calculation engines.
+
+Module 1:
+- actual source data
+- canonical validated ledger
+- FX normalization
+- financial reconciliation
+- population reconciliation
+- Pareto hierarchy
+- period/FY logic
+- quality index
+- needs-action/quarantine
+
+Module 2:
+- categorization
+- UNSPSC
+- sourcing opportunities
+- consolidation
+- supplier/material analysis
+
+Module 3:
+- PCBI
+- benchmark mapping
+- trend analysis
+- benchmark evidence
+
+Module 4:
+- savings engine
+- savings bridge
+- exclusions
+- overlap deductions
+- direct savings
+- strategic market value
+- cost avoidance/risk
+- realized savings
+- productivity
+
+ABSOLUTELY NO CHANGE to these calculations as part of this command.
+
+==================================================
+6. INTERNAL WORKFLOW
+==================================================
+
+Implement this workflow:
+
+CREATE ASSESSMENT
+        ↓
+NDA SIGNED
+        ↓
+DATA RECEIVED
+        ↓
+UPLOAD DATA
+        ↓
+MODULE 1
+        ↓
+DATA QUALITY REVIEW
+        ↓
+MODULE 2
+        ↓
+PCBI REVIEW
+        ↓
+MODULE 4
+        ↓
+FINANCIAL VALIDATION
+        ↓
+ANALYST REVIEW
+        ↓
+APPROVE REPORT
+        ↓
+GENERATE DELIVERY PACKAGE
+        ↓
+DELIVER TO CUSTOMER
+        ↓
+CLOSE ASSESSMENT
+
+The system must prevent report approval if mandatory validation gates fail.
+
+==================================================
+7. ANALYST REVIEW GATE
+==================================================
+
+Before customer delivery, require:
+
+Module 1 financial reconciliation = PASS
+FX coverage validation = PASS or explicitly acknowledged
+Data quality review = COMPLETE
+Module 2 validation = COMPLETE
+PCBI review = COMPLETE where applicable
+Savings reconciliation = PASS
+Evidence workbook generation = PASS
+Report generation = PASS
+
+Then:
+
+ANALYST APPROVAL
+
+Store:
+
+approvedBy
+approvedAt
+approvalComment
+analysisRunId
+dataVersionId
+
+Approval must be auditable.
+
+==================================================
+8. INTERNAL DASHBOARD
+==================================================
+
+Create an internal dashboard showing:
+
+Active Assessments
+Data Awaiting
+Analysis In Progress
+PCBI Review
+Reports Awaiting Review
+Approved
+Delivered
+Blocked
+
+For each assessment show:
+
+Assessment ID
+Customer
+Industry
+Data Period
+Spend
+Validated Spend
+Potential Savings
+Savings %
+Status
+Assigned Analyst
+Created Date
+Last Updated
+
+Do NOT calculate financial values independently in the frontend.
+
+Use the canonical backend result.
+
+==================================================
+9. REPORT DELIVERY PACKAGE
+==================================================
+
+For an approved assessment provide:
+
+1. Management Quick Summary
+2. Executive Opportunity Brief
+3. Boardroom & Evidence Report
+4. Comprehensive Evidence Workbook
+5. Dedicated savings evidence workbooks where applicable
+
+Create a single:
+
+"Generate Delivery Package"
+
+action.
+
+The package should contain only the approved analysis run.
+
+Do not accidentally package a superseded Data Version or Analysis Run.
+
+==================================================
+10. INTERNAL CUSTOMER DATA STORAGE
+==================================================
+
+Do not store customer files inside source code.
+
+Do not commit customer data to Git.
+
+Do not use demo/mock data for financial outputs.
+
+Customer data must be linked to Assessment ID + Data Version.
+
+Maintain:
+
+original file
+checksum
+uploadedAt
+uploadedBy
+file name
+file size
+Data Version ID
+
+If a corrected file is uploaded:
+
+create NEW Data Version
+
+Never overwrite the original source version.
+
+==================================================
+11. AUDIT TRAIL
+==================================================
+
+Record audit events for:
+
+Assessment created
+NDA status changed
+Data received
+File uploaded
+Data Version created
+Analysis started
+Analysis completed
+PCBI review started
+Correction made
+New Data Version created
+Report generated
+Report superseded
+Analyst approval
+Report delivered
+Assessment closed
+
+Never log passwords, OTPs, secrets or sensitive authentication credentials.
+
+==================================================
+12. FUTURE PUBLIC SAAS COMPATIBILITY
+==================================================
+
+Do NOT implement public registration now.
+
+Do NOT remove existing:
+
+User
+Role
+Tenant
+Entitlement
+Subscription
+Activation
+Admin
+
+architecture.
+
+Keep these available for future PUBLIC_SAAS mode.
+
+The design must allow later:
+
+INTERNAL_ASSESSMENT
+        ↓
+PUBLIC_SAAS
+
+without replacing the core calculation engine.
+
+Do not create two financial engines.
+
+==================================================
+13. ACCESS CONTROL
+==================================================
+
+During INTERNAL_ASSESSMENT:
+
+CUSTOMER role:
+DISABLED for direct application access
+
+INTERNAL_ADMIN:
+Full access
+
+ANALYST:
+Assigned assessments + analysis/review access
+
+CONSULTANT:
+Assessment/report/evidence access according to assigned permissions
+
+No anonymous access to assessment data.
+
+==================================================
+14. REMOVE CUSTOMER-FACING SAAS NOISE
+==================================================
+
+In INTERNAL_ASSESSMENT mode do not show:
+
+Public registration
+Bronze/Silver/Gold upgrade
+Subscription purchase
+Payment
+Activation code
+Customer self-service onboarding
+Customer SaaS dashboard
+
+Do NOT delete these features.
+
+Simply suppress them through the central operating-mode policy.
+
+==================================================
+15. DO NOT CHANGE
+==================================================
+
+DO NOT change:
+
+Module 1 financial calculations
+FX rates
+FX master
+FX fallback rules
+Canonical ledger
+Pareto hierarchy
+Module 2 calculations
+PCBI calculations
+Module 4 savings calculations
+Savings bridge
+Evidence workbook calculations
+Existing approved report calculations
+Subscription architecture
+Authentication core
+Tenant isolation
+
+==================================================
+16. TESTING REQUIREMENTS
+==================================================
+
+Create automated tests for:
+
+A. New assessment creation
+B. Unique Assessment ID
+C. NDA status
+D. Data receipt
+E. Data Version creation
+F. Upload linked to correct Assessment ID
+G. Analysis linked to correct Data Version
+H. Report linked to correct Analysis Run
+I. Superseded report cannot be delivered
+J. Approval gate
+K. Audit trail
+L. Customer data isolation
+M. Assessment isolation
+N. Global master data cannot be modified by customer data
+O. INTERNAL_ASSESSMENT mode hides SaaS onboarding
+P. Existing SaaS code remains intact
+Q. Financial result unchanged before/after operating-mode implementation
+
+==================================================
+17. REGRESSION TEST
+==================================================
+
+Run the complete existing test suite.
+
+Required:
+
+Backend typecheck
+Frontend typecheck
+Lint
+Build
+Backend tests
+Frontend tests
+Existing Module 1 tests
+Existing Module 2 tests
+Existing PCBI tests
+Existing Module 4 tests
+Evidence workbook tests
+Report tests
+
+Also perform a financial differential test:
+
+CURRENT_CANONICAL_RESULT
+vs
+INTERNAL_ASSESSMENT_CANONICAL_RESULT
+
+Expected:
+
+ZERO financial variance.
+
+==================================================
+18. BROWSER ACCEPTANCE TEST
+==================================================
+
+Using a clean browser session:
+
+1. Login as INTERNAL_ADMIN
+2. Open Procurement Assessment Centre
+3. Create AIC-2026-XXXX
+4. Confirm status CREATED
+5. Set NDA SIGNED
+6. Mark data RECEIVED
+7. Upload actual test dataset
+8. Confirm new Data Version
+9. Run Module 1
+10. Confirm canonical spend
+11. Confirm population metrics
+12. Confirm FX
+13. Confirm Pareto
+14. Continue Modules 2–4
+15. Generate report
+16. Review evidence
+17. Approve report
+18. Generate Delivery Package
+19. Confirm package uses approved Analysis Run
+20. Confirm audit trail
+
+Then refresh browser.
+
+Confirm state persists.
+
+Logout/login.
+
+Confirm state persists.
+
+==================================================
+19. IMPORTANT REAL DATA REGRESSION
+==================================================
+
+Use the existing VGT Testing Data.xlsx as the first regression dataset.
+
+Expected authoritative Module 1 result:
+
+20,505 source rows
+20,241 valid commercial transactions
+252 excluded
+12 anomaly rows
+
+Validated FX-normalized spend:
+
+₹4,073.8307 Cr
+
+Profile FX baseline:
+
+₹3,920.3277 Cr
+
+FX normalization impact:
+
+₹153.5029 Cr
+
+Customer-facing population:
+
+529 suppliers
+57 material groups
+19 operating plants
+10 billing months
+
+Actual billing period:
+
+April 2021 – January 2022
+
+No regression is permitted.
+
+==================================================
+20. DELIVERABLE FROM THIS COMMAND
+==================================================
+
+At completion provide:
+
+1. Files changed
+2. Database/schema changes
+3. New Assessment workflow
+4. New operating-mode implementation
+5. Test count
+6. Pass/fail count
+7. Typecheck result
+8. Lint result
+9. Build result
+10. Browser validation result
+11. Financial differential result
+12. VGT regression result
+13. Any blockers
+14. Any known limitations
+
+Do not claim completion if browser validation was not actually performed.
+
+STOP after this command.
+
+Do not start public SaaS enablement.
+
+Do not modify the financial engine.
+
+Do not modify Modules 1–4 calculations.
+
+---
+
+## Prompt 336
+resume
+
+---
+
+## Prompt 337
+P0 — aiCEV REAL CUSTOMER ASSESSMENT DRY RUN
+
+OBJECTIVE
+
+Validate the complete Procucev internal business workflow using aiCEV INTERNAL_ASSESSMENT mode.
+
+This is an operational acceptance test.
+
+Do not change application architecture or financial calculations unless a defect is found.
+
+TEST FLOW
+
+1. Create a new Assessment.
+2. Assign Assessment ID.
+3. Enter customer/industry/assessment period.
+4. Mark NDA as SIGNED.
+5. Mark DATA RECEIVED.
+6. Upload the approved test procurement dataset.
+7. Confirm immutable Data Version creation.
+8. Run Module 1.
+9. Validate:
+   - source rows
+   - valid rows
+   - exclusions
+   - anomalies
+   - FX coverage
+   - validated spend
+   - suppliers
+   - material groups
+   - plants
+   - billing months
+10. Run Module 2.
+11. Validate categorization and sourcing opportunities.
+12. Run PCBI review.
+13. Validate benchmark mapping and uncovered items.
+14. Run Module 4.
+15. Validate all savings classifications.
+16. Validate financial bridge.
+17. Generate evidence workbooks.
+18. Generate Management Quick Summary.
+19. Generate Executive Opportunity Brief.
+20. Generate Boardroom & Evidence Report.
+21. Perform analyst review.
+22. Approve report.
+23. Generate Delivery Package.
+24. Confirm only approved Analysis Run is included.
+25. Mark DELIVERED.
+26. Close assessment.
+
+TEST NEGATIVE PATHS
+
+Also test:
+
+A. Upload without Assessment
+B. Upload wrong file
+C. Duplicate upload
+D. Failed validation
+E. New Data Version after correction
+F. Superseded Analysis Run
+G. Report generated before approval
+H. Attempt delivery without approval
+I. Attempt cross-assessment data access
+J. Attempt modification of global PCBI/FX master
+K. Logout/login during analysis
+L. Browser refresh during workflow
+
+EXPECTED:
+
+No cross-assessment contamination.
+No financial variance.
+No stale frontend financial values.
+No demo values.
+No unauthorized report delivery.
+
+Measure:
+
+Data received → Module 1 ready
+Module 1 → full analysis ready
+Full analysis → report ready
+Report → analyst approval
+Approval → delivery package
+
+Do not fabricate 24–48 hour performance.
+
+Report the actual measured duration for the dry run.
+
+DELIVER:
+
+- Complete workflow result
+- Screenshots/route evidence where available
+- Timing
+- Failed tests
+- Root causes
+- Fix recommendations
+- Final GO / NO-GO decision
+
+STOP after validation.
+
+---
+
+## Prompt 338
+P0 — aiCEV INTERNAL PRODUCTION SAFETY GATE
+
+OBJECTIVE
+
+Certify the current aiCEV INTERNAL_ASSESSMENT environment as suitable for Procucev's 30-day controlled internal customer-assessment period.
+
+DO NOT enable public SaaS.
+
+DO NOT change Modules 1–4 calculations.
+
+VERIFY:
+
+1. Authentication
+2. Internal role permissions
+3. Assessment isolation
+4. Data Version immutability
+5. Analysis Run traceability
+6. Audit logging
+7. Customer file storage
+8. File checksum
+9. Backup/recovery process
+10. No customer data in source control
+11. No demo financial data in production paths
+12. Global FX Master protection
+13. Global PCBI Master protection
+14. Report approval gate
+15. Delivery package integrity
+16. Evidence workbook integrity
+17. Browser refresh persistence
+18. Logout/login persistence
+19. Failed analysis recovery
+20. Corrected data re-analysis
+21. Superseded report handling
+22. Cross-assessment isolation
+
+SECURITY TESTS
+
+Attempt unauthorized access to:
+
+- another Assessment
+- another Data Version
+- another Analysis Run
+- another report
+- another evidence workbook
+- global master data
+
+All must fail.
+
+FINANCIAL REGRESSION
+
+Run the VGT dataset.
+
+Expected:
+
+20,505 source
+20,241 valid
+252 excluded
+12 anomalies
+₹4,073.8307 Cr validated spend
+529 suppliers
+57 material groups
+19 operating plants
+10 billing months
+April 2021–January 2022
+
+Expected financial variance:
+
+₹0.00
+
+REPORT:
+
+PASS/FAIL for every gate.
+
+Classify findings:
+
+P0 BLOCKER
+P1 HIGH
+P2 MEDIUM
+P3 LOW
+
+Only issue:
+
+INTERNAL_ASSESSMENT GO
+
+if all P0/P1 issues are resolved.
+
+Do not claim production safety based only on automated tests.
+
+STOP.
+
+---
+
+## Prompt 339
+continue
+
+---
+
+## Prompt 340
+P0 COMMAND — aiCEV E2E-001 FULL END-TO-END CALCULATION CERTIFICATION + WINDOWS DESKTOP LAUNCHER
+
+OBJECTIVE
+
+Perform a formal end-to-end certification of the aiCEV INTERNAL_ASSESSMENT application before any real customer data is accepted.
+
+This is NOT a generic unit-test exercise.
+
+The objective is to independently prove that:
+
+INPUT DATA
+→ DATA VERSION
+→ MODULE 1
+→ MODULE 2
+→ MODULE 3 / PCBI
+→ MODULE 4 / SAVINGS ENGINE
+→ FINANCIAL BRIDGE
+→ EVIDENCE WORKBOOKS
+→ MANAGEMENT QUICK SUMMARY
+→ REPORTS
+→ APPROVAL
+→ DELIVERY
+
+all produce numerically correct, traceable and mutually consistent results.
+
+The certification must use an independently calculated GOLDEN EXPECTED RESULT and compare every deterministic financial result against aiCEV.
+
+DO NOT use production calculation functions to calculate the expected result.
+
+DO NOT modify the certified financial engine merely to make the tests pass.
+
+DO NOT change the existing VGT certified baseline.
+
+DO NOT enable PUBLIC_SAAS.
+
+DO NOT introduce payment, registration, subscription or customer portal functionality.
+
+==================================================
+PART A — GOLDEN TEST DATASET
+==================================================
+
+Create:
+
+qa/e2e/E2E-GOLD-001/
+
+with:
+
+1. E2E_GOLD_001.xlsx
+2. expected-results.xlsx
+3. README.md
+4. validation-rules.md
+5. independent-calculation-engine/
+6. certification-report/
+7. test-fixtures/
+8. golden-checksums.json
+
+The dataset must intentionally exercise all major aiCEV pathways.
+
+Create approximately 150–250 transaction rows, not thousands, so every expected result can be manually inspected.
+
+The dataset MUST contain:
+
+A. Currencies
+- INR
+- USD
+- EUR
+- CNY
+
+B. Suppliers
+- at least 10 suppliers
+- suppliers with multiple items
+- suppliers with multiple plants
+- suppliers with duplicate-looking names but different codes
+- supplier with only excluded transactions
+- supplier with both valid and excluded transactions
+
+C. Material groups
+- at least 8 material groups
+- direct materials
+- packing materials
+- MRO
+- indirect material
+- service/non-commodity category
+
+D. Plants
+- at least 4 plants
+
+E. Dates
+- transactions across at least 12 months
+- at least 2 Indian financial years
+- multiple transactions in the same month
+- month-end dates
+- year boundary
+
+F. Quantity / price cases
+- normal quantity × price
+- decimal quantity
+- decimal unit price
+- price unit = 1
+- price unit = 10
+- price unit = 100
+- price unit = 1000
+- different UOMs where supported
+
+G. Data-quality cases
+- valid rows
+- zero quantity
+- FOC
+- deletion indicator L
+- deletion indicator X
+- negative quantity
+- negative price
+- missing optional field
+- blank material group
+- blank supplier field
+- duplicate transaction
+- duplicate supplier name with different supplier codes
+
+H. FX cases
+Include:
+- INR transaction
+- USD transaction
+- EUR transaction
+- CNY transaction
+- dates where exact FX exists
+- dates requiring approved prior-date FX lookup
+- at least one intentionally pending/unavailable FX case if supported by the application
+
+I. Benchmark cases
+Create items representing:
+- strong benchmark mapping
+- secondary benchmark mapping
+- frequency mismatch
+- no benchmark
+- non-benchmarkable engineered item
+- service
+- manual review
+- excluded item
+
+J. Savings cases
+The dataset MUST deliberately create:
+- vendor consolidation opportunity
+- benchmark price gap
+- strategic sourcing opportunity
+- strategic market value
+- process productivity candidate
+- cost avoidance/risk candidate
+- overlap between savings levers
+- exclusions
+- non-addressable spend
+
+The golden dataset must be deterministic.
+
+After creation calculate and freeze:
+
+SHA-256
+row count
+column schema
+source total
+valid total
+excluded total
+anomaly total
+
+==================================================
+PART B — INDEPENDENT EXPECTED CALCULATION ENGINE
+==================================================
+
+Create:
+
+qa/e2e/E2E-GOLD-001/independent-calculation-engine/
+
+This engine MUST be independently implemented.
+
+STRICT RULE:
+
+It must NOT import:
+
+- VgtModule1Runner
+- canonical aggregator
+- Module1CanonicalViewModel
+- Module 2 production calculation services
+- PCBI production calculation services
+- Module 4 savings engine
+- financial bridge production functions
+- production aggregation utilities
+
+The expected engine may only read:
+
+E2E_GOLD_001.xlsx
+and
+explicitly defined test constants/rules.
+
+Implement independent calculations for:
+
+1. source row count
+2. valid row count
+3. excluded row count
+4. anomaly count
+5. quantity × unit price
+6. price-unit normalization
+7. currency normalization
+8. FX date selection
+9. INR converted spend
+10. supplier aggregation
+11. material-group aggregation
+12. plant aggregation
+13. monthly aggregation
+14. financial-year aggregation
+15. Pareto aggregation
+16. PCBI addressable spend
+17. benchmark coverage
+18. benchmark price
+19. customer price
+20. benchmark price gap
+21. vendor consolidation opportunity
+22. strategic sourcing opportunity
+23. strategic market value
+24. process productivity
+25. cost avoidance/risk
+26. overlap
+27. exclusions
+28. net defensible opportunity
+29. net direct savings
+30. financial bridge
+
+All expected values must be written to:
+
+expected-results.xlsx
+
+Every expected result must have:
+
+- test ID
+- metric
+- expected value
+- unit
+- calculation rule
+- source transaction population
+- notes
+
+==================================================
+PART C — 100+ VALIDATION CHECKS
+==================================================
+
+Create at least 120 deterministic certification checks.
+
+Minimum distribution:
+
+MODULE 1 — 35 checks
+
+M1-001 Source row count
+M1-002 Schema validation
+M1-003 Valid row count
+M1-004 Excluded row count
+M1-005 Anomaly count
+M1-006 Zero quantity handling
+M1-007 FOC handling
+M1-008 Deletion indicator L
+M1-009 Deletion indicator X
+M1-010 Negative quantity
+M1-011 Negative price
+M1-012 Duplicate detection
+M1-013 Price unit 1
+M1-014 Price unit 10
+M1-015 Price unit 100
+M1-016 Price unit 1000
+M1-017 INR transaction
+M1-018 USD conversion
+M1-019 EUR conversion
+M1-020 CNY conversion
+M1-021 exact-date FX
+M1-022 prior-approved-date FX
+M1-023 pending FX
+M1-024 total INR spend
+M1-025 supplier aggregation
+M1-026 material group aggregation
+M1-027 plant aggregation
+M1-028 month aggregation
+M1-029 financial year aggregation
+M1-030 Pareto total
+M1-031 supplier Pareto
+M1-032 item Pareto
+M1-033 supplier→item relationship
+M1-034 item→supplier relationship
+M1-035 Module 1 canonical reconciliation
+
+MODULE 2 — 25 checks
+
+M2-001 opportunity population
+M2-002 supplier qualification
+M2-003 material qualification
+M2-004 minimum spend threshold
+M2-005 supplier consolidation
+M2-006 supplier count reduction
+M2-007 sourcing opportunity
+M2-008 volume opportunity
+M2-009 strategic sourcing
+M2-010 action population
+M2-011 opportunity baseline
+M2-012 opportunity percentage
+M2-013 opportunity amount
+M2-014 transaction lineage
+M2-015 supplier lineage
+M2-016 material lineage
+M2-017 plant lineage
+M2-018 exclusion handling
+M2-019 non-addressable handling
+M2-020 duplicate prevention
+M2-021 zero-opportunity handling
+M2-022 total opportunity reconciliation
+M2-023 UI/API parity
+M2-024 evidence workbook parity
+M2-025 Module 2 reconciliation
+
+MODULE 3 / PCBI — 25 checks
+
+M3-001 PCBI mapping count
+M3-002 mapped spend
+M3-003 unmapped spend
+M3-004 benchmarkable spend
+M3-005 non-benchmarkable spend
+M3-006 service exclusion
+M3-007 manual review
+M3-008 frequency mismatch
+M3-009 Quality A
+M3-010 Quality B
+M3-011 Quality C
+M3-012 benchmark source
+M3-013 benchmark technical ID
+M3-014 benchmark date
+M3-015 benchmark value
+M3-016 customer price
+M3-017 unit normalization
+M3-018 benchmark currency
+M3-019 customer currency
+M3-020 benchmark price gap
+M3-021 addressable spend
+M3-022 coverage percentage
+M3-023 uncovered items
+M3-024 mapped spend reconciliation
+M3-025 Module 3 evidence reconciliation
+
+MODULE 4 — 30 checks
+
+M4-001 baseline spend
+M4-002 vendor consolidation gross
+M4-003 vendor consolidation net
+M4-004 benchmark price gap gross
+M4-005 benchmark price gap overlap
+M4-006 benchmark price gap net
+M4-007 strategic sourcing gross
+M4-008 strategic sourcing overlap
+M4-009 strategic sourcing net
+M4-010 strategic market value
+M4-011 process productivity
+M4-012 cost avoidance
+M4-013 risk classification
+M4-014 realized savings classification
+M4-015 gross opportunity
+M4-016 overlap
+M4-017 exclusions
+M4-018 net defensible opportunity
+M4-019 net direct savings
+M4-020 strategic market value separation
+M4-021 no double counting
+M4-022 transaction-level traceability
+M4-023 supplier-level traceability
+M4-024 material-level traceability
+M4-025 lever-level traceability
+M4-026 financial bridge
+M4-027 savings percentage
+M4-028 UI/API parity
+M4-029 evidence workbook parity
+M4-030 Module 4 final reconciliation
+
+REPORT / EVIDENCE / WORKFLOW — 15 checks
+
+R-001 Module 1 report parity
+R-002 Module 2 report parity
+R-003 Module 3 report parity
+R-004 Module 4 report parity
+R-005 Management Quick Summary parity
+R-006 PDF parity
+R-007 PPTX parity
+R-008 Excel evidence parity
+R-009 approved report immutability
+R-010 report version
+R-011 Data Version lineage
+R-012 Analysis Run lineage
+R-013 Assessment ID lineage
+R-014 delivery package parity
+R-015 final end-to-end reconciliation
+
+TOTAL MINIMUM = 130 CHECKS.
+
+==================================================
+PART D — ZERO-VARIANCE RECONCILIATION RULES
+==================================================
+
+For deterministic calculations:
+
+EXPECTED VALUE == aiCEV VALUE
+
+Variance must be exactly zero after applying the application's documented decimal precision.
+
+Do NOT use arbitrary tolerances such as 1%, 0.1% or 0.01%.
+
+For monetary values compare using the application's canonical precision and document the precision.
+
+Every reconciliation must identify:
+
+expected
+actual
+variance
+percentage variance
+status
+
+Create:
+
+E2E_CERTIFICATION_MATRIX.xlsx
+
+with columns:
+
+Test ID
+Module
+Metric
+Expected
+Actual
+Variance
+Status
+Source Population
+Calculation Rule
+Evidence Reference
+Failure Reason
+
+==================================================
+PART E — FINANCIAL BRIDGE
+==================================================
+
+The final bridge must reconcile independently.
+
+At minimum:
+
+Source Spend
+→ Valid Spend
+→ FX Normalized Spend
+→ Addressable Spend
+→ Gross Opportunities
+→ Overlap
+→ Exclusions
+→ Net Defensible Opportunity
+→ Net Direct Savings
+→ Strategic Market Value
+→ Other separately classified values
+
+Do NOT sum classifications that are not additive.
+
+Cost Avoidance/Risk must remain separately classified.
+
+Realized Savings must remain separately classified.
+
+Process Productivity must remain separately classified unless the documented methodology explicitly makes it additive.
+
+The system must prove that the same transaction rupee cannot be counted twice across savings levers.
+
+==================================================
+PART F — TRACEABILITY
+==================================================
+
+For every final savings number, provide drill-down:
+
+Final Number
+→ Savings Lever
+→ qualifying population
+→ transaction IDs
+→ supplier
+→ material
+→ plant
+→ baseline spend
+→ rule
+→ percentage
+→ gross value
+→ overlap
+→ exclusion
+→ net value
+
+No final savings number may exist without an identifiable source population.
+
+==================================================
+PART G — UI/API/EVIDENCE PARITY
+==================================================
+
+For every major KPI verify:
+
+UI == API == canonical ledger == evidence workbook == report.
+
+At minimum compare:
+
+- source rows
+- valid rows
+- excluded rows
+- anomalies
+- total spend
+- supplier count
+- material group count
+- plant count
+- monthly spend
+- Module 2 opportunity
+- Module 3 mapped spend
+- PCBI coverage
+- Module 4 gross opportunity
+- overlap
+- exclusions
+- net opportunity
+- net direct savings
+- strategic market value
+
+==================================================
+PART H — RE-ANALYSIS TEST
+==================================================
+
+After the first successful run:
+
+1. Modify exactly 3 controlled transactions.
+2. Create a new immutable Data Version.
+3. Run a new Analysis Run.
+4. Independently calculate the expected delta.
+5. Verify only the affected calculations change.
+6. Verify unaffected calculations remain unchanged.
+7. Verify the previous report remains immutable.
+8. Verify the new report has a new version.
+9. Verify audit trail.
+10. Verify evidence workbook lineage.
+
+==================================================
+PART I — NEGATIVE TESTS
+==================================================
+
+Test:
+
+1. invalid file
+2. corrupted workbook
+3. missing mandatory column
+4. wrong data type
+5. duplicate upload
+6. duplicate transaction
+7. invalid currency
+8. missing FX
+9. invalid benchmark
+10. unauthorized Module 4 access
+11. unauthorized evidence download
+12. cross-assessment access
+13. stale Data Version
+14. superseded Analysis Run
+15. premature report approval
+16. premature delivery
+17. tampered evidence workbook
+18. tampered source file
+19. deleted source file
+20. browser refresh during analysis
+
+No negative test may silently produce a financially valid-looking result.
+
+==================================================
+PART J — REPORT CERTIFICATION
+==================================================
+
+Generate:
+
+1. E2E_CERTIFICATION_REPORT.pdf
+2. E2E_CERTIFICATION_REPORT.xlsx
+3. E2E_CERTIFICATION_MATRIX.xlsx
+4. E2E_EXPECTED_RESULTS.xlsx
+5. E2E_TRACEABILITY.xlsx
+
+The PDF must contain:
+
+Executive Verdict
+Dataset Definition
+Checksum
+Module 1 Results
+Module 2 Results
+Module 3 Results
+Module 4 Results
+Financial Bridge
+Double Counting Test
+UI/API/Evidence Parity
+Re-analysis Test
+Negative Tests
+Failed Tests
+Final Certification
+
+Final verdict must be one of:
+
+E2E CERTIFIED
+E2E CERTIFIED WITH OBSERVATIONS
+E2E NOT CERTIFIED
+
+Do NOT declare CERTIFIED if any financial calculation fails.
+
+==================================================
+PART K — EXISTING VGT REGRESSION
+==================================================
+
+After E2E-GOLD-001 certification, run the existing VGT regression.
+
+Required unchanged values:
+
+Source rows = 20,505
+Valid rows = 20,241
+Excluded rows = 252
+Anomalies = 12
+Canonical spend = ₹4,073.8307 Cr
+Profile FX baseline = ₹3,920.3277 Cr
+FX normalization impact = ₹153.5029 Cr
+Suppliers = 529
+Material groups = 57
+Plants = 19
+Billing months = 10
+Period = Apr 2021–Jan 2022
+Variance = ₹0
+
+Do not change these values.
+
+==================================================
+PART L — 3–4 FUTURE REALISTIC TEST DATASETS
+==================================================
+
+Create a reusable certification framework so that additional datasets can later be dropped into:
+
+qa/e2e/customer-tests/
+
+Each dataset must produce:
+
+dataset checksum
+row count
+Module 1 expected vs actual
+Module 2 expected vs actual
+Module 3 expected vs actual
+Module 4 expected vs actual
+financial bridge
+variance
+failed checks
+final certification status
+
+Do NOT hardcode E2E-GOLD-001-specific assumptions into the validation framework.
+
+The user will subsequently provide 3–4 additional datasets and they must be independently validated through the same framework.
+
+==================================================
+PART M — WINDOWS DESKTOP LAUNCHER
+==================================================
+
+The aiCEV application currently runs locally from the Antigravity project.
+
+Inspect the actual project configuration and determine the correct production-like local startup process from package.json, workspace configuration and existing scripts.
+
+Do NOT guess the ports.
+
+Do NOT change the application's existing startup architecture unnecessarily.
+
+Create:
+
+tools/windows/Launch-aiCEV.ps1
+tools/windows/Stop-aiCEV.ps1
+tools/windows/Launch-aiCEV.cmd
+
+The launcher must:
+
+1. Start the required backend.
+2. Start the required frontend.
+3. Wait for the actual health endpoint / application readiness.
+4. Open the correct local aiCEV URL automatically in the default browser.
+5. Avoid starting duplicate servers if aiCEV is already running.
+6. Show a useful error if startup fails.
+7. Log startup status locally.
+8. Work from the existing project directory.
+9. Preserve INTERNAL_ASSESSMENT mode.
+10. Never enable PUBLIC_SAAS.
+
+Create a Windows Desktop shortcut:
+
+Desktop shortcut name:
+"aiCEV – Internal Assessment"
+
+The shortcut should launch:
+
+Launch-aiCEV.cmd
+
+Use the existing project path discovered from the repository.
+
+Current known project location is:
+
+C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs
+
+Verify this path exists before creating the shortcut.
+
+The shortcut must NOT depend on manually opening a terminal.
+
+Also create:
+
+"aiCEV – Stop Server"
+
+which launches Stop-aiCEV.cmd or the equivalent shutdown script.
+
+After creating the shortcut, perform a real test:
+
+DOUBLE CLICK / PROGRAMMATICALLY INVOKE THE LAUNCHER
+→ backend starts
+→ frontend starts
+→ health check passes
+→ browser URL resolves
+→ INTERNAL_ASSESSMENT workspace loads.
+
+Do not merely test that the .lnk file exists.
+
+==================================================
+PART N — QUALITY GATES
+==================================================
+
+Run:
+
+npm run typecheck
+npm run lint
+npm run build
+npm run quality:fast
+npm test
+
+plus all E2E certification tests.
+
+Report:
+
+backend suites
+frontend suites
+E2E suites
+total tests
+passed
+failed
+skipped
+typecheck
+lint
+build
+quality
+performance
+
+==================================================
+PART O — FINAL ACCEPTANCE CRITERIA
+==================================================
+
+E2E CERTIFIED requires:
+
+1. Golden dataset deterministic.
+2. Independent calculation engine completed.
+3. Minimum 130 checks executed.
+4. 100% financial checks passed.
+5. Module 1 passed.
+6. Module 2 passed.
+7. Module 3 passed.
+8. Module 4 passed.
+9. Financial bridge passed.
+10. No double counting.
+11. UI/API parity passed.
+12. Evidence parity passed.
+13. PDF/PPTX parity passed.
+14. Re-analysis passed.
+15. Negative tests passed.
+16. VGT regression passed with ₹0 variance.
+17. No P0 defects.
+18. No P1 defects.
+19. No customer data introduced.
+20. PUBLIC_SAAS remains disabled.
+21. Desktop launcher successfully starts the application.
+22. Desktop shortcut successfully opens aiCEV.
+
+If any requirement fails:
+
+DO NOT declare certification.
+
+Produce:
+
+E2E NOT CERTIFIED
+
+with exact failed Test IDs, expected value, actual value, variance, root cause and recommended correction.
+
+IMPORTANT:
+
+Do not make unrelated architectural changes.
+
+Do not alter existing certified Module 1–4 financial logic merely to satisfy this test.
+
+Do not alter the global FX Master.
+
+Do not alter the global PCBI Master.
+
+Do not alter the certified VGT baseline.
+
+Do not change subscription architecture.
+
+Do not enable public SaaS.
+
+At the end provide a concise executive summary and a complete machine-readable certification result:
+
+E2E_STATUS
+GOLDEN_DATASET_STATUS
+MODULE_1_STATUS
+MODULE_2_STATUS
+MODULE_3_STATUS
+MODULE_4_STATUS
+FINANCIAL_BRIDGE_STATUS
+DOUBLE_COUNTING_STATUS
+REPORT_PARITY_STATUS
+REANALYSIS_STATUS
+NEGATIVE_TEST_STATUS
+VGT_REGRESSION_STATUS
+DESKTOP_LAUNCHER_STATUS
+TOTAL_CHECKS
+PASSED
+FAILED
+SKIPPED
+P0
+P1
+FINAL_VERDICT
+
+---
+
+## Prompt 341
+P0 COMMAND — aiCEV WINDOWS DESKTOP APPLICATION
+CONTROLLED VERSIONED RELEASE ARCHITECTURE
+
+OBJECTIVE
+
+Convert the existing certified aiCEV INTERNAL_ASSESSMENT application into a proper Windows desktop application.
+
+The desktop application must behave like an installed Windows application:
+
+Windows Desktop
+→ Double-click "aiCEV – Internal Assessment"
+→ Native aiCEV application window opens
+→ Backend starts automatically in the background
+→ Existing aiCEV UI loads inside the application
+→ No Chrome/Edge browser
+→ No visible localhost URL
+→ No terminal window
+→ Closing the application gracefully shuts down its local processes.
+
+IMPORTANT ARCHITECTURAL PRINCIPLE
+
+The installed desktop application is a RELEASED BUILD.
+
+Changing source code in the Antigravity development environment MUST NOT automatically change the installed desktop application.
+
+Development builds and certified/released builds must remain separate.
+
+For the current internal assessment phase:
+
+SOURCE CODE
+→ TEST
+→ E2E CERTIFICATION
+→ BUILD
+→ VERSION
+→ INSTALLER
+→ INSTALL
+
+Updates are MANUAL and CONTROLLED.
+
+DO NOT implement automatic updating yet.
+
+Future auto-update capability may be added only after the internal assessment phase.
+
+==================================================
+PART 1 — DO NOT CHANGE CERTIFIED FINANCIAL LOGIC
+==================================================
+
+This is a desktop packaging/runtime task.
+
+DO NOT modify:
+
+- Module 1 calculation logic
+- Module 2 calculation logic
+- Module 3 / PCBI calculation logic
+- Module 4 savings engine
+- canonical financial engine
+- FX Master
+- PCBI Master
+- financial bridge
+- evidence calculation logic
+- report calculation logic
+- E2E-GOLD-001
+- independent calculation engine
+- VGT certified baseline
+- INTERNAL_ASSESSMENT workflow
+- assessment isolation
+- authentication/authorization
+- security boundaries
+- subscription architecture
+
+DO NOT enable PUBLIC_SAAS.
+
+If any financial regression occurs, STOP and report it.
+Do not modify financial logic to make the regression pass.
+
+==================================================
+PART 2 — INSPECT CURRENT APPLICATION
+==================================================
+
+Inspect the actual repository:
+
+C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs
+
+Determine from the existing project:
+
+- frontend framework
+- backend framework
+- package structure
+- startup scripts
+- backend entry point
+- frontend startup script
+- configured ports
+- health endpoint
+- environment variables
+- build process
+- INTERNAL_ASSESSMENT configuration
+- existing launcher scripts
+
+Do NOT guess ports or startup commands.
+
+Preserve the current development workflow.
+
+==================================================
+PART 3 — ELECTRON DESKTOP SHELL
+==================================================
+
+Add Electron as a desktop shell around the existing application.
+
+Use the most appropriate packaging approach for the current repository.
+
+Electron must:
+
+1. Create a native Windows application window.
+2. Start the required local backend.
+3. Wait for backend health.
+4. Start/load the frontend.
+5. Wait for frontend readiness.
+6. Load the existing aiCEV UI inside Electron.
+7. Never open Chrome/Edge.
+8. Never expose localhost to the user.
+9. Prevent duplicate backend instances.
+10. Gracefully terminate child processes on application exit.
+11. Prevent orphan Node processes.
+12. Preserve INTERNAL_ASSESSMENT mode.
+13. Preserve authentication and authorization.
+14. Preserve Assessment ID/Data Version/Analysis Run isolation.
+
+The current browser-based development launcher may remain available for development/troubleshooting.
+
+The installed desktop application becomes the primary internal-user experience.
+
+==================================================
+PART 4 — SECURITY
+==================================================
+
+Use secure Electron configuration:
+
+- contextIsolation = true
+- nodeIntegration = false
+- preload bridge only where required
+- no arbitrary remote navigation
+- restrict navigation to the local application
+- no arbitrary external content execution
+- no renderer access to filesystem APIs
+- no renderer access to shell execution
+- disable unnecessary Electron capabilities
+
+Backend must remain localhost-only unless the existing architecture explicitly requires otherwise.
+
+Do not expose the local backend to the LAN.
+
+==================================================
+PART 5 — APPLICATION WINDOW
+==================================================
+
+Application title:
+
+aiCEV – Internal Assessment
+
+Minimum recommended size:
+
+1200 × 700
+
+Allow maximize.
+
+Use the existing responsive UI.
+
+The user must NOT see:
+
+localhost:3001
+localhost:5000
+development-server information
+terminal windows
+debug information.
+
+==================================================
+PART 6 — BRANDING / ICON
+==================================================
+
+Use the existing Procucev / aiCEV branding.
+
+Create a proper Windows application icon.
+
+At minimum:
+
+.ico
+PNG source assets as required.
+
+Do not use the generic Windows gears icon.
+
+The desktop shortcut must display the aiCEV application icon.
+
+==================================================
+PART 7 — VERSION AND BUILD IDENTITY
+==================================================
+
+Implement a central application version/build identity.
+
+Every build must have:
+
+APP_VERSION
+BUILD_NUMBER
+GIT_COMMIT
+BUILD_TIMESTAMP
+OPERATING_MODE
+CERTIFICATION_STATUS
+
+Example:
+
+APP_VERSION: 1.0.0
+BUILD_NUMBER: E2E-001-CERTIFIED
+GIT_COMMIT: <actual commit>
+BUILD_TIMESTAMP: <actual timestamp>
+OPERATING_MODE: INTERNAL_ASSESSMENT
+CERTIFICATION_STATUS: CERTIFIED
+
+Do NOT invent the Git commit.
+
+Read it from the repository if available.
+
+The version must be visible in an appropriate:
+
+Settings / About / System Information
+
+section.
+
+Also expose a safe diagnostic endpoint/API for internal diagnostics containing:
+
+- application version
+- build number
+- operating mode
+- build timestamp
+- git commit
+- FX Master checksum/version
+- PCBI Master checksum/version
+
+Do not expose secrets.
+
+==================================================
+PART 8 — CERTIFICATION IDENTITY
+==================================================
+
+The installed application must clearly distinguish:
+
+DEVELOPMENT BUILD
+TEST BUILD
+CERTIFIED INTERNAL BUILD
+
+For the current release:
+
+INTERNAL_ASSESSMENT
+E2E-001-CERTIFIED
+
+Do not allow an uncertified development build to be represented as certified.
+
+Certification status must be metadata, not a financial calculation.
+
+==================================================
+PART 9 — RELEASE MANIFEST
+==================================================
+
+Create a release manifest for every packaged build.
+
+Example:
+
+release-manifest.json
+
+containing:
+
+{
+  applicationName,
+  appVersion,
+  buildNumber,
+  gitCommit,
+  buildTimestamp,
+  operatingMode,
+  certificationStatus,
+  e2eCertificationId,
+  fxMasterVersion,
+  fxMasterChecksum,
+  pcbiMasterVersion,
+  pcbiMasterChecksum
+}
+
+Use actual values.
+
+The manifest must be included in the packaged build in a read-only manner.
+
+==================================================
+PART 10 — INSTALLER
+==================================================
+
+Create a Windows installer.
+
+Preferred output:
+
+aiCEV-Internal-Assessment-Setup.exe
+
+The installer must:
+
+- install under Program Files
+- create Start Menu shortcut
+- create exactly ONE Desktop shortcut
+- use aiCEV icon
+- create uninstall entry
+- not require Node.js
+- not require npm
+- not require a terminal
+- package all runtime dependencies required by the desktop application
+- preserve INTERNAL_ASSESSMENT mode
+
+The installer must NOT automatically enable PUBLIC_SAAS.
+
+==================================================
+PART 11 — UPDATE MODEL
+==================================================
+
+IMPORTANT:
+
+DO NOT implement automatic updates.
+
+DO NOT poll a server for updates.
+
+DO NOT silently download new versions.
+
+DO NOT replace the installed application when source code changes.
+
+The current controlled update process must be:
+
+Developer changes source code
+        ↓
+Developer tests
+        ↓
+E2E regression
+        ↓
+Certification
+        ↓
+New version/build
+        ↓
+Installer generated
+        ↓
+Manual installation
+        ↓
+Installed application updated
+
+Example:
+
+Installed:
+aiCEV 1.0.0
+E2E-001-CERTIFIED
+
+Developer changes code.
+
+Development environment may now contain:
+
+aiCEV 1.0.1
+TEST
+
+The installed 1.0.0 MUST remain unchanged.
+
+Only after certification should:
+
+aiCEV 1.0.1
+E2E-002-CERTIFIED
+
+be packaged and manually installed.
+
+==================================================
+PART 12 — VERSION UPGRADE BEHAVIOUR
+==================================================
+
+The installer must support upgrading an existing installation.
+
+When upgrading:
+
+- preserve application data
+- preserve assessment data
+- preserve reports
+- preserve evidence
+- preserve audit records
+- preserve configuration that is intended to persist
+- do not overwrite customer/assessment data
+- do not overwrite master data unless explicitly included in a certified release
+- do not silently reset application state
+
+Do not allow downgrade unless explicitly supported and safely handled.
+
+If downgrade is not supported, clearly document it.
+
+==================================================
+PART 13 — DATA LOCATION
+==================================================
+
+Do NOT store customer data in the application installation directory.
+
+Do NOT store customer data inside the Electron bundle.
+
+Customer data must remain in the existing secure assessment/data storage architecture.
+
+Never put customer:
+
+- Excel files
+- reports
+- evidence workbooks
+- credentials
+- secrets
+
+inside the application executable/package.
+
+Do not put customer data into Git.
+
+==================================================
+PART 14 — EXISTING DEVELOPMENT LAUNCHERS
+==================================================
+
+Keep:
+
+tools/windows/Launch-aiCEV.ps1
+tools/windows/Launch-aiCEV.cmd
+tools/windows/Stop-aiCEV.ps1
+tools/windows/Stop-aiCEV.cmd
+
+These remain developer/troubleshooting tools.
+
+They are NOT the primary end-user experience.
+
+Do not remove them unless they become technically incompatible.
+
+==================================================
+PART 15 — REMOVE DUPLICATE DESKTOP SHORTCUTS
+==================================================
+
+Current desktop has duplicate:
+
+aiCEV – Internal Assessment
+
+and duplicate:
+
+aiCEV – Stop Server
+
+Clean these up.
+
+Remove only the old aiCEV launcher/stop-server shortcuts created by the previous implementation.
+
+Do not touch unrelated desktop shortcuts.
+
+Final desktop state must contain exactly:
+
+aiCEV – Internal Assessment
+
+There must be NO:
+
+aiCEV – Stop Server
+
+desktop shortcut.
+
+The desktop application handles its own shutdown.
+
+==================================================
+PART 16 — APPLICATION LOGGING
+==================================================
+
+Implement safe local application logs for:
+
+- application startup
+- backend startup
+- frontend readiness
+- health checks
+- shutdown
+- unexpected backend termination
+- application errors
+- application version/build
+
+Never log:
+
+- passwords
+- OTP
+- activation codes
+- secrets
+- unnecessary raw customer financial data
+
+==================================================
+PART 17 — APPLICATION LIFECYCLE
+==================================================
+
+Test:
+
+Launch
+→ backend starts
+→ health check
+→ frontend ready
+→ Electron window opens
+
+Close
+→ Electron closes
+→ backend terminates
+→ child processes terminate
+→ no orphan Node processes
+
+Relaunch
+→ clean startup
+→ existing assessment data remains available.
+
+If the backend unexpectedly dies:
+
+- detect it
+- show a meaningful application error
+- do not silently display stale financial data
+- allow controlled restart where safe.
+
+==================================================
+PART 18 — DESKTOP TESTS
+==================================================
+
+Create tests:
+
+D-001 Electron process starts
+D-002 Backend starts
+D-003 Backend health
+D-004 Frontend readiness
+D-005 Native window opens
+D-006 Chrome/Edge does not open
+D-007 localhost not user-visible
+D-008 INTERNAL_ASSESSMENT active
+D-009 duplicate backend prevented
+D-010 graceful shutdown
+D-011 no orphan Node processes
+D-012 restart
+D-013 assessment persistence
+D-014 version displayed
+D-015 build identity displayed
+D-016 release manifest valid
+D-017 secure Electron configuration
+D-018 installer build
+D-019 desktop shortcut
+D-020 uninstall entry
+D-021 upgrade simulation
+D-022 customer data preserved during upgrade
+D-023 E2E-GOLD-001 regression
+D-024 VGT regression
+
+==================================================
+PART 19 — FINANCIAL REGRESSION
+==================================================
+
+After implementation, rerun E2E-GOLD-001.
+
+Required:
+
+130/130 checks PASS
+₹0 deterministic variance
+
+Then rerun VGT regression.
+
+Required:
+
+Source rows = 20,505
+Valid rows = 20,241
+Excluded rows = 252
+Anomalies = 12
+Canonical spend = ₹4,073.8307 Cr
+Profile FX baseline = ₹3,920.3277 Cr
+FX normalization impact = ₹153.5029 Cr
+Suppliers = 529
+Material Groups = 57
+Plants = 19
+Billing Months = 10
+Period = Apr 2021–Jan 2022
+Variance = ₹0
+
+If any number changes:
+
+STOP.
+
+Do not modify the financial engine.
+
+Report exact difference and root cause.
+
+==================================================
+PART 20 — LIVE INSTALLATION TEST
+==================================================
+
+Build:
+
+aiCEV-Internal-Assessment-Setup.exe
+
+Install it on the current Windows machine.
+
+Actually test the installed application.
+
+Acceptance:
+
+1. Installer runs.
+2. Installation succeeds.
+3. Exactly one desktop shortcut exists.
+4. Shortcut name is:
+   aiCEV – Internal Assessment
+5. Correct aiCEV icon appears.
+6. Double-click opens native application.
+7. No terminal appears.
+8. No Chrome/Edge window appears.
+9. No localhost URL is visible.
+10. Application title is correct.
+11. Internal Assessment workspace loads.
+12. Module 1 loads.
+13. Module 2 loads.
+14. Module 3 loads.
+15. Module 4 loads.
+16. Management Quick Summary loads.
+17. Evidence/report functionality loads.
+18. Application closes cleanly.
+19. Backend child processes terminate.
+20. Relaunch works.
+21. Existing assessment data remains available.
+
+==================================================
+PART 21 — DEVELOPMENT VS INSTALLED VERSION TEST
+==================================================
+
+This is mandatory.
+
+After installing the certified version:
+
+1. Record installed APP_VERSION and BUILD_NUMBER.
+2. Make a harmless development-only source change that changes a visible non-financial development marker.
+3. Start the development environment separately.
+4. Confirm the installed desktop application remains unchanged.
+5. Confirm the installed version/build identity remains unchanged.
+6. Confirm the development version can differ.
+7. Do not package/install the development change.
+
+This proves:
+
+SOURCE CODE CHANGE
+≠
+INSTALLED APPLICATION CHANGE
+
+==================================================
+PART 22 — PERFORMANCE
+==================================================
+
+Measure:
+
+- cold startup
+- backend readiness
+- frontend readiness
+- native window load
+- idle CPU
+- idle memory
+- application shutdown
+
+Report actual measurements.
+
+Do not make unsupported SLA claims.
+
+==================================================
+PART 23 — FINAL ARTIFACTS
+==================================================
+
+Generate:
+
+1. aiCEV-Internal-Assessment-Setup.exe
+2. packaged desktop application
+3. release-manifest.json
+4. desktop acceptance matrix
+5. version/build report
+6. E2E regression report
+7. VGT regression report
+8. installer SHA-256 checksum
+9. release notes
+10. installation/update instructions
+
+==================================================
+PART 24 — FINAL VERDICT
+==================================================
+
+Final status must be one of:
+
+DESKTOP APP CERTIFIED
+
+DESKTOP APP CERTIFIED WITH OBSERVATIONS
+
+DESKTOP APP NOT CERTIFIED
+
+Only declare CERTIFIED if:
+
+- installed application was actually launched
+- native window was verified
+- no browser was used
+- backend lifecycle was verified
+- shutdown was verified
+- version identity was verified
+- development-vs-installed isolation was verified
+- E2E-GOLD-001 = 130/130
+- VGT regression = ₹0 variance
+- no P0
+- no P1
+
+Final report must include:
+
+DESKTOP_APP_STATUS
+APP_VERSION
+BUILD_NUMBER
+GIT_COMMIT
+OPERATING_MODE
+CERTIFICATION_STATUS
+INSTALLER_STATUS
+SHORTCUT_STATUS
+NATIVE_WINDOW_STATUS
+BACKEND_LIFECYCLE_STATUS
+FRONTEND_LIFECYCLE_STATUS
+SHUTDOWN_STATUS
+SECURITY_STATUS
+DEVELOPMENT_INSTALLED_ISOLATION_STATUS
+E2E_001_STATUS
+VGT_REGRESSION_STATUS
+FINANCIAL_VARIANCE
+PUBLIC_SAAS_STATUS
+P0
+P1
+FINAL_VERDICT
+
+IMPORTANT:
+
+This is a packaging/runtime task.
+
+Do not alter certified financial calculations.
+
+Do not alter Modules 1–4.
+
+Do not alter FX Master.
+
+Do not alter PCBI Master.
+
+Do not alter E2E-GOLD-001.
+
+
+
+---
+
+## Prompt 342
+P0 BUG FIX — PACKAGED aiCEV DESKTOP STARTUP FAILURE
+
+USER-REPORTED PRODUCTION ISSUE
+
+When the user double-clicks the installed:
+
+"aiCEV – Internal Assessment"
+
+desktop application, the native Electron window opens, but the normal aiCEV application does NOT load.
+
+Observed behavior:
+
+1. User clicks the desktop shortcut.
+2. Application asks the user to locate/select the server.
+3. After that, the Electron window displays:
+
+"aiCEV Startup Exception"
+
+followed by a large encoded string beginning approximately:
+
+(-3) loading 'data:text/html;charset=utf-8,...'
+
+The content appears to be the HTML/CSS of an error page encoded into a data URL.
+
+This is a real packaged-application startup defect.
+
+DO NOT treat the previous automated desktop certification as sufficient for this issue.
+
+DO NOT ask the user to manually start localhost servers.
+
+DO NOT ask the user to locate a server.
+
+DO NOT require Chrome/Edge.
+
+The installed application must be completely self-contained from the user's perspective.
+
+==================================================
+OBJECTIVE
+==================================================
+
+Fix the packaged Windows desktop startup flow so:
+
+DOUBLE CLICK DESKTOP SHORTCUT
+        ↓
+aiCEV starts
+        ↓
+Electron starts required local backend/frontend
+        ↓
+health checks pass
+        ↓
+Electron loads the actual aiCEV frontend
+        ↓
+aiCEV Internal Assessment workspace appears
+
+No server-selection dialog.
+No browser.
+No localhost URL visible.
+No data: encoded error page.
+No terminal.
+No manual server startup.
+
+==================================================
+PART 1 — INVESTIGATE THE ACTUAL FAILURE
+==================================================
+
+Do NOT guess.
+
+Inspect:
+
+desktop/src/main.ts
+desktop/src/preload.ts
+desktop/src/processManager.ts
+desktop/package.json
+desktop/release-manifest.json
+desktop/dist-installer/
+frontend/next.config.mjs
+frontend/package.json
+frontend/.env.local
+backend/package.json
+backend/.env
+backend/src/index.ts
+existing launcher scripts.
+
+Inspect:
+
+%APPDATA%\aiCEV\logs\desktop-app.log
+
+and any packaged application logs.
+
+Reproduce the failure by launching the INSTALLED executable directly.
+
+Do NOT rely only on development mode.
+
+Capture:
+
+- Electron startup arguments
+- current working directory
+- executable path
+- app.getAppPath()
+- process.resourcesPath
+- frontend URL
+- backend URL
+- backend health result
+- frontend readiness result
+- loadURL/loadFile target
+- Electron webContents load failure event
+- renderer console errors
+- renderer process failure
+- child-process startup result.
+
+==================================================
+PART 2 — IDENTIFY WHY THE data: URL IS APPEARING
+==================================================
+
+Find the exact code path that creates/displays:
+
+data:text/html;charset=utf-8,...
+
+The application must NOT use a malformed data URL as the normal startup/error mechanism.
+
+If an error page is required, render it safely inside the Electron renderer or load a correctly constructed local resource.
+
+Do not encode an entire HTML document incorrectly into a URL.
+
+Add logging around:
+
+BrowserWindow creation
+loadURL()
+loadFile()
+did-finish-load
+did-fail-load
+render-process-gone
+unresponsive
+console-message.
+
+Record the actual target URL/path.
+
+==================================================
+PART 3 — PACKAGED FRONTEND ARCHITECTURE
+==================================================
+
+Determine how the packaged application is currently expected to serve the Next.js frontend.
+
+Do not assume that:
+
+http://localhost:3001
+
+will automatically exist merely because it worked during development.
+
+The packaged application must explicitly ensure that the frontend server required by Electron is actually running.
+
+Choose the least invasive architecture compatible with the existing application.
+
+Preferred approach:
+
+Electron
+→ start packaged/local backend
+→ start packaged/local frontend
+→ health check
+→ BrowserWindow loads frontend URL.
+
+If the existing Next.js application can be packaged correctly into a standalone runtime, use that.
+
+If the existing frontend must run as a local Node process, package the required runtime and application files into the installer and start them through ProcessManager.
+
+The installed machine must NOT require Node.js/npm separately.
+
+==================================================
+PART 4 — WORKING DIRECTORY
+==================================================
+
+This is critical.
+
+The packaged application must NOT depend on:
+
+C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs
+
+being the current working directory.
+
+The user should be able to move/delete the development repository after installation and the installed application must still work.
+
+Use the correct packaged application paths based on:
+
+app.getAppPath()
+process.resourcesPath
+app.isPackaged
+
+and the actual electron-builder package layout.
+
+Use absolute resolved paths for:
+
+backend
+frontend
+runtime
+configuration
+assets.
+
+Do not use fragile relative paths based on process.cwd().
+
+==================================================
+PART 5 — BACKEND STARTUP
+==================================================
+
+When packaged:
+
+1. Detect whether the required backend is already running.
+2. If healthy, reuse it.
+3. If not, start the packaged backend.
+4. Wait for:
+
+GET /api/health
+
+5. Continue only after health succeeds.
+
+Do NOT show any server-selection dialog.
+
+If backend startup fails:
+
+show a clean user-facing error:
+
+"aiCEV could not start its internal services."
+
+Provide:
+
+- Retry
+- Close
+
+Do NOT expose technical paths or localhost URLs in the primary error.
+
+Technical details may be available in a diagnostic log.
+
+==================================================
+PART 6 — FRONTEND STARTUP
+==================================================
+
+After backend readiness:
+
+1. Start the packaged frontend runtime.
+2. Wait until the frontend responds successfully.
+3. Only then create/load the main BrowserWindow.
+
+Do not create the normal application window before the frontend is ready unless displaying a clean branded startup screen.
+
+Preferred startup sequence:
+
+Native startup window
+        ↓
+Starting aiCEV services...
+        ↓
+Services ready
+        ↓
+Load actual aiCEV UI
+        ↓
+Internal Assessment workspace
+
+==================================================
+PART 7 — NO SERVER SELECTION
+==================================================
+
+Find the reason the user is being asked to locate/select a server.
+
+Remove this behavior completely from the packaged internal application.
+
+The application itself owns its local backend/frontend.
+
+The user must never be asked:
+
+- where the server is
+- which port to use
+- which executable to select
+- which Node installation to use
+- which browser to open.
+
+==================================================
+PART 8 — DEVELOPMENT MODE MUST STILL WORK
+==================================================
+
+Do not break the current development workflow.
+
+Support:
+
+DEVELOPMENT:
+
+existing npm scripts and localhost workflow.
+
+PACKAGED:
+
+self-contained Electron workflow.
+
+Use:
+
+if (app.isPackaged) {
+    packaged runtime paths
+} else {
+    development paths
+}
+
+Do not mix the two path models.
+
+==================================================
+PART 9 — DATA STORAGE
+==================================================
+
+Customer/assessment data must remain outside the Electron application bundle.
+
+Do not package customer data.
+
+Do not use the development repository as the runtime data directory.
+
+Preserve the existing:
+
+data/assessments/
+
+or the appropriate production assessment storage location.
+
+Resolve it safely for the installed application.
+
+Existing assessment data must remain accessible after restarting the application.
+
+==================================================
+PART 10 — INTERNAL ASSESSMENT MODE
+==================================================
+
+The packaged application MUST start in:
+
+INTERNAL_ASSESSMENT
+
+It must not fall back to:
+
+PUBLIC_SAAS
+FREE
+BRONZE
+SILVER
+GOLD
+DEMO.
+
+Verify through the actual runtime system-info endpoint.
+
+==================================================
+PART 11 — VERSION IDENTITY
+==================================================
+
+Do NOT change:
+
+APP_VERSION:
+1.0.0
+
+BUILD_NUMBER:
+E2E-001-CERTIFIED
+
+unless a new version is genuinely required.
+
+If a code fix requires a new build, use an appropriate patch version and explicitly state:
+
+1.0.1
+BUILD_NUMBER:
+E2E-001-DESKTOP-FIX
+
+But do not mark it CERTIFIED until regression testing is complete.
+
+==================================================
+PART 12 — REPRODUCE BEFORE FIX
+==================================================
+
+Before modifying code:
+
+Launch the installed executable.
+
+Capture the failure.
+
+Record:
+
+FAILURE_REPRODUCED = YES
+
+Then implement the fix.
+
+==================================================
+PART 13 — TEST THE ACTUAL INSTALLED APPLICATION
+==================================================
+
+After fixing:
+
+1. Build a NEW installer.
+2. Uninstall/replace the previous broken build as appropriate.
+3. Install the new build.
+4. Use the actual Desktop shortcut.
+5. Do NOT run the development launcher.
+6. Do NOT manually start backend.
+7. Do NOT manually start frontend.
+8. Do NOT run npm before testing.
+9. Do NOT open Chrome.
+
+Test:
+
+Double-click
+→ native window
+→ startup screen
+→ backend ready
+→ frontend ready
+→ aiCEV workspace.
+
+==================================================
+PART 14 — LIVE ACCEPTANCE
+==================================================
+
+The following MUST be manually/live verified:
+
+D-FIX-001 Desktop shortcut launches.
+D-FIX-002 No server-selection dialog.
+D-FIX-003 No terminal.
+D-FIX-004 No Chrome/Edge.
+D-FIX-005 Native Electron window opens.
+D-FIX-006 Correct aiCEV title.
+D-FIX-007 Correct aiCEV icon.
+D-FIX-008 No data: URL error page.
+D-FIX-009 Backend starts automatically.
+D-FIX-010 Frontend starts automatically.
+D-FIX-011 Module 1 loads.
+D-FIX-012 Module 2 loads.
+D-FIX-013 Module 3 loads.
+D-FIX-014 Module 4 loads.
+D-FIX-015 Management Quick Summary loads.
+D-FIX-016 Assessment workspace loads.
+D-FIX-017 INTERNAL_ASSESSMENT confirmed.
+D-FIX-018 Application closes cleanly.
+D-FIX-019 No orphan Node processes.
+D-FIX-020 Relaunch works.
+
+==================================================
+PART 15 — E2E REGRESSION
+==================================================
+
+After fixing the desktop startup:
+
+Run E2E-GOLD-001 again.
+
+Required:
+
+130/130 PASS
+₹0.00 variance.
+
+Run VGT regression again.
+
+Required:
+
+20,505 source rows
+20,241 valid
+252 excluded
+12 anomalies
+₹4,073.8307 Cr canonical spend
+₹3,920.3277 Cr profile FX baseline
+₹153.5029 Cr FX impact
+529 suppliers
+57 material groups
+19 plants
+10 billing months
+Apr 2021–Jan 2022
+₹0 variance.
+
+If any financial result changes:
+
+STOP.
+
+Do not modify the financial engine.
+
+==================================================
+PART 16 — PACKAGED-ONLY TEST
+==================================================
+
+Create a test that specifically proves the installed application works when the development repository is NOT required.
+
+Test procedure:
+
+1. Install application.
+2. Verify it works.
+3. Stop/remove development backend/frontend processes.
+4. Ensure no development server is available.
+5. Launch installed aiCEV.
+6. Verify application still starts.
+7. Verify Modules 1–4 load.
+
+This is critical.
+
+The installed application must not accidentally be passing because the development server is already running on localhost:3001.
+
+==================================================
+PART 17 — CLEAN MACHINE SIMULATION
+==================================================
+
+If possible, simulate a clean runtime by ensuring:
+
+- no backend process
+- no frontend process
+- no npm dev server
+- no Antigravity development server
+
+Then launch the installed application.
+
+The application itself starts all required services.
+
+==================================================
+PART 18 — DO NOT CLAIM CERTIFICATION PREMATURELY
+==================================================
+
+The previous desktop certification should now be treated as:
+
+DESKTOP CERTIFICATION — CONDITIONAL / STARTUP DEFECT FOUND
+
+Do NOT simply report all old tests as certified again.
+
+The new final status must be:
+
+DESKTOP APP CERTIFIED
+
+only after the actual installed shortcut launches successfully without the reported error.
+
+Otherwise:
+
+DESKTOP APP NOT CERTIFIED
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+Report:
+
+FAILURE_REPRODUCED
+ROOT_CAUSE
+FIX_IMPLEMENTED
+PACKAGED_FRONTEND_STRATEGY
+PACKAGED_BACKEND_STRATEGY
+INSTALLED_APP_TEST
+SERVER_SELECTION_DIALOG
+DATA_URL_ERROR
+NATIVE_WINDOW
+MODULE_1
+MODULE_2
+MODULE_3
+MODULE_4
+INTERNAL_ASSESSMENT_MODE
+E2E_001
+VGT_REGRESSION
+FINANCIAL_VARIANCE
+ORPHAN_PROCESS_CHECK
+CLEAN_RUNTIME_TEST
+P0
+P1
+FINAL_VERDICT
+
+IMPORTANT:
+
+Do not make unrelated changes.
+
+Do not modify financial calculations.
+
+Do not modify FX Master.
+
+Do not modify PCBI Master.
+
+Do not modify E2E-GOLD-001.
+
+Do not enable PUBLIC_SAAS.
+
+Do not add automatic updates.
+
+Fix the packaged startup defect only.
+
+---
+
+## Prompt 343
+P0 COMMAND — MODULE 2 FORENSIC DATA-LINEAGE, CALCULATION & E2E CERTIFICATION
+
+OBJECTIVE
+
+Perform a complete forensic validation of Module 2 against the already-certified VGT dataset and Module 1 canonical output.
+
+Module 1 and the desktop runtime are considered frozen.
+
+The purpose of this command is to prove that EVERY Module 2 number is derived from the actual canonical VGT transaction ledger, is mathematically reproducible, is traceable to source transactions, and is consistent across:
+
+UI
+API
+calculation engine
+opportunity ledger
+evidence workbook
+reports.
+
+DO NOT proceed to external/customer datasets until Module 2 passes this certification.
+
+==================================================
+NON-NEGOTIABLE RULE
+==================================================
+
+DO NOT merely modify the UI to make numbers look correct.
+
+First trace:
+
+SOURCE TRANSACTION
+→ VALIDATED RECORD
+→ MODULE 1 CANONICAL LEDGER
+→ MODULE 2 INPUT
+→ MODULE 2 CALCULATION
+→ OPPORTUNITY LEDGER
+→ DEDUPLICATION
+→ NET OPPORTUNITY
+→ API
+→ UI
+→ EVIDENCE WORKBOOK.
+
+Every material number must have an auditable lineage.
+
+If the current implementation contains hardcoded/demo/static values, identify them and replace them with actual canonical data-driven calculations where the functionality is intended to operate.
+
+If a metric legitimately cannot be calculated from the available VGT fields, show:
+
+NOT CALCULABLE FROM AVAILABLE DATA
+
+rather than zero, invented values, or demo values.
+
+==================================================
+FROZEN VGT BASELINE
+==================================================
+
+Use the already-certified VGT dataset:
+
+Source rows:
+20,505
+
+Valid rows:
+20,241
+
+Excluded:
+252
+
+Anomalies:
+12
+
+Canonical validated spend:
+₹4,073.8307 Cr
+
+Profile FX baseline:
+₹3,920.3277 Cr
+
+FX normalization impact:
+₹153.5029 Cr
+
+Suppliers:
+529
+
+Material Groups:
+57
+
+Operating Plants:
+19
+
+Billing Months:
+10
+
+Period:
+Apr 2021 – Jan 2022
+
+Fiscal Year:
+FY22
+
+Canonical financial variance:
+₹0
+
+DO NOT change these values.
+
+==================================================
+PART 1 — FREEZE MODULE 1 INPUT
+==================================================
+
+Module 2 MUST consume the same canonical validated transaction ledger used by Module 1.
+
+Do NOT allow Module 2 to independently:
+
+- re-read the Excel file
+- use raw frontend upload state
+- use demo arrays
+- use a different parser
+- use stale localStorage
+- use static seed data
+- use a different FX source
+- use a different currency conversion
+- use a different date interpretation.
+
+Create/verify one explicit Module 2 canonical input contract.
+
+Example:
+
+Module2CanonicalInput
+
+{
+  transactions,
+  suppliers,
+  materialGroups,
+  plants,
+  billingMonths,
+  totalValidatedSpend,
+  currencyCoverage,
+  fxNormalization,
+  period
+}
+
+The exact implementation may differ, but there must be one authoritative source.
+
+==================================================
+PART 2 — TRACE EVERY MODULE 2 SECTION
+==================================================
+
+Audit each of the following independently:
+
+A. AI / UNSPSC Categorization
+B. Top 50 Vendor Analysis
+C. Strategic High-Value / Dominant Vendor Risk
+D. Strategic Sourcing Opportunity Engine
+E. Recurring Procurement Optimization
+F. Vendor Consolidation
+G. PO Consolidation
+H. E-Auction Suitability
+I. Market Discovery
+J. Machine Learning Line Item Workbench
+K. Opportunity Ledger
+L. Overlap/Deduplication
+M. Net Defensible Opportunity
+
+For each section document:
+
+INPUT SOURCE
+FILTERS
+TRANSFORMATION
+FORMULA
+OUTPUT
+SOURCE TRANSACTION COUNT
+OUTPUT SPEND
+OUTPUT OPPORTUNITY
+TRACEABILITY ID.
+
+==================================================
+PART 3 — ELIMINATE DEMO / STATIC CONTENT
+==================================================
+
+Search the entire Module 2 implementation for:
+
+- hardcoded spend
+- hardcoded vendor names
+- hardcoded categories
+- demo industry sectors
+- static opportunity values
+- static percentages
+- placeholder arrays
+- seed records
+- fallback demo data
+- mock opportunity values
+- hardcoded FY24/FY25/FY26
+- hardcoded 36-month periods.
+
+Pay particular attention to content currently visible such as:
+
+"High-Value Catalysts, Polymers, Industrial Reagents & Specialized Packaging"
+
+"Specialty Catalysts & Reaction Modifiers"
+
+"High-Purity Solvents & Extraction Agents"
+
+"Synthetic Resins & Polymer Concentrates"
+
+"Industrial Pigments, Colorants & Dyes"
+
+"Organic Intermediate Compounds"
+
+"Chemical & Petrochemicals"
+
+"Specialty Chemicals"
+
+"Sector Core Direct"
+
+"Critical Packaging"
+
+"Sector Logistics"
+
+"General Plant MRO"
+
+If these are not derived from actual VGT transactions, they MUST NOT appear as customer-specific analytical results.
+
+They may only appear as clearly-labelled generic examples/demo content, and demo mode is NOT permitted in INTERNAL_ASSESSMENT.
+
+==================================================
+PART 4 — REMOVE INVALID TIME ASSUMPTIONS
+==================================================
+
+The actual VGT period is:
+
+Apr 2021 – Jan 2022
+10 billing months
+FY22
+
+Module 2 MUST NOT display:
+
+FY24
+FY25
+FY26
+FY24–FY26
+3-Year Spend
+3-Year Spend Analysis
+ALL FY (3 Years)
+36-Month Volatility
+36-Month Analytics
+3-Year Trajectory
+3-Year Run Rate
+
+unless a separate actual dataset genuinely contains those periods.
+
+Use dynamic period metadata from the canonical ledger.
+
+For VGT, display:
+
+Actual Period:
+Apr 2021 – Jan 2022
+
+Available Billing Months:
+10
+
+Fiscal Year:
+FY22
+
+FY22 Coverage:
+10 of 12 months
+
+The missing two months must NOT be treated as zero.
+
+==================================================
+PART 5 — TOTAL SPEND RECONCILIATION
+==================================================
+
+Module 2 must reconcile to:
+
+₹4,073.8307 Cr
+
+unless a clearly documented Module 2 eligibility filter is being applied.
+
+If Module 2 analyzes only a subset, display BOTH:
+
+Total Validated Spend:
+₹4,073.8307 Cr
+
+Module 2 Eligible / Analyzed Spend:
+₹X
+
+Coverage:
+X / ₹4,073.8307 Cr
+
+Coverage %:
+X%
+
+Do NOT label ₹3.30 Cr as "Total Addressable Spend" if it is merely the spend of six currently qualifying rows/categories.
+
+The terminology must distinguish:
+
+Validated Spend
+Eligible Spend
+Analyzed Spend
+Addressable Spend
+Opportunity Spend
+
+==================================================
+PART 6 — SUPPLIER POPULATION
+==================================================
+
+Module 1 authoritative supplier count:
+
+529
+
+Module 2 must explain its supplier population.
+
+Required:
+
+Module 1 Valid Suppliers:
+529
+
+Module 2 Eligible Suppliers:
+X
+
+Module 2 Analyzed Suppliers:
+Y
+
+If Y = 0, identify why.
+
+The following must NOT silently show zero:
+
+Top 50 Vendor Analysis
+Multi-Category Vendors
+Single-Category Specialists
+Strategic Supplier Risk
+Supplier Concentration
+
+unless the actual data mathematically produces zero.
+
+==================================================
+PART 7 — MATERIAL GROUP / ITEM POPULATION
+==================================================
+
+Authoritative:
+
+57 valid material groups.
+
+Validate:
+
+material description
+material code
+material group
+supplier
+spend
+transaction count
+
+and their relationships.
+
+Every Module 2 category/commodity must be traceable to actual transactions.
+
+==================================================
+PART 8 — RECURRING SPEND ENGINE
+==================================================
+
+Use actual billing dates.
+
+For every recurring category determine:
+
+- active months
+- number of active months
+- supplier count
+- transaction count
+- total spend
+- recurring classification
+- qualification threshold.
+
+The existing UI says:
+
+"Across 12/12 Month Active Lines"
+
+This is invalid for VGT.
+
+Use actual coverage:
+
+10 billing months.
+
+If a recurring category requires 12 months to qualify and VGT only has 10 months, do not silently fabricate 12 months.
+
+Instead state:
+
+"12-month recurring analysis unavailable — dataset contains 10 billing months."
+
+If the engine supports 10-month recurring analysis, clearly label it as such.
+
+==================================================
+PART 9 — VENDOR CONSOLIDATION
+==================================================
+
+Build vendor/category relationships from actual transactions.
+
+For each category:
+
+supplier count
+supplier spend
+supplier share
+HHI
+fragmentation
+addressable spend
+consolidation suitability.
+
+Do NOT use hardcoded vendor consolidation assumptions.
+
+If an opportunity requires a business assumption, label it:
+
+MODELLING ASSUMPTION
+
+and keep it separate from:
+
+DATA-DERIVED OPPORTUNITY.
+
+==================================================
+PART 10 — E-AUCTION ENGINE
+==================================================
+
+For every e-auction candidate show:
+
+category
+spend
+supplier count
+transaction count
+suitability
+eligibility rule
+estimated opportunity
+opportunity formula
+source transaction IDs.
+
+Do not treat e-auction as a savings thesis by itself.
+
+It is an execution mechanism unless the calculation explicitly derives a price opportunity.
+
+==================================================
+PART 11 — PO CONSOLIDATION
+==================================================
+
+Use actual PO numbers if present.
+
+Calculate:
+
+PO count
+supplier count
+category
+frequency
+spend
+consolidation potential.
+
+If PO number is unavailable, explicitly state:
+
+PO CONSOLIDATION NOT CALCULABLE — PO IDENTIFIER NOT AVAILABLE.
+
+Do not create artificial PO consolidation opportunities.
+
+==================================================
+PART 12 — STRATEGIC SUPPLIER RISK
+==================================================
+
+For each high-value item:
+
+primary supplier
+primary share
+secondary suppliers
+secondary share
+supplier count
+total spend
+sole-source classification
+dominance classification
+risk value.
+
+Use actual transaction relationships.
+
+If no item qualifies, show:
+
+0 qualifying items
+
+and explain the qualification threshold.
+
+Do not show zero merely because the data was not loaded.
+
+==================================================
+PART 13 — UNSPSC / AI CATEGORIZATION
+==================================================
+
+Use the actual canonical material description/material code.
+
+Every classification must have:
+
+source transaction ID
+material description
+UNSPSC code if available
+UNSPSC title
+confidence
+category
+classification source
+review status.
+
+No synthetic category examples in INTERNAL_ASSESSMENT.
+
+If AI classification has not actually run, clearly show:
+
+CLASSIFICATION PENDING
+
+rather than presenting static classification cards.
+
+==================================================
+PART 14 — MACHINE LEARNING WORKBENCH
+==================================================
+
+The current UI shows:
+
+"Machine Learning Line Item AI Categorization & Spend Review Workbench"
+
+but no records.
+
+Determine why.
+
+It must either:
+
+A. display actual classified VGT line items,
+
+OR
+
+B. clearly show:
+
+"AI categorization not yet executed."
+
+Do not display a blank table suggesting a technical failure.
+
+==================================================
+PART 15 — OPPORTUNITY LEDGER
+==================================================
+
+Create or validate a single authoritative Module 2 opportunity ledger.
+
+Minimum fields:
+
+opportunityId
+sourceTransactionIds
+category
+supplierIds
+materialIds
+opportunityType
+eligibleSpend
+grossOpportunity
+overlapGroup
+overlapAmount
+netOpportunity
+methodology
+formula
+assumption
+confidence
+status.
+
+Every Module 2 savings number must originate from this ledger.
+
+==================================================
+PART 16 — CRITICAL ₹453.64 Cr VS ₹0.18–₹0.20 Cr DISCREPANCY
+==================================================
+
+This is mandatory.
+
+The previous desktop certification reported:
+
+Module 2:
+7 opportunities
+₹453.64 Cr savings.
+
+The current live UI displays approximately:
+
+Proven Opportunity:
+₹0.16 Cr
+
+Quantifiable Opportunity:
+₹0.02–₹0.04 Cr
+
+Potential E-Auction:
+₹0.08 Cr
+
+Potential Vendor:
+₹0.00 Cr
+
+Overlap:
+-₹0.05 Cr
+
+Net Defensible Opportunity:
+₹0.18–₹0.20 Cr.
+
+DO NOT choose one value arbitrarily.
+
+Trace BOTH values back to their calculation sources.
+
+Determine:
+
+- where ₹453.64 Cr comes from
+- where ₹0.16–₹0.20 Cr comes from
+- whether one is stale
+- whether one is a demo/static result
+- whether one uses a different dataset
+- whether one is gross and another net
+- whether one is in ₹ lakh vs ₹ crore
+- whether one uses a different spend denominator
+- whether one is an old VGT run
+- whether there is an API/UI mismatch
+- whether there are duplicate calculation engines.
+
+Produce a reconciliation table:
+
+Metric | Source | Dataset | Formula | Value | Status
+
+Do NOT declare success until this discrepancy is resolved.
+
+==================================================
+PART 17 — MODULE 2 MATHEMATICAL BRIDGE
+==================================================
+
+The UI currently appears to show:
+
+Proven Opportunity = ₹0.16 Cr
+
+Quantifiable Opportunity = ₹0.02–₹0.04 Cr
+
+E-Auction = ₹0.08 Cr
+
+Vendor = ₹0.00 Cr
+
+Overlap = -₹0.05 Cr
+
+Net Defensible = ₹0.18–₹0.20 Cr
+
+Reconstruct the actual bridge.
+
+For every component state whether it is:
+
+ADD
+SUBSET
+OVERLAP
+INFORMATIONAL
+EXECUTION MECHANISM
+NOT INCLUDED IN NET.
+
+Do not simply add every displayed card.
+
+The final bridge must mathematically reconcile.
+
+==================================================
+PART 18 — ZERO DOUBLE COUNTING
+==================================================
+
+Test combinations such as:
+
+E-Auction + Price Opportunity
+Vendor Consolidation + E-Auction
+PO Consolidation + Vendor Consolidation
+Strategic Sourcing + Benchmark Price Gap
+Multiple opportunities on same source transaction.
+
+The same source spend must not be counted twice.
+
+==================================================
+PART 19 — UI/API/EVIDENCE PARITY
+==================================================
+
+For every major Module 2 KPI:
+
+UI value
+=
+API value
+=
+Opportunity Ledger value
+=
+Evidence workbook value.
+
+Run automated parity tests.
+
+Required variance:
+
+₹0.00
+
+==================================================
+PART 20 — EVIDENCE WORKBOOK
+==================================================
+
+Generate:
+
+MODULE_2_FORENSIC_EVIDENCE.xlsx
+
+Required sheets:
+
+README
+Canonical_Input
+Transaction_Lineage
+Supplier_Lineage
+Material_Lineage
+UNSPSC_Lineage
+Category_Analysis
+Vendor_Analysis
+Recurring_Spend
+E_Auction
+PO_Consolidation
+Supplier_Risk
+Opportunity_Ledger
+Overlap_Deduplication
+Savings_Bridge
+UI_API_Parity
+Reconciliation
+Exceptions
+
+Every material opportunity must be traceable to source transaction IDs.
+
+==================================================
+PART 21 — REMOVE UNSUPPORTED CLAIMS
+==================================================
+
+Audit Module 2 and visible global UI for unsupported certification claims.
+
+Do not display:
+
+ISO 27001
+SOC 2 Type II
+SOC 2 compliant
+FIPS
+certified security claims
+
+unless formally verified in the product evidence.
+
+Replace with accurate wording such as:
+
+"Data encrypted at rest and in transit"
+
+only if actually implemented and verified.
+
+Similarly verify:
+
+DPS Verified
+
+and remove/qualify if unsupported.
+
+Do not make this a cosmetic claim.
+
+==================================================
+PART 22 — TEST MATRIX
+==================================================
+
+Create tests:
+
+M2-F-001 Canonical input
+M2-F-002 Spend reconciliation
+M2-F-003 Supplier reconciliation
+M2-F-004 Material group reconciliation
+M2-F-005 Plant reconciliation
+M2-F-006 Billing month reconciliation
+M2-F-007 No stale FY24/FY25/FY26
+M2-F-008 No 36-month assumption
+M2-F-009 No demo data
+M2-F-010 No hardcoded opportunity
+M2-F-011 Vendor lineage
+M2-F-012 Recurring spend lineage
+M2-F-013 E-auction lineage
+M2-F-014 PO consolidation lineage
+M2-F-015 Supplier risk lineage
+M2-F-016 UNSPSC lineage
+M2-F-017 ML workbench lineage
+M2-F-018 Opportunity ledger
+M2-F-019 Overlap
+M2-F-020 Net bridge
+M2-F-021 UI/API parity
+M2-F-022 Evidence parity
+M2-F-023 ₹453.64 Cr discrepancy resolved
+M2-F-024 Unsupported claims removed
+M2-F-025 VGT regression.
+
+==================================================
+PART 23 — DO NOT TOUCH MODULES 1, 3 OR 4
+==================================================
+
+Module 1 is frozen.
+
+Module 3 / PCBI is disconnected for this certification.
+
+Module 4 is not to be recalculated or changed.
+
+Do not modify their financial logic.
+
+Only validate the Module 2 interfaces required to consume Module 1.
+
+==================================================
+PART 24 — FINAL CERTIFICATION CRITERIA
+==================================================
+
+Module 2 can only be declared:
+
+MODULE 2 CERTIFIED
+
+if:
+
+- canonical input proven
+- all major sections traceable
+- no demo/static customer data
+- actual VGT period used
+- no 36-month assumptions
+- supplier population reconciled
+- spend reconciled
+- opportunity ledger exists
+- overlap reconciled
+- net bridge mathematically reconciles
+- ₹453.64 Cr vs ₹0.18–₹0.20 Cr discrepancy resolved
+- UI/API/evidence parity = ₹0
+- evidence workbook generated
+- no unsupported security claims
+- no P0
+- no P1.
+
+Otherwise:
+
+MODULE 2 NOT CERTIFIED.
+
+==================================================
+FINAL REPORT
+==================================================
+
+Return:
+
+MODULE_2_STATUS
+CANONICAL_INPUT_STATUS
+TOTAL_VALIDATED_SPEND
+MODULE_2_ELIGIBLE_SPEND
+MODULE_2_ANALYZED_SPEND
+SUPPLIER_POPULATION
+MATERIAL_GROUP_POPULATION
+BILLING_PERIOD
+UNSPSC_STATUS
+VENDOR_ANALYSIS_STATUS
+RECURRING_SPEND_STATUS
+E_AUCTION_STATUS
+PO_CONSOLIDATION_STATUS
+SUPPLIER_RISK_STATUS
+ML_WORKBENCH_STATUS
+OPPORTUNITY_LEDGER_STATUS
+GROSS_OPPORTUNITY
+OVERLAP
+NET_OPPORTUNITY
+453_64_CR_RECONCILIATION
+UI_API_PARITY
+EVIDENCE_PARITY
+DEMO_DATA_STATUS
+36_MONTH_STATUS
+UNSUPPORTED_CLAIMS_STATUS
+P0
+P1
+FINAL_VERDICT
+
+IMPORTANT:
+
+Do not proceed to Dataset 1.
+
+Do not alter Module 1 financial results.
+
+Do not alter Module 3.
+
+Do not alter Module 4.
+
+Do not alter FX Master.
+
+Do not alter PCBI Master.
+
+Do not alter E2E-GOLD-001.
+
+Do not enable PUBLIC_SAAS.
+
+Do not simply patch the UI.
+
+Trace and correct the underlying Module 2 data lineage and calculation engine.
+
+---
+
+## Prompt 344
+P0 — MODULE 2 FINANCIAL FORMULA & SAVINGS SANITY CERTIFICATION
+
+Module 2 data lineage has now passed the forensic certification.
+
+DO NOT change:
+- Module 1
+- Module 2 canonical input
+- FX Master
+- Module 3
+- Module 4
+- desktop runtime
+- authentication
+- assessment workflow
+- evidence architecture
+
+DO NOT change the UI merely to make numbers look reasonable.
+
+OBJECTIVE
+
+Independently prove that every Module 2 savings number is mathematically and economically derived from actual eligible spend.
+
+The current certified report shows:
+
+Total Validated Spend = ₹4,073.8307 Cr
+Module 2 Addressable Spend = ₹443.621 Cr
+Gross Quantifiable Benefit = ₹441.833 Cr
+Overlap = ₹104.067 Cr
+Net Opportunity = ₹337.766 Cr
+Proven Opportunity = ₹319.439 Cr
+Conservative Delivery Range = ₹39.793–₹99.097 Cr
+
+These figures MUST now undergo an independent formula audit.
+
+==================================================
+1. ADDRESSABLE SPEND RECONCILIATION
+==================================================
+
+Reconstruct ₹443.621 Cr from source transactions.
+
+Produce:
+
+Category
+Source Transaction Count
+Validated Spend
+Eligible Spend
+Eligibility Rule
+Excluded Spend
+Reason Excluded
+
+The sum of all category eligible spend MUST equal:
+
+₹443.621 Cr
+
+with ₹0 variance.
+
+Also reconcile:
+
+₹443.621 Cr
++
+Non-addressable Module 2 spend
+=
+₹4,073.8307 Cr
+
+If this does not reconcile, identify the missing amount.
+
+==================================================
+2. GROSS OPPORTUNITY RECONSTRUCTION
+==================================================
+
+Reconstruct ₹441.833 Cr independently from the opportunity ledger.
+
+For EVERY opportunity:
+
+Opportunity ID
+Category
+Source Spend
+Lever
+Savings Rate
+Savings Formula
+Gross Opportunity
+Source Transaction IDs
+
+Then prove:
+
+SUM(all gross opportunities)
+=
+₹441.833 Cr
+
+with ₹0 variance.
+
+==================================================
+3. SAVINGS RATE SANITY CHECK
+==================================================
+
+For every opportunity calculate:
+
+Savings Rate =
+Gross Opportunity / Eligible Spend
+
+Create a table:
+
+Category
+Eligible Spend
+Gross Opportunity
+Implied Savings %
+Lever
+Methodology
+Source
+
+FLAG any:
+
+> 100%
+
+FLAG any:
+
+> 50%
+
+FLAG any:
+
+> 25%
+
+Do NOT automatically reject these.
+
+Instead provide the actual reason and evidence.
+
+Any rate above 100% is mathematically invalid unless the denominator is not actually spend and the methodology explicitly defines another denominator.
+
+==================================================
+4. CRITICAL CHECK
+==================================================
+
+Current result:
+
+Addressable Spend = ₹443.621 Cr
+Gross Opportunity = ₹441.833 Cr
+
+Calculate:
+
+Gross Opportunity / Addressable Spend
+
+Report the exact percentage.
+
+If approximately 99.6%, identify why.
+
+Determine whether:
+
+A. the opportunity calculation is a percentage of spend,
+
+B. the opportunity calculation is based on historical price variance,
+
+C. the opportunity is based on another denominator,
+
+D. opportunity is being double-counted,
+
+E. opportunity is being calculated from multiple levers on the same spend,
+
+F. opportunity includes non-savings execution values,
+
+G. a formula or unit conversion is incorrect.
+
+Do NOT accept the result until the cause is proven.
+
+==================================================
+5. LEVER-LEVEL BRIDGE
+==================================================
+
+Break ₹441.833 Cr into every individual lever.
+
+For example:
+
+E-Auction
+Vendor Consolidation
+Bundling
+PO Consolidation
+Historical Price Variance
+Specification Rationalization
+Payment Terms
+Volume Tier
+Other
+
+For each:
+
+Eligible Spend
+Assumed Savings %
+Gross Savings
+Overlap Group
+Overlap
+Net Savings
+
+Then prove:
+
+SUM(levers)
+=
+₹441.833 Cr
+
+==================================================
+6. DOUBLE-COUNTING TEST
+==================================================
+
+For every source transaction determine:
+
+Number of opportunity levers attached.
+
+Flag transactions attached to:
+
+2 opportunities
+3 opportunities
+4+ opportunities
+
+Calculate:
+
+Gross opportunity by transaction
+Maximum defensible opportunity by transaction
+Overlap deduction
+
+Demonstrate that no transaction is counted twice without an explicit overlap deduction.
+
+==================================================
+7. OVERLAP RECONCILIATION
+==================================================
+
+Reconstruct:
+
+Gross = ₹441.833 Cr
+
+Overlap = ₹104.067 Cr
+
+Net = ₹337.766 Cr
+
+Prove:
+
+441.833
+-104.067
+=
+337.766
+
+Then independently identify the exact opportunity IDs forming the ₹104.067 Cr overlap.
+
+Do not accept an aggregate hardcoded overlap value.
+
+==================================================
+8. PROVEN OPPORTUNITY
+==================================================
+
+Reconstruct:
+
+₹319.439 Cr
+
+Define exactly what "Proven Opportunity" means.
+
+It must have an explicit formula and eligibility criteria.
+
+For every rupee included in Proven Opportunity, show:
+
+source transaction
+historical evidence
+calculation
+confidence
+methodology.
+
+==================================================
+9. CONSERVATIVE DELIVERY RANGE
+==================================================
+
+Reconstruct:
+
+₹39.793 Cr minimum
+₹99.097 Cr maximum
+
+Show:
+
+input opportunity
+minimum realization %
+maximum realization %
+formula
+result
+
+Do not use unexplained hardcoded percentages.
+
+==================================================
+10. ECONOMIC SANITY RULES
+==================================================
+
+Run these tests:
+
+SAVINGS <= ELIGIBLE SPEND
+
+for every opportunity.
+
+SAVINGS >= 0
+
+unless explicitly identified as a cost increase.
+
+Net Opportunity <= Addressable Spend
+
+Proven Opportunity <= Addressable Spend
+
+Conservative Maximum <= Proven Opportunity
+
+No savings generated from:
+- supplier count alone
+- HHI alone
+- e-auction eligibility alone
+- recurring frequency alone
+- category classification alone.
+
+These characteristics can identify opportunity but cannot themselves constitute savings.
+
+==================================================
+11. E-AUCTION
+==================================================
+
+E-auction suitability is NOT savings.
+
+Separate:
+
+E-Auction Eligible Spend
+from
+E-Auction Savings Opportunity.
+
+Do not multiply eligible spend by an arbitrary percentage unless that percentage has a defined methodology.
+
+==================================================
+12. VENDOR CONSOLIDATION
+==================================================
+
+Vendor consolidation is NOT automatically savings.
+
+Show:
+
+Current supplier count
+Target supplier count
+Current spend
+Expected commercial improvement
+Savings rate
+Formula
+Evidence.
+
+Do not use "5% vendor consolidation" as a savings formula unless explicitly labelled as a modelling assumption.
+
+==================================================
+13. RECURRING SPEND
+==================================================
+
+Recurring frequency identifies a sourcing opportunity.
+
+It does NOT itself create savings.
+
+Separate:
+
+Recurring Spend
+from
+Savings Opportunity.
+
+==================================================
+14. PO CONSOLIDATION
+==================================================
+
+PO count reduction is a process benefit unless an explicit commercial saving is demonstrated.
+
+Do not convert PO count into rupee savings without a validated formula.
+
+==================================================
+15. CATEGORY-LEVEL INDEPENDENT RECOMPUTATION
+==================================================
+
+Build an independent calculation table outside the primary UI calculation path.
+
+Do not reuse the exact same function used by the production calculation merely to prove itself.
+
+Independently calculate:
+
+Eligible Spend
+Gross Opportunity
+Overlap
+Net Opportunity.
+
+Compare independent calculation against production calculation.
+
+Required variance:
+
+₹0.00
+
+==================================================
+16. EVIDENCE WORKBOOK
+==================================================
+
+Create:
+
+MODULE_2_FINANCIAL_SANITY_EVIDENCE.xlsx
+
+Sheets:
+
+01 README
+02 Addressable_Spend_Reconciliation
+03 Opportunity_Ledger
+04 Lever_Calculation
+05 Savings_Rate_Test
+06 Transaction_Overlap
+07 Overlap_Reconciliation
+08 Proven_Opportunity
+09 Delivery_Range
+10 E_Auction
+11 Vendor_Consolidation
+12 Recurring_Spend
+13 PO_Consolidation
+14 Independent_Recalculation
+15 Production_vs_Independent
+16 Exceptions
+17 Final_Bridge
+
+==================================================
+17. FINAL ACCEPTANCE CRITERIA
+==================================================
+
+MODULE 2 FINANCIAL CERTIFIED only if:
+
+- Addressable spend reconciles
+- Gross opportunity reconciles
+- every savings formula is traceable
+- no unexplained >50% savings rates
+- no >100% savings rates
+- overlap is transaction/opportunity traceable
+- independent calculation matches production
+- UI matches API
+- API matches ledger
+- ledger matches evidence workbook
+- ₹0 variance
+- no double counting
+- all assumptions explicitly labelled
+- e-auction eligibility is not incorrectly treated as savings
+- vendor consolidation is not automatically treated as savings
+- recurring spend is not automatically treated as savings
+- PO reduction is not automatically treated as savings.
+
+If the current ₹441.833 Cr / ₹337.766 Cr result is mathematically and economically defensible, KEEP IT.
+
+Do NOT reduce the number merely because it appears high.
+
+If it is not defensible, identify the exact formula/logic error and correct the calculation engine.
+
+FINAL OUTPUT:
+
+ADDRESSABLE_SPEND
+GROSS_OPPORTUNITY
+GROSS_AS_PERCENT_OF_ADDRESSABLE
+OVERLAP
+NET_OPPORTUNITY
+PROVEN_OPPORTUNITY
+DELIVERY_RANGE
+MAX_SAVINGS_RATE
+NUMBER_OF_RATES_OVER_25_PERCENT
+NUMBER_OF_RATES_OVER_50_PERCENT
+NUMBER_OF_RATES_OVER_100_PERCENT
+DOUBLE_COUNTING_STATUS
+INDEPENDENT_RECALCULATION_VARIANCE
+UI_API_VARIANCE
+EVIDENCE_VARIANCE
+FINAL_FINANCIAL_VERDICT
+
+Possible verdicts:
+
+FINANCIALLY CERTIFIED
+
+or
+
+FINANCIALLY NOT CERTIFIED
+
+Do not claim financial certification merely because the software tests pass.
+
+---
+
+## Prompt 345
+P0 — MODULE 2 FINANCIAL GOVERNANCE CORRECTION
+DO NOT rebuild or alter Module 1, the canonical Module 2 transaction engine, FX Master, data ingestion, UNSPSC classification, or existing validated financial data unless a specific defect is proven by this audit.
+
+OBJECTIVE
+Correct the Module 2 financial presentation and savings-governance logic identified in the latest Financial Formula & Savings Sanity Audit.
+
+The previous audit achieved arithmetic reconciliation but MUST NOT be treated as financially certified because:
+1. 8 categories reported savings rates >100%.
+2. MAX_SAVINGS_RATE was reported as 219.0%.
+3. Gross opportunity ₹441.833 Cr / addressable spend ₹443.621 Cr = 99.6%, but gross is a multi-lever theoretical opportunity pool, NOT a savings rate.
+4. Volume Bundling used a broader denominator than the stated Module 2 addressable spend in some categories.
+5. Delivery formulas used 12.45% and 31.02% while labels said 10% and 25%.
+6. The report contained an unsupported external benchmark claim of 6%–12%.
+7. Category-level overlap was aggregate/category based and must have traceable opportunity-level lineage.
+
+==================================================
+A. FREEZE CERTIFIED BASELINE
+==================================================
+
+Preserve exactly:
+
+VGT dataset SHA:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Module 1:
+Source rows: 20,505
+Valid transactions: 20,241
+Excluded: 252
+Anomalies: 12
+Validated spend: ₹4,073.8307 Cr
+Profile baseline: ₹3,920.3277 Cr
+FX impact: ₹153.5029 Cr
+Suppliers: 529
+Material groups: 57
+Plants: 19
+Billing months: 10
+Period: Apr 2021–Jan 2022
+Module 1 variance: ₹0
+
+Module 2 current reconciled baseline:
+Validated spend: ₹4,073.8307 Cr
+Addressable spend: ₹443.621 Cr
+Non-addressable spend: ₹3,630.210 Cr
+Gross multi-lever opportunity pool: ₹441.833 Cr
+Current overlap deduction: ₹104.067 Cr
+Current net opportunity: ₹337.766 Cr
+Current proven opportunity: ₹319.439 Cr
+Current delivery range: ₹39.793–₹99.097 Cr
+
+Do NOT arbitrarily reduce or increase these amounts merely to make percentages look better.
+
+The purpose of this command is to determine whether each amount is economically defensible and to correct terminology, denominator logic, traceability, assumptions and realization formulas.
+
+==================================================
+B. REDEFINE FINANCIAL TERMINOLOGY
+==================================================
+
+Replace any customer-facing use of:
+
+"savings rate"
+"gross savings rate"
+"gross savings %"
+
+when the numerator represents simultaneous/multi-lever theoretical opportunity.
+
+Use:
+
+"Gross Multi-Lever Opportunity Pool"
+and
+"Gross Opportunity / Addressable Spend"
+
+The latter is a diagnostic ratio only.
+
+Explicitly label:
+
+Gross Multi-Lever Opportunity Pool:
+₹441.833 Cr
+
+Addressable Spend:
+₹443.621 Cr
+
+Gross Opportunity / Addressable Spend:
+99.60%
+
+Description:
+
+"This is a theoretical multi-lever opportunity pool before overlap and execution constraints. It is NOT a savings rate and must not be interpreted as an immediately realizable savings percentage."
+
+Never present 99.60% as:
+"99.6% savings"
+"99.6% savings rate"
+"99.6% achievable savings"
+
+==================================================
+C. HARD FINANCIAL ACCEPTANCE RULES
+==================================================
+
+Implement automated assertions:
+
+1. No customer-facing SAVINGS_RATE may exceed 100%.
+2. No customer-facing SAVINGS_RATE may be negative.
+3. Net Defensible Opportunity <= applicable economic denominator.
+4. Proven Opportunity <= applicable economic denominator.
+5. Delivery Maximum <= Proven Opportunity.
+6. Delivery Minimum <= Delivery Maximum.
+7. No opportunity amount may be generated merely because a supplier count, PO count, recurrence flag, HHI, auction eligibility or consolidation flag exists.
+8. Every monetary opportunity must have:
+   - transaction/category lineage
+   - denominator
+   - formula
+   - rate/assumption
+   - evidence/confidence
+   - lever
+   - overlap treatment
+9. A category with no valid commercial price/volume evidence must not automatically create monetary savings.
+10. Eligibility is NOT savings.
+11. Opportunity pool is NOT realized savings.
+12. Proven opportunity is NOT realized savings.
+13. Realized savings must remain a separate classification.
+
+If any rule fails:
+FINANCIAL CERTIFICATION = NOT CERTIFIED.
+
+Never downgrade the rule to make the test pass.
+
+==================================================
+D. CATEGORY-LEVEL DENOMINATOR GOVERNANCE
+==================================================
+
+Create/validate a mandatory financial denominator object for every opportunity:
+
+{
+  opportunityId,
+  category,
+  lever,
+  denominatorType,
+  denominatorAmount,
+  denominatorTransactionCount,
+  numeratorAmount,
+  rate,
+  formula,
+  evidenceType,
+  confidence,
+  overlapGroupId,
+  sourceTransactionIds
+}
+
+Allowed denominator types must be explicit, for example:
+
+PRICE_VARIANCE_ELIGIBLE_SPEND
+VOLUME_BUNDLING_ELIGIBLE_SPEND
+VENDOR_CONSOLIDATION_ELIGIBLE_SPEND
+E_AUCTION_ELIGIBLE_SPEND
+HISTORICAL_PRICE_VARIANCE_SPEND
+OTHER_APPROVED_DENOMINATOR
+
+DO NOT call all denominators "Module 2 Addressable Spend" unless they are actually identical.
+
+If Volume Bundling uses a broader item-level denominator than ₹443.621 Cr, expose that exact denominator.
+
+Example:
+
+Module 2 Addressable Spend = ₹443.621 Cr
+
+Volume Bundling Eligible Spend = ₹X
+
+If ₹X differs from ₹443.621 Cr, the UI/report must say:
+
+"Volume Bundling Eligible Spend"
+
+and NOT:
+
+"Addressable Spend"
+
+Do not silently substitute one denominator for another.
+
+==================================================
+E. VOLUME BUNDLING GOVERNANCE
+==================================================
+
+Audit the current Volume Bundling formula.
+
+Current reported:
+Volume Bundling gross = ₹196.222 Cr
+Current implied rate = 44.23%
+
+Determine independently:
+
+1. What transactions are eligible?
+2. What exact spend is the denominator?
+3. What price/volume relationship produces the benefit?
+4. What commercial evidence supports the rate?
+5. Is the rate calculated from actual historical price dispersion, supplier quotes, volume tiers, negotiated benchmarks, or an assumption?
+6. Is the same spend simultaneously included in Vendor Consolidation or E-Auction?
+
+If the current ₹196.222 Cr is supported, retain it.
+
+If not supported by actual transaction/category evidence, classify the unsupported component as:
+
+THEORETICAL / ASSUMPTION-BASED
+
+and exclude it from Proven Opportunity.
+
+Do NOT invent replacement savings.
+
+==================================================
+F. VENDOR CONSOLIDATION GOVERNANCE
+==================================================
+
+Audit the current:
+
+Vendor Consolidation = ₹168.245 Cr
+
+Require evidence for each category:
+
+- number of active suppliers
+- supplier spend
+- supplier concentration
+- eligible spend
+- historical supplier price dispersion OR validated commercial assumption
+- expected consolidation mechanism
+- formula
+- rate
+- source transactions
+
+A category having 3+ suppliers does NOT itself create savings.
+
+A category having high supplier fragmentation does NOT itself create savings.
+
+If a monetary rate is assumption-based, expose it as an assumption and do not classify it as Proven Opportunity.
+
+==================================================
+G. E-AUCTION GOVERNANCE
+==================================================
+
+Audit:
+
+E-Auction = ₹77.366 Cr
+
+Existing eligibility conditions may remain:
+
+supplier count >= 3
+price dispersion >5%
+
+BUT:
+
+Eligibility must never equal savings.
+
+Require:
+
+eligible spend
+historical price dispersion
+baseline price
+benchmark/current price
+auction savings assumption or historical auction evidence
+formula
+confidence
+source transactions
+
+If only auction eligibility exists without defensible commercial savings evidence:
+
+classify as EXECUTION OPPORTUNITY, not Proven Savings.
+
+==================================================
+H. OVERLAP / DOUBLE COUNTING
+==================================================
+
+The current aggregate overlap is:
+
+₹104.067 Cr
+
+Do not merely prove:
+
+Gross - overlap = Net
+
+That only proves arithmetic.
+
+Create an opportunity-level overlap ledger:
+
+opportunityId
+transaction/category
+lever
+grossOpportunity
+overlapGroupId
+selectedOpportunity
+deductedOpportunity
+deductionReason
+
+For each overlap group:
+
+Selected opportunity must equal the economically defensible mutually exclusive value.
+
+Where multiple levers apply to the same spend:
+
+DO NOT simply add them.
+
+Use explicit mutually exclusive treatment.
+
+The final overlap amount may remain ₹104.067 Cr ONLY if the new opportunity-level reconciliation independently produces the same value.
+
+Otherwise use the independently calculated value.
+
+Required reconciliation:
+
+SUM(gross opportunities)
+- SUM(valid overlap deductions)
+= Net Defensible Opportunity
+
+Variance must equal ₹0.
+
+==================================================
+I. PROVEN OPPORTUNITY
+==================================================
+
+Current:
+
+Proven Opportunity = ₹319.439 Cr
+
+Retain this only where every component has transaction-level evidence.
+
+Required evidence:
+
+transactionId
+category
+supplier
+item/material
+historical unit price
+benchmark/reference price
+quantity/spend
+price variance
+confidence
+formula
+
+Current reported composition:
+
+High confidence = ₹268.320 Cr
+Medium confidence = ₹51.119 Cr
+Speculative/excluded = ₹18.327 Cr
+
+Validate these independently.
+
+Do NOT include speculative/excluded ₹18.327 Cr in Proven Opportunity.
+
+Proven Opportunity must satisfy:
+
+0 <= Proven Opportunity <= applicable eligible spend
+
+==================================================
+J. DELIVERY RANGE — REMOVE HIDDEN FORMULAS
+==================================================
+
+The previous report showed:
+
+₹39.793 Cr
+₹99.097 Cr
+
+but labels incorrectly described them as 10%–25% of Proven Opportunity.
+
+DO NOT leave this inconsistency.
+
+Preferred correction:
+
+Indicative Delivery Rate:
+10%–25% of Proven Opportunity
+
+Formula:
+
+Delivery Minimum = Proven Opportunity × 0.10
+Delivery Maximum = Proven Opportunity × 0.25
+
+For ₹319.439 Cr:
+
+Minimum ≈ ₹31.944 Cr
+Maximum ≈ ₹79.860 Cr
+
+These rates must be explicit configuration/assumptions.
+
+NO hidden constants.
+
+If business logic intentionally requires different rates, expose the exact rates and justification instead of calling them 10%–25%.
+
+Do not use 12.45% or 31.02% silently.
+
+==================================================
+K. REMOVE UNSUPPORTED EXTERNAL CLAIM
+==================================================
+
+Remove:
+
+"conforms to global procurement transformation benchmarks (6%–12%)"
+
+unless an actual cited external source is implemented and included in the evidence workbook.
+
+Do not replace it with another unsupported benchmark.
+
+Use internal evidence wording instead:
+
+"The result is based on the customer's validated transaction data and the documented opportunity methodology."
+
+==================================================
+L. CUSTOMER-FACING VALUE HIERARCHY
+==================================================
+
+Use exactly this hierarchy:
+
+1. Total Evaluated Spend
+₹4,073.8307 Cr
+
+2. Module 2 Addressable Spend
+₹443.621 Cr
+
+3. Gross Multi-Lever Opportunity Pool
+₹441.833 Cr
+Label:
+"Theoretical opportunity pool before overlap and execution constraints."
+
+4. Net Defensible Opportunity
+₹337.766 Cr
+Only if independently reconciled.
+
+5. Proven Opportunity
+₹319.439 Cr
+Only evidence-backed historical commercial opportunity.
+
+6. Indicative Deliverable Opportunity
+₹31.944–₹79.860 Cr
+assuming 10%–25% realization of Proven Opportunity.
+
+Never describe any of these as:
+"guaranteed savings"
+"realized savings"
+"immediate savings"
+
+Realized Savings remains a separate classification.
+
+==================================================
+M. REPORT / UI / API / EVIDENCE PARITY
+==================================================
+
+Update:
+
+Backend API
+Frontend UI
+Management Quick Summary
+Module 2 report
+Module 2 evidence workbook
+Financial Sanity workbook
+Opportunity ledger
+Executive reports
+
+All must use the same canonical financial objects.
+
+Required parity:
+
+UI amount = API amount = evidence workbook amount = report amount
+
+Variance = ₹0.
+
+Search the entire codebase for:
+
+"219%"
+"MAX_SAVINGS_RATE"
+"99.6% savings"
+"99.60% savings"
+"savings rate"
+"6%–12%"
+"6%-12%"
+"12.45%"
+"31.02%"
+"10%"
+"25%"
+
+Do NOT globally replace legitimate unrelated uses.
+
+Correct only Module 2 financial governance references.
+
+==================================================
+N. TEST SUITE
+==================================================
+
+Create P0 financial governance tests:
+
+M2-FG-001
+No customer-facing savings rate >100%.
+
+M2-FG-002
+No negative savings.
+
+M2-FG-003
+Gross multi-lever pool may exceed an individual lever denominator only when explicitly classified as a theoretical pool.
+
+M2-FG-004
+Gross opportunity is never labelled savings rate.
+
+M2-FG-005
+Net Defensible Opportunity <= applicable denominator.
+
+M2-FG-006
+Proven Opportunity <= applicable denominator.
+
+M2-FG-007
+Delivery minimum <= delivery maximum.
+
+M2-FG-008
+Delivery maximum <= Proven Opportunity.
+
+M2-FG-009
+Delivery formulas use explicit configured rates.
+
+M2-FG-010
+No hidden 12.45% or 31.02% constants.
+
+M2-FG-011
+No unsupported 6%–12% benchmark claim.
+
+M2-FG-012
+Every opportunity has denominator + formula + evidence + source lineage.
+
+M2-FG-013
+Eligibility alone cannot create savings.
+
+M2-FG-014
+Supplier count alone cannot create savings.
+
+M2-FG-015
+E-auction eligibility alone cannot create savings.
+
+M2-FG-016
+Opportunity-level overlap reconciliation = ₹0 variance.
+
+M2-FG-017
+Independent financial recomputation = production = ₹0 variance.
+
+M2-FG-018
+UI/API/evidence/report = ₹0 variance.
+
+M2-FG-019
+Module 1 VGT financial baseline remains unchanged.
+
+M2-FG-020
+No customer-facing financial certification if any governance test fails.
+
+==================================================
+O. INDEPENDENT RECOMPUTATION
+==================================================
+
+Do NOT simply call the production financial functions and call that an independent audit.
+
+Create an independent calculation path for the certification test using the opportunity ledger / canonical transaction data.
+
+Recalculate independently:
+
+Addressable Spend
+Gross Opportunity
+Overlap
+Net Opportunity
+Proven Opportunity
+Delivery Range
+
+Compare independent result against production.
+
+All accepted differences must be ₹0.
+
+If a difference exists:
+
+STOP certification.
+
+Do not modify production logic merely to force equality.
+
+==================================================
+P. EVIDENCE WORKBOOK
+==================================================
+
+Regenerate:
+
+MODULE_2_FINANCIAL_SANITY_EVIDENCE.xlsx
+
+Minimum sheets:
+
+01_README
+02_FINANCIAL_CERTIFICATION
+03_TOTAL_SPEND_RECONCILIATION
+04_ADDRESSABLE_SPEND
+05_OPPORTUNITY_DENOMINATORS
+06_GROSS_OPPORTUNITY_LEDGER
+07_VOLUME_BUNDLING
+08_VENDOR_CONSOLIDATION
+09_E_AUCTION
+10_CATEGORY_OPPORTUNITY
+11_OVERLAP_LEDGER
+12_NET_OPPORTUNITY
+13_PROVEN_OPPORTUNITY
+14_DELIVERY_ASSUMPTIONS
+15_TRANSACTION_EVIDENCE
+16_INDEPENDENT_RECALCULATION
+17_UI_API_REPORT_PARITY
+18_FINANCIAL_GOVERNANCE_TESTS
+19_EXCLUSIONS_AND_UNSUPPORTED
+20_FINAL_CERTIFICATION
+
+Every monetary number must be traceable to source transactions/categories.
+
+No blank evidence sheets.
+
+No broken formulas.
+
+==================================================
+Q. FINAL CERTIFICATION RULE
+==================================================
+
+The final report must NOT automatically say FINANCIALLY CERTIFIED.
+
+Use:
+
+FINANCIALLY CERTIFIED
+
+ONLY IF:
+
+- all P0 financial governance tests pass
+- no customer-facing savings rate >100%
+- no unsupported benchmark claims
+- all denominators explicit
+- all assumptions explicit
+- opportunity-level overlap traceable
+- proven opportunity evidence-backed
+- delivery formulas match labels
+- independent recomputation variance = ₹0
+- UI/API/report/evidence variance = ₹0
+- Module 1 remains unchanged
+- no P0/P1 defects
+
+Otherwise:
+
+FINANCIALLY NOT CERTIFIED
+
+and list every failed gate.
+
+==================================================
+R. REGRESSION PROTECTION
+==================================================
+
+After implementation prove:
+
+Module 1:
+₹4,073.8307 Cr
+₹0 variance
+
+Module 2 data lineage:
+unchanged
+
+FX Master:
+unchanged
+checksum:
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+VGT checksum:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+No changes to:
+- ingestion
+- FX normalization
+- canonical Module 1
+- Pareto hierarchy
+- PCBI
+- customer data isolation
+- assessment workflow
+- internal assessment mode
+
+==================================================
+S. LIVE BROWSER VALIDATION
+==================================================
+
+Validate the actual running application at:
+
+1440×900
+1920×1080
+1280×800
+
+Check:
+
+1. Module 2 overview
+2. opportunity cards
+3. lever breakdown
+4. category opportunity
+5. overlap
+6. proven opportunity
+7. delivery range
+8. Management Quick Summary
+9. evidence/report download
+10. no >100% savings rate displayed
+11. no "219%" displayed
+12. no unsupported 6%–12% benchmark claim
+13. no stale 12.45% / 31.02% delivery wording
+14. no blank/NaN/negative financial cards
+15. UI/API parity
+
+==================================================
+T. FINAL OUTPUT REQUIRED
+==================================================
+
+Return a concise but complete certification report containing:
+
+1. Implementation status
+2. Exact financial outputs
+3. Addressable denominator
+4. Gross multi-lever opportunity pool
+5. Net defensible opportunity
+6. Proven opportunity
+7. Delivery range
+8. Exact delivery rates
+9. Overlap amount and methodology
+10. Number of opportunity categories
+11. Number of transactions with opportunity lineage
+12. Number of categories previously >100%
+13. Confirmation that MAX_SAVINGS_RATE is removed/redefined
+14. Confirmation that unsupported benchmark claims are removed
+15. Independent recalculation result
+16. UI/API/report/evidence variance
+17. Module 1 regression result
+18. Test counts
+19. Browser validation result
+20. Evidence workbook filename + SHA-256
+21. P0/P1/P2 defects
+22. FINAL VERDICT
+
+The final verdict must be exactly one of:
+
+FINANCIALLY CERTIFIED
+
+or
+
+FINANCIALLY NOT CERTIFIED
+
+IMPORTANT:
+Do not declare certification simply because arithmetic reconciles.
+Economic denominator validity, opportunity evidence, overlap traceability and customer-facing terminology are mandatory.
+
+---
+
+## Prompt 346
+P0 — MODULE 2 FINAL TRANSACTION-LEVEL FINANCIAL TRACEABILITY CERTIFICATION
+
+OBJECTIVE
+Perform the final evidence-traceability certification of Module 2.
+
+DO NOT rebuild, redesign, or change:
+- Module 1
+- canonical VGT transaction engine
+- FX Master
+- Module 2 classification engine
+- existing financial formulas
+- subscription/internal assessment architecture
+- UI design
+
+This is an AUDIT-ONLY + MINIMAL CORRECTION gate.
+
+The purpose is to prove that the currently certified financial outputs are traceable to actual VGT transactions and explicit economic formulas.
+
+==================================================
+1. GOLDEN BASELINE — MUST REMAIN IMMUTABLE
+==================================================
+
+VGT SHA:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Module 1:
+20,505 source rows
+20,241 valid transactions
+252 excluded
+12 anomalies
+₹4,073.8307 Cr validated spend
+₹3,920.3277 Cr profile baseline
+₹153.5029 Cr FX normalization impact
+529 suppliers
+57 material groups
+19 plants
+10 billing months
+Apr 2021–Jan 2022
+
+FX Master SHA:
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Module 2 currently reported:
+Addressable Spend: ₹443.621 Cr
+Gross Multi-Lever Opportunity Pool: ₹441.833 Cr
+Overlap: ₹104.067 Cr
+Net Defensible Opportunity: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Indicative Delivery: ₹31.944–₹79.860 Cr
+
+These numbers must NOT be changed merely to make the audit pass.
+
+==================================================
+2. TRANSACTION-LEVEL TRACEABILITY
+==================================================
+
+For EVERY monetary opportunity included in:
+
+A. Gross Multi-Lever Opportunity Pool
+B. Net Defensible Opportunity
+C. Proven Opportunity
+
+prove a complete lineage chain:
+
+VGT transaction
+→ canonical transaction ID
+→ material/category
+→ supplier
+→ applicable economic denominator
+→ sourcing lever
+→ opportunity ID
+→ gross opportunity
+→ overlap group
+→ overlap deduction
+→ net opportunity
+→ evidence/confidence
+→ formula
+→ final financial output
+
+Every monetary opportunity must have at least one sourceTransactionId.
+
+For every opportunity calculate:
+
+sourceTransactionCount
+sourceSpend
+eligibleSpend
+grossOpportunity
+overlapDeduction
+netOpportunity
+
+==================================================
+3. NO AGGREGATE-ONLY EVIDENCE
+==================================================
+
+A summary row such as:
+
+"Vendor Consolidation ₹128.623 Cr"
+
+is NOT sufficient evidence by itself.
+
+The workbook must allow an auditor to drill from:
+
+₹128.623 Cr
+→ opportunity IDs
+→ categories
+→ suppliers
+→ transaction IDs
+→ transaction spend
+→ calculation formula.
+
+If an opportunity cannot be drilled to transaction-level evidence:
+
+classify it as:
+
+TRACEABILITY_FAILED
+
+and exclude it from Proven Opportunity.
+
+Do NOT invent transactions.
+
+==================================================
+4. PROVEN OPPORTUNITY TEST
+==================================================
+
+For each component of ₹319.439 Cr:
+
+Require:
+
+transactionId
+supplier
+material/category
+historical price
+benchmark/reference price
+quantity
+historical spend
+price variance
+confidence
+formula
+
+Verify:
+
+Opportunity =
+Quantity × max(0, Historical Unit Price - Benchmark Unit Price)
+
+OR the exact documented formula actually used by the engine.
+
+Do not assume the formula.
+
+Read the production formula and prove that the evidence matches it.
+
+For every proven opportunity:
+
+0 <= opportunity <= source eligible spend
+
+If not:
+
+PROVEN TRACEABILITY FAIL.
+
+==================================================
+5. GROSS OPPORTUNITY TEST
+==================================================
+
+For every gross opportunity:
+
+identify:
+
+lever
+denominatorType
+denominatorAmount
+rate
+formula
+sourceTransactionIds
+
+Verify:
+
+Gross Opportunity =
+documented denominator × documented economic rate
+
+or the exact production formula.
+
+Do not accept a number simply because it reconciles to the existing total.
+
+==================================================
+6. DENOMINATOR RECONCILIATION
+==================================================
+
+Validate the four current denominators:
+
+HISTORICAL_PRICE_VARIANCE_SPEND
+₹443.621 Cr
+
+VOLUME_BUNDLING_ELIGIBLE_SPEND
+₹685.240 Cr
+
+VENDOR_CONSOLIDATION_ELIGIBLE_SPEND
+₹443.621 Cr
+
+E_AUCTION_ELIGIBLE_SPEND
+₹218.450 Cr
+
+For each denominator:
+
+SUM(source eligible transaction spend)
+must equal
+reported denominator
+
+Variance must be ₹0.
+
+Also identify whether denominators overlap.
+
+Do NOT add the four denominators together.
+
+==================================================
+7. 16 VS 19 CATEGORY RECONCILIATION
+==================================================
+
+The previous report contains potentially confusing terminology:
+
+"16 strategic categories"
+
+but also states:
+
+"19 sourcing categories"
+
+and provides a 16-row opportunity ledger.
+
+Resolve this explicitly.
+
+Determine:
+
+- total Module 2 sourcing categories
+- strategic categories
+- categories with monetary opportunity
+- categories with zero opportunity
+- opportunity IDs
+- category-to-opportunity mapping
+
+Create a reconciliation table:
+
+Metric | Count
+Total Module 2 categories
+Strategic categories
+Monetary opportunity categories
+Zero-opportunity categories
+Opportunity IDs
+
+The numbers must reconcile.
+
+Do not silently rename 16 as 19.
+
+==================================================
+8. OVERLAP TRACEABILITY
+==================================================
+
+For each overlap deduction:
+
+overlapId
+opportunityId
+sourceTransactionIds
+category
+leverA
+leverB
+grossA
+grossB
+selectedOpportunity
+deduction
+deductionReason
+
+Prove:
+
+SUM(Gross Opportunity)
+-
+SUM(Overlap Deduction)
+=
+Net Defensible Opportunity
+
+Target:
+
+₹441.833 Cr
+-
+₹104.067 Cr
+=
+₹337.766 Cr
+
+Variance must be ₹0.
+
+But also prove that every overlap deduction has actual source evidence.
+
+Arithmetic reconciliation alone is insufficient.
+
+==================================================
+9. PROVEN VS THEORETICAL
+==================================================
+
+Clearly classify every opportunity as one of:
+
+PROVEN
+EVIDENCE_BACKED
+ASSUMPTION_BASED
+THEORETICAL
+EXCLUDED
+
+Only PROVEN may contribute to:
+
+₹319.439 Cr Proven Opportunity.
+
+ASSUMPTION_BASED and THEORETICAL opportunities must NOT be included in Proven Opportunity.
+
+If the current ₹319.439 Cr contains any unsupported amount:
+
+recalculate Proven Opportunity from evidence.
+
+Do not force ₹319.439 Cr.
+
+==================================================
+10. DELIVERY RANGE
+==================================================
+
+Preserve the corrected formulas:
+
+Proven Opportunity = ₹319.43875 Cr
+
+Minimum = 10%
+₹31.944 Cr
+
+Maximum = 25%
+₹79.860 Cr
+
+Verify these are derived from the final proven amount.
+
+If Proven Opportunity changes because of traceability failure, automatically recalculate the delivery range.
+
+No hidden constants.
+
+==================================================
+11. INDEPENDENT RECOMPUTATION
+==================================================
+
+Perform an independent calculation using transaction-level evidence.
+
+Do NOT simply call the production calculation service.
+
+Independently calculate:
+
+A. denominator totals
+B. gross opportunity
+C. overlap
+D. net opportunity
+E. proven opportunity
+F. delivery range
+
+Compare against production.
+
+Produce:
+
+Production
+Independent
+Variance
+
+for every metric.
+
+All accepted financial variances must be ₹0.
+
+==================================================
+12. EVIDENCE WORKBOOK
+==================================================
+
+Create:
+
+MODULE_2_FINAL_TRACEABILITY_EVIDENCE.xlsx
+
+Minimum sheets:
+
+01_EXECUTIVE_CERTIFICATION
+02_GOLDEN_BASELINE
+03_TRANSACTION_LINEAGE
+04_OPPORTUNITY_LINEAGE
+05_DENOMINATOR_RECONCILIATION
+06_VOLUME_BUNDLING_TRACE
+07_VENDOR_CONSOLIDATION_TRACE
+08_E_AUCTION_TRACE
+09_PRICE_VARIANCE_TRACE
+10_PROVEN_OPPORTUNITY_TRACE
+11_OVERLAP_TRACE
+12_CATEGORY_RECONCILIATION
+13_PRODUCTION_VS_INDEPENDENT
+14_ASSUMPTION_REGISTER
+15_EXCLUSIONS
+16_DELIVERY_RANGE
+17_UI_API_REPORT_PARITY
+18_TEST_RESULTS
+19_CHECKSUMS
+20_FINAL_SIGNOFF
+
+The workbook must contain actual transaction-level evidence, not merely summary numbers.
+
+No empty sheets.
+
+No broken formulas.
+
+==================================================
+13. AUTOMATED TESTS
+==================================================
+
+Create/run:
+
+M2-TL-001
+Every monetary opportunity has source transaction IDs.
+
+M2-TL-002
+Every opportunity has an explicit denominator.
+
+M2-TL-003
+Every opportunity has an explicit formula.
+
+M2-TL-004
+Every Proven Opportunity amount has historical commercial evidence.
+
+M2-TL-005
+No Proven Opportunity exceeds source eligible spend.
+
+M2-TL-006
+Every denominator reconciles to transaction-level spend.
+
+M2-TL-007
+Every overlap deduction has source transaction evidence.
+
+M2-TL-008
+Gross - overlap = net.
+
+M2-TL-009
+Proven Opportunity contains no theoretical opportunity.
+
+M2-TL-010
+Proven Opportunity contains no unsupported assumption-based opportunity.
+
+M2-TL-011
+16 vs 19 category counts reconcile.
+
+M2-TL-012
+Production vs independent calculation variance = ₹0.
+
+M2-TL-013
+Delivery formulas reconcile to 10%–25%.
+
+M2-TL-014
+UI/API/report/workbook financial parity = ₹0.
+
+M2-TL-015
+Module 1 baseline unchanged.
+
+M2-TL-016
+VGT SHA unchanged.
+
+M2-TL-017
+FX Master SHA unchanged.
+
+M2-TL-018
+No customer-facing >100% savings rate.
+
+M2-TL-019
+No unsupported external benchmark claim.
+
+M2-TL-020
+No customer-facing "guaranteed savings" claim.
+
+==================================================
+14. BROWSER VALIDATION
+==================================================
+
+Validate:
+
+1440×900
+1920×1080
+1280×800
+
+Check:
+
+Module 2 dashboard
+Opportunity breakdown
+Denominator display
+Gross pool terminology
+Net opportunity
+Proven opportunity
+Delivery range
+Category details
+Evidence/download
+Management Quick Summary
+
+Confirm:
+
+NO "99.60% savings"
+NO "219%"
+NO >100% savings rate
+NO 12.45%
+NO 31.02%
+NO "6%–12% benchmark"
+NO guaranteed savings
+
+The UI should use:
+
+"Gross Multi-Lever Opportunity Pool"
+
+"Gross Opportunity / Addressable Spend Diagnostic Ratio"
+
+"Net Defensible Opportunity"
+
+"Proven Opportunity"
+
+"Indicative Deliverable Opportunity"
+
+==================================================
+15. FINAL CERTIFICATION RULE
+==================================================
+
+CERTIFY ONLY IF:
+
+✓ 100% monetary opportunity traceability
+✓ all denominators transaction-reconciled
+✓ gross formulas independently verified
+✓ overlap independently traceable
+✓ Proven Opportunity independently evidenced
+✓ 16 vs 19 category terminology reconciled
+✓ production vs independent variance = ₹0
+✓ UI/API/report/workbook variance = ₹0
+✓ delivery range correct
+✓ Module 1 unchanged
+✓ VGT unchanged
+✓ FX Master unchanged
+✓ all P0 tests pass
+✓ no P0/P1 defects
+
+If ANY mandatory condition fails:
+
+FINAL VERDICT = FINANCIALLY NOT CERTIFIED
+
+Do not manipulate the numbers to obtain certification.
+
+==================================================
+16. FINAL REPORT
+==================================================
+
+Return:
+
+FINAL TRACEABILITY CERTIFICATION REPORT
+
+Include:
+
+- total evaluated spend
+- addressable spend
+- gross multi-lever pool
+- overlap
+- net defensible opportunity
+- proven opportunity
+- delivery range
+- denominator reconciliation
+- category reconciliation
+- opportunity count
+- transaction lineage count
+- proven transaction count
+- assumption-based amount
+- theoretical amount
+- excluded amount
+- independent calculation
+- variance
+- UI/API/evidence variance
+- Module 1 regression
+- VGT checksum
+- FX checksum
+- workbook filename
+- workbook SHA-256
+- test count
+- browser validation
+- P0/P1/P2 defects
+
+FINAL VERDICT MUST BE:
+
+FINANCIALLY CERTIFIED
+
+OR
+
+FINANCIALLY NOT CERTIFIED
+
+No other verdict is permitted.
+
+---
+
+## Prompt 347
+resume
+
+---
+
+## Prompt 348
+P0 — MODULE 3 PCBI FORENSIC DATA-LINEAGE & BENCHMARK CERTIFICATION
+
+OBJECTIVE
+
+Perform a forensic audit of Module 3 — PCBI / Benchmark & Trend Analysis.
+
+This is an AUDIT-FIRST certification exercise.
+
+DO NOT rebuild Module 3.
+DO NOT invent benchmark values.
+DO NOT substitute generic/public benchmark data.
+DO NOT modify Module 1 or Module 2.
+DO NOT change the certified financial engine.
+DO NOT convert benchmark gaps into savings unless the underlying benchmark evidence and methodology support it.
+
+The purpose is to establish:
+
+1. What PCBI data actually exists.
+2. Where each benchmark comes from.
+3. Which customer transactions can legitimately be benchmarked.
+4. Which benchmark series are complete, partial, frequency-mismatched, paid, licensed, manual or unavailable.
+5. Whether benchmark calculations are mathematically correct.
+6. Whether PCBI coverage is honestly represented.
+7. Whether benchmark gaps can legitimately feed Module 4.
+8. Whether UI, API and evidence workbook use the same canonical PCBI calculation.
+9. Whether an independent calculation reproduces the production result.
+
+FINAL STATUS MUST BE:
+
+PCBI CERTIFIED
+
+or
+
+PCBI NOT CERTIFIED
+
+Do not declare certification simply because arithmetic reconciles.
+
+==================================================
+1. CERTIFIED BASELINES — FREEZE
+==================================================
+
+Do not alter:
+
+VGT SHA:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+FX Master SHA:
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+Module 1 certified baseline:
+
+Source rows:
+20,505
+
+Valid transactions:
+20,241
+
+Excluded:
+252
+
+Anomalies:
+12
+
+Validated spend:
+₹4,073.8307 Cr
+
+Profile baseline:
+₹3,920.3277 Cr
+
+FX normalization impact:
+₹153.5029 Cr
+
+Suppliers:
+529
+
+Material groups:
+57
+
+Plants:
+19
+
+Billing months:
+10
+
+Period:
+Apr 2021–Jan 2022
+
+Module 2 certified financial baseline:
+
+Addressable Spend:
+₹443.621 Cr
+
+Gross Multi-Lever Opportunity Pool:
+₹441.833 Cr
+
+Net Defensible Opportunity:
+₹337.766 Cr
+
+Proven Opportunity:
+₹319.439 Cr
+
+Indicative Delivery:
+₹31.944–₹79.860 Cr
+
+These values must remain unchanged during the PCBI audit.
+
+==================================================
+2. IDENTIFY THE ACTUAL PCBI SOURCE OF TRUTH
+==================================================
+
+Locate the current PCBI master/index implementation and identify:
+
+- PCBI technical ID
+- commodity/category
+- item/material mapping
+- benchmark name
+- source organization
+- source URL/reference
+- source access tier
+- source frequency
+- benchmark unit
+- currency
+- effective date
+- benchmark quality grade
+- historical date coverage
+- transformation methodology
+- normalization methodology
+- confidence/coverage status
+
+Do not assume that a PCBI ID is valid merely because it exists in code or a database.
+
+Create a canonical PCBI Master Record structure:
+
+PCBI ID
+Commodity
+Category
+Benchmark Name
+Source
+Source Access Tier
+Source Frequency
+Benchmark Unit
+Currency
+Quality Grade
+Coverage Status
+Effective From
+Effective To
+Transformation Method
+Evidence Reference
+Last Validated Date
+
+==================================================
+3. SOURCE ACCESS-TIER GOVERNANCE
+==================================================
+
+Preserve and audit the following source classifications where actually implemented:
+
+VERIFIED_FREE
+VERIFIED_PAID
+LICENSED
+MANUAL_AUTHENTICATED
+FREQUENCY_MISMATCH
+SOURCE_NOT_IDENTIFIED
+NOT_BENCHMARKABLE
+
+Do not silently classify an unavailable source as FREE.
+
+For every series determine:
+
+source available?
+historical data available?
+commercial license required?
+manual authentication required?
+frequency compatible?
+unit compatible?
+currency compatible?
+
+If source evidence cannot be verified:
+
+status must be:
+
+SOURCE_NOT_IDENTIFIED
+
+or
+
+PENDING_SOURCE_VALIDATION
+
+not VERIFIED.
+
+==================================================
+4. PCBI QUALITY GRADING
+==================================================
+
+Audit the existing A/B/C quality methodology.
+
+For every PCBI series document:
+
+Quality Grade:
+A / B / C
+
+Quality rationale:
+
+A:
+direct authoritative benchmark with appropriate frequency/unit/source evidence.
+
+B:
+credible benchmark but with limitations such as frequency transformation, secondary publication, or broader commodity mapping.
+
+C:
+proxy/manual/limited evidence requiring explicit qualification.
+
+Do not upgrade a series simply to increase coverage.
+
+Quality grade must be data-driven and auditable.
+
+==================================================
+5. BENCHMARK COVERAGE
+==================================================
+
+For every PCBI series calculate:
+
+Total expected dates
+Actual benchmark dates
+Missing dates
+Coverage %
+First benchmark date
+Last benchmark date
+Frequency
+Expected frequency
+Frequency mismatch
+
+Coverage must be based on actual benchmark observations.
+
+Do not count a padded zero or fabricated value as coverage.
+
+Do not treat missing observations as zero price.
+
+Do not forward-fill indefinitely.
+
+Any interpolation/stepping must be explicitly documented.
+
+==================================================
+6. HISTORICAL PERIOD
+==================================================
+
+Audit PCBI coverage independently of the customer's VGT period.
+
+The PCBI Master may contain historical data from:
+
+1-Apr-2020
+
+through current available date.
+
+But customer transaction benchmarking must only use benchmark values valid for the relevant transaction date.
+
+For every transaction:
+
+transactionDate
+PCBI ID
+benchmarkDateUsed
+benchmarkValue
+benchmarkCurrency
+benchmarkUnit
+benchmarkSource
+dateSelectionRule
+
+The date selection rule must be explicit.
+
+Preferred:
+
+1. exact benchmark date
+2. latest prior approved benchmark observation
+3. no benchmark if no valid prior observation exists
+
+Never use a future benchmark value.
+
+Never use a benchmark outside its effective validity period.
+
+==================================================
+7. FREQUENCY MISMATCH
+==================================================
+
+Audit monthly/quarterly/weekly/daily benchmark transformations.
+
+For a monthly benchmark used against a weekly/daily transaction:
+
+show:
+
+Source frequency
+Target frequency
+Transformation method
+Effective benchmark date
+Reason
+
+Examples of allowed documented methods:
+
+MONTH_END
+MONTH_AVERAGE
+MONTHLY_STEPPED
+WEEKLY_STEPPED
+EXPLICIT_PUBLICATION_DATE
+
+Do NOT silently transform monthly data into weekly data.
+
+Every frequency transformation must be reproducible.
+
+==================================================
+8. UNIT NORMALIZATION
+==================================================
+
+For every benchmark calculate:
+
+Source unit
+Customer transaction unit
+Conversion factor
+Normalized benchmark unit
+
+Examples:
+
+₹/MT
+₹/KG
+$/MT
+₹/L
+₹/Unit
+
+Verify:
+
+benchmark normalization does not create a factor-of-10,
+factor-of-100,
+factor-of-1000,
+or currency conversion error.
+
+Create automated unit sanity tests.
+
+Any unexplained unit conversion:
+
+PCBI NOT CERTIFIED.
+
+==================================================
+9. CURRENCY / FX
+==================================================
+
+PCBI must use the certified FX Master.
+
+Do NOT use:
+
+live Yahoo FX
+frontend live FX
+static ERP FX
+hardcoded currency rates
+
+for historical PCBI calculations.
+
+For every foreign-currency benchmark:
+
+benchmark original currency
+benchmark original value
+FX date
+FX source
+FX rate
+INR benchmark value
+
+The original benchmark value must remain preserved.
+
+Use the same authoritative FX service as Module 1.
+
+FX Master checksum must remain:
+
+7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f
+
+==================================================
+10. CUSTOMER ITEM → PCBI MAPPING
+==================================================
+
+Trace:
+
+VGT transaction
+→ material/group/item
+→ UNSPSC/category where applicable
+→ PCBI Technical ID
+→ benchmark series
+
+For every mapping determine:
+
+MAPPED
+PARTIAL
+UNMAPPED
+NOT_BENCHMARKABLE
+SERVICE/NON-COMMODITY
+
+Never force an item into a PCBI series merely because names look similar.
+
+Where mapping uses a proxy:
+
+record:
+
+source item
+mapped PCBI
+mapping rationale
+mapping confidence
+quality grade
+
+==================================================
+11. SERVICE / NON-COMMODITY EXCLUSION
+==================================================
+
+Services must not be treated as commodity benchmark opportunities.
+
+Explicitly identify:
+
+SERVICE
+NON_COMMODITY
+ENGINEERED_SPARE
+CUSTOM_FABRICATION
+CIVIL_WORK
+LABOUR
+FREIGHT
+OTHER_NON_BENCHMARKABLE
+
+These may remain visible for coverage reporting but must not create false benchmark savings.
+
+==================================================
+12. BENCHMARKABLE SPEND
+==================================================
+
+Calculate:
+
+Total validated spend
+Benchmarkable spend
+Partially benchmarkable spend
+Not benchmarkable spend
+Unmapped spend
+Service/non-commodity spend
+
+Reconcile:
+
+Benchmarkable
++
+Partially benchmarkable
++
+Not benchmarkable
++
+Unmapped
++
+Service/non-commodity
+
+against the Module 1 validated population.
+
+Variance must be ₹0.
+
+Do not double count categories.
+
+==================================================
+13. PCBI COVERAGE METRIC
+==================================================
+
+Define at least:
+
+Transaction Coverage %
+Spend Coverage %
+Category Coverage %
+
+Example:
+
+Spend Coverage =
+Benchmark-linked valid transaction spend
+÷
+Total validated transaction spend
+
+Do not use number of PCBI series as spend coverage.
+
+Do not report:
+
+"94% coverage"
+
+unless the denominator and numerator are explicit.
+
+For every coverage percentage show:
+
+numerator
+denominator
+formula.
+
+==================================================
+14. BENCHMARK PRICE CALCULATION
+==================================================
+
+For every benchmarked transaction calculate:
+
+Transaction price
+Benchmark price
+Normalized benchmark price
+Price difference
+Price difference %
+Benchmark date
+Benchmark source
+Benchmark quality
+Mapping confidence
+
+Formula must be explicit.
+
+For example, if:
+
+Transaction Price > Benchmark Price
+
+then:
+
+Potential Price Gap =
+(Transaction Price - Benchmark Price)
+× Quantity
+
+ONLY if the methodology permits such an interpretation.
+
+Do NOT automatically call this:
+
+"Savings"
+
+Call it:
+
+BENCHMARK PRICE GAP
+
+until Module 4 governance explicitly qualifies it.
+
+==================================================
+15. NO FALSE SAVINGS
+==================================================
+
+PCBI must NOT automatically create savings from:
+
+- benchmark availability
+- price difference alone
+- commodity mapping alone
+- historical index movement
+- supplier count
+- category fragmentation
+- market trend
+- benchmark coverage
+
+A benchmark price gap is an analytical signal.
+
+It becomes an opportunity only when the approved methodology and evidence conditions are satisfied.
+
+==================================================
+16. NEGATIVE / INVERTED BENCHMARKS
+==================================================
+
+Test:
+
+transaction price < benchmark
+
+transaction price = benchmark
+
+transaction price > benchmark
+
+Ensure:
+
+negative "savings" is not created.
+
+Do not reverse signs merely to make an opportunity positive.
+
+Classify appropriately:
+
+BELOW_BENCHMARK
+AT_BENCHMARK
+ABOVE_BENCHMARK
+
+==================================================
+17. OUTLIER GOVERNANCE
+==================================================
+
+Audit extreme benchmark gaps.
+
+Flag:
+
+>100%
+>50%
+>25%
+
+but do not automatically delete them.
+
+For every extreme value:
+
+transaction
+benchmark
+price
+unit
+quantity
+supplier
+category
+source
+mapping
+calculation
+
+must be inspectable.
+
+Do not cap values without documented methodology.
+
+==================================================
+18. BENCHMARK TREND ANALYSIS
+==================================================
+
+Audit:
+
+weekly trend
+monthly trend
+source frequency
+benchmark effective dates
+
+Ensure charts use actual benchmark observations.
+
+No artificial 36-month padding.
+
+No zero-value months for missing data.
+
+No fabricated future values.
+
+For missing benchmark periods display:
+
+NO DATA
+or
+NOT PUBLISHED
+
+not zero.
+
+==================================================
+19. CUSTOMER TRANSACTION PERIOD ALIGNMENT
+==================================================
+
+For VGT:
+
+Apr 2021–Jan 2022
+
+Ensure Module 3 charts and calculations use the actual customer transaction period where customer-specific analysis is displayed.
+
+Do not display:
+
+FY24
+FY25
+FY26
+3-Year comparison
+
+for this VGT dataset.
+
+Module 1 period logic remains authoritative.
+
+==================================================
+20. BENCHMARK SOURCE PROVENANCE
+==================================================
+
+Every benchmark value must be traceable to:
+
+PCBI ID
+source
+publication/date
+source file/document/API where available
+retrieval/validation date
+transformation
+unit
+currency
+
+If source evidence is missing:
+
+mark source evidence unavailable.
+
+Do not manufacture URLs or citations.
+
+==================================================
+21. PCBI MASTER VS CUSTOMER DATA ISOLATION
+==================================================
+
+Customer assessment data must NEVER modify the global PCBI master.
+
+Verify:
+
+Global PCBI master
+Customer Data Version
+Analysis Run
+
+are separate entities.
+
+A customer-specific correction creates a new customer mapping/data version.
+
+It must not alter global PCBI records.
+
+==================================================
+22. PCBI IMMUTABILITY
+==================================================
+
+Calculate checksum for the current PCBI master/index.
+
+Record:
+
+PCBI master version
+checksum
+record count
+series count
+observation count
+effective date
+
+Future changes must create a new PCBI version.
+
+Do not silently overwrite the certified version.
+
+==================================================
+23. INDEPENDENT PCBI RECOMPUTATION
+==================================================
+
+Create an independent calculator.
+
+It must independently recompute:
+
+PCBI mapping
+benchmark date selection
+benchmark normalization
+currency conversion
+transaction benchmark price
+benchmark price gap
+coverage
+
+Do NOT simply call the production PCBI service.
+
+Compare:
+
+Production
+Independent
+Variance
+
+for:
+
+benchmarkable spend
+benchmark coverage
+mapped transactions
+benchmark observations
+benchmark price
+benchmark gap
+
+All accepted financial variances must be ₹0.
+
+Where non-financial mapping differences exist:
+
+document exact records and reason.
+
+==================================================
+24. EVIDENCE WORKBOOK
+==================================================
+
+Generate:
+
+MODULE_3_PCBI_FORENSIC_EVIDENCE.xlsx
+
+Minimum sheets:
+
+01_EXECUTIVE_CERTIFICATION
+02_PCBI_MASTER_REGISTER
+03_PCBI_SOURCE_PROVENANCE
+04_PCBI_VERSION_CHECKSUM
+05_SOURCE_ACCESS_TIERS
+06_QUALITY_GRADING
+07_HISTORICAL_COVERAGE
+08_FREQUENCY_TRANSFORMATIONS
+09_UNIT_NORMALIZATION
+10_FX_NORMALIZATION
+11_CUSTOMER_ITEM_MAPPING
+12_BENCHMARK_DATE_SELECTION
+13_TRANSACTION_BENCHMARK_LEDGER
+14_BENCHMARK_PRICE_GAP
+15_COVERAGE_RECONCILIATION
+16_NON_BENCHMARKABLE
+17_UNMAPPED_ITEMS
+18_OUTLIER_AUDIT
+19_TREND_VALIDATION
+20_INDEPENDENT_RECALCULATION
+21_UI_API_PARITY
+22_TEST_MATRIX
+23_ASSUMPTION_REGISTER
+24_EXCLUSIONS
+25_FINAL_CERTIFICATION
+
+Every monetary PCBI output must be traceable.
+
+No empty evidence sheets.
+
+No broken formulas.
+
+==================================================
+25. REQUIRED TESTS
+==================================================
+
+Create and run:
+
+M3-PCBI-001
+PCBI master exists and has version/checksum.
+
+M3-PCBI-002
+Every certified PCBI series has source provenance.
+
+M3-PCBI-003
+No VERIFIED series without evidence.
+
+M3-PCBI-004
+Quality grade exists for every active series.
+
+M3-PCBI-005
+Historical coverage dates are valid.
+
+M3-PCBI-006
+No future benchmark used for a transaction.
+
+M3-PCBI-007
+Benchmark date selection follows documented rule.
+
+M3-PCBI-008
+Frequency transformation is explicit.
+
+M3-PCBI-009
+Unit normalization is explicit.
+
+M3-PCBI-010
+No factor-of-10/100/1000 conversion defect.
+
+M3-PCBI-011
+Foreign currency benchmark uses certified FX Master.
+
+M3-PCBI-012
+No live frontend FX used.
+
+M3-PCBI-013
+Customer item → PCBI mapping has lineage.
+
+M3-PCBI-014
+No forced mapping without rationale.
+
+M3-PCBI-015
+Services excluded from commodity benchmark savings.
+
+M3-PCBI-016
+Benchmark coverage numerator/denominator reconcile.
+
+M3-PCBI-017
+Benchmark price gap formula independently verified.
+
+M3-PCBI-018
+No automatic savings from benchmark availability.
+
+M3-PCBI-019
+Negative/inverted benchmark results handled correctly.
+
+M3-PCBI-020
+Extreme benchmark gaps are inspectable.
+
+M3-PCBI-021
+Missing benchmark data never becomes zero.
+
+M3-PCBI-022
+Customer period uses Apr 2021–Jan 2022 for VGT.
+
+M3-PCBI-023
+PCBI master is isolated from customer data.
+
+M3-PCBI-024
+Independent calculator variance = ₹0.
+
+M3-PCBI-025
+UI/API/workbook parity = ₹0.
+
+M3-PCBI-026
+Module 1 baseline unchanged.
+
+M3-PCBI-027
+Module 2 financial baseline unchanged.
+
+M3-PCBI-028
+VGT checksum unchanged.
+
+M3-PCBI-029
+FX Master checksum unchanged.
+
+M3-PCBI-030
+No unsupported benchmark source claims.
+
+==================================================
+26. REGRESSION PROTECTION
+==================================================
+
+Prove unchanged:
+
+Module 1:
+₹4,073.8307 Cr
+
+Module 2:
+₹443.621 Cr addressable
+₹441.833 Cr gross multi-lever pool
+₹337.766 Cr net defensible
+₹319.439 Cr proven
+₹31.944–₹79.860 Cr delivery
+
+Do not modify these values as part of PCBI audit unless a genuine upstream data defect is proven.
+
+If a defect is discovered:
+
+STOP.
+
+Report it separately.
+
+Do not silently cascade changes into Module 2.
+
+==================================================
+27. LIVE BROWSER VALIDATION
+==================================================
+
+Validate Module 3 in the running application:
+
+1440×900
+1920×1080
+1280×800
+
+Check:
+
+PCBI dashboard
+benchmark coverage
+source classification
+quality grade
+benchmark trend
+customer item mapping
+benchmark price
+benchmark gap
+non-benchmarkable
+unmapped
+evidence download
+
+Verify:
+
+No blank charts caused by fabricated dates.
+No zero-padding for missing benchmark observations.
+No unsupported benchmark source claims.
+No >100% savings presentation.
+No guaranteed savings language.
+No stale FY24/FY25/FY26 labels.
+No live Yahoo FX.
+No customer data modifying global PCBI.
+
+==================================================
+28. FINAL CERTIFICATION RULE
+==================================================
+
+PCBI CERTIFIED ONLY IF:
+
+✓ PCBI source of truth identified
+✓ version/checksum recorded
+✓ source provenance complete
+✓ access tier verified
+✓ quality grades verified
+✓ historical coverage verified
+✓ frequency transformations reproducible
+✓ unit conversions verified
+✓ FX integration verified
+✓ customer mapping traceable
+✓ services/non-benchmarkable correctly excluded
+✓ benchmark coverage reconciles
+✓ benchmark price calculations independently verified
+✓ benchmark gaps are not falsely called savings
+✓ missing values never become zero
+✓ independent calculator reconciles
+✓ UI/API/evidence parity passes
+✓ Module 1 unchanged
+✓ Module 2 unchanged
+✓ all P0 tests pass
+✓ no P0/P1 defects
+
+Otherwise:
+
+PCBI NOT CERTIFIED.
+
+==================================================
+29. FINAL OUTPUT
+==================================================
+
+Return:
+
+P0 MODULE 3 PCBI FORENSIC CERTIFICATION REPORT
+
+Include:
+
+1. PCBI master version
+2. PCBI checksum
+3. Total PCBI series
+4. Total benchmark observations
+5. Source distribution
+6. Quality A/B/C distribution
+7. Coverage by spend
+8. Coverage by transaction
+9. Covered categories
+10. Unmapped categories
+11. Non-benchmarkable categories
+12. Frequency mismatch count
+13. Missing observation count
+14. Customer transaction-to-PCBI mapping count
+15. Benchmarkable spend
+16. Benchmark price-gap amount
+17. Benchmark price-gap transaction count
+18. Independent calculation
+19. Production vs independent variance
+20. UI/API/evidence variance
+21. Module 1 regression
+22. Module 2 regression
+23. VGT checksum
+24. FX checksum
+25. Evidence workbook SHA-256
+26. Test count
+27. Browser validation
+28. P0/P1/P2 defects
+29. FINAL VERDICT
+
+FINAL VERDICT MUST BE:
+
+PCBI CERTIFIED
+
+or
+
+PCBI NOT CERTIFIED
+
+Do not use "production-ready" unless every certification condition above is satisfied.
+
+---
+
+## Prompt 349
+resume
+
+---
+
+## Prompt 350
+resume
+
+---
+
+## Prompt 351
+resume
+
+---
+
+## Prompt 352
+P0 — MODULE 4 SAVINGS ENGINE
+FINAL FORENSIC, FINANCIAL & TRANSACTION-LEVEL CERTIFICATION
+
+OBJECTIVE
+=========
+Perform a complete forensic, financial, transaction-level and UI/API/evidence certification of Module 4 — Savings Engine.
+
+This is NOT a feature-development exercise.
+
+This is a certification exercise.
+
+Do not redesign or change Modules 1, 2 or 3.
+Do not change the frozen VGT canonical ledger.
+Do not change the frozen FX Master.
+Do not change the certified Module 2 financial bridge.
+Do not change the certified Module 3 PCBI calculations.
+
+Module 4 must consume the certified outputs of Modules 1–3 and independently prove every monetary result it presents.
+
+FINAL VERDICT MUST BE EXACTLY ONE OF:
+
+1. SAVINGS ENGINE CERTIFIED
+OR
+2. NOT CERTIFIED
+
+Do not declare certification if any financial lineage, denominator, overlap, exclusion, evidence or reconciliation requirement fails.
+
+
+============================================================
+1. FROZEN INPUTS — MUST NOT CHANGE
+============================================================
+
+Use the existing certified baselines.
+
+MODULE 1
+---------
+VGT SHA-256:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Authoritative Module 1 baseline:
+Source transactions: 20,505
+Valid transactions: 20,241
+Excluded transactions: 252
+Anomalies: 12
+Validated spend: ₹4,073.8307 Cr
+Profile FX baseline: ₹3,920.3277 Cr
+FX normalization impact: ₹153.5029 Cr
+Suppliers: 529
+Material groups: 57
+Plants: 19
+Billing months: 10
+Period: Apr 2021–Jan 2022
+FX coverage: 100%
+
+
+MODULE 2
+---------
+Certified addressable sourcing spend:
+₹443.621 Cr
+
+Certified gross multi-lever opportunity pool:
+₹441.833 Cr
+
+Certified overlap:
+₹104.067 Cr
+
+Certified net opportunity:
+₹337.766 Cr
+
+Certified proven opportunity:
+₹319.439 Cr
+
+Certified delivery range:
+₹31.944 Cr – ₹79.860 Cr
+
+Do NOT reinterpret the ₹441.833 Cr gross multi-lever opportunity pool as savings.
+
+Do NOT add Module 2 opportunities again inside Module 4.
+
+
+MODULE 3
+---------
+PCBI Master:
+PCBI_MASTER_V2.0_FORENSIC
+
+PCBI checksum:
+d8f4e29c1b7a60358e2d4f107c9b83a54e1206f97305bc821e649a372d80ef61
+
+Certified benchmarkable spend:
+₹652.1402 Cr
+
+Certified benchmark price gap:
+₹31.6921 Cr
+
+143 benchmarked transactions
+
+The ₹31.6921 Cr is a BENCHMARK PRICE GAP,
+NOT automatically savings.
+
+Module 3 is certified and frozen.
+
+
+============================================================
+2. FIRST PRINCIPLE — MODULE 4 MUST HAVE ONE CANONICAL
+   OPPORTUNITY LEDGER
+============================================================
+
+Identify the actual production Module 4 canonical opportunity ledger.
+
+There must be ONE authoritative opportunity-level data structure.
+
+Every opportunity must contain, at minimum:
+
+opportunityId
+sourceTransactionIds
+supplierId / supplierIds
+materialGroup
+item / short text where applicable
+plant where applicable
+lever
+subLever
+eligibleSpend
+grossOpportunity
+overlapAmount
+excludedAmount
+netOpportunity
+provenOpportunity
+deliveryLow
+deliveryHigh
+calculationFormula
+rate / percentage where applicable
+denominatorType
+evidenceType
+evidenceReference
+confidence
+status
+
+Do NOT allow separate frontend calculations.
+
+UI, API, reports and evidence workbooks must consume the same canonical Module 4 result.
+
+
+============================================================
+3. TRANSACTION-LEVEL TRACEABILITY
+============================================================
+
+For EVERY monetary opportunity:
+
+Opportunity
+→ sourceTransactionIds
+→ source transaction
+→ validated transaction amount
+→ eligibility rule
+→ denominator
+→ formula
+→ gross opportunity
+→ overlap
+→ exclusions
+→ net opportunity
+→ proven opportunity
+→ delivery range
+
+must be traceable.
+
+No opportunity may exist only as an aggregate category number.
+
+No monetary opportunity may be generated from:
+
+- hard-coded totals
+- mock arrays
+- sample opportunities
+- demo data
+- frontend-only calculations
+- category-level percentages without transaction support
+- manually typed financial outputs
+
+
+============================================================
+4. SAVINGS LEVER GOVERNANCE
+============================================================
+
+Identify every savings lever currently implemented in Module 4.
+
+For EACH lever document:
+
+A. Economic thesis
+B. Eligible spend
+C. Exact denominator
+D. Eligibility rule
+E. Rate/formula
+F. Gross opportunity
+G. Exclusions
+H. Overlap logic
+I. Net opportunity
+J. Evidence requirement
+K. Proven opportunity
+L. Delivery range
+M. Source transactions
+
+
+For example, if the engine contains:
+
+- Benchmark Price Gap
+- Vendor Consolidation
+- Strategic Sourcing
+- Volume Bundling
+- E-Auction
+- Specification Rationalization
+- Payment Terms Optimization
+- PO Consolidation
+- Process Productivity
+- Cost Avoidance / Risk
+- Realized Savings
+
+audit EACH independently.
+
+Do not assume that all levers are savings.
+
+Classify each as:
+
+DIRECT_SAVINGS
+COST_AVOIDANCE
+RISK_VALUE
+PROCESS_PRODUCTIVITY
+REALIZED_SAVINGS
+ANALYTICAL_SIGNAL
+OPPORTUNITY_POOL
+
+Use the existing financial governance terminology.
+
+Never sum economically different classifications unless the engine explicitly supports that aggregation.
+
+
+============================================================
+5. DENOMINATOR CONTROL
+============================================================
+
+This is a P0 requirement.
+
+Every percentage must have an explicit denominator.
+
+Examples:
+
+historical price variance spend
+volume bundling eligible spend
+vendor consolidation eligible spend
+e-auction eligible spend
+benchmarkable spend
+total validated spend
+etc.
+
+Never calculate:
+
+opportunity / total spend
+
+and label it as a savings rate if the actual economic denominator is smaller.
+
+Never allow any customer-facing savings rate >100%.
+
+For every rate produce:
+
+numerator
+denominator
+rate
+denominatorType
+transaction count
+
+
+============================================================
+6. GROSS OPPORTUNITY ≠ SAVINGS
+============================================================
+
+Audit all terminology.
+
+The UI/report must distinguish:
+
+Gross Opportunity
+Net Opportunity
+Proven Opportunity
+Delivery Range
+Realized Savings
+Cost Avoidance
+Risk Value
+Benchmark Price Gap
+Analytical Signal
+
+No wording such as:
+
+"guaranteed savings"
+"assured savings"
+"100% savings"
+"certain savings"
+
+is permitted.
+
+Do not use unsupported industry benchmark claims.
+
+Do not claim EBITDA impact unless explicitly calculated and supported.
+
+
+============================================================
+7. OVERLAP ENGINE — OPPORTUNITY LEVEL
+============================================================
+
+Audit the overlap engine.
+
+Overlap must occur at opportunity/transaction level.
+
+Do NOT simply subtract a percentage from the total.
+
+For each overlap relationship produce:
+
+opportunityIdA
+opportunityIdB
+sourceTransactionIds
+overlapAmount
+overlapReason
+deduplicationRule
+
+Then independently reconstruct:
+
+Gross Opportunity Pool
+− Validated Overlap
+− Validated Exclusions
+= Net Defensible Opportunity
+
+Every rupee must reconcile.
+
+
+============================================================
+8. EXCLUSIONS
+============================================================
+
+Identify all exclusions.
+
+For each exclusion:
+
+transactionId
+reason
+amount
+module/lever
+rule
+evidence
+
+must be available.
+
+Do not double-count exclusions.
+
+Do not subtract excluded amounts twice.
+
+Reconcile:
+
+eligible spend
++ excluded spend
+= source population where applicable.
+
+
+============================================================
+9. PROVEN OPPORTUNITY
+============================================================
+
+Proven Opportunity must be evidence-backed.
+
+Define exactly what qualifies as PROVEN.
+
+Examples may include:
+
+validated benchmark evidence
+historical transaction evidence
+supplier concentration evidence
+documented sourcing event
+validated commercial evidence
+approved business rule
+
+Do NOT classify a theoretical percentage × spend calculation as Proven Opportunity.
+
+Every Proven Opportunity must have:
+
+opportunityId
+sourceTransactionIds
+evidenceType
+evidenceReference
+calculation
+amount
+
+
+============================================================
+10. DELIVERY RANGE
+============================================================
+
+If Module 4 presents a delivery range:
+
+prove the formula.
+
+Current certified governance requires:
+
+Proven Opportunity
+₹319.439 Cr
+
+Delivery range:
+10%–25%
+
+Therefore:
+
+LOW = ₹31.9439 Cr
+HIGH = ₹79.85975 Cr
+
+Displayed rounded values may be:
+
+₹31.944 Cr – ₹79.860 Cr
+
+Do not use any other delivery range unless independently justified and explicitly documented.
+
+
+============================================================
+11. BENCHMARK PRICE GAP INTEGRATION
+============================================================
+
+Module 3 provides:
+
+Benchmarkable Spend:
+₹652.1402 Cr
+
+Benchmark Price Gap:
+₹31.6921 Cr
+
+Do NOT automatically convert ₹31.6921 Cr into savings.
+
+If Module 4 uses this signal:
+
+trace:
+
+Module 3 opportunity
+→ benchmarked transaction
+→ benchmark value
+→ actual transaction price
+→ gap
+→ Module 4 eligibility
+→ commercial action
+→ resulting opportunity classification
+
+If no commercial action/evidence exists, retain it as:
+
+BENCHMARK_PRICE_GAP / ANALYTICAL_SIGNAL
+
+
+============================================================
+12. REALIZED SAVINGS
+============================================================
+
+If Realized Savings exists anywhere in Module 4:
+
+keep it completely separate from opportunity calculations.
+
+It must never be added to:
+
+Gross Opportunity
+Net Opportunity
+Proven Opportunity
+Delivery Range
+
+unless a specific reconciliation explicitly requires it.
+
+Require:
+
+realization date
+supplier
+transaction/event
+baseline
+actual outcome
+evidence
+amount
+
+
+============================================================
+13. PROCESS PRODUCTIVITY
+============================================================
+
+If Process Productivity exists:
+
+do not convert productivity into direct financial savings unless:
+
+baseline manpower/time-motion data
+time saved
+cost rate
+calculation
+
+are actually present.
+
+If not financially monetized:
+
+label it:
+
+PROCESS PRODUCTIVITY — NOT MONETIZED
+
+Do not manufacture a financial value.
+
+
+============================================================
+14. COST AVOIDANCE / RISK
+============================================================
+
+Cost Avoidance / Risk must remain separate from direct savings.
+
+If Module 4 contains risk spend:
+
+show:
+
+risk-exposed spend
+risk opportunity
+risk mitigation value
+
+but do NOT add it to direct savings unless explicitly supported by evidence and methodology.
+
+
+============================================================
+15. MULTI-LEVER OPPORTUNITY GOVERNANCE
+============================================================
+
+Audit whether one transaction can contribute to multiple levers.
+
+For every transaction appearing in multiple opportunities:
+
+show:
+
+transactionId
+lever A
+lever B
+gross A
+gross B
+overlap
+net contribution
+
+A transaction cannot be counted twice in net savings.
+
+Build a transaction-level overlap matrix.
+
+
+============================================================
+16. INDEPENDENT CALCULATOR
+============================================================
+
+Create a completely independent Module 4 calculator.
+
+Do NOT import the production Module 4 totals into the independent calculator.
+
+The independent calculator must independently derive:
+
+eligible spend
+gross opportunity
+overlap
+exclusions
+net opportunity
+proven opportunity
+delivery range
+
+Then compare production vs independent.
+
+Required:
+
+₹0.00 variance
+
+for every material financial output.
+
+
+============================================================
+17. FINANCIAL BRIDGE
+============================================================
+
+Produce one definitive Module 4 financial bridge.
+
+At minimum:
+
+Total Validated Spend
+₹4,073.8307 Cr
+
+Module 2 Addressable Sourcing Spend
+₹443.621 Cr
+
+Module 2 Certified Net Opportunity
+₹337.766 Cr
+
+Module 2 Proven Opportunity
+₹319.439 Cr
+
+Module 3 Benchmark Price Gap
+₹31.6921 Cr
+
+Module 4 Gross Opportunity
+[CALCULATED]
+
+Module 4 Overlap
+[CALCULATED]
+
+Module 4 Exclusions
+[CALCULATED]
+
+Module 4 Net Opportunity
+[CALCULATED]
+
+Module 4 Proven Opportunity
+[CALCULATED]
+
+Module 4 Delivery Range
+[CALCULATED]
+
+Do not force Module 4 numbers to match Module 2.
+
+If Module 4 produces a different number, explain exactly why.
+
+No unexplained variance is acceptable.
+
+
+============================================================
+18. RECONCILIATION REQUIREMENTS
+============================================================
+
+Perform:
+
+1. Transaction reconciliation
+2. Supplier reconciliation
+3. Material group reconciliation
+4. Plant reconciliation
+5. Monthly reconciliation
+6. Lever reconciliation
+7. Opportunity reconciliation
+8. Gross-to-net reconciliation
+9. Proven-opportunity reconciliation
+10. Delivery-range reconciliation
+11. Module 2 regression
+12. Module 3 regression
+13. Module 1 regression
+
+
+============================================================
+19. EVIDENCE WORKBOOK
+============================================================
+
+Generate:
+
+MODULE_4_FINAL_SAVINGS_EVIDENCE.xlsx
+
+Minimum sheets:
+
+01_README
+02_CERTIFICATION_SUMMARY
+03_SOURCE_BASELINE
+04_TRANSACTION_LEDGER
+05_OPPORTUNITY_LEDGER
+06_LEVER_DEFINITIONS
+07_DENOMINATOR_REGISTER
+08_GROSS_OPPORTUNITY
+09_OVERLAP_LEDGER
+10_EXCLUSIONS
+11_NET_OPPORTUNITY
+12_PROVEN_OPPORTUNITY
+13_DELIVERY_RANGE
+14_BENCHMARK_GAP_INTEGRATION
+15_REALIZED_SAVINGS
+16_PROCESS_PRODUCTIVITY
+17_COST_AVOIDANCE_RISK
+18_TRANSACTION_OVERLAP_MATRIX
+19_FINANCIAL_BRIDGE
+20_INDEPENDENT_RECALCULATION
+21_RECONCILIATION
+22_MODULE_1_REGRESSION
+23_MODULE_2_REGRESSION
+24_MODULE_3_REGRESSION
+25_AUDIT_TRAIL
+26_CERTIFICATION_REGISTER
+
+No empty sheets.
+
+No broken formulas.
+
+Every monetary figure in the summary must be traceable to detailed evidence.
+
+
+============================================================
+20. TEST MATRIX
+============================================================
+
+Create at least:
+
+M4-F-001 through M4-F-040
+
+Cover:
+
+- source lineage
+- canonical ledger
+- transaction traceability
+- denominator correctness
+- lever formulas
+- gross opportunity
+- overlap
+- exclusions
+- net opportunity
+- proven opportunity
+- delivery range
+- benchmark gap
+- realized savings separation
+- process productivity
+- risk/cost avoidance
+- independent calculator
+- financial bridge
+- Module 1 regression
+- Module 2 regression
+- Module 3 regression
+- UI/API parity
+- evidence workbook parity
+- authorization
+- tenant isolation
+- no mock data
+- no hard-coded financial outputs
+- no customer-facing >100% rates
+- no double counting
+
+
+============================================================
+21. UI / API / REPORT PARITY
+============================================================
+
+The same canonical Module 4 result must feed:
+
+API
+UI
+PDF report
+Excel evidence
+Management Quick Summary
+
+For every major financial value:
+
+UI = API = Report = Evidence
+
+Variance must be ₹0.00.
+
+
+============================================================
+22. NEGATIVE TESTS
+============================================================
+
+Explicitly test and fail closed for:
+
+1. Missing source transaction
+2. Deleted transaction
+3. Duplicate opportunity
+4. Duplicate transaction assignment
+5. Invalid denominator
+6. Rate >100%
+7. Missing evidence
+8. Fake benchmark gap
+9. Double overlap
+10. Excluded transaction included in savings
+11. Realized savings added to opportunity
+12. Cost avoidance added to direct savings
+13. Process productivity monetized without baseline
+14. Hard-coded financial total
+15. Mock opportunity array
+16. Cross-assessment data leakage
+17. Cross-tenant data leakage
+18. UI-only savings calculation
+
+
+============================================================
+23. CODE FORENSICS
+============================================================
+
+Search the entire Module 4 implementation for:
+
+- mock
+- demo
+- sample
+- hardcoded monetary values
+- fallback financial totals
+- fixed savings percentages
+- frontend-only calculations
+- duplicate opportunity arrays
+- static report numbers
+
+Any production-path finding must be corrected.
+
+Test fixtures may remain only if they are explicitly isolated from production execution.
+
+
+============================================================
+24. BROWSER VALIDATION
+============================================================
+
+Validate at:
+
+1440×900
+1920×1080
+1280×800
+
+Verify:
+
+- no misleading savings terminology
+- no unsupported totals
+- no >100% savings rate
+- gross/net/proven clearly separated
+- benchmark gap clearly separated from savings
+- delivery range correctly displayed
+- no duplicate opportunities
+- no blank financial widgets
+- UI matches API
+
+
+============================================================
+25. QUALITY GATES
+============================================================
+
+Require:
+
+0 TypeScript errors
+0 ESLint errors
+0 ESLint warnings
+100% Module 4 certification test pass
+>=90% per-file coverage for new certification code
+workspace differential tests pass
+production build pass
+browser validation pass
+
+
+============================================================
+26. FINAL CERTIFICATION REGISTER
+============================================================
+
+Produce a final register containing at minimum:
+
+1. Module 4 version
+2. Source dataset checksum
+3. Canonical opportunity ledger checksum
+4. Number of opportunities
+5. Number of source transactions
+6. Eligible spend
+7. Gross opportunity
+8. Overlap
+9. Exclusions
+10. Net opportunity
+11. Proven opportunity
+12. Delivery low
+13. Delivery high
+14. Benchmark price-gap contribution
+15. Realized savings — separate
+16. Cost avoidance — separate
+17. Process productivity — separate
+18. Independent calculator variance
+19. UI/API variance
+20. Evidence variance
+21. Module 1 regression
+22. Module 2 regression
+23. Module 3 regression
+24. Test count
+25. Browser validation
+26. P0 defects
+27. P1 defects
+28. P2 defects
+29. Final verdict
+
+
+============================================================
+27. FINAL OUTPUT
+============================================================
+
+At the end provide:
+
+# MODULE 4 SAVINGS ENGINE FINAL CERTIFICATION
+
+Source:
+VGT Testing Data.xlsx
+
+VGT checksum:
+59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def
+
+Module 1 baseline:
+₹4,073.8307 Cr
+
+Module 2 certified baseline:
+₹443.621 Cr addressable
+₹337.766 Cr net opportunity
+₹319.439 Cr proven opportunity
+
+Module 3:
+₹652.1402 Cr benchmarkable
+₹31.6921 Cr benchmark price gap
+
+Module 4:
+
+Eligible Spend:
+[VALUE]
+
+Gross Opportunity:
+[VALUE]
+
+Overlap:
+[VALUE]
+
+Exclusions:
+[VALUE]
+
+Net Opportunity:
+[VALUE]
+
+Proven Opportunity:
+[VALUE]
+
+Delivery Range:
+[LOW] – [HIGH]
+
+Realized Savings:
+[VALUE / NOT MONETIZED]
+
+Cost Avoidance / Risk:
+[VALUE / SEPARATE]
+
+Process Productivity:
+[VALUE / NOT MONETIZED]
+
+Independent Calculation Variance:
+₹0.00
+
+UI/API Variance:
+₹0.00
+
+Evidence Variance:
+₹0.00
+
+Module 1 Regression:
+0%
+
+Module 2 Regression:
+0%
+
+Module 3 Regression:
+0%
+
+Certification Tests:
+[PASS COUNT]/[TOTAL]
+
+P0:
+0
+
+P1:
+0
+
+P2:
+0
+
+FINAL VERDICT:
+
+SAVINGS ENGINE CERTIFIED
+
+OR
+
+NOT CERTIFIED
+
+
+IMPORTANT:
+Do not manufacture any value.
+Do not force certification.
+If any requirement fails, return NOT CERTIFIED and list the exact failed gates and financial impact.
+
+Do not modify Modules 1–3 except where required to expose read-only certified outputs to Module 4.
+Do not change the frozen FX Master.
+Do not change the PCBI Master.
+Do not change the certified Module 2 financial outputs.
+
+
+---
+
+## Prompt 353
+P0 — MODULE 4 FINAL TRANSACTION-LEVEL EVIDENCE COMPLETENESS CLOSEOUT
+==================================================================
+
+OBJECTIVE
+---------
+Perform the FINAL evidence-completeness audit for the already-certified
+Module 4 Savings Engine.
+
+This is NOT a recalculation exercise.
+This is NOT a redesign exercise.
+This is NOT a new savings methodology.
+
+The purpose is to prove that 100% of the monetary opportunity reported by
+Module 4 is supported by complete transaction-level lineage.
+
+DO NOT change:
+
+- Module 1
+- Module 2
+- Module 3
+- FX Master
+- PCBI Master
+- VGT canonical ledger
+- Module 4 financial formulas
+- Module 4 opportunity calculations
+- overlap methodology
+- exclusions methodology
+- proven-opportunity methodology
+- delivery-range methodology
+
+If the existing architecture already satisfies the requirement, preserve it
+and only add/complete the evidence and verification layer.
+
+FINAL VERDICT MUST BE EXACTLY ONE OF:
+
+MODULE 4 EVIDENCE COMPLETE
+
+OR
+
+MODULE 4 EVIDENCE INCOMPLETE
+
+
+============================================================
+1. FROZEN MODULE 4 CERTIFIED FINANCIAL BASELINE
+============================================================
+
+Use the existing certified Module 4 values exactly.
+
+Validated Spend:
+₹4,073.8307 Cr
+
+Module 2 Addressable Spend:
+₹443.6210 Cr
+
+Module 2 Gross Opportunity:
+₹441.8330 Cr
+
+Module 2 Overlap:
+₹104.0670 Cr
+
+Module 2 Net Opportunity:
+₹337.7660 Cr
+
+Module 2 Proven Opportunity:
+₹319.4390 Cr
+
+Delivery Low:
+₹31.9440 Cr
+
+Delivery High:
+₹79.8600 Cr
+
+Module 3 Benchmark Price Gap:
+₹31.6921 Cr
+
+Module 3 Benchmark Gap must remain:
+ANALYTICAL_SIGNAL
+
+It must NOT be converted into savings merely for this evidence exercise.
+
+
+============================================================
+2. IDENTIFY THE AUTHORITATIVE OPPORTUNITY LEDGER
+============================================================
+
+Locate the actual production Module 4 canonical opportunity ledger.
+
+Do NOT use:
+
+- mock arrays
+- demo arrays
+- test fixtures
+- manually entered totals
+- frontend-only opportunity objects
+- report-only data
+- workbook-only reconstructed opportunities
+
+The evidence must originate from the actual production opportunity ledger.
+
+Record:
+
+- ledger name
+- source service
+- source file
+- source checksum/version if available
+- number of opportunities
+- total gross opportunity
+- total overlap
+- total net opportunity
+- total proven opportunity
+
+
+============================================================
+3. COMPLETE OPPORTUNITY-LEVEL LINEAGE
+============================================================
+
+For EVERY monetary opportunity, verify the existence of:
+
+opportunityId
+sourceTransactionIds
+lever
+subLever
+eligibleSpend
+denominator
+denominatorType
+formula
+grossOpportunity
+overlapAmount
+excludedAmount
+netOpportunity
+provenOpportunity
+evidenceType
+evidenceReference
+status
+
+Every opportunity must have at least one valid source transaction unless
+the opportunity is explicitly classified as a non-transactional item.
+
+If a non-transactional opportunity exists, it must be explicitly documented
+and must NOT be silently treated as transaction-derived.
+
+
+============================================================
+4. TRANSACTION-LEVEL LINEAGE
+============================================================
+
+For every sourceTransactionId referenced by Module 4:
+
+Verify that it exists in the frozen Module 1 canonical transaction ledger.
+
+For every reference calculate:
+
+source transaction amount
+eligible amount
+opportunity contribution
+lever
+opportunityId
+
+Detect:
+
+- orphan transaction IDs
+- invalid transaction IDs
+- duplicate transaction IDs
+- duplicate opportunity assignments
+- deleted transaction references
+- transactions outside the certified VGT baseline
+- transactions belonging to excluded populations
+- cross-assessment transaction references
+
+
+============================================================
+5. COMPLETE LINEAGE COVERAGE
+============================================================
+
+Calculate:
+
+A. Total Module 4 opportunities
+B. Opportunities with complete lineage
+C. Opportunities missing lineage
+D. Total gross opportunity
+E. Gross opportunity backed by complete lineage
+F. Total net opportunity
+G. Net opportunity backed by complete lineage
+H. Total proven opportunity
+I. Proven opportunity backed by complete lineage
+
+Required:
+
+Complete Opportunity Coverage = 100%
+
+Gross Lineage Coverage = 100%
+
+Net Lineage Coverage = 100%
+
+Proven Lineage Coverage = 100%
+
+unless a documented non-transactional opportunity category is explicitly
+approved by the governance model.
+
+
+============================================================
+6. INDEPENDENT LINEAGE RECONCILIATION
+============================================================
+
+Do NOT simply compare stored totals.
+
+Independently aggregate the complete lineage records.
+
+Calculate:
+
+SUM(transaction-supported gross opportunities)
+
+SUM(transaction-supported overlap)
+
+SUM(transaction-supported exclusions)
+
+SUM(transaction-supported net opportunities)
+
+SUM(transaction-supported proven opportunities)
+
+Compare against the frozen Module 4 certification values.
+
+Expected:
+
+Gross:
+₹441.8330 Cr
+Variance:
+₹0.0000 Cr
+
+Overlap:
+₹104.0670 Cr
+Variance:
+₹0.0000 Cr
+
+Net:
+₹337.7660 Cr
+Variance:
+₹0.0000 Cr
+
+Proven:
+₹319.4390 Cr
+Variance:
+₹0.0000 Cr
+
+
+============================================================
+7. OPPORTUNITY → TRANSACTION RECONCILIATION
+============================================================
+
+Produce an auditable matrix:
+
+Opportunity ID
+Lever
+Source Transaction Count
+Eligible Spend
+Gross Opportunity
+Overlap
+Exclusion
+Net Opportunity
+Proven Opportunity
+Lineage Status
+
+Every row must reconcile.
+
+Then independently sum the matrix.
+
+The matrix total must equal the certified Module 4 totals.
+
+
+============================================================
+8. TRANSACTION → OPPORTUNITY RECONCILIATION
+============================================================
+
+Also perform the reverse audit.
+
+For every transaction participating in Module 4:
+
+Transaction ID
+Supplier
+Material Group
+Plant
+Transaction Amount
+Opportunity IDs
+Lever(s)
+Total Opportunity Contribution
+Overlap Contribution
+Net Contribution
+Evidence Status
+
+Identify transactions appearing in:
+
+- one opportunity
+- multiple opportunities
+- no opportunity
+
+For transactions appearing in multiple opportunities, prove that the
+overlap engine prevents double counting.
+
+No transaction may silently contribute twice to net/proven opportunity.
+
+
+============================================================
+9. OVERLAP EVIDENCE
+============================================================
+
+For every overlap amount:
+
+opportunityIdA
+opportunityIdB
+transactionIds
+grossA
+grossB
+overlapAmount
+deduplicationReason
+
+Recalculate total overlap independently.
+
+Required:
+
+₹104.0670 Cr
+₹0.0000 Cr variance
+
+
+============================================================
+10. EXCLUSION EVIDENCE
+============================================================
+
+For every exclusion affecting Module 4:
+
+transactionId
+amount
+exclusionReason
+originalOpportunity
+excludedAmount
+rule
+
+Verify:
+
+- no excluded transaction contributes to net opportunity
+- no exclusion is applied twice
+- excluded amounts reconcile to the certified financial bridge
+
+
+============================================================
+11. PROVEN OPPORTUNITY EVIDENCE
+============================================================
+
+For every Proven Opportunity record:
+
+opportunityId
+sourceTransactionIds
+evidenceType
+evidenceReference
+calculation
+provenAmount
+
+No theoretical opportunity may be classified as proven without evidence.
+
+Recalculate:
+
+Total Proven Opportunity
+= ₹319.4390 Cr
+
+Expected variance:
+₹0.0000 Cr
+
+
+============================================================
+12. DELIVERY RANGE
+============================================================
+
+Do not change the certified delivery range.
+
+Proven Opportunity:
+₹319.4390 Cr
+
+10%:
+₹31.9439 Cr → ₹31.9440 Cr
+
+25%:
+₹79.85975 Cr → ₹79.8600 Cr
+
+Verify both values independently.
+
+No new delivery assumptions.
+
+
+============================================================
+13. DATA INTEGRITY CHECKS
+============================================================
+
+Explicitly test:
+
+1. Missing transaction ID
+2. Invalid transaction ID
+3. Duplicate transaction ID
+4. Duplicate opportunity ID
+5. Opportunity with zero source transactions
+6. Opportunity with negative contribution
+7. Opportunity contribution greater than eligible spend
+8. Excluded transaction included in opportunity
+9. Cross-assessment transaction
+10. Cross-tenant transaction
+11. Superseded data-version transaction
+12. Superseded analysis-run transaction
+13. Deleted transaction
+14. Duplicate opportunity contribution
+15. Missing evidence reference
+
+
+============================================================
+14. CURRENT WORKBOOK CLOSEOUT
+============================================================
+
+The current certification workbook contains:
+
+11_TRANSACTION_LINEAGE
+
+which was previously described as:
+
+"Sample transaction mapping showing trace IDs and levers."
+
+This is NOT sufficient if it only contains sample records.
+
+Determine whether the existing workbook already contains complete lineage.
+
+If it is sample-only:
+
+ADD a new sheet:
+
+27_COMPLETE_TRANSACTION_LINEAGE
+
+This sheet must contain the COMPLETE production opportunity-to-transaction
+lineage, not examples.
+
+Minimum columns:
+
+Opportunity ID
+Lever
+Sub-Lever
+Transaction ID
+Supplier
+Material Group
+Plant
+Transaction Date
+Transaction Amount
+Eligible Amount
+Denominator Type
+Gross Contribution
+Overlap Contribution
+Exclusion Amount
+Net Contribution
+Proven Contribution
+Evidence Type
+Evidence Reference
+Lineage Status
+
+Do not create fake records merely to populate this sheet.
+
+
+============================================================
+15. WORKBOOK RECONCILIATION
+============================================================
+
+Regenerate:
+
+MODULE_4_FINAL_SAVINGS_EVIDENCE.xlsx
+
+or create a clearly versioned successor if the existing certified workbook
+must remain immutable.
+
+If a successor is created, retain the original workbook unchanged and
+record:
+
+previous workbook SHA
+new workbook SHA
+reason for new version
+changes made
+
+Verify:
+
+No empty sheets
+No broken formulas
+No unexplained financial variance
+No orphan lineage
+No fake/sample production records
+
+
+============================================================
+16. INDEPENDENT LINEAGE CALCULATOR
+============================================================
+
+Create or use a separate pure-function verification routine.
+
+It must consume:
+
+COMPLETE TRANSACTION LINEAGE
+
+and independently calculate:
+
+gross
+overlap
+net
+proven
+delivery low
+delivery high
+
+It must NOT read the already-calculated Module 4 summary totals as inputs.
+
+Required variance:
+
+₹0.0000 Cr
+
+
+============================================================
+17. TEST MATRIX
+============================================================
+
+Create:
+
+M4-TL-001 through M4-TL-025
+
+Minimum tests:
+
+M4-TL-001  Complete opportunity count
+M4-TL-002  Opportunity lineage completeness
+M4-TL-003  Transaction ID validity
+M4-TL-004  Orphan transaction detection
+M4-TL-005  Duplicate transaction detection
+M4-TL-006  Opportunity-to-transaction reconciliation
+M4-TL-007  Transaction-to-opportunity reconciliation
+M4-TL-008  Gross opportunity reconciliation
+M4-TL-009  Overlap reconciliation
+M4-TL-010  Exclusion reconciliation
+M4-TL-011  Net opportunity reconciliation
+M4-TL-012  Proven opportunity reconciliation
+M4-TL-013  Delivery low reconciliation
+M4-TL-014  Delivery high reconciliation
+M4-TL-015  Multi-lever transaction deduplication
+M4-TL-016  Excluded transaction protection
+M4-TL-017  Cross-assessment isolation
+M4-TL-018  Cross-tenant isolation
+M4-TL-019  Data-version integrity
+M4-TL-020  Evidence-reference completeness
+M4-TL-021  Independent recalculation
+M4-TL-022  UI/API lineage parity
+M4-TL-023  Workbook lineage parity
+M4-TL-024  Certified baseline regression
+M4-TL-025  No hardcoded/mock production opportunity
+
+
+============================================================
+18. UI/API/EVIDENCE PARITY
+============================================================
+
+Verify:
+
+UI
+=
+API
+=
+PDF/report
+=
+Evidence workbook
+=
+Canonical opportunity ledger
+
+for:
+
+Gross Opportunity
+Overlap
+Net Opportunity
+Proven Opportunity
+Delivery Range
+
+Variance must be ₹0.0000 Cr.
+
+
+============================================================
+19. CODE FORENSICS
+============================================================
+
+Search Module 4 production code for:
+
+- mock opportunities
+- demo opportunities
+- sample opportunity arrays
+- hardcoded transaction IDs
+- hardcoded financial totals
+- fallback financial totals
+- static lineage records
+- frontend-only opportunity calculations
+
+Test fixtures are permitted only inside test scope.
+
+Any production-path occurrence must be reported and corrected.
+
+
+============================================================
+20. FINAL REPORT
+============================================================
+
+Produce:
+
+# MODULE 4 FINAL TRANSACTION-LEVEL EVIDENCE CLOSEOUT
+
+Include:
+
+Total Module 4 Opportunities:
+[VALUE]
+
+Opportunities Fully Traceable:
+[VALUE]
+
+Opportunity Coverage:
+[VALUE]%
+
+Total Gross Opportunity:
+₹441.8330 Cr
+
+Gross Opportunity Fully Traceable:
+[VALUE]
+
+Gross Lineage Coverage:
+[VALUE]%
+
+Total Overlap:
+₹104.0670 Cr
+
+Overlap Fully Traceable:
+[VALUE]
+
+Total Net Opportunity:
+₹337.7660 Cr
+
+Net Opportunity Fully Traceable:
+[VALUE]
+
+Net Lineage Coverage:
+[VALUE]%
+
+Total Proven Opportunity:
+₹319.4390 Cr
+
+Proven Opportunity Fully Traceable:
+[VALUE]
+
+Proven Lineage Coverage:
+[VALUE]%
+
+Orphan Transaction References:
+[VALUE]
+
+Duplicate Transaction Assignments:
+[VALUE]
+
+Missing Evidence References:
+[VALUE]
+
+Independent Gross Variance:
+[VALUE]
+
+Independent Overlap Variance:
+[VALUE]
+
+Independent Net Variance:
+[VALUE]
+
+Independent Proven Variance:
+[VALUE]
+
+Delivery Low Variance:
+[VALUE]
+
+Delivery High Variance:
+[VALUE]
+
+Module 1 Regression:
+[PASS/FAIL]
+
+Module 2 Regression:
+[PASS/FAIL]
+
+Module 3 Regression:
+[PASS/FAIL]
+
+Test Results:
+[PASS]/[TOTAL]
+
+P0:
+[VALUE]
+
+P1:
+[VALUE]
+
+P2:
+[VALUE]
+
+
+============================================================
+FINAL DECISION
+============================================================
+
+Return exactly one:
+
+MODULE 4 EVIDENCE COMPLETE
+
+OR
+
+MODULE 4 EVIDENCE INCOMPLETE
+
+
+IMPORTANT:
+
+Do NOT declare MODULE 4 EVIDENCE COMPLETE merely because the existing
+certification totals match.
+
+The purpose of this closeout is to prove that the COMPLETE underlying
+transaction lineage supports those totals.
+
+If even one material monetary opportunity cannot be fully traced, return:
+
+MODULE 4 EVIDENCE INCOMPLETE
+
+and identify:
+
+- opportunity ID
+- amount
+- missing lineage
+- affected financial total
+- recommended correction
+
+If all monetary opportunities are fully traceable with ₹0.0000 Cr variance,
+then return:
+
+MODULE 4 EVIDENCE COMPLETE
+
+and freeze Module 4.
+
+DO NOT perform any further savings-engine redesign after this closeout.
+
+
+---
+
+## Prompt 354
+resume
+
+---
+
+## Prompt 355
+resume
+
+---
+
+## Prompt 356
+P0 — MODULE 4 LINEAGE COUNT CONTRADICTION — FINAL RECONCILIATION
+
+STOP CERTIFICATION.
+
+The latest Module 4 Evidence Completeness report cannot yet be accepted.
+
+There is an internal contradiction in the transaction-lineage evidence.
+
+The report states:
+
+- Module 1 validated transactions = 20,241
+- Sheet 27 complete lineage rows = 20,241
+- 16 opportunities
+- zero duplicate transaction assignments
+- every transaction links to a valid opportunity
+
+However, the Opportunity Lineage Aggregation reports:
+
+OPP-001 to OPP-004:
+1,266 backing transactions each
+
+OPP-005 to OPP-016:
+1,265 backing transactions each
+
+Therefore:
+
+4 × 1,266 + 12 × 1,265 = 20,244 opportunity-to-transaction assignments
+
+which is 3 greater than the 20,241 unique Module 1 transactions.
+
+This contradiction MUST be resolved before Module 4 can be frozen.
+
+DO NOT modify:
+
+- Module 1
+- Module 2
+- Module 3
+- FX Master
+- VGT canonical ledger
+- Module 4 financial methodology
+- gross opportunity
+- overlap methodology
+- net opportunity
+- proven opportunity
+- delivery range
+
+============================================================
+1. RECONSTRUCT THE ACTUAL TRANSACTION SETS
+============================================================
+
+Read the actual production Sheet 27 / canonical lineage data.
+
+For each opportunity:
+
+OPP-001 through OPP-016
+
+extract the COMPLETE set of Transaction IDs.
+
+Do NOT rely on the aggregate transaction counts currently displayed.
+
+Calculate:
+
+- number of rows
+- number of unique Transaction IDs
+- total Line Spend
+- total Eligible Spend
+- gross contribution
+- overlap contribution
+- net contribution
+- proven contribution
+
+============================================================
+2. CALCULATE SET UNION AND INTERSECTION
+============================================================
+
+For all 16 opportunity transaction sets calculate:
+
+Total assignment count
+Unique transaction count
+Duplicate assignment count
+Union count
+Intersection count
+
+Required relationship:
+
+SUM(opportunity assignment counts)
+=
+UNIQUE transaction union
++
+duplicate assignments
+
+Compare the result against:
+
+Module 1 validated transactions = 20,241
+
+Explicitly identify every duplicated Transaction ID if duplicates exist.
+
+If there are 3 duplicate assignments, list the exact 3 Transaction IDs.
+
+Do NOT suppress them.
+
+============================================================
+3. RECONCILE THE "1:1" CLAIM
+============================================================
+
+The report currently claims:
+
+"All 20,241 validated transactions are mapped 1:1"
+
+Prove whether this is actually true.
+
+There are only three valid outcomes:
+
+A. Exactly 20,241 unique transactions and exactly 20,241 assignments
+   → 1:1 confirmed
+
+B. 20,241 unique transactions but >20,241 assignments
+   → multi-lever assignments exist and must be explicitly documented
+
+C. Fewer than 20,241 unique transactions
+   → incomplete lineage
+
+Do NOT label B as "1:1".
+
+============================================================
+4. MULTI-LEVER OPPORTUNITY LOGIC
+============================================================
+
+If the same transaction participates in multiple opportunities:
+
+DO NOT remove it merely to make the count reconcile.
+
+Instead explicitly represent:
+
+Transaction ID
+Opportunity A
+Opportunity B
+Gross A
+Gross B
+Overlap
+Net contribution A
+Net contribution B
+Deduplication rule
+
+Then prove that the overlap engine prevents double counting.
+
+The existence of a transaction in multiple opportunity sets is NOT itself a defect.
+
+The defect is claiming "zero duplicate assignments" or "1:1" when the data is actually multi-lever.
+
+============================================================
+5. LINE-SPEND RECONCILIATION
+============================================================
+
+The current report shows approximately the same backing Line Spend for
+multiple opportunities.
+
+Do not assume this is correct.
+
+For each opportunity calculate Line Spend directly from its actual
+Transaction IDs.
+
+Then produce:
+
+Opportunity
+Unique Tx Count
+Assignment Count
+Line Spend
+Eligible Spend
+Gross
+Overlap
+Net
+Proven
+
+If multiple opportunities legitimately use the same transaction population,
+explicitly explain why.
+
+If they incorrectly use the same population, identify the defect.
+
+============================================================
+6. FINANCIAL RECONCILIATION
+============================================================
+
+After resolving the transaction-set issue, independently recalculate:
+
+Gross = ₹441.8330 Cr
+Overlap = ₹104.0670 Cr
+Net = ₹337.7660 Cr
+Proven = ₹319.4390 Cr
+Delivery Low = ₹31.9440 Cr
+Delivery High = ₹79.8600 Cr
+
+Expected financial variance:
+
+₹0.0000 Cr
+
+Do not change any financial value simply to force transaction counts to
+reconcile.
+
+If a financial value genuinely changes because the existing lineage was
+incorrect, STOP and report the difference.
+
+============================================================
+7. CORRECT THE EVIDENCE LANGUAGE
+============================================================
+
+If multi-lever assignments exist, replace incorrect claims such as:
+
+"mapped 1:1"
+
+and
+
+"zero duplicate assignments"
+
+with precise terminology such as:
+
+"20,241 unique validated transactions participate in X opportunity
+assignments across 16 opportunities, with Y multi-lever transaction
+assignments governed by the overlap engine."
+
+Use the actual numbers.
+
+If it truly is 1:1, prove that mathematically.
+
+============================================================
+8. UPDATE SHEET 27
+============================================================
+
+27_COMPLETE_TRANSACTION_LINEAGE must contain the actual complete lineage.
+
+Required fields:
+
+Opportunity ID
+Lever
+Sub-Lever
+Transaction ID
+Supplier
+Material Group
+Plant
+Transaction Date
+Line Spend
+Eligible Spend
+Denominator Type
+Gross Contribution
+Overlap Contribution
+Exclusion
+Net Contribution
+Proven Contribution
+Evidence Type
+Evidence Reference
+Lineage Status
+
+Add:
+
+Assignment Type
+Multi-Lever Flag
+
+where required.
+
+============================================================
+9. ADD A LINEAGE SET RECONCILIATION SHEET
+
+Create:
+
+28_LINEAGE_SET_RECONCILIATION
+
+Include:
+
+Opportunity ID
+Assignment Count
+Unique Transaction Count
+Duplicate Transaction Count
+Line Spend
+Gross
+Overlap
+Net
+Proven
+
+Then include:
+
+TOTAL ASSIGNMENTS
+UNIQUE TRANSACTION UNION
+DUPLICATE ASSIGNMENTS
+MODULE 1 VALIDATED TRANSACTIONS
+UNION VARIANCE
+
+============================================================
+10. FINAL TESTS
+
+Add tests:
+
+M4-LC-001
+Opportunity assignment count reconciliation
+
+M4-LC-002
+Unique transaction union reconciliation
+
+M4-LC-003
+Duplicate assignment detection
+
+M4-LC-004
+Multi-lever transaction identification
+
+M4-LC-005
+Line-spend reconstruction
+
+M4-LC-006
+Opportunity-to-transaction reconciliation
+
+M4-LC-007
+Transaction-to-opportunity reconciliation
+
+M4-LC-008
+Gross financial reconciliation
+
+M4-LC-009
+Overlap financial reconciliation
+
+M4-LC-010
+Net financial reconciliation
+
+M4-LC-011
+Proven financial reconciliation
+
+M4-LC-012
+Module 1 regression
+
+All must pass.
+
+============================================================
+11. FINAL DECISION
+
+Do NOT return:
+
+MODULE 4 EVIDENCE COMPLETE
+
+unless the transaction-set contradiction has been explicitly resolved.
+
+Return:
+
+MODULE 4 LINEAGE RECONCILED
+
+only when:
+
+- assignment counts are mathematically explained
+- unique transaction union is reconciled
+- multi-lever assignments are explicitly identified if present
+- no unexplained transaction duplication exists
+- financial totals remain ₹0 variance
+- Sheet 27 is complete
+- Sheet 28 reconciles the set mathematics
+
+If the existing numbers are wrong, return:
+
+MODULE 4 LINEAGE NOT RECONCILED
+
+and identify the exact discrepancy.
+
+Do not perform any unrelated redesign.
+
+
+---
+
+## Prompt 357
+P0 — aiCEV INTERNAL ASSESSMENT DESKTOP v1.0
+FINAL PACKAGING + OPERATIONAL ACCEPTANCE GATE
+
+OBJECTIVE
+=========
+Package the currently certified aiCEV Internal Assessment Engine into a stable
+Windows desktop-ready internal production release for Procucev's real customer
+assessments.
+
+This is NOT a new feature-development exercise.
+
+The objective is to freeze the certified M1–M4 economic engine, package the
+INTERNAL_ASSESSMENT operating mode, validate the complete internal workflow,
+and produce a formal GO / NO-GO release decision.
+
+Do NOT redesign or alter the underlying financial calculations unless a
+blocking defect is discovered. Any financial change automatically fails this
+release gate and must be reported separately.
+
+
+============================================================
+1. CERTIFIED BASELINE — MUST REMAIN UNCHANGED
+============================================================
+
+Treat the following as immutable regression baselines.
+
+MODULE 1
+--------
+Validated transactions: 20,241
+Validated spend: ₹4,073.8307 Cr
+Source rows: 20,505
+Excluded rows: 252
+Anomaly rows: 12
+Suppliers: 529
+Material groups: 57
+Operating plants: 19
+Billing months: 10
+Period: Apr 2021 – Jan 2022
+FY: FY22
+FX normalization impact: ₹153.5029 Cr
+FX coverage: 100%
+
+MODULE 2
+--------
+Addressable sourcing spend: ₹443.621 Cr
+Gross Multi-Lever Opportunity Pool: ₹441.833 Cr
+Overlap deductions: ₹104.067 Cr
+Net Defensible Opportunity: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Delivery Low: ₹31.944 Cr
+Delivery High: ₹79.860 Cr
+
+MODULE 3
+--------
+PCBI benchmarkable spend: ₹652.1402 Cr
+Benchmark coverage: 16.01%
+Benchmark price-gap analytical signal: ₹31.6921 Cr
+This MUST remain an analytical signal and MUST NOT be merged into savings.
+
+MODULE 4
+--------
+Gross Multi-Lever Opportunity Pool: ₹441.833 Cr
+Overlap: ₹104.067 Cr
+Net: ₹337.766 Cr
+Proven: ₹319.439 Cr
+Delivery: ₹31.944–₹79.860 Cr
+
+LINEAGE
+-------
+20,241 / 20,241 validated transactions
+20,241 opportunity assignments
+20,241 unique transaction union
+0 duplicate assignments
+0 orphan transactions
+1:1 partition confirmed
+
+Do not rename:
+"Gross Multi-Lever Opportunity Pool"
+"Net Defensible Opportunity"
+"Proven Opportunity"
+"Delivery Range"
+
+Do NOT call the above figures "guaranteed savings".
+
+
+============================================================
+2. FREEZE CERTIFIED ENGINE
+============================================================
+
+Create an explicit release/freeze manifest containing:
+
+- Module 1 certified version
+- Module 2 certified version
+- Module 3 certified version
+- Module 4 certified version
+- FX Master checksum
+- PCBI Master checksum
+- VGT regression dataset checksum
+- Evidence workbook checksum
+- application build/version
+- git commit/hash
+- build timestamp
+
+The frozen financial engine must not be modified by the packaging work.
+
+If any financial output changes from the certified baseline above:
+
+STATUS = NO-GO
+
+Stop release certification and report:
+- changed metric
+- previous value
+- new value
+- source of change
+- affected module
+
+
+============================================================
+3. OPERATING MODE
+============================================================
+
+Set the production operating mode to:
+
+INTERNAL_ASSESSMENT
+
+This is the ONLY enabled production mode for v1.0.
+
+PUBLIC_SAAS must remain disabled.
+
+Do NOT expose:
+
+- public registration
+- Bronze/Silver/Gold
+- online subscription
+- online payment
+- self-service customer analysis
+- customer-side execution of M1–M4
+
+Preserve the future PUBLIC_SAAS architecture in code, but do not expose
+or activate it.
+
+
+============================================================
+4. INTERNAL ASSESSMENT WORKSPACE
+============================================================
+
+Create/validate the internal landing screen:
+
+aiCEV | Internal Assessment Workspace
+
+Show:
+
+- Active Assessments
+- Data Received
+- Analysis In Progress
+- PCBI Review
+- Analyst Review
+- Approved
+- Delivered
+- Closed
+
+Provide:
+
++ New Assessment
+
+
+============================================================
+5. NEW ASSESSMENT FLOW
+============================================================
+
+New Assessment must capture:
+
+Customer Name
+Industry
+Business Unit
+Assessment Owner
+Analyst
+Assessment Period
+Currency
+Data Received Date
+NDA Status
+Notes
+
+Automatically create:
+
+Assessment ID
+
+Format:
+
+AIC-YYYY-XXXX
+
+Initial state:
+
+CREATED
+
+Then progress through the existing internal workflow:
+
+CREATED
+NDA_PENDING
+DATA_PENDING
+DATA_RECEIVED
+MODULE_1_READY
+ANALYSIS_IN_PROGRESS
+PCBI_REVIEW
+REPORT_GENERATION
+ANALYST_REVIEW
+APPROVED
+DELIVERED
+CLOSED
+BLOCKED
+
+
+============================================================
+6. DATA UPLOAD
+============================================================
+
+Support:
+
+XLSX
+XLS
+CSV
+
+When a customer file is uploaded:
+
+1. Preserve original file.
+2. Calculate SHA-256.
+3. Create immutable Data Version.
+4. Associate it with Assessment ID.
+5. Validate schema.
+6. Start Module 1.
+7. Persist all metadata.
+
+Show:
+
+Assessment ID
+Data Version
+Original filename
+Rows
+Checksum
+Received timestamp
+Status
+
+Customer data MUST NOT enter:
+
+- Git
+- global FX Master
+- global PCBI Master
+- shared customer data
+- demo dataset
+- another Assessment
+
+
+============================================================
+7. ANALYSIS WORKFLOW
+============================================================
+
+Module 1 remains immediate.
+
+Detailed analysis follows the existing orchestration:
+
+Module 1
+   ↓
+Module 2
+   ↓
+Module 3 / PCBI
+   ↓
+Module 4
+   ↓
+Analyst Review
+   ↓
+Approval
+   ↓
+Report Generation
+   ↓
+Delivery
+
+Display:
+
+"Analysis in progress"
+
+and:
+
+"Typical assessment turnaround: 24–48 hours"
+
+Do NOT represent 24–48 hours as a guaranteed software processing SLA.
+
+The application may complete processing faster internally.
+
+
+============================================================
+8. ANALYST REVIEW
+============================================================
+
+Create/validate the analyst review screen.
+
+Mandatory gates:
+
+MODULE 1
+---------
+- data completeness
+- transaction validity
+- FX coverage
+- supplier population
+- material groups
+- plants
+- period coverage
+
+MODULE 2
+---------
+- opportunity eligibility
+- denominators
+- opportunity calculations
+- overlap
+- transaction lineage
+- proven opportunity evidence
+
+MODULE 3
+---------
+- PCBI mapping
+- source
+- source quality
+- benchmark frequency
+- historical coverage
+- unmapped items
+- benchmark price-gap classification
+
+MODULE 4
+---------
+- gross opportunity
+- overlap
+- net opportunity
+- proven opportunity
+- delivery range
+- evidence completeness
+
+Approval must not be possible until all mandatory gates are passed.
+
+
+============================================================
+9. REPORT GENERATION
+============================================================
+
+Generate the approved assessment package containing:
+
+1. Executive Opportunity Brief
+2. Boardroom & Evidence Edition
+3. Module 1 report
+4. Module 2 report
+5. PCBI report
+6. Module 4 report
+7. Evidence workbook
+8. Methodology / assumptions
+9. Data quality observations
+10. Recommended Wave 1 actions
+
+All reports must use the certified terminology.
+
+Do not introduce:
+
+- Guaranteed Savings
+- Zero Hallucination
+- Fully Autonomous Procurement
+- ISO 27001 Certified
+- SOC 2 Certified
+- FIPS Certified
+- Air-Gapped
+
+unless independently verified in the actual application environment.
+
+
+============================================================
+10. DELIVERY PACKAGE
+============================================================
+
+Create a controlled delivery package for each approved assessment.
+
+Package must contain:
+
+Assessment ID
+Customer name
+Assessment period
+Report files
+Evidence workbook
+Data version reference
+Analysis run reference
+Approval timestamp
+Release/build version
+Checksums
+
+The delivery package must be reproducible from the approved assessment.
+
+
+============================================================
+11. SECURITY / ISOLATION REGRESSION
+============================================================
+
+Run negative tests for:
+
+A. Assessment A cannot access Assessment B data.
+B. Customer data cannot modify global FX Master.
+C. Customer data cannot modify PCBI Master.
+D. Customer data cannot enter Git.
+E. User cannot access another tenant/assessment.
+F. Unapproved assessment cannot generate final delivery package.
+G. Superseded report cannot be presented as current.
+H. Deleted/invalid assessment cannot be queried.
+I. Public SaaS endpoints remain disabled.
+J. Direct billing/payment remains disabled.
+
+
+============================================================
+12. DESKTOP OPERATION
+============================================================
+
+Prepare the application for Windows internal desktop use.
+
+Validate:
+
+- clean startup
+- application restart
+- backend restart
+- frontend restart
+- browser refresh
+- logout/login
+- interrupted analysis recovery
+- file upload recovery
+- report generation recovery
+- backup/recovery
+- no dependency on developer machine paths
+- no dependency on localhost-only development assumptions
+- no hard-coded test/customer data
+
+Provide a simple internal startup procedure.
+
+Example:
+
+START aiCEV
+→ Verify service health
+→ Login
+→ Internal Assessment Workspace
+
+
+============================================================
+13. VGT REGRESSION
+============================================================
+
+Run the certified VGT Testing Data.xlsx regression.
+
+Expected:
+
+20,505 source rows
+20,241 valid
+252 excluded
+12 anomalies
+₹4,073.8307 Cr validated spend
+₹153.5029 Cr FX impact
+529 suppliers
+57 material groups
+19 plants
+10 billing months
+
+Module 2:
+
+₹443.621 Cr addressable
+₹441.833 Cr gross
+₹104.067 Cr overlap
+₹337.766 Cr net
+₹319.439 Cr proven
+₹31.944–₹79.860 Cr delivery
+
+Module 3:
+
+₹652.1402 Cr benchmarkable
+₹31.6921 Cr benchmark price-gap analytical signal
+
+Module 4:
+
+₹441.833 Cr gross
+₹104.067 Cr overlap
+₹337.766 Cr net
+₹319.439 Cr proven
+₹31.944–₹79.860 Cr delivery
+
+Lineage:
+
+20,241 assignments
+20,241 unique transactions
+0 duplicates
+0 orphan transactions
+
+
+============================================================
+14. BROWSER ACCEPTANCE
+============================================================
+
+Run live browser acceptance at:
+
+1440 × 900
+1920 × 1080
+1280 × 800
+
+Validate:
+
+- login
+- workspace
+- create assessment
+- upload
+- Module 1
+- Module 2
+- Module 3
+- Module 4
+- analyst review
+- approval
+- report generation
+- delivery package
+- logout
+- refresh/re-login
+
+Check for:
+
+- clipping
+- blank controls
+- stale values
+- old demo values
+- incorrect periods
+- incorrect FY labels
+- broken navigation
+- incorrect financial numbers
+- unauthorized controls
+
+
+============================================================
+15. RELEASE ARTIFACTS
+============================================================
+
+Create:
+
+A. RELEASE_MANIFEST.md
+B. INTERNAL_ASSESSMENT_DESKTOP_v1.0_RELEASE_NOTES.md
+C. INTERNAL_STARTUP_GUIDE.md
+D. CUSTOMER_ASSESSMENT_OPERATING_PROCEDURE.md
+E. CUSTOMER_1_OPERATIONAL_ACCEPTANCE_CHECKLIST.md
+F. CERTIFIED_REGRESSION_REPORT.md
+
+Also generate a release directory containing the required production
+artifacts.
+
+Do NOT place customer data inside the release package.
+
+
+============================================================
+16. CUSTOMER #1 OPERATIONAL ACCEPTANCE CHECKLIST
+============================================================
+
+Create a checklist covering:
+
+PRE-DATA
+--------
+□ NDA received
+□ Assessment created
+□ Assessment ID generated
+□ Customer folder created
+□ Analyst assigned
+
+DATA
+----
+□ File received
+□ Checksum recorded
+□ Data Version created
+□ Schema validated
+□ Original preserved
+
+ANALYSIS
+--------
+□ Module 1 completed
+□ Module 2 completed
+□ PCBI reviewed
+□ Module 4 completed
+□ Evidence generated
+
+ANALYST
+-------
+□ All mandatory gates passed
+□ Financial bridge checked
+□ Lineage checked
+□ Report reviewed
+
+DELIVERY
+--------
+□ Assessment approved
+□ Reports generated
+□ Evidence workbook generated
+□ Checksums recorded
+□ Delivery package created
+□ Customer delivery completed
+□ Assessment marked DELIVERED
+
+
+============================================================
+17. FINAL QUALITY GATE
+============================================================
+
+Run:
+
+- backend tests
+- frontend tests
+- typecheck
+- lint
+- build
+- regression tests
+- security tests
+- isolation tests
+- browser acceptance
+- financial differential checks
+- evidence generation
+- release manifest verification
+
+Do not accept a test suite merely because the process exits successfully.
+
+Inspect actual results.
+
+
+============================================================
+18. FINAL VERDICT
+============================================================
+
+Return exactly one of:
+
+========================================
+INTERNAL ASSESSMENT DESKTOP v1.0 — GO
+========================================
+
+or
+
+========================================
+INTERNAL ASSESSMENT DESKTOP v1.0 — NO-GO
+========================================
+
+If NO-GO, provide:
+
+1. Blocking defect
+2. Exact test that failed
+3. Expected result
+4. Actual result
+5. Financial impact, if any
+6. Security impact, if any
+7. Recommended correction
+
+If GO, provide:
+
+1. Release version
+2. Build/commit
+3. Certified engine checksums
+4. Regression result
+5. Security result
+6. Browser result
+7. Release artifact locations
+8. Startup procedure
+9. Customer #1 readiness
+10. Explicit statement:
+
+"aiCEV Internal Assessment Desktop v1.0 is ready for controlled real-customer
+assessment use. Public SaaS remains disabled."
+
+
+============================================================
+IMPORTANT
+============================================================
+
+This is the final packaging gate.
+
+Do not introduce new financial methodology.
+Do not redesign M1–M4.
+Do not modify certified opportunity calculations.
+Do not change PCBI methodology.
+Do not change FX methodology.
+Do not create public SaaS functionality.
+Do not add subscription/payment functionality.
+
+If a defect is discovered, fix only what is necessary and rerun the affected
+certification/regression gates.
+
+The objective is STABILITY and REAL-CUSTOMER READINESS, not additional feature
+development.
+
+
+## Prompt 358
+P0 — aiCEV v1.0 RELEASE BLOCKER:
+DASHBOARD BASELINE PARITY + CLEAN CUSTOMER INTAKE
+
+OBJECTIVE
+=========
+Resolve two release blockers before accepting confidential customer data:
+
+1. Dashboard opportunity figures must match the certified financial
+   terminology and the selected assessment's persisted analysis run.
+2. The application must start a genuinely new customer assessment without
+   inheriting VGT regression data, preloaded customer records, or test reports.
+
+Do not redesign Modules 1–4.
+Do not change financial calculations.
+Do not change FX or PCBI methodology.
+Do not enable Public SaaS.
+Make only the necessary corrections and run targeted regression tests.
+
+
+1. DASHBOARD FINANCIAL PARITY
+=============================
+
+The release report currently shows:
+
+Identified Opportunity Pool: ₹378.40 Cr
+Opportunity Potential: 9.29%
+
+The certified VGT regression baseline is:
+
+Validated Spend: ₹4,073.8307 Cr
+Addressable Sourcing Spend: ₹443.621 Cr
+Gross Multi-Lever Opportunity Pool: ₹441.833 Cr
+Overlap Deductions: ₹104.067 Cr
+Net Defensible Opportunity: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Delivery Range: ₹31.944–₹79.860 Cr
+PCBI Benchmark Price-Gap Analytical Signal: ₹31.6921 Cr
+
+Inspect the actual dashboard API, backend response, frontend selectors,
+persisted analysis run, and any fallback/default values.
+
+Rules:
+- Do not hard-code any of the above values into the live dashboard.
+- Do not use a previous dry-run value as a fallback.
+- Bind dashboard metrics to the selected assessment and its active,
+  non-superseded analysis run.
+- Clearly distinguish gross, net, proven, delivery range, and PCBI signal.
+- Never add the PCBI analytical signal to the savings/opportunity pool.
+- When there is no completed analysis, display a clear pending/empty state,
+  not VGT metrics or zero values presented as real results.
+- Label regression/test data as TEST DATA.
+- Do not silently change any certified financial formulas.
+
+Add targeted tests for:
+A. VGT regression assessment displays the certified values.
+B. New assessment displays no inherited financial values.
+C. Switching assessments changes all metrics correctly.
+D. Superseded analysis does not populate the current dashboard.
+E. PCBI signal remains separate.
+F. Dashboard/API/report values reconcile.
+
+
+2. CLEAN CUSTOMER INTAKE
+========================
+
+Inspect all seeded assessments, demo records, test records, and default
+dashboard state.
+
+Requirements:
+- Preserve the VGT regression fixture for automated tests.
+- Clearly mark the fixture as TEST DATA.
+- Do not delete certified regression files or evidence.
+- New real-customer assessments must begin with their own Assessment ID,
+  empty analysis state, and no inherited transactions or reports.
+- Test assessment delivery must require an explicit test-only pathway or
+  remain blocked from ordinary customer delivery.
+- Do not preselect Varroc Polymers as a real customer.
+- Ensure customer records are not automatically created from test fixtures.
+- Preserve existing Assessment ID and immutable Data Version controls.
+- Verify cross-assessment isolation using two separate assessments.
+
+
+3. RELEASE SAFETY
+=================
+
+Verify:
+- INTERNAL_ASSESSMENT remains the only enabled mode.
+- PUBLIC_SAAS remains disabled.
+- No financial baseline or calculation has changed.
+- No customer data is placed in the release package or Git.
+- No test customer report can be mistaken for a real customer deliverable.
+
+
+4. REQUIRED TESTS
+=================
+
+Run the relevant backend and frontend tests, typecheck, lint, and build.
+
+Perform live browser verification for:
+- Fresh workspace
+- New assessment
+- No inherited metrics
+- VGT regression assessment
+- Switching between assessments
+- Report/delivery gating
+- 1440x900 and 1280x800 layouts
+
+Report actual observed results. Do not infer browser acceptance from unit tests.
+
+
+5. FINAL VERDICT
+================
+
+Return one:
+
+RELEASE BLOCKERS RESOLVED
+
+or
+
+RELEASE BLOCKERS NOT RESOLVED
+
+Include:
+- Root causes
+- Files changed
+- Tests executed and actual pass/fail counts
+- Before/after dashboard values
+- Fresh-assessment isolation result
+- Confirmation that financial calculations remained unchanged
+- Confirmation that Public SaaS remains disabled
+
+Do not declare unconditional production readiness if any required test
+has not actually executed.
+
+
+---
+
+## Prompt 359
+P0 AUDIT — aiCEV DESKTOP INSTALLED BUILD VERIFICATION
+MODE: READ-ONLY. DO NOT MODIFY CODE, REBUILD, REINSTALL, OR CHANGE DATA.
+
+OBJECTIVE
+Determine conclusively whether the currently installed Windows desktop application
+contains the latest financial dashboard parity and fresh customer assessment
+isolation fixes.
+
+Previously certified desktop release:
+- Version: 1.0.0
+- Build: E2E-001-CERTIFIED
+- Operating mode: INTERNAL_ASSESSMENT
+- Public SaaS: DISABLED
+
+Latest fixes to verify:
+1. Removal of legacy synthetic ₹378.40 Cr opportunity figures and 9.29% rate.
+2. Dashboard figures sourced exclusively from the correct assessment's active,
+   non-superseded Analysis Run.
+3. New assessments start with no inherited transactions, metrics, or reports.
+4. VGT regression assessment AIC-2026-0001 remains explicitly marked TEST DATA.
+5. Ordinary customer delivery from test assessments is blocked.
+6. Assessment switching does not leak data between customers.
+7. Modules 1–4 calculations and the certified financial baseline remain unchanged.
+
+STRICT RULES
+- Do not change any source files or configuration.
+- Do not generate or overwrite installers.
+- Do not install or launch a different version.
+- Do not use customer data for testing.
+- Do not assume that passing browser tests proves the desktop installer is updated.
+- Distinguish source-code status, packaged-build status, and installed-application
+  status in every result.
+- If evidence is unavailable, report NOT VERIFIED rather than PASS.
+
+AUDIT A — SOURCE CODE
+Inspect the actual current implementation and tests.
+
+Verify:
+- No legacy ₹378.40 Cr / 9.29% synthetic dashboard seed remains active.
+- Dashboard financial values use the correct assessment and active run.
+- Fresh assessments start with empty run history and no inherited metrics.
+- Test-data delivery protection is enforced server-side.
+- Assessment data is isolated by Assessment ID.
+- Public SaaS registration and self-service billing remain disabled.
+
+Report the exact files and tests supporting each result.
+
+AUDIT B — RELEASE ARTIFACTS
+Inspect the actual Windows desktop packaging configuration and release directory.
+
+Identify:
+- Current application version and build identifier.
+- Latest installer filename and exact path.
+- Installer creation/modification timestamp and file size.
+- Installer SHA-256 checksum.
+- Packaged frontend/backend build identifiers, where available.
+- Whether the packaged files contain the latest fixes.
+- Whether a new installer was created AFTER the latest fixes.
+- Whether the release manifest/checksums match the actual artifacts.
+
+Compare timestamps and build identifiers. Do not infer inclusion merely because
+source code has been updated.
+
+AUDIT C — CURRENTLY INSTALLED APPLICATION
+Identify the actual installed desktop application's executable and installation
+directory using Windows installation metadata, process information, shortcuts,
+and file properties where available.
+
+Report:
+- Installed version and build identifier.
+- Executable path.
+- Executable SHA-256 checksum.
+- Installed-file timestamps.
+- Whether the installed files match the latest release artifact.
+- Whether the installed version demonstrably contains the latest fixes.
+
+Do not launch, update, or replace the installed application during this audit.
+If the installer or installed directory cannot be located, state exactly what
+access or evidence is missing.
+
+AUDIT D — FINANCIAL PARITY
+Verify that the current implementation and any testable packaged build preserve
+these certified Module 2/4 figures:
+
+Validated spend: ₹4,073.8307 Cr
+Addressable sourcing spend: ₹443.621 Cr
+Gross Multi-Lever Opportunity Pool: ₹441.833 Cr
+Overlap deductions: ₹104.067 Cr
+Net opportunity after overlap: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Delivery Range: ₹31.944–₹79.860 Cr
+Separate PCBI benchmark price-gap signal: ₹31.6921 Cr
+FX normalization impact: ₹153.5029 Cr
+
+The PCBI signal must not be added to the savings figures.
+Gross opportunity must not be labelled as achieved or guaranteed savings.
+Do not modify calculations to force a match.
+
+AUDIT E — FRESH ASSESSMENT SAFETY
+Use isolated test data only, and only if a safe test environment already exists.
+
+Verify:
+- A newly created assessment has no inherited financial metrics.
+- Metrics remain pending until its own file is uploaded and analysed.
+- Switching between a fresh assessment and the VGT test assessment does not
+  transfer transactions, reports, or dashboard values.
+- Ordinary delivery from the VGT test assessment is rejected.
+
+Do not create, alter, or deliver a real customer assessment.
+
+FINAL REPORT
+Produce a table with one of these statuses for every check:
+PASS / FAIL / NOT VERIFIED.
+
+Separate the results into:
+1. Source code
+2. Packaged installer
+3. Currently installed desktop application
+4. Financial parity
+5. Assessment isolation and delivery safety
+
+End with exactly one recommendation:
+A. INSTALLED BUILD VERIFIED — no installation required.
+B. NEW INSTALLER REQUIRED — source is fixed, but the installed build is outdated.
+C. RELEASE BLOCKED — fixes or financial/safety checks failed.
+D. NOT VERIFIABLE — insufficient evidence to establish the installed build's status.
+
+Do not make changes after producing the report.
+
+
+---
+
+## Prompt 360
+P0 IMPLEMENTATION — aiCEV PUSH TO DESKTOP APPLICATION
+CONTROLLED DESKTOP RELEASE AND UPDATE WORKFLOW
+
+OBJECTIVE
+
+Implement a permanent, reliable workflow that allows the developer to issue
+the command:
+
+PUSH TO DESKTOP APPLICATION
+
+The command must validate the current approved source, build and certify a
+new Windows desktop release, stage the release for the installed application,
+and allow the installed application to detect and install that release when
+the user opens it.
+
+This must work for the current release and future releases.
+
+Do not treat source-code changes, browser updates, or development-server
+updates as desktop application updates.
+
+==================================================
+PART 1 — PRESERVE THE EXISTING OPERATING POLICY
+==================================================
+
+Application: aiCEV Desktop
+Operating mode: INTERNAL_ASSESSMENT
+Public SaaS: DISABLED
+
+Preserve the existing Module 1–4 calculation engines and their certified
+financial and data-lineage controls.
+
+Preserve:
+- Assessment isolation
+- Data Version immutability
+- Analysis Run traceability
+- Test-data safeguards
+- Report approval and delivery controls
+- Frozen FX Master
+- PCBI source and provenance controls
+- Existing customer assessment data
+
+Do not introduce public registration, online billing, or customer self-service.
+
+Do not modify the installed application merely because source code changes.
+
+Do not silently install updates.
+
+==================================================
+PART 2 — CREATE A SINGLE RELEASE COMMAND
+==================================================
+
+Create a documented, repeatable release command named:
+
+PUSH TO DESKTOP APPLICATION
+
+Provide a discoverable project command, such as:
+
+npm run desktop:push
+
+Use the repository's existing package manager and Windows desktop packaging
+architecture. Do not assume a particular package manager or replace the
+existing packaging framework without first inspecting it.
+
+The command must orchestrate the following stages:
+
+1. Preflight checks
+2. Source-code validation
+3. Automated regression tests
+4. Financial parity verification
+5. Security and assessment-isolation verification
+6. Frontend and backend production builds
+7. Windows desktop packaging
+8. Installer generation
+9. Artifact checksum generation
+10. Release manifest generation
+11. Packaged-artifact validation
+12. Release acceptance
+13. Staging the certified update
+14. Final release report
+
+If a mandatory stage fails, stop the release.
+
+Never label a release CERTIFIED when a mandatory check failed or was skipped.
+
+Never overwrite the last known-good release.
+
+==================================================
+PART 3 — VERSION AND RELEASE MANAGEMENT
+==================================================
+
+Implement controlled versioning.
+
+The current installed release is reported as version 1.0.0,
+build E2E-001-CERTIFIED.
+
+The next release should use the next appropriate version and a unique build ID,
+based on the actual repository state and versioning policy.
+
+Do not reuse a build ID for different binaries.
+
+Generate a release manifest containing at least:
+
+- Product name
+- Version
+- Build identifier
+- Git commit, when available
+- Build timestamp
+- Operating mode
+- Public SaaS status
+- Installer filename
+- Installer SHA-256
+- Installer size
+- Backend build identifier
+- Frontend build identifier
+- Required regression-suite results
+- Financial parity result
+- Security verification result
+- Release certification status
+
+Generate checksums from the actual final artifacts.
+
+Verify every recorded checksum independently.
+
+Do not copy stale hashes or build identifiers from an older release.
+
+==================================================
+PART 4 — REQUIRED FINANCIAL ACCEPTANCE GATES
+==================================================
+
+Preserve and verify these certified VGT regression figures:
+
+Validated Spend: ₹4,073.8307 Cr
+Addressable Sourcing Spend: ₹443.621 Cr
+Gross Multi-Lever Opportunity Pool: ₹441.833 Cr
+Overlap Deductions: ₹104.067 Cr
+Net Opportunity After Overlap: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Delivery Range: ₹31.944–₹79.860 Cr
+Separate PCBI Benchmark Price-Gap Signal: ₹31.6921 Cr
+FX Normalization Impact: ₹153.5029 Cr
+
+Verify the following:
+
+- Gross minus overlap reconciles to net opportunity.
+- Proven Opportunity remains distinct from the gross opportunity pool.
+- Delivery Range is derived from the approved delivery formula.
+- The PCBI analytical signal is not added to savings.
+- Realized savings remain a separate classification.
+- No synthetic ₹378.40 Cr or 9.29% fallback appears.
+- A new assessment displays pending metrics until its own data is analysed.
+- Financial calculations are not modified to force a test to pass.
+
+Verify source, API, report, evidence workbook and packaged UI parity.
+
+Any unexplained financial variance blocks release.
+
+==================================================
+PART 5 — REQUIRED ASSESSMENT-SAFETY GATES
+==================================================
+
+Verify the actual application implementation and tests for:
+
+- Clean initialization of new assessments
+- No inherited VGT metrics or reports
+- Assessment ID data isolation
+- Active, non-superseded Analysis Run selection
+- Immutable Data Versions
+- Test-data tagging
+- Server-side test-data delivery protection
+- Role and tenant authorization
+- Audit logging
+- Existing assessment recovery after application restart
+- Public SaaS disabled
+
+Use isolated test data only.
+
+Do not modify or deliver a real customer assessment during release testing.
+
+If any critical safety test fails, block release.
+
+==================================================
+PART 6 — STAGE THE CERTIFIED DESKTOP UPDATE
+==================================================
+
+After all mandatory release checks pass:
+
+1. Generate the installer.
+2. Verify the installer checksum.
+3. Validate the packaged frontend and backend.
+4. Confirm the package contains the latest approved fixes.
+5. Create an immutable release directory.
+6. Stage the release manifest and installer for the desktop updater.
+7. Record the current installed version and the staged version separately.
+8. Do not replace the installed application during the push command.
+
+The staged release must be distinguishable from an installed release.
+
+Do not claim the application has been updated merely because an installer
+was generated or staged.
+
+==================================================
+PART 7 — DESKTOP STARTUP UPDATE CHECK
+==================================================
+
+Implement a controlled update check in the installed Windows desktop application.
+
+At startup, check the configured local release manifest or approved update
+location.
+
+The update check must:
+
+- Compare the installed version with the latest certified staged version.
+- Validate the manifest and installer checksum.
+- Reject malformed manifests and invalid checksums.
+- Reject uncertified or incomplete releases.
+- Never install an arbitrary executable.
+- Never use an untrusted source.
+- Avoid exposing assessment data or credentials to an update service.
+- Continue safely if no update is available.
+- Display a clear error if update status cannot be verified.
+
+Do not download or execute installers from arbitrary URLs.
+
+Use the existing trusted local release mechanism unless a different
+authenticated update mechanism is explicitly approved.
+
+==================================================
+PART 8 — UPDATE AVAILABLE EXPERIENCE
+==================================================
+
+If a valid newer release is staged, display:
+
+"aiCEV Desktop Update Available"
+
+Show:
+- Installed version
+- Available version
+- Build identifier
+- Release date
+- Short release notes
+- Verification status
+
+Provide:
+
+[Install Update & Restart]
+[Remind Me Later]
+
+Do not silently install the update.
+
+When the user selects Install Update & Restart:
+
+1. Confirm the release has passed validation.
+2. Ask the user to save or finish any active assessment operation.
+3. Prevent installation during active file writes or critical assessment jobs.
+4. Close the application safely.
+5. Invoke the trusted installer using the existing supported installation
+   mechanism.
+6. Preserve customer assessment data, configuration, and local databases.
+7. Relaunch the application.
+8. Verify the installed version and build against the release manifest.
+9. Display a success message only after verification succeeds.
+
+If installation fails, preserve the existing installation and provide a clear
+recovery path.
+
+Do not delete or replace customer data as part of an application update.
+
+==================================================
+PART 9 — VERSION VERIFICATION AFTER RESTART
+==================================================
+
+The application must distinguish:
+
+- Source version
+- Packaged version
+- Staged version
+- Installed version
+- Currently running version
+
+Display the currently running installed version in an About or System
+Information screen.
+
+After an update, verify the actual running application against the installed
+release manifest.
+
+If the old version is still running, do not display "Updated Successfully".
+
+If a newer release is staged but not installed, display "Update Available",
+not "Updated".
+
+==================================================
+PART 10 — TESTING
+==================================================
+
+Add automated tests for:
+
+- No update available
+- Certified update available
+- Invalid manifest
+- Checksum mismatch
+- Uncertified release
+- Older version
+- Duplicate build ID
+- Failed installer
+- User chooses Remind Me Later
+- User confirms update
+- Application restart
+- Version mismatch after restart
+- Customer data preservation
+- Assessment data isolation
+- Interrupted update recovery
+- Existing VGT regression
+- Fresh customer assessment
+- Financial dashboard parity
+- Test-data delivery blocking
+
+Test the actual packaged application, not only the development browser.
+
+Run the existing project test, typecheck, lint, build and desktop packaging
+commands after inspecting the repository's actual configuration.
+
+Do not bypass, weaken, delete, or silently skip existing tests.
+
+==================================================
+PART 11 — FIRST RELEASE
+==================================================
+
+Use this workflow to prepare the first corrected desktop release.
+
+The existing audit found that the installed version 1.0.0 is outdated and
+still contains the legacy ₹378.40 Cr fallback and lacks the latest assessment
+isolation and test-data delivery protections.
+
+Build the next appropriate certified release from the corrected source.
+
+Do not assume the current source is correct without rerunning the required
+acceptance checks.
+
+Stage the newly certified release.
+
+Do not silently install it.
+
+Report whether the existing desktop application can discover the staged
+release and present the update prompt.
+
+If the updater requires an additional bootstrap installation, state this
+explicitly and produce the required initial installer.
+
+==================================================
+PART 12 — FINAL REPORT
+==================================================
+
+Provide separate PASS / FAIL / NOT VERIFIED results for:
+
+1. Source validation
+2. Automated tests
+3. Financial parity
+4. Assessment safety
+5. Production builds
+6. Desktop installer
+7. Installer checksum
+8. Packaged artifact validation
+9. Release manifest
+10. Update staging
+11. Installed application update detection
+12. Install and restart
+13. Post-update version verification
+14. Customer data preservation
+
+Provide exact paths to:
+- Installer
+- Release manifest
+- Checksum file
+- Release notes
+- Test results
+- Build report
+
+Clearly distinguish:
+- Release created
+- Release staged
+- Release installed
+- Updated application verified
+
+Do not claim that a desktop installation has been updated unless the actual
+installed and running application has been verified.
+
+FINAL OBJECTIVE
+
+I want future desktop releases to follow this simple workflow:
+
+Modify and test aiCEV in Antigravity
+→ Enter PUSH TO DESKTOP APPLICATION
+→ Antigravity validates and packages the release
+→ Certified release is staged
+→ Open aiCEV Desktop
+→ Update Available prompt appears
+→ I explicitly confirm installation
+→ aiCEV restarts
+→ The new installed version is verified
+
+Implement this without changing the certified procurement calculations,
+weakening security, or losing existing customer assessment data.
+
+---
+
+## Prompt 361
+resume
+
+---
+
+## Prompt 362
+P0 — FIX DESKTOP UPDATE DETECTION (INITIAL UPDATER BOOTSTRAP)
+
+CONTEXT
+- Installed desktop version: 1.0.0
+- Staged release: 1.0.1
+- Staged build: E2E-002-CERTIFIED
+- Reported staging locations:
+  %APPDATA%\aiCEV\staged_update
+  Project release/staged directory
+- The update notification did NOT appear when I opened the installed
+  aiCEV desktop application.
+
+OBJECTIVE
+Identify and fix the reason the installed application cannot detect the
+staged update. Ensure future releases can be pushed from Antigravity and
+detected when aiCEV Desktop starts.
+
+PHASE 1 — DIAGNOSE BEFORE CHANGING ANYTHING
+
+1. Inspect the installed application's actual startup and update-check code.
+2. Identify the exact location where the installed application looks for
+   updates.
+3. Verify the actual location and contents of the staged v1.0.1 release.
+4. Compare those locations and determine whether they match.
+5. Verify the release manifest, version, build identifier, certification
+   status, and installer SHA-256.
+6. Check whether v1.0.0 contains any update-detection code at all.
+7. Inspect startup logs and report why no notification appeared.
+8. Distinguish confirmed findings from assumptions.
+
+Do not assume that the application checks either staging location listed
+above. Verify the real implementation.
+
+PHASE 2 — IMPLEMENT THE CORRECT FIX
+
+If v1.0.0 does not contain the necessary updater, implement a safe initial
+bootstrap installation rather than pretending the old application can
+update itself.
+
+Requirements:
+- Preserve the existing controlled-update policy.
+- Never silently install an update.
+- Never execute an unverified installer.
+- Verify the manifest and SHA-256 before installation.
+- Require explicit user confirmation.
+- Preserve all customer assessment data, configuration, and local databases.
+- Prevent installation during active assessment writes or critical jobs.
+- Provide a safe recovery path if installation fails.
+- Keep PUBLIC_SAAS disabled.
+- Do not change Modules 1–4 calculations or certified financial controls.
+- Never overwrite the last known-good installer.
+- Do not replace individual installed application files manually.
+
+If an initial manual installation is necessary, clearly explain that
+limitation and prepare the verified installer for user-approved installation.
+
+PHASE 3 — MAKE FUTURE PUSHES RELIABLE
+
+Ensure the command:
+
+npm run desktop:push
+
+performs these operations:
+
+1. Run mandatory tests and financial/safety checks.
+2. Build the Windows desktop package.
+3. Generate the installer and SHA-256 checksum.
+4. Create and verify the release manifest.
+5. Stage the certified release in the exact location the installed updater
+   checks.
+6. Report the installed, packaged, and staged versions separately.
+7. Never claim installation has completed merely because staging succeeded.
+
+The installed application must detect a valid newer staged release at startup
+and display an Update Available notification.
+
+PHASE 4 — VALIDATE END TO END
+
+Test the actual Windows desktop application, not only the development browser.
+
+Verify:
+- Installed v1.0.0 detects the staged v1.0.1 release, OR document why a
+  one-time bootstrap installation is required.
+- Update notification appears.
+- Remind Me Later leaves the current installation unchanged.
+- User confirmation initiates the verified installation.
+- The application restarts successfully.
+- The running application reports the actual installed version and build.
+- Assessment data remains intact.
+- The incorrect ₹378.40 Cr and 9.29% figures are absent.
+- A fresh assessment has no inherited metrics.
+- VGT test data remains isolated and protected from ordinary delivery.
+- Modules 1–4 and financial parity remain unchanged.
+- PUBLIC_SAAS remains disabled.
+
+Do not use real customer data for testing.
+
+FINAL REPORT
+Provide:
+- Confirmed root cause
+- Files changed
+- Tests executed and results
+- Exact installer path and SHA-256
+- Exact staging directory
+- Whether a one-time manual bootstrap is required
+- Whether the actual installed application now detects the update
+- Whether installation and restart were successfully verified
+- Whether customer data preservation was tested
+
+Mark each result PASS, FAIL, or NOT VERIFIED.
+
+Do not claim the desktop is updated unless the running installed application
+has been verified.
+
+---
+
+## Prompt 363
+P0 — FINAL aiCEV DESKTOP v1.0.1 POST-INSTALLATION ACCEPTANCE
+
+The installed desktop now displays:
+Version: 1.0.1
+Build: E2E-002-CERTIFIED
+Operating Mode: INTERNAL_ASSESSMENT
+Certification Status: CERTIFIED
+FX Master: v2.0
+PCBI Master: v2.0
+
+The desktop displays No staged update — Current build is active.
+
+Perform verification only. Do not rebuild, reinstall, or modify customer data
+unless an actual defect is identified and reported first.
+
+1. INSTALLED BUILD
+- Verify the installed executable and app.asar paths.
+- Verify their SHA-256 hashes against the certified release artifacts.
+- Verify that the running version and build match the installed manifest.
+- Confirm that the updater and IPC handlers are present in the installed package.
+
+2. PCBI CHECKSUM DISCREPANCY
+The currently displayed PCBI checksum is:
+df4299ffa183cb21c59d80f66e258604f5c376615d83a7d075dd53787e1411
+
+The previously recorded PCBI master checksum is:
+d8f4e29c1b7a60358e2d4f107c9b83a54e1206f97305bc821e649a372d80ef61
+
+Identify the authoritative PCBI master file, its version, and its actual SHA-256.
+Compare the runtime manifest, source master, packaged master, and certified
+release manifest.
+Do not overwrite or regenerate the master merely to make the hashes match.
+Explain the discrepancy and determine whether it affects benchmark provenance.
+
+3. UPDATE MECHANISM
+- Confirm the installed application checks the configured staging directory.
+- Confirm a valid newer certified release would trigger an update notification.
+- Verify that no update is falsely reported when none is staged.
+- Verify that an invalid checksum or uncertified release is rejected.
+- Do not create or install another release solely for this test.
+
+4. CUSTOMER SAFETY
+- Verify fresh assessments have no inherited metrics or reports.
+- Verify test-data delivery is blocked server-side.
+- Verify assessment isolation and data preservation.
+- Confirm PUBLIC_SAAS remains disabled.
+
+5. FINANCIAL REGRESSION
+Verify the certified Module 1–4 baseline without changing calculations:
+Validated spend: ₹4,073.8307 Cr
+Addressable sourcing spend: ₹443.621 Cr
+Gross opportunity pool: ₹441.833 Cr
+Overlap deductions: ₹104.067 Cr
+Net opportunity: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Delivery Range: ₹31.944–₹79.860 Cr
+Separate PCBI analytical signal: ₹31.6921 Cr
+FX normalization impact: ₹153.5029 Cr
+
+FINAL REPORT
+Return PASS / FAIL / NOT VERIFIED for each section.
+Include exact paths, hashes, test results, and root causes for discrepancies.
+Distinguish runtime identity from full release certification.
+
+Do not claim full acceptance if the PCBI provenance discrepancy remains
+unexplained or any critical verification is missing.
+
+---
+
+## Prompt 364
+P0 — aiCEV DESKTOP: CUSTOMER PERSISTENCE, ASSESSMENT–MODULE 1
+INTEGRATION, AND DUPLICATE SHORTCUT REMEDIATION
+
+APPLICATION: aiCEV Desktop
+CURRENT RELEASE: 1.0.1
+BUILD: E2E-002-CERTIFIED
+OPERATING MODE: INTERNAL_ASSESSMENT
+PUBLIC_SAAS: DISABLED
+
+PRIORITY: P0
+OBJECTIVE: Restore reliable customer assessment operations before processing
+real customer procurement data.
+
+IMPORTANT OPERATING RULES
+
+1. Begin with diagnosis and evidence collection.
+2. Do not rebuild, reinstall, or update the desktop application during the
+   initial diagnostic phase.
+3. Do not delete customer records, assessment records, databases, files,
+   shortcuts, or application directories during diagnosis.
+4. Do not overwrite the current certified financial calculation engines.
+5. Preserve the existing VGT regression dataset and its test-data protection.
+6. Do not use real customer data for testing.
+7. Do not create duplicate customers to work around missing records.
+8. Do not silently migrate, merge, or delete application databases.
+9. If a database migration or data recovery is necessary, report the proposed
+   operation, backup requirements, and expected impact before executing it.
+10. Distinguish confirmed root causes from assumptions.
+11. Preserve INTERNAL_ASSESSMENT mode and keep PUBLIC_SAAS disabled.
+
+========================================================
+PART 1 — INVESTIGATE THE MISSING CUSTOMER FROM YESTERDAY
+========================================================
+
+OBSERVED PROBLEM
+
+The user created a customer assessment yesterday but could not upload its
+procurement data. When the user reopened aiCEV today, the customer name was
+no longer visible in the Assessment Centre.
+
+This is a potential persistence defect and must be investigated before
+creating additional customer records.
+
+A. IDENTIFY THE AUTHORITATIVE PERSISTENCE LAYER
+
+Inspect the actual implementation of:
+- Assessment Centre customer/assessment listing
+- Assessment creation API and backend service
+- Assessment store/repository
+- Application database or persistent file storage
+- Application startup and initialization
+- Assessment list filters and status filters
+- Customer and assessment search
+- Assessment deletion/archive logic
+- Local database selection and initialization
+- Data Version and Analysis Run persistence
+- Desktop backend startup configuration
+
+Determine whether customer and assessment records are stored in:
+- A persistent database
+- JSON or other local files
+- In-memory state
+- Browser/localStorage state
+- Multiple competing storage locations
+
+Report the actual authoritative source of truth.
+
+B. TRACE THE MISSING CUSTOMER
+
+Inspect available audit records, logs, persisted database records, and
+assessment metadata to establish what happened to the customer's record.
+
+Check for:
+- Assessment creation not committed to persistent storage
+- Assessment stored only in memory
+- Application restart replacing an existing store with an empty store
+- Desktop shortcut launching a different application installation
+- Two installations pointing to different databases or data directories
+- Database path depending on the working directory
+- Relative paths resolving differently on startup
+- Incorrect database initialization or seeding
+- Customer record filtered out by status or date
+- Assessment ID/customer relationship mismatch
+- Failed writes that were not surfaced to the user
+- Data being stored under an unexpected operating-system user profile
+- Startup recovery or migration issues
+
+Use existing audit logs and persisted evidence. Do not invent a record if
+the original record cannot be recovered.
+
+C. RECOVERY
+
+If the original customer assessment is found:
+- Preserve its original Assessment ID.
+- Restore its visibility through the supported recovery mechanism.
+- Preserve its creation timestamp and audit history.
+- Preserve any associated Data Versions, uploaded files and Analysis Runs.
+- Do not overwrite the record with a newly created assessment.
+
+If the record cannot be found:
+- State that recovery is not possible from the available evidence.
+- Do not fabricate or silently recreate the historical record.
+- Fix the underlying persistence issue first.
+- Provide a safe way to create a replacement assessment with a new ID,
+  clearly documenting that it is a replacement.
+
+========================================================
+PART 2 — INVESTIGATE THE TWO DESKTOP SHORTCUTS
+========================================================
+
+OBSERVED PROBLEM
+
+The user sees two aiCEV desktop shortcuts.
+
+A. INSPECT BOTH SHORTCUTS
+
+Locate both shortcuts, including any relevant entries in:
+- Windows Desktop
+- Public Desktop
+- Start Menu
+- User Start Menu
+
+For each shortcut, report:
+- Shortcut path
+- Target executable
+- Arguments
+- Working directory
+- Target version/build where identifiable
+- Installation directory
+- Whether the target exists
+- Whether it is the same application installation as the other shortcut
+- Whether it launches the correct backend and frontend
+- Which persistent data directory it uses
+
+Compare the shortcut targets with the actual installed v1.0.1 application.
+
+B. DETERMINE WHETHER THE SHORTCUTS ARE DUPLICATES OR DIFFERENT BUILDS
+
+Do not assume two shortcuts are duplicates merely because their icons and
+names look similar.
+
+Determine whether they point to:
+- The same executable and data store
+- Different installations
+- A stale v1.0.0 installation and the current v1.0.1 installation
+- A development server or browser wrapper instead of the installed app
+- Different backend ports, working directories or data stores
+
+C. SAFE REMEDIATION
+
+After establishing the correct installation:
+- Identify one canonical desktop shortcut.
+- Ensure it launches the certified installed v1.0.1 build.
+- Ensure the application uses the authoritative persistent data location.
+- Remove or rename a duplicate shortcut only after confirming its target
+  and obtaining a safe remediation plan.
+- Preserve the ability to recover the original shortcut if needed.
+- Do not uninstall an application or delete its directories merely to remove
+  a shortcut.
+- Do not leave the user with two shortcuts that launch different application
+  instances without clearly labelling their purposes.
+
+If both shortcuts are already identical and harmless, report that and avoid
+unnecessary changes.
+
+========================================================
+PART 3 — FIX CUSTOMER AND ASSESSMENT PERSISTENCE
+========================================================
+
+Implement a reliable persistent customer assessment workflow using the
+existing architecture.
+
+Requirements:
+
+1. Creating a customer assessment must persist it to the authoritative
+   backend store before reporting success to the UI.
+
+2. The backend must return the authoritative persisted Assessment ID and
+   saved customer details.
+
+3. The Assessment Centre must retrieve records from the persisted backend
+   source rather than relying on transient frontend state.
+
+4. A normal application close and restart must not remove customer records.
+
+5. Refreshing the Assessment Centre must not remove customer records.
+
+6. Logging out and logging back in must not remove or hide authorized records.
+
+7. Reopening the application through the canonical desktop shortcut must
+   show the same assessments.
+
+8. Assessment listing and filtering must include legitimate records regardless
+   of whether data has been uploaded.
+
+9. An assessment with no uploaded data must remain visible with a status such
+   as DATA_PENDING and blank/pending financial metrics.
+
+10. The UI must distinguish:
+    - Assessment created
+    - Data pending
+    - Data received
+    - Module 1 ready
+    - Analysis in progress
+    - Analyst review
+    - Approved
+    - Delivered
+    - Closed
+    - Blocked
+
+11. Failed persistence must produce an explicit error. Do not show a success
+    notification if the record was not saved.
+
+12. Existing assessment records must not be replaced by demo fixtures,
+    seeded VGT records, or empty startup state.
+
+13. Startup initialization must not overwrite existing persistent data.
+
+14. Use explicit, stable database/file paths that do not depend on the
+    current working directory or shortcut launch location.
+
+15. Preserve the current versioned data model and audit trail.
+
+16. Use safe transactional writes or the existing equivalent persistence
+    guarantees.
+
+17. If the existing persistence layer is in-memory only, propose and implement
+    the smallest safe persistent-storage correction compatible with the
+    current application architecture. Back up existing data before migration.
+
+18. Keep all customer records isolated by their authoritative Assessment IDs.
+
+Do not add a second competing customer database.
+
+========================================================
+PART 4 — CONNECT ASSESSMENT CENTRE TO MODULE 1
+========================================================
+
+OBSERVED PROBLEM
+
+A customer created in the Assessment Centre is not reliably available in
+Module 1 Data Ingestion. Uploading through Module 1 does not reliably associate
+the data with the customer created in the Assessment Centre.
+
+Fix the underlying integration instead of adding a disconnected upload form.
+
+A. ROOT-CAUSE ANALYSIS
+
+Inspect:
+- Assessment Centre
+- New Assessment creation form
+- Assessment Workspace
+- Assessment Detail Workflow
+- Data Ingestion
+- Module 1 upload UI
+- Module 1 canonical runner/service
+- Assessment store and workflow services
+- Upload routes and controllers
+- Data Version creation
+- Analysis Run creation
+- Frontend API clients
+- Active assessment selection
+- Header customer context
+
+Identify any mismatch between the customer/assessment IDs used by the
+Assessment Centre and Module 1.
+
+B. REQUIRED USER EXPERIENCE
+
+When the analyst clicks "+ New Assessment":
+
+1. Enter the customer details using the existing form.
+2. Save the assessment successfully through the backend.
+3. Receive the authoritative Assessment ID.
+4. Automatically navigate to that assessment's dedicated upload screen.
+5. Display the saved customer details and current status.
+6. Present the existing Module 1 file-upload component.
+
+The upload page must show:
+- Customer name
+- Assessment ID
+- Industry
+- Assessment period
+- NDA status
+- Data receipt status
+- Upload control
+- Current workflow status
+
+Use the existing Module 1 accepted file formats and validation rules.
+
+Provide appropriate upload progress, validation errors, retry, cancel, and
+back-navigation behavior.
+
+The upload screen must also be accessible when reopening an existing
+assessment whose data is still pending.
+
+C. CANONICAL DATA LINEAGE
+
+Enforce this lineage:
+
+Customer
+→ Persisted Assessment ID
+→ Uploaded File
+→ Assessment-Specific Storage
+→ Immutable Data Version
+→ Module 1 Canonical Analysis
+→ Persisted Analysis Run
+→ Modules 2–4
+→ Evidence Workbooks
+→ Report Approval
+→ Delivery Package
+
+Do not create a second customer when opening Module 1.
+
+Do not associate uploaded data based only on customer name, display label,
+or frontend-selected customer.
+
+Propagate the authoritative Assessment ID through the upload request,
+storage path, Data Version, Analysis Run and resulting Module 1 records.
+
+The backend must authorize the user against that assessment ID.
+
+D. UPLOAD BEHAVIOR
+
+For a valid upload:
+
+1. Validate the file using the existing Module 1 validation engine.
+2. Calculate the SHA-256 checksum.
+3. Store the file in the correct assessment-specific location.
+4. Create an immutable Data Version.
+5. Run the existing Module 1 engine.
+6. Persist the canonical result and Analysis Run.
+7. Update the same Assessment Centre row from persisted backend data.
+
+For an invalid upload:
+- Preserve the assessment.
+- Display the actual validation error.
+- Do not create a successful Data Version for an invalid file.
+- Allow retry.
+
+For an analysis failure after a valid upload:
+- Preserve the uploaded Data Version.
+- Record the failed Analysis Run as appropriate.
+- Provide a controlled retry mechanism.
+
+Prevent duplicate uploads caused by repeated button clicks or network retries
+according to the existing idempotency and duplicate-file policies.
+
+Do not silently overwrite an earlier Data Version.
+
+========================================================
+PART 5 — CORRECT HEADER AND CUSTOMER CONTEXT
+========================================================
+
+The screenshot showed Apex Industrial Dynami... in the application header,
+while ABC Textiles Ltd appeared in the Assessment Centre.
+
+This may indicate a legitimate active selection or a context mismatch.
+
+Verify the behavior rather than assuming the cause.
+
+Ensure that:
+- The active customer/assessment displayed in the header is unambiguous.
+- The upload page displays the selected assessment's customer and Assessment ID.
+- Module 1 uses that exact assessment.
+- The Assessment Centre shows results against the same assessment.
+- Switching between assessments cannot leak financial figures or reports.
+- A stale header selection cannot override the assessment being uploaded.
+- No VGT regression values can appear in a fresh customer's assessment.
+
+The header must never imply that one customer's financial results belong to
+another customer.
+
+========================================================
+PART 6 — MODULE 1 AND MODULES 2–4 REGRESSION
+========================================================
+
+Reuse the existing certified Module 1 implementation.
+
+Do not modify financial calculations to solve the integration problem.
+
+Preserve:
+- Currency and FX normalization
+- Transaction validation
+- Exclusions and anomalies
+- Supplier, material-group and plant aggregation
+- Actual-period/FY logic
+- Pareto hierarchy
+- PCBI source provenance
+- Savings engine calculations
+- Opportunity overlap controls
+- Financial bridge and evidence generation
+- Data Version and Analysis Run traceability
+
+Verify the existing VGT regression baseline:
+
+Validated spend: ₹4,073.8307 Cr
+Addressable sourcing spend: ₹443.621 Cr
+Gross opportunity pool: ₹441.833 Cr
+Overlap deductions: ₹104.067 Cr
+Net opportunity: ₹337.766 Cr
+Proven Opportunity: ₹319.439 Cr
+Delivery Range: ₹31.944–₹79.860 Cr
+Separate PCBI analytical signal: ₹31.6921 Cr
+FX normalization impact: ₹153.5029 Cr
+
+No unexplained variance is acceptable.
+
+Gross opportunity must not be labelled as achieved or guaranteed savings.
+The PCBI price-gap signal must remain separate from the savings bridge.
+Realized savings must remain a separate classification.
+
+========================================================
+PART 7 — SECURITY AND CUSTOMER DATA SAFETY
+========================================================
+
+Verify:
+- Assessment-level backend authorization
+- Customer data isolation
+- Data Version immutability
+- Audit logging
+- Secure file storage
+- No unauthorized assessment ID substitution
+- No unauthorized file access
+- No cross-assessment Analysis Run reuse
+- No customer data contamination from regression fixtures
+- Global FX and PCBI masters cannot be changed by customer uploads
+- Existing customer assessment data survives application updates
+- PUBLIC_SAAS remains disabled
+
+Do not migrate or merge databases without an explicit, documented plan and
+verified backup.
+
+========================================================
+PART 8 — AUTOMATED TESTS
+========================================================
+
+Add or update tests for at least the following:
+
+CUSTOMER PERSISTENCE
+1. Creating an assessment persists it.
+2. A failed database write does not show false success.
+3. Closing and reopening the app preserves the assessment.
+4. Browser refresh preserves the assessment.
+5. Logout/relogin preserves authorized assessment visibility.
+6. Empty assessments remain visible.
+7. Assessment filters do not hide valid pending records.
+8. Startup initialization does not overwrite existing records.
+9. Stable data paths work regardless of shortcut working directory.
+10. Existing records are preserved during migrations and restarts.
+
+SHORTCUTS AND INSTALLATION
+11. Both shortcut targets are discoverable and reported.
+12. The canonical shortcut launches the intended installed build.
+13. Different data directories are detected and reported.
+14. No automatic destructive cleanup occurs.
+
+ASSESSMENT–MODULE 1 INTEGRATION
+15. Creating an assessment opens its upload page.
+16. The correct Assessment ID reaches the Module 1 upload API.
+17. A valid upload creates a Data Version for the correct assessment.
+18. Module 1 results persist against the same assessment.
+19. Assessment Centre reflects the results after upload.
+20. Refresh preserves the correct customer and results.
+21. Existing empty assessments can resume the upload flow.
+22. Failed upload can be retried.
+23. Duplicate submission is handled safely.
+24. Cross-assessment uploads are rejected.
+25. Header/customer context remains correct when switching assessments.
+26. A second assessment never inherits the first assessment's results.
+
+FINANCIAL AND SECURITY REGRESSION
+27. Module 1 financial calculations remain unchanged.
+28. Modules 2–4 regression tests remain unchanged.
+29. Test-data delivery remains blocked.
+30. Customer data remains isolated.
+31. FX Master and PCBI Master remain unchanged.
+32. PUBLIC_SAAS remains disabled.
+
+Run the actual tests, typecheck, lint, build and relevant security checks.
+Do not bypass or weaken existing tests.
+
+========================================================
+PART 9 — END-TO-END BROWSER ACCEPTANCE
+========================================================
+
+Use disposable synthetic test data only.
+
+Test the following complete sequence:
+
+1. Launch aiCEV through the canonical desktop shortcut.
+2. Open the Assessment Centre.
+3. Create "Integration Test Textiles Ltd".
+4. Verify that the backend persisted its customer and assessment records.
+5. Verify the returned Assessment ID.
+6. Confirm the upload page opens automatically.
+7. Upload a small synthetic procurement file.
+8. Confirm that Module 1 processes the file against the same Assessment ID.
+9. Confirm that the Data Version and Analysis Run are persisted.
+10. Confirm the Assessment Centre displays the correct customer's results.
+11. Refresh the application.
+12. Close and reopen aiCEV.
+13. Confirm that the test assessment remains visible.
+14. Confirm the uploaded results remain correctly linked.
+15. Create a second empty test assessment.
+16. Confirm it appears immediately and has no inherited financial metrics.
+17. Switch between both assessments and verify correct customer context.
+18. Confirm neither assessment inherits VGT data.
+19. Confirm Modules 2–4 remain available through the existing workflow.
+20. Verify that the two desktop shortcuts have been correctly diagnosed and
+    that the canonical shortcut opens the authoritative installation.
+
+Do not delete existing customer records or regression datasets as cleanup.
+Only remove explicitly disposable synthetic test records through the
+supported test cleanup process.
+
+========================================================
+PART 10 — RELEASE POLICY
+========================================================
+
+Initially fix and validate in the development environment.
+
+Do not automatically install a desktop update during this task.
+
+If source changes are required:
+- Run all required regression tests.
+- Verify financial parity.
+- Verify data persistence.
+- Verify assessment isolation.
+- Verify the complete upload workflow.
+- Run existing quality gates.
+
+Only after acceptance should a new desktop release be prepared using:
+
+npm run desktop:push
+
+Do not modify or reinstall the current certified desktop until the fix is
+validated and the release is ready.
+
+========================================================
+PART 11 — FINAL REPORT
+========================================================
+
+Provide PASS / FAIL / NOT VERIFIED for:
+
+A. Missing customer root cause
+B. Recovery of yesterday's customer assessment
+C. Authoritative persistence layer
+D. Persistence after refresh and application restart
+E. Shortcut target investigation
+F. Canonical shortcut remediation
+G. Assessment Centre → upload navigation
+H. Correct Assessment ID propagation
+I. Module 1 upload and analysis
+J. Assessment Centre results synchronization
+K. Header customer context
+L. Financial regression
+M. Security and assessment isolation
+N. End-to-end desktop/browser acceptance
+O. Remaining risks
+
+Include:
+- Confirmed root cause
+- Whether yesterday's record was recovered
+- Exact database/storage paths
+- Backup and migration details, if applicable
+- Both shortcut paths and targets
+- Canonical shortcut path and target
+- Files changed
+- APIs and services changed
+- Tests executed and actual results
+- Whether restart persistence passed
+- Whether upload → Module 1 → Assessment Centre passed
+- Whether a new desktop release is required
+- Any action required from the user
+
+Do not declare completion just because a customer appears on screen.
+Demonstrate that the persisted record survives refresh and restart and that
+its uploaded data remains linked to the same Assessment ID.
+
+FINAL ACCEPTANCE CRITERION
+
+The user can create a customer once, immediately upload its procurement data,
+run Module 1, see the correct results in the Assessment Centre, close and
+reopen the desktop application, and still find the same assessment and data.
+
+The correct desktop shortcut must launch the same authoritative application
+and persistent data store every time.
+
+No duplicate customer creation, lost assessments, manual reconnection,
+incorrect customer context, or cross-assessment contamination.
+
+---
+
+## Prompt 365
+P0 — RESOLVE DESKTOP RELEASE VERSION COLLISION AND VERIFY INSTALLED FIXES
+
+The latest assessment integration and persistence changes have been implemented
+and tested in the repository.
+
+However, the staged installer and currently installed desktop both report:
+
+Version: 1.0.1
+Build: E2E-002-CERTIFIED
+
+The installed application was not replaced during staging.
+
+OBJECTIVE:
+Ensure the new customer persistence and Assessment Centre → Module 1
+integration changes can be safely installed on the actual desktop.
+
+PHASE 1 — VERIFY RELEASE IDENTITY
+
+1. Inspect the installed application version/build from the Windows registry
+   and running executable.
+2. Inspect the staged release manifest and installer version/build.
+3. Identify whether the staged release contains the new persistence and
+   upload-integration changes.
+4. Compare the installed and staged executable/app.asar hashes.
+5. Report the exact version/build collision and its consequences.
+
+Do not assume a new installer means a new release.
+
+PHASE 2 — CORRECT RELEASE VERSIONING
+
+If the staged release contains changes that are absent from the installed
+application, prepare a genuinely new release identity.
+
+Use the next appropriate version/build, for example:
+Version: 1.0.2
+Build: E2E-003-CERTIFIED
+
+Use these values only after checking the existing versioning and release
+conventions.
+
+Update all required release metadata consistently:
+- Application version
+- Build identity
+- Release manifest
+- Installer metadata
+- Update comparison logic
+- Release notes
+- Checksums
+- Immutable release archive
+
+Do not overwrite the existing v1.0.1 release archive.
+Do not bypass checksum verification or certification requirements.
+Do not change certified financial calculations.
+
+PHASE 3 — PRESERVE DATA
+
+Before installation, verify the authoritative data location:
+
+%APPDATA%\aiCEV\data\assessments.json
+
+Confirm the installer and update process preserve:
+- assessments.json
+- assessments.json.bak
+- Assessment-specific uploaded files
+- Data Versions
+- Analysis Runs
+- Audit records
+
+Create and verify a backup before any operation that could affect existing
+application data.
+
+Do not claim that the lost assessment from yesterday has been recovered.
+
+PHASE 4 — VALIDATE THE RELEASE
+
+Run:
+- Backend and frontend typecheck
+- Lint
+- Relevant persistence and upload-integration tests
+- Module 1–4 financial regression tests
+- Assessment isolation and test-data delivery checks
+- Desktop packaging checks
+- Update manifest/checksum validation
+
+Confirm:
+1. The new installer has a version/build newer than the installed release.
+2. The update detector identifies it as a genuine available update.
+3. An invalid or corrupted package is rejected.
+4. The installed version is not changed during staging.
+5. PUBLIC_SAAS remains disabled.
+
+PHASE 5 — INSTALLATION INSTRUCTIONS
+
+Do not silently install the update.
+
+Report:
+- Exact installer path
+- SHA-256 checksum
+- New version/build
+- Installed version/build
+- Backup location
+- Whether update notification is expected to appear
+
+If the updater cannot safely install the release, state that the one-time
+manual installation is required. Do not claim an update notification works
+until it is demonstrated.
+
+PHASE 6 — FINAL REPORT
+
+Return PASS / FAIL / NOT VERIFIED for:
+- Release version uniqueness
+- Staged package contains the new code
+- Installed/staged version comparison
+- Data preservation
+- Persistence and upload integration tests
+- Financial regression
+- Update detection
+- Installation readiness
+
+Do not mark the desktop as updated until the actual installed version/build
+and installed file hashes confirm it.
+
+
+
+
+## Prompt 366
+
+aiCEV — CRITICAL ASSESSMENT ISOLATION, DATA PROVENANCE
+AND END-TO-END VALIDATION
+
+PRIORITY: P0 — CUSTOMER DATA INTEGRITY
+
+OBJECTIVE
+Fix the existing aiCEV Internal Assessment application so that
+every assessment displays and analyses only the dataset uploaded
+to that assessment.
+
+After fixing the defect, prove that 3–4 separate datasets can
+complete Modules 1, 2, 3 and 4 without cross-assessment
+contamination, stale results, incorrect financial calculations,
+or report mismatches.
+
+OPERATING CONSTRAINTS
+
+1. Preserve the existing architecture and certified financial
+   calculation logic wherever it is correct.
+2. Do not redesign the UI or introduce unrelated features.
+3. Do not change certified savings formulas merely to make
+   tests pass.
+4. Do not use hardcoded, demo, synthetic, VGT or previously
+   analysed customer results as fallback values.
+5. Do not delete existing assessments or customer data.
+6. Preserve INTERNAL_ASSESSMENT mode.
+7. Keep PUBLIC_SAAS disabled.
+8. Treat the existing VGT dataset strictly as regression-test data.
+9. Never present VGT results as another customer's results.
+10. Back up relevant data before modifying persistence or
+    migration logic.
+
+OBSERVED DEFECT
+
+The UI currently shows ABC TEXTTILE LTD,
+assessment AIC-2026-0003, with ₹125.40 Cr in the header.
+
+However, another screen shows 20,241 valid records,
+10 billing months from April 2021 to January 2022,
+and FX normalization impact of approximately ₹153.50 Cr.
+These figures match the previously tested VGT dataset.
+
+The execution pipeline also displays opportunity and PCBI figures.
+
+Investigate the root cause before changing code.
+
+PHASE 1 — TRACE THE ENTIRE DATA FLOW
+
+Trace the complete lifecycle:
+
+Assessment creation
+→ assessment ID
+→ uploaded source file
+→ immutable data version
+→ upload validation
+→ persisted AnalysisJob
+→ analysis run ID
+→ Module 1 results
+→ Module 2 results
+→ Module 3 PCBI results
+→ Module 4 opportunity ledger
+→ reports and exports
+→ Assessment Centre
+→ application restart and reload.
+
+Inspect the frontend state management, API requests, backend
+services, database/file persistence, assessment selection,
+analysis-run selection, report generation, localStorage/session
+storage, caches, demo fixtures and fallback logic.
+
+Identify exactly where results become associated with an
+assessment and where the selected assessment is used to retrieve
+those results.
+
+Do not assume that changing the frontend alone will fix the issue.
+
+PHASE 2 — ENFORCE ASSESSMENT AND RUN ISOLATION
+
+Every analysis result must be traceable to the correct combination
+of:
+
+- tenant/customer ID
+- assessment ID
+- immutable data version ID
+- uploaded file ID and SHA-256
+- analysis run ID
+- module number
+- calculation/version metadata
+- creation timestamp
+- processing status.
+
+All result retrieval, updates, reports, exports and status
+transitions must be scoped to the selected assessment and its
+specific analysis run.
+
+Enforce this in the backend, not only in frontend filters.
+
+Never retrieve the latest global result when an assessment-specific
+result is missing.
+
+Never substitute results from another assessment.
+
+Never silently reuse VGT, demo or previously analysed customer data.
+
+If no valid result exists for the selected assessment, display
+a clear empty, queued, processing, failed or review-required state.
+
+Do not fabricate a successful result to fill an empty screen.
+
+PHASE 3 — CORRECT UPLOAD AND START BEHAVIOUR
+
+When a user creates a new assessment:
+
+1. Generate and persist a unique assessment ID.
+2. Initialise the assessment without previous customer metrics.
+3. Bind the selected customer and assessment to the upload.
+4. Persist the uploaded file and immutable data version.
+5. Validate the file and show validation results.
+6. When Start is clicked, create a new analysis run associated
+   with that assessment and data version.
+7. Show a genuine processing state while the engine runs.
+8. Display results only after the corresponding module has
+   completed successfully.
+9. Show the actual source row count, valid rows, exclusions,
+   anomalies, currency coverage and billing-period coverage
+   calculated from that dataset.
+10. Persist results before marking the module complete.
+
+A new upload must not inherit the prior assessment's metrics.
+
+Do not mark analysis complete merely because a file was uploaded
+or a previous run already exists.
+
+Use idempotent run handling so duplicate clicks cannot create
+conflicting or duplicated results.
+
+Show the selected assessment ID, data version and run ID in the
+internal diagnostics or audit trail.
+
+PHASE 4 — FIX ASSESSMENT CENTRE
+
+Assessment Centre must display persisted assessments with their
+actual status and timestamps.
+
+Selecting an assessment must load that assessment's own metadata,
+data version, analysis run, module results and reports.
+
+Creating a new assessment must not automatically open an old
+assessment.
+
+Refreshing the page or restarting the application must not change
+the selected assessment to another customer's assessment.
+
+If multiple assessments exist, make the selected assessment
+visually unmistakable.
+
+Use persisted backend state as the source of truth.
+
+Do not let stale browser state override the selected assessment
+or a newer persisted run.
+
+Ensure that test assessments remain identifiable as test data.
+
+PHASE 5 — VERIFY MODULES 1–4
+
+MODULE 1 — DATA INGESTION
+- Verify the uploaded file identity and SHA-256.
+- Recalculate source rows, valid rows, exclusions and anomalies.
+- Verify actual billing dates and available billing months.
+- Verify original currency and FX normalization.
+- Reconcile the displayed spend to persisted calculation outputs.
+- Confirm that the displayed customer name matches the source
+  assessment, not a previous assessment.
+- No preloaded VGT values may appear unless the selected
+  assessment is explicitly the VGT regression assessment.
+
+MODULE 2 — AI CATEGORIZATION AND STRATEGIC SOURCING
+- Consume the selected assessment's validated Module 1 data.
+- Verify material/category mapping and supplier relationships.
+- Verify addressable spend and opportunity calculations.
+- Preserve the certified gross, overlap, net and proven
+  opportunity distinctions.
+- Show missing or unsupported mappings explicitly.
+- Do not copy Module 2 results from another assessment.
+
+MODULE 3 — PCBI TREND AND BENCHMARK ANALYSIS
+- Consume only the selected assessment's eligible records.
+- Verify the actual applicable PCBI master and its SHA-256.
+- Verify commodity mapping, benchmark period, currency,
+  unit of measure, benchmark source and coverage.
+- Keep unmatched items unmatched; do not force inappropriate
+  proxy benchmarks.
+- Treat the benchmark price-gap as an analytical signal,
+  not automatically as savings.
+- Keep PCBI signals separate from Module 4 savings.
+- If no eligible benchmark exists, report the limitation rather
+  than inventing a value.
+
+MODULE 4 — SAVINGS ENGINE
+- Consume the selected assessment's validated Module 1–3
+  outputs and approved sourcing opportunities.
+- Preserve transaction-level lineage and opportunity IDs.
+- Apply documented overlap deductions without double counting.
+- Reconcile gross opportunity, overlap, net opportunity,
+  proven opportunity and delivery range.
+- Keep realized savings separate from identified opportunity.
+- Do not monetize productivity or risk avoidance without
+  a defensible baseline.
+- Generate reports exclusively from the selected assessment's
+  persisted approved results.
+
+PHASE 6 — FINANCIAL AND REPORT INTEGRITY
+
+For each assessment, independently verify that:
+
+- Module 1 spend matches its canonical reconciliation.
+- Module 2 totals reconcile to the selected assessment.
+- Module 3 benchmark signals remain separate from savings.
+- Module 4 opportunity lineage reconciles without duplicate
+  or orphaned transactions.
+- Every dashboard card uses the same selected assessment/run
+  as its detail page.
+- Every report and export matches the approved assessment.
+- Changing assessments changes all displayed metrics and reports.
+- Missing, failed or stale modules cannot be presented as current.
+- Currency and billing periods are not silently substituted.
+- Any discrepancy causes a visible failure or review state.
+
+Retain the existing certified financial formulas. If a mismatch
+is found, identify its source and repair it rather than changing
+the expected value to match an incorrect result.
+
+PHASE 7 — AUTOMATED ISOLATION TESTS
+
+Create deterministic regression tests with at least four
+distinct test datasets.
+
+Use the existing VGT regression dataset plus three separately
+identified datasets, preferably covering different:
+- customer names
+- row counts
+- billing periods
+- material descriptions
+- suppliers
+- currencies, where supported
+- spend totals.
+
+Where customer files are unavailable, use clearly labelled
+synthetic fixtures. Never describe synthetic test results as
+real customer results.
+
+Give each fixture unique, known input totals and identifiable
+records so that leakage is detectable.
+
+Test the following:
+
+A. Upload dataset A and analyse it.
+B. Create dataset B and verify that A's figures do not appear.
+C. Analyse B and switch back to A.
+D. Verify that A and B retain their own correct results.
+E. Repeat with datasets C and D.
+F. Run Modules 1–4 independently for each supported dataset.
+G. Open reports and exports for each assessment and verify
+   their assessment IDs and data provenance.
+H. Refresh the UI and restart the desktop application.
+I. Verify that all assessments and their correct results persist.
+J. Attempt to retrieve a run or report using a different
+   assessment ID; reject the mismatch.
+K. Verify that missing or failed runs never display old metrics.
+L. Verify that repeated Start clicks cannot corrupt or duplicate
+   results.
+M. Verify that one assessment cannot update another assessment's
+   status or results.
+
+Include tests for stale frontend state, cached API responses,
+incorrect assessment selection and missing analysis outputs.
+
+PHASE 8 — REQUIRED EVIDENCE
+
+Before declaring the defect fixed, provide:
+
+1. Root cause with exact files/services/functions involved.
+2. List of code changes.
+3. Database/persistence migration details, if applicable.
+4. Automated test results with passed and failed counts.
+5. Dataset-by-dataset results table with:
+   assessment ID, dataset ID, file hash, row counts, billing
+   period, validated spend, module statuses and report status.
+6. Evidence that each dataset's results are independently
+   persisted and retrievable.
+7. Financial reconciliation variances for Modules 1–4.
+8. Assessment isolation and restart/persistence test results.
+9. Remaining limitations or failed tests.
+10. Final build ID, version and installer checksum if a new
+    installer is required.
+
+Do not claim certification based solely on passing unit tests.
+Do not claim an end-to-end test passed unless the actual
+workflow and persisted outputs have been verified.
+
+EXECUTION RULE
+
+First reproduce the defect and identify its root cause.
+Then implement the smallest safe correction.
+Run targeted tests, the full regression suite, and the
+four-dataset end-to-end test.
+
+Do not stop after frontend changes or a successful build.
+Do not install a new release until the test evidence is reviewed.
+
+The required outcome is a reliable internal assessment system
+that can process 3–4 distinct datasets end-to-end through
+Modules 1–4, preserve the correct results after restart, and
+never mix assessment data.
+
+---
+
+## Prompt 367
+
+aiCEV — CLEAN DEVELOPMENT ENVIRONMENT AND CHROME TEST RESET
+
+PRIORITY: P0 — DATA HYGIENE AND TEST ENVIRONMENT RESET
+
+OBJECTIVE
+
+Prepare the existing aiCEV application for controlled end-to-end
+testing in Google Chrome.
+
+Remove all active customer, assessment, analysis, demo and
+regression-test data from the LOCAL DEVELOPMENT ENVIRONMENT.
+
+After cleanup, the application must open with no customer
+assessments and no previously calculated customer results.
+
+We will subsequently create a new customer and test Modules
+1, 2, 3 and 4 sequentially.
+
+This task is a controlled environment reset, not a product rebuild.
+
+==================================================
+PHASE 1 — IDENTIFY THE ACTIVE DEVELOPMENT ENVIRONMENT
+==================================================
+
+Before deleting or modifying anything, inspect the repository
+and identify:
+
+1. The local frontend entry point.
+2. The local backend entry point.
+3. The database or file-based persistence mechanism.
+4. The actual development data directory.
+5. Assessment and customer persistence files.
+6. AnalysisJob and analysis-run persistence.
+7. Module 1, Module 2, Module 3 and Module 4 result stores.
+8. Report and export persistence.
+9. Frontend localStorage, sessionStorage and IndexedDB usage.
+10. Server-side caches and in-memory application state.
+11. Demo-data fixtures and automatic seed scripts.
+12. VGT-specific data fixtures, seeded assessments and fallback
+    result providers.
+13. Background workers that might recreate deleted data.
+14. The mechanism that launches the application locally.
+15. The existing packaged desktop application and its separate
+    data directory.
+
+Distinguish local development data from installed desktop data.
+
+DO NOT modify or delete data from the installed desktop
+application during this task.
+
+DO NOT assume that deleting one JSON file or clearing the browser
+cache removes all persisted assessment data.
+
+First report the exact locations and sources of active data.
+
+==================================================
+PHASE 2 — CREATE A RECOVERY SNAPSHOT
+==================================================
+
+Create a timestamped recovery snapshot outside all directories
+from which the running application loads active data.
+
+Include existing assessment records, analysis runs, reports,
+and other operational data that could be affected by the reset.
+
+Do not copy confidential customer data into a public directory
+or commit recovery files to Git.
+
+Do not include the snapshot in frontend builds, public assets,
+seed scripts or automatic application startup.
+
+Confirm that the snapshot was created successfully before
+performing the reset.
+
+Preserve source code, application configuration, financial
+calculation logic, certified reference assets and build files.
+
+==================================================
+PHASE 3 — CLEAR ACTIVE DEVELOPMENT ASSESSMENT DATA
+==================================================
+
+Remove all active development records for:
+
+- Customers and customer assessments.
+- Assessment metadata and active workspaces.
+- Uploaded customer files and associated temporary copies.
+- Data-version records.
+- AnalysisJob records and stale queue entries.
+- Analysis-run records.
+- Module 1 results.
+- Module 2 categorization and sourcing results.
+- Module 3 PCBI analysis results.
+- Module 4 opportunity ledgers and savings results.
+- Active reports, generated exports and delivery packages.
+- Customer-specific audit records associated with deleted
+  development assessments, subject to applicable retention
+  requirements.
+- Stale cached calculations and assessment-specific state.
+- In-memory job state that could repopulate deleted results.
+
+Remove VGT and all other demo/test customer data from the active
+development environment.
+
+Do not merely hide VGT in the interface while retaining it as
+the default data source.
+
+Do not retain hidden customer metrics that can appear when a
+new assessment is opened.
+
+Preserve the recovery snapshot outside the active application
+data directories.
+
+If any data store cannot safely be cleared, stop and report the
+exact reason instead of claiming the reset is complete.
+
+==================================================
+PHASE 4 — REMOVE AUTOMATIC DEMO AND FALLBACK DATA
+==================================================
+
+Inspect the entire application for:
+
+- VGT hardcoded customer names and metrics.
+- Preloaded financial dashboard values.
+- Mock Module 1–4 results.
+- Demo assessment IDs.
+- Default customer selection.
+- Hardcoded ₹125.40 Cr or other previous assessment metrics.
+- Automatic sample-data loading.
+- Automatic test-fixture seeding.
+- Fallbacks that return the latest global analysis.
+- Fallbacks that substitute previously calculated results.
+- Default reports from previous assessments.
+- Frontend fixtures that override empty API responses.
+- Cached values that are shown when an API call fails.
+
+Remove these behaviours from normal development startup.
+
+Retain legitimate automated test fixtures in a separate test-only
+location where required by automated tests.
+
+Test fixtures must never be loaded into the normal application
+workspace.
+
+The application must not automatically create or load a customer
+or assessment on startup.
+
+If there are no customers, display an appropriate empty state.
+
+If there are no assessments, display an appropriate empty state.
+
+If Module 1 has not run, display "Not Run".
+
+If a module fails, display its actual failure state.
+
+Never display fabricated or previous customer results to fill
+an empty dashboard.
+
+Do not remove certified calculation logic or reference datasets
+as part of this cleanup.
+
+==================================================
+PHASE 5 — IMPLEMENT EXPLICIT ASSESSMENT EXECUTION
+==================================================
+
+Establish the following lifecycle for every assessment:
+
+CREATED
+→ DATA_UPLOADED
+→ DATA_VALIDATED
+→ MODULE_1_READY
+→ MODULE_1_RUNNING
+→ MODULE_1_COMPLETED
+→ MODULE_2_RUNNING
+→ MODULE_2_COMPLETED
+→ MODULE_3_RUNNING
+→ MODULE_3_COMPLETED
+→ MODULE_4_RUNNING
+→ MODULE_4_COMPLETED
+→ REPORT_READY
+→ AWAITING_ACCEPTANCE
+→ ACCEPTED_AND_ARCHIVED
+
+Use the existing state model where suitable. Do not introduce
+unnecessary duplicate status systems.
+
+The lifecycle must be persisted in the backend.
+
+An uploaded file is not an analysis result.
+
+Creating an assessment must not automatically run Modules 1–4.
+
+Each module must run only through an explicit, valid action or
+a documented workflow transition.
+
+Every result must belong to the selected assessment, immutable
+data version and specific analysis run.
+
+Never fetch a global "latest result" as a fallback.
+
+==================================================
+PHASE 6 — REPORT ACCEPTANCE AND RESULT ISOLATION
+==================================================
+
+Implement or correct the following behaviour:
+
+When a Module 4 report is accepted:
+
+1. Persist the accepted report and its evidence.
+2. Mark the assessment as accepted and archived.
+3. Preserve the accepted report for authorised historical access.
+4. Remove the assessment from the active execution workspace.
+5. Ensure Modules 1–4 do not automatically display its old
+   results as the current working dataset.
+6. Ensure a new customer or assessment starts with empty results.
+7. Do not delete the accepted report merely to clear the screen.
+8. Do not automatically rerun an archived assessment.
+
+To analyse an archived assessment again, require an explicit
+user action such as "Reopen Assessment" followed by
+"Run Analysis".
+
+A reopened assessment must have a traceable new analysis run.
+Preserve the previous accepted report and its immutable results.
+
+Historical reports must not silently become the active results
+for another assessment.
+
+==================================================
+PHASE 7 — LAUNCH LOCALLY IN GOOGLE CHROME
+==================================================
+
+Inspect the existing repository scripts and determine the
+correct local frontend and backend startup commands.
+
+Do not invent ports, scripts or paths.
+
+Start the application using the existing supported development
+configuration.
+
+Open the local application in Google Chrome.
+
+Ensure that the frontend is communicating with the intended
+local development backend and persistence store.
+
+Confirm that no packaged desktop runtime is being used for
+this test.
+
+Do not build or install a new desktop release.
+
+Do not change PUBLIC_SAAS or enable any public-facing mode.
+
+Keep INTERNAL_ASSESSMENT as the operating mode.
+
+==================================================
+PHASE 8 — RESET ACCEPTANCE TESTS
+==================================================
+
+After cleanup, verify all of the following:
+
+1. The application starts successfully.
+2. No customer assessments are automatically loaded.
+3. The Assessment Centre shows zero active assessments.
+4. VGT does not appear as an active customer or assessment.
+5. ABC TEXTTILE LTD does not appear as an active assessment
+   after the reset.
+6. No old Module 1–4 financial metrics appear.
+7. No old reports appear in the active workspace.
+8. No stale jobs execute in the background.
+9. Refreshing Chrome does not restore old assessments.
+10. Restarting the local backend does not restore old assessments.
+11. Restarting the frontend does not restore old assessments.
+12. Certified FX and PCBI reference assets remain available.
+13. Automated tests can still access their isolated test fixtures.
+14. The installed desktop application and its data remain
+    unchanged.
+15. The recovery snapshot exists outside active data locations.
+
+If any assertion fails, investigate and fix the cause before
+declaring the reset complete.
+
+==================================================
+PHASE 9 — REQUIRED FINAL REPORT
+==================================================
+
+Return a concise evidence-based report containing:
+
+A. Actual development frontend and backend locations.
+B. Actual data stores inspected.
+C. Operational data removed from the active environment.
+D. Demo and VGT data sources disabled or removed.
+E. Reference assets preserved.
+F. Recovery snapshot location.
+G. Files/functions changed.
+H. Tests executed with passed and failed counts.
+I. Evidence that the active Assessment Centre is empty.
+J. Evidence that the application runs locally in Chrome.
+K. Confirmation that the installed desktop application was
+   not modified.
+L. Any remaining cleanup limitations.
+
+Do not claim that the application is clean merely because
+the dashboard appears empty.
+
+Verify the underlying persisted records and startup behaviour.
+
+Do not proceed to customer creation or Module 1 testing.
+
+STOP after completing this reset and local Chrome launch.
+Wait for explicit approval before beginning the next step.
+
+---
+
+## Prompt 368
+
+aiCEV — READ-ONLY ASSESSMENT PROVENANCE AUDIT
+STEP 2A: ABC TEXTILE LTD
+
+Assessment ID: AIC-2026-0002
+Environment: Local development in Chrome
+Operating mode: INTERNAL_ASSESSMENT
+
+OBJECTIVE
+Determine exactly where the financial figures currently displayed
+in the ABC Textile assessment originated and whether they were
+calculated from its uploaded dataset.
+
+STRICT READ-ONLY RULES
+
+1. Do not modify source code, configuration, database records,
+   JSON files, browser storage or application state.
+2. Do not upload, parse for analysis, or reprocess any dataset.
+3. Do not click or invoke Execute Analysis Run programmatically.
+4. Do not create an assessment, data version or analysis run.
+5. Do not delete or restore any data.
+6. Do not use VGT, demo fixtures or another customer as a fallback.
+7. Do not infer missing facts. Report NOT FOUND when evidence
+   does not exist.
+8. Inspect only the local development environment, not the
+   installed desktop application's separate data store.
+9. Do not print confidential transaction-level customer data.
+   Report metadata, identifiers, counts, hashes and aggregates.
+10. Verify that every inspection command is read-only.
+
+AUDIT A — ASSESSMENT IDENTITY
+
+Read the persisted assessment record for AIC-2026-0002.
+
+Report:
+- Assessment ID
+- Customer ID and exact customer name
+- Industry and assessment period
+- Current persisted workflow status
+- Creation and last-update timestamps
+- Data receipt status
+- Associated uploaded-file ID, if any
+- Associated immutable data-version ID, if any
+- Associated analysis-run IDs, if any
+
+Do not rely on the displayed UI alone.
+
+AUDIT B — UPLOADED FILE PROVENANCE
+
+Locate the exact file referenced by this assessment's persisted
+records.
+
+Report:
+- Original filename
+- Actual stored file path, without exposing unrelated files
+- File existence
+- File size in bytes
+- SHA-256 hash
+- Upload timestamp
+- File validation status
+- Persisted source-row count, if available
+- Persisted valid-row count, if available
+- Persisted excluded-row count, if available
+- Persisted anomaly count, if available
+
+Do not open a different dataset if this file is missing.
+
+If the assessment references no file, report NO FILE LINKED.
+
+AUDIT C — ANALYSIS RUN HISTORY
+
+Inspect the persisted AnalysisJob, analysis-run and module-status
+records associated specifically with AIC-2026-0002.
+
+Report:
+- Whether a run exists
+- Run ID
+- Assessment ID and data-version ID attached to the run
+- Trigger time
+- Start and completion timestamps
+- Actual persisted status
+- Engine/service name and version, if recorded
+- Error details, if recorded
+- Whether Module 1 completed successfully
+- Whether Module 2 completed successfully
+- Whether Module 3 completed successfully
+- Whether Module 4 completed successfully
+
+Distinguish between:
+- File uploaded
+- Data validated
+- Run created
+- Engine invoked
+- Module completed
+- Results persisted
+
+Do not treat these states as interchangeable.
+
+AUDIT D — TRACE DISPLAYED FINANCIAL METRICS
+
+The current UI displays:
+
+Validated spend: ₹605.8385 Cr
+Addressable sourcing spend: ₹109.051 Cr
+Gross multi-lever opportunity: ₹87.241 Cr
+Overlap deductions: ₹13.086 Cr
+Net defensible opportunity: ₹74.155 Cr
+Proven opportunity: ₹68.223 Cr
+Delivery range: ₹8.899–₹20.763 Cr
+PCBI benchmark price-gap signal: ₹9.0876 Cr
+
+For each metric, trace the actual source of the displayed value.
+
+Inspect the frontend selector/state, API endpoint and response,
+backend service, persistence record and associated assessment/run
+identifiers.
+
+Return a table with:
+- Metric
+- Displayed value
+- Actual source file/function/API
+- Persisted record or run ID
+- Assessment ID associated with the result
+- Data-version ID associated with the result
+- Whether the source can be verified
+- Conclusion
+
+Possible conclusions:
+- VERIFIED_FOR_THIS_ASSESSMENT
+- VERIFIED_BUT_FROM_OLD_RUN
+- ASSOCIATED_WITH_DIFFERENT_ASSESSMENT
+- HARDCODED_OR_FIXTURE
+- FRONTEND_CACHE_OR_STALE_STATE
+- SOURCE_NOT_FOUND
+- INCONCLUSIVE
+
+Do not infer that a metric is current simply because its value
+matches an existing calculation.
+
+AUDIT E — MODULE EXECUTION PROOF
+
+Establish whether Module 1 actually processed the file linked to
+AIC-2026-0002.
+
+Look for existing execution logs, persisted run records, file
+hashes, data-version references, engine invocation records and
+canonical result records.
+
+Do not start a new run to produce evidence.
+
+If there is insufficient evidence to prove execution, state:
+"MODULE 1 EXECUTION NOT PROVEN."
+
+For Modules 2–4, establish whether their displayed metrics came
+from actual assessment-specific execution or an older/global
+result source.
+
+AUDIT F — FINANCIAL RECONCILIATION
+
+Check only persisted values and already available calculation
+outputs.
+
+Verify:
+Gross opportunity − overlap deductions = net opportunity.
+
+Report the exact arithmetic variance.
+
+Separately establish whether the values share the same
+assessment ID, run ID and calculation basis.
+
+Arithmetic reconciliation must not be treated as proof of
+correct data provenance.
+
+AUDIT G — FINAL REPORT
+
+Return:
+
+1. Assessment identity and current persisted state.
+2. Uploaded-file identity and hash.
+3. Data-version and analysis-run identifiers.
+4. Module 1 execution evidence.
+5. Provenance of each displayed metric.
+6. Whether Modules 2–4 actually ran for this assessment.
+7. Any cross-assessment data association found.
+8. Exact files, functions and API routes involved.
+9. The most likely failure point, distinguishing evidence
+   from hypotheses.
+10. The next smallest corrective action, as a recommendation only.
+
+Do not implement that correction.
+
+STOP after producing the read-only audit report.
+Wait for explicit approval before making any changes.
+
+
+---
+
+## Prompt 369
+
+aiCEV — CUSTOMER MANAGEMENT AND CLEAN ASSESSMENT WORKSPACE
+ARCHITECTURE CORRECTION
+PRIORITY: P0 — WORKFLOW AND DATA INTEGRITY
+
+OBJECTIVE
+
+Simplify the Internal Command Centre so that it manages customer
+profiles only.
+
+Establish the following workflow:
+
+INTERNAL COMMAND CENTRE
+    ↓
+CREATE / SELECT CUSTOMER
+    ↓
+CREATE / SELECT ASSESSMENT
+    ↓
+OPEN MODULE 1
+    ↓
+UPLOAD CUSTOMER PROCUREMENT DATA
+    ↓
+VALIDATE DATASET
+    ↓
+EXPLICITLY START MODULE 1
+    ↓
+DISPLAY MODULE 1 RESULTS ONLY AFTER SUCCESSFUL EXECUTION
+
+This task concerns customer management, navigation, workspace
+initialisation, result visibility and Module 1 initiation.
+
+Do not redesign unrelated parts of the application.
+Do not modify the certified financial calculation formulas.
+Do not implement or repair Modules 2–4 in this task.
+Do not run a new analysis automatically.
+Do not build or install a new desktop release.
+
+Keep INTERNAL_ASSESSMENT enabled and PUBLIC_SAAS disabled.
+
+==================================================
+PHASE 1 — INSPECT THE EXISTING ARCHITECTURE
+==================================================
+
+Identify the existing implementations of:
+
+- Internal Command Centre
+- Customer creation and persistence
+- Assessment creation and persistence
+- Assessment Centre
+- Module 1 upload and validation
+- Module 1 execution
+- Module 1 result retrieval
+- Modules 2–4 dashboards and result retrieval
+- Frontend state, localStorage, sessionStorage and caches
+- Backend APIs and persistence
+- Default customer configuration
+- Demo and VGT fallback data
+
+Reuse existing components and services wherever possible.
+
+Before modifying code, report the actual files and functions
+responsible for customer creation, assessment selection,
+module navigation and result display.
+
+Do not invent file names or assume the architecture.
+
+==================================================
+PHASE 2 — COMMAND CENTRE: CUSTOMER MANAGEMENT ONLY
+==================================================
+
+Simplify the Internal Command Centre into a customer-management
+workspace.
+
+Required actions:
+
+1. Create Customer.
+2. View Customers.
+3. Edit Customer, subject to existing permissions.
+4. Select Customer.
+5. Open or create an assessment for the selected customer.
+
+Retain appropriate existing customer fields, validation and
+audit controls.
+
+Separate customer-level attributes from assessment-specific
+attributes.
+
+Assessment period, uploaded procurement file, data version,
+analysis runs, Module 1 results, savings results and reports
+must not be stored as default customer-level analytical values.
+
+Remove analytical dashboards and analysis execution controls
+from the Command Centre, including:
+
+- Validated spend
+- Addressable sourcing spend
+- Gross and net opportunity
+- Savings percentages
+- PCBI benchmark price-gap signals
+- Historical customer-specific module results
+- Automatic analysis execution
+
+The Command Centre must never automatically select a default
+customer or populate a new customer workspace with another
+customer's metrics.
+
+If no customer exists, show an empty state with a Create Customer
+action.
+
+If customers exist but none is selected, show a customer list
+and a clear selection action.
+
+Do not delete existing customer records as part of this UI change.
+
+==================================================
+PHASE 3 — ASSESSMENT CENTRE
+==================================================
+
+The Assessment Centre manages assessment records and workflow
+statuses. It is not a source of fabricated financial results.
+
+When creating an assessment:
+
+- Generate a unique assessment ID.
+- Associate it with the explicitly selected customer ID.
+- Record the assessment period and relevant metadata.
+- Initialise dataset and module statuses correctly.
+- Do not automatically execute any analytical engine.
+- Do not inherit another assessment's data version, run IDs,
+  metrics or reports.
+
+Display only persisted assessment information.
+
+Do not populate financial result columns from global state,
+default values or another assessment.
+
+Where no valid results exist, show "—" or "Not Run", as
+appropriate.
+
+Ensure that the selected assessment remains selected when
+navigating into its workspace and returning to the Assessment
+Centre.
+
+==================================================
+PHASE 4 — CLEAN MODULE 1 INITIAL STATE
+==================================================
+
+When a newly created assessment is opened in Module 1, show
+a clean, assessment-specific workspace.
+
+Display:
+
+- Customer name
+- Customer ID
+- Assessment ID
+- Assessment period
+- Dataset status
+- Data-version ID, if one exists
+- Module 1 execution status
+- Uploaded filename, if one exists
+
+For a new assessment, initialise the workspace with:
+
+Dataset: NOT_UPLOADED
+Validation: NOT_RUN
+Module 1: NOT_RUN
+Analysis run ID: NONE
+Validated spend: —
+Supplier count: —
+Material-group count: —
+FX normalisation impact: —
+Module 2 results: —
+Module 3 results: —
+Module 4 results: —
+
+These values represent an empty state, not actual analytical
+results.
+
+Remove all inappropriate default customer-specific content,
+including:
+
+- Apex Industrial Dynamics Ltd as a default customer
+- Default evaluated-spend indicators
+- Preloaded spend and savings figures
+- Old customer supplier/material counts
+- Previous FX-normalisation impacts
+- Previous benchmark signals
+- Old analysis-run results
+- Default assessment periods unrelated to the selected
+  assessment
+- VGT or other demo results
+
+Do not remove legitimate FX or PCBI reference datasets.
+
+Reference market rates may remain available as reference
+information, clearly separated from customer analysis.
+
+==================================================
+PHASE 5 — UPLOAD AND MODULE 1 EXECUTION
+==================================================
+
+Preserve the existing Module 1 ingestion and calculation engine
+unless an actual defect is found.
+
+The workflow must distinguish these states:
+
+1. No file uploaded.
+2. File selected.
+3. File uploaded.
+4. File validation in progress.
+5. File validation passed.
+6. File validation failed.
+7. Module 1 not run.
+8. Module 1 running.
+9. Module 1 completed.
+10. Module 1 failed.
+
+Use the existing status model where possible.
+
+A file upload must not be interpreted as successful analysis.
+
+A successful validation must not be interpreted as completed
+analysis.
+
+Provide clear controls for:
+
+- Select Procurement File
+- Validate Dataset
+- Start Module 1 Analysis
+
+Enable Start Module 1 Analysis only when the existing validation
+requirements have passed.
+
+When Start is clicked:
+
+- Use the selected assessment ID.
+- Use its uploaded file and immutable data version.
+- Invoke the actual Module 1 engine.
+- Persist the run and its results.
+- Display genuine processing progress or status.
+- Show results only after that run completes successfully.
+- Show a meaningful error if execution fails.
+
+Prevent duplicate clicks from creating conflicting runs.
+
+Do not fabricate a successful run or fall back to another
+assessment's results.
+
+==================================================
+PHASE 6 — MODULE RESULT VISIBILITY
+==================================================
+
+Apply these rules consistently across Modules 1–4.
+
+A module may display its analytical results only when the
+corresponding assessment-specific run has completed successfully
+and the persisted result can be verified.
+
+For example:
+
+- Module 1 results require a successful Module 1 run.
+- Module 2 results require a successful Module 2 run.
+- Module 3 results require a successful Module 3 run.
+- Module 4 results require a successful Module 4 run.
+
+Until a module has completed, show its appropriate empty,
+queued, running, failed or review-required state.
+
+Do not automatically copy metrics between modules.
+
+Do not display fixed-percentage opportunity estimates as if they
+were actual engine results.
+
+Do not fetch the latest global result as a fallback.
+
+Do not use hardcoded values, mock data, VGT results or cached
+metrics to populate a new assessment.
+
+This task establishes the result-visibility rules. It does not
+authorise changes to the analytical formulas.
+
+==================================================
+PHASE 7 — HISTORICAL RESULTS AND ASSESSMENT ISOLATION
+==================================================
+
+Preserve existing assessment records and reports.
+
+Do not delete ABC Textile's uploaded file, DV-001, RUN-001,
+or existing Module 1 evidence.
+
+However, existing Module 2–4 values that cannot be verified
+must not be presented as validated results.
+
+For every result retrieval, verify the association with:
+
+- Selected customer ID
+- Selected assessment ID
+- Data-version ID
+- Analysis-run ID
+- Module number
+- Execution status
+
+If the association is missing or inconsistent, suppress the
+metric and expose the issue in internal diagnostics.
+
+Historical reports must remain accessible through the correct
+assessment and must never populate a different assessment.
+
+Do not automatically rerun or delete historical assessments.
+
+==================================================
+PHASE 8 — TEST THE REVISED WORKFLOW
+==================================================
+
+Run focused tests for:
+
+A. Create a customer without an assessment.
+B. Create an assessment for that customer.
+C. Open the new assessment in Module 1.
+D. Confirm the clean initial state.
+E. Confirm that no old spend or savings metrics appear.
+F. Confirm that the default Apex customer is absent.
+G. Confirm that VGT is not loaded into the normal workspace.
+H. Confirm that upload and validation statuses are distinct.
+I. Confirm that Module 1 is not run automatically.
+J. Confirm that an explicit Start action invokes the actual
+   Module 1 engine.
+K. Confirm that Module 1 results appear only after successful
+   execution.
+L. Confirm that Modules 2–4 remain empty until their respective
+   runs succeed.
+M. Switch between two assessments and check for contamination.
+N. Refresh Chrome and confirm persisted assessment selection.
+O. Confirm that the existing ABC Textile Module 1 evidence
+   remains preserved.
+P. Confirm that the desktop application's files and data remain
+   unchanged.
+
+Use the existing local Chrome development environment.
+
+Do not create a new installer.
+
+Do not proceed to Modules 2–4 analysis repairs.
+
+==================================================
+PHASE 9 — REPORT AND STOP
+==================================================
+
+Report:
+
+1. Actual source files and functions changed.
+2. Command Centre changes.
+3. Assessment Centre changes.
+4. Module 1 initial-state changes.
+5. Result-visibility and isolation changes.
+6. Tests run and passed/failed counts.
+7. Confirmation that existing ABC Textile Module 1 evidence
+   remains intact.
+8. Any unresolved issues.
+
+Do not claim successful end-to-end analysis merely because
+the frontend builds or the tests pass.
+
+STOP after this workflow correction.
+
+Wait for approval before modifying the analytical engines
+or proceeding to the next testing stage.
+
+
+## Prompt 370
+aiCEV — TOP RIBBON AND SUMMARY STRIP CORRECTION
+PRIORITY: P0 — CUSTOMER DATA DISPLAY INTEGRITY
+
+ENVIRONMENT
+Local Chrome development application.
+Frontend: localhost:3001
+Backend: existing local development backend.
+Operating mode: INTERNAL_ASSESSMENT.
+PUBLIC_SAAS must remain disabled.
+
+OBJECTIVE
+
+Correct the global top ribbon and the Module 1 summary strip.
+
+The current screen incorrectly displays ABC Textile Ltd and
+₹605.84 Cr even when the currently open assessment has no
+uploaded dataset.
+
+Prevent stale, historical, default, cached or cross-assessment
+financial figures from appearing in the active workspace.
+
+This task is strictly limited to:
+1. Top ribbon and active customer identity.
+2. Customer-specific spend indicator in the ribbon.
+3. Management Quick Summary availability.
+4. More Reports availability.
+5. Module 1 summary strip containing four cards.
+6. The data selectors and state transitions required to make
+   these displays assessment-specific.
+
+Do not modify procurement calculation formulas.
+Do not modify Modules 2–4 analytical engines.
+Do not run a new analysis.
+Do not delete historical customer data or assessments.
+Do not modify the desktop installation or create an installer.
+
+==================================================
+PHASE 1 — TRACE THE CURRENT DISPLAY SOURCES
+==================================================
+
+Inspect the actual source code responsible for:
+
+- Header / top ribbon.
+- Active customer identity.
+- Spend indicator beside the customer name.
+- Management Quick Summary button.
+- More Reports button.
+- Actual Data Coverage card.
+- Real-Time Processing card.
+- FX Normalization Impact card.
+- Clean Spend Yield card.
+- Selected customer and selected assessment state.
+- Module 1 canonical result retrieval.
+- API calls that provide assessment results.
+- Browser storage and cached frontend state.
+
+Identify exactly where ABC Textile Ltd and ₹605.84 Cr
+are being obtained for the current screen.
+
+Determine whether the source is:
+- Correctly associated with the current assessment.
+- A previously selected assessment.
+- A stale frontend state.
+- A default or fallback value.
+- A persisted result belonging to another assessment.
+- An unverified result.
+
+Do not guess the source.
+
+==================================================
+PHASE 2 — DEFINE ACTIVE ASSESSMENT CONTEXT
+==================================================
+
+Use the existing assessment and customer records.
+
+When an assessment is open, establish its identity using the
+persisted assessment ID and linked customer ID.
+
+All customer-specific display data must be associated with:
+
+- Customer ID.
+- Assessment ID.
+- Data-version ID, when available.
+- Analysis-run ID, when available.
+- Module number.
+- Persisted execution status.
+
+Do not use the most recent global result as a fallback.
+
+Do not use the last selected customer's spend as the current
+assessment's spend.
+
+Do not use localStorage or sessionStorage values as authoritative
+financial results.
+
+Browser storage may preserve navigation preferences, but the
+backend's assessment-specific records must determine whether
+analytical results exist.
+
+If the active assessment cannot be resolved, show the appropriate
+empty state instead of reusing previous figures.
+
+==================================================
+PHASE 3 — CORRECT THE TOP RIBBON
+==================================================
+
+Preserve the existing branding, layout style and navigation
+unless a minimal adjustment is necessary for correct behaviour.
+
+Customer identity rules:
+
+A. No customer or assessment selected:
+   Display "No Active Customer".
+   Do not display any customer-specific spend.
+
+B. Customer selected, but no assessment open:
+   Display the selected customer's name.
+   Do not display spend or savings figures.
+
+C. Assessment open, but no file uploaded:
+   Display the selected customer and assessment identity.
+   Optionally show "Data Not Uploaded".
+   Do not display spend, savings, supplier counts, benchmark
+   signals or historical analysis figures.
+
+D. File uploaded but not validated:
+   Display the file and upload status where appropriate.
+   Do not display completed analytical results.
+
+E. Dataset validated, but Module 1 has not completed:
+   Display validation status.
+   Do not display calculated spend or analytical result cards.
+
+F. Module 1 completed successfully:
+   The customer spend indicator may display the persisted
+   validated spend belonging to the active assessment's
+   successful Module 1 run.
+
+Before showing the spend indicator, verify the assessment ID,
+data-version ID, run ID and successful Module 1 status.
+
+If these associations are missing or inconsistent, suppress
+the spend indicator.
+
+Do not show ABC Textile's historical ₹605.84 Cr figure merely
+because ABC Textile was selected previously.
+
+Do not hardcode customer names, amounts or status values.
+
+==================================================
+PHASE 4 — MANAGEMENT QUICK SUMMARY AND REPORTS
+==================================================
+
+Management Quick Summary:
+
+- Do not generate a new report automatically.
+- Do not display a report from another assessment.
+- Disable or clearly mark the action unavailable if the selected
+  assessment does not have an eligible persisted report.
+- Do not treat a Module 1 result as proof that Modules 2–4
+  have completed.
+
+More Reports:
+
+- Show only reports linked to the active assessment.
+- Hide or disable report actions when no corresponding report
+  exists for that assessment.
+- Preserve access to historical reports through their original
+  assessment records.
+
+==================================================
+PHASE 5 — CORRECT THE FOUR SUMMARY CARDS
+==================================================
+
+Apply the following initial state when the active assessment
+has no uploaded dataset:
+
+1. ACTUAL DATA COVERAGE
+   Display "Awaiting dataset".
+
+2. REAL-TIME PROCESSING
+   Display "Not started".
+
+3. FX NORMALIZATION IMPACT
+   Display "—".
+
+4. CLEAN SPEND YIELD
+   Display "—".
+
+Do not display:
+- Previous customer metrics.
+- Previous spend values.
+- Previous FX impacts.
+- Previous clean-spend percentages.
+- Mock values.
+- VGT figures.
+- Default Apex customer values.
+- Metrics from another assessment.
+
+Do not display 0% or ₹0 Cr as if those values were calculated
+results when no analysis exists.
+
+For a file that is uploaded but not validated, keep analytical
+result fields unavailable.
+
+After successful dataset validation, display validation
+information only where appropriate, clearly labelled as
+validation output rather than completed analysis.
+
+After successful Module 1 execution, display the persisted
+Module 1 outputs for the active assessment only.
+
+Use explicit loading, empty, running, failed and completed states.
+
+==================================================
+PHASE 6 — STATE RESET AND NAVIGATION
+==================================================
+
+When switching customers or assessments:
+
+- Resolve the newly selected assessment.
+- Clear transient display state belonging to the previous
+  assessment before rendering the new assessment.
+- Fetch the new assessment's persisted status and results.
+- Ignore late API responses belonging to the previous selection.
+- Do not briefly display old figures while the new assessment
+  loads.
+- Preserve historical results in their original records.
+
+When navigating back to Module 1, reconstruct the screen from
+the currently selected assessment's persisted state.
+
+Do not automatically execute Module 1.
+
+Do not automatically create a data version or analysis run.
+
+==================================================
+PHASE 7 — TESTS
+==================================================
+
+Add or update focused tests for:
+
+1. No active customer: no spend displayed.
+2. Customer selected without assessment: no spend displayed.
+3. New assessment without a file: all four cards show the
+   specified empty states.
+4. File uploaded but not validated: no analytical results.
+5. Dataset validated but Module 1 not run: no analytical results.
+6. Module 1 running: no completed results.
+7. Module 1 completed: only its persisted assessment-specific
+   results appear.
+8. ABC Textile's historical spend does not appear in a fresh
+   assessment.
+9. Switching assessments clears the previous display.
+10. A delayed response from an old assessment cannot overwrite
+    the current assessment's figures.
+11. Management Quick Summary cannot show another assessment's
+    report.
+12. More Reports shows only reports linked to the active
+    assessment.
+13. Refreshing Chrome restores the correct active assessment
+    without restoring stale analytical values.
+14. Existing historical assessment records remain unchanged.
+
+Use existing test conventions and the local Chrome application.
+
+Do not weaken or delete existing regression tests merely to
+make the new tests pass.
+
+==================================================
+PHASE 8 — VERIFY AND REPORT
+==================================================
+
+Run the relevant frontend and backend tests and typechecks.
+
+Report:
+- Exact source of the old ₹605.84 Cr display.
+- Files and functions changed.
+- State and API changes.
+- Tests passed and failed.
+- Confirmation that no analytical formulas were modified.
+- Confirmation that historical assessment data was preserved.
+- Any unresolved issues.
+
+Do not claim browser-level verification unless it was actually
+performed.
+
+Do not modify Modules 2–4 calculation engines.
+
+Do not create a desktop installer.
+
+STOP after completing this task and await approval.
+
+## Prompt 371
+
+aiCEV — ASSESSMENT CENTRE STABILITY AND TOP RIBBON ALIGNMENT
+PRIORITY: P0 — UI DATA INTEGRITY AND USABILITY
+
+ENVIRONMENT
+Local Chrome development application.
+Frontend: localhost:3001
+Operating mode: INTERNAL_ASSESSMENT.
+PUBLIC_SAAS must remain disabled.
+
+OBJECTIVES
+
+1. Eliminate Assessment Centre flickering and transient stale data.
+2. Ensure assessment records and financial results are associated
+   with the correct assessment.
+3. Align the global top ribbon to the left and ensure that the
+   entire ribbon is visible without clipping.
+4. Verify the changes in the running Chrome application.
+
+Do not modify procurement calculation formulas.
+Do not modify Modules 1–4 analytical engines.
+Do not run any new analysis.
+Do not delete customer records, assessment records, datasets,
+analysis runs, audit trails or historical reports.
+Do not modify the desktop installation or create an installer.
+
+==================================================
+PHASE 1 — INVESTIGATE THE FLICKER
+==================================================
+
+Inspect the actual implementation of:
+
+- Assessment Centre.
+- Customer list and assessment list.
+- Assessment table data loading.
+- Assessment loading and empty states.
+- Customer and assessment selection.
+- API calls used to retrieve assessments.
+- Frontend caches and persisted browser state.
+- Any polling, effects, subscriptions or repeated fetches.
+- Financial values displayed in assessment rows.
+- Loading, error and refresh transitions.
+
+Use the attached video and previous correction report as
+the reproduction context.
+
+The observed problem is that historical assessment information
+and financial figures appear, then disappear or change, and
+subsequently reappear.
+
+Identify the actual cause before changing the implementation.
+
+Determine whether the behaviour comes from:
+
+- Initial rendering with stale cached data.
+- Duplicate or overlapping API requests.
+- State being reset during component initialisation.
+- A race between different API responses.
+- Incorrect dependencies in React effects.
+- Inconsistent backend responses.
+- Incorrect mapping between assessments and their results.
+- Another cause established by source-code inspection.
+
+Do not assume the cause without evidence.
+
+==================================================
+PHASE 2 — STABILISE ASSESSMENT DATA LOADING
+==================================================
+
+Implement the smallest safe correction based on the diagnosis.
+
+Requirements:
+
+1. Show an intentional loading state when assessment data is
+   initially being retrieved.
+
+2. Do not briefly render stale or unrelated assessment figures
+   while the current request is pending.
+
+3. Do not clear a valid assessment list merely because another
+   request starts, unless a deliberate refresh requires it.
+
+4. Prevent obsolete asynchronous responses from overwriting
+   newer state.
+
+5. Avoid duplicate fetches where they are not required.
+
+6. Ensure an empty state appears only after a successful response
+   confirms that no assessments exist.
+
+7. Distinguish an API error from a genuinely empty assessment list.
+
+8. If refresh fails, retain valid previously loaded information
+   where safe and show a clear error or refresh status.
+
+9. Do not introduce automatic analysis execution or automatic
+   assessment creation.
+
+10. Do not use mock, VGT or default customer data to populate
+    the assessment list.
+
+Do not suppress historical assessment records simply to remove
+the flicker.
+
+==================================================
+PHASE 3 — FINANCIAL DATA INTEGRITY IN THE ASSESSMENT TABLE
+==================================================
+
+Historical assessments may display their own persisted results.
+
+However, every financial figure must belong to the assessment
+whose row displays it.
+
+Verify that the table does not obtain a result from:
+
+- A global latest-result variable.
+- A previously selected assessment.
+- Another customer's assessment.
+- A frontend fallback or mock.
+- An unrelated localStorage or sessionStorage value.
+- An unverified or incomplete analysis run.
+
+Where a result is not available or cannot be verified, display
+"—" or an appropriate status.
+
+Do not display a fabricated zero.
+
+Do not delete or alter historical results.
+
+Keep the active workspace separate from the historical list.
+
+Opening the Assessment Centre must not automatically activate
+a customer or assessment.
+
+Selecting an assessment must explicitly establish the active
+assessment context.
+
+==================================================
+PHASE 4 — CORRECT THE GLOBAL TOP RIBBON
+==================================================
+
+Inspect the actual layout containers and responsive styles
+responsible for the global header.
+
+Current visual issues:
+
+- The ribbon content is positioned too far from the left edge.
+- The rightmost controls can be clipped.
+- The full ribbon does not fit cleanly within the available
+  browser width.
+
+Requirements:
+
+1. Align the ribbon content container to the left.
+
+2. Remove or correct an unnecessarily restrictive centred
+   max-width container if that is the cause.
+
+3. Preserve the existing aiCEV branding, colour palette,
+   typography and component styling.
+
+4. Preserve the existing controls:
+   - aiCEV logo.
+   - Internal Assessment Mode.
+   - Assessment Centre.
+   - Active customer identity.
+   - Management Quick Summary.
+   - More Reports.
+   - Admin Portal.
+   - User controls, where present.
+
+5. Ensure the rightmost controls are not clipped.
+
+6. Use responsive spacing and sizing where necessary.
+
+7. Do not solve the problem by making all text or buttons
+   excessively small.
+
+8. Do not introduce horizontal page overflow.
+
+9. Do not alter the underlying customer-selection or
+   assessment-selection rules except where required to
+   preserve the correct identity.
+
+10. Maintain keyboard accessibility and visible focus states.
+
+Inspect the actual rendered layout at the existing development
+viewport before choosing the CSS correction.
+
+==================================================
+PHASE 5 — REGRESSION TESTS
+==================================================
+
+Add or update tests covering:
+
+A. Initial assessment loading shows a stable loading state.
+
+B. A successful empty response displays the empty state.
+
+C. A populated assessment response remains visible after
+   loading completes.
+
+D. A delayed older response cannot overwrite newer data.
+
+E. A refresh does not cause valid records to disappear
+   transiently without a justified reason.
+
+F. An API error is not presented as an empty assessment list.
+
+G. ABC Textile's historical record remains preserved.
+
+H. Historical financial figures remain associated with
+   their original assessment.
+
+I. A new assessment does not inherit historical financial values.
+
+J. Opening the Assessment Centre does not automatically
+   activate an assessment.
+
+K. The ribbon is left-aligned.
+
+L. The full ribbon controls remain accessible without clipping
+   at the target Chrome viewport.
+
+M. Existing INTERNAL_ASSESSMENT and PUBLIC_SAAS restrictions
+   remain unchanged.
+
+Do not weaken or remove existing tests merely to make the
+new tests pass.
+
+==================================================
+PHASE 6 — RUNNING CHROME VERIFICATION
+==================================================
+
+Use the existing local Chrome development environment.
+
+Do not claim browser-level verification based only on:
+
+- TypeScript checks.
+- Unit tests.
+- HTTP status.
+- Static source-code inspection.
+
+Actually inspect the running application.
+
+Verify:
+
+1. Open the application with no active customer.
+2. Open Assessment Centre.
+3. Observe the initial loading and final list states.
+4. Refresh the Assessment Centre.
+5. Switch between customers and assessments.
+6. Confirm that no stale financial figures flash on screen.
+7. Confirm the historical assessment list remains intact.
+8. Confirm the ribbon is left-aligned and fully visible.
+9. Confirm the rightmost controls are accessible.
+10. Confirm that no analytical engine was triggered.
+
+If browser automation is unavailable, state that explicitly.
+Do not represent automated component tests as visual
+browser verification.
+
+==================================================
+PHASE 7 — REPORT AND STOP
+==================================================
+
+Provide a concise implementation report containing:
+
+1. Root cause of the flickering, supported by source evidence.
+2. Files and functions changed.
+3. Exact layout correction.
+4. Tests executed and passed/failed counts.
+5. Actual Chrome verification performed.
+6. Confirmation that historical data was preserved.
+7. Confirmation that Modules 1–4 formulas and engines
+   were not modified.
+8. Any remaining issues.
+
+Do not create a desktop installer.
+
+Do not proceed to Module 1–4 end-to-end testing.
+
+STOP after this correction and wait for approval.
+
+## Prompt 372
+
+run ocally on chrome
+
+## Prompt 373
+
+aiCEV — FINAL ASSESSMENT DISPLAY GATE
+PRIORITY: P0 — FINANCIAL DATA DISPLAY CONTROL
+
+Make a minimal, targeted correction to the Assessment Centre.
+
+CURRENT ISSUE
+The Assessment Centre displays financial values for ABC Textile
+Ltd while assessment AIC-2026-0002 is still in Draft status.
+
+Examples include:
+- Total Spend
+- Validated Spend
+- Potential Savings
+- Savings Percentage
+
+REQUIRED BEHAVIOUR
+
+1. Do not display any customer-specific financial result anywhere
+   in the Assessment Centre unless the assessment has completed
+   Modules 1, 2, 3 and 4, the Savings Engine has successfully
+   generated the consolidated result, and the final report has
+   been formally accepted and the assessment marked ACCEPTED.
+
+2. Until all these conditions are satisfied, display "—" for:
+   - Total Spend
+   - Validated Spend
+   - Potential Savings
+   - Savings Percentage
+   - Any other derived financial result shown in the assessment
+     list, summary cards or customer identity ribbon.
+
+3. A Draft, DATA_PENDING, UPLOADED, VALIDATED, ANALYSIS_RUNNING,
+   MODULE_1_READY, PCBI_REVIEW, ANALYST_REVIEW, APPROVED or
+   DELIVERED assessment must not reveal these financial figures
+   in the Assessment Centre.
+
+4. Define one explicit eligibility predicate for financial display.
+   It must verify:
+   - All four modules completed successfully.
+   - A successful persisted Module 4/Savings Engine run exists.
+   - Consolidated savings results are persisted for the same
+     assessment and data version.
+   - The final report has been formally accepted.
+   - The assessment's persisted lifecycle status is ACCEPTED.
+
+5. Do not rely solely on the presence of validatedSpendCr,
+   netDefensibleOpportunityCr, savingsPct or other populated
+   fields to decide whether results may be displayed.
+
+6. Do not use a frontend-only status check as the sole protection.
+   Inspect the existing backend/API and ensure the Assessment Centre
+   receives or exposes financial figures only when the assessment
+   meets the eligibility rules. Preserve authorised access to
+   historical evidence within the appropriate review workflow.
+
+7. Keep customer names, assessment IDs, industry, assessment period
+   and lifecycle status visible as appropriate. Only suppress
+   ineligible financial results.
+
+8. Do not delete or alter ABC Textile's historical records.
+   Do not clear databases or browser storage.
+   Do not run an analysis.
+   Do not modify any analytical formulas or Modules 1–4 engines.
+   Do not change the desktop installer or operating mode.
+
+9. Add regression tests proving that:
+   - A Draft assessment with populated financial fields displays
+     no financial results.
+   - Module 1 completion alone displays no financial results.
+   - Module 4 completion without formal report acceptance displays
+     no financial results.
+   - Report delivery without acceptance displays no financial results.
+   - A fully completed and formally ACCEPTED assessment displays
+     its own persisted consolidated results.
+   - An accepted assessment cannot expose its results in another
+     assessment's row.
+   - The customer ribbon follows the same display rule.
+   - Historical records remain intact.
+
+10. Run relevant frontend and backend tests and typechecks.
+    Report the files changed, the eligibility rule implemented,
+    and the test results.
+
+Do not claim browser verification unless it was performed.
+
+STOP after this correction. Do not proceed to end-to-end testing
+or make unrelated changes.
+
+## Prompt 374
+
+aiCEV — CRITICAL MODULE 1 DATA LINEAGE AND ASSESSMENT ISOLATION FIX
+
+PRIORITY: RELEASE-BLOCKING DATA INTEGRITY DEFECT
+ENVIRONMENT: LOCAL CHROME DEVELOPMENT
+OPERATING MODE: INTERNAL_ASSESSMENT
+PUBLIC_SAAS: REMAIN DISABLED
+
+IMPORTANT:
+Do not begin by changing UI labels or hiding the incorrect numbers.
+Trace the actual data lineage and fix the underlying defect.
+
+Do not change Modules 1–4 analytical formulas.
+Do not delete historical customer data or audit records.
+Do not execute a new customer analysis until the investigation
+and corrective tests are complete.
+
+==================================================
+1. CONFIRMED REPRODUCTION
+==================================================
+
+The selected customer and assessment are:
+
+Customer: ABC Textile Ltd
+Assessment: AIC-2026-0002
+Configured assessment period: January–December 2023
+
+However, Module 1 displays:
+
+Filename: VGT Testing Data.xlsx
+Data version prefix: DATA-VER-VGT-
+Ingested records: 20,505
+Evaluated spend: ₹4,073.83 Cr
+Actual period: April 2021–January 2022
+Suppliers: 529
+Material groups: 57
+Plants: 19
+
+These values match the known VGT regression dataset.
+
+The UI is displaying ABC Textile's identity alongside VGT dataset
+information. This is a critical assessment-to-dataset integrity
+failure.
+
+Do not assume that the screenshots prove whether the wrong file
+was uploaded or whether the application substituted VGT data.
+Establish the exact cause from source code, API responses and
+persisted records.
+
+==================================================
+2. TRACE THE COMPLETE DATA LINEAGE
+==================================================
+
+Trace the exact path:
+
+Browser file selection
+    -> upload request
+    -> backend upload handler
+    -> file parsing
+    -> persisted data version
+    -> assessment-to-data-version association
+    -> Module 1 execution request
+    -> analysis run
+    -> canonical Module 1 result
+    -> API response
+    -> frontend state
+    -> displayed results
+
+At every stage, record the actual identifiers and values:
+
+- Active customer/tenant ID
+- Assessment ID
+- Uploaded original filename
+- Upload request ID, where available
+- Data version ID
+- Persisted file location or storage reference
+- Source row count
+- Analysis run ID
+- Run status
+- Dataset period
+- Canonical result ID or reference
+- IDs returned by the backend API
+- IDs and data version used by the frontend
+
+Inspect:
+
+- Assessment upload and ingestion controllers/services.
+- Assessment and DataVersion persistence models.
+- Upload response handling.
+- Module 1 execution entry points.
+- VGT regression runner and test fixtures.
+- Default dataset selection and fallback logic.
+- Cached browser state and local/session storage.
+- Shared frontend stores and global result variables.
+- API calls that retrieve the current dataset or Module 1 results.
+- Customer/assessment switching logic.
+- Any demo, seed, mock, fixture or regression-data auto-loading.
+
+Determine whether VGT data is entering through the upload,
+backend persistence, analysis-run selection, canonical aggregator,
+API response, frontend state or another path.
+
+Do not guess. Report evidence for the root cause.
+
+==================================================
+3. REMOVE AUTOMATIC VGT FALLBACK FROM CUSTOMER WORKFLOWS
+==================================================
+
+VGT is regression/test data.
+
+It must never be used automatically as:
+
+- A default customer dataset.
+- A fallback when an upload is missing.
+- A fallback when a data version cannot be retrieved.
+- A fallback when Module 1 has no result.
+- A substitute for a failed API response.
+- A global or latest dataset shared across assessments.
+- An automatic seed for a newly created customer.
+
+Search the entire application for VGT regression dataset references
+and identify every execution path.
+
+Preserve VGT fixtures and tests where they are intentionally used
+by isolated regression tests.
+
+Permit VGT execution only through an explicit, identifiable
+test-only path that cannot be triggered by an ordinary customer
+upload or normal Module 1 button.
+
+Do not merely rename the VGT file or suppress its display.
+
+==================================================
+4. ENFORCE ASSESSMENT-SCOPED DATA ASSOCIATION
+==================================================
+
+Every customer dataset, data version, Module 1 run and result
+must be associated with the correct assessment and customer.
+
+Requirements:
+
+1. Module 1 must use the data version explicitly associated with
+   the selected assessment.
+
+2. A dataset belonging to one assessment must never be selected
+   by another assessment through a global latest-result lookup.
+
+3. Reject mismatched customer, assessment, data-version and run
+   associations.
+
+4. Ensure that an analysis run uses the same assessment and data
+   version that the user explicitly selected for execution.
+
+5. Persist the association and return the relevant identifiers
+   through the API.
+
+6. Prevent stale asynchronous responses from replacing the
+   selected assessment's dataset or results.
+
+7. Do not infer dataset identity from the customer name alone.
+
+8. Do not assume that a filename proves the file's contents.
+   Record the uploaded filename and independently inspect the
+   parsed dataset metadata and source rows.
+
+9. If the association is missing, ambiguous or inconsistent,
+   stop the run and show a clear error.
+
+10. Do not silently substitute another dataset.
+
+Do not invent a new tenant or assessment identity scheme if
+a correct persisted model already exists. Repair the existing
+association model consistently.
+
+==================================================
+5. CORRECT THE UPLOAD AND MODULE 1 WORKFLOW
+==================================================
+
+Required workflow:
+
+A. Create or select the customer assessment.
+
+B. Open Module 1.
+
+C. Show the selected customer's identity and assessment period.
+
+D. Start with an empty dataset workspace when that assessment
+   has no associated uploaded dataset.
+
+E. User explicitly selects a procurement file.
+
+F. The application uploads and parses that exact file.
+
+G. Show the uploaded filename, data version ID, row count,
+   detected date range, currencies and initial validation status.
+
+H. Persist the dataset association to the selected assessment.
+
+I. User explicitly presses "Ingest Dataset & Execute Module 1".
+
+J. Execute Module 1 against that exact persisted data version.
+
+K. Show results only when the corresponding Module 1 run succeeds
+   and the returned result references the same assessment and
+   data version.
+
+L. If the run fails, show the failure and allow a deliberate retry.
+   Do not show another dataset's results.
+
+Do not automatically execute Module 1 using an unrelated dataset.
+
+Do not trigger Modules 2–4 automatically.
+
+Do not show fabricated financial figures while ingestion or
+analysis is pending.
+
+==================================================
+6. HANDLE THE CURRENT ABC TEXTILE ASSESSMENT SAFELY
+==================================================
+
+Inspect assessment AIC-2026-0002 and its persisted dataset
+associations before changing any records.
+
+Determine whether:
+
+- The VGT file was actually uploaded to this assessment.
+- The UI merely displayed stale VGT state.
+- The backend associated the wrong data version.
+- The Module 1 run selected the wrong dataset.
+- More than one of these conditions occurred.
+
+Do not automatically delete the VGT data version.
+Do not overwrite historical analysis runs.
+Do not silently reassign the existing VGT dataset to ABC Textile.
+Do not execute Module 1 again during this investigation.
+
+Preserve all existing records and audit evidence.
+
+If ABC Textile has no valid customer dataset associated with
+the assessment, mark the workspace as requiring a fresh explicit
+upload. Clearly identify any inconsistent existing association
+without destroying the evidence.
+
+==================================================
+7. VERIFY MODULE 1 DATA INTEGRITY
+==================================================
+
+Add regression tests for the following cases:
+
+TEST 1:
+A new assessment with no upload displays an empty dataset
+workspace, with no inherited customer spend or results.
+
+TEST 2:
+Uploading a file creates a data version associated with the
+correct assessment and customer.
+
+TEST 3:
+The uploaded filename and persisted data version are consistent
+across the upload response, backend persistence and frontend.
+
+TEST 4:
+A Module 1 run uses only the explicitly selected assessment's
+data version.
+
+TEST 5:
+A VGT dataset cannot enter an ordinary customer workflow through
+a fallback or global latest-result lookup.
+
+TEST 6:
+An analysis run from one assessment cannot supply results to
+another assessment.
+
+TEST 7:
+Switching assessments cannot display stale results from the
+previous assessment.
+
+TEST 8:
+A missing or inconsistent dataset association causes a clear
+error rather than silent substitution.
+
+TEST 9:
+A failed upload or failed analysis cannot display results from
+an earlier successful run as though they belong to the current run.
+
+TEST 10:
+The explicit VGT regression test path still works and remains
+isolated from ordinary customer workflows.
+
+TEST 11:
+A dataset's actual date range is derived from its parsed source
+records and is not replaced by another assessment's period.
+
+TEST 12:
+Existing FX normalization and Module 1 reconciliation tests
+continue to pass without formula changes.
+
+Do not weaken existing tests to make the new tests pass.
+
+==================================================
+8. VERIFY THE FIX IN LOCAL CHROME
+==================================================
+
+After the code changes and tests pass, start or refresh the
+existing local application and verify the actual workflow.
+
+Do not claim browser verification based only on typechecks,
+unit tests, source inspection or an HTTP status.
+
+Verify:
+
+1. Open ABC Textile assessment AIC-2026-0002.
+2. Confirm that the displayed dataset identity is unambiguous.
+3. Confirm that no VGT dataset or result appears unless VGT is
+   explicitly selected through an isolated test workflow.
+4. If the assessment has no valid associated customer dataset,
+   confirm that the workspace requests an upload.
+5. Upload the intended ABC Textile file explicitly.
+6. Confirm that the displayed filename and data version match
+   the actual upload.
+7. Execute Module 1 only after the association is verified.
+8. Confirm that the result uses the same assessment ID and
+   data version ID.
+9. Refresh the page and confirm the same association persists.
+10. Switch to another assessment and back; verify no cross-
+    assessment results appear.
+
+If browser automation or access to the running browser is
+unavailable, state this explicitly and do not claim the test
+passed.
+
+Do not use the VGT regression dataset as proof that the ABC
+Textile workflow is correct.
+
+==================================================
+9. SCOPE RESTRICTIONS
+==================================================
+
+Do not modify:
+
+- Module 1 financial formulas.
+- FX master data or FX methodology.
+- Module 2 sourcing formulas.
+- Module 3 PCBI methodology.
+- Module 4 savings calculations.
+- Savings percentage assumptions.
+- Assessment financial acceptance gate.
+- Desktop installer or desktop release metadata.
+- Operating mode or SaaS restrictions.
+
+This task is limited to dataset identity, persistence,
+assessment association, run selection, frontend state and
+regression tests.
+
+==================================================
+10. FINAL REPORT AND STOP
+==================================================
+
+Report:
+
+1. Proven root cause, with file/function evidence.
+2. Whether the wrong file was uploaded or the wrong dataset
+   was substituted after upload.
+3. Exact files changed.
+4. Dataset, assessment and run association rules implemented.
+5. VGT fallback paths removed or isolated.
+6. Tests executed, with pass/fail counts.
+7. Actual Chrome verification results.
+8. Confirmation that historical records were preserved.
+9. Confirmation that Modules 1–4 formulas were not modified.
+10. Any remaining blockers.
+
+Do not proceed to Modules 2–4.
+Do not change savings percentage calculations.
+Do not generate a desktop installer.
+
+STOP and wait for approval after Module 1 data lineage
+is corrected and verified.
+
+---
+
+## Prompt 375
+resume
+
+---
+
+## Prompt 376
+aiCEV — ABC TEXTILE MODULE 1 FORENSIC RECONCILIATION
+PRIORITY: P0 — CUSTOMER DATA ACCURACY
+
+ENVIRONMENT:
+Local Chrome development application.
+Operating mode: INTERNAL_ASSESSMENT.
+Customer: ABC Textile Ltd.
+Assessment: AIC-2026-0002.
+Module: 1 only.
+
+OBJECTIVE
+Independently reconcile the actual uploaded Textile1.xlsx workbook
+against every material Module 1 output, correct proven defects,
+and enforce strict customer/file/data-version isolation.
+
+Do not begin by editing displayed numbers.
+Trace each value to its source field, transformation and aggregation.
+
+Do not proceed to Modules 2–4.
+Do not change sourcing or savings formulas.
+Do not execute VGT regression data in the customer workflow.
+Do not delete historical records or audit evidence.
+Do not create a desktop installer.
+
+==================================================
+1. PIN THE EXACT SOURCE FILE
+==================================================
+
+Expected source filename:
+Textile1.xlsx
+
+Expected file size:
+4,251,414 bytes
+
+Expected SHA-256:
+7c7d5f8a68efe9b60f9d53bd3c0564d27cd187923fd7bf75b6b71a18ef25cca7
+
+Expected worksheet:
+OpPack
+
+Header row:
+Row 1
+
+Expected data records:
+23,570
+
+Expected source date range:
+2023-01-02 through 2023-12-30
+
+Expected billing months:
+12
+
+Locate the persisted uploaded file and independently verify its hash.
+
+If the hash does not match, stop and report the actual file identity.
+Do not silently substitute another workbook.
+
+Use the exact data version associated with assessment AIC-2026-0002.
+
+Record and verify:
+- Customer ID
+- Assessment ID
+- Data version ID
+- Original filename
+- SHA-256
+- Upload timestamp
+- Source record count
+- Analysis run ID, if one exists
+
+Every result must be traceable to these identifiers.
+
+==================================================
+2. BUILD AN INDEPENDENT SOURCE-DATA RECONCILIATION
+==================================================
+
+Inspect the source columns, including:
+
+- Purch.Doc.
+- Doc. Date
+- Purchase Month
+- Material
+- Short Text
+- Quantity
+- vendor code
+- Vendor Name
+- PO Category
+- Plnt
+- POrg
+- Crcy
+- CR
+- Net Value
+- Net Value In INR
+- Net Value in Crs.
+- Vendor Code2
+- Vendor Name2
+- Matl Group
+
+Do not assume that similarly named columns are interchangeable.
+
+Create an independent audit of:
+
+A. Source rows and parsed rows.
+B. Date range and billing months.
+C. Currency counts.
+D. Raw monetary values.
+E. INR-normalized values.
+F. Missing values by required field.
+G. Distinct material codes.
+H. Distinct item descriptions.
+I. Distinct material groups.
+J. Distinct procurement categories.
+K. Distinct plant codes.
+L. Distinct vendor names and vendor codes.
+M. Duplicate or excluded records, with explicit rules.
+
+Record the source column, transformation and aggregation rule
+for every reported metric.
+
+==================================================
+3. INVESTIGATE THE SPEND AND FX DISCREPANCY
+==================================================
+
+Independent source-workbook findings:
+
+Sum of Net Value:
+₹583.41623312 Cr
+
+Sum of Net Value In INR:
+₹613.88051855 Cr
+
+Sum of Net Value in Crs.:
+₹613.88051855 Cr
+
+Difference between normalized and raw totals:
++₹30.46428543 Cr
+
+The current Module 1 screen shows:
+- Evaluated spend: ₹583.42 Cr
+- Valid FX-normalized spend: ₹583.42 Cr
+- FX normalization impact: ₹153.50 Cr
+
+The displayed FX impact does not reconcile to this source workbook.
+
+Investigate the complete calculation path:
+
+source amount
+-> source currency
+-> transaction exchange rate
+-> INR-normalized amount
+-> INR crores
+-> eligible/ineligible record classification
+-> persisted spend aggregate
+-> frontend summary
+-> Pareto spend aggregate
+
+Determine exactly why the current screen reports these figures.
+
+The workbook's Net Value In INR and Net Value in Crs. columns
+reconcile to one another. Verify whether the existing Module 1
+implementation is incorrectly summing raw Net Value instead
+of the normalized value.
+
+Do not blindly replace totals with hard-coded expected values.
+
+Correct the underlying field mapping or transformation only
+after proving the cause.
+
+Verify whether historical FX conversion should use the workbook's
+CR field or the approved aiCEV transaction-date FX methodology.
+Document any difference. Do not silently change FX policy.
+
+All totals must reconcile using the approved treatment of
+included, excluded and quarantined records.
+
+==================================================
+4. CORRECT CURRENCY DETECTION AND VALIDATION
+==================================================
+
+The source workbook contains these currencies:
+
+INR: 23,319 records
+USD: 105 records
+EUR: 111 records
+JPY: 26 records
+GBP: 5 records
+CHF: 4 records
+
+Total: 23,570 records
+
+There are no CNY records in this workbook.
+
+The current screen reports:
+INR, USD, EUR, CNY.
+
+It also flags 30 records as having a missing currency code,
+although the source Crcy column is populated in all 23,570 rows.
+
+Investigate the source-to-canonical column mapping, especially
+the mapping of Crcy and CR.
+
+Requirements:
+
+1. Detect currencies from the actual parsed source data.
+2. Preserve all supported source currency codes.
+3. Do not inject currencies from previous datasets.
+4. Do not default a missing canonical mapping to INR when
+   the source currency exists.
+5. Distinguish an actually missing source currency from a
+   mapping or parser error.
+6. Do not classify a record as having a missing currency code
+   if its source Crcy value is valid and correctly mapped.
+7. Preserve genuinely invalid records and explain the reason
+   they cannot be processed.
+8. Reconcile conversion issue counts against actual source rows.
+
+Do not apply blanket AI fixes or mutate source data to hide
+the mapping defect.
+
+==================================================
+5. CORRECT MATERIAL, CATEGORY, PLANT AND ITEM MAPPINGS
+==================================================
+
+Source-derived counts:
+
+Distinct nonblank Material codes: 9,846
+Distinct Short Text descriptions: 12,769
+Distinct Matl Group values: 262
+Distinct PO Category values: 41
+Distinct Plnt values: 12
+Distinct Vendor Name values: 1,291
+Distinct vendor code values: 1,310
+
+The current screen shows:
+- 1 material group
+- 1 operating plant
+- 14,698 unique items
+- Pareto labels displaying codes instead of actual descriptions
+
+Trace the mapping and aggregation rules for each field.
+
+Requirements:
+
+A. Material code and item description must remain separate fields.
+
+B. Pareto display hierarchy must use the actual Short Text
+   description for the item label and preserve Material as
+   a separate identifier.
+
+C. Do not use generic values such as "Item-6986" when an actual
+   source description is available.
+
+D. Do not replace actual descriptions with material codes.
+
+E. Do not use PO Category as a substitute for Matl Group.
+
+F. Do not use POrg or another organizational field as a substitute
+   for Plnt.
+
+G. Determine the intended definition of "Unique Items".
+   Report the exact source fields and distinct-count rule.
+   Do not hard-code 14,698 or substitute another count without
+   establishing the intended definition.
+
+H. Ensure Pareto grouping and spend aggregation use the same
+   correctly normalized transaction amounts as Module 1.
+
+I. Ensure material group, plant, vendor and item totals reconcile
+   to the selected assessment's source dataset.
+
+==================================================
+6. ENFORCE STRICT ASSESSMENT AND FILE ISOLATION
+==================================================
+
+Every Module 1 metric must be calculated from the exact persisted
+data version explicitly associated with the selected assessment.
+
+Do not use:
+- Global latest-result variables.
+- Cached results from another customer.
+- VGT regression results.
+- Previous assessment state.
+- Hard-coded fallback totals.
+- Unrelated default datasets.
+- Currency lists or FX-impact values from previous assessments.
+
+Bind the persisted Module 1 run and result to:
+customer ID + assessment ID + data version ID.
+
+Reject mismatched associations.
+
+If the association or source file cannot be verified, stop the run
+and display a clear error instead of displaying another result.
+
+On assessment switching, ensure all source-dependent summary,
+currency, material-group, plant, validation and Pareto state is
+loaded from the newly selected assessment's own data version.
+
+Do not erase valid historical data or audit records.
+
+==================================================
+7. CREATE A MODULE 1 RECONCILIATION LEDGER
+==================================================
+
+For each key metric, record:
+
+- Metric name
+- Source field(s)
+- Transformation
+- Inclusion/exclusion rules
+- Independent source result
+- Application result
+- Difference
+- Pass/fail
+- Evidence or test reference
+
+At minimum, reconcile:
+
+1. File hash and identity.
+2. Source record count.
+3. Parsed record count.
+4. Source date range.
+5. Billing month count.
+6. Currency counts.
+7. Raw spend.
+8. INR-normalized spend.
+9. FX normalization impact.
+10. Valid, excluded and quarantined records.
+11. Unique material codes.
+12. Unique item descriptions.
+13. Unique material groups.
+14. Unique procurement categories.
+15. Unique plants.
+16. Unique vendors and vendor codes.
+17. Spend by material group.
+18. Spend by plant.
+19. Spend by month.
+20. Pareto cumulative spend and threshold.
+
+For each metric, define its own correct denominator and source.
+Do not use one global value to populate unrelated summaries.
+
+Any unexplained difference must fail reconciliation.
+Do not label the dataset fully reconciled while a material
+difference remains unresolved.
+
+==================================================
+8. REQUIRED REGRESSION TESTS
+==================================================
+
+Add or update tests proving:
+
+1. The correct ABC Textile data version is used.
+2. VGT data cannot enter the ABC Textile workflow.
+3. Currency counts exactly match the parsed source file.
+4. A populated Crcy field is not falsely flagged as missing.
+5. INR normalization uses the approved conversion methodology.
+6. Raw spend and normalized spend are not conflated.
+7. FX impact is derived from the selected assessment's data.
+8. Actual Short Text descriptions appear in Pareto.
+9. Material code and Short Text are stored separately.
+10. Material groups are mapped from Matl Group.
+11. Plants are mapped from Plnt.
+12. Unique-item counts follow a documented definition.
+13. Refreshing and switching assessments cannot leak results.
+14. All spend aggregations reconcile to the same data version.
+15. VGT regression tests remain isolated and continue to pass.
+
+Do not weaken existing tests.
+
+==================================================
+9. LIVE CHROME ACCEPTANCE
+==================================================
+
+After the corrections and tests, verify the running local Chrome
+application with the actual ABC Textile file.
+
+Verify that:
+
+- The correct filename and data version are shown.
+- The detected currencies match the workbook.
+- The correct date range and 12 billing months are shown.
+- Spend is calculated using the approved normalization rule.
+- The FX impact is supported by the source data.
+- The source descriptions appear in Pareto.
+- Material groups and plants are not collapsed incorrectly.
+- The validation screen does not falsely flag valid currency data.
+- Refreshing does not reintroduce old values.
+- No VGT data appears anywhere in the customer workspace.
+- No unrelated assessment is changed.
+
+Do not claim browser verification unless it was actually performed.
+
+==================================================
+10. SCOPE AND FINAL REPORT
+==================================================
+
+Do not modify Modules 2–4 formulas.
+Do not modify savings percentage assumptions.
+Do not change the financial acceptance gate.
+Do not create a desktop installer.
+Do not delete source files, historical results or audit evidence.
+
+Report:
+
+1. Proven cause of every discrepancy.
+2. Exact files and functions changed.
+3. The corrected field mappings.
+4. The approved FX treatment used.
+5. The independent reconciliation ledger.
+6. Test counts and failures.
+7. Actual Chrome verification results.
+8. Any remaining unresolved differences.
+
+STOP after Module 1 reconciliation.
+
+Do not proceed to Module 2 until the reconciliation ledger has
+no unexplained material differences and the user approves.
+
+---
+
+## Prompt 377
+resume
+
+---
+
+## Prompt 378
+TASK: ABC TEXTILE LTD — MODULE 1 FINANCIAL METHODOLOGY AUDIT
+ASSESSMENT: AIC-2026-0002
+SOURCE FILE: Textile1.xlsx
+SCOPE: MODULE 1 ONLY — FORENSIC AUDIT, NO IMPLEMENTATION CHANGES
+
+OBJECTIVE
+Independently establish whether Module 1's financial calculations, FX
+normalization, source-to-field mappings, and displayed metrics are correct
+for ABC Textile Ltd and its exact uploaded dataset.
+
+This is an AUDIT-ONLY task. Do not modify application code, financial
+formulas, database records, the uploaded workbook, assessment status,
+or Modules 2–4 during this run.
+
+Do not change the existing UI or business logic.
+Do not use VGT data, demo data, synthetic fixtures, fallback values,
+or hardcoded customer metrics as evidence.
+
+PHASE 1 — PRESERVE AND IDENTIFY THE ACTIVE DATASET
+
+1. Identify the persisted assessment AIC-2026-0002.
+2. Identify its active customer, immutable data-version ID, upload filename,
+   upload timestamp, file size, and SHA-256 checksum.
+3. Confirm that the active dataset is Textile1.xlsx belonging to ABC Textile Ltd.
+4. Trace the active dataset from upload through parsing, normalization,
+   persistence, API response, and Module 1 rendering.
+5. Establish whether every displayed Module 1 value is derived from this
+   assessment's persisted data version.
+6. Check for stale browser state, previous analysis results, VGT fixtures,
+   hardcoded summary values, cached API responses, or cross-assessment data.
+7. Do not replace, delete, or re-upload the dataset.
+
+PHASE 2 — INDEPENDENT SOURCE-WORKBOOK AUDIT
+
+Read the actual Textile1.xlsx workbook and independently calculate:
+
+- Source data rows, excluding headers.
+- Valid, excluded, deleted, and quarantined row counts.
+- Transaction-date range and actual billing months.
+- Currency distribution.
+- Raw source spend by currency.
+- Material groups, plants, vendor names, vendor codes, material codes,
+  and distinct item descriptions.
+- Monthly spend and currency-wise spend.
+- Duplicate and missing-field diagnostics.
+- Any other relevant data-quality exceptions.
+
+For each metric, record:
+A. Source workbook value or independently derived result.
+B. Application/API result.
+C. Difference.
+D. Reconciliation status.
+E. Exact source column and calculation rule.
+
+Do not silently normalize, exclude, or repair records.
+Document every transformation and its impact.
+
+PHASE 3 — CRITICAL FX METHODOLOGY AUDIT
+
+Investigate the following reported values:
+
+Raw source Net Value total: ₹583.4162 Cr
+Reported normalized spend: ₹613.8805 Cr
+Reported FX impact: +₹30.4643 Cr (+5.22%)
+
+Do not assume these figures are correct merely because they reconcile
+arithmetically or match two workbook columns.
+
+A. Inspect the exact source columns:
+   - Net Value
+   - Net Value in Crs.
+   - Net Value In INR, if present
+   - Crcy
+   - CR
+   - Document Date / transaction date
+
+B. Determine the actual unit and currency of each amount column.
+   Establish whether amounts are denominated in INR, foreign currency,
+   lakhs, crores, or another unit.
+
+C. Determine whether the source Net Value total of ₹583.4162 Cr is a valid
+   INR baseline. If the source column mixes currencies, explicitly state
+   that its arithmetic sum cannot be treated as consolidated INR spend
+   without a documented conversion rule.
+
+D. Inspect the CR column at transaction level.
+   Determine whether the rates are:
+   - actual transaction-date rates;
+   - constant currency-specific rates;
+   - customer-profile rates;
+   - source-system rates; or
+   - another rate convention.
+
+E. For each currency, independently compare the rates in the workbook
+   with the applicable approved conversion methodology and source.
+
+F. Establish whether the existing implementation performs genuine
+   transaction-date FX conversion or merely multiplies amounts by the
+   CR value provided in the workbook.
+
+G. Check conversion direction, decimal precision, rounding, rate units,
+   and special treatment of JPY or any currency quoted per 100 units.
+
+H. Independently recompute consolidated INR spend using the approved,
+   evidenced conversion methodology.
+
+I. Calculate FX impact only when both comparison baselines are valid,
+   denominated consistently, and calculated under documented methods.
+
+J. If the correct historical rate source or baseline methodology cannot
+   be established, mark the FX result UNVERIFIED. Do not invent rates,
+   substitute today's rates, or declare a reconciliation PASS.
+
+PHASE 4 — PARETO AND DIMENSIONAL INTEGRITY
+
+Inspect the exact source-to-field mapping for:
+- Short Text / item description
+- Material code
+- Material group
+- Vendor name and vendor code
+- Plant
+- Quantity and unit of measure
+- Net price
+- Currency
+- Transaction date
+- Line value
+
+Verify that Pareto displays actual item descriptions rather than synthetic
+Item-XXXX placeholders or material codes presented as item names.
+
+Where descriptions are blank in the source, display an explicit missing-
+description indicator. Never invent an item description.
+
+Reconcile the Pareto hierarchy to the same active dataset's spend total.
+Explain the treatment of blanks, duplicate descriptions, vendor aliases,
+and any grouping or normalization rules.
+
+PHASE 5 — VALIDATE CUSTOMER AND ASSESSMENT ISOLATION
+
+Check all relevant Module 1 data paths for cross-assessment contamination.
+
+Verify that:
+- ABC Textile shows only its own persisted data version.
+- VGT test data cannot populate ABC Textile metrics.
+- A new assessment cannot inherit old spend, vendors, material groups,
+  FX impacts, Pareto rows, or analysis results.
+- API requests and responses are correlated to AIC-2026-0002.
+- Refreshing the page does not change the underlying assessment dataset.
+- Removing a file or changing an assessment cannot accidentally expose
+  another customer's data.
+
+Report evidence from source code, API responses, persisted data, and tests.
+Do not claim isolation merely because a UI label displays ABC Textile.
+
+PHASE 6 — TESTS AND EVIDENCE
+
+Run only relevant, non-destructive audit tests.
+
+Record:
+- Exact commands executed.
+- Test names and pass/fail counts.
+- Any tests not executed and why.
+- Source files inspected.
+- Relevant calculation functions and API endpoints.
+- Independent calculation methodology.
+- Reconciliation tables with actual values and variances.
+- Any remaining uncertainty or defect.
+
+Do not change existing tests merely to make them pass.
+Do not weaken assertions, suppress errors, or change expected values
+without evidence.
+
+MANDATORY OUTPUT
+
+Produce an audit report with these sections:
+
+1. Executive verdict: PASS, FAIL, or BLOCKED.
+2. Dataset identity and SHA-256.
+3. Independent source-workbook reconciliation.
+4. Currency and FX methodology findings.
+5. Correct financial baseline, if it can be established.
+6. Pareto and field-mapping findings.
+7. Cross-assessment isolation findings.
+8. Test evidence.
+9. Confirmed defects and their severity.
+10. Recommended corrective actions, ordered by priority.
+11. Exact acceptance criteria for Module 1 certification.
+
+IMPORTANT STOP CONDITIONS
+
+- Do not implement any correction during this audit.
+- Do not modify the source workbook or existing customer records.
+- Do not touch Modules 2, 3, or 4.
+- Do not generate savings figures.
+- Do not approve, deliver, or close the assessment.
+- Do not certify Module 1 unless the evidence supports it.
+
+Finish by presenting the audit report and waiting for explicit approval
+before implementing any changes.
+
+
+
+
+## Prompt 379
+[REDACTED_GEMINI_API_KEY_1]
+[REDACTED_GEMINI_API_KEY_2]
+[REDACTED_GEMINI_API_KEY_3]
+[REDACTED_GEMINI_API_KEY_4]
+[REDACTED_GEMINI_API_KEY_5]
+[REDACTED_GEMINI_API_KEY_6]
+[REDACTED_GEMINI_API_KEY_7]
+[REDACTED_GEMINI_API_KEY_8]
+[REDACTED_GEMINI_API_KEY_9]
+[REDACTED_GEMINI_API_KEY_10]
+
+Add the all the gemini keys as abackup
+
+## Prompt 380
+cleanup all unncessary files and commit the changes and raise the pr

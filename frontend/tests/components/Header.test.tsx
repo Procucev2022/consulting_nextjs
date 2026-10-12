@@ -6,6 +6,7 @@ import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 import { DEFAULT_SPEND_BASELINE_INR_CR } from '../../src/constants/app';
+import type { OperatingModeConfig } from '../../src/types';
 
 describe('Header Component', () => {
   const defaultProps = {
@@ -305,5 +306,104 @@ describe('Header Component', () => {
       '_blank'
     );
     openSpy.mockRestore();
+  });
+
+  it('implements Prompt 370 Rules A-F for customer identity and spend indicator', () => {
+    const internalMode: OperatingModeConfig = {
+      mode: 'INTERNAL_ASSESSMENT',
+      isInternalAssessment: true,
+      isPublicSaaS: false,
+      workspaceTitle: 'aiCEV — Internal Assessment Workspace',
+      phaseName: 'Internal Assessment',
+      features: {
+        publicRegistration: false,
+        tierUpgrade: false,
+        subscriptionPurchase: false,
+        customerSelfOnboarding: false,
+        customerSaaSDashboard: false,
+        assessmentCentre: true
+      },
+      allowedRoles: ['INTERNAL_ADMIN', 'ANALYST', 'CONSULTANT']
+    };
+
+    // Rule A: No customer or assessment selected
+    const { rerender } = render(
+      <Header {...defaultProps} operatingMode={internalMode} activeAssessment={null} activeCustomer={null} />
+    );
+    expect(screen.getByText(UI_STRINGS.header.noActiveCustomer)).toBeInTheDocument();
+    expect(screen.queryByTestId('assessment-spend-badge')).not.toBeInTheDocument();
+
+    // Rule B: Customer selected, but no assessment open
+    const mockCustomer = {
+      id: 'cust-101',
+      customerName: 'Acme Heavy Industries',
+      industry: 'Manufacturing',
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01'
+    };
+    rerender(
+      <Header {...defaultProps} operatingMode={internalMode} activeAssessment={null} activeCustomer={mockCustomer} />
+    );
+    expect(screen.getByText('Acme Heavy Industries')).toBeInTheDocument();
+    expect(screen.queryByTestId('assessment-spend-badge')).not.toBeInTheDocument();
+
+    // Rule C: Assessment open, but no file uploaded
+    const assessmentNoFile = {
+      assessmentId: 'AIC-2026-0005',
+      customerName: 'Acme Heavy Industries',
+      industry: 'Manufacturing',
+      assessmentPeriodStart: '2024-01-01',
+      assessmentPeriodEnd: '2024-12-31',
+      ndaStatus: 'SIGNED' as const,
+      dataStatus: 'AWAITING_DATA' as const,
+      assignedAnalyst: 'analyst@procucev.com',
+      status: 'DRAFT' as const,
+      createdAt: '2026-10-11T10:00:00.000Z',
+      updatedAt: '2026-10-11T10:00:00.000Z'
+    };
+    rerender(
+      <Header {...defaultProps} operatingMode={internalMode} activeAssessment={assessmentNoFile} />
+    );
+    expect(screen.getByText('Acme Heavy Industries')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.dataNotUploadedBadge)).toBeInTheDocument();
+    expect(screen.queryByTestId('assessment-spend-badge')).not.toBeInTheDocument();
+
+    // Rule D: File uploaded but not validated
+    const assessmentUploaded = {
+      ...assessmentNoFile,
+      activeDataVersionId: 'DV-2026-001',
+      dataStatus: 'RECEIVED' as const
+    };
+    rerender(
+      <Header {...defaultProps} operatingMode={internalMode} activeAssessment={assessmentUploaded} />
+    );
+    expect(screen.getByText(UI_STRINGS.header.awaitingValidationBadge)).toBeInTheDocument();
+    expect(screen.queryByTestId('assessment-spend-badge')).not.toBeInTheDocument();
+
+    // Rule E: Dataset validated, but Module 1 not run
+    const assessmentValidated = {
+      ...assessmentUploaded,
+      dataStatus: 'VALIDATED' as const
+    };
+    rerender(
+      <Header {...defaultProps} operatingMode={internalMode} activeAssessment={assessmentValidated} />
+    );
+    expect(screen.getByText(UI_STRINGS.header.validatedBadge)).toBeInTheDocument();
+    expect(screen.queryByTestId('assessment-spend-badge')).not.toBeInTheDocument();
+
+    // Prompt 373: Completed and formally ACCEPTED assessment with verified IDs & consolidated savings
+    const assessmentCompleted = {
+      ...assessmentValidated,
+      activeAnalysisRunId: 'RUN-2026-001',
+      status: 'ACCEPTED' as const,
+      isReportAccepted: true,
+      validatedSpendCr: 125.5,
+      netDefensibleOpportunityCr: 12.5
+    };
+    rerender(
+      <Header {...defaultProps} operatingMode={internalMode} activeAssessment={assessmentCompleted} />
+    );
+    expect(screen.getByTestId('assessment-spend-badge')).toBeInTheDocument();
+    expect(screen.getByText('₹125.50 Cr')).toBeInTheDocument();
   });
 });

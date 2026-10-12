@@ -77,10 +77,10 @@ export function renderPptxSlides26To30(
   addSlideHeader(s28, 'How Customer Procurement Data is Protected: Trust & Governance', 'Trust & Governance', 28);
 
   const trusts28 = [
-    { n: '01', t: 'AES-256-GCM', s: 'Cryptographic Standard', d: 'All transactional line items, unit rates, supplier names, and plant IDs are encrypted with AES-256-GCM using unique per-tenant keys.', b: 'FIPS-Grade', c: BRAND_COLORS.procucevBlue },
+    { n: '01', t: 'AES-256-GCM', s: 'Cryptographic Standard', d: 'All transactional line items, unit rates, supplier names, and plant IDs are encrypted with AES-256-GCM using unique per-tenant keys.', b: 'AEAD Authenticated', c: BRAND_COLORS.procucevBlue },
     { n: '02', t: 'Zero Training', s: 'Data Isolation', d: 'UltraTech procurement data is processed in an isolated tenant enclave. Data is NEVER shared or used to train public machine learning models.', b: 'Air-Gapped', c: BRAND_COLORS.accentGreen },
     { n: '03', t: 'Audit Trail', s: 'Lineage Line', d: 'Every finding carries an immutable checksum linked directly back to specific SAP invoice and PO line-item numbers.', b: '100% Provenance', c: '#0284C7' },
-    { n: '04', t: 'Compliance', s: 'SOC-2 / ISO 27001', d: 'Hardened cloud infrastructure with role-based access control (RBAC), multi-factor authentication, and automated audit logging on all queries.', b: 'Enterprise Ready', c: BRAND_COLORS.accentAmber }
+    { n: '04', t: 'Compliance', s: 'Hardened Security', d: 'Hardened cloud infrastructure with role-based access control (RBAC), multi-factor authentication, and automated audit logging on all queries.', b: 'Enterprise Ready', c: BRAND_COLORS.accentAmber }
   ];
   trusts28.forEach((tr, idx) => {
     const x = 0.5 + idx * 2.28;

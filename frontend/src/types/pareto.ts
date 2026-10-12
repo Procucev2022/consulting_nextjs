@@ -6,6 +6,7 @@ export interface ParetoHierarchyChild {
   name: string;
   spendCr: number;
   percentage: number;
+  transactionCount?: number;
 }
 
 export interface ParetoHierarchyParent {
@@ -16,6 +17,7 @@ export interface ParetoHierarchyParent {
   cumulativeSpendCr: number;
   cumulativePct: number;
   children: ParetoHierarchyChild[];
+  transactionCount?: number;
   isCutoffBoundary?: boolean;
 }
 

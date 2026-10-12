@@ -59,6 +59,13 @@ export const UI_STRINGS = {
     slaText: 'SLA: <800ms Query',
     slaQuery: (ms: number) => `SLA: <${ms}ms Query`,
     enterpriseFallback: 'Enterprise',
+    noActiveCustomer: 'No Active Customer',
+    zeroAssessmentsBadge: '0 Assessments',
+    dataNotUploadedBadge: 'Data Not Uploaded',
+    awaitingValidationBadge: 'Awaiting Validation',
+    validatedBadge: 'Validated',
+    managementQuickSummaryUnavailable: 'Management Quick Summary unavailable until analysis is complete',
+    moreReportsUnavailable: 'No persisted reports available for this assessment',
     evaluatedSpendFallback: '₹732.41 Cr',
     totalSpendEvaluatedPrefix: 'Total Spend Evaluated: ',
     viewExecutiveReport: 'View Executive Report',
@@ -88,8 +95,8 @@ export const UI_STRINGS = {
     multiCurrencyLiveFX: 'Multi-Currency Live FX',
     inrCroresSymbol: '₹ Cr',
     subtitle: 'Tech Enabled Strategic Sourcing Suite',
-    securityBadge: 'SOC2 Type II / AES-256',
-    dpsVerified: 'DPS Verified',
+    securityBadge: 'AES-256-GCM Encrypted',
+    dpsVerified: 'Verified Pipeline Architecture',
     userProfile: {
       menuButtonTitle: 'User Profile & Settings Menu',
       defaultName: 'Guest User',
@@ -156,20 +163,37 @@ export const UI_STRINGS = {
         value: '3 Yrs',
         sub: '36-Month Full Horizon'
       },
+      dataCoverage: {
+        label: 'Actual Data Coverage',
+        value: '10 Billing Months',
+        sub: 'Apr 2024 – Jan 2025',
+        awaitingDataset: 'Awaiting dataset'
+      },
       realTimeProcessing: {
         label: 'Real-Time Processing',
         value: '100%',
-        sub: 'Sub-800ms Query Render'
+        sub: 'Sub-800ms Query Render',
+        notStarted: 'Not started'
       },
       avgIdentifiedSavings: {
         label: 'Avg Identified Savings',
         value: '15%+',
         sub: 'Realized Benchmark'
       },
+      fxImpact: {
+        label: 'FX Normalization Impact',
+        value: '₹153.50 Cr',
+        sub: 'Data-quality / spend-normalization impact only — not procurement savings'
+      },
       fasterConversion: {
         label: 'Faster Conversion',
         value: '3x',
         sub: 'Advisory to SaaS Lock-in'
+      },
+      cleanSpendYield: {
+        label: 'Clean Spend Yield',
+        value: '98.7%',
+        sub: 'Active Ingestion Pipeline'
       }
     },
     navStages: {
@@ -266,7 +290,7 @@ export const UI_STRINGS = {
     badge: 'Data Ingestion & Multi-Currency ETL',
     fxEngineActive: 'Multi-Currency FX Engine Active',
     multiCurrencyActive: 'Multi-Currency FX Engine Active',
-    liveFxRatesLabel: 'Live FX Benchmark Conversion Rates to INR:',
+    liveFxRatesLabel: 'Reference Market Rates — Informational Only:',
     activeTenant: 'Enterprise Client:',
     industrySector: 'Industry Sector:',
     heading: '3-Year Multi-Currency Ingestion & FX Normalization',
@@ -302,6 +326,9 @@ export const UI_STRINGS = {
     filterTabs: {
       allRecords: (count: number) => `All Records (${count})`,
       needsAction: (count: number) => `Needs Action (${count})`,
+      quarantinedSpendBadge: (amountCr: number) => `Quarantined: ₹${amountCr.toFixed(2)} Cr`,
+      quarantinedTooltip: (excludedCount: number, anomalyCount: number, totalSpendCr: number) =>
+        `Excluded / Quarantined Value: ₹${totalSpendCr.toFixed(2)} Cr across ${excludedCount + anomalyCount} records (${excludedCount} excluded + ${anomalyCount} anomalies). Does not affect canonical valid spend.`,
       conversion: (count: number) => `💱 Conversion Issues (${count})`,
       vendorDuplication: (count: number) => `🏢 Duplicate Vendors (${count})`,
       itemDuplication: (count: number) => `📦 Duplicate Items (${count})`,
@@ -396,8 +423,10 @@ export const UI_STRINGS = {
       showingSummary: (count: number, total: number, pct: number) => `Showing ${count} entities (${pct}% of spend, cumulative Pareto threshold)`,
       cumulativeLabel: (amount: string) => `Cumulative Spend: ₹${amount} Cr`,
       noRecords: 'No records matching search filter.',
-      childItemsCount: (count: number) => `${count} items`,
-      childVendorsCount: (count: number) => `${count} suppliers`,
+      childItemsCount: (count: number) => count === 1 ? '1 distinct Short Text' : `${count} distinct Short Text values`,
+      childVendorsCount: (count: number) => count === 1 ? '1 supplier' : `${count} suppliers`,
+      unavailableShortText: 'Short Text unavailable',
+      clearSearch: 'Clear Search',
       excelViewBadge: 'Excel Pivot Layout',
       cutoffNotice: '80% Spend Cutoff Boundary Reached — Remaining Long-Tail Suppliers / Items Excluded Below'
     }
@@ -412,6 +441,12 @@ export const UI_STRINGS = {
     subheading: (file: string, records: number) =>
       `Consolidated summary of uploaded dataset "${file || 'Data Upload'}" (${(records ?? 0).toLocaleString()} records) across Material Groups, Facilities & Billing Months.`,
     totalSpendEvaluated: 'Total Evaluated Spend',
+    validFxNormalizedSpend: 'VALID FX-NORMALIZED SPEND',
+    fxHistoricalNormalizationNote:
+      'Spend normalized using transaction-date historical FX rates. Customer-profile fixed FX rates are retained as the baseline for comparison.',
+    fxMethodologyImpactLabel: 'FX normalization impact vs profile rates: ₹153.50 Cr',
+    fxMethodologyImpactNote: 'Data-quality & spend-normalization impact only — not procurement savings.',
+    rawAllRowReconciliationNote: 'Raw population historical FX value — before exclusions/anomaly quarantine',
     evaluatedRecords: 'Total Line Items',
     uniqueItems: 'Unique Items',
     uniqueVendors: 'Unique Vendors',
@@ -490,7 +525,8 @@ export const UI_STRINGS = {
         pos: 'PO Count',
         spend: (curr: string) => `Spend (${curr})`,
         share: 'Spend Share',
-        trend: '3-Year Trend (FY24 / FY25 / FY26)'
+        trend: '3-Year Trend (FY24 / FY25 / FY26)',
+        trendSingleFy: (fy: string) => `Fiscal Spend Coverage (${fy})`
       }
     },
     plant: {
@@ -517,10 +553,22 @@ export const UI_STRINGS = {
       subtitle: '36-month time-series distribution showing seasonal procurement trends, monthly run rates, and transaction spikes',
       filterLabel: 'Fiscal Year Filter:',
       filterAll: 'All 36 Months',
+      allMonthsFilter: (count: number) => `All ${count} Months`,
       filterFy24: 'FY24',
       filterFy25: 'FY25',
       filterFy26: 'FY26',
       searchPlaceholder: 'Search month, group, or facility...',
+      actualTrendTitle: 'Actual Month-Wise Spend Trend',
+      actualTrendSubtitle: (count: number) => `Actual monthly spend based on the ${count} billing months available in the uploaded dataset.`,
+      actualCoverageLabel: (range: string, count: number) => `Actual Coverage: ${range} | ${count} Billing Months`,
+      fiscalLabel: (fy: string, available: number, total: number = 12) => `${fy} | ${available} of ${total} months available`,
+      coverageDisclosure: (count: number, range: string, missing: number, fy: string) =>
+        `Actual data coverage: ${count} billing months (${range}). ${missing} ${fy} months are not present in the uploaded dataset.`,
+      datasetCoverageTitle: 'DATASET COVERAGE',
+      actualCoverageTitle: 'ACTUAL COVERAGE',
+      datasetCoverageValue: (count: number) => `${count} Months`,
+      yoyUnavailableTitle: 'Year-over-Year comparison unavailable',
+      yoyUnavailableDesc: 'At least two comparable fiscal years are required.',
       headers: {
         month: 'Billing Month',
         fy: 'Fiscal Year',
@@ -536,6 +584,8 @@ export const UI_STRINGS = {
       graph: {
         title: '3-Year Month-Wise Spend & Change Trajectory (FY24 – FY26)',
         subtitle: 'Interactive graphical progression of 36 monthly billing periods with month-over-month (MoM) expenditure fluctuations',
+        actualTrendTitle: 'Actual Month-Wise Spend Trend',
+        actualTrendSubtitle: (count: number) => `Actual monthly spend based on the ${count} billing months available in the uploaded dataset.`,
         viewMode: {
           chartAndTable: 'Chart & Table View',
           chartOnly: 'Graphical Chart Only',
@@ -545,9 +595,12 @@ export const UI_STRINGS = {
           peakMonth: 'Peak Spend Month',
           lowestMonth: 'Lowest Spend Month',
           monthlyAvg: 'Average Monthly Spend',
-          netTrajectory: '3-Year Trajectory'
+          netTrajectory: '3-Year Trajectory',
+          datasetCoverage: 'DATASET COVERAGE',
+          actualCoverage: 'ACTUAL COVERAGE'
         },
         legends: {
+          actualTrend: 'Actual Monthly Spend',
           fy24: 'FY24 Run Rate',
           fy25: 'FY25 Run Rate',
           fy26: 'FY26 Run Rate',
@@ -576,11 +629,13 @@ export const UI_STRINGS = {
         topGroupCardLabel: 'Top Group',
         topPlantCardLabel: 'Top Plant',
         chartTypes: {
-          line: 'Multi-Year Line Graph',
-          bar: '36-Month Bar View'
+          line: 'Spend Trend Line Graph',
+          bar: 'Monthly Spend Bar View'
         },
         lineGraphTitle: '3-Year Month-Wise Comparative Line Graph (FY24, FY25, FY26)',
         lineGraphSubtitle: 'Annual trend comparison showing monthly spend curves across April to March for each fiscal year',
+        actualLineGraphTitle: 'Actual Month-Wise Spend Trend',
+        actualLineGraphSubtitle: (count: number) => `Actual monthly spend based on the ${count} billing months available in the uploaded dataset.`,
         xAxisLabel: 'Months (Billing Cycles: Apr – Mar)',
         yAxisLabel: (curr: string) => `Spend Amount (${curr})`,
         yoyComparisonTitle: (month: string) => `${month} Year-Over-Year Spend Comparison`,
@@ -697,7 +752,7 @@ export const UI_STRINGS = {
       statPotentialSavingsLabel: 'Consolidation Savings Potential',
       statPotentialSavingsValue: (savings: number) => `₹${savings.toFixed(2)} Cr (8.5%)`,
       kpiTotalSpend: 'Top 50 Evaluated Spend',
-      kpiTotalSpendSubtitle: 'Total 3-Year Spend (FY24–FY26)',
+      kpiTotalSpendSubtitle: 'Total Evaluated Period Spend (FY22)',
       kpiMultiVendors: 'Multi-Category Vendors',
       kpiMultiVendorsSubtitle: 'Supplying unrelated / disparate categories',
       kpiSingleVendors: 'Single Category Specialists',
@@ -728,7 +783,7 @@ export const UI_STRINGS = {
         spendFy24: 'FY24 (₹ Cr)',
         spendFy25: 'FY25 (₹ Cr)',
         spendFy26: 'FY26 (₹ Cr)',
-        totalSpend: 'Total 3-Yr Spend (₹ Cr)',
+        totalSpend: 'Total Evaluated Spend (₹ Cr)',
         yoyTrend: 'YoY Trend',
         spendYoY: 'Spend YoY (Items)',
         quantityYoY: 'Quantity YoY',
@@ -2245,7 +2300,7 @@ export const UI_STRINGS = {
     emailLabel: 'Organization Email',
     emailPlaceholder: 'e.g., rajesh.verma@company.com',
     companyNameLabel: 'Company Name',
-    companyNamePlaceholder: 'e.g., Apex Industrial Dynamics Ltd.',
+    companyNamePlaceholder: 'e.g., Enterprise Client Ltd.',
     companyAddressLabel: 'Company Address',
     companyAddressPlaceholder: 'e.g., Plot 45, Industrial Suburb, Peenya 2nd Stage, Bengaluru 560058, Karnataka, India',
     passwordLabel: 'Password',
@@ -3117,6 +3172,325 @@ export const UI_STRINGS = {
       processReductionLabel: '20% PO Effort Reduction',
       spendDeRiskedLabel: 'Spend De-Risked',
       realizedLabel: 'Historical Realized Savings'
+    }
+  },
+  ASSESSMENT: {
+    title: 'aiCEV | Internal Assessment Workspace',
+    workspaceTitle: 'aiCEV | Internal Assessment Workspace',
+    customerManagement: {
+      title: 'aiCEV | Internal Command Centre',
+      subtitle: 'Enterprise Customer Profiles & Assessment Dossiers',
+      tabCustomers: 'Customer Profiles',
+      tabAssessments: 'Assessment Dossiers',
+      btnCreateCustomer: '+ Create Customer',
+      btnEditCustomer: 'Edit Customer',
+      btnSelectCustomer: 'Select Customer',
+      btnCreateAssessment: '+ New Assessment',
+      searchPlaceholder: 'Search customers by ID, name, industry, or BU...',
+      emptyNoCustomers: 'No customer profiles found. Click "+ Create Customer" to register an enterprise customer.',
+      emptyNoSelection: 'No customer selected. Select a customer from the directory below to view or initialize assessments.',
+      selectedCustomerBanner: (name: string, id: string) => `Active Customer: ${name} (${id})`,
+      clearSelection: 'Clear Selection',
+      table: {
+        colId: 'Customer ID',
+        colName: 'Customer / Enterprise Name',
+        colIndustry: 'Industry',
+        colBusinessUnit: 'Business Unit',
+        colRegion: 'Region',
+        colAssessmentsCount: 'Assessments',
+        colStatus: 'Status',
+        colActions: 'Actions',
+        selectAction: 'Select Customer →',
+        editAction: 'Edit Profile'
+      },
+      modalCreate: {
+        title: 'Create Customer Profile',
+        subtitle: 'Register an enterprise client profile within the Internal Command Centre',
+        fieldName: 'Customer / Enterprise Name *',
+        fieldIndustry: 'Industry Sector *',
+        fieldBusinessUnit: 'Business Unit / Division',
+        fieldRegion: 'Operating Region',
+        fieldCurrency: 'Base Currency',
+        fieldContactPerson: 'Contact Person / Stakeholder',
+        fieldContactEmail: 'Contact Email',
+        fieldNotes: 'Customer Profile Notes',
+        btnSubmit: 'Create Customer Profile',
+        btnCancel: 'Cancel'
+      },
+      modalEdit: {
+        title: 'Edit Customer Profile',
+        subtitle: 'Update enterprise client metadata and operational parameters',
+        btnSubmit: 'Save Changes',
+        btnCancel: 'Cancel'
+      }
+    },
+    uploadPipeline: {
+      title: 'Procurement Dataset Ingestion & Module 1 Execution',
+      subtitle: 'Upload, validate, and execute Module 1 analysis under strict provenance controls',
+      states: {
+        notUploaded: 'No File Uploaded',
+        fileSelected: 'File Selected',
+        uploaded: 'File Uploaded',
+        validating: 'Validation in Progress',
+        validated: 'Dataset Validated',
+        validationFailed: 'Validation Failed',
+        module1NotRun: 'Module 1 Not Run',
+        module1Running: 'Module 1 Running',
+        module1Completed: 'Module 1 Completed',
+        module1Failed: 'Module 1 Failed'
+      },
+      controls: {
+        btnSelectFile: 'Select Procurement File',
+        btnValidate: 'Validate Dataset',
+        btnStartModule1: 'Start Module 1 Analysis'
+      },
+      validationPassedSummary: (rows: number, exclusions: number, anomalies: number) =>
+        `Dataset validated: ${rows.toLocaleString()} valid rows (${exclusions.toLocaleString()} excluded, ${anomalies} anomalies quarantined). Ready for Module 1.`,
+      module1SuccessSummary: (spendCr: number, rows: number) =>
+        `Module 1 execution complete: ₹${spendCr.toFixed(4)} Cr validated spend reconciled across ${rows.toLocaleString()} valid records.`
+    },
+    phaseBadge: 'PROCUCEV — 30-DAY INTERNAL VALIDATION PHASE',
+    internalNotice: 'CONFIDENTIAL — FOR PROCUCEV INTERNAL ASSESSMENT & VALIDATION ONLY',
+    internalNoticeDesc: 'Direct customer software access is disabled during this 30-day internal phase. All analyses are executed by Procucev analysts on authorized internal workstations.',
+    btnNewAssessment: '+ New Assessment',
+    btnBack: '← Back to Assessments',
+    searchPlaceholder: 'Search assessments by ID, customer name, industry...',
+    filterAll: 'All Assessments',
+    filterActive: 'Active',
+    filterNeedsReview: 'Needs Review',
+    filterApproved: 'Approved',
+    filterDelivered: 'Delivered',
+    turnaround: {
+      status: 'Analysis in progress',
+      notice: 'Typical assessment turnaround: 24–48 hours'
+    },
+    nav: {
+      assessments: 'Assessments',
+      customers: 'Customers',
+      dataIngestion: 'Data Ingestion',
+      analysisPipeline: 'Analysis Pipeline',
+      reportsPackages: 'Reports & Packages',
+      systemIdentity: 'System Identity'
+    },
+    statusStrip: {
+      mode: 'Operating Mode: INTERNAL_ASSESSMENT',
+      environment: 'Environment: Local / Windows Desktop',
+      phase: 'Phase: Procucev Internal Assessment Phase (30-day window)',
+      certifications: 'Certifications: M1 certified, M2 certified, M3 certified, M4 certified',
+      build: 'Active Engine Build: E2E-003-CERTIFIED / Commit 2378cd054fdcd528ec2815362a44a6461c72fa8e'
+    },
+    kpiCards: {
+      active: 'Active Assessments',
+      dataReceived: 'Data Received',
+      inProgress: 'Analysis In Progress',
+      pcbiReview: 'PCBI Review',
+      analystReview: 'Analyst Review',
+      approved: 'Approved',
+      delivered: 'Delivered',
+      closed: 'Closed'
+    },
+    table: {
+      colId: 'Assessment ID',
+      colCustomer: 'Customer / Enterprise',
+      colIndustry: 'Industry',
+      colPeriod: 'Assessment Period',
+      colTotalSpend: 'Total Spend',
+      colValidatedSpend: 'Validated Spend',
+      colAddressableSpend: 'Addressable Spend',
+      colPotentialSavings: 'Potential Savings',
+      colNetOpportunity: 'Net Defensible Opp.',
+      colDeliveryRange: 'Delivery Range',
+      colSavingsPct: 'Savings %',
+      colStatus: 'Status',
+      colNda: 'NDA',
+      colData: 'Data Status',
+      colAnalyst: 'Assigned Analyst',
+      colActions: 'Actions',
+      viewWorkflow: 'View Workflow →',
+      emptyMessage: 'No assessments match the current filter criteria.',
+      badgeTestData: 'TEST DATA'
+    },
+    financial: {
+      metricsTitle: 'Certified Sourcing & Opportunity Baseline',
+      metricsSubtitle: 'Persisted analytical engine outputs derived from verified dataset ingestion',
+      testDataBadge: 'TEST DATA · Certified VGT Regression Baseline',
+      pendingTitle: 'Analysis Pending — No Inherited Financial Metrics',
+      pendingSubtitle: 'Ingest procurement dataset and execute analytical engine run to calculate validated spend and opportunity metrics. No values are inherited.',
+      pendingLabel: 'Analysis Pending',
+      emptyValue: '—',
+      validatedSpend: 'Validated Spend',
+      addressableSpend: 'Addressable Sourcing Spend',
+      grossOpportunity: 'Gross Multi-Lever Opportunity Pool',
+      overlapDeductions: 'Overlap Deductions',
+      netDefensibleOpportunity: 'Net Defensible Opportunity',
+      provenOpportunity: 'Proven Opportunity',
+      deliveryRange: 'Delivery Range',
+      pcbiSignal: 'PCBI Benchmark Price-Gap Signal',
+      pcbiSignalNotice: 'Analytical Signal Only — Strictly isolated from savings pool',
+      varianceNotice: 'Net = Gross (₹441.833 Cr) − Overlap (₹104.067 Cr) = ₹337.766 Cr (Zero Variance)'
+    },
+    detail: {
+      workflowTitle: 'Assessment Execution Pipeline',
+      workflowSubtitle: '13-Stage Internal Assessment Operating Protocol',
+      metaCustomer: 'Customer Name:',
+      metaIndustry: 'Industry:',
+      metaPeriod: 'Evaluation Period:',
+      metaAnalyst: 'Assigned Analyst:',
+      metaNda: 'NDA Status:',
+      metaDataStatus: 'Data Status:',
+      metaActiveVersion: 'Active Data Version:',
+      metaActiveRun: 'Active Analysis Run:',
+      tabs: {
+        upload: 'Module 1 Ingestion',
+        workflow: 'Execution Pipeline',
+        dataVersions: 'Data Versions',
+        reviewChecklist: 'Review Checklist',
+        deliveryPackage: 'Delivery Package',
+        auditTrail: 'Audit Trail'
+      },
+      btnUploadData: 'Upload Dataset Version',
+      btnRunAnalysis: 'Execute Analysis Run',
+      btnApprove: 'Approve Assessment',
+      btnGeneratePackage: 'Generate Delivery Package',
+      btnDeliver: 'Mark Delivered',
+      btnClose: 'Close Assessment'
+    },
+    uploadScreen: {
+      title: 'Procurement Dataset Ingestion & Validation',
+      subtitle: 'Upload customer procurement spend workbook to execute Module 1 analysis and calculate opportunity metrics',
+      customerLabel: 'Customer / Enterprise',
+      assessmentIdLabel: 'Assessment ID',
+      industryLabel: 'Industry',
+      periodLabel: 'Assessment Period',
+      ndaStatusLabel: 'NDA Status',
+      dataStatusLabel: 'Data Receipt Status',
+      workflowStatusLabel: 'Assessment Status',
+      dropzoneTitle: 'Drag and drop procurement file here, or click to browse',
+      dropzoneSupported: 'Supported formats: .xlsx, .csv, .xls (Max 100 MB)',
+      selectedFileLabel: 'Selected File:',
+      fileSizeLabel: 'File Size:',
+      checksumLabel: 'SHA-256 Checksum:',
+      computingChecksum: 'Computing cryptographic checksum...',
+      btnUploadAndRun: 'Ingest Dataset & Execute Module 1 Analysis',
+      btnUploading: 'Ingesting & Analyzing Dataset...',
+      btnCancel: 'Cancel / Back to Assessments',
+      uploadSuccess: 'Dataset successfully ingested and verified with Module 1 analytical run.',
+      uploadErrorTitle: 'Dataset Ingestion Failed',
+      btnRetry: 'Retry Ingestion',
+      ndaWarning: 'NDA is currently NOT_SIGNED. Please confirm NDA status before processing confidential data.'
+    },
+    modalNew: {
+      title: 'Initialize New Customer Assessment',
+      subtitle: 'Create a tracked internal assessment dossier under PROCUCEV validation protocol',
+      fieldCustomer: 'Customer Name *',
+      fieldCustomerPlaceholder: 'e.g. UltraTech Cement Limited / Client Alpha',
+      fieldBusinessUnit: 'Business Unit / Division',
+      fieldBusinessUnitPlaceholder: 'e.g. Heavy Materials / Procurement Operations',
+      fieldIndustry: 'Industry *',
+      fieldIndustryPlaceholder: 'e.g. Textile, Automotive, Chemicals',
+      fieldPeriodStart: 'Assessment Period Start *',
+      fieldPeriodStartPlaceholder: 'e.g. FY2023-24 or June 2023',
+      fieldPeriodEnd: 'Assessment Period End *',
+      fieldPeriodEndPlaceholder: 'e.g. March 2024',
+      fieldAnalyst: 'Assessment Owner / Lead Analyst *',
+      fieldCurrency: 'Currency',
+      fieldDataReceived: 'Data Received Date',
+      fieldNdaStatus: 'Initial NDA Status',
+      fieldNotes: 'Notes / Scope Notes',
+      btnSubmit: 'Create Assessment',
+      btnCancel: 'Cancel'
+    },
+    modalUpload: {
+      title: 'Upload Data Version',
+      subtitle: 'Immutable raw dataset ingestion with automatic SHA-256 fingerprinting',
+      fieldFile: 'Select File (.xlsx, .csv) *',
+      fieldRecordCount: 'Estimated Record Count',
+      fieldNotes: 'Version Ingestion Notes',
+      btnUpload: 'Upload & Hash Dataset',
+      btnCancel: 'Cancel'
+    },
+    modalApprove: {
+      title: 'Analyst Gate Approval',
+      subtitle: 'Formal sign-off verifying all 26 quality gates before delivery package generation',
+      fieldAnalystEmail: 'Approving Analyst Email *',
+      fieldComment: 'Quality Sign-Off Notes / Justification *',
+      fieldCommentPlaceholder: 'e.g. Reconciled spend, verified FX conversion and validated savings consistency.',
+      btnConfirmApprove: 'Sign-Off & Approve Assessment',
+      btnCancel: 'Cancel'
+    },
+    modalDeliver: {
+      title: 'Deliver Assessment Package',
+      subtitle: 'Mark the verified report & evidence workbooks as delivered to customer stakeholders',
+      fieldRecipient: 'Primary Customer Recipient Email *',
+      fieldRecipientPlaceholder: 'e.g. cfo@client.com',
+      fieldDeliveryChannel: 'Delivery Channel',
+      fieldNotes: 'Delivery Handover Notes',
+      btnConfirmDeliver: 'Confirm Package Delivery',
+      btnCancel: 'Cancel'
+    },
+    delivery: {
+      packageTitle: 'Executive Assessment Delivery Package',
+      packageSubtitle: '10 authoritative deliverables generated directly from validated engine artifacts',
+      generatedFor: 'Generated for:',
+      approvedByLabel: 'Approved By:',
+      colTitle: 'Deliverable Document',
+      colFormat: 'Format',
+      colFile: 'Generated File',
+      colGeneratedAt: 'Generated At',
+      btnDownload: 'Download File ↓',
+      approvedAlert: 'This package is certified and ready for executive presentation.',
+      notApprovedAlert: 'Package generation requires formal Analyst Gate Approval.'
+    },
+    errors: {
+      fetchFailed: 'Failed to load assessments from server. Please verify backend service.',
+      createFailed: 'Failed to create assessment. Please check required fields and retry.',
+      gatesPending: 'Approval Blocked: All 26 review gates must pass before formal analyst approval.',
+      packagePending: 'Package generation is only available for APPROVED or DELIVERED assessments.',
+      networkError: 'Network Error: Cannot connect to backend server at http://localhost:5000.'
+    },
+    systemInfoModal: {
+      btnOpen: 'System Information',
+      title: 'aiCEV System & Build Information',
+      subtitle: 'Authoritative build manifest and runtime certification identity',
+      appVersion: 'Application Version',
+      buildNumber: 'Build Number',
+      operatingMode: 'Operating Mode',
+      gitCommit: 'Git Commit',
+      buildTimestamp: 'Build Timestamp',
+      certificationStatus: 'Certification Status',
+      e2eCertificationId: 'E2E Certification ID',
+      fxMasterVersion: 'FX Master Version',
+      fxMasterChecksum: 'FX Master SHA-256',
+      pcbiMasterVersion: 'PCBI Master Version',
+      pcbiMasterChecksum: 'PCBI Master SHA-256',
+      certifiedBadge: 'CERTIFIED INTERNAL RELEASE',
+      btnClose: 'Close'
+    },
+    updater: {
+      updateAvailableBannerTitle: 'aiCEV Desktop Update Available',
+      installedVersionLabel: 'Installed Version:',
+      availableVersionLabel: 'Available Version:',
+      buildNumberLabel: 'Build Identifier:',
+      releaseDateLabel: 'Release Date:',
+      verificationStatusLabel: 'Verification Status:',
+      statusCertified: 'Certified & SHA-256 Verified',
+      installAndRestartBtn: 'Install Update & Restart',
+      remindMeLaterBtn: 'Remind Me Later',
+      confirmPrompt: 'Save or finish any active assessment operation before updating. The application will close safely, execute the verified installer, and restart.',
+      preventActiveJobMessage: 'Cannot install update while assessment data file operations are in progress. Please wait for completion.',
+      updateFailedTitle: 'Update Verification Failed',
+      updateSuccessMessage: (version: string) => `aiCEV Desktop updated successfully to version ${version}`,
+      recoveryPathMessage: 'If installation fails, the previous installation is preserved. Launch from desktop shortcut or reinstall from installer.',
+      stagedOnlyNote: 'Update is staged and verified. Awaiting user restart.',
+      checkingUpdates: 'Checking for certified desktop updates...',
+      noUpdateAvailable: 'Desktop application is up to date.',
+      installingTitle: 'Preparing Update Installation...',
+      installingDesc: 'Closing background services and launching trusted installer...',
+      modalRunningVersion: 'Currently Running Version',
+      modalStagedVersion: 'Staged Release',
+      modalInstalledVersion: 'Installed Release',
+      modalSourceVersion: 'Source Version',
+      modalPackagedVersion: 'Packaged Version'
     }
   }
 } as const;

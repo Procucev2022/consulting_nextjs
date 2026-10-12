@@ -14,33 +14,64 @@ import { UI_STRINGS } from '../constants';
 export const PipelineBar: React.FC<PipelineBarProps> = ({
   activeTab,
   onSelectTab,
-  tenant,
-  opportunities,
+  tenant: _tenant,
+  opportunities: _opportunities,
   ingestionQueue,
-  totalSpendCr,
+  totalSpendCr: _totalSpendCr,
   isStep1Complete,
   isStep2Complete,
   isStep3Complete,
   isStep4Complete,
   unlockedTabs,
-  onLockedTabClick
+  onLockedTabClick,
+  canonicalViewModel,
+  activeAssessment
 }) => {
-  const hasData = Boolean(ingestionQueue && ingestionQueue.length > 0);
+  // Assessment & Module 1 Status Resolution (Prompt 370 Phase 5 & Prompt 374 Isolation)
+  const hasUploadedDataset = Boolean(
+    activeAssessment?.activeDataVersionId ||
+    activeAssessment?.currentDataVersionId ||
+    (activeAssessment?.dataStatus &&
+      activeAssessment.dataStatus !== 'NOT_RECEIVED' &&
+      activeAssessment.dataStatus !== 'AWAITING_DATA') ||
+    (ingestionQueue && ingestionQueue.length > 0 && (!activeAssessment || ingestionQueue[0]?.tenant_id === activeAssessment.assessmentId))
+  );
+
+  const isDatasetValidated = Boolean(activeAssessment?.dataStatus === 'VALIDATED');
+
+  const isModule1Completed = Boolean(
+    canonicalViewModel &&
+    (canonicalViewModel.moduleStatuses?.module1 === 'READY' ||
+      canonicalViewModel.moduleStatuses?.module1 === 'COMPLETED') &&
+    (!activeAssessment || (
+      Boolean(activeAssessment.activeAnalysisRunId) &&
+      (!activeAssessment.activeDataVersionId || canonicalViewModel.dataVersionId === activeAssessment.activeDataVersionId)
+    ))
+  );
+
+  const isModule1Running = Boolean(
+    activeAssessment?.status === 'IN_PROGRESS' ||
+    (activeAssessment?.status as any) === 'ANALYSIS_IN_PROGRESS'
+  );
+
   const isStep1Done = isStep1Complete !== undefined
     ? isStep1Complete
-    : Boolean(hasData || (totalSpendCr && totalSpendCr > 0) || (tenant?.total_spend_evaluated_inr && tenant.total_spend_evaluated_inr > 0));
+    : Boolean(
+        isModule1Completed ||
+        ((activeAssessment?.validatedSpendCr ?? 0) > 0)
+      );
 
   const isStep2Done = isStep2Complete !== undefined
     ? isStep2Complete
-    : isStep1Done;
+    : Boolean(canonicalViewModel?.moduleStatuses?.module2 === 'COMPLETED');
 
   const isStep3Done = isStep3Complete !== undefined
     ? isStep3Complete
-    : isStep2Done;
+    : Boolean(canonicalViewModel?.moduleStatuses?.module3 === 'COMPLETED');
 
   const isStep4Done = isStep4Complete !== undefined
     ? isStep4Complete
-    : isStep3Done;
+    : Boolean(canonicalViewModel?.moduleStatuses?.module4 === 'COMPLETED');
 
   const isStageLocked = (stageId: PipelineActiveTab): boolean => {
     // If explicitly listed in unlockedTabs, it is unlocked (development mode per Prompt 99)
@@ -55,46 +86,78 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
     return false;
   };
 
-  const dynamicTotalSavings = opportunities && opportunities.length > 0
-    ? (hasData ? opportunities.reduce((sum, o) => sum + (o.est_savings_inr_cr || 0), 0) : 0)
-    : (hasData ? 119.67 : 0);
+  const totalRecords = isModule1Completed && canonicalViewModel
+    ? canonicalViewModel.sourceRowCount
+    : (activeAssessment?.canonicalModule1?.sourceRowCount ?? (
+        ingestionQueue && ingestionQueue.length > 0 && hasUploadedDataset
+          ? ingestionQueue.reduce((sum, doc) => sum + (doc.records_count || 0), 0)
+          : 0
+      ));
 
-  const totalRecords = hasData && ingestionQueue
-    ? ingestionQueue.reduce((sum, doc) => sum + (doc.records_count || 0), 0)
-    : 0;
+  // Determine 4 KPI Summary Card outputs (Prompt 370 Phase 5)
+  let dataCoverageValue: string = UI_STRINGS.pipeline.kpis.dataCoverage.awaitingDataset || 'Awaiting dataset';
+  let dataCoverageSub = 'Awaiting dataset upload';
+  if (isModule1Completed && canonicalViewModel) {
+    dataCoverageValue = `${canonicalViewModel.actualDataCoverage.billingMonthsCount} Billing Months`;
+    dataCoverageSub = `${canonicalViewModel.actualDataCoverage.dateRangeLabel} (Configured: ${canonicalViewModel.configuredEvaluationWindow})`;
+  } else if (isDatasetValidated && totalRecords > 0) {
+    dataCoverageValue = `${totalRecords.toLocaleString()} Records`;
+    dataCoverageSub = 'Validation output — Awaiting Module 1 run';
+  } else if (hasUploadedDataset) {
+    dataCoverageValue = 'Dataset uploaded';
+    dataCoverageSub = 'Awaiting dataset validation';
+  }
 
-  const evaluatedSpend = hasData ? (totalSpendCr || tenant?.total_spend_evaluated_inr || 0) : 0;
+  let realTimeProcessingValue: string = UI_STRINGS.pipeline.kpis.realTimeProcessing.notStarted || 'Not started';
+  let realTimeProcessingSub = 'Module 1 not started';
+  if (isModule1Completed && canonicalViewModel) {
+    realTimeProcessingValue = UI_STRINGS.pipeline.kpis.realTimeProcessing.value; // '100%'
+    realTimeProcessingSub = `${canonicalViewModel.validRowCount.toLocaleString()} Valid Records Reconciled`;
+  } else if (isModule1Running) {
+    realTimeProcessingValue = 'Running';
+    realTimeProcessingSub = 'Module 1 execution in progress';
+  }
+
+  let fxImpactValue = '—';
+  let fxImpactSub = 'Data-quality / spend-normalization impact only — not procurement savings';
+  if (isModule1Completed && canonicalViewModel) {
+    fxImpactValue = `₹${canonicalViewModel.fxNormalizationImpactCr.toFixed(2)} Cr`;
+    fxImpactSub = `${canonicalViewModel.fxNormalizationImpactPct >= 0 ? '+' : ''}${canonicalViewModel.fxNormalizationImpactPct.toFixed(2)}% vs profile rates (Data-quality / normalization only)`;
+  }
+
+  let cleanSpendYieldValue = '—';
+  let cleanSpendYieldSub = hasUploadedDataset ? 'Available after Module 1 execution' : 'Pipeline Ready';
+  if (isModule1Completed && canonicalViewModel) {
+    cleanSpendYieldValue = `${canonicalViewModel.validationSummary.cleanSpendYieldPct.toFixed(1)}%`;
+    cleanSpendYieldSub = `${canonicalViewModel.excludedRowCount} Excluded · ${canonicalViewModel.anomalyRowCount} Quarantined`;
+  }
 
   const kpis = [
     {
-      label: UI_STRINGS.pipeline.kpis.historicalIngestion.label,
-      value: hasData ? UI_STRINGS.pipeline.kpis.historicalIngestion.value : '0 Mo',
-      sub: hasData && totalRecords > 0
-        ? `${totalRecords.toLocaleString()} Verified Records Ingested`
-        : 'Awaiting File Ingestion',
+      label: UI_STRINGS.pipeline.kpis.dataCoverage.label,
+      value: dataCoverageValue,
+      sub: dataCoverageSub,
       color: 'text-cyan-700 dark:text-cyan-400',
       border: 'border-cyan-500/30'
     },
     {
       label: UI_STRINGS.pipeline.kpis.realTimeProcessing.label,
-      value: hasData ? UI_STRINGS.pipeline.kpis.realTimeProcessing.value : 'Ready',
-      sub: hasData ? UI_STRINGS.pipeline.kpis.realTimeProcessing.sub : 'Upload File to Ingest',
+      value: realTimeProcessingValue,
+      sub: realTimeProcessingSub,
       color: 'text-blue-700 dark:text-blue-400',
       border: 'border-blue-500/30'
     },
     {
-      label: UI_STRINGS.pipeline.kpis.avgIdentifiedSavings.label,
-      value: hasData ? `₹${dynamicTotalSavings.toFixed(2)} Cr` : '₹0.00 Cr',
-      sub: hasData && evaluatedSpend && evaluatedSpend > 0
-        ? `Evaluated on ₹${evaluatedSpend.toFixed(2)} Cr baseline`
-        : 'Awaiting Ingestion Baseline',
+      label: UI_STRINGS.pipeline.kpis.fxImpact.label,
+      value: fxImpactValue,
+      sub: fxImpactSub,
       color: 'text-emerald-700 dark:text-emerald-400',
       border: 'border-emerald-500/30'
     },
     {
-      label: UI_STRINGS.pipeline.kpis.fasterConversion.label,
-      value: hasData ? UI_STRINGS.pipeline.kpis.fasterConversion.value : 'Ready',
-      sub: hasData ? UI_STRINGS.pipeline.kpis.fasterConversion.sub : 'Pipeline Ready',
+      label: UI_STRINGS.pipeline.kpis.cleanSpendYield.label,
+      value: cleanSpendYieldValue,
+      sub: cleanSpendYieldSub,
       color: 'text-purple-700 dark:text-purple-400',
       border: 'border-purple-500/30'
     }

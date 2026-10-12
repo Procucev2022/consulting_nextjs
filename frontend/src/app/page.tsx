@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
@@ -40,13 +40,21 @@ const AnalyzingLoader = dynamic(
   { ssr: false }
 );
 
+const AssessmentWorkspace = dynamic(
+  () => import('@/components/assessment/AssessmentWorkspace').then((mod) => mod.AssessmentWorkspace),
+  { ssr: false }
+);
+
 import { getYahooFinanceRateToINR, parseDateOrYear } from '@/utils/currencyConverter';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
+import { assessmentApiClient } from '@/utils/assessmentApi';
+import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from '@/types/assessment';
 import { frontendLogger } from '@/utils/logger';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '@/data/unspscTaxonomy';
 import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
+import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 
 // Modals (Dynamically loaded on demand)
@@ -113,7 +121,9 @@ import type {
   SpendCategorySummary,
   UserProfile,
   SubscriptionTier,
-  AnalysisJob
+  AnalysisJob,
+  Module1CanonicalViewModel,
+  ParetoHierarchyParent
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
@@ -141,13 +151,16 @@ export default function Home() {
     return 'light';
   });
 
-  // Navigation & User Session State
+  const [operatingMode, setOperatingMode] = useState<OperatingModeConfig | null>(null);
   const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
+  const [activeAssessment, setActiveAssessment] = useState<AssessmentRecord | null>(null);
+  const [activeCustomer, setActiveCustomer] = useState<CustomerRecord | null>(null);
+  const activeAssessmentIdRef = useRef<string | null>(null);
   const [targetSection, setTargetSection] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     if (typeof window !== 'undefined') {
       const stored = authApiClient.getStoredUser();
-      return stored && stored.role !== 'ADMIN' ? stored : null;
+      return stored || null;
     }
     return null;
   });
@@ -196,6 +209,189 @@ export default function Home() {
   const [uploadedUniqueItems, setUploadedUniqueItems] = useState<number | undefined>(undefined);
   const [uploadedUniqueVendors, setUploadedUniqueVendors] = useState<number | undefined>(undefined);
   const [uploadedParetoData, setUploadedParetoData] = useState<ParetoSpendData | undefined>(undefined);
+  const [canonicalModule1, setCanonicalModule1] = useState<Module1CanonicalViewModel | null>(null);
+
+  const applyCanonicalViewModel = (canonical: Module1CanonicalViewModel): void => {
+    if (activeAssessmentIdRef.current && canonical.assessmentId && canonical.assessmentId !== activeAssessmentIdRef.current) {
+      frontendLogger.warn('Rejected canonical view model from mismatched assessment', {
+        active: activeAssessmentIdRef.current,
+        canonical: canonical.assessmentId
+      });
+      return;
+    }
+    setCanonicalModule1(canonical);
+    setTenant((prev) => ({
+      ...prev,
+      total_spend_evaluated_inr: canonical.validFxNormalizedSpendCr,
+      total_spend_evaluated: Math.round((canonical.validFxNormalizedSpendCr * 10000000) / 83.8)
+    }));
+
+    const canonicalDoc: RawDocumentIngestion = {
+      doc_id: canonical.dataVersionId || `DOC-${canonical.datasetId || 'ASSESSMENT'}`,
+      tenant_id: canonical.datasetId,
+      file_name: canonical.sourceFileName,
+      file_type: 'XLSX',
+      file_size_mb: 2.14,
+      ocr_status: 'Completed',
+      progress: 100,
+      uploaded_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      records_count: canonical.sourceRowCount,
+      detected_currencies: canonical.detectedCurrencies,
+      converted_inr_crores: canonical.validFxNormalizedSpendCr,
+      unique_items_count: canonical.uniqueItems,
+      unique_vendors_count: canonical.uniqueVendors,
+      material_groups_count: canonical.materialGroups,
+      plants_count: canonical.operatingPlants
+    };
+    setIngestionQueue([canonicalDoc]);
+    setUploadedUniqueItems(canonical.uniqueItems);
+    setUploadedUniqueVendors(canonical.uniqueVendors);
+
+    if (canonical.materialGroupSpend && canonical.materialGroupSpend.length > 0) {
+      setUploadedMaterialGroups(canonical.materialGroupSpend.map((mg) => ({
+        group_code: mg.group_code,
+        group_name: mg.group_name,
+        records_count: mg.records_count,
+        unique_items_count: mg.unique_items_count,
+        unique_vendors_count: mg.unique_vendors_count,
+        po_count: mg.po_count,
+        spend_inr_cr: mg.spend_inr_cr,
+        spend_usd_m: mg.spend_usd_m,
+        share_pct: mg.share_pct,
+        sample_item: mg.sample_item,
+        primary_segment: mg.primary_segment,
+        color: mg.color,
+        fy24_spend_inr_cr: mg.fy24_spend_inr_cr,
+        fy25_spend_inr_cr: mg.fy25_spend_inr_cr,
+        fy26_spend_inr_cr: mg.fy26_spend_inr_cr
+      })));
+    }
+
+    if (canonical.plantSpend && canonical.plantSpend.length > 0) {
+      setUploadedPlants(canonical.plantSpend.map((p) => ({
+        plant_code: p.plant_code,
+        plant_name: p.plant_name,
+        region: 'Central',
+        location: 'Operational Site',
+        records_count: p.records_count,
+        unique_items_count: p.unique_items_count,
+        unique_vendors_count: p.unique_vendors_count,
+        spend_inr_cr: p.spend_inr_cr,
+        share_pct: p.share_pct
+      })));
+    }
+
+    if (canonical.monthlySpend && canonical.monthlySpend.length > 0) {
+      setUploadedMonths(canonical.monthlySpend.map((m) => ({
+        month_key: m.month_key,
+        month_label: m.month_label,
+        fiscal_year: m.fiscalYear || (canonical.periodMetadata?.actualFiscalYears[0] ?? 'FY22'),
+        records_count: m.records_count,
+        po_count: m.records_count,
+        unique_items_count: m.unique_items_count,
+        unique_vendors_count: m.unique_vendors_count,
+        spend_inr_cr: m.spend_inr_cr,
+        share_pct: m.share_pct ?? 0,
+        mom_change_pct: m.mom_change_pct ?? 0,
+        top_material_group: 'DIRECT',
+        top_plant: 'Plant 1000'
+      })));
+    }
+
+    if (canonical.paretoHierarchy) {
+      setUploadedParetoData({
+        totalSpendCr: canonical.validFxNormalizedSpendCr,
+        paretoSpendCr: canonical.paretoHierarchy.reconciliation.vendorParetoSpendCr,
+        paretoPct: canonical.paretoHierarchy.reconciliation.vendorParetoSpendPct,
+        vendorHierarchy: canonical.paretoHierarchy.supplierToShortText,
+        itemHierarchy: canonical.paretoHierarchy.shortTextToSupplier
+      });
+    } else if (canonical.supplierSpend && canonical.supplierSpend.length > 0) {
+      let runningSpend = 0;
+      const vendorParents: ParetoHierarchyParent[] = canonical.supplierSpend.slice(0, 20).map((s, idx) => {
+        const spend = s.spend_inr_cr ?? s.spendCr ?? 0;
+        runningSpend += spend;
+        return {
+          id: `VENDOR-${idx + 1}`,
+          name: s.supplier_name || s.supplierName || `Vendor ${idx + 1}`,
+          totalSpendCr: spend,
+          sharePct: s.share_pct ?? s.sharePct ?? 0,
+          cumulativeSpendCr: Number(runningSpend.toFixed(2)),
+          cumulativePct: s.cumulative_share_pct ?? s.cumulativePct ?? 0,
+          children: []
+        };
+      });
+      setUploadedParetoData({
+        totalSpendCr: canonical.validFxNormalizedSpendCr,
+        paretoSpendCr: canonical.pareto ? canonical.pareto.top80SpendCr : 0,
+        paretoPct: canonical.pareto ? canonical.pareto.top80SpendPct : 0,
+        vendorHierarchy: vendorParents,
+        itemHierarchy: []
+      });
+    }
+
+    if (canonical.moduleStatuses) {
+      setCompletedSteps({
+        step1: canonical.moduleStatuses.module1 === 'READY' || canonical.moduleStatuses.module1 === 'COMPLETED',
+        step2: canonical.moduleStatuses.module2 === 'COMPLETED',
+        step3: canonical.moduleStatuses.module3 === 'COMPLETED',
+        step4: canonical.moduleStatuses.module4 === 'COMPLETED'
+      });
+    }
+  };
+
+  const handleActiveAssessmentChange = useCallback((assessment: AssessmentRecord | null): void => {
+    activeAssessmentIdRef.current = assessment ? assessment.assessmentId : null;
+
+    // Reset transient analytical state to prevent cross-assessment leakage (Prompt 370 Phase 6)
+    setCanonicalModule1(null);
+    setIngestionQueue([]);
+    setValidationRecords([]);
+    setUploadedMaterialGroups(undefined);
+    setUploadedPlants(undefined);
+    setUploadedMonths(undefined);
+    setUploadedUniqueItems(undefined);
+    setUploadedUniqueVendors(undefined);
+    setUploadedParetoData(undefined);
+    setCategories([]);
+    setLineItems([]);
+    setVendorRankings([]);
+    setOpportunities([]);
+    setIsDataRefreshed(false);
+    setCompletedSteps({ step1: false, step2: false, step3: false, step4: false });
+
+    setActiveAssessment(assessment);
+
+    if (assessment) {
+      const isEligible = isAssessmentFinancialDisplayEligible(assessment);
+      const isM1Complete = Boolean(
+        assessment.activeDataVersionId &&
+        assessment.activeAnalysisRunId &&
+        (assessment.status !== 'DRAFT' && assessment.status !== 'DATA_AWAITING') &&
+        assessment.validatedSpendCr &&
+        assessment.validatedSpendCr > 0
+      );
+
+      setTenant((prev) => ({
+        ...prev,
+        enterprise_name: assessment.customerName,
+        total_spend_evaluated_inr: isEligible ? (assessment.validatedSpendCr ?? 0) : 0,
+        total_spend_evaluated: isEligible ? Math.round(((assessment.validatedSpendCr ?? 0) * 10000000) / 83.8) : 0
+      }));
+
+      if (isM1Complete && assessment.canonicalModule1) {
+        applyCanonicalViewModel(assessment.canonicalModule1);
+      }
+    } else {
+      setTenant((prev) => ({
+        ...prev,
+        enterprise_name: activeCustomer ? activeCustomer.customerName : UI_STRINGS.header.noActiveCustomer,
+        total_spend_evaluated_inr: 0,
+        total_spend_evaluated: 0
+      }));
+    }
+  }, [activeCustomer]);
+
   const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
   const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
@@ -251,31 +447,29 @@ export default function Home() {
   );
 
   const isStep1Complete = Boolean(
+    canonicalModule1?.moduleStatuses?.module1 === 'READY' ||
+    canonicalModule1?.moduleStatuses?.module1 === 'COMPLETED' ||
     completedSteps.step1 ||
     (ingestionQueue && ingestionQueue.length > 0) ||
-    (lineItems && lineItems.length > 0) ||
     (tenant.total_spend_evaluated_inr > 0)
   );
 
   const isStep2Complete = Boolean(
-    isStep1Complete && (
-      completedSteps.step2 ||
-      (vendorRankings && vendorRankings.length > 0)
-    )
+    canonicalModule1
+      ? canonicalModule1.moduleStatuses?.module2 === 'COMPLETED'
+      : (completedSteps.step2 && isStep1Complete)
   );
 
   const isStep3Complete = Boolean(
-    isStep2Complete && (
-      completedSteps.step3 ||
-      (opportunities && opportunities.length > 0)
-    )
+    canonicalModule1
+      ? canonicalModule1.moduleStatuses?.module3 === 'COMPLETED'
+      : (completedSteps.step3 && isStep2Complete)
   );
 
   const isStep4Complete = Boolean(
-    isStep3Complete && (
-      completedSteps.step4 ||
-      (opportunities && opportunities.length > 0)
-    )
+    canonicalModule1
+      ? canonicalModule1.moduleStatuses?.module4 === 'COMPLETED'
+      : (completedSteps.step4 && isStep3Complete)
   );
 
   const isTabAccessible = (_tab: PipelineActiveTab): boolean => {
@@ -352,8 +546,8 @@ export default function Home() {
       return;
     }
 
-    // Redirect admin users to /admin/dashboard
-    if (storedUser?.role === 'ADMIN') {
+    // Redirect admin users to /admin/dashboard only in standard SaaS mode
+    if (storedUser?.role === 'ADMIN' && !operatingMode?.isInternalAssessment) {
       if (router) {
         router.push('/admin/dashboard');
       } else if (typeof window !== 'undefined') {
@@ -365,7 +559,7 @@ export default function Home() {
     const handleHash = () => {
       if (typeof window !== 'undefined') {
         const rawHash = window.location.hash.replace('#', '');
-        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(rawHash)) {
+        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema', 'assessment'].includes(rawHash)) {
           setActiveTab(rawHash as PipelineActiveTab);
         }
       }
@@ -393,90 +587,158 @@ export default function Home() {
 
     async function loadBackendData() {
       try {
-        const storedUser = authApiClient.getStoredUser();
-        const buyerUser = storedUser && storedUser.role !== 'ADMIN' ? storedUser : null;
-        const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
-          apiClient.getTenant(buyerUser?.id),
-          apiClient.getIngestionData(buyerUser?.id),
-          apiClient.getCategories(),
-          apiClient.getVendors(),
-          apiClient.getSavingsOpportunities()
-        ]);
-
-        if (tenantData.status === 'fulfilled' && tenantData.value) {
-          if (buyerUser) {
-            setTenant((prev) => ({
-              ...tenantData.value,
-              enterprise_name: buyerUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
-              total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
-              total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
-            }));
-          } else {
-            setTenant({
-              ...tenantData.value,
-              enterprise_name: tenantData.value.enterprise_name || mockTenant.enterprise_name
-            });
+        let modeRes: OperatingModeConfig | null = null;
+        try {
+          modeRes = await assessmentApiClient.getOperatingMode();
+          setOperatingMode(modeRes);
+          const currentHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
+          if (modeRes.isInternalAssessment && !['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(currentHash)) {
+            setActiveTab('assessment');
           }
+        } catch {
+          modeRes = {
+            mode: 'INTERNAL_ASSESSMENT',
+            isInternalAssessment: true,
+            isPublicSaaS: false,
+            workspaceTitle: 'aiCEV — Procurement Assessment Centre',
+            phaseName: '30-Day Internal Validation Phase',
+            features: {
+              publicRegistration: false,
+              tierUpgrade: false,
+              subscriptionPurchase: false,
+              customerSelfOnboarding: false,
+              customerSaaSDashboard: false,
+              assessmentCentre: true
+            },
+            allowedRoles: ['INTERNAL_ADMIN', 'ANALYST', 'CONSULTANT']
+          };
+          setOperatingMode(modeRes);
         }
 
-        if (ingestionData.status === 'fulfilled' && ingestionData.value) {
-          const backendQueue = ingestionData.value.queue || [];
-          const queueToHydrate = buyerUser?.id
-            ? backendQueue.filter(
-                (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
-              )
-            : backendQueue;
+        const isInternalMode = Boolean(modeRes?.isInternalAssessment);
 
-          if (queueToHydrate.length === 0) {
-            // Current buyer has NO uploaded documents!
-            setIngestionQueue([]);
-            setValidationRecords([]);
-            setUploadedMaterialGroups(undefined);
-            setUploadedPlants(undefined);
-            setUploadedMonths(undefined);
-            setUploadedUniqueItems(undefined);
-            setUploadedUniqueVendors(undefined);
-            setUploadedParetoData(undefined);
-            setCategories([]);
-            setLineItems([]);
-            setVendorRankings([]);
-            setOpportunities([]);
-            setIsDataRefreshed(false);
-            setTenant((prev) => ({
-              ...prev,
-              total_spend_evaluated_inr: 0,
-              total_spend_evaluated: 0
-            }));
-          } else {
-            const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
-              doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
-              tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
-              file_name: doc.file_name || 'Uploaded_Document.xlsx',
-              file_type: doc.file_type || 'XLSX',
-              file_size_mb: doc.file_size_mb || 1.0,
-              ocr_status: doc.ocr_status || 'Completed',
-              progress: doc.progress ?? 100,
-              uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
-              records_count: doc.records_count ?? 0,
-              detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
-              converted_inr_crores: doc.converted_inr_crores ?? 0,
-              unique_items_count: doc.unique_items_count,
-              unique_vendors_count: doc.unique_vendors_count,
-              material_groups_count: doc.material_groups_count,
-              plants_count: doc.plants_count
-            }));
-            setIngestionQueue(sanitizedQueue.slice(0, 1));
-            if (ingestionData.value.validationRecords) {
-              setValidationRecords(ingestionData.value.validationRecords);
+        if (isInternalMode) {
+          // In INTERNAL_ASSESSMENT mode:
+          // Active customer and assessment are resolved exclusively from assessment store.
+          // Do not overwrite tenant or queue with global mock SaaS tenant data!
+          setTenant((prev) => ({
+            ...prev,
+            enterprise_name: UI_STRINGS.header.noActiveCustomer,
+            total_spend_evaluated_inr: 0,
+            total_spend_evaluated: 0
+          }));
+          setIngestionQueue([]);
+          setValidationRecords([]);
+          setUploadedMaterialGroups(undefined);
+          setUploadedPlants(undefined);
+          setUploadedMonths(undefined);
+          setUploadedUniqueItems(undefined);
+          setUploadedUniqueVendors(undefined);
+          setUploadedParetoData(undefined);
+          setCategories([]);
+          setLineItems([]);
+          setVendorRankings([]);
+          setOpportunities([]);
+
+          try {
+            const storedAssessmentId = typeof window !== 'undefined'
+              ? localStorage.getItem('aicev_selected_assessment_id')
+              : null;
+            if (storedAssessmentId) {
+              const res: any = await assessmentApiClient.getAssessmentById(storedAssessmentId);
+              const record = res?.assessment || res;
+              if (record?.assessmentId === storedAssessmentId) {
+                handleActiveAssessmentChange(record);
+              }
             }
-            if (categoryData.status === 'fulfilled' && categoryData.value) {
-              setCategories(categoryData.value.categories || []);
+          } catch (storageErr) {
+            frontendLogger.warn('Failed to restore active assessment from storage', { error: storageErr });
+          }
+        } else {
+          const storedUser = authApiClient.getStoredUser();
+          const buyerUser = storedUser?.role !== 'ADMIN' ? storedUser : null;
+          const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
+            apiClient.getTenant(buyerUser?.id),
+            apiClient.getIngestionData(buyerUser?.id),
+            apiClient.getCategories(),
+            apiClient.getVendors(),
+            apiClient.getSavingsOpportunities()
+          ]);
+
+          if (tenantData.status === 'fulfilled' && tenantData.value) {
+            if (buyerUser) {
+              setTenant((prev) => ({
+                ...prev,
+                enterprise_name: buyerUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
+                total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
+                total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
+              }));
+            } else {
+              setTenant({
+                ...tenantData.value,
+                enterprise_name: tenantData.value.enterprise_name || mockTenant.enterprise_name
+              });
             }
-            if (vendorData.status === 'fulfilled' && vendorData.value) {
-              setVendorRankings(vendorData.value.vendorRankings || []);
-            }
-            if (savingsData.status === 'fulfilled' && savingsData.value) {
-              setOpportunities(savingsData.value.opportunities || []);
+          }
+
+          if (ingestionData.status === 'fulfilled' && ingestionData.value) {
+            const backendQueue = ingestionData.value.queue || [];
+            const queueToHydrate = buyerUser?.id
+              ? backendQueue.filter(
+                  (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
+                )
+              : backendQueue;
+
+            if (queueToHydrate.length === 0) {
+              setIngestionQueue([]);
+              setValidationRecords([]);
+              setUploadedMaterialGroups(undefined);
+              setUploadedPlants(undefined);
+              setUploadedMonths(undefined);
+              setUploadedUniqueItems(undefined);
+              setUploadedUniqueVendors(undefined);
+              setUploadedParetoData(undefined);
+              setCategories([]);
+              setLineItems([]);
+              setVendorRankings([]);
+              setOpportunities([]);
+              setIsDataRefreshed(false);
+              setTenant((prev) => ({
+                ...prev,
+                total_spend_evaluated_inr: 0,
+                total_spend_evaluated: 0
+              }));
+            } else {
+              const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
+                doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
+                tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
+                file_name: doc.file_name || 'Uploaded_Document.xlsx',
+                file_type: doc.file_type || 'XLSX',
+                file_size_mb: doc.file_size_mb || 1.0,
+                ocr_status: doc.ocr_status || 'Completed',
+                progress: doc.progress ?? 100,
+                uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
+                records_count: doc.records_count ?? 0,
+                detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
+                converted_inr_crores: doc.converted_inr_crores ?? 0,
+                unique_items_count: doc.unique_items_count,
+                unique_vendors_count: doc.unique_vendors_count,
+                material_groups_count: doc.material_groups_count,
+                plants_count: doc.plants_count
+              }));
+              setIngestionQueue(sanitizedQueue.slice(0, 1));
+              if (ingestionData.value.validationRecords) {
+                setValidationRecords(ingestionData.value.validationRecords);
+              }
+              if (categoryData.status === 'fulfilled' && categoryData.value) {
+                setCategories(categoryData.value.categories || []);
+              }
+              if (vendorData.status === 'fulfilled' && vendorData.value) {
+                setVendorRankings(vendorData.value.vendorRankings || []);
+              }
+              if (savingsData.status === 'fulfilled' && savingsData.value) {
+                setOpportunities(savingsData.value.opportunities || []);
+              }
             }
           }
         }
@@ -492,6 +754,8 @@ export default function Home() {
         } catch {
           setActiveAnalysisJob(null);
         }
+
+        // Global analysis state synced with active assessment
       } catch (err) {
         frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
       }
@@ -505,6 +769,80 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Synchronize Module 1-4 analytical data strictly with the active assessment
+  useEffect(() => {
+    async function syncActiveAssessmentData(): Promise<void> {
+      if (!activeAssessment?.assessmentId || !activeAssessment.activeDataVersionId) {
+        setCanonicalModule1(null);
+        setIngestionQueue([]);
+        setValidationRecords([]);
+        setUploadedMaterialGroups(undefined);
+        setUploadedPlants(undefined);
+        setUploadedMonths(undefined);
+        setUploadedUniqueItems(undefined);
+        setUploadedUniqueVendors(undefined);
+        setUploadedParetoData(undefined);
+        setCategories([]);
+        setLineItems([]);
+        setVendorRankings([]);
+        setOpportunities([]);
+        setCompletedSteps({
+          step1: false,
+          step2: false,
+          step3: false,
+          step4: false
+        });
+        setActiveAnalysisJob(null);
+        return;
+      }
+
+      try {
+        const canonicalRes = await apiClient.getCanonicalModule1(undefined, activeAssessment.assessmentId);
+        const canonicalData = (canonicalRes as any)?.data ?? canonicalRes;
+        frontendLogger.info('syncActiveAssessmentData evaluation', {
+          hasCanonicalData: Boolean(canonicalData),
+          validFx: canonicalData?.validFxNormalizedSpendCr,
+          sourceRows: canonicalData?.sourceRowCount,
+          cDataVersion: canonicalData?.dataVersionId,
+          aDataVersion: activeAssessment?.activeDataVersionId,
+          match: !canonicalData?.dataVersionId || canonicalData?.dataVersionId === activeAssessment?.activeDataVersionId
+        });
+        if (
+          canonicalData &&
+          (canonicalData.validFxNormalizedSpendCr || canonicalData.sourceRowCount) &&
+          (!canonicalData.dataVersionId || canonicalData.dataVersionId === activeAssessment.activeDataVersionId)
+        ) {
+          applyCanonicalViewModel(canonicalData);
+        } else {
+          frontendLogger.warn('syncActiveAssessmentData failed predicate, resetting state', {
+            canonicalDataNull: !canonicalData,
+            noSpendOrRows: !(canonicalData?.validFxNormalizedSpendCr || canonicalData?.sourceRowCount),
+            mismatchedVersion: canonicalData?.dataVersionId !== activeAssessment.activeDataVersionId
+          });
+          setCanonicalModule1(null);
+          setIngestionQueue([]);
+        }
+      } catch (err: any) {
+        frontendLogger.error(`syncActiveAssessmentData caught error: ${err?.message || String(err)}`, {
+          message: err?.message,
+          stack: err?.stack
+        }, err);
+        setCanonicalModule1(null);
+        setIngestionQueue([]);
+      }
+
+      try {
+        const m2Items = await apiClient.getModule2CanonicalLineItems(1000);
+        if (m2Items && m2Items.length > 0) {
+          setLineItems(m2Items);
+        }
+      } catch {
+        // safe fallback
+      }
+    }
+    void syncActiveAssessmentData();
+  }, [activeAssessment]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -972,6 +1310,7 @@ export default function Home() {
     let dynamicLineItems: LineItemMapping[] | undefined = undefined;
     let dynamicVendorRankings: VendorPriceRank[] | undefined = undefined;
     let dynamicOpportunities: SavingsOpportunity[] | undefined = undefined;
+    const detectedCurrenciesSet = new Set<string>();
 
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
       try {
@@ -986,8 +1325,11 @@ export default function Home() {
           recordsCount = rows.length; // Header row is automatically excluded by sheet_to_json!
           const keys = Array.from(new Set(rows.slice(0, 5).flatMap((r) => Object.keys(r || {}))));
           const qtyKey = keys.find((k) => /qty|quantity|order_qty|ordered|units/i.test(k));
-          const priceKey = keys.find((k) => /price|net_price|unit_price|rate|cost/i.test(k));
-          const currKey = keys.find((k) => /curr|currency|waers/i.test(k));
+          const priceKey = keys.find((k) =>
+            /^(?:net[_\s-]*price|unit[_\s-]*price|netpr)$/i.test(k) ||
+            (/price|rate|cost/i.test(k) && !/unit|curr|type|code|grp/i.test(k))
+          );
+          const currKey = keys.find((k) => /crcy|curr|currency|waers/i.test(k));
 
           const matPatterns = [
             /^(?:material[_\s-]*code|material[_\s-]*no|material[_\s-]*num(?:ber)?|matnr|item[_\s-]*code)$/i,
@@ -1003,12 +1345,11 @@ export default function Home() {
             /^short[_\s-]*text$/i,
             /^txz01$/i,
             /short[_\s-]*text/i,
-            /(?:material|product|part|goods)[_\s-]*(?:desc(?:ription)?|text|name)/i,
+            /(?:item|product|part|goods)[_\s-]*(?:desc(?:ription)?|text|name)/i,
             /^item[_\s-]*(?:desc(?:ription)?|text|name)$/i,
             /item[_\s-]*(?:desc(?:ription)?|text|name)/i,
             /^desc(?:ription)?$/i,
-            /description|desc/i,
-            /material/i
+            /description/i
           ];
           const descKey = keys.find((k) =>
             descPatterns.some((p) => p.test(k) && !/(?:code|id|no|num|group|grp|type|plant|cat)/i.test(k))
@@ -1036,18 +1377,18 @@ export default function Home() {
             poPatterns.some((p) => p.test(k) && !/(?:type|date|status)/i.test(k))
           );
           const yearKey = keys.find((k) => /year|date/i.test(k));
-          const totalCrKey = keys.find((k) => /total.*in.*cr|total.*cr/i.test(k));
-          const totalInrKey = keys.find((k) => /total.*inr|inr.*total/i.test(k));
+          const totalCrKey = keys.find((k) => /net[_\s-]*value[_\s-]*in[_\s-]*crs?|total.*in.*cr|total.*cr/i.test(k));
+          const totalInrKey = keys.find((k) => /net[_\s-]*value[_\s-]*in[_\s-]*inr|total.*inr|inr.*total/i.test(k));
           const mgPatterns = [
-            /^(?:material[_\s-]*group|mat[_\s-]*grp|matkl)$/i,
-            /material.*group/i,
-            /mat[_\s-]*grp/i,
+            /^(?:material[_\s-]*group|matl[_\s-]*group|mat[_\s-]*grp|matl[_\s-]*grp|matkl)$/i,
+            /mat(?:erial|l).*group/i,
+            /matl[_\s-]*grp/i,
             /matkl/i
           ];
           const mgKey = keys.find((k) =>
             mgPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
           );
-          const plantKey = keys.find((k) => /plant|werks|facility|site/i.test(k));
+          const plantKey = keys.find((k) => /plnt|plant|werks|facility|site/i.test(k));
           const dateKey = keys.find((k) => /doc.*date|document.*date|posting.*date|date/i.test(k));
 
           let cumulativeFileTotalINR = 0;
@@ -1055,6 +1396,7 @@ export default function Home() {
 
           const uniqueItemsSet = new Set<string>();
           const uniqueVendorsSet = new Set<string>();
+          detectedCurrenciesSet.clear();
           dynamicParetoRecords.length = 0;
           const mgMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string>; sampleItem: string }>();
           const plantMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
@@ -1066,6 +1408,7 @@ export default function Home() {
             const hasExplicitPrice = priceKey && r[priceKey] != null && !isNaN(Number(r[priceKey]));
             const rawPrice = hasExplicitPrice ? Math.max(0, Number(r[priceKey])) : 0;
             const rawCurr = currKey && r[currKey] != null ? String(r[currKey]).trim().toUpperCase() : '';
+            if (rawCurr) detectedCurrenciesSet.add(rawCurr);
             const rawDateVal = dateKey ? r[dateKey] : null;
             const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || new Date().getFullYear());
             const rawYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
@@ -1442,6 +1785,10 @@ export default function Home() {
       total_spend_evaluated: Math.round((totalSpendInrCr * 10000000) / 83.8)
     }));
 
+    const dynamicDetectedCurrencies = (detectedCurrenciesSet && detectedCurrenciesSet.size > 0)
+      ? Array.from(detectedCurrenciesSet)
+      : ['INR'];
+
     const newDoc: RawDocumentIngestion = {
       doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
       tenant_id: loggedUser.id || tenant.tenant_id,
@@ -1452,7 +1799,7 @@ export default function Home() {
       progress: 100,
       uploaded_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
       records_count: recordsCount, // Header row strictly excluded
-      detected_currencies: ['INR'],
+      detected_currencies: dynamicDetectedCurrencies,
       converted_inr_crores: totalSpendInrCr, // Sum of Order Qty * Net Price * FX Rate
       unique_items_count: dynamicUniqueItems,
       unique_vendors_count: dynamicUniqueVendors,
@@ -1462,6 +1809,7 @@ export default function Home() {
 
     setIngestionQueue([newDoc]);
 
+    let uploadRes: any = null;
     try {
       let fileBase64 = '';
       try {
@@ -1480,18 +1828,25 @@ export default function Home() {
         // Base64 conversion fallback
       }
 
-      const uploadRes: any = await apiClient.uploadDocumentToObjectStore({
+      uploadRes = await apiClient.uploadDocumentToObjectStore({
         fileName: file.name,
         fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
         fileBase64: fileBase64 || undefined,
         fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)) || 1.0,
         recordsCount,
         convertedInrCrores: totalSpendInrCr,
-        detectedCurrencies: ['USD', 'EUR', 'INR'],
+        detectedCurrencies: dynamicDetectedCurrencies,
         datasetType: _datasetType,
         buyer_id: loggedUser.id,
-        tenant_id: loggedUser.id
+        tenant_id: activeAssessment?.assessmentId || loggedUser.id
       });
+      if (
+        uploadRes?.data?.canonical &&
+        activeAssessment?.activeDataVersionId &&
+        uploadRes.data.canonical.dataVersionId === activeAssessment.activeDataVersionId
+      ) {
+        applyCanonicalViewModel(uploadRes.data.canonical);
+      }
       if (uploadRes?.data?.analysisJob) {
         setActiveAnalysisJob(uploadRes.data.analysisJob);
       } else {
@@ -1507,7 +1862,9 @@ export default function Home() {
       frontendLogger.warn('Backend sync warning for document upload', { error: e });
     }
 
-    showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, totalSpendInrCr, recordsCount));
+    const finalSpendCr = uploadRes?.data?.canonical?.validFxNormalizedSpendCr || totalSpendInrCr;
+    const finalRecordsCount = uploadRes?.data?.canonical?.sourceRowCount || recordsCount;
+    showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, finalSpendCr, finalRecordsCount));
   };
 
   // Handlers for Module 2
@@ -1745,27 +2102,56 @@ export default function Home() {
         currentTier={effectiveTier}
         onSelectSimulatedTier={handleSelectSimulatedTier}
         user={currentUser}
+        operatingMode={operatingMode}
+        onToggleAssessmentMode={() => setActiveTab((prev) => (prev === 'assessment' ? 'module1' : 'assessment'))}
+        activeAssessment={activeAssessment}
+        activeCustomer={activeCustomer}
       />
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-6">
-        {/* Pipeline & Strategic Vision Navigation */}
-        <PipelineBar
-          activeTab={activeTab}
-          onSelectTab={handleSelectTab}
-          isStep1Complete={isStep1Complete}
-          isStep2Complete={isStep2Complete}
-          isStep3Complete={isStep3Complete}
-          isStep4Complete={isStep4Complete}
-          unlockedTabs={UNLOCKED_DEV_PIPELINE_STAGES as PipelineActiveTab[]}
-          onLockedTabClick={(tab) => {
-            showToast(getLockedTabMessage(tab));
-          }}
-          tenant={tenant}
-          opportunities={opportunities}
-          ingestionQueue={ingestionQueue}
-          totalSpendCr={tenant.total_spend_evaluated_inr}
-        />
+        {activeTab === 'assessment' ? (
+          <AssessmentWorkspace
+            onActiveAssessmentChange={handleActiveAssessmentChange}
+            onSelectCustomer={(c) => {
+              setActiveCustomer(c);
+              if (!activeAssessment) {
+                setTenant((prev) => ({
+                  ...prev,
+                  enterprise_name: c ? c.customerName : UI_STRINGS.header.noActiveCustomer,
+                  total_spend_evaluated_inr: 0,
+                  total_spend_evaluated: 0
+                }));
+              }
+            }}
+            onNavigateToModule1={(assessment) => {
+              handleActiveAssessmentChange(assessment);
+              setActiveTab('module1');
+            }}
+          />
+        ) : (
+          <>
+            {/* Pipeline & Strategic Vision Navigation */}
+            <PipelineBar
+              activeTab={activeTab}
+              onSelectTab={handleSelectTab}
+              isStep1Complete={isStep1Complete}
+              isStep2Complete={isStep2Complete}
+              isStep3Complete={isStep3Complete}
+              isStep4Complete={isStep4Complete}
+              unlockedTabs={UNLOCKED_DEV_PIPELINE_STAGES as PipelineActiveTab[]}
+              onLockedTabClick={(tab) => {
+                showToast(getLockedTabMessage(tab));
+              }}
+              tenant={tenant}
+              opportunities={opportunities}
+              ingestionQueue={ingestionQueue}
+              totalSpendCr={tenant.total_spend_evaluated_inr}
+              canonicalViewModel={canonicalModule1}
+              activeAssessment={activeAssessment}
+            />
+          </>
+        )}
 
         {/* Tab Modules */}
         {activeTab === 'module1' && (
@@ -1808,6 +2194,7 @@ export default function Home() {
             onRefreshWithFixes={handleRefreshWithFixes}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
+            canonicalViewModel={canonicalModule1}
           />
           </>
         )}
@@ -1892,7 +2279,7 @@ export default function Home() {
               AES-256-GCM ENCRYPTED
             </span>
             <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
-            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit · ISO 27001 · SOC 2 Type II compliant</span>
+            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 font-mono">
             <span>Procucev / aiCEV v2.0</span>

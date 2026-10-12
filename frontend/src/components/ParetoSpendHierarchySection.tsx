@@ -6,7 +6,8 @@ import {
   SlidersHorizontal,
   Layers,
   BarChart3,
-  FileSpreadsheet
+  FileSpreadsheet,
+  X
 } from 'lucide-react';
 import type {
   ParetoHierarchyParent,
@@ -67,6 +68,12 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
     setExpandedIds(new Set());
   };
 
+  const handleTabChange = (tab: 'vendor' | 'item') => {
+    setActiveTab(tab);
+    setSearchQuery('');
+    setExpandedIds(new Set());
+  };
+
   const strings = UI_STRINGS.module1.paretoHierarchy;
 
   // Compute total spend in current visible Pareto set
@@ -110,11 +117,8 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
         <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-200/80">
           <div className="flex items-center space-x-1 p-1 bg-slate-100 rounded-xl w-fit">
             <button
-              onClick={() => {
-                setActiveTab('vendor');
-                setExpandedIds(new Set());
-              }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
+              onClick={() => handleTabChange('vendor')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
                 activeTab === 'vendor'
                   ? 'bg-white text-sky-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -124,11 +128,8 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
               <span>{strings.tabVendorFirst}</span>
             </button>
             <button
-              onClick={() => {
-                setActiveTab('item');
-                setExpandedIds(new Set());
-              }}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 ${
+              onClick={() => handleTabChange('item')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer ${
                 activeTab === 'item'
                   ? 'bg-white text-sky-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -147,18 +148,29 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={strings.searchPlaceholder}
-                className="pl-8 pr-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-sky-500 w-44 sm:w-60"
+                className="pl-8 pr-7 py-1.5 text-xs rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-sky-500 w-44 sm:w-60"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  title={strings.clearSearch}
+                  aria-label={strings.clearSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <button
               onClick={handleExpandAll}
-              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
             >
               {strings.expandAll}
             </button>
             <button
               onClick={handleCollapseAll}
-              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              className="px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
             >
               {strings.collapseAll}
             </button>
@@ -198,6 +210,13 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
             ) : (
               filteredHierarchy.map((parent) => {
                 const isExpanded = expandedIds.has(parent.id);
+                const hasChildren = parent.children.length > 0;
+                const childCountLabel = hasChildren
+                  ? (activeTab === 'vendor'
+                      ? strings.childItemsCount(parent.children.length)
+                      : strings.childVendorsCount(parent.children.length))
+                  : strings.unavailableShortText;
+
                 return (
                   <React.Fragment key={parent.id}>
                     {/* Parent Row */}
@@ -223,15 +242,11 @@ export const ParetoSpendHierarchySection: React.FC<ParetoSpendHierarchyProps> = 
                         <span className="inline-flex items-center space-x-1 text-[11px] text-slate-400 italic">
                           {isExpanded ? (
                             <span className="not-italic text-sky-700 font-medium">
-                              {activeTab === 'vendor'
-                                ? strings.childItemsCount(parent.children.length)
-                                : strings.childVendorsCount(parent.children.length)}
+                              {childCountLabel}
                             </span>
                           ) : (
                             <span>
-                              {activeTab === 'vendor'
-                                ? `[+] ${strings.childItemsCount(parent.children.length)} (click to expand)`
-                                : `[+] ${strings.childVendorsCount(parent.children.length)} (click to expand)`}
+                              {hasChildren ? `[+] ${childCountLabel} (click to expand)` : childCountLabel}
                             </span>
                           )}
                         </span>
