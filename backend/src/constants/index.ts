@@ -48,3 +48,14 @@ export * from './module2FinancialSanity';
 export * from './module2FinancialTraceability';
 export * from './module3PcbiForensic';
 export * from './module4SavingsForensic';
+export * from './schemaMatching';
+export * from './taxonomy';
+export * from './module2Attribution';
+export * from './module2AttributionLevers';
+export * from './module2DirectPriceImprovement';
+export * from './module2EAuction';
+export * from './module2VendorConsolidation';
+export * from './module2MaterialMappingTaxonomy';
+export * from './module2VolumeAggregation';
+export * from './module2PaymentTerms';
+

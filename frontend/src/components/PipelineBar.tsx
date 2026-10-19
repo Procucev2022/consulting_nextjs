@@ -119,10 +119,18 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   }
 
   let fxImpactValue = '—';
-  let fxImpactSub = 'Data-quality / spend-normalization impact only — not procurement savings';
+  let fxImpactSub: string = UI_STRINGS.pipeline.kpis.fxImpact.sub;
   if (isModule1Completed && canonicalViewModel) {
-    fxImpactValue = `₹${canonicalViewModel.fxNormalizationImpactCr.toFixed(2)} Cr`;
-    fxImpactSub = `${canonicalViewModel.fxNormalizationImpactPct >= 0 ? '+' : ''}${canonicalViewModel.fxNormalizationImpactPct.toFixed(2)}% vs profile rates (Data-quality / normalization only)`;
+    if (
+      canonicalViewModel.fxNormalizationImpactStatus === 'NOT_CALCULATED' ||
+      (!canonicalViewModel.isTestData && canonicalViewModel.fxNormalizationImpactCr === 0)
+    ) {
+      fxImpactValue = UI_STRINGS.pipeline.kpis.fxImpact.notCalculated || 'Not calculated';
+      fxImpactSub = UI_STRINGS.pipeline.kpis.fxImpact.notCalculatedSub || 'Provisional ERP conversion applied (no dual-rate FX baseline)';
+    } else {
+      fxImpactValue = `₹${canonicalViewModel.fxNormalizationImpactCr.toFixed(2)} Cr`;
+      fxImpactSub = `${canonicalViewModel.fxNormalizationImpactPct >= 0 ? '+' : ''}${canonicalViewModel.fxNormalizationImpactPct.toFixed(2)}% vs profile rates (Data-quality / normalization only)`;
+    }
   }
 
   let cleanSpendYieldValue = '—';

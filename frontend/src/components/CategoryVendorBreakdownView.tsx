@@ -32,9 +32,19 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
         const spend = Number(
           (c.total_3yr_spend_inr_cr ?? c.spend_inr_crores ?? (calculatedSum > 0 ? calculatedSum : 0)).toFixed(2)
         );
-        const fy24 = Number((c.spend_fy24_cr ?? c.spend_inr_2023_cr ?? (spend * 0.28)).toFixed(2));
-        const fy25 = Number((c.spend_fy25_cr ?? c.spend_inr_2024_cr ?? (spend * 0.34)).toFixed(2));
-        const fy26 = Number((c.spend_fy26_cr ?? c.spend_inr_2025_26_cr ?? (spend * 0.38)).toFixed(2));
+        const fy24 = Number((c.spend_fy24_cr ?? c.spend_inr_2023_cr ?? 0).toFixed(2));
+        const fy25 = Number((c.spend_fy25_cr ?? c.spend_inr_2024_cr ?? 0).toFixed(2));
+        const fy26 = Number((c.spend_fy26_cr ?? c.spend_inr_2025_26_cr ?? 0).toFixed(2));
+        let yoy = c.yoy_growth_pct;
+        if (yoy === undefined || yoy === null) {
+          if (fy25 > 0 && fy26 > 0) {
+            yoy = Number((((fy26 - fy25) / fy25) * 100).toFixed(1));
+          } else if (fy24 > 0 && fy25 > 0) {
+            yoy = Number((((fy25 - fy24) / fy24) * 100).toFixed(1));
+          } else {
+            yoy = undefined;
+          }
+        }
         return {
           id: c.id || `CAT-${idx + 1}`,
           category: c.category || c.name || 'Direct Materials',
@@ -45,7 +55,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
           spend_fy26_cr: fy26,
           total_3yr_spend_inr_cr: spend,
           spend_share_pct: c.spend_share_pct ?? 0,
-          yoy_growth_pct: c.yoy_growth_pct ?? 8.0,
+          yoy_growth_pct: yoy,
           vendor_count: c.vendor_count ?? 1,
           item_count: c.item_count ?? 1,
           top_items: c.top_items ?? [],

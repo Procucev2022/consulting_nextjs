@@ -99,6 +99,7 @@ export interface Module1IngestionProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   canonicalViewModel?: Module1CanonicalViewModel | null;
+  onConfirmDatasetBaseCurrency?: (confirmedCurrency?: string) => void;
 }
 
 export interface ValidationPreCheckSectionProps {
@@ -112,6 +113,7 @@ export interface ValidationPreCheckSectionProps {
   isDataRefreshed?: boolean;
   onRefreshWithFixes?: () => void;
   canonicalViewModel?: Module1CanonicalViewModel | null;
+  onConfirmDatasetBaseCurrency?: (confirmedCurrency?: string) => void;
 }
 
 export interface Module2CategorizationProps {
@@ -127,6 +129,7 @@ export interface Module2CategorizationProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   targetSection?: string | null;
+  assessmentId?: string;
 }
 
 export interface Module3TrendAnalyticsProps {

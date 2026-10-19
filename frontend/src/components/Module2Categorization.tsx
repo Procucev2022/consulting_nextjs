@@ -66,7 +66,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   onUpdateTenant,
   currentTier = 'GOLD',
   onUpgrade,
-  targetSection
+  targetSection,
+  assessmentId
 }) => {
   const [isCategorizing, setIsCategorizing] = useState<boolean>(false);
   const [isCategorized, setIsCategorized] = useState<boolean>(false);
@@ -233,25 +234,41 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         };
         vendorMap.set(vName, entry);
       }
-      const spendCr = item.inr_crores || (item.total_spend ? item.total_spend / 10000000 : 0.5);
+      const spendCr = item.inr_crores ?? (item.total_spend ? item.total_spend / 10000000 : 0);
       entry.spend += spendCr;
 
-      const year = Number(item.spend_year) || 2024;
-      if (year <= 2023) {
-        entry.spendFy24 += spendCr;
-      } else if (year === 2024) {
-        entry.spendFy25 += spendCr;
-      } else {
-        entry.spendFy26 += spendCr;
+      let year: number | undefined;
+      if (item.invoice_date) {
+        const parsedYear = new Date(item.invoice_date).getFullYear();
+        if (!isNaN(parsedYear) && parsedYear > 2000 && parsedYear < 2100) {
+          year = parsedYear;
+        }
+      }
+      if (year === undefined && item.spend_year) {
+        const parsedYear = Number(item.spend_year);
+        if (!isNaN(parsedYear) && parsedYear > 2000 && parsedYear < 2100) {
+          year = parsedYear;
+        }
+      }
+
+      if (year !== undefined) {
+        if (year <= 2023) {
+          entry.spendFy24 += spendCr;
+        } else if (year === 2024) {
+          entry.spendFy25 += spendCr;
+        } else {
+          entry.spendFy26 += spendCr;
+        }
       }
 
       entry.categories.add(item.core_bucket || item.unspsc_category_name || 'General Materials');
+      const volumeQty = item.qty && item.qty > 0 ? item.qty : 0;
       entry.items.push({
         material_code: item.material_code || item.line_item_id || `MAT-${1000 + idx}`,
         item_name: item.raw_desc || item.material_desc || 'Material Line Item',
         category: item.core_bucket || 'Direct Materials',
         spend_inr_cr: Number(spendCr.toFixed(2)),
-        volume: item.qty || 100,
+        volume: volumeQty,
         unit: 'Units',
         po_number: item.po_number,
         unspsc_code: item.unspsc_code,
@@ -271,7 +288,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       const spendFy24 = Number(data.spendFy24.toFixed(2));
       const spendFy25 = Number(data.spendFy25.toFixed(2));
       const spendFy26 = Number(data.spendFy26.toFixed(2));
-      const yoy = spendFy25 > 0 ? Number((((spendFy26 - spendFy25) / spendFy25) * 100).toFixed(1)) : 0;
+      // Calculate YoY change only when comparable historical baseline exists; otherwise undefined (displayed as N/A)
+      const yoy = spendFy25 > 0 && spendFy26 > 0
+        ? Number((((spendFy26 - spendFy25) / spendFy25) * 100).toFixed(1))
+        : (spendFy24 > 0 && spendFy25 > 0
+          ? Number((((spendFy25 - spendFy24) / spendFy24) * 100).toFixed(1))
+          : undefined);
 
       const vendorTopItems = data.items.slice(0, 10).map((it) => {
         const unitRate = it.unitPrice || (it.volume > 0 ? Number(((it.spend_inr_cr * 10000000) / it.volume).toFixed(2)) : 0);
@@ -281,9 +303,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           po_number: it.po_number || 'PO IDENTIFIER NOT AVAILABLE',
           unspsc_code: it.unspsc_code || '10000000',
           unspsc_title: it.unspsc_title || it.category,
-          spend_yoy_pct: 0,
-          qty_yoy_pct: 0,
-          price_yoy_pct: 0,
+          spend_yoy_pct: undefined,
+          qty_yoy_pct: undefined,
+          price_yoy_pct: undefined,
           observation_mark: isMulti ? 'Cross-category item line' : undefined,
           remark: unitRate > 0 ? `Unit Rate: ₹${unitRate.toLocaleString()}` : 'Actual Transaction Line'
         };
@@ -951,7 +973,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         id="module2-strategic-sourcing-workspace-section"
         data-testid="module2-strategic-sourcing-workspace-container"
       >
-        <Module2StrategicSourcingWorkspace />
+        <Module2StrategicSourcingWorkspace assessmentId={assessmentId} />
       </div>
 
       {/* High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) */}

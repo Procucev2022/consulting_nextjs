@@ -58,12 +58,35 @@ describe('AiCategorizationService Unit Tests', () => {
     });
 
     const result = await service.categorizeLineItems([
-      { rawLineText: 'Centrifugal pump', vendorIdentified: 'Vendor A', amount: 50000 }
+      { rawLineText: 'Bleached paperboard rolls', vendorIdentified: 'Vendor A', amount: 50000 }
     ]);
 
     expect(result.status).toBe(CLASSIFICATION_STATUS.SUCCESS);
     expect(result.mappings.length).toBe(1);
     expect(result.mappings[0].mappedUnspscCode).toBeDefined();
     expect(result.mappings[0].confidenceScore).toBeGreaterThanOrEqual(90);
+  });
+
+  it('should assign confidenceScore 0.0 and UNCLASSIFIED status when item is unknown', async () => {
+    vi.spyOn(geminiService, 'generateJson').mockResolvedValueOnce({
+      status: EXTRACTION_STATUS.AI_FAILED,
+      data: null,
+      model: null,
+      error: 'Model offline'
+    });
+
+    const result = await service.categorizeLineItems([
+      { rawLineText: 'Unknown Random Proprietary Item 9999XYZ', vendorIdentified: 'Supplier Z', amount: 12500 }
+    ]);
+
+    expect(result.status).toBe(CLASSIFICATION_STATUS.SUCCESS);
+    expect(result.mappings.length).toBe(1);
+    const mapping = result.mappings[0];
+    expect(mapping.mappedUnspscCode).toBe('00000000');
+    expect(mapping.unspscTitle).toBe('Unclassified Commodity');
+    expect(mapping.confidenceScore).toBe(0.0);
+    expect(mapping.reason).toContain('UNCLASSIFIED');
+    expect(mapping.rawLineText).toBe('Unknown Random Proprietary Item 9999XYZ');
+    expect(mapping.vendorIdentified).toBe('Supplier Z');
   });
 });

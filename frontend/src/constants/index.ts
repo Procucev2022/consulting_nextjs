@@ -53,3 +53,8 @@ export * from './analysisOrchestration';
 export * from './evidenceWorkbook';
 export * from './adminValidation';
 export * from './assessment';
+export * from './module2LeversOverview';
+export * from './module2EAuction';
+export * from './module2VendorConsolidation';
+export * from './module2VolumeAggregation';
+export * from './module2PaymentTerms';

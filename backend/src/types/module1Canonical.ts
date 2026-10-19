@@ -193,6 +193,8 @@ export interface Module1CanonicalViewModel {
   validRowCount: number;
   excludedRowCount: number;
   anomalyRowCount: number;
+  /** Number of excess PO-line rows (Purch.Doc. + Item repeated) found during ingestion. */
+  suspectedDuplicateRowCount?: number;
 
   validFxNormalizedSpendInr: number;
   validFxNormalizedSpendCr: number;
@@ -203,6 +205,14 @@ export interface Module1CanonicalViewModel {
   fxNormalizationImpactInr: number;
   fxNormalizationImpactCr: number;
   fxNormalizationImpactPct: number;
+  fxNormalizationImpactStatus?: 'CALCULATED' | 'NOT_CALCULATED';
+  /**
+   * Describes the provenance of validFxNormalizedSpendCr.
+   * 'ERP_CONVERTED'  — value is the sum of the source workbook's pre-converted INR column.
+   * 'FX_MASTER_NORMALIZED' — Procucev time-series FX rates were applied.
+   */
+  spendProvenance?: 'ERP_CONVERTED' | 'FX_MASTER_NORMALIZED';
+  isTestData?: boolean;
 
   detectedCurrencies: string[];
   currencyBreakdown: VgtCurrencyBreakdownItem[];

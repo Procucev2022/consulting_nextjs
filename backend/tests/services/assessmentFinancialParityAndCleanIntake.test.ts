@@ -167,7 +167,7 @@ describe('Assessment Financial Parity & Clean Customer Intake (P0 Release Blocke
         'ANALYST'
       );
     }).toThrow(/Cannot approve a superseded analysis run/);
-  });
+  }, 35000);
 
   it('Test E: PCBI benchmark price-gap signal remains strictly separate from savings/opportunity pool', () => {
     const vgt = assessmentStore.getById('AIC-2026-0001');

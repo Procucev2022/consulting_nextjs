@@ -2,7 +2,9 @@ import crypto from 'crypto';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { assessmentWorkflowService } from '../../src/services/assessmentWorkflowService';
 import { assessmentStore } from '../../src/services/assessmentStore';
+import { Module1CanonicalService } from '../../src/services/module1CanonicalService';
 import { NDA_STATUSES, SYSTEM_BUILD_IDENTITY } from '../../src/constants/assessment';
+
 
 describe('AssessmentWorkflowService', () => {
   beforeEach(() => {
@@ -565,5 +567,53 @@ describe('AssessmentWorkflowService', () => {
     expect(m1Result.assessment.validatedSpendCr).toBeGreaterThan(0);
     expect(m1Result.assessment.canonicalModule1).toBeDefined();
     expect(m1Result.assessment.status).toBe('ANALYSIS_IN_PROGRESS');
+  });
+
+  it('Prompt 400: runModule1() embeds canonicalModule1 in the persisted AssessmentAnalysisRun', () => {
+    // Run Module 1 on the VGT assessment (always available in seed)
+    const m1Result = assessmentWorkflowService.runModule1(
+      'AIC-2026-0001',
+      'DV-001',
+      'analyst@procucev.com',
+      'ANALYST'
+    );
+    expect(m1Result.success).toBe(true);
+
+    // Verify the run in the store has canonicalModule1 embedded
+    const runs = assessmentStore.getAnalysisRuns('AIC-2026-0001');
+    const activeRun = runs.find((r) => r.analysisRunId === m1Result.analysisRun.analysisRunId);
+    expect(activeRun).toBeDefined();
+    expect(activeRun?.canonicalModule1).toBeDefined();
+    expect(activeRun?.canonicalModule1?.validFxNormalizedSpendCr).toBeGreaterThan(0);
+    expect(activeRun?.canonicalModule1?.sourceRowCount).toBeGreaterThan(0);
+    expect(activeRun?.canonicalModule1?.dataVersionId).toBeTruthy();
+  });
+
+  it('Prompt 400: Module1CanonicalService restores canonicalViewModel from persisted run after store reload (cold-restart simulation)', () => {
+    // Step 1: Run Module 1 (populates in-memory cache AND persisted run)
+    const m1Result = assessmentWorkflowService.runModule1(
+      'AIC-2026-0001',
+      'DV-001',
+      'analyst@procucev.com',
+      'ANALYST'
+    );
+    expect(m1Result.success).toBe(true);
+    const originalSpend = m1Result.canonicalModule1.validFxNormalizedSpendCr;
+    expect(originalSpend).toBeGreaterThan(0);
+
+    // Step 2: Simulate cold restart — wipe the in-memory canonical cache entirely
+    Module1CanonicalService.clearCache();
+    const afterClearCached = Module1CanonicalService.getCachedViewModel();
+    expect(afterClearCached).toBeNull();
+
+    // Step 3: Reload store from disk (simulates process restart reading assessments.json)
+    assessmentStore.reloadFromDisk();
+
+    // Step 4: Attempt canonical restoration — must succeed using persisted run data
+    const restored = Module1CanonicalService.getCanonicalViewModelForAssessment('AIC-2026-0001');
+    expect(restored).not.toBeNull();
+    expect(restored?.validFxNormalizedSpendCr).toBe(originalSpend);
+    expect(restored?.sourceRowCount).toBeGreaterThan(0);
+    expect(restored?.assessmentId).toBe('AIC-2026-0001');
   });
 });

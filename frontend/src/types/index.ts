@@ -54,3 +54,10 @@ export * from './savingsEvidence';
 export * from './adminGateway';
 export * from './module1Canonical';
 export * from './assessment';
+export * from './module2DirectPriceImprovement';
+export * from './module2EAuction';
+export * from './module2VendorConsolidation';
+export * from './module2VolumeAggregation';
+export * from './module2PaymentTerms';
+export * from './module2CategorySpecialisation';
+

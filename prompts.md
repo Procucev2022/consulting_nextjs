@@ -98329,3 +98329,9010 @@ Add the all the gemini keys as abackup
 
 ## Prompt 380
 cleanup all unncessary files and commit the changes and raise the pr
+
+## Prompt 381
+TASK: ABC TEXTILE LTD — MODULE 1 CONTROLLED CORRECTION
+Assessment ID: AIC-2026-0002
+Customer: ABC Textile Ltd
+Source workbook: Textile1.xlsx
+Environment: Local development / Chrome
+Scope: Module 1 ONLY
+
+IMPORTANT: Implement only the explicitly approved corrections below.
+Do not redesign the application or modify Modules 2, 3, or 4.
+
+========================================================
+1. SAFETY AND BASELINE PROTECTION
+========================================================
+
+Before changing anything:
+
+1. Read the latest forensic financial methodology audit report for
+   AIC-2026-0002.
+
+2. Record the current Git status and identify all modified files.
+   Do not overwrite unrelated existing changes.
+
+3. Preserve the original source workbook:
+   data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx
+
+4. Record and verify its SHA-256 checksum before and after the task.
+   Do not modify, replace, or regenerate the source workbook.
+
+5. Back up the relevant Module 1 source files and assessment metadata
+   using the project's existing safe backup conventions.
+
+6. Identify every code location that calculates or displays:
+   - profileFxBaselineSpendCr
+   - validFxNormalizedSpendCr
+   - fxNormalizationImpactCr
+   - total procurement spend
+   - monthly spend
+   - supplier Pareto spend
+   - item Pareto spend
+   - plant and material-group spend
+
+7. Do not make any code changes until the existing calculations and
+   their consumers are understood.
+
+========================================================
+2. CORRECT THE MIXED-CURRENCY BASELINE
+========================================================
+
+The audit identified an invalid calculation that sums raw Net Value
+amounts across INR, USD, EUR, JPY, GBP, and CHF and presents the
+result as INR.
+
+This mixed-currency sum must not be used as an INR spend baseline.
+
+Required behaviour:
+
+A. Use the source workbook's Net Value In INR field as the provisional
+   ERP-converted spend basis, after validating its relationship with
+   Net Value and CR.
+
+B. Alternatively, use Net Value multiplied by CR only if the existing
+   source-column semantics, units, and conversion direction have been
+   verified and the resulting row-level amounts reconcile with
+   Net Value In INR.
+
+C. Do not add raw amounts across different currencies and label the
+   result INR.
+
+D. Do not treat the difference between the mixed-currency sum and
+   converted INR spend as FX impact.
+
+E. Keep the existing source fields and their original values intact.
+
+F. If the application has a field named profileFxBaselineSpendCr that
+   currently represents the invalid mixed-currency sum, trace all
+   dependencies before changing its meaning. Update the relevant
+   consumers consistently, or introduce a clearly named canonical
+   ERP-converted baseline if that is safer.
+
+G. Do not silently substitute one financial definition for another.
+   Record the definition and source columns used for each displayed
+   spend figure.
+
+H. The provisional ERP-converted total should reconcile to the
+   independently calculated source total, subject to rounding.
+   The audit reported approximately ₹613.8805 Cr, but independently
+   recalculate it before accepting that value.
+
+========================================================
+3. REMOVE THE SPURIOUS FX IMPACT
+========================================================
+
+The current reported FX impact of approximately ₹30.4643 Cr is not
+a valid measure of foreign-exchange movements.
+
+Required behaviour:
+
+1. Remove this invalid calculation from Module 1.
+2. Do not display ₹30.4643 Cr or +5.22% as FX impact.
+3. Do not calculate FX impact by subtracting raw mixed-currency
+   amounts from INR-converted amounts.
+4. Do not invent or fetch exchange rates as part of this task.
+5. Do not claim historical spot-rate normalization.
+6. Unless a valid, approved FX methodology already exists and is
+   independently evidenced, display the FX impact as "Not calculated"
+   or the application's equivalent explicit unavailable state.
+7. Distinguish the following concepts in the code and UI:
+   - ERP-converted INR procurement spend
+   - Transaction-currency amounts
+   - Historical FX movement impact
+
+Do not describe the ERP-converted total as a historical spot-rate
+valuation.
+
+========================================================
+4. INVESTIGATE THE 952 EXACT DUPLICATE ROWS
+========================================================
+
+The audit reports 952 rows identical across all 27 columns, with
+associated converted spend of approximately ₹69.4712 Cr.
+
+Do not delete, deduplicate, exclude, or quarantine these rows
+automatically.
+
+Perform a read-only investigation:
+
+1. Recalculate the exact duplicate count from the source workbook.
+2. Preserve the original Excel row number for each duplicate.
+3. Produce a duplicate-review artifact containing:
+   - Source workbook and sheet
+   - Original row number
+   - Duplicate group identifier
+   - Matching row references
+   - Relevant available transaction identifiers
+   - Original transaction currency and amount
+   - Original CR and converted INR amount
+   - Duplicate group count
+   - Sum of converted INR amounts for the flagged rows
+4. Identify whether purchase-document numbers, line-item identifiers,
+   posting references, or other transaction identifiers are available.
+5. Determine whether the source provides sufficient evidence to
+   establish that these are duplicate exports rather than legitimate
+   repeated transactions.
+6. If the evidence is insufficient, mark the records
+   DUPLICATE_REVIEW_REQUIRED.
+
+Do not remove the flagged rows from the provisional spend calculation.
+Do not claim that ₹544.4093 Cr is the approved baseline.
+
+The duplicate review must remain separate from the financial
+correction. Preserve all original transaction records.
+
+========================================================
+5. REMOVE THE LEGACY VGT API FALLBACK
+========================================================
+
+The audit found that GET /api/ingestion/canonical falls back to
+VGT test data when the x-assessment-id header is omitted.
+
+This behaviour is not acceptable.
+
+Required behaviour:
+
+1. Identify all callers of /api/ingestion/canonical.
+2. Require a valid assessment identifier for assessment-specific
+   canonical data requests.
+3. If the identifier is missing, return a clear HTTP 400 response.
+4. If the identifier is malformed or unknown, return an appropriate
+   client error without returning any customer's data.
+5. If the assessment exists but has no completed analysis run, return
+   the application's appropriate empty/not-ready response.
+6. Never substitute VGT data or any other assessment's data as a
+   fallback.
+7. Preserve legitimate ABC Textile and VGT assessment behaviour when
+   their explicit assessment identifiers are supplied.
+8. Do not weaken authentication, authorization, or existing tenant
+   isolation controls.
+9. Inspect related canonical-data routes for the same unsafe fallback
+   pattern, but modify only the minimum code required for this task.
+
+Add regression tests for:
+- Missing assessment header
+- Unknown assessment ID
+- Existing assessment without an analysis run
+- ABC Textile with its explicit assessment ID
+- VGT with its explicit assessment ID
+- Requests that must not return data belonging to another assessment
+
+Do not rely only on HTTP status codes. Assert the response payload
+does not contain another assessment's data.
+
+========================================================
+6. RECONCILE ALL MODULE 1 OUTPUTS
+========================================================
+
+Using the unchanged source workbook, independently calculate and
+reconcile:
+
+- Total source rows
+- Valid rows
+- Excluded rows
+- Quarantined rows
+- Exact duplicate-review rows
+- ERP-converted INR spend
+- Monthly spend
+- Supplier spend
+- Item-description spend
+- Plant spend
+- Material-group spend
+- Vendor counts
+- Material-group counts
+- Plant counts
+- Currency counts
+- Billing-month counts
+
+Ensure that all spend breakdowns use the same documented provisional
+financial basis.
+
+Do not mix raw transaction-currency amounts into INR aggregates.
+
+Check that monthly, supplier, item, plant, and material-group totals
+reconcile to the same total, allowing only documented rounding
+differences.
+
+Do not fabricate missing descriptions, suppliers, plants, or material
+groups. Continue displaying actual source descriptions.
+
+Do not claim that the dataset is certified while the duplicate
+review remains unresolved.
+
+========================================================
+7. TESTING AND BROWSER VERIFICATION
+========================================================
+
+Run the narrowest relevant unit and integration tests first.
+
+Then run the appropriate project quality checks, including the full
+quality suite if feasible.
+
+Record:
+- Exact commands executed
+- Exit codes
+- Tests passed and failed
+- Any skipped tests
+- Actual coverage output if coverage is available
+- Any pre-existing failures
+- Any new failures
+
+Do not report a test as passing unless its actual result supports
+that claim.
+
+In local Chrome, test Module 1 for ABC Textile using assessment
+AIC-2026-0002.
+
+Verify:
+- Correct customer and assessment identity
+- Correct source workbook
+- Correct source-row count
+- Provisional ERP-converted spend
+- No invalid ₹583.4162 Cr mixed-currency INR baseline
+- No invalid ₹30.4643 Cr FX impact
+- FX impact explicitly marked unavailable/not calculated
+- Duplicate review status visible or clearly recorded
+- Authentic item descriptions in Pareto
+- Correct supplier, plant, and material-group totals
+- No VGT data in the ABC Textile assessment
+- No stale data after refresh
+- Data remains correctly associated with the assessment after reload
+- Requests without an assessment ID do not return VGT data
+
+Also perform regression checks against VGT using its explicit
+assessment ID. Do not modify the VGT dataset.
+
+========================================================
+8. STRICT SCOPE RESTRICTIONS
+========================================================
+
+Do not:
+- Modify Modules 2, 3, or 4
+- Recalculate savings opportunities
+- Generate new savings claims
+- Approve or close the assessment
+- Delete or alter the 952 duplicate rows
+- Change the source workbook
+- Introduce new exchange rates
+- Enable PUBLIC_SAAS
+- Modify the desktop installer or package a new installer
+- Perform unrelated refactoring or UI redesign
+- Claim certification without completing all required checks
+
+Use local Chrome for verification. Do not deploy or distribute a
+desktop build.
+
+========================================================
+9. REQUIRED FINAL REPORT
+========================================================
+
+Return a concise but evidence-based report containing:
+
+A. Files changed and why
+B. Source workbook SHA-256 before and after
+C. Financial definitions and formulas before and after
+D. Independently calculated provisional ERP-converted spend
+E. FX impact treatment
+F. Duplicate count and review-artifact location
+G. Duplicate-review status and limitations
+H. API behaviour for missing, unknown, ABC, and VGT IDs
+I. Spend reconciliation results and variances
+J. Actual test commands, exit codes, pass/fail counts, and coverage
+K. Local Chrome verification results
+L. Known defects or outstanding acceptance criteria
+M. Final status: PASS, FAIL, or BLOCKED
+
+If any critical financial reconciliation, duplicate-handling safeguard,
+or assessment-isolation test fails, report FAIL or BLOCKED.
+
+Do not claim Module 1 certification merely because the code builds
+or the test suite passes.
+
+========================================================
+10. STOP CONDITION
+========================================================
+
+After implementing the narrowly scoped corrections and producing the
+evidence-based report:
+
+STOP.
+
+Do not proceed to Modules 2–4.
+Do not certify, approve, close, or deliver the assessment.
+Do not make further changes without explicit approval.
+
+Present the report and wait for review.
+
+## Prompt 382
+TASK: FINAL READ-ONLY VERIFICATION OF MODULE 1 CONTROLLED CORRECTION
+
+Assessment: AIC-2026-0002
+Customer: ABC Textile Ltd
+Source: Textile1.xlsx
+
+This is a READ-ONLY verification task. Do not edit code, assessment
+records, the source workbook, duplicate-review records, or any other
+data. Do not modify Modules 2, 3, or 4.
+
+1. Verify the source workbook SHA-256 against the recorded checksum:
+   7c7d5f8a68efe9b60f9d53bd3c0564d27cd187923fd7bf75b6b71a18ef25cca7
+
+2. Read the currently persisted assessment and active analysis run.
+   Independently report:
+   - Assessment ID and customer name
+   - Active data version and analysis run
+   - Source filename and row count
+   - Persisted provisional ERP-converted spend
+   - FX normalization impact value and status
+   - Duplicate-review status
+
+3. Independently recalculate the ERP-converted spend from the unchanged
+   source workbook. Verify that:
+   SUM(Net Value In INR) equals SUM(Net Value * CR), subject to
+   documented rounding.
+
+4. Verify that ₹583.4162 Cr is not displayed as an INR spend baseline
+   and that ₹30.4643 Cr / +5.22% is not displayed as FX impact.
+
+5. Verify that FX impact is explicitly shown as "Not calculated" in
+   the API and relevant Module 1 UI.
+
+6. Confirm that all 952 duplicate groups remain preserved and flagged
+   DUPLICATE_REVIEW_REQUIRED. Do not remove or exclude any row.
+
+7. Test the canonical API with:
+   - No assessment identifier
+   - Malformed identifier
+   - Unknown identifier
+   - AIC-2026-0002
+   - AIC-2026-0001, if its assessment and test run exist
+
+   Assert both HTTP behaviour and response contents. No request may
+   silently fall back to another assessment's dataset.
+
+8. Restart or reload the development application using the project's
+   normal safe procedure, if feasible. Recheck the persisted assessment
+   and browser display after restart/reload.
+
+9. In local Chrome, verify the ABC Textile customer name, source file,
+   row count, provisional spend, FX status, Pareto descriptions, and
+   absence of VGT data. Capture the actual verification output.
+
+10. Run the relevant existing regression tests without changing them.
+    Report the actual commands, exit codes, pass/fail counts, and
+    any skipped tests. Do not claim full-suite validation unless the
+    full suite was actually executed.
+
+11. Confirm that Modules 2, 3, and 4 have not been modified by this
+    verification task.
+
+FINAL STATUS:
+- PASS: All verification checks pass, with duplicate review still
+  explicitly unresolved and Module 1 remaining uncertified.
+- FAIL: A verified data, calculation, or isolation defect exists.
+- BLOCKED: Required evidence or environment is unavailable.
+
+Do not certify the dataset. Do not approve the assessment. Do not
+proceed to Module 2. Do not make any changes. Return the evidence
+and stop.
+
+---
+
+## Prompt 383
+resume
+
+---
+
+## Prompt 384
+TASK: MODULE 1 CROSS-DATASET READINESS AUDIT
+BEFORE CREATING THE NEXT CUSTOMER
+
+OBJECTIVE
+
+We have encountered repeated issues while validating Module 1
+against different customer datasets.
+
+We do not want to keep fixing individual customer datasets one by one.
+
+We need to establish whether Module 1 has a robust, reusable
+processing and validation framework that works across different
+procurement datasets.
+
+AUDIT ONLY. READ-ONLY.
+
+ABSOLUTE RESTRICTIONS
+
+Do not edit code, customer records, assessments, source workbooks,
+test fixtures, databases, configuration, or existing tests.
+
+Do not create a customer or upload a dataset.
+
+Do not delete, restore, reseed, or reset any test data.
+
+Do not run PCBI benchmarking.
+
+Do not modify Modules 2, 3, or 4.
+
+Do not install packages or download browser drivers.
+
+Do not change existing application behaviour.
+
+If a test requires a write, cleanup, database reset, or modification
+of data, do not execute it. Identify it as requiring a separately
+approved test environment.
+
+PART 1 — VERIFY THE CURRENT STATE
+
+Inspect the current repository, working tree, available test fixtures,
+and assessment persistence.
+
+Report:
+
+1. Current Git branch and working-tree status.
+2. Uncommitted changes relevant to Module 1.
+3. Current assessment IDs and customer names in the active
+   development data store.
+4. Available assessment records, analysis runs and data versions.
+5. Whether ABC Textile and VGT records currently exist.
+6. Whether development and application-runtime persistence point
+   to the same data store.
+7. Whether any earlier test cleanup changed or removed assessment
+   records.
+
+Do not change or restore anything.
+
+Identify the authoritative source for the current persisted state.
+
+If any state cannot be determined, report UNKNOWN.
+
+PART 2 — MAP THE COMPLETE MODULE 1 FLOW
+
+Trace the actual implementation from file upload through final UI.
+
+Include:
+
+- File upload and validation
+- Worksheet selection
+- Header and column mapping
+- Data type and date parsing
+- Currency identification and conversion
+- Row validation and exclusion
+- Duplicate detection and review
+- Spend calculations
+- Supplier aggregation
+- Material and item aggregation
+- Plant and monthly aggregation
+- Pareto calculations
+- Assessment persistence
+- Analysis-run selection
+- Canonical API responses
+- Frontend result rendering
+
+For every step, identify:
+
+A. Source file and function.
+B. Inputs and outputs.
+C. Customer-specific or test-specific assumptions.
+D. Hard-coded column names or file layouts.
+E. Error handling and validation.
+F. Existing tests.
+G. Known limitations and untested cases.
+
+Do not infer behaviour from filenames alone. Inspect the implementation.
+
+PART 3 — DATASET COMPATIBILITY MATRIX
+
+Assess whether Module 1 handles each case below.
+
+FILE STRUCTURE
+- Different column names for equivalent fields
+- Different column ordering
+- Whitespace and punctuation in headers
+- Different worksheet names
+- Multiple worksheets
+- Additional irrelevant columns
+- Missing required columns
+- Empty files and worksheets
+- Different file formats, but only those the current product claims
+  to support
+
+DATA QUALITY
+- Missing supplier names and codes
+- Missing material codes
+- Different descriptions for the same material
+- Leading/trailing spaces and inconsistent capitalisation
+- Exact duplicates
+- Potential duplicates
+- Negative amounts and credit transactions
+- Zero-value transactions
+- Missing quantities and units of measure
+- Invalid numeric values
+- Missing and invalid dates
+- Different date formats
+- Multiple reporting periods
+
+FINANCIAL AND CURRENCY HANDLING
+- Single-currency datasets
+- Multi-currency datasets
+- Currency codes and symbols
+- Missing conversion rates
+- Static ERP rates
+- Historical exchange rates
+- Original-currency versus converted values
+- Negative transactions
+- Rounding and reconciliation
+
+PROCUREMENT STRUCTURE
+- Direct materials
+- Packing materials
+- MRO
+- Indirect materials
+- Services
+- Spares and unclassified items
+- Multiple plants
+- Multiple procurement categories
+- Different supplier and material coding systems
+- Unmapped categories
+
+Classify each case as:
+
+SUPPORTED_AND_TESTED
+SUPPORTED_BUT_UNTESTED
+PARTIALLY_SUPPORTED
+NOT_SUPPORTED
+UNKNOWN
+
+Only mark a case SUPPORTED_AND_TESTED when actual test evidence exists.
+
+For every classification, cite the implementation location and
+test name, or explain why the evidence is unavailable.
+
+PART 4 — IDENTIFY GENERALISATION RISKS
+
+Rank risks as CRITICAL, HIGH, MEDIUM or LOW.
+
+Investigate:
+
+1. Customer-specific names, IDs, file paths and test-data fallbacks.
+2. Fixed column names, positions and worksheet assumptions.
+3. Incorrect handling of currencies or financial baselines.
+4. Automatic duplicate removal or misleading duplicate counts.
+5. Incorrect inclusion or exclusion of transactions.
+6. Results displayed before analysis completion or acceptance.
+7. Stale data or cross-customer contamination.
+8. Mismatches between source data, persisted data, API and UI.
+9. Incorrect aggregation or Pareto labels.
+10. Metrics displayed as zero when they are unknown or uncalculated.
+11. Test suites that rely on mocked data without checking calculations
+    from actual workbooks.
+12. Persistence differences between development and runtime stores.
+
+For each material risk, provide evidence and its potential impact.
+
+PART 5 — DESIGN A CROSS-DATASET TEST STRATEGY
+
+Propose three complementary test layers.
+
+LAYER A: EXISTING REAL-CUSTOMER REGRESSION
+
+Use ABC Textile as the current reference case.
+
+Use VGT only if its existing fixture or assessment is available.
+Do not recreate it or modify persisted records.
+
+Keep customer-specific expected results separate.
+
+LAYER B: SECOND MANUFACTURING CUSTOMER
+
+Recommend a manufacturing procurement profile that differs from
+Textile1.xlsx, preferably cement or industrial manufacturing.
+
+Explain the dataset characteristics needed to test the generic
+processing engine.
+
+Do not create the customer or dataset yet.
+
+LAYER C: CONTROLLED GOLDEN TEST DATASET
+
+Design a synthetic test dataset that deliberately covers relevant
+edge cases, including:
+
+- Different headers and column ordering
+- Multiple currencies
+- Missing fields
+- Exact and potential duplicates
+- Negative and credit transactions
+- Unmapped items
+- Services
+- Multiple plants
+- Missing or invalid dates
+- Different units of measure
+- Zero-value transactions
+- Rounding cases
+
+For every synthetic test case, define the expected result before
+execution.
+
+Synthetic data must be clearly labelled and must never be presented
+as real customer data.
+
+Explain how the test environment will be isolated from production
+and existing customer assessments.
+
+PART 6 — DEFINE OBJECTIVE ACCEPTANCE CRITERIA
+
+Propose measurable Module 1 acceptance criteria for:
+
+- Dataset ingestion
+- Schema mapping
+- Row-level validation
+- Inclusion, exclusion and duplicate-review accounting
+- Financial reconciliation
+- Currency conversion
+- Supplier, item, material-group and plant aggregations
+- Monthly totals and Pareto calculations
+- Customer and assessment isolation
+- Persistence and reload
+- Error handling
+- UI/API consistency
+- Automated regression coverage
+- Documented unsupported formats and limitations
+
+Do not claim 100% accuracy merely because tests pass.
+
+Distinguish between:
+1. Technical validation,
+2. Financial reconciliation,
+3. Duplicate resolution,
+4. Customer acceptance,
+5. Final dataset certification.
+
+PART 7 — RECOMMENDED IMPLEMENTATION SEQUENCE
+
+Based on actual findings, propose a dependency-ordered sequence
+of generic fixes and validation work.
+
+The sequence must minimise repeated rework across customer datasets.
+
+Identify the exact source files and tests that would need to change
+in a later implementation task.
+
+Do not make those changes now.
+
+FINAL DELIVERABLE
+
+Return:
+
+1. Executive summary.
+2. Current repository and persistence state.
+3. Module 1 processing-flow map.
+4. Dataset compatibility matrix.
+5. Generalisation risks ranked by severity.
+6. Existing test coverage and gaps.
+7. Proposed second-customer test profile.
+8. Golden dataset design with expected outcomes.
+9. Objective Module 1 acceptance checklist.
+10. Dependency-ordered implementation plan.
+11. Files requiring modification in a later approved task.
+12. Any evidence that could not be obtained.
+
+Use actual source files, functions, tests, commands and outputs
+to support findings.
+
+Clearly separate VERIFIED FACTS, INFERENCES and UNKNOWN ITEMS.
+
+Do not claim tests passed unless they were actually executed.
+
+STOP after the audit.
+
+Do not implement fixes.
+Do not create the second customer.
+Do not proceed to Module 2.
+
+---
+
+## Prompt 385
+TASK: MODULE 1 — STAGE 1
+SAFE PERSISTENCE AND TEST ISOLATION
+
+CONTEXT
+
+The Module 1 Cross-Dataset Readiness Audit identified:
+
+1. Development data is stored under data/dev.
+2. The desktop-runtime persistence layer defaults to
+   %APPDATA%\aiCEV\data.
+3. These stores currently contain different assessment records.
+4. assessmentStore.resetToDefaultSeed() clears and reseeds the
+   in-memory assessment store and persists the result.
+5. Tests that use this function without an isolated data directory
+   can overwrite persisted assessment records.
+6. The development store currently contains ABC Textile Ltd,
+   assessment AIC-2026-0002.
+7. The runtime store has different records and assessment IDs.
+
+OBJECTIVE
+
+Implement a safe, explicit persistence and test-isolation foundation
+before making further Module 1 ingestion changes.
+
+SCOPE: STAGE 1 ONLY.
+
+Do not implement generic schema mapping, worksheet selection,
+FX changes, date parsing changes, duplicate detection, credit-note
+handling, or any other ingestion enhancement in this task.
+
+Do not modify Modules 2, 3, or 4.
+
+PART 1 — BASELINE AND SAFEGUARDS
+
+Before editing anything:
+
+1. Inspect the current Git branch and working-tree status.
+2. Identify all persistence configuration and resolution paths.
+3. Identify every test that calls resetToDefaultSeed(),
+   setCustomDataDir(), or other store-reset/persistence functions.
+4. Identify whether tests can write to data/dev or the APPDATA store.
+5. Record the current assessment IDs, customer names, active runs
+   and active data versions in both stores.
+6. Record checksums of the existing assessment JSON files.
+7. Inspect existing backups and test-directory conventions.
+
+Do not print secrets from environment files.
+
+Do not delete, reset, reseed, migrate or overwrite any existing
+assessment store.
+
+If any baseline cannot be captured safely, stop and report the issue.
+
+PART 2 — TEST ISOLATION
+
+Modify the relevant test setup so persistence tests use an isolated
+temporary directory.
+
+Requirements:
+
+- Tests must not write to data/dev.
+- Tests must not write to %APPDATA%\aiCEV\data.
+- resetToDefaultSeed() must operate only on the explicitly isolated
+  test store during automated tests.
+- Temporary test directories must be cleaned up only after the
+  relevant test process has completed.
+- Tests must fail safely if the intended isolated data directory
+  cannot be established.
+- Tests must not depend on the developer's current customer records.
+- Preserve the ability to test seeded fixtures within the isolated
+  test environment.
+
+Do not weaken or remove existing assertions merely to make tests pass.
+
+PART 3 — PERSISTENCE CONFIGURATION
+
+Review the difference between development persistence and desktop
+runtime persistence.
+
+Do not simply force both environments to share the same directory.
+
+Instead:
+
+- Make environment selection explicit and documented.
+- Preserve the existing intended development and desktop-runtime
+  storage behaviour unless a code change is necessary for safety.
+- Ensure the application reports which persistence environment
+  and data directory it is using, without exposing sensitive paths
+  unnecessarily to end users.
+- Ensure automated tests can inject a dedicated data directory.
+- Prevent silent fallback to a different customer's store.
+- Do not automatically migrate, merge, overwrite or copy records
+  between existing stores.
+
+If safely reconciling the stores requires a product decision,
+document the issue and stop short of migration.
+
+PART 4 — REQUIRED REGRESSION TESTS
+
+Add or update isolated tests to demonstrate:
+
+1. A test reset affects only its temporary store.
+2. Existing development-store records are unchanged by tests.
+3. Existing APPDATA-store records are unchanged by tests.
+4. Missing or invalid test-directory configuration fails safely.
+5. Seeded test fixtures work inside the temporary test store.
+6. Restarting the store using the same isolated directory preserves
+   the expected records.
+7. Two independent test stores do not leak data into each other.
+8. Tests do not rely on customer-specific assessment IDs unless
+   explicitly testing a named fixture.
+
+Use temporary test directories and deterministic fixtures.
+
+Do not use live customer data as a disposable test fixture.
+
+PART 5 — VALIDATION
+
+Run only the relevant persistence tests and necessary type checks.
+
+Do not run tests that may reset a live store unless their isolation
+has first been verified.
+
+Report the actual commands, exit codes, pass/fail counts and
+skipped tests.
+
+Before and after testing, compare the recorded checksums and
+assessment IDs for the existing development and APPDATA stores.
+
+If either store changes unexpectedly:
+
+- Stop immediately.
+- Do not attempt an automatic restore.
+- Report exactly what changed and where.
+- Do not proceed with additional tests.
+
+PART 6 — CHANGE CONTROL
+
+Do not commit changes.
+
+Do not create a customer.
+
+Do not upload a dataset.
+
+Do not change the existing ABC Textile assessment or its analysis.
+
+Do not modify Modules 2, 3 or 4.
+
+Do not proceed to Stage 2.
+
+FINAL REPORT
+
+Provide:
+
+1. Files modified and the reason for each.
+2. Baseline and final assessment-store checksums.
+3. Confirmation that existing assessment IDs and customer names
+   are unchanged.
+4. Tests executed and actual results.
+5. Any remaining persistence or environment risks.
+6. Whether Stage 1 is ready for acceptance.
+
+Classify the outcome as PASS, FAIL or BLOCKED.
+
+A PASS requires evidence that the existing stores were not changed
+and automated persistence tests operated only in isolated stores.
+
+Stop after the report.
+
+---
+
+## Prompt 386
+TASK: MODULE 1 — STAGE 1A
+FINAL READ-ONLY PERSISTENCE SAFETY VERIFICATION
+
+CONTEXT
+Stage 1 reports 47 persistence/store tests passed, 3 desktop
+controller tests passed, backend typecheck passed, and ESLint passed.
+
+The development store and desktop APPDATA store remain separate.
+The source report says both stores were unchanged.
+
+Before authorizing Stage 2, independently inspect the implementation
+and verify that the safeguards are effective across actual code paths.
+
+STRICT MODE: READ-ONLY
+
+Do not edit or create source files.
+Do not edit, create, delete, restore, reseed, merge, or migrate
+any assessment-store data.
+Do not run resetToDefaultSeed() against any existing store.
+Do not launch the installed desktop application if doing so could
+write to its existing store.
+Do not run tests that have not first been proven to use isolated
+temporary storage.
+Do not change customer records, assessment IDs, runs, or versions.
+Do not touch Modules 2, 3, or 4.
+Do not commit changes.
+
+PART A — INSPECT THE ACTUAL CODE
+
+Review the current implementations of:
+
+1. assessmentPersistence.ts
+2. assessmentStore.ts
+3. assessmentStore.test.ts
+4. persistenceIsolation.test.ts
+5. desktop.controller.ts
+6. Every caller of:
+   - resetToDefaultSeed()
+   - setCustomDataDir()
+   - useIsolatedTestDir()
+   - setPersistenceEnvironment()
+   - any persistence-path resolver or write method
+
+Report the actual file paths and relevant function names.
+
+PART B — VERIFY PROTECTED STORE WRITES
+
+Determine whether ALL writes, not just one public helper, are
+protected from automated tests writing to:
+
+- data/dev/assessments.json
+- %APPDATA%/aiCEV/data/assessments.json
+
+Inspect direct writes, backup creation, atomic rename, file deletion,
+reset/reseed, constructor initialization, and error-recovery paths.
+
+Check whether environment detection can be bypassed by a test running
+under an unexpected NODE_ENV, VITEST, or custom environment value.
+
+Do not infer safety merely because a helper throws an exception.
+Trace each relevant write path to the enforcement point.
+
+PART C — VERIFY TEST ISOLATION
+
+Inspect the actual test setup and configuration.
+
+Confirm:
+- tests establish temporary storage before store initialization;
+- tests cannot initialize a singleton against a live store first;
+- cleanup does not delete or modify pre-existing paths;
+- parallel test execution cannot share or reset the same temporary store;
+- failure to create isolated storage stops the test before store writes;
+- tests do not leave process-global state or environment variables
+  altered for subsequent suites.
+
+Identify any test suites outside the two persistence suites that can
+initialize or reset the assessment store.
+
+Do not run those suites unless their isolation is proven.
+
+PART D — VERIFY PERSISTENCE CONFIGURATION
+
+Check the precedence and behaviour of:
+- test mode;
+- development mode;
+- desktop runtime;
+- explicit custom data directory;
+- missing or invalid configuration.
+
+Confirm there is no silent fallback from one customer's store to
+another store.
+
+Confirm system-info diagnostics expose only sanitized persistence
+information.
+
+Do not unify development and runtime stores or propose migration
+without explicit approval.
+
+PART E — CHECK BASELINE INTEGRITY
+
+Read the current SHA-256 hashes for:
+- data/dev/assessments.json
+- data/dev/assessments.json.bak, if present
+- %APPDATA%/aiCEV/data/assessments.json
+- %APPDATA%/aiCEV/data/assessments.json.bak, if present
+
+Compare with the Stage 1 report:
+
+Development primary:
+53A7A43476913289E124C5B265C3FCC8ACCF0518FF6E82BD75F83CF7440AD0F5
+
+Development backup:
+63EFBDA77DB040A1036DD0B932CA4E1C6D3F3996A086FA5930500DDC5A02160A
+
+APPDATA primary:
+7F3A98DF5B5CCE2FE3B86914A6C86F6D20B6B426AF2D2AE4DFF4457B6141E1FD
+
+APPDATA backup:
+530E319D0590674C78F5A84D45BBBBBF2B7F77D6BFAB5C6209FB32DD88F8CA27
+
+Report missing files as missing. Do not recreate or restore them.
+If any current hash differs, STOP and report the discrepancy.
+Do not attempt automatic repair.
+
+PART F — REVIEW CHANGE SCOPE
+
+Run read-only git status and diff inspection.
+Identify all files modified by Stage 1 and any unrelated pre-existing
+modified files.
+
+Do not revert or overwrite pre-existing work.
+
+PART G — FINAL VERDICT
+
+Return PASS, FAIL, or BLOCKED for each of Parts B, C, D, E, and F.
+
+Include:
+- evidence from actual source paths/functions;
+- all relevant write paths inspected;
+- any unverified paths;
+- current versus baseline store hashes;
+- tests already run and whether they were demonstrably isolated;
+- any remaining risks;
+- whether Stage 1 is safe to accept.
+
+Do not modify anything.
+Stop after the report.
+
+IMPORTANT:
+A passing test suite is not sufficient if the source inspection reveals
+a bypass, a singleton initialized before isolation, or a live-store
+write path that is not guarded.
+
+---
+
+## Prompt 387
+TASK: MODULE 1 — STAGE 2
+DYNAMIC WORKSHEET SELECTION AND GENERIC SCHEMA MATCHING
+
+AUTHORIZATION
+Stage 1 and Stage 1A are accepted.
+Proceed with Stage 2 implementation only.
+
+PRIMARY OBJECTIVE
+Make Module 1 capable of processing different customer procurement
+datasets without assuming that:
+1. The first worksheet contains transaction data.
+2. Every customer uses SAP column names.
+3. Every transaction file follows the Textile1.xlsx layout.
+
+The existing ABC Textile assessment must continue to work.
+
+==================================================
+PART 1 — PROTECT EXISTING WORK
+==================================================
+
+Before editing:
+
+1. Record the current branch and git status.
+2. Identify the existing Module 1 parser, aggregator, controller,
+   types, tests, and frontend upload flow.
+3. Preserve all existing uncommitted work.
+4. Do not revert, overwrite, or clean up unrelated files.
+5. Do not modify either assessment store.
+6. Do not modify customer records, analysis runs, or data versions.
+7. Do not commit changes.
+8. Do not build or replace the desktop installer.
+
+Use isolated test storage as established in Stage 1.
+
+If a required test cannot be isolated from existing customer data,
+stop and report the blocker.
+
+==================================================
+PART 2 — DYNAMIC WORKSHEET DISCOVERY
+==================================================
+
+Inspect every worksheet in an uploaded workbook.
+
+Do not automatically assume that SheetNames[0] contains transactions.
+
+For each worksheet, evaluate:
+- Number of populated rows and columns.
+- Candidate header rows.
+- Recognizable transaction-field headers.
+- Presence of transaction-like records.
+- Whether the worksheet is a cover page, metadata page, instructions,
+  lookup table, summary, or transaction table.
+- Confidence that the worksheet contains usable transaction data.
+
+Support workbooks where:
+- The first sheet is metadata and the second contains transactions.
+- Transaction data is on a later worksheet.
+- Multiple worksheets may contain relevant transaction records.
+- The first sheet already contains the transaction data.
+
+Create a deterministic worksheet selection process.
+
+If one worksheet is clearly the transaction source, select it and
+record why.
+
+If multiple worksheets could contain transaction records:
+- Do not silently combine them.
+- Do not silently select one when doing so could omit transactions.
+- Present the candidates and their detected row/column counts.
+- Require an explicit selection or an unambiguous rule.
+- Prevent analysis from proceeding until ambiguity is resolved.
+
+If no worksheet contains usable transaction data, return a clear,
+actionable validation error.
+
+Do not change the existing UI architecture unnecessarily.
+Use the smallest suitable UI addition to let the analyst select
+a worksheet when required.
+
+==================================================
+PART 3 — GENERIC COLUMN AND SCHEMA MATCHING
+==================================================
+
+Replace exclusive reliance on SAP-specific aliases with a controlled,
+extensible schema-matching layer.
+
+The engine should identify candidate columns for fields such as:
+
+IDENTIFICATION
+- Purchase order number
+- Purchase order line, where available
+- Transaction/document number, where available
+- Posting/document date
+- Fiscal period, where available
+
+SUPPLIER
+- Supplier/vendor name
+- Supplier/vendor code
+
+MATERIAL
+- Material/item code
+- Material/item description
+- Material group/category
+- Procurement category, where available
+
+TRANSACTION
+- Quantity
+- Unit of measure
+- Unit price
+- Net transaction value
+- Currency
+- Existing converted value, if supplied
+- Plant/site/location
+
+Support common naming variations, including SAP-style names and
+generic ERP/export names such as:
+- Vendor, Supplier Name, Supplier ID, Vendor Code
+- Item Code, Material Code, SKU, Product Code
+- Item Description, Material Description, Product Description
+- PO Number, Purchase Order, Order Number
+- Posting Date, Document Date, Transaction Date
+- Net Value, Amount, Line Amount, Extended Amount
+- Currency, Currency Code
+- Plant, Site, Location
+
+This list is illustrative, not a mandate to map every similar-looking
+column automatically.
+
+Matching must be deterministic and explainable.
+
+For each selected field, expose:
+- Source column name.
+- Canonical field name.
+- Matching method: exact alias, normalized alias, or heuristic.
+- Confidence or match status.
+- Whether analyst confirmation is required.
+
+Rules:
+1. Normalize surrounding whitespace and harmless formatting
+   differences in headers.
+2. Preserve the original source header in the mapping report.
+3. Do not map ambiguous columns silently.
+4. Do not use an unrelated column merely because its name is similar.
+5. Do not invent missing transaction values.
+6. Distinguish required fields from optional fields.
+7. If a mandatory field cannot be mapped, stop with a useful message.
+8. If two columns are equally plausible, require analyst confirmation.
+9. Preserve original source data and row references.
+10. Do not alter transaction values simply to make the mapping pass.
+
+Avoid customer-specific hardcoding and assessment-ID-based routing.
+
+Do not introduce new hidden customer-name or filename-based branches.
+
+==================================================
+PART 4 — SPEND CALCULATION SAFETY
+==================================================
+
+This stage is primarily about worksheet selection and schema matching.
+
+Do not redesign the financial calculation engine.
+
+However, verify that schema mapping does not:
+- Select the wrong amount column.
+- Mistake a quantity, unit price, or tax column for transaction spend.
+- Prefer an unrelated converted-value column.
+- Silently substitute a missing currency or mandatory amount.
+- Change the existing ABC Textile spend calculation without explanation.
+
+Preserve the current precedence rules unless a demonstrated mapping
+defect makes the current result invalid.
+
+If a potential financial-calculation issue is discovered, document it
+and stop short of an unrelated financial-engine redesign.
+
+Do not implement historical FX conversion, locale-specific date
+handling, duplicate exclusion, or credit-note policy in this stage.
+
+==================================================
+PART 5 — FRONTEND AND ANALYST FEEDBACK
+==================================================
+
+Provide clear feedback for:
+- Worksheet selected automatically.
+- Worksheet selection required.
+- Field mappings successfully identified.
+- Ambiguous field mappings requiring confirmation.
+- Missing mandatory fields.
+- Unsupported or unreadable workbook structure.
+
+Before analysis starts, allow the analyst to review the detected
+worksheet and field mapping.
+
+Keep the UI concise and consistent with the existing aiCEV interface.
+
+Do not display calculated assessment results as accepted results
+before the full assessment is complete and accepted.
+
+Do not redesign the Command Centre.
+Do not change Modules 2, 3, or 4.
+
+==================================================
+PART 6 — REQUIRED TESTS
+==================================================
+
+Create or extend deterministic tests using synthetic fixtures stored
+in isolated test locations.
+
+Required cases:
+
+A. Existing ABC Textile schema and header variations.
+B. Transaction table on the first worksheet.
+C. Metadata sheet first, transaction sheet second.
+D. Transaction table on a later worksheet.
+E. Multiple candidate transaction worksheets.
+F. No usable transaction worksheet.
+G. SAP-style headers.
+H. Generic non-SAP headers.
+I. Headers with surrounding whitespace.
+J. Ambiguous supplier columns.
+K. Ambiguous amount columns.
+L. Missing mandatory amount field.
+M. Missing mandatory date or supplier field, according to the
+   agreed Module 1 field requirements.
+N. Optional fields absent.
+O. Unknown extra columns.
+P. Different column ordering.
+Q. Workbook with no worksheets or an unreadable structure.
+
+Tests must prove:
+- The intended worksheet is selected.
+- No transaction rows are silently omitted.
+- No sheets are silently combined.
+- Ambiguity blocks analysis when necessary.
+- Original transaction row counts remain traceable.
+- Mappings are deterministic.
+- Existing ABC Textile calculations remain consistent.
+- No customer data crosses assessment boundaries.
+- Existing regression tests remain valid.
+
+Do not weaken existing assertions to make the tests pass.
+
+==================================================
+PART 7 — VALIDATION
+==================================================
+
+Run:
+1. New worksheet-discovery tests.
+2. New schema-mapping tests.
+3. Existing Module 1 parser tests.
+4. Existing Module 1 controller tests.
+5. Relevant frontend mapping/worksheet tests.
+6. Backend typecheck.
+7. Relevant lint checks.
+
+Use isolated test data only.
+
+If an existing test writes to a non-isolated store, do not run it
+until safe isolation has been established.
+
+Report actual commands, exit codes, test counts, failures, and skips.
+
+Do not claim end-to-end browser validation unless it was actually run.
+
+==================================================
+PART 8 — ABC TEXTILE REGRESSION
+==================================================
+
+Use the existing ABC Textile source workbook as a regression reference.
+
+Expected source:
+- Assessment ID: AIC-2026-0002
+- Workbook: Textile1.xlsx
+- Source rows: 23,570 excluding the header
+- Provisional ERP-converted spend: ₹613.8805 Cr
+- FX status: NOT_CALCULATED
+- Duplicate review: REQUIRED; do not automatically exclude rows.
+
+Do not upload the workbook again to the existing customer assessment.
+Do not modify or overwrite the persisted ABC assessment.
+
+Perform the regression using an isolated test copy or fixture.
+
+Compare:
+- Source row count.
+- Selected worksheet.
+- Header-to-field mapping.
+- Valid and excluded row counts.
+- Spend and reconciliation totals.
+- Currency and date fields.
+- Supplier, material, and plant counts where available.
+
+Any difference must be explained with row-level or field-level evidence.
+Do not force the results to match by suppressing anomalies.
+
+The ₹613.8805 Cr figure remains provisional ERP-converted spend,
+not independently validated historical-FX spend.
+
+==================================================
+PART 9 — SCOPE GUARDRAILS
+==================================================
+
+Do not:
+- Implement Stage 3.
+- Change FX conversion policy.
+- Change date parsing policy except where necessary to identify
+  a header row; document any such dependency.
+- Implement duplicate removal or credit-note handling.
+- Change Module 2, 3, or 4.
+- Unlock or modify downstream module behaviour.
+- Merge development and desktop runtime stores.
+- Create live customer assessments.
+- Upload any new customer data to live storage.
+- Modify or reseed existing customer records.
+- Commit changes.
+- Build or update the desktop installer.
+
+==================================================
+PART 10 — FINAL REPORT
+==================================================
+
+Return a structured report containing:
+
+1. Files modified and why.
+2. Worksheet-discovery algorithm and ambiguity rules.
+3. Supported canonical fields and mapping strategy.
+4. Mandatory fields and confirmation requirements.
+5. Tests executed, commands, exit codes, and actual results.
+6. ABC Textile regression comparison.
+7. Source row-count and financial reconciliation evidence.
+8. Confirmation that both live stores remain unchanged.
+9. Confirmation that Modules 2–4 remain untouched.
+10. Remaining risks and known limitations.
+11. Stage 2 verdict: PASS, FAIL, or BLOCKED.
+
+Do not begin Stage 3 or start testing new live customer datasets
+as part of this task.
+
+STOP after delivering the report.
+
+
+
+---
+
+## Prompt 388
+resue
+
+---
+
+## Prompt 389
+TASK: MODULE 1 — STAGE 2A
+FINAL VERIFICATION AND ACCEPTANCE GATE
+
+OBJECTIVE
+Finalize verification of the existing Stage 2 implementation:
+dynamic worksheet selection and generic schema matching.
+
+This is a verification-only task.
+Do not add features or begin Stage 3.
+
+PART 1 — FREEZE SCOPE
+
+Record the current branch, git status, and diff.
+
+Preserve all current and pre-existing changes.
+Do not revert, overwrite, or clean up unrelated files.
+Do not commit.
+Do not modify customer records or assessment stores.
+Do not upload or create live customer assessments.
+Do not modify Modules 2, 3, or 4.
+
+PART 2 — FINISH RUNNING CHECKS
+
+Inspect and obtain the actual final result of every outstanding
+Stage 2 test, coverage run, and quality check.
+
+In particular, verify whether the following completed successfully:
+- Stage 2 worksheet-discovery tests
+- Generic-schema-matching tests
+- Schema dictionary tests
+- Dataset aggregator tests
+- ABC Textile regression test
+- npm run quality:fast
+- Backend and frontend typecheck
+- Relevant lint checks
+
+Do not report a test as passing merely because it was launched.
+Capture its final exit code and actual summary.
+
+If any task is still running, wait for it to finish.
+If it failed, investigate the failure and report it.
+Do not expand scope to unrelated failures.
+
+PART 3 — FINAL COVERAGE
+
+Run the relevant Stage 2 tests against the CURRENT code.
+
+Report statements, branches, functions, and lines for every new
+production source file involved in worksheet discovery and
+schema matching.
+
+The previously specified target is at least 90% for each metric
+for each applicable source file.
+
+Do not omit newly introduced source files from the coverage report.
+If a source file is below target, report the actual gap.
+Do not weaken tests or manipulate coverage configuration to claim PASS.
+
+PART 4 — ABC TEXTILE REGRESSION
+
+Run the isolated ABC Textile regression against the current code.
+
+Expected reference:
+- Workbook: Textile1.xlsx
+- Source data rows: 23,570
+- Provisional ERP-converted spend: ₹613.8805 Cr
+- FX status: NOT_CALCULATED
+- Duplicate rows: preserved for review
+
+Confirm:
+- Correct worksheet selection.
+- Correct field mappings.
+- Source row count and valid/excluded counts.
+- Spend reconciliation.
+- Currency and date-field recognition.
+- No automatic duplicate exclusion.
+- No writes to the existing ABC assessment.
+
+Explain any differences instead of forcing parity.
+
+Important: the regression must use isolated test data and must not
+re-upload or overwrite the existing customer assessment.
+
+PART 5 — MULTI-WORKSHEET AND MAPPING ACCEPTANCE
+
+Confirm actual tests cover:
+- Metadata worksheet before the transaction worksheet.
+- Transaction worksheet at a later position.
+- Multiple plausible transaction worksheets.
+- No usable transaction worksheet.
+- SAP and non-SAP headers.
+- Whitespace normalization.
+- Ambiguous supplier and amount fields.
+- Missing mandatory fields.
+- Optional and unknown columns.
+- Different column ordering.
+- No silent worksheet merging or transaction-row omission.
+
+Identify any required case that is not covered.
+
+PART 6 — CHANGE-SCOPE REVIEW
+
+Review the current diff and identify:
+- All Stage 2 files changed or added.
+- Any unrelated changes made during Stage 2.
+- Any change to the ABC Textile source workbook or persisted assessment.
+- Any change to Modules 2–4.
+- Any unresolved lint, typecheck, or test failure.
+
+Do not revert anything.
+
+PART 7 — STORE INTEGRITY
+
+Verify that the existing development and runtime assessment stores
+remain unchanged.
+
+Compare current hashes with the accepted Stage 1 baselines where
+the same files remain present.
+
+Do not restore or recreate any missing file.
+If a hash differs, stop and report the discrepancy.
+
+PART 8 — FINAL VERDICT
+
+Return PASS, FAIL, or BLOCKED.
+
+A PASS requires:
+- Current-code tests passing.
+- Required coverage thresholds met.
+- ABC Textile regression verified.
+- Required worksheet and mapping cases covered.
+- No unexplained financial variance.
+- Existing customer stores unchanged.
+- Modules 2–4 untouched.
+
+Provide actual commands, exit codes, coverage metrics, and evidence.
+
+Do not begin Stage 3.
+Do not test a new customer dataset in this task.
+Stop after the final report.
+
+---
+
+## Prompt 390
+MODULE 1 — STAGE 2B: CURRENCY RECONCILIATION AND FX STATUS VERIFICATION
+
+OBJECTIVE
+Resolve the remaining ABC Textile currency discrepancy and verify the
+meaning of the FX methodology status before Stage 2 is finally certified.
+
+This is a narrowly scoped audit and correction task.
+
+STRICT GUARDRAILS
+1. Do not start Stage 3.
+2. Do not upload, create, delete, or modify any customer assessment.
+3. Do not modify Textile1.xlsx.
+4. Do not modify live or runtime assessment stores.
+5. Do not modify Modules 2, 3, or 4.
+6. Do not broaden the architecture or refactor unrelated code.
+7. Preserve all existing uncommitted work. Do not commit.
+8. Do not change expected test results simply to obtain a passing test.
+9. Do not claim independent verification unless the actual commands and
+   their outputs are captured.
+10. If a change is necessary, make the smallest justified change and
+    report every modified file.
+
+TASK A — VERIFY THE SOURCE CURRENCIES
+
+Read the original Textile1.xlsx workbook in read-only mode.
+
+Identify:
+- The worksheet containing the transactions.
+- The exact currency column used.
+- All distinct nonblank currency values, after trimming surrounding
+  whitespace.
+- The count of rows for each currency.
+- The total source data-row count.
+- Whether CHF, SGD, or both actually occur.
+
+Compare the source results with:
+- The parser's detected currencies.
+- The ABC Textile regression test's expected currencies.
+- The Stage 2A report.
+
+Do not infer the answer from the regression test or an earlier report.
+The workbook itself is the authority.
+
+TASK B — VERIFY ROW AND SPEND RECONCILIATION
+
+Independently calculate and report:
+- Source data rows.
+- Parsed data rows.
+- Valid rows.
+- Excluded rows.
+- Anomaly rows.
+- Sum of Net Value In INR.
+- Sum of Net Value in Crs., if present.
+- Whether these two converted-spend columns reconcile.
+- Duplicate rows preserved for review.
+
+Report currency-mixed Net Value separately. Do not label a mixed-currency
+sum as INR.
+
+Expected provisional converted spend is approximately ₹613.8805 Cr.
+Investigate any discrepancy rather than changing the expected value
+without evidence.
+
+TASK C — VERIFY FX STATUS SEMANTICS
+
+Trace how these fields are generated and presented:
+- fxMethodologyStatus
+- fxMethodologyImpactCr
+- fxImpactPct
+
+When status is NOT_CALCULATED, determine whether the API or UI incorrectly
+presents numeric zero as a calculated FX impact.
+
+If necessary, make the smallest Module 1-only correction so the result
+clearly means:
+- Historical FX impact: Not calculated.
+- Verified FX impact: Not available.
+- ERP-converted spend remains provisional.
+
+Do not implement a historical FX calculation in this task.
+Do not alter the spend baseline.
+Do not change Modules 2–4.
+
+TASK D — REGRESSION TESTS
+
+Add or update focused tests to ensure:
+1. The currency set in the ABC regression matches the actual workbook.
+2. CHF and SGD cannot be silently substituted for each other.
+3. Currency values are normalized only by safe whitespace trimming and
+   do not silently lose distinct values.
+4. NOT_CALCULATED FX status is not presented as a verified zero impact.
+5. Existing spend, row-count, duplicate-preservation, and persistence
+   isolation behavior remains unchanged.
+
+Run the relevant tests, backend and frontend typechecks, and applicable
+lint/quality checks. Capture actual exit codes and results.
+
+TASK E — SCOPE AND STORE INTEGRITY
+
+Record:
+- Git branch and working-tree status before and after.
+- Every changed file and a concise explanation.
+- Confirmation that Textile1.xlsx is unchanged.
+- Confirmation that assessment stores are unchanged.
+- Confirmation that Modules 2–4 are untouched.
+
+Do not restore, delete, or migrate any store files.
+
+FINAL REPORT
+
+Return:
+1. Source-workbook currency counts and exact currency set.
+2. Parser-versus-source comparison.
+3. Row and spend reconciliation.
+4. FX status finding and any correction made.
+5. Test commands, actual exit codes, and results.
+6. Files changed.
+7. Store/workbook integrity results.
+8. Final verdict: PASS, FAIL, or BLOCKED.
+
+Stop after the report. Do not begin Stage 3 or test another customer.
+
+---
+
+## Prompt 391
+run locally on chrome
+
+---
+
+## Prompt 392
+MODULE 1 — STAGE 3: CUSTOMER 2 ISOLATED INGESTION VALIDATION
+
+OBJECTIVE
+Validate the accepted Stage 2 worksheet-discovery, schema-matching,
+and dataset-ingestion workflow against a genuinely different customer
+workbook.
+
+This stage tests Module 1 only.
+
+PRECONDITIONS
+- Stage 2A and Stage 2B verification reports are available.
+- Preserve all existing uncommitted changes.
+- Do not create a git commit.
+- Do not modify the ABC Textile source workbook or assessment.
+- Do not modify VGT or any other existing customer assessment.
+- Do not modify Modules 2, 3, or 4.
+- Do not modify production code before documenting a reproducible failure.
+- Do not update the desktop installer.
+- Do not expose customer data in logs or reports beyond what is necessary
+  for controlled validation.
+
+STEP 1 — IDENTIFY THE TEST DATASET
+Ask me to provide or identify the Customer 2 workbook if it is not
+already available.
+
+Do not select a different customer dataset or reuse ABC Textile/VGT
+without my approval.
+
+STEP 2 — CREATE AN ISOLATED TEST CONTEXT
+Use the established test isolation mechanism.
+Do not write to existing customer assessment stores.
+Record the isolated storage location and test assessment identifier.
+Verify that the source workbook checksum remains unchanged.
+
+STEP 3 — INSPECT THE WORKBOOK
+Report:
+- Worksheet names and order.
+- Candidate transaction sheets and the reason for each classification.
+- Header row detected for each candidate.
+- Selected worksheet and selection confidence.
+- Whether analyst confirmation is required.
+- Source data-row count.
+- Column mappings, confidence levels, ambiguous fields, and unmapped fields.
+- Mandatory fields that are missing or uncertain.
+- Distinct currencies and row counts per currency.
+- Date range, transaction months, plants, suppliers, and material groups.
+
+Do not silently combine worksheets or discard transaction rows.
+
+If worksheet selection or mandatory field mapping is ambiguous,
+stop and request analyst confirmation rather than guessing.
+
+STEP 4 — RECONCILE THE INGESTION
+Compare workbook totals against parsed output:
+- Source rows versus parsed rows.
+- Valid, excluded, and anomaly counts.
+- Raw native-currency spend, reported separately by currency.
+- Converted spend, if supplied by the workbook.
+- Duplicate groups and duplicate-review status.
+- Missing values and mapping exceptions.
+
+Do not describe mixed-currency amounts as INR.
+Do not describe ERP-converted values as historical spot-FX valuation.
+Do not claim savings or procurement opportunities at this stage.
+
+STEP 5 — VERIFY ISOLATION
+Confirm that:
+- ABC Textile assessment files and hashes are unchanged.
+- VGT assessment files and hashes are unchanged.
+- Other existing customer stores are unchanged.
+- No Customer 2 data has appeared in another customer's UI or assessment.
+- No partial or stale results appear before the assessment is complete.
+
+STEP 6 — RUN QUALITY CHECKS
+Run the relevant Module 1 tests, backend/frontend typechecks,
+and applicable lint checks.
+
+Capture actual commands, exit codes, and results.
+
+STEP 7 — REPORT AND STOP
+Return:
+1. Dataset identity and checksum.
+2. Worksheet-discovery findings.
+3. Schema-mapping findings.
+4. Row, currency, and spend reconciliation.
+5. Duplicate and data-quality findings.
+6. Isolation and persistence evidence.
+7. Tests and quality-gate results.
+8. Any reproducible defects.
+9. Verdict: PASS, FAIL, or BLOCKED.
+
+Do not start Module 2.
+Do not modify Modules 2–4.
+Do not begin testing another customer until I review this report.
+
+---
+
+## Prompt 393
+IMPORTANT CORRECTION — CUSTOMER 2 DATASET SELECTION
+
+The previously identified file:
+
+C:\Users\srini\Desktop\Enterprise Qua Buyer Data.xlsx
+
+IS NOT THE DATASET I HAVE AUTHORIZED FOR CUSTOMER 2.
+
+Do not select or use this file.
+
+Do not infer my intended dataset from:
+- Files found on the Desktop.
+- Files found in parent directories.
+- Files found in the project data directory.
+- Previously used demo, regression, or product datasets.
+- The currently selected customer in the application.
+
+The intended Customer 2 workbook has not yet been explicitly identified
+or approved.
+
+STRICT GUARDRAILS:
+1. Do not create a customer profile or assessment.
+2. Do not upload, copy, move, rename, or modify any workbook.
+3. Do not modify ABC Textile, VGT, PQR Cement Ltd, or any other
+   existing assessment.
+4. Do not run Module 1 ingestion.
+5. Do not modify application code.
+6. Do not modify Modules 2, 3, or 4.
+7. Do not update the desktop installer.
+8. Preserve all existing work and do not commit changes.
+
+For now, stop dataset discovery and wait for me to explicitly identify
+or provide the intended workbook.
+
+After I provide the correct workbook, verify its exact path, filename,
+and SHA-256 checksum, then inspect it in read-only mode.
+
+Do not proceed to customer creation or assessment until I approve
+the inspection report.
+
+---
+
+## Prompt 394
+MODULE 1 — CUSTOMER 2: POST-INGESTION VALIDATION AUDIT
+
+OBJECTIVE
+Investigate the issues identified in the aiCEV screenshots after uploading
+Cement2.xlsx for PQR Cement Ltd.
+
+Do not accept Module 1 yet.
+
+STRICT GUARDRAILS
+1. Do not run Modules 2, 3, or 4.
+2. Do not click Apply Blanket AI Fixes or automatically resolve anomalies.
+3. Do not delete or exclude source rows.
+4. Do not modify the original workbook.
+5. Do not alter ABC Textile, VGT, or any other existing assessment.
+6. Do not modify production code until a reproducible defect is documented.
+7. Preserve existing work and do not commit changes.
+8. Do not change the spend baseline to force reconciliation.
+9. Do not infer missing currency codes without documented evidence.
+10. Do not migrate or modify customer assessment stores.
+
+TASK A — VERIFY FILE IDENTITY
+
+Record:
+- Actual uploaded filename.
+- Original source filename.
+- SHA-256 checksum of the source and uploaded workbook, where available.
+- Whether the uploaded file is byte-identical to the source workbook.
+- Assessment ID and selected customer.
+
+Investigate the difference between Cement2(2).xlsx and Cement2.xlsx.
+Do not assume they are identical based on their names.
+
+TASK B — RECONCILE THE SOURCE FIELDS
+
+Using the original workbook, independently verify:
+- 19,670 data rows.
+- Basic Value total of approximately ₹262.6412 Cr.
+- Basic Value in Crs total.
+- LANDED Value total.
+- Basic Value (After Discount) total.
+- 10,664 unique item descriptions.
+- 828 unique supplier descriptions.
+- Two distinct plants.
+- All 41 distinct source procurement categories.
+
+Identify which source columns feed each Module 1 metric.
+Report exact mappings and any defaults or fallback values.
+
+TASK C — INVESTIGATE MATERIAL GROUP COLLAPSE
+
+The source has 41 distinct procurement categories, while the dashboard
+shows only one material group: DIRECT Materials & Consumables.
+
+Trace:
+- Source procurement-category field.
+- Source material-group field, if present.
+- Canonical field mapping.
+- Material-group aggregation.
+- Dashboard display.
+
+Determine whether the source categories are:
+A. Preserved in a different field but not displayed.
+B. Unmapped.
+C. Replaced by a default value.
+D. Incorrectly aggregated.
+
+Do not silently remap all 41 categories into new categories.
+Report the evidence and recommend the smallest safe correction.
+
+TASK D — INVESTIGATE THE 30 CURRENCY EXCEPTIONS
+
+The UI reports:
+- 30 records evaluated.
+- 30 conversion issues.
+- ₹0.14 Cr quarantined.
+- 0 records cleared.
+- Missing Currency Code.
+Yet visible rows display INR and an FX rate of 1.00.
+
+Trace the source fields, mapped currency value, configured customer currency,
+fallback behavior, validation rule, and displayed values.
+
+Establish whether INR is:
+- Present in the source.
+- Explicitly configured by the analyst.
+- Applied as a documented default.
+- Merely a UI fallback.
+
+Do not apply automatic fixes.
+Do not clear the exceptions until the correct treatment is established.
+Report the 30 records' aggregate spend and explain why they are quarantined.
+
+TASK E — VERIFY FX METHODOLOGY
+
+The UI reports an FX normalization impact of ₹153.50 Cr.
+
+Trace the exact formula, source currency data, conversion rates, dates,
+customer-profile rates, and status logic used to calculate this amount.
+
+Because the workbook has no explicit currency column, determine whether
+the FX impact is supportable.
+
+Do not classify FX normalization impact as procurement savings.
+Do not calculate historical FX unless the required source data and
+methodology are valid.
+
+TASK F — RECONCILE PARETO
+
+Verify that:
+- Supplier totals reconcile to the source transactions.
+- The Pareto uses the correct spend field.
+- The 80% cutoff is calculated from the validated spend baseline.
+- The cumulative amount shown is mathematically consistent.
+- Supplier-name variants are not silently merged or split without
+  documented normalization rules.
+
+TASK G — ISOLATION AND QUALITY
+
+Confirm that:
+- The assessment belongs to the correct customer.
+- ABC Textile and VGT stores are unchanged.
+- No stale customer data appears in this assessment.
+- No rows have been silently deleted.
+- No automatic anomaly fixes have been applied.
+
+FINAL REPORT
+Return:
+1. File identity and checksum comparison.
+2. Source-to-dashboard reconciliation.
+3. Material-group finding.
+4. Currency-exception finding.
+5. FX methodology finding.
+6. Pareto reconciliation.
+7. Store-isolation evidence.
+8. Relevant test results.
+9. PASS, FAIL, or BLOCKED verdict.
+
+Stop after reporting. Do not run Modules 2–4.
+
+---
+
+## Prompt 395
+PROMPT 395 — MODULE 1 TARGETED REMEDIATION
+PQR CEMENT LTD | AIC-2026-0003
+
+OBJECTIVE
+Resolve the three defects established in the Module 1 audit:
+
+1. Source procurement categories collapse into one default category.
+2. Domestic records without an explicit currency column are
+   incorrectly quarantined.
+3. A hardcoded FX impact of ₹153.50 Cr appears when no valid
+   FX calculation exists.
+
+This is a targeted remediation, not a redesign.
+
+MANDATORY GUARDRAILS
+
+1. Work only on Module 1 ingestion, canonical normalization,
+   validation, and related display logic.
+2. Do not run Modules 2, 3, or 4.
+3. Do not modify their business logic or outputs.
+4. Do not delete, overwrite, or re-import the source workbook.
+5. Do not modify ABC Textile, VGT, or any unrelated assessment.
+6. Do not modify assessment-store files manually.
+7. Do not silently migrate or combine customer stores.
+8. Do not apply blanket AI fixes to the 30 flagged records.
+9. Do not commit changes.
+10. Preserve the current code and report every modified file.
+
+FIX 1 — PROCUREMENT CATEGORY PRESERVATION
+
+Trace the existing canonical schema, row normalizer, aggregation
+service, and Module 1 UI.
+
+Map the source field "Department" to the appropriate canonical
+procurement-category field.
+
+Do not assume Department and Material Group are always identical.
+Preserve the original source value and use an explicit mapping rule.
+
+If a separate material-group field exists, do not overwrite it
+with Department unless the data model explicitly defines that
+relationship.
+
+Add regression tests proving:
+- Department values survive ingestion.
+- Distinct source categories do not collapse into DIRECT by default.
+- Unknown categories are flagged rather than silently overwritten.
+- Category spend sums reconcile to total validated spend.
+- No rows are duplicated or omitted.
+
+FIX 2 — EXPLICIT DOMESTIC CURRENCY CONFIRMATION
+
+Support an analyst-confirmed dataset base currency when the source
+does not contain a currency column.
+
+The UI or configuration must distinguish:
+- Source-provided currency.
+- Analyst-confirmed base currency.
+- System-inferred currency.
+- Unresolved currency.
+
+Do not silently default all datasets to INR.
+
+For the current PQR Cement Ltd test, allow INR to be explicitly
+confirmed for the dataset before treating the affected rows as INR.
+
+After confirmation:
+- Re-evaluate the 30 currency exceptions.
+- Preserve all source rows.
+- Record the currency provenance.
+- Do not apply a blanket AI fix.
+- Reconcile the affected spend to the source totals.
+
+If confirmation cannot be safely performed in the current workflow,
+leave the records unresolved and report the missing capability.
+
+FIX 3 — REMOVE UNSUPPORTED FX FALLBACK
+
+Remove the hardcoded ₹153.50 Cr FX impact from any fallback path.
+
+When no valid FX computation exists, display:
+"Not calculated"
+
+Use a numeric FX impact only when the necessary currency data,
+rate methodology, and comparison baseline are available.
+
+Do not substitute numeric zero for an unperformed calculation.
+
+Do not classify FX normalization impact as procurement savings.
+
+REGRESSION REQUIREMENTS
+
+A. Re-run the ABC Textile Module 1 regression.
+   Expected source workbook SHA-256:
+   7c7d5f8a68efe9b60f9d53bd3c0564d27cd187923fd7bf75b6b71a18ef25cca7
+
+   Verify that its previous expected behavior is preserved and that
+   no currency or FX regression is introduced.
+
+B. Re-test PQR Cement Ltd against the original source workbook.
+   Expected SHA-256:
+   8866eda88a6ee0f1b1cd9d3975e90936dc8e9463d1180c4fd4fee954ba726e27
+
+   Expected source values:
+   - 19,670 data rows.
+   - Basic Value: ₹262.641177 Cr.
+   - Landed Value: ₹283.425865 Cr approximately.
+   - Basic Value after discount: ₹244.499189 Cr approximately.
+   - 10,664 unique item descriptions.
+   - 828 unique supplier descriptions.
+   - Two distinct plants.
+   - 41 discrete source operational categories, including blanks
+     where applicable; independently verify the precise category count.
+
+C. Verify the 30 currency exceptions:
+   - Explain their final status.
+   - Reconcile their spend.
+   - Do not delete or silently exclude them.
+
+D. Verify FX display:
+   - No hardcoded ₹153.50 Cr.
+   - "Not calculated" when the computation is unavailable.
+   - No false zero calculation.
+
+E. Verify supplier Pareto totals and the 80% cutoff.
+
+F. Verify isolation:
+   - ABC Textile data and hashes remain unchanged.
+   - VGT data remains unchanged.
+   - PQR Cement Ltd data is not mixed with another assessment.
+
+G. Run relevant tests, backend and frontend typechecks, and linters.
+   Report actual exit codes and test counts.
+
+H. Review the final diff and confirm that no unrelated modules,
+   assessment stores, or installer files were modified.
+
+FINAL REPORT
+
+Provide:
+1. Root cause for each defect.
+2. Files changed and reason for each change.
+3. Before/after metrics.
+4. PQR source reconciliation.
+5. ABC Textile regression results.
+6. Currency confirmation and provenance behavior.
+7. FX display behavior.
+8. Data-isolation evidence.
+9. Automated test results.
+10. PASS, FAIL, or BLOCKED verdict.
+
+Do not run Modules 2, 3, or 4.
+Stop after the report.
+
+## Prompt 396
+
+PROMPT 396 — MODULE 1 RUNTIME ACCEPTANCE VERIFICATION
+
+OBJECTIVE
+Independently verify the Prompt 395 remediation in the running
+application and determine whether Module 1 can be accepted.
+
+This is a verification-only task. Do not implement further fixes.
+
+STRICT GUARDRAILS
+
+1. Do not edit source files.
+2. Do not create new tests or modify existing tests.
+3. Do not upload or re-import customer workbooks.
+4. Do not modify any assessment or persistence-store files.
+5. Do not run Modules 2, 3, or 4.
+6. Do not modify the installer or desktop application package.
+7. Do not commit changes.
+8. Do not report a test result as a runtime result.
+9. If the running application cannot be verified, report BLOCKED.
+10. Preserve the current working tree and report its initial and
+    final git status.
+
+VERIFICATION A — CURRENT CODE AND DIFF
+
+Inspect the actual changes from Prompt 395.
+
+Report:
+- Every changed file.
+- Whether each change is confined to Module 1 or supporting tests.
+- Whether shared services or data models used by Modules 2–4 changed.
+- Whether any assessment store, uploaded workbook, or installer changed.
+- Any unintended or unexplained change.
+
+Do not infer this from the previous report. Inspect the current diff.
+
+VERIFICATION B — PQR CEMENT CATEGORY RESULTS
+
+Using the existing PQR Cement assessment and original source:
+
+- Verify the source workbook checksum.
+- Verify 19,670 source data rows.
+- Verify Basic Value totals ₹262.641177 Cr.
+- Verify the number of non-blank distinct Department values.
+- Verify category-level row counts and spend.
+- Confirm category spend reconciles to total spend.
+- Confirm no category is silently converted to DIRECT_MATERIALS.
+- Confirm blank or unknown categories are handled explicitly.
+
+Open the actual running Module 1 UI and inspect the category display.
+
+If the UI cannot be accessed or the assessment must be re-imported,
+stop and report BLOCKED. Do not re-import the file.
+
+VERIFICATION C — CURRENCY CONFIRMATION
+
+Using the existing PQR Cement assessment:
+
+1. Inspect the pre-confirmation behavior if available without
+   changing persisted assessment data.
+2. Verify unresolved currency is clearly identified.
+3. Verify the explicit INR confirmation action is visible.
+4. Verify the action triggers re-evaluation of affected records.
+5. Verify confirmed records show analyst-confirmed provenance.
+6. Verify all 19,670 rows and spend remain reconciled.
+7. Verify the confirmed currency does not leak into ABC Textile
+   or VGT.
+8. Verify whether confirmation survives reopening the assessment.
+
+Do not click a control if doing so would alter persisted data and
+cannot be safely reversed. If persistence cannot be tested safely,
+report it as unverified.
+
+VERIFICATION D — FX DISPLAY
+
+Inspect the actual Module 1 UI for PQR Cement.
+
+Verify:
+- No ₹153.50 Cr fallback appears.
+- FX status is NOT_CALCULATED when no valid FX comparison exists.
+- The display says "Not calculated" rather than a misleading zero.
+- No unsupported FX amount is presented as savings.
+
+Also run the relevant existing component tests and report their
+actual output separately from the runtime findings.
+
+VERIFICATION E — REGRESSION AND ISOLATION
+
+Without re-importing or modifying assessments:
+
+- Verify ABC Textile source checksum and assessment identity.
+- Verify VGT source checksum and assessment identity.
+- Confirm no PQR data appears in either assessment.
+- Confirm PQR results do not appear when another assessment is
+  selected.
+- Check for stale Module 1 results after switching customers.
+- Confirm that no results from Modules 2–4 were generated or
+  modified during this verification.
+
+VERIFICATION F — FINAL QUALITY STATUS
+
+Inspect the current working tree and existing command results.
+
+Report actual exit codes for relevant:
+- Backend tests.
+- Frontend tests.
+- Backend typecheck and lint.
+- Frontend typecheck and lint.
+- Global quality:fast command, if completed.
+
+Do not rerun a long-running command unnecessarily. If its result
+cannot be established, report it as unverified.
+
+FINAL VERDICT
+
+Choose one:
+- PASS — runtime behavior and data integrity verified.
+- FAIL — reproducible defect found.
+- BLOCKED — verification could not be completed safely.
+
+Include:
+1. Evidence for every conclusion.
+2. Runtime findings separately from automated test findings.
+3. Any remaining risks.
+4. Exact next step.
+
+STOP after the report. Do not modify code.
+
+---
+
+## Prompt 397
+PROMPT 397 — PQR CEMENT MODULE 1 EVIDENCE-BASED ACCEPTANCE AUDIT
+
+OBJECTIVE
+Audit the current PQR Cement Module 1 results against the original
+Cement2.xlsx workbook and the assessment persisted after the latest upload.
+
+This is a verification-only task. Do not change application code.
+
+STRICT GUARDRAILS
+1. Do not edit source code, tests, customer records, or uploaded workbooks.
+2. Do not re-upload or re-import the workbook.
+3. Do not trigger Modules 2, 3, or 4.
+4. Do not modify ABC Textile, VGT, or any other assessment.
+5. Do not create a new customer or assessment.
+6. Do not claim that a UI screenshot proves a backend calculation.
+7. If evidence is unavailable, report BLOCKED rather than infer a PASS.
+
+AUDIT A — SOURCE AND PERSISTED ASSESSMENT
+- Verify the source workbook SHA-256.
+- Verify the persisted PQR assessment ID and its uploaded document/version.
+- Verify the ingested record count is 19,670, excluding the header.
+- Independently calculate:
+  * Basic Value
+  * Landed Value
+  * Basic Value after Discount
+- Identify the exact source columns used for each figure.
+- Compare the independent results with the UI and persisted results.
+- Report exact variances, not rounded-only comparisons.
+
+AUDIT B — EVALUATION PERIOD
+- Extract minimum and maximum transaction/billing dates from the workbook.
+- Count distinct billing months.
+- Compare them with the UI evaluation window:
+  1 April 2023–31 March 2026.
+- Explain why actual coverage is displayed as April 2021–August 2022.
+- Determine whether the application distinguishes the requested evaluation
+  period from actual source-data coverage.
+- Do not modify transaction dates.
+
+AUDIT C — CATEGORIES
+- Independently derive the 38 nonblank Department categories from the source.
+- Recalculate row counts and Basic Value spend for every category.
+- Reconcile all category rows and spend to the complete dataset.
+- Verify that category mapping preserves the original Department.
+- Confirm that the displayed category totals use Basic Value rather than
+  Landed Value or Basic Value after Discount.
+- Identify any transformation that changes category identity.
+- Do not conflate operational departments with standardized procurement
+  commodity categories.
+
+AUDIT D — CURRENCY AND FX
+- Verify that the workbook has no explicit transaction-currency column.
+- Verify whether INR confirmation is recorded with analyst provenance.
+- Establish whether confirmation persists in the stored assessment.
+- Determine whether historical transaction-date FX conversion actually ran.
+- Trace the exact source of the UI statement:
+  "Spend normalized using transaction-date historical FX rates."
+- Verify that "Not calculated" corresponds to the actual FX computation status.
+- Do not infer that historical FX normalization occurred merely because the
+  customer confirmed INR.
+- Do not treat reference-market rates as applied transaction rates.
+
+AUDIT E — PRE-CHECK
+- Establish whether the 30 displayed records are a sample or the complete
+  exception queue.
+- Reconcile their ₹0.14 Cr total to the relevant source rows.
+- Establish whether the original currency exceptions were resolved by
+  explicit analyst confirmation.
+- Verify what validation was applied to the remaining 19,640 rows.
+- Report the scope of the 100% Quality Index accurately.
+- Do not declare the full workbook 100% clean based only on 30 records.
+
+AUDIT F — PARETO
+- Verify the spend field used.
+- Independently calculate the cumulative spend threshold for the top 80%.
+- Verify that supplier totals reconcile to the same total-spend basis.
+- Identify whether supplier-name variants were merged or preserved.
+- Report the top-80% supplier count and exact cumulative spend.
+
+AUDIT G — ISOLATION
+- Verify that PQR results belong only to AIC-2026-0003.
+- Confirm ABC Textile and VGT source files and stored assessment data were
+  not modified.
+- Verify that Modules 2–4 were not run or altered.
+
+FINAL REPORT
+Return PASS / FAIL / BLOCKED for each audit.
+Include independent calculations, source-column names, exact variances,
+evidence locations, and unresolved risks.
+Clearly separate:
+1. Source workbook facts.
+2. Persisted backend results.
+3. UI display values.
+4. Claims that could not be verified.
+
+No code edits. Stop after the report.
+
+---
+
+## Prompt 398
+PROMPT 398 — REGISTER EXISTING PQR CEMENT DATA VERSION
+
+OBJECTIVE
+Complete the formal Module 1 assessment registration for PQR Cement Ltd,
+assessment AIC-2026-0003, using the existing verified Cement2.xlsx object.
+
+This is a narrowly scoped workflow correction, not a new ingestion.
+
+PRECONDITIONS
+- Source workbook SHA-256:
+  8866eda88a6ee0f1b1cd9d3975e90936dc8e9463d1180c4fd4fee954ba726e27
+- Existing ingestion document:
+  DOC-INGEST-3735
+- Existing assessment:
+  AIC-2026-0003
+- Existing customer:
+  CUST-2026-0003
+- Existing source data:
+  19,670 rows; Basic Value ₹262.641177 Cr.
+- The existing object-store copy is verified.
+- The Quick Ingestion endpoint previously populated the queue but did not
+  register a formal assessment data version.
+
+STRICT GUARDRAILS
+1. Do not upload or re-import Cement2.xlsx.
+2. Do not create a new customer, assessment, or ingestion document.
+3. Do not modify the source workbook or its stored object.
+4. Do not modify ABC Textile or VGT records or files.
+5. Do not run Modules 2, 3, or 4.
+6. Do not manually edit assessments.json or other persistence files.
+7. Do not invent API fields, endpoints, statuses, or transitions.
+8. Do not claim acceptance solely because an HTTP request returns success.
+
+STEP 1 — INSPECT
+Inspect the official assessment data-versioning route, controller, service,
+validation rules, and required request fields.
+
+Confirm that the existing object and ingestion record can be registered
+against AIC-2026-0003 without re-uploading the workbook.
+
+Check for an existing data version first to avoid duplicate registration.
+
+STEP 2 — SAFE EXECUTION
+If the official workflow supports registration of the existing object:
+- Register the existing verified document as the data version for
+  AIC-2026-0003 through the application's official service/API.
+- Preserve the existing assessment and customer IDs.
+- Do not trigger Modules 2–4.
+- If the official workflow cannot safely register the existing object,
+  stop and report the precise blocker without creating a workaround.
+
+STEP 3 — VERIFY
+Read the assessment back through the official API and persistence layer.
+Verify:
+- AIC-2026-0003 remains associated with PQR Cement Ltd.
+- Exactly one intended data version is registered for this upload.
+- The original workbook checksum remains unchanged.
+- Record count is 19,670.
+- Basic Value is ₹262.641177 Cr, displayed at the correct precision.
+- The 38 departments and their totals reconcile.
+- Actual data coverage is displayed as Apr 2021–Aug 2022.
+- FX impact remains NOT_CALCULATED.
+- No ABC Textile or VGT data has changed or leaked.
+- Modules 2–4 remain untouched.
+
+Do not claim cold-restart persistence unless a real restart is performed
+and the assessment is verified afterward.
+
+FINAL REPORT
+Return PASS / FAIL / BLOCKED.
+List the exact official endpoint/service used, the registered version ID,
+before/after assessment status, reconciliation results, and any remaining
+
+---
+
+## Prompt 399
+PROMPT 399 — FIX MODULE 1 RESTORATION AFTER REFRESH
+
+OBJECTIVE
+Investigate why the PQR Cement Module 1 UI shows no uploaded file and
+₹0.00 Cr after refresh, although the existing assessment was registered
+and Module 1 was executed.
+
+CUSTOMER: PQR Cement Ltd
+ASSESSMENT: AIC-2026-0003
+DATA VERSION: DV-001
+ANALYSIS RUN: RUN-001
+SOURCE: Cement2.xlsx
+EXPECTED ROW COUNT: 19,670
+EXPECTED BASIC SPEND: ₹262.641177 Cr
+
+STRICT GUARDRAILS
+1. Do not upload or re-import the workbook.
+2. Do not create another assessment or data version.
+3. Do not modify assessment persistence files manually.
+4. Do not alter ABC Textile or VGT data.
+5. Do not execute Modules 2, 3, or 4.
+6. Do not change the verified Module 1 calculations.
+7. Investigate first; do not edit code until the root cause is established.
+
+STEP 1 — TRACE THE CURRENT STATE
+Read the existing assessment through the official API:
+GET /api/assessment/AIC-2026-0003
+
+Verify:
+- Assessment status and data status
+- Active data version
+- Registered versions
+- Active analysis run
+- Module 1 run status and result references
+
+STEP 2 — TRACE THE UI
+Inspect the frontend component and API calls used when Module 1 opens.
+
+Determine why the interface shows:
+- No file uploaded yet
+- ₹0.00 Cr evaluated
+- Dataset uploaded / awaiting validation
+- Module 1 execution in progress
+
+Identify whether the UI is:
+- Reading the wrong endpoint
+- Reading a different persistence store
+- Failing to load the active data version
+- Failing to restore the completed Module 1 result
+- Incorrectly resetting its local state on navigation or refresh
+
+STEP 3 — RECONCILE
+Compare the official assessment API, canonical Module 1 API,
+active data version, analysis run, and displayed UI state.
+
+Do not assume the backend is correct merely because a version exists.
+Do not assume the frontend is correct merely because an API returns data.
+
+STEP 4 — REPORT
+Return the precise root cause and supporting evidence.
+
+If the problem is a UI restoration defect, propose the smallest targeted fix.
+Do not re-import data or alter the analysis results.
+
+Stop and report before implementing a fix.
+
+---
+
+---
+
+## Prompt 400
+PROMPT 400 - PERSIST MODULE 1 RESULTS AND VERIFY RESTORATION
+
+DECISION
+Approved to implement the proposed minimal fix, subject to the guardrails
+and acceptance tests below.
+
+ROOT CAUSE
+The runModule1() execution path computes canonicalModule1 but does not
+include it in the persisted AssessmentAnalysisRun object. After a backend
+restart, the in-memory cache is empty and the canonical API cannot restore
+the active Module 1 results.
+
+IMPLEMENTATION SCOPE
+1. Modify only the necessary source and test files.
+2. In assessmentWorkflowService.ts, ensure the AssessmentAnalysisRun created
+   by runModule1() persists the already-computed canonicalModule1.
+3. Check the AssessmentAnalysisRun type and persistence serialization.
+4. Do not duplicate or recompute the existing spend calculations.
+5. Do not modify the full-pipeline runAnalysis() path unless investigation
+   proves an additional change is essential.
+6. Add a focused regression test for persistence and restoration after
+   reconstructing the store/service or restarting the backend.
+7. Do not weaken existing tests or validation rules.
+
+STRICT GUARDRAILS
+- Do not upload or re-import Cement2.xlsx.
+- Do not create a new assessment or data version.
+- Preserve AIC-2026-0003, DV-001, and RUN-001.
+- Do not manually edit assessments.json or other persisted records.
+- Do not modify ABC Textile or VGT data.
+- Do not run Modules 2, 3, or 4.
+- Do not modify the desktop installer.
+- Do not claim a cold-restart PASS based only on an in-memory unit test.
+- Capture the changed-file list and report any unrelated changes.
+
+ACCEPTANCE TESTS
+
+A. Regression test
+- Run the Module 1-only workflow.
+- Confirm canonicalModule1 is persisted on the analysis run.
+- Reconstruct the store/service or restart the backend.
+- Confirm the canonical results can be restored without relying on the
+  original in-memory cache.
+
+B. Existing assessment integrity
+- Verify AIC-2026-0003 still uses DV-001 and RUN-001.
+- Verify the source checksum remains:
+  8866eda88a6ee0f1b1cd9d3975e90936dc8e9463d1180c4fd4fee954ba726e27
+- Verify 19,670 rows and Basic Value ₹262.641177 Cr.
+- Confirm the 38 operational departments remain reconciled.
+- Confirm FX impact remains NOT_CALCULATED.
+- Do not create duplicate versions or analysis runs simply to test restoration.
+
+C. API verification
+After restarting the backend, call:
+GET /api/ingestion/canonical?assessmentId=AIC-2026-0003
+
+Confirm the response contains the persisted canonical Module 1 results,
+including row count, spend, department breakdown, actual coverage, and
+FX calculation status.
+
+D. Browser verification
+Refresh Chrome and reopen PQR Cement Module 1.
+Confirm the registered workbook and results are restored.
+The interface must not show "No file uploaded yet" or ₹0.00 Cr when the
+existing completed Module 1 run is available.
+
+E. Isolation and scope
+- Confirm ABC Textile and VGT remain unchanged.
+- Confirm Modules 2-4 were not run or modified.
+- Run the focused tests, typecheck, lint, and existing fast quality gate
+  if feasible.
+
+FINAL REPORT
+Return PASS, FAIL, or BLOCKED for each acceptance test.
+List changed files, test results, API evidence, and browser evidence.
+Separate automated verification from actual cold-restart and UI verification.
+Stop after reporting; do not proceed to another customer dataset.
+
+---
+
+## Prompt 401
+PROMPT 401 — ABC TEXTILE MODULE 1 RESTORATION AND DATA-QUALITY AUDIT
+
+OBJECTIVE
+Verify that ABC Textile's existing Module 1 assessment is correctly
+restored after browser refresh and that the visible results accurately
+represent the saved assessment and source workbook.
+
+Assessment: AIC-2026-0002
+Customer: ABC Textile Ltd
+Source workbook: Textile1.xlsx
+
+MODE: READ-ONLY VERIFICATION
+
+STRICT GUARDRAILS
+1. Do not upload or re-import the workbook.
+2. Do not create a new assessment or analysis run.
+3. Do not modify source code, tests, assessment stores, or workbook data.
+4. Do not click Reset Anomaly State or delete any records.
+5. Do not execute Modules 2, 3, or 4.
+6. Do not modify PQR Cement or VGT data.
+7. Do not claim PASS without supporting evidence.
+8. If verification requires a state-changing action, stop and report BLOCKED.
+
+TEST A — PERSISTENCE
+Inspect the active ABC Textile assessment and analysis run.
+Confirm that the canonical Module 1 payload is persisted and that the
+canonical API returns the same assessment after a backend cold restart,
+if this can be verified without modifying data.
+
+Report:
+- Assessment ID
+- Active data version
+- Active analysis run
+- Source row count
+- Validated spend
+- Workbook checksum
+- Whether a new upload or analysis run was required
+
+TEST B — DUPLICATE REVIEW
+Independently inspect the source workbook or existing forensic evidence.
+Expected previously reported finding:
+- 952 duplicate groups
+- 1,904 rows belonging to those groups
+- 952 potentially redundant copies
+
+Do not assume these are confirmed duplicate transactions.
+Determine whether the current Module 1 validation state exposes this
+review requirement or incorrectly reports zero duplicate concerns.
+
+Do not delete, exclude, or alter any rows.
+
+TEST C — FX PROVENANCE
+Inspect the actual data transformation and UI wording.
+Determine whether ₹613.8805 Cr represents:
+- source ERP-converted INR spend,
+- transaction-date historical FX normalization, or
+- another explicitly documented calculation.
+
+Verify whether the displayed explanatory text matches the implemented
+calculation. FX impact must remain "Not calculated" unless a valid
+comparison baseline exists.
+
+TEST D — SPEND RECONCILIATION
+Verify that:
+- 23,570 source data rows are represented;
+- ₹613.8805 Cr reconciles to the source's converted-INR spend;
+- category totals reconcile to overall spend;
+- vendor, item, material-group, plant, and date-range metrics are
+  derived from the ABC Textile dataset;
+- no PQR Cement or VGT values appear in ABC Textile's results.
+
+TEST E — UI RESTORATION
+Inspect the current Module 1 UI without uploading or changing data.
+Confirm whether the saved filename, row count, spend, and summary are
+restored after refresh.
+
+FINAL REPORT
+Return PASS / FAIL / BLOCKED for each test, with evidence.
+Separate automated/API evidence from browser evidence.
+List discrepancies and their business impact.
+Do not implement fixes in this prompt.
+
+Stop after producing the report.
+
+---
+
+## Prompt 402
+PROMPT 402 — FINAL MODULE 1 ALIGNMENT AND ACCEPTANCE
+
+PROJECT
+aiCEV Procurement Assessment Application
+
+MODE
+Targeted remediation followed by verification.
+
+OBJECTIVE
+Complete the outstanding Module 1 data-quality and presentation fixes,
+then determine whether Module 1 is ready to serve as the validated
+input to Module 2.
+
+TEST ASSESSMENTS
+1. ABC Textile Ltd — AIC-2026-0002 — Textile1.xlsx
+2. PQR Cement Ltd — AIC-2026-0003 — Cement2.xlsx
+
+VGT is a separate regression dataset and must remain isolated.
+
+PHASE 1 — ESTABLISH THE BASELINE
+
+Before changing code:
+1. Inspect the current source-code diff and existing test results.
+2. Record the current assessment IDs, data versions, analysis runs,
+   workbook checksums, row counts and spend totals.
+3. Verify that the original source workbooks remain unchanged.
+4. Do not re-upload either workbook.
+5. Do not modify assessment stores manually.
+6. Do not change Modules 2, 3 or 4.
+
+PHASE 2 — ABC TEXTILE DUPLICATE AUDIT
+
+Independently recalculate the suspected duplicate findings directly
+from Textile1.xlsx.
+
+Earlier reports differ:
+- Earlier audit: 952 duplicate groups / 1,904 rows.
+- Latest audit: 962 duplicate groups / 1,924 rows.
+
+Reconcile this discrepancy using a reproducible duplicate definition.
+
+Report separately:
+- Groups with identical document and item identifiers.
+- Groups with all compared fields identical.
+- Rows within each group.
+- Potentially redundant rows.
+- Spend associated with those rows.
+- Any limitations caused by missing transaction identifiers.
+
+Do not automatically delete or exclude suspected duplicates.
+
+Implement or correct the Module 1 review indicator so that potential
+duplicates cannot silently appear as zero concerns.
+
+Preserve all original rows and their source values.
+
+Do not deduct suspected duplicate spend from the validated baseline
+without explicit review and authorization.
+
+PHASE 3 — FX PROVENANCE AND LABELS
+
+For ABC Textile, distinguish the existing ERP-converted INR amount
+from spend independently normalized using Procucev's historical FX
+master.
+
+When no independent historical-FX comparison has been performed:
+- Display "ERP-Converted Spend (INR)" where appropriate.
+- Display "FX Normalization Impact: Not calculated".
+- Do not claim transaction-date historical FX normalization occurred.
+- Do not substitute zero for an unperformed calculation.
+
+For PQR Cement, preserve the verified INR baseline and its existing
+NOT_CALCULATED FX status unless the underlying evidence supports
+a different conclusion.
+
+Do not change the underlying spend calculations merely to make the
+labels appear consistent.
+
+PHASE 4 — DATA-QUALITY AND RECONCILIATION
+
+Verify:
+- Source row count and data-version integrity.
+- Source spend and converted-INR spend.
+- Reconciliation of category, vendor, plant and period totals.
+- Duplicate-review indicators.
+- Unresolved currency and other material validation issues.
+- Customer and assessment isolation.
+
+Do not label all records fully clean when material review requirements
+remain unresolved.
+
+Distinguish:
+- Records ingested.
+- Records structurally valid.
+- Records included in provisional spend.
+- Records requiring review.
+- Records formally accepted for analysis.
+
+Do not silently exclude rows or change financial totals.
+
+PHASE 5 — PERSISTENCE AND REGRESSION
+
+Verify that:
+- Existing canonical Module 1 data survives a backend restart.
+- Existing assessments restore without re-uploading files.
+- ABC Textile and PQR Cement do not display each other's data.
+- VGT remains isolated.
+- Assessment versions and source workbook checksums remain traceable.
+- No unrelated source files or Modules 2–4 have been modified.
+
+Add focused regression tests for any corrected behavior.
+
+Run the appropriate existing quality gates and report actual exit codes.
+
+PHASE 6 — FINAL ACCEPTANCE
+
+Return PASS, FAIL or BLOCKED for each acceptance criterion.
+
+Provide:
+1. Changed-file list and exact scope.
+2. Before-and-after findings.
+3. ABC Textile duplicate reconciliation.
+4. FX wording and provenance verification.
+5. Source-spend reconciliation results.
+6. Persistence and isolation evidence.
+7. Regression test results.
+8. Remaining limitations and risks.
+
+Do not claim browser verification unless it was actually performed.
+Do not modify the desktop installer.
+Do not execute Modules 2, 3 or 4.
+
+STOP after reporting the results.
+
+If all mandatory criteria pass, recommend that Module 1 be accepted
+and that Module 2 testing may begin. Otherwise, identify the smallest
+remaining remediation required.
+
+---
+
+## Prompt 403
+PROMPT 403 — MODULE 2 ACCEPTANCE TEST: ABC TEXTILE
+
+PROJECT
+aiCEV Procurement Assessment Application
+
+OBJECTIVE
+Validate Module 2 — AI Categorization & Strategic Sourcing —
+using the existing, accepted Module 1 assessment for ABC Textile Ltd.
+
+ASSESSMENT
+Customer: ABC Textile Ltd
+Assessment ID: AIC-2026-0002
+Source workbook: Textile1.xlsx
+Expected active data version: DV-001
+Expected active analysis run: RUN-001
+
+MODE
+Verification-first. Make no code changes unless a specific defect is
+identified and separately reported.
+
+STRICT GUARDRAILS
+1. Do not upload or re-import Textile1.xlsx.
+2. Do not create another assessment, data version, or Module 1 run.
+3. Do not modify ABC Textile's persisted Module 1 baseline.
+4. Do not modify PQR Cement or VGT data.
+5. Do not run Module 3 or PCBI.
+6. Do not run Module 4 or finalize savings realization.
+7. Do not modify the desktop installer.
+8. Do not claim a test passed without evidence.
+9. Do not treat potential savings as validated or realized savings.
+10. Do not silently remove or exclude the 962 suspected duplicate rows.
+
+PHASE 1 — VERIFY INPUT HANDOFF
+
+Confirm that Module 2 receives the canonical Module 1 output for
+AIC-2026-0002, DV-001, RUN-001.
+
+Verify:
+- Source row count: 23,570.
+- ERP-converted INR spend: ₹613.8805 Cr.
+- Original source workbook checksum is unchanged.
+- 262 material groups, 1,291 suppliers and 12 plants are consistent
+  with the Module 1 assessment.
+- FX normalization impact remains NOT_CALCULATED.
+- The 962 suspected duplicate rows remain included in the provisional
+  baseline and their review status is disclosed.
+
+Stop if the active assessment or input data does not match.
+
+PHASE 2 — RUN THE EXISTING MODULE 2 WORKFLOW
+
+Use the existing Module 2 controls and implementation.
+
+Do not redesign the workflow before testing it.
+
+Verify the actual behavior for:
+1. Procurement categorization and UNSPSC mapping.
+2. Item-description normalization.
+3. Supplier consolidation and supplier-name handling.
+4. Material/category spend aggregation.
+5. Identification of consolidation and strategic sourcing opportunities.
+6. Identification of possible RFQ, competitive bidding or e-auction
+   opportunities, where supported by the implementation.
+7. Treatment of uncertain or unmapped records.
+8. Evidence supporting each major recommendation.
+
+Do not invent a classification, benchmark, savings rate, or opportunity
+where the available data does not support it.
+
+PHASE 3 — FINANCIAL RECONCILIATION
+
+For every major Module 2 output, report:
+- Record count.
+- Spend amount.
+- Percentage of the applicable spend baseline.
+- Calculation method.
+- Any excluded, unresolved or unclassified records.
+- Whether the result is an observation, an estimated opportunity,
+  an analyst-validated opportunity, or realized savings.
+
+Reconcile the applicable category and supplier totals to the
+₹613.8805 Cr Module 1 baseline.
+
+If a category total does not reconcile, investigate before accepting
+the result.
+
+Do not assume the entire baseline is addressable spend.
+
+PHASE 4 — DUPLICATE-RISK DISCLOSURE
+
+Keep the 962 suspected duplicate rows intact.
+
+Determine whether the Module 2 opportunity calculations could be
+inflated by these rows.
+
+Where the effect cannot be determined, explicitly state that limitation
+and identify the affected outputs. Do not silently apply a blanket
+discount or deduplication factor.
+
+PHASE 5 — CUSTOMER ISOLATION
+
+Confirm that Module 2 reads ABC Textile data only.
+
+Verify that:
+- No PQR Cement or VGT records appear.
+- ABC Textile's Module 1 baseline remains unchanged.
+- No Module 3 or Module 4 results are generated or modified.
+
+PHASE 6 — FINAL REPORT
+
+Return PASS, FAIL or BLOCKED for each phase.
+
+Include:
+1. Actual Module 2 execution status.
+2. Categorization and mapping quality.
+3. Spend reconciliation.
+4. Supplier and sourcing findings.
+5. Evidence supporting major opportunities.
+6. Duplicate-related limitations.
+7. Customer-isolation evidence.
+8. Errors, missing functionality and risks.
+9. Actual test results, if tests were run.
+10. The smallest next corrective action, if needed.
+
+Do not automatically fix defects discovered during this assessment.
+Report them first so the scope can be agreed.
+
+STOP after producing the report.
+
+---
+
+## Prompt 404
+PROMPT 404 — FIX MODULE 2 CUSTOMER DATA HANDOFF
+
+OBJECTIVE
+Correct the Module 2 integration defect identified in Prompt 403.
+
+ABC Textile's accepted Module 1 assessment must flow into Module 2.
+Module 2 must never silently substitute VGT regression data for a
+customer assessment.
+
+TARGET
+ABC Textile Ltd
+Assessment ID: AIC-2026-0002
+Data Version: DV-001
+Analysis Run: RUN-001
+
+MODE
+Implement the smallest safe fix, then run focused regression tests.
+
+STRICT GUARDRAILS
+1. Do not upload or re-import Textile1.xlsx.
+2. Do not create another assessment, data version, or Module 1 run.
+3. Do not modify ABC Textile's Module 1 baseline or its persisted records.
+4. Do not modify PQR Cement data.
+5. Preserve VGT as a separate regression dataset.
+6. Do not run Module 3, PCBI, or Module 4.
+7. Do not modify the desktop installer.
+8. Do not change the core Module 2 opportunity formulas unless a
+   specific defect is independently demonstrated.
+9. Do not automatically deduplicate ABC Textile transactions.
+10. Do not report estimated opportunities as realized savings.
+11. Do not use a default customer ID or silently fall back to VGT
+    when a customer assessment is selected.
+12. Record all changed files and test results.
+
+IMPLEMENTATION
+
+A. BACKEND INPUT ROUTING
+Inspect Module2CanonicalService and the Module 2 controllers/routes.
+
+When a valid customer assessmentId is provided:
+- Resolve the assessment from the existing persistence/store layer.
+- Read its existing persisted canonical Module 1 transactions and
+  required spend dimensions.
+- Confirm the selected assessment is completed and has a valid
+  canonical Module 1 payload.
+- Use that assessment as the only source for Module 2.
+- If the assessment or canonical payload is missing, return an explicit
+  error. Never substitute VGT data.
+
+Preserve the VGT regression path only when VGT is explicitly selected
+through its existing supported mechanism.
+
+B. API AND FRONTEND
+Pass the active assessmentId from the selected customer context through
+the Module 2 frontend API calls.
+
+Ensure dashboard, category analysis, supplier analysis, and sourcing
+opportunity endpoints all use the same selected assessment.
+
+Check every Module 2 endpoint, not just the dashboard.
+
+C. FINANCIAL AND DATA INTEGRITY
+For ABC Textile, verify:
+- 23,570 source rows.
+- ₹613.8805 Cr provisional ERP-converted spend.
+- 262 material groups.
+- 1,291 suppliers.
+- 12 operating plants.
+- FX normalization status NOT_CALCULATED.
+- 962 suspected duplicate rows remain present and disclosed.
+
+Reconcile Module 2's applicable spend totals to the Module 1 baseline.
+
+Preserve the existing duplicate-risk disclosure. Do not deduct suspected
+duplicate spend without explicit authorization.
+
+D. CUSTOMER ISOLATION TESTS
+Add focused tests proving:
+1. AIC-2026-0002 returns ABC Textile data.
+2. AIC-2026-0003 returns PQR Cement data when explicitly selected.
+3. AIC-2026-0001 returns VGT data only when VGT is explicitly selected.
+4. Missing or invalid assessment IDs return explicit errors.
+5. No customer assessment silently falls back to VGT.
+6. Switching assessment IDs cannot reuse stale results from another
+   customer.
+7. All Module 2 endpoints use the same selected assessment context.
+
+Do not execute Modules 3 or 4 in these tests.
+
+E. VALIDATION
+Run focused Module 2 tests, typecheck, lint, and relevant existing
+quality gates as feasible.
+
+Report actual results and exit codes. Do not claim live-browser success
+unless Chrome was actually tested.
+
+FINAL REPORT
+Return PASS, FAIL, or BLOCKED for:
+- Backend assessment routing.
+- API parameter propagation.
+- Frontend assessment selection.
+- Financial reconciliation.
+- Customer isolation.
+- VGT regression compatibility.
+- Automated tests and quality gates.
+
+List changed files and remaining risks.
+
+STOP after reporting. Do not proceed to Module 3 or Module 4.
+
+---
+
+## Prompt 405
+run locally on chrome
+
+---
+
+## Prompt 406
+TASK: MODULE 2 STRATEGIC SOURCING — FORENSIC AUDIT ONLY
+PROMPT ID: M2-REDESIGN-001
+
+OBJECTIVE
+Prepare a complete, evidence-based technical audit of Module 2 of
+the aiCEV procurement application before redesigning it.
+
+The objective is to rebuild Module 2 into a reliable strategic sourcing
+intelligence engine covering all 10 savings levers defined below.
+
+IMPORTANT: THIS IS AN AUDIT TASK ONLY. DO NOT MODIFY CODE.
+
+STRICT MODULE BOUNDARIES
+
+1. Module 1 is the existing source of customer spend and transaction data.
+   Treat it as read-only.
+
+2. Module 2 owns AI categorization, UNSPSC mapping, strategic sourcing
+   analysis, sourcing opportunities, and opportunity evidence.
+
+3. Module 3 owns PCBI benchmark indices and market trend analysis.
+   Do not call, modify, integrate, or calculate PCBI benchmarks in Module 2.
+
+4. Module 4 owns the consolidated savings engine and implementation
+   tracking. Do not redesign or modify Module 4.
+
+5. Do not modify the desktop installer, database schema, migrations,
+   shared application architecture, authentication, or other modules.
+
+6. Do not change any source files, configuration files, database
+   records, test files, or persisted customer assessments during this task.
+
+7. Do not re-upload or regenerate customer data.
+
+8. Preserve the existing assessment-based customer isolation.
+   Module 2 must always analyse the explicitly selected customer assessment.
+   It must never silently fall back to a different customer or a golden
+   test dataset.
+
+9. Use the existing application and data architecture. Do not propose
+   a second purchase database or a duplicate transaction ingestion pipeline.
+
+TEN REQUIRED STRATEGIC SOURCING LEVERS
+
+1. Direct Price Improvement
+2. E-Auction / Dynamic Bidding
+3. Vendor Base Consolidation
+4. Volume Aggregation
+5. Payment Terms Optimisation
+6. Category Specialisation
+7. Logistics & Packaging Specifications
+8. Specification Rationalisation
+9. Contract Compliance Audit
+10. New-Vendor Development & Alternate Sourcing, including alternate
+    materials, alternate makes, and make-versus-buy where evidence permits.
+
+PCBI market index contracting is explicitly excluded.
+
+AUDIT REQUIREMENTS
+
+A. FRONTEND INVENTORY
+Identify every Module 2 page, component, dashboard card, table, filter,
+calculation display, recommendation panel, and export.
+
+For each component, identify its source file, API dependency, data fields,
+calculation source, and customer-assessment dependency.
+
+B. BACKEND AND API INVENTORY
+Trace every Module 2 API from route to controller, service, database query,
+calculation engine, and frontend consumer.
+
+Identify hardcoded datasets, default customer IDs, fallback datasets,
+mock values, duplicated calculation logic, stale caches, and missing
+assessmentId propagation.
+
+C. DATA AND CLASSIFICATION AUDIT
+Trace how Module 2 reads Module 1 transactions.
+
+Identify the exact fields used for:
+- Spend and currency
+- Quantity and unit of measure
+- Item and material descriptions
+- Material codes
+- Supplier names and supplier IDs
+- Purchase orders and line items
+- Plants and departments
+- Transaction and billing dates
+- Procurement categories
+- UNSPSC commodity and class codes
+
+Verify whether UNSPSC codes and descriptions come from an authoritative
+catalog or from heuristics, fabricated mappings, or unrelated fallback
+values.
+
+Specifically investigate the observed incorrect mapping of textile
+packaging items to "Fresh cut African boxwood".
+
+Determine whether this originates in the UNSPSC lookup, classification
+logic, data join, fallback behaviour, cached results, or frontend rendering.
+
+Do not change the mapping during this audit.
+
+D. SAVINGS CALCULATION AUDIT
+For every displayed opportunity metric, document:
+- Exact formula
+- Source fields and transaction population
+- Baseline and comparison population
+- Eligibility criteria
+- Assumptions and parameter values
+- Exclusions
+- Overlap and double-counting controls
+- Confidence and evidence status
+- Whether the amount is calculated, estimated, or merely indicative
+
+Trace every displayed headline number back to its underlying calculation.
+
+Investigate the current displayed metrics, including addressable spend,
+proven opportunity, quantifiable opportunity range, e-auction opportunity,
+vendor consolidation opportunity, overlapping opportunity, and net
+defensible opportunity.
+
+Do not accept a metric simply because it appears on the screen.
+
+E. VENDOR, PO, AND HISTORICAL TREND AUDIT
+Check the calculations behind:
+- Single-category and multi-category vendors
+- Supplier concentration
+- Vendor consolidation
+- Recurring spend
+- Repeated and consolidated purchase orders
+- Year-on-year price and quantity changes
+- Sole-source and alternative-source exposure
+- Price dispersion
+- Contract compliance
+
+Determine why historical comparisons show 0.0% and why the vendor
+categorisation may conflict with the transaction evidence.
+
+Distinguish genuine zero values from unavailable, incomplete, or
+incomparable data.
+
+F. TEN-LEVER COVERAGE MATRIX
+Create one row for each of the ten required strategic sourcing levers.
+
+For each lever, report:
+- Existing implementation status
+- Frontend component
+- API and backend calculation
+- Required input fields
+- Actual calculation method
+- Evidence available
+- Known defects
+- Missing capabilities
+- Recommended implementation
+- Measurable acceptance criteria
+
+Clearly identify whether each lever is functional, partially implemented,
+display-only, incorrectly calculated, or not implemented.
+
+G. MODULE 4 HANDOFF
+Trace how Module 2 opportunities are transferred to Module 4.
+
+Document the existing payload, opportunity IDs, source transaction IDs,
+overlap controls, and ownership of calculations.
+
+Do not change this integration.
+
+H. REGRESSION AND ISOLATION
+Identify the tests covering:
+- ABC Textile assessment AIC-2026-0002
+- PQR Cement assessment AIC-2026-0003
+- VGT regression dataset, if present
+
+Determine whether the selected assessment controls every Module 2 API
+and calculation.
+
+Do not run destructive tests or modify stored data.
+
+REQUIRED DELIVERABLE
+
+Produce a report with these sections:
+
+1. Executive diagnosis
+2. Module 2 frontend component inventory
+3. API-to-calculation dependency map
+4. Transaction and UNSPSC data lineage
+5. Metric-by-metric calculation audit
+6. Ten-lever coverage matrix
+7. Defects ranked Critical / High / Medium / Low
+8. Module 4 handoff and double-counting assessment
+9. Customer isolation and regression-test assessment
+10. Proposed redesign architecture for Module 2 only
+11. Ordered implementation and acceptance-test plan
+12. Exact list of files that would need modification in later stages
+
+For every major finding, provide file paths, function names, and
+supporting code references. Clearly separate verified findings from
+suspicions that still require runtime evidence.
+
+Do not make code changes.
+Do not redesign the interface yet.
+Do not modify Modules 1, 3, or 4.
+Do not implement PCBI.
+Do not claim a test passed unless it was actually executed.
+
+STOP after producing the audit report and wait for approval.
+
+---
+
+## Prompt 407
+PROMPT ID: M2-REDESIGN-002
+PHASE 1: UNSPSC TAXONOMY AND CLASSIFICATION CORRECTION
+
+OBJECTIVE
+Correct Module 2's UNSPSC classification defects without redesigning
+the entire module in this phase.
+
+The forensic audit identified this defect:
+lookupUNSPSCByDescription(query) returns:
+    match || unspscOfficialDictionary[0]
+
+The first dictionary entry is:
+    Code: 10502909
+    Description: Fresh cut African boxwood
+
+As a result, unmatched textile and packaging items can be incorrectly
+classified as African boxwood.
+
+The audit also found this fallback entry incorrectly associated with
+"Packaging Materials".
+
+REQUIRED CHANGES
+
+1. Inspect both:
+   - backend/src/data/unspscTaxonomy.ts
+   - frontend/src/data/unspscTaxonomy.ts
+
+2. Trace every caller of lookupUNSPSCByDescription and determine how
+   its return value is used.
+
+3. Remove the behaviour that automatically assigns dictionary index 0
+   when a description has no valid match.
+
+4. Introduce an explicit unclassified result using the existing taxonomy
+   types and interfaces wherever possible.
+
+   Suggested representation:
+   code: "00000000"
+   title: "Unclassified Commodity"
+   classification status: UNCLASSIFIED
+
+   Do not add this synthetic entry to the official UNSPSC catalog.
+   Keep it distinguishable from genuine official commodity codes.
+
+5. An unsuccessful lookup must return UNCLASSIFIED, not an unrelated
+   official commodity.
+
+6. Do not implement fuzzy matching in this phase unless the existing
+   matching architecture already supports a safe, independently
+   validated approach. Do not introduce speculative mappings.
+
+7. If fuzzy matching is considered later, it must return a candidate
+   only when a documented confidence threshold and ambiguity checks pass.
+   Otherwise, the item must remain UNCLASSIFIED.
+
+8. Preserve the distinction between:
+   - Official UNSPSC commodity code and title
+   - Official UNSPSC class code and title
+   - Customer procurement category
+   - Industry-sector classification
+   - Classification confidence and review status
+
+   Do not assign "Packaging Materials" merely because an item contains
+   packaging-related words unless a validated mapping rule supports it.
+
+9. Review the frontend and backend taxonomy implementations for parity.
+   Prevent the frontend from reintroducing an incorrect fallback.
+
+10. Preserve assessment IDs, source transactions, Module 1 results,
+    customer data, and all existing assessment records.
+
+STRICT SCOPE
+
+You may modify only the Module 2 taxonomy lookup implementation,
+its directly necessary types, and focused taxonomy tests.
+
+Do not modify:
+- Module 1
+- Module 3 or PCBI
+- Module 4
+- The ten-lever sourcing calculations
+- Existing savings formulas
+- Customer data or database records
+- Desktop installer
+- Global application styling or unrelated components
+
+TESTS REQUIRED
+
+A. A known valid official UNSPSC lookup returns the correct code and title.
+
+B. An unknown description returns UNCLASSIFIED, never African boxwood.
+
+C. Textile packaging descriptions do not map to African boxwood merely
+   because no valid match was found.
+
+D. An ambiguous description does not silently receive an unrelated code.
+
+E. Genuine official commodity code 10502909 remains valid when the actual
+   commodity is Fresh cut African boxwood.
+
+F. Frontend and backend lookup behaviour is consistent.
+
+G. Existing taxonomy tests pass.
+
+H. Run typecheck and lint for the changed files.
+
+REPORT REQUIRED
+
+List:
+1. Exact files modified.
+2. The original faulty behaviour and corrected behaviour.
+3. Tests actually executed and their results.
+4. Any compatibility issues caused by returning UNCLASSIFIED.
+5. Any callers that still incorrectly assume every lookup returns an
+   official commodity.
+6. Confirmation that Modules 1, 3, and 4 and customer data were untouched.
+
+Do not proceed to Phase 2.
+Do not implement fuzzy matching speculatively.
+Do not modify the strategic sourcing engine.
+Stop after Phase 1 and return the evidence-based report.
+
+---
+
+## Prompt 408
+PROMPT ID: M2-REDESIGN-003
+PHASE 2: ELIMINATE SYNTHETIC CALCULATIONS
+
+OBJECTIVE
+Remove unsupported synthetic calculations from Module 2 and ensure
+that every displayed metric is derived from actual customer transaction
+data or is explicitly labelled as an estimate with documented assumptions.
+
+This is a targeted correction phase, not the complete ten-lever redesign.
+
+FIRST: INSPECT THE CURRENT WORKING TREE
+Review the actual current code after Phase 1.
+Do not assume previous audit line numbers remain accurate.
+Confirm which changes have been committed or remain uncommitted.
+
+STRICT SCOPE
+Modify only the Module 2 calculation logic and directly dependent tests
+needed to eliminate synthetic values.
+
+Do not modify:
+- Module 1
+- Module 3 or PCBI
+- Module 4
+- Assessment data or stored customer records
+- The desktop installer
+- Unrelated application styling or components
+
+REQUIREMENTS
+
+1. CLASSIFICATION STATUS
+Inspect all Module 2 callers of lookupUNSPSCByDescription.
+
+If classificationStatus is UNCLASSIFIED:
+- Do not claim an official UNSPSC match.
+- Do not assign a high confidence score to the failed lookup.
+- Mark the item for classification review.
+- Preserve its original description, transaction reference and spend.
+- Do not silently discard its spend.
+
+2. YEAR-ON-YEAR METRICS
+Remove hardcoded values such as:
+spend_yoy_pct: 0
+qty_yoy_pct: 0
+price_yoy_pct: 0
+
+Calculate changes only when the required comparable historical data exists.
+
+Use consistent units, currencies, material/specification groupings and
+time periods. Do not compare unlike items or incompatible units.
+
+If data is missing or incomparable, return an explicit unavailable status,
+not a fabricated zero.
+
+3. SYNTHETIC VENDOR-CONSOLIDATION PREMIUMS
+Remove arithmetic formulas such as:
+ratePremium = (sIdx + 1) * 0.03
+
+Do not infer price savings from supplier rank or supplier array position.
+
+A price-improvement opportunity requires a valid comparable price baseline
+or another clearly identified, evidence-supported calculation method.
+
+If no valid baseline exists, show the opportunity as unquantified.
+
+4. SYNTHETIC MULTI-YEAR SPEND DISTRIBUTIONS
+Remove arbitrary fallback distributions such as 28% / 34% / 38%.
+
+Calculate annual spend from actual transaction dates and validated spend
+fields. Use the correct fiscal-year boundaries.
+
+Do not fabricate historical spend when dates or amounts are unavailable.
+
+5. SYNTHETIC DELIVERY RANGES
+Remove hardcoded opportunity multipliers such as:
+provenOpp * 0.10
+provenOpp * 0.25
+
+Do not derive a savings range from an arbitrary percentage of another
+opportunity metric.
+
+Only display a numerical range when the lower and upper bounds are derived
+from explicit, documented and evidence-supported assumptions.
+
+Otherwise display:
+"Not quantifiable from available data"
+
+6. OVERLAP AND NET OPPORTUNITY
+Inspect the current gross, overlap and net opportunity calculations.
+
+Do not introduce a new overlap formula in this phase unless it is necessary
+to eliminate a demonstrated synthetic result.
+
+Document why the existing approach is insufficient and specify the
+transaction-level attribution design needed in the next phase.
+
+Do not claim the existing net opportunity is validated merely because
+the numbers reconcile arithmetically.
+
+7. GENERAL RULE
+Never replace a synthetic value with another arbitrary constant or
+unsupported heuristic.
+
+Preserve original transaction records and spend values.
+Distinguish calculated results, evidence-supported estimates, unavailable
+results and unquantified opportunities.
+
+TESTS REQUIRED
+- Unknown UNSPSC items cannot receive false official-match confidence.
+- Year-on-year metrics use actual comparable periods.
+- Missing historical data is not presented as 0% change.
+- Supplier rank cannot determine an assumed price premium.
+- Annual spend is derived from transaction dates and actual amounts.
+- Missing data does not generate a fabricated savings range.
+- Existing customer-isolation tests pass.
+- Existing Module 2 tests pass where applicable.
+- Typecheck and lint pass.
+
+REPORT
+List exact files changed, formulas removed, replacement logic,
+tests actually executed, test results, and remaining defects.
+
+Do not implement the ten sourcing levers in this phase.
+Do not redesign the dashboard.
+Do not modify Modules 1, 3 or 4.
+Do not proceed to Phase 3.
+Stop and return the report for review.
+
+---
+
+## Prompt 409
+TASK: VERIFY PHASE 2 RUNTIME BEHAVIOUR
+PROMPT ID: M2-REDESIGN-004
+
+Do not implement new features or modify code unless a defect is
+demonstrated and its correction is separately approved.
+
+Using the existing running application and current persisted assessments,
+verify the Phase 2 changes for:
+
+1. ABC Textile Ltd — AIC-2026-0002
+2. PQR Cement Ltd — AIC-2026-0003
+
+Check the following:
+
+A. CLASSIFICATION
+Unclassified material descriptions must not appear as official UNSPSC
+matches or receive fabricated high confidence.
+
+B. HISTORICAL TRENDS
+For ABC Textile's single-year 2023 dataset, verify that unavailable
+prior-year comparisons are displayed as N/A or equivalent, not as 0.0%
+growth.
+
+For PQR Cement, verify that the displayed historical period reflects the
+actual available transaction dates. Do not invent data for the configured
+evaluation period.
+
+C. VENDOR PRICE COMPARISON
+Verify that a quantified vendor price difference requires comparable
+items, valid unit rates, compatible units of measure, and compatible
+currency treatment.
+
+If any requirement is missing, the opportunity must be unquantified.
+
+D. SPEND DISTRIBUTION
+Verify that historical annual spend reflects actual dated transactions
+rather than estimated distributions.
+
+E. SAVINGS RANGE
+Verify that unsupported opportunity ranges display
+"Not quantifiable from available data" or equivalent.
+
+F. CUSTOMER ISOLATION
+Switch between ABC Textile and PQR Cement without uploading data again.
+Verify that customer-specific figures and classifications do not leak
+between assessments.
+
+G. OPPORTUNITY RECONCILIATION
+Record the current gross, overlap, and net opportunity figures.
+Explicitly mark these figures as NOT YET CERTIFIED if transaction-level
+attribution is not implemented.
+
+RESTRICTIONS
+- Do not modify Modules 1, 3, or 4.
+- Do not implement PCBI.
+- Do not create or alter customer records.
+- Do not implement the ten sourcing levers yet.
+- Do not claim browser verification if it was not actually performed.
+
+DELIVERABLE
+Return a concise PASS / FAIL / NOT VERIFIED table, with actual observed
+values and evidence for each check.
+
+Stop after verification.
+
+---
+
+## Prompt 410
+PROMPT ID: M2-REDESIGN-005
+PHASE 3A — TRANSACTION-LEVEL OPPORTUNITY ATTRIBUTION LEDGER
+
+OBJECTIVE
+Build the foundational attribution engine for Module 2 before implementing
+the ten strategic sourcing levers.
+
+The purpose is to ensure every sourcing opportunity is traceable to actual
+customer transactions and that the same spend is not double-counted.
+
+STRICT SCOPE
+Modify Module 2 only.
+
+Do not modify Module 1, Module 3 (PCBI), Module 4, customer source data,
+assessment records, the desktop installer, or unrelated application code.
+
+Do not implement the ten sourcing levers in this phase.
+Do not redesign the dashboard.
+Do not introduce external benchmark data or PCBI dependencies.
+
+STEP 1 — INSPECT BEFORE CODING
+Inspect the current Phase 1 and Phase 2 implementation and the existing
+Module 2 calculation, overlap, and financial traceability services.
+
+Identify reusable components and propose the smallest safe implementation.
+Do not duplicate transaction ingestion or create a parallel spend database.
+
+STEP 2 — DEFINE THE ATTRIBUTION RECORD
+Design a typed attribution record containing, where available:
+
+- Assessment ID
+- Source transaction ID and source row reference
+- Purchase order and line-item identifiers
+- Supplier ID and name
+- Material code and original item description
+- Procurement category and UNSPSC code
+- Transaction date
+- Quantity and unit of measure
+- Original currency and amount
+- Validated spend amount in INR
+- Candidate sourcing levers
+- Eligibility status and reason
+- Primary attributed lever
+- Baseline unit rate and baseline evidence
+- Proposed unit rate and supporting evidence
+- Gross opportunity amount
+- Overlap treatment
+- Net attributed opportunity
+- Confidence/evidence status
+- Calculation method and version
+
+Use existing project types and identifiers where possible.
+Do not invent missing transaction identifiers or baseline values.
+
+STEP 3 — CUSTOMER AND TRANSACTION INTEGRITY
+The engine must process the explicitly selected assessment only.
+
+Preserve every source transaction.
+Do not delete or silently deduplicate repeated purchase lines.
+
+Distinguish exact duplicate records from legitimate repeat purchases.
+Flag suspected duplicates for review without automatically reducing spend.
+
+Do not compare prices across incompatible currencies, units of measure,
+material specifications, or non-comparable transactions.
+
+If required evidence is missing, mark the opportunity UNQUANTIFIED.
+
+STEP 4 — OPPORTUNITY ATTRIBUTION
+Design a deterministic attribution mechanism that supports:
+
+- Candidate eligibility for multiple levers
+- Exactly one primary lever per quantified opportunity allocation
+- Alternative lever scenarios retained separately
+- No duplicate monetary allocation to the same transaction spend
+- Explicit reasons for rejected or unquantified opportunities
+- Traceability from each opportunity back to its source transactions
+
+Do not assume that selecting the largest opportunity automatically
+produces the correct sourcing strategy.
+
+Use a documented priority policy, with the ability to revise that policy
+later without rewriting individual lever engines.
+
+Do not fabricate a baseline price, target price, savings percentage,
+or opportunity amount.
+
+STEP 5 — RECONCILIATION
+Implement and test reconciliation between:
+
+1. Source spend included in the attribution population
+2. Eligible and ineligible spend
+3. Quantified and unquantified opportunities
+4. Primary allocations and alternative scenarios
+5. Gross opportunity, overlap treatment and net opportunity
+
+Clearly distinguish spend coverage from savings opportunity.
+
+A balanced arithmetic total alone is not proof that the opportunity
+is commercially achievable.
+
+STEP 6 — CUSTOMER ISOLATION AND REGRESSION
+Test with existing assessment IDs:
+
+- ABC Textile: AIC-2026-0002
+- PQR Cement: AIC-2026-0003
+- VGT regression assessment: AIC-2026-0001, if supported by existing tests
+
+Verify that transaction IDs, spend, and opportunity allocations do not
+cross between assessments.
+
+Do not upload or regenerate datasets.
+
+STEP 7 — TESTS
+Add tests for:
+
+- Unique transaction attribution
+- Multiple candidate levers without duplicate allocation
+- Missing baseline and unquantified opportunities
+- Incompatible currencies and units of measure
+- Suspected duplicate lines remaining in source spend
+- Genuine repeated purchases remaining separate
+- Missing source identifiers
+- Zero-value and negative-value transactions
+- Reconciliation invariants
+- Deterministic results across repeated runs
+- Customer isolation
+- Existing Module 2 regression tests
+
+Run relevant tests, typecheck, and lint. Report actual results.
+
+DELIVERABLES
+1. Attribution data model and calculation rules.
+2. Exact files modified.
+3. Transaction-level attribution ledger output or a test-generated
+   representative ledger using existing fixtures.
+4. Reconciliation report.
+5. Tests and results.
+6. Remaining limitations and decisions requiring approval.
+7. Confirmation that Modules 1, 3, and 4 and customer data were untouched.
+
+STOP CONDITIONS
+Do not implement any of the ten sourcing levers yet.
+Do not certify existing ABC or PQR savings figures.
+Do not redesign the dashboard.
+Do not modify Module 4 integration.
+Do not proceed to Phase 3B.
+
+Stop after Phase 3A and return the report for review.
+
+---
+
+## Prompt 411
+PROMPT ID: M2-REDESIGN-006
+PHASE 3A — INDEPENDENT SAVINGS VALIDATION AND LEDGER AUDIT
+
+OBJECTIVE
+Audit the newly implemented Module 2 transaction-level attribution ledger before Phase 3B.
+
+Do not add the ten strategic sourcing levers.
+Do not redesign the dashboard.
+Do not modify Modules 1, 3, or 4.
+Do not change customer source data, assessment records, or the desktop installer.
+Do not certify any savings figures.
+
+CUSTOMER ASSESSMENTS
+ABC Textile: AIC-2026-0002
+PQR Cement: AIC-2026-0003
+
+The previous report claims gross opportunities of ₹213.826 Cr
+and ₹19.564 Cr respectively. Treat these as unverified outputs,
+not accepted financial results.
+
+TASK 1 — TRACE THE ACTUAL CALCULATION
+Trace the complete calculation path from source transaction records
+to baseline unit rate, proposed unit rate, gross opportunity,
+primary attribution, alternative scenarios, and reconciliation.
+
+Identify the exact formula used at every stage.
+
+For each quantified opportunity, establish:
+- Which source transaction and material it relates to.
+- Quantity and UOM used.
+- Currency and amount used.
+- Baseline rate and its source transactions.
+- Proposed rate and supporting evidence.
+- Formula and calculation result.
+- Primary lever and alternative candidate levers.
+- Whether the resulting opportunity is economically attainable
+  based on the evidence currently available.
+
+TASK 2 — VALIDATE BASELINE AND RATE COMPARABILITY
+The minimum observed supplier unit price must not automatically
+be treated as an attainable baseline for all purchases.
+
+Check whether comparisons account for:
+- Identical material/specification and material code reliability.
+- Matching UOM and currency.
+- Quantity and purchase-volume differences.
+- Transaction dates and relevant price changes over time.
+- Supplier and contract conditions, where available.
+- Missing, zero, negative, or invalid quantities and prices.
+- Whether the proposed price is supported by an actual transaction
+  or another explicitly available evidence source.
+
+Do not invent missing fields or assume unavailable commercial terms.
+Classify insufficiently supported calculations as UNQUANTIFIED.
+Clearly distinguish an observed price variance from a validated,
+attainable savings opportunity.
+
+TASK 3 — AUDIT FINANCIAL FORMULAS
+Verify whether opportunity calculations correctly use transaction
+quantities, unit rates, and eligible quantities.
+
+Test:
+- No positive savings from a negative price difference.
+- No savings from invalid or zero quantities.
+- No double counting across transactions or candidate levers.
+- No aggregation of incompatible currencies or UOMs.
+- No duplicate counting of the same source transaction.
+- Credits, returns, reversals, and negative-value records are
+  retained and handled transparently rather than silently discarded.
+- Rounding does not create a material reconciliation difference.
+
+Do not deduplicate legitimate repeated purchases. A suspected duplicate
+must be flagged with evidence and retained in the source population.
+
+TASK 4 — AUDIT THE ZERO-OVERLAP RESULT
+Explain why ABC Textile and PQR Cement currently report zero overlap
+deductions despite multiple possible candidate levers.
+
+Determine whether:
+- Multiple quantified candidates genuinely do not occur; or
+- Candidate generation, overlap detection, or reconciliation is
+  failing to detect them.
+
+Provide transaction-level examples for each applicable case.
+Do not manufacture examples if none exist.
+
+TASK 5 — INDEPENDENT RECONCILIATION
+For both assessments, reconcile:
+1. Source transaction count and source spend.
+2. Eligible and ineligible transactions/spend.
+3. Quantified and unquantified candidate opportunities.
+4. Gross candidate opportunity.
+5. Alternative scenario opportunity.
+6. Primary-attributed opportunity.
+7. Overlap deductions, if applicable.
+8. Net attributed opportunity.
+9. Any excluded, invalid, or unresolved amounts.
+
+Every amount must have a documented definition and calculation.
+A mathematically balanced waterfall is not proof of valid savings.
+
+TASK 6 — TESTS
+Add or update targeted tests for:
+- Different quantities at different unit prices.
+- Price changes over time.
+- Insufficient evidence for an attainable proposed price.
+- Zero and negative quantities.
+- Zero and negative transaction values.
+- Credits, returns, and reversals.
+- Currency and UOM incompatibility.
+- Missing material identifiers.
+- Duplicate source identifiers versus legitimate repeated purchases.
+- Multiple quantified candidate levers.
+- Reconciliation of gross, alternative, overlap, and net amounts.
+- Deterministic results across repeated runs.
+- Isolation between ABC Textile and PQR Cement.
+
+Run the relevant targeted tests, backend lint, and backend typecheck.
+Report actual command results; do not report a check as passing
+unless its execution completed successfully.
+
+DELIVERABLE
+Return a concise audit report containing:
+A. Files inspected and changed.
+B. Exact financial formulas.
+C. Findings classified as PASS, FAIL, or UNVERIFIED.
+D. Actual test and quality-gate results.
+E. Reconciled figures for both customers, or explicit reasons why
+   reliable figures cannot yet be produced.
+F. Any remaining blockers before Phase 3B.
+
+Do not implement Phase 3B.
+Stop after producing the audit report.
+
+---
+
+## Prompt 412
+PROMPT ID: M2-REDESIGN-007
+PHASE 3A.1 — BASELINE QUALIFICATION AND SAVINGS INTEGRITY
+
+OBJECTIVE
+Resolve the outstanding financial methodology issues from the
+Phase 3A independent audit before implementing Phase 3B.
+
+SCOPE RESTRICTIONS
+- Modify Module 2 backend only.
+- Do not implement the ten sourcing levers.
+- Do not redesign the frontend or dashboard.
+- Do not modify Modules 1, 3, or 4.
+- Do not modify customer source data, assessment records, or installer.
+- Do not certify savings merely because tests pass.
+- Preserve existing data and transaction identifiers.
+
+1. BASELINE QUALIFICATION
+
+Review the existing minimum-observed-price baseline calculation.
+
+A transaction's lowest observed supplier rate must not automatically
+be treated as an attainable proposed rate.
+
+Separate the following statuses:
+- OBSERVED_PRICE_VARIANCE
+- VALIDATED_ATTAINABLE_OPPORTUNITY
+- UNQUANTIFIED
+- INELIGIBLE
+
+Do not classify an observed price variance as validated savings
+unless sufficient supporting evidence exists.
+
+2. TEMPORAL COMPARABILITY
+
+Implement a configurable baseline evaluation window.
+
+Use a default rolling 90-day window for initial evaluation, but
+make the window configurable and document how the comparison date
+is selected.
+
+Do not silently compare commodity prices across materially different
+market periods.
+
+If a suitable comparison window has insufficient comparable
+transactions, mark the opportunity UNQUANTIFIED.
+
+Do not assume a 90-day window is appropriate for every commodity.
+Flag categories that require category-specific temporal policies
+for later review.
+
+3. VOLUME AND COMMERCIAL ATTAINABILITY
+
+Use actual available transaction quantities and any existing
+reliable MOQ, contract-volume, or pricing-tier evidence.
+
+Do not invent MOQ values, volume discounts, or proposed prices.
+
+Where volume-tier attainability cannot be established, report the
+observed price variance separately and leave validated savings
+UNQUANTIFIED.
+
+Do not reject a valid opportunity solely because MOQ data is absent;
+instead, distinguish the missing evidence and avoid claiming
+attainability.
+
+4. PLACEHOLDER AND OUTLIER RATE CONTROLS
+
+Detect suspicious rates such as ₹0.01 without using an arbitrary
+universal threshold that incorrectly excludes legitimate low-priced
+commodities.
+
+Use available evidence such as:
+- Unit rate relative to comparable records.
+- Extended amount relative to quantity and unit rate.
+- Zero or near-zero values and known placeholder patterns.
+- Material and UOM context.
+
+Use deterministic rules and explicit reason codes.
+
+Do not silently delete records or rewrite source transaction values.
+Flag suspicious rates and prevent unvalidated values from becoming
+baselines.
+
+5. DUPLICATE SAFETY
+
+Retain every source transaction.
+
+Preserve suspected duplicate flags and supporting reasons.
+Ensure duplicate records cannot silently inflate the opportunity
+calculation.
+
+Do not deduplicate legitimate repeated purchases or subtract flagged
+spend without a separately evidenced and approved treatment.
+
+6. FINANCIAL RECONCILIATION
+
+Report separately:
+- Source spend.
+- Eligible spend.
+- Spend excluded from baseline comparison.
+- Spend with observed price variance.
+- Spend with validated attainable opportunity.
+- Unquantified spend and reasons.
+- Gross candidate opportunity.
+- Primary attributed opportunity.
+- Alternative scenarios.
+- Overlap deductions.
+- Net attributed opportunity.
+
+Document the formula for each amount.
+
+Do not use the arithmetic balance alone as evidence that savings
+are financially valid.
+
+7. TESTING
+
+Add tests for:
+- Same material and UOM with comparable purchases inside the window.
+- Comparable purchases outside the window.
+- Commodity prices that change over time.
+- Different purchase volumes and missing MOQ evidence.
+- Valid low-priced items versus placeholder rates.
+- Missing material identifiers.
+- Suspected duplicates and legitimate repeat purchases.
+- Credit reversals and negative-value records.
+- Insufficient evidence for an attainable proposed price.
+- Deterministic calculations and exact reconciliation.
+- ABC Textile/PQR Cement data isolation.
+
+Run the targeted attribution tests, backend lint, and backend typecheck.
+Report actual completed command results.
+
+8. LIVE VALIDATION
+
+Re-run the ledger against:
+ABC Textile: AIC-2026-0002
+PQR Cement: AIC-2026-0003
+
+Show the impact of each control on the previously reported
+₹12.708 Cr and ₹19.564 Cr opportunities.
+
+Do not force the results to remain unchanged.
+If validated opportunity cannot be reliably calculated, state that
+explicitly rather than substituting a fabricated figure.
+
+DELIVERABLE
+Return:
+A. Files changed.
+B. Baseline qualification rules and formulas.
+C. Actual test and quality-gate results.
+D. Before/after reconciliation for both customers.
+E. Observed variance versus validated opportunity.
+F. Remaining limitations requiring business approval.
+
+STOP after Phase 3A.1.
+Do not implement Phase 3B.
+
+---
+
+## Prompt 413
+PROMPT ID: M2-REDESIGN-008
+PHASE 3A.2 — FINAL FINANCIAL RECONCILIATION AND ACCEPTANCE GATE
+
+OBJECTIVE
+Independently reconcile the Phase 3A.1 attribution results for
+ABC Textile and PQR Cement before approval for Phase 3B.
+
+Assessments:
+ABC Textile: AIC-2026-0002
+PQR Cement: AIC-2026-0003
+
+SCOPE
+- Inspect and validate the existing Module 2 backend implementation.
+- Do not add or redesign sourcing levers.
+- Do not modify Modules 1, 3, or 4.
+- Do not modify customer source data, assessment records, or installer.
+- Do not certify savings.
+- Make only the smallest necessary corrections to calculation
+  or reconciliation defects discovered during this audit.
+
+1. RECONCILE SOURCE SPEND
+
+For each customer, produce an exact transaction-count and
+spend waterfall showing:
+
+A. Total source transaction count and spend.
+B. Ineligible transactions and their spend.
+C. Eligible transactions and their spend.
+D. Spend excluded from baseline formation.
+E. Spend with observed price variance.
+F. Spend with validated attainable opportunity.
+G. Unquantified transactions and spend.
+H. Gross candidate opportunity.
+I. Alternative scenario amounts.
+J. Overlap deductions.
+K. Net attributed opportunity.
+
+For every category, provide the exact definition and calculation.
+
+Show whether each category is mutually exclusive or may overlap
+with another category.
+
+Never add overlapping category amounts as though they were
+separate spend populations.
+
+2. INVESTIGATE THE REPORTED DISCREPANCIES
+
+ABC Textile:
+- Total spend: ₹613.8805 Cr.
+- Ineligible excluded spend: ₹109.9365 Cr.
+- Eligible audited spend: ₹503.9440 Cr.
+- Spend excluded from baseline: ₹109.9365 Cr.
+
+PQR Cement:
+- Total spend: ₹262.6414 Cr.
+- Ineligible excluded spend: ₹2.2933 Cr.
+- Eligible audited spend: ₹260.3481 Cr.
+- Spend excluded from baseline: ₹22.9281 Cr.
+
+Explain why ineligible spend and baseline-excluded spend differ
+or coincide in each assessment.
+
+Identify the transaction IDs and reason codes contributing to
+each difference. If transaction IDs are unavailable, use stable
+source-row references.
+
+Confirm that the eligible/ineligible partition reconciles to
+the total source population and that baseline exclusions are
+accounted for without being incorrectly counted twice.
+
+3. VALIDATE OPPORTUNITY DEFINITIONS
+
+Clearly distinguish:
+- Observed price variance.
+- Validated attainable opportunity.
+- Gross candidate opportunity.
+- Primary-attributed opportunity.
+- Alternative scenario opportunity.
+- Overlap deductions.
+- Net attributed opportunity.
+
+Confirm which amounts represent spend and which represent
+potential savings.
+
+Show the exact calculation from source unit price and quantity
+to every reported opportunity amount.
+
+Confirm that observed price variance is not automatically counted
+as validated savings, and that alternative scenarios are not added
+to the primary opportunity total.
+
+4. VALIDATE TEMPORAL AND VOLUME RULES
+
+Inspect the 90-day temporal window and volume-disparity controls.
+
+Confirm:
+- How comparison dates are selected.
+- How missing dates are handled.
+- How different quantities and volume tiers are treated.
+- How volatile commodity categories are handled.
+- How missing MOQ or contract-volume evidence is represented.
+- How placeholder/outlier rates are detected.
+
+Do not claim universal commercial attainability based solely on
+a 90-day window or a 3x volume ratio.
+
+Do not invent missing contract, MOQ, or market data.
+
+5. INDEPENDENT LIVE RE-RUN
+
+Re-run both persisted assessments and produce exact totals,
+transaction counts, reason-code breakdowns, and reconciliation
+balances.
+
+Verify that repeated runs are deterministic and customer data
+remains isolated.
+
+Report whether the figures ₹3.8680 Cr for ABC Textile and
+₹0.5222 Cr for PQR Cement remain unchanged, change, or cannot
+yet be independently supported.
+
+Do not force results to match the previous report.
+
+6. QUALITY GATES
+
+Run the targeted attribution and temporal-volume tests, backend
+typecheck, and backend lint.
+
+Report only commands that actually completed and their exit status.
+
+7. ACCEPTANCE VERDICT
+
+Provide one of these verdicts:
+
+PASS — Reconciliation is complete, definitions are consistent,
+and every validated opportunity has traceable calculation evidence.
+
+CONDITIONAL PASS — Arithmetic reconciles, but explicitly listed
+commercial evidence gaps remain and opportunity figures must stay
+uncertified.
+
+FAIL — Spend, transaction counts, opportunity totals, or category
+definitions do not reconcile.
+
+Do not proceed to Phase 3B.
+Stop after the final audit report.
+
+---
+
+## Prompt 414
+PROMPT ID: M2-REDESIGN-009
+PHASE 3B — TEN STRATEGIC SOURCING LEVERS
+CONTROLLED IMPLEMENTATION
+
+OBJECTIVE
+Extend the existing Module 2 transaction-level attribution engine
+to support the ten Procucev strategic sourcing levers.
+
+Use the existing Phase 3A and Phase 3A.1 architecture, baseline
+qualification controls, reconciliation engine, and customer
+assessment isolation.
+
+Do not create a parallel savings engine.
+
+SCOPE RESTRICTIONS
+- Modify Module 2 only.
+- Do not modify Modules 1, 3, or 4.
+- Do not redesign the dashboard in this phase.
+- Do not modify customer source data, assessment records, or installer.
+- Do not certify savings figures.
+- Do not introduce fabricated savings rates, benchmark values,
+  supplier quotes, MOQ commitments, or commercial assumptions.
+- Keep PCBI benchmarking disconnected from this phase.
+
+THE TEN SOURCING LEVERS
+
+1. Direct Price Improvement
+2. E-Auction / Dynamic Bidding
+3. Vendor Base Consolidation
+4. Volume Aggregation
+5. Payment Terms Optimisation
+6. Category Specialisation
+7. Logistics & Packaging Specifications
+8. Specification Rationalisation
+9. Contract Compliance Audit
+10. New-Vendor Development & Alternate Sourcing
+
+IMPLEMENTATION REQUIREMENTS
+
+1. LEVER-SPECIFIC EVIDENCE
+Create a separate evaluation model for each lever.
+
+Each model must identify:
+- Required transaction and supplier data.
+- Eligibility rules.
+- Evidence required for quantification.
+- Calculation formula.
+- Unquantified reason codes.
+- Confidence and evidence status.
+- Preconditions for commercial validation.
+
+Do not apply a generic percentage-saving formula to every lever.
+
+2. LEVER-SPECIFIC RULES
+
+Direct Price Improvement:
+Require comparable material, UOM, currency, period, and rate evidence.
+
+E-Auction / Dynamic Bidding:
+Identify suitable spend and competition conditions. Do not assume
+auction participation or savings before actual bid evidence exists.
+
+Vendor Base Consolidation:
+Identify comparable supplier spend and potential consolidation
+candidates. Do not assume capacity, approval, or supply continuity.
+
+Volume Aggregation:
+Identify compatible purchases that could be aggregated. Require
+evidence of compatible specifications, demand timing, and feasible
+volume commitments before quantifying savings.
+
+Payment Terms Optimisation:
+Use actual payment terms and relevant finance-cost assumptions.
+If the required terms or approved financing rate are missing,
+leave the financial opportunity unquantified.
+
+Category Specialisation:
+Identify categories that could benefit from specialist sourcing
+or governance. Do not assign arbitrary savings percentages.
+
+Logistics & Packaging Specifications:
+Require relevant freight, packaging, specification, quantity,
+and service-level evidence. Avoid comparing incompatible terms.
+
+Specification Rationalisation:
+Identify potential duplicate or unnecessarily varied specifications.
+Do not assume technically interchangeable items without evidence.
+
+Contract Compliance Audit:
+Compare actual transactions against available contract prices,
+terms, validity dates, and applicable conditions. Quantify only
+where the contract evidence supports the calculation.
+
+New-Vendor Development & Alternate Sourcing:
+Identify potential alternative sources or materials, but do not
+assume technical equivalence, approval, availability, or savings.
+Where make-versus-buy is considered, require supporting cost evidence.
+
+3. SHARED ATTRIBUTION AND DOUBLE-COUNTING CONTROLS
+
+All ten levers must use the existing transaction attribution ledger.
+
+A transaction may be a candidate for several levers, but its
+primary attributed opportunity must not be counted more than once.
+
+Keep alternative scenarios separately identifiable.
+
+Do not treat priority ordering alone as proof that overlap has
+been correctly calculated.
+
+Add tests where two or more levers produce overlapping opportunities
+on the same transactions.
+
+4. EVIDENCE STATUS
+
+Keep the following distinctions explicit:
+- Candidate identified.
+- Observed price variance.
+- Opportunity calculated from available evidence.
+- Commercially validated opportunity.
+- Approved savings.
+
+Do not automatically promote one status to the next.
+
+Supplier capacity, MOQ, contract approval, logistics parity,
+technical interchangeability, and other missing evidence must
+remain visible as unresolved conditions.
+
+5. RECONCILIATION
+
+For each lever, report:
+- Candidate transaction count and spend.
+- Eligible transaction count and spend.
+- Quantified opportunity.
+- Unquantified opportunity and reasons.
+- Primary-attributed opportunity.
+- Alternative scenario amount.
+- Overlap deductions.
+- Net attributed opportunity.
+
+Distinguish spend amounts from savings amounts throughout.
+
+6. TESTING
+
+Add targeted tests for each lever and for interactions between
+levers.
+
+Include:
+- Missing evidence.
+- Incompatible material, UOM, currency, or terms.
+- Zero and negative values.
+- Duplicate and repeated transactions.
+- Overlapping candidate levers.
+- Deterministic results.
+- Reconciliation invariants.
+- ABC Textile and PQR Cement isolation.
+
+Run the relevant tests, backend typecheck, and backend lint.
+Report actual completed command results.
+
+7. LIVE VALIDATION
+
+Use the persisted assessments:
+ABC Textile: AIC-2026-0002
+PQR Cement: AIC-2026-0003
+
+Do not force the previous reported opportunities to remain unchanged.
+
+Show how each lever changes candidate counts, quantified amounts,
+overlap deductions, and net opportunity.
+
+Keep all results marked NOT YET CERTIFIED.
+
+DELIVERABLE
+
+Provide:
+A. Files created and modified.
+B. Lever-by-lever evidence and calculation rules.
+C. Test and quality-gate results.
+D. Live results for both assessments.
+E. Remaining commercial evidence gaps.
+F. Any blockers before dashboard integration.
+
+STOP after Phase 3B.
+Do not redesign the dashboard or modify Module 4.
+
+---
+
+## Prompt 415
+PROMPT ID: M2-REDESIGN-010
+TITLE: PHASE 3B INDEPENDENT FINANCIAL AND ATTRIBUTION AUDIT
+
+OBJECTIVE
+Independently audit Phase 3B implementation before approving
+dashboard redesign.
+
+This is a validation and correction task, not a new feature build.
+
+STRICT SCOPE
+1. Module 2 backend services, types, constants and tests only.
+2. Do not modify Module 1, Module 3/PCBI, Module 4, customer
+   source datasets, persisted assessment records or desktop installers.
+3. Do not modify the frontend or dashboard.
+4. Do not change the customer data to make tests pass.
+5. Do not certify any savings figures.
+6. Do not proceed to Phase 3C.
+
+AUDIT 1 — ELIGIBILITY AND SPEND RECONCILIATION
+
+Re-run the Phase 3A.2 and Phase 3B calculations on the same
+persisted assessment records:
+- ABC Textile: AIC-2026-0002
+- PQR Cement: AIC-2026-0003
+
+For each assessment, reconcile:
+- Source transaction count and source spend.
+- Eligible transaction count and spend.
+- Ineligible transaction count and spend.
+- Duplicate exclusions.
+- Zero/negative-spend exclusions.
+- Missing identifier exclusions.
+- Baseline qualification exclusions.
+- Any records whose eligibility changed between phases.
+
+Produce a transaction-level difference report with:
+transaction ID, old classification, new classification,
+reason code, quantity, unit price, spend and assessment ID.
+
+Every classification change must have an explicit rule-based reason.
+Do not silently change eligibility rules.
+
+Verify that the eligible and ineligible populations are disjoint,
+cover the full source population, and reconcile to source spend.
+Explain any rounding or reversal treatment.
+
+AUDIT 2 — PRIMARY ATTRIBUTION AND OVERLAP
+
+Inspect the actual implementation, not only the summary report.
+
+Verify:
+- All ten lever evaluators use the documented evidence requirements.
+- Priority scores and priority ordering are consistent.
+- Primary attribution is deterministic.
+- A transaction cannot contribute savings more than once.
+- Alternative lever opportunities remain visible without being
+  added to net opportunity.
+- Evaluation order does not change the final result.
+- Missing evidence never produces an invented positive opportunity.
+- Unquantified candidates are not reported as quantified savings.
+- Duplicate and credit-reversal records cannot create opportunity.
+
+Add adversarial tests for:
+- A transaction eligible for three quantified levers.
+- Two levers with equal priority.
+- Reversing evaluator order.
+- Negative and zero quantities or spend.
+- Missing material code.
+- Missing currency or UOM.
+- A baseline outside the permitted temporal window.
+- A volume mismatch above the allowed ratio.
+- A placeholder or outlier price.
+- Duplicate transactions.
+- Credit reversals.
+- A transaction with several alternative scenarios.
+
+AUDIT 3 — CANDIDATE COUNTS
+
+For every lever and customer, report four separate counts:
+1. Transactions screened.
+2. Transactions meeting eligibility rules.
+3. Transactions with sufficient evidence to quantify.
+4. Transactions with commercially validated opportunities.
+
+Do not use the same count for all four stages unless the data
+actually proves they are equal.
+
+For each lever, list the exact missing fields or evidence
+preventing quantification.
+
+AUDIT 4 — FINANCIAL RECONCILIATION
+
+For each customer, independently recompute:
+- Gross candidate opportunity by lever.
+- Overlap deduction by transaction and lever pair.
+- Net attributed opportunity.
+- Count and spend of transactions contributing to each amount.
+- Count and spend of transactions left unquantified.
+
+Trace the largest 20 positive opportunity contributions to their
+source transactions and show the calculation for each.
+
+Ensure that the reported net opportunity equals the sum of
+transaction-level primary attributed amounts, without double counting.
+
+Explicitly distinguish:
+A. Spend associated with an opportunity.
+B. Observed price variance.
+C. Calculated candidate opportunity.
+D. Net attributed opportunity after overlap.
+E. Commercially validated savings.
+
+These metrics must not be interchanged.
+
+AUDIT 5 — TESTING
+
+Run:
+- Existing Phase 3B lever tests.
+- Temporal and volume qualification tests.
+- Attribution ledger tests.
+- Live validation tests for both persisted assessments.
+- Backend typecheck.
+- Backend lint.
+
+Run the broader existing backend regression suite if feasible.
+Report exact commands, exit codes, test counts and failures.
+
+Do not report a test as passing unless its command completed
+successfully in this execution.
+
+DELIVERABLES
+
+Create a concise audit report containing:
+1. PASS / FAIL / BLOCKED for each audit.
+2. Before-and-after spend reconciliation.
+3. Transaction-level classification changes.
+4. Lever-by-lever eligibility and evidence counts.
+5. Largest 20 opportunity calculations.
+6. Gross, overlap and net opportunity reconciliation.
+7. Tests actually executed and their results.
+8. Remaining defects and risks.
+9. A final recommendation: PASS, CONDITIONAL PASS or FAIL.
+
+Do not begin Phase 3C or change any dashboard components.
+
+A passing arithmetic invariant alone is not sufficient.
+Do not certify savings unless commercial evidence supports
+commercial validation.
+
+---
+
+## Prompt 416
+PROMPT ID: M2-REDESIGN-011
+TITLE: PHASE 3B FINAL OVERLAP AND LEVER DISTINCTNESS VALIDATION
+
+OBJECTIVE
+
+Resolve the remaining questions in the Phase 3B financial audit
+before authorizing Phase 3C dashboard redesign.
+
+STRICT SCOPE
+
+- Module 2 backend and tests only.
+- Do not modify Module 1, Module 3/PCBI, Module 4, frontend,
+  source datasets, persisted customer records, or installers.
+- Do not modify customer transaction data.
+- Do not certify any savings.
+- Do not begin Phase 3C.
+- Preserve the existing 10 strategic sourcing levers.
+
+AUDIT 1 — TRACE EVERY OVERLAP DEDUCTION
+
+For ABC Textile (AIC-2026-0002) and PQR Cement
+(AIC-2026-0003), produce a transaction-level overlap report.
+
+For every overlap deduction, show:
+- Assessment ID and transaction ID.
+- Primary lever.
+- Alternative lever.
+- Gross opportunity for each candidate.
+- Actual overlap deduction.
+- Final primary attributed opportunity.
+- Exact rule used to calculate the deduction.
+
+Reconcile the complete overlap totals:
+
+ABC:
+Gross opportunity: ₹8.289 Cr
+Overlap deductions: ₹4.421 Cr
+Net opportunity: ₹3.868 Cr
+
+PQR:
+Gross opportunity: ₹3.252 Cr
+Overlap deductions: ₹2.730 Cr
+Net opportunity: ₹0.522 Cr
+
+Specifically explain the additional overlap amounts not covered
+by the reported Direct Price Improvement versus Vendor
+Consolidation overlap:
+
+ABC: approximately ₹0.276 Cr
+PQR: approximately ₹1.104 Cr
+
+Do not classify these amounts as valid merely because the final
+arithmetic balances. Trace them to actual transactions and
+alternative lever candidates.
+
+AUDIT 2 — DISTINGUISH THE TWO PRICE-BASED LEVERS
+
+Inspect the actual calculation and attribution implementation.
+
+DIRECT PRICE IMPROVEMENT:
+Calculate a potential price improvement using comparable
+transactions and a qualifying baseline.
+
+VENDOR BASE CONSOLIDATION:
+Identify the potential benefit of transferring suitable spend
+to selected suppliers. Do not automatically equate this with
+the entire Direct Price Improvement opportunity.
+
+Require evidence for:
+- Target supplier capacity.
+- Relevant material and specification compatibility.
+- UOM and currency comparability.
+- Temporal and volume comparability.
+- Quality and supply continuity.
+- Rate applicability to the proposed consolidated volume.
+
+If the required consolidation evidence is absent, keep the
+consolidation opportunity unquantified. Do not copy the direct
+price opportunity into the consolidation lever.
+
+Use explicit reason codes for missing evidence.
+
+AUDIT 3 — BASELINE AND COMMODITY QUALIFICATION
+
+Trace the largest 20 opportunity contributions for each
+assessment to their original transactions and qualifying peers.
+
+Verify:
+- Exact material identity.
+- Compatible UOM and currency.
+- Valid positive quantities and rates.
+- Temporal qualification.
+- Volume qualification.
+- Placeholder and outlier screening.
+- Commodity volatility controls where applicable.
+
+Investigate especially large price differences and transactions
+for volatile commodities. Do not assume that a lower historical
+price is an attainable current price.
+
+AUDIT 4 — REGRESSION AND RECONCILIATION
+
+Run the relevant Phase 3B, temporal-volume, attribution,
+adversarial and live assessment tests.
+
+Verify:
+- No double counting.
+- Deterministic primary attribution.
+- Correct alternative-scenario treatment.
+- Source spend reconciliation.
+- Customer isolation.
+- Correct separation of observed variance, candidate opportunity,
+  net attributed opportunity and commercially validated savings.
+
+Run typecheck and lint.
+
+DELIVERABLE
+
+Return:
+1. PASS / FAIL / BLOCKED for each audit.
+2. Transaction-level overlap reconciliation.
+3. Explanation of all additional overlap deductions.
+4. Evidence that Direct Price Improvement and Vendor
+   Consolidation are distinct calculations.
+5. Largest 20 opportunity trace results for each customer.
+6. Exact commands, test counts and exit codes.
+7. Final recommendation: PASS, CONDITIONAL PASS or FAIL.
+
+Do not begin Phase 3C in this execution.
+
+A mathematically balanced total is not sufficient evidence
+that the attribution methodology is correct.
+
+---
+
+## Prompt 417
+M2-REDESIGN-012 — FINAL ATTRIBUTION INTEGRITY FIX
+
+OBJECTIVE
+Resolve the remaining financial reconciliation, opportunity attribution, and lever qualification defects identified in M2-REDESIGN-011. Do not start Phase 3C until all acceptance criteria below pass.
+
+STRICT SCOPE
+1. Fix Module 2 attribution and reconciliation logic only.
+2. Do not redesign the frontend or dashboard yet.
+3. Do not modify Modules 1, 3 (PCBI), or 4.
+4. Do not modify the desktop installer or production release.
+5. Preserve existing customer datasets and transaction counts.
+6. Do not introduce synthetic savings percentages, assumed supplier capacity, or unsupported commercial claims.
+
+FIX 1 — SEPARATE OVERLAP FROM VOLUME-DISPARITY EXCLUSIONS
+
+M2-REDESIGN-011 found that the field overlapDeductionsInr combines two different concepts:
+- Genuine multi-lever overlap deductions.
+- Volume-disparity exclusions that should not be counted as attainable opportunity.
+
+Implement separate, explicitly named fields:
+- grossCandidateOpportunityInr
+- multiLeverOverlapDeductionsInr
+- volumeDisparityExclusionsInr
+- otherQualificationExclusionsInr, if applicable
+- netQualifiedCandidateOpportunityInr
+
+Requirements:
+- Trace each deduction to its transaction IDs, amount, reason, and affected lever.
+- Never label volume-disparity exclusions as multi-lever overlap.
+- Ensure every deduction is applied exactly once.
+- Provide a reconciliation equation that balances to the rupee.
+- Preserve observed price variance separately from qualified opportunity.
+- Do not label qualified candidate opportunity as commercially validated savings.
+
+Use the M2-REDESIGN-011 figures as the forensic reference, not as values to hard-code:
+ABC:
+Gross candidate opportunity: ₹8,28,85,749.08
+Previously reported combined deductions: ₹4,42,05,557.13
+Of these, genuine multi-lever overlap was reported as ₹4,14,42,874.54 and volume-disparity variance as ₹27,62,682.59.
+
+PQR:
+Gross candidate opportunity: ₹3,25,20,502.10
+Previously reported combined deductions: ₹2,72,98,013.71
+Of these, genuine multi-lever overlap was reported as ₹1,62,60,251.05 and volume-disparity variance as ₹1,10,37,762.66.
+
+Recalculate these from transaction-level evidence. Do not blindly retain the reported amounts if the underlying records contradict them.
+
+FIX 2 — PREVENT UNSUPPORTED VENDOR CONSOLIDATION SAVINGS
+
+M2-REDESIGN-011 states that Vendor Base Consolidation must remain unquantified when supplier capacity evidence is absent. However, live results still attribute price-based opportunity to Vendor Consolidation.
+
+Enforce these rules:
+- Direct Price Improvement and Vendor Base Consolidation must have separate qualification rules and separate attribution.
+- Direct Price Improvement may quantify comparable-price variance only when the established material, UOM, currency, temporal, volume, and other baseline controls pass.
+- Vendor Base Consolidation must remain unquantified with grossOpportunityInr = 0 and isQuantified = false when required supplier capacity, quality continuity, and rate-applicability evidence is missing.
+- Use reason code MISSING_SUPPLIER_CAPACITY when capacity evidence is missing.
+- Do not copy, re-label, or transfer Direct Price Improvement opportunity to Vendor Consolidation.
+- A supplier count or price spread alone is not evidence that demand can safely be consolidated.
+- Only quantify Vendor Consolidation when the necessary evidence is present and traceable.
+
+Add regression tests that fail if the same transaction-level opportunity is attributed to both levers without an independently evidenced, non-overlapping calculation.
+
+FIX 3 — RESOLVE THE HISTORICAL ELIGIBILITY RECONCILIATION CONFLICT
+
+The reports contain conflicting ABC figures:
+
+M2-REDESIGN-008 reported:
+- Eligible spend: ₹503.9442 Cr
+- Ineligible spend: ₹109.9363 Cr
+
+M2-REDESIGN-010 later reported:
+- Eligible spend: ₹600.9565 Cr
+- Ineligible spend: approximately ₹12.9240 Cr
+- Zero eligibility drift between phases.
+
+These figures cannot both describe the same eligibility classification of the same source population.
+
+Investigate the actual source transactions, eligibility predicates, persisted outputs, and report-generation code. Determine whether the discrepancy comes from:
+- Different definitions of eligibility and baseline qualification;
+- A report-generation or labeling defect;
+- A change in classification logic; or
+- Another demonstrable cause.
+
+Do not assume that the later report is correct.
+Do not rewrite historical figures merely to make the reports agree.
+Produce a reconciliation showing, for ABC and PQR:
+- Source transaction count and total spend;
+- Eligible and ineligible counts and spend;
+- Duplicate, zero/negative, and other exclusion counts and spend;
+- Baseline-excluded count and spend;
+- The exact eligibility definition used at each stage;
+- The verified reason for every material difference between Phase 3A.2 and Phase 3B.
+
+Counts and financial totals must reconcile to the source population. If the original historical state cannot be reconstructed, explicitly mark the comparison UNRESOLVED rather than claiming zero drift.
+
+FIX 4 — COMMODITY AND UNIT QUALIFICATION
+
+The latest audit reports that 87.6% of ABC's net opportunity is associated with Coal, including transactions with suspicious EA units and large price spreads.
+
+Requirements:
+- Do not treat volatile commodity price differences as attainable savings without adequate grade/specification and relevant market-period comparability.
+- Flag coal transactions lacking verified grade, calorific value, pricing basis, or indexation comparability as UNVERIFIED_PRICE_VARIANCE.
+- Keep these amounts separate from qualified candidate opportunity until the necessary evidence is available.
+- Investigate suspicious UOM/rate combinations, including coal measured in EA and furnace oil with potentially inconsistent units.
+- Do not silently normalize or change units without documented conversion evidence.
+- Flag possible specification mismatches such as scrapper belts and adapter sleeves when equivalence is not established.
+- Add tests covering these cases.
+
+TESTING AND ACCEPTANCE
+
+Run the relevant existing backend tests, new regression tests, typecheck, lint, and quality checks.
+
+Verify the live attribution-ledger endpoint against the actual ABC and PQR datasets. Do not use hard-coded demonstration results.
+
+Acceptance criteria:
+1. Every deduction is classified and traced exactly once.
+2. Genuine multi-lever overlap is separate from qualification exclusions.
+3. Vendor Consolidation cannot quantify without required commercial evidence.
+4. Direct Price Improvement and Vendor Consolidation cannot double-count the same opportunity.
+5. ABC historical eligibility discrepancy is explained with evidence or explicitly marked UNRESOLVED.
+6. Coal, UOM, and specification uncertainties cannot silently become qualified opportunity.
+7. All financial reconciliation equations balance.
+8. Existing customer data and transaction counts remain intact.
+9. All relevant tests, typecheck, lint, and quality checks pass.
+10. Report commercially validated savings separately; do not claim savings validation when it has not occurred.
+
+DELIVERABLE
+
+Return a concise audit report containing:
+- Files changed;
+- Root cause of each defect;
+- Before/after figures for ABC and PQR;
+- Transaction-level reconciliation evidence;
+- Vendor Consolidation qualification results;
+- Commodity/UOM exceptions;
+- Test commands and actual outcomes;
+- Remaining blockers;
+- Final verdict: PASS, CONDITIONAL PASS, or FAIL.
+
+Do not begin Phase 3C in this task. Stop after reporting the evidence and verdict.
+
+---
+
+## Prompt 418
+M2-REDESIGN-013 — INDEPENDENT FINAL RECONCILIATION AUDIT
+
+OBJECTIVE
+Independently verify the M2-REDESIGN-012 financial reconciliation and certify whether Module 2 is ready for Phase 3C.
+
+STRICT SCOPE
+- Audit only. Do not redesign the frontend.
+- Do not modify Modules 1, 3, or 4.
+- Do not modify the desktop installer.
+- Do not change source customer transactions.
+- Do not change opportunity calculations merely to force totals to balance.
+- Do not claim PASS based only on existing tests or the previous audit report.
+
+AUDIT 1 — TRANSACTION-LEVEL EXCLUSION LEDGER
+
+For ABC Textile and PQR Cement, generate a transaction-level audit table containing:
+- Assessment ID
+- Transaction/PO line identifier
+- Source spend
+- Eligibility status
+- Observed price variance
+- Gross candidate opportunity
+- Multi-lever overlap deduction
+- Volume-disparity exclusion
+- Other qualification exclusion
+- Net qualified candidate opportunity
+- Primary lever
+- Qualification status and reason code
+
+Each transaction must be assigned to clearly defined, mutually exclusive financial buckets wherever the accounting model requires exclusivity.
+
+Identify duplicate transaction references across exclusion buckets. Prevent the same amount from being deducted twice.
+
+AUDIT 2 — RECONCILE OBSERVED VARIANCE
+
+Independently recompute totals from the source transactions.
+
+For ABC, verify:
+- Total observed price variance: reported ₹8.520 Cr
+- Net qualified candidate opportunity: reported ₹0.481 Cr
+- Volume-disparity exclusions: reported ₹0.276 Cr
+- Other qualification exclusions: reported ₹7.763 Cr
+
+For PQR, verify:
+- Total observed price variance: reported ₹19.526 Cr
+- Net qualified candidate opportunity: reported ₹0.477 Cr
+- Volume-disparity exclusions: reported ₹1.104 Cr
+- Other qualification exclusions: reported ₹17.945 Cr
+
+Do not assume these totals are correct. Recompute them from transaction-level records and identify whether the components are mutually exclusive.
+
+Distinguish:
+1. Observed price variance;
+2. Gross candidate opportunity;
+3. Qualified candidate opportunity;
+4. Exclusions from candidate opportunity;
+5. Commercially validated savings.
+
+Do not use these terms interchangeably.
+
+AUDIT 3 — VENDOR CONSOLIDATION
+
+Confirm from the live attribution endpoint that:
+- Vendor Consolidation is unquantified when supplier capacity and required commercial evidence are absent.
+- Its attributed opportunity is zero in that situation.
+- Direct Price Improvement remains separately attributed.
+- No opportunity is double-counted across levers.
+
+AUDIT 4 — COMMODITY AND UNIT EXCEPTIONS
+
+Verify that the eight reported ABC coal transactions are excluded from qualified opportunity unless grade, GCV, unit conversion, and pricing-basis comparability are supported by source evidence.
+
+Verify the PQR scrapper belt and adapter sleeve exclusions.
+
+Check that temporal-window exclusions, volume-disparity exclusions, and commodity/specification exclusions are not double-counted.
+
+AUDIT 5 — HISTORICAL ELIGIBILITY
+
+Verify the ABC eligibility result against the canonical engine and source records:
+- Source: 23,570 transactions, ₹613.8805 Cr
+- Eligible: 22,237 transactions, ₹503.9442 Cr
+- Ineligible: 1,333 transactions, ₹109.9363 Cr
+
+Confirm whether the historical discrepancy in M2-REDESIGN-010 was solely a reporting transcription error. If original evidence cannot prove this, state the limitation explicitly.
+
+AUDIT 6 — LIVE RUNTIME AND TESTS
+
+- Call the live attribution-ledger endpoint for both customer assessments.
+- Compare runtime results with independently recomputed audit totals.
+- Run the relevant regression tests, typecheck, and lint.
+- Do not treat passing tests as proof of financial correctness.
+- Do not claim browser UI verification unless a browser-rendered result was actually inspected.
+
+DELIVERABLE
+
+Produce a concise report with:
+1. Independently recomputed ABC and PQR financial tables.
+2. Transaction-level evidence for each reconciliation bucket.
+3. Duplicate-bucket and double-counting checks.
+4. Vendor Consolidation qualification evidence.
+5. Commodity/UOM exception verification.
+6. Historical eligibility verification.
+7. Actual test and runtime outcomes.
+8. Remaining limitations.
+9. Final verdict: PASS, CONDITIONAL PASS, or FAIL.
+
+PASS requires every financial equation to reconcile from source transactions and every exclusion to be traceable without double-counting.
+
+If any reconciliation cannot be independently demonstrated, return CONDITIONAL PASS or FAIL as appropriate.
+
+Stop after the audit. Do not begin Phase 3C.
+
+---
+
+## Prompt 419
+M2-REDESIGN-014 — FINAL COAL AMOUNT AND FINANCIAL RECONCILIATION
+
+OBJECTIVE
+Resolve the remaining discrepancy in the M2-REDESIGN-013 audit report before Phase 3C.
+
+STRICT SCOPE
+- Do not redesign the frontend.
+- Do not modify Modules 1, 3, or 4.
+- Do not modify the desktop installer.
+- Do not change customer source transactions.
+- Do not alter the attribution methodology unless a demonstrable defect requires it.
+
+TASK 1 — TRACE THE EIGHT ABC COAL PO LINES
+
+For each of the eight coal PO lines listed in M2-REDESIGN-013, retrieve the actual source values:
+- PO number and line identifier
+- Quantity
+- UOM
+- Actual unit rate
+- Comparable baseline unit rate
+- Currency
+- Observed price variance
+- Candidate opportunity before qualification
+- Excluded amount and exclusion reason
+
+Recalculate all amounts directly from source data.
+
+Investigate the discrepancy between:
+- M2-REDESIGN-012: ₹3.387 Cr reported as coal variance.
+- M2-REDESIGN-013: ₹3,387,000, equivalent to ₹0.3387 Cr.
+
+Determine whether this is a reporting conversion error, a quantity/rate calculation error, a different transaction population, or another cause.
+
+Do not choose a value merely to match either report.
+
+TASK 2 — RECONCILE ALL FINANCIAL BUCKETS
+
+For ABC Textile and PQR Cement, independently recompute:
+- Total source spend
+- Eligible and ineligible spend
+- Total observed price variance
+- Volume-disparity exclusions
+- Other qualification exclusions
+- Gross candidate opportunity
+- Multi-lever overlap deductions
+- Net qualified candidate opportunity
+- Commercially validated savings
+
+Trace each amount to transaction-level records and prove that the financial buckets do not double-count the same amount.
+
+Explain the relationship between observed variance and candidate opportunity. Do not assume that they are interchangeable or that all observed variance must become candidate opportunity.
+
+TASK 3 — VERIFY THE LIVE OUTPUT
+
+Call the live attribution-ledger endpoint for both assessments.
+
+Confirm that the live API returns the same figures as the independent source-data calculation. Identify any report/API mismatch.
+
+Run the relevant regression tests, typecheck, and lint.
+
+DELIVERABLE
+Return:
+1. The eight-line coal calculation table.
+2. The corrected coal variance and root cause of the discrepancy.
+3. Final reconciled ABC and PQR financial tables.
+4. Live API comparison.
+5. Actual test outcomes.
+6. Final verdict: PASS, CONDITIONAL PASS, or FAIL.
+
+Do not begin Phase 3C in this task.
+
+---
+
+## Prompt 420
+PROJECT: Procucev Procurement Software
+TASK: Implement Lever 1 — Direct Price Improvement
+SCOPE: Lever 1 ONLY.
+
+IMPORTANT:
+Do not modify Module 1, the remaining Module 2 levers, Module 3 (PCBI),
+Module 4 (Savings Engine), authentication, or unrelated application components.
+Do not redesign the entire application.
+Do not introduce hypothetical data, assumed savings percentages, or synthetic transactions.
+
+STEP 1 — INSPECT BEFORE IMPLEMENTING
+Inspect the existing application, backend, frontend, database, and uploaded
+SAP purchase-history schema for ABC Textile and VGT Testing.
+
+Identify the actual available fields for:
+- Material/item code and description
+- Supplier code and name
+- Purchase order number and line item
+- Purchase date and financial year
+- Quantity and unit of measure
+- Unit price and currency
+- Purchase value and normalized purchase value, if available
+- Plant
+- Deletion/cancellation indicators, if available
+
+Do not assume that both datasets have identical columns.
+Reuse existing validated data mappings and calculation services where appropriate.
+Do not create duplicate calculation engines.
+
+STEP 2 — CORE BUSINESS LOGIC
+
+Implement financial-year-wise historical price opportunity analysis.
+
+Financial year:
+1 April to 31 March, following the Indian financial-year convention.
+
+For every eligible item within each financial year:
+
+A. Establish a comparable group using the same verified material/item identity,
+unit of measure, and currency or a documented common currency basis.
+
+B. Identify the lowest eligible unit price observed for that item during that
+financial year.
+
+C. Calculate:
+Benchmark Cost = Total Eligible Quantity × Lowest Comparable Unit Price
+
+D. Calculate:
+Actual Purchase Cost = Sum of (Eligible Purchase Quantity × Actual Unit Price)
+
+E. Calculate:
+Historical Lost Opportunity = Actual Purchase Cost − Benchmark Cost
+
+F. Calculate:
+Weighted Average Purchase Price =
+Actual Purchase Cost / Total Eligible Quantity
+
+Use the actual transaction quantities and prices.
+Do not substitute arithmetic averages for weighted averages.
+
+Do not carry a financial year's lowest price into another financial year.
+Calculate a new benchmark for each item and financial year.
+
+Retain transaction dates so users can see when the lowest price occurred.
+Flag temporal differences for review; do not assume the lowest price was
+available for every transaction throughout the year.
+
+Do not report negative lost opportunity. If validation or rounding causes an
+unexpected negative result, flag the calculation for investigation.
+
+STEP 3 — DATA ELIGIBILITY AND SAFEGUARDS
+
+- Exclude records only when available source fields reliably establish that
+  they should be excluded, such as confirmed deleted or cancelled lines.
+- Do not interpret release status as a deletion indicator.
+- Do not combine different material codes merely because their descriptions
+  appear similar.
+- Flag inconsistent descriptions associated with the same material code.
+- Do not combine incompatible units of measure.
+- Do not compare currencies without a documented normalization basis.
+- Do not invent missing quantities, prices, material codes, exchange rates,
+  supplier details, or other fields.
+- Flag missing or invalid data and disclose excluded records and spend.
+- Identify potentially erroneous or abnormal unit prices for review.
+- Do not classify every standard component as price-stable automatically.
+- Do not assume larger quantities should always have lower prices.
+
+Maintain traceability from every calculated result to its source transactions.
+
+STEP 4 — IMPLEMENT THE 15 APPROVED SCENARIOS
+
+1. Same item purchased at different prices during a financial year.
+2. Same item purchased from different suppliers at different prices.
+3. Same item purchased from the same supplier at different prices.
+4. Same item purchased at different prices across plants.
+5. Price increases during the financial year.
+6. Price decreases during the financial year.
+7. High-spend items with material price variation.
+8. Repeated purchases above the annual lowest comparable price.
+9. Standard items with relatively stable historical prices but observed
+   purchase-price differences.
+10. Different prices for the same item across purchase orders.
+11. Price variation at different purchase quantities.
+12. Unusually high unit prices requiring investigation.
+13. Same description with different material codes, flagged for review.
+14. Same material code with potentially inconsistent descriptions, flagged.
+15. Price differences across financial years.
+
+The annual lowest-price calculation is the PRIMARY opportunity calculation.
+The remaining scenarios are diagnostic views and prioritization methods.
+
+Do not add opportunity amounts from these scenarios together.
+They can represent the same underlying transactions.
+
+Do not invent technical equivalence between different items.
+Do not claim contract violations without contract evidence.
+Do not calculate savings from hypothetical future negotiations, e-auctions,
+supplier quotations, or assumed future prices.
+
+STEP 5 — REQUIRED OUTPUT
+
+For each item and financial year, show:
+
+- Material/item code and description
+- Financial year
+- Total eligible quantity
+- Unit of measure
+- Number of eligible purchase transactions
+- Number of distinct suppliers, where available
+- Actual purchase cost
+- Weighted average purchase price
+- Lowest comparable historical unit price
+- Date and transaction details of the lowest-price observation
+- Benchmark cost
+- Historical lost opportunity
+- Supplier-wise price variation
+- Plant-wise price variation
+- PO-wise price variation
+- Price trend and repeated higher-price observations
+- Data-quality warnings
+- Excluded transaction count and value, where calculable
+
+Provide drill-down from the opportunity summary to the underlying purchase
+transactions.
+
+Allow users to filter by customer, financial year, material group, item,
+supplier, plant, and other dimensions only when supported by the actual data.
+
+Prioritize opportunities by historical lost-opportunity value.
+Clearly distinguish:
+1. Observed historical price variation.
+2. Potential price-alignment opportunity requiring procurement review.
+3. Validated savings supported by actual execution evidence.
+
+Purchase history alone must never be represented as proof of achieved savings.
+
+STEP 6 — RECONCILIATION AND TESTING
+
+Test the implementation using the actual uploaded ABC Textile and VGT Testing
+datasets. Do not generate replacement or synthetic customer data.
+
+Validate:
+- Source transaction counts and spend reconcile with the uploaded data.
+- Benchmark quantity equals the eligible quantity for each comparison group.
+- Benchmark cost equals eligible quantity multiplied by the annual lowest price.
+- Actual purchase cost reconciles to the eligible transactions.
+- Lost opportunity equals actual purchase cost minus benchmark cost.
+- Weighted average equals actual purchase cost divided by eligible quantity.
+- Different financial years have independent benchmarks.
+- Different currencies and incompatible UOMs are not incorrectly combined.
+- Missing material codes do not create artificial price opportunities.
+- The same underlying opportunity is not double-counted across scenarios.
+- Excluded records and values are transparently reported.
+- Existing modules and other levers remain unchanged.
+
+Add automated tests for the calculation rules and edge cases.
+Run applicable backend tests, frontend tests, linting, and type checks.
+
+STEP 7 — REPORT RESULTS
+
+Before declaring completion, provide:
+1. Files and components changed.
+2. Actual data fields used for each dataset.
+3. Results for ABC Textile and VGT Testing.
+4. Reconciliation evidence and test results.
+5. Known limitations and unquantified records.
+6. Confirmation that no other modules or levers were changed.
+7. Any remaining failures or issues.
+
+Do not claim successful UI verification unless the application was actually
+opened and the relevant workflows were tested.
+
+Begin with inspection. Implement only after confirming the actual schema.
+Do not proceed to Lever 2.
+
+---
+
+## Prompt 421
+We are NOT authorising Phase 3C or Dashboard Redesign.
+
+Our immediate priority is implementing and validating the agreed business
+methodology for Lever 1 — Direct Price Improvement.
+
+First inspect the current implementation and determine whether it already
+supports the following exact methodology.
+
+For each comparable item and each Indian financial year (1 April to 31 March):
+
+1. Identify eligible purchase transactions from the actual uploaded SAP
+   purchase history.
+2. Determine the lowest comparable unit price observed during that financial
+   year.
+3. Calculate benchmark cost = total eligible quantity × lowest comparable price.
+4. Calculate actual purchase cost = sum of (transaction quantity × actual
+   transaction unit price).
+5. Calculate historical lost opportunity = actual purchase cost − benchmark cost.
+6. Calculate weighted-average purchase price = actual purchase cost /
+   total eligible quantity.
+
+Use the same verified item identity, compatible UOM and comparable currency
+basis. Do not combine different materials based only on similar descriptions.
+
+Include the 15 approved scenarios as diagnostic views, with the annual
+lowest-price calculation as the primary opportunity calculation.
+
+IMPORTANT:
+- Inspect the existing implementation before editing.
+- Do not assume the existing ₹48.10 lakh ABC or ₹47.71 lakh PQR figures are
+  correct for this new methodology.
+- Do not modify Module 1, Module 3, Module 4, the desktop installer, or
+  unrelated modules.
+- Do not proceed to other levers.
+- Do not generate hypothetical customer transactions.
+- Prevent double counting across diagnostic views.
+
+VALIDATION:
+1. Create small, deterministic unit tests for the agreed annual calculation.
+2. Test separate financial years, multiple prices, quantities, suppliers,
+   missing material codes, incompatible UOMs and different currencies.
+3. Run the calculation against the actual ABC Textile and PQR Cement datasets.
+4. Reconcile transaction counts, eligible quantities, actual spend, benchmark
+   cost and lost opportunity.
+5. Provide item-level examples that can be traced to source transactions.
+6. Report exclusions and their reasons.
+7. Run relevant tests, typecheck and lint.
+8. List all modified files and confirm whether any unrelated components changed.
+
+Do not claim completion unless the new methodology is implemented and its
+results are reconciled against the actual datasets.
+
+Stop after reporting the results. Do not start Phase 3C.
+
+---
+
+## Prompt 422
+TASK: Complete Lever 1 — Direct Price Improvement and verify the visible UI.
+
+DO NOT START PHASE 3C.
+DO NOT MODIFY MODULE 1, MODULE 3 (PCBI), MODULE 4, OR THE DESKTOP INSTALLER.
+DO NOT IMPLEMENT LEVER 2 YET.
+
+A. VERIFY LEVER 1 BUSINESS LOGIC
+
+Inspect the current code and confirm whether the agreed calculation is implemented.
+
+For each comparable item and Indian financial year (1 April–31 March):
+
+1. Identify eligible purchase transactions.
+2. Find the lowest comparable unit price observed during that financial year.
+3. Benchmark Cost = Total Eligible Quantity × Lowest Comparable Price.
+4. Actual Purchase Cost = Sum of (Quantity × Actual Unit Price).
+5. Historical Lost Opportunity = Actual Purchase Cost − Benchmark Cost.
+6. Weighted Average Price = Actual Purchase Cost / Total Eligible Quantity.
+
+Use actual customer purchase-history data only.
+Respect material identity, UOM, currency, financial year and data-quality rules.
+Do not assume that existing opportunity totals represent the new calculation.
+
+Run the calculation on ABC Textile and PQR Cement.
+Provide item-level examples and transaction-level reconciliation.
+
+B. IMPLEMENT THE VISIBLE LEVER 1 UI
+
+Inspect the existing Module 2 frontend and identify why previous backend
+commands did not result in visible UI changes.
+
+Implement the approved Lever 1 interface within the existing application.
+
+The interface must include:
+- Financial-year and customer filters.
+- Summary of actual spend, benchmark cost and historical lost opportunity.
+- A filterable item-level opportunity table.
+- Item-level drill-down to the supporting purchase transactions.
+- Supplier, plant and purchase-order price comparisons where supported.
+- Data-quality warnings and excluded-record explanations.
+- Clear distinction between historical opportunity and validated savings.
+
+Use actual calculated results; do not hardcode metrics or create mock customer data.
+Follow the existing Procucev design system.
+
+C. UI ACCEPTANCE TESTING
+
+Run the application and verify the rendered interface in a browser.
+
+Confirm that:
+- The Lever 1 screen is visible through the existing Module 2 navigation.
+- Filters and drill-downs work.
+- Figures reconcile with the backend calculation.
+- Empty and error states are handled.
+- Existing modules continue to work.
+
+A passing unit test, typecheck or lint run is not proof of UI completion.
+
+D. REPORT
+
+Provide:
+1. Calculation methodology actually implemented.
+2. Reconciled results for both customers.
+3. Files changed.
+4. Tests executed and their results.
+5. Evidence of the rendered UI and working interactions.
+6. Remaining limitations.
+
+Do not proceed to Lever 2 or any dashboard-wide redesign.
+Stop and report the results.
+
+---
+
+## Prompt 423
+STOP repeating the M2-REDESIGN-012 attribution audit.
+
+The existing attribution fixes and passing tests do not complete our current task.
+
+Our approved priority is:
+
+1. Implement the agreed financial-year-wise lowest comparable purchase-price
+   calculation for Lever 1 — Direct Price Improvement.
+2. Validate it against the actual ABC Textile and PQR Cement purchase histories.
+3. Implement the visible Lever 1 UI.
+4. Verify the UI in the running application using a browser.
+
+For every comparable item and Indian financial year:
+
+Lowest-price benchmark cost = Total eligible quantity × Lowest comparable
+unit price observed during that financial year.
+
+Actual purchase cost = Sum of eligible transaction quantity × actual unit price.
+
+Historical lost opportunity = Actual purchase cost − Lowest-price benchmark cost.
+
+Weighted-average purchase price = Actual purchase cost / Total eligible quantity.
+
+Preserve material identity, UOM, currency and financial-year comparability.
+Do not use hypothetical data or assume existing candidate opportunity figures
+are results of this methodology.
+
+Reconcile the actual results, show item-level source transactions, and add
+dedicated automated tests.
+
+UI REQUIREMENT:
+The application must visibly display the implemented Lever 1 functionality.
+Modify the relevant frontend components, connect them to the actual backend
+results, and verify the rendered screen and interactions in the browser.
+Backend-only changes are not sufficient.
+
+ALSO:
+Explain and reconcile the existing attribution waterfall figures so it is
+clear how the gross opportunity, exclusions, overlap deductions and net
+opportunity relate to one another.
+
+Do not modify Module 1, Module 3, Module 4, the desktop installer or unrelated
+components.
+Do not implement Lever 2 yet.
+Do not start Phase 3C or a broad dashboard redesign.
+
+Report the actual code changes, calculation results, reconciliation evidence,
+test results and browser verification. Stop after reporting.
+
+
+
+
+
+---
+
+## Prompt 424
+STOP WORKING ON M2-REDESIGN-012.
+
+The attribution integrity fixes have been reported repeatedly. Do not repeat
+the same audit, regenerate the same report, or request Phase 3C approval.
+
+OUR CURRENT APPROVED TASK IS LEVER 1 — DIRECT PRICE IMPROVEMENT.
+
+OBJECTIVE 1: IMPLEMENT THE AGREED CALCULATION
+
+For every comparable item and Indian financial year (1 April–31 March):
+
+1. Identify eligible purchase transactions from actual customer SAP history.
+2. Find the lowest comparable unit price observed during that financial year.
+3. Benchmark Cost = Total Eligible Quantity × Lowest Comparable Unit Price.
+4. Actual Purchase Cost = Sum of (Transaction Quantity × Actual Unit Price).
+5. Historical Lost Opportunity = Actual Purchase Cost − Benchmark Cost.
+6. Weighted Average Price = Actual Purchase Cost / Total Eligible Quantity.
+
+Respect material identity, UOM, currency and financial-year boundaries.
+Do not invent data or assume existing opportunity figures reflect this method.
+
+Test the calculation with deterministic test cases and the actual ABC Textile
+and PQR Cement datasets. Reconcile results to the source transactions.
+
+OBJECTIVE 2: IMPLEMENT THE VISIBLE LEVER 1 UI
+
+Inspect the current frontend and explain why earlier commands did not produce
+visible changes in the application.
+
+Implement the actual Lever 1 interface, connected to the new calculation:
+- Financial-year and customer filters.
+- Actual spend, benchmark cost and historical lost-opportunity summary.
+- Item-level opportunity table.
+- Supplier, plant and PO comparisons where supported.
+- Drill-down to supporting purchase transactions.
+- Data-quality warnings and exclusions.
+- Clear distinction between historical opportunity and validated savings.
+
+Use actual customer results. Do not hardcode metrics or introduce mock data.
+
+OBJECTIVE 3: VERIFY IN THE BROWSER
+
+Run the application and confirm that the new Lever 1 screen is visible and
+its filters, drill-downs and displayed calculations work.
+
+Typecheck, lint and unit tests alone do not satisfy UI acceptance.
+
+OBJECTIVE 4: RECONCILIATION
+
+Explain the relationship between gross opportunity, overlap deductions,
+volume-disparity exclusions, other exclusions and net qualified opportunity.
+Provide a mathematically and transactionally reconciled result.
+
+CONSTRAINTS
+
+- Do not modify Module 1, Module 3 (PCBI), Module 4 or the desktop installer.
+- Do not implement Lever 2 yet.
+- Do not start Phase 3C or a broad dashboard redesign.
+- Do not repeat the previous audit unless a specific defect blocks this task.
+- Report actual code changes, reconciled calculations, test evidence and
+  browser verification.
+
+Start by inspecting the current code, then implement the missing functionality.
+Stop and report when Lever 1 is complete.
+
+---
+
+## Prompt 418
+Do not repeat the M2-REDESIGN-012 report.
+
+You have created the Direct Price Improvement engine and API components.
+Now complete the following tasks:
+
+1. Run the new engine against the actual ABC Textile and PQR Cement datasets.
+2. Report financial-year-wise results using the agreed lowest comparable
+   historical price methodology.
+3. Reconcile actual spend, benchmark cost, weighted-average price and
+   historical lost opportunity against the underlying transactions.
+4. Identify the frontend files modified for Lever 1. If none were modified,
+   implement the Lever 1 UI and connect it to the new API.
+5. Run the application and verify the rendered screen, financial-year filter,
+   item-level table and transaction drill-down in a browser.
+6. Provide the actual test results and list every file changed.
+
+Do not modify Modules 1, 3 or 4, the desktop installer, or unrelated levers.
+Do not start Lever 2 implementation or Phase 3C.
+Stop and report only after the calculation and visible UI are verified.
+
+---
+
+## Prompt 419
+TASK: Final acceptance verification for Lever 1 — Direct Price Improvement.
+
+The frontend implementation has now started. Do not repeat previous audits
+or begin any new feature development until this verification is complete.
+
+1. CALCULATION RESULTS
+Run the implemented Direct Price Improvement engine against the actual
+ABC Textile and PQR Cement datasets.
+
+For each customer and financial year, report:
+- Eligible transaction count and quantity
+- Actual purchase cost
+- Lowest comparable historical unit price
+- Benchmark cost
+- Weighted-average purchase price
+- Historical lost opportunity
+
+Include item-level examples traceable to actual source transactions.
+Explain excluded transactions and their reasons.
+Do not reuse previous candidate opportunity totals as the new results.
+
+2. CALCULATION VALIDATION
+Verify that:
+Actual Purchase Cost = sum of eligible quantity × actual unit price.
+Benchmark Cost = total eligible quantity × annual lowest comparable price.
+Historical Lost Opportunity = Actual Purchase Cost − Benchmark Cost.
+Weighted Average Price = Actual Purchase Cost / total eligible quantity.
+
+Validate financial-year boundaries, material identity, UOM, currency,
+missing identifiers and duplicate handling.
+
+3. FRONTEND INTEGRATION
+Verify that DirectPriceImprovementView.tsx is reachable through the existing
+Module 2 navigation and consumes actual API results.
+
+Confirm:
+- Customer and financial-year filters work.
+- Summary metrics update correctly.
+- The item-level table displays actual calculated results.
+- Item drill-down opens and shows supporting purchase transactions.
+- Supplier, plant and PO details appear where supported by source data.
+- Loading, empty and error states work.
+- No hardcoded or mock customer metrics are displayed.
+
+4. BROWSER VERIFICATION
+Run the application and test the actual rendered screen in a browser.
+Report the URL, navigation steps and observed results.
+Do not claim browser verification if only source code or automated unit tests
+were inspected.
+
+5. QUALITY AND SCOPE
+Run the relevant calculation tests, frontend tests, typecheck and lint.
+Inspect git diff and git status.
+Report all modified and deleted files, including temporary test files.
+Confirm that Modules 1, 3 and 4 and the desktop installer remain unchanged.
+
+Stop after reporting the evidence. Do not implement Lever 2 or start Phase 3C.
+
+---
+
+## Prompt 420
+TASK: Complete Module 2 Lever Overview and reconcile Lever 1 exclusions.
+
+Do not implement Lever 2 or any other new savings lever.
+
+PART A — MODULE 2 UI
+1. Open the running application in a browser.
+2. Verify the main Module 2 Strategic Sourcing screen.
+3. Display all 10 sourcing levers in one clear, numbered overview.
+4. Show each lever's purpose, truthful implementation status, and action to
+   open its details.
+5. Only show quantified opportunity where supported by implemented calculations.
+6. Clearly distinguish historical candidate opportunity from commercially
+   validated savings.
+7. Keep technical diagnostics and detailed methodology collapsed by default.
+8. Verify all 10 levers are visible and navigation works.
+9. Provide screenshots or equivalent browser evidence of the actual rendered UI.
+
+PART B — LEVER 1 RECONCILIATION
+ABC Textile has 23,570 source transactions, of which 6,184 transactions
+worth ₹314.9012 Cr are reported as excluded.
+
+1. Export a transaction-level register of all excluded ABC transactions.
+2. Show each exclusion reason, transaction count and total spend.
+3. Confirm exclusion buckets are mutually exclusive and reconcile exactly
+   to the source dataset.
+4. Explain why these transactions are ineligible, using actual source fields.
+5. Check whether valid comparable purchases were excluded unnecessarily.
+6. Separately reconcile eligible transactions, eligible spend, actual purchase
+   cost, benchmark cost and historical lost opportunity.
+7. Perform the same arithmetic reconciliation for PQR Cement.
+8. Do not weaken eligibility rules merely to increase opportunity.
+9. Do not modify the agreed annual-lowest-comparable-price methodology.
+10. Do not change Module 1, Module 3, Module 4 or the desktop installer.
+
+ACCEPTANCE:
+- All 10 levers are clearly visible in the actual browser.
+- Lever 1's actual figures reconcile to the underlying transactions.
+- Exclusion reasons and totals reconcile without double counting.
+- Historical opportunity remains separate from validated savings.
+- Report exact files changed, test results, browser evidence and unresolved issues.
+
+Stop after these checks. Do not implement Lever 2.
+
+---
+
+## Prompt 421
+TASK: Final consistency verification of Module 2 Lever 1. No new features.
+
+The latest reports show different ABC Textile results:
+
+Earlier API result:
+Actual Cost ₹272.3882 Cr
+Benchmark Cost ₹255.2727 Cr
+Opportunity ₹17.1155 Cr
+
+Latest reconciliation report:
+Actual Cost ₹272.3923 Cr
+Benchmark Cost ₹255.2713 Cr
+Opportunity ₹17.1210 Cr
+
+Resolve this discrepancy before certifying Lever 1.
+
+1. Run the calculation engine and API against the same persisted assessment
+   datasets and record the exact dataset version/hash and execution timestamp.
+
+2. Reconcile, at transaction level:
+   - Source rows and spend
+   - Duplicate exclusions
+   - Other exclusions
+   - Eligible transactions and spend
+   - Actual purchase cost
+   - Benchmark cost
+   - Historical lost opportunity
+
+3. Investigate the 1,325 ABC duplicate signatures worth ₹109.9363 Cr.
+   Show representative source rows for repeated signatures and determine whether
+   they are genuine ingestion duplicates or legitimate repeated purchases.
+   Do not remove purchases solely because material, price, quantity, vendor,
+   or PO fields happen to match. Use reliable source-row identity and evidence.
+
+4. Confirm that the UI, API and calculation engine return exactly the same
+   totals for the same customer and financial-year filters.
+
+5. Verify the annual lowest comparable price methodology:
+   Indian financial year, material code, compatible UOM and currency.
+   Do not change the methodology to force agreement with previous totals.
+
+6. Preserve the ten-lever overview. Do not implement Levers 2–10.
+   Do not modify Modules 1, 3 or 4, or the desktop installer.
+
+7. Run relevant tests, typecheck and lint. Report the final reconciled figures,
+   explain the original discrepancy, list any remaining limitations, and stop.
+
+Do not report "no blockers" unless every discrepancy is explained and
+reproducible from the source transactions.
+
+## Prompt 422
+TASK: Correct Lever 1 transaction deduplication before final certification.
+
+The latest audit identified 364 distinct SAP PO line items incorrectly
+classified as duplicates because the duplicate signature omits the PO item
+number.
+
+1. Inspect the original Excel columns and confirm the correct source field
+   representing the PO item/line number.
+
+2. Update duplicate detection to distinguish:
+   A. Genuine repeated ingestion records.
+   B. Legitimate separate PO line items, including different item numbers
+      within the same PO.
+
+3. Do not assume identical prices, quantities, material codes or spend values
+   make two rows duplicates.
+
+4. Where reliable row identity is unavailable, flag the records for review
+   rather than automatically deleting legitimate-looking transactions.
+
+5. Recalculate ABC Textile and PQR Cement using the corrected transaction
+   population and the existing annual lowest comparable price methodology.
+
+6. Reconcile source rows, duplicate exclusions, eligible transactions,
+   eligible gross spend, actual purchase cost, benchmark cost and historical
+   lost opportunity.
+
+7. Confirm the calculation engine, API and UI all return matching figures.
+
+8. Rerun relevant tests, typecheck and lint. Add regression tests covering
+   genuine ingestion duplicates and distinct PO line items with otherwise
+   identical values.
+
+Do not modify the agreed benchmarking methodology.
+Do not implement Levers 2–10.
+Do not change Modules 1, 3 or 4, or the desktop installer.
+
+Report the revised results and any remaining limitations. Do not declare
+final certification until the corrected results reconcile.
+
+## Prompt 423
+PROJECT: Procucev Procurement Analytics
+MODULE: Module 2 — Strategic Sourcing & Savings Opportunities
+
+OBJECTIVE
+Complete the following in one controlled implementation:
+1. Simplify the Lever 1 analysis screen to show UNSPSC category-wise spend by default.
+2. Implement Lever 2 — E-Auction / Dynamic Bidding.
+3. Provide complete downloadable Excel workbooks for both levers.
+4. Validate the results against the actual customer datasets and verify the working UI in the browser.
+
+STRICT SCOPE
+- Work only on Module 2.
+- Do not modify Module 1.
+- Do not connect to or modify Module 3 (PCBI).
+- Do not modify Module 4 or its calculations.
+- Do not modify the desktop installer.
+- Do not implement Levers 3–10.
+- Preserve the existing ten-lever overview and navigation.
+- Preserve existing source-data exclusions, deduplication rules, and audit traceability.
+- Do not create a second or conflicting calculation engine.
+- Inspect the existing implementation before making changes.
+- Do not hard-code customer results or test outcomes into production code.
+
+==================================================
+PART A — LEVER 1: DIRECT PRICE IMPROVEMENT
+SIMPLIFY THE ANALYSIS UI
+==================================================
+
+CURRENT PROBLEM
+The Lever 1 headline values are visible and correct in the overview, but clicking "Open Lever Analysis" exposes too much transaction-level data immediately.
+
+REQUIRED DEFAULT VIEW
+
+Make the UNSPSC category-wise summary the primary screen.
+
+Aggregate eligible material-level results under their verified UNSPSC categories. Sort by eligible spend in descending order.
+
+Show these columns:
+
+1. UNSPSC Code
+2. UNSPSC Category / Description
+3. Distinct Material Count
+4. Eligible Transaction Count
+5. Eligible Spend
+6. Actual Purchase Cost
+7. Benchmark Cost
+8. Historical Lost Opportunity
+9. Opportunity % of Actual Purchase Cost
+10. Data Quality / Qualification Status
+
+At the top, show:
+- Total eligible spend
+- Total historical lost opportunity
+- Number of categories analysed
+- Number of categories requiring data review
+- Commercially validated savings
+
+Commercially validated savings must remain ₹0.00 until actual procurement execution and validation evidence support a different value.
+
+FILTERS AND DRILL-DOWN
+
+Provide:
+- Financial-year filter
+- UNSPSC category filter
+- Data-quality / qualification-status filter
+- Search by material code or description
+- Spend-based sorting
+- Pagination for large datasets
+
+On clicking a category:
+- Display its material-level analysis.
+
+On clicking a material:
+- Display the supporting purchase transactions and calculation details.
+
+Keep transaction-level records, technical diagnostics, and detailed methodology collapsed or hidden until requested.
+
+UNSPSC AND DATA QUALITY
+
+- Use verified UNSPSC codes and descriptions.
+- Do not invent missing mappings.
+- Group unmapped records under "Unclassified — UNSPSC mapping unavailable".
+- Flag potentially duplicate material records for review rather than automatically merging unrelated materials.
+- Do not combine materials merely because their descriptions are similar.
+- Respect differences in specifications, units of measure, currencies, and price comparability.
+- Do not calculate misleading category-level opportunities from incompatible materials.
+
+LEVER 1 CALCULATION METHODOLOGY — PRESERVE EXACTLY
+
+Use the accepted annual-low methodology:
+
+- Indian financial year runs from 1 April to 31 March.
+- For each comparable material within each financial year, identify the lowest comparable observed unit price.
+- Benchmark Cost = eligible quantity × lowest comparable unit price.
+- Actual Purchase Cost = sum of eligible transaction quantity × actual unit price.
+- Historical Lost Opportunity = Actual Purchase Cost − Benchmark Cost.
+- Weighted Average Purchase Price = Actual Purchase Cost ÷ eligible quantity.
+
+Apply this to eligible standard items and other comparable materials, not just raw materials.
+
+Preserve the established eligibility rules, source-data exclusions, duplicate handling, and qualification controls.
+
+Do not silently change the calculation methodology.
+
+Do not add overlapping category, material, supplier, plant, or scenario opportunity totals.
+
+Clearly label historical lost opportunity as an indicative historical price variance, not achieved savings.
+
+RECONCILIATION
+
+The sum of category-level calculations must reconcile to the corresponding material-level results and approved underlying Lever 1 results.
+
+Investigate and explain any discrepancies. Do not force totals to match.
+
+Keep the existing source-data audit trail.
+
+==================================================
+PART B — LEVER 2: E-AUCTION / DYNAMIC BIDDING
+IMPLEMENT THE CANDIDATE IDENTIFICATION ENGINE
+==================================================
+
+OBJECTIVE
+
+Identify categories and materials that may be suitable for competitive e-auctions using actual SAP purchase history.
+
+The analysis must help procurement teams decide where to investigate competitive bidding.
+
+Purchase history alone cannot prove that suppliers will participate, sufficient competition exists, or savings will be achieved.
+
+CANDIDATE IDENTIFICATION RULES
+
+Evaluate the available evidence for:
+
+1. Repeat-purchase materials with sufficient history.
+2. High-spend categories and materials.
+3. Materials purchased from multiple suppliers.
+4. Recurring materials currently purchased from one supplier that may warrant competition review.
+5. Materials with observed purchase-price variation.
+6. Standardised, repeat-purchase items that may be operationally suitable for bidding.
+7. Categories with meaningful spend across multiple plants.
+8. Purchase frequency and PO count.
+9. Annual spend and eligible quantity.
+10. Price range and weighted average, where comparable.
+11. Completeness and reliability of the available data.
+
+Do not assume that high spend alone makes a category suitable for an e-auction.
+
+Use actual purchase history and reliably available source fields only.
+
+Do not invent:
+- Alternative suppliers
+- Supplier willingness or capacity
+- Supplier participation
+- Market prices or external quotations
+- Auction outcomes
+- Savings percentages
+- Expected or achieved savings amounts
+
+Do not infer supplier competition solely from the number of transactions.
+
+LEVER 2 DEFAULT UI
+
+Show a concise summary containing:
+
+- Total spend reviewed
+- Number of UNSPSC categories reviewed
+- Number of candidate categories
+- Number of candidate materials
+- Number of records requiring data review
+- Commercially validated savings
+
+Show a category-wise table sorted by spend descending.
+
+Required columns:
+
+1. UNSPSC Code
+2. UNSPSC Category / Description
+3. Total Spend
+4. Purchase Quantity and UOM, where comparable
+5. Distinct Material Count
+6. PO Count
+7. Supplier Count, where reliably available
+8. Plant Count, where available
+9. Price Variation Indicator, where comparable
+10. Auction Suitability
+11. Evidence-Based Rationale
+12. Data Limitations
+
+AUCTION SUITABILITY CLASSIFICATIONS
+
+Use transparent, evidence-based labels:
+
+- Candidate for Review
+- Further Data Required
+- Not Currently Suitable
+- Not Assessed
+
+Do not label anything "Auction Ready" unless the required commercial, supplier, specification, and operational checks have actually been completed and evidenced.
+
+DRILL-DOWN
+
+Clicking a category should show its material-level breakdown.
+
+Clicking a material should show the supporting purchase-history records.
+
+Provide:
+- Financial-year filter
+- UNSPSC category filter
+- Candidate classification filter
+- Search by material code or description
+- Spend-based sorting
+- Pagination for large datasets
+
+Keep raw transactions, diagnostic details, and technical methodology collapsed until requested.
+
+Show supplier counts only where supplier identities are reliably available.
+
+If purchase history is insufficient to make a recommendation, classify the record accordingly and explain why.
+
+FINAL PROCUREMENT REVIEW
+
+Make it clear that final e-auction approval requires procurement review of:
+- Specifications and material comparability
+- Supplier eligibility
+- Supplier competition and participation
+- Commercial terms
+- Delivery requirements
+- Operational constraints
+- Any other relevant category-specific requirements
+
+LEVER 2 SAVINGS RULES
+
+- Do not apply generic auction savings percentages.
+- Do not calculate hypothetical auction savings from historical price dispersion.
+- Do not copy Lever 1 historical lost opportunity into Lever 2.
+- Do not report candidate spend as savings.
+- Keep Lever 2 quantified savings at ₹0.00 until an actual auction, resulting award/transaction evidence, and savings validation are available.
+- Clearly distinguish candidate identification from commercially validated savings.
+
+==================================================
+PART C — COMPLETE EXCEL EXPORTS
+==================================================
+
+Provide a visible "Download Excel" action in both the Lever 1 and Lever 2 analysis screens.
+
+Generate genuine .xlsx workbooks from the same canonical analysis results used by the UI and backend.
+
+Create a separate workbook for each selected customer assessment.
+
+Expected downloads:
+1. Lever 1 — ABC Textile
+2. Lever 1 — PQR Cement
+3. Lever 2 — ABC Textile
+4. Lever 2 — PQR Cement
+
+Do not hard-code these customer names or results. Use the selected assessment and actual underlying data.
+
+------------------------------------------
+C1. LEVER 1 EXCEL WORKBOOK
+------------------------------------------
+
+SHEET 1 — EXECUTIVE SUMMARY
+
+Include:
+- Customer / assessment name and ID
+- Source record count
+- Eligible transaction count
+- Excluded transaction count
+- Eligible spend
+- Actual Purchase Cost
+- Benchmark Cost
+- Historical Lost Opportunity
+- Commercially Validated Savings
+- Analysis period and financial years
+- Exclusion summary
+- Data-quality limitations
+- Reconciliation status
+
+SHEET 2 — UNSPSC CATEGORY SUMMARY
+
+Include:
+- UNSPSC code
+- UNSPSC category / description
+- Distinct material count
+- Eligible transaction count
+- Eligible quantity, where comparable
+- Eligible spend
+- Actual Purchase Cost
+- Benchmark Cost
+- Historical Lost Opportunity
+- Opportunity percentage
+- Data-quality / qualification status
+
+SHEET 3 — MATERIAL-LEVEL ANALYSIS
+
+Include every eligible material analysed:
+- Material ID / code
+- Material description
+- UNSPSC code and description
+- Financial year
+- UOM
+- Eligible quantity
+- Transaction count
+- Supplier count, where available
+- Actual Purchase Cost
+- Weighted Average Purchase Price
+- Lowest comparable unit price
+- Benchmark Cost
+- Historical Lost Opportunity
+- Qualification status
+- Warnings and limitations
+
+SHEET 4 — TRANSACTION-LEVEL EVIDENCE
+
+Include every source transaction used in the calculation.
+
+Include available fields:
+- Source row reference
+- Purchase order number
+- PO line number
+- Purchase date
+- Financial year
+- Material ID and description
+- UNSPSC code and description
+- Supplier ID / name
+- Plant
+- Quantity and UOM
+- Unit price and currency
+- Actual transaction cost
+- Applied benchmark unit price
+- Benchmark transaction cost
+- Historical lost opportunity contribution
+- Eligibility status
+- Exclusion reason, where applicable
+
+Preserve source references so each result can be traced back to the original input.
+
+SHEET 5 — EXCLUDED TRANSACTIONS
+
+Include all excluded rows, with available:
+- Source row reference
+- PO and line number
+- Material ID and description
+- Quantity and UOM
+- Price and currency
+- Exclusion reason
+- Duplicate classification, where applicable
+
+Do not silently omit excluded records.
+
+SHEET 6 — DATA QUALITY AND UNSPSC MAPPING
+
+Include:
+- Unmapped materials
+- Missing or invalid material IDs
+- Incompatible UOM or currency issues
+- Suspected duplicate material records
+- Missing or conflicting descriptions
+- Other calculation qualification issues
+- Impact on eligibility or interpretation
+
+SHEET 7 — FINANCIAL-YEAR ANALYSIS
+
+Show category-wise and material-wise results by financial year, including:
+- Eligible quantity
+- Actual Purchase Cost
+- Benchmark Cost
+- Historical Lost Opportunity
+- Transaction count
+- Reconciliation checks
+
+------------------------------------------
+C2. LEVER 2 EXCEL WORKBOOK
+------------------------------------------
+
+SHEET 1 — EXECUTIVE SUMMARY
+
+Include:
+- Customer / assessment name and ID
+- Total spend reviewed
+- Number of categories reviewed
+- Number of candidate categories
+- Number of candidate materials
+- Number of records requiring data review
+- Analysis period
+- Commercially validated savings
+- Important limitations
+
+SHEET 2 — UNSPSC CATEGORY ANALYSIS
+
+Include:
+- UNSPSC code and description
+- Total spend
+- Purchase quantity and UOM, where comparable
+- Distinct material count
+- PO count
+- Supplier count
+- Plant count, where available
+- Price variation indicator
+- Auction suitability classification
+- Evidence-based rationale
+- Data limitations
+
+SHEET 3 — MATERIAL-LEVEL CANDIDATE ANALYSIS
+
+Include every material assessed, not only recommended candidates.
+
+Include:
+- Material ID and description
+- UNSPSC code and description
+- Financial year
+- Total spend and quantity
+- UOM
+- PO count
+- Supplier count
+- Plant count
+- Observed price range
+- Weighted average price, where comparable
+- Candidate classification
+- Evidence supporting classification
+- Missing information and limitations
+- Procurement review requirements
+
+SHEET 4 — TRANSACTION-LEVEL PURCHASE HISTORY
+
+Include the supporting purchase transactions used to assess each material.
+
+Include available:
+- Source row reference
+- PO and line number
+- Purchase date
+- Material ID and description
+- UNSPSC code and description
+- Supplier ID / name
+- Plant
+- Quantity and UOM
+- Unit price and currency
+- Spend
+
+SHEET 5 — CANDIDATE AND NON-CANDIDATE DECISIONS
+
+Show every assessed category/material and why it was classified as:
+- Candidate for Review
+- Further Data Required
+- Not Currently Suitable
+- Not Assessed
+
+SHEET 6 — DATA QUALITY AND LIMITATIONS
+
+Include:
+- Unmapped UNSPSC categories
+- Missing identifiers
+- Incompatible UOM/currency
+- Insufficient purchasing history
+- Missing supplier information
+- Other limitations affecting assessment
+
+Do not include hypothetical auction savings or unverified supplier information.
+
+------------------------------------------
+C3. EXCEL QUALITY REQUIREMENTS
+------------------------------------------
+
+- Include all relevant records, not just visible rows, the first page, or top categories.
+- Use readable column widths and clear headers.
+- Freeze header rows.
+- Enable Excel filters.
+- Apply suitable number formats for currency, quantities, prices, and percentages.
+- Include customer/assessment identity, generation date, and analysis period.
+- Distinguish zero, blank, unavailable, unclassified, and not applicable values.
+- Never replace missing data with fabricated values.
+- Preserve source row references and auditability.
+- Prevent duplicate counting when reconciling category, material, and transaction sheets.
+- Ensure exported data reflects the selected assessment.
+- Generate workbooks using the same canonical calculation results used by the UI.
+- Validate that each workbook opens successfully.
+- Verify that exported totals reconcile with the UI and backend.
+
+For Lever 1, distinguish Eligible Spend from Actual Purchase Cost if the established engine reports them as different metrics. Do not silently substitute one for the other.
+
+For both levers, do not treat total spend, candidate spend, or historical lost opportunity as achieved savings.
+
+==================================================
+PART D — ENGINEERING AND ACCEPTANCE TESTS
+==================================================
+
+1. Inspect existing code and data contracts before changing anything.
+2. Reuse the existing Module 2 architecture.
+3. Preserve established Lever 1 calculation methodology, exclusions, deduplication, and auditability.
+4. Use canonical source data and applicable eligibility rules consistently.
+5. Keep Levers 3–10 as Planned / Not Implemented.
+6. Do not modify Modules 1, 3, or 4.
+7. Add tests for:
+   - UNSPSC category aggregation
+   - Unmapped categories
+   - Missing material identifiers
+   - Duplicate handling
+   - UOM and currency comparability
+   - Category-to-material reconciliation
+   - Material-to-transaction reconciliation
+   - Financial-year calculations
+   - Supplier counts and identity reliability
+   - Lever 2 candidate classifications
+   - Exclusion traceability
+   - Excel sheet completeness
+   - Excel exported totals
+8. Run relevant backend tests, frontend tests, type checks, and lint checks.
+9. Launch the application and verify the actual browser UI at:
+   http://localhost:3001
+10. Verify ABC Textile and PQR Cement using their actual selected datasets.
+11. Confirm Lever 1 category totals reconcile with the approved underlying results.
+12. Confirm Lever 2 category and material classifications are evidence-based.
+13. Test filters, sorting, pagination, and category/material drill-downs.
+14. Test the Download Excel action for both levers and both customer assessments.
+15. Open and inspect all four downloaded workbooks.
+16. Verify that all eligible transactions are present in the relevant evidence sheets.
+17. Verify that exclusions are recorded with reasons.
+18. Recalculate exported totals and reconcile them with the UI and backend.
+19. Capture screenshots showing:
+    - Lever 1 category-wise analysis
+    - Lever 1 material drill-down
+    - Lever 2 category-wise candidate analysis
+    - Lever 2 material drill-down
+    - Excel download controls
+20. Report actual record counts, totals, reconciliation results, test results, and any unresolved discrepancies.
+
+Do not claim browser verification based only on code inspection, type checks, or automated unit tests.
+
+Do not claim Excel export validation unless the workbooks have actually been generated, opened, and checked.
+
+If a reconciliation fails, investigate and report it instead of forcing the figures to match.
+
+==================================================
+FINAL DELIVERABLE
+==================================================
+
+Complete the scoped implementation and provide:
+
+1. Summary of UI changes.
+2. Summary of Lever 2 candidate-identification logic.
+3. Files changed.
+4. Actual results for ABC Textile and PQR Cement.
+5. Lever 1 UNSPSC category reconciliation results.
+6. Lever 2 category/material candidate counts and classifications.
+7. Download links or working UI controls for all four Excel workbooks.
+8. Actual exported record counts and reconciliation results.
+9. Backend/frontend test results.
+10. Browser verification screenshots.
+11. Known limitations and unresolved issues.
+
+STOP after completing this scope.
+
+Do not implement Levers 3–10.
+Do not modify Modules 1, 3, or 4.
+Do not modify the desktop installer.
+Do not introduce hypothetical or fabricated savings.
+Do not report completion of any check that has not actually been performed.
+
+---
+
+## Prompt 424
+resume
+
+---
+
+## Prompt 425
+Continue from the prompt recorded in prompts.md.
+
+IMPORTANT: Do not just record or summarise the prompt. Execute the implementation.
+
+PHASE 1 — QUALITY CHECKS
+1. Finish the currently running npm run quality:fast.
+2. Review the complete output and fix any failures caused by the current changes.
+3. Rerun the check and report the actual result.
+4. Do not stop after quality checks. Proceed with implementation once the existing codebase is in a safe state.
+
+PHASE 2 — IMPLEMENT THE APPROVED REQUIREMENTS
+
+A. LEVER 1 — DIRECT PRICE IMPROVEMENT
+- Simplify the analysis screen to show UNSPSC category-wise spend by default.
+- Show eligible spend, actual purchase cost, benchmark cost, historical lost opportunity, material count, transaction count, and data-quality status.
+- Provide category → material → transaction drill-down.
+- Preserve the approved annual-low calculation methodology, financial-year boundaries, exclusions, and deduplication logic.
+- Ensure category totals reconcile with material and transaction details.
+
+B. LEVER 2 — E-AUCTION / DYNAMIC BIDDING
+- Implement evidence-based candidate identification using actual SAP purchase history.
+- Show the category-wise analysis by default, followed by material and transaction drill-down.
+- Assess purchase frequency, addressable spend, PO count, supplier count, price variation, standardisation, cross-plant demand, and data quality where the source supports them.
+- Classify each category/material as Candidate for Review, Further Data Required, Not Currently Suitable, or Not Assessed.
+- Explain the evidence and limitations behind each classification.
+
+C. LEVER 2 — MINIMUM, EXPECTED, AND MAXIMUM SAVINGS
+For each eligible category/material, calculate:
+
+Minimum Estimated Savings = Addressable Spend × Minimum Savings Rate
+
+Expected Estimated Savings = Addressable Spend × Expected Savings Rate
+
+Maximum Estimated Savings = Addressable Spend × Maximum Savings Rate
+
+Requirements:
+- Use comparable completed auction results, reliable applicable benchmarks, or explicitly approved planning assumptions.
+- Record the rate source, reference period, applicability, approval status, and confidence.
+- Ensure minimum rate ≤ expected rate ≤ maximum rate.
+- Do not assume the midpoint is an expected outcome unless explicitly labelled as a planning assumption.
+- Do not infer savings rates from historical price variation alone.
+- Do not hard-code illustrative rates into production calculations.
+- Allow authorised users to configure and approve planning assumptions.
+- If no defensible rate is available, show the addressable spend and mark the savings range "Not Yet Quantifiable".
+- Label estimates clearly. They are not guaranteed savings.
+- Keep estimated, actual, and validated savings separate.
+- Never copy Lever 1 historical lost opportunity into Lever 2.
+- Prevent double-counting across categories, materials, and levers.
+
+D. COMPLETE EXCEL EXPORTS
+Add a working Download Excel action to both lever analysis screens.
+
+Generate four workbooks using actual selected assessments:
+1. Lever 1 — ABC Textile
+2. Lever 1 — PQR Cement
+3. Lever 2 — ABC Textile
+4. Lever 2 — PQR Cement
+
+Lever 1 workbook must include:
+- Executive Summary
+- UNSPSC Category Summary
+- Material-Level Analysis
+- Transaction-Level Evidence
+- Excluded Transactions
+- Data Quality and UNSPSC Mapping
+- Financial-Year Analysis
+
+Lever 2 workbook must include:
+- Executive Summary
+- UNSPSC Category Analysis
+- Material-Level Candidate Analysis
+- Transaction-Level Purchase History
+- Candidate and Non-Candidate Decisions
+- Data Quality and Limitations
+
+Include all relevant records, source references, exclusion reasons, calculation details, assumptions, and reconciliation checks. Use readable formatting, filters, frozen headers, and appropriate number formats.
+
+Generate exports from the same canonical results used by the UI. Do not create a separate calculation engine or hard-code customer results.
+
+PHASE 3 — TEST AND VERIFY
+
+1. Run relevant backend and frontend tests, type checks, and lint checks.
+2. Verify ABC Textile and PQR Cement using their actual datasets.
+3. Test filters, sorting, pagination, category drill-down, material drill-down, and Excel downloads.
+4. Open all four workbooks and verify their contents.
+5. Recalculate and reconcile exported totals against the UI and backend.
+6. Verify Lever 1 category totals against its approved underlying results.
+7. Verify that Lever 2 estimates use the recorded rates and correct addressable spend.
+8. Confirm that no savings are fabricated or double-counted.
+9. Launch the application and verify the actual browser UI at http://localhost:3001.
+10. Capture screenshots of both lever screens, their drill-downs, and the Excel download controls.
+
+STRICT SCOPE
+- Module 2 only.
+- Do not modify Module 1, Module 3 (PCBI), Module 4, or the desktop installer.
+- Do not implement Levers 3–10.
+- Preserve the existing ten-lever overview.
+- Do not change the approved Lever 1 methodology.
+- Do not claim any test, browser check, Excel export, or reconciliation passed unless it was actually performed.
+
+FINAL REPORT
+Provide:
+- Files changed
+- Actual quality-check and test results
+- ABC Textile and PQR Cement results
+- Lever 1 reconciliation
+- Lever 2 candidate counts and savings ranges
+- Sources and assumptions used for each savings range
+- Download links or working UI controls for all four Excel workbooks
+- Excel record counts and reconciliation results
+- Browser screenshots
+- Unresolved issues and limitations
+
+Do not stop after editing prompts.md or completing the initial quality checks. Implement, test, and verify the approved requirements before reporting completion.
+
+---
+
+## Prompt 426
+Perform a final validation audit of the completed Module 2 implementation.
+Do not rebuild the modules or introduce unrelated changes.
+
+1. SAVINGS RANGE VALIDATION — LEVER 2
+
+Verify the minimum, expected, and maximum savings calculations for ABC Textile and PQR Cement.
+
+For every savings rate used:
+- Identify the actual source document or dataset.
+- Verify that the source exists and contains the claimed evidence.
+- Verify its period, category applicability, and methodology.
+- Identify whether the rate is empirically supported or an approved planning assumption.
+- Confirm that the source and approval status are recorded in the UI and Excel exports.
+
+Do not treat a source name in code or a report as proof that the source exists.
+
+If a rate cannot be substantiated, classify it as an unverified planning assumption. Do not present it as a validated industry benchmark.
+
+Verify:
+Minimum Savings <= Expected Savings <= Maximum Savings.
+
+Recalculate the amounts independently from the addressable spend and the applicable rates. Confirm that category totals reconcile to the material-level totals without double-counting.
+
+If no defensible rate is available, display "Not Yet Quantifiable". Do not invent a rate.
+
+2. LEVER 1 RECONCILIATION
+
+Investigate the difference between the previously reported ABC Textile Actual Purchase Cost of ₹311.2831 Cr and the latest reported ₹311.9566 Cr.
+
+Trace the difference to the source transactions, eligibility rules, duplicate handling, or calculation changes.
+
+Also verify PQR Cement's results.
+
+Confirm that:
+- Actual Purchase Cost
+- Benchmark Cost
+- Historical Lost Opportunity
+- Category totals
+- Material totals
+- Transaction-level totals
+
+reconcile using the approved annual-low methodology.
+
+Do not change the approved methodology merely to force agreement. Explain any legitimate differences between report versions.
+
+3. EXCEL VALIDATION
+
+Open all four generated workbooks and verify:
+- Correct customer and assessment ID.
+- Complete relevant data and supporting transaction references.
+- Savings rates, assumptions, and source evidence.
+- Correct minimum, expected, and maximum calculations.
+- Reconciliation between Excel, backend, and UI.
+- No duplicate counting.
+
+4. BROWSER VALIDATION
+
+Verify the actual running application at http://localhost:3001.
+
+Confirm that:
+- Lever 1 defaults to UNSPSC category-wise analysis.
+- Lever 2 displays category-wise candidates and the savings range.
+- Material and transaction drill-downs work.
+- Planning assumptions are clearly labelled.
+- Download Excel actions work.
+
+5. FINAL REPORT
+
+Provide:
+- The reconciled Lever 1 results for both customers.
+- The validated Lever 2 savings ranges for both customers.
+- Evidence and approval status for each savings rate.
+- Any unresolved discrepancies.
+- Actual test and browser verification results.
+
+Do not modify Modules 1, 3, or 4, the desktop installer, or Levers 3–10.
+
+Do not claim a check passed unless it was actually performed.
+
+---
+
+## Prompt 427
+Final acceptance review — Module 2 only.
+
+The latest audit reports that Lever 1 and Lever 2 are implemented and reconciled.
+
+Do not rebuild anything or modify unrelated modules.
+
+1. Confirm whether the Lever 2 planning rates (minimum 2%, expected 3.5%, maximum 5% for the general industrial profile, with other category profiles as configured) were explicitly approved by management. Do not infer approval from a hard-coded APPROVED status.
+
+2. If approval has not been explicitly provided, change the status to "Proposed Planning Assumption — Approval Required". Keep the savings range visible but clearly label it provisional and editable by an authorised user.
+
+3. Confirm that the ₹218.2408 Cr ABC Textile and ₹102.3835 Cr PQR Cement addressable spends include only eligible, non-overlapping candidate materials. Explain the eligibility calculation and exclusions.
+
+4. Confirm that category-specific rates are selected correctly for every material and that category totals reconcile to material totals. Flag any materials assigned to a generic profile without sufficient justification.
+
+5. Confirm that the four Excel workbooks contain the same figures, assumptions, approval status, and disclosures as the UI.
+
+6. Preserve Lever 1's reconciled values and the existing calculation methodology. Do not modify Modules 1, 3, or 4, the desktop installer, or Levers 3–10.
+
+Return a concise report of findings, any corrections made, and unresolved issues. Do not claim approval or validation without evidence.
+
+---
+
+## Prompt 428
+IMPLEMENTATION TASK: MODULE 2 — LEVER 3: VENDOR BASE CONSOLIDATION
+
+OBJECTIVE
+Implement Lever 3 in the existing Procucev procurement analytics application.
+
+This lever must identify supplier consolidation opportunities at:
+1. Same-material level.
+2. Comparable-material level.
+3. UNSPSC category level, including different materials within the same category.
+4. Cross-plant level, wherever plant information is available.
+
+IMPORTANT SCOPE RESTRICTIONS
+- Modify Lever 3 only.
+- Do not redesign or modify Module 1.
+- Do not modify Module 3 (PCBI) or Module 4.
+- Do not modify Lever 1 or Lever 2 calculations, UI, or exports.
+- Do not implement Levers 4–10.
+- Do not modify the desktop installer.
+- Preserve the existing application architecture and design system.
+- Inspect existing code before making changes. Reuse existing data models, APIs, and components wherever appropriate.
+- Do not create duplicate engines or parallel calculation logic.
+- Do not replace working functionality with mock data.
+
+STEP 1: DATA AND ELIGIBILITY
+
+Use actual uploaded SAP procurement transaction data.
+
+Identify and use the available fields for:
+- Material ID and material description.
+- UNSPSC commodity, class, and category.
+- Supplier/vendor ID and name.
+- Quantity and UOM.
+- Unit price and currency.
+- Purchase order and transaction date.
+- Plant, where available.
+- Net purchase value or spend.
+- Relevant material-group information, where available.
+
+Use verified UNSPSC classification for category-level analysis. Do not assign unclassified materials to an arbitrary category.
+
+Validate missing supplier IDs, material IDs, quantities, prices, currencies, and UOMs.
+
+Do not compare prices across incompatible UOMs or currencies unless a documented, valid normalization method exists.
+
+Do not assume different materials are interchangeable merely because they belong to the same category.
+
+STEP 2: IDENTIFY CONSOLIDATION OPPORTUNITIES
+
+A. SAME-MATERIAL CONSOLIDATION
+Identify materials purchased from multiple suppliers.
+
+Show supplier count, supplier-wise quantities and spend, unit prices where comparable, plant coverage, and purchase history.
+
+B. COMPARABLE-MATERIAL CONSOLIDATION
+Identify potential consolidation opportunities involving comparable materials only when the available data supports the relationship.
+
+If technical equivalence is not established, label the relationship "Potential Comparable — Validation Required".
+
+Never automatically merge material identities or assume technical interchangeability.
+
+C. CATEGORY-LEVEL CONSOLIDATION
+This is a mandatory requirement.
+
+For each UNSPSC category, analyse all suppliers serving that category, even when they supply different materials.
+
+Calculate:
+- Number of distinct suppliers.
+- Number of distinct materials.
+- Total category spend.
+- Supplier-wise category spend and percentage share.
+- Number of plants served, if available.
+- Supplier spend concentration.
+- Spend fragmentation.
+- Materials supplied by each supplier.
+- Materials sourced from multiple suppliers.
+- Potential category-wide sourcing or negotiation opportunities.
+
+A supplier may contribute to the category through multiple different materials. Aggregate category spend correctly without double-counting transactions.
+
+Do not assume that all suppliers within a category can replace one another.
+
+D. CROSS-PLANT OPPORTUNITIES
+Where plant data exists, identify materials or categories purchased across plants from different suppliers.
+
+Show the potential for coordinated sourcing, enterprise-wide negotiations, or supplier rationalisation.
+
+Do not assume that plant requirements, specifications, delivery constraints, or supplier approvals are identical.
+
+E. SUPPLIER FRAGMENTATION
+Assess supplier count relative to category spend, material coverage, purchasing frequency, and available sourcing evidence.
+
+Do not flag a category solely because it has a high number of suppliers.
+
+Identify possible consolidation opportunities where the data indicates fragmentation that merits review.
+
+F. PRICE VARIATION
+Compare prices only for identical materials or properly validated comparable materials.
+
+Show the observed price range and relevant transaction details.
+
+Price variation is an investigation signal, not proof of avoidable cost or achievable savings.
+
+STEP 3: OPPORTUNITY CLASSIFICATION
+
+Assign each record an appropriate status:
+- Opportunity Identified.
+- Potential Opportunity — Further Validation Required.
+- Insufficient Data.
+- No Clear Opportunity Identified.
+
+For every identified opportunity, explain the reason it was flagged.
+
+Do not automatically recommend eliminating suppliers based on low spend or low transaction volume.
+
+Purchase history alone does not establish supplier capacity, quality approval, contractual suitability, willingness to supply additional volumes, or operational feasibility.
+
+STEP 4: FINANCIAL MEASUREMENT
+
+Keep the following concepts separate:
+
+1. Addressable Spend:
+   Actual historical spend associated with the identified consolidation opportunity, using a documented and non-overlapping calculation.
+
+2. Estimated Savings:
+   Calculate only when a defensible pricing basis or explicitly approved planning assumption is available.
+
+3. Actual Savings:
+   Calculate after the sourcing activity has occurred and the resulting commercial outcome is supported by actual transaction or purchase-order evidence.
+
+4. Validated Savings:
+   Savings confirmed through the client's validation process.
+
+Do not apply arbitrary savings percentages.
+
+Do not treat the entire category spend as savings.
+
+Do not derive savings solely from supplier count, spend fragmentation, or observed price dispersion.
+
+If no defensible savings basis exists, display addressable spend and mark savings as "Not Yet Quantifiable".
+
+Do not reuse Lever 1 historical lost opportunity or Lever 2 estimated savings as Lever 3 savings.
+
+Ensure that opportunities across materials, suppliers, plants, and categories are not double-counted in any consolidated financial total.
+
+STEP 5: USER INTERFACE
+
+Implement a working Lever 3 screen within the existing Module 2 interface.
+
+The default view must be category-wise.
+
+Provide drill-down in this sequence:
+
+UNSPSC Category
+    → Supplier Analysis
+        → Material Analysis
+            → Purchase Transactions
+
+Display:
+- Category name and UNSPSC code.
+- Total category spend.
+- Supplier count.
+- Material count.
+- Plant count, if available.
+- Supplier-wise spend and share.
+- Supplier concentration and fragmentation indicators.
+- Same-material consolidation opportunities.
+- Potential comparable-material opportunities.
+- Category-level consolidation opportunities.
+- Cross-plant opportunities.
+- Price variation where valid.
+- Opportunity status and reason.
+- Data-quality warnings and outstanding validations.
+- Addressable spend.
+- Estimated, actual, and validated savings as separate measures.
+
+All displayed figures must be calculated from the actual assessment data.
+
+Ensure that users can navigate back from each drill-down level without losing the selected assessment or filters.
+
+STEP 6: EXCEL EXPORT
+
+Provide a functioning Excel export for Lever 3.
+
+Include appropriate worksheets for:
+1. Executive Summary.
+2. UNSPSC Category Analysis.
+3. Supplier-wise Analysis.
+4. Material-level Opportunities.
+5. Cross-Plant Analysis, where plant data is available.
+6. Supporting Purchase Transactions.
+7. Data Quality, Exclusions, and Methodology.
+
+Use the actual calculation results and the same eligibility rules as the UI.
+
+Category totals must reconcile to their underlying eligible transactions. Supplier and material subtotals must reconcile without duplicate counting.
+
+Clearly disclose assumptions, exclusions, missing fields, and unquantified opportunities.
+
+STEP 7: TESTING AND ACCEPTANCE
+
+Do not stop after generating code or passing type checks.
+
+Run the existing relevant automated tests and add tests for Lever 3 covering:
+- Same material purchased from multiple suppliers.
+- Different materials within the same UNSPSC category.
+- Supplier appearing against multiple materials.
+- Supplier fragmentation and spend concentration.
+- Cross-plant sourcing.
+- Comparable materials requiring validation.
+- Missing supplier or material identifiers.
+- Incompatible UOMs and currencies.
+- Duplicate transactions and double-counting prevention.
+- Category-to-material-to-supplier reconciliation.
+- Financial totals and savings separation.
+- Excel export reconciliation.
+- Empty or insufficient data.
+- Persistence and correct assessment selection.
+
+Then start or use the existing local application and verify the actual Lever 3 UI in the browser.
+
+Test both ABC Textile and PQR Cement assessments if they are available in the local environment.
+
+Verify:
+- The Lever 3 screen is visible and functional.
+- Category-level supplier counts include suppliers serving different materials within the category.
+- Drill-downs show the correct underlying records.
+- UI figures reconcile with the exported workbook.
+- Existing Modules 1 and 2 Lever 1/2 behaviour remains unchanged.
+
+Do not claim browser verification unless it was actually performed.
+
+FINAL REPORT
+
+Return a concise report containing:
+1. Files and components changed.
+2. Business rules implemented.
+3. Actual UI verification performed.
+4. Test results.
+5. ABC Textile and PQR Cement results, if available.
+6. Category, supplier, and material reconciliation results.
+7. Excel export verification.
+8. Known limitations and unresolved issues.
+
+Do not proceed to Lever 4.
+Wait for review and explicit approval before starting the next lever.
+
+---
+
+## Prompt 429
+LEVER 3 — FINAL ACCEPTANCE AUDIT AND CORRECTIONS
+
+Scope: Module 2, Lever 3 — Vendor Base Consolidation only.
+
+Do not rebuild the feature or redesign the UI.
+Do not start Lever 4.
+Do not modify Lever 1, Lever 2, Modules 1, 3, or 4, or the desktop installer.
+
+1. CATEGORY-LEVEL CONSOLIDATION
+
+Using the actual ABC Textile and PQR Cement assessment data, select representative UNSPSC categories containing multiple materials supplied by different vendors.
+
+For each category, demonstrate:
+- Category name and UNSPSC code.
+- Number of distinct suppliers across all materials in the category.
+- Number of distinct materials.
+- Total category spend.
+- Supplier-wise spend and percentage share.
+- Materials supplied by each supplier.
+- Purchase transaction counts.
+- Plant coverage, where available.
+
+Confirm that category-level supplier counts include suppliers serving different materials, not just suppliers sharing an identical material.
+
+Verify category spend against the underlying transactions and show the reconciliation variance.
+
+2. COMPARABLE-MATERIAL GROUPS
+
+Inspect a sample of actual comparable-material groups from both assessments.
+
+Confirm that keyword similarity never establishes technical equivalence.
+Retain the label "Potential Comparable — Validation Required" until technical equivalence is established.
+
+Identify obvious false matches, if any, and correct only those supported by evidence.
+
+3. ADDRESSABLE SPEND AND DOUBLE COUNTING
+
+Explain the exact formula used to calculate addressable spend.
+
+Reconcile the reported ABC Textile amount of ₹385.4025 Cr and PQR Cement amount of ₹147.7511 Cr to eligible source transactions.
+
+Demonstrate how same-material, comparable-material, category-level and cross-plant views avoid duplicate counting.
+
+Distinguish the total spend reviewed from unique addressable spend. Do not add overlapping opportunity-view totals together.
+
+If the existing calculation is incorrect, correct it and document the before-and-after values.
+
+4. SAVINGS GOVERNANCE
+
+Keep estimated savings as "Not Yet Quantifiable" unless a defensible, approved calculation basis exists.
+
+Keep actual savings and validated savings separate.
+Do not apply arbitrary percentages.
+Do not reuse Lever 1 or Lever 2 savings.
+
+5. EXCEL AND LIVE UI VERIFICATION
+
+Open the actual Lever 3 UI in the browser.
+Verify category-level supplier counts and drill-downs for both assessments.
+
+Download and open the generated Excel workbooks.
+Reconcile the category and supplier totals to the UI and source transactions.
+
+Do not report a browser or workbook check as passed unless it was actually completed.
+
+6. REGRESSION AND SCOPE
+
+Run the relevant Lever 3 tests, typecheck and lint.
+
+Confirm that no unrelated modules or levers were modified.
+
+FINAL RESPONSE
+
+Provide:
+- Actual category-level reconciliation examples for both assessments.
+- Addressable-spend calculation and variance.
+- Any false comparable-material matches discovered.
+- UI and Excel verification results.
+- Test results and unresolved issues.
+
+Do not start Lever 4. Wait for explicit approval.
+
+---
+
+## Prompt 430
+LEVER 3 — FINAL CATEGORY-LEVEL CONSOLIDATION CORRECTION
+
+The Lever 3 implementation and targeted tests are reported as passing.
+Do not rebuild the feature.
+
+Modify Lever 3 only. Do not change Levers 1 or 2, Modules 1, 3 or 4, Levers 4–10, or the desktop installer.
+
+1. CATEGORY CLASSIFICATION
+
+The latest audit shows ABC Textile's P01 category and PQR Cement's ELECTRICAL category using UNSPSC code 00000000 because mapping is unavailable.
+
+Do not describe these as verified UNSPSC categories.
+
+Preserve the original source spend-category label and distinguish:
+- Verified UNSPSC category.
+- Source spend category.
+- Unclassified or unmapped category.
+
+Use verified UNSPSC categories wherever the data supports them.
+
+Where mapping is unavailable, continue source-category-level analysis, but clearly label it as such. Do not invent UNSPSC codes or mappings.
+
+2. CATEGORY-LEVEL CONSOLIDATION OPPORTUNITIES
+
+Our agreed business requirement includes consolidation opportunities where different materials belong to the same category and are purchased from different suppliers.
+
+Review the current logic, which defines addressable spend using materials purchased from two or more suppliers.
+
+Retain this as a distinct measure:
+"Same-Material Multi-Sourcing Spend".
+
+Add or expose a separate category-level opportunity measure where category fragmentation or a shared supplier base creates a sourcing opportunity across different materials.
+
+For example, where several suppliers serve different materials in the same category, identify opportunities for coordinated category sourcing or commercial negotiation.
+
+Do not automatically treat all category spend as addressable savings.
+Do not assume different materials are interchangeable.
+Do not add overlapping same-material, category, comparable-material, and cross-plant views together.
+
+Clearly distinguish:
+- Total Category Spend.
+- Same-Material Multi-Sourcing Spend.
+- Category-Level Consolidation Candidate Spend.
+- Estimated Savings.
+- Actual Savings.
+- Validated Savings.
+
+If category-level candidate spend cannot be calculated without overlap or unsupported assumptions, show the opportunity count and mark the spend as "Not Yet Quantifiable" rather than inventing a value.
+
+3. RECONCILIATION
+
+For ABC Textile and PQR Cement, demonstrate:
+- Category spend reconciles to eligible source transactions.
+- Supplier spend reconciles to category spend.
+- Same-material multi-sourcing spend reconciles to unique qualifying transactions.
+- Category-level opportunity spend is calculated separately and does not duplicate same-material spend in consolidated totals.
+
+Preserve the existing reported figures unless a verified calculation error is found. Document any correction.
+
+4. EXCEL AND UI
+
+Display the classification status and the separate financial measures in the Lever 3 UI and Excel export.
+
+Ensure that source spend categories are not presented as verified UNSPSC categories when their code is 00000000.
+
+The current workbook contains 100 sample transactions. Confirm whether the export is intentionally a sample or a complete transaction audit trail. If it is only a sample, provide a clearly labelled sample and a separate complete transaction export, or explain the supported export limitation. Do not describe a sample as the full transaction history.
+
+5. VALIDATION
+
+Run relevant Lever 3 tests, typecheck, and lint.
+Verify the actual UI and generated workbook for both assessments.
+
+Do not modify unrelated functionality.
+Do not start Lever 4.
+
+Return a concise report of changes, category-level calculations, reconciliation results, and any remaining limitations. Do not claim a check passed unless it was executed.
+
+\
+
+---
+
+## Prompt 431
+TASK: LEVER 3 — COMPREHENSIVE QUALITY IMPROVEMENT
+Module 2: Vendor Base Consolidation
+
+The current Lever 3 output is not acceptable for production consulting use.
+Do not rebuild the module from scratch. Audit and improve the existing
+implementation comprehensively, using the live UI and actual assessment data.
+
+STRICT SCOPE:
+- Modify Module 2, Lever 3 only.
+- Do not modify Module 1, PCBI/Module 3, Module 4, Lever 1, Lever 2,
+  or Levers 4–10.
+- Do not modify the desktop installer.
+- Do not invent material classifications, supplier capabilities, prices,
+  savings, or commercial outcomes.
+- Preserve existing assessment data and working functionality.
+
+PRIORITY 1 — 100% MATERIAL CLASSIFICATION COVERAGE
+
+I do not want materials left unclassified simply because their source
+SAP material groups are P01, RF02, P11, DTYALI, KMAN20, ELECTRICAL,
+STORES, or similar client-specific codes.
+
+Implement a proper material-level UNSPSC classification workflow.
+
+1. Use the official UNSPSC hierarchy and version-controlled taxonomy.
+   Map materials at the most specific level justified by their descriptions
+   and available attributes.
+
+2. Classify using available evidence:
+   material description, manufacturer part number, material specifications,
+   material type, existing client classifications, source category,
+   and other available transaction attributes.
+
+3. Apply a deterministic classification hierarchy:
+   - Verified exact identifier or approved mapping
+   - Strong evidence-based material-description mapping
+   - Contextual classification supported by material attributes
+   - Manual review when evidence is insufficient
+
+4. Never assign a code merely because it is the closest text match.
+   Never classify an entire source category as one UNSPSC category unless
+   every material within it is genuinely covered by that mapping.
+
+5. Implement a persistent mapping register containing:
+   source material ID, source description, source category, assigned UNSPSC
+   code and description, taxonomy version, mapping method, confidence,
+   evidence, review status, and mapping date.
+
+6. Reuse approved mappings consistently across assessments where the
+   underlying material identity is demonstrably the same. Do not assume
+   two materials are identical merely because their descriptions resemble
+   each other.
+
+7. Provide an exception queue for materials requiring review. Allow an
+   authorized user to approve or correct a mapping, with audit history.
+
+8. Report classification coverage by both distinct material count and spend:
+   verified/approved, provisionally mapped, and awaiting review.
+   Show the percentage of total materials and spend covered by each status.
+
+IMPORTANT:
+Achieve 100% classification WORKFLOW COVERAGE: every material must have
+a classification result or an explicit review status. Do not falsely claim
+100% verified UNSPSC mapping when the evidence does not support it.
+Unresolved records must be visible and actionable, never silently hidden
+under 00000000 or an invented code.
+
+PRIORITY 2 — REBUILD CATEGORY ANALYSIS AROUND VERIFIED CLASSIFICATION
+
+The current screen presents source groups such as RF02 and P11 as categories.
+This is insufficient for strategic sourcing analysis.
+
+1. Make verified UNSPSC category the primary category-analysis view
+   wherever a defensible mapping exists.
+
+2. Retain client SAP material group/source category as a separate dimension.
+   Users must be able to switch between:
+   - UNSPSC hierarchy
+   - Client source material group
+   - Plant
+   - Supplier
+   - Material
+
+3. Provide hierarchical drill-down:
+   UNSPSC Segment → Family → Class → Commodity → Material →
+   Supplier → Purchase Transactions.
+
+4. Where UNSPSC mapping is pending, show a separate mapping-review section.
+   Do not mix unmapped source groups with verified UNSPSC categories.
+
+5. Ensure category totals, supplier totals, material totals, and transaction
+   totals reconcile to the eligible assessment data. Explain exclusions.
+
+PRIORITY 3 — IMPROVE VENDOR CONSOLIDATION ANALYSIS
+
+For every category, evaluate and clearly separate:
+
+A. Same-material multi-sourcing:
+   Identical, sufficiently verified material purchased from multiple suppliers.
+
+B. Category-level supplier fragmentation:
+   Multiple suppliers serving different materials within the same verified
+   category. This is a review signal, not proof that suppliers or materials
+   can be consolidated.
+
+C. Potential comparable materials:
+   Possible overlap requiring technical/specification validation.
+   Never treat text similarity as proof of equivalence.
+
+D. Cross-plant consolidation:
+   Common materials or categories purchased across plants, where plant data
+   is available.
+
+For each view, show:
+- Total eligible category spend
+- Supplier count and spend share
+- Material count
+- Plant count
+- Same-material multi-sourcing spend
+- Candidate count and explicit qualification criteria
+- Data quality and classification status
+- Recommended next investigation/action
+- Estimated savings status
+- Actual savings and commercially validated savings separately
+
+Do not add overlapping analytical views together.
+Do not label entire category spend as addressable savings.
+Do not infer supplier capacity, quality approval, contractual suitability,
+or willingness to supply additional volumes from historical POs.
+
+PRIORITY 4 — MAKE OPPORTUNITIES ACTIONABLE
+
+Replace generic “Opportunity Identified” labels with precise statuses:
+- Candidate for Review
+- Technical Validation Required
+- Supplier/Commercial Validation Required
+- Further Data Required
+- Not Currently Suitable
+- Validated for Sourcing Action
+
+Use the final status only when the required evidence exists.
+
+Each candidate must display why it was identified and what must happen next.
+Provide filters for status, spend, supplier count, plant count, classification
+confidence, and mapping-review requirement.
+
+Estimated savings must remain “Not Yet Quantifiable” unless a defensible
+basis and approval exist. Actual and validated savings must remain zero until
+supported by actual execution and validation evidence.
+
+PRIORITY 5 — IMPROVE UI AND EXCEL
+
+The current table is difficult to interpret, and key labels and numbers
+appear cramped or split across lines.
+
+Improve:
+- Column widths, typography, alignment, currency formatting, and spacing.
+- Long descriptions and category labels.
+- Category classification badges and mapping confidence.
+- Readable KPI cards and clear metric definitions.
+- Search, filtering, sorting, drill-down, and breadcrumbs.
+- Clear explanations of what each spend measure means.
+- Separate indicators for verified mapping and pending review.
+
+Excel must contain:
+1. Executive Summary
+2. UNSPSC Category Analysis
+3. Source Material Group Analysis
+4. Supplier Analysis
+5. Material-Level Opportunities
+6. Cross-Plant Analysis
+7. Mapping Exceptions and Review Queue
+8. Complete Purchase Transaction Audit Trail
+9. Data Quality and Methodology
+
+The transaction audit trail must include all eligible source transactions,
+not just a 100-row sample. If the export has a technical size limit, provide
+a clearly labelled complete multi-part export and verify that all parts
+reconcile to the source. Do not claim a complete export exists without
+testing it.
+
+PRIORITY 6 — ACCEPTANCE TESTING
+
+Test both:
+- ABC Textile — AIC-2026-0002
+- PQR Cement — AIC-2026-0003
+
+Required evidence:
+1. Material count and spend by classification status.
+2. Examples of approved UNSPSC mappings with supporting evidence.
+3. Mapping exceptions with explicit reasons.
+4. Category, supplier, material, and transaction reconciliation.
+5. Proof that overlapping opportunities are not double-counted.
+6. Proof that the complete transaction export contains all required records.
+7. Backend tests, frontend tests, typecheck, and lint.
+8. Open http://localhost:3001 and inspect the actual rendered Lever 3 UI
+   for both assessments.
+9. Confirm the classification and analysis are correct in the downloaded
+   Excel workbooks.
+
+Do not report success based only on code changes, passing tests, or API
+responses. Verify the actual UI and exported workbooks.
+
+Before making broad changes, inspect the existing taxonomy, material fields,
+mapping utilities, and source data. Reuse existing infrastructure where
+appropriate. Do not fabricate missing attributes or silently change
+assessment totals.
+
+At completion, provide:
+- Files changed
+- Classification coverage before and after, by material count and spend
+- Verified mappings versus provisional mappings and exceptions
+- Reconciliation results for both assessments
+- Complete transaction-export record counts and spend reconciliation
+- Actual UI verification results
+- Test results
+- Any remaining limitations
+
+Do not start Lever 4. Stop after Lever 3 validation.
+## Prompt 432
+LEVER 3 — FINAL CLASSIFICATION AND DATA-INTEGRITY CORRECTION
+
+Do not rebuild Lever 3. Do not start Lever 4. Preserve all other modules
+and levers.
+
+The latest report shows that 82.8% of ABC Textile materials and 86.8%
+of PQR Cement materials remain awaiting review. This is not sufficient
+classification coverage for consulting-grade category analysis.
+
+1. IMPROVE CLASSIFICATION QUALITY
+Inspect the mapping rules and actual material descriptions for both
+assessments. Prioritise high-spend materials and common industrial items.
+Improve defensible mappings using the existing official UNSPSC taxonomy,
+material descriptions, identifiers, and available specifications.
+
+Do not invent codes. Do not assign a code merely to increase the
+classification percentage.
+
+Report verified, provisional, and awaiting-review material counts and
+spend before and after the changes. Show the highest-spend unresolved
+materials and why they remain unresolved.
+
+2. VERIFY THE 16 UNSPSC CATEGORY GROUPS
+Show the actual UNSPSC codes and descriptions, the number of mapped
+materials, and spend under each category. Confirm that each code exists
+in the loaded taxonomy and that the assigned level is justified by
+the available evidence.
+
+Do not describe a category as verified if its underlying material
+assignments are provisional or awaiting review.
+
+3. CORRECT OPPORTUNITY STATUS LOGIC
+Do not use “Validated for Sourcing Action” merely because an item has
+multiple suppliers or a verified UNSPSC code.
+
+Use that status only when the required technical, supplier, contractual,
+and operational validations are actually documented. Otherwise retain
+the appropriate review or validation-required status.
+
+4. RECONCILE SOURCE TRANSACTION COUNTS
+The latest report gives 23,573 ABC Textile transactions and 19,673
+PQR Cement transactions. Earlier reports gave 23,570 and 19,670.
+
+Identify the exact three additional records per assessment. Determine
+whether they are legitimate source transactions, duplicates, or records
+excluded by the canonical processing rules.
+
+Show source row count, eligible transaction count, exclusions, and
+spend reconciliation separately. Do not silently change the baseline.
+
+5. VERIFY THE EXCEL EXPORT
+Download both assessment workbooks and report actual computed values for:
+- Executive Summary spend
+- UNSPSC category spend
+- Source material group spend
+- Full transaction audit trail spend
+- Transaction record counts, excluding headers and notices
+
+Explain any expected differences caused by exclusions or category
+aggregation. Confirm that overlapping analytical views are not added
+together as savings.
+
+6. LIVE ACCEPTANCE
+Open the actual Lever 3 UI at http://localhost:3001 for both assessments.
+Verify classification coverage, category drill-down, mapping exceptions,
+opportunity statuses, and readable table layout.
+
+Run the relevant backend and frontend tests, typecheck, and lint.
+
+Return the actual evidence and remaining limitations. Do not claim
+production readiness based only on passing tests or 100% workflow coverage.
+Do not modify Modules 1, 3, or 4, Levers 1–2, Levers 4–10, or the installer.
+
+---
+
+
+---
+
+## Prompt 433
+PROMPT 433 — LEVER 3 FINAL CLASSIFICATION AUDIT
+
+The previous correction has improved classification coverage and
+resolved the transaction-count discrepancy. Do not rebuild Lever 3.
+
+Before acceptance, perform a final accuracy audit of the classification
+results for ABC Textile and PQR Cement.
+
+1. VERIFIED-MATERIAL AUDIT
+Select the 50 highest-spend materials marked VERIFIED from each
+assessment. Show material code, original description, assigned UNSPSC
+code, official taxonomy description, evidence used, and spend.
+
+Check whether the evidence genuinely supports the assigned code.
+A broad keyword match or client source-group match alone must not
+qualify as verified.
+
+Correct unsupported mappings and report the resulting coverage.
+
+2. TERMINOLOGY
+Clearly distinguish:
+- Taxonomy verified
+- Provisional classification
+- Awaiting review
+- Client-approved mapping
+
+Do not use “Approved Spend” when the underlying evidence establishes
+only taxonomy verification. Do not imply client approval without
+documented client sign-off.
+
+3. CATEGORY RECONCILIATION
+For all 16 displayed UNSPSC groups, report:
+- Code and official description
+- Classification level
+- Verified, provisional, and awaiting-review material counts
+- Spend by classification status
+- Total category spend
+
+Confirm that categories are not presented as fully verified when
+their underlying material mappings are provisional or awaiting review.
+
+4. REGRESSION AND LIVE ACCEPTANCE
+Re-run the relevant Lever 3 tests, typecheck, and lint.
+Open the live UI for both assessments and confirm that the revised
+classification terminology and figures are visible.
+
+Re-download both Excel workbooks and verify that the same terminology,
+classification status, and spend totals appear in the exported files.
+
+Return the actual audit results and any remaining limitations.
+
+Do not modify Module 1, Module 3, Module 4, Levers 1–2, Levers 4–10,
+or the desktop installer. Do not start Lever 4.
+
+---
+
+## Prompt 434
+PROMPT 434 — LEVER 3 RECONCILIATION DEFECT AND EVIDENCE TRACEABILITY
+
+OBJECTIVE
+Resolve the outstanding inconsistencies in Prompt 433's Lever 3
+classification audit for ABC Textile and PQR Cement.
+
+This is a targeted correction. Do not rebuild Lever 3.
+
+ISSUE 1 — CATEGORY RECONCILIATION
+
+In the Prompt 433 report, the ABC Textile category breakdown contains
+UNSPSC code 80111600 with:
+
+- Total materials: 0
+- Verified materials: 0
+- Provisional materials: 0
+- Awaiting-review materials: 0
+- Provisional spend: ₹204.9665 Cr
+- Total category spend: ₹204.9665 Cr
+
+Investigate the actual source of this discrepancy.
+
+Trace the category row through:
+1. Source purchase transactions.
+2. Material-level classification records.
+3. Category aggregation logic.
+4. Backend API response.
+5. Frontend category table.
+6. Excel export aggregation.
+
+Determine whether this is caused by:
+- An incorrect UNSPSC assignment.
+- An incorrect category count.
+- A material-to-category join defect.
+- Spend aggregation from a different grouping.
+- A source category incorrectly displayed as an UNSPSC category.
+- Another demonstrable cause.
+
+Do not guess or simply change the displayed count.
+
+Correct the underlying cause and verify that each category's material
+counts and spend reconcile to the same underlying material population.
+
+Apply the same consistency check to PQR Cement and all categories
+included in the displayed category reconciliation.
+
+ISSUE 2 — TAXONOMY VERIFICATION EVIDENCE
+
+Inspect every material currently classified TAXONOMY_VERIFIED.
+
+For each mapping, establish what evidence is actually available.
+
+Distinguish:
+A. Exact official UNSPSC code/reference supplied in the source.
+B. Explicit technical specification present in source data.
+C. Manufacturer part number with verified mapping evidence.
+D. Standardized commodity description with sufficient specificity.
+E. General keyword or contextual inference only.
+F. External or technical evidence that is claimed but not stored or
+   traceable in the application.
+
+Do not invent supporting documents, technical specifications,
+standards, manufacturer references or client approvals.
+
+A broad description or keyword match alone must not qualify as
+TAXONOMY_VERIFIED.
+
+Where evidence is insufficient, downgrade the mapping to PROVISIONAL
+or AWAITING_REVIEW as appropriate.
+
+Preserve the original source description and record the reason for
+each status change.
+
+ISSUE 3 — CATEGORY SEMANTICS
+
+Maintain a strict distinction between:
+- Verified UNSPSC classification.
+- Provisional UNSPSC classification.
+- Source category/group.
+- Unclassified material.
+- Client-approved mapping.
+
+Never display a source group as an official UNSPSC category.
+
+A category must not be called fully verified unless every included
+material satisfies the documented verification criteria.
+
+ISSUE 4 — RECONCILIATION
+
+For each assessment, prove that:
+
+1. Material counts by classification status reconcile to the total
+   unique material population.
+2. Spend by classification status reconciles to the source spend.
+3. Category spend reconciles to the same source spend, with no
+   duplicate attribution or omitted transactions.
+4. Category material counts and category spend use the same grouping
+   and population.
+5. The complete transaction export reconciles to the original source.
+6. Rounding differences are explicitly identified.
+
+Keep the source transaction counts and baseline spend unchanged unless
+a demonstrable source-data defect is discovered. If a correction changes
+any baseline, explain and quantify the change before proceeding.
+
+ISSUE 5 — TARGETED VALIDATION
+
+Run only the relevant tests first.
+
+Then:
+- Run typecheck and lint if affected code warrants it.
+- Verify both assessment screens in the live browser.
+- Regenerate both Excel exports if the underlying results change.
+- Inspect the exported category counts, status labels and spend totals.
+
+Do not claim live UI validation unless the actual UI was opened and
+the relevant values were checked.
+
+EFFICIENCY REQUIREMENTS
+
+Do not re-read the entire repository.
+Do not repeat successful unrelated test suites.
+Do not rerun unchanged calculations without a specific reason.
+Reuse existing audit outputs where valid.
+Report the actual time spent by major stage and identify any long-running
+operation or retry.
+
+FINAL REPORT
+
+Provide:
+1. Root cause of the ₹204.9665 Cr ABC category inconsistency.
+2. Exact code/data changes made.
+3. Before-and-after figures for affected categories.
+4. Any verified mappings downgraded and why.
+5. Reconciled classification totals for both assessments.
+6. Relevant test results.
+7. Actual live UI and Excel verification results.
+8. Remaining limitations and unresolved evidence gaps.
+
+Do not modify Module 1, Module 3, Module 4, Levers 1–2 or Levers 4–10.
+Do not modify the desktop installer.
+Do not start Lever 4.
+Do not declare Lever 3 accepted unless every identified reconciliation
+defect is resolved and the relevant checks pass.
+
+---
+
+## Prompt 435
+PROMPT 435 — LEVER 3 FINAL ACCEPTANCE GATE
+Prompt 434 has addressed the uncodified transaction classification defect and reports successful reconciliation, tests, typecheck, lint, and Excel generation.
+Do not rebuild or refactor the implementation. Do not modify code unless a specific acceptance-blocking defect is demonstrated and you report it first.
+Perform only the following outstanding acceptance checks:
+1. Verify the 50 highest-spend materials marked TAXONOMY_VERIFIED in each assessment.
+ABC Textile: AIC-2026-0002.
+PQR Cement: AIC-2026-0003.
+Read the actual material mapping register and generated audit outputs.
+Verify material identity, assigned UNSPSC code, official taxonomy description, source evidence, spend, and classification status.
+Report unsupported mappings and evidence gaps.
+If fewer than 50 materials qualify, audit all qualifying materials and report the actual count. Do not promote provisional mappings to reach 50.
+2. Verify all category-level classifications.
+Reconcile every displayed category against its underlying material mapping records.
+Confirm that a category is labelled VERIFIED_UNSPSC only when all underlying materials satisfy the agreed verification criteria.
+Confirm that unmapped records remain clearly distinguished from official UNSPSC categories.
+Verify category spend and material counts against source transactions using full-precision values.
+Explain any rounding differences without altering reconciled source totals.
+3. Independently inspect the existing Excel exports.
+Open and inspect:
+artifacts/excel_exports/Prompt434_AIC-2026-0002_Vendor_Consolidation.xlsx
+artifacts/excel_exports/Prompt434_AIC-2026-0003_Vendor_Consolidation.xlsx
+Verify all nine worksheets, the complete transaction audit trail, classification terminology, material statuses, spend reconciliation, and mapping exceptions.
+Confirm that calculations use full-precision values and that display rounding does not create reconciliation errors. Do not regenerate the workbooks unless an actual defect is found.
+4. Confirm live UI acceptance.
+Open the existing local application at http://localhost:3001.
+Inspect Lever 3 for both assessments and capture evidence showing:
+Category-level supplier analysis.
+Material counts and spend by classification status.
+Correct treatment of uncodified transactions.
+Consistent classification terminology.
+No misleading approved-spend or validated-savings claims.
+Use the existing application and browser session where possible. Do not rebuild the application or repeat successful tests unnecessarily.
+5. Report the final acceptance decision.
+Return:
+Mapping audit findings for each assessment.
+Any category reconciliation discrepancies.
+Excel validation results.
+Live UI evidence and findings.
+Any defects preventing acceptance.
+Files inspected or changed.
+Tests actually executed and their results.
+Actual execution time.
+Classify the outcome as:
+A. ACCEPTED — all required evidence checks pass.
+B. CONDITIONALLY ACCEPTED — only explicitly documented non-blocking limitations remain.
+C. NOT ACCEPTED — one or more material correctness defects remain.
+Do not claim checks passed without actual evidence.
+Do not modify Module 1, Module 3, Module 4, Levers 1–2, Levers 4–10, or the desktop installer. Do not connect PCBI benchmarking or begin Lever 4.
+Make no implementation changes unless necessary to correct a demonstrated acceptance-blocking defect. Report such a defect and its proposed minimal correction before proceeding.
+
+---
+
+## Prompt 436
+# PROMPT 436 — LEVER 4 VOLUME AGGREGATION: LOGIC REVIEW AND IMPLEMENTATION PLAN
+
+## Objective
+
+Prepare a targeted implementation plan for Lever 4 — Volume Aggregation — in the existing Procucev procurement analytics application.
+
+**This prompt is strictly for investigation and planning. Do not modify code, generate new implementation files, change the UI, or execute implementation tasks.**
+
+## 1. Preserve the Existing Application
+
+The application contains four modules:
+
+* Module 1: Spend Analysis.
+* Module 2: AI Categorisation and Savings Opportunities.
+* Module 3: PCBI Benchmark Index.
+* Module 4: Savings Engine.
+
+Levers 1–3 have existing implementations. Lever 3 — Vendor Base Consolidation — has been formally accepted following Prompt 435.
+
+Preserve all accepted functionality.
+
+Do not modify:
+
+* Module 1.
+* Module 3 or its PCBI connections.
+* Module 4.
+* Levers 1–3.
+* Levers 5–10.
+* The desktop installer.
+* Public SaaS functionality.
+
+Do not start implementation until the proposed plan has been reviewed and approved.
+
+## 2. Agreed Business Principles
+
+### A. Three distinct aggregation opportunity types
+
+Identify opportunities across:
+
+1. IDENTICAL MATERIALS
+
+   * The same verified material purchased across plants, departments, suppliers or purchasing periods.
+   * Validate material identity, compatible units of measure, quantities and timing.
+
+2. TECHNICALLY COMPARABLE MATERIALS
+
+   * Different material records that may represent technically comparable items.
+   * Require appropriate technical validation before treating their quantities as aggregatable.
+   * Text similarity alone is insufficient.
+
+3. CATEGORY-LEVEL SOURCING OPPORTUNITIES
+
+   * Different materials within a procurement category that may benefit from coordinated sourcing.
+   * Keep these opportunities separate from quantities that can genuinely be combined.
+   * Do not automatically aggregate category expenditure or assume technical equivalence.
+
+Do not combine the three opportunity types into one undifferentiated quantity or savings figure.
+
+### B. Savings methodology
+
+Savings must be supported by defensible evidence, including:
+
+* Comparable commercial offers.
+* Completed sourcing results.
+* Reliable comparable external benchmarks.
+* Explicitly approved planning assumptions.
+
+Record the source, period, applicability, approval status and confidence of any savings assumption.
+
+If there is no defensible basis, display:
+
+**NOT YET QUANTIFIABLE**
+
+Do not infer savings from purchasing volume, supplier count, historical price variation or category expenditure alone.
+
+Do not count the same commercial benefit under multiple sourcing levers.
+
+### C. Sequential implementation
+
+The initial implementation should focus on:
+
+* Opportunity identification.
+* Aggregatable quantity calculations.
+* Plant and material analysis.
+* Purchase-period analysis.
+* Data-quality checks.
+* Traceability to source transactions.
+* Opportunity status and validation requirements.
+
+Commercial savings calculations must not be introduced until this first stage has been implemented and accepted.
+
+## 3. Inspect the Existing Implementation
+
+Inspect only the files necessary to understand the current architecture and identify the smallest safe implementation path.
+
+Review:
+
+* Existing Lever 4-related code, if any.
+* Module 2 routing and navigation.
+* Existing spend-analysis and transaction data structures.
+* Material mapping and classification services.
+* The accepted Lever 3 implementation and its reusable components.
+* Existing Excel export conventions.
+* Existing opportunity status and savings governance logic.
+* Relevant tests.
+
+Do not conduct an unnecessary full-codebase review.
+
+Identify which existing components can be reused without changing their established behaviour.
+
+## 4. Define the Opportunity Identification Logic
+
+Propose precise rules for identifying each of the three opportunity types.
+
+Address:
+
+* Material identity and mapping confidence.
+* Quantity aggregation and compatible units.
+* Currency and price comparability where relevant.
+* Plants, departments and suppliers.
+* Purchase frequency and assessment period.
+* Recurring versus one-time demand.
+* Timing and demand overlap.
+* Missing or unreliable data.
+* Technical validation requirements.
+* Logistics and delivery constraints.
+* Supplier capacity and commercial feasibility.
+* Duplicate or overlapping opportunities.
+* Cross-lever opportunity relationships.
+
+Distinguish facts established by source data from assumptions requiring procurement review.
+
+Do not introduce arbitrary thresholds, minimum volumes, savings percentages or new business rules without identifying them as proposals requiring approval.
+
+## 5. Define the Quantity and Spend Calculations
+
+Specify how the system should calculate:
+
+* Total historical quantity by verified material and compatible unit.
+* Quantity by plant, department and supplier.
+* Purchase frequency over the selected period.
+* Historical expenditure for eligible transactions.
+* Weighted average purchase price where comparable transactions permit calculation.
+* Potentially aggregatable quantity.
+* Quantity excluded because of incompatible units, specifications, periods or other constraints.
+
+Distinguish historical quantities from forecast demand and genuinely consolidatable demand.
+
+Do not assume that historical demand will recur or that all historical expenditure can be included in a consolidated sourcing event.
+
+Define the treatment of returns, cancellations, duplicate transactions, credit notes and invalid records using existing documented rules. Flag gaps rather than inventing new exclusion rules.
+
+All totals must reconcile to eligible source transactions without double-counting.
+
+## 6. Define Opportunity Statuses
+
+Evaluate the following proposed statuses:
+
+* Candidate Identified.
+* Further Data Required.
+* Technical Validation Required.
+* Commercial Evaluation Required.
+* Ready for Sourcing Review.
+* Approved for Execution.
+* Completed — Benefit Pending Validation.
+* Savings Validated.
+* Not Suitable.
+
+Explain the evidence and conditions required for each status.
+
+Identify which statuses can be assigned automatically and which require documented human approval.
+
+Do not implement status transitions at this stage.
+
+## 7. Propose the UI and Excel Outputs
+
+Propose a clear navigation hierarchy:
+
+Volume Aggregation → Opportunity Overview → Plant Analysis → Material Analysis → Purchase Transactions.
+
+Specify the essential KPIs, filters, tables, drill-downs and explanations needed for each screen.
+
+Propose an auditable Excel workbook structure covering:
+
+* Executive Summary.
+* Aggregation Opportunities.
+* Plant Analysis.
+* Material Analysis.
+* Supplier Analysis.
+* Purchase Transactions.
+* Validation Requirements.
+* Data Quality and Methodology.
+
+Recommend a different structure only if the existing application architecture provides a compelling reason.
+
+The transaction export must contain the complete relevant audit trail, not a sample.
+
+## 8. Define Acceptance Tests
+
+Prepare test scenarios covering:
+
+* Identical material purchased across multiple plants.
+* Incompatible units of measure.
+* Non-recurring purchase exclusion.
+* Missing specification preventing aggregation.
+* Category-level sourcing candidate without physical aggregation.
+* Unclassified material handling.
+* Complete transaction spend reconciliation.
+* Display rounding vs full-precision calculations.
+* Live UI navigation and filter behaviour.
+* Complete Excel export reconciliation.
+
+---
+
+## Prompt 437
+PROMPT 437 — LEVER 4 BUSINESS RULE CLARIFICATIONS
+
+Review the Prompt 436 implementation plan and make only the following corrections to the plan. Do not modify production code.
+
+1. TECHNICAL COMPARABILITY
+   A shared UNSPSC code or similar description identifies a review candidate only. It does not establish technical interchangeability. Require documented technical validation before combining quantities for technically comparable materials.
+
+2. PURCHASE RECURRENCE
+   Do not automatically exclude a material solely because it was purchased once or twice. Classify demand as recurring, periodic/seasonal, one-time/project, or insufficient history. Assess aggregation feasibility separately from recurrence classification. Do not introduce arbitrary volume or frequency thresholds without approval.
+
+3. RETURNS AND CREDIT NOTES
+   Net returns or credit notes only when they can be reliably linked to the relevant purchase records. Flag unmatched adjustments for review. Do not include negative quantities or spend in aggregatable quantities without an established treatment rule.
+
+4. FRAGMENTATION INDEX
+   Retain the proposed index as a descriptive indicator if useful. Do not use its proposed thresholds to automatically approve, reject or quantify an opportunity. Explain its limitations.
+
+5. CALCULATION SAFEGUARDS
+   Specify the validation of compatible units, conversion factors, currencies, transaction costs and price comparability. Separate historical expenditure, potentially aggregatable expenditure and genuinely aggregatable quantity. Never treat expenditure as savings.
+
+6. IMPLEMENTATION PHASING
+   Keep the initial delivery focused on opportunity identification, quantity aggregation, data quality, transaction traceability, UI and Excel validation. Savings estimation and negotiated volume-rebate modelling remain deferred until formal acceptance.
+
+Return the revised business rules, any remaining decisions requiring my approval, and the exact proposed implementation scope.
+
+Do not modify production code, run implementation tasks, activate Lever 4, change accepted Levers 1–3, or modify Modules 1, 3 or 4.
+
+Stop after presenting the revised plan and wait for approval.
+
+---
+
+## Prompt 438
+# PROMPT 438 — PHASE 2 IMPLEMENTATION
+
+## Lever 4: Volume Aggregation
+
+Implement Phase 2 based on the approved business rules in Prompt 437 and the following decisions:
+
+1. **Density conversions — Option A approved:** Permit cross-dimensional volume-to-mass conversion only when a verified, material-specific density factor is available. Record its value, unit, source, effective date, and conversion formula. If verification is unavailable, retain separate UOM subtotals and flag `FURTHER_DATA_REQUIRED`. Never assume a generic density factor.
+2. **Unmatched credit notes:** Exclude unmatched negative transactions from physical aggregatable quantities. Show them in a dedicated Unmatched Adjustments table, preserve their full-precision financial values, and maintain reconciliation with source ERP totals.
+3. **Plant geography:** Capture plant locations and distances as informational attributes only. Do not apply automatic freight penalties or assume logistics savings.
+
+## 1. FIRST: VERIFY THE CURRENT CODEBASE
+
+Before implementation:
+
+* Inspect the current Module 2 architecture, Prompt 436/437 specifications, and existing implementation of Levers 1–3.
+* Reuse established services, types, UI patterns, API conventions, and workbook styles wherever appropriate.
+* Confirm the actual source transaction fields, material identifiers, UOMs, currency fields, plant identifiers, purchase dates, PO references, and adjustment links.
+* Do not assume fields or services exist without verifying them.
+* Do not create duplicate services or modify unrelated functionality.
+
+## 2. IMPLEMENTATION SCOPE
+
+Implement the following for Lever 4 only:
+
+### A. Opportunity identification
+
+Create three distinct opportunity tiers:
+
+**Tier 1 — Identical Materials**
+
+* Identify records with reliable evidence of identical material identity.
+* Aggregate quantities only when material identity, UOM compatibility, currency treatment, and relevant commercial conditions permit it.
+* Support multi-plant and multi-supplier demand analysis.
+* Preserve the original transaction-to-opportunity audit trail.
+
+**Tier 2 — Technically Comparable Materials**
+
+* Identify review candidates using available material attributes, descriptions, taxonomy, and technical data.
+* A shared UNSPSC code, category, material group, or similar description is not proof of interchangeability.
+* Never combine physical quantities until documented engineering validation confirms interchangeability, operating tolerances, and plant acceptance.
+* Until approval, display `TECHNICAL_VALIDATION_REQUIRED` and mark aggregatable physical quantity as conditional.
+
+**Tier 3 — Category-Level Sourcing**
+
+* Identify opportunities for coordinated category negotiations.
+* Do not combine quantities of different materials into a single physical lot.
+* Keep category-level historical expenditure separate from genuinely aggregatable physical quantity.
+
+### B. Demand classification
+
+Classify demand into:
+
+* `RECURRING`
+* `PERIODIC_SEASONAL`
+* `ONE_TIME_PROJECT`
+* `INSUFFICIENT_HISTORY`
+
+Do not exclude one-time or infrequent purchases automatically. Assess aggregation feasibility independently. Do not introduce arbitrary order-count, volume, or recurrence thresholds without explicit approval.
+
+### C. Quantity and financial calculations
+
+Maintain separate, clearly labelled measures for:
+
+1. Total historical incurred expenditure.
+2. Potentially aggregatable historical expenditure.
+3. Genuinely aggregatable physical quantity.
+4. Excluded or conditionally aggregatable quantities, with reasons.
+5. Unmatched financial adjustments.
+
+Use full-precision calculations internally and round only for display.
+
+**UOM controls**
+
+* Convert compatible units only using explicit, validated conversion rules.
+* Cross-dimensional conversions require a verified, material-specific conversion factor.
+* Record conversion provenance and expose the calculation for audit.
+* If the conversion factor is unavailable or unverified, maintain separate subtotals and flag the issue.
+
+**Currency controls**
+
+---
+
+## Prompt 439
+# PROMPT 439 — LEVER 4 RECONCILIATION AND ACCEPTANCE AUDIT
+
+Lever 4 Volume Aggregation has been implemented. Before accepting it, investigate and resolve the following reported discrepancies.
+
+## 1. CUSTOMER BASELINES
+
+ABC Textile — AIC-2026-0002
+
+* Source transactions: 23,570
+* Historical expenditure: ₹6,138,805,185.51
+* Reported potentially aggregatable expenditure: ₹6,138,805,185.51
+* Reported Tier 1 expenditure: approximately ₹6,138,666,000
+* Reported unmatched adjustments: 0
+
+PQR Cement — AIC-2026-0003
+
+* Source transactions: 19,670
+* Historical expenditure: ₹2,626,411,770.62
+* Reported potentially aggregatable expenditure: ₹1,580,736,530.65
+* Reported Tier 1 expenditure: approximately ₹2,626,402,000
+* Reported unmatched adjustments: 1, amount -₹24,570
+
+Use the actual full-precision values from the live API and source transactions rather than these rounded report figures.
+
+## 2. INVESTIGATE FINANCIAL MEASURE DEFINITIONS
+
+Trace the calculation of:
+
+* Total historical incurred expenditure.
+* Potentially aggregatable expenditure.
+* Tier 1 historical expenditure.
+* Tier 1 aggregatable physical quantity.
+* Tier 2 conditional quantities.
+* Tier 3 category-level expenditure.
+* Excluded expenditure and unmatched adjustments.
+
+Explain why ABC potentially aggregatable expenditure equals total historical expenditure despite a reported difference from Tier 1 expenditure.
+
+Explain why PQR Tier 1 expenditure is nearly equal to total historical expenditure while potentially aggregatable expenditure is materially lower.
+
+Do not change formulas simply to make the numbers match. Identify the correct business definition and source of every discrepancy first.
+
+## 3. VALIDATE GENUINE TIER 1 OPPORTUNITIES
+
+Inspect the Tier 1 builder and determine exactly what each reported count represents.
+
+Distinguish:
+
+* Source transaction rows.
+* Individual material records.
+* Distinct material groups.
+* Genuine aggregation opportunities.
+* Material groups with compatible demand across multiple plants or purchasing events.
+
+A material code alone does not establish a genuine volume aggregation opportunity.
+
+For every Tier 1 opportunity, validate material identity, compatible UOM, currency treatment, relevant cost basis, plant/supplier distribution and transaction eligibility.
+
+Do not aggregate physical quantities across incompatible materials or UOMs.
+
+## 4. VERIFY THE FINANCIAL AUDIT TRAIL
+
+For both customers:
+
+* Reconcile all source transaction amounts to the reported historical expenditure.
+* Identify every included and excluded transaction and its reason.
+* Verify that unmatched adjustments are isolated from physical aggregation without disappearing from financial reconciliation.
+* Confirm that transaction classifications are mutually exclusive where required and that no transaction is double-counted across tiers.
+* Reconcile every expenditure subtotal to its contributing source transactions using full precision.
+
+A zero source reconciliation delta must not be presented as proof that aggregation eligibility is correct.
+
+## 5. VERIFY DENSITY AND CURRENCY CONVERSIONS
+
+Inspect the HSD and furnace oil density factors, their sources, effective dates and units.
+
+Verify that the conversion formula uses the correct dimensions and does not apply a generic factor to unrelated materials. If the evidence supporting a factor is not available, report that limitation and require verification before relying on the conversion.
+
+Confirm that foreign-currency transactions are converted only through the existing authoritative date-indexed FX master. Do not invent rates or silently substitute missing values.
+
+## 6. VERIFY THE EXCEL EXPORT
+
+Generate and inspect the actual eight-sheet workbook for both customer assessments.
+
+Verify:
+
+* Sheet contents and transaction-level traceability.
+* Reconciliation of historical expenditure.
+* Correct distinction between historical expenditure and potentially aggregatable expenditure.
+* Correct distinction between candidate groups and genuine aggregation opportunities.
+* Explicit reasons for excluded and conditional quantities.
+* Correct handling of unmatched adjustments.
+* No speculative savings.
+* Correct conversion-factor provenance.
+
+Do not treat a successful HTTP response or a non-empty workbook as proof of correctness.
+
+## 7. TESTING AND PRESERVATION
+
+Add or correct regression tests for every discrepancy identified.
+
+Run relevant backend tests, frontend tests, lint and typechecking. Report actual results, not intended outcomes.
+
+Do not modify Module 1, Module 3, Module 4, Levers 1–3 or 5–10, or the desktop installer. Do not implement Phase 3 or introduce savings assumptions.
+
+If a shared file must change, explain why before modifying it.
+
+## 8. FINAL REPORT
+
+Provide:
+
+1. Root cause of each discrepancy.
+2. Corrected full-precision financial figures.
+3. Tier 1 counts separated into material records, distinct groups and genuine opportunities.
+4. Included/excluded transaction counts and amounts.
+5. Reconciliation results for both customers.
+6. Actual test results.
+7. Excel validation results.
+8. Remaining limitations.
+
+If any discrepancy cannot be resolved from the available source data, identify it explicitly rather than manufacturing a result.
+
+Do not declare Lever 4 accepted until the financial measures, physical quantities, eligibility rules and exported workbook are demonstrably consistent.
+
+---
+
+## Prompt 440
+# PROMPT 440 — FINAL LEVER 4 VALIDATION
+
+Lever 4 has undergone financial reconciliation. Before final acceptance, investigate and resolve the following three issues without expanding scope.
+
+## 1. UOM CONVERSION SAFEGUARDS
+
+Audit `UOM_STANDARD_CONVERSIONS` and every calculation that uses it.
+
+* Do not assume that BOX, BAG, DRUM, PAIR, SET, KIT, EA or similar packaging/count units are universally interchangeable.
+* Permit direct conversion only between units representing the same physical dimension and genuinely equivalent quantity basis.
+* Where package contents differ, require a verified material-specific conversion factor.
+* Preserve original UOM and converted UOM, factor, source and formula in the audit trail.
+* Where conversion cannot be verified, retain separate quantities and flag `FURTHER_DATA_REQUIRED`.
+* Ensure cross-material quantity aggregation cannot occur merely because two UOMs map to the same base unit.
+
+Add tests covering compatible units, incompatible units, packaging units with different contents, and missing conversion factors.
+
+## 2. SINGLE-PURCHASE AND PROJECT DEMAND CLASSIFICATION
+
+Review the rule that marks a material non-aggregatable when it has one transaction, one plant and one supplier.
+
+* Preserve the fact that no historical aggregation pattern was identified.
+* Do not interpret limited transaction history as proof that future joint sourcing is impossible.
+* Use the existing four-tier demand classification: RECURRING, PERIODIC_SEASONAL, ONE_TIME_PROJECT and INSUFFICIENT_HISTORY.
+* Where evidence is insufficient, use an appropriate review status rather than asserting that the material is categorically unsuitable.
+* Do not automatically count every single purchase as an opportunity either.
+* Keep historical expenditure separate from any future potential opportunity.
+* Do not introduce savings estimates or arbitrary thresholds.
+
+Update the UI, Excel workbook and tests so these distinctions are visible and auditable.
+
+## 3. VERIFIED DENSITY FACTORS
+
+Audit the registered HSD and furnace oil density factors.
+
+For each factor, verify:
+
+* Exact material applicability and grade.
+* Authoritative source and supporting evidence available in the project.
+* Effective date or applicable validity period.
+* Correct source and target units.
+* Formula and resulting quantity.
+* Any assumptions or limitations.
+
+Do not treat a cited standard as proof of a single universally applicable density value without supporting evidence.
+
+If verification cannot be established, do not silently apply the factor. Flag the affected conversion for validation and preserve the original quantities.
+
+## 4. REGRESSION AND PRESERVATION
+
+Run the relevant Lever 4 tests, typecheck and lint.
+
+Recheck both customer assessments:
+
+* ABC Textile: AIC-2026-0002.
+* PQR Cement: AIC-2026-0003.
+
+Confirm:
+
+* Financial reconciliation remains exact.
+* The unmatched credit adjustment remains visible and is not included in physical aggregation without a valid netting rule.
+* No incompatible physical quantities are combined.
+* Historical expenditure is not presented as savings.
+* The eight-sheet Excel workbook reflects the corrected rules.
+* No double counting is introduced.
+
+Do not modify Module 1, Module 3, Module 4, Levers 1–3 or 5–10, or the desktop installer. Do not begin Phase 3.
+
+## 5. REPORT
+
+Provide the actual code changes, validation evidence, test results, and any unresolved limitations.
+
+Do not claim full acceptance if source evidence for a conversion is unavailable or if the underlying data cannot establish the business rule.
+
+Keep the changes limited to Lever 4.
+
+
+
+
+
+---
+
+## Prompt 441
+resume
+
+
+---
+
+## Prompt 442
+resume
+
+ 
+---
+
+## Prompt 443
+resume
+
+ 
+---
+
+## Prompt 444
+# PROMPT 444 � FINAL BUSINESS-RULE CORRECTIONS FOR LEVER 4
+
+Make only the following corrections to the existing Lever 4 Volume Aggregation implementation.
+
+## 1. REMOVE UNAPPROVED DEMAND RECURRENCE THRESHOLDS
+
+The current implementation uses calendar-month thresholds to classify recurring and seasonal demand. These thresholds were not approved.
+
+Replace the arbitrary rules with evidence-based classifications:
+
+* RECURRING: Supported by transaction history showing a recurring purchasing pattern.
+* PERIODIC_SEASONAL: Supported by identifiable seasonal or operational-cycle evidence.
+* ONE_TIME_PROJECT: Supported by project identifiers project descriptions or other reliable evidence of discrete project demand.
+* INSUFFICIENT_HISTORY: Available evidence is insufficient to establish the purchasing pattern.
+
+Requirements:
+
+* Do not infer that several purchases in one month constitute a project.
+* Do not infer that transactions spanning four months establish recurring demand automatically.
+* Do not invent minimum transaction counts or date thresholds.
+* If evidence is inconclusive use INSUFFICIENT_HISTORY.
+* Preserve source transaction dates and the evidence supporting each classification.
+* Keep historical expenditure distinct from future aggregation potential.
+* A lack of historical recurrence must not automatically disqualify a material from future joint sourcing.
+* Do not introduce savings assumptions.
+
+Update the UI Excel workbook tests and methodology disclosures accordingly.
+
+## 2. RESOLVE AMBIGUOUS UOM ABBREVIATIONS
+
+Audit all UOM aliases and conversion mappings.
+
+The current implementation lists MT under both mass and length. Resolve this ambiguity.
+
+Requirements:
+
+* Do not assign one raw UOM abbreviation to multiple physical dimensions without an explicit reliable source-system interpretation.
+* Use documented source-system metadata or an authoritative UOM mapping to resolve ambiguous abbreviations.
+* Do not silently interpret MT as metres or metric tonnes based solely on the abbreviation.
+* Where the intended unit cannot be established preserve the raw UOM exclude the affected quantity from physical aggregation and flag FURTHER_DATA_REQUIRED.
+* Verify that every conversion stays within compatible physical dimensions.
+* Confirm that CFT and CF conversions where used apply only to volume and use the correct conversion factor.
+* Confirm that packaging conversions require verified material-specific evidence.
+
+Add regression tests for ambiguous UOMs incorrect dimension mappings valid conversions and missing mapping evidence.
+
+## 3. VERIFY PACKAGING AND DENSITY EVIDENCE
+
+Inspect the evidence for every registered material-specific packaging conversion and density factor.
+
+* Confirm that the cited source documents actually exist and support the relevant material grade factor and units.
+* Do not label a conversion verified merely because a source name is present in code.
+* If supporting evidence is unavailable flag the conversion for validation and retain the original quantity.
+* Continue to preserve native HSD and furnace oil volume when material-specific density cannot be verified.
+
+Do not introduce generic conversion factors.
+
+## 4. REGRESSION VALIDATION
+
+Run the relevant Lever 4 backend and frontend tests typechecking linting and build checks.
+
+Recheck:
+
+* ABC Textile: AIC-2026-0002.
+* PQR Cement: AIC-2026-0003.
+
+Confirm:
+
+* Full-precision financial reconciliation remains correct.
+* No incompatible physical quantities are combined.
+* No unsupported demand classification is presented as confirmed.
+* No historical expenditure is represented as savings.
+* The Excel export contains the corrected classifications UOM mappings and audit evidence.
+* Existing accepted modules and levers remain unchanged.
+
+Do not modify Module 1 Module 3 Module 4 Levers 1�3 or 5�10 or the desktop installer. Do not begin Phase 3.
+
+## 5. FINAL REPORT
+
+Report the exact changes test results conversion evidence and any unresolved limitations.
+
+Do not claim a conversion or demand classification is verified without supporting evidence. If the evidence is unavailable preserve the data and flag the uncertainty.
+
+Keep this correction limited to Lever 4.
+
+
+## Prompt 445
+
+# PROMPT 445 — FINAL UOM GOVERNANCE AND RECONCILIATION AUDIT
+
+Make only the following targeted corrections to Module 2, Lever 4 — Volume Aggregation. Do not redesign the module or change previously accepted functionality.
+
+## 1. Remove keyword-based UOM resolution
+
+The Prompt 444 report states that ambiguous `MT` values are resolved using material-description or category keywords. This does not satisfy the requirement for documented source-system metadata or an authoritative UOM mapping.
+
+Implement the following rules:
+
+* Resolve ambiguous UOMs only through reliable ERP/source-system metadata or an approved, authoritative mapping with traceable provenance.
+* Material descriptions, category names, UNSPSC codes and keyword matches may suggest a possible interpretation for human review, but must not independently establish a physical dimension.
+* If authoritative evidence is unavailable, preserve the original UOM and quantity, exclude that quantity from incompatible physical aggregation, and flag `FURTHER_DATA_REQUIRED`.
+* Never silently convert an ambiguous UOM to mass, length or another dimension.
+* Show the resolution source, evidence, status and exclusion reason in the UI and Excel export.
+* Apply the same governance rule to every ambiguous UOM, not just `MT` and `M.T`.
+
+Add regression tests proving that keyword-only matches cannot authorize conversion and that approved source metadata can authorize a compatible conversion.
+
+## 2. Reconcile PQR Cement without concealing excluded quantities
+
+For PQR Cement (`AIC-2026-0003`), separately report:
+
+1. Gross transaction expenditure before unmatched adjustments.
+2. Unmatched adjustments, including credit note `CN-001` for -₹24,570.
+3. Net incurred expenditure after the adjustment.
+4. Expenditure associated with quantities eligible for physical aggregation.
+5. Expenditure associated with quantities excluded from physical aggregation because their UOM is ambiguous or incompatible.
+
+Requirements:
+
+* Financial reconciliation must include all applicable transactions and adjustments according to the existing approved accounting rules.
+* An excluded physical quantity must not automatically exclude its expenditure from financial reconciliation.
+* Do not count the unmatched credit note as a physical quantity or arbitrarily allocate it to a material.
+* Clearly distinguish gross material-record spend from net customer expenditure.
+* Reconcile using full precision and explain every difference between the reported figures.
+* Preserve the existing treatment of the unmatched adjustment unless a verified source link justifies a change.
+
+## 3. Revalidate physical aggregation
+
+For ABC Textile (`AIC-2026-0002`) and PQR Cement (`AIC-2026-0003`):
+
+* Verify that only quantities with established, compatible physical dimensions are combined.
+* Verify that incompatible or unresolved quantities are excluded from physical pooling but remain visible in the audit trail.
+* Verify that packaging and density conversions remain blocked when supporting evidence is unavailable.
+* Confirm that recurrence classifications remain evidence-based.
+* Do not introduce savings assumptions or label historical expenditure as savings.
+
+## 4. Regression tests and scope protection
+
+Run the relevant Lever 4 backend and frontend tests, typechecking, linting and production builds.
+
+Verify the affected UI and Excel workbook, including UOM provenance, conversion status, exclusions and financial reconciliation.
+
+Do not modify Module 1, Module 3, Module 4, Levers 1–3 or 5–10, or the desktop installer. Do not begin Phase 3. Do not enable SaaS functionality.
+
+## 5. Final report
+
+Provide:
+
+* Exact files changed.
+* Test commands and actual results.
+* Final ABC Textile and PQR Cement financial reconciliation figures.
+* Number of materials and expenditure affected by unresolved UOMs.
+* Evidence used to authorize any conversions.
+* Any remaining limitations.
+
+Do not claim that a UOM has been verified solely because a material description appears to imply its meaning. If reliable evidence is unavailable, preserve the source data and flag the uncertainty.
+
+
+
+## Prompt 446
+
+# PROMPT 446 — FINAL RECONCILIATION AND AGGREGATION METRIC AUDIT
+
+Perform a targeted correction and audit of Module 2, Lever 4 — Volume Aggregation. Preserve all accepted functionality and existing governance safeguards.
+
+## 1. Resolve the ABC Textile financial discrepancy
+
+The Prompt 439 report recorded ABC Textile (`AIC-2026-0002`) total expenditure as ₹6,138,805,185.51.
+
+The Prompt 445 report records ₹6,138,804,874.00.
+
+The difference is ₹311.51.
+
+Requirements:
+
+* Recalculate the total directly from the authoritative underlying transaction dataset using full precision.
+* Compare the transaction count, transaction identifiers, individual amounts, excluded records, adjustments and source-data version against the previous baseline.
+* Determine whether the difference results from a legitimate correction or an unintended regression.
+* Do not force the total to match either earlier report.
+* Document the verified source total and the exact explanation for the difference.
+* Confirm that the same authoritative total is used consistently in the UI, Excel export, engine calculations and tests.
+* Confirm the final financial reconciliation delta is zero.
+
+## 2. Separate UOM compatibility from aggregation opportunity
+
+The current report labels ₹239.7283 Cr of PQR Cement expenditure as eligible for physical aggregation, although it includes ₹56.1676 Cr associated with single isolated purchases or limited history.
+
+Review and correct the terminology throughout the UI, Excel workbook, API response and methodology disclosures.
+
+Use separate metrics:
+
+A. UOM-compatible expenditure:
+Expenditure associated with quantities whose UOMs have established, compatible physical dimensions. This is a data-quality and comparability measure, not a claim that all the spend is an actionable aggregation opportunity.
+
+B. Genuine aggregation opportunity expenditure:
+Expenditure associated with materials that satisfy the existing, approved criteria for a genuine aggregation opportunity.
+
+C. Limited-history expenditure:
+Expenditure associated with compatible quantities for which the available evidence does not establish an aggregation opportunity.
+
+D. Expenditure excluded from physical aggregation:
+Expenditure associated with quantities that cannot safely be combined because of unresolved or incompatible UOMs.
+
+Requirements:
+
+* Do not double-count expenditure between these categories.
+* Preserve historical expenditure even when physical aggregation is blocked.
+* Do not automatically classify limited-history purchases as either future opportunities or permanently non-aggregatable.
+* Do not infer savings from any of these expenditure figures.
+* Ensure the category totals reconcile to the appropriate gross material expenditure, with unmatched adjustments reported separately.
+* If an existing metric cannot be calculated accurately from available data, disclose the limitation instead of inventing a value.
+
+## 3. Reconcile opportunity counts
+
+For ABC Textile (`AIC-2026-0002`) and PQR Cement (`AIC-2026-0003`):
+
+* Establish one consistent definition for a genuine aggregation opportunity and apply it to both datasets.
+* Confirm that every distinct material record belongs to exactly one appropriate classification.
+* Reconcile genuine opportunities, limited-history records and records excluded for unresolved or incompatible UOMs to the total number of distinct material records.
+* Explain changes in PQR Cement's genuine opportunity count across the Prompt 439, Prompt 444 and Prompt 445 reports.
+* Explain any other changed metrics that cannot be reproduced from the previous report.
+* Confirm that the UI, Excel export, API response and regression tests use the same classification rules.
+
+## 4. Regression validation and scope protection
+
+Run the relevant Lever 4 backend and frontend tests, typechecking, linting and production builds.
+
+Verify:
+
+* Full-precision financial reconciliation for both reference assessments.
+* Consistent financial totals and opportunity counts across all output surfaces.
+* No double-counting between spend classifications.
+* No incompatible quantities combined.
+* No unsupported UOM conversions.
+* No historical expenditure represented as savings.
+* No regressions in evidence-based demand classifications.
+
+Do not modify Module 1, Module 3, Module 4, Levers 1–3 or 5–10, or the desktop installer. Do not begin Phase 3 or enable SaaS functionality.
+
+## 5. Final report
+
+Provide:
+
+* Verified ABC Textile and PQR Cement financial totals.
+* A transaction-level explanation for the ₹311.51 ABC Textile discrepancy.
+* Reconciled expenditure and material counts for all four classifications.
+* The reason for changed opportunity counts.
+* Exact files changed.
+* Actual test commands and results.
+* Any unresolved limitations.
+
+Do not claim successful reconciliation merely because a test passes. Demonstrate that the reported totals derive from the authoritative transaction data and that every material and expenditure amount is accounted for exactly once.
+
+## Prompt 447
+
+Perform a final, targeted closure audit of Module 2, Lever 4 — Volume Aggregation, based on the Prompt 446 report.
+
+Preserve all accepted functionality and governance safeguards. Do not redesign the module or change unrelated functionality.
+
+### 1. Prove the ABC Textile financial baseline
+
+For assessment `AIC-2026-0002`, independently recalculate expenditure from the authoritative source transaction dataset.
+
+Verify:
+
+* Source transaction count and unique transaction identifiers.
+* Transaction amounts at full available precision.
+* Duplicate, invalid, excluded, or adjusted records.
+* Source file identity/version and any transformation applied.
+* The exact origin of the ₹311.51 difference between the Prompt 439 and Prompt 445 reported totals.
+
+Do not describe this as a transcription error unless the underlying data comparison supports that conclusion.
+
+Provide a reproducible reconciliation showing the authoritative total and whether the difference is entirely reporting-related or involves transaction data or calculations.
+
+Confirm the same verified baseline is used in the engine, API, UI, Excel export, and regression tests.
+
+### 2. Enforce the Phase 3 boundary
+
+The Prompt 446 report states that savings are computed using commercial discount tiers of 0.5%–3.5% and supplier negotiation attribution.
+
+Investigate whether this is merely inaccurate report wording or whether any savings calculations have actually been implemented or activated.
+
+For this scope:
+
+* Do not implement or activate Phase 3 savings calculations.
+* Do not apply discount tiers or supplier negotiation assumptions to generate savings estimates.
+* Do not present historical expenditure or aggregation opportunity expenditure as realized or estimated savings.
+* If any such calculation was introduced by the current work, remove or disable only that out-of-scope functionality without disturbing previously accepted functionality.
+* Ensure the UI, API, Excel export, and methodology disclosures clearly distinguish aggregation opportunity expenditure from savings.
+* Use `NOT YET QUANTIFIABLE` wherever savings cannot legitimately be quantified under the approved methodology.
+
+Do not modify Module 4 or any other module to accomplish this.
+
+### 3. Validate the four expenditure classifications
+
+Retain the approved, mutually exclusive classifications:
+A. UOM-compatible expenditure.
+B. Genuine aggregation opportunity expenditure.
+C. Limited-history expenditure.
+D. Expenditure excluded from physical aggregation.
+
+Verify that B + C = A, A + D = gross material expenditure, and gross expenditure plus unmatched adjustments equals net expenditure.
+
+Verify that each distinct material belongs to exactly one appropriate classification and that no expenditure is double-counted.
+
+Do not authorize UOM conversions without authoritative source metadata or an approved mapping. Do not infer material equivalence from text similarity alone.
+
+### 4. Regression and scope protection
+
+Run the relevant Lever 4 backend and frontend tests, typechecking, linting, performance budget check, and production build.
+
+Inspect the actual changes and confirm that Module 1, Module 3, Module 4, Levers 1–3 and 5–10, and the desktop installer remain untouched.
+
+Do not begin Phase 3. Do not enable SaaS functionality.
+
+### 5. Final report
+
+Report:
+
+* Verified ABC Textile and PQR Cement financial totals.
+* Transaction-level evidence explaining the ₹311.51 discrepancy.
+* The actual status of any savings calculation or discount-tier logic.
+* Reconciled counts and expenditure for all four classifications.
+* Exact files changed and the reason for each change.
+* Actual test commands and results.
+* Any unresolved limitations.
+
+Do not claim closure merely because tests pass. If the transaction-level discrepancy cannot be proved, state that it remains unresolved.
+
+Do not close Lever 4 until both the financial evidence and Phase 3 scope boundary have been verified.
+## Prompt 448
+
+Implement and validate MODULE 2, LEVER 5 — PAYMENT TERMS OPTIMISATION in the existing Procucev procurement application.
+
+IMPORTANT SCOPE RESTRICTIONS
+1. Inspect the existing Lever 5 implementation, data structures, and UI before making changes.
+2. Modify ONLY Lever 5 files and components strictly required for this implementation.
+3. Do not modify Levers 1–4 or 6–10.
+4. Do not connect, modify, or activate Module 3 (PCBI Benchmark Index).
+5. Do not modify Module 4, the desktop installer, or SaaS configuration.
+6. Preserve existing working functionality and UI conventions.
+
+A. OBJECTIVE
+Analyse supplier payment terms, identify evidence-supported opportunities to negotiate additional credit days, and calculate indicative financing benefits where sufficient data exists.
+
+B. STANDARD MODELLING ASSUMPTION
+Use the following centrally governed default for Indian company assessments:
+
+Procucev standard modelling rate = 1.5% per additional 30 days of credit.
+
+This is a Procucev modelling assumption, NOT a claim that all Indian companies have the same financing cost.
+
+Formula:
+Indicative Annual Financing Benefit =
+Eligible Annual Purchases × 1.5% × (Additional Credit Days / 30)
+
+Use simple linear pro-rata calculation. Do not compound.
+
+Example:
+Eligible annual purchases = ₹120 crore
+Proposed additional credit = 30 days
+Indicative annual financing benefit = ₹1.80 crore.
+
+For 60 additional days, the illustrative benefit is ₹3.60 crore, assuming the same eligible annual purchases.
+
+Calculate only when eligible annual spend, existing payment terms, and proposed additional credit days are adequately supported by data.
+
+C. WORKING CAPITAL RELEASE
+Calculate separately:
+
+Indicative Working Capital Released =
+Eligible Annual Purchases / 365 × Additional Credit Days
+
+Display working capital released and indicative annual financing benefit as separate metrics. Never add them together.
+
+D. PAYMENT-TERM DATA AVAILABILITY — MANDATORY
+Missing information must be reported transparently. Never invent or infer missing payment terms.
+
+Use these statuses:
+
+1. OPPORTUNITY IDENTIFIED
+Existing payment terms, eligible spend, and proposed improvement are supported by evidence.
+
+2. DATA PARTIALLY AVAILABLE
+Some records are analysable, but coverage is incomplete. Show analysed spend and the spend for which terms are missing.
+
+3. DATA UNAVAILABLE
+Required payment-term data is missing.
+Display:
+"Data Unavailable — Payment Terms Not Found in Source Data."
+
+Do not calculate a financing benefit for records without sufficient evidence.
+
+4. AWAITING VALIDATION
+Data is present but requires confirmation or approval.
+
+5. NOT YET QUANTIFIABLE
+A potential opportunity may exist, but the available evidence is insufficient to calculate a defensible benefit.
+
+Do not interpret missing payment terms as zero credit days, immediate payment, or an automatic savings opportunity.
+
+E. DATA COVERAGE REPORT
+Include a dedicated Payment Terms Data Coverage section in the dashboard and Excel export.
+
+Show:
+- Total spend analysed.
+- Spend with verified payment terms.
+- Spend with missing payment terms.
+- Percentage of spend with verified payment terms.
+- Percentage of spend with missing payment terms.
+- Number of records with complete, partial, and missing data.
+- Reason for each identified data gap, wherever determinable.
+- Records requiring validation.
+
+Reconcile the coverage figures against the underlying source data. Avoid double-counting.
+
+F. OPPORTUNITY IDENTIFICATION
+- Analyse actual payment terms using available contractual, purchase-order, invoice, or ERP evidence.
+- Identify potential improvements relative to documented existing terms.
+- Do not automatically assume an additional 30, 60, or 90 days.
+- Treat proposed additional credit days as a scenario requiring explicit documentation or approval.
+- Analyse early-payment discounts separately against the applicable financing assumption.
+- Prevent double-counting between early-payment discounts and payment-term benefits.
+- Do not label an indicative benefit as realised savings.
+- Clearly distinguish source data, assumptions, proposed scenarios, and approved terms.
+
+G. CONFIGURATION AND AUDITABILITY
+Maintain the 1.5% per 30 days assumption as a centrally governed parameter.
+Record the parameter used, eligible spend, existing terms, proposed additional days, calculation, evidence status, and approval status.
+Allow authorised overrides only where the existing application supports them, with an auditable record.
+Do not silently change the default assumption.
+
+H. VALIDATION
+Before completion:
+1. Inspect the current implementation and identify the exact files requiring changes.
+2. Implement Lever 5 without altering unrelated levers.
+3. Test records with complete payment-term data.
+4. Test records with partially available data.
+5. Test records with missing payment-term data.
+6. Verify that missing data never produces a fabricated benefit.
+7. Verify the 30-day and 60-day formula examples above.
+8. Verify working capital released is calculated and displayed separately.
+9. Verify dashboard and Excel export consistency.
+10. Verify totals, coverage percentages, rounding, and currency formatting.
+11. Run relevant existing tests, type checks, linting, and build checks.
+
+Do not claim a test passed unless it was actually executed.
+
+FINAL REPORT
+Provide:
+- Files changed.
+- Existing data fields used.
+- Calculation methodology.
+- Payment-term data coverage and gaps identified in the available test data.
+- Tests actually executed and their results.
+- Any unresolved issues.
+
+Do not begin work on any other lever or module.
+
+## Prompt 449
+
+LEVER 5 — FINAL RECONCILIATION AND GOVERNANCE CHECK
+
+Review the existing Lever 5 implementation. Do not rebuild it.
+
+Make only the changes necessary to resolve the following issues.
+
+1. SPEND RECONCILIATION
+Investigate the difference between the Lever 5 spend totals and the previously established authoritative customer baselines.
+
+ABC Textile:
+Authoritative recorded baseline: ₹6,138,805,185.51
+
+PQR Cement:
+Authoritative recorded net baseline: ₹2,626,411,770.62
+
+Trace each discrepancy to the actual source data, credit-note treatment, aggregation logic, or rounding.
+
+Do not hardcode these figures to force a match.
+Use the established authoritative source and reconciliation rules.
+If the figures cannot be reconciled, report the exact cause and leave the issue unresolved rather than claiming success.
+
+2. SCENARIO GOVERNANCE
+The 1.5% financing assumption per additional 30 days remains unchanged.
+
+Do not automatically assume 30, 60, or 90 additional credit days.
+
+If the scenario simulator displays 60 days by default, label it clearly as an illustrative, unapproved scenario. It must not appear as an identified opportunity or feed into the opportunity total until the required inputs and approvals are provided.
+
+3. MISSING PAYMENT TERMS
+Preserve the existing DATA_UNAVAILABLE behaviour.
+
+When payment terms are absent:
+- Show "Data Unavailable — Payment Terms Not Found in Source Data."
+- Do not infer zero credit days or immediate payment.
+- Do not calculate a financing benefit or working capital release.
+- Show missing spend, coverage percentage, and the reason for the data gap.
+
+4. REGRESSION SAFEGUARDS
+Do not modify Levers 1–4 or 6–10.
+Do not connect or modify Module 3.
+Do not modify Module 4, the desktop installer, or SaaS configuration.
+
+5. VALIDATION
+Run the relevant tests after any changes.
+Verify source-to-dashboard-to-Excel spend reconciliation.
+Verify that an illustrative scenario cannot be mistaken for an approved opportunity.
+
+Return a concise report identifying the discrepancies, root causes, files changed, tests executed, and any remaining issues.
+
+Do not claim complete reconciliation unless it is demonstrated by the actual source data.
+
+
+## Prompt 450
+
+run locally on chrome
+
+
+## Prompt 451
+
+## MODULE 2 — LEVER 6: CATEGORY SPECIALISATION
+## IMPLEMENTATION AND VALIDATION
+
+Implement Lever 6 in the existing Procucev procurement application.
+
+OBJECTIVE
+Identify procurement categories requiring specialised category management, recommend actionable interventions, estimate tentative annual savings under each applicable opportunity head, and help management prioritise procurement resources.
+
+1. STRICT SCOPE
+
+- Inspect the existing architecture and implementation before making changes.
+- Modify only Lever 6 components and files strictly required.
+- Do not modify Levers 1–5 or 7–10.
+- Do not connect, modify, or activate Module 3 (PCBI Benchmark Index).
+- Do not modify Module 4, the desktop installer, or SaaS configuration.
+- Preserve all existing functionality.
+- Reuse existing canonical customer data and established spend reconciliation rules.
+
+2. OPPORTUNITY HEADS AND INITIAL SAVINGS ASSUMPTIONS
+
+Use the following initial Procucev planning assumptions.
+
+These are tentative modelling assumptions, not verified industry averages or guaranteed savings.
+
+A. Strategic Category Management: 1–3%
+B. Supplier Base Rationalisation: 1–3%
+C. Purchasing Consolidation: 1–3%
+D. Price Variation Reduction: 2–5%
+E. Contract Coverage Improvement: 1–3%
+F. Strategic Sourcing & Competitive Bidding: 2–5%
+G. Alternative Supplier Development: 1–4%
+H. Specification & Requirement Optimisation: 1–5%
+I. Category Expertise Deployment: 0.5–2%
+J. Process & Transaction Efficiency: 5–15% of independently established, addressable procurement operating costs.
+
+Store these assumptions centrally in a configurable Lever 6 configuration structure.
+
+For each head, provide low, base, and high assumptions. Use the midpoint as the initial base case unless an explicit, documented rule specifies otherwise.
+
+Allow authorised administrators to change the assumptions only through existing supported configuration mechanisms. Maintain an audit trail wherever the architecture supports it.
+
+3. ELIGIBLE SPEND
+
+Do not apply a percentage to total category spend automatically.
+
+Determine eligible spend from available transaction data and the documented rationale for the proposed intervention.
+
+Examples:
+- Price variation: only comparable materials with defensible price comparisons.
+- Supplier rationalisation: spend genuinely addressable through a validated supplier strategy.
+- Purchasing consolidation: spend where combined purchasing has a credible commercial rationale.
+- Contract coverage: spend for which contract coverage and purchasing status can be established.
+- Alternative suppliers: spend for which alternative sourcing is relevant and feasible.
+- Specification optimisation: spend potentially affected by a defined specification change.
+- Process efficiency: independently established operating costs, not material purchase spend.
+
+Where eligible spend cannot be established, do not invent a spend base or monetary benefit.
+
+Display:
+"Eligible Spend Not Yet Established — Further Data or Validation Required."
+
+4. TENTATIVE BENEFIT CALCULATION
+
+For each applicable opportunity head:
+
+Low Estimate = Eligible Annual Spend × Low Assumption
+
+Base Estimate = Eligible Annual Spend × Base Assumption
+
+High Estimate = Eligible Annual Spend × High Assumption
+
+Use consistent currencies, appropriate annualisation, and correct rounding.
+
+Display annual values in INR and crore/lakh formats consistent with the existing application.
+
+Clearly label all initial estimates:
+"TENTATIVE — ILLUSTRATIVE PLANNING ESTIMATE — PENDING VALIDATION."
+
+Show:
+- Eligible annual spend.
+- Low-case benefit.
+- Base-case benefit.
+- High-case benefit.
+- Assumption used.
+- Calculation rationale.
+- Data and evidence status.
+- Validation requirements.
+
+Do not describe these estimates as realised savings or guaranteed outcomes.
+
+5. CATEGORY PRIORITISATION
+
+Assess categories using available evidence, including:
+- Annual spend.
+- Transaction count and frequency.
+- Supplier count and concentration.
+- Material diversity and category complexity.
+- Comparable-material price variation.
+- Contract coverage, where data exists.
+- Business criticality and sourcing complexity, where documented.
+- Existing category-management coverage, where available.
+
+Classify categories into:
+- Priority A — Strategic Category.
+- Priority B — Optimisation Candidate.
+- Priority C — Routine Category.
+
+Explain the reason for each classification.
+
+Do not rely exclusively on spend thresholds or invent business criticality, supplier capability, market competition, or contract coverage.
+
+Where required evidence is unavailable, disclose the limitation.
+
+6. CATEGORY MANAGEMENT RESOURCE PLANNING
+
+Recommend an appropriate approach:
+- Dedicated Category Manager.
+- Shared Category Manager.
+- Centralised Category Management.
+- Standard or Automated Procurement.
+
+Base the recommendation on available workload, transaction volume, business units or plants served, supplier complexity, category criticality, and existing resource information.
+
+Do not invent staffing numbers or claim resource savings without supporting evidence.
+
+Keep resource and operating-cost benefits separate from material procurement savings.
+
+7. CRITICAL DOUBLE-COUNTING CONTROLS
+
+This is mandatory.
+
+Lever 6 opportunity heads can overlap with other procurement levers.
+
+Examples:
+- Price improvement may overlap with Lever 1.
+- Supplier rationalisation may overlap with Lever 3.
+- Purchasing consolidation may overlap with Lever 4.
+- Payment-term improvement may overlap with Lever 5.
+
+Implement a documented cross-lever overlap review.
+
+For each opportunity, capture:
+- Opportunity head.
+- Category and eligible spend.
+- Potential benefit.
+- Related lever, if applicable.
+- Overlap status.
+- Deduplication treatment.
+- Evidence and approval status.
+
+Show two separate totals:
+
+A. Gross Tentative Opportunity:
+Sum of individual tentative estimates before overlap removal.
+
+B. Net Indicative Opportunity:
+Deduplicated estimate after applying documented eligibility and overlap rules.
+
+Do not add overlapping estimates into the net total.
+
+If overlap cannot be resolved from available evidence, flag the affected amount as "Overlap Review Required" and exclude it from the confirmed net indicative total until reviewed.
+
+Do not automatically treat the full benefit identified by another lever as an additional Lever 6 benefit.
+
+8. DATA AVAILABILITY AND VALIDATION STATUS
+
+Use clear, distinct statuses:
+- TENTATIVE — PENDING VALIDATION.
+- DATA PARTIALLY AVAILABLE.
+- DATA UNAVAILABLE.
+- AWAITING VALIDATION.
+- OVERLAP REVIEW REQUIRED.
+- APPROVED.
+- REALISED.
+
+Do not infer missing data.
+
+When required information is unavailable, explain which field or evidence is missing and how it affects the calculation.
+
+Do not convert a tentative estimate into an approved or realised benefit automatically.
+
+9. MANAGEMENT DASHBOARD
+
+Provide a clear management-level view showing:
+- Total annual procurement spend assessed.
+- Categories assessed.
+- Categories by priority.
+- Gross tentative opportunity, low/base/high.
+- Net indicative opportunity, low/base/high.
+- Opportunities requiring overlap review.
+- Categories requiring specialised intervention.
+- Recommended category-management approach.
+- Data availability and validation gaps.
+- Estimated benefits by opportunity head.
+- Top categories ranked by net indicative opportunity.
+
+Provide drill-down from summary to category and individual opportunity.
+
+Ensure management can distinguish gross estimates from deduplicated estimates and validated outcomes.
+
+10. EXPORT
+
+Provide an Excel export consistent with the dashboard.
+
+Include:
+- Executive Summary.
+- Category Assessment Register.
+- Opportunity Head Benefit Estimates.
+- Eligible Spend and Calculation Details.
+- Cross-Lever Overlap Register.
+- Category Resource Recommendations.
+- Data Coverage and Validation Gaps.
+- Assumptions and Methodology.
+
+Include the assumption percentages, formulas, evidence status, and disclaimers in the export.
+
+Reconcile exported totals to the dashboard.
+
+11. VALIDATION AND TESTING
+
+Test at minimum:
+- Correct low/base/high calculations.
+- Missing eligible spend.
+- Missing supplier or contract information.
+- Category prioritisation when evidence is incomplete.
+- Gross versus net opportunity totals.
+- Duplicate opportunities across heads.
+- Overlap with Levers 1–5.
+- Process-efficiency benefits using operating costs rather than material spend.
+- Currency formatting and rounding.
+- Dashboard and Excel reconciliation.
+- Existing regression tests.
+
+Run the relevant type checks, linting, tests, and production build.
+
+Do not claim that tests passed unless they were executed.
+
+Do not hardcode customer results or fabricate data to demonstrate benefits.
+
+12. FINAL REPORT
+
+Report:
+- Files changed.
+- Opportunity heads implemented.
+- Assumptions and formulas used.
+- How eligible spend is determined.
+- Gross and net opportunity calculation rules.
+- Double-counting safeguards.
+- Data gaps.
+- Tests executed and results.
+- Any unresolved issues.
+
+Do not start work on any other lever or module.
+
+
+## Prompt 452
+
+LEVER 6 — BENEFIT CALCULATION AND COMMERCIAL VALIDATION AUDIT
+
+Review the existing Lever 6 implementation and its actual calculations.
+Do not rebuild the module.
+
+SCOPE
+- Modify only Lever 6 files when a correction is necessary.
+- Do not modify Levers 1–5 or 7–10.
+- Do not connect or modify Module 3.
+- Do not modify Module 4, the desktop installer, or SaaS configuration.
+- Preserve all existing functionality unless a demonstrated defect requires correction.
+
+1. TRACE THE REPORTED BENEFITS
+
+Investigate the reported base-case results:
+
+ABC Textile:
+Gross tentative opportunity: ₹64.25 Cr
+Net indicative opportunity: ₹33.57 Cr
+Overlap excluded: ₹30.68 Cr
+
+PQR Cement:
+Gross tentative opportunity: ₹28.69 Cr
+Net indicative opportunity: ₹13.75 Cr
+Overlap excluded: ₹14.94 Cr
+
+Trace the actual calculation for every opportunity head and reconcile the reported totals to the underlying category records.
+
+For each head, report:
+- Total category spend.
+- Eligible spend.
+- Eligibility rule.
+- Low, base and high assumptions.
+- Low, base and high benefits.
+- Evidence supporting the opportunity.
+- Related procurement lever.
+- Overlap status.
+- Amount included in the gross total.
+- Amount excluded from the net total and why.
+
+Do not hardcode reported results.
+
+2. VALIDATE ELIGIBLE SPEND
+
+Verify that the system does not apply a savings percentage blindly to total category spend.
+
+Require a defensible basis for each eligible-spend calculation.
+
+If the required evidence is missing, show:
+"Eligible Spend Not Yet Established — Further Data or Validation Required."
+
+Do not calculate monetary benefits for unestablished eligible spend.
+
+3. CONTRACT COVERAGE
+
+If contract registers, contract coverage or expiry information are unavailable, do not estimate contract-coverage savings.
+
+Display the data gap and identify the information required for validation.
+
+4. CROSS-LEVER DEDUPLICATION
+
+Audit overlap with all relevant procurement levers, including:
+- Lever 1: Direct Price Improvement.
+- Lever 2: E-Auction / Dynamic Bidding.
+- Lever 3: Vendor Base Consolidation.
+- Lever 4: Volume Aggregation.
+- Lever 5: Payment Terms Optimisation.
+- Lever 8: Specification Rationalisation.
+
+Do not assume overlap is limited to the four relationships initially identified.
+
+Use opportunity-level identifiers, category/material scope, eligible spend, and benefit rationale wherever available.
+
+If the same commercial benefit appears in multiple levers, count it only once in the consolidated net opportunity.
+
+If overlap cannot be resolved, flag it as OVERLAP REVIEW REQUIRED and exclude the affected benefit from the net indicative total.
+
+Do not exclude an entire category automatically if only part of its opportunity overlaps.
+
+5. ASSUMPTION GOVERNANCE
+
+Retain the existing low, base and high planning assumptions unless the audit identifies a calculation or implementation defect.
+
+Label all unvalidated estimates:
+"TENTATIVE — ILLUSTRATIVE PLANNING ESTIMATE — PENDING VALIDATION."
+
+Do not describe the estimates as industry-verified benchmarks, achievable savings, approved savings, or realised savings.
+
+Keep gross tentative opportunity, net indicative opportunity, approved opportunity, and realised savings separate.
+
+6. CATEGORY PRIORITISATION
+
+Review the existing priority thresholds and confirm they are configurable rather than hardcoded as universal procurement standards.
+
+Explain each category's priority using available evidence.
+
+Do not infer supplier inefficiency from supplier count alone.
+
+Do not invent technical equivalence, market competition, contract coverage, or business criticality.
+
+7. VALIDATION
+
+Run relevant tests after any changes.
+
+Test:
+- Low/base/high calculations.
+- Missing eligible-spend evidence.
+- Contract data unavailable.
+- Overlapping opportunities across different levers.
+- Partial overlap within a category.
+- Gross-to-net reconciliation.
+- Dashboard-to-Excel reconciliation.
+- Regression safeguards.
+
+Report the actual tests executed and their results.
+
+FINAL REPORT
+Provide the reconciled totals, calculation methodology, any corrected defects, unresolved data gaps, files changed, and test results.
+
+Do not claim that savings are commercially validated merely because automated tests pass.
+
+
+## Prompt 453
+
+PROMPT 453 — LEVER 6 FINAL COMMERCIAL GOVERNANCE CORRECTION
+
+Review the Prompt 452 audit findings. Do not rebuild Lever 6.
+
+SCOPE
+- Modify only Lever 6 files when necessary.
+- Do not modify Levers 1–5 or 7–10.
+- Keep Module 3 disconnected.
+- Do not modify Module 4, installer, or SaaS configuration.
+- Preserve existing functionality unless a demonstrated defect requires correction.
+
+1. HEAD A AND HEAD I — GOVERNANCE VS SAVINGS
+
+Review Strategic Category Management and Category Expertise Deployment.
+
+Do not automatically assign monetary savings merely because a category is Priority A, spans multiple plants, or warrants specialist attention.
+
+Separate:
+a. Category-management priority.
+b. Resource and capability recommendations.
+c. Monetisable savings opportunities.
+
+Only calculate a monetary benefit where a defensible eligible-spend base and a specific commercial savings mechanism exist.
+
+Otherwise show:
+"Opportunity Identified — Monetary Benefit Not Yet Quantifiable."
+
+Retain the planning assumptions for transparent scenario analysis, but do not treat them as validated savings.
+
+2. HEAD F — STRATEGIC SOURCING & BIDDING
+
+Default to excluding Head F from the consolidated net indicative opportunity until overlap with Lever 2 has been resolved.
+
+Do not rely on an unverified configurable switch to justify retaining overlapping benefits.
+
+Allow Head F to contribute to the net total only when an opportunity-level record demonstrates that its commercial mechanism and spend scope are distinct from Lever 2.
+
+Record the evidence, scope, rationale and approval status.
+
+Where overlap cannot be resolved, flag:
+"OVERLAP REVIEW REQUIRED"
+
+Exclude the affected benefit from the consolidated net total.
+
+3. OPPORTUNITY-LEVEL TRACEABILITY
+
+For every opportunity head, expose:
+- Customer and category identifiers.
+- Eligible spend and the rule establishing it.
+- Commercial mechanism expected to generate savings.
+- Low/base/high planning assumptions.
+- Low/base/high tentative benefit.
+- Related procurement lever.
+- Overlap status and rationale.
+- Amount retained, excluded and reason.
+- Validation and approval status.
+
+Do not infer savings solely from supplier count, price variation, category priority or multi-plant presence.
+
+Do not invent evidence.
+
+4. CLEARLY SEPARATE FINANCIAL MEASURES
+
+Keep separate:
+- Gross tentative planning estimate.
+- Net indicative estimate after resolved exclusions.
+- Unresolved benefits excluded from net.
+- Validated/approved opportunity.
+- Realised savings.
+
+Never label an estimate as validated or achievable without supporting evidence.
+
+Display this disclaimer prominently:
+"TENTATIVE — ILLUSTRATIVE PLANNING ESTIMATE — PENDING VALIDATION."
+
+5. DASHBOARD AND EXCEL
+
+Ensure dashboard and Excel show consistent totals and the same overlap treatment.
+
+Show the assumptions and calculation basis beside each head.
+
+Distinguish:
+- Identified opportunity without quantified benefit.
+- Tentative monetary estimate.
+- Data unavailable.
+- Overlap review required.
+- Validated/approved.
+- Realised.
+
+Do not show an unquantifiable opportunity as ₹0 savings without explaining that its monetary benefit has not been established.
+
+6. TESTING
+
+Add or update tests for:
+- Head A and Head I without unsupported monetary benefits.
+- Head F excluded by default when overlap is unresolved.
+- Head F retained only with documented non-overlap evidence.
+- Unresolved overlap excluded from net.
+- Gross/net/unresolved totals reconciled.
+- Dashboard-to-Excel consistency.
+- Existing Levers 1–5 and 7–10 remain unchanged.
+
+Run the relevant backend and frontend tests, typecheck, lint and budget checks.
+
+FINAL REPORT
+
+Report:
+- Revised gross, net and unresolved tentative estimates for both customers.
+- Which heads contribute to each figure and why.
+- Which heads are identified but not monetised.
+- All unresolved data gaps.
+- Files changed and tests executed.
+
+Do not claim that automated tests establish commercial validity.
+Do not hardcode the reported totals.

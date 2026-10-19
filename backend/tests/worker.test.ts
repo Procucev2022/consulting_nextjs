@@ -140,6 +140,16 @@ describe('Cloudflare backend worker', () => {
   });
 
   it('handles AI endpoints', async () => {
+    const { geminiService } = await import('../src/services/geminiService');
+    const { aiCategorizationService } = await import('../src/services/aiCategorizationService');
+    const { aiReportService } = await import('../src/services/aiReportService');
+    const { aiAnomalyService } = await import('../src/services/aiAnomalyService');
+
+    vi.spyOn(geminiService, 'extractLineItems').mockResolvedValue({ status: 'SUCCESS', items: [] } as any);
+    vi.spyOn(aiCategorizationService, 'categorizeLineItems').mockResolvedValue({ status: 'SUCCESS', mappings: [] } as any);
+    vi.spyOn(aiReportService, 'generateExecutiveSummary').mockResolvedValue({ status: 'SUCCESS', data: {} } as any);
+    vi.spyOn(aiAnomalyService, 'analyzeAnomalies').mockResolvedValue({ status: 'SUCCESS', anomalies: [] } as any);
+
     const configRes = await workerFetch(request('/api/ai/config'), {}, executionContext);
     expect(configRes.status).toBe(200);
 

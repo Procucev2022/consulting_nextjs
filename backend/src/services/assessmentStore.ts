@@ -1,10 +1,14 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import type {
   AssessmentRecord,
   CustomerRecord,
   AssessmentDataVersion,
   AssessmentAnalysisRun,
   AssessmentAuditLog,
-  PersistedStoreData
+  PersistedStoreData,
+  PersistenceInfo
 } from '../types/assessment';
 import type {
   CreateCustomerInput,
@@ -18,12 +22,17 @@ import {
   DATA_STATUSES,
   ASSESSMENT_STATUSES,
   AUDIT_ACTIONS,
-  DEFAULT_ASSESSMENT_CONFIG
+  DEFAULT_ASSESSMENT_CONFIG,
+  PERSISTENCE_ENVIRONMENTS
 } from '../constants/assessment';
 import {
   getAuthoritativeDataDir,
   loadAssessmentStoreFromDisk,
-  persistAssessmentStoreToDisk
+  persistAssessmentStoreToDisk,
+  isTestMode,
+  isProtectedLiveStore,
+  sanitizePersistencePath,
+  getPersistenceEnvironment
 } from './assessmentPersistence';
 import logger from '../utils/logger';
 
@@ -53,12 +62,85 @@ export class AssessmentStore {
     return AssessmentStore.instance;
   }
 
+  public static resetInstance(): void {
+    AssessmentStore.instance = undefined as unknown as AssessmentStore;
+  }
+
   public getDataDir(): string {
     return this.customDataDir || getAuthoritativeDataDir();
   }
 
   public setCustomDataDir(dir?: string): void {
     this.customDataDir = dir;
+    if (dir) {
+      const loaded = this.loadFromDisk();
+      if (!loaded) {
+        this.assessments.clear();
+        this.customers.clear();
+        this.dataVersions.clear();
+        this.analysisRuns.clear();
+        this.auditLogs.clear();
+        this.nextSequence = 1;
+        this.nextCustomerSequence = 1;
+      }
+    } else {
+      this.loadFromDisk();
+    }
+  }
+
+  public useIsolatedTestDir(customDir?: string): { testDir: string; cleanup: () => void } {
+    const prevDir = this.customDataDir;
+    let targetDir = customDir;
+    let isCreatedTemp = false;
+
+    if (!targetDir) {
+      const tempBase = path.join(os.tmpdir(), 'aicev-test-stores');
+      const uniqueSuffix = `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      targetDir = path.join(tempBase, uniqueSuffix);
+      isCreatedTemp = true;
+    }
+
+    try {
+      fs.mkdirSync(targetDir, { recursive: true });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`FAILED_TO_ESTABLISH_ISOLATED_TEST_DIR: Could not establish test directory: ${msg}`);
+    }
+
+    this.setCustomDataDir(targetDir);
+
+    const cleanup = (): void => {
+      this.setCustomDataDir(prevDir);
+      if (isCreatedTemp && targetDir && fs.existsSync(targetDir)) {
+        try {
+          fs.rmSync(targetDir, { recursive: true, force: true });
+        } catch (rmErr: unknown) {
+          logger.warn('Failed to clean up temporary test directory', {
+            targetDir: sanitizePersistencePath(targetDir),
+            error: rmErr
+          });
+        }
+      }
+    };
+
+    return { testDir: targetDir, cleanup };
+  }
+
+  public getPersistenceInfo(): PersistenceInfo {
+    const dir = this.getDataDir();
+    const env = getPersistenceEnvironment(dir, this.customDataDir !== undefined);
+    const sanitized = sanitizePersistencePath(dir);
+    const primaryFile = path.join(dir, 'assessments.json');
+    const backupFile = path.join(dir, 'assessments.json.bak');
+    const storeExists = fs.existsSync(primaryFile) || fs.existsSync(backupFile);
+    return {
+      environment: env,
+      activeDataDir: dir,
+      sanitizedPath: sanitized,
+      isTestIsolated: this.customDataDir !== undefined || env === PERSISTENCE_ENVIRONMENTS.TEST,
+      storeExists,
+      assessmentCount: this.assessments.size
+    };
   }
 
   public loadFromDisk(): boolean {
@@ -284,6 +366,12 @@ export class AssessmentStore {
   }
 
   public resetToDefaultSeed(): void {
+    const activeDir = this.getDataDir();
+    if (isTestMode() && isProtectedLiveStore(activeDir)) {
+      throw new Error(
+        `CRITICAL_TEST_ISOLATION_BREACH: resetToDefaultSeed() cannot be executed on protected live store: ${sanitizePersistencePath(activeDir)}`
+      );
+    }
     this.assessments.clear();
     this.dataVersions.clear();
     this.analysisRuns.clear();

@@ -7,11 +7,31 @@ import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import { logger } from '../utils/logger';
 
+const handleControllerError = (res: Response, error: unknown, defaultMessage: string): Response => {
+  const message = error instanceof Error ? error.message : defaultMessage;
+  if (message.includes('not found') || message.includes('was not found')) {
+    return res.status(404).json({ success: false, message });
+  }
+  if (
+    message.includes('completed Module 1') ||
+    message.includes('required') ||
+    message.includes('active data version')
+  ) {
+    return res.status(400).json({ success: false, message });
+  }
+  return res.status(500).json({ success: false, message });
+};
+
 export const getDashboardSummary = async (req: Request, res: Response): Promise<Response | void> => {
   try {
+    const assessmentId = (req.query.assessmentId as string)?.trim();
+    if (!assessmentId) {
+      return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
+    }
     const forceRefresh = req.query.refresh === 'true';
-    const analysis = db.getModule2StrategicSourcingAnalysis(forceRefresh);
+    const analysis = db.getModule2StrategicSourcingAnalysis(assessmentId, forceRefresh);
     logger.info('Module 2 Sourcing Dashboard fetched', {
+      assessmentId,
       addressableSpendCr: analysis.summary.totalAddressableSpendInrCr,
       netOpportunityCr: analysis.summary.netQuantifiableOpportunityInrCr
     });
@@ -21,17 +41,20 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch sourcing dashboard summary';
     logger.error('Failed to fetch sourcing dashboard summary', {}, error);
-    return res.status(500).json({ success: false, message });
+    return handleControllerError(res, error, 'Failed to fetch sourcing dashboard summary');
   }
 };
 
 export const getCategoryProfiles = async (req: Request, res: Response): Promise<Response | void> => {
   try {
+    const assessmentId = (req.query.assessmentId as string)?.trim();
+    if (!assessmentId) {
+      return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
+    }
     const forceRefresh = req.query.refresh === 'true';
-    const analysis = db.getModule2StrategicSourcingAnalysis(forceRefresh);
-    logger.info('Module 2 Category Sourcing Profiles fetched', { count: analysis.profiles.length });
+    const analysis = db.getModule2StrategicSourcingAnalysis(assessmentId, forceRefresh);
+    logger.info('Module 2 Category Sourcing Profiles fetched', { assessmentId, count: analysis.profiles.length });
     return res.json({
       success: true,
       data: {
@@ -41,9 +64,8 @@ export const getCategoryProfiles = async (req: Request, res: Response): Promise<
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch category profiles';
     logger.error('Failed to fetch category profiles', {}, error);
-    return res.status(500).json({ success: false, message });
+    return handleControllerError(res, error, 'Failed to fetch category profiles');
   }
 };
 
@@ -53,7 +75,11 @@ export const getCategoryProfileById = async (req: Request, res: Response): Promi
     if (!id) {
       return res.status(400).json({ success: false, message: 'Category identifier is required' });
     }
-    const profile = db.getModule2StrategicProfile(id);
+    const assessmentId = (req.query.assessmentId as string)?.trim();
+    if (!assessmentId) {
+      return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
+    }
+    const profile = db.getModule2StrategicProfile(id, assessmentId);
     if (!profile) {
       return res.status(404).json({
         success: false,
@@ -61,6 +87,7 @@ export const getCategoryProfileById = async (req: Request, res: Response): Promi
       });
     }
     logger.info('Module 2 Category Deep-Dive profile fetched', {
+      assessmentId,
       categoryId: profile.categoryId,
       categoryName: profile.categoryName
     });
@@ -70,22 +97,28 @@ export const getCategoryProfileById = async (req: Request, res: Response): Promi
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch category profile';
     logger.error('Failed to fetch category profile by ID', { id: req.params.id }, error);
-    return res.status(500).json({ success: false, message });
+    return handleControllerError(res, error, 'Failed to fetch category profile');
   }
 };
 
-export const getSupplierDeepDive = async (_req: Request, res: Response): Promise<Response | void> => {
+export const getSupplierDeepDive = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const analysis = db.getModule2StrategicSourcingAnalysis();
-    const supplierAgg = new Map<string, {
-      supplierName: string;
-      categories: string[];
-      totalSpendInr: number;
-      totalTransactions: number;
-      potentialConsolidationRelevance: string;
-    }>();
+    const assessmentId = (req.query.assessmentId as string)?.trim();
+    if (!assessmentId) {
+      return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
+    }
+    const analysis = db.getModule2StrategicSourcingAnalysis(assessmentId);
+    const supplierAgg = new Map<
+      string,
+      {
+        supplierName: string;
+        categories: string[];
+        totalSpendInr: number;
+        totalTransactions: number;
+        potentialConsolidationRelevance: string;
+      }
+    >();
 
     for (const p of analysis.profiles) {
       for (const s of p.suppliers) {
@@ -115,15 +148,18 @@ export const getSupplierDeepDive = async (_req: Request, res: Response): Promise
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch supplier deep dive';
     logger.error('Failed to fetch supplier deep dive', {}, error);
-    return res.status(500).json({ success: false, message });
+    return handleControllerError(res, error, 'Failed to fetch supplier deep dive');
   }
 };
 
-export const getHandoffPackages = async (_req: Request, res: Response): Promise<Response | void> => {
+export const getHandoffPackages = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const packages = db.getModule2HandoffPackages();
+    const assessmentId = (req.query.assessmentId as string)?.trim();
+    if (!assessmentId) {
+      return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
+    }
+    const packages = db.getModule2HandoffPackages(assessmentId);
     return res.json({
       success: true,
       data: {
@@ -133,20 +169,23 @@ export const getHandoffPackages = async (_req: Request, res: Response): Promise<
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to fetch handoff packages';
     logger.error('Failed to fetch handoff packages', {}, error);
-    return res.status(500).json({ success: false, message });
+    return handleControllerError(res, error, 'Failed to fetch handoff packages');
   }
 };
 
-export const exportSourcingReport = async (_req: Request, res: Response): Promise<Response | void> => {
+export const exportSourcingReport = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const analysis = db.getModule2StrategicSourcingAnalysis();
+    const assessmentId = (req.query.assessmentId as string)?.trim();
+    if (!assessmentId) {
+      return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
+    }
+    const analysis = db.getModule2StrategicSourcingAnalysis(assessmentId);
     const exportData = {
       exportVersion: 'MODULE_2_SOURCING_LOGIC_V1.0',
       exportedAt: new Date().toISOString(),
       summary: analysis.summary,
-      profiles: analysis.profiles.map(p => ({
+      profiles: analysis.profiles.map((p) => ({
         categoryId: p.categoryId,
         categoryName: p.categoryName,
         totalSpendInr: p.totalSpendInr,
@@ -175,8 +214,7 @@ export const exportSourcingReport = async (_req: Request, res: Response): Promis
       timestamp: new Date().toISOString()
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to export sourcing report';
     logger.error('Failed to export sourcing report', {}, error);
-    return res.status(500).json({ success: false, message });
+    return handleControllerError(res, error, 'Failed to export sourcing report');
   }
 };

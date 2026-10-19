@@ -12,11 +12,23 @@ import { StrategicSourcingDashboardCards } from './StrategicSourcingDashboardCar
 import { StrategicSourcingCategoryTable } from './StrategicSourcingCategoryTable';
 import { StrategicSourcingDeepDiveModal } from './StrategicSourcingDeepDiveModal';
 import { HowCalculatedModal, type HowCalculatedData } from './HowCalculatedModal';
+import { DirectPriceImprovementView } from './DirectPriceImprovementView';
+import { EAuctionDynamicBiddingView } from './EAuctionDynamicBiddingView';
+import { VendorConsolidationView } from './VendorConsolidationView';
+import { VolumeAggregationView } from './VolumeAggregationView';
+import { PaymentTermsView } from './PaymentTermsView';
+import { CategorySpecialisationView } from './CategorySpecialisationView';
+import { Module2LeverOverview } from './Module2LeverOverview';
 import { logger } from '../../utils/logger';
 
-export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = () => {
+export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = ({
+  assessmentId
+}) => {
   const strings = UI_STRINGS.module2Sourcing;
 
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'directPrice' | 'eAuction' | 'vendorConsolidation' | 'volumeAggregation' | 'paymentTerms' | 'categorySpecialisation' | 'strategy'
+  >('overview');
   const [summary, setSummary] = useState<Module2StrategicSourcingDashboardSummary | null>(null);
   const [profiles, setProfiles] = useState<CategoryStrategicSourcingProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<CategoryStrategicSourcingProfile | null>(null);
@@ -38,8 +50,8 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
     setIsLoading(true);
     try {
       const [sumRes, profRes] = await Promise.all([
-        Module2StrategicSourcingApi.getDashboardSummary(refresh),
-        Module2StrategicSourcingApi.getCategoryProfiles(refresh)
+        Module2StrategicSourcingApi.getDashboardSummary(refresh, assessmentId),
+        Module2StrategicSourcingApi.getCategoryProfiles(refresh, assessmentId)
       ]);
       if (isMountedRef.current) {
         if (sumRes) setSummary(sumRes);
@@ -54,7 +66,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [assessmentId]);
 
   useEffect(() => {
     loadData();
@@ -67,7 +79,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
 
   const handleExportAudit = async () => {
     try {
-      const data = await Module2StrategicSourcingApi.exportAuditDossier();
+      const data = await Module2StrategicSourcingApi.exportAuditDossier(assessmentId);
       if (!data) return;
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -157,40 +169,218 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         </div>
       </div>
 
-      {/* 10 KPI Dashboard Summary Cards */}
-      {summary && (
-        <StrategicSourcingDashboardCards
-          summary={summary}
-          onFilterCardClick={(key) => setActiveFilterCard(key)}
-          activeFilter={activeFilterCard}
-          onOpenHowCalculated={() => handleOpenHowCalculated()}
+      {/* Workspace Navigation Subtabs */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800">
+        <button
+          type="button"
+          data-testid="subtab-btn-overview"
+          onClick={() => setActiveTab('overview')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'overview'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>10 Levers Overview</span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-directPrice"
+          onClick={() => setActiveTab('directPrice')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'directPrice'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 1: Direct Price Improvement</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-eAuction"
+          onClick={() => setActiveTab('eAuction')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'eAuction'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 2: E-Auction Dynamic Bidding</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-vendorConsolidation"
+          onClick={() => setActiveTab('vendorConsolidation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'vendorConsolidation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 3: Vendor Base Consolidation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-volumeAggregation"
+          onClick={() => setActiveTab('volumeAggregation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'volumeAggregation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 4: Volume Aggregation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-paymentTerms"
+          onClick={() => setActiveTab('paymentTerms')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'paymentTerms'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 5: Payment Terms</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-categorySpecialisation"
+          onClick={() => setActiveTab('categorySpecialisation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'categorySpecialisation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 6: Category Specialisation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-strategy"
+          onClick={() => setActiveTab('strategy')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'strategy'
+              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Category Sourcing Strategy</span>
+        </button>
+      </div>
+
+      {activeTab === 'overview' && (
+        <Module2LeverOverview
+          assessmentId={assessmentId}
+          onSelectLever={(lever) =>
+            setActiveTab(
+              lever as
+                | 'directPrice'
+                | 'eAuction'
+                | 'vendorConsolidation'
+                | 'volumeAggregation'
+                | 'paymentTerms'
+                | 'categorySpecialisation'
+            )
+          }
         />
       )}
 
-      {/* Category Sourcing Table */}
-      <StrategicSourcingCategoryTable
-        profiles={profiles}
-        onSelectCategory={handleSelectCategory}
-        onExportAudit={handleExportAudit}
-        selectedCategoryName={selectedProfile?.categoryName}
-        onOpenHowCalculated={handleOpenHowCalculated}
-      />
+      {activeTab === 'directPrice' && (
+        <DirectPriceImprovementView assessmentId={assessmentId || 'AIC-2026-0002'} />
+      )}
 
-      {/* 20-Section Deep Dive Modal */}
-      <StrategicSourcingDeepDiveModal
-        isOpen={isDeepDiveOpen}
-        onClose={() => setIsDeepDiveOpen(false)}
-        profile={selectedProfile}
-        onHandoffToModule4={handleHandoffToModule4}
-        onOpenHowCalculated={handleOpenHowCalculated}
-      />
+      {activeTab === 'eAuction' && (
+        <EAuctionDynamicBiddingView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
 
-      {/* Clickable How Calculated Modal */}
-      <HowCalculatedModal
-        isOpen={isHowCalculatedOpen}
-        onClose={() => setIsHowCalculatedOpen(false)}
-        data={howCalculatedData}
-      />
+      {activeTab === 'vendorConsolidation' && (
+        <VendorConsolidationView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'volumeAggregation' && (
+        <VolumeAggregationView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'paymentTerms' && (
+        <PaymentTermsView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'categorySpecialisation' && (
+        <CategorySpecialisationView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'strategy' && (
+        <>
+          {/* 10 KPI Dashboard Summary Cards */}
+          {summary && (
+            <StrategicSourcingDashboardCards
+              summary={summary}
+              onFilterCardClick={(key) => setActiveFilterCard(key)}
+              activeFilter={activeFilterCard}
+              onOpenHowCalculated={() => handleOpenHowCalculated()}
+            />
+          )}
+
+          {/* Category Sourcing Table */}
+          <StrategicSourcingCategoryTable
+            profiles={profiles}
+            onSelectCategory={handleSelectCategory}
+            onExportAudit={handleExportAudit}
+            selectedCategoryName={selectedProfile?.categoryName}
+            onOpenHowCalculated={handleOpenHowCalculated}
+          />
+
+          {/* 20-Section Deep Dive Modal */}
+          <StrategicSourcingDeepDiveModal
+            isOpen={isDeepDiveOpen}
+            onClose={() => setIsDeepDiveOpen(false)}
+            profile={selectedProfile}
+            onHandoffToModule4={handleHandoffToModule4}
+            onOpenHowCalculated={handleOpenHowCalculated}
+          />
+
+          {/* Clickable How Calculated Modal */}
+          <HowCalculatedModal
+            isOpen={isHowCalculatedOpen}
+            onClose={() => setIsHowCalculatedOpen(false)}
+            data={howCalculatedData}
+          />
+        </>
+      )}
     </div>
   );
 };

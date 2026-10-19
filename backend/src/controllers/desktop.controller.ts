@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { SYSTEM_BUILD_IDENTITY } from '../constants/assessment';
 import type { SystemBuildInfo } from '../types/assessment';
 import { desktopUpdateService } from '../services/desktopUpdateService';
+import { assessmentStore } from '../services/assessmentStore';
 
 export class DesktopController {
   public static getSystemInfo(_req: Request, res: Response): void {
@@ -20,7 +21,8 @@ export class DesktopController {
       pcbiMaster: {
         version: SYSTEM_BUILD_IDENTITY.PCBI_MASTER_VERSION,
         checksum: SYSTEM_BUILD_IDENTITY.PCBI_MASTER_CHECKSUM
-      }
+      },
+      persistence: assessmentStore.getPersistenceInfo()
     };
     res.json({ success: true, data: info });
   }

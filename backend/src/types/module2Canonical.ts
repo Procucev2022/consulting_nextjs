@@ -4,7 +4,11 @@
  */
 
 import type { StrategicInputTransaction } from './strategicSourcing';
-import type { CategoryStrategicSourcingProfile, Module2StrategicSourcingDashboardSummary } from './module2StrategicSourcing';
+import type {
+  CategoryStrategicSourcingProfile,
+  Module2StrategicSourcingDashboardSummary,
+  Module2ToModule4HandoffPackage
+} from './module2StrategicSourcing';
 
 export interface Module2PeriodMetadata {
   startDate: string;
@@ -24,6 +28,7 @@ export interface Module2CanonicalInput {
   validRowCount: number;
   excludedRowCount: number;
   anomalyRowCount: number;
+  suspectedDuplicateRowCount?: number;
   totalValidatedSpendInr: number;
   totalValidatedSpendCr: number;
   transactions: StrategicInputTransaction[];
@@ -160,3 +165,57 @@ export interface Module2ForensicSummary {
   poConsolidation: Module2PoConsolidationItem[];
   recurringSpend: Module2RecurringSpendItem[];
 }
+
+export interface Module2ValidRowInput {
+  recordId: string;
+  poNumber: string;
+  poLine?: string;
+  transactionDate: string;
+  vendorCode: string;
+  vendorName: string;
+  itemCode: string;
+  itemDescription: string;
+  quantity: number;
+  uom: string;
+  netPrice: number;
+  lineSpendInr: number;
+  currency: string;
+  plant: string;
+  materialGroup: string;
+  billingMonth?: string;
+}
+
+export interface AssessmentModule2CacheBundle {
+  canonicalInput: Module2CanonicalInput;
+  transactions: StrategicInputTransaction[];
+  sourcingResult: {
+    summary: Module2StrategicSourcingDashboardSummary;
+    profiles: CategoryStrategicSourcingProfile[];
+    handoffPackages: Module2ToModule4HandoffPackage[];
+  };
+  ledger: Module2OpportunityLedgerItem[];
+  bridge: Module2MathematicalBridge;
+  top50: Module2Top50VendorItem[];
+  risk: Module2SupplierRiskItem[];
+  po: Module2PoConsolidationItem[];
+  recurring: Module2RecurringSpendItem[];
+}
+
+export interface RawBundleInput {
+  datasetId: string;
+  dataVersionId: string;
+  sourceFileName: string;
+  sourceRowCount: number;
+  validRowCount: number;
+  excludedRowCount: number;
+  anomalyRowCount: number;
+  totalValidatedSpendInr: number;
+  totalValidatedSpendCr: number;
+  currenciesDetected: string[];
+  fileSha256: string;
+  validRows: Module2ValidRowInput[];
+  validNormalized: Array<{ inrNormalizedValue?: number | null } | undefined>;
+  suspectedDuplicateRowCount?: number;
+}
+
+

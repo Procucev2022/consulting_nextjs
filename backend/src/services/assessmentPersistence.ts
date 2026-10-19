@@ -1,7 +1,66 @@
 import fs from 'fs';
 import path from 'path';
-import type { PersistedStoreData } from '../types/assessment';
+import type { PersistedStoreData, PersistenceEnvironment } from '../types/assessment';
+import { PERSISTENCE_ENVIRONMENTS } from '../constants/assessment';
 import logger from '../utils/logger';
+
+export function isTestMode(): boolean {
+  return process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+}
+
+export function getDevelopmentDataDir(): string {
+  return path.resolve(__dirname, '../../../data/dev');
+}
+
+export function getDesktopRuntimeDataDir(): string | null {
+  if (process.env.APPDATA) {
+    return path.join(process.env.APPDATA, 'aiCEV', 'data');
+  }
+  return null;
+}
+
+export function isProtectedLiveStore(targetDir: string): boolean {
+  if (!targetDir) {
+    return false;
+  }
+  const normalized = path.resolve(targetDir).toLowerCase();
+  const devDir = path.resolve(getDevelopmentDataDir()).toLowerCase();
+  if (normalized === devDir) {
+    return true;
+  }
+
+  const appDataDir = getDesktopRuntimeDataDir();
+  if (appDataDir && normalized === path.resolve(appDataDir).toLowerCase()) {
+    return true;
+  }
+
+  return false;
+}
+
+export function sanitizePersistencePath(dirPath: string): string {
+  if (!dirPath) {
+    return '';
+  }
+  const resolved = path.resolve(dirPath);
+  const normalized = resolved.replace(/\\/g, '/');
+
+  const workspaceRoot = path.resolve(__dirname, '../../..').replace(/\\/g, '/');
+  if (normalized.toLowerCase().startsWith(workspaceRoot.toLowerCase())) {
+    return '<WORKSPACE>' + normalized.slice(workspaceRoot.length);
+  }
+
+  const appData = (process.env.APPDATA || '').replace(/\\/g, '/');
+  if (appData && normalized.toLowerCase().startsWith(appData.toLowerCase())) {
+    return '<APPDATA>' + normalized.slice(appData.length);
+  }
+
+  const userProfile = (process.env.USERPROFILE || process.env.HOME || '').replace(/\\/g, '/');
+  if (userProfile && normalized.toLowerCase().startsWith(userProfile.toLowerCase())) {
+    return '<USER_HOME>' + normalized.slice(userProfile.length);
+  }
+
+  return normalized;
+}
 
 export function getAuthoritativeDataDir(): string {
   if (process.env.AICEV_DATA_DIR) {
@@ -11,6 +70,28 @@ export function getAuthoritativeDataDir(): string {
     return path.join(process.env.APPDATA, 'aiCEV', 'data');
   }
   return path.resolve(__dirname, '../../../data');
+}
+
+export function getPersistenceEnvironment(
+  targetDir: string,
+  isCustomInjected = false
+): PersistenceEnvironment {
+  if (isTestMode() || isCustomInjected) {
+    return PERSISTENCE_ENVIRONMENTS.TEST;
+  }
+  const normalized = path.resolve(targetDir).toLowerCase();
+  const devDir = path.resolve(getDevelopmentDataDir()).toLowerCase();
+  if (
+    normalized === devDir ||
+    (process.env.AICEV_DATA_DIR && normalized === path.resolve(process.env.AICEV_DATA_DIR).toLowerCase())
+  ) {
+    return PERSISTENCE_ENVIRONMENTS.DEVELOPMENT;
+  }
+  const appDataDir = getDesktopRuntimeDataDir();
+  if (appDataDir && normalized === path.resolve(appDataDir).toLowerCase()) {
+    return PERSISTENCE_ENVIRONMENTS.DESKTOP_RUNTIME;
+  }
+  return PERSISTENCE_ENVIRONMENTS.DEFAULT;
 }
 
 function resolveStoreFileToRead(dataDir: string): string | null {
@@ -68,6 +149,16 @@ export function loadAssessmentStoreFromDisk(dataDir: string): PersistedStoreData
 }
 
 export function persistAssessmentStoreToDisk(dataDir: string, data: PersistedStoreData): void {
+  if (isTestMode() && isProtectedLiveStore(dataDir)) {
+    const sanitized = sanitizePersistencePath(dataDir);
+    logger.error('CRITICAL_TEST_ISOLATION_BREACH: Automated test attempted to write to live data directory', {
+      dataDir: sanitized
+    });
+    throw new Error(
+      `CRITICAL_TEST_ISOLATION_BREACH: Automated test attempted to write to live data directory: ${sanitized}`
+    );
+  }
+
   try {
     fs.mkdirSync(dataDir, { recursive: true });
     const targetFile = path.join(dataDir, 'assessments.json');

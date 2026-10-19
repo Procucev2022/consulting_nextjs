@@ -29,13 +29,14 @@ export interface UnitPricesResult {
 }
 
 export function computeUnitPrices(item: LineItemMapping, spendCr: number): UnitPricesResult {
-  const qty = item.qty || 100;
-  const unitPrice = item.unit_price || (qty > 0 ? Number(((spendCr * 10000000) / qty).toFixed(2)) : 100);
+  const qty = item.qty || 0;
+  const unitPrice = item.unit_price || (qty > 0 ? Number(((spendCr * 10000000) / qty).toFixed(2)) : 0);
+  const basePrice = Number(unitPrice.toFixed(2));
   return {
     qty,
-    priceFy24: Number(unitPrice.toFixed(2)),
-    priceFy25: Number((unitPrice * 1.05).toFixed(2)),
-    priceFy26: Number((unitPrice * 1.10).toFixed(2))
+    priceFy24: basePrice,
+    priceFy25: item.unit_price_fy25 ? Number(item.unit_price_fy25.toFixed(2)) : basePrice,
+    priceFy26: item.unit_price_fy26 ? Number(item.unit_price_fy26.toFixed(2)) : basePrice
   };
 }
 

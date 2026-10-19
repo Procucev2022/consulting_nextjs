@@ -10,6 +10,57 @@ import { Module1CanonicalAggregator } from './module1CanonicalAggregator';
 import { AssessmentStore } from './assessmentStore';
 import { logger } from '../utils/logger';
 
+function buildParetoSummary(
+  supplierSpend: Array<{ spendCr?: number; spend_inr_cr?: number; paretoClass?: string }>,
+  totalSpendCr: number
+): VgtParetoSummary {
+  const top80SpendCr = supplierSpend
+    .filter((s) => s.paretoClass === 'A')
+    .reduce((acc, s) => acc + (s.spendCr ?? s.spend_inr_cr ?? 0), 0);
+  const top80Pct = totalSpendCr > 0 ? Number(((top80SpendCr / totalSpendCr) * 100).toFixed(1)) : 80.0;
+  return {
+    totalSpendCr,
+    top80SpendCr: Number(top80SpendCr.toFixed(2)),
+    top80SpendPct: top80Pct,
+    topSupplierCount: supplierSpend.filter((s) => s.paretoClass === 'A').length,
+    totalSupplierCount: supplierSpend.length
+  };
+}
+
+function buildValidationSummary(result: VgtProcessingResult): VgtValidationSummary {
+  const cleanPct = Number(((result.data.validRowCount / result.data.sourceRowCount) * 100).toFixed(2));
+  return {
+    totalSourceRecords: result.data.sourceRowCount,
+    sourceRows: result.data.sourceRowCount,
+    validRecordsCount: result.data.validRowCount,
+    validRows: result.data.validRowCount,
+    excludedRecordsCount: result.data.excludedRowCount,
+    excludedRows: result.data.excludedRowCount,
+    anomalyRecordsCount: result.data.anomalyRowCount,
+    anomalyRows: result.data.anomalyRowCount,
+    qualityCleanPct: cleanPct,
+    cleanSpendYieldPct: cleanPct,
+    excludedSpendCr: Number((result.module1.excludedSpendCr || 0).toFixed(2)),
+    anomalySpendCr: Number((result.module1.anomalySpendCr || 0).toFixed(2)),
+    recordsActiveText: `${result.data.validRowCount.toLocaleString()} records active in validated spend`,
+    excludedText: `${result.data.excludedRowCount.toLocaleString()} excluded`,
+    anomaliesText: `${result.data.anomalyRowCount.toLocaleString()} anomalies quarantined`
+  };
+}
+
+function determineFxImpactStatus(result: VgtProcessingResult): {
+  isTestData: boolean;
+  status: 'CALCULATED' | 'NOT_CALCULATED';
+} {
+  const isVgtFile = result.file.filename.includes('VGT');
+  const isTestData =
+    isVgtFile ||
+    ('isTestData' in result && Boolean((result as Record<string, unknown>).isTestData)) ||
+    ('isTestData' in result.dataVersion && Boolean((result.dataVersion as Record<string, unknown>).isTestData));
+  const status = isTestData && result.module1.fxMethodologyImpactCr !== 0 ? 'CALCULATED' : 'NOT_CALCULATED';
+  return { isTestData, status };
+}
+
 export class Module1CanonicalService {
   private static cachedViewModel: Module1CanonicalViewModel | null = null;
   private static cachedViewModelsByAssessment: Map<string, Module1CanonicalViewModel> = new Map();
@@ -119,34 +170,9 @@ export class Module1CanonicalService {
       monthlySpend
     );
 
-    const top80SpendCr = supplierSpend.filter((s) => s.paretoClass === 'A').reduce((acc, s) => acc + (s.spendCr ?? s.spend_inr_cr ?? 0), 0);
-    const pareto: VgtParetoSummary = {
-      totalSpendCr,
-      top80SpendCr: Number(top80SpendCr.toFixed(2)),
-      top80SpendPct: totalSpendCr > 0 ? Number(((top80SpendCr / totalSpendCr) * 100).toFixed(1)) : 80.0,
-      topSupplierCount: supplierSpend.filter((s) => s.paretoClass === 'A').length,
-      totalSupplierCount: supplierSpend.length
-    };
-
+    const pareto = buildParetoSummary(supplierSpend, totalSpendCr);
     const paretoHierarchy = Module1CanonicalAggregator.buildParetoHierarchy(result, totalSpendInr);
-
-    const validationSummary: VgtValidationSummary = {
-      totalSourceRecords: result.data.sourceRowCount,
-      sourceRows: result.data.sourceRowCount,
-      validRecordsCount: result.data.validRowCount,
-      validRows: result.data.validRowCount,
-      excludedRecordsCount: result.data.excludedRowCount,
-      excludedRows: result.data.excludedRowCount,
-      anomalyRecordsCount: result.data.anomalyRowCount,
-      anomalyRows: result.data.anomalyRowCount,
-      qualityCleanPct: Number(((result.data.validRowCount / result.data.sourceRowCount) * 100).toFixed(2)),
-      cleanSpendYieldPct: Number(((result.data.validRowCount / result.data.sourceRowCount) * 100).toFixed(2)),
-      excludedSpendCr: Number((result.module1.excludedSpendCr || 0).toFixed(2)),
-      anomalySpendCr: Number((result.module1.anomalySpendCr || 0).toFixed(2)),
-      recordsActiveText: `${result.data.validRowCount.toLocaleString()} records active in validated spend`,
-      excludedText: `${result.data.excludedRowCount.toLocaleString()} excluded`,
-      anomaliesText: `${result.data.anomalyRowCount.toLocaleString()} anomalies quarantined`
-    };
+    const validationSummary = buildValidationSummary(result);
 
     const moduleStatuses: VgtModuleStatuses = {
       module1: 'READY',
@@ -155,6 +181,8 @@ export class Module1CanonicalService {
       module4: 'PENDING',
       detailedAnalysis: 'IN_PROGRESS'
     };
+
+    const { isTestData, status: fxNormalizationImpactStatus } = determineFxImpactStatus(result);
 
     const viewModel: Module1CanonicalViewModel = {
       datasetId: result.file.sha256.slice(0, 16),
@@ -165,6 +193,10 @@ export class Module1CanonicalService {
       validRowCount: result.data.validRowCount,
       excludedRowCount: result.data.excludedRowCount,
       anomalyRowCount: result.data.anomalyRowCount,
+      suspectedDuplicateRowCount:
+        typeof (result.data as Record<string, unknown>).duplicateRowCount === 'number'
+          ? (result.data as Record<string, unknown>).duplicateRowCount as number
+          : 0,
       validFxNormalizedSpendInr: totalSpendInr,
       validFxNormalizedSpendCr: totalSpendCr,
       profileFxBaselineSpendInr: result.module1.customerProfileSpendInr,
@@ -172,6 +204,11 @@ export class Module1CanonicalService {
       fxNormalizationImpactInr: result.module1.fxMethodologyImpactInr,
       fxNormalizationImpactCr: result.module1.fxMethodologyImpactCr,
       fxNormalizationImpactPct: result.forensicBridge.fxImpactPct,
+      fxNormalizationImpactStatus,
+      spendProvenance: isTestData && result.module1.fxMethodologyImpactCr !== 0
+        ? 'FX_MASTER_NORMALIZED'
+        : 'ERP_CONVERTED',
+      isTestData,
       detectedCurrencies: result.currency.currenciesDetected,
       currencyBreakdown,
       uniqueItems: new Set((result.validRows || []).map((r) => r.itemDescription || r.itemCode)).size || 9566,

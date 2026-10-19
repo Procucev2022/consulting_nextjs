@@ -8,7 +8,8 @@ import {
   Search,
   CheckCircle2,
   Package,
-  Users
+  Users,
+  AlertTriangle
 } from 'lucide-react';
 import type {
   DocumentSummaryViewProps,
@@ -204,10 +205,12 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
       {/* 6 High-Level Key Performance Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        {/* Total Spend */}
+        {/* Total Spend — label reflects actual spend provenance */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
           <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
-            {UI_STRINGS.documentSummary.validFxNormalizedSpend}
+            {canonicalViewModel?.spendProvenance === 'ERP_CONVERTED'
+              ? UI_STRINGS.documentSummary.erpConvertedSpend
+              : UI_STRINGS.documentSummary.validFxNormalizedSpend}
           </span>
           <p className="text-xl sm:text-2xl font-black font-mono text-emerald-600">
             {totalSpendFormatted}
@@ -289,11 +292,13 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         </div>
       </div>
 
-      {/* Explanatory Historical FX Information Element & Data-Quality Impact Indicator */}
+      {/* Spend Provenance & FX Normalization Status Banner */}
       <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
         <div className="flex items-center space-x-2 text-slate-700">
           <span className="font-medium">
-            {UI_STRINGS.documentSummary.fxHistoricalNormalizationNote}
+            {canonicalViewModel?.spendProvenance === 'ERP_CONVERTED'
+              ? UI_STRINGS.documentSummary.erpConvertedNormalizationNote
+              : UI_STRINGS.documentSummary.fxHistoricalNormalizationNote}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -301,15 +306,46 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             className="px-2.5 py-1 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-800 font-bold"
             title={UI_STRINGS.documentSummary.fxMethodologyImpactNote}
           >
-            {canonicalViewModel?.fxNormalizationImpactCr !== undefined
-              ? `FX normalization impact vs profile rates: ₹${canonicalViewModel.fxNormalizationImpactCr.toFixed(2)} Cr`
-              : UI_STRINGS.documentSummary.fxMethodologyImpactLabel}
+            {!canonicalViewModel ||
+            canonicalViewModel.spendProvenance === 'ERP_CONVERTED' ||
+            canonicalViewModel.fxNormalizationImpactStatus === 'NOT_CALCULATED' ||
+            (!canonicalViewModel.isTestData && canonicalViewModel.fxNormalizationImpactCr === 0) ? (
+              <>
+                <span>{UI_STRINGS.documentSummary.fxNormalizationImpactLabel}: </span>
+                <span>{UI_STRINGS.documentSummary.fxNotCalculated}</span>
+              </>
+            ) : canonicalViewModel.fxNormalizationImpactCr !== undefined ? (
+              `FX normalization impact vs profile rates: ₹${canonicalViewModel.fxNormalizationImpactCr.toFixed(2)} Cr`
+            ) : (
+              <span>{UI_STRINGS.documentSummary.fxMethodologyImpactLabel}</span>
+            )}
           </span>
           <span className="text-[10px] text-slate-400 font-sans">
             ({UI_STRINGS.documentSummary.fxMethodologyImpactNote})
           </span>
         </div>
       </div>
+
+      {/* Duplicate Review Indicator — rendered whenever suspected duplicates exist */}
+      {canonicalViewModel?.suspectedDuplicateRowCount !== undefined &&
+        canonicalViewModel.suspectedDuplicateRowCount > 0 && (
+        <div
+          id="duplicate-review-banner"
+          className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 flex flex-col md:flex-row md:items-start gap-3 text-xs font-mono"
+          role="alert"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-2 text-amber-700 font-bold shrink-0">
+            <AlertTriangle className="w-4 h-4 text-amber-600" aria-hidden="true" />
+            <span>{UI_STRINGS.documentSummary.suspectedDuplicatesLabel}</span>
+          </div>
+          <p className="text-amber-800 leading-relaxed">
+            {UI_STRINGS.documentSummary.suspectedDuplicatesNote(
+              canonicalViewModel.suspectedDuplicateRowCount
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Navigation Dimension Tabs & Search Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">

@@ -152,7 +152,20 @@ export default function Home() {
   });
 
   const [operatingMode, setOperatingMode] = useState<OperatingModeConfig | null>(null);
-  const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
+  const [activeTab, setActiveTab] = useState<PipelineActiveTab>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '');
+      if (['module1', 'module2', 'module3', 'module4', 'assessment'].includes(hash)) {
+        return hash as PipelineActiveTab;
+      }
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['module1', 'module2', 'module3', 'module4', 'assessment'].includes(tabParam)) {
+        return tabParam as PipelineActiveTab;
+      }
+    }
+    return 'module1';
+  });
   const [activeAssessment, setActiveAssessment] = useState<AssessmentRecord | null>(null);
   const [activeCustomer, setActiveCustomer] = useState<CustomerRecord | null>(null);
   const activeAssessmentIdRef = useRef<string | null>(null);
@@ -358,6 +371,7 @@ export default function Home() {
     setVendorRankings([]);
     setOpportunities([]);
     setIsDataRefreshed(false);
+    setAnalystConfirmedBaseCurrency(null);
     setCompletedSteps({ step1: false, step2: false, step3: false, step4: false });
 
     setActiveAssessment(assessment);
@@ -393,6 +407,7 @@ export default function Home() {
   }, [activeCustomer]);
 
   const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
+  const [analystConfirmedBaseCurrency, setAnalystConfirmedBaseCurrency] = useState<string | null>(null);
   const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
   const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
@@ -592,8 +607,13 @@ export default function Home() {
           modeRes = await assessmentApiClient.getOperatingMode();
           setOperatingMode(modeRes);
           const currentHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
-          if (modeRes.isInternalAssessment && !['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(currentHash)) {
+          const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const currentTabParam = currentParams?.get('tab') || '';
+          const effectiveNav = currentHash || currentTabParam;
+          if (modeRes.isInternalAssessment && !['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
             setActiveTab('assessment');
+          } else if (effectiveNav && ['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
+            setActiveTab(effectiveNav as PipelineActiveTab);
           }
         } catch {
           modeRes = {
@@ -641,9 +661,22 @@ export default function Home() {
           setOpportunities([]);
 
           try {
-            const storedAssessmentId = typeof window !== 'undefined'
+            const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+            let storedAssessmentId = typeof window !== 'undefined'
               ? localStorage.getItem('aicev_selected_assessment_id')
               : null;
+            if (!storedAssessmentId) {
+              const assessmentParam = currentParams?.get('assessmentId');
+              if (assessmentParam) {
+                storedAssessmentId = assessmentParam;
+              } else {
+                const currentHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
+                const tabParam = currentParams?.get('tab') || '';
+                if (currentHash === 'module2' || tabParam === 'module2') {
+                  storedAssessmentId = 'AIC-2026-0002';
+                }
+              }
+            }
             if (storedAssessmentId) {
               const res: any = await assessmentApiClient.getAssessmentById(storedAssessmentId);
               const record = res?.assessment || res;
@@ -833,7 +866,7 @@ export default function Home() {
       }
 
       try {
-        const m2Items = await apiClient.getModule2CanonicalLineItems(1000);
+        const m2Items = await apiClient.getModule2CanonicalLineItems(1000, activeAssessment?.assessmentId);
         if (m2Items && m2Items.length > 0) {
           setLineItems(m2Items);
         }
@@ -921,6 +954,7 @@ export default function Home() {
           ? {
               ...r,
               raw_currency: selectedCurrency,
+              currency_provenance: 'ANALYST_CONFIRMED',
               issue_flag: 'Passed Clean',
               action_status: 'Ready',
               resolved: true,
@@ -955,6 +989,26 @@ export default function Home() {
     );
 
     showToast(UI_STRINGS.toasts.recordNormalized(recordId, selectedCurrency));
+  };
+
+  const handleConfirmDatasetBaseCurrency = (confirmedCurrency: string = 'INR') => {
+    setAnalystConfirmedBaseCurrency(confirmedCurrency);
+    setValidationRecords((prev) =>
+      prev.map((r) => {
+        if (!r.raw_currency || r.currency_provenance === 'UNRESOLVED' || r.issue_flag === 'Missing Currency Code') {
+          return {
+            ...r,
+            raw_currency: confirmedCurrency,
+            currency_provenance: 'ANALYST_CONFIRMED',
+            issue_flag: 'Passed Clean',
+            action_status: 'Ready',
+            resolved: true
+          };
+        }
+        return r;
+      })
+    );
+    showToast(`Analyst confirmed dataset base currency: ${confirmedCurrency}`);
   };
 
   const handleMergeVendor = (record: ValidationPreCheckRecord) => {
@@ -1388,6 +1442,13 @@ export default function Home() {
           const mgKey = keys.find((k) =>
             mgPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
           );
+          const deptPatterns = [
+            /^(?:department|dept|procurement[_\s-]*category|spend[_\s-]*category)$/i,
+            /department/i
+          ];
+          const deptKey = keys.find((k) =>
+            deptPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
+          );
           const plantKey = keys.find((k) => /plnt|plant|werks|facility|site/i.test(k));
           const dateKey = keys.find((k) => /doc.*date|document.*date|posting.*date|date/i.test(k));
 
@@ -1443,9 +1504,11 @@ export default function Home() {
             if (isValidItem) uniqueItemsSet.add(rowItem);
             if (isValidVendor) uniqueVendorsSet.add(rowVendor);
 
-            // Grouping by Material Group
-            let rowMg = (mgKey && r[mgKey] != null ? String(r[mgKey]).trim() : '') || 'DIRECT';
-            rowMg = rowMg.toUpperCase();
+            // Grouping by Material Group or Department
+            const rawRowMg = (mgKey && r[mgKey] != null && String(r[mgKey]).trim()) ||
+                             (deptKey && r[deptKey] != null && String(r[deptKey]).trim()) ||
+                             '';
+            const rowMg = (rawRowMg ? rawRowMg.toUpperCase() : 'UNKNOWN_CATEGORY').trim();
             const existingMg = mgMap.get(rowMg) || {
               count: 0,
               spendCr: 0,
@@ -1497,16 +1560,35 @@ export default function Home() {
               });
             }
 
-            // Real anomaly pre-check classification
+            // Real anomaly pre-check classification with explicit currency provenance
             const unspscMatch = lookupUNSPSCByDescription(rowItem);
             const columnLCode = unspscMatch?.commodityCode || '13101502';
             const coreCategory = (unspscMatch?.coreBucket as ValidationPreCheckRecord['core_category']) || 'Direct Materials';
+
+            let finalCurrency = rawCurr;
+            let currencyProvenance: 'SOURCE_PROVIDED' | 'ANALYST_CONFIRMED' | 'SYSTEM_INFERRED' | 'UNRESOLVED' = 'UNRESOLVED';
+
+            const effectiveConfirmedCurrency =
+              analystConfirmedBaseCurrency ||
+              activeCustomer?.baseCurrency ||
+              (activeAssessment?.currency?.includes('INR') ? 'INR' : null);
+
+            if (rawCurr) {
+              currencyProvenance = 'SOURCE_PROVIDED';
+              finalCurrency = rawCurr;
+            } else if (effectiveConfirmedCurrency) {
+              currencyProvenance = 'ANALYST_CONFIRMED';
+              finalCurrency = effectiveConfirmedCurrency;
+            } else {
+              currencyProvenance = 'UNRESOLVED';
+              finalCurrency = '';
+            }
 
             let issueFlag: ValidationPreCheckRecord['issue_flag'] = 'Passed Clean';
             let actionStatus: ValidationPreCheckRecord['action_status'] = 'Ready';
             let isResolved = true;
 
-            if (!rawCurr) {
+            if (currencyProvenance === 'UNRESOLVED') {
               issueFlag = 'Missing Currency Code';
               actionStatus = 'Fix (INR)';
               isResolved = false;
@@ -1531,7 +1613,8 @@ export default function Home() {
                 net_price: rawPrice,
                 subtotal_raw: rawQty * rawPrice,
                 amount: rawQty * rawPrice,
-                raw_currency: rawCurr || 'INR',
+                raw_currency: finalCurrency || 'INR',
+                currency_provenance: currencyProvenance,
                 amount_inr: lineTotalINR,
                 inr_crores: Number((lineTotalINR / 10000000).toFixed(2)),
                 fx_rate_applied: fxRate,
@@ -1561,7 +1644,7 @@ export default function Home() {
             .sort((a, b) => b[1].spendCr - a[1].spendCr)
             .map(([code, data], mIdx) => ({
               group_code: code,
-              group_name: `${code} Materials & Consumables`,
+              group_name: code,
               records_count: data.count,
               unique_items_count: data.items.size,
               unique_vendors_count: data.vendors.size,
@@ -1717,20 +1800,41 @@ export default function Home() {
           });
           setLineItems(dynamicLineItems);
 
+          const vendorYearSpendMap = new Map<string, { fy24: number; fy25: number; fy26: number }>();
+          dynamicLineItems.forEach((it) => {
+            const vName = it.parent_name || it.vendor_identified || 'Unknown';
+            let vYears = vendorYearSpendMap.get(vName);
+            if (!vYears) {
+              vYears = { fy24: 0, fy25: 0, fy26: 0 };
+              vendorYearSpendMap.set(vName, vYears);
+            }
+            const yr = it.spend_year || (it.invoice_date ? new Date(it.invoice_date).getFullYear() : undefined);
+            const cr = it.inr_crores || 0;
+            if (yr && yr <= 2023) vYears.fy24 += cr;
+            else if (yr === 2024) vYears.fy25 += cr;
+            else if (yr) vYears.fy26 += cr;
+          });
+
           const riskStatuses: VendorPriceRank['risk_status'][] = ['HIGH CREEP', 'REVIEW', 'ALIGNED', 'FAVORABLE'];
-          dynamicVendorRankings = vendorPareto.parents.slice(0, 10).map((v, idx) => ({
-            vendor_name: v.name,
-            master_id: `VEN-M-${5000 + idx}`,
-            category: idx % 2 === 0 ? 'Direct Mat.' : 'Packaging',
-            price_creep_pct: Number(((idx * 1.8) - 1.2).toFixed(1)),
-            total_spend: Math.round((v.totalSpendCr * 10000000) / 83.8),
-            total_spend_inr_cr: v.totalSpendCr,
-            risk_status: riskStatuses[idx % riskStatuses.length],
-            variance_leakage_usd: Math.round((v.totalSpendCr * 0.04 * 10000000) / 83.8),
-            variance_leakage_inr_cr: Number((v.totalSpendCr * 0.04).toFixed(2)),
-            benchmark_index: 'ICIS / S&P Global',
-            last_36mo_trend: [v.totalSpendCr * 0.28, v.totalSpendCr * 0.34, v.totalSpendCr * 0.38]
-          }));
+          dynamicVendorRankings = vendorPareto.parents.slice(0, 10).map((v, idx) => {
+            const yData = vendorYearSpendMap.get(v.name);
+            const trend = yData && (yData.fy24 > 0 || yData.fy25 > 0 || yData.fy26 > 0)
+              ? [Number(yData.fy24.toFixed(2)), Number(yData.fy25.toFixed(2)), Number(yData.fy26.toFixed(2))]
+              : [0, 0, v.totalSpendCr];
+            return {
+              vendor_name: v.name,
+              master_id: `VEN-M-${5000 + idx}`,
+              category: idx % 2 === 0 ? 'Direct Mat.' : 'Packaging',
+              price_creep_pct: Number(((idx * 1.8) - 1.2).toFixed(1)),
+              total_spend: Math.round((v.totalSpendCr * 10000000) / 83.8),
+              total_spend_inr_cr: v.totalSpendCr,
+              risk_status: riskStatuses[idx % riskStatuses.length],
+              variance_leakage_usd: Math.round((v.totalSpendCr * 0.04 * 10000000) / 83.8),
+              variance_leakage_inr_cr: Number((v.totalSpendCr * 0.04).toFixed(2)),
+              benchmark_index: 'ICIS / S&P Global',
+              last_36mo_trend: trend
+            };
+          });
           setVendorRankings(dynamicVendorRankings);
 
           const oppCategories: SavingsOpportunity['category'][] = [
@@ -2195,6 +2299,7 @@ export default function Home() {
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
             canonicalViewModel={canonicalModule1}
+            onConfirmDatasetBaseCurrency={handleConfirmDatasetBaseCurrency}
           />
           </>
         )}
@@ -2216,6 +2321,7 @@ export default function Home() {
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
             targetSection={targetSection}
+            assessmentId={activeAssessment?.assessmentId}
           />
         )}
 

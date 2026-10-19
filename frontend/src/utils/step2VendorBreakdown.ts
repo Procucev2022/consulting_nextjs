@@ -73,10 +73,12 @@ function mapVendorToDetail(
   idx: number,
   totalCalculated: number
 ): VendorYearDetail {
-  const fy24 = data.spendFY24 > 0 ? data.spendFY24 : data.totalSpend * 0.28;
-  const fy25 = data.spendFY25 > 0 ? data.spendFY25 : data.totalSpend * 0.34;
-  const fy26 = data.spendFY26 > 0 ? data.spendFY26 : data.totalSpend * 0.38;
-  const yoy = fy25 > 0 ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1)) : 7.5;
+  const fy24 = data.spendFY24;
+  const fy25 = data.spendFY25;
+  const fy26 = data.spendFY26;
+  const yoy = (fy25 > 0 && fy26 > 0)
+    ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1))
+    : undefined;
   const primaryCat = getPrimaryCategory(data.categories);
 
   const topItems = Array.from(data.items.values())

@@ -1,133 +1,59 @@
 /**
- * Module 2 — Vendor Consolidation & Demand Pooling Engine
- * Version: MODULE_2_SOURCING_LOGIC_V2.0
- * 
- * Implements:
- * - Commercial Benefit A: Empirical price differential shifting tail spend to core reference
- * - Administrative Benefit B: Transaction cost savings if cost-per-PO provided, else NOT_QUANTIFIABLE
- * - Evidence-based Target Range (e.g. 2-3 suppliers)
- * - Consolidation Feasibility: HIGH | MEDIUM | LOW | NOT_QUANTIFIABLE
+ * Module 2 — Lever 3: Vendor Base Consolidation Engine
+ * Compliant with Rule 8, 9, max 300 lines, cyclomatic complexity <= 10, line <= 120
  */
 
+import logger from '../utils/logger';
+import { Module2CanonicalService } from './module2CanonicalService';
+import {
+  Module2MaterialMappingRegister,
+  getStrategicTransactionMaterialId
+} from './module2MaterialMappingRegister';
+import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import type {
   PriceDispersionMetrics,
-  ConsolidationSuitability,
-  OperationalConsolidationIndicators,
-  CategorySupplierStructureItem,
-  SourcingOpportunityStatus
+  CategorySupplierStructureItem
 } from '../types/module2StrategicSourcing';
-import { Module2ConsolidationHelper } from './module2ConsolidationHelper';
+import type { MaterialMappingEntry } from '../types/module2MaterialMapping';
+import type {
+  VendorConsolidationResult,
+  CategoryConsolidationProfile,
+  SameMaterialOpportunity,
+  ComparableMaterialOpportunity,
+  CrossPlantOpportunity,
+  VendorConsolidationQueryOptions,
+  VendorConsolidationBenefitEvaluation
+} from '../types/module2VendorConsolidation';
+import {
+  VENDOR_CONSOLIDATION_CONFIG,
+  VENDOR_CONSOLIDATION_DISCLOSURES,
+  METHODOLOGY_DISCLOSURES
+} from '../constants/module2VendorConsolidation';
+import {
+  calculateSupplierProfiles,
+  evaluateSameMaterialOpportunities,
+  evaluateComparableMaterialOpportunities,
+  evaluateCrossPlantOpportunities,
+  buildVendorConsolidationDataQualityExclusions
+} from './module2VendorConsolidationHelpers';
+import {
+  determineCategoryClassification,
+  evaluateCategoryStatus
+} from './module2VendorConsolidationCategoryHelper';
+import {
+  Module2VendorConsolidationStrategyHelper
+} from './module2VendorConsolidationStrategyHelper';
 
-export interface VendorConsolidationBenefitEvaluation {
-  suitability: ConsolidationSuitability;
-  rationale: string;
-  commercialPriceOpportunityInr: number | null;
-  commercialPriceOpportunityInrCr: number | null;
-  administrativeOpportunityInr: number | null;
-  administrativeOpportunityInrCr: number | null;
-  administrativeStatus: 'QUANTIFIABLE' | 'NOT_QUANTIFIABLE';
-  totalConsolidationBenefitInr: number | null;
-  totalConsolidationBenefitInrCr: number | null;
-  opportunityPct: number | null;
-  isQuantifiable: boolean;
-  status: SourcingOpportunityStatus;
-  evidencePath: 'PATH_A' | 'PATH_B' | 'PATH_C' | 'PATH_D';
-  proposedTargetSupplierRange: string;
-  consolidationFeasibility: 'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_QUANTIFIABLE';
-  operational: OperationalConsolidationIndicators;
-  consolidatableQuantity: number;
-  baselineWeightedPrice: number;
-  targetCredibleUnitPrice: number;
+export type { VendorConsolidationBenefitEvaluation };
+
+interface CategoryBuildOutput {
+  profile: CategoryConsolidationProfile;
+  sameMatOpps: SameMaterialOpportunity[];
+  compMatOpps: ComparableMaterialOpportunity[];
+  crossPlantOpps: CrossPlantOpportunity[];
 }
 
 export class Module2VendorConsolidationEngine {
-  private static toCr(inr: number | null): number | null {
-    if (inr === null) return null;
-    return Math.round((inr / 10000000) * 1000) / 1000;
-  }
-
-  private static deriveTargetRange(supplierCount: number, isRecurring: boolean): string {
-    if (supplierCount <= 1) return 'Maintain sole supplier: no consolidation applicable';
-    if (supplierCount <= 3) return 'Maintain current structure: no consolidation recommended';
-    if (supplierCount <= 5) return '2 suppliers';
-    if (supplierCount <= 8) return '2–3 suppliers';
-    return isRecurring ? '3–4 qualified suppliers' : '2–3 suppliers';
-  }
-
-  private static evaluateFeasibility(
-    supplierCount: number,
-    isRecurring: boolean,
-    commercialOpp: number
-  ): 'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_QUANTIFIABLE' {
-    if (supplierCount <= 1) return 'NOT_QUANTIFIABLE';
-    if (commercialOpp > 500000 && isRecurring) return 'HIGH';
-    if (supplierCount >= 3) return 'MEDIUM';
-    return 'LOW';
-  }
-
-  private static calculateTailCommercialOpportunity(
-    tailSuppliers: CategorySupplierStructureItem[],
-    bestCorePrice: number
-  ): { commercialPriceOpportunityInr: number; consolidatableQuantity: number } {
-    let commercialPriceOpportunityInr = 0;
-    let consolidatableQuantity = 0;
-
-    for (const tail of tailSuppliers) {
-      if (tail.weightedAveragePrice > bestCorePrice) {
-        const priceGap = tail.weightedAveragePrice - bestCorePrice;
-        commercialPriceOpportunityInr += priceGap * tail.totalQuantity;
-        consolidatableQuantity += tail.totalQuantity;
-      }
-    }
-    return {
-      commercialPriceOpportunityInr: Math.round(commercialPriceOpportunityInr),
-      consolidatableQuantity
-    };
-  }
-
-  private static calculateAdminBenefit(
-    customerCostPerPoInr: number | null,
-    poCountAffected: number
-  ): { adminOppInr: number | null; adminStatus: 'QUANTIFIABLE' | 'NOT_QUANTIFIABLE' } {
-    if (customerCostPerPoInr !== null && customerCostPerPoInr > 0 && poCountAffected > 0) {
-      return {
-        adminOppInr: Math.round(poCountAffected * customerCostPerPoInr),
-        adminStatus: 'QUANTIFIABLE'
-      };
-    }
-    return { adminOppInr: null, adminStatus: 'NOT_QUANTIFIABLE' };
-  }
-
-  private static buildIneligibleResult(
-    suitability: ConsolidationSuitability,
-    rationale: string,
-    status: SourcingOpportunityStatus,
-    proposedTargetSupplierRange: string,
-    operational: OperationalConsolidationIndicators
-  ): VendorConsolidationBenefitEvaluation {
-    return {
-      suitability,
-      rationale,
-      commercialPriceOpportunityInr: status === 'NOT_ELIGIBLE' ? 0 : null,
-      commercialPriceOpportunityInrCr: status === 'NOT_ELIGIBLE' ? 0 : null,
-      administrativeOpportunityInr: null,
-      administrativeOpportunityInrCr: null,
-      administrativeStatus: 'NOT_QUANTIFIABLE',
-      totalConsolidationBenefitInr: status === 'NOT_ELIGIBLE' ? 0 : null,
-      totalConsolidationBenefitInrCr: status === 'NOT_ELIGIBLE' ? 0 : null,
-      opportunityPct: status === 'NOT_ELIGIBLE' ? 0 : null,
-      isQuantifiable: false,
-      status,
-      evidencePath: 'PATH_D',
-      proposedTargetSupplierRange,
-      consolidationFeasibility: 'NOT_QUANTIFIABLE',
-      operational,
-      consolidatableQuantity: 0,
-      baselineWeightedPrice: 0,
-      targetCredibleUnitPrice: 0
-    };
-  }
-
   public static evaluate(
     isRecurring: boolean,
     suppliers: CategorySupplierStructureItem[],
@@ -136,80 +62,236 @@ export class Module2VendorConsolidationEngine {
     activeMonthsCount: number,
     customerCostPerPoInr: number | null = null
   ): VendorConsolidationBenefitEvaluation {
-    const { operational, tailSuppliers, tailSpend } = Module2ConsolidationHelper.buildOperationalIndicators(
-      suppliers,
-      activeMonthsCount
-    );
-
-    const proposedTargetSupplierRange = this.deriveTargetRange(suppliers.length, isRecurring);
-
-    if (suppliers.length <= 1) {
-      return this.buildIneligibleResult(
-        'NOT_SUITABLE',
-        'Sole supplier configuration. Vendor consolidation not applicable.',
-        'NOT_ELIGIBLE',
-        proposedTargetSupplierRange,
-        operational
-      );
-    }
-
-    if (!dispersion || addressableQuantity <= 0) {
-      return this.buildIneligibleResult(
-        'INSUFFICIENT_DATA',
-        'Insufficient comparable data to determine consolidation benefit.',
-        'IDENTIFIED_NOT_QUANTIFIABLE',
-        proposedTargetSupplierRange,
-        operational
-      );
-    }
-
-    const coreSuppliers = suppliers.filter(s => !s.isTailSupplier && s.weightedAveragePrice > 0);
-    const bestCorePrice = coreSuppliers.length > 0
-      ? Math.min(...coreSuppliers.map(s => s.weightedAveragePrice))
-      : dispersion.weightedAveragePrice;
-
-    const { commercialPriceOpportunityInr, consolidatableQuantity } =
-      this.calculateTailCommercialOpportunity(tailSuppliers, bestCorePrice);
-
-    const { adminOppInr, adminStatus } =
-      this.calculateAdminBenefit(customerCostPerPoInr, operational.poCountAffected);
-
-    const totalBenefitInr = commercialPriceOpportunityInr + (adminOppInr ?? 0);
-    const { suitability, rationale } = Module2ConsolidationHelper.getConsolidationSuitabilityInfo(
-      tailSuppliers.length,
-      commercialPriceOpportunityInr,
+    return Module2VendorConsolidationStrategyHelper.evaluate(
       isRecurring,
-      tailSpend
+      suppliers,
+      addressableQuantity,
+      dispersion,
+      activeMonthsCount,
+      customerCostPerPoInr
     );
+  }
 
-    const baselinePrice = dispersion.weightedAveragePrice;
-    const oppPct = baselinePrice > 0 && addressableQuantity > 0
-      ? (commercialPriceOpportunityInr / (baselinePrice * addressableQuantity)) * 100
-      : 0;
+  public static async calculate(
+    assessmentId: string,
+    options?: VendorConsolidationQueryOptions
+  ): Promise<VendorConsolidationResult> {
+    logger.info('Evaluating Lever 3 Vendor Base Consolidation', { assessmentId, options });
 
-    const isQuantifiable = commercialPriceOpportunityInr > 0;
-    const feasibility = this.evaluateFeasibility(suppliers.length, isRecurring, commercialPriceOpportunityInr);
+    const canonical = await Module2CanonicalService.getCanonicalInput(assessmentId);
+    const transactions: StrategicInputTransaction[] =
+      canonical?.transactions ??
+      (canonical as unknown as { spendProfile?: { transactions?: StrategicInputTransaction[] } })?.spendProfile
+        ?.transactions ??
+      [];
+
+    const { register, coverage, exceptions, materialCodeToMapping } =
+      Module2MaterialMappingRegister.classifyMaterials(transactions);
+
+    const unspscGroupMap = this.groupTransactionsByUnspsc(transactions, materialCodeToMapping);
+    const categories: CategoryConsolidationProfile[] = [];
+    const allSameMatOpps: SameMaterialOpportunity[] = [];
+    const allCompMatOpps: ComparableMaterialOpportunity[] = [];
+    const allCrossPlantOpps: CrossPlantOpportunity[] = [];
+    const addressableTxIds = new Set<string>();
+
+    for (const [, group] of unspscGroupMap.entries()) {
+      const out = this.buildCategoryProfile(
+        group.title,
+        group.txs,
+        addressableTxIds,
+        group.code,
+        materialCodeToMapping
+      );
+      categories.push(out.profile);
+      allSameMatOpps.push(...out.sameMatOpps);
+      allCompMatOpps.push(...out.compMatOpps);
+      allCrossPlantOpps.push(...out.crossPlantOpps);
+    }
+
+    const sourceGroupCategories = this.buildSourceGroupCategories(transactions, materialCodeToMapping);
+    const filtered = this.filterCategories(categories, options);
+    const addressableTxs = transactions.filter(t => t.id && addressableTxIds.has(t.id));
+    const addrSpendInr = Math.round(addressableTxs.reduce((sum, t) => sum + (t.total_spend_inr ?? 0), 0) * 100) / 100;
+    const totalSpendInr = Math.round(transactions.reduce((sum, t) => sum + (t.total_spend_inr ?? 0), 0) * 100) / 100;
+
+    const allSuppliers = new Set(transactions.map(t => (t.vendor_code ?? t.vendor_name ?? '').trim()).filter(Boolean));
+    const allMaterials = new Set(transactions.map(t => getStrategicTransactionMaterialId(t)));
+    const allPlants = new Set(transactions.map(t => (t.plant ?? '').trim()).filter(Boolean));
+    const categoryConsolidationCount = categories.filter(
+      c => c.categoryConsolidationCandidateStatus === 'IDENTIFIED'
+    ).length;
 
     return {
-      suitability,
-      rationale,
-      commercialPriceOpportunityInr: isQuantifiable ? commercialPriceOpportunityInr : null,
-      commercialPriceOpportunityInrCr: this.toCr(commercialPriceOpportunityInr),
-      administrativeOpportunityInr: adminOppInr,
-      administrativeOpportunityInrCr: this.toCr(adminOppInr),
-      administrativeStatus: adminStatus,
-      totalConsolidationBenefitInr: totalBenefitInr > 0 ? totalBenefitInr : null,
-      totalConsolidationBenefitInrCr: this.toCr(totalBenefitInr),
-      opportunityPct: Math.round(oppPct * 10) / 10,
-      isQuantifiable,
-      status: isQuantifiable ? 'CONSOLIDATION_CANDIDATE' : 'IDENTIFIED_NOT_QUANTIFIABLE',
-      evidencePath: isQuantifiable ? 'PATH_B' : 'PATH_D',
-      proposedTargetSupplierRange,
-      consolidationFeasibility: feasibility,
-      operational,
-      consolidatableQuantity,
-      baselineWeightedPrice: baselinePrice,
-      targetCredibleUnitPrice: bestCorePrice
+      assessmentId,
+      customerName: canonical?.datasetId ? undefined : assessmentId,
+      reportDate: new Date().toISOString(),
+      leverId: VENDOR_CONSOLIDATION_CONFIG.LEVER_ID,
+      leverCode: VENDOR_CONSOLIDATION_CONFIG.LEVER_CODE,
+      leverName: VENDOR_CONSOLIDATION_CONFIG.LEVER_NAME,
+      totalAssessmentSpendInr: totalSpendInr,
+      totalAssessmentSpendCr: Math.round((totalSpendInr / 10000000) * 10000) / 10000,
+      sameMaterialMultiSourcingSpendInr: addrSpendInr,
+      sameMaterialMultiSourcingSpendCr: Math.round((addrSpendInr / 10000000) * 10000) / 10000,
+      addressableSpendInr: addrSpendInr,
+      addressableSpendCr: Math.round((addrSpendInr / 10000000) * 10000) / 10000,
+      categoryConsolidationOpportunitiesCount: categoryConsolidationCount,
+      categoryConsolidationCandidateSpendCr: null,
+      categoryConsolidationCandidateSpendStatus: 'NOT_YET_QUANTIFIABLE',
+      categoryConsolidationDisclosure: VENDOR_CONSOLIDATION_DISCLOSURES.CATEGORY_CONSOLIDATION_CANDIDATE_DISCLOSURE,
+      estimatedSavingsInr: null,
+      estimatedSavingsCr: null,
+      actualSavingsCr: 0.00,
+      validatedSavingsCr: 0.00,
+      savingsStatus: 'NOT_YET_QUANTIFIABLE',
+      savingsDisclosure: VENDOR_CONSOLIDATION_DISCLOSURES.SAVINGS_NOT_QUANTIFIABLE,
+      transactionAuditTrailNotice: VENDOR_CONSOLIDATION_DISCLOSURES.TRANSACTION_AUDIT_TRAIL_NOTICE,
+      categoriesAnalysedCount: filtered.length,
+      distinctSuppliersCount: allSuppliers.size,
+      distinctMaterialsCount: allMaterials.size,
+      distinctPlantsCount: allPlants.size,
+      multiSourcedMaterialsCount: allSameMatOpps.length,
+      categories: filtered.sort((a, b) => b.totalSpendInr - a.totalSpendInr),
+      sourceGroupCategories: sourceGroupCategories.sort((a, b) => b.totalSpendInr - a.totalSpendInr),
+      sameMaterialOpportunities: allSameMatOpps.sort((a, b) => b.totalSpendInr - a.totalSpendInr),
+      comparableMaterialOpportunities: allCompMatOpps.sort((a, b) => b.addressableSpendInr - a.addressableSpendInr),
+      crossPlantOpportunities: allCrossPlantOpps.sort((a, b) => b.totalSpendInr - a.totalSpendInr),
+      coverageSummary: coverage,
+      mappingRegister: register,
+      mappingExceptions: exceptions,
+      allTransactionsCount: transactions.length,
+      allTransactionsSpendInr: totalSpendInr,
+      transactionsSample: transactions.slice(0, 100),
+      methodologyDisclosures: METHODOLOGY_DISCLOSURES,
+      dataQualityExclusions: buildVendorConsolidationDataQualityExclusions(transactions)
     };
+  }
+
+  private static groupTransactionsByUnspsc(
+    txs: StrategicInputTransaction[],
+    mappingMap: Map<string, MaterialMappingEntry>
+  ): Map<string, { txs: StrategicInputTransaction[]; code: string; title: string }> {
+    const map = new Map<string, { txs: StrategicInputTransaction[]; code: string; title: string }>();
+    for (const t of txs) {
+      const matId = getStrategicTransactionMaterialId(t);
+      const mapping = mappingMap.get(matId);
+      const isMapped = mapping && mapping.reviewStatus !== 'AWAITING_REVIEW';
+      const code = isMapped ? mapping.assignedUnspscCode : '00000000';
+      const title = isMapped ? mapping.assignedUnspscTitle : 'Unclassified Materials (Review Queued)';
+      const key = `${title} [${code}]`;
+      let group = map.get(key);
+      if (!group) {
+        group = { txs: [], code, title };
+        map.set(key, group);
+      }
+      group.txs.push(t);
+    }
+    return map;
+  }
+
+  private static buildSourceGroupCategories(
+    txs: StrategicInputTransaction[],
+    mappingMap: Map<string, MaterialMappingEntry>
+  ): CategoryConsolidationProfile[] {
+    const map = new Map<string, StrategicInputTransaction[]>();
+    for (const t of txs) {
+      const cat = (t.spend_category ?? 'General').trim();
+      let list = map.get(cat);
+      if (!list) {
+        list = [];
+        map.set(cat, list);
+      }
+      list.push(t);
+    }
+    const result: CategoryConsolidationProfile[] = [];
+    const dummySet = new Set<string>();
+    for (const [catName, catTxs] of map.entries()) {
+      const out = this.buildCategoryProfile(catName, catTxs, dummySet, undefined, mappingMap);
+      result.push(out.profile);
+    }
+    return result;
+  }
+
+  private static buildCategoryProfile(
+    catName: string,
+    catTxs: StrategicInputTransaction[],
+    addressableTxIds: Set<string>,
+    forcedUnspscCode?: string,
+    materialMappingMap?: Map<string, MaterialMappingEntry>
+  ): CategoryBuildOutput {
+    const totalSpendInr = Math.round(catTxs.reduce((sum, t) => sum + (t.total_spend_inr ?? 0), 0) * 100) / 100;
+    const { unspscCode, unspscCategory, classificationType, classificationLabel } =
+      determineCategoryClassification(catName, catTxs, forcedUnspscCode, materialMappingMap);
+
+    const { suppliers, top1SharePct, top3SharePct, hhiIndex, fragmentation } =
+      calculateSupplierProfiles(catTxs, totalSpendInr);
+
+    const sameMatOpps = evaluateSameMaterialOpportunities(
+      catTxs,
+      catName,
+      unspscCode,
+      unspscCategory,
+      materialMappingMap
+    );
+    const compMatOpps = evaluateComparableMaterialOpportunities(catTxs, catName);
+    const crossPlantOpps = evaluateCrossPlantOpportunities(catTxs, catName);
+
+    for (const smo of sameMatOpps) {
+      if (smo.transactions) {
+        for (const tx of smo.transactions) {
+          if (tx.id) addressableTxIds.add(tx.id);
+        }
+      }
+    }
+
+    const sameMatInr = sameMatOpps.reduce((sum, o) => sum + o.addressableSpendInr, 0);
+    const sameMatCr = Math.round((sameMatInr / 10000000) * 10000) / 10000;
+    const distinctPlants = new Set(catTxs.map(t => (t.plant ?? '').trim()).filter(Boolean));
+    const distinctMats = new Set(catTxs.map(t => getStrategicTransactionMaterialId(t)));
+    const { status, reason, candidateStatus, candidateReason } = evaluateCategoryStatus(
+      sameMatOpps.length, suppliers.length, compMatOpps.length, distinctMats.size
+    );
+    const missingVendors = catTxs.filter(t => !t.vendor_code && !t.vendor_name).length;
+    const warnings = missingVendors > 0 ? [`${missingVendors} lines missing supplier identification`] : [];
+    const sourceCategories = Array.from(new Set(catTxs.map(t => (t.spend_category ?? '').trim()).filter(Boolean)));
+
+    const profile: CategoryConsolidationProfile = {
+      unspscCode, unspscCategory, spendCategory: catName, sourceCategories,
+      classificationType, classificationLabel,
+      totalSpendInr, totalSpendCr: Math.round((totalSpendInr / 10000000) * 10000) / 10000,
+      sameMaterialMultiSourcingSpendInr: sameMatInr, sameMaterialMultiSourcingSpendCr: sameMatCr,
+      addressableSpendInr: sameMatInr, addressableSpendCr: sameMatCr,
+      categoryConsolidationCandidateSpendInr: null, categoryConsolidationCandidateSpendCr: null,
+      categoryConsolidationCandidateStatus: candidateStatus, categoryConsolidationCandidateReason: candidateReason,
+      distinctSuppliersCount: suppliers.length, distinctMaterialsCount: distinctMats.size,
+      distinctPlantsCount: distinctPlants.size, plantsServed: Array.from(distinctPlants),
+      suppliers, top1SharePct, top3SharePct, hhiIndex, fragmentationLevel: fragmentation,
+      multiSourcedMaterialsCount: sameMatOpps.length, sameMaterialOpportunitiesCount: sameMatOpps.length,
+      comparableMaterialOpportunitiesCount: compMatOpps.length, crossPlantOpportunitiesCount: crossPlantOpps.length,
+      categoryOpportunityStatus: status, categoryOpportunityReason: reason,
+      estimatedSavingsInr: null, estimatedSavingsCr: null, actualSavingsCr: 0.00, validatedSavingsCr: 0.00,
+      savingsStatus: 'NOT_YET_QUANTIFIABLE', dataQualityWarnings: warnings
+    };
+
+    return { profile, sameMatOpps, compMatOpps, crossPlantOpps };
+  }
+
+  private static filterCategories(
+    categories: CategoryConsolidationProfile[],
+    options?: VendorConsolidationQueryOptions
+  ): CategoryConsolidationProfile[] {
+    if (!options) return categories;
+    return categories.filter(c => {
+      const q = options.category?.toLowerCase();
+      if (q) {
+        const m1 = c.spendCategory.toLowerCase().includes(q);
+        const m2 = c.unspscCategory.toLowerCase().includes(q);
+        const m3 = c.sourceCategories?.some(sc => sc.toLowerCase().includes(q));
+        if (!m1 && !m2 && !m3) return false;
+      }
+      if (options.status && c.categoryOpportunityStatus !== options.status) return false;
+      if (options.supplierCode && !c.suppliers.some(s => s.vendorCode === options.supplierCode)) return false;
+      return true;
+    });
   }
 }

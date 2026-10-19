@@ -59,6 +59,7 @@ export interface FxNormalizedTransaction {
   fxConversionStatus: FxConversionStatus;
   inrNormalizedValue: number | null;
   fxMasterVersion: string;
+  currencyProvenance?: string;
 }
 
 export interface FxSpendSummary {

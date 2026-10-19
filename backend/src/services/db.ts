@@ -61,6 +61,10 @@ import type {
   Module2RecurringSpendItem
 } from '../types/module2Canonical';
 import type {
+  TransactionAttributionLedgerResult,
+  AttributionLeverType
+} from '../types/module2Attribution';
+import type {
   SavingsOpportunityItem,
   SavingsWaterfallMetrics,
   OpportunityOverlapGroup,
@@ -1537,63 +1541,93 @@ export class DatabaseStore {
   // MODULE 2 STRATEGIC SOURCING INTELLIGENCE (V1.0)
   // =========================================================================
 
-  public getModule2StrategicTransactions(): StrategicInputTransaction[] {
+  public getModule2StrategicTransactions(assessmentId?: string): StrategicInputTransaction[] {
     try {
-      return Module2CanonicalService.getCanonicalTransactions();
+      return Module2CanonicalService.getCanonicalTransactions(assessmentId);
     } catch {
       return [];
     }
   }
 
-  public getModule2StrategicSourcingAnalysis(forceRefresh = false): {
+  public getModule2StrategicSourcingAnalysis(
+    assessmentIdOrForceRefresh?: string | boolean,
+    forceRefresh = false
+  ): {
     profiles: CategoryStrategicSourcingProfile[];
     summary: Module2StrategicSourcingDashboardSummary;
     handoffPackages: Module2ToModule4HandoffPackage[];
   } {
-    return Module2CanonicalService.getSourcingAnalysis(forceRefresh);
+    const isBool = typeof assessmentIdOrForceRefresh === 'boolean';
+    const assessmentId = isBool ? undefined : assessmentIdOrForceRefresh;
+    const refresh = isBool ? assessmentIdOrForceRefresh : forceRefresh;
+    return Module2CanonicalService.getSourcingAnalysis(assessmentId, refresh);
   }
 
-  public getModule2StrategicProfile(categoryIdOrName: string): CategoryStrategicSourcingProfile | null {
-    const analysis = this.getModule2StrategicSourcingAnalysis();
+  public getModule2StrategicProfile(
+    categoryIdOrName: string,
+    assessmentId?: string
+  ): CategoryStrategicSourcingProfile | null {
+    const analysis = this.getModule2StrategicSourcingAnalysis(assessmentId);
     const normalized = categoryIdOrName.trim().toLowerCase();
-    return analysis.profiles.find(
-      (p) =>
-        p.categoryId.toLowerCase() === normalized ||
-        p.categoryName.toLowerCase() === normalized
-    ) || null;
+    return (
+      analysis.profiles.find(
+        (p) =>
+          p.categoryId.toLowerCase() === normalized ||
+          p.categoryName.toLowerCase() === normalized
+      ) || null
+    );
   }
 
-  public getModule2HandoffPackages(): Module2ToModule4HandoffPackage[] {
-    const analysis = this.getModule2StrategicSourcingAnalysis();
+  public getModule2HandoffPackages(assessmentId?: string): Module2ToModule4HandoffPackage[] {
+    const analysis = this.getModule2StrategicSourcingAnalysis(assessmentId);
     return analysis.handoffPackages;
   }
 
-  public getModule2OpportunityLedger(forceRefresh = false): Module2OpportunityLedgerItem[] {
-    return Module2CanonicalService.getOpportunityLedger(forceRefresh);
+  public getModule2OpportunityLedger(
+    assessmentIdOrForceRefresh?: string | boolean,
+    forceRefresh = false
+  ): Module2OpportunityLedgerItem[] {
+    const isBool = typeof assessmentIdOrForceRefresh === 'boolean';
+    const assessmentId = isBool ? undefined : assessmentIdOrForceRefresh;
+    const refresh = isBool ? assessmentIdOrForceRefresh : forceRefresh;
+    return Module2CanonicalService.getOpportunityLedger(assessmentId, refresh);
   }
 
-  public getModule2MathematicalBridge(forceRefresh = false): Module2MathematicalBridge {
-    return Module2CanonicalService.getMathematicalBridge(forceRefresh);
+  public getModule2MathematicalBridge(
+    assessmentIdOrForceRefresh?: string | boolean,
+    forceRefresh = false
+  ): Module2MathematicalBridge {
+    const isBool = typeof assessmentIdOrForceRefresh === 'boolean';
+    const assessmentId = isBool ? undefined : assessmentIdOrForceRefresh;
+    const refresh = isBool ? assessmentIdOrForceRefresh : forceRefresh;
+    return Module2CanonicalService.getMathematicalBridge(assessmentId, refresh);
   }
 
-  public getModule2CanonicalInput(): Module2CanonicalInput {
-    return Module2CanonicalService.getCanonicalInput();
+  public getModule2CanonicalInput(assessmentId?: string): Module2CanonicalInput {
+    return Module2CanonicalService.getCanonicalInput(assessmentId);
   }
 
-  public getModule2Top50Vendors(): Module2Top50VendorItem[] {
-    return Module2CanonicalService.getTop50Vendors();
+  public getModule2Top50Vendors(assessmentId?: string): Module2Top50VendorItem[] {
+    return Module2CanonicalService.getTop50Vendors(assessmentId);
   }
 
-  public getModule2SupplierRisk(): Module2SupplierRiskItem[] {
-    return Module2CanonicalService.getSupplierRiskAnalysis();
+  public getModule2SupplierRisk(assessmentId?: string): Module2SupplierRiskItem[] {
+    return Module2CanonicalService.getSupplierRiskAnalysis(assessmentId);
   }
 
-  public getModule2PoConsolidation(): Module2PoConsolidationItem[] {
-    return Module2CanonicalService.getPoConsolidationAnalysis();
+  public getModule2PoConsolidation(assessmentId?: string): Module2PoConsolidationItem[] {
+    return Module2CanonicalService.getPoConsolidationAnalysis(assessmentId);
   }
 
-  public getModule2RecurringSpend(): Module2RecurringSpendItem[] {
-    return Module2CanonicalService.getRecurringSpendAnalysis();
+  public getModule2RecurringSpend(assessmentId?: string): Module2RecurringSpendItem[] {
+    return Module2CanonicalService.getRecurringSpendAnalysis(assessmentId);
+  }
+
+  public getModule2AttributionLedger(
+    assessmentId?: string,
+    priorityOrder?: AttributionLeverType[]
+  ): TransactionAttributionLedgerResult {
+    return Module2CanonicalService.getTransactionAttributionLedger(assessmentId, priorityOrder);
   }
 }
 

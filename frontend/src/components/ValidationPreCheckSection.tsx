@@ -26,7 +26,8 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
   onRunAICategorization,
   isDataRefreshed,
   onRefreshWithFixes: _onRefreshWithFixes,
-  canonicalViewModel
+  canonicalViewModel,
+  onConfirmDatasetBaseCurrency
 }) => {
   const [filterIssue, setFilterIssue] = useState<ValidationIssueCategoryFilter>('ALL');
 
@@ -123,6 +124,17 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>⚡ {UI_STRINGS.module1.applyBlanketFixes}</span>
+            </button>
+          )}
+
+          {onConfirmDatasetBaseCurrency && validationRecords.some((r) => r.currency_provenance === 'UNRESOLVED' || r.issue_flag === 'Missing Currency Code') && (
+            <button
+              type="button"
+              onClick={() => onConfirmDatasetBaseCurrency('INR')}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 text-xs font-bold text-emerald-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-xs transition-all border border-emerald-500 cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Confirm Dataset Base Currency (INR)</span>
             </button>
           )}
 

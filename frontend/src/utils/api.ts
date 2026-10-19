@@ -92,30 +92,35 @@ export const apiClient = {
   },
 
   // Module 2 Canonical Data
-  async getModule2CanonicalLineItems(limit = 1000): Promise<LineItemMapping[]> {
-    frontendLogger.debug('Fetching canonical Module 2 line items', { limit });
-    const res = await fetch(`${API_BASE}/api/module2-sourcing/line-items?limit=${limit}`);
+  async getModule2CanonicalLineItems(limit = 1000, assessmentId?: string): Promise<LineItemMapping[]> {
+    frontendLogger.debug('Fetching canonical Module 2 line items', { limit, assessmentId });
+    const query = new URLSearchParams({ limit: String(limit) });
+    if (assessmentId) query.set('assessmentId', assessmentId);
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/line-items?${query.toString()}`);
     const json = await res.json();
     return json.data?.lineItems || [];
   },
 
-  async getModule2CanonicalInput(): Promise<unknown> {
-    frontendLogger.debug('Fetching canonical Module 2 input contract');
-    const res = await fetch(`${API_BASE}/api/module2-sourcing/canonical-input`);
+  async getModule2CanonicalInput(assessmentId?: string): Promise<unknown> {
+    frontendLogger.debug('Fetching canonical Module 2 input contract', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/canonical-input${query}`);
     const json = await res.json();
     return json.data;
   },
 
-  async getModule2OpportunityLedger(): Promise<unknown> {
-    frontendLogger.debug('Fetching canonical Module 2 opportunity ledger');
-    const res = await fetch(`${API_BASE}/api/module2-sourcing/opportunity-ledger`);
+  async getModule2OpportunityLedger(assessmentId?: string): Promise<unknown> {
+    frontendLogger.debug('Fetching canonical Module 2 opportunity ledger', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/opportunity-ledger${query}`);
     const json = await res.json();
     return json.data;
   },
 
-  async getModule2MathematicalBridge(): Promise<unknown> {
-    frontendLogger.debug('Fetching canonical Module 2 mathematical bridge');
-    const res = await fetch(`${API_BASE}/api/module2-sourcing/bridge`);
+  async getModule2MathematicalBridge(assessmentId?: string): Promise<unknown> {
+    frontendLogger.debug('Fetching canonical Module 2 mathematical bridge', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/bridge${query}`);
     const json = await res.json();
     return json.data;
   },

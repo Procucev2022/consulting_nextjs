@@ -30,11 +30,11 @@ describe('AssessmentDatasetParser Unit Tests', () => {
     expect(result.data.excludedRowCount).toBe(0);
     expect(result.data.anomalyRowCount).toBe(0);
 
-    // 2. Financial Spend & FX Normalization
+    // 2. Financial Spend & Provisional ERP-Converted Baseline (Prompt 381)
     expect(result.module1.totalConvertedInrSpendCr).toBeCloseTo(613.8805, 3);
-    expect(result.module1.customerProfileSpendCr).toBeCloseTo(583.4162, 3);
-    expect(result.module1.fxMethodologyImpactCr).toBeCloseTo(30.4643, 3);
-    expect(result.forensicBridge.fxImpactPct).toBeCloseTo(5.22, 1);
+    expect(result.module1.customerProfileSpendCr).toBeCloseTo(613.8805, 3);
+    expect(result.module1.fxMethodologyImpactCr).toBe(0.0);
+    expect(result.forensicBridge.fxImpactPct).toBe(0.0);
 
     // 3. Currency Detection: exactly 6 currencies, zero CNY
     expect(result.currency.currenciesDetected).toContain('INR');

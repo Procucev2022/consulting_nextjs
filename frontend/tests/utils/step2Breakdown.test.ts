@@ -82,11 +82,10 @@ describe('step2BreakdownShared', () => {
       const r = computeUnitPrices(item, 1.0);
       expect(r.priceFy24).toBeGreaterThan(0);
     });
-    it('uses 0 price when qty defaults to 100 but spendCr is 0 and no unit_price', () => {
-      // qty 0 || 100 = 100; unit_price undefined; 100 > 0 so (0 * 10M / 100) = 0
+    it('uses 0 price when qty is 0 and spendCr is 0 and no unit_price', () => {
       const item = { ...baseItem, qty: 0, unit_price: undefined };
       const r = computeUnitPrices(item, 0);
-      expect(r.qty).toBe(100);
+      expect(r.qty).toBe(0);
       expect(r.priceFy24).toBe(0);
     });
   });
@@ -149,7 +148,9 @@ describe('step2CategoryBreakdown', () => {
     const fallback = [{ id: 'C1', name: 'Chemicals', category: 'Chemicals', spend_inr_crores: 10, lineItemsCount: 5 }];
     const r = calculateCategoryYearDetails([], fallback);
     expect(r[0].category).toBe('Chemicals');
-    expect(r[0].spend_fy24_cr).toBeCloseTo(2.8);
+    expect(r[0].total_3yr_spend_inr_cr).toBe(10);
+    expect(r[0].spend_fy24_cr).toBe(0);
+    expect(r[0].yoy_growth_pct).toBeUndefined();
   });
   it('handles Packaging bucket in fallback', () => {
     const fallback = [{ id: 'C2', name: 'Packaging Materials', spend_inr_crores: 5 }];
@@ -222,11 +223,13 @@ describe('step2VendorBreakdown', () => {
     const r = calculateVendorYearDetails([item], 100);
     expect(r.length).toBeGreaterThanOrEqual(1);
   });
-  it('uses fallback FY splits when FY25 is 0 (spend sent to FY24)', () => {
-    // spend_year 2023 → year <= 2023 → FY24 gets spend, FY25 stays 0 → fallback 0.34 multiplier
+  it('records spend in FY24 without fabricating FY25 spend when FY25 is 0', () => {
+    // spend_year 2023 -> year <= 2023 -> FY24 gets spend, FY25 stays 0 (no synthetic 0.34 multiplier)
     const item = { ...baseItem, spend_year: 2023, inr_crores: 4.0 };
     const r = calculateVendorYearDetails([item]);
-    expect(r[0].spend_fy25_cr).toBeCloseTo(4.0 * 0.34, 1);
+    expect(r[0].spend_fy24_cr).toBeCloseTo(4.0, 1);
+    expect(r[0].spend_fy25_cr).toBe(0);
+    expect(r[0].yoy_growth_pct).toBeUndefined();
   });
 });
 
@@ -559,6 +562,6 @@ describe('step2VendorBreakdown branch coverage (lines 30, 39, 50, 53, 54, 79, 10
 
     const schneider = results.find(v => v.vendor_name === 'Schneider');
     expect(schneider).toBeDefined();
-    expect(schneider?.yoy_growth_pct).toBe(7.5);
+    expect(schneider?.yoy_growth_pct).toBeUndefined();
   });
 });

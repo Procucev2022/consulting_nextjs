@@ -114,6 +114,12 @@ export interface RawTransactionLedgerRecord {
   acctAssignmentCat?: string;
 }
 
+export type CurrencyProvenance =
+  | 'SOURCE_PROVIDED'
+  | 'ANALYST_CONFIRMED_BASE_CURRENCY'
+  | 'SYSTEM_INFERRED'
+  | 'UNRESOLVED';
+
 export interface ValidatedTransactionLedgerRecord {
   recordId: string;
   sourceRow: number;
@@ -132,11 +138,14 @@ export interface ValidatedTransactionLedgerRecord {
   itemDescription: string;
   normalizedItem: string;
   materialGroup: string;
+  procurementCategory?: string;
+  department?: string;
   plant: string;
   quantity: number;
   uom: string;
   netPrice: number;
   currency: string;
+  currencyProvenance?: CurrencyProvenance;
   approvedFxRate: number;
   fxRateDate: string;
   fxRateSource: string;

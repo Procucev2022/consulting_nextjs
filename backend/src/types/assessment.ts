@@ -5,7 +5,8 @@ import type {
   AssessmentStatus,
   AssessmentRole,
   AuditAction,
-  ReviewGate
+  ReviewGate,
+  PersistenceEnvironment
 } from '../constants/assessment';
 import type { Module1CanonicalViewModel } from './module1Canonical';
 
@@ -16,7 +17,8 @@ export type {
   AssessmentStatus,
   AssessmentRole,
   AuditAction,
-  ReviewGate
+  ReviewGate,
+  PersistenceEnvironment
 };
 
 export interface CustomerRecord {
@@ -113,6 +115,8 @@ export interface Module1Metrics {
   validRows: number;
   exclusions: number;
   anomalies: number;
+  /** Number of PO-line pairs (Purch.Doc. + Item) that appear more than once in the source workbook. */
+  suspectedDuplicateRowCount?: number;
   fxCoveragePct: number;
   validatedSpendCr: number;
   suppliers: number;
@@ -256,6 +260,7 @@ export interface SystemBuildInfo {
     module3: string;
     module4: string;
   };
+  persistence?: PersistenceInfo;
 }
 
 export type {
@@ -263,6 +268,15 @@ export type {
   DesktopUpdateCheckResult,
   DesktopInstallUpdateResponse
 } from './desktop';
+
+export interface PersistenceInfo {
+  environment: PersistenceEnvironment;
+  activeDataDir: string;
+  sanitizedPath: string;
+  isTestIsolated: boolean;
+  storeExists: boolean;
+  assessmentCount: number;
+}
 
 export interface PersistedStoreData {
   version: number;
@@ -275,4 +289,5 @@ export interface PersistedStoreData {
   analysisRuns: Record<string, AssessmentAnalysisRun[]>;
   auditLogs: Record<string, AssessmentAuditLog[]>;
 }
+
 

@@ -1,7 +1,8 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { assessmentStore } from '../../src/services/assessmentStore';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
+import { assessmentStore, AssessmentStore } from '../../src/services/assessmentStore';
 import {
   getAuthoritativeDataDir,
   persistAssessmentStoreToDisk,
@@ -10,6 +11,17 @@ import {
 import { NDA_STATUSES, AUDIT_ACTIONS } from '../../src/constants/assessment';
 
 describe('AssessmentStore', () => {
+  let cleanupIso: () => void;
+
+  beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+  });
+
   beforeEach(() => {
     assessmentStore.resetToDefaultSeed();
   });
@@ -404,4 +416,112 @@ describe('AssessmentStore', () => {
     expect(allCustomers.length).toBeGreaterThanOrEqual(1);
     expect(allCustomers.some((c) => c.id === cust1.id)).toBe(true);
   });
+
+  it('reports persistence info accurately', () => {
+    const info = assessmentStore.getPersistenceInfo();
+    expect(info).toBeDefined();
+    expect(info.isTestIsolated).toBe(true);
+    expect(typeof info.sanitizedPath).toBe('string');
+    expect(typeof info.assessmentCount).toBe('number');
+  });
+
+  it('handles isolated test dir creation and cleanup safely', () => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    expect(fs.existsSync(iso.testDir)).toBe(true);
+    expect(assessmentStore.getDataDir()).toBe(iso.testDir);
+    iso.cleanup();
+    expect(fs.existsSync(iso.testDir)).toBe(false);
+  });
+
+  it('covers resetInstance and initialization with seed test data enabled', () => {
+    const origSeed = process.env.AICEV_SEED_TEST_DATA;
+    const origDataDir = process.env.AICEV_DATA_DIR;
+    const tempDir = path.join(os.tmpdir(), 'aicev-seed-test-' + Date.now());
+    fs.mkdirSync(tempDir, { recursive: true });
+    try {
+      process.env.AICEV_SEED_TEST_DATA = 'true';
+      process.env.AICEV_DATA_DIR = tempDir;
+      AssessmentStore.resetInstance();
+      const instance = AssessmentStore.getInstance();
+      expect(instance.getById('AIC-2026-0001')).toBeDefined();
+    } finally {
+      process.env.AICEV_SEED_TEST_DATA = origSeed;
+      process.env.AICEV_DATA_DIR = origDataDir;
+      if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+      AssessmentStore.resetInstance();
+      AssessmentStore.getInstance();
+    }
+  });
+
+  it('covers createCustomer and updateCustomer optional attributes', () => {
+    const cust = assessmentStore.createCustomer({
+      customerName: 'OptCo',
+      industry: 'Tech',
+      businessUnit: 'Cloud',
+      region: 'APAC',
+      baseCurrency: 'USD',
+      contactEmail: 'contact@opt.com',
+      contactPerson: 'Alice',
+      notes: 'Test notes'
+    });
+    expect(cust.businessUnit).toBe('Cloud');
+    expect(cust.contactEmail).toBe('contact@opt.com');
+
+    const updated = assessmentStore.updateCustomer(cust.id || '', {
+      businessUnit: 'SaaS',
+      region: 'EMEA',
+      baseCurrency: 'EUR',
+      contactEmail: 'alice2@opt.com',
+      contactPerson: 'Bob',
+      status: 'ARCHIVED',
+      notes: 'Archived notes'
+    });
+    expect(updated?.businessUnit).toBe('SaaS');
+    expect(updated?.status).toBe('ARCHIVED');
+
+    const updatedEmpty = assessmentStore.updateCustomer(cust.id || '', {
+      businessUnit: '   ',
+      region: '   ',
+      baseCurrency: '   ',
+      contactEmail: '   ',
+      contactPerson: '   ',
+      notes: '   '
+    });
+    expect(updatedEmpty?.businessUnit).toBeUndefined();
+    expect(updatedEmpty?.contactEmail).toBeUndefined();
+
+    assessmentStore.recordAudit('AIC-GHOST-AUDIT', 'admin@procucev.com', 'INTERNAL_ADMIN', AUDIT_ACTIONS.ASSESSMENT_CREATED);
+    expect(assessmentStore.getAuditLogs('AIC-GHOST-AUDIT').length).toBe(1);
+  });
+
+  it('covers createAssessment optional attributes and initialNotes', () => {
+    const a = assessmentStore.createAssessment(
+      {
+        customerName: 'Optional Assessment Client',
+        industry: 'Healthcare',
+        businessUnit: 'Pharma',
+        assessmentOwner: 'dr.smith@procucev.com',
+        currency: 'USD',
+        assessmentPeriodStart: '2023-01-01',
+        assessmentPeriodEnd: '2023-12-31',
+        assignedAnalyst: 'analyst@procucev.com',
+        ndaStatus: NDA_STATUSES.SIGNED,
+        dataReceivedDate: '2023-02-01',
+        initialNotes: 'Some initial notes',
+        isTestData: true
+      },
+      'dr.smith@procucev.com',
+      'INTERNAL_ADMIN'
+    );
+
+    expect(a.businessUnit).toBe('Pharma');
+    expect(a.currency).toBe('USD');
+    expect(a.status).toBe('DATA_PENDING');
+    expect(a.isTestData).toBe(true);
+    expect(a.dataReceivedAt).toBe('2023-02-01');
+    expect(a.notes).toBe('Some initial notes');
+  });
 });
+

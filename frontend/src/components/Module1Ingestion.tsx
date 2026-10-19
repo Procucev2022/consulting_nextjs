@@ -43,6 +43,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   currentTier = 'GOLD',
   onUpgrade,
   canonicalViewModel,
+  onConfirmDatasetBaseCurrency,
   ...restProps
 }: Module1IngestionProps & { rawUploadRecords?: any[] }) => {
   const rawUploadRecords = (restProps as any).rawUploadRecords;
@@ -396,6 +397,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             isDataRefreshed={isDataRefreshed}
             onRefreshWithFixes={onRefreshWithFixes}
             canonicalViewModel={canonicalViewModel}
+            onConfirmDatasetBaseCurrency={onConfirmDatasetBaseCurrency}
           />
         </>
       ) : (

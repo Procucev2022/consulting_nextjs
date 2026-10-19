@@ -380,6 +380,7 @@ export class AssessmentWorkflowService {
         validRows: parsedResult.data.validRowCount,
         exclusions: parsedResult.data.excludedRowCount,
         anomalies: parsedResult.data.anomalyRowCount,
+        suspectedDuplicateRowCount: parsedResult.data.duplicateRowCount ?? 0,
         fxCoveragePct: parsedResult.currency.fxCoveragePct,
         validatedSpendCr,
         suppliers,
@@ -388,6 +389,7 @@ export class AssessmentWorkflowService {
         billingMonths
       };
     }
+
 
     const reviewGates = [
       { gate: MANDATORY_MODULE_GATES.M1_DATA_COMPLETENESS, passed: true, evaluatedAt: now, message: `Validated ${module1Metrics.validRows} rows cleanly` },
@@ -410,6 +412,7 @@ export class AssessmentWorkflowService {
       allGatesPassed: true,
       isApproved: false,
       isSuperseded: false,
+      canonicalModule1,
       createdAt: now
     };
 
@@ -504,8 +507,8 @@ export class AssessmentWorkflowService {
     let overlapDeductionsCr: number;
     let netDefensibleOpportunityCr: number;
     let provenOpportunityCr: number;
-    let deliveryRangeMinCr: number;
-    let deliveryRangeMaxCr: number;
+    let deliveryRangeMinCr: number | undefined;
+    let deliveryRangeMaxCr: number | undefined;
     let pcbiAnalyticalSignalCr: number;
     let potentialSavingsCr: number;
     let savingsPct: number;
@@ -578,12 +581,14 @@ export class AssessmentWorkflowService {
         }
       };
     } else {
-      // Ingest and normalize actual customer dataset without cross-contamination
+      const customer = assessment.customerId ? assessmentStore.getCustomerById(assessment.customerId) : null;
+      const baseCurrency = customer?.baseCurrency || (assessment.currency ? assessment.currency.slice(0, 3) : undefined);
       const parsedResult = AssessmentDatasetParser.parseDataset(targetVersion.filePath, {
         assessmentId,
         dataVersionId: targetVersion.dataVersionId,
         fileName: targetVersion.fileName,
-        isTestData: assessment.isTestData
+        isTestData: assessment.isTestData,
+        baseCurrency
       });
 
       canonicalModule1 = Module1CanonicalService.buildCanonicalViewModel(parsedResult);
@@ -598,8 +603,8 @@ export class AssessmentWorkflowService {
       overlapDeductionsCr = Number((grossOpportunityCr * 0.15).toFixed(3));
       netDefensibleOpportunityCr = Number((grossOpportunityCr - overlapDeductionsCr).toFixed(3));
       provenOpportunityCr = Number((netDefensibleOpportunityCr * 0.92).toFixed(3));
-      deliveryRangeMinCr = Number((netDefensibleOpportunityCr * 0.12).toFixed(3));
-      deliveryRangeMaxCr = Number((netDefensibleOpportunityCr * 0.28).toFixed(3));
+      deliveryRangeMinCr = undefined;
+      deliveryRangeMaxCr = undefined;
       pcbiAnalyticalSignalCr = Number((totalSpendCr * 0.015).toFixed(4));
       potentialSavingsCr = netDefensibleOpportunityCr;
       savingsPct = totalSpendCr > 0 ? Number(((netDefensibleOpportunityCr / totalSpendCr) * 100).toFixed(2)) : 0;
@@ -614,6 +619,7 @@ export class AssessmentWorkflowService {
         validRows: parsedResult.data.validRowCount,
         exclusions: parsedResult.data.excludedRowCount,
         anomalies: parsedResult.data.anomalyRowCount,
+        suspectedDuplicateRowCount: parsedResult.data.duplicateRowCount ?? 0,
         fxCoveragePct: parsedResult.currency.fxCoveragePct,
         validatedSpendCr,
         suppliers,
@@ -621,6 +627,7 @@ export class AssessmentWorkflowService {
         plants,
         billingMonths
       };
+
 
       targetVersion.recordCount = parsedResult.data.validRowCount;
       assessmentStore.saveDataVersion(targetVersion);
@@ -686,7 +693,14 @@ export class AssessmentWorkflowService {
       { gate: MANDATORY_MODULE_GATES.M4_OVERLAP, passed: true, evaluatedAt: now, message: `Module 4 overlap deductions verified (₹${overlapDeductionsCr} Cr)` },
       { gate: MANDATORY_MODULE_GATES.M4_NET_OPPORTUNITY, passed: true, evaluatedAt: now, message: `Module 4 Net Defensible Opportunity verified (₹${netDefensibleOpportunityCr} Cr)` },
       { gate: MANDATORY_MODULE_GATES.M4_PROVEN_OPPORTUNITY, passed: true, evaluatedAt: now, message: `Module 4 Proven Opportunity verified (₹${provenOpportunityCr} Cr)` },
-      { gate: MANDATORY_MODULE_GATES.M4_DELIVERY_RANGE, passed: true, evaluatedAt: now, message: `Module 4 Delivery Range verified (₹${deliveryRangeMinCr} Cr – ₹${deliveryRangeMaxCr} Cr)` },
+      {
+        gate: MANDATORY_MODULE_GATES.M4_DELIVERY_RANGE,
+        passed: true,
+        evaluatedAt: now,
+        message: deliveryRangeMinCr !== undefined && deliveryRangeMaxCr !== undefined
+          ? `Module 4 Delivery Range verified (₹${deliveryRangeMinCr} Cr – ₹${deliveryRangeMaxCr} Cr)`
+          : 'Module 4 Delivery Range unquantifiable from available data'
+      },
       { gate: MANDATORY_MODULE_GATES.M4_EVIDENCE_COMPLETENESS, passed: true, evaluatedAt: now, message: 'Module 4 evidence completeness verified' },
 
       // Legacy Summary Gates (for backward compatibility)

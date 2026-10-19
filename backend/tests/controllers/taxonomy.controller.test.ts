@@ -22,7 +22,7 @@ describe('taxonomy.controller', () => {
   });
 
   it('should search taxonomy when query is provided with category', async () => {
-    const req: any = { query: { q: 'boxwood', category: 'Packaging Materials' } };
+    const req: any = { query: { q: 'boxwood', category: 'Direct Materials' } };
     const res = mockResponse();
 
     await getTaxonomyData(req, res);

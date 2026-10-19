@@ -161,9 +161,9 @@ export const AssessmentPipelineTab: React.FC<AssessmentPipelineTabProps> = ({
               {UI_STRINGS.ASSESSMENT.financial.deliveryRange}
             </span>
             <p className="text-lg font-bold text-blue-400 mt-1 font-mono">
-              {hasCompletedRun && deliveryMin !== undefined && deliveryMax !== undefined
+              {hasCompletedRun && deliveryMin !== undefined && deliveryMax !== undefined && deliveryMin > 0 && deliveryMax > 0
                 ? `₹${deliveryMin.toFixed(3)}–₹${deliveryMax.toFixed(3)} Cr`
-                : emptyVal}
+                : (hasCompletedRun ? UI_STRINGS.ASSESSMENT.financial.deliveryRangeUnquantified : emptyVal)}
             </p>
             <span className="text-[10px] text-slate-500">
               {hasCompletedRun ? 'Execution Band' : UI_STRINGS.ASSESSMENT.financial.pendingLabel}

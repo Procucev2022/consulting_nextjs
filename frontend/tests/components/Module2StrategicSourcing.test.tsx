@@ -484,6 +484,12 @@ describe('Module 2 Strategic Sourcing Frontend Component Suite', () => {
     await waitFor(() => {
       expect(screen.getByTestId('module2-strategic-sourcing-workspace')).toBeDefined();
       expect(screen.getAllByText(UI_STRINGS.module2Sourcing.title).length).toBeGreaterThan(0);
+    });
+
+    const strategyTabBtn = screen.getByTestId('subtab-btn-strategy');
+    fireEvent.click(strategyTabBtn);
+
+    await waitFor(() => {
       expect(screen.getByText('Structural Steel Plates')).toBeDefined();
     });
   });

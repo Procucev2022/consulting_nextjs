@@ -54,4 +54,25 @@ export interface StrategicSupplierDeepDiveViewProps {
 
 export interface Module2StrategicSourcingWorkspaceProps {
   initialProfiles?: CategoryStrategicSourcingProfile[];
+  assessmentId?: string;
+}
+
+export interface LeverOverviewItem {
+  id: number;
+  code: string;
+  name: string;
+  purpose: string;
+  implementationStatus: 'IMPLEMENTED' | 'NOT_IMPLEMENTED';
+  statusLabel: string;
+  historicalOpportunityCr: number | null;
+  validatedSavingsCr: number;
+  methodologySummary: string;
+  requiredFields: string[];
+  preconditions: string[];
+}
+
+export interface Module2LeverOverviewProps {
+  assessmentId?: string;
+  onSelectLever: (leverCode: string) => void;
+  directPriceOppCr?: number;
 }
