@@ -109805,3 +109805,118 @@ State:
 7. Remaining limitations.
 
 Do not begin any other lever or feature. Stop after this validation.
+
+
+## Prompt 475
+
+PART F — CROSS-LEVER SAVINGS DEDUPLICATION CONTROL
+
+OBJECTIVE
+Ensure consolidated estimated savings across Module 2 are not duplicated. The application must calculate the maximum defensible net savings opportunity without double-counting the same underlying financial benefit.
+
+SCOPE
+Inspect and validate the existing savings calculations across Module 2 Levers 1–10. Do not redesign or modify accepted lever methodologies unnecessarily. Implement changes only where required for correct cross-lever deduplication, preserving existing business rules.
+
+1. SINGLE SOURCE OF TRUTH
+
+Establish a canonical savings-opportunity record, reusing existing architecture where possible.
+
+Each opportunity must be identifiable by:
+- Assessment ID
+- Unique opportunity ID
+- Applicable lever
+- Material/category identifier
+- Eligible spend or transaction scope
+- Calculation basis
+- Estimated gross savings
+- Overlapping opportunity references
+- Deduplication status
+- Evidence/validation status
+- Approval status
+
+Do not create duplicate opportunity records when the same underlying opportunity appears in multiple views.
+
+2. OVERLAP DETECTION
+
+Identify overlaps using the strongest available evidence:
+- Same underlying transactions or eligible spend pool
+- Same material or category
+- Same financial benefit and calculation basis
+- Same supplier/price-reduction opportunity
+- Related opportunities across different levers
+
+Do not assume opportunities are independent merely because their lever IDs differ.
+
+Do not assume that all opportunities in the same category overlap completely. Use the actual eligible spend scope and calculation basis.
+
+3. MAXIMUM DEFENSIBLE NET SAVINGS
+
+For overlapping alternative strategies targeting the same financial benefit:
+- Do not sum the full savings estimates.
+- Retain the highest defensible estimate only when the estimates are genuinely alternative approaches to the same benefit and have comparable scope and assumptions.
+- If an opportunity provides a validated, incremental benefit independent of the others, allow the incremental benefit to be included separately.
+- Do not add an independent benefit without evidence that it is incremental.
+- Where overlap cannot be reliably determined, exclude the unresolved portion from the consolidated net estimate and flag it for review.
+
+Do not use a simple maximum across all opportunities indiscriminately. Deduplicate only the overlapping benefit; retain verified independent benefits.
+
+4. GROSS, NET AND VALIDATED VALUES
+
+Maintain separate values:
+A. Gross Estimated Savings: pre-deduplication total, clearly labelled as potentially overlapping.
+B. Net Estimated Savings: estimated savings after cross-lever deduplication and unresolved-overlap exclusions.
+C. Commercially Validated Savings: evidence-supported and appropriately validated savings.
+
+Never label estimated savings as realised or validated savings.
+
+Unapproved planning assumptions must not feed commercially validated savings.
+
+5. LEVER-SPECIFIC SAFEGUARDS
+
+- Lever 1: Preserve the existing comparable-price methodology.
+- Lever 2: Auction candidacy or historical price dispersion alone does not prove savings.
+- Lever 3: Supplier fragmentation and low spend do not automatically prove savings.
+- Lever 4: Volume aggregation benefits must be validated and checked for overlap with price improvement.
+- Lever 5: Keep annual financing benefit and working capital released separate. Never sum them. Do not count financing benefits as purchase-price savings.
+- Lever 6: Preserve canonical heads A-J and existing overlap controls.
+- Lever 7: Keep COMING_SOON; no calculation.
+- Lever 8: Phase 1 discovery only; no savings until Phase 2 is approved.
+- Lever 9: Include only validated, measurable financial benefits.
+- Lever 10: Vendor counts and alternate sourcing discovery produce no savings estimate by themselves. A savings estimate requires a defensible price comparison and appropriate validation.
+
+Do not change accepted formulas or business rules simply to force every lever to produce savings.
+
+6. REPORTING
+
+The consolidated Module 2 summary must distinguish:
+- Gross Estimated Savings
+- Net Estimated Savings After Deduplication
+- Commercially Validated Savings
+- Unquantified Opportunities
+- Unresolved Overlaps Excluded from Net Savings
+
+Where a number cannot be supported, display DATA_UNAVAILABLE or NOT YET QUANTIFIABLE rather than inventing a value.
+
+Provide drill-down from each consolidated figure to its contributing opportunity records and calculation evidence.
+
+7. TESTS
+
+Test at minimum:
+- Same opportunity surfaced by two levers is counted once.
+- Alternative estimates for the same benefit retain the maximum defensible comparable estimate.
+- Independent validated incremental benefits are retained.
+- Partially overlapping opportunities count only the non-overlapping incremental portion when demonstrable.
+- Unresolved overlaps are excluded from net savings.
+- Financing benefit and working capital released are never summed.
+- Vendor discovery counts do not create savings.
+- Unapproved assumptions do not enter validated savings.
+- Gross, net and validated figures reconcile.
+- Repeated refreshes do not create duplicate opportunities.
+- Existing accepted lever calculations and Module 3/4 isolation remain intact.
+
+Run relevant tests, typecheck, lint and builds.
+
+FINAL REPORT
+Explain the deduplication methodology, identify any existing double-counting, show before-and-after totals only where supported by actual data, list changed files and actual test results, and document unresolved cases.
+
+Do not fabricate savings figures. Do not begin any unrelated feature.

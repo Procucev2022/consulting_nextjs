@@ -65,6 +65,11 @@ import type {
   AttributionLeverType
 } from '../types/module2Attribution';
 import type {
+  Module2ConsolidatedSavingsSummary,
+  SavingsDeduplicationOptions
+} from '../types/module2SavingsDeduplication';
+import { Module2SavingsDeduplicationEngine } from './module2SavingsDeduplicationEngine';
+import type {
   SavingsOpportunityItem,
   SavingsWaterfallMetrics,
   OpportunityOverlapGroup,
@@ -1628,6 +1633,14 @@ export class DatabaseStore {
     priorityOrder?: AttributionLeverType[]
   ): TransactionAttributionLedgerResult {
     return Module2CanonicalService.getTransactionAttributionLedger(assessmentId, priorityOrder);
+  }
+
+  public getModule2ConsolidatedSavings(
+    assessmentId?: string,
+    options?: SavingsDeduplicationOptions
+  ): Module2ConsolidatedSavingsSummary {
+    const targetId = assessmentId || 'AIC-2026-0001';
+    return Module2SavingsDeduplicationEngine.calculateConsolidatedSavings(targetId, options);
   }
 }
 

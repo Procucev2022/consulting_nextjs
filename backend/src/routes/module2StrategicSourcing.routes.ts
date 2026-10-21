@@ -10,7 +10,8 @@ import {
   getCategoryProfileById,
   getSupplierDeepDive,
   getHandoffPackages,
-  exportSourcingReport
+  exportSourcingReport,
+  getConsolidatedSavings
 } from '../controllers/module2StrategicSourcing.controller';
 import {
   getOpportunityLedger,
@@ -54,6 +55,7 @@ router.get('/category/:id', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY)
 router.get('/suppliers', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getSupplierDeepDive);
 router.get('/handoff', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getHandoffPackages);
 router.get('/export', requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT), exportSourcingReport);
+router.get('/consolidated-savings', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getConsolidatedSavings);
 
 router.get('/opportunity-ledger', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getOpportunityLedger);
 router.get('/attribution-ledger', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getTransactionAttributionLedger);

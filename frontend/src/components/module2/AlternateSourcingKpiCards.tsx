@@ -38,9 +38,11 @@ export const AlternateSourcingKpiCards: React.FC<AlternateSourcingKpiCardsProps>
           {strings.KPI_POTENTIAL_VENDORS_ALL}
         </span>
         <span className="text-xl font-black text-blue-700 dark:text-blue-300 font-mono mt-0.5 block">
-          {summary?.totalPotentialVendorsAllLocations.toLocaleString() || '—'}
+          {(summary?.deduplicatedDistinctVendorsAllLocations ?? summary?.totalPotentialVendorsAllLocations ?? 0).toLocaleString()}
         </span>
-        <span className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 block">{strings.SUB_VERIFIED_COUNT}</span>
+        <span className="text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 block">
+          {strings.SUB_DEDUPLICATED_POOL || 'DISTINCT DEDUPLICATED POOL'}
+        </span>
       </div>
 
       <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-indigo-200 dark:border-indigo-900/60 shadow-sm">
@@ -48,7 +50,7 @@ export const AlternateSourcingKpiCards: React.FC<AlternateSourcingKpiCardsProps>
           {strings.KPI_POTENTIAL_VENDORS_REGION}
         </span>
         <span className="text-xl font-black text-indigo-700 dark:text-indigo-300 font-mono mt-0.5 block">
-          {summary?.totalPotentialVendorsPreferredRegion.toLocaleString() || '—'}
+          {(summary?.deduplicatedDistinctVendorsPreferredRegion ?? summary?.totalPotentialVendorsPreferredRegion ?? 0).toLocaleString()}
         </span>
         <span className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-0.5 block">{selectedState} POOL</span>
       </div>
@@ -58,7 +60,11 @@ export const AlternateSourcingKpiCards: React.FC<AlternateSourcingKpiCardsProps>
         <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
           {summary?.totalCurrentSuppliersExcluded || 0}
         </span>
-        <span className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-0.5 block">DEDUPLICATED</span>
+        <span className="text-[10px] text-emerald-700 dark:text-emerald-300 mt-0.5 block">
+          {summary?.totalCurrentSuppliersMatchedInMaster
+            ? `${summary.totalCurrentSuppliersMatchedInMaster} OF ${summary.totalCurrentSuppliersIdentified} IN MASTER`
+            : '0 OF 19 IN MASTER'}
+        </span>
       </div>
 
       <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">

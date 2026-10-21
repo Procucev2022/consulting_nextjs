@@ -3800,6 +3800,48 @@ export const UI_STRINGS = {
       modalSourceVersion: 'Source Version',
       modalPackagedVersion: 'Packaged Version'
     }
+  },
+
+  module2SavingsDeduplication: {
+    title: 'Cross-Lever Savings Deduplication & Consolidation',
+    subtitle: 'Canonical single-source-of-truth deduplication control across Levers 1–10 to eliminate double-counting and establish maximum defensible net savings.',
+    grossEstimatedSavingsLabel: 'Gross Estimated Savings',
+    grossEstimatedSavingsDesc: 'Pre-deduplication total across candidate levers (potentially overlapping alternative strategies)',
+    netEstimatedSavingsLabel: 'Net Estimated Savings After Deduplication',
+    netEstimatedSavingsDesc: 'Estimated savings after cross-lever deduplication and unresolved-overlap exclusions',
+    commerciallyValidatedSavingsLabel: 'Commercially Validated Savings',
+    commerciallyValidatedSavingsDesc: 'Evidence-supported and contractually validated savings (defaults to ₹0.00 Cr until approved)',
+    unquantifiedOpportunitiesLabel: 'Unquantified Opportunities',
+    unresolvedOverlapsExcludedLabel: 'Unresolved Overlaps Excluded',
+    annualFinancingBenefitLabel: 'Annual Financing Benefit (Lever 5)',
+    workingCapitalReleasedLabel: 'Working Capital Released (Lever 5)',
+    leverBreakdownTitle: 'Consolidated Lever Breakdown & Overlap Control',
+    opportunityRegisterTitle: 'Canonical Savings Opportunity Register',
+    filterByLever: 'Filter by Lever',
+    filterByStatus: 'Filter by Deduplication Status',
+    searchPlaceholder: 'Search category, material, or opportunity ID...',
+    badgeDeduplicated: 'Deduplicated Overlap',
+    badgeRetained: 'Maximum Defensible Retained',
+    badgeIndependent: 'Independent Incremental',
+    badgeExcluded: 'Unresolved Excluded',
+    dataUnavailable: 'DATA_UNAVAILABLE',
+    notYetQuantifiable: 'NOT YET QUANTIFIABLE',
+    auditBadge: 'AUDITED WATERFALL',
+    arithmeticBalancedBadge: 'ARITHMETICALLY RECONCILED',
+    certNoticeTitle: 'Governance & Pre-Negotiation Notice',
+    disclosuresTitle: 'Deduplication Methodology Disclosures',
+    colOpportunityId: 'Opportunity ID',
+    colLever: 'Applicable Lever',
+    colScope: 'Material / Category Scope',
+    colEligibleSpend: 'Eligible Spend',
+    colGross: 'Estimated Gross',
+    colNet: 'Net Estimated',
+    colValidated: 'Validated',
+    colStatus: 'Deduplication Status',
+    colCalculationBasis: 'Calculation Basis',
+    colOverlapRefs: 'Overlapping References',
+    emptyOpportunities: 'No matching opportunities found for current filters.',
+    workingCapitalNote: 'Working capital released is a balance-sheet liquidity metric and is strictly segregated from purchase-price savings.'
   }
 } as const;
 

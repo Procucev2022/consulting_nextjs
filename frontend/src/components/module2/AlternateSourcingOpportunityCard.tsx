@@ -33,13 +33,19 @@ export const AlternateSourcingOpportunityCard: React.FC<AlternateSourcingOpportu
       {/* Card Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
         <div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/80 px-2 py-0.5 rounded border border-blue-300 dark:border-blue-800">
               {opportunity.opportunityId}
             </span>
             <span className="text-xs text-slate-500 font-mono">
               CATEGORY: {opportunity.spendCategory} • SUB: {opportunity.subCategory}
             </span>
+            {opportunity.matchType === 'UNMATCHED' && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded border border-rose-300 dark:border-rose-800">
+                <AlertTriangle className="w-3 h-3" />
+                NO VERIFIED CATEGORY MATCH
+              </span>
+            )}
             {isSingleSource && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/80 px-2 py-0.5 rounded">
                 <AlertTriangle className="w-3 h-3" />
@@ -77,10 +83,14 @@ export const AlternateSourcingOpportunityCard: React.FC<AlternateSourcingOpportu
           </span>
         </div>
 
-        {opportunity.excludedCurrentSuppliersCount > 0 && (
+        {opportunity.excludedCurrentSuppliersCount > 0 ? (
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded">
             <CheckCircle2 className="w-3 h-3" />
-            {opportunity.excludedCurrentSuppliersCount} EXCLUDED AS EXISTING SUPPLIERS
+            {opportunity.excludedCurrentSuppliersCount} EXCLUDED FROM CATEGORY POOL
+          </span>
+        ) : (
+          <span className="text-[10px] text-slate-500 italic">
+            {opportunity.exclusionLimitationNotice || 'Incumbent not indexed in category vendor master'}
           </span>
         )}
       </div>

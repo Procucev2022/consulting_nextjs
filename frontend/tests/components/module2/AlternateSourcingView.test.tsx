@@ -17,6 +17,11 @@ const mockResult: AlternateSourcingResult = {
     singleSourceMaterialsCount: 13,
     totalPotentialVendorsAllLocations: 21103,
     totalPotentialVendorsPreferredRegion: 3159,
+    deduplicatedDistinctVendorsAllLocations: 21103,
+    deduplicatedDistinctVendorsPreferredRegion: 3159,
+    cumulativeOpportunityVendorMatches: 25695,
+    totalCurrentSuppliersIdentified: 2,
+    totalCurrentSuppliersMatchedInMaster: 2,
     totalCurrentSuppliersExcluded: 2,
     overallDistinctVendorPoolEstimate: 614864,
     potentialFinancialSavingsInr: 0,
@@ -119,6 +124,10 @@ const mockResult: AlternateSourcingResult = {
   ],
   availableStates: ['MAHARASHTRA', 'GUJARAT'],
   availableCities: ['MUMBAI', 'PUNE'],
+  stateToCitiesMap: {
+    MAHARASHTRA: ['ALL_CITIES', 'MUMBAI', 'PUNE'],
+    GUJARAT: ['ALL_CITIES', 'AHMEDABAD']
+  },
   disclosures: [
     ALTERNATE_SOURCING_UI_STRINGS.NOTICE_DISCOVERY_ONLY,
     ALTERNATE_SOURCING_UI_STRINGS.NOTICE_SAVINGS_SAFEGUARD
@@ -161,7 +170,7 @@ describe('AlternateSourcingView Component', () => {
     expect(await screen.findByText('CC COPPER WIRE ROD 8MM')).toBeInTheDocument();
     expect(screen.getByText('EXPANSION BOLT L TYPE M 8 X 60')).toBeInTheDocument();
     expect(screen.getByText('SINGLE-SOURCE RISK')).toBeInTheDocument();
-    expect(screen.getByText('1 EXCLUDED AS EXISTING SUPPLIERS')).toBeInTheDocument();
+    expect(screen.getByText('1 EXCLUDED FROM CATEGORY POOL')).toBeInTheDocument();
   });
 
   it('toggles tabs between all materials, single source, and disclosures', async () => {

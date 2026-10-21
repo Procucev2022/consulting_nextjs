@@ -6,6 +6,7 @@
 import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import { logger } from '../utils/logger';
+import { consolidatedSavingsQuerySchema } from '../constants/module2SavingsDeduplicationValidation';
 
 const handleControllerError = (res: Response, error: unknown, defaultMessage: string): Response => {
   const message = error instanceof Error ? error.message : defaultMessage;
@@ -216,5 +217,37 @@ export const exportSourcingReport = async (req: Request, res: Response): Promise
   } catch (error: unknown) {
     logger.error('Failed to export sourcing report', {}, error);
     return handleControllerError(res, error, 'Failed to export sourcing report');
+  }
+};
+
+export const getConsolidatedSavings = async (req: Request, res: Response): Promise<Response | void> => {
+  try {
+    const parseResult = consolidatedSavingsQuerySchema.safeParse(req.query);
+    if (!parseResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid query parameters for consolidated savings',
+        errors: parseResult.error.errors
+      });
+    }
+    const { assessmentId, allowUnverifiedIncremental } = parseResult.data;
+    const consolidated = db.getModule2ConsolidatedSavings(assessmentId, {
+      allowUnverifiedIncremental
+    });
+    logger.info('Module 2 Consolidated Savings Deduplication fetched', {
+      assessmentId,
+      grossCr: consolidated.grossEstimatedSavingsCr,
+      netCr: consolidated.netEstimatedSavingsCr,
+      validatedCr: consolidated.commerciallyValidatedSavingsCr,
+      opportunitiesCount: consolidated.opportunities.length
+    });
+    return res.json({
+      success: true,
+      data: consolidated,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: unknown) {
+    logger.error('Failed to fetch consolidated savings deduplication', {}, error);
+    return handleControllerError(res, error, 'Failed to fetch consolidated savings deduplication');
   }
 };

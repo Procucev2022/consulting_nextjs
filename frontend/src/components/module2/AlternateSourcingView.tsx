@@ -19,7 +19,8 @@ import type {
 import {
   ALTERNATE_SOURCING_UI_STRINGS,
   GEOGRAPHIC_PREFERENCE_OPTIONS,
-  MATCH_TYPE_LABELS
+  MATCH_TYPE_LABELS,
+  STATE_TO_CITIES_MAP
 } from '../../constants/module2AlternateSourcing';
 import { AlternateSourcingOpportunityCard } from './AlternateSourcingOpportunityCard';
 import { AlternateSourcingKpiCards } from './AlternateSourcingKpiCards';
@@ -36,7 +37,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
   const [activeTab, setActiveTab] = useState<'all' | 'singleSource' | 'disclosures'>('all');
   const [geoPreference, setGeoPreference] = useState<GeographicPreference>('ALL_LOCATIONS');
   const [selectedState, setSelectedState] = useState<string>('MAHARASHTRA');
-  const [selectedCity, setSelectedCity] = useState<string>('MUMBAI');
+  const [selectedCity, setSelectedCity] = useState<string>('ALL_CITIES');
   const [selectedMatchType, setSelectedMatchType] = useState<AlternateVendorMatchType | 'ALL'>('ALL');
 
   const fetchData = useCallback(async () => {
@@ -84,6 +85,9 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
     if (activeTab === 'singleSource') return o.currentSupplierCount === 1;
     return true;
   });
+
+  const availableCities =
+    data?.stateToCitiesMap?.[selectedState] || STATE_TO_CITIES_MAP[selectedState] || ['ALL_CITIES'];
 
   return (
     <div className="space-y-6 animate-fadeIn" data-testid="alternate-sourcing-view">
@@ -144,10 +148,15 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
             </label>
             <select
               value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
+              onChange={(e) => {
+                const nextState = e.target.value;
+                setSelectedState(nextState);
+                const nextCities = data?.stateToCitiesMap?.[nextState] || STATE_TO_CITIES_MAP[nextState] || ['ALL_CITIES'];
+                setSelectedCity(nextCities[0] || 'ALL_CITIES');
+              }}
               className="px-2.5 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
             >
-              {(data?.availableStates || ['MAHARASHTRA', 'GUJARAT', 'TAMIL NADU', 'KARNATAKA', 'DELHI']).map((st) => (
+              {(data?.availableStates || Object.keys(STATE_TO_CITIES_MAP)).map((st) => (
                 <option key={st} value={st}>{st}</option>
               ))}
             </select>
@@ -162,8 +171,8 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
               onChange={(e) => setSelectedCity(e.target.value)}
               className="px-2.5 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
             >
-              {(data?.availableCities || ['MUMBAI', 'PUNE', 'AHMEDABAD', 'CHENNAI', 'BENGALURU']).map((ci) => (
-                <option key={ci} value={ci}>{ci}</option>
+              {availableCities.map((ci) => (
+                <option key={ci} value={ci}>{ci === 'ALL_CITIES' ? 'All Cities in State' : ci}</option>
               ))}
             </select>
           </div>

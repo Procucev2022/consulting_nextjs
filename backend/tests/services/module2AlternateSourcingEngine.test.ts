@@ -23,12 +23,20 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { Module2AlternateSourcingEngine } from '../../src/services/module2AlternateSourcingEngine';
 import { ALTERNATE_SOURCING_DISCLOSURES } from '../../src/constants/module2AlternateSourcing';
 import { Module2CanonicalService } from '../../src/services/module2CanonicalService';
+import { AssessmentStore } from '../../src/services/assessmentStore';
+import { getDevelopmentDataDir } from '../../src/services/assessmentPersistence';
 
 describe('Module2AlternateSourcingEngine', () => {
   beforeAll(async () => {
-    // Warm up canonical transactions bundle so VGT workbook is loaded
+    const devDir = getDevelopmentDataDir();
+    const store = AssessmentStore.getInstance();
+    store.setCustomDataDir(devDir);
+    store.reloadFromDisk();
+    Module2CanonicalService.clearCache();
+    // Warm up canonical transactions bundle so VGT and ABC Textile workbooks are loaded
     Module2CanonicalService.getCanonicalTransactions('AIC-2026-0001');
-  }, 30000);
+    Module2CanonicalService.getCanonicalTransactions('AIC-2026-0002');
+  }, 60000);
 
   beforeEach(() => {
     Module2AlternateSourcingEngine.clearCache();
@@ -155,8 +163,8 @@ describe('Module2AlternateSourcingEngine', () => {
 
   it('12. handles empty, unmapped, or unmatched categories safely', () => {
     const unmapped = Module2AlternateSourcingEngine.mapCategory('NONEXISTENT_XYZ_ITEM_UNKNOWN', '99999');
-    expect(unmapped.vendorCategory).toBe('General Procurement');
-    expect(unmapped.matchType).toBe('RELATED');
+    expect(unmapped.vendorCategory).toBe('NO_VERIFIED_CATEGORY_MATCH');
+    expect(unmapped.matchType).toBe('UNMATCHED');
   });
 
   it('13. handles assessmentId filtering properly', () => {
@@ -189,4 +197,70 @@ describe('Module2AlternateSourcingEngine', () => {
     expect(result.summary.isDiscoveryOnly).toBe(true);
     expect(result.disclosures).toContain(ALTERNATE_SOURCING_DISCLOSURES.NO_SAVINGS_CALCULATION);
   });
+
+  it('17. maps Coal E-Auction to NO_VERIFIED_CATEGORY_MATCH and discloses exclusion limitation', () => {
+    const coalMatch = Module2AlternateSourcingEngine.mapCategory('Coal E-Auction', '4010');
+    expect(coalMatch.vendorCategory).toBe('NO_VERIFIED_CATEGORY_MATCH');
+    expect(coalMatch.matchType).toBe('UNMATCHED');
+
+    const result = Module2AlternateSourcingEngine.calculateAlternateSourcing('AIC-2026-0002');
+    const coalOpp = result.opportunities.find((o) => o.materialDescription.toLowerCase().includes('coal'));
+    expect(coalOpp).toBeDefined();
+    if (coalOpp) {
+      expect(coalOpp.matchedVendorCategory).toBe('NO_VERIFIED_CATEGORY_MATCH');
+      expect(coalOpp.matchType).toBe('UNMATCHED');
+      expect(coalOpp.potentialVendorsAllLocations).toBe(0);
+      expect(coalOpp.potentialVendorsPreferredRegion).toBe(0);
+      expect(coalOpp.currentSuppliersIdentified.length).toBeGreaterThan(0);
+      expect(coalOpp.exclusionLimitationNotice).toBeDefined();
+    }
+  });
+
+  it('18. reconciles deduplicated distinct vendor pool vs cumulative line-item matches', () => {
+    const result = Module2AlternateSourcingEngine.calculateAlternateSourcing('AIC-2026-0002');
+    expect(result.summary.deduplicatedDistinctVendorsAllLocations).toBe(13018);
+    expect(result.summary.cumulativeOpportunityVendorMatches).toBe(25695);
+    expect(result.summary.deduplicatedDistinctVendorsAllLocations).toBeLessThan(
+      result.summary.cumulativeOpportunityVendorMatches
+    );
+  });
+
+  it('19. enforces state-to-cities consistency and auto-resets invalid city', () => {
+    const result = Module2AlternateSourcingEngine.calculateAlternateSourcing('AIC-2026-0002', {
+      preferredState: 'GUJARAT',
+      preferredCity: 'MUMBAI'
+    });
+    expect(result.opportunities[0].customerPreferredCity).toBe('ALL_CITIES');
+    expect(result.stateToCitiesMap['GUJARAT']).toContain('AHMEDABAD');
+  });
+
+  it('20. handles query filtering by materialCode, spendCategory, matchType, and empty category index', () => {
+    const filtered = Module2AlternateSourcingEngine.calculateAlternateSourcing('AIC-2026-0001', {
+      matchType: 'EXACT'
+    });
+    expect(filtered.opportunities.every((o) => o.matchType === 'EXACT')).toBe(true);
+
+    const mat = {
+      materialCode: 'TEST01',
+      materialDescription: 'HEX HEAD BOLT M10',
+      spendCategory: 'Fasteners',
+      customerPlant: 'Plant 1',
+      totalSpendInr: 100000,
+      totalQuantity: 10,
+      uom: 'NOS',
+      transactionCount: 1,
+      currentSupplierCount: 1,
+      currentSuppliers: ['Test Supplier'],
+      singleSourceDependency: true
+    };
+    const oppWithEmptyIndex = (Module2AlternateSourcingEngine as any).buildOpportunity(
+      mat,
+      {},
+      'GUJARAT',
+      'AHMEDABAD',
+      99
+    );
+    expect(oppWithEmptyIndex.potentialVendorsAllLocations).toBe(0);
+  });
 });
+

@@ -13,7 +13,8 @@ import {
   CATEGORY_TAXONOMY_RULES,
   RELATED_CATEGORY_MAPPINGS,
   DEFAULT_PREFERRED_STATE,
-  DEFAULT_PREFERRED_CITY
+  DEFAULT_PREFERRED_CITY,
+  STATE_TO_CITIES_MAP
 } from '../constants/module2AlternateSourcing';
 import type {
   AlternateVendorMatchType,
@@ -24,7 +25,6 @@ import type {
   AlternateSourcingResult,
   AlternateSourcingQueryOptions
 } from '../types/module2AlternateSourcing';
-import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import { Module2AlternateSourcingHelpers } from './module2AlternateSourcingHelpers';
 
 export class Module2AlternateSourcingEngine {
@@ -80,62 +80,11 @@ export class Module2AlternateSourcingEngine {
     }
 
     return {
-      vendorCategory: 'General Procurement',
-      matchType: 'RELATED',
-      rationale: 'No exact category mapping found; routed to general discovery.'
+      vendorCategory: 'NO_VERIFIED_CATEGORY_MATCH',
+      matchType: 'UNMATCHED',
+      rationale:
+        'No verified technical category exists in vendor master; generic fallback prohibited to prevent distorted counts.'
     };
-  }
-
-  private static upsertMaterialTransaction(
-    map: Map<string, CustomerMaterialProcurementContext>,
-    t: StrategicInputTransaction
-  ): void {
-    const code = (t.material_code || 'UNCODED').trim();
-    const desc = (t.material_desc || 'Unknown Material').trim();
-    const key = `${code}:::${desc}`;
-
-    let item = map.get(key);
-    if (!item) {
-      item = {
-        materialCode: code,
-        materialDescription: desc,
-        spendCategory: (t.spend_category || 'General').trim(),
-        customerPlant: (t.plant || 'Main Plant').trim(),
-        totalSpendInr: 0,
-        totalQuantity: 0,
-        uom: t.uom || 'units',
-        transactionCount: 0,
-        currentSupplierCount: 0,
-        currentSuppliers: [],
-        singleSourceDependency: false
-      };
-      map.set(key, item);
-    }
-
-    item.totalSpendInr += t.total_spend_inr || 0;
-    item.totalQuantity += t.quantity || 0;
-    item.transactionCount += 1;
-
-    const vendor = (t.vendor_name || '').trim();
-    if (vendor && !item.currentSuppliers.includes(vendor)) {
-      item.currentSuppliers.push(vendor);
-    }
-  }
-
-  private static extractCustomerMaterials(
-    txns: StrategicInputTransaction[]
-  ): CustomerMaterialProcurementContext[] {
-    const map = new Map<string, CustomerMaterialProcurementContext>();
-    for (const t of txns) {
-      this.upsertMaterialTransaction(map, t);
-    }
-
-    for (const item of map.values()) {
-      item.currentSupplierCount = item.currentSuppliers.length;
-      item.singleSourceDependency = item.currentSupplierCount === 1;
-    }
-
-    return Array.from(map.values()).sort((a, b) => b.totalSpendInr - a.totalSpendInr);
   }
 
   private static buildOpportunity(
@@ -146,6 +95,19 @@ export class Module2AlternateSourcingEngine {
     indexCounter: number
   ): AlternateVendorDiscoveryOpportunity {
     const mapping = this.mapCategory(mat.materialDescription, mat.spendCategory);
+    const oppId = `OPP-ALT-${String(indexCounter).padStart(3, '0')}`;
+    const spendCr = Math.round((mat.totalSpendInr / 1e7) * 100) / 100;
+
+    if (mapping.matchType === 'UNMATCHED') {
+      return Module2AlternateSourcingHelpers.buildUnmatchedOpportunity(
+        mat,
+        prefState,
+        prefCity,
+        oppId,
+        mapping.rationale
+      );
+    }
+
     const catRecord = index[mapping.vendorCategory] || {
       categoryName: mapping.vendorCategory,
       distinctVendorCount: 0,
@@ -155,7 +117,7 @@ export class Module2AlternateSourcingEngine {
       companyNorms: []
     };
 
-    const { excludedCount, excludedNames } = Module2AlternateSourcingHelpers.matchAndExcludeSuppliers(
+    const supplierCheck = Module2AlternateSourcingHelpers.matchAndExcludeSuppliers(
       mat.currentSuppliers,
       catRecord.companyNorms
     );
@@ -164,7 +126,7 @@ export class Module2AlternateSourcingEngine {
       catRecord,
       prefState,
       prefCity,
-      excludedCount
+      supplierCheck.excludedCount
     );
     const contact = Module2AlternateSourcingHelpers.buildContactMetrics(
       catRecord.contactMetrics,
@@ -182,7 +144,7 @@ export class Module2AlternateSourcingEngine {
     const synonymCount = mapping.matchType === 'SYNONYM' ? catRecord.distinctVendorCount : 0;
 
     return {
-      opportunityId: `OPP-ALT-${String(indexCounter).padStart(3, '0')}`,
+      opportunityId: oppId,
       materialCode: mat.materialCode,
       materialDescription: mat.materialDescription,
       spendCategory: mat.spendCategory,
@@ -192,9 +154,12 @@ export class Module2AlternateSourcingEngine {
       customerPreferredState: prefState,
       customerPreferredCity: prefCity,
       relevantSpendInr: mat.totalSpendInr,
-      relevantSpendCr: Math.round((mat.totalSpendInr / 1e7) * 100) / 100,
+      relevantSpendCr: spendCr,
       currentSupplierCount: mat.currentSupplierCount,
       currentSuppliers: mat.currentSuppliers,
+      currentSuppliersIdentified: supplierCheck.identifiedSuppliers,
+      currentSuppliersMatchedInMaster: supplierCheck.matchedSuppliers,
+      exclusionLimitationNotice: supplierCheck.limitationNotice,
       matchedVendorCategory: mapping.vendorCategory,
       matchType: mapping.matchType,
       matchTypeRationale: mapping.rationale,
@@ -206,8 +171,8 @@ export class Module2AlternateSourcingEngine {
       relatedMatchesCount: relatedCount,
       qualifiedAlternativesCount: 'DATA_UNAVAILABLE',
       qualificationStatus: 'UNQUALIFIED',
-      excludedCurrentSuppliersCount: excludedCount,
-      excludedSupplierNames: excludedNames,
+      excludedCurrentSuppliersCount: supplierCheck.excludedCount,
+      excludedSupplierNames: supplierCheck.excludedNames,
       geographicBreakdown: geo,
       contactCompleteness: contact,
       disclosures: [
@@ -218,42 +183,65 @@ export class Module2AlternateSourcingEngine {
     };
   }
 
+  private static resolveLocation(options?: AlternateSourcingQueryOptions): {
+    prefState: string;
+    prefCity: string;
+    validCities: string[];
+  } {
+    const prefState = (options?.preferredState || DEFAULT_PREFERRED_STATE).toUpperCase().trim();
+    const validCities = STATE_TO_CITIES_MAP[prefState] || ['ALL_CITIES'];
+    let prefCity = (options?.preferredCity || DEFAULT_PREFERRED_CITY).toUpperCase().trim();
+    if (!validCities.includes(prefCity) && prefCity !== 'ALL_CITIES') {
+      prefCity = validCities[0] || 'ALL_CITIES';
+    }
+    return { prefState, prefCity, validCities };
+  }
+
+  private static isOpportunityAllowed(
+    mat: CustomerMaterialProcurementContext,
+    opp: AlternateVendorDiscoveryOpportunity,
+    options?: AlternateSourcingQueryOptions
+  ): boolean {
+    if (options?.materialCode && mat.materialCode !== options.materialCode) return false;
+    if (options?.spendCategory && mat.spendCategory !== options.spendCategory) return false;
+    if (options?.matchType && opp.matchType !== options.matchType) return false;
+    return true;
+  }
+
   public static calculateAlternateSourcing(
     assessmentId = 'AIC-2026-0001',
     options?: AlternateSourcingQueryOptions
   ): AlternateSourcingResult {
-    const prefState = (options?.preferredState || DEFAULT_PREFERRED_STATE).toUpperCase().trim();
-    const prefCity = (options?.preferredCity || DEFAULT_PREFERRED_CITY).toUpperCase().trim();
-
+    const { prefState, prefCity, validCities } = this.resolveLocation(options);
     const txns = Module2CanonicalService.getCanonicalTransactions(assessmentId);
-    const materials = this.extractCustomerMaterials(txns);
+    const materials = Module2AlternateSourcingHelpers.extractCustomerMaterials(txns);
     const index = this.loadIndex();
 
     const opportunities: AlternateVendorDiscoveryOpportunity[] = [];
     let counter = 1;
 
     for (const mat of materials) {
-      if (options?.materialCode && mat.materialCode !== options.materialCode) continue;
-      if (options?.spendCategory && mat.spendCategory !== options.spendCategory) continue;
-
       const opp = this.buildOpportunity(mat, index, prefState, prefCity, counter++);
-      if (options?.matchType && opp.matchType !== options.matchType) continue;
+      if (!this.isOpportunityAllowed(mat, opp, options)) continue;
 
       opportunities.push(opp);
       if (opportunities.length >= 25) break;
     }
 
-    const totalPotentialAll = opportunities.reduce((acc, o) => acc + o.potentialVendorsAllLocations, 0);
-    const totalPotentialPref = opportunities.reduce((acc, o) => acc + o.potentialVendorsPreferredRegion, 0);
-    const totalExcluded = opportunities.reduce((acc, o) => acc + o.excludedCurrentSuppliersCount, 0);
+    const pool = Module2AlternateSourcingHelpers.calculateDistinctPool(opportunities, index, prefState);
     const singleSourceCount = opportunities.filter((o) => o.currentSupplierCount === 1).length;
 
     const summary: AlternateSourcingSummary = {
       totalEligibleMaterials: materials.length,
       singleSourceMaterialsCount: singleSourceCount,
-      totalPotentialVendorsAllLocations: totalPotentialAll,
-      totalPotentialVendorsPreferredRegion: totalPotentialPref,
-      totalCurrentSuppliersExcluded: totalExcluded,
+      totalPotentialVendorsAllLocations: pool.deduplicatedAll,
+      totalPotentialVendorsPreferredRegion: pool.deduplicatedPref,
+      deduplicatedDistinctVendorsAllLocations: pool.deduplicatedAll,
+      deduplicatedDistinctVendorsPreferredRegion: pool.deduplicatedPref,
+      cumulativeOpportunityVendorMatches: pool.cumulativeAll,
+      totalCurrentSuppliersIdentified: pool.identifiedSuppliersCount,
+      totalCurrentSuppliersMatchedInMaster: pool.matchedSuppliersCount,
+      totalCurrentSuppliersExcluded: pool.excludedSuppliersCount,
       overallDistinctVendorPoolEstimate: 614864,
       potentialFinancialSavingsInr: 0,
       potentialFinancialSavingsCr: 0,
@@ -264,8 +252,9 @@ export class Module2AlternateSourcingEngine {
       assessmentId,
       summary,
       opportunities,
-      availableStates: ['MAHARASHTRA', 'GUJARAT', 'TAMIL NADU', 'KARNATAKA', 'DELHI', 'HARYANA', 'RAJASTHAN'],
-      availableCities: ['MUMBAI', 'PUNE', 'AHMEDABAD', 'CHENNAI', 'BENGALURU', 'DELHI', 'HYDERABAD'],
+      availableStates: Object.keys(STATE_TO_CITIES_MAP),
+      availableCities: validCities,
+      stateToCitiesMap: STATE_TO_CITIES_MAP,
       disclosures: [
         ALTERNATE_SOURCING_DISCLOSURES.DISCOVERY_ONLY,
         ALTERNATE_SOURCING_DISCLOSURES.NO_SAVINGS_CALCULATION,

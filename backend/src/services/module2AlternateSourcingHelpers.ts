@@ -7,10 +7,129 @@
 import type {
   CategoryVendorIndexRecord,
   GeographicVendorBreakdown,
-  ContactCompletenessMetrics
+  ContactCompletenessMetrics,
+  CustomerMaterialProcurementContext,
+  AlternateVendorDiscoveryOpportunity
 } from '../types/module2AlternateSourcing';
+import type { StrategicInputTransaction } from '../types/strategicSourcing';
+import { ALTERNATE_SOURCING_DISCLOSURES } from '../constants/module2AlternateSourcing';
 
 export class Module2AlternateSourcingHelpers {
+  private static initCustomerMaterial(
+    t: StrategicInputTransaction,
+    code: string,
+    desc: string
+  ): CustomerMaterialProcurementContext {
+    return {
+      materialCode: code,
+      materialDescription: desc,
+      spendCategory: (t.spend_category || 'General').trim(),
+      customerPlant: (t.plant || 'Main Plant').trim(),
+      totalSpendInr: 0,
+      totalQuantity: 0,
+      uom: t.uom || 'units',
+      transactionCount: 0,
+      currentSupplierCount: 0,
+      currentSuppliers: [],
+      singleSourceDependency: false
+    };
+  }
+
+  private static accumulateTxn(
+    item: CustomerMaterialProcurementContext,
+    t: StrategicInputTransaction
+  ): void {
+    item.totalSpendInr += t.total_spend_inr || 0;
+    item.totalQuantity += t.quantity || 0;
+    item.transactionCount += 1;
+    const vendor = (t.vendor_name || '').trim();
+    if (vendor && !item.currentSuppliers.includes(vendor)) {
+      item.currentSuppliers.push(vendor);
+    }
+  }
+
+  public static extractCustomerMaterials(
+    txns: StrategicInputTransaction[]
+  ): CustomerMaterialProcurementContext[] {
+    const map = new Map<string, CustomerMaterialProcurementContext>();
+    for (const t of txns) {
+      const code = (t.material_code || 'UNCODED').trim();
+      const desc = (t.material_desc || 'Unknown Material').trim();
+      const key = `${code}:::${desc}`;
+
+      let item = map.get(key);
+      if (!item) {
+        item = this.initCustomerMaterial(t, code, desc);
+        map.set(key, item);
+      }
+      this.accumulateTxn(item, t);
+    }
+
+    for (const item of map.values()) {
+      item.currentSupplierCount = item.currentSuppliers.length;
+      item.singleSourceDependency = item.currentSupplierCount === 1;
+    }
+
+    return Array.from(map.values()).sort((a, b) => b.totalSpendInr - a.totalSpendInr);
+  }
+
+  public static buildUnmatchedOpportunity(
+    mat: CustomerMaterialProcurementContext,
+    prefState: string,
+    prefCity: string,
+    oppId: string,
+    rationale: string
+  ): AlternateVendorDiscoveryOpportunity {
+    const limitNotice = mat.currentSuppliers.length > 0
+      ? `Current supplier (${mat.currentSuppliers.join(', ')}) identified in assessment, but no category match exists in vendor master.`
+      : undefined;
+
+    return {
+      opportunityId: oppId,
+      materialCode: mat.materialCode,
+      materialDescription: mat.materialDescription,
+      spendCategory: mat.spendCategory,
+      subCategory: 'NO_VERIFIED_CATEGORY_MATCH',
+      specification: null,
+      customerPlant: mat.customerPlant,
+      customerPreferredState: prefState,
+      customerPreferredCity: prefCity,
+      relevantSpendInr: mat.totalSpendInr,
+      relevantSpendCr: Math.round((mat.totalSpendInr / 1e7) * 100) / 100,
+      currentSupplierCount: mat.currentSupplierCount,
+      currentSuppliers: mat.currentSuppliers,
+      currentSuppliersIdentified: mat.currentSuppliers,
+      currentSuppliersMatchedInMaster: [],
+      exclusionLimitationNotice: limitNotice,
+      matchedVendorCategory: 'NO_VERIFIED_CATEGORY_MATCH',
+      matchType: 'UNMATCHED',
+      matchTypeRationale: rationale,
+      potentialVendorsAllLocations: 0,
+      potentialVendorsPreferredRegion: 0,
+      exactMatchesCount: 0,
+      hierarchyMatchesCount: 0,
+      synonymMatchesCount: 0,
+      relatedMatchesCount: 0,
+      qualifiedAlternativesCount: 'DATA_UNAVAILABLE',
+      qualificationStatus: 'UNQUALIFIED',
+      excludedCurrentSuppliersCount: 0,
+      excludedSupplierNames: [],
+      geographicBreakdown: {
+        preferredCity: prefCity,
+        sameCityCount: 0, sameStateCount: 0, otherStatesCount: 0,
+        allLocationsCount: 0, preferredRegionCount: 0, topStates: [], topCities: []
+      },
+      contactCompleteness: {
+        hasWebsiteCount: 0, hasEmailCount: 0, hasPhoneCount: 0,
+        missingContactCount: 0, hasWebsiteRatioPct: 0, hasEmailRatioPct: 0
+      },
+      disclosures: [
+        ALTERNATE_SOURCING_DISCLOSURES.DISCOVERY_ONLY,
+        ALTERNATE_SOURCING_DISCLOSURES.NO_SAVINGS_CALCULATION,
+        ALTERNATE_SOURCING_DISCLOSURES.GEOGRAPHIC_LIMITATION
+      ]
+    };
+  }
   public static matchAndExcludeSuppliers(
     currentSuppliers: string[],
     vendorCompanyNorms: string[]
@@ -110,6 +229,25 @@ export class Module2AlternateSourcingHelpers {
     };
   }
 
+  private static aggregateOpportunityVendors(
+    opp: AlternateVendorDiscoveryOpportunity,
+    index: Record<string, CategoryVendorIndexRecord>,
+    distinctAll: Set<string>,
+    identified: Set<string>,
+    matched: Set<string>,
+    excluded: Set<string>
+  ): void {
+    for (const s of opp.currentSuppliers || []) identified.add(s);
+    for (const s of opp.currentSuppliersMatchedInMaster || []) matched.add(s);
+    for (const s of opp.excludedSupplierNames || []) excluded.add(s);
+
+    if (opp.matchType !== 'UNMATCHED' && index[opp.matchedVendorCategory]) {
+      for (const norm of index[opp.matchedVendorCategory].companyNorms || []) {
+        distinctAll.add(norm);
+      }
+    }
+  }
+
   public static calculateDistinctPool(
     opportunities: AlternateVendorDiscoveryOpportunity[],
     index: Record<string, CategoryVendorIndexRecord>,
@@ -127,23 +265,15 @@ export class Module2AlternateSourcingHelpers {
     const identifiedSuppliers = new Set<string>();
     const matchedSuppliers = new Set<string>();
     const excludedSuppliers = new Set<string>();
-
     let cumulativeAll = 0;
     let cumulativePref = 0;
 
     for (const opp of opportunities) {
       cumulativeAll += opp.potentialVendorsAllLocations;
       cumulativePref += opp.potentialVendorsPreferredRegion;
-
-      for (const s of opp.currentSuppliers || []) identifiedSuppliers.add(s);
-      for (const s of opp.currentSuppliersMatchedInMaster || []) matchedSuppliers.add(s);
-      for (const s of opp.excludedSupplierNames || []) excludedSuppliers.add(s);
-
-      if (opp.matchType !== 'UNMATCHED' && index[opp.matchedVendorCategory]) {
-        for (const norm of index[opp.matchedVendorCategory].companyNorms || []) {
-          distinctAll.add(norm);
-        }
-      }
+      this.aggregateOpportunityVendors(
+        opp, index, distinctAll, identifiedSuppliers, matchedSuppliers, excludedSuppliers
+      );
     }
 
     const ratio = cumulativeAll > 0 ? Math.min(1, cumulativePref / cumulativeAll) : 0;
