@@ -21,7 +21,7 @@ import { Module2CanonicalService } from '../../src/services/module2CanonicalServ
 import { generateAuthToken, verifyAuthToken } from '../../src/utils/auth';
 import { encryptData, resolveEncryptionKey, serializeEncryptedPayload } from '../../src/utils/encryption';
 import { Module2ComplianceAuth } from '../../src/utils/module2ComplianceAuth';
-import { CRYPTO_ERRORS } from '../../src/constants/crypto';
+import { CRYPTO_ERRORS, DEFAULT_DEV_ENCRYPTION_KEY } from '../../src/constants/crypto';
 
 interface MockResponseContext {
   res: Response;
@@ -165,6 +165,34 @@ describe('Lever 9: Token Hardening & Cryptographic Security Verification (Prompt
       const valid64Hex = 'a'.repeat(64);
       const buf = resolveEncryptionKey(valid64Hex);
       expect(buf.length).toBe(32);
+    });
+
+    it('strictly forbids missing APP_ENCRYPTION_KEY when NODE_ENV is production', () => {
+      const origEnv = process.env.NODE_ENV;
+      const origKey = process.env.APP_ENCRYPTION_KEY;
+      try {
+        process.env.NODE_ENV = 'production';
+        delete process.env.APP_ENCRYPTION_KEY;
+        expect(() => resolveEncryptionKey()).toThrow('APP_ENCRYPTION_KEY must be configured in production environment');
+      } finally {
+        process.env.NODE_ENV = origEnv;
+        if (origKey !== undefined) process.env.APP_ENCRYPTION_KEY = origKey;
+        else delete process.env.APP_ENCRYPTION_KEY;
+      }
+    });
+
+    it('strictly forbids hardcoded dev key when NODE_ENV is production', () => {
+      const origEnv = process.env.NODE_ENV;
+      const origKey = process.env.APP_ENCRYPTION_KEY;
+      try {
+        process.env.NODE_ENV = 'production';
+        process.env.APP_ENCRYPTION_KEY = DEFAULT_DEV_ENCRYPTION_KEY;
+        expect(() => resolveEncryptionKey()).toThrow('Development encryption key cannot be used in production environment');
+      } finally {
+        process.env.NODE_ENV = origEnv;
+        if (origKey !== undefined) process.env.APP_ENCRYPTION_KEY = origKey;
+        else delete process.env.APP_ENCRYPTION_KEY;
+      }
     });
   });
 

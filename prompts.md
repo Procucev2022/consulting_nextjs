@@ -108961,3 +108961,303 @@ Provide:
 Do not claim production readiness if a critical security issue remains unresolved.
 
 STOP after this verification. Do not start Lever 10.
+
+
+## Prompt 467
+
+PROMPT 467 — LEVER 9 PRODUCTION-READINESS VERIFICATION
+
+OBJECTIVE
+
+Perform the final security review and running-application validation of Module 2, Lever 9 — Procurement Compliance & Control.
+
+Prompt 466 introduced authenticated tokens, role checks, tenant isolation, and protected review/export endpoints. Verify the actual implementation and close remaining risks.
+
+STRICT SCOPE
+
+- Do not redesign Lever 9.
+- Do not modify accepted Levers 1–6 or Lever 8.
+- Keep Lever 7 in Coming Soon state.
+- Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+- Do not start Lever 10.
+- Preserve existing business rules, canonical datasets, review history, and financial classifications.
+
+1. AUTHENTICATION CONFIGURATION
+
+Inspect the actual token implementation and deployment configuration.
+
+Verify:
+- AES-256-GCM encryption and authentication-tag validation.
+- Secure key generation and storage.
+- Startup and request behavior when APP_ENCRYPTION_KEY is missing or invalid.
+- Token expiry enforcement.
+- Rejection of malformed, tampered, and expired tokens.
+- No fallback to client-supplied x-user-role or reviewerRole.
+- No production activation of development authentication bypass.
+
+Do not print or expose encryption keys or live tokens in logs or the final report.
+
+2. ROLE AND TENANT AUTHORIZATION
+
+Verify all Lever 9 routes, including:
+- Compliance data retrieval.
+- Review submission.
+- Excel export.
+- Review history, if exposed through a separate endpoint.
+
+Confirm:
+- The authenticated identity and role come only from a verified token.
+- The requested assessment is authorized for the authenticated tenant.
+- Administrative cross-tenant access is explicit and restricted to authorized administrative roles.
+- No endpoint bypasses these controls.
+- A user cannot change their role or assessment access through query parameters, request bodies, or headers.
+
+Add regression tests for any gaps found.
+
+3. EXCEL EXPORT TOKEN HANDLING
+
+Inspect the export endpoint and frontend download flow.
+
+Prefer Authorization-header authentication and a Blob download where practical.
+
+If query-string tokens remain necessary:
+- Document why.
+- Ensure short expiry.
+- Ensure tokens are not written to application logs.
+- Apply appropriate cache-control and referrer protections.
+- Ensure the token cannot grant broader access than the intended assessment and action.
+
+Do not introduce a new authentication framework unnecessarily.
+
+4. LIVE APPLICATION VALIDATION
+
+The previous report states that browser automation could not run because the Playwright browser binary was unavailable.
+
+First check whether a usable browser is already installed locally. Do not repeatedly attempt network downloads if the environment is offline.
+
+If browser automation is available, validate:
+- Authenticated user opens the compliance dashboard.
+- Unauthorized user is rejected.
+- User opens an exception.
+- User submits a review decision with mandatory justification.
+- Saved decision appears in the UI and audit history.
+- Decision survives backend restart.
+- ABC Textile and PQR Cement remain isolated.
+- Excel export matches the active assessment's API metrics.
+
+If browser automation remains unavailable, run the strongest feasible live API integration tests and clearly identify which UI checks remain unverified. Do not claim browser validation passed.
+
+5. FINANCIAL REGRESSION CHECK
+
+Preserve and verify these canonical baselines.
+
+ABC Textile — AIC-2026-0002
+- 23,570 transactions.
+- Net expenditure ₹613.8805 Cr.
+- Expenditure under review ₹149.05 Cr.
+
+PQR Cement — AIC-2026-0003
+- 19,670 transactions.
+- Gross expenditure ₹262.6436 Cr.
+- Credit adjustment -₹24,570.
+- Net expenditure ₹262.6412 Cr.
+- Expenditure under review ₹172.18 Cr.
+
+Confirmed financial exposure and verified financial impact must remain ₹0 unless supported by documented evidence.
+
+Do not classify investigation signals or duplicate candidates as confirmed losses or savings.
+
+6. QUALITY GATES
+
+Run relevant security and regression tests, typecheck, lint, production build, and performance-budget checks.
+
+Inspect the final diff and ensure unrelated modules have not changed.
+
+7. FINAL REPORT
+
+Provide:
+- Exact endpoints and middleware reviewed.
+- Authentication configuration findings.
+- Export token-handling findings.
+- Security test results.
+- Live API and browser workflow results.
+- Financial regression results.
+- Files changed.
+- Remaining limitations.
+- A clear recommendation: production-ready, conditionally ready, or not ready.
+
+Do not claim production readiness if a critical security issue remains unresolved.
+
+STOP after this verification. Do not start Lever 10.
+
+
+## Prompt 468
+
+PROMPT 468 — LEVER 9 DEPLOYMENT SAFETY GATE
+
+Perform a final deployment-configuration check for Module 2, Lever 9.
+
+Do not redesign or refactor the module.
+Do not modify accepted Levers 1–6 or Lever 8.
+Keep Lever 7 in Coming Soon state.
+Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+Do not start Lever 10.
+
+1. ENCRYPTION KEY CONFIGURATION
+
+Inspect the actual production configuration path for APP_ENCRYPTION_KEY.
+
+Verify:
+- The key is securely generated and stored outside source control.
+- The production application cannot fall back to a hardcoded development key.
+- Missing or invalid production configuration fails safely.
+- Development and production keys are separated.
+- Keys and tokens are not exposed in logs or client responses.
+
+Do not display secret values in the report.
+
+2. DEVELOPMENT AUTHENTICATION BYPASS
+
+Inspect every code path that enables development authentication bypass.
+
+Verify:
+- It is impossible to activate the bypass when NODE_ENV is production.
+- Client-supplied role headers cannot activate or influence it.
+- The actual production configuration does not enable the bypass.
+- Missing or ambiguous environment configuration fails safely.
+
+3. AUTHENTICATION REGRESSION
+
+Run the relevant tests confirming:
+- Missing, expired, malformed, and tampered tokens are rejected.
+- Client-supplied roles cannot elevate privileges.
+- Unauthorized cross-tenant access is rejected.
+- Authenticated users retain authorized functionality.
+- Review audit identity is derived from the verified token.
+
+4. FINANCIAL REGRESSION
+
+Confirm these baselines remain unchanged:
+
+ABC Textile — AIC-2026-0002
+23,570 transactions
+₹613.8805 Cr net expenditure
+₹149.05 Cr expenditure under review
+
+PQR Cement — AIC-2026-0003
+19,670 transactions
+₹262.6436 Cr gross expenditure
+-₹24,570 credit adjustment
+₹262.6412 Cr net expenditure
+₹172.18 Cr expenditure under review
+
+Confirmed financial exposure and verified financial impact must remain ₹0 unless supported by documented evidence.
+
+5. SCOPE AND QUALITY
+
+Do not change business calculations unless a critical defect is found.
+Run relevant security tests, typecheck, lint, and production build.
+Inspect the final diff for unrelated changes.
+
+6. FINAL DECISION
+
+Report:
+- Whether production key management is safe.
+- Whether development bypass is impossible in production.
+- Test results.
+- Files changed.
+- Any remaining critical risks.
+
+Conclude with one of:
+A. Deployment safety checks passed.
+B. Deployment safety checks failed — production use blocked.
+C. Unable to verify deployment configuration — production approval pending.
+
+Do not claim that a configuration is safe merely because unit tests pass.
+
+STOP after this check. Do not start Lever 10.
+
+
+## Prompt 469
+
+PROMPT 469 — INDEPENDENT DEPLOYMENT READINESS VERIFICATION
+
+Lever 9 code-level checks reportedly passed in Prompt 468.
+Do not repeat the same tests and automatically declare production readiness.
+
+Do not modify accepted functionality.
+Do not modify Levers 1–6 or 8.
+Keep Lever 7 as Coming Soon.
+Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+Do not start Lever 10.
+
+Verify the following using actual evidence:
+
+1. PRODUCTION SECRET CONFIGURATION
+- Identify the actual deployment target and its configuration mechanism.
+- Confirm whether APP_ENCRYPTION_KEY is configured through an approved secret-management mechanism.
+- Confirm the key is not committed to source control or embedded in client-side assets.
+- Never print the key or any portion of it.
+- Verify the configured key meets the required format and length.
+- Verify production startup fails safely when the key is missing, invalid, or equal to the development fallback.
+- If deployment access is unavailable, explicitly state that production secret management is unverified.
+
+2. AUTHENTICATION BYPASS
+- Inspect every development-bypass entry point.
+- Verify that production mode cannot activate the bypass, even when the client sends x-dev-auth-bypass: true or x-user-role: ADMIN.
+- Verify that client-supplied role or tenant information cannot override the verified token identity.
+- Inspect the effective deployment configuration if available.
+- Do not claim the actual production configuration is safe unless it was inspected.
+
+3. AUTHENTICATION REGRESSION
+Run the relevant tests for:
+- Missing, expired, malformed and tampered tokens.
+- Privilege escalation using client-supplied headers.
+- Unauthorized cross-tenant access.
+- Authorized review submission and audit identity.
+- Production encryption-key enforcement.
+Report actual test commands and results.
+
+4. LIVE APPLICATION VERIFICATION
+If a suitable production-like environment is available, verify:
+- Unauthenticated requests are rejected.
+- An unauthorized role is rejected.
+- Cross-tenant access is rejected.
+- An authorized user can load the compliance view, submit a review and export Excel.
+- Review identity comes from the verified token.
+Do not invent browser or live-test results if the environment is unavailable.
+
+5. FINANCIAL REGRESSION
+Confirm these exact baselines:
+ABC Textile AIC-2026-0002:
+23,570 transactions; ₹613.8805 Cr net expenditure;
+₹149.05 Cr expenditure under review.
+
+PQR Cement AIC-2026-0003:
+19,670 transactions; ₹262.6436 Cr gross expenditure;
+-₹24,570 credit adjustment; ₹262.6412 Cr net expenditure;
+₹172.18 Cr expenditure under review.
+
+Confirmed financial exposure and verified financial impact remain ₹0
+unless documented evidence supports a change.
+
+6. CHANGE CONTROL
+- Do not make unrelated code or business-logic changes.
+- If a critical defect is found, explain it before making a fix.
+- Report the actual changed-file list and final diff.
+- Run relevant tests, typecheck, lint and production builds if code changes.
+- Preserve all accepted functionality.
+
+FINAL DECISION — choose exactly one:
+A. Production configuration independently verified; deployment safety checks passed.
+B. Deployment safety checks failed — production use blocked.
+C. Unable to verify actual production configuration — production approval pending.
+
+Clearly separate:
+- Code-level safeguards verified.
+- Deployment configuration verified.
+- Live application behavior verified.
+- Items not verified.
+
+Passing unit tests alone is not proof of production readiness.
+STOP after this report. Do not start Lever 10.
