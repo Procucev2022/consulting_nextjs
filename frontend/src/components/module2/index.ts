@@ -37,3 +37,6 @@ export * from './VendorConsolidationSupplierTable';
 export * from './VendorConsolidationMaterialTable';
 export * from './VendorConsolidationTransactionTable';
 export * from './VendorConsolidationView';
+export * from './ProcurementComplianceView';
+export * from './ProcurementComplianceReviewModal';
+export * from './ProcurementComplianceTable';

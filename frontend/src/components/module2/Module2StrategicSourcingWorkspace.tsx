@@ -18,6 +18,8 @@ import { VendorConsolidationView } from './VendorConsolidationView';
 import { VolumeAggregationView } from './VolumeAggregationView';
 import { PaymentTermsView } from './PaymentTermsView';
 import { CategorySpecialisationView } from './CategorySpecialisationView';
+import { SpecificationRationalisationView } from './SpecificationRationalisationView';
+import { ProcurementComplianceView } from './ProcurementComplianceView';
 import { Module2LeverOverview } from './Module2LeverOverview';
 import { logger } from '../../utils/logger';
 
@@ -27,7 +29,16 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const strings = UI_STRINGS.module2Sourcing;
 
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'directPrice' | 'eAuction' | 'vendorConsolidation' | 'volumeAggregation' | 'paymentTerms' | 'categorySpecialisation' | 'strategy'
+    | 'overview'
+    | 'directPrice'
+    | 'eAuction'
+    | 'vendorConsolidation'
+    | 'volumeAggregation'
+    | 'paymentTerms'
+    | 'categorySpecialisation'
+    | 'specificationRationalisation'
+    | 'procurementCompliance'
+    | 'strategy'
   >('overview');
   const [summary, setSummary] = useState<Module2StrategicSourcingDashboardSummary | null>(null);
   const [profiles, setProfiles] = useState<CategoryStrategicSourcingProfile[]>([]);
@@ -275,6 +286,48 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         </button>
         <button
           type="button"
+          data-testid="subtab-btn-lever7-coming-soon"
+          disabled
+          className="pb-2.5 px-3 font-semibold text-xs border-b-2 border-transparent text-slate-400 dark:text-slate-500 flex items-center gap-1.5 cursor-not-allowed opacity-75"
+          title="Lever 7: Logistics & Packaging Specifications is coming soon"
+        >
+          <span>Lever 7: Logistics & Packaging Specifications</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold">
+            COMING SOON
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-specificationRationalisation"
+          onClick={() => setActiveTab('specificationRationalisation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'specificationRationalisation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 8: Specification Rationalisation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            PHASE 1
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-procurementCompliance"
+          onClick={() => setActiveTab('procurementCompliance')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+            activeTab === 'procurementCompliance'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 9: Procurement Compliance</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
           data-testid="subtab-btn-strategy"
           onClick={() => setActiveTab('strategy')}
           className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
@@ -299,6 +352,8 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
                 | 'volumeAggregation'
                 | 'paymentTerms'
                 | 'categorySpecialisation'
+                | 'specificationRationalisation'
+                | 'procurementCompliance'
             )
           }
         />
@@ -340,6 +395,20 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         <CategorySpecialisationView
           assessmentId={assessmentId || 'AIC-2026-0002'}
           onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'specificationRationalisation' && (
+        <SpecificationRationalisationView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onNavigateBack={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'procurementCompliance' && (
+        <ProcurementComplianceView
+          assessmentId={assessmentId || 'AIC-2026-0002'}
+          onNavigateBack={() => setActiveTab('overview')}
         />
       )}
 

@@ -71,6 +71,13 @@ export interface CategoryOpportunityBenefit {
   opportunityStatus: string;
   hasDistinctScopeFromLever2?: boolean;
   distinctScopeEvidence?: string;
+  hasVerifiedAlternativeSupplier?: boolean;
+  alternativeSupplierEvidence?: string;
+  concentrationRiskMetrics?: {
+    topSupplierSharePct: number;
+    herfindahlIndex: number;
+    distinctSuppliersCount: number;
+  };
   relatedLever?: string;
   appliesToOperatingCost?: boolean;
 }
@@ -174,4 +181,6 @@ export interface Lever6ThresholdConfig {
 export interface CategorySpecialisationCalculationOptions {
   customThresholds?: Lever6ThresholdConfig;
   includeLever2Overlap?: boolean;
+  verifiedAlternativeSuppliers?: Record<string, { hasVerifiedAlternativeSupplier: boolean; evidence: string }>;
+  distinctScopeFromLever2Categories?: Record<string, { hasDistinctScope: boolean; evidence: string }>;
 }

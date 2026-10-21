@@ -61,9 +61,13 @@ export class Module2CategorySpecialisationEngine {
     const metrics = Module2CategorySpecialisationMetricHelper.buildMetricsForCategory(categoryName, txs);
     const classification = classifyCategory(metrics, totalSpendInr, options?.customThresholds);
     const profile = buildCategoryProfile(metrics, totalSpendInr, classification);
+    const distinctScopeOverride = options?.distinctScopeFromLever2Categories?.[categoryName];
+    const altSupplierOverride = options?.verifiedAlternativeSuppliers?.[categoryName];
     const benefits = Module2CategorySpecialisationOpportunityHelper.evaluateOpportunitiesForCategory(
       metrics,
-      classification.priority
+      classification.priority,
+      distinctScopeOverride,
+      altSupplierOverride
     );
     profile.opportunities = benefits;
 

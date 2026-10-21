@@ -62,7 +62,7 @@ export interface LeverOverviewItem {
   code: string;
   name: string;
   purpose: string;
-  implementationStatus: 'IMPLEMENTED' | 'NOT_IMPLEMENTED';
+  implementationStatus: 'IMPLEMENTED' | 'NOT_IMPLEMENTED' | 'COMING_SOON';
   statusLabel: string;
   historicalOpportunityCr: number | null;
   validatedSavingsCr: number;

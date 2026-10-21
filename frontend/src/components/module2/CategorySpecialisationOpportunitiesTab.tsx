@@ -89,28 +89,28 @@ export const CategorySpecialisationOpportunitiesTab: React.FC<OpportunitiesTabPr
                   <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
                     {item.isEstablished
                       ? `₹${item.eligibleSpendCr.toFixed(2)} Cr`
-                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I')
+                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I' || item.assumption.key === 'HEAD-G')
                         ? 'Identified — Not Quantifiable'
                         : 'Not Established'}
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', color: '#475569' }}>
                     {item.isEstablished
                       ? `₹${item.lowEstimateCr.toFixed(2)}`
-                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I')
+                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I' || item.assumption.key === 'HEAD-G')
                         ? 'Not Quantifiable'
                         : 'Data Gap'}
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: item.isEstablished ? '#047857' : '#94a3b8' }}>
                     {item.isEstablished
                       ? `₹${item.baseEstimateCr.toFixed(2)}`
-                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I')
+                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I' || item.assumption.key === 'HEAD-G')
                         ? 'Not Quantifiable'
                         : 'Data Gap'}
                   </td>
                   <td style={{ padding: '10px 14px', textAlign: 'right', color: '#475569' }}>
                     {item.isEstablished
                       ? `₹${item.highEstimateCr.toFixed(2)}`
-                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I')
+                      : (item.assumption.key === 'HEAD-A' || item.assumption.key === 'HEAD-I' || item.assumption.key === 'HEAD-G')
                         ? 'Not Quantifiable'
                         : 'Data Gap'}
                   </td>
@@ -125,7 +125,7 @@ export const CategorySpecialisationOpportunitiesTab: React.FC<OpportunitiesTabPr
       </div>
 
       {/* Specific Governance Callouts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         <div style={{ padding: '16px', backgroundColor: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
           <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#1e40af' }}>
             Head J: Process & Transaction Efficiency
@@ -144,6 +144,16 @@ export const CategorySpecialisationOpportunitiesTab: React.FC<OpportunitiesTabPr
           <p style={{ margin: 0, fontSize: '12px', color: '#7f1d1d' }}>
             Contract status is not maintained in standard transaction feeds. Per governance rules, no benefit is claimed
             without verifiable contract expiry and compliance registers.
+          </p>
+        </div>
+
+        <div style={{ padding: '16px', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
+          <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: '#92400e' }}>
+            Head G: Alternative Supplier Development
+          </h4>
+          <p style={{ margin: 0, fontSize: '12px', color: '#78350f' }}>
+            Supplier concentration indicates single-source resilience risk. Monetary benefits require documented
+            technical qualification trials, plant audits, and validated competitive price quotes.
           </p>
         </div>
       </div>

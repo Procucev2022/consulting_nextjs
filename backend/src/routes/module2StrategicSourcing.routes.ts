@@ -40,6 +40,8 @@ import {
 import { Module2VolumeAggregationController } from '../controllers/module2VolumeAggregation.controller';
 import { Module2PaymentTermsController } from '../controllers/module2PaymentTerms.controller';
 import { Module2CategorySpecialisationController } from '../controllers/module2CategorySpecialisation.controller';
+import { Module2SpecificationRationalisationController } from '../controllers/module2SpecificationRationalisation.controller';
+import { Module2ProcurementComplianceController } from '../controllers/module2ProcurementCompliance.controller';
 import { requireFeature } from '../utils/entitlementMiddleware';
 import { FEATURE_PERMISSIONS } from '../constants/subscription';
 
@@ -94,6 +96,40 @@ router.get(
   '/category-specialisation/export-excel',
   requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT),
   Module2CategorySpecialisationController.exportExcel
+);
+
+// Lever 8: Specification Rationalisation (Phase 1)
+router.get(
+  '/specification-rationalisation',
+  requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL),
+  Module2SpecificationRationalisationController.getSpecificationRationalisation
+);
+router.post(
+  '/specification-rationalisation/review',
+  requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL),
+  Module2SpecificationRationalisationController.submitTechnicalReview
+);
+router.get(
+  '/specification-rationalisation/export-excel',
+  requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT),
+  Module2SpecificationRationalisationController.exportExcel
+);
+
+// Lever 9: Procurement Compliance & Control
+router.get(
+  '/procurement-compliance',
+  requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL),
+  Module2ProcurementComplianceController.getProcurementCompliance
+);
+router.post(
+  '/procurement-compliance/review',
+  requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL),
+  Module2ProcurementComplianceController.submitComplianceReview
+);
+router.get(
+  '/procurement-compliance/export-excel',
+  requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT),
+  Module2ProcurementComplianceController.exportExcel
 );
 
 export default router;

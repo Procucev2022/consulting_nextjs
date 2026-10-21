@@ -41,7 +41,14 @@ export function calculateBenefitForHead(
   commercialMechanism = '',
   eligibilityRule = '',
   hasDistinctScopeFromLever2 = false,
-  distinctScopeEvidence?: string
+  distinctScopeEvidence?: string,
+  hasVerifiedAlternativeSupplier = false,
+  alternativeSupplierEvidence?: string,
+  concentrationRiskMetrics?: {
+    topSupplierSharePct: number;
+    herfindahlIndex: number;
+    distinctSuppliersCount: number;
+  }
 ): CategoryOpportunityBenefit {
   if (!isEligibleEstablished || eligibleSpendInr <= 0) {
     const isUnquantified = evidenceStatus === LEVER6_VALIDATION_STATUSES.IDENTIFIED_NOT_QUANTIFIED ||
@@ -76,6 +83,9 @@ export function calculateBenefitForHead(
       opportunityStatus: status,
       hasDistinctScopeFromLever2,
       distinctScopeEvidence,
+      hasVerifiedAlternativeSupplier,
+      alternativeSupplierEvidence,
+      concentrationRiskMetrics,
       relatedLever: assumption.relatedLever,
       appliesToOperatingCost: assumption.appliesToOperatingCost
     };
@@ -111,6 +121,9 @@ export function calculateBenefitForHead(
     opportunityStatus: LEVER6_VALIDATION_STATUSES.TENTATIVE_PENDING,
     hasDistinctScopeFromLever2,
     distinctScopeEvidence,
+    hasVerifiedAlternativeSupplier,
+    alternativeSupplierEvidence,
+    concentrationRiskMetrics,
     relatedLever: assumption.relatedLever,
     appliesToOperatingCost: assumption.appliesToOperatingCost
   };

@@ -60,4 +60,6 @@ export * from './module2VendorConsolidation';
 export * from './module2VolumeAggregation';
 export * from './module2PaymentTerms';
 export * from './module2CategorySpecialisation';
+export * from './module2SpecificationRationalisation';
+export * from './module2ProcurementCompliance';
 

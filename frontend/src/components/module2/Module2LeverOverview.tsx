@@ -105,6 +105,11 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                           <ShieldCheck className="w-3 h-3" />
                           {strings.statusImplemented}
                         </span>
+                      ) : lever.implementationStatus === 'COMING_SOON' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                          <Clock className="w-3 h-3" />
+                          {strings.statusComingSoon}
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                           <Clock className="w-3 h-3" />
@@ -154,7 +159,11 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                         data-testid={`lever-open-btn-${lever.id}`}
                         onClick={() =>
                           onSelectLever(
-                            lever.id === 6
+                            lever.id === 9
+                              ? 'procurementCompliance'
+                              : lever.id === 8
+                              ? 'specificationRationalisation'
+                              : lever.id === 6
                               ? 'categorySpecialisation'
                               : lever.id === 5
                               ? 'paymentTerms'
@@ -171,6 +180,17 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                       >
                         <span>{strings.btnOpenAnalysis}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    ) : lever.implementationStatus === 'COMING_SOON' ? (
+                      <button
+                        type="button"
+                        disabled
+                        data-testid={`lever-coming-soon-btn-${lever.id}`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 text-xs font-semibold cursor-not-allowed"
+                        title="Lever 7: Logistics & Packaging Specifications is coming soon"
+                      >
+                        <Clock className="w-3 h-3" />
+                        <span>{strings.btnComingSoon}</span>
                       </button>
                     ) : (
                       <button
@@ -203,7 +223,11 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                   )}
                 </button>
                 <div className="text-[10px] text-slate-400 italic">
-                  {isImplemented ? strings.provisionalNotice : strings.statusPlanned}
+                  {isImplemented
+                    ? strings.provisionalNotice
+                    : lever.implementationStatus === 'COMING_SOON'
+                    ? strings.statusComingSoon
+                    : strings.statusPlanned}
                 </div>
               </div>
 

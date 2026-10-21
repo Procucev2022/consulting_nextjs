@@ -107336,3 +107336,1628 @@ Report:
 
 Do not claim that automated tests establish commercial validity.
 Do not hardcode the reported totals.
+
+## Prompt 454
+
+PROMPT 454 — LEVER 6 FINAL HEAD G EVIDENCE VALIDATION
+
+Review the existing Lever 6 implementation. Do not rebuild the module.
+
+SCOPE
+- Modify only Lever 6 files if a demonstrated defect requires correction.
+- Do not modify Levers 1–5 or 7–10.
+- Keep Module 3 disconnected.
+- Do not modify Module 4, the installer, or SaaS configuration.
+- Preserve the existing category-prioritisation and resource-planning functionality.
+
+1. AUDIT HEAD G — ALTERNATIVE SUPPLIER DEVELOPMENT
+
+The current net indicative opportunities are reported as:
+- ABC Textile: ₹2.62 Cr.
+- PQR Cement: ₹0.13 Cr.
+
+Trace every Head G contribution to the underlying category and transaction records.
+
+For each category, report:
+- Total spend and eligible spend.
+- Supplier count and top-supplier share.
+- Concentration metric used.
+- Eligibility rule satisfied.
+- Low/base/high planning assumptions and calculated amounts.
+- Evidence of an actual sourcing opportunity, if available.
+- Whether alternative suppliers have been identified and technically validated.
+- Whether comparable specifications, commercial terms and pricing are available.
+- Related procurement levers and overlap status.
+
+Do not invent supplier availability, technical equivalence, market competition, or expected price reductions.
+
+2. SEPARATE CONCENTRATION RISK FROM MONETARY SAVINGS
+
+Supplier concentration alone must not establish a monetary savings opportunity.
+
+If the data supports a sourcing-risk or resilience opportunity but does not establish a defensible monetary benefit, classify it as:
+
+"Opportunity Identified — Monetary Benefit Not Yet Quantifiable."
+
+Retain the category in sourcing-priority and resource-planning views.
+
+Do not generate a monetary estimate from unsupported eligible spend or assumptions.
+
+Where sufficient evidence exists only for an illustrative scenario, clearly identify it as:
+
+"TENTATIVE — ILLUSTRATIVE PLANNING ESTIMATE — PENDING VALIDATION."
+
+3. FINANCIAL OUTPUT GOVERNANCE
+
+Maintain separate measures for:
+- Gross tentative planning estimate.
+- Unresolved overlap excluded from net.
+- Net indicative planning estimate.
+- Opportunity validated and approved by the relevant stakeholders.
+- Realised savings.
+
+Do not describe the current net figure as validated or achievable savings.
+
+Reconcile all figures dynamically. Do not hardcode customer totals.
+
+4. DASHBOARD AND EXCEL
+
+Ensure the dashboard and Excel use the same Head G eligibility, assumptions, statuses and calculations.
+
+Show category-level evidence and explain why each monetary estimate is included.
+
+Distinguish quantified tentative opportunities from non-monetised sourcing-risk opportunities and data gaps.
+
+5. VALIDATION
+
+Run the relevant tests for:
+- Supplier concentration without monetary savings evidence.
+- Missing alternative-supplier or technical-validation evidence.
+- Supported versus unsupported Head G estimates.
+- Low/base/high calculation consistency.
+- Cross-lever overlap treatment.
+- Dashboard-to-Excel reconciliation.
+- Regression safeguards.
+
+Run the relevant backend and frontend tests, typecheck and lint.
+
+FINAL REPORT
+
+Provide:
+- Head G category-level audit findings for both customers.
+- Revised gross, excluded and net tentative estimates, if changed.
+- The evidence supporting each retained monetary estimate.
+- Opportunities identified but not monetised.
+- Files changed and actual test results.
+
+Do not claim commercial validation solely because automated tests pass.
+
+
+## Prompt 455
+
+PROMPT 455 — LEVER 6 FINAL SEMANTIC AND CALCULATION CONSISTENCY AUDIT
+
+Review the existing Lever 6 implementation following Prompt 454.
+
+Do not rebuild the module.
+
+SCOPE
+- Modify only Lever 6 files when a demonstrated defect requires correction.
+- Do not modify Levers 1–5 or 7–10.
+- Keep Module 3 disconnected.
+- Do not modify Module 4, the desktop installer, or SaaS configuration.
+- Preserve existing functionality unless a demonstrated defect requires correction.
+
+1. RESTORE THE CANONICAL OPPORTUNITY-HEAD DEFINITIONS
+
+Audit every backend calculation, frontend label, overlap mapping, dashboard output and Excel export.
+
+Use these canonical definitions consistently:
+
+HEAD A: Strategic Category Management
+HEAD B: Supplier Base Rationalisation
+HEAD C: Purchasing Consolidation
+HEAD D: Price Variation Reduction
+HEAD E: Contract Coverage Improvement
+HEAD F: Strategic Sourcing & Bidding
+HEAD G: Alternative Supplier Development
+HEAD H: Specification Optimisation
+HEAD I: Category Expertise Deployment
+HEAD J: Process & Transaction Efficiency
+
+Do not silently rename a head or assign another head's commercial mechanism to it.
+
+Correct the inconsistent descriptions identified in the Prompt 454 report.
+
+2. VERIFY ELIGIBILITY RULES AND CROSS-LEVER MAPPINGS
+
+Check that each head's eligibility rule, commercial mechanism, calculation and overlap mapping correspond to its canonical definition.
+
+Expected primary overlap relationships:
+- Head B ↔ Lever 3: Vendor Base Consolidation.
+- Head C ↔ Lever 4: Volume Aggregation.
+- Head D ↔ Lever 1: Direct Price Improvement.
+- Head F ↔ Lever 2: E-Auction / Dynamic Bidding.
+- Head H ↔ Lever 8: Specification Rationalisation.
+- Head E ↔ contract coverage and compliance evidence.
+- Head J ↔ procurement operating-cost and transaction-efficiency evidence.
+
+Review other overlaps where evidence warrants them. Do not assume that the listed mappings are exhaustive.
+
+Do not invent commercial mechanisms or evidence.
+
+3. PRESERVE HEAD G GOVERNANCE
+
+Keep Head G non-monetised unless sufficient evidence establishes a defensible monetary benefit.
+
+Supplier concentration alone must not create savings.
+
+Retain concentration-risk metrics, category prioritisation and resource-planning recommendations.
+
+4. VALIDATE FINANCIAL RECONCILIATION
+
+Recalculate gross, overlap-excluded, net indicative, approved and realised figures from the underlying records.
+
+Do not hardcode reported totals.
+
+For each customer and each opportunity head, verify:
+- Canonical definition.
+- Eligibility rule.
+- Eligible spend.
+- Low/base/high assumptions.
+- Calculated benefit.
+- Related lever.
+- Overlap status.
+- Gross contribution.
+- Net contribution or exclusion reason.
+
+Ensure gross = net + excluded benefits where the measures are defined on the same basis.
+
+Do not describe tentative gross estimates as achievable savings.
+
+If all quantified heads remain subject to unresolved overlap, retain a zero net indicative estimate and explain why.
+
+5. DASHBOARD AND EXCEL
+
+Ensure all labels, commercial mechanisms, eligibility rules, calculation details and overlap explanations are consistent between backend, dashboard and Excel.
+
+Remove contradictory or stale descriptions.
+
+6. TESTS AND SCOPE
+
+Run relevant tests for:
+- All ten canonical head definitions.
+- Eligibility and overlap mappings.
+- Head G non-monetisation without evidence.
+- Gross-to-net reconciliation.
+- Dashboard-to-Excel consistency.
+- Regression protection for other levers.
+
+Run backend tests, frontend tests, typecheck and lint.
+
+Confirm that Levers 1–5 and 7–10, Module 3, Module 4, installer and SaaS configuration remain unchanged.
+
+FINAL REPORT
+
+Provide:
+- Any inconsistent definitions or mappings found and corrected.
+- Reconciled financial figures for both customers.
+- Remaining unresolved overlaps and data gaps.
+- Files changed and actual test results.
+
+Do not claim commercial validation solely because automated tests pass.
+
+
+## Prompt 456
+
+PROMPT 456 — LEVER 6 FINAL ACCEPTANCE CHECK
+
+Perform a final read-only acceptance check of Module 2, Lever 6.
+
+Do not modify code unless a material defect is found.
+Do not modify Levers 1–5 or 7–10, Module 3, Module 4, the installer, or SaaS configuration.
+
+Verify:
+
+1. All ten opportunity-head titles and commercial definitions are canonical and consistent across backend, frontend, dashboard and Excel.
+
+2. Head G remains a non-monetised sourcing-risk opportunity unless verified alternative suppliers, technical qualification and comparable commercial evidence support a monetary estimate.
+
+3. ABC Textile and PQR Cement totals reconcile:
+   ABC: gross ₹43.03 Cr; overlap excluded ₹43.03 Cr; net ₹0.00 Cr.
+   PQR: gross ₹20.46 Cr; overlap excluded ₹20.46 Cr; net ₹0.00 Cr.
+
+4. These amounts are dynamically calculated and not hardcoded.
+
+5. No unresolved overlap is included in net opportunity. No entire category is permanently excluded solely because a related lever exists; opportunity-level scope must determine duplication when evidence becomes available.
+
+6. Contract coverage and operating-cost gaps remain explicitly disclosed. Approved and realised savings remain separate from tentative estimates.
+
+7. Confirm dashboard and Excel reconciliation and verify that the latest implementation has no stale labels or inconsistent financial figures.
+
+8. Confirm the latest Lever 6 and Lever 5 regression tests pass.
+
+Return PASS/FAIL for each check, list any material defect, and identify any remaining limitation.
+
+Do not claim commercial validation from software tests alone.
+
+
+## Prompt 457
+
+PROMPT 457 — MARK LEVER 7 AS COMING SOON
+
+Module 2 — Lever 7: Logistics & Packaging Specifications
+
+DECISION
+We are deferring the development of Lever 7 because the required
+benchmark prices and supporting data are not currently available.
+
+REQUIREMENTS
+
+1. Display Lever 7 as "COMING SOON" in the Module 2 interface.
+
+2. Clearly display its name:
+   "Logistics & Packaging Specifications"
+
+3. Do not implement any opportunity identification, savings calculations,
+   benchmark analysis, data processing, or backend business logic for
+   Lever 7 at this stage.
+
+4. Do not display estimated savings, opportunity counts, benchmark values,
+   or fabricated results for Lever 7.
+
+5. If the existing interface supports disabled or upcoming modules,
+   follow the same design pattern. The user must understand that the
+   functionality is not yet available.
+
+6. Do not allow users to execute Lever 7 or mistake it for a functional
+   module.
+
+7. Do not modify Levers 1–6 or 8–10, Module 3 (PCBI), Module 4
+   (Savings Engine), the desktop installer, or SaaS configuration.
+
+8. Do not refactor unrelated code or modify shared functionality unless
+   absolutely necessary to display the status.
+
+VALIDATION
+
+- Confirm Lever 7 displays "COMING SOON".
+- Confirm it cannot be executed.
+- Confirm the other existing levers remain functional.
+- Run relevant tests, typecheck, lint, and build.
+- Report the files changed and test results.
+
+IMPORTANT
+This is a UI status change only. Do not start implementing Lever 7.
+Do not modify any other lever's business logic.
+
+
+## Prompt 458
+
+PROMPT 458 — LEVER 8: SPECIFICATION RATIONALISATION
+PHASE 1 — OPPORTUNITY IDENTIFICATION & TECHNICAL REVIEW
+
+OBJECTIVE
+Implement Module 2, Lever 8: Specification Rationalisation.
+
+The objective is to identify potentially duplicate, redundant, non-standard
+or unnecessarily varied material specifications and enable authorised
+technical review.
+
+IMPORTANT: Phase 1 is for identification and technical review only.
+Do not implement financial savings calculations in this phase.
+
+==================================================
+1. INSPECT THE EXISTING ARCHITECTURE
+==================================================
+
+Before making changes, inspect:
+
+- Existing Module 2 architecture and shared types.
+- Lever 1–7 implementation and status configurations.
+- Existing taxonomy classification and review workflows.
+- Existing opportunity identification and overlap controls.
+- Existing dashboard and Excel export patterns.
+- Existing testing conventions.
+
+Reuse existing components and patterns wherever possible.
+
+Do not create duplicate frameworks or introduce unnecessary dependencies.
+
+Lever 7 must remain COMING SOON.
+
+==================================================
+2. OPPORTUNITY IDENTIFICATION
+==================================================
+
+Identify potential specification rationalisation opportunities through:
+
+A. Potentially duplicate material codes.
+B. Similar material descriptions.
+C. Potentially equivalent technical specifications.
+D. Specification variations across plants or departments.
+E. Multiple internal codes potentially representing the same approved item.
+F. Potential standardisation opportunities across comparable materials.
+G. Potential over-specification candidates where relevant technical
+   attributes are available.
+
+These are identification categories, not confirmed opportunities.
+
+Do not assume every variation is unnecessary or that every similar
+description represents an equivalent material.
+
+Preserve original descriptions and source records.
+
+==================================================
+3. MATCHING AND TECHNICAL COMPARISON
+==================================================
+
+Implement a staged identification process:
+
+Stage 1: Normalise descriptions and identifiers for comparison.
+
+Stage 2: Compare available technical attributes, including relevant
+dimensions, material grades, ratings, tolerances, finishes and other
+category-specific attributes where available.
+
+Stage 3: Identify potential matches and show the evidence supporting
+each match.
+
+Stage 4: Route candidates for authorised technical review.
+
+Do not assume one universal attribute-matching rule works for all
+material categories.
+
+Do not silently infer missing attributes.
+
+Do not classify an item as technically equivalent solely because:
+- Its description is similar.
+- Its item code is similar.
+- Its historical price is similar.
+- Its supplier is the same.
+- Its attributes are incomplete.
+
+Where critical information is missing, explicitly disclose the gap.
+
+==================================================
+4. TECHNICAL REVIEW STATUS
+==================================================
+
+Support these Lever 8 review states:
+
+POTENTIAL_MATCH
+Candidate identified through automated analysis.
+
+AWAITING_TECHNICAL_REVIEW
+Candidate requires review by an authorised technical or engineering
+reviewer.
+
+TECHNICALLY_VERIFIED
+An authorised reviewer has confirmed equivalence or approved the
+proposed alternative for the explicitly defined application and scope.
+
+REJECTED
+The candidate has been reviewed and rejected, with a reason recorded.
+
+Reuse existing taxonomy governance and review conventions wherever
+appropriate. Do not introduce conflicting taxonomy status definitions.
+
+Automated analysis must never independently grant technical approval.
+
+For each review, capture available information such as:
+- Existing item codes and descriptions.
+- Compared technical attributes.
+- Identified differences and missing fields.
+- Proposed standard or alternative.
+- Technical justification.
+- Reviewer and approval status.
+- Review date.
+- Rejection reason, where applicable.
+
+Maintain traceability and an auditable review history using existing
+application conventions.
+
+==================================================
+5. FINANCIAL GOVERNANCE — MANDATORY
+==================================================
+
+Phase 1 must not calculate or claim monetary savings.
+
+Do not:
+- Apply generic savings percentages.
+- Treat total category expenditure as savings.
+- Treat price differences between unverified items as savings.
+- Infer savings from duplicate item codes alone.
+- Create fabricated benchmark prices or alternative prices.
+- Extrapolate historical price differences into future savings.
+- Display invented opportunity values.
+
+Where a candidate is identified, show the relevant expenditure or
+quantity under review only when supported by source data.
+
+Clearly distinguish expenditure under review from potential savings.
+
+Financial benefit status must remain:
+NOT YET QUANTIFIABLE — COMMERCIAL QUANTIFICATION DEFERRED TO PHASE 2.
+
+Keep validated/approved savings and realised savings separate.
+Do not change existing financial totals for other levers.
+
+Phase 2 may be developed later when approved alternative specifications,
+comparable prices, eligible quantities and other necessary evidence
+are available.
+
+==================================================
+6. CROSS-LEVER OVERLAP GOVERNANCE
+==================================================
+
+Prevent duplicate financial attribution with:
+
+Lever 1 — Direct Price Improvement
+Lever 2 — E-Auction / Dynamic Bidding
+Lever 3 — Vendor Base Consolidation
+Lever 4 — Volume Aggregation
+Lever 5 — Payment Terms Optimisation
+Lever 6 — Category Specialisation
+Lever 7 — Logistics & Packaging Specifications (COMING SOON)
+
+Lever 8 must not modify or recalculate benefits belonging to other
+levers.
+
+Record potential overlaps at opportunity level where possible.
+
+Do not permanently exclude an entire material category merely because
+another lever is associated with it.
+
+Because Phase 1 does not calculate financial savings, do not invent
+overlap amounts. Record the relevant relationship for later review.
+
+==================================================
+7. DASHBOARD AND EXCEL
+==================================================
+
+Use the existing Module 2 design conventions.
+
+The Lever 8 interface should display:
+
+- Total candidates identified.
+- Candidates awaiting technical review.
+- Technically verified candidates.
+- Rejected candidates.
+- Candidates with missing technical data.
+- Relevant expenditure or quantities under review, where supported.
+- Financial status: NOT YET QUANTIFIABLE.
+- Review status and next required action.
+
+These counts and figures must be dynamically derived from actual
+records, not hardcoded.
+
+Provide detailed Excel output using existing export conventions,
+including candidate details, attribute comparisons, status, evidence,
+data gaps and review history where supported.
+
+Dashboard and Excel results must reconcile.
+
+Do not display fabricated savings figures.
+
+==================================================
+8. STRICT SCOPE CONTROL
+==================================================
+
+Implement Lever 8 Phase 1 only.
+
+Do not modify:
+- Levers 1–6 business logic.
+- Lever 7 COMING SOON status.
+- Lever 9 or Lever 10 business logic.
+- Module 3 / PCBI.
+- Module 4 / Savings Engine.
+- Desktop installer.
+- SaaS configuration.
+
+Avoid unrelated refactoring.
+
+==================================================
+9. TESTING AND ACCEPTANCE
+==================================================
+
+Add tests covering:
+
+1. Exact and normalised description matching.
+2. Similar descriptions that have different technical attributes.
+3. Missing technical attributes.
+4. Potential matches requiring technical review.
+5. Technical approval and rejection workflows.
+6. Prevention of automatic technical approval.
+7. No monetary savings calculations in Phase 1.
+8. No fabricated expenditure or opportunity values.
+9. Correct review counts and status summaries.
+10. Dashboard and Excel reconciliation.
+11. Cross-lever isolation.
+12. Regression protection for existing functionality.
+
+Run relevant tests, typecheck, lint and build.
+
+Report:
+- Files modified.
+- Matching logic implemented.
+- Review workflow implemented.
+- Test results.
+- Known limitations.
+- Any acceptance criteria not met.
+
+Do not declare commercial savings validated.
+
+Do not begin Phase 2.
+
+Begin with architecture inspection, then implement Phase 1 using the
+existing application patterns.
+
+
+## Prompt 459
+
+PROMPT 459 — LEVER 8 PHASE 1 ACCEPTANCE AUDIT
+
+Conduct a focused acceptance audit of the implemented Module 2,
+Lever 8 — Specification Rationalisation, Phase 1.
+
+This is primarily a READ-ONLY audit. Do not refactor working code.
+Fix only material defects discovered by the audit.
+
+Do not modify Levers 1–7 or 9–10, Module 3 / PCBI, Module 4 /
+Savings Engine, the desktop installer, or SaaS configuration.
+
+VERIFY THE FOLLOWING:
+
+1. MATCHING SAFEGUARDS
+- Similar descriptions with different critical attributes must not be
+  classified as technically equivalent.
+- Missing critical attributes must prevent automatic technical approval.
+- Similarity scores must identify candidates only, not certify equivalence.
+- Explain the exact rules used to classify each candidate type.
+- Confirm original source descriptions and item codes are preserved.
+
+2. TECHNICAL REVIEW AND AUTHORISATION
+- Verify review decisions are persisted in the backend.
+- Verify decisions remain after refresh and reopening the workspace.
+- Verify reviewer identity and timestamps are recorded.
+- Verify only appropriately authorised users can approve or reject.
+- Verify rejection reasons are mandatory.
+- Verify clients cannot bypass approval by submitting arbitrary status
+  values through the API.
+- Verify review history is not silently overwritten.
+
+3. EXPENDITURE RECONCILIATION
+- Confirm expenditure under review is calculated from a defined set
+  of underlying transaction records.
+- Ensure the same transaction is not counted repeatedly across
+  multiple candidate pairs.
+- Reconcile dashboard and Excel figures.
+- Confirm expenditure under review is not labelled or presented as savings.
+- Confirm Phase 1 calculates no monetary savings.
+
+4. DATA AND CATEGORY SAFEGUARDS
+- Verify category-specific technical attributes are compared correctly.
+- Check examples involving different dimensions, grades, ratings,
+  finishes and units.
+- Verify missing or unparseable attributes are disclosed.
+- Confirm no technical equivalence is inferred from price similarity,
+  supplier identity or description similarity alone.
+
+5. WORKFLOW AND EXPORT
+- Verify the live Lever 8 screen opens correctly.
+- Verify candidate filters, technical review modal, approval/rejection
+  actions and Excel export work end to end.
+- Confirm dashboard and Excel statuses and totals reconcile.
+- Confirm Lever 7 remains COMING SOON and Levers 1–6 remain functional.
+
+6. REGRESSION AND SCOPE
+- Run focused Lever 8 backend and frontend tests.
+- Run relevant regression tests, typecheck, lint and build.
+- Report exact test counts and results.
+- List all files changed during this audit.
+- Do not claim live verification unless the browser workflow was actually
+  executed.
+
+OUTPUT
+Return PASS/FAIL for each section, evidence for each result, any material
+defects found, fixes made, remaining limitations and a final recommendation
+of ACCEPT or DO NOT ACCEPT.
+
+Do not begin Lever 9.
+
+
+## Prompt 460
+
+Implement LEVER 9 — PROCUREMENT COMPLIANCE & CONTROL in the existing Procucev procurement analytics application.
+
+IMPORTANT: Follow the existing architecture, coding standards, UI conventions, data models, and testing approach. Inspect the current codebase before making changes. Do not rebuild existing modules.
+
+BUSINESS CONTEXT
+Customers may not provide contracts or rate cards at this stage. Therefore, Lever 9 must work with available purchase transaction and PO data. Contract-document and rate-card integration can be added in a future phase.
+
+OBJECTIVE
+Identify potential procurement-control gaps, transaction anomalies, pricing inconsistencies, and purchasing exceptions from available customer data. Support investigation and corrective action without falsely claiming contractual violations or realised savings.
+
+1. DATA INPUTS
+Use available fields from existing customer uploads, including:
+- Purchase transaction and PO identifiers
+- Supplier identifiers and names
+- Material/item codes and descriptions
+- Quantities and units of measure
+- Unit prices and transaction values
+- Transaction and PO dates
+- Plant/business-unit information
+- Payment terms, where available
+- Approval and sourcing-reference fields, where available
+
+Reuse existing uploaded datasets and data-processing pipelines wherever possible.
+
+Do not require contract documents or rate cards for the module to function.
+
+If a field is unavailable, record the data gap and continue with checks that the available data supports.
+
+2. PROCUREMENT CONTROL CHECKS
+Implement defensible checks where the required fields exist:
+
+A. Price Inconsistency
+Identify price differences for comparable items purchased from the same supplier or across suppliers.
+
+Compare only when item identity, currency, unit of measure, and other material comparison requirements are sufficiently established.
+
+Price variation is an investigation signal, not proof of overcharging or avoidable expenditure.
+
+B. Supplier and Purchase Pattern Exceptions
+Flag potentially unusual supplier concentration, repeated purchases, fragmented purchasing, or transactions that may warrant consolidation or sourcing review.
+
+Do not automatically classify these patterns as violations or savings opportunities.
+
+C. Purchase Order and Transaction Exceptions
+Where the required data exists, identify:
+- Missing or inconsistent PO references
+- Potential duplicate transactions
+- Missing supplier or item identifiers
+- Unusual quantity or unit-price patterns
+- Inconsistent transaction dates or values
+
+Use deterministic duplicate checks where possible. Similar descriptions or amounts alone must not establish that two transactions are duplicates.
+
+D. Sourcing and Approval Control Gaps
+Where sourcing-reference or approval fields exist, identify missing references or incomplete approval information.
+
+Do not label a purchase unauthorised merely because a reference is absent from the uploaded dataset.
+
+E. Payment and Commercial Exceptions
+Use payment-term data only when available and sufficiently reliable.
+
+Do not infer missing payment terms or calculate benefits from them.
+
+Avoid duplicating Lever 5 Payment Terms Optimisation.
+
+F. Contract Compliance
+Since contracts and rate cards may not be available, do not claim to verify contractual compliance.
+
+Display:
+"Contract Compliance Verification — Additional Contract or Rate-Card Data Required."
+
+The module may identify transaction-level exceptions for investigation, but must distinguish them from verified contractual breaches.
+
+3. EXCEPTION CLASSIFICATION
+Provide clear statuses such as:
+- POTENTIAL_EXCEPTION
+- AWAITING_REVIEW
+- VERIFIED_EXCEPTION
+- NOT_AN_EXCEPTION
+- DATA_INSUFFICIENT
+
+Only authorised reviewers may mark an exception as verified.
+
+Record the review outcome, reviewer, timestamp, and reason using the existing audit-history conventions.
+
+Do not silently overwrite review history.
+
+If the existing application lacks durable persistence for these records, identify that limitation and implement persistence using the established project architecture. Do not represent an in-memory cache as permanent storage.
+
+4. FINANCIAL IMPACT
+Quantify potential financial exposure only when the transaction data supports a defensible calculation.
+
+For example, a potential price difference may be estimated only when the compared transactions are genuinely comparable and the reference price has a documented basis.
+
+Every estimate must display:
+- Calculation methodology
+- Relevant transaction or item population
+- Assumptions and limitations
+- Data completeness
+- Validation status
+
+Use these labels where appropriate:
+"Potential Financial Exposure — Requires Validation"
+"Not Yet Quantifiable — Additional Data Required"
+"Verified Exception — Financial Impact Not Yet Established"
+
+Do not describe estimated exposure as realised savings, confirmed recoveries, or guaranteed benefits.
+
+Do not invent industry benchmarks, savings percentages, contractual terms, or assumed violation rates.
+
+5. PREVENT DOUBLE COUNTING
+Integrate with the existing opportunity classification framework.
+
+Explicitly prevent duplicate financial claims against:
+- Lever 1: Price Benchmarking
+- Lever 2: Strategic Sourcing and Auction Opportunities
+- Lever 3: Existing supplier and purchasing optimisation opportunities
+- Lever 4: Logistics and Packaging Specifications — currently Coming Soon
+- Lever 5: Payment Terms Optimisation
+- Lever 6: Category Specialisation
+- Lever 8: Specification Rationalisation
+
+Where an exception overlaps an existing opportunity, link or flag it for review rather than adding the same financial benefit again.
+
+Do not modify the business logic of these existing levers.
+
+6. DASHBOARD AND USER EXPERIENCE
+Create a clear Lever 9 workspace showing:
+- Total transactions reviewed
+- Transactions eligible for each control check
+- Potential exceptions identified
+- Exceptions awaiting review
+- Verified exceptions
+- Exceptions dismissed after review
+- Data gaps and coverage percentages
+- Potential financial exposure, where defensibly quantifiable
+- Financial impact not yet quantifiable
+
+Separate counts, expenditure under review, potential financial exposure, and verified financial impact.
+
+Never treat expenditure under review as savings.
+
+Provide filters by supplier, item/category, plant, date range, exception type, and review status where the relevant data exists.
+
+Allow users to inspect the underlying transactions supporting each exception.
+
+Use clear explanations for every flag so users understand why it was generated.
+
+7. EXPORT AND AUDITABILITY
+Provide an export of identified exceptions and their supporting transaction references.
+
+Include exception type, supporting evidence, calculation basis where applicable, data gaps, review status, reviewer information, and timestamps.
+
+Preserve source transaction identifiers and original descriptions.
+
+Do not modify the underlying customer source data.
+
+8. ACCESS CONTROL
+Follow the existing authentication and role-based authorisation framework.
+
+Restrict exception verification and review actions to appropriate authorised roles.
+
+Validate inputs and status transitions on the backend, not only in the frontend.
+
+9. TESTING AND ACCEPTANCE
+Before declaring completion, verify:
+
+- Missing fields do not crash processing.
+- Comparisons do not mix incompatible materials, currencies, or units.
+- Potential anomalies are not automatically classified as violations.
+- Duplicate checks do not rely solely on textual similarity.
+- Financial exposure is not calculated without a defensible reference.
+- Missing payment terms never produce assumed benefits.
+- Overlapping opportunities are not double-counted.
+- Review history is preserved.
+- Role-based permissions are enforced.
+- Exports reconcile with the displayed results.
+- Existing modules and their results remain unchanged.
+
+Run relevant backend tests, frontend tests, type checks, lint, budget checks, and production build.
+
+Report actual test results. Do not claim browser-based validation if it was not executed.
+
+10. STRICT CHANGE BOUNDARIES
+- Implement Lever 9 only.
+- Do not modify Module 3 / PCBI benchmarking.
+- Do not modify Module 4 / Savings Engine.
+- Do not reopen or redesign accepted Levers 1–6 or Lever 8.
+- Keep Lever 7 in its existing Coming Soon state.
+- Do not introduce SaaS enablement or modify the desktop installer.
+- Do not fabricate customer data or financial benefits.
+
+DELIVERABLE
+Complete the implementation and provide a concise report covering:
+1. Files changed.
+2. Control checks implemented.
+3. Dashboard and export functionality.
+4. Data limitations.
+5. Financial calculation methodology.
+6. Double-counting safeguards.
+7. Test results.
+8. Any remaining defects or limitations.
+
+Do not begin another lever until Lever 9 has been reviewed and accepted.
+
+
+## Prompt 461
+
+Perform a final acceptance audit of Lever 9 — Procurement Compliance & Control.
+
+Do not redesign the module or modify unrelated functionality. Inspect the actual implementation and resolve the issues identified below.
+
+1. DURABLE AUDIT HISTORY
+
+The implementation report states that review history is currently stored in an in-memory backend cache.
+
+Inspect the existing database architecture and determine the correct way to persist review records permanently.
+
+If supported by the established architecture, implement durable audit storage using the existing database and migration conventions.
+
+Preserve:
+- Exception identifier
+- Previous and new status
+- Reviewer identity and role
+- Review decision
+- Review reason and justification
+- Corrective action, where applicable
+- Timestamp
+- Relevant supporting references
+
+Audit records must be append-only through the application workflow. A new decision must not silently overwrite previous history.
+
+Verify persistence across backend restarts.
+
+Enforce appropriate backend role permissions.
+
+If durable persistence cannot be implemented safely, document the blocker and retain a clearly visible limitation. Do not claim permanent audit storage.
+
+2. FINANCIAL EXPOSURE VALIDATION
+
+Review every financial calculation in Lever 9.
+
+A. Price inconsistency:
+- Compare only genuinely comparable transactions.
+- Check material identity, currency, UOM, transaction dates, quantity, and available commercial conditions.
+- Where required information is missing, flag the limitation.
+- Do not interpret the lowest historical price as an automatically achievable purchase price.
+- Label any calculated difference as potential exposure requiring validation.
+
+B. Duplicate transactions:
+- Use deterministic duplicate criteria.
+- Do not treat a suspected duplicate as a confirmed loss.
+- Prevent the same transaction from contributing repeatedly to exposure.
+- Where duplicate status is unresolved, show the amount under investigation separately from validated financial impact.
+
+C. Credit notes and reversals:
+- Verify that negative-value transactions, credit notes, and reversals are handled correctly.
+- Do not interpret negative expenditure as positive exposure.
+- Do not discard legitimate adjustments without documenting the treatment.
+
+D. Reconciliation:
+- Reconcile dashboard totals with exception details and Excel exports.
+- Distinguish transaction count, unique transactions, expenditure under review, potential financial exposure, and verified financial impact.
+- Ensure each measure uses the correct population and calculation basis.
+
+E. Double counting:
+- Review overlaps between control checks and Levers 1, 2, 3, 5, 6, and 8.
+- Do not add Lever 9 exposure to savings totals.
+- Flag unresolved overlaps for manual reconciliation.
+
+3. CONTROL CHECK VALIDATION
+
+Inspect the six existing checks:
+- Price Inconsistency
+- Supplier & Purchase Pattern Exceptions
+- PO & Transaction Control Exceptions
+- Sourcing & Approval Control Gaps
+- Payment & Commercial Exceptions
+- Contract Compliance Disclosure
+
+Verify that missing source fields are treated as data gaps, not proof of a violation.
+
+Check that the 5% price-dispersion threshold, 40% supplier concentration threshold, and fragmented-order thresholds are clearly documented as configurable analytical rules, not universal industry standards.
+
+Do not introduce unsupported assumptions or fabricate data.
+
+4. REVIEW WORKFLOW
+
+Verify status transitions and backend validation.
+
+Confirm that:
+- Only authorised users can verify or dismiss exceptions.
+- Dismissal requires a reason.
+- Every review creates a new audit-history entry.
+- Supporting transaction references remain available.
+- Invalid status transitions are rejected.
+- The frontend does not falsely imply that a review was saved if the backend rejected it.
+
+5. LIVE APPLICATION AND EXPORT TESTING
+
+Run the application using the existing development setup.
+
+Verify in the running UI:
+- Lever 9 is accessible through Module 2 navigation.
+- The dashboard loads without errors.
+- Filters and search operate correctly.
+- Supporting transactions can be inspected.
+- Review submission works and updates the visible status.
+- Excel export downloads and opens correctly.
+- Export totals reconcile with the dashboard.
+- Appropriate empty states and data-gap messages appear.
+
+If browser automation is unavailable, report that limitation explicitly and do not claim live UI validation.
+
+6. REGRESSION SAFEGUARDS
+
+Do not modify the business logic of accepted Levers 1–6 or Lever 8.
+
+Keep Lever 7 in its existing Coming Soon state.
+
+Do not connect or modify Module 3 / PCBI benchmarking or Module 4 / Savings Engine.
+
+Do not modify the desktop installer or introduce SaaS enablement.
+
+7. TESTS AND FINAL REPORT
+
+Run focused backend and frontend tests, type checks, lint, production builds, and the applicable quality checks.
+
+Add tests for audit persistence across backend restarts if durable storage is implemented.
+
+Provide a concise report with:
+- Issues found and fixes made
+- Files changed
+- Audit-storage implementation and restart-test results
+- Financial calculation safeguards
+- Dashboard/export reconciliation results
+- Live UI verification results
+- Test results
+- Remaining limitations
+
+Do not declare Lever 9 accepted merely because automated tests pass.
+
+Stop after the audit and report. Do not start Lever 10.
+
+
+## Prompt 462
+
+PROMPT 462 — LEVER 9 FINANCIAL EXPOSURE RECONCILIATION
+
+Perform a focused financial audit of Lever 9 using the actual ABC Textile and PQR Cement assessment datasets.
+
+Do not redesign the module. Do not modify accepted levers or Module 3/Module 4.
+
+OBJECTIVE
+Validate the reported ₹149.05 Cr expenditure under review and ₹140.51 Cr potential financial exposure. Determine whether these values are correctly calculated and economically defensible.
+
+1. DATA RECONCILIATION
+For ABC Textile (AIC-2026-0002) and PQR Cement (AIC-2026-0003), separately report:
+- Source transaction count and source expenditure
+- Transactions eligible for each control check
+- Unique transactions under review
+- Expenditure under review
+- Potential exposure by control-check type
+- Verified financial impact, if any
+- Transactions excluded and the reason for exclusion
+
+Reconcile each figure to the canonical source data. Do not invent or estimate missing values.
+
+2. PRICE-INCONSISTENCY AUDIT
+For each price-inconsistency exception, show:
+- Material code and description
+- Supplier
+- UOM and currency
+- Comparison period
+- Comparable transaction count and quantities
+- Lowest and highest comparable prices
+- Reference price and its source transaction
+- Exact exposure formula and calculated amount
+
+Confirm that quantities, unit prices and transaction values are internally consistent.
+
+Do not treat the lowest historical price as automatically achievable or as a guaranteed saving.
+
+Where commercial conditions or transaction comparability cannot be established, classify the result as an investigation signal and do not present an unsupported financial estimate.
+
+3. DUPLICATE-TRANSACTION AUDIT
+Show the exact source transaction identifiers for each suspected duplicate group.
+
+Verify that:
+- Repeated purchases are not automatically treated as duplicate invoices or payments.
+- The same transaction is not counted repeatedly.
+- The exposure formula is appropriate for the evidence available.
+- Suspected duplicate exposure remains separate from verified financial impact.
+
+If invoice or payment identifiers are unavailable, explicitly disclose that limitation.
+
+4. CREDIT NOTES AND REVERSALS
+Inspect negative transactions, credit notes and reversals.
+
+Verify whether they are linked to original purchases where possible, and explain their effect on gross and net exposure.
+
+Do not assume that every negative transaction is a reversal or that every unmatched credit note has no financial effect.
+
+5. DOUBLE-COUNTING AUDIT
+Identify all transaction IDs that appear in more than one control check.
+
+Calculate exposure both before and after removing demonstrable overlaps.
+
+Do not subtract amounts mechanically where overlap cannot be quantified. Flag unresolved overlap and exclude the affected amounts from any consolidated financial-impact figure.
+
+6. REPORTING
+Produce a concise reconciliation table for both assessments.
+
+Clearly distinguish:
+- Expenditure under review
+- Potential exposure requiring validation
+- Verified financial impact
+- Unquantified exceptions
+
+Do not label potential exposure as savings or confirmed recovery.
+
+7. ACCEPTANCE
+Add or update focused tests for any defects discovered.
+
+Run relevant tests, typecheck, lint and build.
+
+Report the actual results and list any unresolved financial limitations.
+
+Do not start Lever 10 until this audit is complete.
+
+
+## Prompt 463
+
+PROMPT 463 — FINAL LEVER 9 FINANCIAL CLASSIFICATION AND ACCEPTANCE
+
+Use the findings from Prompt 462 to correct the financial presentation of Lever 9.
+
+Do not redesign the module. Do not modify accepted Levers 1–6 or 8, Lever 7's Coming Soon status, Module 3 / PCBI, or Module 4 / Savings Engine.
+
+1. DUPLICATE CLASSIFICATION
+
+Same-PO lines with matching supplier, material, date, quantity and value must not automatically be classified as duplicate payments.
+
+Classify them as:
+POTENTIAL_PO_SCHEDULE_DUPLICATE — AP VERIFICATION REQUIRED
+
+Cross-PO matches must be classified as:
+POTENTIAL_DUPLICATE_TRANSACTION — AP VERIFICATION REQUIRED
+
+Without invoice or payment-clearing evidence, do not claim a duplicate payment or financial loss.
+
+Do not calculate confirmed loss from either classification.
+
+2. PRICE VARIANCE
+
+Historical minimum price must not automatically be treated as an achievable commercial baseline.
+
+Where comparable market conditions, volume, timing and commercial terms cannot be established, classify the result as:
+PRICE_VARIANCE_INVESTIGATION_SIGNAL
+
+Do not present unsupported price differences as savings or confirmed financial loss.
+
+3. PQR HSD ADJUSTMENT
+
+Review the reported ₹7.81 Cr adjustment for HSD.
+
+Verify the exact calculation, underlying transactions, comparison periods and supporting evidence.
+
+Do not apply an assumed commodity-market adjustment.
+
+If the adjustment cannot be substantiated, remove it from the quantified financial reconciliation and disclose the unresolved limitation.
+
+4. DOUBLE COUNTING
+
+Do not sum exposure from overlapping checks.
+
+Use a documented transaction-level reconciliation method. Where overlap cannot be reliably resolved, keep the affected amount outside any consolidated quantified exposure.
+
+5. DASHBOARD AND EXCEL
+
+Clearly separate:
+- Unique expenditure under review
+- Price-variance investigation signals
+- Potential duplicate transactions awaiting AP verification
+- Other governance exceptions
+- Quantified potential exposure supported by defensible evidence
+- Verified financial impact
+
+Maintain verified financial impact at zero unless evidence supports a different value.
+
+Do not present investigation signals as realised savings, confirmed losses or recoveries.
+
+Reconcile the dashboard, API and Excel export against the source data.
+
+6. TESTING
+
+Add tests for:
+- Same-PO delivery schedules
+- Cross-PO suspected duplicates
+- Missing invoice and payment references
+- Price variance without a defensible baseline
+- Overlapping checks
+- Credit notes and reversals
+- PQR HSD adjustment validation
+- Dashboard and Excel reconciliation
+
+Run tests, typecheck, lint and production builds.
+
+Report the actual results and remaining limitations.
+
+Stop after this correction. Do not start Lever 10.
+
+## Prompt 464
+
+PROMPT 464 — SOURCE DATA INTEGRITY AND FINANCIAL RECONCILIATION
+
+Perform a focused data-integrity audit of Lever 9 following Prompt 463.
+
+IMPORTANT:
+Do not redesign Lever 9.
+Do not modify accepted Levers 1–6 or Lever 8.
+Keep Lever 7 in its existing Coming Soon state.
+Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+Do not start Lever 10.
+
+OBJECTIVE
+
+Resolve the discrepancies between the previously established canonical baselines and the figures reported after Prompt 463.
+
+PREVIOUSLY ESTABLISHED BASELINES
+
+ABC Textile:
+Assessment ID: AIC-2026-0002
+Source: Textile1.xlsx
+Transaction count: 23,570
+Canonical expenditure: ₹613.8805 Cr
+
+PQR Cement:
+Assessment ID: AIC-2026-0003
+Source: Cement2.xlsx
+Transaction count: 19,670
+Canonical net expenditure: ₹262.6412 Cr
+This includes gross purchase expenditure of ₹262.6436 Cr and a credit adjustment of -₹24,570.
+
+LATEST PROMPT 463 REPORT
+
+ABC Textile:
+23,570 transactions
+₹1,559.40 Cr source expenditure
+
+PQR Cement:
+22,238 transactions
+₹2,152.01 Cr source expenditure
+
+These differences must be explained before Lever 9 is accepted.
+
+1. VERIFY SOURCE DATA
+
+For each assessment, identify:
+- The exact source file and dataset version.
+- The assessment ID used by Lever 9.
+- The canonical transaction retrieval method.
+- The source expenditure field used.
+- Whether the values are gross or net of credit notes and reversals.
+- Whether any additional records, joins, or datasets were introduced.
+- Whether transactions were duplicated during parsing or ingestion.
+
+Do not change the canonical source dataset merely to make totals agree.
+
+2. RECONCILE ABC TEXTILE
+
+Trace the ₹613.8805 Cr baseline against the reported ₹1,559.40 Cr.
+
+Provide:
+- Source row count.
+- Unique transaction count.
+- Sum of the canonical expenditure field.
+- Sum of the field used by Lever 9.
+- Duplicate transaction count and value.
+- Excluded records and reasons.
+- Exact numerical reconciliation explaining the difference.
+
+3. RECONCILE PQR CEMENT
+
+Trace the ₹262.6412 Cr net baseline against the reported ₹2,152.01 Cr.
+
+Provide:
+- Source row count.
+- Unique transaction count.
+- Gross expenditure.
+- Credit notes and reversals.
+- Net expenditure.
+- Duplicate transaction count and value.
+- Excluded records and reasons.
+- Exact numerical reconciliation explaining the difference.
+
+4. CHECK LEVER 9 SUMMARY TOTALS
+
+Investigate why the consolidated expenditure under review is reported as ₹149.05 Cr when the latest report separately reports:
+- ABC Textile: ₹72.63 Cr
+- PQR Cement: ₹76.42 Cr
+
+Verify the calculation from underlying unique transaction identifiers.
+
+Ensure:
+- The two assessments are not confused.
+- Transaction IDs from different assessments cannot collide.
+- Each source transaction contributes correctly to each metric.
+- Cross-check overlaps are calculated from actual transaction identifiers.
+- Dashboard, API and Excel totals use the same calculation basis.
+
+5. PRESERVE FINANCIAL SAFEGUARDS
+
+Retain the corrected Prompt 463 classifications:
+- Same-PO schedule duplicates require AP verification.
+- Cross-PO potential duplicates require AP verification.
+- Price variances are investigation signals unless a defensible commercial baseline exists.
+- Verified financial impact remains zero unless supported by evidence.
+- No unsupported savings or recoveries may be claimed.
+
+6. TESTING
+
+Add focused tests for the discrepancies found.
+
+Run the relevant backend and frontend tests, typecheck, lint and production builds.
+
+Do not modify unrelated modules.
+
+7. FINAL REPORT
+
+Provide:
+- Exact root cause of each discrepancy.
+- Correct canonical transaction counts and spend totals.
+- Correct Lever 9 expenditure-under-review totals for both assessments.
+- Dashboard and Excel reconciliation results.
+- Files changed.
+- Test results.
+- Any remaining limitations.
+
+If the cause cannot be established, report the issue as unresolved and do not claim acceptance.
+
+STOP after completing this audit. Do not start Lever 10.
+
+## Prompt 465
+
+PROMPT 465 — LEVER 9 FINAL CONTROL VALIDATION
+
+Perform a focused final validation of Module 2, Lever 9 — Procurement Compliance & Control.
+
+Do not redesign the module.
+Do not modify accepted Levers 1–6 or Lever 8.
+Keep Lever 7 in Coming Soon state.
+Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+Do not start Lever 10.
+
+CANONICAL BASELINES — MUST REMAIN UNCHANGED
+
+ABC Textile:
+Assessment ID: AIC-2026-0002
+Transactions: 23,570
+Net expenditure: ₹613.8805 Cr
+Expenditure under review: ₹149.05 Cr
+
+PQR Cement:
+Assessment ID: AIC-2026-0003
+Transactions: 19,670
+Gross expenditure: ₹262.6436 Cr
+Credit adjustment: -₹24,570
+Net expenditure: ₹262.6412 Cr
+Expenditure under review: ₹172.18 Cr
+
+1. FINANCIAL CLASSIFICATION
+
+Confirm that:
+- Expenditure under review is not labelled as loss, savings, recovery, or confirmed exposure.
+- Same-PO candidates are labelled POTENTIAL_PO_SCHEDULE_DUPLICATE — AP VERIFICATION REQUIRED.
+- Cross-PO candidates are labelled POTENTIAL_DUPLICATE_TRANSACTION — AP VERIFICATION REQUIRED.
+- Price variance remains an investigation signal unless a defensible comparable commercial baseline exists.
+- Confirmed financial exposure and verified financial impact remain ₹0 unless supported by documented evidence.
+- No duplicate, price-variance, or governance amounts are added together without a transaction-level overlap reconciliation.
+
+2. PRICE-VARIANCE CONTROL
+
+Inspect the minimum-price × 1.15 rule.
+
+Verify that comparisons are restricted to comparable material, UOM, currency, and appropriate transaction context.
+
+Do not treat the historical minimum as automatically representing a valid market price.
+If a defensible comparison cannot be established, retain the exception as an investigation signal and explain the limitation.
+
+Do not invent a replacement threshold or change the business rule without documenting the justification.
+
+3. ASSESSMENT ISOLATION AND RECONCILIATION
+
+Using the canonical transaction identifiers, verify separately for both assessment IDs:
+- Source transaction count and expenditure.
+- Unique expenditure under review.
+- Counts and amounts for each exception type.
+- Overlap between exception types.
+- Review status totals.
+
+Ensure assessment identifiers are included in all relevant keys and aggregations.
+
+Verify that dashboard, API responses, and Excel exports reconcile to the same assessment-scoped calculation results.
+
+Do not combine the ABC Textile and PQR Cement assessment totals into a single assessment view.
+
+4. REVIEW WORKFLOW AND PERSISTENCE
+
+Validate the full workflow:
+- Open an exception.
+- Save a review decision and comments.
+- Confirm the saved review appears in the dashboard and review history.
+- Restart the backend.
+- Confirm the saved review remains available.
+- Verify that the review record retains the correct assessment ID and exception identity.
+
+Inspect authorization. Do not rely on a freely supplied client header as proof of the user's role. If authorization is not grounded in trusted server-side authentication, document this as an unresolved security limitation; do not claim role security is complete.
+
+5. EXCEL EXPORT
+
+Generate exports for both assessments separately.
+
+Verify:
+- Correct assessment identity and canonical baseline.
+- Exception counts and amounts match the API.
+- Review statuses and comments are represented consistently.
+- No cross-assessment contamination.
+- No unsupported financial recovery or savings claims.
+- No misleading label implying that unverified candidates are confirmed losses.
+
+6. TESTING
+
+Add or update focused regression tests only where required.
+
+Run relevant backend and frontend tests, typecheck, lint, and production build.
+
+If browser automation is unavailable, explicitly state that live browser workflow validation was not performed. Do not claim it passed.
+
+7. FINAL REPORT
+
+Provide:
+- Pass/fail result for each control.
+- Exact reconciled metrics for both assessments.
+- Price-variance methodology findings.
+- Dashboard/API/Excel reconciliation results.
+- Review persistence and authorization findings.
+- Files changed.
+- Test results.
+- Remaining limitations.
+
+Do not claim Lever 9 is fully accepted if any critical financial-integrity, assessment-isolation, persistence, or authorization issue remains unresolved.
+
+STOP after this validation. Do not start Lever 10.
+
+## Prompt 466
+
+PROMPT 466 — LEVER 9 AUTHORIZATION HARDENING
+
+OBJECTIVE
+
+Resolve the client-supplied role authorization weakness identified in Prompt 465.
+
+This is a focused security task. Do not redesign Procurement Compliance & Control.
+
+STRICT SCOPE
+
+- Modify only the authentication/authorization components required to secure Lever 9.
+- Do not modify accepted Levers 1–6 or Lever 8.
+- Keep Lever 7 in Coming Soon state.
+- Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+- Do not start Lever 10.
+- Preserve all existing Lever 9 calculations, classifications, review history, exports, and canonical baselines.
+
+1. INSPECT EXISTING AUTHENTICATION
+
+Before coding, inspect the current application authentication architecture.
+
+Determine whether trusted server-side sessions, signed session cookies, JWT validation, or an existing authentication gateway is already available.
+
+Reuse the existing trusted mechanism wherever possible.
+
+Do not introduce a second authentication system unnecessarily.
+
+2. REMOVE TRUST IN CLIENT-SUPPLIED ROLES
+
+For every Lever 9 endpoint that reads, writes, exports, or reviews compliance data:
+
+- Derive the authenticated identity and authorized role from a trusted server-side authentication mechanism.
+- Do not grant permissions based on x-user-role, a request-body role, or any other freely supplied client value.
+- Reject unauthenticated requests.
+- Reject authenticated users who lack the required permission.
+- Enforce assessment/tenant access independently of the user's role.
+- Apply the same controls to Excel export and review-history endpoints.
+
+Do not merely hide frontend controls. Enforce authorization on the backend.
+
+3. PRESERVE DEVELOPMENT WORKFLOWS SAFELY
+
+If local development currently depends on x-user-role:
+
+- Do not silently retain that header as a production authorization mechanism.
+- Use an explicit, environment-restricted development authentication mechanism only if needed.
+- Ensure it cannot be enabled accidentally in production.
+- Document the development and production behavior.
+
+If the project lacks a trusted authentication mechanism, do not fabricate one or claim the issue is solved. Implement only what is safe within the existing architecture and report any remaining dependency.
+
+4. SECURITY TESTS
+
+Add tests proving:
+
+- An unauthenticated user cannot read protected compliance data.
+- An unauthenticated user cannot submit a review.
+- An unauthenticated user cannot export Excel.
+- A client-supplied x-user-role cannot elevate privileges.
+- A low-privilege user cannot perform restricted actions.
+- A user cannot access another assessment without authorization.
+- Authorized users retain permitted functionality.
+- Existing review persistence and audit history still work.
+
+5. REGRESSION PROTECTION
+
+Preserve these canonical baselines:
+
+ABC Textile — AIC-2026-0002
+- 23,570 transactions
+- ₹613.8805 Cr net expenditure
+- ₹149.05 Cr expenditure under review
+
+PQR Cement — AIC-2026-0003
+- 19,670 transactions
+- ₹262.6436 Cr gross expenditure
+- -₹24,570 credit adjustment
+- ₹262.6412 Cr net expenditure
+- ₹172.18 Cr expenditure under review
+
+Confirmed financial exposure and verified financial impact remain ₹0 unless supported by documented evidence.
+
+Do not convert investigation signals or duplicate candidates into confirmed losses or savings.
+
+6. QUALITY GATES
+
+Run relevant backend and frontend tests, typecheck, lint, and production build.
+
+Inspect the final diff for unrelated changes.
+
+If browser automation is available locally, validate the authenticated workflow. Otherwise, explicitly state that live browser testing remains outstanding.
+
+7. FINAL REPORT
+
+Report:
+- Authentication mechanism discovered.
+- Files changed.
+- Endpoints protected.
+- Security tests and results.
+- Regression test results.
+- Build results.
+- Remaining security limitations.
+- Whether production use is safe.
+
+Do not claim production readiness if trusted authentication, tenant authorization, or another critical security control remains unresolved.
+
+STOP after this task. Do not start Lever 10.
+
+
+## Prompt 467
+
+PROMPT 467 — LEVER 9 PRODUCTION-READINESS VERIFICATION
+
+OBJECTIVE
+
+Perform the final security review and running-application validation of Module 2, Lever 9 — Procurement Compliance & Control.
+
+Prompt 466 introduced authenticated tokens, role checks, tenant isolation, and protected review/export endpoints. Verify the actual implementation and close remaining risks.
+
+STRICT SCOPE
+
+- Do not redesign Lever 9.
+- Do not modify accepted Levers 1–6 or Lever 8.
+- Keep Lever 7 in Coming Soon state.
+- Do not modify Module 3 / PCBI or Module 4 / Savings Engine.
+- Do not start Lever 10.
+- Preserve existing business rules, canonical datasets, review history, and financial classifications.
+
+1. AUTHENTICATION CONFIGURATION
+
+Inspect the actual token implementation and deployment configuration.
+
+Verify:
+- AES-256-GCM encryption and authentication-tag validation.
+- Secure key generation and storage.
+- Startup and request behavior when APP_ENCRYPTION_KEY is missing or invalid.
+- Token expiry enforcement.
+- Rejection of malformed, tampered, and expired tokens.
+- No fallback to client-supplied x-user-role or reviewerRole.
+- No production activation of development authentication bypass.
+
+Do not print or expose encryption keys or live tokens in logs or the final report.
+
+2. ROLE AND TENANT AUTHORIZATION
+
+Verify all Lever 9 routes, including:
+- Compliance data retrieval.
+- Review submission.
+- Excel export.
+- Review history, if exposed through a separate endpoint.
+
+Confirm:
+- The authenticated identity and role come only from a verified token.
+- The requested assessment is authorized for the authenticated tenant.
+- Administrative cross-tenant access is explicit and restricted to authorized administrative roles.
+- No endpoint bypasses these controls.
+- A user cannot change their role or assessment access through query parameters, request bodies, or headers.
+
+Add regression tests for any gaps found.
+
+3. EXCEL EXPORT TOKEN HANDLING
+
+Inspect the export endpoint and frontend download flow.
+
+Prefer Authorization-header authentication and a Blob download where practical.
+
+If query-string tokens remain necessary:
+- Document why.
+- Ensure short expiry.
+- Ensure tokens are not written to application logs.
+- Apply appropriate cache-control and referrer protections.
+- Ensure the token cannot grant broader access than the intended assessment and action.
+
+Do not introduce a new authentication framework unnecessarily.
+
+4. LIVE APPLICATION VALIDATION
+
+The previous report states that browser automation could not run because the Playwright browser binary was unavailable.
+
+First check whether a usable browser is already installed locally. Do not repeatedly attempt network downloads if the environment is offline.
+
+If browser automation is available, validate:
+- Authenticated user opens the compliance dashboard.
+- Unauthorized user is rejected.
+- User opens an exception.
+- User submits a review decision with mandatory justification.
+- Saved decision appears in the UI and audit history.
+- Decision survives backend restart.
+- ABC Textile and PQR Cement remain isolated.
+- Excel export matches the active assessment's API metrics.
+
+If browser automation remains unavailable, run the strongest feasible live API integration tests and clearly identify which UI checks remain unverified. Do not claim browser validation passed.
+
+5. FINANCIAL REGRESSION CHECK
+
+Preserve and verify these canonical baselines.
+
+ABC Textile — AIC-2026-0002
+- 23,570 transactions.
+- Net expenditure ₹613.8805 Cr.
+- Expenditure under review ₹149.05 Cr.
+
+PQR Cement — AIC-2026-0003
+- 19,670 transactions.
+- Gross expenditure ₹262.6436 Cr.
+- Credit adjustment -₹24,570.
+- Net expenditure ₹262.6412 Cr.
+- Expenditure under review ₹172.18 Cr.
+
+Confirmed financial exposure and verified financial impact must remain ₹0 unless supported by documented evidence.
+
+Do not classify investigation signals or duplicate candidates as confirmed losses or savings.
+
+6. QUALITY GATES
+
+Run relevant security and regression tests, typecheck, lint, production build, and performance-budget checks.
+
+Inspect the final diff and ensure unrelated modules have not changed.
+
+7. FINAL REPORT
+
+Provide:
+- Exact endpoints and middleware reviewed.
+- Authentication configuration findings.
+- Export token-handling findings.
+- Security test results.
+- Live API and browser workflow results.
+- Financial regression results.
+- Files changed.
+- Remaining limitations.
+- A clear recommendation: production-ready, conditionally ready, or not ready.
+
+Do not claim production readiness if a critical security issue remains unresolved.
+
+STOP after this verification. Do not start Lever 10.

@@ -72,12 +72,15 @@ export const LEVER6_EVIDENCE_DISCLOSURES = {
   GOVERNANCE_NOT_QUANTIFIED:
     'Opportunity Identified — Monetary Benefit Not Yet Quantifiable: Requires defensible eligible-spend base and specific commercial savings mechanism.',
   EXPERTISE_NOT_QUANTIFIED:
-    'Opportunity Identified — Monetary Benefit Not Yet Quantifiable: Technical specialist deployment is a capability intervention; specific commercial savings mechanism required.'
+    'Opportunity Identified — Monetary Benefit Not Yet Quantifiable: Technical specialist deployment is a capability intervention; specific commercial savings mechanism required.',
+  ALTERNATIVE_SUPPLIER_NOT_QUANTIFIED:
+    'Opportunity Identified — Monetary Benefit Not Yet Quantifiable: Supplier concentration identifies single-source resilience risk; monetary savings require technical trial and validated alternative quotes.'
 } as const;
 
 export const LEVER6_METHODOLOGY_DISCLOSURES: string[] = [
   'Opportunity heads use Procucev initial planning assumptions for scenario analysis.',
   'Strategic Category Management (Head A) and Category Expertise (Head I) are governance and capability interventions; monetary savings are not assigned without a specific commercial mechanism.',
+  'Alternative Supplier Development (Head G) identifies single-source resilience risk; monetary savings require technical trial and validated alternative quotes, otherwise classified as Opportunity Identified — Monetary Benefit Not Yet Quantifiable.',
   'Eligible spend is strictly determined from actual transaction patterns, never a blanket percentage.',
   'Process & Transaction Efficiency applies exclusively to addressable operating costs, not material purchase spend.',
   'Strategic Sourcing & Bidding (Head F) defaults to OVERLAP REVIEW REQUIRED against Lever 2 unless an opportunity-level record proves distinct scope.',
@@ -149,7 +152,7 @@ export const LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS: Record<OpportunityHeadKey, Opp
   'HEAD-F': {
     key: 'HEAD-F',
     code: 'HEAD-F',
-    title: 'Strategic Sourcing & Competitive Bidding',
+    title: 'Strategic Sourcing & Bidding',
     lowPct: 2.0,
     basePct: 3.5,
     highPct: 5.0,
@@ -168,7 +171,7 @@ export const LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS: Record<OpportunityHeadKey, Opp
   'HEAD-H': {
     key: 'HEAD-H',
     code: 'HEAD-H',
-    title: 'Specification & Requirement Optimisation',
+    title: 'Specification Optimisation',
     lowPct: 1.0,
     basePct: 3.0,
     highPct: 5.0,

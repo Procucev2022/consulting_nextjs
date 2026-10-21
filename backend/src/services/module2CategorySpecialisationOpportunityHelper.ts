@@ -117,22 +117,66 @@ export class Module2CategorySpecialisationOpportunityHelper {
   }
 
   private static evaluateAlternativeSupplierHead(
-    metrics: CategoryMetrics
+    metrics: CategoryMetrics,
+    altSupplierOverride?: { hasVerifiedAlternativeSupplier: boolean; evidence: string }
   ): CategoryOpportunityBenefit {
-    const needsAltSupplier = metrics.topSupplierSharePct >= 50 || metrics.herfindahlIndex >= 2500;
-    const altSpend = needsAltSupplier ? metrics.topSupplierSpendInr * 0.4 : 0;
+    const isConcentrated = metrics.topSupplierSharePct >= 50 || metrics.herfindahlIndex >= 2500;
+    const hasVerifiedAlt = Boolean(altSupplierOverride?.hasVerifiedAlternativeSupplier);
+    const altEvidence = altSupplierOverride?.evidence;
+
+    const concentrationMetrics = {
+      topSupplierSharePct: metrics.topSupplierSharePct,
+      herfindahlIndex: metrics.herfindahlIndex,
+      distinctSuppliersCount: metrics.distinctSuppliersCount
+    };
+
+    if (hasVerifiedAlt) {
+      const altSpend = metrics.topSupplierSpendInr * 0.4;
+      return calculateBenefitForHead(
+        LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS['HEAD-G'],
+        metrics.categoryName,
+        altSpend,
+        true,
+        `Verified dual-sourcing strategy: ${altEvidence}`,
+        LEVER6_VALIDATION_STATUSES.TENTATIVE_PENDING,
+        'Requires pilot order qualification and supplier contract execution.',
+        'Secondary vendor qualification and technical trial to eliminate single/monopoly source pricing premium',
+        'Applied to 40% contestable share of concentrated spend with validated alternative supplier',
+        false,
+        undefined,
+        true,
+        altEvidence,
+        concentrationMetrics
+      );
+    }
+
+    const rationale = isConcentrated
+      ? 'Opportunity Identified — Monetary Benefit Not Yet Quantifiable.'
+      : 'Excluded: Supplier concentration is balanced; dual-sourcing development not required.';
+
+    const status = isConcentrated
+      ? LEVER6_VALIDATION_STATUSES.IDENTIFIED_NOT_QUANTIFIED
+      : LEVER6_VALIDATION_STATUSES.DATA_UNAVAILABLE;
+
+    const eligibilityRule = isConcentrated
+      ? 'Supplier concentration indicates sourcing/resilience risk; monetary benefit requires verified alternative supplier qualification'
+      : 'Supplier concentration is balanced across existing vendor base';
+
     return calculateBenefitForHead(
       LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS['HEAD-G'],
       metrics.categoryName,
-      altSpend,
-      needsAltSupplier,
-      needsAltSupplier
-        ? `Applied to concentrated spend with top supplier (${metrics.topSupplierSharePct}% share) for dual-sourcing.`
-        : 'Excluded: Supplier concentration is balanced; dual-sourcing development not required.',
-      needsAltSupplier ? LEVER6_VALIDATION_STATUSES.TENTATIVE_PENDING : LEVER6_VALIDATION_STATUSES.DATA_UNAVAILABLE,
-      'Requires secondary vendor technical trial, plant audit, and tooling validation.',
+      0,
+      false,
+      rationale,
+      status,
+      'Requires identified alternative vendor, technical trial, QA plant validation, and comparative commercial pricing quotes.',
       'Secondary vendor qualification and technical trial to eliminate single/monopoly source pricing premium',
-      'Applied to concentrated top supplier spend (share >= 50% or HHI >= 2500) for dual-sourcing'
+      eligibilityRule,
+      false,
+      undefined,
+      false,
+      undefined,
+      concentrationMetrics
     );
   }
 
@@ -160,12 +204,13 @@ export class Module2CategorySpecialisationOpportunityHelper {
   private static evaluateStrategicHeads(
     metrics: CategoryMetrics,
     priority: string,
-    distinctScopeOverride?: { hasDistinctScope: boolean; evidence: string }
+    distinctScopeOverride?: { hasDistinctScope: boolean; evidence: string },
+    altSupplierOverride?: { hasVerifiedAlternativeSupplier: boolean; evidence: string }
   ): CategoryOpportunityBenefit[] {
     const isStrategic = priority === LEVER6_PRIORITIES.PRIORITY_A;
     return [
       this.evaluateBiddingHead(metrics, isStrategic, priority, distinctScopeOverride),
-      this.evaluateAlternativeSupplierHead(metrics),
+      this.evaluateAlternativeSupplierHead(metrics, altSupplierOverride),
       this.evaluateSpecificationHead(metrics, isStrategic)
     ];
   }
@@ -219,11 +264,12 @@ export class Module2CategorySpecialisationOpportunityHelper {
   public static evaluateOpportunitiesForCategory(
     metrics: CategoryMetrics,
     priority: string,
-    distinctScopeOverride?: { hasDistinctScope: boolean; evidence: string }
+    distinctScopeOverride?: { hasDistinctScope: boolean; evidence: string },
+    altSupplierOverride?: { hasVerifiedAlternativeSupplier: boolean; evidence: string }
   ): CategoryOpportunityBenefit[] {
     const governance = this.evaluateGovernanceHeads(metrics, priority);
     const commercial = this.evaluateCommercialHeads(metrics);
-    const strategic = this.evaluateStrategicHeads(metrics, priority, distinctScopeOverride);
+    const strategic = this.evaluateStrategicHeads(metrics, priority, distinctScopeOverride, altSupplierOverride);
 
     return [
       governance[0], // Head A

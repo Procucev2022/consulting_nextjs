@@ -219,12 +219,66 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
       expect(benefits[1].isEligibleEstablished).toBe(true);
       expect(benefits[4].headKey).toBe('HEAD-E');
       expect(benefits[4].isEligibleEstablished).toBe(false);
+      expect(benefits[6].headKey).toBe('HEAD-G');
+      expect(benefits[6].isEligibleEstablished).toBe(false);
+      expect(benefits[6].baseEstimateInr).toBe(0);
+      expect(benefits[6].calculationRationale).toBe('Opportunity Identified — Monetary Benefit Not Yet Quantifiable.');
+      expect(benefits[6].opportunityStatus).toBe('OPPORTUNITY IDENTIFIED — NOT YET QUANTIFIABLE');
       expect(benefits[8].headKey).toBe('HEAD-I');
       expect(benefits[8].isEligibleEstablished).toBe(false);
       expect(benefits[8].calculationRationale).toBe('Opportunity Identified — Monetary Benefit Not Yet Quantifiable.');
       expect(benefits[9].headKey).toBe('HEAD-J');
       expect(benefits[9].isEligibleEstablished).toBe(false);
       expect(benefits[9].appliesToOperatingCost).toBe(true);
+    });
+
+    it('separates supplier concentration risk from monetary savings for Head G', () => {
+      const concentratedMetrics: CategoryMetrics = {
+        categoryName: 'Monopoly Raw Material',
+        totalSpendInr: 100000000,
+        transactionCount: 50,
+        distinctSuppliersCount: 2,
+        distinctMaterialsCount: 3,
+        distinctPlantsCount: 2,
+        topSupplierSpendInr: 80000000,
+        topSupplierSharePct: 80,
+        herfindahlIndex: 6800,
+        priceVariationCoefficient: 0.05,
+        contractCoveragePct: 0
+      };
+
+      // Default: Concentration risk is identified, but monetary savings are unquantified without verified alternative vendor
+      const oppsDefault = Module2CategorySpecialisationOpportunityHelper.evaluateOpportunitiesForCategory(
+        concentratedMetrics,
+        LEVER6_PRIORITIES.PRIORITY_A
+      );
+      const headGDefault = oppsDefault.find((o) => o.headKey === 'HEAD-G')!;
+      expect(headGDefault.isEligibleEstablished).toBe(false);
+      expect(headGDefault.eligibleAnnualSpendInr).toBe(0);
+      expect(headGDefault.baseEstimateInr).toBe(0);
+      expect(headGDefault.calculationRationale).toBe('Opportunity Identified — Monetary Benefit Not Yet Quantifiable.');
+      expect(headGDefault.opportunityStatus).toBe(LEVER6_VALIDATION_STATUSES.IDENTIFIED_NOT_QUANTIFIED);
+      expect(headGDefault.concentrationRiskMetrics).toBeDefined();
+      expect(headGDefault.concentrationRiskMetrics?.topSupplierSharePct).toBe(80);
+      expect(headGDefault.concentrationRiskMetrics?.herfindahlIndex).toBe(6800);
+
+      // When verified alternative supplier evidence is provided via opportunity record
+      const oppsVerified = Module2CategorySpecialisationOpportunityHelper.evaluateOpportunitiesForCategory(
+        concentratedMetrics,
+        LEVER6_PRIORITIES.PRIORITY_A,
+        undefined,
+        {
+          hasVerifiedAlternativeSupplier: true,
+          evidence: 'Secondary vendor audited and technically validated for 40% dual-sourcing allocation'
+        }
+      );
+      const headGVerified = oppsVerified.find((o) => o.headKey === 'HEAD-G')!;
+      expect(headGVerified.isEligibleEstablished).toBe(true);
+      expect(headGVerified.eligibleAnnualSpendInr).toBe(32000000); // 80M * 0.4
+      expect(headGVerified.baseEstimateInr).toBe(800000); // 32M * 2.5%
+      expect(headGVerified.hasVerifiedAlternativeSupplier).toBe(true);
+      expect(headGVerified.alternativeSupplierEvidence).toContain('Secondary vendor audited');
+      expect(headGVerified.opportunityStatus).toBe(LEVER6_VALIDATION_STATUSES.TENTATIVE_PENDING);
     });
   });
 
@@ -248,7 +302,7 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
       expect(overlap.exclusionReason).toContain('Lever 1');
     });
 
-    it('retains full benefit in net when no cross-lever overlap exists', () => {
+    it('retains full benefit in net when verified alternative supplier evidence is provided', () => {
       const baseOpp = calculateBenefitForHead(
         LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS['HEAD-G'],
         'Raw Cotton',
@@ -256,7 +310,13 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
         true,
         'Alternative supplier qualification',
         'TENTATIVE — PENDING VALIDATION',
-        'Validation needed'
+        'Validation needed',
+        'Secondary vendor qualification',
+        'Concentrated spend rule',
+        false,
+        undefined,
+        true,
+        'Secondary vendor audited and approved'
       );
 
       const overlap = evaluateCrossLeverOverlap(baseOpp);
@@ -274,7 +334,13 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
         true,
         'Commercial mechanism',
         'TENTATIVE',
-        'Valid'
+        'Valid',
+        'Secondary vendor qualification',
+        'Concentrated spend rule',
+        false,
+        undefined,
+        true,
+        'Secondary vendor audited'
       );
       const opp2 = calculateBenefitForHead(
         LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS['HEAD-D'],
@@ -319,7 +385,13 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
         true,
         'Alternative supplier qualification',
         'TENTATIVE — PENDING VALIDATION',
-        'Charter review'
+        'Charter review',
+        'Secondary vendor qualification',
+        'Concentrated spend rule',
+        false,
+        undefined,
+        true,
+        'Secondary vendor audited'
       );
       const oppD = calculateBenefitForHead(
         LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS['HEAD-D'],
@@ -428,10 +500,10 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
       expect(result.customerName).toBe('ABC Textile Ltd');
       expect(result.categories.length).toBeGreaterThan(0);
       expect(result.summary.totalProcurementSpendInr).toBeGreaterThan(0);
-      expect(result.summary.grossTentativeOpportunityBaseCr).toBe(45.65);
-      expect(result.summary.netIndicativeOpportunityBaseCr).toBe(2.62);
+      expect(result.summary.grossTentativeOpportunityBaseCr).toBe(43.03);
+      expect(result.summary.netIndicativeOpportunityBaseCr).toBe(0.0);
       expect(result.summary.overlapReviewAmountCr).toBe(43.03);
-      expect(result.summary.unquantifiedOpportunitiesCount).toBe(1565);
+      expect(result.summary.unquantifiedOpportunitiesCount).toBe(1758);
       expect(result.opportunityHeadAssumptions.length).toBe(10);
       expect(result.methodologyDisclosures.length).toBeGreaterThan(0);
     });
@@ -442,10 +514,57 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
       expect(result.assessmentId).toBe('AIC-2026-0003');
       expect(result.customerName).toBe('PQR Cement Ltd');
       expect(result.categories.length).toBeGreaterThan(0);
-      expect(result.summary.grossTentativeOpportunityBaseCr).toBe(20.59);
-      expect(result.summary.netIndicativeOpportunityBaseCr).toBe(0.13);
+      expect(result.summary.grossTentativeOpportunityBaseCr).toBe(20.46);
+      expect(result.summary.netIndicativeOpportunityBaseCr).toBe(0.0);
       expect(result.summary.overlapReviewAmountCr).toBe(20.46);
-      expect(result.summary.unquantifiedOpportunitiesCount).toBe(220);
+      expect(result.summary.unquantifiedOpportunitiesCount).toBe(240);
+    });
+
+    it('calculates revised net indicative opportunity when verified alternative supplier is provided via options', () => {
+      const result = Module2CategorySpecialisationEngine.calculate('AIC-2026-0003', {
+        verifiedAlternativeSuppliers: {
+          LABORATORY: {
+            hasVerifiedAlternativeSupplier: true,
+            evidence: 'Secondary testing equipment vendor qualified via trial'
+          }
+        }
+      });
+      expect(result.summary.netIndicativeOpportunityBaseCr).toBeGreaterThan(0);
+      expect(result.summary.grossTentativeOpportunityBaseCr).toBeGreaterThan(20.46);
+    });
+
+    it('enforces all 10 canonical opportunity-head definitions and primary overlap mappings', () => {
+      const canonicalDefinitions: Record<string, { title: string; relatedLever?: string }> = {
+        'HEAD-A': { title: 'Strategic Category Management' },
+        'HEAD-B': { title: 'Supplier Base Rationalisation', relatedLever: 'LEVER_3' },
+        'HEAD-C': { title: 'Purchasing Consolidation', relatedLever: 'LEVER_4' },
+        'HEAD-D': { title: 'Price Variation Reduction', relatedLever: 'LEVER_1' },
+        'HEAD-E': { title: 'Contract Coverage Improvement' },
+        'HEAD-F': { title: 'Strategic Sourcing & Bidding', relatedLever: 'LEVER_2' },
+        'HEAD-G': { title: 'Alternative Supplier Development' },
+        'HEAD-H': { title: 'Specification Optimisation', relatedLever: 'LEVER_8' },
+        'HEAD-I': { title: 'Category Expertise Deployment' },
+        'HEAD-J': { title: 'Process & Transaction Efficiency' }
+      };
+
+      for (const [key, expected] of Object.entries(canonicalDefinitions)) {
+        const assumption = LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS[key as keyof typeof LEVER6_OPPORTUNITY_HEAD_ASSUMPTIONS];
+        expect(assumption).toBeDefined();
+        expect(assumption.title).toBe(expected.title);
+        expect(assumption.relatedLever).toBe(expected.relatedLever);
+      }
+    });
+
+    it('reconciles gross = net + excluded dynamically for both customer baselines', () => {
+      for (const tenantId of ['AIC-2026-0002', 'AIC-2026-0003']) {
+        const result = Module2CategorySpecialisationEngine.calculate(tenantId);
+        const grossBase = result.summary.grossTentativeOpportunityBaseCr;
+        const netBase = result.summary.netIndicativeOpportunityBaseCr;
+        const excludedBase = result.summary.overlapReviewAmountCr;
+
+        // Dynamic reconciliation: gross = net + excluded
+        expect(Math.round((grossBase - (netBase + excludedBase)) * 100) / 100).toBe(0);
+      }
     });
   });
 
@@ -554,6 +673,5 @@ describe('Module 2 — Lever 6: Category Specialisation Engine & Services', () =
         })
       );
     });
-  });
   });
 });

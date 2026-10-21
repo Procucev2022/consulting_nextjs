@@ -121,7 +121,7 @@ export const CategorySpecialisationOverviewTab: React.FC<OverviewTabProps> = ({
             }}
           >
             ℹ️ <strong>{sum.unquantifiedOpportunitiesCount}</strong> opportunity items (including Strategic Category Governance,
-            Technical Domain Expertise Deployment, and Data Gaps) are identified as capability recommendations without automatic monetary savings.
+            Technical Domain Expertise Deployment, Single-Source Resilience Risks, and Data Gaps) are identified as capability & resilience recommendations without automatic monetary savings.
           </div>
         )}
       </div>
