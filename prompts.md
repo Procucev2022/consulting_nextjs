@@ -109261,3 +109261,547 @@ Clearly separate:
 
 Passing unit tests alone is not proof of production readiness.
 STOP after this report. Do not start Lever 10.
+
+
+## Prompt 472
+
+PROMPT 472 — MODULE 2, LEVER 10
+NEW-VENDOR DEVELOPMENT & ALTERNATE SOURCING
+
+OBJECTIVE
+
+Implement the initial Alternate Vendor Discovery Engine using
+Procucev's existing database of approximately 600,000 vendors.
+
+The customer-facing interface should primarily show counts of
+potential alternate vendors, not expose individual vendor details
+in executive summaries.
+
+The discovery engine must use the existing vendor-category mapping
+and support geographic filtering.
+
+IMPORTANT:
+This is an initial discovery capability, not a supplier qualification
+or financial savings calculation engine.
+
+============================================================
+1. SCOPE PROTECTION
+============================================================
+
+Work ONLY on Module 2, Lever 10.
+
+Preserve the original name:
+New-Vendor Development & Alternate Sourcing.
+
+Do not modify accepted Levers 1–6 or Lever 8.
+Keep Lever 7 in its existing Coming Soon state.
+Do not modify Lever 9.
+Do not modify Module 3 / PCBI.
+Do not modify Module 4 / Savings Engine.
+Do not modify the desktop installer or enable SaaS functionality.
+
+Inspect the existing architecture and vendor database before coding.
+
+Do not create a duplicate vendor master if an existing source can be
+used safely.
+
+============================================================
+2. EXISTING VENDOR DATABASE
+============================================================
+
+The existing vendor database contains approximately 600,000 vendors.
+
+Available fields include:
+- Company Name
+- Phone Number
+- Email
+- Email 2
+- Website
+- Website Yes/No
+- Pincode
+- City
+- State
+- Categories
+
+Some fields, particularly websites and email addresses, are missing
+for a substantial proportion of records.
+
+Missing contact details must NOT automatically disqualify a vendor
+from category-based discovery.
+
+One vendor can belong to multiple categories. The existing vendor
+name may consequently appear in multiple category records.
+
+Preserve the existing vendor-category relationships.
+
+Before implementation, inspect:
+- Actual storage format.
+- Unique vendor identifier, if available.
+- Category representation and hierarchy, if available.
+- Duplicate records.
+- Current search/indexing capabilities.
+- Existing tenant and access-control boundaries.
+
+Do not assume that company name is a globally unique vendor identifier.
+
+If a reliable unique identifier is unavailable, document the limitations
+of counting distinct vendors and implement conservative deduplication
+without merging different businesses merely because their names are
+similar.
+
+============================================================
+3. CUSTOMER REQUIREMENT INPUT
+============================================================
+
+Use the existing customer procurement analysis and Module 2 data.
+
+For each eligible material or category, identify the available:
+- Material description.
+- Category and subcategory.
+- Specification, if available.
+- Customer procurement location, if available.
+- Existing supplier identities, if available.
+- Relevant spend and purchase history.
+
+Do not invent missing specifications or supplier identities.
+
+Where category mapping is uncertain, identify the data limitation.
+
+============================================================
+4. CATEGORY-BASED DISCOVERY
+============================================================
+
+Search the existing vendor database for vendors mapped to the
+customer's relevant category.
+
+Support, where the existing data permits:
+- Exact category matching.
+- Existing category hierarchy matching.
+- Synonym-based category matching.
+- Related-category discovery.
+
+Keep the match types distinct.
+
+Do not treat a related-category match as proof of technical capability.
+
+Do not invent category relationships or silently assign suppliers to
+new categories.
+
+If AI-assisted category matching is used, retain its rationale and
+make uncertain matches reviewable.
+
+============================================================
+5. GEOGRAPHIC DISCOVERY — OPTION C
+============================================================
+
+Display both:
+
+A. OVERALL CATEGORY-MATCHED VENDOR COUNT
+
+Count distinct vendor identities matching the selected category,
+regardless of geography.
+
+B. GEOGRAPHICALLY MATCHED VENDOR COUNT
+
+Count distinct vendors from the category-matched pool that have
+location information satisfying the selected geographic criteria.
+
+Allow users to select geographic preferences based on available data:
+- Same city.
+- Nearby city or configurable radius, where reliable coordinates
+  or geographic calculations are available.
+- Same state.
+- Other states.
+- All available locations.
+
+Do not infer physical distance from city names alone.
+
+Pincode-based proximity may be used only with a reliable geographic
+mapping.
+
+If the data is insufficient to calculate proximity, offer city/state
+filters and disclose the limitation.
+
+Geographic suitability is a discovery preference, not proof of
+manufacturing location or delivery capability.
+
+Do not automatically exclude out-of-state vendors from the overall
+category-matched count.
+
+============================================================
+6. DISTINCT VENDOR COUNTING
+============================================================
+
+One vendor may appear in multiple categories.
+
+For each selected category:
+- Count each distinct vendor identity once.
+- Do not count database rows as vendors.
+- Do not count the same vendor multiple times because it has multiple
+  contact records or category relationships.
+- Exclude the customer's current supplier when its identity can be
+  reliably matched.
+- If supplier identity cannot be reliably matched, disclose that
+  current-supplier exclusion could not be fully verified.
+
+Display the total matching count and the number excluded as existing
+suppliers, where these counts can be established reliably.
+
+Never present an unreliable record count as a verified business count.
+
+============================================================
+7. CUSTOMER-FACING SUMMARY
+============================================================
+
+For each material/category, provide a concise view such as:
+
+ALTERNATE SOURCING OPPORTUNITY
+
+Material / Category: [Actual customer data]
+Current Supplier Count: [Verified count, if available]
+
+Potential Alternate Vendors — All Locations: [Calculated count]
+
+Potential Alternate Vendors — Preferred Region: [Calculated count]
+
+Category Match:
+- Exact matches: [Count]
+- Related-category matches: [Count, if implemented reliably]
+
+Qualification Status:
+- Qualified alternatives: [Count only if actual qualification records
+  support the result]
+- Qualification status unavailable: [When applicable]
+
+These are potential vendor discovery results, not verified qualified
+supplier counts.
+
+If the data does not support a metric, display DATA_UNAVAILABLE rather
+than an invented number.
+
+Do not use sample or fabricated vendor counts in production.
+
+============================================================
+8. VENDOR IDENTITY AND CONTACT PRIVACY
+============================================================
+
+The initial executive summary must display vendor counts rather than
+individual vendor names or contact details.
+
+Do not expose the full vendor database through an API or export.
+
+Do not return unnecessary phone numbers, emails, or website details
+when the interface only needs counts.
+
+Respect existing authentication, authorization, and tenant boundaries.
+
+If a future detailed vendor view already exists, inspect its access
+controls before reusing it. Do not build an unrestricted vendor directory.
+
+Do not assume that hiding vendor names in the UI is sufficient if the
+API exposes all underlying vendor records to unauthorized users.
+
+============================================================
+9. SUPPLIER QUALIFICATION SEPARATION
+============================================================
+
+Vendor discovery must be separate from qualification.
+
+The following concepts must remain distinct:
+
+- Category-matched vendor.
+- Geographic-matched vendor.
+- Shortlisted vendor.
+- Supplier under qualification.
+- Qualified alternate supplier.
+
+Do not automatically classify a discovered vendor as qualified.
+
+Do not infer certifications, manufacturing capability, product quality,
+capacity, financial health, or delivery capability from category and
+location alone.
+
+Do not exclude a potentially relevant vendor merely because its email
+or website is missing.
+
+============================================================
+10. COMMERCIAL BENEFIT SAFEGUARDS
+============================================================
+
+Do not calculate financial savings merely from the number of vendors
+identified.
+
+Do not apply generic savings percentages.
+
+Do not infer competitive prices from vendor counts.
+
+Financial opportunity can be calculated only in a later, appropriate
+stage when comparable commercial evidence supports it.
+
+For this initial discovery engine, the principal output is the number
+of potential alternative vendors and the progress of discovery.
+
+============================================================
+11. PERFORMANCE
+============================================================
+
+The database contains approximately 600,000 vendors.
+
+Inspect the current storage and indexing approach before choosing
+an implementation.
+
+Avoid scanning and loading all vendor records into the browser for
+every search.
+
+Use appropriate backend filtering and indexing.
+
+Do not introduce an expensive external AI/API call for every vendor.
+
+Keep category and geographic counts consistent between the API and UI.
+
+============================================================
+12. TESTING
+============================================================
+
+Test at least:
+
+1. Exact category match.
+2. Related-category match, if implemented.
+3. One vendor appearing in multiple categories.
+4. Duplicate vendor records.
+5. Exclusion of the current supplier.
+6. Missing email and website fields.
+7. Missing city, state, or pincode.
+8. Same-city and same-state filters.
+9. Geographic proximity where reliable data exists.
+10. Out-of-state suppliers remaining in the overall count.
+11. Distinct vendor count reconciliation.
+12. Empty and unmatched categories.
+13. Tenant isolation and authorization.
+14. API response minimization.
+15. Search performance on representative data volumes.
+16. Regression protection for accepted modules.
+
+Run relevant tests, typecheck, lint, production builds, and performance
+budget checks.
+
+Inspect the final diff for unrelated changes.
+
+============================================================
+13. FINAL REPORT
+============================================================
+
+Report:
+- Actual vendor database and storage format.
+- How vendor identity and deduplication are handled.
+- How category matching works.
+- How geographic filtering works.
+- Whether distance calculations are genuinely supported.
+- How current suppliers are excluded.
+- API and UI changes.
+- Performance and indexing changes.
+- Files changed.
+- Test commands and actual results.
+- Known limitations.
+- Confirmation that no fabricated counts or savings were introduced.
+
+STOP after implementing and validating the initial discovery engine.
+
+Do not start another lever.
+
+
+## Prompt 473
+
+PROMPT 473 — RESPONSIVE APPLICATION LAYOUT + LEVER 10 UI DIAGNOSTICS
+
+OBJECTIVE
+Fix the application layout to use the available viewport width properly and diagnose why Module 2, Lever 10 still displays "PLANNED / NOT IMPLEMENTED" despite the reported implementation.
+
+STRICT RULES
+- Inspect the existing code and reproduce both issues before changing anything.
+- Fix the root causes, not just the visible symptoms.
+- Preserve all accepted procurement business rules and existing functionality.
+- Do not modify Module 3 / PCBI, Module 4 / Savings Engine, or the desktop installer.
+- Do not introduce SaaS functionality.
+- Do not change Lever 10's identity: "New-Vendor Development & Alternate Sourcing".
+- Do not change the calculation logic of other levers.
+- Do not create mock vendor data or fabricate results.
+- Do not claim success without testing the actual application.
+
+PART A — RESPONSIVE APPLICATION LAYOUT
+
+1. Inspect the application shell, root containers, page wrappers, headers, sidebars, module workspaces, grids, cards, and responsive CSS.
+
+2. Identify all causes of unnecessary left/right margins, including:
+   - Fixed or restrictive max-width values.
+   - Nested containers with duplicated horizontal padding.
+   - Fixed-width cards or grids.
+   - Incorrect width calculations.
+   - Horizontal overflow.
+   - Excessive whitespace inside cards.
+   - Text columns that are too narrow.
+
+3. Establish a consistent layout:
+   - Use the available viewport width within the application's intended boundaries.
+   - Keep appropriate outer gutters and internal padding.
+   - Use box-sizing: border-box consistently.
+   - Use responsive grid and flex layouts.
+   - Allow cards and their content to expand naturally.
+   - Prevent text, tabs, buttons, and cards from overflowing horizontally.
+   - Keep text readable; do not stretch text into excessively wide paragraphs.
+   - Preserve existing visual styling and information hierarchy.
+   - On smaller screens, adapt columns and navigation rather than forcing desktop widths.
+   - Do not use arbitrary absolute positioning to compensate for layout problems.
+
+4. Apply shared layout fixes at the appropriate common container level. Do not independently patch every card if a shared root cause exists.
+
+5. Check both screenshots' relevant views:
+   - Module 2 Strategic Sourcing Intelligence.
+   - Lever 10 card and discovery workspace.
+   - Other representative module screens to ensure there are no regressions.
+
+PART B — LEVER 10 ROOT-CAUSE DIAGNOSIS
+
+The current UI still shows:
+"New-Vendor Development & Alternate Sourcing"
+"PLANNED / NOT IMPLEMENTED"
+"Pending Implementation"
+
+The previous report claimed the discovery engine, backend route, API and frontend view were implemented.
+
+Trace the complete path:
+1. Lever 10 overview/card definition and its status.
+2. Lever 10 navigation/tab registration.
+3. Click handler and selected-lever state.
+4. Conditional rendering of the alternate sourcing workspace.
+5. API request URL, parameters, authentication and response parsing.
+6. Backend route registration and controller.
+7. Vendor index file loading and runtime path.
+8. Actual API response and browser console/network errors.
+
+Determine whether the screenshot shows the overview card, an obsolete status definition, a missing navigation entry, an unreachable component, or an API/runtime failure.
+
+IMPORTANT:
+- The screenshot's navigation appears to stop at Lever 9 and Category Sourcing Strategy. Verify whether Lever 10 is missing from the navigation.
+- Do not assume that the Lever 10 card itself is supposed to be clickable; inspect the intended navigation pattern.
+- Do not simply change "PLANNED / NOT IMPLEMENTED" to "ACTIVE".
+- Do not hide errors or show success with empty data.
+- If the discovery view is unavailable, display a clear diagnostic/error state.
+- Preserve the distinction between discovery, shortlist, qualification and approved suppliers.
+- Keep vendor names and contact details out of executive summary responses.
+- Do not fabricate savings.
+
+PART C — VERIFICATION
+
+Run the relevant frontend and backend tests, typecheck, lint and build.
+
+Add or update regression tests for:
+- Responsive layout and horizontal overflow.
+- Lever 10 navigation and selected-view rendering.
+- Correct handling of API success, empty data and API failure.
+- Vendor counts remaining consistent with backend results.
+- All ten levers remaining correctly represented.
+- Existing module behavior remaining intact.
+
+Where possible, launch the local application and verify the rendered UI at desktop width and a narrower viewport.
+
+Report:
+1. Exact root cause of the layout issue.
+2. Files changed and shared layout rules adjusted.
+3. Exact root cause of Lever 10 not appearing.
+4. Whether the actual discovery interface now renders and retrieves data.
+5. Tests and build commands actually run, with results.
+6. Any unresolved issues.
+
+STOP after these two issues are addressed. Do not start another lever or make unrelated changes.
+
+
+## Prompt 474
+
+PROMPT 474 — LEVER 10 VENDOR COUNT RECONCILIATION & CATEGORY MATCH VALIDATION
+
+OBJECTIVE
+Investigate and correct the inconsistencies visible in the actual Lever 10 UI.
+
+The current screenshot shows:
+- Dashboard potential alternate vendors, all locations: 25,695
+- Dashboard preferred-region pool: 2,059
+- Coal E-Auction opportunity:
+  - Current supplier: WESTERN COAL FIELDS LTD
+  - Alternate vendors, all locations: 0
+  - Alternate vendors, preferred region: 0
+  - Matched category: General Procurement
+  - Exact matches: 0
+  - Excluded current suppliers KPI: 0
+
+Do not assume any displayed figure is correct without tracing its calculation.
+
+STRICT SCOPE
+- Modify only Lever 10 New-Vendor Development & Alternate Sourcing and its necessary supporting code.
+- Preserve the existing responsive layout.
+- Do not modify Levers 1–9, Module 3 / PCBI, Module 4 / Savings Engine, or the desktop installer.
+- Do not fabricate vendor data, category matches, savings, or qualifications.
+- Preserve API minimization: do not expose raw vendor contact information in executive summaries.
+
+PART A — RECONCILE COUNTS
+1. Trace the source and formula for each dashboard KPI.
+2. Trace the source and formula for the counts displayed on each opportunity card.
+3. Confirm that dashboard totals and card-level counts use compatible definitions.
+4. Determine whether dashboard counts represent all indexed vendors, category-matched vendors, or alternate vendors after exclusions.
+5. Label each count accurately.
+6. If totals represent different populations, explain the distinction clearly in the UI.
+7. Never present a nationwide total as the number of viable alternatives for a specific material.
+
+PART B — MATERIAL AND CATEGORY MATCHING
+1. Trace how each customer material/category maps to vendor master categories.
+2. Investigate why Coal E-Auction maps to General Procurement when no exact category match exists.
+3. Do not treat General Procurement as a valid technical match for coal merely because it is a broad category.
+4. Use exact matches first.
+5. Use hierarchy or synonyms only where supported by an explicit, auditable mapping.
+6. Keep related-category matches separate from exact or verified category matches.
+7. If no defensible mapping exists, show DATA_UNAVAILABLE or NO_VERIFIED_CATEGORY_MATCH and explain why.
+8. Do not silently convert unmatched materials to a generic category and count all vendors under it as alternates.
+
+PART C — CURRENT-SUPPLIER EXCLUSION
+1. Trace the current-supplier matching and exclusion logic.
+2. Verify how WESTERN COAL FIELDS LTD is represented in the vendor index and customer transactions.
+3. Exclude current suppliers only when identity matching is sufficiently reliable.
+4. Distinguish:
+   - Current suppliers identified in the assessment
+   - Current suppliers matched to the vendor master
+   - Current suppliers excluded from a specific material/category pool
+5. Do not use the global exclusion count as a substitute for category-specific exclusion.
+6. If identity cannot be established reliably, disclose the limitation.
+
+PART D — GEOGRAPHIC FILTERS
+1. Make Preferred City consistent with Preferred State.
+2. When the state changes, clear or update an incompatible city selection.
+3. Do not infer geographic distance from city names.
+4. Clearly distinguish nationwide category-matched counts from state- or city-matched counts.
+
+PART E — VERIFICATION
+Add or update tests covering:
+- Dashboard-to-card count definitions and reconciliation
+- Exact category matches
+- Unmatched material categories
+- Generic-category fallback prevention
+- Current supplier identification and exclusion
+- Duplicate vendor records
+- Geographic filter consistency
+- Empty and unavailable data states
+- API/UI agreement
+- Privacy and no fabricated savings
+
+Run the relevant tests, typecheck, lint, and builds. Test the actual UI where possible.
+
+FINAL REPORT
+State:
+1. Root cause of the 25,695 versus 0 discrepancy.
+2. Correct definition and source of every KPI.
+3. Whether Coal E-Auction has a defensible vendor category match.
+4. Current-supplier exclusion findings.
+5. Geographic-filter corrections.
+6. Actual tests and results.
+7. Remaining limitations.
+
+Do not begin any other lever or feature. Stop after this validation.

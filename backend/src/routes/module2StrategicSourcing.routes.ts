@@ -42,6 +42,7 @@ import { Module2PaymentTermsController } from '../controllers/module2PaymentTerm
 import { Module2CategorySpecialisationController } from '../controllers/module2CategorySpecialisation.controller';
 import { Module2SpecificationRationalisationController } from '../controllers/module2SpecificationRationalisation.controller';
 import { Module2ProcurementComplianceController } from '../controllers/module2ProcurementCompliance.controller';
+import { Module2AlternateSourcingController } from '../controllers/module2AlternateSourcing.controller';
 import { requireFeature } from '../utils/entitlementMiddleware';
 import { FEATURE_PERMISSIONS } from '../constants/subscription';
 
@@ -130,6 +131,13 @@ router.get(
   '/procurement-compliance/export-excel',
   requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT),
   Module2ProcurementComplianceController.exportExcel
+);
+
+// Lever 10: New-Vendor Development & Alternate Sourcing
+router.get(
+  '/alternate-sourcing',
+  requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL),
+  Module2AlternateSourcingController.getAlternateSourcing
 );
 
 export default router;

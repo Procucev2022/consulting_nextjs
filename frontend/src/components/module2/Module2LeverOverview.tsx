@@ -33,7 +33,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
   const resolvedDirectPriceOpp = directPriceOppCr ?? (assessmentId === 'AIC-2026-0003' ? 8.8873 : 17.1155);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="space-y-6 w-full py-4">
       {/* Overview Header */}
       <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
         <div className="flex items-center gap-2">
@@ -103,7 +103,13 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                       {isImplemented ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
                           <ShieldCheck className="w-3 h-3" />
-                          {strings.statusImplemented}
+                          {lever.id === 10
+                            ? (lever.statusLabel || 'IMPLEMENTED (VENDOR DISCOVERY)')
+                            : lever.id === 9
+                            ? (lever.statusLabel || 'IMPLEMENTED (CONTROL & AUDIT)')
+                            : lever.id === 8
+                            ? (lever.statusLabel || 'IMPLEMENTED (PHASE 1)')
+                            : strings.statusImplemented}
                         </span>
                       ) : lever.implementationStatus === 'COMING_SOON' ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
@@ -159,7 +165,9 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
                         data-testid={`lever-open-btn-${lever.id}`}
                         onClick={() =>
                           onSelectLever(
-                            lever.id === 9
+                            lever.id === 10
+                              ? 'alternateSourcing'
+                              : lever.id === 9
                               ? 'procurementCompliance'
                               : lever.id === 8
                               ? 'specificationRationalisation'

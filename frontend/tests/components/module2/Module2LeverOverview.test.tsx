@@ -26,13 +26,18 @@ describe('Module2LeverOverview Component', () => {
       expect(screen.getByText(lever.name)).toBeInTheDocument();
     }
 
-    // Levers 1-6, 8, 9: Implemented
-    const implementedBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusImplemented);
-    expect(implementedBadges).toHaveLength(8);
+    // Levers 1-6: Implemented & Audited
+    const implementedAuditedBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusImplemented);
+    expect(implementedAuditedBadges).toHaveLength(6);
     expect(screen.getByText('₹17.12 Cr')).toBeInTheDocument();
 
+    // Specific Phase / Sourcing Badges
+    expect(screen.getByText('IMPLEMENTED (PHASE 1)')).toBeInTheDocument();
+    expect(screen.getByText('IMPLEMENTED (CONTROL & AUDIT)')).toBeInTheDocument();
+    expect(screen.getByText('IMPLEMENTED (VENDOR DISCOVERY)')).toBeInTheDocument();
+
     const openBtns = screen.getAllByText(UI_STRINGS.module2LeversOverview.btnOpenAnalysis);
-    expect(openBtns).toHaveLength(8);
+    expect(openBtns).toHaveLength(9);
 
     // Open Lever 1
     fireEvent.click(openBtns[0]);
@@ -66,6 +71,10 @@ describe('Module2LeverOverview Component', () => {
     fireEvent.click(openBtns[7]);
     expect(handleSelectLever).toHaveBeenCalledWith('procurementCompliance');
 
+    // Open Lever 10
+    fireEvent.click(openBtns[8]);
+    expect(handleSelectLever).toHaveBeenCalledWith('alternateSourcing');
+
     // Lever 7: Coming Soon
     expect(screen.getByText('Logistics & Packaging Specifications')).toBeInTheDocument();
     const comingSoonBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusComingSoon);
@@ -74,13 +83,6 @@ describe('Module2LeverOverview Component', () => {
     const comingSoonBtn = screen.getByTestId('lever-coming-soon-btn-7');
     expect(comingSoonBtn).toBeInTheDocument();
     expect(comingSoonBtn).toBeDisabled();
-
-    // Lever 10: Planned / Not Implemented with ₹0.00 unquantified
-    const plannedBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusPlanned);
-    expect(plannedBadges).toHaveLength(2);
-
-    const pendingButtons = screen.getAllByText(UI_STRINGS.module2LeversOverview.btnPending);
-    expect(pendingButtons).toHaveLength(1);
   });
 
   it('toggles collapsible technical diagnostics and methodology', () => {

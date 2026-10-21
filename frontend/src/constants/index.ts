@@ -61,3 +61,4 @@ export * from './module2PaymentTerms';
 export * from './module2CategorySpecialisation';
 export * from './module2SpecificationRationalisation';
 export * from './module2ProcurementCompliance';
+export * from './module2AlternateSourcing';

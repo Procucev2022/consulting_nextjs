@@ -20,6 +20,7 @@ import { PaymentTermsView } from './PaymentTermsView';
 import { CategorySpecialisationView } from './CategorySpecialisationView';
 import { SpecificationRationalisationView } from './SpecificationRationalisationView';
 import { ProcurementComplianceView } from './ProcurementComplianceView';
+import { AlternateSourcingView } from './AlternateSourcingView';
 import { Module2LeverOverview } from './Module2LeverOverview';
 import { logger } from '../../utils/logger';
 
@@ -38,6 +39,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
     | 'categorySpecialisation'
     | 'specificationRationalisation'
     | 'procurementCompliance'
+    | 'alternateSourcing'
     | 'strategy'
   >('overview');
   const [summary, setSummary] = useState<Module2StrategicSourcingDashboardSummary | null>(null);
@@ -181,12 +183,12 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       </div>
 
       {/* Workspace Navigation Subtabs */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center overflow-x-auto scrollbar-thin border-b border-slate-200 dark:border-slate-800 gap-1 pb-1">
         <button
           type="button"
           data-testid="subtab-btn-overview"
           onClick={() => setActiveTab('overview')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'overview'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -198,7 +200,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-directPrice"
           onClick={() => setActiveTab('directPrice')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'directPrice'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -213,7 +215,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-eAuction"
           onClick={() => setActiveTab('eAuction')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'eAuction'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -228,7 +230,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-vendorConsolidation"
           onClick={() => setActiveTab('vendorConsolidation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'vendorConsolidation'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -243,7 +245,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-volumeAggregation"
           onClick={() => setActiveTab('volumeAggregation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'volumeAggregation'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -258,7 +260,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-paymentTerms"
           onClick={() => setActiveTab('paymentTerms')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'paymentTerms'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -273,7 +275,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-categorySpecialisation"
           onClick={() => setActiveTab('categorySpecialisation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'categorySpecialisation'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -288,7 +290,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-lever7-coming-soon"
           disabled
-          className="pb-2.5 px-3 font-semibold text-xs border-b-2 border-transparent text-slate-400 dark:text-slate-500 flex items-center gap-1.5 cursor-not-allowed opacity-75"
+          className="pb-2.5 px-3 font-semibold text-xs border-b-2 border-transparent text-slate-400 dark:text-slate-500 flex items-center gap-1.5 cursor-not-allowed opacity-75 shrink-0 whitespace-nowrap"
           title="Lever 7: Logistics & Packaging Specifications is coming soon"
         >
           <span>Lever 7: Logistics & Packaging Specifications</span>
@@ -300,7 +302,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-specificationRationalisation"
           onClick={() => setActiveTab('specificationRationalisation')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'specificationRationalisation'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -315,7 +317,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           type="button"
           data-testid="subtab-btn-procurementCompliance"
           onClick={() => setActiveTab('procurementCompliance')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'procurementCompliance'
               ? 'border-blue-600 text-blue-600 dark:text-blue-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -328,9 +330,24 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         </button>
         <button
           type="button"
+          data-testid="subtab-btn-alternateSourcing"
+          onClick={() => setActiveTab('alternateSourcing')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'alternateSourcing'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 10: Alternate Sourcing</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            DISCOVERY
+          </span>
+        </button>
+        <button
+          type="button"
           data-testid="subtab-btn-strategy"
           onClick={() => setActiveTab('strategy')}
-          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors ${
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
             activeTab === 'strategy'
               ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -354,6 +371,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
                 | 'categorySpecialisation'
                 | 'specificationRationalisation'
                 | 'procurementCompliance'
+                | 'alternateSourcing'
             )
           }
         />
@@ -409,6 +427,12 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         <ProcurementComplianceView
           assessmentId={assessmentId || 'AIC-2026-0002'}
           onNavigateBack={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'alternateSourcing' && (
+        <AlternateSourcingView
+          assessmentId={assessmentId || 'AIC-2026-0001'}
         />
       )}
 

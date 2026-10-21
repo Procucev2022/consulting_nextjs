@@ -128,13 +128,13 @@ export const TEN_LEVERS_OVERVIEW_CONFIG: LeverOverviewItem[] = [
     id: 10,
     code: 'LEV-10',
     name: 'New-Vendor Development & Alternate Sourcing',
-    purpose: 'Develops and qualifies alternate regional suppliers for single-sourced or monopoly materials to de-risk supply chain and restore market competitiveness.',
-    implementationStatus: 'NOT_IMPLEMENTED',
-    statusLabel: 'PLANNED / NOT IMPLEMENTED',
+    purpose: 'Discovers potential alternate suppliers across 600,000+ national vendor repository based on category mapping and Option C geographic filtering for single-sourced and critical materials, maintaining strict separation between vendor discovery and qualification.',
+    implementationStatus: 'IMPLEMENTED',
+    statusLabel: 'IMPLEMENTED (VENDOR DISCOVERY)',
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Surfaces single-supplier dependency risks and benchmarks against external industry supplier capability profiles.',
-    requiredFields: ['supplier_count', 'market_availability_index', 'qualification_cycle_days', 'switching_costs'],
-    preconditions: ['Alternate vendor technical qualification', 'Quality audit and sample testing certification']
+    methodologySummary: 'Algorithmic category and geographic matching against 600,000+ vendor records, single-source dependency risk identification, and conservative entity deduplication. Commercial savings and technical qualification deferred.',
+    requiredFields: ['material_code', 'spend_category', 'customer_plant', 'current_supplier_count', 'relevant_spend_inr'],
+    preconditions: ['Category taxonomy alignment', 'Deterministic customer supplier exclusion', 'Administrative location mapping']
   }
 ];
