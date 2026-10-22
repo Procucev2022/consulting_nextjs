@@ -230,7 +230,7 @@ describe('Module 2 — Direct Price Improvement Engine', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(Module2CanonicalService, 'getCanonicalInput').mockResolvedValue(mockCanonicalInput);
+    vi.spyOn(Module2CanonicalService, 'getCanonicalInput').mockReturnValue(mockCanonicalInput);
   });
 
   it('calculates Direct Price Improvement across all financial years', async () => {
@@ -372,7 +372,7 @@ describe('Module 2 — Direct Price Improvement Engine', () => {
       }
     ];
 
-    vi.spyOn(Module2CanonicalService, 'getCanonicalInput').mockResolvedValueOnce({
+    vi.spyOn(Module2CanonicalService, 'getCanonicalInput').mockReturnValueOnce({
       ...mockCanonicalInput,
       transactions: multiLineTransactions
     });

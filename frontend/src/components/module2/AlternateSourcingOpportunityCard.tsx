@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { AlternateVendorDiscoveryOpportunity } from '../../types/module2AlternateSourcing';
 import { ALTERNATE_SOURCING_UI_STRINGS, MATCH_TYPE_LABELS } from '../../constants/module2AlternateSourcing';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 interface AlternateSourcingOpportunityCardProps {
   opportunity: AlternateVendorDiscoveryOpportunity;
@@ -38,7 +39,7 @@ export const AlternateSourcingOpportunityCard: React.FC<AlternateSourcingOpportu
               {opportunity.opportunityId}
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              CATEGORY: {opportunity.spendCategory} • SUB: {opportunity.subCategory}
+              CATEGORY: {resolveHumanReadableCategory(opportunity.spendCategory)} • SUB: {opportunity.subCategory}
             </span>
             {opportunity.matchType === 'UNMATCHED' && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded border border-rose-300 dark:border-rose-800">

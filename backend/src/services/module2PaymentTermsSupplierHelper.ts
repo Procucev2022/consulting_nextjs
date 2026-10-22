@@ -11,6 +11,7 @@ import type {
   PaymentTermsDataAvailabilityStatus
 } from '../types/module2PaymentTerms';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 interface SupplierAggregationEntry {
   name: string;
@@ -35,7 +36,7 @@ export class Module2PaymentTermsSupplierHelper {
     if (!entry) {
       entry = {
         name: t.vendor_name || 'UNKNOWN',
-        category: t.spend_category || 'General',
+        category: resolveHumanReadableCategory(t.spend_category, t.material_code),
         spend: 0,
         txCount: 0,
         termsSet: new Set(),

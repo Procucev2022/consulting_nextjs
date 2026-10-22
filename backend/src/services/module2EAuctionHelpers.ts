@@ -16,6 +16,7 @@ import {
   AUCTION_SUITABILITY_LABELS,
   DEFAULT_AUCTION_PLANNING_ASSUMPTIONS
 } from '../constants/module2EAuction';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export interface MaterialEvaluationInput {
   materialCode: string;
@@ -199,12 +200,14 @@ export function buildMaterialCandidate(input: MaterialEvaluationInput): EAuction
     input.configuredAssumptions
   );
 
+  const humanCategory = resolveHumanReadableCategory(input.spendCategory, input.materialCode);
+
   return {
     materialCode: input.materialCode,
     materialDesc: input.materialDesc,
-    spendCategory: input.spendCategory,
+    spendCategory: humanCategory,
     unspscCode: EAUCTION_CONFIG.UNMAPPED_UNSPSC_CODE,
-    unspscCategory: `${EAUCTION_CONFIG.UNMAPPED_UNSPSC_TITLE} (${input.spendCategory})`,
+    unspscCategory: humanCategory,
     financialYear: input.financialYear,
     totalSpendInr: totalSpend,
     totalSpendCr: Number((totalSpend / 10000000).toFixed(4)),
@@ -306,10 +309,12 @@ export function rollUpCategoryCandidate(
     };
   }
 
+  const humanCategory = resolveHumanReadableCategory(spendCategory, materials[0]?.materialCode);
+
   return {
     unspscCode: EAUCTION_CONFIG.UNMAPPED_UNSPSC_CODE,
-    unspscCategory: `${EAUCTION_CONFIG.UNMAPPED_UNSPSC_TITLE} (${spendCategory})`,
-    spendCategory,
+    unspscCategory: humanCategory,
+    spendCategory: humanCategory,
     totalSpendInr: totalSpend,
     totalSpendCr: Number((totalSpend / 10000000).toFixed(4)),
     addressableSpendInr: categoryAddressableSpendInr,

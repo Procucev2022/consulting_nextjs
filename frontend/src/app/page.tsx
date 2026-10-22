@@ -170,33 +170,14 @@ export default function Home() {
   const [activeCustomer, setActiveCustomer] = useState<CustomerRecord | null>(null);
   const activeAssessmentIdRef = useRef<string | null>(null);
   const [targetSection, setTargetSection] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = authApiClient.getStoredUser();
-      return stored || null;
-    }
-    return null;
-  });
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>('GOLD');
   const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
-  const [tenant, setTenant] = useState<TenantMaster>(() => {
-    if (typeof window !== 'undefined') {
-      const user = authApiClient.getStoredUser();
-      if (user) {
-        return {
-          ...mockTenant,
-          enterprise_name: user.company_name || 'Enterprise Client',
-          total_spend_evaluated_inr: 0,
-          total_spend_evaluated: 0
-        };
-      }
-    }
-    return {
-      ...mockTenant,
-      enterprise_name: 'Enterprise Client',
-      total_spend_evaluated_inr: 0,
-      total_spend_evaluated: 0
-    };
+  const [tenant, setTenant] = useState<TenantMaster>({
+    ...mockTenant,
+    enterprise_name: 'Enterprise Client',
+    total_spend_evaluated_inr: 0,
+    total_spend_evaluated: 0
   });
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
   const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
@@ -589,6 +570,12 @@ export default function Home() {
       const user = apiClient.getStoredUser();
       if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
+        if (user.company_name) {
+          setTenant(prev => ({
+            ...prev,
+            enterprise_name: user.company_name || 'Enterprise Client'
+          }));
+        }
       } else {
         setCurrentUser(null);
       }
@@ -670,9 +657,13 @@ export default function Home() {
               if (assessmentParam) {
                 storedAssessmentId = assessmentParam;
               } else {
-                const currentHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
-                const tabParam = currentParams?.get('tab') || '';
-                if (currentHash === 'module2' || tabParam === 'module2') {
+                try {
+                  const list = await assessmentApiClient.getAssessments();
+                  if (list && list.length > 0) {
+                    const validated = list.find((a: any) => a.validatedSpendCr && a.validatedSpendCr > 0);
+                    storedAssessmentId = validated ? validated.assessmentId : list[0].assessmentId;
+                  }
+                } catch {
                   storedAssessmentId = 'AIC-2026-0002';
                 }
               }
@@ -2214,7 +2205,27 @@ export default function Home() {
 
       {/* Main Container */}
       <main className="w-full max-w-[1920px] mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 pt-6 pb-12 space-y-6">
-        {activeTab === 'assessment' ? (
+        {/* Pipeline & Strategic Vision Navigation */}
+        <PipelineBar
+          activeTab={activeTab}
+          onSelectTab={handleSelectTab}
+          isStep1Complete={isStep1Complete}
+          isStep2Complete={isStep2Complete}
+          isStep3Complete={isStep3Complete}
+          isStep4Complete={isStep4Complete}
+          unlockedTabs={UNLOCKED_DEV_PIPELINE_STAGES as PipelineActiveTab[]}
+          onLockedTabClick={(tab) => {
+            showToast(getLockedTabMessage(tab));
+          }}
+          tenant={tenant}
+          opportunities={opportunities}
+          ingestionQueue={ingestionQueue}
+          totalSpendCr={tenant.total_spend_evaluated_inr}
+          canonicalViewModel={canonicalModule1}
+          activeAssessment={activeAssessment}
+        />
+
+        {activeTab === 'assessment' && (
           <AssessmentWorkspace
             onActiveAssessmentChange={handleActiveAssessmentChange}
             onSelectCustomer={(c) => {
@@ -2233,28 +2244,6 @@ export default function Home() {
               setActiveTab('module1');
             }}
           />
-        ) : (
-          <>
-            {/* Pipeline & Strategic Vision Navigation */}
-            <PipelineBar
-              activeTab={activeTab}
-              onSelectTab={handleSelectTab}
-              isStep1Complete={isStep1Complete}
-              isStep2Complete={isStep2Complete}
-              isStep3Complete={isStep3Complete}
-              isStep4Complete={isStep4Complete}
-              unlockedTabs={UNLOCKED_DEV_PIPELINE_STAGES as PipelineActiveTab[]}
-              onLockedTabClick={(tab) => {
-                showToast(getLockedTabMessage(tab));
-              }}
-              tenant={tenant}
-              opportunities={opportunities}
-              ingestionQueue={ingestionQueue}
-              totalSpendCr={tenant.total_spend_evaluated_inr}
-              canonicalViewModel={canonicalModule1}
-              activeAssessment={activeAssessment}
-            />
-          </>
         )}
 
         {/* Tab Modules */}

@@ -56,7 +56,16 @@ export const PAYMENT_TERMS_UI_STRINGS = {
   SCENARIO_GOVERNANCE_TAG: 'ILLUSTRATIVE, UNAPPROVED SCENARIO — NOT AN IDENTIFIED OPPORTUNITY',
   SCENARIO_DISCLAIMER:
     'This scenario simulator is an interactive modelling sandbox. It does not appear as an identified opportunity and does not feed into opportunity totals until required commercial inputs and approvals are provided.',
-  SCENARIO_RATE_NOTE: 'Procucev standard modelling rate: 1.5% per additional 30 days of credit (simple linear, non-compounded).'
+  SCENARIO_RATE_NOTE: 'Procucev standard modelling rate: 1.5% per additional 30 days of credit (simple linear, non-compounded).',
+  BENEFIT_CANNOT_BE_ASCERTAINED_TITLE: 'BENEFIT CANNOT BE ASCERTAINED',
+  BENEFIT_CANNOT_BE_ASCERTAINED_MESSAGE:
+    'Procucev is unable to ascertain the actual working capital release or financing benefit because supplier payment-terms data is unavailable. Please provide or validate supplier payment terms from ERP records, contracts or invoices before quantifying the benefit.',
+  ACTUAL_WC_BENEFIT_UNAVAILABLE: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
+  ACTUAL_FINANCING_BENEFIT_UNAVAILABLE: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
+  ACTUAL_CREDIT_DAYS_UNAVAILABLE: 'DATA UNAVAILABLE',
+  PLANNING_SCENARIO_TITLE: 'Illustrative Planning Scenario (30 Days / 1.5%)',
+  PLANNING_SCENARIO_DISCLAIMER:
+    'Illustrative planning scenario only. This is not an assessed, verified or committed benefit. Actual benefits cannot be ascertained until supplier payment terms and the feasible improvement in credit days are established.'
 } as const;
 
 export const PAYMENT_TERMS_METHODOLOGY_DISCLOSURES: string[] = [

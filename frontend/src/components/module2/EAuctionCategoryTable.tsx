@@ -17,6 +17,7 @@ import type {
   AuctionSuitabilityClassification
 } from '../../types/module2EAuction';
 import { UI_STRINGS } from '../../constants';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 export interface EAuctionCategoryTableProps {
   categories: EAuctionCategoryCandidate[];
@@ -244,8 +245,9 @@ export const EAuctionCategoryTable: React.FC<EAuctionCategoryTableProps> = ({
                   >
                     <td className="py-3 px-3 font-mono text-slate-600 dark:text-slate-400">{c.unspscCode}</td>
                     <td className="py-3 px-3">
-                      <div className="font-semibold text-slate-900 dark:text-slate-100">{c.unspscCategory}</div>
-                      <div className="text-[11px] text-slate-500 font-mono">Source: {c.spendCategory}</div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">
+                        {resolveHumanReadableCategory(c.unspscCategory || c.spendCategory)}
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-slate-100">
                       ₹{c.totalSpendCr.toFixed(4)} Cr

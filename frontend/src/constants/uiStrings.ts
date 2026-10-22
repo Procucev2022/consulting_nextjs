@@ -84,6 +84,8 @@ export const UI_STRINGS = {
     boardroomEvidence: 'Boardroom & Evidence',
     boardroomEvidenceSubtitle: '30-Slide Procurement Value Assessment',
     adminPortal: 'Admin Portal',
+    assessmentCentre: 'Assessment Centre',
+    assessmentModeTitle: 'Assessment Centre',
     currencies: {
       inr: '₹ INR (Cr)',
       usd: 'USD',
@@ -121,6 +123,7 @@ export const UI_STRINGS = {
     title: 'Consulting Delivery Pipeline (Stages 1 - 5)',
     subtitle: 'End-to-end algorithmic spend evaluation from ERP ingestion to EBITDA savings',
     endToEndArchitecture: 'End-to-End Processing Pipeline & Architecture',
+    assessmentCentreTab: 'Assessment Centre',
     conversionMatrixTab: '5. Conversion Matrix',
     dataArchitectureTab: 'Data Architecture',
     dataArchitecture: 'Data Architecture',
@@ -671,6 +674,18 @@ export const UI_STRINGS = {
     startAiCategorization: 'Start AI Categorization as per UNSPSC',
     aiCategorizationRunning: 'Categorizing as per UNSPSC...',
     aiCategorizationCompleted: 'UNSPSC Categorization Active',
+    areaTabs: {
+      clientSpend: 'Client Spend & Category Intelligence',
+      aiReview: 'AI Categorization & Review',
+      strategicSourcing: 'Strategic Sourcing Opportunities',
+      vendorIntelligence: 'Vendor Intelligence',
+      consolidatedView: 'All Areas / Consolidated View',
+      statusFilterAll: 'All Review Statuses',
+      statusTaxonomyVerified: 'TAXONOMY_VERIFIED',
+      statusProvisional: 'PROVISIONAL',
+      statusAwaitingReview: 'AWAITING_REVIEW',
+      statusClientApproved: 'CLIENT_APPROVED'
+    },
     industryContext: {
       badge: 'Industry Sector Lens',
       label: 'Sector Context:',
@@ -818,8 +833,8 @@ export const UI_STRINGS = {
       yoyLegendObservation: 'Red Mark of Observation (Inflation / Surge)',
       yoyLegendDecrease: 'Decrease: Amber (-% YoY)',
       yoyLegendRemark: 'Blue Remark (Volume Softening / Relief)',
-      yoyUnavailable: 'N/A',
-      yoyUnavailableTitle: 'Historical baseline unavailable',
+      yoyUnavailable: 'Baseline (FY22)',
+      yoyUnavailableTitle: 'Single period baseline (FY22); multi-year historical comparison requires multi-year dataset',
       observationBadgeTag: 'Obs',
       remarkBadgeTag: 'Rem',
       observationPrefix: 'Observation',
@@ -849,12 +864,16 @@ export const UI_STRINGS = {
       fy26: 'FY26 (₹ Cr)',
       total: 'Total (FY24-FY26)',
       yoyTrend: 'YoY Trend',
+      spendShare: 'Spend Share %',
       targetSavings: 'Target Savings (₹ Cr)'
     },
     colLPrefix: (code: string) => `Col L: ${code}`,
     unspscCodeBadge: (code: string) => `UNSPSC: ${code}`,
+    unmappedCategory: 'Unmapped Category',
+    colLCode: 'Column L Code',
     strategicVendorRisk: {
       tabs: {
+        vendorSupply: 'Vendor Rankings & Supply Matrix',
         strategicRisk: 'Strategic High-Value Single & Dominant Vendor Risk Engine',
         catalog: 'UNSPSC Official Catalog Explorer (Column L)',
         badgeCount: (count: number) => `${count} Strategic Items Flagged`
@@ -3044,8 +3063,8 @@ export const UI_STRINGS = {
     cardTotalEligibleSpend: 'TOTAL ELIGIBLE SPEND',
     cardCategoriesAnalysed: 'CATEGORIES ANALYSED',
     cardCategoriesRequiringReview: 'CATEGORIES REQUIRING REVIEW',
-    colUnspscCode: 'UNSPSC Code',
-    colUnspscCategory: 'UNSPSC Category / Description',
+    colUnspscCode: 'Column L Code',
+    colUnspscCategory: 'Procurement Category',
     colDistinctMaterials: 'Distinct Materials',
     colEligibleTransactions: 'Eligible Txns',
     colEligibleSpend: 'Eligible Spend',
@@ -3093,8 +3112,8 @@ export const UI_STRINGS = {
     cardValidatedSavings: 'COMMERCIALLY VALIDATED SAVINGS',
 
     // Table Headers
-    colUnspscCode: 'UNSPSC Code',
-    colUnspscCategory: 'UNSPSC Category / Description',
+    colUnspscCode: 'Column L Code',
+    colUnspscCategory: 'Procurement Category',
     colTotalSpend: 'Total Spend',
     colPurchaseQuantity: 'Quantity & UOM',
     colDistinctMaterials: 'Distinct Materials',
@@ -3177,8 +3196,8 @@ export const UI_STRINGS = {
     tabTransactions: 'Purchase Transactions',
 
     // Column Headers
-    colUnspscCode: 'UNSPSC Code',
-    colUnspscCategory: 'Category Description & Classification',
+    colUnspscCode: 'Column L Code',
+    colUnspscCategory: 'Procurement Category',
     colClassification: 'Classification Type',
     colTotalSpend: 'Total Spend',
     colAddressableSpend: 'Same-Mat Multi-Sourcing Spend',
@@ -3841,7 +3860,39 @@ export const UI_STRINGS = {
     colCalculationBasis: 'Calculation Basis',
     colOverlapRefs: 'Overlapping References',
     emptyOpportunities: 'No matching opportunities found for current filters.',
-    workingCapitalNote: 'Working capital released is a balance-sheet liquidity metric and is strictly segregated from purchase-price savings.'
+    workingCapitalNote: 'Working capital released is a balance-sheet liquidity metric and is strictly segregated from purchase-price savings.',
+    loadingMessage: 'Loading cross-lever savings deduplication analysis...',
+    errorMessage: 'Error loading cross-lever deduplication data',
+    btnRetry: 'Retry',
+    btnRefresh: 'Refresh',
+    lever5SectionTitle: 'Lever 5 Payment Terms & Working Capital Segregation (Rule 5 Safeguard)',
+    annualFinancingBenefitBadge: 'ANNUAL FINANCING BENEFIT',
+    workingCapitalReleasedBadge: 'WORKING CAPITAL RELEASED',
+    thLever: 'Lever',
+    thMethodologyBasis: 'Methodology Basis',
+    thGrossEstimated: 'Gross Estimated',
+    thOverlapDeductions: 'Overlap Deductions',
+    thNetEstimated: 'Net Estimated',
+    thValidatedSavings: 'Validated Savings',
+    thSafeguardRule: 'Safeguard Governance Rule',
+    thOverlapDeducted: 'Overlap Deducted',
+    optAllLevers: 'All Levers (1–10)',
+    optAllStatuses: 'All Statuses',
+    kpiNetBadge: 'NET DEFENDED',
+    kpiGrossBadge: 'GROSS',
+    kpiValidatedBadge: 'VALIDATED',
+    kpiDiscoveryBadge: 'DISCOVERY',
+    kpiExcludedBadge: 'EXCLUDED',
+    moduleBadge: 'MODULE 2 CROSS-LEVER CONTROL',
+    benefitCannotBeAscertainedTitle: 'BENEFIT CANNOT BE ASCERTAINED',
+    benefitCannotBeAscertainedMessage:
+      'Procucev is unable to ascertain the actual working capital release or financing benefit because supplier payment-terms data is unavailable. Please provide or validate supplier payment terms from ERP records, contracts or invoices before quantifying the benefit.',
+    actualWcBenefitUnavailable: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
+    actualFinancingBenefitUnavailable: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
+    actualCreditDaysUnavailable: 'DATA UNAVAILABLE',
+    planningScenarioTitle: 'Illustrative Planning Scenario (30 Days / 1.5%)',
+    planningScenarioDisclaimer:
+      'Illustrative planning scenario only. This is not an assessed, verified or committed benefit. Actual benefits cannot be ascertained until supplier payment terms and the feasible improvement in credit days are established.'
   }
 } as const;
 

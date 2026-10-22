@@ -7,6 +7,7 @@
 import * as XLSX from 'xlsx';
 import type { DirectPriceImprovementResult } from '../types/module2DirectPriceImprovement';
 import { applyWorksheetFormatting } from './module2ExcelStylingUtils';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2DirectPriceExcelBuilder {
   public static buildWorkbook(result: DirectPriceImprovementResult): XLSX.WorkBook {
@@ -44,7 +45,7 @@ export class Module2DirectPriceExcelBuilder {
 
     // Sheet 2 — UNSPSC Category Summary
     const catHeaders = [
-      'UNSPSC Code', 'UNSPSC Category / Description', 'Distinct Material Count',
+      'Column L Code', 'Procurement Category', 'Distinct Material Count',
       'Eligible Transaction Count', 'Eligible Quantity', 'UOM', 'Eligible Spend (INR)',
       'Actual Purchase Cost (INR)', 'Benchmark Cost (INR)', 'Historical Lost Opportunity (INR)',
       'Opportunity % of Actual Purchase Cost', 'Data Quality / Qualification Status'
@@ -61,14 +62,14 @@ export class Module2DirectPriceExcelBuilder {
 
     // Sheet 3 — Material-Level Analysis
     const matHeaders = [
-      'Material Code', 'Material Description', 'UNSPSC Code', 'UNSPSC Category',
+      'Material Code', 'Material Description', 'Column L Code', 'Procurement Category',
       'Financial Year', 'UOM', 'Eligible Quantity', 'Transaction Count', 'Supplier Count',
       'Actual Purchase Cost (INR)', 'Weighted Average Purchase Price', 'Lowest Comparable Unit Price',
       'Benchmark Cost (INR)', 'Historical Lost Opportunity (INR)', 'Qualification Status', 'Warnings'
     ];
     const matRows = result.items.map((m) => [
       m.materialCode, m.materialDesc, '00000000',
-      `Unclassified — UNSPSC mapping unavailable (${m.spendCategory})`,
+      resolveHumanReadableCategory(m.spendCategory, m.materialCode),
       m.financialYear, m.uom, m.totalEligibleQuantity, m.transactionCount, m.supplierCount,
       m.actualPurchaseCostInr, m.weightedAveragePrice, m.lowestUnitPrice,
       m.benchmarkCostInr, m.historicalLostOpportunityInr, m.qualificationStatus, m.warnings.join('; ') || 'None'
@@ -80,7 +81,7 @@ export class Module2DirectPriceExcelBuilder {
     // Sheet 4 — Transaction-Level Evidence
     const txHeaders = [
       'PO Number', 'PO Date', 'Financial Year', 'Material Code', 'Material Description',
-      'Spend Category', 'Supplier Name', 'Plant Code', 'Quantity', 'Unit Price',
+      'Procurement Category', 'Supplier Name', 'Plant Code', 'Quantity', 'Unit Price',
       'Total Spend (INR)', 'Benchmark Unit Price', 'Benchmark Cost (INR)',
       'Lost Opportunity Contribution (INR)', 'Eligibility Status', 'Qualification Status'
     ];
@@ -89,7 +90,8 @@ export class Module2DirectPriceExcelBuilder {
       for (const t of item.transactions) {
         txRows.push([
           t.poNumber, t.poDate, t.financialYear, item.materialCode, item.materialDesc,
-          item.spendCategory, t.supplierName, t.plantCode, t.quantity, t.unitPrice,
+          resolveHumanReadableCategory(item.spendCategory, item.materialCode),
+          t.supplierName, t.plantCode, t.quantity, t.unitPrice,
           t.totalSpendInr, t.benchmarkUnitPrice, t.benchmarkCostInr,
           t.historicalLostOpportunityInr, 'Eligible', t.qualificationStatus
         ]);

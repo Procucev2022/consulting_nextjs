@@ -9,6 +9,7 @@ import type {
   DirectPriceCategorySummary
 } from '../types/module2DirectPriceImprovement';
 import { EAUCTION_CONFIG } from '../constants/module2EAuction';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2CategoryAggregationHelper {
   public static buildCategorySummaries(
@@ -17,7 +18,7 @@ export class Module2CategoryAggregationHelper {
     const categoryMap = new Map<string, DirectPriceItemOpportunity[]>();
 
     for (const item of items) {
-      const cat = (item.spendCategory || 'General').trim();
+      const cat = resolveHumanReadableCategory(item.spendCategory, item.materialCode);
       let list = categoryMap.get(cat);
       if (!list) {
         list = [];
@@ -46,12 +47,9 @@ export class Module2CategoryAggregationHelper {
 
       const oppPct = actualCostInr > 0 ? Number(((lostOppInr / actualCostInr) * 100).toFixed(2)) : 0;
 
-      // Check if any verified UNSPSC code was mapped or if unmapped
-      const hasVerifiedUnspsc = false; // Verified source mapping only; do not invent mappings
+      const hasVerifiedUnspsc = spendCategory !== 'Unmapped Category';
       const unspscCode = hasVerifiedUnspsc ? '10000000' : EAUCTION_CONFIG.UNMAPPED_UNSPSC_CODE;
-      const unspscCategory = hasVerifiedUnspsc
-        ? spendCategory
-        : `${EAUCTION_CONFIG.UNMAPPED_UNSPSC_TITLE} (${spendCategory})`;
+      const unspscCategory = spendCategory;
 
       const hasDisqualified = catItems.some((i) => i.qualificationStatus !== 'QUALIFIED');
       const dataQualityStatus = !hasVerifiedUnspsc || hasDisqualified ? 'Requires Data Review' : 'Qualified';

@@ -148,11 +148,11 @@ function buildItemOpportunity(groupKey: string, g: InternalGroup): DirectPriceIt
 }
 
 export class Module2DirectPriceImprovementEngine {
-  public static async calculate(
+  public static calculateSync(
     assessmentId: string,
     options?: DirectPriceQueryOptions
-  ): Promise<DirectPriceImprovementResult> {
-    const canonical = await Module2CanonicalService.getCanonicalInput(assessmentId);
+  ): DirectPriceImprovementResult {
+    const canonical = Module2CanonicalService.getCanonicalInput(assessmentId);
     const { eligible, ineligibleCount, ineligibleSpend } = filterEligibleTransactions(canonical.transactions);
     const groupsMap = groupTransactionsByFyAndItem(eligible);
 
@@ -262,5 +262,12 @@ export class Module2DirectPriceImprovementEngine {
       categorySummaries,
       items: filteredItems
     };
+  }
+
+  public static async calculate(
+    assessmentId: string,
+    options?: DirectPriceQueryOptions
+  ): Promise<DirectPriceImprovementResult> {
+    return this.calculateSync(assessmentId, options);
   }
 }

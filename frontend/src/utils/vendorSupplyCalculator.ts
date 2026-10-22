@@ -25,7 +25,7 @@ function buildTierSummary(
   const multiSpendPct = totalSpendCr > 0 ? (multiSpendCr / totalSpendCr) * 100 : 0;
   const singleVendors = tierVendors.filter((v) => v.category_type === 'SINGLE_CATEGORY');
   const singleSpendCr = singleVendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
-  const singleSpendPct = totalSpendCr > 0 ? (singleSpendCr / totalSpendCr) * 100 : 0;
+  const singleSpendPct = totalSpendCr > 0 ? Math.max(0, 100 - multiSpendPct) : 0;
 
   return {
     tier_id: tierConfig.id,
@@ -57,7 +57,7 @@ export function computeVendorSupplyOverview(
   const multiCategorySpendCr = multiCategoryVendors.reduce((acc, v) => acc + v.total_spend_inr_cr, 0);
 
   const singleCategorySpendPct = totalSpendCr > 0 ? (singleCategorySpendCr / totalSpendCr) * 100 : 0;
-  const multiCategorySpendPct = totalSpendCr > 0 ? (multiCategorySpendCr / totalSpendCr) * 100 : 0;
+  const multiCategorySpendPct = totalSpendCr > 0 ? Math.max(0, 100 - singleCategorySpendPct) : 0;
 
   const tier1Vendors = vendors.filter((v) => v.total_spend_inr_cr >= VENDOR_SUPPLY_THRESHOLDS.HIGH_SPEND_THRESHOLD_CR);
   const tier2Vendors = vendors.filter(

@@ -99,6 +99,9 @@ export const MATERIAL_FIELDS: CanonicalFieldDefinition[] = [
     isMandatory: false,
     exactAliases: [
       'Procurement Category',
+      'PO Category',
+      'PO_Category',
+      'Purchasing Category',
       'Spend Category',
       'Class',
       'Class Title',
@@ -111,6 +114,9 @@ export const MATERIAL_FIELDS: CanonicalFieldDefinition[] = [
     ],
     normalizedAliases: [
       'procurementcategory',
+      'pocategory',
+      'po_category',
+      'purchasingcategory',
       'spendcategory',
       'class',
       'classtitle',

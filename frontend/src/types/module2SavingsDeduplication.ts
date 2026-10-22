@@ -10,12 +10,14 @@ export type DeduplicationStatus =
   | 'DEDUPLICATED_OVERLAP'
   | 'INCREMENTAL_VALIDATED'
   | 'UNRESOLVED_EXCLUDED'
+  | 'EXPLORATORY_PIPELINE'
   | 'NOT_APPLICABLE';
 
 export type EvidenceValidationStatus =
   | 'VALIDATED_COMMERCIAL'
   | 'UNVERIFIED_ESTIMATE'
   | 'PLANNING_ASSUMPTION'
+  | 'EXPLORATORY_PIPELINE'
   | 'DISCOVERY_ONLY'
   | 'NOT_YET_QUANTIFIABLE';
 
@@ -50,6 +52,8 @@ export interface Module2CanonicalSavingsOpportunity {
   commerciallyValidatedSavingsCr: number;
   isIncrementalBenefit: boolean;
   isFinancingBenefitOnly?: boolean;
+  isExploratoryPipeline?: boolean;
+  validationEvidenceRequired?: string;
   workingCapitalReleasedInr?: number;
   workingCapitalReleasedCr?: number;
   unresolvedExclusionReason?: string;
@@ -72,6 +76,8 @@ export interface Module2LeverSavingsSummaryItem {
   overlapDeductionsCr: number;
   unresolvedExcludedInr: number;
   unresolvedExcludedCr: number;
+  exploratorySavingsInr: number;
+  exploratorySavingsCr: number;
   opportunitiesCount: number;
   methodologyBasis: string;
   safeguardRule: string;
@@ -90,8 +96,16 @@ export interface Module2ConsolidatedSavingsSummary {
   grossEstimatedSavingsCr: number;
   netEstimatedSavingsInr: number;
   netEstimatedSavingsCr: number;
+  grossEvidenceBasedSavingsInr: number;
+  grossEvidenceBasedSavingsCr: number;
+  netEvidenceBasedSavingsInr: number;
+  netEvidenceBasedSavingsCr: number;
+  exploratoryPipelineSavingsInr: number;
+  exploratoryPipelineSavingsCr: number;
   commerciallyValidatedSavingsInr: number;
   commerciallyValidatedSavingsCr: number;
+  realizedSavingsInr: number;
+  realizedSavingsCr: number;
   totalOverlappingDeductionsInr: number;
   totalOverlappingDeductionsCr: number;
   unresolvedOverlapsExcludedInr: number;
@@ -109,4 +123,19 @@ export interface Module2ConsolidatedSavingsSummary {
   opportunities: Module2CanonicalSavingsOpportunity[];
   certificationNotice: string;
   disclosures: string[];
+  disclaimerText: string;
 }
+
+export interface Module2ConsolidatedSavingsViewProps {
+  assessmentId?: string;
+  initialData?: Module2ConsolidatedSavingsSummary | null;
+}
+
+export interface Module2ConsolidatedOpportunityTableProps {
+  opportunities: Module2CanonicalSavingsOpportunity[];
+}
+
+export interface Module2Lever5CalloutProps {
+  data: Module2ConsolidatedSavingsSummary;
+}
+

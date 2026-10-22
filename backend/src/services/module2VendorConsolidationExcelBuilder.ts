@@ -152,8 +152,8 @@ export class Module2VendorConsolidationExcelBuilder {
   ): XLSX.WorkSheet {
     const headers = [
       'Classification Type',
-      mode === 'UNSPSC' ? 'UNSPSC Category Description' : 'Source Spend Category',
-      mode === 'UNSPSC' ? 'Assigned UNSPSC Code' : 'Client SAP Code',
+      mode === 'UNSPSC' ? 'Procurement Category' : 'Source Spend Category',
+      mode === 'UNSPSC' ? 'Column L Code' : 'Client SAP Code',
       'Total Spend (INR)', 'Total Spend (Cr)', 'Same-Material Multi-Sourcing Spend (Cr)',
       'Category Candidate Status', 'Category Candidate Rationale',
       'Distinct Suppliers', 'Distinct Materials', 'Distinct Plants',

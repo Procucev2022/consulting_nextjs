@@ -17,9 +17,11 @@ interface VendorAggregate {
   categories: Map<string, number>;
   items: Map<string, CategoryTopItem>;
   masterId: string;
+  vendorName: string;
+  lineItemsCount: number;
 }
 
-function createVendorEntry(item: LineItemMapping, idx: number): VendorAggregate {
+function createVendorEntry(item: LineItemMapping, idx: number, vName: string): VendorAggregate {
   return {
     spendFY24: 0,
     spendFY25: 0,
@@ -27,7 +29,9 @@ function createVendorEntry(item: LineItemMapping, idx: number): VendorAggregate 
     totalSpend: 0,
     categories: new Map(),
     items: new Map(),
-    masterId: item.master_supplier_id || `VND-M-${1000 + idx}`
+    masterId: item.master_supplier_id || `VND-M-${1000 + idx}`,
+    vendorName: vName,
+    lineItemsCount: 0
   };
 }
 
@@ -36,15 +40,17 @@ function aggregateLineItemVendor(
   idx: number,
   vendorMap: Map<string, VendorAggregate>
 ): void {
-  const vName = item.vendor_identified || 'Unknown Supplier';
-  let entry = vendorMap.get(vName);
+  const vName = item.vendor_identified?.trim() || 'Unknown Supplier';
+  const vKey = item.master_supplier_id ? `ID_${item.master_supplier_id}` : `NAME_${vName.toUpperCase()}`;
+  let entry = vendorMap.get(vKey);
   if (!entry) {
-    entry = createVendorEntry(item, idx);
-    vendorMap.set(vName, entry);
+    entry = createVendorEntry(item, idx, vName);
+    vendorMap.set(vKey, entry);
   }
 
   const spendCr = getItemSpendCr(item);
   entry.totalSpend += spendCr;
+  entry.lineItemsCount += 1;
   addSpendToFiscalYear(entry, spendCr, item.spend_year);
 
   const cat = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
@@ -68,7 +74,6 @@ function getPrimaryCategory(categories: Map<string, number>): string {
 }
 
 function mapVendorToDetail(
-  vName: string,
   data: VendorAggregate,
   idx: number,
   totalCalculated: number
@@ -78,7 +83,9 @@ function mapVendorToDetail(
   const fy26 = data.spendFY26;
   const yoy = (fy25 > 0 && fy26 > 0)
     ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1))
-    : undefined;
+    : (fy24 > 0 && fy25 > 0)
+      ? Number((((fy25 - fy24) / fy24) * 100).toFixed(1))
+      : undefined;
   const primaryCat = getPrimaryCategory(data.categories);
 
   const topItems = Array.from(data.items.values())
@@ -95,7 +102,7 @@ function mapVendorToDetail(
   return {
     id: `VND-${idx + 1}`,
     rank: idx + 1,
-    vendor_name: vName,
+    vendor_name: data.vendorName,
     master_vendor_id: data.masterId,
     primary_category: primaryCat,
     spend_fy24_cr: Number(fy24.toFixed(2)),
@@ -104,8 +111,8 @@ function mapVendorToDetail(
     total_3yr_spend_inr_cr: Number(data.totalSpend.toFixed(2)),
     spend_share_pct: Number(((data.totalSpend / totalCalculated) * 100).toFixed(1)),
     yoy_growth_pct: yoy,
-    line_items_count: data.items.size,
-    item_count: data.items.size,
+    line_items_count: data.lineItemsCount || data.items.size,
+    item_count: data.lineItemsCount || data.items.size,
     risk_status: data.totalSpend > 15 ? 'HIGH CREEP' : 'ALIGNED',
     top_items: topItems,
     is_balance_vendor: false
@@ -133,7 +140,7 @@ export function calculateVendorYearDetails(
 
   const sorted = Array.from(vendorMap.entries()).sort((a, b) => b[1].totalSpend - a[1].totalSpend);
 
-  return sorted.slice(0, 50).map(([vName, data], idx) =>
-    mapVendorToDetail(vName, data, idx, totalCalculated)
+  return sorted.slice(0, 50).map(([, data], idx) =>
+    mapVendorToDetail(data, idx, totalCalculated)
   );
 }

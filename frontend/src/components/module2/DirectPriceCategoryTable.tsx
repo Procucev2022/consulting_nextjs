@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { DirectPriceCategorySummary } from '../../types';
 import { UI_STRINGS } from '../../constants';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 export interface DirectPriceCategoryTableProps {
   categories: DirectPriceCategorySummary[];
@@ -205,10 +206,7 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
                     </td>
                     <td className="py-3 px-3">
                       <div className="font-semibold text-slate-900 dark:text-slate-100">
-                        {c.unspscCategory}
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        Source Category: {c.spendCategory}
+                        {resolveHumanReadableCategory(c.unspscCategory || c.spendCategory)}
                       </div>
                     </td>
                     <td className="py-3 px-3 text-right font-medium text-slate-800 dark:text-slate-200">

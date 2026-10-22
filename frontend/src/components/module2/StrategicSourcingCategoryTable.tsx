@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { StrategicSourcingCategoryTableProps } from '../../types';
 import { UI_STRINGS } from '../../constants';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 type SortField =
   | 'totalSpendInr'
@@ -205,10 +206,10 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
                   {/* Category */}
                   <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
                     <div className="flex items-center space-x-1.5">
-                      <span>{p.categoryName}</span>
+                      <span>{resolveHumanReadableCategory(p.categoryName)}</span>
                       <ExternalLink className="w-3 h-3 text-slate-400 opacity-60 hover:opacity-100" />
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">{p.unspscCode}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">Column L Code: {p.unspscCode}</div>
                   </td>
 
                   {/* Spend */}

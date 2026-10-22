@@ -18,12 +18,15 @@ import { CategoryTopItemsModal } from './modals/CategoryTopItemsModal';
 import { VendorTopItemsModal } from './modals/VendorTopItemsModal';
 import { UI_STRINGS, resolveUNSPSCCategoryDisplay } from '../constants';
 import type { UNSPSCFilterMode } from '../constants';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewProps> = ({
   tenant,
   categories: propCategories = [],
   vendors: propVendors = [],
-  lineItems = []
+  lineItems = [],
+  initialMode,
+  lockMode
 }) => {
   const categoriesList: CategoryYearDetail[] = React.useMemo(() => {
     if (propCategories && propCategories.length > 0) {
@@ -45,9 +48,10 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
             yoy = undefined;
           }
         }
+        const humanCat = resolveHumanReadableCategory(c.category || c.name || 'Direct Materials');
         return {
           id: c.id || `CAT-${idx + 1}`,
-          category: c.category || c.name || 'Direct Materials',
+          category: humanCat,
           core_bucket: c.core_bucket || 'Direct Materials',
           sample_column_l_code: c.sample_column_l_code || c.unspsc_code || '10000000',
           spend_fy24_cr: fy24,
@@ -60,7 +64,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
           item_count: c.item_count ?? 1,
           top_items: c.top_items ?? [],
           balance_items: c.balance_items,
-          sample_column_l_title: c.sample_column_l_title,
+          sample_column_l_title: resolveHumanReadableCategory(c.sample_column_l_title || humanCat),
           is_balance_category: Boolean(c.is_balance_category),
           rank: c.rank ?? idx + 1
         };
@@ -85,7 +89,9 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
   }, [propVendors, lineItems, tenant?.total_spend_evaluated_inr]);
 
   const [selectedYearView, setSelectedYearView] = useState<'ALL' | 'FY24' | 'FY25' | 'FY26'>('ALL');
-  const [breakdownMode, setBreakdownMode] = useState<'CATEGORY' | 'VENDOR'>('CATEGORY');
+  const [breakdownMode, setBreakdownMode] = useState<'CATEGORY' | 'VENDOR'>(
+    lockMode || initialMode || 'CATEGORY'
+  );
   const [unspscFilterMode, setUnspscFilterMode] = useState<UNSPSCFilterMode>('AUTO');
   const [isBalanceExpanded, setIsBalanceExpanded] = useState<boolean>(false);
   const [isVendorBalanceExpanded, setIsVendorBalanceExpanded] = useState<boolean>(false);
@@ -130,7 +136,10 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
   const enterpriseName = tenant?.enterprise_name || 'Enterprise Client';
 
   return (
-    <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-5">
+    <div
+      data-testid="category-breakdown-container"
+      className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-5"
+    >
       {/* Header with Dimension Switcher and Year Pills */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div className="space-y-1.5">
@@ -160,31 +169,33 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* View Switcher: By Categories vs By Vendors */}
-          <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono shrink-0 shadow-xs">
-            <button
-              onClick={() => setBreakdownMode('CATEGORY')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
-                breakdownMode === 'CATEGORY'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>{UI_STRINGS.module2.breakdown.byCategories}</span>
-            </button>
-            <button
-              onClick={() => setBreakdownMode('VENDOR')}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
-                breakdownMode === 'VENDOR'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>{UI_STRINGS.module2.breakdown.byVendors}</span>
-            </button>
-          </div>
+          {/* View Switcher: By Categories vs By Vendors (conditionally rendered when not locked) */}
+          {!lockMode && (
+            <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono shrink-0 shadow-xs">
+              <button
+                onClick={() => setBreakdownMode('CATEGORY')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  breakdownMode === 'CATEGORY'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>{UI_STRINGS.module2.breakdown.byCategories}</span>
+              </button>
+              <button
+                onClick={() => setBreakdownMode('VENDOR')}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  breakdownMode === 'VENDOR'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{UI_STRINGS.module2.breakdown.byVendors}</span>
+              </button>
+            </div>
+          )}
 
           {/* Fiscal Year Switcher Pills (only if multi-year data exists) */}
           <div className="flex items-center bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-mono shrink-0 shadow-xs">

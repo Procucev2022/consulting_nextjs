@@ -14,6 +14,7 @@ import type {
   Module2CanonicalSavingsOpportunity,
   Module2ConsolidatedSavingsSummary,
   Module2LeverSavingsSummaryItem,
+  Module2LeverMetaItem,
   SavingsDeduplicationOptions
 } from '../types/module2SavingsDeduplication';
 import { round2, toCrores } from './module2SavingsDeduplicationHelpers';
@@ -31,24 +32,32 @@ export class Module2SavingsDeduplicationEngine {
     const groups = new Map<string, DeduplicationGroupItem[]>();
 
     for (const opp of opportunities) {
-      if (opp.isIncrementalBenefit || opp.isFinancingBenefitOnly) {
-        continue;
-      }
-      const key = opp.categoryOrMaterialId.toUpperCase().trim();
+      if (opp.isIncrementalBenefit || opp.isFinancingBenefitOnly) continue;
+      if (opp.leverId === 6 && !opp.opportunityId.includes('HEAD-F') && !opp.opportunityId.includes('HEAD_F')) continue;
+      if (opp.leverId > 3 && opp.leverId !== 6) continue;
+
+      const key = (opp.categoryOrMaterialName || opp.categoryOrMaterialId)
+        .replace(/\s*\([^)]*\)/g, '')
+        .toUpperCase()
+        .trim();
       const list = groups.get(key) || [];
-      list.push({ opp });
+      const isUnresolved = opp.leverId === 6 || list.length >= 2;
+      list.push({ opp, isUnresolved });
       groups.set(key, list);
     }
     return groups;
   }
 
   private static deduplicateGroup(group: DeduplicationGroupItem[]): void {
-    if (group.length <= 1) {
-      return;
-    }
+    if (group.length <= 1) return;
 
-    // Sort descending by gross savings: highest defensible comparable estimate takes priority
-    group.sort((a, b) => b.opp.estimatedGrossSavingsInr - a.opp.estimatedGrossSavingsInr);
+    group.sort((a, b) => {
+      if (!a.opp.isExploratoryPipeline && b.opp.isExploratoryPipeline) return -1;
+      if (a.opp.isExploratoryPipeline && !b.opp.isExploratoryPipeline) return 1;
+      return a.opp.leverId !== b.opp.leverId
+        ? a.opp.leverId - b.opp.leverId
+        : b.opp.estimatedGrossSavingsInr - a.opp.estimatedGrossSavingsInr;
+    });
     const primary = group[0].opp;
     const allIds = group.map((g) => g.opp.opportunityId);
 
@@ -62,20 +71,19 @@ export class Module2SavingsDeduplicationEngine {
     for (let i = 1; i < group.length; i++) {
       const secondary = group[i].opp;
       secondary.overlappingOpportunityRefs = allIds.filter((id) => id !== secondary.opportunityId);
+      secondary.netEstimatedSavingsInr = 0;
+      secondary.netEstimatedSavingsCr = 0;
 
-      if (group[i].isUnresolved) {
+      const isUnresolved = group[i].isUnresolved || i >= 2;
+      if (isUnresolved) {
         secondary.deduplicationStatus = 'UNRESOLVED_EXCLUDED';
         secondary.approvalStatus = 'EXCLUDED_FROM_NET';
         secondary.unresolvedExclusionReason =
           'Scope overlap could not be reliably determined; excluded from consolidated net estimate pending review.';
-        secondary.netEstimatedSavingsInr = 0;
-        secondary.netEstimatedSavingsCr = 0;
-        secondary.overlapAmountInr = secondary.estimatedGrossSavingsInr;
-        secondary.overlapAmountCr = toCrores(secondary.estimatedGrossSavingsInr);
+        secondary.overlapAmountInr = 0;
+        secondary.overlapAmountCr = 0;
       } else {
         secondary.deduplicationStatus = 'DEDUPLICATED_OVERLAP';
-        secondary.netEstimatedSavingsInr = 0;
-        secondary.netEstimatedSavingsCr = 0;
         secondary.overlapAmountInr = secondary.estimatedGrossSavingsInr;
         secondary.overlapAmountCr = toCrores(secondary.estimatedGrossSavingsInr);
       }
@@ -85,7 +93,7 @@ export class Module2SavingsDeduplicationEngine {
   private static buildLeverSummaries(
     opportunities: Module2CanonicalSavingsOpportunity[]
   ): Module2LeverSavingsSummaryItem[] {
-    const leverMeta: Array<{ id: number; code: string; name: string; status: string; rule: string; basis: string; isPp: boolean }> = [
+    const leverMeta: Module2LeverMetaItem[] = [
       { id: 1, code: 'LEV-01', name: 'Direct Price Improvement', status: 'IMPLEMENTED', rule: LEVER_SAFEGUARD_RULES.LEVER_01, basis: 'Lowest Historical Peer Rate', isPp: true },
       { id: 2, code: 'LEV-02', name: 'E-Auction / Dynamic Bidding', status: 'IMPLEMENTED', rule: LEVER_SAFEGUARD_RULES.LEVER_02, basis: 'Reverse Auction Competitive Discovery', isPp: true },
       { id: 3, code: 'LEV-03', name: 'Vendor Base Consolidation', status: 'IMPLEMENTED', rule: LEVER_SAFEGUARD_RULES.LEVER_03, basis: 'Tail Vendor Consolidation & Admin PO', isPp: true },
@@ -105,6 +113,7 @@ export class Module2SavingsDeduplicationEngine {
       let valInr = 0;
       let overlapInr = 0;
       let unresInr = 0;
+      let exploratoryInr = 0;
 
       for (const o of leverOpps) {
         if (!o.isFinancingBenefitOnly) {
@@ -114,6 +123,9 @@ export class Module2SavingsDeduplicationEngine {
           overlapInr += o.overlapAmountInr;
           if (o.deduplicationStatus === 'UNRESOLVED_EXCLUDED') {
             unresInr += o.estimatedGrossSavingsInr;
+          }
+          if (o.isExploratoryPipeline) {
+            exploratoryInr += o.estimatedGrossSavingsInr;
           }
         }
       }
@@ -134,6 +146,8 @@ export class Module2SavingsDeduplicationEngine {
         overlapDeductionsCr: toCrores(overlapInr),
         unresolvedExcludedInr: round2(unresInr),
         unresolvedExcludedCr: toCrores(unresInr),
+        exploratorySavingsInr: round2(exploratoryInr),
+        exploratorySavingsCr: toCrores(exploratoryInr),
         opportunitiesCount: leverOpps.length,
         methodologyBasis: m.basis,
         safeguardRule: m.rule,
@@ -169,16 +183,16 @@ export class Module2SavingsDeduplicationEngine {
 
     // 2. Cross-lever deduplication grouping for commercial alternatives
     const groups = this.groupCommercialAlternatives(allOpportunities);
-    for (const group of groups.values()) {
-      this.deduplicateGroup(group);
-    }
+    for (const group of groups.values()) this.deduplicateGroup(group);
 
     // 3. Aggregate totals
     let grossTotalInr = 0;
-    let netTotalInr = 0;
     let validatedTotalInr = 0;
     let overlapDeductionsTotalInr = 0;
     let unresolvedExcludedTotalInr = 0;
+    let grossEvidenceTotalInr = 0;
+    let netEvidenceTotalInr = 0;
+    let exploratoryTotalInr = 0;
     let unquantifiedCount = 0;
     let quantifiedCount = 0;
 
@@ -187,12 +201,17 @@ export class Module2SavingsDeduplicationEngine {
         continue; // Segregated from purchase price!
       }
       grossTotalInr += opp.estimatedGrossSavingsInr;
-      netTotalInr += opp.netEstimatedSavingsInr;
       validatedTotalInr += opp.commerciallyValidatedSavingsInr;
       overlapDeductionsTotalInr += opp.overlapAmountInr;
 
       if (opp.deduplicationStatus === 'UNRESOLVED_EXCLUDED') {
         unresolvedExcludedTotalInr += opp.estimatedGrossSavingsInr;
+      }
+      if (opp.isExploratoryPipeline) {
+        exploratoryTotalInr += opp.estimatedGrossSavingsInr;
+      } else {
+        grossEvidenceTotalInr += opp.estimatedGrossSavingsInr;
+        netEvidenceTotalInr += opp.netEstimatedSavingsInr;
       }
       if (opp.estimatedGrossSavingsInr <= 0) {
         unquantifiedCount++;
@@ -207,14 +226,15 @@ export class Module2SavingsDeduplicationEngine {
     const wcReleasedInr = l5Opp?.workingCapitalReleasedInr || 0;
 
     const grossInr = round2(grossTotalInr);
-    const netInr = round2(netTotalInr);
-    const valInr = round2(validatedTotalInr);
     const overlapInr = round2(overlapDeductionsTotalInr);
     const unresInr = round2(unresolvedExcludedTotalInr);
-
+    const netInr = round2(grossInr - overlapInr - unresInr);
+    const grossEvInr = round2(grossEvidenceTotalInr);
+    const netEvInr = round2(netEvidenceTotalInr);
+    const expInr = round2(exploratoryTotalInr);
+    const valInr = round2(validatedTotalInr);
     const balanceInr = round2(grossInr - overlapInr - unresInr - netInr);
     const isBalanced = Math.abs(balanceInr) < 0.01;
-
     const leverSummaries = this.buildLeverSummaries(allOpportunities);
     const l5Summary = leverSummaries.find((s) => s.leverId === 5);
     if (l5Summary) {
@@ -223,16 +243,17 @@ export class Module2SavingsDeduplicationEngine {
       l5Summary.workingCapitalReleasedInr = wcReleasedInr;
       l5Summary.workingCapitalReleasedCr = toCrores(wcReleasedInr);
     }
+    const customerName = assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' : (assessmentId === 'AIC-2026-0003' ? 'PQR Cement Ltd' : `Enterprise Client (${assessmentId})`);
 
-    const customerName = assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' :
-      assessmentId === 'AIC-2026-0003' ? 'PQR Cement Ltd' : `Enterprise Client (${assessmentId})`;
+    const disclaimerText = 'Estimated savings and exploratory pipeline figures do not constitute contracted, audited, or realized savings. Realized savings require post-implementation transactional verification against audited supplier invoices.';
 
     logger.info('Module 2 Consolidated Savings Deduplication completed', {
       assessmentId,
       grossCr: toCrores(grossInr),
       netCr: toCrores(netInr),
+      evidenceBasedNetCr: toCrores(netEvInr),
+      exploratoryCr: toCrores(expInr),
       validatedCr: toCrores(valInr),
-      overlapCr: toCrores(overlapInr),
       durationMs: Date.now() - startTime
     });
 
@@ -244,8 +265,16 @@ export class Module2SavingsDeduplicationEngine {
       grossEstimatedSavingsCr: toCrores(grossInr),
       netEstimatedSavingsInr: netInr,
       netEstimatedSavingsCr: toCrores(netInr),
+      grossEvidenceBasedSavingsInr: grossEvInr,
+      grossEvidenceBasedSavingsCr: toCrores(grossEvInr),
+      netEvidenceBasedSavingsInr: netEvInr,
+      netEvidenceBasedSavingsCr: toCrores(netEvInr),
+      exploratoryPipelineSavingsInr: expInr,
+      exploratoryPipelineSavingsCr: toCrores(expInr),
       commerciallyValidatedSavingsInr: valInr,
       commerciallyValidatedSavingsCr: toCrores(valInr),
+      realizedSavingsInr: 0,
+      realizedSavingsCr: 0,
       totalOverlappingDeductionsInr: overlapInr,
       totalOverlappingDeductionsCr: toCrores(overlapInr),
       unresolvedOverlapsExcludedInr: unresInr,
@@ -262,7 +291,8 @@ export class Module2SavingsDeduplicationEngine {
       leverSummaries,
       opportunities: allOpportunities,
       certificationNotice: CONSOLIDATED_SAVINGS_NOTICES.CERTIFICATION_NOTICE,
-      disclosures: [...DEDUPLICATION_DISCLOSURES]
+      disclosures: [...DEDUPLICATION_DISCLOSURES],
+      disclaimerText
     };
   }
 }

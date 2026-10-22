@@ -43,7 +43,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
     if (!matchesSearch) return false;
 
     if (trendFilter === 'HIGH_CREEP') return item.price_change_pct >= 15;
-    if (trendFilter === 'STEADY') return item.price_change_pct < 10;
+    if (trendFilter === 'STEADY') return item.price_change_pct < 15;
     return true;
   });
 
@@ -51,6 +51,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
   const sharePct = ((vendorSpendCr / totalEvaluatedSpendInrCr) * 100).toFixed(1);
   const highCreepCount = rawItems.filter((i) => i.price_change_pct >= 15).length;
   const totalPotentialLakhs = rawItems.reduce((acc, i) => acc + (i.opportunity_potential_inr_lakhs || 0), 0);
+  const activeCount = vendor.line_items_count || vendor.item_count || rawItems.length;
 
   const handleExportCSV = () => {
     const headers = [
@@ -158,7 +159,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
           <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.contractedItems}</span>
             <p className="text-base font-black text-cyan-700 dark:text-cyan-400">
-              {UI_STRINGS.modals.topItems.lineItemsCount(vendor.line_items_count)}
+              {UI_STRINGS.modals.topItems.lineItemsCount(activeCount)}
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import type { SupplierPaymentTermsProfile, PaymentTermsRecordCoverage } from '../../types/module2PaymentTerms';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 interface PaymentTermsSupplierTabProps {
   supplierProfiles: SupplierPaymentTermsProfile[];
@@ -100,7 +101,7 @@ export const PaymentTermsSupplierTab: React.FC<PaymentTermsSupplierTabProps> = (
                     <div style={{ fontWeight: 600, color: '#0f172a' }}>{s.supplierName}</div>
                     <div style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>{s.supplierCode}</div>
                   </td>
-                  <td style={{ padding: '10px 16px', color: '#475569' }}>{s.spendCategory}</td>
+                  <td style={{ padding: '10px 16px', color: '#475569' }}>{resolveHumanReadableCategory(s.spendCategory)}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#0f172a' }}>
                     ₹{s.totalSpendCr.toFixed(4)} Cr
                   </td>

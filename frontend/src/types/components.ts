@@ -232,7 +232,10 @@ export interface CategoryVendorBreakdownViewProps {
   categories?: CategoryYearDetail[];
   vendors?: VendorYearDetail[];
   lineItems?: LineItemMapping[];
+  initialMode?: 'CATEGORY' | 'VENDOR';
+  lockMode?: 'CATEGORY' | 'VENDOR';
 }
+
 
 // Modal Props & Types
 export type DatasetType = 'Purchase History' | 'Invoice Data' | 'Trial Balance';

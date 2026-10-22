@@ -6,6 +6,7 @@ import { PAYMENT_TERMS_UI_STRINGS } from '../../constants/module2PaymentTerms';
 import { PaymentTermsCoverageTab } from './PaymentTermsCoverageTab';
 import { PaymentTermsOpportunitiesTab } from './PaymentTermsOpportunitiesTab';
 import { PaymentTermsSupplierTab } from './PaymentTermsSupplierTab';
+import { PaymentTermsKpiHeader } from './PaymentTermsKpiHeader';
 
 interface PaymentTermsViewProps {
   assessmentId: string;
@@ -78,8 +79,6 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
     );
   }
 
-  const cov = data.coverageSummary;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '8px 0' }}>
       {/* Header */}
@@ -135,85 +134,8 @@ export const PaymentTermsView: React.FC<PaymentTermsViewProps> = ({
         </a>
       </div>
 
-      {/* 5 KPI Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>
-        <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_TOTAL_SPEND_ANALYSED}
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
-            ₹{cov.totalSpendAnalysedCr.toFixed(4)} Cr
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {cov.totalRecordsCount.toLocaleString()} transactions analysed
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_DATA_AVAILABILITY_STATUS}
-          </div>
-          <div
-            style={{
-              fontSize: '15px',
-              fontWeight: 700,
-              marginTop: '6px',
-              color: cov.overallDataAvailabilityStatus === 'DATA_UNAVAILABLE' ? '#b45309' : '#047857'
-            }}
-          >
-            {cov.overallDataAvailabilityStatus === 'DATA_UNAVAILABLE' ? 'DATA UNAVAILABLE' : cov.overallStatusDisplayText}
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {cov.verifiedSpendPct.toFixed(1)}% verified | {cov.missingSpendPct.toFixed(1)}% missing
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_VERIFIED_SPEND}
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#047857', marginTop: '4px' }}>
-            ₹{cov.verifiedSpendCr.toFixed(4)} Cr
-          </div>
-          <div style={{ fontSize: '11px', color: '#059669', marginTop: '2px' }}>
-            {cov.completeRecordsCount.toLocaleString()} verified records
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_WORKING_CAPITAL_RELEASED}
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#2563eb', marginTop: '4px' }}>
-            ₹{cov.totalWorkingCapitalReleasedCr.toFixed(4)} Cr
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            Segregated from financing benefits
-          </div>
-        </div>
-
-        <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_FINANCING_BENEFIT}
-          </div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
-            ₹{cov.totalFinancingBenefitCr.toFixed(4)} Cr
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {PAYMENT_TERMS_UI_STRINGS.KPI_FINANCING_BENEFIT_SUB}
-          </div>
-        </div>
-      </div>
-
-      {/* Governance & Modelling Assumption Banner */}
-      <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e40af' }}>
-          Centrally Governed Modelling Baseline & Transparency Mandate
-        </div>
-        <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#1e3a8a', lineHeight: '18px' }}>
-          {PAYMENT_TERMS_UI_STRINGS.GOVERNANCE_NOTICE}
-        </p>
-      </div>
+      {/* Payment Terms KPI Cards, Explicit Disclosure & Planning Scenario */}
+      <PaymentTermsKpiHeader coverageSummary={data.coverageSummary} />
 
       {/* Subtabs */}
       <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '2px' }}>

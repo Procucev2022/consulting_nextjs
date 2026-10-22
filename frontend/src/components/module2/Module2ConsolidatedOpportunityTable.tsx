@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Filter, Search, CheckCircle, AlertTriangle, Layers, XCircle } from 'lucide-react';
-import type { Module2CanonicalSavingsOpportunity, DeduplicationStatus } from '../../types';
+import { Search, CheckCircle, Layers, XCircle } from 'lucide-react';
+import type {
+  DeduplicationStatus,
+  Module2ConsolidatedOpportunityTableProps
+} from '../../types';
 import { UI_STRINGS } from '../../constants';
-
-interface Module2ConsolidatedOpportunityTableProps {
-  opportunities: Module2CanonicalSavingsOpportunity[];
-}
 
 export const Module2ConsolidatedOpportunityTable: React.FC<Module2ConsolidatedOpportunityTableProps> = ({
   opportunities
@@ -109,7 +108,7 @@ export const Module2ConsolidatedOpportunityTable: React.FC<Module2ConsolidatedOp
             onChange={(e) => setSelectedLever(e.target.value)}
             className="text-xs border rounded-lg px-2.5 py-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
           >
-            <option value="ALL">All Levers (1–10)</option>
+            <option value="ALL">{strings.optAllLevers}</option>
             <option value="LEV-01">LEV-01: Direct Price</option>
             <option value="LEV-02">LEV-02: E-Auction</option>
             <option value="LEV-03">LEV-03: Vendor Consolidation</option>
@@ -128,12 +127,11 @@ export const Module2ConsolidatedOpportunityTable: React.FC<Module2ConsolidatedOp
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="text-xs border rounded-lg px-2.5 py-1 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
           >
-            <option value="ALL">All Statuses</option>
-            <option value="MUTUALLY_EXCLUSIVE_ALTERNATIVE_RETAINED">Maximum Defensible Retained</option>
-            <option value="DEDUPLICATED_OVERLAP">Deduplicated Overlap</option>
-            <option value="INCREMENTAL_VALIDATED">Incremental Validated</option>
-            <option value="UNRESOLVED_EXCLUDED">Unresolved Excluded</option>
-            <option value="DISCOVERY_ONLY">Discovery Only</option>
+            <option value="ALL">{strings.optAllStatuses}</option>
+            <option value="MUTUALLY_EXCLUSIVE_ALTERNATIVE_RETAINED">{strings.badgeRetained}</option>
+            <option value="DEDUPLICATED_OVERLAP">{strings.badgeDeduplicated}</option>
+            <option value="INCREMENTAL_VALIDATED">{strings.badgeIndependent}</option>
+            <option value="UNRESOLVED_EXCLUDED">{strings.badgeExcluded}</option>
           </select>
         </div>
       </div>
@@ -147,7 +145,7 @@ export const Module2ConsolidatedOpportunityTable: React.FC<Module2ConsolidatedOp
               <th className="px-3.5 py-2.5">{strings.colLever}</th>
               <th className="px-3.5 py-2.5">{strings.colScope}</th>
               <th className="px-3.5 py-2.5 text-right">{strings.colGross}</th>
-              <th className="px-3.5 py-2.5 text-right">Overlap Deducted</th>
+              <th className="px-3.5 py-2.5 text-right">{strings.thOverlapDeducted}</th>
               <th className="px-3.5 py-2.5 text-right font-bold text-slate-900 dark:text-slate-100">
                 {strings.colNet}
               </th>

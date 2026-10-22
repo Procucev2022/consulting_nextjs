@@ -417,6 +417,10 @@ describe('VolumeAggregationView', () => {
     fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_TRANSACTIONS));
     expect(screen.getByText('PO-9001-1')).toBeDefined();
 
+    // Switch to PO Consolidation Tab
+    fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_PO_CONSOLIDATION));
+    expect(screen.getByText('Operational Demand Cadence & Batch Lot Sizing Analysis')).toBeDefined();
+
     // Switch back to Overview Tab
     fireEvent.click(screen.getByText(VOLUME_AGGREGATION_UI_STRINGS.TAB_OVERVIEW));
     expect(screen.getByText('L4-T1-MAT_01')).toBeDefined();

@@ -22,8 +22,40 @@ import type {
 } from '../types/module2SpecificationRationalisation';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import { Module2SpecificationRationalisationMatcher } from './module2SpecificationRationalisationMatcher';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2SpecificationRationalisationEngine {
+  private static readonly resultCache = new Map<string, SpecificationRationalisationResult>();
+  private static readonly txsCache = new Map<string, StrategicInputTransaction[]>();
+  private static readonly pairCache = new Map<string, SpecificationCandidateItem[]>();
+
+  /** Clears all engine caches — used by tests to force recalculation */
+  public static clearResultCache(): void {
+    this.resultCache.clear();
+    this.txsCache.clear();
+    this.pairCache.clear();
+  }
+
+  private static applyReviewOverrides(
+    base: SpecificationCandidateItem[],
+    reviews: Record<string, TechnicalReviewRecord | TechnicalReviewRecord[]>
+  ): SpecificationCandidateItem[] {
+    const hasReviews = Object.keys(reviews).length > 0;
+    if (!hasReviews) return base;
+    return base.map((c) => {
+      const raw = reviews[c.candidateId];
+      if (!raw) return c;
+      const defaultStatus = c.reviewStatus as SpecificationRationalisationReviewStatus;
+      const { history, finalStatus } = this.resolveReviewState(raw as TechnicalReviewRecord, defaultStatus);
+      return {
+        ...c,
+        reviewStatus: finalStatus,
+        reviewHistory: history,
+        nextRequiredAction: this.resolveNextAction(finalStatus)
+      };
+    });
+  }
+
   private static createMaterialItem(
     t: StrategicInputTransaction,
     code: string,
@@ -40,7 +72,7 @@ export class Module2SpecificationRationalisationEngine {
       uom: t.uom || 'units',
       transactionCount: 1,
       suppliersCount: t.vendor_name ? 1 : 0,
-      category: (t.spend_category || 'General Procurement').trim()
+      category: resolveHumanReadableCategory(t.spend_category, code)
     };
   }
 
@@ -251,23 +283,49 @@ export class Module2SpecificationRationalisationEngine {
     assessmentId: string,
     options?: SpecificationRationalisationOptions
   ): Promise<SpecificationRationalisationResult> {
-    logger.info('Executing Module 2 Lever 8 Specification Rationalisation (Phase 1)', {
-      assessmentId,
-      hasOverrides: Boolean(options?.reviews)
-    });
+    const threshold = options?.similarityThreshold;
+    const reviews = options?.reviews ?? {};
+    const hasReviews = Object.keys(reviews).length > 0;
+    const pairCacheKey = `${assessmentId}:${threshold ?? 'default'}`;
+    const noEffectiveOptions = !hasReviews && threshold === undefined;
 
-    const txs = await Module2CanonicalService.getCanonicalTransactions(assessmentId);
+    // Full result cache: only when no reviews and default threshold
+    if (noEffectiveOptions && this.resultCache.has(assessmentId)) {
+      return this.resultCache.get(assessmentId) as SpecificationRationalisationResult;
+    }
+
+    // Load transactions (cached to skip disk I/O on repeated calls)
+    let txs = this.txsCache.get(assessmentId);
+    if (!txs) {
+      logger.info('Executing Module 2 Lever 8 Specification Rationalisation (Phase 1)', {
+        assessmentId,
+        hasOverrides: hasReviews
+      });
+      txs = await Module2CanonicalService.getCanonicalTransactions(assessmentId);
+      this.txsCache.set(assessmentId, txs);
+    }
+
     const customerName =
       assessmentId === 'AIC-2026-0002'
         ? 'ABC Textile Ltd'
         : assessmentId === 'AIC-2026-0003'
         ? 'PQR Cement Ltd'
         : `Enterprise Client (${assessmentId})`;
+
     const materialMap = this.aggregateMaterials(txs);
-    const candidates = this.identifyCandidates(materialMap, options);
+
+    // Pair identification cache: keyed on assessmentId + threshold
+    let baseCandidates = this.pairCache.get(pairCacheKey);
+    if (!baseCandidates) {
+      baseCandidates = this.identifyCandidates(materialMap, { similarityThreshold: threshold });
+      this.pairCache.set(pairCacheKey, baseCandidates);
+    }
+
+    // Apply review overrides in O(n) — no re-running O(n²) pair scan
+    const candidates = hasReviews ? this.applyReviewOverrides(baseCandidates, reviews) : baseCandidates;
     const summary = this.buildSummary(assessmentId, customerName, materialMap.size, candidates);
 
-    return {
+    const result: SpecificationRationalisationResult = {
       assessmentId,
       customerName,
       calculatedAt: new Date().toISOString(),
@@ -276,5 +334,10 @@ export class Module2SpecificationRationalisationEngine {
       methodologyDisclosures: SPECIFICATION_METHODOLOGY_DISCLOSURES,
       financialDisclaimer: SPECIFICATION_FINANCIAL_DISCLOSURES.PHASE_1_STATUS
     };
+
+    if (noEffectiveOptions) {
+      this.resultCache.set(assessmentId, result);
+    }
+    return result;
   }
 }

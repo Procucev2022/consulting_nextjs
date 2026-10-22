@@ -5,16 +5,31 @@
 
 import * as XLSX from 'xlsx';
 import type { PaymentTermsResult } from '../types/module2PaymentTerms';
-import { PAYMENT_TERMS_EXCEL_SHEETS } from '../constants/module2PaymentTerms';
+import {
+  PAYMENT_TERMS_EXCEL_SHEETS,
+  PAYMENT_TERMS_DISCLOSURE_STRINGS
+} from '../constants/module2PaymentTerms';
 
 function buildExecutiveRows(res: PaymentTermsResult): (string | number)[][] {
   const sum = res.coverageSummary;
-  return [
+  const isUnavailable = sum.overallDataAvailabilityStatus === 'DATA_UNAVAILABLE';
+  const rows: (string | number)[][] = [
     ['STRATEGIC SOURCING LEVER 5 — PAYMENT TERMS OPTIMISATION AUDIT DOSSIER'],
     ['Assessment Identifier', sum.assessmentId],
     ['Generated At', new Date().toISOString()],
     ['Centrally Governed Default Rate', `${sum.procucevModellingRatePctPer30Days}% per 30 Days`],
-    [],
+    []
+  ];
+
+  if (isUnavailable) {
+    rows.push(
+      ['EXPLICIT BUSINESS DISCLOSURE', PAYMENT_TERMS_DISCLOSURE_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_TITLE],
+      ['Disclosure Detail', PAYMENT_TERMS_DISCLOSURE_STRINGS.BENEFIT_CANNOT_BE_ASCERTAINED_MESSAGE],
+      []
+    );
+  }
+
+  rows.push(
     ['EXECUTIVE SUMMARY KEY PERFORMANCE INDICATORS'],
     ['Total Spend Analysed (Cr)', sum.totalSpendAnalysedCr],
     ['Total Spend Analysed (INR)', sum.totalSpendAnalysedInr],
@@ -24,7 +39,14 @@ function buildExecutiveRows(res: PaymentTermsResult): (string | number)[][] {
     ['Missing Spend Share (%)', `${sum.missingSpendPct}%`],
     ['Overall Data Availability Status', sum.overallStatusDisplayText],
     [],
-    ['WORKING CAPITAL & FINANCING BENEFIT (SEPARATE METRICS — NEVER SUMMED)'],
+    ['ACTUAL PAYMENT TERMS BENEFITS (SEPARATE METRICS — NEVER SUMMED INTO PROCUREMENT SAVINGS)'],
+    ['Actual Working Capital Benefit', isUnavailable ? PAYMENT_TERMS_DISCLOSURE_STRINGS.ACTUAL_WC_BENEFIT_UNAVAILABLE : `₹${sum.totalWorkingCapitalReleasedCr} Cr`],
+    ['Actual Annual Financing Benefit', isUnavailable ? PAYMENT_TERMS_DISCLOSURE_STRINGS.ACTUAL_FINANCING_BENEFIT_UNAVAILABLE : `₹${sum.totalFinancingBenefitCr} Cr`],
+    ['Actual Additional Credit Days', isUnavailable ? PAYMENT_TERMS_DISCLOSURE_STRINGS.ACTUAL_CREDIT_DAYS_UNAVAILABLE : '30 Days'],
+    ['Commercially Validated Benefit', 0],
+    [],
+    ['ILLUSTRATIVE PLANNING SCENARIO (SEPARATELY LABELLED ILLUSTRATION — NOT AN ACTUAL BENEFIT)'],
+    ['Planning Scenario Disclaimer', PAYMENT_TERMS_DISCLOSURE_STRINGS.PLANNING_SCENARIO_DISCLAIMER],
     ['Indicative Working Capital Released (Cr)', sum.totalWorkingCapitalReleasedCr],
     ['Indicative Annual Financing Benefit (Cr)', sum.totalFinancingBenefitCr],
     ['Early Payment Cash Discount Potential (Cr)', sum.totalEarlyPaymentDiscountsCr],
@@ -36,7 +58,8 @@ function buildExecutiveRows(res: PaymentTermsResult): (string | number)[][] {
     ['Partial Records (Review Required)', sum.partialRecordsCount],
     ['Missing Records (Terms Not Found)', sum.missingRecordsCount],
     ['Records Requiring Commercial Validation', sum.recordsRequiringValidationCount]
-  ];
+  );
+  return rows;
 }
 
 function buildCoverageRows(res: PaymentTermsResult): (string | number)[][] {

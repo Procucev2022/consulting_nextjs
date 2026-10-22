@@ -24,6 +24,7 @@ import {
   rollUpCategoryCandidate
 } from './module2EAuctionHelpers';
 import { Module2EAuctionAssumptionStore } from './module2EAuctionAssumptionStore';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 interface ItemTxGroup {
   financialYear: string;
@@ -51,7 +52,7 @@ function groupTransactionsByFyAndItem(
         financialYear: fy,
         materialCode: mat,
         materialDesc: (t.material_desc || '').trim(),
-        spendCategory: (t.spend_category || 'General').trim(),
+        spendCategory: resolveHumanReadableCategory(t.spend_category, mat),
         uom,
         txs: []
       };

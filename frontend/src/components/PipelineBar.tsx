@@ -6,7 +6,8 @@ import {
   LineChart,
   Target,
   ArrowRight,
-  Lock
+  Lock,
+  LayoutDashboard
 } from 'lucide-react';
 import type { PipelineBarProps, PipelineActiveTab } from '../types';
 import { UI_STRINGS } from '../constants';
@@ -205,7 +206,7 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   const isModule5Locked = isStageLocked('module5');
 
   return (
-    <div className="space-y-6">
+    <div data-testid="pipeline-bar" className="space-y-6">
       {/* 1. Executive Summary & Strategic System Vision - KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         {kpis.map((kpi, idx) => (
@@ -274,6 +275,23 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
               }`}
             >
               {UI_STRINGS.pipeline.conversionMatrixTab}
+            </a>
+            <a
+              href="#assessment"
+              data-testid="pipeline-assessment-centre-btn"
+              onClick={(e) => {
+                e.preventDefault();
+                onSelectTab('assessment');
+                if (typeof window !== 'undefined') window.location.hash = 'assessment';
+              }}
+              className={`text-[11px] px-3 py-1.5 rounded-lg font-semibold transition-all inline-flex items-center gap-1 cursor-pointer ${
+                activeTab === 'assessment'
+                  ? 'bg-amber-600 text-white shadow-sm shadow-amber-500/20 border border-amber-500'
+                  : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-700 dark:text-slate-200 hover:bg-amber-50 hover:text-amber-800 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-amber-500" />
+              <span>{UI_STRINGS.pipeline.assessmentCentreTab}</span>
             </a>
           </div>
         </div>

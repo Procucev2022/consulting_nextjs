@@ -22,6 +22,7 @@ import { SpecificationRationalisationView } from './SpecificationRationalisation
 import { ProcurementComplianceView } from './ProcurementComplianceView';
 import { AlternateSourcingView } from './AlternateSourcingView';
 import { Module2LeverOverview } from './Module2LeverOverview';
+import { Module2ConsolidatedSavingsView } from './Module2ConsolidatedSavingsView';
 import { logger } from '../../utils/logger';
 
 export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = ({
@@ -31,6 +32,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
 
   const [activeTab, setActiveTab] = useState<
     | 'overview'
+    | 'consolidatedSavings'
     | 'directPrice'
     | 'eAuction'
     | 'vendorConsolidation'
@@ -50,7 +52,14 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const [howCalculatedData, setHowCalculatedData] = useState<HowCalculatedData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeFilterCard, setActiveFilterCard] = useState<string>('ALL');
+  const [downloadPayload, setDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
+  const [handoffSuccessMsg, setHandoffSuccessMsg] = useState<string | null>(null);
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
   const isMountedRef = useRef<boolean>(true);
+
+  const effectiveAssessmentId =
+    assessmentId ||
+    (typeof window !== 'undefined' ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002' : 'AIC-2026-0002');
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -60,11 +69,17 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   }, []);
 
   const loadData = useCallback(async (refresh = false) => {
+    if (!effectiveAssessmentId) {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+      return;
+    }
     setIsLoading(true);
     try {
       const [sumRes, profRes] = await Promise.all([
-        Module2StrategicSourcingApi.getDashboardSummary(refresh, assessmentId),
-        Module2StrategicSourcingApi.getCategoryProfiles(refresh, assessmentId)
+        Module2StrategicSourcingApi.getDashboardSummary(refresh, effectiveAssessmentId),
+        Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId)
       ]);
       if (isMountedRef.current) {
         if (sumRes) setSummary(sumRes);
@@ -79,7 +94,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         setIsLoading(false);
       }
     }
-  }, [assessmentId]);
+  }, [effectiveAssessmentId]);
 
   useEffect(() => {
     loadData();
@@ -91,16 +106,19 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   };
 
   const handleExportAudit = async () => {
+    if (!effectiveAssessmentId) return;
     try {
-      const data = await Module2StrategicSourcingApi.exportAuditDossier(assessmentId);
+      const data = await Module2StrategicSourcingApi.exportAuditDossier(effectiveAssessmentId);
       if (!data) return;
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `MODULE_2_STRATEGIC_SOURCING_AUDIT_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      setDownloadPayload({
+        url,
+        filename: `MODULE_2_STRATEGIC_SOURCING_AUDIT_${Date.now()}.json`
+      });
+      setTimeout(() => {
+        downloadLinkRef.current?.click();
+      }, 50);
     } catch (err) {
       logger.error('Failed to trigger export', {}, err);
     }
@@ -111,7 +129,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       categoryId: profile.categoryId,
       opportunityId: profile.calculationId
     });
-    alert(`Opportunity ${profile.categoryId} successfully packaged for Module 4 Sourcing Execution.`);
+    setHandoffSuccessMsg(`Opportunity ${profile.categoryId} successfully packaged for Module 4 Sourcing Execution.`);
+    setTimeout(() => {
+      setHandoffSuccessMsg(null);
+    }, 4000);
   };
 
   const handleOpenHowCalculated = (profile?: CategoryStrategicSourcingProfile | null) => {
@@ -150,6 +171,37 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       data-testid="module2-strategic-sourcing-workspace"
       className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-sm space-y-6"
     >
+      {/* Declarative Virtual Download Anchor */}
+      {downloadPayload && (
+        <a
+          ref={downloadLinkRef}
+          href={downloadPayload.url}
+          download={downloadPayload.filename}
+          className="hidden"
+          aria-hidden="true"
+        >
+          Download
+        </a>
+      )}
+
+      {/* Declarative Sourcing Handoff Alert */}
+      {handoffSuccessMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center justify-between"
+        >
+          <span>{handoffSuccessMsg}</span>
+          <button
+            type="button"
+            onClick={() => setHandoffSuccessMsg(null)}
+            className="text-emerald-600 hover:text-emerald-900 font-bold ml-2 cursor-pointer"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -195,6 +247,21 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           }`}
         >
           <span>10 Levers Overview</span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-consolidatedSavings"
+          onClick={() => setActiveTab('consolidatedSavings')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'consolidatedSavings'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Consolidated Savings & Deduplication</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 font-bold">
+            PART F
+          </span>
         </button>
         <button
           type="button"
@@ -375,6 +442,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
             )
           }
         />
+      )}
+
+      {activeTab === 'consolidatedSavings' && (
+        <Module2ConsolidatedSavingsView assessmentId={assessmentId || 'AIC-2026-0002'} />
       )}
 
       {activeTab === 'directPrice' && (

@@ -66,3 +66,17 @@ export const PAYMENT_TERMS_EXCEL_SHEETS = {
   SHEET_7_TRANSACTIONS: '7. Purchase Transactions',
   SHEET_8_GOVERNANCE: '8. Methodology & Governance'
 } as const;
+
+export const PAYMENT_TERMS_DISCLOSURE_STRINGS = {
+  BENEFIT_CANNOT_BE_ASCERTAINED_TITLE: 'BENEFIT CANNOT BE ASCERTAINED',
+  BENEFIT_CANNOT_BE_ASCERTAINED_MESSAGE:
+    'Procucev is unable to ascertain the actual working capital release or financing benefit because supplier payment-terms data is unavailable. Please provide or validate supplier payment terms from ERP records, contracts or invoices before quantifying the benefit.',
+  ACTUAL_WC_BENEFIT_UNAVAILABLE: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
+  ACTUAL_FINANCING_BENEFIT_UNAVAILABLE: 'NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE',
+  ACTUAL_CREDIT_DAYS_UNAVAILABLE: 'DATA UNAVAILABLE',
+  COMMERCIALLY_VALIDATED_BENEFIT_ZERO: '₹0',
+  PLANNING_SCENARIO_TITLE: 'Illustrative Planning Scenario (30 Days / 1.5%)',
+  PLANNING_SCENARIO_DISCLAIMER:
+    'Illustrative planning scenario only. This is not an assessed, verified or committed benefit. Actual benefits cannot be ascertained until supplier payment terms and the feasible improvement in credit days are established.'
+} as const;
+

@@ -1,11 +1,11 @@
 {
-  "auditTimestamp": "2026-10-19T18:25:49.339Z",
+  "auditTimestamp": "2026-10-22T09:13:24.380Z",
   "engineVersion": "MODULE_2_EVALUATION_V1.0",
   "totalInputTransactions": 4,
   "categoryProfile": "Structural Steel",
   "netOpportunityInr": 8400000,
   "evidenceChain": {
-    "chainId": "EVID-CHAIN-STR-1792434349338",
+    "chainId": "EVID-CHAIN-STR-1792660404378",
     "categoryId": "CAT-STR",
     "categoryName": "Structural Steel",
     "addressability": {

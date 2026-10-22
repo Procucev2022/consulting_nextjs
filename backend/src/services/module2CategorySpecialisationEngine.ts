@@ -34,6 +34,7 @@ import {
   evaluateCrossLeverOverlap,
   aggregateSpecialisationSummary
 } from './module2CategorySpecialisationOverlapHelper';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2CategorySpecialisationEngine {
   private static groupTransactionsByCategory(
@@ -61,8 +62,15 @@ export class Module2CategorySpecialisationEngine {
     const metrics = Module2CategorySpecialisationMetricHelper.buildMetricsForCategory(categoryName, txs);
     const classification = classifyCategory(metrics, totalSpendInr, options?.customThresholds);
     const profile = buildCategoryProfile(metrics, totalSpendInr, classification);
-    const distinctScopeOverride = options?.distinctScopeFromLever2Categories?.[categoryName];
-    const altSupplierOverride = options?.verifiedAlternativeSuppliers?.[categoryName];
+    const humanCat = resolveHumanReadableCategory(categoryName, txs[0]?.material_code);
+    profile.categoryName = humanCat;
+
+    const distinctScopeOverride =
+      options?.distinctScopeFromLever2Categories?.[categoryName] ??
+      options?.distinctScopeFromLever2Categories?.[humanCat];
+    const altSupplierOverride =
+      options?.verifiedAlternativeSuppliers?.[categoryName] ??
+      options?.verifiedAlternativeSuppliers?.[humanCat];
     const benefits = Module2CategorySpecialisationOpportunityHelper.evaluateOpportunitiesForCategory(
       metrics,
       classification.priority,

@@ -10,6 +10,7 @@ import { VolumeAggregationOverviewTab } from './VolumeAggregationOverviewTab';
 import { VolumeAggregationPlantTab } from './VolumeAggregationPlantTab';
 import { VolumeAggregationMaterialTab } from './VolumeAggregationMaterialTab';
 import { VolumeAggregationTransactionTab } from './VolumeAggregationTransactionTab';
+import { VolumeAggregationPoConsolidationTab } from './VolumeAggregationPoConsolidationTab';
 
 interface VolumeAggregationViewProps {
   assessmentId: string;
@@ -23,7 +24,9 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
   const [data, setData] = useState<VolumeAggregationResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'plants' | 'materials' | 'transactions'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'plants' | 'materials' | 'transactions' | 'poConsolidation'
+  >('overview');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -235,7 +238,8 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
             { id: 'overview', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_OVERVIEW },
             { id: 'plants', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_PLANTS },
             { id: 'materials', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_MATERIALS },
-            { id: 'transactions', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_TRANSACTIONS }
+            { id: 'transactions', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_TRANSACTIONS },
+            { id: 'poConsolidation', label: VOLUME_AGGREGATION_UI_STRINGS.TAB_PO_CONSOLIDATION }
           ] as const
         ).map((t) => (
           <button
@@ -268,6 +272,9 @@ export const VolumeAggregationView: React.FC<VolumeAggregationViewProps> = ({
       {activeTab === 'plants' && <VolumeAggregationPlantTab plantProfiles={data.plantProfiles} />}
       {activeTab === 'materials' && <VolumeAggregationMaterialTab materialProfiles={data.materialProfiles} />}
       {activeTab === 'transactions' && <VolumeAggregationTransactionTab transactions={data.transactions} />}
+      {activeTab === 'poConsolidation' && (
+        <VolumeAggregationPoConsolidationTab transactions={data.transactions} />
+      )}
     </div>
   );
 };

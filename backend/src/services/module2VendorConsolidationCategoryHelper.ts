@@ -16,6 +16,7 @@ import {
 
 import type { MaterialMappingEntry } from '../types/module2MaterialMapping';
 import { getStrategicTransactionMaterialId } from './module2MaterialMappingRegister';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export interface CategoryClassificationResult {
   unspscCode: string;
@@ -57,10 +58,11 @@ export function determineCategoryClassification(
 ): CategoryClassificationResult {
   const code = forcedUnspscCode ?? catTxs[0]?.unspsc_code?.trim() ?? '';
   const isVerified = code.length === 8 && code !== '00000000' && /^\d{8}$/.test(code);
+  const humanCategory = resolveHumanReadableCategory(catName, catTxs[0]?.material_code);
 
   if (isVerified) {
     const unspscCommodity = catTxs[0]?.unspsc_commodity?.trim();
-    const catDesc = unspscCommodity && unspscCommodity.length > 0 ? unspscCommodity : catName;
+    const catDesc = unspscCommodity && unspscCommodity.length > 0 ? unspscCommodity : humanCategory;
     const { hasPending } = checkCategoryMaterialStatus(catTxs, materialMappingMap);
     const classificationType: CategoryClassificationType = hasPending ? 'PROVISIONAL_UNSPSC' : 'VERIFIED_UNSPSC';
 
@@ -77,7 +79,7 @@ export function determineCategoryClassification(
 
   return {
     unspscCode: VENDOR_CONSOLIDATION_CONFIG.UNMAPPED_UNSPSC_CODE,
-    unspscCategory: `Source Category: ${catName} [UNSPSC Unmapped]`,
+    unspscCategory: isNamedSource ? `Source Category: ${humanCategory} [UNSPSC Unmapped]` : 'Unmapped Category',
     classificationType,
     classificationLabel: CATEGORY_CLASSIFICATION_LABELS[classificationType]
   };

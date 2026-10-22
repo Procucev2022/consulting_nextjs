@@ -10,12 +10,14 @@ export type DeduplicationStatus =
   | 'DEDUPLICATED_OVERLAP'
   | 'INCREMENTAL_VALIDATED'
   | 'UNRESOLVED_EXCLUDED'
+  | 'EXPLORATORY_PIPELINE'
   | 'NOT_APPLICABLE';
 
 export type EvidenceValidationStatus =
   | 'VALIDATED_COMMERCIAL'
   | 'UNVERIFIED_ESTIMATE'
   | 'PLANNING_ASSUMPTION'
+  | 'EXPLORATORY_PIPELINE'
   | 'DISCOVERY_ONLY'
   | 'NOT_YET_QUANTIFIABLE';
 
@@ -50,6 +52,8 @@ export interface Module2CanonicalSavingsOpportunity {
   commerciallyValidatedSavingsCr: number;
   isIncrementalBenefit: boolean;
   isFinancingBenefitOnly?: boolean;
+  isExploratoryPipeline?: boolean;
+  validationEvidenceRequired?: string;
   workingCapitalReleasedInr?: number;
   workingCapitalReleasedCr?: number;
   unresolvedExclusionReason?: string;
@@ -72,6 +76,8 @@ export interface Module2LeverSavingsSummaryItem {
   overlapDeductionsCr: number;
   unresolvedExcludedInr: number;
   unresolvedExcludedCr: number;
+  exploratorySavingsInr: number;
+  exploratorySavingsCr: number;
   opportunitiesCount: number;
   methodologyBasis: string;
   safeguardRule: string;
@@ -82,6 +88,16 @@ export interface Module2LeverSavingsSummaryItem {
   workingCapitalReleasedCr?: number;
 }
 
+export interface Module2LeverMetaItem {
+  id: number;
+  code: string;
+  name: string;
+  status: string;
+  rule: string;
+  basis: string;
+  isPp: boolean;
+}
+
 export interface Module2ConsolidatedSavingsSummary {
   assessmentId: string;
   customerName: string;
@@ -90,8 +106,16 @@ export interface Module2ConsolidatedSavingsSummary {
   grossEstimatedSavingsCr: number;
   netEstimatedSavingsInr: number;
   netEstimatedSavingsCr: number;
+  grossEvidenceBasedSavingsInr: number;
+  grossEvidenceBasedSavingsCr: number;
+  netEvidenceBasedSavingsInr: number;
+  netEvidenceBasedSavingsCr: number;
+  exploratoryPipelineSavingsInr: number;
+  exploratoryPipelineSavingsCr: number;
   commerciallyValidatedSavingsInr: number;
   commerciallyValidatedSavingsCr: number;
+  realizedSavingsInr: number;
+  realizedSavingsCr: number;
   totalOverlappingDeductionsInr: number;
   totalOverlappingDeductionsCr: number;
   unresolvedOverlapsExcludedInr: number;
@@ -109,6 +133,7 @@ export interface Module2ConsolidatedSavingsSummary {
   opportunities: Module2CanonicalSavingsOpportunity[];
   certificationNotice: string;
   disclosures: string[];
+  disclaimerText: string;
 }
 
 export interface SavingsDeduplicationOptions {
@@ -116,4 +141,22 @@ export interface SavingsDeduplicationOptions {
   includePlanningAssumptionsInValidated?: boolean;
   distinctScopeOverrides?: Record<string, boolean>;
   commercialApprovals?: Record<string, boolean>;
+}
+
+/** Internal profile shape for e-auction opportunity builder */
+export interface EAuctionProfile {
+  categoryId: string;
+  categoryName: string;
+  addressableSpendInr: number;
+  transactionCount: number;
+  potentialEAuctionOpportunityInr?: number | null;
+}
+
+/** Internal profile shape for vendor consolidation opportunity builder */
+export interface ConsolidationProfile {
+  categoryId: string;
+  categoryName: string;
+  totalSpendInr: number;
+  transactionCount: number;
+  suppliers?: { isTailSupplier?: boolean; totalSpendInr: number; transactionCount: number }[];
 }

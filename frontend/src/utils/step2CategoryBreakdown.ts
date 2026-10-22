@@ -18,6 +18,7 @@ import {
 
 export { calculateVendorYearDetails } from './step2VendorBreakdown';
 export * from './step2BreakdownShared';
+import { resolveHumanReadableCategory } from './procurementCategoryResolver';
 
 interface CategoryAggregate {
   spendFY24: number;
@@ -29,6 +30,7 @@ interface CategoryAggregate {
   coreBucket: string;
   sampleColumnL: string;
   sampleColumnLTitle: string;
+  lineItemsCount: number;
 }
 
 export function calculateCategoryYearDetails(
@@ -57,7 +59,9 @@ export function calculateCategoryYearDetails(
     const fy26 = data.spendFY26;
     const yoy = (fy25 > 0 && fy26 > 0)
       ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1))
-      : undefined;
+      : (fy24 > 0 && fy25 > 0)
+        ? Number((((fy25 - fy24) / fy24) * 100).toFixed(1))
+        : undefined;
 
     const topItems = Array.from(data.items.values())
       .sort((a, b) => (b.total_spend_inr_cr || 0) - (a.total_spend_inr_cr || 0))
@@ -81,7 +85,8 @@ export function calculateCategoryYearDetails(
       spend_share_pct: Number(((data.totalSpend / totalCalculated) * 100).toFixed(1)),
       yoy_growth_pct: yoy,
       vendor_count: data.vendors.size || /* c8 ignore next */ 1,
-      item_count: data.items.size || /* c8 ignore next */ 1,
+      item_count: data.lineItemsCount || data.items.size || /* c8 ignore next */ 1,
+      line_items_count: data.lineItemsCount || data.items.size || /* c8 ignore next */ 1,
       top_items: topItems,
       is_balance_category: false,
       rank: idx + 1
@@ -153,6 +158,8 @@ function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
   const descMatch = lookupUNSPSCByDescription(item.raw_desc);
   const isClassified = descMatch?.classificationStatus === 'CLASSIFIED';
   const fallback = lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
+  const rawCat = item.unspsc_category_name || item.core_bucket;
+  const humanCat = resolveHumanReadableCategory(rawCat, item.material_code);
   return {
     spendFY24: 0,
     spendFY25: 0,
@@ -163,7 +170,8 @@ function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
     coreBucket: item.core_bucket || 'Direct Materials',
     sampleColumnL: item.unspsc_code || (isClassified ? descMatch?.commodityCode : '00000000') || '00000000',
     sampleColumnLTitle:
-      item.unspsc_commodity_title || (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') || fallback.commodityTitle
+      humanCat || item.unspsc_commodity_title || (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') || fallback.commodityTitle,
+    lineItemsCount: 0
   };
 }
 
@@ -171,7 +179,8 @@ function aggregateLineItemCategory(
   item: LineItemMapping,
   categoryMap: Map<string, CategoryAggregate>
 ): void {
-  const catKey = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
+  const rawCat = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
+  const catKey = resolveHumanReadableCategory(rawCat, item.material_code);
   let entry = categoryMap.get(catKey);
   if (!entry) {
     entry = createCategoryEntry(item);
@@ -180,6 +189,7 @@ function aggregateLineItemCategory(
 
   const spendCr = getItemSpendCr(item);
   entry.totalSpend += spendCr;
+  entry.lineItemsCount += 1;
   addSpendToFiscalYear(entry, spendCr, item.spend_year);
 
   const vendor = item.vendor_identified;

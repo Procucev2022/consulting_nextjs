@@ -70,9 +70,14 @@ export class Module2StrategicSourcingApi {
     assessmentId?: string
   ): Promise<Module2StrategicSourcingDashboardSummary | null> {
     try {
+      const resolvedAssessmentId =
+        assessmentId ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002'
+          : undefined);
       const path = this.appendQueryParams('/dashboard', {
         refresh: refresh ? true : undefined,
-        assessmentId
+        assessmentId: resolvedAssessmentId
       });
       const url = this.getFullUrl(path);
       const res = await fetch(url);
@@ -93,9 +98,14 @@ export class Module2StrategicSourcingApi {
     assessmentId?: string
   ): Promise<CategoryStrategicSourcingProfile[]> {
     try {
+      const resolvedAssessmentId =
+        assessmentId ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002'
+          : undefined);
       const path = this.appendQueryParams('/categories', {
         refresh: refresh ? true : undefined,
-        assessmentId
+        assessmentId: resolvedAssessmentId
       });
       const url = this.getFullUrl(path);
       const res = await fetch(url);

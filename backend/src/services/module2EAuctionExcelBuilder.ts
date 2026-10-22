@@ -61,7 +61,7 @@ export class Module2EAuctionExcelBuilder {
 
   private static buildCategorySheet(result: EAuctionResult): XLSX.WorkSheet {
     const catHeaders = [
-      'UNSPSC Code', 'UNSPSC Category / Description', 'Total Spend (INR)', 'Total Spend (Cr)',
+      'Column L Code', 'Procurement Category', 'Total Spend (INR)', 'Total Spend (Cr)',
       'Addressable Spend (INR)', 'Addressable Spend (Cr)', 'Purchase Quantity', 'UOM',
       'Distinct Material Count', 'PO Count', 'Supplier Count', 'Plant Count',
       'Price Variation Indicator', 'Auction Suitability', 'Savings Range Status',
@@ -93,7 +93,7 @@ export class Module2EAuctionExcelBuilder {
 
   private static buildMaterialSheet(allMats: EAuctionMaterialCandidate[]): XLSX.WorkSheet {
     const matHeaders = [
-      'Material Code', 'Material Description', 'Spend Category', 'UNSPSC Code',
+      'Material Code', 'Material Description', 'Procurement Category', 'Column L Code',
       'Financial Year', 'Total Spend (INR)', 'Total Spend (Cr)', 'Addressable Spend (INR)',
       'Addressable Spend (Cr)', 'Total Quantity', 'UOM', 'PO Count', 'Supplier Count',
       'Plant Count', 'Lowest Unit Price', 'Highest Unit Price', 'Price Range',

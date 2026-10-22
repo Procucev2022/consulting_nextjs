@@ -15,6 +15,7 @@ import type {
 } from '../types/module2EvidenceChain';
 import { Module2EvidenceChainEngine } from './module2EvidenceChainEngine';
 import { Module2EvidenceStatisticsHelper } from './module2EvidenceStatisticsHelper';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2CategoryProfileHelper {
   public static toCr(inr: number | null | undefined): number {
@@ -58,7 +59,8 @@ export class Module2CategoryProfileHelper {
     unspscCode: string;
     unspscFamily: string;
   } {
-    const classification = firstTx?.unspsc_commodity || firstTx?.spend_category || categoryName;
+    const raw = firstTx?.spend_category || categoryName;
+    const classification = resolveHumanReadableCategory(raw, firstTx?.material_code);
     const unspscCode = firstTx?.unspsc_code || 'UNSPSC-COMMODITY';
     const unspscFamily = firstTx?.unspsc_class || 'General Commercial Spend';
     return { classification, unspscCode, unspscFamily };

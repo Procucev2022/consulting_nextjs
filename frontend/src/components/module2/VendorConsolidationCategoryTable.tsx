@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, ChevronRight, Users, Package, Factory } from 'lucide-react';
 import type { CategoryConsolidationProfile } from '../../types/module2VendorConsolidation';
 import { UI_STRINGS } from '../../constants';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 interface VendorConsolidationCategoryTableProps {
   categories: CategoryConsolidationProfile[];
@@ -146,13 +147,13 @@ export const VendorConsolidationCategoryTable: React.FC<VendorConsolidationCateg
                 >
                   <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span>{c.spendCategory}</span>
+                      <span>{resolveHumanReadableCategory(c.spendCategory || c.unspscCategory)}</span>
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getClassificationBadge(c.classificationType)}`}>
                         {c.classificationLabel}
                       </span>
                     </div>
                     <div className="text-[10px] text-slate-400 font-normal mt-0.5">
-                      UNSPSC: {c.unspscCode} • {c.unspscCategory}
+                      Column L Code: {c.unspscCode}
                     </div>
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white">

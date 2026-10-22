@@ -118,3 +118,8 @@ export interface PaymentTermsResult {
   coverageRecords: PaymentTermsRecordCoverage[];
   methodologyDisclosures: string[];
 }
+
+export interface PaymentTermsKpiHeaderProps {
+  coverageSummary: PaymentTermsCoverageSummary;
+}
+

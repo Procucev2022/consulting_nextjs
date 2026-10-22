@@ -14,6 +14,10 @@ import {
   findValueByKeys,
   isRowDeleted
 } from './assessmentDatasetRowNormalizerUtils';
+import {
+  resolveHumanReadableCategory,
+  UNMAPPED_CATEGORY_LABEL
+} from '../utils/procurementCategoryResolver';
 
 export { parseExcelDate, findValueByKeys, isRowDeleted };
 
@@ -114,19 +118,31 @@ function resolveCategoryAndGroup(row: Record<string, unknown>): {
 } {
   const rawMatGroup = findValueByKeys(row, ['Matl Group', 'Material Group', 'MATKL', 'Material_Group']);
   const rawDept = findValueByKeys(row, ['Department', 'Dept', 'Department Name']);
-  const rawProcCat = findValueByKeys(row, ['Procurement Category', 'Spend Category', 'Category', 'Commodity']);
+  const rawProcCat = findValueByKeys(row, [
+    'Procurement Category',
+    'PO Category',
+    'PO_Category',
+    'Purchasing Category',
+    'Spend Category',
+    'Category',
+    'Commodity'
+  ]);
 
   const department = rawDept != null && String(rawDept).trim().length > 0 ? String(rawDept).trim() : undefined;
-  const procurementCategory =
-    rawProcCat != null && String(rawProcCat).trim().length > 0 ? String(rawProcCat).trim() : department;
 
   let materialGroup = 'UNKNOWN_CATEGORY';
   if (rawMatGroup != null && String(rawMatGroup).trim().length > 0) {
     materialGroup = String(rawMatGroup).trim();
   } else if (department) {
-    // Preserve source department when no separate material-group field exists
     materialGroup = department;
-  } else if (procurementCategory) {
+  }
+
+  const rawCatCandidate =
+    rawProcCat != null && String(rawProcCat).trim().length > 0 ? String(rawProcCat).trim() : department;
+
+  const procurementCategory = resolveHumanReadableCategory(rawCatCandidate, materialGroup);
+
+  if (materialGroup === 'UNKNOWN_CATEGORY' && procurementCategory && procurementCategory !== UNMAPPED_CATEGORY_LABEL) {
     materialGroup = procurementCategory;
   }
 

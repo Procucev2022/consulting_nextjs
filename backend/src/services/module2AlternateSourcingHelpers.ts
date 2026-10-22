@@ -13,6 +13,7 @@ import type {
 } from '../types/module2AlternateSourcing';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import { ALTERNATE_SOURCING_DISCLOSURES } from '../constants/module2AlternateSourcing';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2AlternateSourcingHelpers {
   private static initCustomerMaterial(
@@ -23,7 +24,7 @@ export class Module2AlternateSourcingHelpers {
     return {
       materialCode: code,
       materialDescription: desc,
-      spendCategory: (t.spend_category || 'General').trim(),
+      spendCategory: resolveHumanReadableCategory(t.spend_category, code),
       customerPlant: (t.plant || 'Main Plant').trim(),
       totalSpendInr: 0,
       totalQuantity: 0,

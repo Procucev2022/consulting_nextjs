@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { db } from '../services/db';
 import logger from '../utils/logger';
 import type { StrategicInputTransaction } from '../types';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 interface StrategicLineItemDto {
   mapping_id: string;
@@ -31,7 +32,7 @@ const mapTxToLineItem = (t: StrategicInputTransaction, idx: number, offset: numb
   const globalIdx = offset + idx + 1;
   const yearParsed = Number(t.po_date?.slice(0, 4));
   const spend = t.total_spend_inr ?? 0;
-  const cat = safeStr(t.spend_category, 'Direct Materials');
+  const humanCat = resolveHumanReadableCategory(t.spend_category, t.material_code);
 
   return {
     mapping_id: `M2-MAP-${globalIdx}`,
@@ -44,10 +45,10 @@ const mapTxToLineItem = (t: StrategicInputTransaction, idx: number, offset: numb
     vendor_identified: t.vendor_name,
     master_supplier_id: safeStr(t.vendor_code, `VND-${globalIdx}`),
     unspsc_code: safeStr(t.unspsc_code, '44101500'),
-    unspsc_commodity_title: safeStr(t.spend_category, 'Industrial Material Line Item'),
-    unspsc_class_title: safeStr(t.spend_category, 'Industrial Goods'),
-    unspsc_category_name: cat,
-    core_bucket: cat,
+    unspsc_commodity_title: humanCat,
+    unspsc_class_title: humanCat,
+    unspsc_category_name: humanCat,
+    core_bucket: humanCat,
     inr_crores: Number((spend / 10000000).toFixed(6)),
     total_spend: spend,
     qty: t.quantity ?? 1,

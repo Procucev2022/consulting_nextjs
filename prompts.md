@@ -109920,3 +109920,1491 @@ FINAL REPORT
 Explain the deduplication methodology, identify any existing double-counting, show before-and-after totals only where supported by actual data, list changed files and actual test results, and document unresolved cases.
 
 Do not fabricate savings figures. Do not begin any unrelated feature.
+
+
+## Prompt 476
+
+PROMPT 476 — INDEPENDENT VALIDATION OF CONSOLIDATED SAVINGS
+
+OBJECTIVE
+Audit the newly implemented Module 2 cross-lever savings deduplication engine before accepting its reported net savings figure.
+
+Reported figures for AIC-2026-0001:
+Gross Estimated Savings: ₹727.86 Cr
+Deduplicated Overlaps: ₹85.99 Cr
+Unresolved Overlaps Excluded: ₹130.95 Cr
+Net Estimated Savings: ₹510.92 Cr
+Commercially Validated Savings: ₹0.00 Cr
+Working Capital Released: ₹157.06 Cr, tracked separately.
+
+STRICT RULES
+- Audit first. Do not change code until the audit identifies a specific defect.
+- Do not invent savings, target prices, baselines, supplier quotations, or validation evidence.
+- Preserve all accepted lever methodologies and existing functionality.
+- Do not modify Module 3 / PCBI, Module 4 / Savings Engine, the desktop installer, or SaaS settings.
+- Do not treat passing tests or arithmetic reconciliation as proof that source savings calculations are correct.
+
+AUDIT 1 — TRACE EVERY SAVINGS VALUE
+For assessment AIC-2026-0001, trace every opportunity included in gross, overlap, unresolved, and net savings back to:
+- Source transactions or eligible spend pool.
+- Applicable lever and calculation engine.
+- Original formula and assumptions.
+- Eligible spend and target/benchmark price, where applicable.
+- Opportunity ID and overlap group.
+- Gross, deducted, excluded, and net contribution.
+
+Provide a detailed reconciliation by opportunity and lever.
+
+AUDIT 2 — CHECK BASELINES AND CALCULATIONS
+Verify that:
+- Each opportunity uses the correct eligible spend.
+- No category spend is itself treated as savings.
+- No estimate exceeds its eligible spend.
+- Comparable materials, units, currencies, and periods are correctly handled.
+- Unsupported planning assumptions are clearlyレンズlabelled and not treated as validated.
+- Lever 1's accepted comparable-price methodology remains intact.
+- Lever 2 does not infer savings merely from auction candidacy or historical price dispersion.
+- Lever 3 does not infer savings merely from supplier fragmentation.
+- Lever 4's estimates are evidence-based and not duplicated with price improvements.
+- Lever 5 financing benefit and working capital released remain separate.
+- Lever 6 preserves its existing canonical heads and overlap rules.
+- Lever 7, Lever 8 and Lever 10 remain excluded from commercial savings while their current restrictions apply.
+- Lever 9 includes only validated, measurable financial benefits.
+
+AUDIT 3 — VALIDATE OVERLAP GROUPING
+For every overlap group:
+- Identify the actual underlying transactions, materials, eligible spend and benefit.
+- Establish whether estimates are alternative strategies or independently incremental benefits.
+- Retain the highest defensible estimate only for genuinely alternative estimates with comparable scope.
+- Count verified incremental benefits only when independence is demonstrated.
+- Exclude unresolved overlaps from net savings.
+- Do not deduplicate all opportunities in a category indiscriminately.
+- Check that stable IDs do not merge materially different opportunities or duplicate the same benefit.
+
+AUDIT 4 — RECONCILE TOTALS
+Recalculate:
+Gross Estimated Savings
+Less: Deduplicated Overlaps
+Less: Unresolved Overlaps Excluded
+Equals: Net Estimated Savings
+
+Separately reconcile:
+Commercially Validated Savings
+Lever 5 Financing Benefit
+Lever 5 Working Capital Released
+
+Provide the calculation in rupees before displaying rounded crore amounts.
+
+AUDIT 5 — OUTPUT
+Return:
+1. Detailed opportunity-level reconciliation.
+2. Savings totals by lever before and after deduplication.
+3. All duplicated, inflated, unsupported, or incorrectly excluded opportunities found.
+4. A list of assumptions and missing evidence.
+5. Whether ₹510.92 Cr is supported, overstated, understated, or not yet quantifiable.
+6. Actual tests run and their results.
+
+If defects are found, explain the required correction and wait for approval before making changes.
+
+Do not report a figure as defensible merely because the totals reconcile.
+Stop after the audit.
+
+
+## Prompt 477
+
+PROMPT 477 — CORRECT SAVINGS BASELINE AND SEPARATE EXPLORATORY PIPELINE
+
+APPROVAL
+Proceed with Option B from the Prompt 476 audit, subject to the controls below.
+
+OBJECTIVE
+Correct identified savings calculation defects and ensure unsupported planning assumptions do not inflate the consolidated evidence-based estimated savings.
+
+PART A — LEVER 3 ELIGIBLE-SPEND DEFECT
+
+Correct the eligible-spend mapping identified in Prompt 476.
+
+Before changing the field:
+1. Inspect the calculation's intended definition of eligible spend.
+2. Confirm the appropriate source field for the actual opportunity.
+3. Do not blindly replace addressable spend with total category spend if only a smaller subset is eligible.
+4. Use the actual eligible tail spend or other documented eligible transaction pool when the opportunity concerns only that subset.
+5. Ensure the savings estimate cannot exceed the spend eligible for that specific opportunity.
+6. Recalculate affected Lever 3 opportunities and their overlap groups.
+
+Preserve the existing Lever 3 business methodology unless a defect is demonstrated. Do not invent a new consolidation savings percentage.
+
+PART B — LEVER 6 EXPLORATORY PIPELINE
+
+Reclassify unsupported top-down percentage assumptions under Lever 6 as PLANNING_ASSUMPTION / EXPLORATORY_PIPELINE.
+
+This includes the audit-identified assumptions for Heads B, C, D and H.
+
+Requirements:
+- Preserve the existing canonical heads A-J.
+- Retain assumptions, formulas and opportunity records for exploratory planning.
+- Do not delete them or silently set their values to zero in their source records.
+- Exclude unsupported planning assumptions from Evidence-Based Estimated Savings and Commercially Validated Savings.
+- Show them separately as Exploratory Savings Pipeline.
+- Explain the assumptions and evidence required to validate each opportunity.
+- Do not treat an exploratory pipeline figure as committed or achievable savings.
+
+PART C — VALIDATE REMAINING LEVERS
+
+Review L2 auction estimates and L3 tail vendor-consolidation estimates.
+
+L2:
+- Auction candidacy or an assumed discount percentage alone is insufficient evidence of savings.
+- Include an estimate in Evidence-Based Estimated Savings only where its basis is defensible and clearly documented.
+- Otherwise classify it as exploratory.
+
+L3:
+- Distinguish administrative PO-processing savings from commercial price savings.
+- Preserve the separate administrative benefit only if its count and unit-cost assumptions are supported.
+- Do not infer commercial savings from supplier fragmentation alone.
+- Remove unsupported percentage estimates from the evidence-based total.
+
+Preserve the accepted methodologies of all other levers.
+
+PART D — CROSS-LEVER DEDUPLICATION
+
+Re-run the shared deduplication engine after reclassification.
+
+- Deduplicate the same underlying financial benefit only once.
+- Retain the highest defensible estimate only for genuinely alternative strategies with comparable scope.
+- Include independent incremental benefits only where supported.
+- Exclude unresolved overlaps from the evidence-based total.
+- Keep Lever 5 financing benefits and working capital released separate from purchase-price savings.
+- Keep Levers 7, 8 and 10 under their current restrictions.
+- Do not use category-level spend as savings.
+
+PART E — REPORTING
+
+Provide separate dashboard values for:
+1. Gross Evidence-Based Estimated Savings before deduplication.
+2. Deduplicated Overlap Amount.
+3. Unresolved Overlaps Excluded.
+4. Net Evidence-Based Estimated Savings.
+5. Exploratory Savings Pipeline.
+6. Commercially Validated Savings.
+7. Realized Savings, only if supported by actual outcome data.
+8. Lever 5 financing benefit and working capital released, separately.
+
+Do not hardcode ₹116.37 Cr, ₹132.15 Cr, or any other target total.
+
+Trace each figure to its source opportunities and assumptions. Display a clear disclaimer that estimated savings are not realized savings.
+
+PART F — TESTS AND VERIFICATION
+
+Add regression tests proving that:
+- L3 savings do not exceed the opportunity's eligible spend.
+- Total category spend is not substituted for eligible spend without justification.
+- Unsupported L6 planning assumptions do not enter evidence-based net savings.
+- L2 unsupported auction assumptions are separated into the exploratory pipeline.
+- Unsupported L3 tail-consolidation assumptions are not treated as evidence-based savings.
+- Administrative PO savings are supported and remain separate from price savings.
+- Deduplication reconciles after reclassification.
+- No opportunity is counted twice.
+- Existing accepted calculations and other modules remain intact.
+
+Run relevant tests, typecheck, lint and production build.
+
+FINAL REPORT
+Provide:
+- Root causes corrected.
+- Before-and-after figures in rupees and crore.
+- Opportunity-level reconciliation by lever.
+- Evidence-based savings versus exploratory pipeline.
+- Actual test and build results.
+- Any remaining unquantifiable items.
+
+Do not fabricate savings or force a target result. Stop after implementation and validation.
+
+## Prompt 478
+
+PROMPT 478 — COMPLETE SAVINGS ENGINE CORRECTION AND FINANCIAL RECONCILIATION
+
+Objective:
+Complete the pending financial corrections from Prompt 477. Do not start new features, redesign the UI, or modify Modules 1, 2, or 3. PCBI Module 3 must remain disconnected. Do not modify any previously accepted business rules or certified calculations outside the scope of these corrections.
+
+1. LEVER 3 — ELIGIBLE SPEND
+Verify and correct the mapping between addressable spend, eligible spend, and the actual spend used in each savings calculation.
+Do not treat total category spend as eligible spend without evidence.
+Investigate categories 11017, 11007, 14004 and 12005, where estimates previously exceeded recorded eligible spend.
+Recalculate affected opportunities using the correct eligible spend and preserve transaction-level traceability.
+
+2. LEVER 6 — EXPLORATORY PIPELINE
+Reclassify unsupported percentage-based estimates under Heads B, C, D and H as PLANNING_ASSUMPTION / EXPLORATORY_PIPELINE.
+Retain the existing canonical A–J structure and documented assumptions.
+Exclude unsupported estimates from evidence-based net savings and commercially validated savings.
+Do not delete the opportunities; display them separately as exploratory pipeline.
+
+3. LEVERS 2 AND 3 — VALIDATE SAVINGS
+Review each commercial savings estimate against its underlying transaction data and documented methodology.
+Do not accept assumed auction discounts or aggressive supplier-consolidation percentages as proven savings.
+Retain an estimate in evidence-based savings only when its calculation basis is defensible and traceable.
+Keep unsupported estimates in the exploratory pipeline.
+Preserve administrative PO-consolidation savings only if their basis and calculation are explicitly documented and reproducible.
+Do not invent replacement percentages or savings rates.
+
+4. CROSS-LEVER DEDUPLICATION
+Recalculate all opportunities after the corrections above.
+Prevent duplicate savings claims for the same spend and economic benefit.
+For genuinely alternative opportunities, retain only the maximum defensible comparable estimate.
+Count separate benefits together only when their independence is supported by evidence.
+Exclude unresolved overlaps from net evidence-based savings.
+Maintain opportunity-level traceability to the originating lever, spend records, assumptions, and overlap decisions.
+
+5. FINANCIAL REPORTING
+Display these metrics separately:
+A. Gross evidence-based estimated savings
+B. Confirmed overlap deductions
+C. Unresolved overlap value excluded from net savings
+D. Net evidence-based estimated savings
+E. Exploratory pipeline value
+F. Commercially validated savings
+G. Realized savings, only when supported by actual outcome records
+H. Working capital released
+I. Indicative annual financing benefit
+
+Working capital released and financing benefit must remain separate from procurement savings and must never be added to savings totals.
+
+Do not label estimated savings as realized or commercially validated.
+
+6. RECONCILIATION
+Produce before-and-after values in both INR and INR crore.
+Reconcile gross, overlap deductions, unresolved exclusions, and net savings with zero arithmetic variance.
+Explain every material change from the previous reported figures.
+Resolve the existing inconsistencies in the prior report:
+- Overlap was reported as both ₹85.993 Cr and ₹62.2609 Cr.
+- Unresolved overlap was reported as both ₹130.9491 Cr and ₹154.6812 Cr.
+- Working capital released was reported as both ₹157.06 Cr and ₹334.84 Cr.
+
+Identify the authoritative calculation for each metric and its underlying records. Do not choose a value merely because it matches an earlier report.
+
+7. VALIDATION
+Run the relevant tests, typecheck, lint and build.
+Report failures separately, including unrelated coverage-threshold failures.
+Verify that source-data or review-status changes invalidate and refresh affected calculations and caches.
+Do not change business logic merely to make tests pass.
+
+FINAL DELIVERABLE
+Return:
+1. Files changed and why.
+2. Corrected Lever 3 category-level calculations.
+3. Lever 6 exploratory-versus-evidence-based breakdown.
+4. Lever 2 and Lever 3 opportunity-level validation results.
+5. Before-and-after financial reconciliation in INR and crore.
+6. Cross-lever overlap and unresolved-overlap register.
+7. Separate working-capital and financing-benefit calculations.
+8. Test, typecheck, lint and build results.
+9. Remaining data gaps and unquantifiable opportunities.
+10. A clear verdict: FINANCIAL RECONCILIATION COMPLETE or INCOMPLETE.
+
+Do not report completion based only on successful builds or tests. Financial calculations and underlying records must also be verified.
+
+
+## Prompt 479
+
+PROMPT 479 — FINAL INDEPENDENT FINANCIAL AUDIT OF PROMPT 478
+
+Objective:
+Audit the actual Savings Engine implementation and underlying data following Prompt 478. Correct all financial reconciliation defects before declaring the savings baseline ready.
+
+Do not add features or redesign the UI.
+Do not modify accepted business rules.
+Keep PCBI Module 3 disconnected.
+Do not hardcode financial totals to make the report reconcile.
+
+1. RECONCILE THE CONFLICTING FINANCIAL TOTALS
+
+Prompt 478 reports:
+- Gross evidence-based savings: ₹188.9911 Cr
+- Confirmed overlap: ₹62.2609 Cr
+- Unresolved overlap excluded: ₹154.6812 Cr
+- Net evidence-based savings: ₹116.2918 Cr
+
+It also reports:
+- Gross savings: ₹727.8576 Cr
+- Net savings after exclusions: ₹510.9155 Cr
+
+The first set is internally inconsistent:
+₹188.9911 Cr - ₹62.2609 Cr = ₹126.7302 Cr, not ₹116.2918 Cr.
+
+Trace the production calculation path, source records, opportunity statuses, deduplication rules, and displayed dashboard metrics.
+
+Establish one authoritative calculation for each metric.
+
+Do not assume unresolved overlap is a deduction from evidence-based savings if those opportunities have already been excluded from the evidence-based gross amount. Prevent double subtraction.
+
+Document the precise meaning of every gross, overlap, unresolved, exploratory and net metric.
+
+Reconcile every displayed amount to its underlying opportunity records with zero arithmetic variance.
+
+2. VERIFY EXPLORATORY PIPELINE ACCOUNTING
+
+Verify that exploratory opportunities remain visible but do not enter evidence-based net savings.
+
+Confirm that the same opportunity cannot appear in both evidence-based savings and exploratory pipeline.
+
+Reconcile the exploratory pipeline independently, using opportunity-level records.
+
+Do not add exploratory amounts to evidence-based savings.
+
+3. VALIDATE LEVER 3 ADMINISTRATIVE PO CONSOLIDATION
+
+Verify the 6,205 PO count against source records.
+Verify whether these are genuinely redundant or consolidatable orders.
+Investigate the ₹1,000 per-order planning assumption and its documented justification.
+
+If the assumption is unsupported, classify the amount as PLANNING_ASSUMPTION / EXPLORATORY_PIPELINE rather than evidence-based savings.
+
+Do not infer that every consolidated PO produces ₹1,000 in economic benefit without evidence.
+
+4. VERIFY LEVER 3 ELIGIBLE SPEND
+
+For categories 11017, 11007, 14004 and 12005, trace:
+- Source transaction IDs
+- Category assignments
+- Eligible tail supplier IDs
+- Eligible spend
+- Rate-gap calculation
+- Estimated opportunity
+- Any applied cap
+
+Verify the underlying records, not just the final capped values.
+
+Confirm that supplier/category totals are not double-counted and that the estimate uses only eligible spend.
+
+5. VERIFY WORKING CAPITAL AND FINANCING BENEFIT
+
+Reproduce the calculation from the actual eligible annual purchase base.
+
+Keep working capital released separate from annual financing benefit and procurement savings.
+
+Verify the additional credit-day assumption, eligible spend, calculation period, and any missing supplier payment-term data.
+
+If actual eligible payment-term data is unavailable, label the result as an indicative planning scenario, not a verified benefit.
+
+6. AUTOMATED TESTS AND DASHBOARD CONSISTENCY
+
+Add or update tests covering:
+- Gross minus applicable deductions equals net.
+- Unresolved exclusions are not subtracted twice.
+- Exploratory opportunities never enter evidence-based savings.
+- No opportunity is counted twice.
+- Working capital and financing benefit never enter procurement savings totals.
+- Dashboard figures match the authoritative backend calculation.
+- Source-data or status changes refresh affected results.
+
+Run relevant tests, typecheck, lint and builds.
+
+7. REQUIRED FINAL REPORT
+
+Provide:
+A. Authoritative calculation formula for each financial metric.
+B. Opportunity-level reconciliation.
+C. Corrected INR and INR crore totals.
+D. Before-and-after comparison.
+E. Lever 3 administrative PO evidence and decision.
+F. Transaction-level validation results for the four Lever 3 categories.
+G. Working-capital and financing-benefit validation.
+H. Test and build results.
+I. Remaining assumptions and data gaps.
+
+Do not claim financial reconciliation is complete merely because builds and tests pass.
+
+Final verdict must be one of:
+- FINANCIALLY RECONCILED — READY FOR BUSINESS REVIEW
+- FINANCIAL RECONCILIATION INCOMPLETE
+
+Do not label any estimated savings as realized or commercially validated without supporting evidence.
+
+## Prompt 480
+
+PROMPT 480 — FINAL LIVE DASHBOARD ACCEPTANCE TEST
+
+Objective:
+Verify that the running Procucev application displays the corrected Prompt 479 financial calculations accurately.
+
+This is a validation-only task unless a specific defect is discovered.
+Do not add features or redesign the application.
+Do not change accepted business rules.
+Do not modify PCBI Module 3; it must remain disconnected.
+
+1. Verify the actual dashboard for baseline AIC-2026-0001.
+
+Compare the backend response, frontend calculations and displayed values for:
+
+- Gross evidence-based savings
+- Net evidence-based savings
+- Gross exploratory pipeline
+- Exploratory overlap deductions
+- Exploratory unresolved exclusions
+- Net retained exploratory potential
+- Total consolidated gross pipeline
+- Total consolidated net pipeline
+- Commercially validated savings
+- Realized savings
+- Working capital released
+- Annual financing benefit
+
+2. Verify these expected Prompt 479 reference figures:
+
+- Gross evidence-based savings: ₹188.3706 Cr
+- Net evidence-based savings: ₹188.3706 Cr
+- Gross exploratory pipeline: ₹539.4869 Cr
+- Exploratory overlap deductions: ₹95.4939 Cr
+- Exploratory unresolved exclusions: ₹235.6226 Cr
+- Net retained exploratory potential: ₹208.3704 Cr
+- Total consolidated gross pipeline: ₹727.8576 Cr
+- Total consolidated net pipeline: ₹396.7410 Cr
+- Commercially validated savings: ₹0
+- Realized savings: ₹0
+- Working capital released: ₹334.8354 Cr, indicative scenario only
+- Annual financing benefit: ₹61.1075 Cr, indicative scenario only
+
+Treat these as expected reference figures, not hardcoded values.
+Recalculate from the underlying records and investigate any difference.
+
+3. Verify accounting rules.
+
+- Exploratory opportunities must not enter evidence-based savings.
+- No opportunity may be counted twice.
+- Unresolved exploratory exclusions must not be deducted from evidence-based savings.
+- Working capital and financing benefit must never be added to procurement savings.
+- Commercially validated and realized savings must remain zero without the required evidence.
+- Show assumptions and disclaimers clearly.
+
+4. Verify data freshness.
+
+Confirm that changing a source transaction or opportunity status invalidates and refreshes affected backend and frontend calculations.
+Do not rely solely on unit tests.
+
+5. Verify the live application.
+
+Run the relevant API/integration tests and inspect the actual rendered dashboard.
+Confirm the baseline being displayed is AIC-2026-0001, not another customer dataset or a stale cached result.
+
+6. Report the results.
+
+Provide:
+- Backend versus frontend figures
+- Expected versus actual values
+- Any discrepancies and corrections
+- API/integration test results
+- Dashboard verification evidence
+- Confirmation that PCBI Module 3 remains disconnected
+
+Final verdict:
+PASS — READY TO FREEZE BASELINE
+or
+FAIL — CORRECTIONS REQUIRED
+
+Do not declare PASS solely because builds and unit tests succeed.                7. PAYMENT TERMS DATA UNAVAILABLE — EXPLICIT BUSINESS DISCLOSURE
+
+Objective:
+Ensure that Procucev clearly communicates when payment-term data is unavailable and the actual financial benefit cannot be ascertained.
+
+A. DATA AVAILABILITY CHECK
+Before calculating or displaying payment-term benefits, check whether sufficient reliable supplier payment-term data is available.
+
+B. WHEN PAYMENT TERMS DATA IS UNAVAILABLE
+Display the following message prominently in the Payment Terms / Working Capital / Financing Benefit section:
+
+"BENEFIT CANNOT BE ASCERTAINED
+
+Procucev is unable to ascertain the actual working capital release or financing benefit because supplier payment-terms data is unavailable. Please provide or validate supplier payment terms from ERP records, contracts or invoices before quantifying the benefit."
+
+C. METRIC PRESENTATION
+When payment-term data is unavailable:
+- Actual Working Capital Benefit: NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE.
+- Actual Annual Financing Benefit: NOT ASCERTAINABLE — PAYMENT TERMS DATA UNAVAILABLE.
+- Actual additional credit days: DATA UNAVAILABLE.
+- Commercially validated benefit: ₹0 unless independently supported by appropriate evidence.
+
+Do not display an indicative scenario as though it were an established or achievable benefit.
+
+D. OPTIONAL PLANNING SCENARIO
+If the existing product supports planning scenarios, retain the existing 30-day and 1.5% assumptions only as a separately labelled illustration.
+
+Display this disclaimer alongside the scenario:
+
+"Illustrative planning scenario only. This is not an assessed, verified or committed benefit. Actual benefits cannot be ascertained until supplier payment terms and the feasible improvement in credit days are established."
+
+Keep indicative scenario values separate from actual benefits and procurement savings.
+
+E. WHEN DATA BECOMES AVAILABLE
+Only quantify an actual potential benefit when sufficient reliable payment-term data and a defensible improvement assumption are available.
+
+Record the data source, eligible purchase base, existing payment terms, proposed additional credit days and calculation methodology.
+
+If any essential input is missing, continue to show NOT ASCERTAINABLE and identify the missing information.
+
+F. VALIDATION
+Test the following:
+1. Missing payment terms trigger the explicit disclosure.
+2. No actual benefit is inferred from missing data.
+3. Indicative scenarios, if displayed, remain clearly separated from actual benefits.
+4. Working capital and financing benefit are never added to procurement savings.
+5. When payment-term data is supplied, the application recalculates only using valid inputs.
+6. The disclosure appears in the relevant dashboard and exported reports, wherever those metrics are presented.
+
+Do not change unrelated features or accepted business rules.
+Keep PCBI Module 3 disconnected.
+
+## Prompt 481
+
+PROMPT 481 — FINAL POST-CHANGE RELEASE VERIFICATION
+
+The Prompt 480 report is positive. Complete the final release verification after the payment-terms disclosure changes.
+
+Do not add features or change accepted business logic.
+Keep PCBI Module 3 disconnected.
+
+1. Run the production build for both backend and frontend after all Prompt 480 changes.
+2. Run the targeted backend and frontend tests again.
+3. Verify the payment-terms disclosure in the running application:
+   - Missing payment terms display BENEFIT CANNOT BE ASCERTAINED.
+   - Actual working capital and financing benefits are NOT ASCERTAINABLE.
+   - Any 30-day / 1.5% scenario is clearly illustrative.
+   - The Excel export contains the same disclosure.
+4. Confirm the dashboard displays the correct AIC-2026-0001 baseline and that evidence-based and exploratory savings remain separate.
+5. Confirm no working-capital or financing benefit is included in procurement savings.
+6. Report any failures or limitations honestly. Do not change figures or hardcode values merely to pass tests.
+
+Return the exact commands run and their results.
+
+Final verdict:
+PASS — RELEASE VERIFICATION COMPLETE
+or
+FAIL — CORRECTIONS REQUIRED
+
+## Prompt 482
+
+PROMPT 482 — FINAL FINANCIAL RECONCILIATION AND BUSINESS-READINESS AUDIT
+
+The Prompt 481 report is positive. Perform a final independent audit of the financial figures and their supporting calculations.
+
+Do not add features.
+Do not change accepted business logic.
+Do not modify Lever 9.
+Keep PCBI Module 3 disconnected.
+Do not hardcode expected figures merely to pass the audit.
+
+1. ASSESSMENT AND DATA INTEGRITY
+Verify that all calculations use the correct AIC-2026-0001 assessment and its actual persisted source data.
+Report the assessment ID, transaction count, total spend and data source used.
+
+2. INDEPENDENT FINANCIAL RECONCILIATION
+Recalculate from the underlying opportunity records:
+- Gross evidence-based pipeline
+- Net evidence-based pipeline
+- Gross exploratory pipeline
+- Confirmed overlap deductions
+- Unresolved exclusions
+- Net retained exploratory pipeline
+- Total consolidated gross pipeline
+- Total consolidated net pipeline
+- Commercially validated savings
+- Realized savings
+
+Show the formula and actual calculated result for every total.
+
+Use full precision internally. Explain any rounding differences between displayed totals and their components.
+
+3. OPPORTUNITY-LEVEL AUDIT
+For each included opportunity, report:
+- Lever and opportunity identifier
+- Eligible spend and calculation basis
+- Gross opportunity value
+- Evidence classification
+- Assumptions used
+- Confirmed overlap deductions
+- Unresolved exclusions
+- Net retained value
+
+Confirm that no opportunity exceeds its eligible spend and that the same underlying benefit is not counted more than once.
+
+Identify any unsupported assumption or unresolved overlap. Do not reclassify it silently.
+
+4. EVIDENCE CLASSIFICATION
+Keep evidence-based, exploratory, commercially validated and realized values separate.
+Verify that L2 auction assumptions, L3 vendor-consolidation assumptions and L6 category-specialisation assumptions are not presented as realized or commercially validated savings.
+
+5. PAYMENT TERMS
+Confirm that missing payment terms remain explicitly disclosed.
+Actual working capital and financing benefits must remain NOT ASCERTAINABLE.
+Keep any illustrative 30-day / 1.5% planning scenario separate from procurement savings.
+
+6. APPLICATION REGRESSION
+Confirm the latest production builds and targeted tests still pass.
+Confirm the Excel export and dashboard show the same reconciled figures.
+Keep PCBI Module 3 disconnected.
+
+Return:
+A. Reconciliation table with exact values and formulas.
+B. Opportunity-level exceptions.
+C. Build and test results.
+D. Any remaining limitations.
+E. Final verdict: PASS — FINANCIAL AUDIT COMPLETE, or FAIL — CORRECTIONS REQUIRED.
+
+Do not claim independent verification if a calculation was only compared with a stored reference figure.
+
+## Prompt 483
+
+PROMPT 483 — CLOSE REMAINING FINANCIAL RECONCILIATION EXCEPTIONS
+
+Review the Prompt 482 financial audit report.
+
+Do not add features.
+Do not change accepted business logic.
+Do not change underlying opportunity values merely to force totals to match.
+Keep PCBI Module 3 disconnected.
+Do not modify Lever 9.
+Preserve the payment-terms disclosures.
+
+1. RECONCILE FULL-PRECISION TOTALS
+
+Using the persisted AIC-2026-0001 source data and the actual 384 canonical opportunity records, independently calculate:
+
+- Gross evidence-based pipeline
+- Gross exploratory pipeline
+- Total gross pipeline
+- Confirmed overlap deductions
+- Unresolved exclusions
+- Net retained exploratory pipeline
+- Total consolidated net pipeline
+
+Show all calculations in INR before converting to ₹ Cr.
+
+Use one documented rounding convention for displayed values.
+
+Identify whether each difference is caused by rounding, aggregation, classification, or an actual calculation defect.
+
+2. RECONCILE LEVER-LEVEL TOTALS
+
+The report shows:
+
+Lever 2 net: ₹0.0017 Cr
+Lever 3 net: ₹0.0000 Cr
+Lever 6 net: ₹208.3687 Cr
+Consolidated net exploratory pipeline: ₹208.3704 Cr
+
+Reconcile these figures against the actual opportunity records.
+
+Explain the ₹0.0017 Cr difference explicitly.
+Do not assume the difference is immaterial without tracing it.
+
+3. VERIFY DEDUCTIONS
+
+For every confirmed overlap and unresolved exclusion:
+- Identify the affected opportunity.
+- Identify the source opportunity or reason for exclusion.
+- Show the amount deducted.
+- Confirm that the amount is deducted exactly once.
+- Confirm that no deduction is applied to the evidence-based baseline unless supported by the approved business rules.
+
+4. VERIFY TOTALS AND UI
+
+Ensure the dashboard, API and Excel export use the same canonical calculation result.
+
+Ensure the UI distinguishes:
+- Evidence-based indicative opportunity
+- Exploratory planning pipeline
+- Commercially validated savings
+- Realized savings
+
+Commercially validated and realized savings must remain ₹0 unless supported by the required evidence.
+
+Working capital and financing benefits must remain separate from procurement savings. Actual benefits remain NOT ASCERTAINABLE while payment terms are unavailable.
+
+5. TESTS
+
+Run the relevant backend and frontend tests.
+Run production builds only if source code changes are required.
+
+Do not change financial logic unless a specific defect is demonstrated. If a defect is found, explain it, correct the smallest necessary component, and rerun the relevant tests.
+
+RETURN:
+A. Exact reconciliation using full-precision INR.
+B. Explanation of every discrepancy.
+C. Any corrections made.
+D. Test results.
+E. Final verdict: PASS — RECONCILIATION CLOSED, or FAIL — EXCEPTIONS REMAIN.
+
+Do not claim independent reconciliation if the totals were merely compared with reference figures.
+
+## Prompt 484
+
+run locally on chrome
+
+
+PROMPT 484 — VALIDATE LEVER 3 AND LEVER 6 FINANCIAL OPPORTUNITIES
+
+Objective:
+Determine whether the retained Lever 3 opportunity of ₹0.6205 Cr and
+Lever 6 opportunity of ₹207.7482 Cr are financially defensible.
+
+Do not change accepted business logic.
+Do not hardcode values.
+Do not force calculations to match expected totals.
+Do not change Module 3 connectivity.
+Do not modify Lever 9.
+
+LEVER 3 — VENDOR BASE CONSOLIDATION
+
+1. Trace the ₹0.6205 Cr opportunity to its underlying records.
+2. Identify the calculation formula, eligible transactions and assumptions.
+3. Identify any assumed administrative cost per PO.
+4. Determine whether the number of avoidable POs and cost per PO are supported by source evidence.
+5. Separate empirically supported findings from planning assumptions.
+6. Recalculate only where the required inputs are supported.
+
+LEVER 6 — CATEGORY SPECIALISATION
+
+1. Trace the ₹207.7482 Cr retained opportunity to every contributing category.
+2. For each category, show:
+   - Category identifier and description.
+   - Actual category spend.
+   - Eligible spend.
+   - Savings percentage and amount.
+   - Source of the percentage assumption.
+   - Evidence supporting the intervention.
+   - Overlap deductions and unresolved exclusions.
+3. Check whether any savings percentage is applied without a category-specific justification.
+4. Identify duplicate benefits across Levers 1, 2, 3 and 6.
+5. Flag unsupported opportunities as NOT YET QUANTIFIABLE rather than presenting them as defensible savings.
+6. Do not assume that a category's total spend is entirely eligible.
+
+OUTPUT
+
+Provide a category-level validation table, exact formulas, source evidence,
+unsupported assumptions and recommended classification for each opportunity.
+
+Keep evidence-supported, exploratory, commercially validated and realized
+amounts separate.
+
+Do not modify application code until the findings identify a specific defect
+or a business-rule change is approved.
+
+
+
+## Prompt 485
+
+# OBJECTIVE
+
+Consolidate Module 2 into a clean, client-specific procurement intelligence workflow while preserving the existing, extensively tested 10-point Strategic Sourcing Engine.
+
+The client presentation must be ready by Friday, 23 October 2026. Prioritize functional correctness, financial reconciliation and end-to-end readiness over cosmetic enhancements.
+
+## 1. INSPECT BEFORE MODIFYING
+
+Inspect the existing codebase, routes, components, APIs, calculation services, data models and tests.
+
+Identify:
+
+* The existing 10-point Strategic Sourcing Engine and its dependencies.
+* Duplicate or overlapping Module 2 dashboards and calculation engines.
+* Unique functionality that must be retained.
+* Any savings calculations currently generated by multiple screens.
+* Dependencies on Module 3 PCBI.
+
+Do not replace or rewrite the existing Strategic Sourcing Engine.
+
+## 2. CONSOLIDATE THE INTERFACE
+
+### A. Client Spend and Category Intelligence
+
+Retain:
+
+* UNSPSC category ranking and spend distribution.
+* Financial-year comparisons.
+* Category and vendor views.
+* Category-to-line-item-to-transaction/PO drill-down.
+* Relevant item prices, quantities, vendors and spend history.
+
+Remove hardcoded sector percentages and sample category allocations from client-specific views. Derive displayed information from the selected client's onboarding details and uploaded data.
+
+### B. AI Categorization and Review
+
+Retain the underlying line-item categorization capability, including:
+
+* UNSPSC commodity and class mapping.
+* AI confidence.
+* Classification status.
+* Confirmation and reassignment.
+* Review and correction workflows.
+
+Integrate the interface with Client Spend and Category Intelligence. Do not remove working review or reassignment functionality.
+
+Maintain the distinct statuses:
+TAXONOMY_VERIFIED, PROVISIONAL, AWAITING_REVIEW and CLIENT_APPROVED.
+
+### C. Strategic Sourcing
+
+Keep the existing 10-point Strategic Sourcing Engine as the single source of truth for sourcing opportunities and associated estimates.
+
+Remove duplicate standalone engines for:
+
+* Top 50 vendor categorization and spend distribution.
+* Single/dominant supplier risk.
+* Recurring spend and vendor consolidation.
+* Multiple PO consolidation and economies of scale.
+
+Preserve unique and validated capabilities from these screens as supporting analyses or drill-downs within the appropriate existing sourcing workflow.
+
+Do not delete functionality simply because its current screen is redundant.
+
+### D. Vendor Intelligence
+
+Retain useful vendor rankings, category coverage, supplier concentration, recurring supplier information and supporting evidence in a consolidated vendor view.
+
+Do not treat multi-category supply, high concentration, low secondary-supplier share or text similarity as conclusive proof of supplier risk, technical equivalence or suitability for consolidation.
+
+Keep alternate-vendor discovery within the existing New-Vendor Development & Alternate Sourcing capability. Do not create a second vendor-discovery or savings engine.
+
+### E. UNSPSC Catalog
+
+Retain the official catalog explorer as a supporting taxonomy reference. It must not independently generate duplicate sourcing opportunities or savings.
+
+## 3. CORRECT DATA AND CALCULATION DEFECTS
+
+Investigate and correct the following issues observed in the UI:
+
+1. Sector Intelligence displaying predefined spend percentages not derived from client data.
+2. Category totals and category percentages that may not reconcile with the selected client's spend.
+3. Inconsistent active-line-item counts and listed line items.
+4. Price-creep KPIs inconsistent with row-level price-trend indicators.
+5. Positive price trends despite identical displayed annual prices, unless a separate valid calculation basis is explicitly disclosed.
+6. Missing year-on-year metrics displayed ambiguously as N/A.
+7. Vendor counts, vendor-category mappings and vendor spend that may include duplicate identities or category rows.
+8. Fiscal-year labels inconsistent with the period used in calculations.
+9. Supplier spend tiers, counts and percentages that may not reconcile.
+10. Savings estimates and PO-consolidation benefits based on unsupported administrative cost assumptions.
+
+Trace each defect to its source. Do not simply change displayed numbers to make them appear consistent.
+
+## 4. FINANCIAL AND BUSINESS RULES
+
+* Use actual client data for all client-specific outputs.
+* Reconcile category spend and vendor spend to the appropriate transaction baseline.
+* Use consistent fiscal-year boundaries, units of measure and currency normalization.
+* Do not compare non-equivalent materials or prices without documented normalization.
+* Treat historical price opportunities as indicative, not realized savings.
+* Do not infer savings from price dispersion alone.
+* Do not assume fewer POs automatically create monetary savings.
+* Do not infer supplier qualification, capacity or technical equivalence from vendor counts or text similarity.
+* Prevent duplicate opportunities from being counted more than once in the Savings Engine.
+* Preserve gross estimates, overlaps, unresolved overlaps, net indicative opportunities, validated savings and realized savings as distinct measures.
+* Keep unsubstantiated benefits marked NOT YET QUANTIFIABLE.
+* Do not hardcode aggregate savings totals.
+
+## 5. PRESERVE ACCEPTED FUNCTIONALITY
+
+Do not modify the established business logic of the 10-point Strategic Sourcing Engine unless a demonstrated defect requires a correction.
+
+Preserve:
+
+* Existing APIs and workflows used by the engine.
+* Accepted financial validation and savings-deduplication rules.
+* Existing review and approval controls.
+* Module 1 functionality.
+* Module 4 functionality.
+* The current desktop application and installer architecture.
+
+Module 3 PCBI must remain disconnected from active calculations, routes and savings outputs. Do not activate benchmark dependencies during this work.
+
+Do not enable SaaS functionality or change deployment architecture.
+
+## 6. TESTING AND ACCEPTANCE
+
+After implementation:
+
+A. Run existing regression tests for the Strategic Sourcing Engine.
+
+B. Test the consolidated Module 2 screens, APIs, filters, drill-downs, exports and review workflows.
+
+C. Verify financial reconciliation between transaction data, categories, vendors and sourcing opportunities.
+
+D. Verify that removing redundant screens has not broken navigation, APIs, calculations or downstream consumers.
+
+E. Verify that the Savings Engine does not count duplicate opportunities.
+
+F. Run relevant backend and frontend tests and production builds.
+
+G. Inspect the actual changed files and report any unresolved failures.
+
+Do not claim a test passed unless it was executed and its result is available.
+
+## 7. REQUIRED DELIVERABLE
+
+Return a concise implementation report containing:
+
+1. Screens consolidated, removed or retained.
+2. Unique capabilities preserved.
+3. Files and services changed.
+4. Regression tests and build results.
+5. Data and financial reconciliation results.
+6. Any remaining critical or high-priority defects.
+7. Any manual action still required.
+
+Do not proceed into a broad cosmetic redesign. Keep the existing visual design wherever possible.
+
+The immediate goal is a reliable Module 2 that feeds the existing Strategic Sourcing Engine without duplication and is ready for end-to-end validation.
+
+
+
+## Prompt 486
+
+# OBJECTIVE
+
+Complete Module 2 consolidation, including UI changes, without losing any unique fields, tables, data, calculations or business functionality.
+
+**Deadline: Friday, 23 October 2026 — client presentation ready.**
+
+The existing 10-point Strategic Sourcing Engine has undergone extensive development and testing. Preserve it as the authoritative sourcing opportunity engine. Remove redundant screens and calculations, not useful information.
+
+## 1. INSPECT AND PROTECT BEFORE MODIFYING
+
+Inspect the current codebase and the latest changes.
+
+* Use Git history or available change history to identify the pre-consolidation UI and functionality.
+* Inventory existing components, fields, tables, KPIs, filters, exports, drill-downs, APIs, calculations and navigation.
+* Identify unique functionality in the screens being consolidated.
+* Create a safe recovery point using the existing version-control mechanism, if available.
+* Do not overwrite client-uploaded data, database records or baseline files.
+* Do not claim that a recovery point exists unless verified.
+
+Implement the approved changes below. Do not stop after producing another diagnostic report.
+
+## 2. FINAL MODULE 2 UI STRUCTURE
+
+Consolidate Module 2 into these four connected areas.
+
+### A. Client Spend & Category Intelligence
+
+Retain:
+
+* Category spend ranking and distribution.
+* UNSPSC commodity/class mapping.
+* Financial-year spend comparisons.
+* Category and vendor views.
+* Supplier concentration and category coverage.
+* Category-to-line-item-to-PO/transaction drill-down.
+* Item descriptions, vendor references, quantities, prices and historical spend.
+* Relevant filters, search, exports and pagination.
+
+All displayed client-specific values must come from the selected client's actual data.
+
+Remove static sector spend percentages and illustrative category allocations from client-specific results.
+
+Industry context may be retained as reference information, clearly separated from actual client spend. Display it only when the client's industry is configured or reliably identified. Never present industry benchmarks as the client's actual category distribution.
+
+### B. AI Categorization & Review
+
+Retain the existing underlying categorization and review capabilities:
+
+* AI classification and confidence.
+* UNSPSC commodity and class.
+* Classification status.
+* Confirm and reassign actions.
+* Review and correction workflows.
+* Search, filters and supporting transaction details.
+
+Maintain distinct statuses:
+TAXONOMY_VERIFIED, PROVISIONAL, AWAITING_REVIEW and CLIENT_APPROVED.
+
+Integrate this workflow into the consolidated UI without deleting unique review functionality or historical data.
+
+### C. Strategic Sourcing Opportunities
+
+Keep the existing 10-point Strategic Sourcing Engine as the single authoritative engine for sourcing opportunities and financial estimates.
+
+Remove redundant standalone dashboards and duplicate savings calculations for:
+
+* Top 50 vendor categorization and spend distribution.
+* Single/dominant supplier risk.
+* Recurring spend and vendor consolidation.
+* Multiple PO consolidation and economies of scale.
+
+However, retain all unique and useful functionality from these screens as supporting views, drill-downs, evidence panels or action plans within the consolidated workflow.
+
+Do not remove a unique table, field, filter, calculation, recommendation, action plan or export merely because its original screen is being removed.
+
+### D. Vendor Intelligence
+
+Provide a consolidated supporting view for:
+
+* Vendor rankings and spend.
+* Vendor/category relationships.
+* Single-source and dominant-supplier indicators.
+* Recurring-spend relationships.
+* Supplier concentration and fragmentation.
+* Relevant supplier-level details and mitigation actions.
+* Alternate-sourcing information linked to the existing New-Vendor Development & Alternate Sourcing capability.
+
+Do not create another sourcing or savings engine.
+
+A high concentration or low secondary-supplier share is a risk signal, not proof of supplier failure, insufficient capacity or technical equivalence.
+
+Retain the official UNSPSC Catalog Explorer as a supporting taxonomy reference, not a separate savings engine.
+
+## 3. REQUIRED UI CHANGES
+
+Implement the consolidation in the actual UI.
+
+* Remove duplicate standalone navigation entries and redundant dashboard containers.
+* Add clear navigation or tabs for the four areas above.
+* Place supplier-concentration, recurring-spend and PO-consolidation analyses under the appropriate existing sourcing or vendor-intelligence area.
+* Preserve unique supporting tables, columns, KPIs, filters, exports, drill-downs and action plans.
+* Keep existing visual styling wherever possible.
+* Ensure no blank screens, broken routes, orphaned actions or duplicate cards remain.
+* Make the consolidated screens usable at the existing desktop application viewport.
+* Preserve the current desktop application and installer architecture.
+
+Before removing a component, verify that its unique capabilities are accessible from the new UI.
+
+## 4. FINANCIAL AND DATA CORRECTIONS
+
+Correct the following observed problems at their actual calculation source:
+
+1. Hardcoded sector percentages displayed as client spend.
+2. Category totals and percentages that do not reconcile with the client baseline.
+3. Active-line-item counts inconsistent with the displayed rows or filters.
+4. Price-creep indicators inconsistent with row-level trends.
+5. Artificial positive price trends when the comparable annual prices are identical.
+6. Missing year-on-year data displayed ambiguously.
+7. Duplicate vendor identities caused by casing or whitespace.
+8. Vendor spend and supplier counts that do not reconcile.
+9. Financial-year labels inconsistent with the selected period.
+10. Unsupported administrative savings assumptions in PO consolidation.
+
+Specific rules:
+
+* Identical comparable annual prices must not produce artificial price escalation.
+* Do not substitute a calculated zero for unavailable data.
+* Display the appropriate baseline period only when it is verified.
+* Replacing an arbitrary target savings rate with Spend Share % is acceptable, but preserve the useful year-wise table and all required underlying information.
+* Vendor master IDs take precedence over names. Do not merge separate legal entities solely because their names look similar.
+* Do not assume fewer POs create monetary savings without defensible cost evidence.
+* Do not infer supplier qualification or technical equivalence from category matches alone.
+
+## 5. PRESERVE THE 10-POINT STRATEGIC SOURCING ENGINE
+
+Do not rewrite or replace its established formulas, opportunity logic, cross-lever deduplication, accepted assumptions, APIs or approval controls.
+
+First establish the actual dependencies. If a shared utility requires a correction, make the smallest necessary change and run the affected regression tests.
+
+Prevent multiple analytical screens from counting the same opportunity more than once.
+
+Keep separate:
+
+* Gross indicative opportunity.
+* Overlapping opportunity.
+* Unresolved overlap.
+* Net indicative opportunity.
+* Commercially validated savings.
+* Realized savings.
+
+Unsupported estimates must remain NOT YET QUANTIFIABLE.
+
+Preserve accepted payment-term disclosures and Lever 9 functionality.
+
+Module 3 PCBI must remain disconnected from active routes, calculations, sourcing outputs and savings totals. Do not activate PCBI integration during this task.
+
+Do not enable SaaS or change deployment architecture.
+
+## 6. VERIFY THE ACTIVE CLIENT BASELINE
+
+Inspect the actual dataset selected in the application.
+
+Report:
+
+* Baseline ID and client name.
+* Transaction and line-item counts.
+* Total evaluated spend.
+* Financial-year coverage.
+* Currency normalization and excluded-record treatment.
+* Reconciliation between Module 1, category spend and vendor spend.
+
+Do not silently switch datasets or baselines.
+
+The report previously identified AIC-2026-0001 with ₹907.36 Cr across 1,440 line items. Verify whether this is the intended presentation baseline before using those figures.
+
+Do not substitute figures from another client or earlier test dataset.
+
+## 7. TEST THE ACTUAL UI AND FUNCTIONALITY
+
+After implementation:
+
+A. Test the new Module 2 navigation and all consolidated screens.
+
+B. Verify that every retained field, table, filter, export, drill-down, review action and sourcing action remains accessible.
+
+C. Run regression tests for the existing 10-point Strategic Sourcing Engine.
+
+D. Verify category, vendor, item, PO and financial-year reconciliation.
+
+E. Verify savings deduplication and ensure that duplicate screens no longer generate duplicate opportunities.
+
+F. Run relevant frontend/backend tests, typecheck, lint and production builds.
+
+G. Launch and inspect the actual application UI. Do not rely exclusively on unit tests or a successful build.
+
+H. Verify that Modules 1 and 4 still work and that Module 3 remains disconnected.
+
+I. Test the end-to-end workflow using the actual client dataset intended for the presentation.
+
+Fix genuine defects discovered during testing. Rerun affected tests and relevant regressions.
+
+Do not claim successful UI or end-to-end testing unless the tests were actually executed.
+
+## 8. FINAL DELIVERABLES
+
+Provide:
+
+1. A list of standalone screens removed or consolidated.
+2. A before-and-after inventory confirming that unique fields, tables and capabilities were preserved or relocated.
+3. A list of changed files.
+4. Test, typecheck, lint and build results.
+5. Actual UI verification results.
+6. Client baseline and financial reconciliation results.
+7. Confirmation that the 10-point engine remains intact and Module 3 remains disconnected.
+8. Any unresolved critical defects or manual steps.
+9. A clear assessment of whether the application is ready for end-to-end client presentation testing.
+
+Prioritize a reliable, fully functional application and presentation-ready outputs by Friday, 23 October 2026.
+
+Do not perform another broad redesign or endless audit cycle. Implement, test, fix and report.
+
+## Prompt 487
+
+URGENT: The user previously reported that Module 1, Assessment Centre and other navigation items disappeared and that application buttons stopped working after Module 2 consolidation.
+The latest report claims the application is ready, but browser automation could not run because the Playwright browser driver download failed.
+Do not perform another redesign. Do not modify sourcing calculations or client data.
+1. Verify the running application
+Inspect the browser console and server logs for JavaScript errors, failed API calls, hydration failures and route errors.
+Inspect the actual application at http://localhost:3001 using an available browser.
+If browser automation is unavailable, use an existing supported browser or interactive manual verification. Do not claim live UI verification without executing it.
+2. Verify global navigation
+Confirm that the original application navigation is visible and operational, including:
+Module 1 — Data Upload and Spend Analysis.
+Assessment Centre.
+Module 2.
+Module 3 — PCBI, remaining disconnected.
+Module 4 — Savings Engine.
+Every other previously available top-level navigation item.
+Click each item and verify that the correct page loads.
+3. Test actual button interactions
+Test representative buttons, tabs, dropdowns, filters, modal open/close actions, exports and primary actions in Modules 1, 2 and 4.
+Identify the root cause if clicks fail. Investigate overlays, pointer-events, disabled states, event handlers, routing and runtime exceptions.
+Fix only confirmed defects. Preserve working functionality and avoid unrelated refactoring.
+4. Verify Module 2
+Confirm the consolidated areas work without affecting global navigation:
+Client Spend & Category Intelligence.
+AI Categorization & Review.
+Strategic Sourcing Opportunities.
+Vendor Intelligence.
+Confirm that unique tables, fields, filters, exports, drill-downs and action plans remain accessible.
+5. Verify the client baseline
+Confirm the active baseline and reconcile the 1,440-line-item, ₹907.36 Cr presentation subset against the full 20,241-transaction, ₹4,073.8307 Cr Varroc Polymers baseline.
+Explain the inclusion criteria for the presentation subset. Do not silently replace the baseline or mix figures from different datasets.
+6. Regression protection
+Run relevant tests, typecheck, lint and production build after any fix. Confirm that the 10-point Strategic Sourcing Engine remains intact and Module 3 remains disconnected.
+7. Report evidence
+Return:
+Root cause of the broken buttons or missing navigation.
+Exact files changed.
+Each navigation destination tested.
+Actual interactive controls tested and their outcomes.
+Baseline reconciliation.
+Remaining failures and whether end-to-end client testing can begin.
+Do not declare the application presentation-ready if the live UI remains unverified or critical interactions fail.
+
+## Prompt 488
+
+resume
+
+## Prompt 489
+
+resume
+
+## Prompt 490
+
+Continue from the current implementation. Do not restart the project, repeat the completed broad audits, or redesign the application.
+
+The latest report confirms that navigation and regression tests pass, but Module 2 still contains standalone engines that we explicitly agreed to remove or consolidate.
+
+### 1. Complete the actual UI changes
+
+**Area A � Client Spend & Category Intelligence**
+
+* Remove the static Industry Sector Lens and hardcoded client-spend allocations.
+* Retain Material DNA only if it provides useful, data-backed information.
+* Keep actual category spend, rankings, year-wise comparisons and transaction drill-downs.
+
+**Area B � AI Categorization & Review**
+
+* Preserve the existing categorization workbench, UNSPSC mapping, review statuses and reassignment workflows.
+
+**Area C � Strategic Sourcing Engine**
+
+* Preserve the existing 10-point Strategic Sourcing Engine and all its accepted business rules.
+* Remove the standalone Multiple Monthly PO Consolidation & Economies of Scale Engine.
+* Relocate its unique analysis into the relevant sourcing lever or supporting drill-down.
+* Preserve the cross-lever deduplication waterfall and consolidated opportunity table.
+
+**Area D � Vendor Intelligence**
+
+* Remove the standalone Strategic High-Value Single & Dominant Vendor Risk Engine.
+* Consolidate its useful risk indicators, evidence and actions into Vendor Intelligence.
+* Remove the standalone Top 50 Vendors Supply Categorization screen, if it remains.
+* Preserve vendor rankings, category coverage, concentration analysis, supplier details and alternate-vendor discovery.
+* Retain the UNSPSC Catalog Explorer as a supporting reference.
+
+### 2. Remove duplicate calculations
+
+* One authoritative calculation per metric.
+* All financial opportunities must flow through the existing 10-point engine and its deduplication controls.
+* Supplier concentration and PO consolidation are analytical signals, not automatic monetary savings.
+* Preserve unique fields, filters, tables, exports, drill-downs and workflows when relocating capabilities.
+* Do not simply hide the screens if that would make useful functionality inaccessible.
+
+### 3. Protect the application
+
+Do not modify the established business rules of the 10-point engine.
+Do not break Module 1, Assessment Centre, Module 3 isolation, Module 4 or Module 5.
+Do not change the desktop architecture or installer.
+
+### 4. Validate financial claims
+
+The latest report lists:
+
+* Full baseline: ?4,073.8307 Cr.
+* Presentation subset: ?907.36 Cr.
+* Presentation subset net opportunity: ?29.105 Cr.
+
+Verify the underlying calculations, eligible spend, assumptions, overlap deductions and evidence before describing ?29.105 Cr as committed or validated savings. If the evidence does not support that classification, label it accurately as an indicative opportunity or mark it NOT YET QUANTIFIABLE.
+
+Do not change the dataset or baseline silently.
+
+### 5. Verify and stop
+
+After implementing the changes:
+
+1. Open the running application in Chrome.
+2. Verify all four Module 2 areas.
+3. Confirm the three redundant standalone engines/screens no longer appear independently.
+4. Confirm their useful capabilities remain accessible in the consolidated areas.
+5. Test the 10-point engine and important drill-downs.
+6. Run relevant regression tests and the production build.
+7. Provide a concise before-and-after inventory, changed files, test results and any unresolved financial validation issues.
+
+Do not start another broad audit or invent additional requirements. Complete the agreed consolidation and report the result.
+
+## Prompt 491
+
+Module 2 consolidation is complete. Do not make further UI or architectural changes unless a confirmed defect requires them.
+
+Begin end-to-end business validation of the existing application, focusing on Modules 1, 2 and 4.
+
+1. Upload and process the intended client dataset through Module 1.
+2. Verify raw row counts, valid transactions, excluded rows, quarantined rows, spend totals, currency normalization and reconciliation.
+3. Follow the same assessment into Module 2. Verify category spend, UNSPSC categorization, vendor intelligence, sourcing opportunities and drill-downs against the same dataset.
+4. Validate each of the ten sourcing levers against its accepted business rules. Check eligibility, calculations, evidence, assumptions, overlap deductions and opportunity classifications.
+5. Confirm that Module 3 PCBI remains disconnected from active calculations.
+6. Verify that Module 4 receives the appropriate opportunities without duplicate counting or treating indicative opportunities as realized savings.
+7. Check that all reported totals reconcile to the correct client baseline.
+8. Test exports and the main user workflows in the live browser.
+
+Use the existing approved test data and business rules. Do not invent data or silently change the active client or assessment.
+
+For every check, report PASS, FAIL or BLOCKED, with the evidence and impact. Fix only confirmed defects and rerun the relevant regression tests.
+
+Do not repeatedly run the entire test suite without a reason. Do not begin another redesign or broad audit.
+
+Finish with a concise end-to-end readiness report identifying any issue that must be resolved before the client presentation.
+
+## Prompt 492
+
+The end-to-end report claims 100% PASS and READY FOR PRESENTATION. However, the report contains conflicting transaction counts and spend totals. Resolve these discrepancies before accepting the financial outputs.
+
+Do not redesign the application. Do not modify validated source data merely to make totals match.
+
+### 1. Establish the authoritative assessment baseline
+
+For AIC-2026-0002, trace the actual source dataset, ingestion version, validation run and active analysis run.
+
+Reconcile the reported figures:
+
+* Raw ledger: 31,671 rows.
+* Valid transactions: 26,876 in one report section and 23,570 in another.
+* Validated spend: ₹5,631.15 Cr in one section and ₹613.8805 Cr in another.
+* Contract subset: ₹583.42 Cr.
+* Total portfolio spend: ₹5,920.35 Cr.
+
+Determine whether these figures represent different datasets, subsets, transaction stages, currency treatments or analysis runs.
+
+For each figure, document its precise meaning and source. If the figures cannot be reconciled from the available evidence, mark the check FAIL or BLOCKED.
+
+Do not silently select a preferred figure.
+
+### 2. Verify the complete transaction reconciliation
+
+Produce a traceable reconciliation showing:
+
+* Raw rows.
+* Valid rows.
+* Excluded rows and exclusion reasons.
+* Quarantined, anomalous and review-required rows.
+* Currency normalization and exchange-rate treatment.
+* Raw spend, excluded spend, valid spend and final baseline.
+* Any credit notes, reversals, duplicates or other adjustments.
+
+Confirm that row counts reconcile and that monetary differences are explained.
+
+Distinguish transaction-level spend, contract subset spend, addressable spend and total portfolio spend. These are not interchangeable.
+
+### 3. Reconcile Modules 1, 2 and 4
+
+Confirm that Modules 1, 2 and 4 reference the same intended assessment and approved baseline.
+
+For each module, report:
+
+* Assessment ID and dataset version.
+* Analysis run ID.
+* Baseline spend.
+* Eligible or addressable spend, with its definition.
+* Gross opportunity.
+* Overlap deductions.
+* Net opportunity.
+* Proven opportunity.
+* Realized savings.
+
+Explain why Module 4 reports ₹88.398 Cr gross and ₹75.138 Cr net for the assessment while also reporting ₹337.766 Cr net for the portfolio.
+
+Do not combine assessment-level and portfolio-level figures.
+
+### 4. Verify the sourcing lever outputs
+
+Preserve all ten existing sourcing levers and their approved business rules.
+
+Specifically:
+
+* Lever 1: Verify comparable material prices, quantities, units, currencies and evidence.
+* Lever 2: Keep auction planning assumptions distinct from validated savings.
+* Lever 3: Treat supplier consolidation as an analytical opportunity until benefits are supported.
+* Lever 4: Distinguish aggregatable spend from actual savings.
+* Lever 5: Preserve DATA_UNAVAILABLE where payment terms are missing.
+* Lever 6: Do not recognize unresolved or overlapping benefits as defensible savings.
+* Lever 7: Keep PCBI-linked contract signals separate from direct savings unless independently validated under approved rules.
+* Lever 8: Keep commercial quantification deferred until the required technical and commercial validation.
+* Lever 9: Preserve the existing compliance logic and AP verification requirements.
+* Lever 10: Treat vendor discovery as discovery-only, with no inferred financial savings.
+
+Check cross-lever deduplication and ensure no opportunity is counted twice.
+
+### 5. Preserve safeguards
+
+* Module 3 PCBI must remain disconnected from active savings calculations.
+* Realized savings must remain zero unless supported by actual executed commercial evidence.
+* Do not label indicative opportunities as committed or proven.
+* Do not modify the approved baseline, accepted business rules, desktop architecture or installer.
+* Preserve the completed Module 2 consolidation.
+
+### 6. Deliver a concise reconciliation report
+
+Provide:
+
+1. The authoritative assessment baseline and supporting evidence.
+2. A row-count and spend reconciliation.
+3. An assessment-versus-portfolio comparison.
+4. A reconciled Module 4 opportunity waterfall.
+5. Any sourcing lever that fails its business-rule checks.
+6. PASS, FAIL or BLOCKED for each critical check.
+7. Only the specific corrections required to resolve confirmed defects.
+
+Run targeted tests after corrections. Do not repeat the full regression suite unless a code change warrants it.
+
+Do not declare the application financially ready for presentation while a material baseline discrepancy remains unresolved.
+## Prompt 493
+
+The baseline reconciliation is complete. Do not modify the UI, architecture, source data, accepted business rules or Module 2 consolidation.
+
+Perform one targeted evidence check before finalizing the client presentation.
+
+1. Inspect the 1,904 transactions flagged for duplicate review, representing 952 pairs. Determine which sourcing opportunities, if any, depend on these records.
+2. Trace Lever 1's ₹17.1155 Cr indicative opportunity to the underlying material, quantity, unit, currency, transaction price and applicable contract evidence.
+3. Trace the ₹69.127 Cr reported proven opportunity to its underlying opportunities and supporting evidence. Confirm the exact criteria used to classify an opportunity as proven.
+4. Verify that unresolved duplicate records and unsupported assumptions do not inflate the proven opportunity or bypass the cross-lever overlap deductions.
+5. Preserve the reported assessment baseline of ₹613.8805 Cr unless source evidence establishes a genuine error. Do not silently change the dataset or baseline.
+6. Keep realized savings at ₹0 unless actual executed commercial evidence supports a different value.
+
+Return a concise PASS / FAIL / BLOCKED report showing the evidence reviewed, the opportunity amounts affected and any required correction.
+
+Do not repeat the complete regression suite. Run targeted tests only if a confirmed defect requires code changes.
+
+If transaction-level evidence is unavailable, state that limitation clearly and recommend the appropriate presentation label instead of inventing evidence.
+## Prompt 494
+
+**Objective: Correct Procurement Category Display Across Module 2**
+
+Inspect and fix all Module 2 screens, tables, charts, summaries, filters, exports and reports where procurement categories are displayed incorrectly.
+
+### 1. Correct Procurement Category Names
+
+* Display the actual, human-readable procurement category name everywhere.
+* Do not display internal material group codes such as P11, P01, KLPR20, P04, P06, SPPOY04 or SPDTY03 as category names unless these are genuinely the approved category names in the source taxonomy.
+* Map source material groups and codes to their correct procurement category names using the existing, verified mapping or master data.
+* Do not invent category names or infer mappings from code patterns.
+* If a category mapping is unavailable, display **“Unmapped Category”** and flag it for correction rather than presenting a code as a category name.
+
+### 2. Correct Column L Code Range Display
+
+First, inspect what the current **Column L** field represents in the uploaded/source data and how it is mapped.
+
+* Column L codes should NOT be presented as procurement category names.
+* If Column L contains an identifier, UNSPSC code, material code or other taxonomy reference, label it accurately according to the verified source definition.
+* Display the Column L code or code range only where it helps users identify or validate the category.
+* In detailed analytical tables, retain it as a separate, clearly labelled column, such as **“Column L Code”** or **“Column L Code Range”**, depending on the actual data structure.
+* In executive summaries, charts, cards and compact tables, show the procurement category name by default. Hide the code range unless it is genuinely useful.
+* Never combine the category name and code into one field or use the code as a substitute for the category name.
+
+### 3. Apply the Correction Throughout Module 2
+
+Audit and correct category display consistently across:
+
+* Year-wise Category Spend Matrix
+* All sourcing-lever tables and detailed item views
+* Category spend and opportunity summaries
+* Supplier and material consolidation views
+* Filters, dropdowns, chart legends and drill-downs
+* Exports and downloadable reports generated by Module 2
+
+Use one consistent category-mapping function or service wherever possible. Ensure that every view uses the same verified mapping and category label.
+
+### 4. Preserve Data Integrity
+
+* Do not change source transactions, material codes, Column L values, spend amounts, opportunity calculations, accepted business rules or Module 2 consolidation logic.
+* Do not merge different categories merely because their codes look similar.
+* Do not change the underlying taxonomy or create duplicate categories to make the display appear correct.
+* Preserve all existing working functionality and the current UI design except for necessary display corrections.
+
+### 5. Validate Before Completion
+
+Use actual assessment data to verify the results.
+
+For every affected view, confirm:
+
+1. Procurement category names are human-readable and correctly mapped.
+2. Column L codes are displayed separately and accurately labelled wherever retained.
+3. Category names remain consistent across tables, charts, filters, drill-downs and exports.
+4. Spend totals, row counts and opportunity calculations remain unchanged.
+5. Unmapped records are explicitly identified instead of silently misclassified.
+
+Test representative categories, including P11, P01, KLPR20, P04, P06, SPPOY04 and SPDTY03, against the authoritative source mapping. These are test examples, not assumed category names.
+
+**Deliverable:** Implement the necessary corrections, run targeted tests, and report the files changed, the affected views, the verified mappings, any remaining unmapped categories, and confirmation that financial calculations are unchanged.
+
+Do not perform another broad application audit. Do not redesign Module 2 or modify unrelated modules. Complete this focused correction and stop.

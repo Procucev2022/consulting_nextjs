@@ -14,6 +14,7 @@ export const DEDUPLICATION_STATUS_LABELS = {
   DEDUPLICATED_OVERLAP: 'Overlapping Alternative Deduplicated',
   INCREMENTAL_VALIDATED: 'Validated Incremental Benefit',
   UNRESOLVED_EXCLUDED: 'Unresolved Overlap Excluded from Net Savings',
+  EXPLORATORY_PIPELINE: 'Exploratory Pipeline (Planning Assumption)',
   NOT_APPLICABLE: 'Not Applicable / Discovery Only'
 } as const;
 
@@ -21,6 +22,7 @@ export const EVIDENCE_VALIDATION_STATUS_LABELS = {
   VALIDATED_COMMERCIAL: 'Commercially Validated',
   UNVERIFIED_ESTIMATE: 'Estimated Opportunity (Pre-Validation)',
   PLANNING_ASSUMPTION: 'Planning Assumption Only',
+  EXPLORATORY_PIPELINE: 'Exploratory Pipeline (Unconfirmed)',
   DISCOVERY_ONLY: 'Discovery Only (No Commercial Savings)',
   NOT_YET_QUANTIFIABLE: 'Not Yet Quantifiable'
 } as const;

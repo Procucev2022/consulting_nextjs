@@ -227,7 +227,7 @@ export const getConsolidatedSavings = async (req: Request, res: Response): Promi
       return res.status(400).json({
         success: false,
         message: 'Invalid query parameters for consolidated savings',
-        errors: parseResult.error.errors
+        errors: parseResult.error.issues
       });
     }
     const { assessmentId, allowUnverifiedIncremental } = parseResult.data;

@@ -341,11 +341,13 @@ export const Header: React.FC<HeaderProps> = ({
               {onToggleAssessmentMode && (
                 <button
                   type="button"
+                  data-testid="header-assessment-centre-btn"
                   onClick={onToggleAssessmentMode}
-                  className="hidden lg:inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-cyan-50 border border-cyan-300 text-cyan-800 hover:bg-cyan-100 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-50 border border-cyan-300 text-cyan-850 hover:bg-cyan-100 transition-colors shadow-xs shrink-0 cursor-pointer"
+                  title={UI_STRINGS.header.assessmentCentre}
                 >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Assessment Centre</span>
+                  <LayoutDashboard className="w-3.5 h-3.5 text-cyan-700" />
+                  <span>{UI_STRINGS.header.assessmentCentre}</span>
                 </button>
               )}
             </div>

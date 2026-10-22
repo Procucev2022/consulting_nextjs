@@ -45,6 +45,9 @@ export const VOLUME_AGGREGATION_UI_STRINGS = {
   TAB_PLANTS: 'Plant Analysis',
   TAB_MATERIALS: 'Material Analysis',
   TAB_TRANSACTIONS: 'Purchase Transactions',
+  TAB_PO_CONSOLIDATION: 'PO Consolidation Cadence',
+  PO_CONSOLIDATION_SIGNAL_NOTE:
+    'PO consolidation is an operational cadence signal for batch lot sizing and administrative efficiency. It is not an automatic monetary saving until vendor volume scale contracts are executed.',
   KPI_TOTAL_INCURRED_SPEND: 'Total Historical Incurred Spend',
   KPI_POTENTIALLY_AGGREGATABLE: 'Potentially Aggregatable Spend',
   KPI_UOM_COMPATIBLE: 'UOM-Compatible Expenditure',
@@ -63,3 +66,4 @@ export const VOLUME_AGGREGATION_UI_STRINGS = {
   EMPTY_RESULTS: 'No aggregation records matching the specified criteria.',
   LOADING_TEXT: 'Analyzing multi-plant purchase history and demand recurrence...'
 } as const;
+

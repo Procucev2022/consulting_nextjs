@@ -100,7 +100,7 @@ describe('PaymentTermsComponents', () => {
 
     expect(screen.getByText('₹613.8805 Cr')).toBeInTheDocument();
     expect(screen.getByText('DATA UNAVAILABLE')).toBeInTheDocument();
-    expect(screen.getByText('Centrally Governed Modelling Baseline & Transparency Mandate')).toBeInTheDocument();
+    expect(screen.getByText(PAYMENT_TERMS_UI_STRINGS.PLANNING_SCENARIO_TITLE)).toBeInTheDocument();
   });
 
   it('renders declarative virtual DOM Excel download link', async () => {
