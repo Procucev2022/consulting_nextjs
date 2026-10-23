@@ -215,7 +215,9 @@ export const DEMO_ARCHETYPE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationCon
 
 export {
   ABC_TEXTILE_VALUE_CLASSIFICATIONS,
-  ABC_TEXTILE_PRESENTATION_CONTRACT
+  ABC_TEXTILE_PRESENTATION_CONTRACT,
+  formatPresentationValues,
+  type PresentationFormattedValues
 } from './customerBriefPresentationConstants';
 import { ABC_TEXTILE_PRESENTATION_CONTRACT } from './customerBriefPresentationConstants';
 

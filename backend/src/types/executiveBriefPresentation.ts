@@ -72,3 +72,12 @@ export interface ExecutiveBriefPresentationContract {
   readonly baselineTotalPOs: number;
   readonly classifications: readonly ExecutiveBriefValueClassification[];
 }
+
+export interface ExecutiveBriefWaterfallStep {
+  readonly title: string;
+  readonly value: string;
+  readonly subtitle: string;
+  readonly desc: string;
+  readonly color: string;
+  readonly sign: string;
+}

@@ -7,7 +7,8 @@ import {
   DEMO_ARCHETYPE_PRESENTATION_CONTRACT,
   isAdditiveDirectSaving,
   validateWaterfallMath,
-  validateNetComposition
+  validateNetComposition,
+  formatPresentationValues
 } from '../../src/constants/executiveBriefPresentationConstants';
 import { ExecutiveOpportunityBriefExportService } from '../../src/services/executiveOpportunityBriefExportService';
 import { ExecutiveBriefExportService } from '../../src/services/executiveBriefExportService';
@@ -122,8 +123,25 @@ describe('Prompt 503: Customer Website Intelligence & Customer-Specific Brief Bi
 
       expect(validateNetComposition()).toBe(true);
       expect(validateNetComposition(ABC_TEXTILE_PRESENTATION_CONTRACT)).toBe(true);
+
+      const customerFmt = formatPresentationValues(ABC_TEXTILE_PRESENTATION_CONTRACT, true);
+      expect(customerFmt.evaluatedSpendFormatted).toBe('₹613.8805 Cr');
+      expect(customerFmt.grossOpportunityFormatted).toBe('₹110.764 Cr');
+      expect(customerFmt.overlapDeductionsFormatted).toBe('₹25.123 Cr');
+      expect(customerFmt.netDirectSavingsFormatted).toBe('₹85.641 Cr');
+      expect(customerFmt.provenOpportunityFormatted).toBe('₹82.380 Cr');
+      expect(customerFmt.realizedSavingsFormatted).toBe('₹0.00 Cr');
+
+      const demoFmt = formatPresentationValues(DEMO_ARCHETYPE_PRESENTATION_CONTRACT, false);
+      expect(demoFmt.evaluatedSpendFormatted).toBe('₹5,920.35 Cr');
+      expect(demoFmt.grossOpportunityFormatted).toBe('₹173.12 Cr');
+      expect(demoFmt.overlapDeductionsFormatted).toBe('₹62.80 Cr');
+      expect(demoFmt.netDirectSavingsFormatted).toBe('₹78.72 Cr');
+      expect(demoFmt.provenOpportunityFormatted).toBe('₹47.90 Cr');
+      expect(demoFmt.realizedSavingsFormatted).toBe('₹68.00 Cr');
     });
   });
+
 
   describe('Dual-Format Brief Generation and Isolation', () => {
     it('generates 10-slide Management Brief for ABC Textile Ltd with zero UltraTech leakage', async () => {
@@ -136,6 +154,13 @@ describe('Prompt 503: Customer Website Intelligence & Customer-Specific Brief Bi
       const pdfStr = result.pdfBuffer.toString('utf-8');
       expect(pdfStr).not.toContain('UltraTech');
       expect(pdfStr).not.toContain('5,920.35');
+      expect(pdfStr).not.toContain('173.12');
+      expect(pdfStr).not.toContain('93.60');
+      expect(pdfStr).not.toContain('47.90');
+      expect(pdfStr).not.toContain('Grinding Media');
+      expect(pdfStr).not.toContain('Petcoke');
+      expect(pdfStr).not.toContain('Refractory Bricks');
+      expect(pdfStr).not.toContain('clinker');
       expect(pdfStr).toContain('85.641');
       expect(pdfStr).toContain('613.8805');
     });
@@ -149,9 +174,22 @@ describe('Prompt 503: Customer Website Intelligence & Customer-Specific Brief Bi
       const pdfStr = result.pdfBuffer.toString('utf-8');
       expect(pdfStr).not.toContain('UltraTech');
       expect(pdfStr).not.toContain('5,920.35');
+      expect(pdfStr).not.toContain('173.12');
+      expect(pdfStr).not.toContain('93.60');
+      expect(pdfStr).not.toContain('47.90');
+      expect(pdfStr).not.toContain('Grinding Media');
+      expect(pdfStr).not.toContain('Petcoke');
+      expect(pdfStr).not.toContain('Refractory Bricks');
+      expect(pdfStr).not.toContain('clinker');
+      expect(pdfStr).not.toContain('68.00 Cr');
+
       expect(pdfStr).toContain('85.641');
+      expect(pdfStr).toContain('82.380');
+      expect(pdfStr).toContain('110.764');
+      expect(pdfStr).toContain('25.123');
       expect(pdfStr).toContain('613.8805');
       expect(pdfStr).toContain('UNAVAILABLE');
     });
   });
 });
+

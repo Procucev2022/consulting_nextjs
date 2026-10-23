@@ -1,12 +1,14 @@
 /**
- * Executive Brief Slide 16 - E-Auction Execution (Prompt 283 - Premium Boardroom Consulting Redesign)
- * Strict 10 x 5.625 inch grid, Aptos typography, 7-stage process flow, commercial governance.
+ * Executive Brief Slide 16 - E-Auction (Prompt 283 - Premium Boardroom Consulting Redesign)
+ * Strict 10 x 5.625 inch grid, Aptos typography, 7-stage methodology, rulebook.
  */
 
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide16EAuction(
@@ -17,16 +19,23 @@ export function renderSlide16EAuction(
   conf: string
 ): void {
   canvas.addPage();
-  canvas.renderHeader('E-Auction as an Execution Mechanism: Dynamic Price Discovery', 'Dynamic Sourcing', p);
+  canvas.renderHeader(
+    'Dynamic Reverse E-Auction: Structured 7-Stage Execution Methodology',
+    'Dynamic E-Auctions',
+    p
+  );
 
-  // E-Auction Process Flow (7 Stages)
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
+  // 7-Stage Process Stepper
   const steps = [
-    { num: '1', title: 'IDENTIFY', desc: 'Screen competitive spend with >= 3 qualified vendors' },
-    { num: '2', title: 'QUALIFY', desc: 'Verify plant QA specs and supplier capacity limits' },
-    { num: '3', title: 'STRUCTURE', desc: 'Define plant lotting rules and reserve baseline pricing' },
-    { num: '4', title: 'RUN', desc: 'Choreograph dynamic live reverse auction bidding' },
-    { num: '5', title: 'NEGOTIATE', desc: 'Final commercial alignment and volume confirmations' },
-    { num: '6', title: 'CONTRACT', desc: 'Execute master rate contracts and supply SLAs' },
+    { num: '1', title: 'DISCOVERY', desc: 'Baseline spend audit and vendor market mapping' },
+    { num: '2', title: 'CLEANSE', desc: 'Standardize item specs and aggregate volume lots' },
+    { num: '3', title: 'QUALIFY', desc: 'Pre-qualify vendors on technical & capacity audits' },
+    { num: '4', title: 'CHOREO', desc: 'Design custom dynamic bidding rules & reserve prices' },
+    { num: '5', title: 'EXECUTE', desc: 'Host multi-round live dynamic reverse auction event' },
+    { num: '6', title: 'ALLOCATE', desc: 'Optimized award split across L1, L2, L3 suppliers' },
     { num: '7', title: 'REALIZE', desc: 'Audit invoice pricing against auction award rates' }
   ];
 
@@ -65,6 +74,12 @@ export function renderSlide16EAuction(
   const govH = 150;
 
   // Left Card: Controlled Volume Allocation
+  const plantCount = isCust ? contract.baselinePlants : 26;
+  const leftCardDesc =
+    'Use controlled volume allocation across qualified suppliers based on competition, capacity, risk and ' +
+    'commercial outcome. Rather than winner-take-all bidding, multi-supplier volume allocation ensures operational ' +
+    `supply continuity across all ${plantCount} operating facilities.`;
+
   canvas.rect(PDF_LAYOUT.CONTENT_LEFT, govY, govW, govH, {
     fill: BRAND_COLORS.lightCard,
     stroke: BRAND_COLORS.border,
@@ -78,9 +93,7 @@ export function renderSlide16EAuction(
     { fontSize: 9.5, font: 'bold', color: BRAND_COLORS.accentGreen }
   );
   canvas.textBlock(
-    'Use controlled volume allocation across qualified suppliers based on competition, capacity, risk and ' +
-    'commercial outcome. Rather than winner-take-all bidding, multi-supplier volume allocation ensures operational ' +
-    'supply continuity across all 26 plant sites.',
+    leftCardDesc,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     govY + 48,
     govW - 40,
@@ -89,6 +102,17 @@ export function renderSlide16EAuction(
 
   // Right Card: Proven Value & Category Applicability
   const rightGovX = PDF_LAYOUT.CONTENT_LEFT + govW + 16;
+  const rightCardTitle = isCust
+    ? 'E-AUCTION OPPORTUNITY POOL: ₹28.07 Cr'
+    : 'E-AUCTION OPPORTUNITY POOL: ₹31.50 Cr';
+  const rightCardDesc = isCust
+    ? 'E-auction is strictly an execution mechanism to capture verified market pricing. Applicable to highly liquid ' +
+      'categories including synthetic yarns & fibers (₹18.25 Cr), secondary logistics routes (₹5.20 Cr), and ' +
+      'standardized packaging materials (₹4.62 Cr).'
+    : 'E-auction is strictly an execution mechanism to capture verified market pricing. Applicable to highly liquid ' +
+      'categories including HDPE packing bags (₹14.50 Cr), secondary logistics freight routes (₹9.60 Cr), and ' +
+      'standardized grinding balls (₹7.40 Cr).';
+
   canvas.rect(rightGovX, govY, govW, govH, {
     fill: BRAND_COLORS.lightCard,
     stroke: BRAND_COLORS.border,
@@ -96,15 +120,13 @@ export function renderSlide16EAuction(
   });
   canvas.rect(rightGovX, govY, govW, 4, { fill: BRAND_COLORS.procucevBlue });
   canvas.text(
-    'E-AUCTION OPPORTUNITY POOL: ₹31.50 Cr',
+    rightCardTitle,
     rightGovX + 20,
     govY + 26,
     { fontSize: 9.5, font: 'bold', color: BRAND_COLORS.procucevBlue }
   );
   canvas.textBlock(
-    'E-auction is strictly an execution mechanism to capture verified market pricing. Applicable to highly liquid ' +
-    'categories including HDPE packing bags (₹14.50 Cr), secondary logistics freight routes (₹9.60 Cr), and ' +
-    'standardized grinding balls (₹7.40 Cr).',
+    rightCardDesc,
     rightGovX + 20,
     govY + 48,
     govW - 40,
@@ -113,6 +135,12 @@ export function renderSlide16EAuction(
 
   // Bottom Takeaway Banner
   const banY = 422;
+  const bannerDesc = isCust
+    ? 'Dynamic reverse auctions are never run cold. Extensive pre-qualification, capacity audits, and index linkage ' +
+      'ensure suppliers bid realistically and deliver reliably without risking plant line shutdowns or production supply shortages.'
+    : 'Dynamic reverse auctions are never run cold. Extensive pre-qualification, capacity audits, and index linkage ' +
+      'ensure suppliers bid realistically and deliver reliably without risking kiln shutdowns or packaging shortages.';
+
   canvas.rect(PDF_LAYOUT.CONTENT_LEFT, banY, PDF_LAYOUT.CONTENT_WIDTH, 68, {
     fill: BRAND_COLORS.lightCard,
     stroke: BRAND_COLORS.border,
@@ -124,8 +152,7 @@ export function renderSlide16EAuction(
     color: BRAND_COLORS.procucevBlue
   });
   canvas.textBlock(
-    'Dynamic reverse auctions are never run cold. Extensive pre-qualification, capacity audits, and index linkage ' +
-    'ensure suppliers bid realistically and deliver reliably without risking kiln shutdowns or packaging shortages.',
+    bannerDesc,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,

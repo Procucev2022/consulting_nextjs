@@ -6,8 +6,19 @@
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
+
+interface AggregationExample {
+  title: string;
+  spec: string;
+  before: string;
+  interv: string;
+  after: string;
+  saving: string;
+  color: string;
+}
 
 export function renderSlide19VolumeAggregation(
   canvas: PdfCanvas,
@@ -19,40 +30,72 @@ export function renderSlide19VolumeAggregation(
   canvas.addPage();
   canvas.renderHeader('Volume Aggregation: National Demand Pooling on Standardized Specs', 'Scale Sourcing', p);
 
+  const isCust = isCustomerAssessment(clientName);
+
   // 3 High-Value Examples with Before/After Visual
   const cardW = 276;
   const cardH = 300;
   const startY = 104;
 
-  const examples = [
-    {
-      title: 'HDPE PACKAGING BAGS',
-      spec: '50kg Laminated Cement Sacks',
-      before: '24 plants buying fragmented lots from 18 regional converters at ₹16.40/pc avg.',
-      interv: 'Pool 320 Million Bags into national master tender benchmarked to Platts PP index.',
-      after: 'Harmonized ₹14.80/pc factory contract with Tier-1 polymer converters.',
-      saving: '₹14.50 Cr Validated Saving',
-      color: BRAND_COLORS.procucevBlue
-    },
-    {
-      title: 'GRINDING MEDIA BALLS',
-      spec: 'High Chrome Alloy Steel 70mm',
-      before: '18 plants issuing 200-500 MT orders at disparate rates up to ₹89/kg.',
-      interv: 'Consolidate 14,200 MT national demand package direct to primary alloy mills.',
-      after: 'Harmonized ₹76/kg contract rate with staged quarterly plant delivery.',
-      saving: '₹11.20 Cr Validated Saving',
-      color: BRAND_COLORS.accentGreen
-    },
-    {
-      title: 'INDUSTRIAL LUBRICANTS',
-      spec: 'Heavy Synthetic Gear & Mill Oils',
-      before: '14 fragmented plant orders across 6 disparate local distributor brands.',
-      interv: 'Standardize to 3 high-performance synthetic grades via direct OEM refinery pact.',
-      after: 'Master agreement securing 15% tier discount and bulk ISO container delivery.',
-      saving: '₹6.40 Cr Validated Saving',
-      color: '#0284C7'
-    }
-  ];
+  const examples: AggregationExample[] = isCust
+    ? [
+        {
+          title: 'SYNTHETIC YARNS & BLENDS',
+          spec: 'Polyester / Viscose Standard Counts',
+          before: '6 operating units buying fragmented lots from regional traders at disparate rates.',
+          interv: 'Pool multi-unit volume into direct framework contract with Tier-1 synthetic yarn spinners.',
+          after: 'Harmonized contract pricing with volume rebate structure across all plants.',
+          saving: '₹18.25 Cr Proven Saving',
+          color: BRAND_COLORS.procucevBlue
+        },
+        {
+          title: 'SPECIALTY DYES & CHEMICALS',
+          spec: 'Standard Reactive Dyes & Finishing Agents',
+          before: 'Operating units purchasing 40+ branded formulations from regional distributors.',
+          interv: 'Standardize to top 15 core active formulations and tender directly to primary chemical producers.',
+          after: 'Harmonized contract rate with quarterly index linkage formula.',
+          saving: '₹16.41 Cr Proven Saving',
+          color: BRAND_COLORS.accentGreen
+        },
+        {
+          title: 'CAPTIVE ENERGY & FUEL',
+          spec: 'Process Steam & Captive Power Fuel',
+          before: 'Plant-level spot purchases with wide unit rate dispersion across suppliers.',
+          interv: 'Consolidate fuel procurement into single corporate framework agreement.',
+          after: 'Direct supplier rate alignment with bilateral index formula linkage.',
+          saving: '₹11.65 Cr Proven Saving',
+          color: '#0284C7'
+        }
+      ]
+    : [
+        {
+          title: 'HDPE PACKAGING BAGS',
+          spec: '50kg Laminated Cement Sacks',
+          before: '24 plants buying fragmented lots from 18 regional converters at ₹16.40/pc avg.',
+          interv: 'Pool 320 Million Bags into national master tender benchmarked to Platts PP index.',
+          after: 'Harmonized ₹14.80/pc factory contract with Tier-1 polymer converters.',
+          saving: '₹14.50 Cr Validated Saving',
+          color: BRAND_COLORS.procucevBlue
+        },
+        {
+          title: 'GRINDING MEDIA BALLS',
+          spec: 'High Chrome Alloy Steel 70mm',
+          before: '18 plants issuing 200-500 MT orders at disparate rates up to ₹89/kg.',
+          interv: 'Consolidate 14,200 MT national demand package direct to primary alloy mills.',
+          after: 'Harmonized ₹76/kg contract rate with staged quarterly plant delivery.',
+          saving: '₹11.20 Cr Validated Saving',
+          color: BRAND_COLORS.accentGreen
+        },
+        {
+          title: 'INDUSTRIAL LUBRICANTS',
+          spec: 'Heavy Synthetic Gear & Mill Oils',
+          before: '14 fragmented plant orders across 6 disparate local distributor brands.',
+          interv: 'Standardize to 3 high-performance synthetic grades via direct OEM refinery pact.',
+          after: 'Master agreement securing 15% tier discount and bulk ISO container delivery.',
+          saving: '₹6.40 Cr Validated Saving',
+          color: '#0284C7'
+        }
+      ];
 
   examples.forEach((ex, idx) => {
     const x = PDF_LAYOUT.CONTENT_LEFT + idx * (cardW + 18);

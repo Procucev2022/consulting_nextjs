@@ -120,7 +120,8 @@ describe('Lever 9: Token Hardening & Cryptographic Security Verification (Prompt
     it('rejects corrupted ciphertext with 401', () => {
       const validToken = generateAuthToken('usr-tamper-2', 'tamper2@procucev.com', 'AUDIT_LEAD', 'GOLD', 'AIC-2026-0002');
       const parts = validToken.split(':');
-      const tamperedCiphertext = '00' + parts[3].substring(2);
+      const flipChar = parts[3][0] === 'a' ? 'b' : 'a';
+      const tamperedCiphertext = flipChar + parts[3].substring(1);
       const tamperedToken = [parts[0], parts[1], parts[2], tamperedCiphertext].join(':');
 
       const decoded = verifyAuthToken(tamperedToken);

@@ -100,3 +100,28 @@ export const ABC_TEXTILE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationContra
   baselineTotalPOs: 11420,
   classifications: ABC_TEXTILE_VALUE_CLASSIFICATIONS
 };
+
+export interface PresentationFormattedValues {
+  evaluatedSpendFormatted: string;
+  grossOpportunityFormatted: string;
+  overlapDeductionsFormatted: string;
+  netDirectSavingsFormatted: string;
+  netPipelineFormatted: string;
+  provenOpportunityFormatted: string;
+  realizedSavingsFormatted: string;
+}
+
+export function formatPresentationValues(
+  contract: ExecutiveBriefPresentationContract,
+  isCust: boolean
+): PresentationFormattedValues {
+  return {
+    evaluatedSpendFormatted: isCust ? `₹${contract.totalCustomerSpendCr.toFixed(4)} Cr` : '₹5,920.35 Cr',
+    grossOpportunityFormatted: isCust ? `₹${contract.grossOpportunityCr.toFixed(3)} Cr` : '₹173.12 Cr',
+    overlapDeductionsFormatted: isCust ? `₹${contract.overlapDeductionsCr.toFixed(3)} Cr` : '₹62.80 Cr',
+    netDirectSavingsFormatted: isCust ? `₹${contract.netDirectSavingsCr.toFixed(3)} Cr` : '₹78.72 Cr',
+    netPipelineFormatted: isCust ? `₹${contract.netDefensiblePipelineCr.toFixed(3)} Cr` : '₹93.60 Cr',
+    provenOpportunityFormatted: isCust ? `₹${contract.validatedSavingsCr.toFixed(3)} Cr` : '₹47.90 Cr',
+    realizedSavingsFormatted: isCust ? `₹${contract.realizedSavingsCr.toFixed(2)} Cr` : '₹68.00 Cr'
+  };
+}

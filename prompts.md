@@ -112079,3 +112079,627 @@ IMPORTANT: Do not treat the missing ABC Textile website as an error. No website 
 
 Return a concise evidence-based PASS / FAIL / BLOCKED report. For every failed check, fix the root cause and retest. Distinguish software verification from business evidence verification. Do not claim that an opportunity is proven unless the supporting records establish it.
 
+---
+
+## Prompt 505
+Perform a focused, read-only forensic reconciliation for ABC Textile Ltd, assessment AIC-2026-0002.
+
+Do not redesign the application or change unrelated modules.
+
+1. ADDRESSABLE SPEND DISCREPANCY
+   Previous approved reconciliation reported addressable spend of ₹521.7984 Cr, while the latest report states ₹315.021 Cr.
+
+Using the actual assessment data and the approved Module 1–4 outputs:
+
+* Determine the authoritative addressable-spend figure.
+* Identify the exact formula, transaction/category population, exclusions, and source field used for each figure.
+* Explain whether ₹315.021 Cr represents a narrower savings-eligible subset of the ₹521.7984 Cr addressable spend, or whether either figure is incorrect.
+* Confirm that all relevant category totals reconcile to the ₹613.8805 Cr baseline.
+* Do not overwrite either value until the discrepancy is explained.
+
+2. OPPORTUNITY RECONCILIATION
+   Verify:
+
+* Gross modelled opportunity: ₹110.764 Cr.
+* Overlap deductions: ₹25.123 Cr.
+* Net modelled opportunity: ₹85.641 Cr.
+* Proven opportunity: ₹82.380 Cr.
+* Realized savings: ₹0 Cr.
+
+Confirm whether Proven Opportunity is a subset of Net Modelled Opportunity and document the evidence lineage. If transaction-level and commercial evidence is insufficient, reclassify unsupported amounts as Modelled Opportunity Pending Validation.
+
+3. REPORT CONSISTENCY
+   Check the customer assessment, Module 2, Module 4, Executive Brief and Management Brief. Ensure they use consistent definitions and do not silently substitute one addressable-spend measure for another.
+
+4. OUTPUT
+   Return:
+
+* The authoritative addressable-spend figure and its definition.
+* A reconciliation table showing both previously reported figures and their derivation.
+* The exact source records or calculation logic supporting the result.
+* Any confirmed defect and the smallest required correction.
+* Test results after any correction.
+
+Do not claim the financial figures are certified unless the underlying data supports that conclusion. Do not publish or send reports.
+
+---
+
+## Prompt 505
+Continue Prompt 505. The latest report repeats the ₹315.021 Cr addressable spend but does not reconcile it with the earlier ₹521.7984 Cr figure.
+
+For ABC Textile Ltd (`AIC-2026-0002`), perform the following:
+
+1. Locate both figures in the actual source code, assessment records, Module 1 outputs, Module 2 outputs, Module 4 calculations, and generated reports.
+2. Establish whether ₹315.021 Cr is a narrower savings-eligible subset of ₹521.7984 Cr. If so, define both metrics clearly and provide a transaction/category-level reconciliation of the ₹206.7774 Cr difference.
+3. Reconcile every spend category to the ₹613.8805 Cr baseline. Identify exclusions, overlaps, unmapped spend, and the exact calculation logic. Do not force totals to match.
+4. Independently validate gross opportunity ₹110.764 Cr, overlap deductions ₹25.123 Cr, net modelled opportunity ₹85.641 Cr, and Proven Opportunity ₹82.380 Cr against source records and reproducible calculations.
+5. For Proven Opportunity, provide evidence references, affected categories, calculation methodology, and transaction-level support. If the evidence does not substantiate an amount, downgrade it to Modelled Opportunity Pending Validation.
+6. Confirm that the Executive Brief, Management Brief, assessment dashboard, and savings engine use consistent definitions and figures.
+
+**Deliverables:** A reconciliation table, source-code/data references, corrected calculations where justified, and regression tests covering both figures and report outputs.
+
+Do not change figures merely to make them reconcile. Preserve unrelated working changes. Do not publish, send, or release the reports. Do not repeat completed quality checks unless changes require them.
+
+---
+
+## Prompt 506
+The latest forensic report labels ₹315.021 Cr as the savings-eligible category subset, but it does not provide the actual reconciliation against the earlier ₹521.7984 Cr addressable-spend figure.
+
+Complete this outstanding issue for ABC Textile Ltd (`AIC-2026-0002`).
+
+1. Locate the original calculation and source records behind both ₹521.7984 Cr and ₹315.021 Cr.
+2. Produce a category-level reconciliation with these columns:
+
+   * Category and category ID
+   * Baseline spend
+   * Amount included in ₹521.7984 Cr
+   * Amount included in ₹315.021 Cr
+   * Difference
+   * Inclusion/exclusion reason
+3. Identify the exact code, formulas, filters, and assessment outputs responsible for each figure.
+4. Confirm whether the two figures represent different business definitions or whether one is incorrect. Do not assume either explanation.
+5. Verify that all category amounts reconcile to the ₹613.8805 Cr baseline, without double-counting.
+6. If the earlier figure cannot be reproduced, explicitly mark it as unverified and identify its origin. Correct only the figures and report labels supported by evidence.
+7. Add a regression test to prevent inconsistent addressable-spend definitions across Modules 1–4 and both executive reports.
+
+Preserve the existing work and do not repeat completed quality checks unless code changes require them. Do not modify unrelated calculations, regenerate reports unnecessarily, publish, or send anything externally.
+
+Return the reconciliation table, evidence references, root cause, and final recommended metric definitions. If the source records cannot establish the answer, state that clearly instead of declaring PASS.
+
+---
+
+## Prompt 507
+Execute a controlled end-to-end customer data test of the existing Procucev procurement assessment application using ABC Textile Ltd (`AIC-2026-0002`) as the pilot.
+
+**Objective:** Verify that Modules 1, 2, 3 and 4 work correctly together with actual customer transaction data before admitting additional customers.
+
+### 1. Testing safeguards
+
+* Preserve the existing implementation and all working changes.
+* Use a test copy of the existing assessment data wherever possible.
+* Do not overwrite original customer uploads or approved assessment records.
+* Do not publish, email, or externally release reports.
+* Do not modify financial calculations merely to make results pass.
+* Clearly distinguish verified results, modelled opportunities and pending validation.
+
+### 2. Module 1 — Spend Analysis
+
+Using the canonical ABC Textile dataset:
+
+* Verify source file, transaction count, date range, suppliers, plants and total spend.
+* Reconcile transaction-level amounts to the assessment baseline.
+* Check duplicate detection, missing values, invalid amounts, date handling and currency assumptions.
+* Verify that all transactions are processed, not just the first 1,000 rows.
+* Confirm that category totals reconcile to total spend without double-counting.
+
+Expected reference baseline: 23,570 transaction records and ₹613.8805 Cr. Investigate any differences rather than forcing the expected result.
+
+### 3. Module 2 — Categorization and Strategic Sourcing
+
+* Validate UNSPSC/category assignments and identify unmapped or low-confidence records.
+* Check supplier consolidation, price variance, volume pooling and other sourcing recommendations.
+* Trace a representative sample of recommendations back to the underlying transactions.
+* Recalculate opportunity estimates independently where feasible.
+* Verify that duplicate or overlapping opportunities are not counted more than once.
+* Do not label an opportunity Proven unless its evidence and calculation can be reproduced.
+
+### 4. Module 3 — PCBI Benchmarking
+
+* Confirm that Module 3 remains isolated from other modules.
+* For ABC Textile, verify that unavailable customer-specific benchmark data produces `UNAVAILABLE`.
+* Do not substitute UltraTech, VGT, cement-sector or another customer's benchmarks.
+* Confirm that unavailable PCBI data does not generate fabricated price gaps or savings.
+
+### 5. Module 4 — Savings Engine
+
+* Verify the gross opportunity, overlap deductions and net opportunity calculations.
+* Reconcile the financial outputs with Modules 1 and 2.
+* Confirm that modelled opportunities and Proven Opportunity are separately identified.
+* Keep realized savings at ₹0 until supported by approved implementation and commercial evidence.
+* Investigate the unresolved addressable-spend figures of ₹521.7984 Cr and ₹315.021 Cr. Identify their source formulas, definitions and category populations. Do not assume either figure is correct.
+* Do not approve financial outputs while this discrepancy remains unexplained.
+
+### 6. Customer Isolation and Access Controls
+
+* Verify that customer records, transactions, benchmarks, suppliers and reports cannot leak across assessments.
+* Test customer-specific report binding and website-optional behaviour.
+* Check that missing customer information does not block an assessment or result in invented facts.
+* Confirm that unauthorized users cannot access another customer's data.
+
+### 7. Report Validation
+
+Generate test copies of the 10-slide Management Opportunity Brief and 30-slide Executive Brief.
+
+* Compare every headline financial figure with the underlying assessment.
+* Verify category names, supplier counts, customer identity and PCBI availability.
+* Check PDF and PPTX content for stale demo values, cross-customer contamination, missing text and structural errors.
+* Confirm that reports cannot be released without the required review and approval.
+
+### 8. Required deliverables
+
+Return a concise test report containing:
+
+1. Test case, expected result, actual result and PASS/FAIL status.
+2. Module-wise findings and reproducible evidence.
+3. Transaction reconciliation and financial validation results.
+4. The root cause and evidence for the addressable-spend discrepancy.
+5. Categorization accuracy, unmapped spend and exceptions.
+6. Customer isolation and access-control findings.
+7. Export validation results for both formats.
+8. Defects classified as Critical, High, Medium or Low, with recommended fixes.
+9. A final readiness decision: READY FOR CONTROLLED PILOT, READY AFTER FIXES, or NOT READY.
+
+Run relevant automated tests and record actual command exit codes and results. Do not claim a test passed merely because it was started.
+
+**Important:** Do not perform broad refactoring, introduce unrelated features, overwrite source data, or release anything externally. Fix only defects directly identified by this test, and rerun affected tests after fixes. If the financial discrepancy cannot be resolved from available evidence, report it as unresolved and retain the financial approval hold.
+
+---
+
+## Prompt 508
+# Objective: Complete Live Customer Data Testing and Finalize Deliverables Today
+
+**Customer:** ABC Textile Ltd
+**Assessment ID:** `AIC-2026-0002`
+**Deadline:** 23 October 2026, EOD
+**Deliverables:**
+
+1. Executive Brief — 30 slides, PDF and PPTX.
+2. Management Opportunity Brief — 10 slides, PDF and PPTX.
+
+We need to complete a controlled, end-to-end customer data test and prepare accurate, customer-specific presentations for submission today.
+
+## 1. Protect Existing Work
+
+* Preserve the current implementation, working features, source data and assessment records.
+* Use the existing ABC Textile assessment and a safe test copy where required.
+* Do not overwrite canonical customer data.
+* Do not perform unrelated refactoring or redesign.
+* Do not publish, email or transmit reports externally.
+
+## 2. Run the Customer Workflow End to End
+
+### Module 1 — Spend Analysis
+
+Using the canonical `Textile1.xlsx` dataset:
+
+* Process all transactions, not just the first 1,000.
+* Verify transaction counts, dates, suppliers, plants and total spend.
+* Reconcile all category totals to the source baseline.
+* Identify duplicates, missing values, invalid records and unmapped spend.
+* Record actual results and exceptions.
+
+Reference figures: 23,570 transaction records and ₹613.8805 Cr baseline spend. Investigate any differences rather than forcing the results to match.
+
+### Module 2 — Categorization and Strategic Sourcing
+
+* Validate category and UNSPSC assignments.
+* Check supplier consolidation, price variance, volume pooling and other recommendations.
+* Trace material recommendations to source transactions.
+* Verify calculations and prevent overlapping opportunities from being double-counted.
+* Distinguish evidence-supported opportunities from modelled opportunities.
+* Do not label an opportunity Proven unless its supporting evidence is reproducible.
+
+### Module 3 — PCBI Benchmarking
+
+* Confirm that PCBI remains isolated from other modules.
+* For ABC Textile, retain `UNAVAILABLE` wherever valid customer-specific benchmark data is absent.
+* Do not substitute benchmarks or figures from another customer or sector.
+* Ensure unavailable benchmark data does not create fabricated price gaps or savings.
+
+### Module 4 — Savings Engine
+
+* Reconcile gross opportunity, overlap deductions and net opportunity.
+* Verify all savings calculations against Modules 1 and 2.
+* Keep realized savings at ₹0 unless supported by approved implementation and commercial evidence.
+* Investigate the unresolved addressable-spend figures of ₹521.7984 Cr and ₹315.021 Cr using the actual source code, calculations and category-level records.
+* Determine whether they represent different definitions or whether one figure is incorrect.
+* Do not force reconciliation or approve unsupported financial claims.
+
+## 3. Validate Customer Isolation
+
+* Confirm that no other customer's transactions, suppliers, categories, benchmarks or financial figures appear in ABC Textile's assessment.
+* Verify customer-specific data binding throughout all four modules.
+* Confirm that missing website information does not block processing or lead to invented corporate facts.
+* Verify appropriate access controls for customer data.
+
+## 4. Generate and Inspect the Final Presentations
+
+Generate fresh copies of both presentations only after validating the underlying data:
+
+**A. Executive Brief**
+
+* 30 slides.
+* PDF and editable PPTX.
+
+**B. Management Opportunity Brief**
+
+* 10 slides.
+* PDF and editable PPTX.
+
+For each export:
+
+* Confirm customer name and assessment identity.
+* Verify all headline figures against the authoritative assessment.
+* Check that charts, category names, supplier counts and recommendations match the underlying data.
+* Remove stale demo content and all cross-customer contamination.
+* Confirm that PCBI is shown as `UNAVAILABLE` where applicable.
+* Ensure realized savings remain ₹0 unless properly evidenced.
+* Inspect slide count, missing text, layout, clipping and PDF/PPTX integrity.
+* Confirm both formats contain consistent figures.
+
+Do not invent missing data or conceal unresolved exceptions.
+
+## 5. Deadline-Driven Defect Prioritization
+
+Classify findings:
+
+* **Critical:** Wrong customer data, material financial misstatement, data leakage, corrupted exports or fabricated benchmark/savings claims.
+* **High:** Incorrect calculations, unreconciled material totals or misleading recommendations.
+* **Medium:** Non-critical inconsistencies that do not invalidate financial conclusions.
+* **Low:** Cosmetic issues without impact on meaning or accuracy.
+
+Fix critical and high-severity defects before submission. Do not introduce unrelated changes to meet the deadline.
+
+If a material financial discrepancy remains unresolved, do not present either disputed figure as verified. Clearly qualify or remove the unsupported claim from the deliverables, and state the limitation. Do not silently substitute another value.
+
+## 6. Required Final Output
+
+Return a concise completion report containing:
+
+1. Module-wise test results: PASS, FAIL or BLOCKED.
+2. Actual transaction and spend reconciliation results.
+3. Root cause and status of the addressable-spend discrepancy.
+4. Evidence status of Proven Opportunity and modelled opportunity.
+5. Customer-isolation test results.
+6. Exact paths to the four final files:
+
+   * 30-slide Executive Brief PDF.
+   * 30-slide Executive Brief PPTX.
+   * 10-slide Management Brief PDF.
+   * 10-slide Management Brief PPTX.
+7. Confirmation that the files were opened or structurally inspected, with actual validation results.
+8. Outstanding defects and their impact on submission.
+9. Final decision: READY FOR SUBMISSION, READY WITH DISCLOSED LIMITATIONS, or NOT READY.
+
+Record actual command exit codes and test results. Do not claim success merely because a process was started.
+
+**Deadline:** Prioritize completion today, but do not fabricate evidence, force financial reconciliation or claim unperformed tests passed. Preserve all existing work and keep external publication and sending disabled.
+
+---
+
+## Prompt 505
+We need to submit the ABC Textile Ltd (`AIC-2026-0002`) Executive Brief and Management Opportunity Brief today.
+
+The latest report confirms the following:
+
+* Baseline spend: ₹613.8805 Cr
+* Addressable spend: ₹315.021 Cr
+* Gross opportunity: ₹110.764 Cr
+* Overlap deductions: ₹25.123 Cr
+* Net modelled opportunity: ₹85.641 Cr
+* Proven Opportunity: ₹82.380 Cr
+* Realized savings: ₹0
+* PCBI benchmark gap: UNAVAILABLE
+
+Do not repeat completed general audits or refactor unrelated code.
+
+### A. Close the financial validation
+
+1. Investigate the earlier ₹521.7984 Cr addressable-spend figure.
+2. Locate its source, formula and category population.
+3. Explain its relationship to ₹315.021 Cr, or identify the earlier figure as unverified if it cannot be reproduced.
+4. Verify the current financial calculations against source records and confirm that the claimed Proven Opportunity has reproducible supporting evidence.
+5. Do not force figures to reconcile or silently replace them.
+
+### B. Validate the customer workflow
+
+Run the necessary focused end-to-end checks for Modules 1–4 using ABC Textile's canonical dataset. Record actual results, failures and exceptions. Preserve the existing data and implementation.
+
+### C. Prepare the final deliverables
+
+Generate fresh copies of:
+
+1. 30-slide Executive Brief — PDF and PPTX.
+2. 10-slide Management Opportunity Brief — PDF and PPTX.
+
+Inspect all four files for customer identity, financial consistency, slide count, clipping, missing content, stale demo figures and cross-customer contamination.
+
+Keep PCBI as UNAVAILABLE wherever valid customer-specific benchmark data is absent. Keep realized savings at ₹0 unless supported by approved evidence.
+
+### D. Submission decision
+
+Return the exact paths to all four files and classify the outcome as:
+
+* READY FOR SUBMISSION
+* READY WITH DISCLOSED LIMITATIONS
+* NOT READY
+
+If a material financial discrepancy or unsupported financial claim remains, clearly disclose it and do not describe the affected figure as verified. Do not publish or email the reports.
+
+Record actual test outcomes. Do not claim a check passed merely because it was started.
+
+---
+
+## Prompt 506
+**Objective:** Complete the final ABC Textile submission correction and launch the Procucev aiCEV application locally in Google Chrome for a live customer demonstration.
+
+Continue from the existing project and previous prompt. Preserve all completed work. Do not rebuild or redesign the application.
+
+### 1. Complete the Final Submission Correction
+
+* Acknowledge that ₹521.7984 Cr appeared in an earlier generated report, even though the current calculation engine does not reproduce it.
+* Retain ₹315.021 Cr as the current addressable sourcing spend only if it is reproducible from the canonical dataset and current calculation logic.
+* Verify the opportunity waterfall:
+
+  * Gross opportunity: ₹110.764 Cr
+  * Overlap deductions: ₹25.123 Cr
+  * Net modelled opportunity: ₹85.641 Cr
+  * Reported proven opportunity: ₹82.380 Cr, subject to supporting evidence verification
+  * Discovery/pending validation: ₹3.261 Cr
+  * Realized savings: ₹0.00 Cr
+* Keep PCBI marked `UNAVAILABLE` unless valid ABC Textile-specific benchmark data exists.
+* Verify all four final PDF/PPTX files exist, inspect their contents, and report their exact paths and modification timestamps.
+* Do not publish or email any deliverables.
+
+### 2. Start the Application Locally
+
+Identify the correct application root and inspect `package.json` to determine the existing framework and start scripts.
+
+Then:
+
+1. Install dependencies only if necessary; do not replace or upgrade existing dependencies unnecessarily.
+2. Run the appropriate development server using the existing project scripts.
+3. Confirm the server starts successfully and identify the actual local URL and port from its terminal output.
+4. Open that exact URL in Google Chrome on this Windows computer. Prefer reusing an existing Chrome window; do not assume a port such as 3000 or 5173 without checking.
+5. Keep the development server running so the application remains available for demonstration.
+6. Verify that the landing page loads and inspect the browser console and terminal for startup errors. Fix only issues that prevent the local demonstration, preserving existing functionality.
+7. Do not use production deployment, publish the application, or expose the development server publicly.
+
+### 3. Validate the Customer Demonstration
+
+* Open ABC Textile Ltd (`AIC-2026-0002`) using the existing customer-selection workflow.
+* Confirm the customer data is correctly bound and no other customer's data is displayed.
+* Confirm Modules 1 and 2 display the validated customer results.
+* Confirm Module 3 displays `UNAVAILABLE` for PCBI where valid customer-specific benchmark data is absent.
+* Confirm Module 4 distinguishes modelled opportunities from realized savings and displays realized savings as ₹0.00 Cr.
+* Do not modify canonical customer data or invent missing data.
+* If login or configuration is required, report exactly what is needed rather than bypassing authentication.
+
+### 4. Final Response
+
+Return a concise status report containing:
+
+* Local Chrome URL and confirmation that the application opened.
+* Development server status and the command used to start it.
+* Customer and module validation results.
+* Final PDF/PPTX paths and verification status.
+* Any remaining blockers or financial evidence limitations.
+
+**Important:** Preserve all current work. Do not repeat completed general audits, generate duplicate reports, redesign slides, or make unrelated code changes. If a check fails, report the specific failure honestly.
+
+---
+
+## Prompt 505
+run locally on chrome
+
+---
+
+## Prompt 506
+Launch the existing Procucev aiCEV application locally on this Windows computer for a live ABC Textile Ltd customer demonstration.
+
+**Do not repeat completed audits, redesign the application, regenerate reports, or modify working business logic. Preserve all existing work.**
+
+1. Open the project root:
+   `C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs`
+
+2. Inspect the root `package.json` and relevant frontend/backend package scripts. Identify the correct command to start the existing application.
+
+3. Check whether the required dependencies are installed. Install only if necessary; do not upgrade packages unnecessarily.
+
+4. Start the application using its existing development scripts. If frontend and backend require separate processes, start both in separate persistent terminals.
+
+5. Wait for startup to complete. Read the actual terminal output and identify the correct local URL and port. Do not assume a port.
+
+6. Open the actual local URL in Google Chrome on this computer. Use PowerShell to launch Chrome if needed, locating the installed Chrome executable rather than assuming its path.
+
+7. Verify that the page loads successfully. Check the browser-visible page and terminal output for startup errors. If it fails, diagnose and fix only the minimum issue required to launch it.
+
+8. If authentication is required, use the existing login workflow. Do not bypass authentication or weaken security.
+
+9. Navigate to ABC Textile Ltd (`AIC-2026-0002`) using the existing interface, if possible. Verify that its assessment opens and the customer-specific data is displayed correctly.
+
+10. Confirm:
+
+* Module 1 loads the spend assessment.
+* Module 2 loads the sourcing opportunity analysis.
+* Module 3 shows PCBI as `UNAVAILABLE` where valid customer-specific benchmark data is absent.
+* Module 4 distinguishes modelled opportunity from realized savings; realized savings remain ₹0.00 Cr.
+
+11. Keep the required development processes running after opening Chrome so I can use the application for the demonstration.
+
+**Return only a concise execution report:**
+
+* Exact command(s) used to start the application.
+* Actual local URL.
+* Whether Chrome opened and the page loaded successfully.
+* Whether ABC Textile's assessment opened.
+* Any remaining blocker requiring my action.
+
+Do not claim success unless the server started and the local page was actually verified.
+
+---
+
+## Prompt 507
+**URGENT: The application is still not running locally in Google Chrome. Stop all unrelated audits and presentation work. Do not repeat typecheck, lint, unit tests, or report generation.**
+
+Project directory:
+`C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs`
+
+Execute the following steps in order. Do not merely describe them—run the commands and report their actual output.
+
+**Step 1 — Identify the startup command**
+
+* Inspect the root `package.json` and the frontend/backend `package.json` files.
+* Identify the actual frontend and backend startup scripts.
+* Do not guess the scripts or ports.
+
+**Step 2 — Check for existing processes**
+
+* Check whether the frontend or backend is already running.
+* Check whether the intended ports are occupied.
+* Do not terminate unrelated processes.
+* If the application is already running, identify its actual URL and test it.
+
+**Step 3 — Start the application**
+
+* Start the frontend using the correct existing development script.
+* Start the backend separately if required.
+* Use separate persistent PowerShell terminals so the processes remain running.
+* Capture the actual startup output, including errors and the port number.
+* If startup fails, diagnose the specific error and make only the minimum necessary correction.
+* Do not change business logic or customer data.
+
+**Step 4 — Open Chrome**
+After the frontend server reports that it is ready, execute a PowerShell command equivalent to:
+
+`Start-Process "chrome.exe" -ArgumentList "http://localhost:<ACTUAL_PORT>"`
+
+Replace `<ACTUAL_PORT>` with the actual port identified from the startup output. If Chrome cannot be found by that command, locate the installed Chrome executable and use its full path.
+
+**Step 5 — Verify**
+
+* Make an HTTP request to the actual local URL and confirm the response.
+* Confirm that Chrome was launched.
+* If browser interaction tools are available, inspect the loaded page. Otherwise, clearly state that the HTTP response was verified but the visual browser page could not be inspected.
+* Report any login or configuration requirement without bypassing authentication.
+
+**Return only these results:**
+
+1. Frontend startup command.
+2. Backend startup command, if required.
+3. Actual local URL.
+4. Actual startup output or exact error.
+5. HTTP verification result.
+6. Whether Chrome opened.
+7. The next action required, if still blocked.
+
+**Strict instruction:** Do not claim success unless the server actually starts. Do not return another code-quality report. Do not publish or expose the application publicly.
+
+---
+
+## Prompt 508
+Set-Location "C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs"
+
+Write-Host "`n--- PROJECT SCRIPTS ---"
+npm run
+
+Write-Host "`n--- FRONTEND/BACKEND PACKAGE SCRIPTS ---"
+if (Test-Path "frontend\package.json") {
+    Get-Content "frontend\package.json"
+}
+if (Test-Path "backend\package.json") {
+    Get-Content "backend\package.json"
+}
+
+Write-Host "`n--- ROOT PACKAGE SCRIPTS ---"
+Get-Content "package.json"
+
+---
+
+## Prompt 509
+Set-Location "C:\Users\srini\Desktop\Antigravity Consulting Files\consulting_nextjs"
+
+Write-Host "`n===== ROOT PACKAGE SCRIPTS ====="
+npm run
+
+Write-Host "`n===== ROOT PACKAGE.JSON ====="
+Get-Content .\package.json
+
+Write-Host "`n===== FRONTEND PACKAGE SCRIPTS ====="
+if (Test-Path .\frontend\package.json) {
+    Get-Content .\frontend\package.json
+}
+
+Write-Host "`n===== BACKEND PACKAGE SCRIPTS ====="
+if (Test-Path .\backend\package.json) {
+    Get-Content .\backend\package.json
+}
+
+Write-Host "`n===== COMMON RUNNING NODE PROCESSES ====="
+Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" |
+    Select-Object ProcessId, CommandLine |
+    Format-List
+
+Write-Host "`n===== LISTENING DEVELOPMENT PORTS ====="
+Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+    Where-Object { $_.LocalPort -ge 3000 -and $_.LocalPort -le 9000 } |
+    Select-Object LocalAddress, LocalPort, OwningProcess |
+    Sort-Object LocalPort |
+    Format-Table -AutoSize
+
+---
+
+## Prompt 510
+The Procucev aiCEV application is open in Chrome at `http://localhost:3001`, but the browser displays `Internal Server Error`.
+
+Fix this startup/runtime problem directly. Do not repeat presentation audits, regenerate reports, or redesign the application.
+
+**1. Identify the process**
+
+* Inspect the root `package.json` and determine which application serves port 3001.
+* Identify the process ID and exact startup command.
+* Check whether the frontend and backend are separate services.
+
+**2. Capture the actual error**
+
+* Inspect the terminal running the server.
+* Reproduce the error by requesting `http://localhost:3001`.
+* Capture the complete server-side stack trace and identify the first actionable error.
+* Check relevant environment configuration, database connectivity, and API dependencies if the stack trace points to them.
+* Never print secrets, passwords, API keys, or tokens.
+
+**3. Fix the root cause**
+
+* Make the smallest safe change that resolves the demonstrated error.
+* Preserve all existing business logic, customer data, Module 1–4 functionality, and report-generation work.
+* Do not disable authentication, security checks, or error handling to make the page load.
+* Do not replace the application with a mock page or dummy data.
+* Do not change ports simply to hide the problem.
+
+**4. Verify the fix**
+
+* Restart the affected service using the correct existing command.
+* Request `http://localhost:3001` again.
+* If it redirects to another local URL, verify that destination too.
+* Confirm the page returns a successful HTTP response and loads in Chrome.
+* If login is required, use the existing authentication workflow.
+* Check the server logs for any remaining startup errors.
+
+**5. If you cannot fix it**
+Stop making changes and return:
+
+* The exact error and stack trace.
+* The file and line responsible, if identifiable.
+* The specific corrective action required.
+
+**Important:** Execute the diagnosis and fix; do not merely propose commands. Do not claim success unless the HTTP request succeeds and the browser page is verified.

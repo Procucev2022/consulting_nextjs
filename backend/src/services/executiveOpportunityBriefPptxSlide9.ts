@@ -13,29 +13,43 @@ import {
   addBriefHeader,
   addBriefFooter
 } from './executiveOpportunityBriefPptxHelpers';
+import {
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
+} from '../constants/executiveBriefPresentationConstants';
+import { DEFAULT_CLIENT_PROFILE } from '../constants/executiveBriefConstants';
 
-export function renderBriefPptxSlide9(pptx: PptxGenJS, _clientName?: string): void {
+export function renderBriefPptxSlide9(pptx: PptxGenJS, clientName = DEFAULT_CLIENT_PROFILE.clientName): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
   addBriefHeader(slide, 'Why Procucev + aiCEV: Enterprise Partner Value', 'Platform & Advisory Capabilities', 9);
+
+  const activeContract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
 
   const pillars = [
     {
       t: 'PROCUREMENT EXPERTISE',
       s: 'Domain Authority & Category Depth',
-      b: [
-        'Decades of direct category leadership in heavy manufacturing',
-        'Specialized playbooks across fuel, power, logistics & MRO',
-        'Senior practitioner negotiation support across pan-India suppliers'
-      ],
+      b: isCust
+        ? [
+            'Decades of direct category leadership across industrial enterprises',
+            'Specialized playbooks across yarn, chemicals, energy & capital goods',
+            'Senior practitioner negotiation support across pan-India suppliers'
+          ]
+        : [
+            'Decades of direct category leadership in heavy manufacturing',
+            'Specialized playbooks across fuel, power, logistics & MRO',
+            'Senior practitioner negotiation support across pan-India suppliers'
+          ],
       c: BRAND_COLORS.procucevBlue
     },
     {
       t: 'FORENSIC SPEND INTELLIGENCE',
       s: 'Transaction-Level Precision',
       b: [
-        'Granular transaction harmonization across 31,671 invoice lines',
-        'Multi-plant ex-works price dispersion detection on identical SKUs',
+        `Granular transaction harmonization across ${activeContract.baselineTransactions.toLocaleString()} invoice lines`,
+        `Multi-plant price dispersion detection across ${activeContract.baselinePlants} operating units`,
         'Systematic exclusion and overlap deduplication governance'
       ],
       c: '#2563EB'
@@ -43,11 +57,17 @@ export function renderBriefPptxSlide9(pptx: PptxGenJS, _clientName?: string): vo
     {
       t: 'MARKET BENCHMARK INTELLIGENCE',
       s: 'Independent Market Anchoring',
-      b: [
-        'Proprietary PCBI indices for cement-specific commodities',
-        'Independent index-linked pricing formulas (coal, petcoke, polymer)',
-        'Market timing intelligence for contract renegotiation windows'
-      ],
+      b: isCust
+        ? [
+            'PCBI Benchmark Price Gap: UNAVAILABLE for customer assessment',
+            'Zero surrogate or demonstration benchmarks substituted',
+            'Module 3 isolation boundary strictly preserved'
+          ]
+        : [
+            'Proprietary PCBI indices for cement-specific commodities',
+            'Independent index-linked pricing formulas (coal, petcoke, polymer)',
+            'Market timing intelligence for contract renegotiation windows'
+          ],
       c: '#0284C7'
     },
     {
