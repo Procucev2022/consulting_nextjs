@@ -164,6 +164,78 @@ describe('step2VendorConsolidation', () => {
     expect(summary.avgVendorsPerCategory).toBe(0);
     expect(summary.avgSavingsPct).toBe(0);
   });
+
+  it('computes tail excess spend when supplier has zero totalUnits but higher price', () => {
+    const items: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 100,
+        qty: 1000,
+        inr_crores: 1.0,
+        vendor_identified: 'Vendor Baseline'
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 150,
+        qty: 0,
+        total_spend: 15000000,
+        inr_crores: 1.5,
+        vendor_identified: 'Vendor ZeroUnits'
+      }
+    ];
+    const results = calculateVendorConsolidation(items);
+    expect(results.length).toBe(1);
+    expect(results[0].est_volume_savings_cr).toBeGreaterThan(0);
+  });
+
+  it('derives effective price from spend and total units when unit_price is falsy', () => {
+    const items: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 100,
+        qty: 1000,
+        inr_crores: 1.0,
+        vendor_identified: 'Vendor A'
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 0 as any,
+        qty: 2000,
+        total_spend: 20000000,
+        inr_crores: 2.0,
+        vendor_identified: 'Vendor B Derived'
+      }
+    ];
+    const results = calculateVendorConsolidation(items);
+    expect(results.length).toBe(1);
+    const derivedSupplier = results[0].suppliers.find(s => s.vendor_name === 'Vendor B Derived');
+    expect(derivedSupplier).toBeDefined();
+    expect(derivedSupplier?.unit_rate_index).toBe(100);
+  });
+
+  it('handles zero total spend group returning 0% savings', () => {
+    const items: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 100,
+        qty: 0,
+        total_spend: 0,
+        inr_crores: 0,
+        vendor_identified: 'Zero Vendor A'
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 100,
+        qty: 0,
+        total_spend: 0,
+        inr_crores: 0,
+        vendor_identified: 'Zero Vendor B'
+      }
+    ];
+    const results = calculateVendorConsolidation(items);
+    expect(results.length).toBe(1);
+    expect(results[0].est_volume_savings_pct).toBe(0);
+  });
 });
 
 describe('step2PoConsolidation', () => {

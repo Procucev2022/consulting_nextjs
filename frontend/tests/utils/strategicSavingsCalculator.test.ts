@@ -445,4 +445,38 @@ describe('strategicSavingsCalculator', () => {
     expect(result.grossOpportunityInrCr).toBe(0);
     expect(result.overlapDeductionsInrCr).toBe(0);
   });
+
+  it('hits the || 0 final fallback when all spend and savings fields on an opportunity are falsy', () => {
+    // Opportunity has every spend/savings field explicitly 0 or undefined,
+    // forcing the || 0 at the end of each chain (lines 71 and 82) to be evaluated.
+    const allFalsyOpp: SavingsOpportunity[] = [
+      {
+        opp_id: 'OPP-ZERO-ALL',
+        category: 'Test Category',
+        title: 'Zero Spend Opp',
+        current_spend_inr_cr: 0,
+        current_spend: 0,
+        baseline_spend_inr_cr: 0,
+        est_savings_inr_cr: 0,
+        est_savings: 0,
+        estimated_savings_inr_cr: 0,
+        target_savings_pct: 10,
+        status: 'Identified',
+        push_to_module: 'proCPX',
+        recommended_action: 'Review',
+        risk_level: 'Low',
+        contract_leak_type: 'None'
+      }
+    ];
+    const result = buildStrategicSavingsSummary({
+      consolidationItems: [],
+      poItems: [],
+      strategicRiskItems: [],
+      opportunities: allFalsyOpp
+    });
+    const categoryInit = getInitiativeByKey(result.initiatives, 'CATEGORY_SAVINGS_PIPELINE');
+    // All fields are 0 → || 0 fallback fires → spend and savings are 0
+    expect(categoryInit?.spendInrCr).toBe(0);
+    expect(categoryInit?.savingsInrCr).toBe(0);
+  });
 });

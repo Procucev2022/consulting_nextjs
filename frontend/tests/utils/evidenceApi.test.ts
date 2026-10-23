@@ -101,4 +101,47 @@ describe('Frontend evidenceApi Client Unit Tests', () => {
     );
     expect(resSingle.success).toBe(true);
   });
+
+  it('should include full authentication headers when token and user profile exist', async () => {
+    const { apiClient } = await import('../../src/utils/api');
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('jwt-token-xyz');
+    vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
+      id: 'USR-777',
+      role: 'ADMIN',
+      name: 'Auditor Pro',
+      company_name: 'Acme Audit'
+    } as any);
+
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ success: true, items: [] })
+    } as any);
+
+    await evidenceApi.getInventory('job-auth');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/evidence/jobs/job-auth/inventory',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer jwt-token-xyz',
+          'x-user-role': 'ADMIN',
+          'x-user-id': 'USR-777',
+          'x-user-name': 'Auditor Pro',
+          'x-company-name': 'Acme Audit',
+          'x-tenant-id': 'USR-777'
+        })
+      })
+    );
+  });
+
+  it('should fetch parity validation without workbookType query when omitted', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ success: true, parity: { overallStatus: 'PASS' } })
+    } as any);
+
+    const res = await evidenceApi.getParityValidation('job-002');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/evidence/jobs/job-002/parity',
+      expect.any(Object)
+    );
+    expect(res.success).toBe(true);
+  });
 });

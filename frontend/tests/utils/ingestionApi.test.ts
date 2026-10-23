@@ -31,6 +31,32 @@ describe('ingestionApiClient', () => {
     expect(res2).toEqual(mockData);
   });
 
+  it('getCanonicalModule1 fetches canonical model with query params and headers', async () => {
+    const mockModel = { totalBaselineSpendInrCr: 613.88 };
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, data: mockModel })
+    });
+
+    const res = await ingestionApiClient.getCanonicalModule1('data/spend.xlsx', 'ASS-101');
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/ingestion/canonical?filePath=data%2Fspend.xlsx&assessmentId=ASS-101',
+      { headers: { 'x-assessment-id': 'ASS-101' } }
+    );
+    expect(res).toEqual(mockModel);
+  });
+
+  it('getCanonicalModule1 handles empty parameters and returns null when data is missing', async () => {
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true })
+    });
+
+    const res = await ingestionApiClient.getCanonicalModule1();
+    expect(global.fetch).toHaveBeenCalledWith('/api/ingestion/canonical', { headers: {} });
+    expect(res).toBeNull();
+  });
+
   it('addIngestionFile posts valid file and throws on validation failure', async () => {
     const mockRes = [{ doc_id: 'DOC-1' }];
     (global.fetch as any).mockResolvedValueOnce({

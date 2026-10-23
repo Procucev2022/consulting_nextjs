@@ -43,7 +43,7 @@ export function calculateVendorConsolidation(
   let counter = 0;
 
   groupMap.forEach((grp) => {
-    if (grp.suppliers.size >= 2 && grp.totalSpend > 0) {
+    if (grp.suppliers.size >= 2) {
       consolidationItems.push(buildConsolidationItem(grp, counter++));
     }
   });

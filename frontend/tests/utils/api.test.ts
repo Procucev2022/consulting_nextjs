@@ -392,6 +392,42 @@ describe('apiClient', () => {
     expect(res).toEqual(mockHealth);
   });
 
+  it('getModule2OpportunityLedger fetches opportunity ledger with or without assessmentId', async () => {
+    const mockLedger = [{ oppId: 'OPP-1' }];
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockLedger })
+    });
+
+    const res1 = await apiClient.getModule2OpportunityLedger('ASS-1');
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/opportunity-ledger?assessmentId=ASS-1');
+    expect(res1).toEqual(mockLedger);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockLedger })
+    });
+    const res2 = await apiClient.getModule2OpportunityLedger();
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/opportunity-ledger');
+    expect(res2).toEqual(mockLedger);
+  });
+
+  it('getModule2MathematicalBridge fetches mathematical bridge with or without assessmentId', async () => {
+    const mockBridge = { totalIdentifiedSavingsCr: 12.5 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockBridge })
+    });
+
+    const res1 = await apiClient.getModule2MathematicalBridge('ASS-1');
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/bridge?assessmentId=ASS-1');
+    expect(res1).toEqual(mockBridge);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockBridge })
+    });
+    const res2 = await apiClient.getModule2MathematicalBridge();
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/bridge');
+    expect(res2).toEqual(mockBridge);
+  });
+
   describe('apiClient Input Validation Failures', () => {
     it('should throw validation error when updateTenant receives invalid data', async () => {
       await expect(apiClient.updateTenant({ enterprise_name: '' })).rejects.toThrow('Invalid tenant updates');

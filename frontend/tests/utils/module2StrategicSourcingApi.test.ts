@@ -250,4 +250,57 @@ describe('Module2StrategicSourcingApi', () => {
       global.window = originalWindow;
     });
   });
+
+  describe('Excel Download URLs', () => {
+    it('generates direct price download URL with financial year', () => {
+      const url = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl('ASS-1', 'FY2024-25');
+      expect(url).toContain('/direct-price-improvement/export-excel');
+      expect(url).toContain('assessmentId=ASS-1');
+      expect(url).toContain('financialYear=FY2024-25');
+    });
+
+    it('generates direct price download URL without financial year or with ALL', () => {
+      const urlAll = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl('ASS-1', 'ALL');
+      expect(urlAll).toContain('assessmentId=ASS-1');
+      expect(urlAll).not.toContain('financialYear=');
+
+      const urlDefault = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl('ASS-1');
+      expect(urlDefault).toContain('assessmentId=ASS-1');
+      expect(urlDefault).not.toContain('financialYear=');
+    });
+
+    it('generates e-auction download URL with financial year', () => {
+      const url = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl('ASS-1', 'FY2024-25');
+      expect(url).toContain('/e-auction/export-excel');
+      expect(url).toContain('assessmentId=ASS-1');
+      expect(url).toContain('financialYear=FY2024-25');
+    });
+
+    it('generates e-auction download URL without financial year or with ALL', () => {
+      const urlAll = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl('ASS-1', 'ALL');
+      expect(urlAll).toContain('assessmentId=ASS-1');
+      expect(urlAll).not.toContain('financialYear=');
+
+      const urlDefault = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl('ASS-1');
+      expect(urlDefault).toContain('assessmentId=ASS-1');
+      expect(urlDefault).not.toContain('financialYear=');
+    });
+
+    it('generates vendor consolidation download URL with category', () => {
+      const url = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl('ASS-1', 'Packaging');
+      expect(url).toContain('/vendor-consolidation/export-excel');
+      expect(url).toContain('assessmentId=ASS-1');
+      expect(url).toContain('category=Packaging');
+    });
+
+    it('generates vendor consolidation download URL without category or with ALL', () => {
+      const urlAll = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl('ASS-1', 'ALL');
+      expect(urlAll).toContain('assessmentId=ASS-1');
+      expect(urlAll).not.toContain('category=');
+
+      const urlDefault = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl('ASS-1');
+      expect(urlDefault).toContain('assessmentId=ASS-1');
+      expect(urlDefault).not.toContain('category=');
+    });
+  });
 });

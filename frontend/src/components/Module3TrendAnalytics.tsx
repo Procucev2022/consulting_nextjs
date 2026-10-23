@@ -146,7 +146,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
       Number((100 + step * 9.0).toFixed(1)),
       Number((100 + marketChange).toFixed(1))
     ];
-  }, [vendorRankings]);
+  }, [vendorRankings, isCommodityUnavailable]);
 
   const chartData = {
     labels: TIMELINE_MONTHS as unknown as string[],

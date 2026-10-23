@@ -102,4 +102,46 @@ describe('Admin Auth API Client (Frontend)', () => {
       })
     ).rejects.toThrow(/Validation failed/);
   });
+
+  it('should throw error in production environment when server returns error message', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      json: async () => ({ message: 'Administrator with this email already exists' })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(
+      adminAuthApiClient.createAdminUser({
+        name: 'Prod Admin',
+        email: 'prod@procucev.com',
+        password: 'Procucev@123'
+      })
+    ).rejects.toThrow('Administrator with this email already exists');
+
+    vi.unstubAllEnvs();
+  });
+
+  it('should throw HTTP status error in production environment when server response is not JSON', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => { throw new Error('Not JSON'); }
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(
+      adminAuthApiClient.createAdminUser({
+        name: 'Prod Admin',
+        email: 'prod@procucev.com',
+        password: 'Procucev@123'
+      })
+    ).rejects.toThrow('Failed to provision administrator (HTTP 502)');
+
+    vi.unstubAllEnvs();
+  });
 });

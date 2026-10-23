@@ -3,6 +3,7 @@ import {
   addSpendToFiscalYear,
   getItemSpendCr,
   computeUnitPrices,
+  computePriceChangePct,
   updateExistingItem,
   createNewTopItem,
   upsertTopItem
@@ -87,6 +88,26 @@ describe('step2BreakdownShared', () => {
       const r = computeUnitPrices(item, 0);
       expect(r.qty).toBe(0);
       expect(r.priceFy24).toBe(0);
+    });
+  });
+
+  describe('computePriceChangePct', () => {
+    it('returns 0.0 when all three fiscal prices are identical', () => {
+      expect(computePriceChangePct(100, 100, 100)).toBe(0.0);
+    });
+
+    it('computes change between FY26 and FY24 when p24 > 0 and p26 > 0 and p26 !== p24', () => {
+      expect(computePriceChangePct(100, 110, 120)).toBe(20.0);
+    });
+
+    it('computes change between FY25 and FY24 when p26 is 0 or equal to p24 and p25 !== p24', () => {
+      expect(computePriceChangePct(100, 115, 0)).toBe(15.0);
+      expect(computePriceChangePct(100, 115, 100)).toBe(15.0);
+    });
+
+    it('returns 0.0 for fallback edge conditions', () => {
+      expect(computePriceChangePct(0, 0, 100)).toBe(0.0);
+      expect(computePriceChangePct(100, 100, 0)).toBe(0.0);
     });
   });
 

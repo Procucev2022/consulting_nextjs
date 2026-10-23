@@ -7,7 +7,8 @@ import type {
   StrategicSavingsSummaryMetrics,
   SavingsInitiativeKey,
   StrategicSavingsBuildOptions,
-  WaterfallBreakdownResult
+  WaterfallBreakdownResult,
+  SavingsWaterfallMetrics
 } from '../types';
 import {
   DEFAULT_STRATEGIC_SAVINGS_INITIATIVES,
@@ -152,8 +153,6 @@ const resolveFromFallbacks = (
       return { ...init };
     case 'CATEGORY_SAVINGS_PIPELINE':
       return updateCategorySavings(init, options.opportunities);
-    default:
-      return { ...init };
   }
 };
 

@@ -6,6 +6,7 @@ import { VendorConsolidationCategoryTable } from '../../../src/components/module
 import { VendorConsolidationSupplierTable } from '../../../src/components/module2/VendorConsolidationSupplierTable';
 import { VendorConsolidationMaterialTable } from '../../../src/components/module2/VendorConsolidationMaterialTable';
 import { VendorConsolidationTransactionTable } from '../../../src/components/module2/VendorConsolidationTransactionTable';
+import { VendorConsolidationMappingQueueTable } from '../../../src/components/module2/VendorConsolidationMappingQueueTable';
 import { VendorConsolidationView } from '../../../src/components/module2/VendorConsolidationView';
 import type {
   VendorConsolidationResult,
@@ -14,6 +15,7 @@ import type {
   ComparableMaterialOpportunity,
   CrossPlantOpportunity
 } from '../../../src/types/module2VendorConsolidation';
+import type { MaterialMappingEntry } from '../../../src/types/module2MaterialMapping';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 import { Module2StrategicSourcingApi } from '../../../src/utils/module2StrategicSourcingApi';
 
@@ -538,6 +540,138 @@ describe('VendorConsolidationView Orchestration Component', () => {
     render(<VendorConsolidationView assessmentId="FAIL-001" />);
     await waitFor(() => {
       expect(screen.getByText('API Connection Timeout')).toBeDefined();
+    });
+  });
+
+  it('renders VendorConsolidationKpiCards with coverage waterfall banner', () => {
+    const resultWithCov: VendorConsolidationResult = {
+      ...mockResult,
+      coverageSummary: {
+        totalMaterialsCount: 200,
+        totalSpendInr: 168000000,
+        totalSpendCr: 16.8,
+        taxonomyVerifiedCount: 150,
+        taxonomyVerifiedSpendInr: 125000000,
+        taxonomyVerifiedSpendCr: 12.5,
+        taxonomyVerifiedMaterialPct: 75.0,
+        taxonomyVerifiedSpendPct: 75.0,
+        clientApprovedCount: 10,
+        clientApprovedSpendInr: 10000000,
+        clientApprovedSpendCr: 1.0,
+        clientApprovedMaterialPct: 5.0,
+        clientApprovedSpendPct: 5.0,
+        approvedCount: 160,
+        approvedSpendInr: 135000000,
+        approvedSpendCr: 13.5,
+        approvedMaterialPct: 80.0,
+        approvedSpendPct: 80.0,
+        provisionalCount: 30,
+        provisionalSpendInr: 35000000,
+        provisionalSpendCr: 3.5,
+        provisionalMaterialPct: 15.0,
+        provisionalSpendPct: 20.0,
+        awaitingReviewCount: 10,
+        awaitingReviewSpendInr: 8000000,
+        awaitingReviewSpendCr: 0.8,
+        awaitingReviewMaterialPct: 5.0,
+        awaitingReviewSpendPct: 5.0,
+        workflowCoveragePct: 100.0
+      }
+    };
+    render(<VendorConsolidationKpiCards result={resultWithCov} />);
+    expect(screen.getByText('Material UNSPSC Classification Coverage Waterfall')).toBeDefined();
+    expect(screen.getByText('Taxonomy-Verified')).toBeDefined();
+    expect(screen.getByText('Provisional')).toBeDefined();
+    expect(screen.getByText('Awaiting Review')).toBeDefined();
+  });
+
+  describe('VendorConsolidationMappingQueueTable', () => {
+    const mockExceptions: MaterialMappingEntry[] = [
+      {
+        sourceMaterialId: 'MAT-001',
+        sourceDescription: 'Hydraulic Valve A1',
+        sourceCategory: 'Fluid Power',
+        assignedUnspscCode: '40141600',
+        assignedUnspscTitle: 'Valves',
+        unspscSegment: 'Industrial Manufacturing',
+        unspscFamily: 'Fluid & Gas Flow',
+        unspscClass: 'Valves',
+        unspscCommodity: 'Hydraulic Valves',
+        taxonomyVersion: 'UNv260801',
+        mappingMethod: 'MANUAL_REVIEW_REQUIRED',
+        confidenceScore: 65,
+        evidence: 'Description ambiguous',
+        reviewStatus: 'AWAITING_REVIEW',
+        mappingDate: '2026-03-01',
+        totalSpendInr: 500000,
+        totalSpendCr: 0.05,
+        transactionCount: 12,
+        qualifyingSuppliersCount: 2,
+        reviewReason: 'Ambiguous manufacturer specs'
+      },
+      {
+        sourceMaterialId: 'MAT-002',
+        sourceDescription: 'Centrifugal Pump Impeller',
+        sourceCategory: 'Pumps',
+        assignedUnspscCode: '00000000',
+        assignedUnspscTitle: 'Unclassified',
+        unspscSegment: 'Industrial Manufacturing',
+        unspscFamily: 'Pumps',
+        unspscClass: 'Centrifugal Pumps',
+        unspscCommodity: 'Pump Parts',
+        taxonomyVersion: 'UNv260801',
+        mappingMethod: 'CONTEXTUAL_HEURISTIC',
+        confidenceScore: 40,
+        evidence: 'No catalog match',
+        reviewStatus: 'PROVISIONAL',
+        mappingDate: '2026-03-01',
+        totalSpendInr: 300000,
+        totalSpendCr: 0.03,
+        transactionCount: 5,
+        qualifyingSuppliersCount: 1
+      }
+    ];
+
+    it('renders exceptions and allows searching and approving mappings', async () => {
+      const onUpdated = vi.fn();
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true })
+      });
+
+      render(
+        <VendorConsolidationMappingQueueTable
+          exceptions={mockExceptions}
+          onMappingUpdated={onUpdated}
+        />
+      );
+
+      expect(screen.getByText('Hydraulic Valve A1')).toBeDefined();
+      expect(screen.getByText('Centrifugal Pump Impeller')).toBeDefined();
+
+      // Search filter
+      const searchInput = screen.getByPlaceholderText(/search/i);
+      fireEvent.change(searchInput, { target: { value: 'Hydraulic' } });
+      expect(screen.getByText('Hydraulic Valve A1')).toBeDefined();
+      expect(screen.queryByText('Centrifugal Pump Impeller')).toBeNull();
+
+      // Clear search
+      fireEvent.change(searchInput, { target: { value: '' } });
+      expect(screen.getByText('Centrifugal Pump Impeller')).toBeDefined();
+
+      // Approve mapping for first item
+      const approveButtons = screen.getAllByRole('button', { name: /approve/i });
+      fireEvent.click(approveButtons[0]);
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/module2/sourcing/vendor-consolidation/mappings/update',
+          expect.objectContaining({
+            method: 'POST'
+          })
+        );
+        expect(onUpdated).toHaveBeenCalled();
+      });
     });
   });
 });

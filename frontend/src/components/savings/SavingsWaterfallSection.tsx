@@ -58,7 +58,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
     {
       title: steps.potentialSavings,
       valueCr: netPotentialSavingsCr,
-      note: `Net Modelled (₹${provenOppCr.toFixed(3)} Cr Prov. + ₹${discoveryOppCr.toFixed(3)} Cr Disc.)`,
+      note: `Net Modelled (₹${provenOppCr.toFixed(3)} Cr Prov. + ₹${discoveryOppCr.toFixed(3)} Cr Disc. | Overlap: -₹${dedupOverlapCr.toFixed(2)} Cr)`,
       color: 'from-emerald-600 to-green-700 text-white',
       barColor: 'bg-emerald-600 dark:bg-emerald-500',
       pct: totalSpendCr > 0 ? Number(((netPotentialSavingsCr / totalSpendCr) * 100).toFixed(1)) : 0.0
