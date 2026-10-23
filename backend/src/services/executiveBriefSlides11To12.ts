@@ -6,7 +6,9 @@
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide11SpendTaxonomy(
@@ -16,6 +18,9 @@ export function renderSlide11SpendTaxonomy(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader(
     'Module 1 - Spend Intelligence: Taxonomy & Category Architecture',
@@ -24,13 +29,21 @@ export function renderSlide11SpendTaxonomy(
   );
 
   // Top Spend Categories with Visual Bars
-  const categories = [
-    { name: 'Raw Materials & Clinker Additives', spend: 1894.51, pct: 32.0, color: BRAND_COLORS.procucevBlue },
-    { name: 'Fuel, Energy & Plant Power', spend: 1480.09, pct: 25.0, color: BRAND_COLORS.accentAmber },
-    { name: 'Packaging, HDPE Bags & Consumables', spend: 947.26, pct: 16.0, color: BRAND_COLORS.accentGreen },
-    { name: 'Logistics, Bulk Terminals & Freight', spend: 828.85, pct: 14.0, color: '#0284C7' },
-    { name: 'Plant Maintenance, Spares & Grinding Media', spend: 769.64, pct: 13.0, color: '#6366F1' }
-  ];
+  const categories = isCust
+    ? [
+        { name: 'Synthetic Yarns, Filaments & Polymers', spend: 233.27, pct: 38.0, color: BRAND_COLORS.procucevBlue },
+        { name: 'Processing Chemicals, Dyes & Auxiliaries', spend: 147.33, pct: 24.0, color: BRAND_COLORS.accentAmber },
+        { name: 'Captive Power, Coal & Energy', spend: 110.50, pct: 18.0, color: BRAND_COLORS.accentGreen },
+        { name: 'Packaging Materials, Boxes & Wraps', spend: 67.53, pct: 11.0, color: '#0284C7' },
+        { name: 'Plant Maintenance Spares & Consumables', spend: 55.25, pct: 9.0, color: '#6366F1' }
+      ]
+    : [
+        { name: 'Raw Materials & Clinker Additives', spend: 1894.51, pct: 32.0, color: BRAND_COLORS.procucevBlue },
+        { name: 'Fuel, Energy & Plant Power', spend: 1480.09, pct: 25.0, color: BRAND_COLORS.accentAmber },
+        { name: 'Packaging, HDPE Bags & Consumables', spend: 947.26, pct: 16.0, color: BRAND_COLORS.accentGreen },
+        { name: 'Logistics, Bulk Terminals & Freight', spend: 828.85, pct: 14.0, color: '#0284C7' },
+        { name: 'Plant Maintenance, Spares & Grinding Media', spend: 769.64, pct: 13.0, color: '#6366F1' }
+      ];
 
   const barY = 104;
   const barH = 34;
@@ -54,7 +67,7 @@ export function renderSlide11SpendTaxonomy(
 
     const bX = PDF_LAYOUT.CONTENT_LEFT + 240;
     canvas.rect(bX, y, maxW, barH, { fill: BRAND_COLORS.canvas, stroke: BRAND_COLORS.border, lineWidth: 0.5 });
-    const fillW = (maxW * cat.pct) / 35;
+    const fillW = (maxW * cat.pct) / (isCust ? 40 : 35);
     canvas.rect(bX, y, fillW, barH, { fill: cat.color });
     canvas.text(`${cat.pct.toFixed(1)}%`, bX + fillW + 10, y + 22, {
       fontSize: 9.5,
@@ -73,12 +86,12 @@ export function renderSlide11SpendTaxonomy(
     font: 'bold',
     color: BRAND_COLORS.secondaryText
   });
-  canvas.text('₹5,920.35 Cr', sumX + 16, barY + 60, {
-    fontSize: 20,
+  canvas.text(`₹${contract.totalCustomerSpendCr.toFixed(isCust ? 4 : 2)} Cr`, sumX + 16, barY + 60, {
+    fontSize: isCust ? 17 : 20,
     font: 'bold',
     color: BRAND_COLORS.procucevBlue
   });
-  canvas.text('256 MATERIAL GROUPS', sumX + 16, barY + 84, {
+  canvas.text(`${contract.baselineMaterialGroups} MATERIAL GROUPS`, sumX + 16, barY + 84, {
     fontSize: 8.5,
     font: 'bold',
     color: BRAND_COLORS.secondaryText
@@ -103,13 +116,15 @@ export function renderSlide11SpendTaxonomy(
     font: 'bold',
     color: BRAND_COLORS.procucevBlue
   });
+  const botText = isCust
+    ? 'Top 3 categories (Synthetic Yarns, Chemicals & Dyes, and Energy) account for 80.0% of evaluated spend (₹491.10 Cr). Concentrating dynamic sourcing and rate harmonization on these core clusters unlocks the majority of identified direct value.'
+    : 'Top 3 categories (Raw Materials, Energy, and Packaging) account for 73.0% of total spend (₹4,321.86 Cr). Concentrating dynamic sourcing and index contracting on these 3 clusters unlocks >70% of identified direct value.';
   canvas.textBlock(
-    'Top 3 categories (Raw Materials, Energy, and Packaging) account for 73.0% of total spend (₹4,321.86 Cr). ' +
-    'Concentrating dynamic sourcing and index contracting on these 3 clusters unlocks >70% of identified direct value.',
+    botText,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     botY + 44,
     PDF_LAYOUT.CONTENT_WIDTH - 40,
-    { fontSize: 10, color: BRAND_COLORS.primaryText, lineHeight: 15 }
+    { fontSize: 9.5, color: BRAND_COLORS.secondaryText, lineHeight: 14 }
   );
 
   canvas.renderFooter(clientName, conf, p, total);
@@ -122,6 +137,9 @@ export function renderSlide12ParetoSpend(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader('Where the Money Goes: Pareto Spend Concentration Visualizations', 'Concentration Risk', p);
 
@@ -130,32 +148,59 @@ export function renderSlide12ParetoSpend(
   const cardH = 300;
   const cY = 104;
 
-  const paretoCards = [
-    {
-      title: 'CATEGORY CONCENTRATION',
-      sub: 'Top 15 Categories = 78.4% of Spend',
-      stat: '₹4,641.55 Cr',
-      pct: 78.4,
-      desc: 'Spend is heavily clustered in core industrial inputs (limestone, coal, petcoke, PP packaging, and freight). High category focus yields outsized commercial return.',
-      color: BRAND_COLORS.procucevBlue
-    },
-    {
-      title: 'SUPPLIER CONCENTRATION',
-      sub: 'Top 62 Suppliers = 81.4% of Spend',
-      stat: '₹4,819.17 Cr',
-      pct: 81.4,
-      desc: 'Top 6.4% of supplier base accounts for 81.4% of spend. Enables high-leverage strategic partnerships and bilateral e-auctions without spreading bandwidth thin.',
-      color: BRAND_COLORS.accentGreen
-    },
-    {
-      title: 'SKU / ITEM CONCENTRATION',
-      sub: 'Top 18% SKUs = 84.2% of Spend',
-      stat: '3,120 Active SKUs',
-      pct: 84.2,
-      desc: 'High concentration across standardized recurring items. Rationalizing minor specification variations across operating units unlocks national volume pooling.',
-      color: '#0284C7'
-    }
-  ];
+  const paretoCards = isCust
+    ? [
+        {
+          title: 'CATEGORY CONCENTRATION',
+          sub: 'Top Categories = 80.0% of Spend',
+          stat: '₹491.10 Cr',
+          pct: 80.0,
+          desc: 'Spend is heavily clustered in core textile inputs (synthetic yarns, processing dyes, captive power, and packing). High category focus yields outsized commercial return.',
+          color: BRAND_COLORS.procucevBlue
+        },
+        {
+          title: 'SUPPLIER CONCENTRATION',
+          sub: 'Top Suppliers = 82.5% of Spend',
+          stat: '₹506.45 Cr',
+          pct: 82.5,
+          desc: `Top tier of ${contract.baselineSuppliers} suppliers accounts for 82.5% of spend. Enables high-leverage strategic partnerships and frame agreements without spreading bandwidth thin.`,
+          color: BRAND_COLORS.accentGreen
+        },
+        {
+          title: 'MATERIAL GROUP CONCENTRATION',
+          sub: `${contract.baselineMaterialGroups} Groups = 100% Cleansed`,
+          stat: `${contract.baselineMaterialGroups} Active Groups`,
+          pct: 85.0,
+          desc: `High concentration across standardized recurring textile inputs. Rationalizing minor specification variations across ${contract.baselinePlants} operating plants unlocks national volume pooling.`,
+          color: '#0284C7'
+        }
+      ]
+    : [
+        {
+          title: 'CATEGORY CONCENTRATION',
+          sub: 'Top 15 Categories = 78.4% of Spend',
+          stat: '₹4,641.55 Cr',
+          pct: 78.4,
+          desc: 'Spend is heavily clustered in core industrial inputs (limestone, coal, petcoke, PP packaging, and freight). High category focus yields outsized commercial return.',
+          color: BRAND_COLORS.procucevBlue
+        },
+        {
+          title: 'SUPPLIER CONCENTRATION',
+          sub: 'Top 62 Suppliers = 81.4% of Spend',
+          stat: '₹4,819.17 Cr',
+          pct: 81.4,
+          desc: 'Top 6.4% of supplier base accounts for 81.4% of spend. Enables high-leverage strategic partnerships and bilateral e-auctions without spreading bandwidth thin.',
+          color: BRAND_COLORS.accentGreen
+        },
+        {
+          title: 'SKU / ITEM CONCENTRATION',
+          sub: 'Top 18% SKUs = 84.2% of Spend',
+          stat: '3,120 Active SKUs',
+          pct: 84.2,
+          desc: 'High concentration across standardized recurring items. Rationalizing minor specification variations across operating units unlocks national volume pooling.',
+          color: '#0284C7'
+        }
+      ];
 
   paretoCards.forEach((cd, idx) => {
     const x = PDF_LAYOUT.CONTENT_LEFT + idx * (cardW + 18);
@@ -193,9 +238,11 @@ export function renderSlide12ParetoSpend(
     font: 'bold',
     color: BRAND_COLORS.procucevBlue
   });
+  const paretoTakeaway = isCust
+    ? `Targeting commercial negotiations, volume pooling, and rate harmonization at top suppliers and core categories captures the majority of total potential while minimizing operational disruption across ${contract.baselinePlants} manufacturing plants.`
+    : 'Targeting commercial negotiations, volume pooling, and dynamic e-auctions at the top 10% suppliers and top 15 categories captures 81.4% of total potential while minimizing operational burden on plant teams.';
   canvas.textBlock(
-    'Targeting commercial negotiations, volume pooling, and dynamic e-auctions at the top 10% suppliers ' +
-    'and top 15 categories captures 81.4% of total potential while minimizing operational burden on plant teams.',
+    paretoTakeaway,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,

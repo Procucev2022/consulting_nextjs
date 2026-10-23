@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Layers,
   Building2,
@@ -64,7 +64,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
           item_count: c.item_count ?? 1,
           top_items: c.top_items ?? [],
           balance_items: c.balance_items,
-          sample_column_l_title: resolveHumanReadableCategory(c.sample_column_l_title || humanCat),
+          sample_column_l_title: c.sample_column_l_title || 'General Commodity',
           is_balance_category: Boolean(c.is_balance_category),
           rank: c.rank ?? idx + 1
         };
@@ -134,6 +134,17 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
   });
 
   const enterpriseName = tenant?.enterprise_name || 'Enterprise Client';
+
+  const hasMultiYear = Boolean(
+    categoriesList.some((c) => (c.spend_fy25_cr || 0) > 0 || (c.spend_fy26_cr || 0) > 0)
+  );
+
+  const selectedYearTotalSpend = useMemo(() => {
+    if (selectedYearView === 'ALL') return totalEvaluatedSpendInrCr;
+    const currentList = breakdownMode === 'CATEGORY' ? categoriesList : vendorsList;
+    const yearSum = currentList.reduce((sum, item) => sum + getYearSpend(item, selectedYearView), 0);
+    return yearSum > 0 ? yearSum : totalEvaluatedSpendInrCr;
+  }, [selectedYearView, breakdownMode, categoriesList, vendorsList, totalEvaluatedSpendInrCr]);
 
   return (
     <div
@@ -209,7 +220,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
             >
               {UI_STRINGS.module2.breakdown.allFy}
             </button>
-            {Boolean(categoriesList.some((c) => (c.spend_fy24_cr || 0) > 0 && (c.spend_fy25_cr || 0) > 0)) && (
+            {hasMultiYear && (
               <>
                 <button
                   onClick={() => setSelectedYearView('FY24')}
@@ -318,7 +329,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
               const fy25 = cat.spend_fy25_cr ?? 0;
               const fy26 = cat.spend_fy26_cr ?? 0;
 
-              const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+              const divisor = selectedYearTotalSpend || 1;
               const sharePct = ((currentSpendCr / divisor) * 100).toFixed(1);
 
               const resolvedUNSPSC = resolveUNSPSCCategoryDisplay(
@@ -379,9 +390,9 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
 
                     <h4
                       className="text-xs font-bold text-slate-900 line-clamp-2 min-h-[32px] leading-tight"
-                      title={resolvedUNSPSC.displayTitle}
+                      title={resolveHumanReadableCategory(cat.category, cat.sample_column_l_code)}
                     >
-                      {resolvedUNSPSC.displayTitle}
+                      {resolveHumanReadableCategory(cat.category, cat.sample_column_l_code)}
                     </h4>
                   </div>
 
@@ -446,13 +457,17 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                     <div className="pt-2 border-t border-slate-200 text-[9px] font-mono space-y-1 w-full">
                     <div className="flex justify-between text-slate-500">
                       <span>FY24: <strong>₹{fy24.toFixed(1)}</strong></span>
-                      <span>FY25: <strong>₹{fy25.toFixed(1)}</strong></span>
-                      <span>FY26: <strong>₹{fy26.toFixed(1)}</strong></span>
+                      <span>FY25: <strong>{hasMultiYear ? `₹${fy25.toFixed(1)}` : '— (N/A)'}</strong></span>
+                      <span>FY26: <strong>{hasMultiYear ? `₹${fy26.toFixed(1)}` : '— (N/A)'}</strong></span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-1.5 flex overflow-hidden">
                       <div className="bg-sky-400 h-full" style={{ width: `${(fy24 / Math.max(1, cat.total_3yr_spend_inr_cr)) * 100}%` }} />
-                      <div className="bg-blue-500 h-full" style={{ width: `${(fy25 / Math.max(1, cat.total_3yr_spend_inr_cr)) * 100}%` }} />
-                      <div className="bg-indigo-600 h-full" style={{ width: `${(fy26 / Math.max(1, cat.total_3yr_spend_inr_cr)) * 100}%` }} />
+                      {hasMultiYear && (
+                        <>
+                          <div className="bg-blue-500 h-full" style={{ width: `${(fy25 / Math.max(1, cat.total_3yr_spend_inr_cr)) * 100}%` }} />
+                          <div className="bg-indigo-600 h-full" style={{ width: `${(fy26 / Math.max(1, cat.total_3yr_spend_inr_cr)) * 100}%` }} />
+                        </>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -466,7 +481,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
             const balanceCat = sortedCategories.find((c) => c.is_balance_category) ?? sortedCategories[sortedCategories.length - 1];
             if (!balanceCat) return null;
             const balSpendCr = getYearSpend(balanceCat, selectedYearView);
-            const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+            const divisor = selectedYearTotalSpend || 1;
             const balSharePct = ((balSpendCr / divisor) * 100).toFixed(1);
 
             const resolvedBalanceUNSPSC = resolveUNSPSCCategoryDisplay(
@@ -494,7 +509,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                       </span>
                     </div>
                     <h4 className="text-xs font-bold text-slate-900 mt-1">
-                      {resolvedBalanceUNSPSC.displayTitle}
+                      {resolveHumanReadableCategory(balanceCat.category, balanceCat.sample_column_l_code)}
                     </h4>
                   </div>
                   <div className="flex items-center space-x-4">
@@ -531,7 +546,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                           {balanceCat.balance_items.map((item) => (
                             <tr key={item.name} className="bg-white hover:bg-slate-50">
                               <td className="py-2.5 px-3 font-sans font-medium text-slate-900">
-                                {item.name}
+                                {resolveHumanReadableCategory(item.name, item.column_l_code)}
                               </td>
                               <td className="py-2.5 px-3">
                                 <span className="px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 text-[10px] font-bold">
@@ -573,7 +588,7 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
               const fy25 = vnd.spend_fy25_cr;
               const fy26 = vnd.spend_fy26_cr;
 
-              const divisor = (selectedYearView === 'ALL' ? totalEvaluatedSpendInrCr : totalEvaluatedSpendInrCr / 3) || 1;
+              const divisor = selectedYearTotalSpend || 1;
               const sharePct = ((currentSpendCr / divisor) * 100).toFixed(1);
 
               const isSelected = selectedVendor?.vendor_name === vnd.vendor_name;
@@ -631,20 +646,24 @@ export const CategoryVendorBreakdownView: React.FC<CategoryVendorBreakdownViewPr
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-600 truncate" title={vnd.primary_category}>
-                      {vnd.primary_category}
+                      {resolveHumanReadableCategory(vnd.primary_category)}
                     </p>
                   </div>
 
                   <div className="pt-2 border-t border-slate-200 text-[9px] font-mono space-y-1 w-full">
                     <div className="flex justify-between text-slate-500">
                       <span>FY24: <strong>₹{(fy24 || 0).toFixed(1)}</strong></span>
-                      <span>FY25: <strong>₹{(fy25 || 0).toFixed(1)}</strong></span>
-                      <span>FY26: <strong>₹{(fy26 || 0).toFixed(1)}</strong></span>
+                      <span>FY25: <strong>{hasMultiYear ? `₹${(fy25 || 0).toFixed(1)}` : '— (N/A)'}</strong></span>
+                      <span>FY26: <strong>{hasMultiYear ? `₹${(fy26 || 0).toFixed(1)}` : '— (N/A)'}</strong></span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-1.5 flex overflow-hidden">
                       <div className="bg-sky-400 h-full" style={{ width: `${((fy24 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
-                      <div className="bg-blue-500 h-full" style={{ width: `${((fy25 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
-                      <div className="bg-indigo-600 h-full" style={{ width: `${((fy26 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
+                      {hasMultiYear && (
+                        <>
+                          <div className="bg-blue-500 h-full" style={{ width: `${((fy25 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
+                          <div className="bg-indigo-600 h-full" style={{ width: `${((fy26 || 0) / (vnd.total_3yr_spend_inr_cr || 1)) * 100}%` }} />
+                        </>
+                      )}
                     </div>
                   </div>
                 </button>

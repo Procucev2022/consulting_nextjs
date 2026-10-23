@@ -36,15 +36,15 @@ export class ExecutiveOpportunityBriefPptxGenerator {
     pptx.title = `Procurement Value Opportunity Brief - ${clientName}`;
 
     renderBriefPptxSlide1(pptx, clientName);
-    renderBriefPptxSlide2(pptx);
-    renderBriefPptxSlide3(pptx);
-    renderBriefPptxSlide4(pptx);
-    renderBriefPptxSlide5(pptx);
-    renderBriefPptxSlide6(pptx);
-    renderBriefPptxSlide7(pptx);
-    renderBriefPptxSlide8(pptx);
-    renderBriefPptxSlide9(pptx);
-    renderBriefPptxSlide10(pptx);
+    renderBriefPptxSlide2(pptx, clientName);
+    renderBriefPptxSlide3(pptx, clientName);
+    renderBriefPptxSlide4(pptx, clientName);
+    renderBriefPptxSlide5(pptx, clientName);
+    renderBriefPptxSlide6(pptx, clientName);
+    renderBriefPptxSlide7(pptx, clientName);
+    renderBriefPptxSlide8(pptx, clientName);
+    renderBriefPptxSlide9(pptx, clientName);
+    renderBriefPptxSlide10(pptx, clientName);
 
     return { pptx, slideCount: ExecutiveOpportunityBriefPptxGenerator.SLIDE_COUNT };
   }

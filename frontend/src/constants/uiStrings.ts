@@ -298,7 +298,7 @@ export const UI_STRINGS = {
     liveFxRatesLabel: 'Reference Market Rates — Informational Only:',
     activeTenant: 'Enterprise Client:',
     industrySector: 'Industry Sector:',
-    heading: '3-Year Multi-Currency Ingestion & FX Normalization',
+    heading: 'Multi-Currency Ingestion & FX Normalization',
     description: 'Ingests multiple foreign currencies (USD, EUR, GBP, AED, JPY, SGD), applies historical time-series FX conversion rates, and normalizes all spend into INR in Crores (₹ Cr).',
     uploadedFileDetails: 'Uploaded Procurement File Details',
     dropzoneTitle: 'Drag & drop ERP spend extracts or purchase histories',
@@ -474,7 +474,12 @@ export const UI_STRINGS = {
     operatingPlants: 'Operating Plants',
     materialGroupsCount: 'Material Groups',
     dateRangeLabel: 'Ingestion Timeframe',
-    dateRangeValue: (monthsCount?: number) => (monthsCount && monthsCount <= 12 ? `1 Year Cycle (${monthsCount} Months)` : 'FY24 – FY26 (36 Months)'),
+    dateRangeValue: (monthsCount?: number, dateRangeLabel?: string) =>
+      dateRangeLabel
+        ? `${dateRangeLabel} (${monthsCount ?? 0} Months)`
+        : (monthsCount && monthsCount <= 12
+          ? `Available Period (${monthsCount} Months)`
+          : `${monthsCount ?? 0} Months Historical Coverage`),
     acrossBillingMonths: (monthsCount: number) => `Across ${monthsCount} Billing Months`,
     acrossBillingCycle: 'Across Operational Billing Cycle',
     currencyToggleLabel: 'Spend Currency:',
@@ -538,7 +543,7 @@ export const UI_STRINGS = {
         pos: 'PO Count',
         spend: (curr: string) => `Spend (${curr})`,
         share: 'Spend Share',
-        trend: '3-Year Trend (FY24 / FY25 / FY26)',
+        trend: 'Financial Year Spend Trend',
         trendSingleFy: (fy: string) => `Fiscal Spend Coverage (${fy})`
       }
     },
@@ -562,10 +567,10 @@ export const UI_STRINGS = {
       }
     },
     month: {
-      title: 'Month Wise Spend & Transaction Timeline (FY24 – FY26)',
-      subtitle: '36-month time-series distribution showing seasonal procurement trends, monthly run rates, and transaction spikes',
+      title: 'Month-Wise Spend & Transaction Timeline',
+      subtitle: 'Time-series distribution showing seasonal procurement trends, monthly run rates, and transaction spikes across the reporting period',
       filterLabel: 'Fiscal Year Filter:',
-      filterAll: 'All 36 Months',
+      filterAll: 'All Available Months',
       allMonthsFilter: (count: number) => `All ${count} Months`,
       filterFy24: 'FY24',
       filterFy25: 'FY25',
@@ -595,8 +600,8 @@ export const UI_STRINGS = {
         mom: 'MoM Change'
       },
       graph: {
-        title: '3-Year Month-Wise Spend & Change Trajectory (FY24 – FY26)',
-        subtitle: 'Interactive graphical progression of 36 monthly billing periods with month-over-month (MoM) expenditure fluctuations',
+        title: 'Month-Wise Spend & Change Trajectory',
+        subtitle: 'Interactive graphical progression of monthly billing periods with month-over-month (MoM) expenditure fluctuations',
         actualTrendTitle: 'Actual Month-Wise Spend Trend',
         actualTrendSubtitle: (count: number) => `Actual monthly spend based on the ${count} billing months available in the uploaded dataset.`,
         viewMode: {
@@ -608,7 +613,7 @@ export const UI_STRINGS = {
           peakMonth: 'Peak Spend Month',
           lowestMonth: 'Lowest Spend Month',
           monthlyAvg: 'Average Monthly Spend',
-          netTrajectory: '3-Year Trajectory',
+          netTrajectory: 'Net Trajectory',
           datasetCoverage: 'DATASET COVERAGE',
           actualCoverage: 'ACTUAL COVERAGE'
         },
@@ -645,7 +650,7 @@ export const UI_STRINGS = {
           line: 'Spend Trend Line Graph',
           bar: 'Monthly Spend Bar View'
         },
-        lineGraphTitle: '3-Year Month-Wise Comparative Line Graph (FY24, FY25, FY26)',
+        lineGraphTitle: 'Month-Wise Comparative Line Graph by Financial Year',
         lineGraphSubtitle: 'Annual trend comparison showing monthly spend curves across April to March for each fiscal year',
         actualLineGraphTitle: 'Actual Month-Wise Spend Trend',
         actualLineGraphSubtitle: (count: number) => `Actual monthly spend based on the ${count} billing months available in the uploaded dataset.`,
@@ -653,7 +658,7 @@ export const UI_STRINGS = {
         yAxisLabel: (curr: string) => `Spend Amount (${curr})`,
         yoyComparisonTitle: (month: string) => `${month} Year-Over-Year Spend Comparison`,
         yoyGrowth: (pct: number) => `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% YoY`,
-        clickToInspect: 'Click or hover a month on the X-axis to compare all 3 years',
+        clickToInspect: 'Click or hover a month on the X-axis to compare available years',
         lineLegendHelp: 'Toggle fiscal year lines on/off'
       }
     },
@@ -710,15 +715,15 @@ export const UI_STRINGS = {
     },
     breakdown: {
       inrValuation: 'INR in Crores (₹ Cr) Valuation',
-      categorySpendBreakdown: 'Category Spend Breakdown by Fiscal Year (FY24 – FY26)',
-      vendorSpendBreakdown: 'Vendor Spend Breakdown by Fiscal Year (FY24 – FY26)',
-      fiscalYearPrefix: 'Fiscal Year: 1st April to 31st March • Total 3-Yr spend for ',
+      categorySpendBreakdown: 'Category Spend Breakdown by Financial Year',
+      vendorSpendBreakdown: 'Vendor Spend Breakdown by Financial Year',
+      fiscalYearPrefix: 'Financial Year: 1st April to 31st March • Total Evaluated Spend for ',
       spendRankOrder: 'Spend Rank Order:',
       spendRankOrderDesc: 'Highest spend category first (#1 to #10), followed by itemized Balance Categories',
       unspscMatchEngine: 'UNSPSC Match Engine: 10 Core Segments + 7 Balance Segments',
       byCategories: 'By Categories',
       byVendors: 'By Vendors',
-      allFy: 'ALL FY (3 Years)',
+      allFy: 'All Periods',
       fy24: 'FY24',
       fy25: 'FY25',
       fy26: 'FY26',
@@ -750,7 +755,7 @@ export const UI_STRINGS = {
         vendor: 'Tail Vendor / Supplier Name',
         primarySegment: 'Primary Segment',
         unspscColL: 'UNSPSC Col L',
-        spend: '3-Yr Spend (₹ Cr)',
+        spend: 'Evaluated Spend (₹ Cr)',
         share: 'Spend Share %'
       }
     },
@@ -1542,7 +1547,7 @@ export const UI_STRINGS = {
       title: 'Client & Dataset Ingestion Setup',
       subtitle: 'Define ERP data source profile, fiscal year parameters, and base currency',
       stepBadge: 'Step 1: Multi-Currency Setup (INR in Crores)',
-      moduleBadge: 'Data Ingestion (3-Year Intake)',
+      moduleBadge: 'Data Ingestion Pipeline',
       enterpriseClientName: 'Enterprise Client Name',
       clientName: 'Client / Enterprise Name',
       clientPlaceholder: 'e.g. Enterprise Client (Fortune 500)',
@@ -1591,7 +1596,7 @@ export const UI_STRINGS = {
         eu: 'European Union (EU)',
         apac: 'Asia-Pacific (APAC)'
       },
-      estimatedSpendLabel: 'Estimated 3-Yr Spend (INR Crores)',
+      estimatedSpendLabel: 'Estimated Spend (INR Crores)',
       spendFormatted: (cr: number) => `₹${cr.toFixed(2)} Cr`,
       industrySector: {
         title: 'Industry / Sector Classification (Major & Minor)',
@@ -1718,10 +1723,13 @@ export const UI_STRINGS = {
       masterVendorId: (id: string) => `Master ID: ${id}`,
       spendShare: (pct: string) => `${pct}% of Total Spend`,
       spendShareVendor: (pct: string) => `${pct}% Spend Share`,
-      categoryTitle: (cat: string) => `${cat} — Top 10 Line Items & 3-Year Price Trends`,
-      vendorTitle: (vendor: string) => `${vendor} — Top Line Items & 3-Year Price Trends`,
-      fiscalYearNote: 'Fiscal Year: 1st April to 31st March (FY24 / FY25 / FY26) • Mapped to uploaded procurement dataset.',
-      vendorFiscalYearNote: (category: string, code: string) => `Primary Segment: ${category} (UNSPSC: ${code}) • Fiscal Years: FY24 / FY25 / FY26 (1st Apr to 31st Mar).`,
+      categoryTitle: (cat: string, period?: string) =>
+        `${cat} — Top Line Items & Price Trends${period ? ` (${period})` : ''}`,
+      vendorTitle: (vendor: string, period?: string) =>
+        `${vendor} — Top Line Items & Price Trends${period ? ` (${period})` : ''}`,
+      fiscalYearNote: 'Fiscal Period: 1st April to 31st March • Mapped to uploaded procurement dataset.',
+      vendorFiscalYearNote: (category: string, code: string) =>
+        `Primary Segment: ${category} (UNSPSC: ${code}) • Evaluated against active dataset dates (1st Apr to 31st Mar).`,
       exportCSV: 'Export CSV',
       totalCategorySpend: 'Total Category Spend',
       totalVendorSpend: 'Total Vendor Spend',
@@ -1753,8 +1761,8 @@ export const UI_STRINGS = {
         fy24Title: '1st April 2023 – 31st March 2024',
         fy25Title: '1st April 2024 – 31st March 2025',
         fy26Title: '1st April 2025 – 31st March 2026',
-        priceTrend3Yr: '3-Yr Price Trend',
-        spend3Yr: '3-Yr Spend (₹ Cr)',
+        priceTrend3Yr: 'Price Trend',
+        spend3Yr: 'Period Spend (₹ Cr)',
         savingsPotential: 'Savings Potential',
         savingsOpportunity: 'Savings Opportunity'
       },
@@ -1762,8 +1770,8 @@ export const UI_STRINGS = {
       unspscColL: (code: string) => `UNSPSC Col L: ${code}`,
       standardOpportunity: 'Standard',
       lakhsVal: (lakhs: number) => `₹${lakhs} Lakhs`,
-      priceTrendFormulaNote: 'Price Trend Formula: Line Item 3-Yr Spend = ∑ (Order Quantity × Net Price × Currency in INR).',
-      vendorSpendFormulaNote: 'Vendor Spend Formula: Line Item 3-Yr Spend = ∑ (Order Quantity × Net Price × Currency in INR).',
+      priceTrendFormulaNote: 'Price Trend Formula: Line Item Spend = ∑ (Order Quantity × Net Price × Currency in INR).',
+      vendorSpendFormulaNote: 'Vendor Spend Formula: Line Item Spend = ∑ (Order Quantity × Net Price × Currency in INR).',
       baseNormalizationNote: 'Base Normalization: INR in Crores (₹ Cr)',
       showingCategoryItems: (shown: number, total: number, category: string) => `Showing ${shown} of ${total} items in ${category}`,
       showingVendorItems: (shown: number, total: number, vendor: string) => `Showing ${shown} of ${total} items purchased from ${vendor}`,
@@ -1849,7 +1857,7 @@ export const UI_STRINGS = {
       baseCurrency: 'Base Currency: INR in Crores (₹ Cr)',
       enterpriseClient: 'Enterprise Client:',
       evaluatedSpendWindow: 'Evaluated Spend Window:',
-      spendWindowVal: '36 Months (Multi-Currency)',
+      spendWindowVal: 'Multi-Currency Intake',
       totalAnalyzedSpend: 'Total Analyzed Spend:',
       totalAnalyzedSpendVal: (spend: number) => `₹${spend.toFixed(2)} Crores`,
       overallRealization: 'Overall Realization:',
@@ -2022,7 +2030,7 @@ export const UI_STRINGS = {
       subtitle: 'High-impact findings across ₹732.41 Cr baseline spend and multi-currency transaction logs',
       kpiBaselineSpend: 'Analyzed Spend Baseline',
       kpiBaselineSpendVal: '₹732.41 Cr',
-      kpiBaselineSpendSub: '3-Year Multi-Currency Ingestion',
+      kpiBaselineSpendSub: 'Multi-Currency Ingestion Baseline',
       kpiIdentifiedSavings: 'Quantified Savings Target',
       kpiIdentifiedSavingsVal: '₹119.67 Cr',
       kpiIdentifiedSavingsSub: '16.4% Net Spend Reduction',
@@ -3534,18 +3542,24 @@ export const UI_STRINGS = {
         subtitle: 'Register an enterprise client profile within the Internal Command Centre',
         fieldName: 'Customer / Enterprise Name *',
         fieldIndustry: 'Industry Sector *',
+        fieldCompanyWebsite: 'Company Website (Official URL)',
+        fieldCompanyWebsitePlaceholder: 'e.g. https://www.abctextile.com',
         fieldBusinessUnit: 'Business Unit / Division',
         fieldRegion: 'Operating Region',
         fieldCurrency: 'Base Currency',
         fieldContactPerson: 'Contact Person / Stakeholder',
         fieldContactEmail: 'Contact Email',
         fieldNotes: 'Customer Profile Notes',
+        websiteIntelSection: 'Website Intelligence & Context Preview',
         btnSubmit: 'Create Customer Profile',
         btnCancel: 'Cancel'
       },
       modalEdit: {
         title: 'Edit Customer Profile',
         subtitle: 'Update enterprise client metadata and operational parameters',
+        fieldCompanyWebsite: 'Company Website (Official URL)',
+        fieldCompanyWebsitePlaceholder: 'e.g. https://www.abctextile.com',
+        websiteIntelSection: 'Website Intelligence & Context Preview',
         btnSubmit: 'Save Changes',
         btnCancel: 'Cancel'
       }
@@ -3893,6 +3907,41 @@ export const UI_STRINGS = {
     planningScenarioTitle: 'Illustrative Planning Scenario (30 Days / 1.5%)',
     planningScenarioDisclaimer:
       'Illustrative planning scenario only. This is not an assessed, verified or committed benefit. Actual benefits cannot be ascertained until supplier payment terms and the feasible improvement in credit days are established.'
+  },
+  reportingPeriod: {
+    title: 'Standardised Reporting Period & Data Coverage',
+    label: 'Reporting Period:',
+    dataCoverageLabel: 'Data Coverage:',
+    periodPrefix: 'Reporting Period: ',
+    dataCoveragePrefix: 'Data Coverage: ',
+    coverageNotice: 'Coverage Notice',
+    modes: {
+      allAvailable: 'All Available Data',
+      last12Months: 'Last 12 Months',
+      last24Months: 'Last 24 Months',
+      last36Months: 'Last 36 Months',
+      customRange: 'Custom Range',
+      financialYear: 'Financial Year'
+    },
+    custom: {
+      startDateLabel: 'Start Date:',
+      endDateLabel: 'End Date:',
+      applyButton: 'Apply Range',
+      clearButton: 'Reset to All'
+    },
+    fy: {
+      selectFyPrompt: 'Select Financial Year (1 Apr – 31 Mar):',
+      fiscalYearLabel: (fy: string) => `${fy} (1 Apr – 31 Mar)`
+    },
+    disclosure: {
+      insufficientHistoryTitle: 'Historical Coverage Limitation Disclosed',
+      insufficientHistoryBody: (selectedMonths: number, availableMonths: number, missingMonths: number) =>
+        `Selected reporting period is ${selectedMonths} months, but available transaction history covers approximately ${availableMonths} months. ${missingMonths} months are unavailable in this dataset and excluded from spend calculations without zero-extrapolation.`,
+      partialFyBody: (fy: string, availableMonths: number, range: string) =>
+        `${fy} covers ${availableMonths} billing months in uploaded dataset (${range}). Out-of-bounds fiscal months are unavailable and not treated as zero spend.`,
+      zeroExtrapolationNote:
+        'Missing or unavailable historical periods are distinguished from genuine zero spend and are not extrapolated.'
+    }
   }
 } as const;
 

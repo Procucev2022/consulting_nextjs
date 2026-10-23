@@ -6,7 +6,8 @@
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide20PCBICoverage(
@@ -19,51 +20,94 @@ export function renderSlide20PCBICoverage(
   canvas.addPage();
   canvas.renderHeader('Module 3 - PCBI Benchmark Coverage & Market Alignment', 'Market Intelligence', p);
 
-  // 4 Hero Benchmark Metrics
+  const isCust = isCustomerAssessment(clientName);
   const cardW = 207;
   const cardH = 92;
   const startY = 104;
 
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT,
-    startY,
-    cardW,
-    cardH,
-    'PCBI Covered Spend',
-    '₹1,480.00 Cr',
-    'Key Industrial Commodities',
-    BRAND_COLORS.procucevBlue
-  );
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT + 219,
-    startY,
-    cardW,
-    cardH,
-    'Benchmark Indices',
-    '28 Commodity Indices',
-    'Coal, Petcoke, Polymer, Steel',
-    BRAND_COLORS.accentGreen
-  );
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT + 438,
-    startY,
-    cardW,
-    cardH,
-    'Index Correlation',
-    '94.2% Market R2',
-    'Empirical Landing Price Match',
-    '#0284C7'
-  );
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT + 657,
-    startY,
-    cardW,
-    cardH,
-    'Strategic Market Value',
-    '₹14.88 Cr',
-    'Contract Timing & Formula Reset',
-    BRAND_COLORS.accentAmber
-  );
+  if (isCust) {
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT,
+      startY,
+      cardW,
+      cardH,
+      'PCBI Covered Spend',
+      'UNAVAILABLE',
+      'Pending Category Benchmark Ingestion',
+      BRAND_COLORS.secondaryText
+    );
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + 219,
+      startY,
+      cardW,
+      cardH,
+      'Benchmark Indices',
+      '0 Active Feeds',
+      'Zero external proxy substituted',
+      BRAND_COLORS.secondaryText
+    );
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + 438,
+      startY,
+      cardW,
+      cardH,
+      'Index Correlation',
+      'UNAVAILABLE',
+      'Empirical Isolation Maintained',
+      '#64748B'
+    );
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + 657,
+      startY,
+      cardW,
+      cardH,
+      'Strategic Market Value',
+      '₹0.00 Cr',
+      'No Modelled Uplift Substituted',
+      BRAND_COLORS.accentAmber
+    );
+  } else {
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT,
+      startY,
+      cardW,
+      cardH,
+      'PCBI Covered Spend',
+      '₹1,480.00 Cr',
+      'Key Industrial Commodities',
+      BRAND_COLORS.procucevBlue
+    );
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + 219,
+      startY,
+      cardW,
+      cardH,
+      'Benchmark Indices',
+      '28 Commodity Indices',
+      'Coal, Petcoke, Polymer, Steel',
+      BRAND_COLORS.accentGreen
+    );
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + 438,
+      startY,
+      cardW,
+      cardH,
+      'Index Correlation',
+      '94.2% Market R2',
+      'Empirical Landing Price Match',
+      '#0284C7'
+    );
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + 657,
+      startY,
+      cardW,
+      cardH,
+      'Strategic Market Value',
+      '₹14.88 Cr',
+      'Contract Timing & Formula Reset',
+      BRAND_COLORS.accentAmber
+    );
+  }
 
   // Methodology & Architecture Grid
   const gridY = 216;
@@ -127,9 +171,11 @@ export function renderSlide20PCBICoverage(
     font: 'bold',
     color: BRAND_COLORS.procucevBlue
   });
+  const takeawayText = isCust
+    ? `PCBI benchmark price gap is labeled as UNAVAILABLE for ${clientName} (Assessment ID: AIC-2026-0002). Module 3 isolation prevents substitution of external demonstration indices. Direct and proven savings rely strictly on verified transaction baseline.`
+    : 'PCBI index correlation enables customer procurement to convert fixed-price commodity contracts into formulaic index-linked agreements, capturing non-direct strategic market value during down-cycles.';
   canvas.textBlock(
-    'PCBI index correlation enables UltraTech to convert fixed-price commodity contracts into formulaic index-linked ' +
-    'agreements, capturing ₹14.88 Cr in non-direct strategic market value during down-cycles.',
+    takeawayText,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,
@@ -149,40 +195,70 @@ export function renderSlide21PCBIFindings(
   canvas.addPage();
   canvas.renderHeader('PCBI Benchmark Findings: Customer Purchase Rate vs Market Indices', 'Market Benchmarks', p);
 
-  // Visual Comparison Bars: Customer Rate vs PCBI Reference
+  const isCust = isCustomerAssessment(clientName);
   const compW = 276;
   const compH = 300;
   const startY = 104;
 
-  const items = [
-    {
-      name: 'Imported Petcoke (6.5% S)',
-      clientRate: '₹14,200 / MT',
-      pcbiRate: '₹13,400 / MT',
-      diff: '+5.9% Over PCBI',
-      opp: '₹9.80 Cr Strategic Timing',
-      desc: 'Customer procurement locked in annual fixed contracts during a temporary spike. Resetting captures declines.',
-      color: BRAND_COLORS.accentAmber
-    },
-    {
-      name: 'Domestic Thermal Coal (G11)',
-      clientRate: '₹8,650 / MT',
-      pcbiRate: '₹8,200 / MT',
-      diff: '+5.5% Over PCBI',
-      opp: '₹3.62 Cr Contract Reset',
-      desc: 'Spot coal buying carries distributor premiums over pithead index plus rail freight. Bilateral linkage helps.',
-      color: BRAND_COLORS.procucevBlue
-    },
-    {
-      name: 'PP Granules (Packaging)',
-      clientRate: '₹98.50 / kg',
-      pcbiRate: '₹94.00 / kg',
-      diff: '+4.8% Over PCBI',
-      opp: '₹1.46 Cr Formula Linkage',
-      desc: 'Bag converter pricing lags raw polymer falls by 60-90 days. Introducing formula contracts enforces pass-through.',
-      color: BRAND_COLORS.accentGreen
-    }
-  ];
+  const items = isCust
+    ? [
+        {
+          name: 'Synthetic Fibers & Yarns',
+          clientRate: 'Assessed Invoices',
+          pcbiRate: 'UNAVAILABLE',
+          diff: 'PCBI Benchmark Price Gap: UNAVAILABLE',
+          opp: '₹0.00 Cr Market Gap',
+          desc: 'Raw material procurement for polyester and viscose evaluated under Module 1 & 2 baseline. External commodity index feeds are not connected for this assessment.',
+          color: BRAND_COLORS.secondaryText
+        },
+        {
+          name: 'Specialty Dyes & Chemicals',
+          clientRate: 'Assessed Invoices',
+          pcbiRate: 'UNAVAILABLE',
+          diff: 'PCBI Benchmark Price Gap: UNAVAILABLE',
+          opp: '₹0.00 Cr Market Gap',
+          desc: 'Processing auxiliaries and dye spend governed under internal rate harmonization. Independent benchmark index price gap is strictly labeled unavailable.',
+          color: BRAND_COLORS.secondaryText
+        },
+        {
+          name: 'Packaging & Consumables',
+          clientRate: 'Assessed Invoices',
+          pcbiRate: 'UNAVAILABLE',
+          diff: 'PCBI Benchmark Price Gap: UNAVAILABLE',
+          opp: '₹0.00 Cr Market Gap',
+          desc: 'Corrugated cartons, film wraps and packing consumables evaluated through cross-plant median benchmarking. External market proxy is not substituted.',
+          color: BRAND_COLORS.secondaryText
+        }
+      ]
+    : [
+        {
+          name: 'Imported Petcoke (6.5% S)',
+          clientRate: '₹14,200 / MT',
+          pcbiRate: '₹13,400 / MT',
+          diff: '+5.9% Over PCBI',
+          opp: '₹9.80 Cr Strategic Timing',
+          desc: 'Customer procurement locked in annual fixed contracts during a temporary spike. Resetting captures declines.',
+          color: BRAND_COLORS.accentAmber
+        },
+        {
+          name: 'Domestic Thermal Coal (G11)',
+          clientRate: '₹8,650 / MT',
+          pcbiRate: '₹8,200 / MT',
+          diff: '+5.5% Over PCBI',
+          opp: '₹3.62 Cr Contract Reset',
+          desc: 'Spot coal buying carries distributor premiums over pithead index plus rail freight. Bilateral linkage helps.',
+          color: BRAND_COLORS.procucevBlue
+        },
+        {
+          name: 'PP Granules (Packaging)',
+          clientRate: '₹98.50 / kg',
+          pcbiRate: '₹94.00 / kg',
+          diff: '+4.8% Over PCBI',
+          opp: '₹1.46 Cr Formula Linkage',
+          desc: 'Bag converter pricing lags raw polymer falls by 60-90 days. Introducing formula contracts enforces pass-through.',
+          color: BRAND_COLORS.accentGreen
+        }
+      ];
 
   items.forEach((it, idx) => {
     const x = PDF_LAYOUT.CONTENT_LEFT + idx * (compW + 18);
@@ -203,10 +279,11 @@ export function renderSlide21PCBIFindings(
       stroke: BRAND_COLORS.border,
       lineWidth: 0.5
     });
-    canvas.text('UltraTech Invoiced Rate:', x + 24, boxY + 22, { fontSize: 8, color: BRAND_COLORS.secondaryText });
-    canvas.text(it.clientRate, x + 24, boxY + 38, { fontSize: 12, font: 'bold', color: BRAND_COLORS.primaryText });
+    const labelRate = isCust ? 'Assessed Status:' : 'Customer Invoiced Rate:';
+    canvas.text(labelRate, x + 24, boxY + 22, { fontSize: 8, color: BRAND_COLORS.secondaryText });
+    canvas.text(it.clientRate, x + 24, boxY + 38, { fontSize: 11, font: 'bold', color: BRAND_COLORS.primaryText });
     canvas.text('PCBI Index Reference:', x + 24, boxY + 54, { fontSize: 8, color: BRAND_COLORS.secondaryText });
-    canvas.text(it.pcbiRate, x + 140, boxY + 54, { fontSize: 9.5, font: 'bold', color: BRAND_COLORS.procucevBlue });
+    canvas.text(it.pcbiRate, x + 140, boxY + 54, { fontSize: 9.5, font: 'bold', color: isCust ? BRAND_COLORS.secondaryText : BRAND_COLORS.procucevBlue });
 
     canvas.textBlock(it.desc, x + 16, startY + 148, compW - 32, {
       fontSize: 9,
@@ -215,11 +292,11 @@ export function renderSlide21PCBIFindings(
     });
 
     canvas.rect(x + 16, startY + 246, compW - 32, 36, {
-      fill: '#EFF6FF',
-      stroke: BRAND_COLORS.procucevBlue,
+      fill: isCust ? BRAND_COLORS.lightCard : '#EFF6FF',
+      stroke: isCust ? BRAND_COLORS.border : BRAND_COLORS.procucevBlue,
       lineWidth: 0.5
     });
-    canvas.text(it.opp, x + 24, startY + 268, { fontSize: 9.5, font: 'bold', color: BRAND_COLORS.procucevBlue });
+    canvas.text(it.opp, x + 24, startY + 268, { fontSize: 9.5, font: 'bold', color: isCust ? BRAND_COLORS.secondaryText : BRAND_COLORS.procucevBlue });
   });
 
   // Bottom Takeaway Banner
@@ -235,9 +312,11 @@ export function renderSlide21PCBIFindings(
     banY + 22,
     { fontSize: 9, font: 'bold', color: BRAND_COLORS.procucevBlue }
   );
+  const banText = isCust
+    ? `For ${clientName} (AIC-2026-0002), benchmark price gap is labeled as UNAVAILABLE. Under strict governance, demonstration archetype benchmarks are NEVER substituted. Modelled savings (₹85.641 Cr net) and proven opportunity (₹82.380 Cr) derive entirely from empirical transaction data.`
+    : 'Total Strategic Market Value of ₹14.88 Cr is tracked separately from Direct Savings (₹78.72 Cr). It reflects commercial timing and formula indexing upside dependent on market movements rather than operational price reduction.';
   canvas.textBlock(
-    'Total Strategic Market Value of ₹14.88 Cr is tracked separately from Direct Savings (₹78.72 Cr). It reflects ' +
-    'commercial timing and formula indexing upside dependent on market movements rather than operational price reduction.',
+    banText,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,

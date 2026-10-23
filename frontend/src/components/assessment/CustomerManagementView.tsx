@@ -148,6 +148,9 @@ export const CustomerManagementView: React.FC<CustomerManagementViewProps> = ({
             <h3 className="text-lg font-bold text-white tracking-wide">{selectedCustomer.customerName}</h3>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
               <span>Industry: <strong className="text-slate-200">{selectedCustomer.industry}</strong></span>
+              {selectedCustomer.companyWebsite && (
+                <span>Website: <strong className="text-cyan-400">{selectedCustomer.companyWebsite}</strong></span>
+              )}
               {selectedCustomer.businessUnit && (
                 <span>BU: <strong className="text-slate-200">{selectedCustomer.businessUnit}</strong></span>
               )}
@@ -341,6 +344,11 @@ export const CustomerManagementView: React.FC<CustomerManagementViewProps> = ({
                               </span>
                             )}
                           </div>
+                          {cust.companyWebsite && (
+                            <div className="text-[10px] text-cyan-400/80 font-normal truncate max-w-[200px]">
+                              {cust.companyWebsite}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-4">{cust.industry}</td>
                         <td className="py-3 px-4 text-slate-400">{cust.businessUnit || '—'}</td>

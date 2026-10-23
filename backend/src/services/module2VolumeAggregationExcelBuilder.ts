@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import type { VolumeAggregationResult } from '../types/module2VolumeAggregation';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import { VOLUME_AGGREGATION_EXCEL_SHEETS } from '../constants/module2VolumeAggregation';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 function buildExecutiveRows(res: VolumeAggregationResult): (string | number)[][] {
   const sum = res.coverageSummary;
@@ -58,8 +59,9 @@ function buildOpportunitiesRows(res: VolumeAggregationResult): (string | number)
   const rows: (string | number)[][] = [headers];
 
   for (const o of allOpps) {
+    const humanCat = resolveHumanReadableCategory(o.category, o.materialCode);
     rows.push([
-      o.opportunityId, o.tierLabel, o.materialCode, o.materialDesc, o.category,
+      o.opportunityId, o.tierLabel, o.materialCode, o.materialDesc, humanCat,
       o.unspscCode, o.baseUom, o.totalHistoricalSpendCr, o.potentiallyAggregatableSpendCr,
       o.aggregatableQuantity, o.excludedQuantity, o.plantCount, o.plants.join(', '),
       o.supplierCount, o.primarySupplier, o.demandClassificationLabel,

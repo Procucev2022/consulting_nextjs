@@ -1,7 +1,7 @@
 /**
  * 10-Slide Executive Opportunity Brief — Slides 9 to 10
- * Adheres strictly to Prompt 286 (CFO/CEO Discussion Edition).
- * Shared Data Contract: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.
+ * Adheres strictly to Prompt 286 (CFO/CEO Discussion Edition) and Prompt 503.
+ * Customer contract binding and governance controls.
  */
 
 import type { PdfCanvas } from '../utils/pdfCanvas';
@@ -10,11 +10,20 @@ import {
   PDF_LAYOUT
 } from '../constants/executiveBriefLayoutConstants';
 import {
-  EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
+import type { ExecutiveBriefPresentationContract } from '../types/executiveBriefPresentation';
 import { renderExecutiveOpportunityBriefFooter } from './executiveOpportunityBriefPdfHelpers';
 
-export function renderBriefSlide9(canvas: PdfCanvas): void {
+export function renderBriefSlide9(
+  canvas: PdfCanvas,
+  clientName = 'ABC Textile Ltd',
+  contract?: ExecutiveBriefPresentationContract
+): void {
+  const activeContract = contract || getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader('Why Procucev + aiCEV: Enterprise Partner Value', 'Platform & Advisory Capabilities', 9);
 
@@ -22,19 +31,25 @@ export function renderBriefSlide9(canvas: PdfCanvas): void {
     {
       title: 'PROCUREMENT EXPERTISE',
       sub: 'Domain Authority & Category Depth',
-      bullets: [
-        'Decades of direct category leadership in heavy manufacturing',
-        'Specialized playbooks across fuel, power, logistics & MRO',
-        'Senior practitioner negotiation support across pan-India suppliers'
-      ],
+      bullets: isCust
+        ? [
+            'Direct category leadership across industrial textile & chemicals',
+            'Specialized playbooks across polymer fibers, dyes, packaging & MRO',
+            'Senior practitioner negotiation support across 420 active suppliers'
+          ]
+        : [
+            'Decades of direct category leadership in heavy manufacturing',
+            'Specialized playbooks across fuel, power, logistics & MRO',
+            'Senior practitioner negotiation support across pan-India suppliers'
+          ],
       c: BRAND_COLORS.procucevBlue
     },
     {
       title: 'FORENSIC SPEND INTELLIGENCE',
       sub: 'Transaction-Level Precision',
       bullets: [
-        'Granular transaction harmonization across 31,671 invoice lines',
-        'Multi-plant ex-works price dispersion detection on identical SKUs',
+        `Granular transaction harmonization across ${activeContract.baselineTransactions.toLocaleString()} invoice lines`,
+        `Multi-plant price dispersion detection across ${activeContract.baselinePlants} operating units`,
         'Systematic exclusion and overlap deduplication governance'
       ],
       c: '#2563EB'
@@ -42,11 +57,17 @@ export function renderBriefSlide9(canvas: PdfCanvas): void {
     {
       title: 'MARKET BENCHMARK INTELLIGENCE',
       sub: 'Independent Market Anchoring',
-      bullets: [
-        'Proprietary PCBI indices for cement-specific commodities',
-        'Independent index-linked pricing formulas (coal, petcoke, polymer)',
-        'Market timing intelligence for contract renegotiation windows'
-      ],
+      bullets: isCust
+        ? [
+            'PCBI Benchmark Price Gap: UNAVAILABLE for AIC-2026-0002',
+            'Zero surrogate or demonstration benchmarks substituted',
+            'Module 3 isolation boundary strictly preserved'
+          ]
+        : [
+            'Proprietary PCBI indices for cement-specific commodities',
+            'Independent index-linked pricing formulas (coal, petcoke, polymer)',
+            'Market timing intelligence for contract renegotiation windows'
+          ],
       c: '#0284C7'
     },
     {
@@ -100,36 +121,70 @@ export function renderBriefSlide9(canvas: PdfCanvas): void {
   renderExecutiveOpportunityBriefFooter(canvas, 9);
 }
 
-export function renderBriefSlide10(canvas: PdfCanvas): void {
+export function renderBriefSlide10(
+  canvas: PdfCanvas,
+  clientName = 'ABC Textile Ltd',
+  contract?: ExecutiveBriefPresentationContract
+): void {
+  const activeContract = contract || getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader('PROPOSED NEXT STEPS', 'Next Steps', 10);
 
-  const decisions = [
-    {
-      num: '01',
-      title: 'ALIGN',
-      action: 'Confirm priority Wave 1 categories',
-      desc: 'Confirm priority categories and align key stakeholders on immediate commercial launch across packaging bags, grinding media, and fuel.',
-      badge: 'Wave 1 Priority',
-      c: BRAND_COLORS.accentGreen
-    },
-    {
-      num: '02',
-      title: 'MOBILIZE',
-      action: 'Establish joint procurement working group',
-      desc: 'Charter joint central procurement and plant execution steering team to harmonize cross-plant specifications and vendor panels.',
-      badge: 'Joint Governance',
-      c: BRAND_COLORS.procucevBlue
-    },
-    {
-      num: '03',
-      title: 'EXECUTE',
-      action: 'Launch approved competitive sourcing initiatives',
-      desc: 'Launch approved dynamic price discovery events and corporate rate card standardizations across vetted supplier panels.',
-      badge: 'Commercial Sourcing',
-      c: '#2563EB'
-    }
-  ];
+  const decisions = isCust
+    ? [
+        {
+          num: '01',
+          title: 'ALIGN',
+          action: 'Confirm priority Wave 1 categories',
+          desc: 'Confirm priority categories and align key stakeholders on immediate commercial launch across synthetic fibers, chemical dyes, and packaging.',
+          badge: 'Wave 1 Priority',
+          c: BRAND_COLORS.accentGreen
+        },
+        {
+          num: '02',
+          title: 'MOBILIZE',
+          action: 'Establish joint procurement working group',
+          desc: 'Charter joint central procurement and plant execution steering team to harmonize cross-plant specifications and vendor panels across 6 units.',
+          badge: 'Joint Governance',
+          c: BRAND_COLORS.procucevBlue
+        },
+        {
+          num: '03',
+          title: 'EXECUTE',
+          action: 'Launch approved competitive sourcing initiatives',
+          desc: 'Launch approved dynamic price discovery events and corporate rate card standardizations across vetted supplier panels.',
+          badge: 'Commercial Sourcing',
+          c: '#2563EB'
+        }
+      ]
+    : [
+        {
+          num: '01',
+          title: 'ALIGN',
+          action: 'Confirm priority Wave 1 categories',
+          desc: 'Confirm priority categories and align key stakeholders on immediate commercial launch across packaging bags, grinding media, and fuel.',
+          badge: 'Wave 1 Priority',
+          c: BRAND_COLORS.accentGreen
+        },
+        {
+          num: '02',
+          title: 'MOBILIZE',
+          action: 'Establish joint procurement working group',
+          desc: 'Charter joint central procurement and plant execution steering team to harmonize cross-plant specifications and vendor panels.',
+          badge: 'Joint Governance',
+          c: BRAND_COLORS.procucevBlue
+        },
+        {
+          num: '03',
+          title: 'EXECUTE',
+          action: 'Launch approved competitive sourcing initiatives',
+          desc: 'Launch approved dynamic price discovery events and corporate rate card standardizations across vetted supplier panels.',
+          badge: 'Commercial Sourcing',
+          c: '#2563EB'
+        }
+      ];
 
   const dW = 280;
   const dGap = 20;
@@ -160,8 +215,8 @@ export function renderBriefSlide10(canvas: PdfCanvas): void {
   canvas.rect(PDF_LAYOUT.CONTENT_LEFT, ctaY, 6, 90, { fill: BRAND_COLORS.accentGreen });
 
   canvas.text(
-    `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDirectSavingsCr.toFixed(2)} Cr Direct Savings Opportunity  |  ` +
-    `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDefensiblePipelineCr.toFixed(2)} Cr Net Defensible Pipeline`,
+    `Rs. ${activeContract.netDirectSavingsCr.toFixed(2)} Cr Direct Savings Opportunity  |  ` +
+    `Rs. ${activeContract.netDefensiblePipelineCr.toFixed(2)} Cr Net Defensible Pipeline`,
     PDF_LAYOUT.CONTENT_LEFT + 24, ctaY + 28, {
       fontSize: 13, font: 'bold', color: '#065F46'
     }

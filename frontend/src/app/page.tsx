@@ -56,6 +56,7 @@ import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
+import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -259,6 +260,25 @@ export default function Home() {
         fy25_spend_inr_cr: mg.fy25_spend_inr_cr,
         fy26_spend_inr_cr: mg.fy26_spend_inr_cr
       })));
+
+      const dynamicCategories: SpendCategorySummary[] = canonical.materialGroupSpend.map((mg, idx) => ({
+        id: `CAT-${idx + 1}`,
+        name: resolveHumanReadableCategory(mg.group_name, mg.group_code),
+        category: resolveHumanReadableCategory(mg.group_name, mg.group_code),
+        column_l_code: mg.group_code,
+        spend_inr_crores: mg.spend_inr_cr,
+        spend_fy24_cr: mg.fy24_spend_inr_cr || mg.spend_inr_cr,
+        spend_fy25_cr: mg.fy25_spend_inr_cr || 0,
+        spend_fy26_cr: mg.fy26_spend_inr_cr || 0,
+        vendor_count: mg.unique_vendors_count,
+        item_count: mg.unique_items_count,
+        line_items_count: mg.records_count,
+        share_pct: mg.share_pct,
+        spend_inr_2023: Math.round((mg.fy24_spend_inr_cr || mg.spend_inr_cr) * 10000000),
+        spend_inr_2024: Math.round((mg.fy25_spend_inr_cr || 0) * 10000000),
+        spend_inr_2025_26: Math.round((mg.fy26_spend_inr_cr || 0) * 10000000)
+      }));
+      setCategories(dynamicCategories);
     }
 
     if (canonical.plantSpend && canonical.plantSpend.length > 0) {
@@ -857,7 +877,7 @@ export default function Home() {
       }
 
       try {
-        const m2Items = await apiClient.getModule2CanonicalLineItems(1000, activeAssessment?.assessmentId);
+        const m2Items = await apiClient.getModule2CanonicalLineItems(undefined, activeAssessment?.assessmentId);
         if (m2Items && m2Items.length > 0) {
           setLineItems(m2Items);
         }
@@ -1236,7 +1256,7 @@ export default function Home() {
     setAnalyzingLoaderState({
       isOpen: true,
       title: 'Recalculating Enterprise Spend & Refreshing Final Numbers',
-      subtitle: `Auditing ${currentRecordsCount ? currentRecordsCount.toLocaleString() : 'all'} line items across facilities, material groups, and 3-year timelines...`,
+      subtitle: `Auditing ${currentRecordsCount ? currentRecordsCount.toLocaleString() : 'all'} line items across facilities, material groups, and transaction timelines...`,
       metrics: {
         totalRecords: currentRecordsCount,
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
@@ -1633,23 +1653,26 @@ export default function Home() {
 
           dynamicMgs = Array.from(mgMap.entries())
             .sort((a, b) => b[1].spendCr - a[1].spendCr)
-            .map(([code, data], mIdx) => ({
-              group_code: code,
-              group_name: code,
-              records_count: data.count,
-              unique_items_count: data.items.size,
-              unique_vendors_count: data.vendors.size,
-              po_count: Math.max(1, Math.round(data.count * 0.18)),
-              spend_inr_cr: Number(data.spendCr.toFixed(2)),
-              spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
-              share_pct: Number(((data.spendCr / Math.max(1, totalSpendInrCr)) * 100).toFixed(1)),
-              sample_item: data.sampleItem,
-              primary_segment: `${code} - Enterprise Spend Segment`,
-              fy24_spend_inr_cr: Number((data.spendCr * 0.3).toFixed(2)),
-              fy25_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
-              fy26_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
-              color: ['#0284c7', '#059669', '#d97706', '#7c3aed', '#ea580c', '#0891b2'][mIdx % 6]
-            }));
+            .map(([code, data], mIdx) => {
+              const humanName = resolveHumanReadableCategory(code);
+              return {
+                group_code: code,
+                group_name: humanName,
+                records_count: data.count,
+                unique_items_count: data.items.size,
+                unique_vendors_count: data.vendors.size,
+                po_count: Math.max(1, Math.round(data.count * 0.18)),
+                spend_inr_cr: Number(data.spendCr.toFixed(2)),
+                spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
+                share_pct: Number(((data.spendCr / Math.max(1, totalSpendInrCr)) * 100).toFixed(1)),
+                sample_item: data.sampleItem,
+                primary_segment: `${humanName} - Enterprise Spend Segment`,
+                fy24_spend_inr_cr: Number((data.spendCr * 0.3).toFixed(2)),
+                fy25_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
+                fy26_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
+                color: ['#0284c7', '#059669', '#d97706', '#7c3aed', '#ea580c', '#0891b2'][mIdx % 6]
+              };
+            });
 
           dynamicPlants = Array.from(plantMap.entries())
             .sort((a, b) => b[1].spendCr - a[1].spendCr)
@@ -1709,7 +1732,7 @@ export default function Home() {
 
           dynamicCategories = dynamicMgs.map((mg, mIdx) => ({
             id: `CAT-${mg.group_code}`,
-            name: mg.group_name,
+            name: resolveHumanReadableCategory(mg.group_name, mg.group_code),
             spend: Math.round((mg.spend_inr_cr * 10000000) / 83.8),
             spend_inr: Math.round(mg.spend_inr_cr * 10000000),
             spend_inr_crores: mg.spend_inr_cr,

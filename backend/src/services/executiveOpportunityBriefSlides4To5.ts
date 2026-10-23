@@ -1,7 +1,7 @@
 /**
  * 10-Slide Executive Opportunity Brief — Slides 4 to 5
- * Adheres strictly to Prompt 286 (CFO/CEO Discussion Edition).
- * Shared Data Contract: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.
+ * Adheres strictly to Prompt 286 (CFO/CEO Discussion Edition) and Prompt 503.
+ * Dynamic presentation contract binding for customer-specific financial figures.
  */
 
 import type { PdfCanvas } from '../utils/pdfCanvas';
@@ -10,38 +10,55 @@ import {
   PDF_LAYOUT
 } from '../constants/executiveBriefLayoutConstants';
 import {
-  EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
+import type { ExecutiveBriefPresentationContract } from '../types/executiveBriefPresentation';
 import { renderExecutiveOpportunityBriefFooter } from './executiveOpportunityBriefPdfHelpers';
 
-export function renderBriefSlide4(canvas: PdfCanvas): void {
+export function renderBriefSlide4(
+  canvas: PdfCanvas,
+  clientName = 'ABC Textile Ltd',
+  contract?: ExecutiveBriefPresentationContract
+): void {
+  const activeContract = contract || getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader('From Gross Opportunity to Defensible Value', 'Financial Reconciliation', 4);
 
   const bridgeSteps = [
     {
       title: 'GROSS OPPORTUNITY',
-      val: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.grossOpportunityCr.toFixed(2)} Cr`,
-      desc: 'Sum of 10 opportunity levers identified across spend baseline',
-      c: BRAND_COLORS.procucevBlue, bg: BRAND_COLORS.lightCard
+      val: `Rs. ${activeContract.grossOpportunityCr.toFixed(2)} Cr`,
+      desc: isCust
+        ? 'Gross modelled opportunity identified across evaluated baseline spend'
+        : 'Sum of 10 opportunity levers identified across spend baseline',
+      c: BRAND_COLORS.procucevBlue,
+      bg: BRAND_COLORS.lightCard
     },
     {
       title: 'OVERLAP DEDUCTIONS',
-      val: `- Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.overlapDeductionsCr.toFixed(2)} Cr`,
+      val: `- Rs. ${activeContract.overlapDeductionsCr.toFixed(2)} Cr`,
       desc: 'Eliminates cross-lever double-counting between price & auction',
-      c: BRAND_COLORS.accentAmber, bg: '#FFFBEB'
+      c: BRAND_COLORS.accentAmber,
+      bg: '#FFFBEB'
     },
     {
       title: 'POLICY EXCLUSIONS',
-      val: `- Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.exclusionsCr.toFixed(2)} Cr`,
-      desc: 'Long-term single-source OEM & statutory boundary constraints',
-      c: BRAND_COLORS.accentAmber, bg: '#FFFBEB'
+      val: `- Rs. ${activeContract.exclusionsCr.toFixed(2)} Cr`,
+      desc: isCust
+        ? 'Zero policy exclusions applied for this assessment baseline'
+        : 'Long-term single-source OEM & statutory boundary constraints',
+      c: BRAND_COLORS.accentAmber,
+      bg: '#FFFBEB'
     },
     {
       title: 'NET DEFENSIBLE PIPELINE',
-      val: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDefensiblePipelineCr.toFixed(2)} Cr`,
+      val: `Rs. ${activeContract.netDefensiblePipelineCr.toFixed(2)} Cr`,
       desc: 'Audited, risk-adjusted value pipeline ready for executive capture',
-      c: BRAND_COLORS.accentGreen, bg: '#ECFDF5'
+      c: BRAND_COLORS.accentGreen,
+      bg: '#ECFDF5'
     }
   ];
 
@@ -77,7 +94,7 @@ export function renderBriefSlide4(canvas: PdfCanvas): void {
   canvas.text('DIRECT SAVINGS OPPORTUNITY (P&L EBITDA EXPANSION)', PDF_LAYOUT.CONTENT_LEFT + 16, splitY + 22, {
     fontSize: 9, font: 'bold', color: '#065F46'
   });
-  canvas.text(`Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDirectSavingsCr.toFixed(2)} Cr`,
+  canvas.text(`Rs. ${activeContract.netDirectSavingsCr.toFixed(2)} Cr`,
     PDF_LAYOUT.CONTENT_LEFT + 16, splitY + 54, {
       fontSize: 22, font: 'bold', color: BRAND_COLORS.accentGreen
     });
@@ -94,24 +111,26 @@ export function renderBriefSlide4(canvas: PdfCanvas): void {
   canvas.text('STRATEGIC MARKET VALUE (COMMODITY & TIMING LEVERS)', split2X + 16, splitY + 22, {
     fontSize: 9, font: 'bold', color: BRAND_COLORS.procucevBlue
   });
-  canvas.text(`Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.strategicMarketValueCr.toFixed(2)} Cr`,
+  canvas.text(`Rs. ${activeContract.strategicMarketValueCr.toFixed(2)} Cr`,
     split2X + 16, splitY + 54, {
       fontSize: 22, font: 'bold', color: BRAND_COLORS.procucevBlue
     });
-  canvas.text('Contract reset timing and market index formula contracting tracked distinctly.',
-    split2X + 16, splitY + 78, {
-      fontSize: 8.5, color: BRAND_COLORS.secondaryText
-    });
+  const stratDesc = isCust
+    ? 'PCBI benchmark price gap is UNAVAILABLE for this assessment. Zero external values substituted.'
+    : 'Contract reset timing and market index formula contracting tracked distinctly.';
+  canvas.text(stratDesc, split2X + 16, splitY + 78, {
+    fontSize: 8.5, color: BRAND_COLORS.secondaryText
+  });
 
   canvas.rect(PDF_LAYOUT.CONTENT_LEFT, 410, PDF_LAYOUT.CONTENT_WIDTH, 34, {
     fill: '#F8FAFC', stroke: BRAND_COLORS.border, lineWidth: 0.75
   });
   canvas.text(
     'Mathematical reconciliation variance: Rs. 0.00 Cr  |  ' +
-    `Gross (Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.grossOpportunityCr.toFixed(2)} Cr) - ` +
-    `Deductions (Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.overlapDeductionsCr.toFixed(2)} Cr) - ` +
-    `Exclusions (Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.exclusionsCr.toFixed(2)} Cr) = ` +
-    `Net Pipeline (Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDefensiblePipelineCr.toFixed(2)} Cr)`,
+    `Gross (Rs. ${activeContract.grossOpportunityCr.toFixed(2)} Cr) - ` +
+    `Deductions (Rs. ${activeContract.overlapDeductionsCr.toFixed(2)} Cr) - ` +
+    `Exclusions (Rs. ${activeContract.exclusionsCr.toFixed(2)} Cr) = ` +
+    `Net Pipeline (Rs. ${activeContract.netDefensiblePipelineCr.toFixed(2)} Cr)`,
     PDF_LAYOUT.CONTENT_LEFT + 16, 431, {
       fontSize: 8.5, font: 'bold', color: BRAND_COLORS.accentGreen
     }
@@ -126,35 +145,41 @@ export function renderBriefSlide4(canvas: PdfCanvas): void {
   renderExecutiveOpportunityBriefFooter(canvas, 4);
 }
 
-export function renderBriefSlide5(canvas: PdfCanvas): void {
+export function renderBriefSlide5(
+  canvas: PdfCanvas,
+  clientName = 'ABC Textile Ltd',
+  contract?: ExecutiveBriefPresentationContract
+): void {
+  const activeContract = contract || getExecutiveBriefPresentationContract(clientName);
+
   canvas.addPage();
   canvas.renderHeader('Why Management Can Trust the Number', 'Evidence & Audit Trail', 5);
 
   const proofPoints = [
     {
-      num: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineTransactions.toLocaleString(),
+      num: activeContract.baselineTransactions.toLocaleString(),
       lbl: 'Transaction Records',
       sub: 'Audited PO & invoice lines'
     },
     {
-      num: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineSuppliers.toLocaleString(),
+      num: activeContract.baselineSuppliers.toLocaleString(),
       lbl: 'Suppliers',
       sub: 'Vendor master profiled'
     },
     {
-      num: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineMaterialGroups.toLocaleString(),
+      num: activeContract.baselineMaterialGroups.toLocaleString(),
       lbl: 'Material Groups',
       sub: 'Clean taxonomy categories'
     },
     {
-      num: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselinePlants.toLocaleString(),
+      num: activeContract.baselinePlants.toLocaleString(),
       lbl: 'Plants',
-      sub: 'Pan-India manufacturing sites'
+      sub: 'Manufacturing plant sites'
     },
     {
-      num: `${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.analysisPeriodMonths} Months`,
+      num: `${activeContract.analysisPeriodMonths} Months`,
       lbl: 'Analysis Period',
-      sub: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.analysisPeriod
+      sub: activeContract.analysisPeriod
     }
   ];
 
@@ -166,45 +191,51 @@ export function renderBriefSlide5(canvas: PdfCanvas): void {
       fill: BRAND_COLORS.lightCard, stroke: BRAND_COLORS.border, lineWidth: 1
     });
     canvas.rect(x, 108, pW, 4, { fill: BRAND_COLORS.procucevBlue });
-    canvas.text(p.num, x + 14, 155, { fontSize: 24, font: 'bold', color: BRAND_COLORS.primaryText });
-    canvas.text(p.lbl, x + 14, 185, { fontSize: 10, font: 'bold', color: BRAND_COLORS.procucevBlue });
-    canvas.text(p.sub, x + 14, 212, { fontSize: 8.5, color: BRAND_COLORS.secondaryText });
+    canvas.text(p.num, x + 12, 142, { fontSize: 20, font: 'bold', color: BRAND_COLORS.primaryText });
+    canvas.text(p.lbl, x + 12, 168, { fontSize: 10, font: 'bold', color: BRAND_COLORS.procucevBlue });
+    canvas.text(p.sub, x + 12, 190, { fontSize: 9, color: BRAND_COLORS.secondaryText });
   });
 
-  const flowY = 260;
-  canvas.rect(PDF_LAYOUT.CONTENT_LEFT, flowY, PDF_LAYOUT.CONTENT_WIDTH, 75, {
-    fill: BRAND_COLORS.lightCard, stroke: BRAND_COLORS.border, lineWidth: 1
+  const bannerY = 265;
+  canvas.rect(PDF_LAYOUT.CONTENT_LEFT, bannerY, PDF_LAYOUT.CONTENT_WIDTH, 70, {
+    fill: '#EFF6FF', stroke: '#BFDBFE', lineWidth: 1
   });
-  canvas.text('ROBUST VALUE PROVENANCE ARCHITECTURE', PDF_LAYOUT.CONTENT_LEFT + 20, flowY + 24, {
-    fontSize: 9, font: 'bold', color: BRAND_COLORS.procucevBlue
-  });
+  canvas.rect(PDF_LAYOUT.CONTENT_LEFT, bannerY, 4, 70, { fill: BRAND_COLORS.procucevBlue });
   canvas.text(
-    'Transaction-level analysis  ->  Category intelligence  ->  ' +
-    'Sourcing opportunities  ->  Overlap controls  ->  Defensible pipeline',
-    PDF_LAYOUT.CONTENT_LEFT + 20, flowY + 54, {
-      fontSize: 11, font: 'bold', color: BRAND_COLORS.primaryText
+    'Every rupee is traced to specific PO line items and supplier rate differentials. Zero high-level extrapolation.',
+    PDF_LAYOUT.CONTENT_LEFT + 20, bannerY + 28, {
+      fontSize: 10.5, font: 'bold', color: BRAND_COLORS.procucevBlue
+    }
+  );
+  canvas.text(
+    `Reconciled against verified baseline of Rs. ${activeContract.totalCustomerSpendCr.toFixed(4)} Cr under strict data isolation.`,
+    PDF_LAYOUT.CONTENT_LEFT + 20, bannerY + 50, {
+      fontSize: 9.5, font: 'regular', color: BRAND_COLORS.primaryText
     }
   );
 
-  const secY = 355;
-  canvas.rect(PDF_LAYOUT.CONTENT_LEFT, secY, PDF_LAYOUT.CONTENT_WIDTH, 60, {
-    fill: '#F8FAFC', stroke: BRAND_COLORS.border, lineWidth: 1
+  const steps = [
+    { n: '1', title: 'Data Ingestion & Hygiene', desc: '100% line-item normalization; duplicate elimination.' },
+    { n: '2', title: 'Isolation & Encryption', desc: 'Customer data processed under dedicated AES-256 isolation.' },
+    { n: '3', title: 'Independent Validation', desc: 'Multi-lever overlap deductions eliminate double-counting.' }
+  ];
+  const sW = 280;
+  const sGap = 20;
+  const sY = 355;
+  steps.forEach((s, idx) => {
+    const x = PDF_LAYOUT.CONTENT_LEFT + idx * (sW + sGap);
+    canvas.rect(x, sY, sW, 90, { fill: BRAND_COLORS.lightCard, stroke: BRAND_COLORS.border, lineWidth: 0.75 });
+    canvas.text(`STEP ${s.n}: ${s.title}`, x + 14, sY + 24, {
+      fontSize: 9.5, font: 'bold', color: BRAND_COLORS.procucevBlue
+    });
+    canvas.textBlock(s.desc, x + 14, sY + 44, sW - 28, {
+      fontSize: 9, color: BRAND_COLORS.secondaryText, lineHeight: 14
+    });
   });
-  canvas.rect(PDF_LAYOUT.CONTENT_LEFT, secY, 4, 60, { fill: '#64748B' });
-  canvas.text('DATA GOVERNANCE & INTEGRITY ASSURANCE', PDF_LAYOUT.CONTENT_LEFT + 20, secY + 22, {
-    fontSize: 9, font: 'bold', color: BRAND_COLORS.primaryText
-  });
-  canvas.text(
-    'Customer procurement data is handled under configured tenant isolation, access controls, ' +
-    'confidentiality and data-governance controls.',
-    PDF_LAYOUT.CONTENT_LEFT + 20, secY + 44, {
-      fontSize: 9.5, color: BRAND_COLORS.secondaryText
-    }
-  );
 
   canvas.text(
-    'Full methodology and audit trail: Boardroom & Evidence Edition - Slides 7 & 30',
-    PDF_LAYOUT.CONTENT_LEFT, 460, {
+    'Full audit methodology: Boardroom & Evidence Edition - Slides 7-10',
+    PDF_LAYOUT.CONTENT_LEFT, 465, {
       fontSize: 9, font: 'italic', color: BRAND_COLORS.secondaryText
     }
   );

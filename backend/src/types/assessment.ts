@@ -21,6 +21,19 @@ export type {
   PersistenceEnvironment
 };
 
+export interface CustomerWebsiteProfile {
+  companyWebsite: string;
+  businessDescription: string;
+  sector: string;
+  mainProducts: string[];
+  operatingFootprint: string;
+  revenueOrProfit?: string;
+  businessPriorities: string[];
+  sourceUrls: string[];
+  reportingPeriod: string;
+  retrievedAt: string;
+}
+
 export interface CustomerRecord {
   customerId: string;
   id?: string;
@@ -29,6 +42,8 @@ export interface CustomerRecord {
   businessUnit?: string;
   region?: string;
   baseCurrency?: string;
+  companyWebsite?: string;
+  websiteProfile?: CustomerWebsiteProfile;
   contactEmail?: string;
   contactPerson?: string;
   status: 'ACTIVE' | 'ARCHIVED' | 'ONBOARDING';
@@ -48,6 +63,8 @@ export interface AssessmentRecord {
   businessUnit?: string;
   assessmentOwner?: string;
   currency?: string;
+  companyWebsite?: string;
+  websiteProfile?: CustomerWebsiteProfile;
   assessmentPeriodStart: string;
   assessmentPeriodEnd: string;
   dataReceivedAt?: string;

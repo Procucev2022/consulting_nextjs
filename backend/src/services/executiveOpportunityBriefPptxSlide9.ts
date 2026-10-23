@@ -14,7 +14,7 @@ import {
   addBriefFooter
 } from './executiveOpportunityBriefPptxHelpers';
 
-export function renderBriefPptxSlide9(pptx: PptxGenJS): void {
+export function renderBriefPptxSlide9(pptx: PptxGenJS, _clientName?: string): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
   addBriefHeader(slide, 'Why Procucev + aiCEV: Enterprise Partner Value', 'Platform & Advisory Capabilities', 9);

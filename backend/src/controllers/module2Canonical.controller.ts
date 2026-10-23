@@ -240,9 +240,12 @@ export const getLineItems = async (req: Request, res: Response): Promise<Respons
     if (!assessmentId) {
       return res.status(400).json({ success: false, message: 'Assessment identifier (assessmentId) is required' });
     }
-    const limit = Number(req.query.limit) || 500;
+    const limitParam = req.query.limit as string | undefined;
     const offset = Number(req.query.offset) || 0;
     const txs = db.getModule2StrategicTransactions(assessmentId);
+    const limit = (limitParam === 'all' || limitParam === '-1' || limitParam === undefined)
+      ? txs.length
+      : Math.max(0, Number(limitParam) || txs.length);
 
     const lineItems = txs
       .slice(offset, offset + limit)

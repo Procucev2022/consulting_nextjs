@@ -110,7 +110,7 @@ export function renderSlide28DataTrust(
   );
   canvas.textBlock(
     'Procucev guarantees full legal and technical custody of customer confidential information. Commercial rate ' +
-    'intelligence remains strictly proprietary to UltraTech and is safeguarded under mutual non-disclosure agreements.',
+    `intelligence remains strictly proprietary to ${clientName} and is safeguarded under mutual non-disclosure agreements.`,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,

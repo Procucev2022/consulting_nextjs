@@ -408,11 +408,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              {months.length === 10
-                ? 'All 10 Months'
-                : months.length === 36
-                ? 'All 36 Months'
-                : UI_STRINGS.documentSummary.month.allMonthsFilter(months.length)}
+              {UI_STRINGS.documentSummary.month.allMonthsFilter(months.length)}
             </button>
             {Array.from(new Set(months.map((m) => m.fiscal_year))).filter(Boolean).map((fy) => (
               <button

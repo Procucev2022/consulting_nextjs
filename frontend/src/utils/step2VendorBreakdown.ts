@@ -8,6 +8,7 @@ import {
   getItemSpendCr,
   upsertTopItem
 } from './step2BreakdownShared';
+import { resolveHumanReadableCategory } from './procurementCategoryResolver';
 
 interface VendorAggregate {
   spendFY24: number;
@@ -53,7 +54,8 @@ function aggregateLineItemVendor(
   entry.lineItemsCount += 1;
   addSpendToFiscalYear(entry, spendCr, item.spend_year);
 
-  const cat = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
+  const rawCat = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
+  const cat = resolveHumanReadableCategory(rawCat, item.material_code);
   entry.categories.set(cat, (entry.categories.get(cat) || 0) + spendCr);
 
   const rawDesc = item.raw_desc || item.material_desc || 'Item';

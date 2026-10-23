@@ -67,7 +67,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
       'FY25 Price',
       'FY26 Price',
       'Price Variance %',
-      '3-Yr Total Spend (INR Cr)',
+      'Total Period Spend (INR Cr)',
       'Savings Potential (Lakhs)'
     ];
 

@@ -14,7 +14,12 @@ import {
   BRIEF_LEVER_SUMMARIES
 } from '../constants/executiveBriefConstants';
 import {
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
+} from '../constants/executiveBriefPresentationConstants';
+import {
   RAW_TOTAL_SPEND_INR,
+  RAW_ADDRESSABLE_SPEND_INR,
   RAW_GROSS_OPP_INR,
   RAW_NET_DEFENSIBLE_INR,
   RAW_APPROVED_MODULE4_INR,
@@ -127,30 +132,53 @@ export class ExecutiveBriefService {
    * Generates the metadata JSON object (Section 27)
    */
   public generateReportMetadata(clientName = DEFAULT_CLIENT_PROFILE.clientName): ExecutiveBriefMetadata {
+    const contract = getExecutiveBriefPresentationContract(clientName);
+    const isCust = isCustomerAssessment(clientName);
+
     return {
       client: clientName,
       reportDate: new Date().toISOString().split('T')[0],
-      analysisPeriod: DEFAULT_CLIENT_PROFILE.analysisPeriod,
+      analysisPeriod: contract.analysisPeriod,
       modulesIncluded: ['Module 1', 'Module 2', 'Module 3', 'Module 4'],
-      transactionCount: 31671,
-      totalSpendInr: RAW_TOTAL_SPEND_INR,
-      addressableSpendInr: 49310000000,
-      grossOpportunityInr: RAW_GROSS_OPP_INR,
-      netDefensibleOpportunityInr: RAW_NET_DEFENSIBLE_INR,
-      approvedSavingsInr: RAW_APPROVED_MODULE4_INR,
-      realizedSavingsInr: RAW_REALIZED_INR,
-      opportunityCount: 10,
-      confidenceSummary: {
-        high: 7,
-        medium: 3,
-        low: 0,
-        insufficient: 0
-      },
-      sourceReferences: DEFAULT_CLIENT_PROFILE.publicFacts.map((pf) => ({
-        topic: pf.characteristic,
-        source: pf.source,
-        sourceDate: pf.sourceDate
-      })),
+      transactionCount: contract.baselineTransactions,
+      totalSpendInr: isCust ? contract.totalCustomerSpendInr : RAW_TOTAL_SPEND_INR,
+      addressableSpendInr: isCust ? contract.addressableSpendInr : RAW_ADDRESSABLE_SPEND_INR,
+      grossOpportunityInr: isCust ? contract.grossOpportunityInr : RAW_GROSS_OPP_INR,
+      netDefensibleOpportunityInr: isCust ? contract.netDefensiblePipelineInr : RAW_NET_DEFENSIBLE_INR,
+      approvedSavingsInr: isCust ? contract.validatedSavingsInr : RAW_APPROVED_MODULE4_INR,
+      realizedSavingsInr: isCust ? contract.realizedSavingsInr : RAW_REALIZED_INR,
+      opportunityCount: isCust ? 6 : 10,
+      confidenceSummary: isCust
+        ? {
+            high: 5,
+            medium: 1,
+            low: 0,
+            insufficient: 0
+          }
+        : {
+            high: 7,
+            medium: 3,
+            low: 0,
+            insufficient: 0
+          },
+      sourceReferences: isCust
+        ? [
+            {
+              topic: 'Annual Financial Filing',
+              source: 'Corporate Filings & Official Website',
+              sourceDate: 'FY 2022-23'
+            },
+            {
+              topic: 'Normalized Transaction Ledger',
+              source: 'Module 1 Ingestion Audit',
+              sourceDate: '2023-12-30'
+            }
+          ]
+        : DEFAULT_CLIENT_PROFILE.publicFacts.map((pf) => ({
+            topic: pf.characteristic,
+            source: pf.source,
+            sourceDate: pf.sourceDate
+          })),
       reportVersion: EXECUTIVE_BRIEF_VERSION
     };
   }

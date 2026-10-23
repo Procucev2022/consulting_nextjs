@@ -14,6 +14,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState('');
   const [industry, setIndustry] = useState('');
+  const [companyWebsite, setCompanyWebsite] = useState('');
   const [businessUnit, setBusinessUnit] = useState('');
   const [region, setRegion] = useState('GLOBAL');
   const [baseCurrency, setBaseCurrency] = useState('INR');
@@ -27,6 +28,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     if (customer) {
       setCustomerName(customer.customerName || '');
       setIndustry(customer.industry || '');
+      setCompanyWebsite(customer.companyWebsite || '');
       setBusinessUnit(customer.businessUnit || '');
       setRegion(customer.region || 'GLOBAL');
       setBaseCurrency(customer.baseCurrency || 'INR');
@@ -54,6 +56,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       const updated: CustomerRecord = await assessmentApiClient.updateCustomer(customer.id, {
         customerName: customerName.trim(),
         industry: industry.trim(),
+        companyWebsite: companyWebsite.trim() || undefined,
         businessUnit: businessUnit.trim() || undefined,
         region: region.trim() || undefined,
         baseCurrency: baseCurrency.trim() || undefined,
@@ -137,6 +140,19 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              {strings.modalEdit.fieldCompanyWebsite}
+            </label>
+            <input
+              type="url"
+              value={companyWebsite}
+              onChange={(e) => setCompanyWebsite(e.target.value)}
+              placeholder={strings.modalEdit.fieldCompanyWebsitePlaceholder}
+              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            />
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
@@ -206,6 +222,37 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
             />
           </div>
+
+          {customer.websiteProfile && (
+            <div className="p-3 rounded-lg bg-slate-800/80 border border-cyan-800/50 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-cyan-400 font-semibold uppercase tracking-wider">
+                <span>{strings.modalEdit.websiteIntelSection}</span>
+                {customer.websiteProfile.reportingPeriod && (
+                  <span className="text-[10px] text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                    Period: {customer.websiteProfile.reportingPeriod}
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-300">{customer.websiteProfile.businessDescription}</p>
+              <div className="grid grid-cols-2 gap-2 text-slate-400 pt-1">
+                <div>
+                  <span className="text-slate-500">Footprint: </span>
+                  <span className="text-slate-200">{customer.websiteProfile.operatingFootprint}</span>
+                </div>
+                {customer.websiteProfile.revenueOrProfit && (
+                  <div>
+                    <span className="text-slate-500">Revenue / EBITDA: </span>
+                    <span className="text-cyan-300 font-semibold">{customer.websiteProfile.revenueOrProfit}</span>
+                  </div>
+                )}
+              </div>
+              {customer.websiteProfile.sourceUrls && customer.websiteProfile.sourceUrls.length > 0 && (
+                <div className="text-[10px] text-slate-500 pt-1 truncate">
+                  Source: <span className="text-cyan-500 underline">{customer.websiteProfile.sourceUrls[0]}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
             <button

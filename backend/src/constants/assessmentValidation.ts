@@ -11,6 +11,7 @@ export const createCustomerSchema = z.object({
   businessUnit: z.string().optional(),
   region: z.string().optional(),
   baseCurrency: z.string().optional(),
+  companyWebsite: z.string().optional().or(z.literal('')),
   contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   contactPerson: z.string().optional(),
   notes: z.string().optional()
@@ -22,6 +23,7 @@ export const updateCustomerSchema = z.object({
   businessUnit: z.string().optional(),
   region: z.string().optional(),
   baseCurrency: z.string().optional(),
+  companyWebsite: z.string().optional().or(z.literal('')),
   contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   contactPerson: z.string().optional(),
   status: z.enum(['ACTIVE', 'ARCHIVED', 'ONBOARDING']).optional(),
@@ -34,6 +36,7 @@ export const createAssessmentSchema = z.object({
   industry: z.string().min(2, 'Industry is required'),
   businessUnit: z.string().optional(),
   assessmentOwner: z.string().optional(),
+  companyWebsite: z.string().optional().or(z.literal('')),
   assessmentPeriodStart: z.string().min(4, 'Assessment period start is required'),
   assessmentPeriodEnd: z.string().min(4, 'Assessment period end is required'),
   assignedAnalyst: z.string().email('Assigned analyst must be a valid email').default('analyst@procucev.com'),

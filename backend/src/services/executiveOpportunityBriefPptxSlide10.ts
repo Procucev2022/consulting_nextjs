@@ -1,6 +1,6 @@
 /**
- * Executive Opportunity Brief PPTX Slide 10 (Prompt 286)
- * Strictly adheres to 10-slide executive structure and shared certified contract.
+ * Executive Opportunity Brief PPTX Slide 10 (Prompt 286 & Prompt 503)
+ * Dynamic customer contract binding for next steps.
  */
 
 import type PptxGenJS from 'pptxgenjs';
@@ -10,44 +10,75 @@ import {
   TYPOGRAPHY
 } from '../constants/executiveBriefLayoutConstants';
 import {
-  EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 import {
   addBriefHeader,
   addBriefFooter
 } from './executiveOpportunityBriefPptxHelpers';
 
-export function renderBriefPptxSlide10(pptx: PptxGenJS): void {
+export function renderBriefPptxSlide10(pptx: PptxGenJS, clientName = 'ABC Textile Ltd'): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   addBriefHeader(slide, 'PROPOSED NEXT STEPS', 'Next Steps', 10);
 
-  const decisions = [
-    {
-      n: '01',
-      t: 'ALIGN',
-      a: 'Confirm priority Wave 1 categories',
-      d: 'Confirm priority categories and align key stakeholders on immediate commercial launch across packaging bags, grinding media, and fuel.',
-      badge: 'Wave 1 Priority',
-      c: BRAND_COLORS.accentGreen
-    },
-    {
-      n: '02',
-      t: 'MOBILIZE',
-      a: 'Establish joint procurement working group',
-      d: 'Charter joint central procurement and plant execution steering team to harmonize cross-plant specifications and vendor panels.',
-      badge: 'Joint Governance',
-      c: BRAND_COLORS.procucevBlue
-    },
-    {
-      n: '03',
-      t: 'EXECUTE',
-      a: 'Launch approved competitive sourcing initiatives',
-      d: 'Launch approved dynamic price discovery events and corporate rate card standardizations across vetted supplier panels.',
-      badge: 'Commercial Sourcing',
-      c: '#2563EB'
-    }
-  ];
+  const decisions = isCust
+    ? [
+        {
+          n: '01',
+          t: 'ALIGN',
+          a: 'Confirm priority Wave 1 categories',
+          d: 'Confirm priority categories and align key stakeholders on immediate commercial launch across synthetic fibers, chemical dyes, and packaging.',
+          badge: 'Wave 1 Priority',
+          c: BRAND_COLORS.accentGreen
+        },
+        {
+          n: '02',
+          t: 'MOBILIZE',
+          a: 'Establish joint procurement working group',
+          d: 'Charter joint central procurement and plant execution steering team to harmonize cross-plant specifications and vendor panels across 6 units.',
+          badge: 'Joint Governance',
+          c: BRAND_COLORS.procucevBlue
+        },
+        {
+          n: '03',
+          t: 'EXECUTE',
+          a: 'Launch approved competitive sourcing initiatives',
+          d: 'Launch approved dynamic price discovery events and corporate rate card standardizations across vetted supplier panels.',
+          badge: 'Commercial Sourcing',
+          c: '#2563EB'
+        }
+      ]
+    : [
+        {
+          n: '01',
+          t: 'ALIGN',
+          a: 'Confirm priority Wave 1 categories',
+          d: 'Confirm priority categories and align key stakeholders on immediate commercial launch across packaging bags, grinding media, and fuel.',
+          badge: 'Wave 1 Priority',
+          c: BRAND_COLORS.accentGreen
+        },
+        {
+          n: '02',
+          t: 'MOBILIZE',
+          a: 'Establish joint procurement working group',
+          d: 'Charter joint central procurement and plant execution steering team to harmonize cross-plant specifications and vendor panels.',
+          badge: 'Joint Governance',
+          c: BRAND_COLORS.procucevBlue
+        },
+        {
+          n: '03',
+          t: 'EXECUTE',
+          a: 'Launch approved competitive sourcing initiatives',
+          d: 'Launch approved dynamic price discovery events and corporate rate card standardizations across vetted supplier panels.',
+          badge: 'Commercial Sourcing',
+          c: '#2563EB'
+        }
+      ];
 
   const dW = 2.85;
   const dGap = 0.22;
@@ -135,8 +166,8 @@ export function renderBriefPptxSlide10(pptx: PptxGenJS): void {
     fill: { color: BRAND_COLORS.accentGreen.replace('#', '') }
   });
   slide.addText(
-    `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDirectSavingsCr.toFixed(2)} Cr Direct Savings Opportunity  |  ` +
-    `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDefensiblePipelineCr.toFixed(2)} Cr Net Defensible Pipeline`,
+    `Rs. ${contract.netDirectSavingsCr.toFixed(2)} Cr Direct Savings Opportunity  |  ` +
+    `Rs. ${contract.netDefensiblePipelineCr.toFixed(2)} Cr Net Defensible Pipeline`,
     {
       x: PPTX_LAYOUT.CONTENT_LEFT + 0.2,
       y: ctaY + 0.08,
@@ -164,7 +195,6 @@ export function renderBriefPptxSlide10(pptx: PptxGenJS): void {
     w: 4.0,
     h: 0.2,
     fontSize: 9.5,
-    bold: true,
     color: BRAND_COLORS.procucevBlue.replace('#', ''),
     fontFace
   });

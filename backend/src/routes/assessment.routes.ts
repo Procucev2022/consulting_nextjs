@@ -12,6 +12,7 @@ router.post('/install-update', AssessmentController.installUpdate);
 // Customer Profiles (Internal Command Centre)
 router.get('/customers', AssessmentController.getCustomers);
 router.post('/customers', AssessmentController.createCustomer);
+router.get('/customers/website-profile', AssessmentController.previewWebsiteProfile);
 router.get('/customers/:id', AssessmentController.getCustomerById);
 router.patch('/customers/:id', AssessmentController.updateCustomer);
 

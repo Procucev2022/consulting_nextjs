@@ -50,6 +50,23 @@ function checkCategoryMaterialStatus(
   return { hasPending: checkedMaterials === 0 };
 }
 
+function buildVerifiedCategoryClassification(
+  code: string,
+  humanCategory: string,
+  catTxs: StrategicInputTransaction[],
+  materialMappingMap?: Map<string, MaterialMappingEntry>
+): CategoryClassificationResult {
+  const { hasPending } = checkCategoryMaterialStatus(catTxs, materialMappingMap);
+  const classificationType: CategoryClassificationType = hasPending ? 'PROVISIONAL_UNSPSC' : 'VERIFIED_UNSPSC';
+
+  return {
+    unspscCode: code,
+    unspscCategory: humanCategory,
+    classificationType,
+    classificationLabel: CATEGORY_CLASSIFICATION_LABELS[classificationType]
+  };
+}
+
 export function determineCategoryClassification(
   catName: string,
   catTxs: StrategicInputTransaction[],
@@ -61,17 +78,7 @@ export function determineCategoryClassification(
   const humanCategory = resolveHumanReadableCategory(catName, catTxs[0]?.material_code);
 
   if (isVerified) {
-    const unspscCommodity = catTxs[0]?.unspsc_commodity?.trim();
-    const catDesc = unspscCommodity && unspscCommodity.length > 0 ? unspscCommodity : humanCategory;
-    const { hasPending } = checkCategoryMaterialStatus(catTxs, materialMappingMap);
-    const classificationType: CategoryClassificationType = hasPending ? 'PROVISIONAL_UNSPSC' : 'VERIFIED_UNSPSC';
-
-    return {
-      unspscCode: code,
-      unspscCategory: `${catDesc} (${code})`,
-      classificationType,
-      classificationLabel: CATEGORY_CLASSIFICATION_LABELS[classificationType]
-    };
+    return buildVerifiedCategoryClassification(code, humanCategory, catTxs, materialMappingMap);
   }
 
   const isNamedSource = Boolean(catName && catName !== 'General' && catName !== 'Unclassified');
@@ -79,7 +86,7 @@ export function determineCategoryClassification(
 
   return {
     unspscCode: VENDOR_CONSOLIDATION_CONFIG.UNMAPPED_UNSPSC_CODE,
-    unspscCategory: isNamedSource ? `Source Category: ${humanCategory} [UNSPSC Unmapped]` : 'Unmapped Category',
+    unspscCategory: isNamedSource ? humanCategory : 'Unmapped Category',
     classificationType,
     classificationLabel: CATEGORY_CLASSIFICATION_LABELS[classificationType]
   };

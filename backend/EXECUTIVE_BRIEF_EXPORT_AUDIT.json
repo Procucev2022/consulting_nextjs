@@ -1,7 +1,7 @@
 {
-  "reportId": "RPT-EXEC-20261022-001",
-  "client": "UltraTech Cement Limited",
-  "generationTimestamp": "2026-10-22T09:12:55.925Z",
+  "reportId": "RPT-EXEC-20261023-001",
+  "client": "ABC Textile Ltd",
+  "generationTimestamp": "2026-10-23T02:33:01.794Z",
   "sourceDataVersion": "MODULE_1_4_CERTIFIED_V1.0",
   "pdfGenerated": true,
   "pptxGenerated": true,
@@ -14,12 +14,12 @@
   "pageCount": 30,
   "slideCount": 30,
   "fileSize": {
-    "pdfBytes": 235812,
-    "pptxBytes": 3348746
+    "pdfBytes": 234479,
+    "pptxBytes": 3336743
   },
   "checksums": {
-    "pdfSha256": "9224b7ed486f0aed9cbf0e1eede6a618ec7bc98fb71fc1454d2a8d1e2e70d62f",
-    "pptxSha256": "23949fd7bfef29f52da208761cd07d35fcdae17a53986866acddebfc7b034336"
+    "pdfSha256": "a3a2bef28caa04dd58d869f7f0e28b8a31b3c5cfc8b4d751729800cc6462932d",
+    "pptxSha256": "14b6bb5db68716c5bd2c992cc17300c9ece61a15c7444a3e1f57c6da0148d2a5"
   },
   "exportStatus": "EXECUTIVE_BRIEF_EXPORT_READY"
 }

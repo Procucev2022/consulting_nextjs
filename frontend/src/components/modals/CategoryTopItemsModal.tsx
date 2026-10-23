@@ -65,8 +65,8 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
       'Unit Price FY24',
       'Unit Price FY25',
       'Unit Price FY26',
-      '3-Year Price Change %',
-      'Total 3-Year Spend (INR Cr)',
+      'Period Price Change %',
+      'Total Period Spend (INR Cr)',
       'Identified Savings Opportunity (INR Lakhs)'
     ];
 

@@ -6,6 +6,7 @@ import type {
   CategoryOpportunityBenefit
 } from '../../types/module2CategorySpecialisation';
 import { CATEGORY_SPECIALISATION_UI_STRINGS } from '../../constants/module2CategorySpecialisation';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 interface CategoriesTabProps {
   categories: CategorySpecialisationProfile[];
@@ -64,7 +65,7 @@ export const CategorySpecialisationCategoriesTab: React.FC<CategoriesTabProps> =
                       onClick={() => toggleExpand(c.categoryName)}
                     >
                       <td style={{ padding: '12px 14px', fontWeight: 600, color: '#0f172a' }}>
-                        {c.categoryName}
+                        {resolveHumanReadableCategory(c.categoryName)}
                       </td>
                       <td style={{ padding: '12px 14px' }}>
                         <span

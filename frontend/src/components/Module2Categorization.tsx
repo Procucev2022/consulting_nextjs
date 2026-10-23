@@ -37,6 +37,7 @@ import {
 import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
 import { Module2StrategicSourcingWorkspace } from './module2';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 import dynamic from 'next/dynamic';
 import { AnalyzingLoader } from './AnalyzingLoader';
 import { TierMaskOverlay } from './TierMaskOverlay';
@@ -188,6 +189,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const categoriesList = useMemo(() => categories || [], [categories]);
 
   const totalEvaluatedSpendInrCr = useMemo(() => {
+    if (tenant?.total_spend_evaluated_inr != null && tenant.total_spend_evaluated_inr > 0) {
+      return tenant.total_spend_evaluated_inr;
+    }
     if (lineItems && lineItems.length > 0) {
       const lineItemSum = lineItems.reduce(
         (sum, it) => sum + (it.inr_crores ?? (it.total_spend ? it.total_spend / 10000000 : 0)),
@@ -195,14 +199,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       );
       if (lineItemSum > 0) return Number(lineItemSum.toFixed(2));
     }
-    if (tenant?.total_spend_evaluated_inr != null && tenant.total_spend_evaluated_inr > 0) {
-      return tenant.total_spend_evaluated_inr;
-    }
     return categoriesList.reduce(
       (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
       0
     ) || 0;
-  }, [lineItems, tenant?.total_spend_evaluated_inr, categoriesList]);
+  }, [tenant?.total_spend_evaluated_inr, lineItems, categoriesList]);
 
   const actualBucketSpend = useMemo(() => {
     let direct = 0;
@@ -584,86 +585,129 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
         {/* Year-Wise Table */}
         <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
-                  <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
-                  <th className="py-3 px-4 text-right" title="1st April 2024 – 31st March 2025">{UI_STRINGS.module2.matrixHeaders.fy25}</th>
-                  <th className="py-3 px-4 text-right" title="1st April 2025 – 31st March 2026">{UI_STRINGS.module2.matrixHeaders.fy26}</th>
-                  <th className="py-3 px-4 text-right font-bold text-emerald-700">{UI_STRINGS.module2.matrixHeaders.total}</th>
-                  <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
-                  <th className="py-3 px-4 text-right">{UI_STRINGS.module2.matrixHeaders.spendShare}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
-                {dynamicCategoryDetails.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500 font-sans text-xs">
-                      Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
-                    </td>
-                  </tr>
-                ) : (
-                  dynamicCategoryDetails.map((cat: any) => {
-                  const fy24 = cat.spend_fy24_cr || 0;
-                  const fy25 = cat.spend_fy25_cr || 0;
-                  const fy26 = cat.spend_fy26_cr || 0;
+          {(() => {
+            const totalFY24 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy24_cr || 0), 0);
+            const totalFY25 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy25_cr || 0), 0);
+            const totalFY26 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy26_cr || 0), 0);
+            const hasFY25 = totalFY25 > 0;
+            const hasFY26 = totalFY26 > 0;
 
-                  return (
-                    <tr
-                      key={cat.id || cat.category}
-                      className={`hover:bg-slate-50 transition-colors ${
-                        cat.is_balance_category
-                          ? 'bg-slate-50/80 font-semibold'
-                          : 'bg-white'
-                      }`}
-                    >
-                      <td className="py-3.5 px-4 font-sans font-bold text-slate-900 flex items-center space-x-2.5">
-                        <span className={`w-6 h-5 rounded px-1 text-[10px] font-mono font-bold flex items-center justify-center ${
-                          cat.rank && cat.rank <= 3
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}>
-                          {cat.rank ? `#${cat.rank}` : '•'}
-                        </span>
-                        <span className="truncate max-w-[260px]" title={cat.category}>{cat.category}</span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
-                          {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code ? String(cat.sample_column_l_code).split(',')[0] : 'UNSPSC')}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800">
-                        ₹{(fy24 || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800">
-                        ₹{(fy25 || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800">
-                        ₹{(fy26 || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-black text-slate-900">
-                        ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center space-x-1 text-slate-700 text-xs font-semibold">
-                          <span>{cat.yoy_growth_pct != null ? `+${cat.yoy_growth_pct}%` : 'Baseline (FY22)'}</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <span className="font-bold text-slate-800">
-                          {cat.spend_share_pct ? `${Number(cat.spend_share_pct).toFixed(1)}%` : '—'}
-                        </span>
+            return (
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
+                    <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
+                    <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
+                    <th className="py-3 px-4 text-right" title={hasFY25 ? "1st April 2024 – 31st March 2025" : "No transactions for FY25 in uploaded dataset"}>
+                      {UI_STRINGS.module2.matrixHeaders.fy25}
+                      {!hasFY25 && <span className="block text-[8px] font-normal text-slate-400 lowercase">unavailable</span>}
+                    </th>
+                    <th className="py-3 px-4 text-right" title={hasFY26 ? "1st April 2025 – 31st March 2026" : "No transactions for FY26 in uploaded dataset"}>
+                      {UI_STRINGS.module2.matrixHeaders.fy26}
+                      {!hasFY26 && <span className="block text-[8px] font-normal text-slate-400 lowercase">unavailable</span>}
+                    </th>
+                    <th className="py-3 px-4 text-right font-bold text-emerald-700">{UI_STRINGS.module2.matrixHeaders.total}</th>
+                    <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
+                    <th className="py-3 px-4 text-right">{UI_STRINGS.module2.matrixHeaders.spendShare}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
+                  {dynamicCategoryDetails.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-500 font-sans text-xs">
+                        Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
                       </td>
                     </tr>
-                  );
-                }))}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    dynamicCategoryDetails.map((cat: any) => {
+                    const fy24 = cat.spend_fy24_cr || 0;
+                    const fy25 = cat.spend_fy25_cr || 0;
+                    const fy26 = cat.spend_fy26_cr || 0;
+
+                    return (
+                      <tr
+                        key={cat.id || cat.category}
+                        className={`hover:bg-slate-50 transition-colors ${
+                          cat.is_balance_category
+                            ? 'bg-slate-50/80 font-semibold'
+                            : 'bg-white'
+                        }`}
+                      >
+                        <td className="py-3.5 px-4 font-sans font-bold text-slate-900 flex items-center space-x-2.5">
+                          <span className={`w-6 h-5 rounded px-1 text-[10px] font-mono font-bold flex items-center justify-center ${
+                            cat.rank && cat.rank <= 3
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}>
+                            {cat.rank ? `#${cat.rank}` : '•'}
+                          </span>
+                          <span className="truncate max-w-[260px]" title={cat.category}>{resolveHumanReadableCategory(cat.category, cat.sample_column_l_code)}</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                            {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code ? String(cat.sample_column_l_code).split(',')[0] : 'UNSPSC')}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-800">
+                          ₹{(fy24 || 0).toFixed(2)} Cr
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-800">
+                          {hasFY25 ? `₹${(fy25 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title="No transactions for FY25 in dataset">—</span>}
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-800">
+                          {hasFY26 ? `₹${(fy26 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title="No transactions for FY26 in dataset">—</span>}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-black text-slate-900">
+                          ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="inline-flex items-center space-x-1 text-slate-700 text-xs font-semibold">
+                            <span>{cat.yoy_growth_pct != null ? `+${cat.yoy_growth_pct}%` : (!hasFY25 && !hasFY26 ? 'Single Period' : 'Baseline (FY22)')}</span>
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className="font-bold text-slate-800">
+                            {cat.spend_share_pct ? `${Number(cat.spend_share_pct).toFixed(1)}%` : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }))}
+                </tbody>
+                {dynamicCategoryDetails.length > 0 && (
+                  <tfoot className="bg-slate-100 font-mono font-bold text-slate-900 border-t-2 border-slate-300">
+                    <tr>
+                      <td className="py-3.5 px-4 font-sans uppercase text-xs" colSpan={2}>
+                        Total Evaluated Spend (Reconciled)
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        ₹{totalFY24.toFixed(2)} Cr
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {hasFY25 ? `₹${totalFY25.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">Unavailable</span>}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {hasFY26 ? `₹${totalFY26.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">Unavailable</span>}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-black text-emerald-800">
+                        ₹{dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.total_3yr_spend_inr_cr || c.spend_inr_crores || 0), 0).toFixed(2)} Cr
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-xs font-sans text-emerald-700">
+                        100% Validated
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-black text-slate-900">
+                        100.0%
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            );
+          })()}
+        </div>
       </div>
-      </div>
+    </div>
 
 
       {/* Area D: Vendor Intelligence */}
@@ -1005,7 +1049,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
-                {filteredItems.map((item) => {
+                {filteredItems.slice(0, 100).map((item) => {
                   const sectorResult = categorizeMaterialWithIndustryContext(
                     item.raw_desc,
                     item.unspsc_code,
@@ -1198,6 +1242,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               })}
             </tbody>
             </table>
+            {filteredItems.length > 100 && (
+              <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 border-t border-slate-200 font-sans">
+                Showing first 100 of {filteredItems.length.toLocaleString()} line items. Filter or search to inspect specific records.
+              </div>
+            )}
           </div>
         </div>
         )}

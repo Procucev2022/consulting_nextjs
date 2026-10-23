@@ -89,7 +89,7 @@ describe('Module 2 — Lever 3 Category Classification & Evaluation Helper', () 
     );
     expect(verified.classificationType).toBe('VERIFIED_UNSPSC');
     expect(verified.unspscCode).toBe('24111507');
-    expect(verified.unspscCategory).toBe('Corrugated Boxes (24111507)');
+    expect(verified.unspscCategory).toBe('Packaging');
   });
 
   it('marks category as PROVISIONAL_UNSPSC when underlying materials are provisional or awaiting review', () => {
@@ -129,7 +129,7 @@ describe('Module 2 — Lever 3 Category Classification & Evaluation Helper', () 
     ]);
     expect(sourceCat.classificationType).toBe('SOURCE_SPEND_CATEGORY');
     expect(sourceCat.unspscCode).toBe('00000000');
-    expect(sourceCat.unspscCategory).toBe('Source Category: ELECTRICAL [UNSPSC Unmapped]');
+    expect(sourceCat.unspscCategory).toBe('ELECTRICAL');
   });
 
   it('correctly marks general or unclassified as UNMAPPED', () => {

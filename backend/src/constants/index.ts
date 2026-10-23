@@ -65,4 +65,5 @@ export * from './module2AlternateSourcing';
 export * from './module2SavingsDeduplication';
 export * from './module2SavingsDeduplicationValidation';
 export * from './procurementCategoryMapping';
+export * from './reportingPeriod';
 

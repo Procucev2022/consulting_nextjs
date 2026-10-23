@@ -17,7 +17,12 @@ import {
   EXPORT_VALIDATION_ERRORS
 } from '../constants/executiveBriefExportConstants';
 import {
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
+} from '../constants/executiveBriefPresentationConstants';
+import {
   RAW_TOTAL_SPEND_INR,
+  RAW_ADDRESSABLE_SPEND_INR,
   RAW_GROSS_OPP_INR,
   RAW_NET_DEFENSIBLE_INR,
   RAW_APPROVED_MODULE4_INR,
@@ -55,13 +60,22 @@ export class ExecutiveBriefExportService {
     clientName = DEFAULT_CLIENT_PROFILE.clientName
   ): FinancialConsistencyCheck {
     const meta = executiveBriefService.generateReportMetadata(clientName);
+    const isCust = isCustomerAssessment(clientName);
+    const contract = getExecutiveBriefPresentationContract(clientName);
 
-    const totalSpendDiff = Math.abs(meta.totalSpendInr - RAW_TOTAL_SPEND_INR);
-    const addressableDiff = Math.abs(meta.addressableSpendInr - 49310000000);
-    const grossOppDiff = Math.abs(meta.grossOpportunityInr - RAW_GROSS_OPP_INR);
-    const netDefensibleDiff = Math.abs(meta.netDefensibleOpportunityInr - RAW_NET_DEFENSIBLE_INR);
-    const approvedDiff = Math.abs(meta.approvedSavingsInr - RAW_APPROVED_MODULE4_INR);
-    const realizedDiff = Math.abs(meta.realizedSavingsInr - RAW_REALIZED_INR);
+    const expectedTotalSpend = isCust ? contract.totalCustomerSpendInr : RAW_TOTAL_SPEND_INR;
+    const expectedAddressable = isCust ? contract.addressableSpendInr : RAW_ADDRESSABLE_SPEND_INR;
+    const expectedGrossOpp = isCust ? contract.grossOpportunityInr : RAW_GROSS_OPP_INR;
+    const expectedNetDefensible = isCust ? contract.netDefensiblePipelineInr : RAW_NET_DEFENSIBLE_INR;
+    const expectedApproved = isCust ? contract.validatedSavingsInr : RAW_APPROVED_MODULE4_INR;
+    const expectedRealized = isCust ? contract.realizedSavingsInr : RAW_REALIZED_INR;
+
+    const totalSpendDiff = Math.abs(meta.totalSpendInr - expectedTotalSpend);
+    const addressableDiff = Math.abs(meta.addressableSpendInr - expectedAddressable);
+    const grossOppDiff = Math.abs(meta.grossOpportunityInr - expectedGrossOpp);
+    const netDefensibleDiff = Math.abs(meta.netDefensibleOpportunityInr - expectedNetDefensible);
+    const approvedDiff = Math.abs(meta.approvedSavingsInr - expectedApproved);
+    const realizedDiff = Math.abs(meta.realizedSavingsInr - expectedRealized);
 
     const totalVariance =
       totalSpendDiff + addressableDiff + grossOppDiff + netDefensibleDiff + approvedDiff + realizedDiff;

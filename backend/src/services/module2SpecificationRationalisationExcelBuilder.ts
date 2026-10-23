@@ -10,6 +10,7 @@ import type {
   SpecificationCandidateItem
 } from '../types/module2SpecificationRationalisation';
 import { SPECIFICATION_EXCEL_SHEETS } from '../constants/module2SpecificationRationalisation';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 function buildExecutiveRows(res: SpecificationRationalisationResult): (string | number)[][] {
   const sum = res.summary;
@@ -50,7 +51,7 @@ function buildCandidateRows(candidates: SpecificationCandidateItem[]): (string |
 
   for (const c of candidates) {
     rows.push([
-      c.candidateId, c.spendCategory, c.identificationType, c.reviewStatus,
+      c.candidateId, resolveHumanReadableCategory(c.spendCategory), c.identificationType, c.reviewStatus,
       c.primaryItem.code || 'N/A', c.primaryItem.description,
       c.comparisonItem.code || 'N/A', c.comparisonItem.description,
       c.similarityScore, c.differencesIdentified.length, c.missingAttributesDisclosed.length,

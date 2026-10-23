@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { assessmentStore } from '../services/assessmentStore';
 import { createCustomerSchema, updateCustomerSchema } from '../constants/assessmentValidation';
+import { customerWebsiteService } from '../services/customerWebsiteService';
 
 export class CustomerController {
   public static getCustomers(req: Request, res: Response): void {
@@ -59,5 +60,12 @@ export class CustomerController {
       return;
     }
     res.json({ success: true, data: record });
+  }
+
+  public static previewWebsiteProfile(req: Request, res: Response): void {
+    const customerName = typeof req.query.customerName === 'string' ? req.query.customerName : '';
+    const websiteUrl = typeof req.query.websiteUrl === 'string' ? req.query.websiteUrl : undefined;
+    const profile = customerWebsiteService.getProfileForCustomer(customerName, websiteUrl);
+    res.json({ success: true, data: profile });
   }
 }

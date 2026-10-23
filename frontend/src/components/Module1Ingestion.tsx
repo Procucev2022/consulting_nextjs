@@ -53,7 +53,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   // Client & File Details Pop-up State
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
   const [activeDatasetType, setActiveDatasetType] = useState<DatasetType>('Purchase History');
-  const [spendPeriod, setSpendPeriod] = useState<string>('36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)');
+  const [spendPeriod, setSpendPeriod] = useState<string>('All Available Transaction Data');
 
   // Live Real-Time Financial Exchange Rates
   const [liveFXRates, setLiveFXRates] = useState<Record<string, { currentRate: number; name?: string }> | null>(null);

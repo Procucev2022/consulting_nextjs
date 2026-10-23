@@ -119,6 +119,7 @@ export const VendorConsolidationCategoryTable: React.FC<VendorConsolidationCateg
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
               <th className="py-2.5 px-3">{strings.colUnspscCategory}</th>
+              <th className="py-2.5 px-3">Column L Code</th>
               <th className="py-2.5 px-3 text-right">{strings.colTotalSpend}</th>
               <th className="py-2.5 px-3 text-right">{strings.colAddressableSpend}</th>
               <th className="py-2.5 px-3 text-center">{strings.colCategoryCandidateSpend}</th>
@@ -135,7 +136,7 @@ export const VendorConsolidationCategoryTable: React.FC<VendorConsolidationCateg
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredCategories.length === 0 ? (
               <tr>
-                <td colSpan={12} className="py-6 text-center text-slate-500">
+                <td colSpan={13} className="py-6 text-center text-slate-500">
                   {strings.noRecordsFound}
                 </td>
               </tr>
@@ -147,14 +148,16 @@ export const VendorConsolidationCategoryTable: React.FC<VendorConsolidationCateg
                 >
                   <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span>{resolveHumanReadableCategory(c.spendCategory || c.unspscCategory)}</span>
+                      <span>{resolveHumanReadableCategory(c.spendCategory || c.unspscCategory, c.unspscCode)}</span>
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${getClassificationBadge(c.classificationType)}`}>
                         {c.classificationLabel}
                       </span>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-normal mt-0.5">
-                      Column L Code: {c.unspscCode}
-                    </div>
+                  </td>
+                  <td className="py-2.5 px-3 font-mono text-[11px] text-cyan-700">
+                    <span className="bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                      {c.unspscCode || '—'}
+                    </span>
                   </td>
                   <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white">
                     ₹{c.totalSpendCr.toFixed(4)} Cr

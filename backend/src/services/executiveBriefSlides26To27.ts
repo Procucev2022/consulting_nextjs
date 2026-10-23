@@ -133,8 +133,8 @@ export function renderSlide26Recommendations(
     { fontSize: 9, font: 'bold', color: BRAND_COLORS.procucevBlue }
   );
   canvas.textBlock(
-    'Transforming UltraTech procurement from decentralized purchasing into a strategic competency ensures ' +
-    'permanent structural cost advantages and superior EBITDA margins against cement industry peers.',
+    `Transforming ${clientName} procurement from decentralized purchasing into a strategic competency ensures ` +
+    'permanent structural cost advantages and superior EBITDA margins against industry peers.',
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,
@@ -232,7 +232,7 @@ export function renderSlide27DomainAuthority(
   );
   canvas.textBlock(
     'Procucev is not a generalist management consultancy. We deploy procurement practitioners, commodity data ' +
-    'scientists, and dynamic auction choreographers who work alongside UltraTech teams to deliver hard EBITDA results.',
+    `scientists, and dynamic auction choreographers who work alongside ${clientName} teams to deliver hard EBITDA results.`,
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,
     PDF_LAYOUT.CONTENT_WIDTH - 40,

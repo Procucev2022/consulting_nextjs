@@ -64,4 +64,5 @@ export * from './module2SpecificationRationalisation';
 export * from './module2ProcurementCompliance';
 export * from './module2AlternateSourcing';
 export * from './module2SavingsDeduplication';
+export * from './reportingPeriod';
 

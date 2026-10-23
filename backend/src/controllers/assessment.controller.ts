@@ -32,6 +32,7 @@ export class AssessmentController {
   public static getCustomerById = CustomerController.getCustomerById;
   public static createCustomer = CustomerController.createCustomer;
   public static updateCustomer = CustomerController.updateCustomer;
+  public static previewWebsiteProfile = CustomerController.previewWebsiteProfile;
 
   public static getAssessments(req: Request, res: Response): void {
     const statusFilter = typeof req.query.status === 'string' ? req.query.status : undefined;

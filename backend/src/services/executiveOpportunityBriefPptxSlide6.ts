@@ -14,7 +14,7 @@ import {
   addBriefFooter
 } from './executiveOpportunityBriefPptxHelpers';
 
-export function renderBriefPptxSlide6(pptx: PptxGenJS): void {
+export function renderBriefPptxSlide6(pptx: PptxGenJS, _clientName?: string): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
   addBriefHeader(slide, 'How the Value Will Be Captured: Execution Pillars', 'Value Capture Mechanisms', 6);

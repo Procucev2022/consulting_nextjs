@@ -7,8 +7,45 @@ import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
   BRAND_COLORS,
-  TYPOGRAPHY
+  TYPOGRAPHY,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
+
+function getSlide2HeroCards(
+  contract: ReturnType<typeof getExecutiveBriefPresentationContract>,
+  isCust: boolean
+): Array<{ label: string; val: string; sub: string; color: string }> {
+  const d = isCust ? 3 : 2;
+  const c2Val = isCust ? contract.grossOpportunityCr : contract.netDefensiblePipelineCr;
+  const c3Val = isCust ? contract.validatedSavingsCr : contract.strategicMarketValueCr;
+  return [
+    {
+      label: isCust ? 'Approved Net Opportunity' : 'Direct Savings Opportunity',
+      val: `₹${contract.netDirectSavingsCr.toFixed(d)} Cr`,
+      sub: isCust ? 'Empirical P&L Scope' : 'Addressable EBITDA Expansion',
+      color: BRAND_COLORS.accentGreen
+    },
+    {
+      label: isCust ? 'Gross Modelled Pipeline' : 'Net Defensible Pipeline',
+      val: `₹${c2Val.toFixed(d)} Cr`,
+      sub: isCust ? 'Before Overlap Deductions' : 'Post-Overlap Deduplicated',
+      color: BRAND_COLORS.procucevBlue
+    },
+    {
+      label: isCust ? 'Proven Opportunity' : 'Strategic Market Value',
+      val: `₹${c3Val.toFixed(d)} Cr`,
+      sub: isCust ? 'Evidence-Based Criteria' : 'Commodity & Timing Levers',
+      color: '#0284C7'
+    },
+    {
+      label: 'Spend Evaluated',
+      val: `₹${contract.totalCustomerSpendCr.toFixed(isCust ? 4 : 2)} Cr`,
+      sub: `${contract.baselineTransactions.toLocaleString('en-IN')} Invoiced Line Items`,
+      color: BRAND_COLORS.secondaryText
+    }
+  ];
+}
 
 export function renderSlide2ExecutiveSummary(
   canvas: PdfCanvas,
@@ -17,6 +54,9 @@ export function renderSlide2ExecutiveSummary(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader(
     'Executive Opportunity: Value Realization Architecture',
@@ -29,46 +69,18 @@ export function renderSlide2ExecutiveSummary(
   const cardH = 90;
   const startY = 104;
 
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT,
-    startY,
-    cardW,
-    cardH,
-    'Direct Savings Opportunity',
-    '₹78.72 Cr',
-    'Addressable EBITDA Expansion',
-    BRAND_COLORS.accentGreen
-  );
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT + 219,
-    startY,
-    cardW,
-    cardH,
-    'Net Defensible Pipeline',
-    '₹93.60 Cr',
-    'Post-Overlap Deduplicated',
-    BRAND_COLORS.procucevBlue
-  );
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT + 438,
-    startY,
-    cardW,
-    cardH,
-    'Strategic Market Value',
-    '₹14.88 Cr',
-    'Commodity & Timing Levers',
-    '#0284C7'
-  );
-  canvas.kpiCard(
-    PDF_LAYOUT.CONTENT_LEFT + 657,
-    startY,
-    cardW,
-    cardH,
-    'Spend Evaluated',
-    '₹5,920.35 Cr',
-    '24 Months Invoiced Baseline',
-    BRAND_COLORS.secondaryText
-  );
+  getSlide2HeroCards(contract, isCust).forEach((card, idx) => {
+    canvas.kpiCard(
+      PDF_LAYOUT.CONTENT_LEFT + idx * 219,
+      startY,
+      cardW,
+      cardH,
+      card.label,
+      card.val,
+      card.sub,
+      card.color
+    );
+  });
 
   // Horizontal Value Statement
   const valStmtY = 210;
@@ -94,27 +106,27 @@ export function renderSlide2ExecutiveSummary(
     {
       title: 'WHERE VALUE LIES',
       points: [
-        'Inter-plant price variance on identical SKUs provides immediate rate arbitrage.',
-        'Top 10% suppliers command 81.4% spend, enabling focused high-impact negotiations.',
-        'Unpooled consumable volume across 26 units allows national aggregator pricing.'
+        `Inter-plant price variance on identical SKUs provides rate arbitrage across ${contract.baselinePlants} units.`,
+        'Top suppliers command majority of spend, enabling focused high-impact volume pooling.',
+        `Unpooled consumable volume across ${contract.baselinePlants} operating units allows national aggregator pricing.`
       ],
       color: BRAND_COLORS.procucevBlue
     },
     {
       title: 'MATHEMATICAL INTEGRITY',
       points: [
-        '100% forensic line-item audit across 31,671 records; zero sample extrapolation.',
-        'Rigorous overlap deduplication (-₹62.80 Cr) removes all multi-lever double counting.',
-        'Strict exclusions (-₹16.72 Cr) carve out proprietary OEM spares and fixed statutory rates.'
+        `100% forensic line-item audit across ${contract.baselineTransactions.toLocaleString('en-IN')} records; zero sample extrapolation.`,
+        `Rigorous overlap deduplication (-₹${contract.overlapDeductionsCr.toFixed(isCust ? 3 : 2)} Cr) removes multi-lever double counting.`,
+        `Realized savings kept strictly at ₹${contract.realizedSavingsCr.toFixed(2)} Cr until actual realization evidence exists.`
       ],
       color: BRAND_COLORS.accentGreen
     },
     {
       title: 'EXECUTION READINESS',
       points: [
-        'Wave 1 pre-qualified initiatives represent ₹47.90 Cr ready for tenders.',
+        `Proven opportunity represents ₹${contract.validatedSavingsCr.toFixed(isCust ? 3 : 2)} Cr ready for phased commercial deployment.`,
         '90-day phased execution roadmap prevents operational plant disruptions.',
-        'Index-linked pricing protects gross margin against fuel market volatility.'
+        'Continuous tracking and governance protect gross margin and deliver verified P&L benefit.'
       ],
       color: '#0284C7'
     }
@@ -157,6 +169,9 @@ export function renderSlide3AboutProcucev(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader(
     'Why Procucev: Industrial Procurement Intelligence & Sourcing Execution',
@@ -173,29 +188,29 @@ export function renderSlide3AboutProcucev(
     {
       num: '01',
       title: 'DOMAIN EXPERTISE',
-      desc: 'Heavy manufacturing and cement procurement veterans with operational category playbooks.',
+      desc: 'Heavy manufacturing and industrial procurement veterans with operational category playbooks.',
       metric: '₹45,000+ Cr Analyzed',
       color: BRAND_COLORS.procucevBlue
     },
     {
       num: '02',
       title: 'FORENSIC DATA',
-      desc: '100% invoice and PO line-item forensic audit across 31,671 records with zero interpolation.',
-      metric: '31,671 Invoices Cleansed',
+      desc: `100% invoice and PO line-item forensic audit across ${contract.baselineTransactions.toLocaleString('en-IN')} records with zero interpolation.`,
+      metric: `${contract.baselineTransactions.toLocaleString('en-IN')} Invoices Cleansed`,
       color: BRAND_COLORS.accentGreen
     },
     {
       num: '03',
       title: 'AI DECISION INTELLIGENCE',
       desc: 'Algorithmic rate benchmarking, outlier detection, and automated UNSPSC classification.',
-      metric: '256 Material Groups',
+      metric: `${contract.baselineMaterialGroups} Material Groups`,
       color: '#0284C7'
     },
     {
       num: '04',
       title: 'EXECUTION',
       desc: 'Hands-on e-auction facilitation, commercial negotiations, and contract realization tracking.',
-      metric: '₹47.90 Cr Wave 1 Ready',
+      metric: `₹${contract.validatedSavingsCr.toFixed(isCust ? 3 : 2)} Cr Wave 1 Ready`,
       color: BRAND_COLORS.accentAmber
     }
   ];

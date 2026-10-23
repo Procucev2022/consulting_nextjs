@@ -1,6 +1,6 @@
 /**
- * Executive Opportunity Brief PPTX Slide 1 (Prompt 286)
- * Strictly adheres to 10-slide executive structure and shared certified contract.
+ * Executive Opportunity Brief PPTX Slide 1 (Prompt 286 & Prompt 503)
+ * Dynamic customer contract binding and metadata alignment.
  */
 
 import type PptxGenJS from 'pptxgenjs';
@@ -10,16 +10,19 @@ import {
   TYPOGRAPHY
 } from '../constants/executiveBriefLayoutConstants';
 import {
-  EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 import {
   addBriefFooter,
   getBriefLogoBase64
 } from './executiveOpportunityBriefPptxHelpers';
 
-export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void {
+export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName = 'ABC Textile Ltd'): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
 
   const logoData = getBriefLogoBase64();
   if (logoData) {
@@ -54,7 +57,10 @@ export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void
     fontFace
   });
 
-  slide.addText(`${clientName} | CFO / CEO Discussion Edition`, {
+  const subEdition = isCust
+    ? `${clientName} | CFO / CEO Discussion Edition [AIC-2026-0002]`
+    : `${clientName} | Demonstration Archetype Edition`;
+  slide.addText(subEdition, {
     x: PPTX_LAYOUT.CONTENT_LEFT,
     y: 1.05,
     w: 7.5,
@@ -93,7 +99,7 @@ export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void
     fontFace
   });
 
-  slide.addText(`Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDirectSavingsCr.toFixed(2)} Cr`, {
+  slide.addText(`Rs. ${contract.netDirectSavingsCr.toFixed(2)} Cr`, {
     x: PPTX_LAYOUT.CONTENT_LEFT + 0.25,
     y: heroY + 0.6,
     w: 3.8,
@@ -117,7 +123,7 @@ export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void
 
   slide.addText(
     'Defensible P&L cost reduction across rate harmonization, volume pooling, and strategic tenders. ' +
-    'Reconciled with 0 variance against 31,671 invoice transactions.',
+    `Reconciled with 0 variance against ${contract.baselineTransactions.toLocaleString()} invoice transactions.`,
     {
       x: PPTX_LAYOUT.CONTENT_LEFT + 0.25,
       y: heroY + 1.7,
@@ -135,22 +141,23 @@ export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void
   const metrics = [
     {
       l: 'NET DEFENSIBLE PIPELINE',
-      v: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDefensiblePipelineCr.toFixed(2)} Cr`,
+      v: `Rs. ${contract.netDefensiblePipelineCr.toFixed(2)} Cr`,
       s: 'Direct Savings + Strategic Market Value',
       c: BRAND_COLORS.procucevBlue
     },
     {
       l: 'STRATEGIC MARKET VALUE',
-      v: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.strategicMarketValueCr.toFixed(2)} Cr`,
-      s: 'Commodity Timing & Index Contracting Levers',
+      v: `Rs. ${contract.strategicMarketValueCr.toFixed(2)} Cr`,
+      s: isCust ? 'PCBI Price Gap UNAVAILABLE (Isolated)' : 'Commodity Timing & Index Contracting Levers',
       c: '#0284C7'
     },
     {
       l: 'TOTAL SPEND EVALUATED',
-      v: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.totalCustomerSpendCr.toLocaleString('en-IN', {
-        minimumFractionDigits: 2
+      v: `Rs. ${contract.totalCustomerSpendCr.toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 4
       })} Cr`,
-      s: `${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineTransactions.toLocaleString()} Invoiced Records | 24 Months`,
+      s: `${contract.baselineTransactions.toLocaleString()} Invoiced Records | ${contract.analysisPeriodMonths} Months`,
       c: BRAND_COLORS.primaryText
     }
   ];
@@ -175,18 +182,18 @@ export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void
     slide.addText(m.l, {
       x: cardsX + 0.2,
       y: cy + 0.1,
-      w: cardW - 0.3,
-      h: 0.2,
-      fontSize: 8.5,
+      w: cardW - 0.4,
+      h: 0.25,
+      fontSize: 9,
       bold: true,
       color: BRAND_COLORS.secondaryText.replace('#', ''),
       fontFace
     });
     slide.addText(m.v, {
       x: cardsX + 0.2,
-      y: cy + 0.32,
-      w: cardW - 0.3,
-      h: 0.38,
+      y: cy + 0.35,
+      w: cardW - 0.4,
+      h: 0.35,
       fontSize: 20,
       bold: true,
       color: m.c.replace('#', ''),
@@ -194,14 +201,37 @@ export function renderBriefPptxSlide1(pptx: PptxGenJS, clientName: string): void
     });
     slide.addText(m.s, {
       x: cardsX + 0.2,
-      y: cy + 0.72,
-      w: cardW - 0.3,
-      h: 0.2,
+      y: cy + 0.68,
+      w: cardW - 0.4,
+      h: 0.25,
       fontSize: 9,
       color: BRAND_COLORS.secondaryText.replace('#', ''),
       fontFace
     });
   });
+
+  slide.addShape('rect', {
+    x: PPTX_LAYOUT.CONTENT_LEFT,
+    y: 4.65,
+    w: PPTX_LAYOUT.CONTENT_WIDTH,
+    h: 0.4,
+    fill: { color: 'EFF6FF' },
+    line: { color: 'BFDBFE', width: 1 }
+  });
+  slide.addText(
+    `"${contract.analysisPeriodMonths} months of transaction-level procurement analysis translated into an approved defensible value pipeline."`,
+    {
+      x: PPTX_LAYOUT.CONTENT_LEFT,
+      y: 4.7,
+      w: PPTX_LAYOUT.CONTENT_WIDTH,
+      h: 0.3,
+      fontSize: 10,
+      bold: true,
+      color: BRAND_COLORS.procucevBlue.replace('#', ''),
+      align: 'center',
+      fontFace
+    }
+  );
 
   addBriefFooter(slide, 1);
 }

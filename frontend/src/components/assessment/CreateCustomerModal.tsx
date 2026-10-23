@@ -13,6 +13,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
 }) => {
   const [customerName, setCustomerName] = useState('');
   const [industry, setIndustry] = useState('');
+  const [companyWebsite, setCompanyWebsite] = useState('');
   const [businessUnit, setBusinessUnit] = useState('');
   const [region, setRegion] = useState('GLOBAL');
   const baseCurrency = 'INR';
@@ -39,6 +40,7 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
       const record: CustomerRecord = await assessmentApiClient.createCustomer({
         customerName: customerName.trim(),
         industry: industry.trim(),
+        companyWebsite: companyWebsite.trim() || undefined,
         businessUnit: businessUnit.trim() || undefined,
         region: region.trim() || undefined,
         baseCurrency: baseCurrency.trim() || undefined,
@@ -118,6 +120,19 @@ export const CreateCustomerModal: React.FC<CreateCustomerModalProps> = ({
                 className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              {strings.fieldCompanyWebsite}
+            </label>
+            <input
+              type="url"
+              value={companyWebsite}
+              onChange={(e) => setCompanyWebsite(e.target.value)}
+              placeholder={strings.fieldCompanyWebsitePlaceholder}
+              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -14,6 +14,7 @@ import {
   VENDOR_CONSOLIDATION_DISCLOSURES,
   VENDOR_CONSOLIDATION_EXCEL_SHEETS
 } from '../constants/module2VendorConsolidation';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 function buildCoverageRows(cov?: ClassificationCoverageSummary): (string | number)[][] {
   const c = cov || {
@@ -161,7 +162,11 @@ export class Module2VendorConsolidationExcelBuilder {
       'Multi-Sourced Materials', 'Opportunity Status', 'Opportunity Reason'
     ];
     const rows = categories.map(c => [
-      c.classificationLabel, mode === 'UNSPSC' ? c.unspscCategory : c.spendCategory, c.unspscCode,
+      c.classificationLabel,
+      mode === 'UNSPSC'
+        ? resolveHumanReadableCategory(c.unspscCategory, c.unspscCode)
+        : resolveHumanReadableCategory(c.spendCategory, c.unspscCode),
+      c.unspscCode,
       c.totalSpendInr, c.totalSpendCr, c.sameMaterialMultiSourcingSpendCr,
       c.categoryConsolidationCandidateStatus, c.categoryConsolidationCandidateReason,
       c.distinctSuppliersCount, c.distinctMaterialsCount, c.distinctPlantsCount,
@@ -181,7 +186,7 @@ export class Module2VendorConsolidationExcelBuilder {
     for (const c of result.categories) {
       for (const s of c.suppliers) {
         rows.push([
-          c.spendCategory, s.vendorCode, s.vendorName,
+          resolveHumanReadableCategory(c.spendCategory, c.unspscCode), s.vendorCode, s.vendorName,
           s.spendInr, s.spendCr, s.spendSharePct,
           s.distinctMaterialsCount, s.distinctPlantsCount, s.poCount, s.isTailSupplier ? 'YES' : 'NO'
         ]);
@@ -200,8 +205,8 @@ export class Module2VendorConsolidationExcelBuilder {
       'Weighted Avg Price', 'Price Dispersion %', 'Opportunity Status', 'Reason'
     ];
     const rows = result.sameMaterialOpportunities.map(m => [
-      m.materialCode, m.materialDesc, m.spendCategory,
-      m.unspscCode, m.unspscCategory, m.classificationReviewStatus || 'PROVISIONAL',
+      m.materialCode, m.materialDesc, resolveHumanReadableCategory(m.spendCategory, m.materialCode),
+      m.unspscCode, resolveHumanReadableCategory(m.unspscCategory, m.unspscCode), m.classificationReviewStatus || 'PROVISIONAL',
       m.actionableStatus || 'Candidate for Review', m.qualificationCriteria || '',
       m.nextRecommendedAction || '', m.uom, m.currency,
       m.totalSpendInr, m.totalSpendCr, m.totalQuantity,

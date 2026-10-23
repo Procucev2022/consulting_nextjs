@@ -106319,7 +106319,7 @@ resume
 ---
 
 ## Prompt 444
-# PROMPT 444 � FINAL BUSINESS-RULE CORRECTIONS FOR LEVER 4
+# PROMPT 444 � FINAL BUSINESS-RULE CORRECTIONS FOR LEVER 4
 
 Make only the following corrections to the existing Lever 4 Volume Aggregation implementation.
 
@@ -106394,7 +106394,7 @@ Confirm:
 * The Excel export contains the corrected classifications UOM mappings and audit evidence.
 * Existing accepted modules and levers remain unchanged.
 
-Do not modify Module 1 Module 3 Module 4 Levers 1�3 or 5�10 or the desktop installer. Do not begin Phase 3.
+Do not modify Module 1 Module 3 Module 4 Levers 1�3 or 5�10 or the desktop installer. Do not begin Phase 3.
 
 ## 5. FINAL REPORT
 
@@ -111138,24 +111138,24 @@ The latest report confirms that navigation and regression tests pass, but Module
 
 ### 1. Complete the actual UI changes
 
-**Area A � Client Spend & Category Intelligence**
+**Area A � Client Spend & Category Intelligence**
 
 * Remove the static Industry Sector Lens and hardcoded client-spend allocations.
 * Retain Material DNA only if it provides useful, data-backed information.
 * Keep actual category spend, rankings, year-wise comparisons and transaction drill-downs.
 
-**Area B � AI Categorization & Review**
+**Area B � AI Categorization & Review**
 
 * Preserve the existing categorization workbench, UNSPSC mapping, review statuses and reassignment workflows.
 
-**Area C � Strategic Sourcing Engine**
+**Area C � Strategic Sourcing Engine**
 
 * Preserve the existing 10-point Strategic Sourcing Engine and all its accepted business rules.
 * Remove the standalone Multiple Monthly PO Consolidation & Economies of Scale Engine.
 * Relocate its unique analysis into the relevant sourcing lever or supporting drill-down.
 * Preserve the cross-lever deduplication waterfall and consolidated opportunity table.
 
-**Area D � Vendor Intelligence**
+**Area D � Vendor Intelligence**
 
 * Remove the standalone Strategic High-Value Single & Dominant Vendor Risk Engine.
 * Consolidate its useful risk indicators, evidence and actions into Vendor Intelligence.
@@ -111408,3 +111408,674 @@ Test representative categories, including P11, P01, KLPR20, P04, P06, SPPOY04 an
 **Deliverable:** Implement the necessary corrections, run targeted tests, and report the files changed, the affected views, the verified mappings, any remaining unmapped categories, and confirmation that financial calculations are unchanged.
 
 Do not perform another broad application audit. Do not redesign Module 2 or modify unrelated modules. Complete this focused correction and stop.
+
+## Prompt 495
+
+run locally on chrome
+
+
+## Prompt 496
+
+**CRITICAL DEFECT: Module 2 Category Spend Totals Do Not Reconcile With Module 1**
+
+In assessment `AIC-2026-0002` for ABC Textile Ltd:
+
+* Module 1 validated baseline: ?613.8805 Cr across 23,570 transactions.
+* Module 2 Year-wise Category Spend Matrix: approximately ?71.71 Cr.
+* Unexplained difference: approximately ?542.17 Cr.
+
+The category display labels have been improved, but the category spend matrix is not reconciling with the full assessment baseline.
+
+### 1. Trace the Actual Data
+
+Trace the complete data flow from the approved assessment dataset through the Module 2 category aggregation service to the Year-wise Category Spend Matrix.
+
+Identify exactly why the matrix includes only ?71.71 Cr instead of ?613.8805 Cr.
+
+Check specifically for:
+
+* Accidental filtering of transactions by category, material group, UNSPSC mapping status, fiscal year, or procurement type.
+* Transactions excluded because their category is unmapped or because the resolver returns "Unmapped Category".
+* Aggregation using only a subset of transaction records.
+* Incorrect source fields used for category, transaction amount, currency, or fiscal year.
+* Fiscal-year parsing errors or transactions assigned to the wrong period.
+* Differences between the full assessment baseline and the rows consumed by the category matrix.
+
+Do not guess the cause. Report the measured row counts and spend at each stage.
+
+### 2. Correct the Aggregation
+
+Use the approved assessment dataset and its existing validated transaction amounts as the source of truth.
+
+* Include every valid transaction in the appropriate procurement category.
+* Preserve the authoritative category mapping.
+* If a transaction cannot be mapped, retain its spend under an explicit "Unmapped Category" or equivalent review bucket. Never silently drop its spend.
+* Do not use Column L/UNSPSC codes as category names.
+* Do not fabricate category assignments.
+* Preserve the original fiscal-year definitions and financial rules.
+* Keep the category name and Column L code in separate fields.
+
+### 3. Enforce Reconciliation
+
+For the complete assessment:
+
+* Total category spend across all categories and years must reconcile to ?613.8805 Cr, subject only to documented rounding.
+* The sum of FY24, FY25 and FY26 must reconcile to the same total if these are the only fiscal years represented in the approved dataset.
+* If the source contains transactions outside those fiscal years, identify them separately and reconcile them explicitly rather than excluding them silently.
+* Category counts and transaction counts must be explainable against the approved dataset.
+* Unmapped, excluded and quarantined records must be reported separately with their counts and values.
+* Do not double-count transactions.
+
+### 4. Validate Across Module 2
+
+Verify the corrected spend totals in:
+
+* Year-wise Category Spend Matrix.
+* Category Spend Breakdown cards.
+* Category/vendor breakdowns.
+* Sourcing-lever category tables and drill-downs where applicable.
+
+Do not change sourcing-lever savings calculations merely to force the spend totals to match. Correct the underlying aggregation and preserve accepted business rules.
+
+### 5. Test and Report
+
+Use assessment `AIC-2026-0002` and compare:
+
+1. Approved baseline row count and spend.
+2. Rows and spend entering Module 2 aggregation.
+3. Rows and spend successfully categorized.
+4. Unmapped and excluded rows and spend.
+5. Final displayed category totals.
+
+Run targeted tests and verify the actual rendered UI after refreshing the application.
+
+**Completion criteria:** The full assessment spend reconciles to ?613.8805 Cr, or any genuine source-scope difference is explicitly explained with transaction-level evidence. Do not report PASS merely because the code compiles.
+
+Do not redesign the UI, alter source data, change accepted business rules, or run another broad application audit. Fix this specific reconciliation defect and stop.
+
+
+## Prompt 497
+The Module 2 aggregation correction is reported complete. Do not reopen the category aggregation work unless this verification identifies a defect.
+
+Perform one final targeted verification for assessment AIC-2026-0002:
+
+1. Confirm that the refreshed Year-wise Category Spend Matrix displays the complete ₹613.8805 Cr baseline across all categories.
+2. Verify the actual PO/document dates for all 23,570 transactions and independently calculate their fiscal years using 1 April–31 March.
+3. Confirm that FY24, FY25 and FY26 totals are based on actual dates, not a default year, calendar-year shortcut or missing-date fallback.
+4. Reconcile the fiscal-year totals to ₹613.8805 Cr. Report any transactions with missing or invalid dates separately.
+5. Confirm the category totals and spend share percentages reconcile to the same baseline, allowing only documented rounding.
+6. Verify the actual rendered UI after refreshing the application. If automated browser testing is blocked by the Playwright installation issue, state that limitation; do not claim browser verification was completed.
+7. Do not modify source data, accepted business rules, savings calculations or unrelated modules.
+
+Return only the fiscal-year evidence, final totals, rendered-UI verification status and any remaining blocker. If all checks pass, stop.
+
+## Prompt 498
+## Objective
+
+Eliminate confusing reporting periods, incorrect duration labels, and inconsistent date displays across the entire Procucev application.
+
+**Core principle: Every reporting period, duration, chart and comparison must reflect the actual dates and data available. Never imply three years of history when only 12 months of data exists.**
+
+### 1. Standardise the Reporting Period Selection
+
+Create one consistent reporting-period model across all applicable modules.
+
+Support:
+
+* **All Available Data:** Entire valid date range in the dataset.
+* **Last 12 Months:** Rolling 12-month period.
+* **Last 24 Months:** Rolling 24-month period.
+* **Last 36 Months:** Rolling 36-month period.
+* **Custom Date Range:** User selects start and end dates.
+* **Financial Year:** Optional selection using the Indian financial year, 1 April�31 March.
+
+Use actual transaction/document dates to determine which records fall within the selected period.
+
+Do not label a calendar-year period as a financial year or a rolling period as a financial year.
+
+### 2. Display Actual Dates Prominently
+
+Wherever a period is selected, show its actual date range clearly.
+
+Examples:
+
+* Reporting Period: 01 Jan 2023 � 31 Dec 2023
+* Data Coverage: 12 months
+* Reporting Period: 01 Apr 2023 � 31 Mar 2024 (FY24)
+* Reporting Period: 01 Jan 2023 � 31 Dec 2025
+* Data Coverage: 36 months
+
+Use the financial-year label only as additional context when appropriate. The actual start and end dates must remain unambiguous.
+
+### 3. Correct All Duration Labels
+
+Search the entire application for hardcoded or dynamically generated labels such as:
+
+* 3 Years
+* 3-Year Spend
+* FY24�FY26
+* Last 3 Years
+* All FY (3 Years)
+* 12 Months
+* Year-wise
+* Any equivalent date-range or duration descriptions.
+
+For every occurrence:
+
+1. Identify the underlying records and date range.
+2. Calculate the actual coverage period.
+3. Correct the label to match the actual period.
+4. Ensure the label updates when the user changes the reporting period or uploads a different dataset.
+
+Never derive the duration merely from the number of columns or the names of fiscal-year fields.
+
+If the dataset contains dates only from 2 January 2023 to 30 December 2023, do not label it as three years of historical data.
+
+If a selected period is 36 months but the source contains only 12 months of transactions, display both facts separately:
+
+* Selected Period: 36 months
+* Available Transaction History: approximately 12 months
+* Missing historical coverage: clearly disclosed
+
+Do not present missing periods as zero spend without distinguishing a genuine zero from unavailable data.
+
+### 4. Correct Year-wise Tables and Charts
+
+Apply the same logic to:
+
+* Module 1 Spend Analysis.
+* Module 2 Category Spend Matrix and Category Spend Breakdown.
+* Category/vendor analysis and sourcing-lever views.
+* Module 3 PCBI trend analysis.
+* Module 4 Savings Engine and reports.
+* Dashboards, KPI cards, charts, filters, drill-downs and downloadable exports.
+
+Requirements:
+
+* Display actual start/end dates and meaningful period labels.
+* Use the correct fiscal-year boundaries where financial years are selected.
+* Show only relevant periods by default.
+* Make missing or unavailable historical periods explicit.
+* Ensure totals across displayed periods reconcile to the selected reporting scope.
+* Use consistent date formatting throughout the application.
+
+Do not force every module to use identical period filters if its business purpose requires a different period. Instead, display its actual scope clearly.
+
+### 5. Handle Insufficient Historical Data
+
+For every reporting view, determine:
+
+* Earliest valid transaction date.
+* Latest valid transaction date.
+* Total valid transaction count.
+* Actual duration of available history.
+* Whether the selected reporting period is fully covered.
+
+If a user selects 36 months but only 12 months of valid history exist, clearly disclose the limitation. Do not invent historical data, extrapolate spend, or classify unavailable periods as zero.
+
+### 6. Preserve Financial Integrity
+
+* Do not alter source transactions, transaction amounts, currency conversions, category mappings, accepted business rules or savings calculations.
+* Do not change the assessment baseline to make date labels appear consistent.
+* Do not hardcode dates or durations for ABC Textile Ltd.
+* Use actual dates for every assessment and customer.
+* Preserve Module 3's existing isolation from savings calculations.
+* Ensure customer-data isolation remains intact.
+
+### 7. Validation
+
+For assessment AIC-2026-0002:
+
+* Baseline: ?613.8805 Cr across 23,570 transactions.
+* Actual date range: 02 Jan 2023 � 30 Dec 2023.
+* Expected coverage: approximately 12 months of transaction history, not three years.
+* The fiscal-year allocation must follow actual dates.
+* The sum of all periods must reconcile to ?613.8805 Cr.
+
+Test additional datasets with different date ranges, including a genuine 36-month dataset, a 12-month dataset and a dataset with missing dates.
+
+Verify that the period selector, table headings, charts, KPI cards and exports all reflect the correct dates and coverage.
+
+### 8. Completion Report
+
+Return:
+
+1. Files/components changed.
+2. Every affected display corrected.
+3. Period-selection and date-range test results.
+4. Reconciliation results.
+5. Any remaining hardcoded labels or unverified screens.
+
+Do not redesign the application, modify unrelated business logic or repeat a broad audit. Implement the shared reporting-period logic, apply it consistently, validate it, and stop.
+
+## Prompt 499
+
+resume
+
+
+## Prompt 500
+
+The reporting-period standardisation is reported complete. Do not reopen the UI redesign or repeat the full test suite.
+
+One discrepancy remains between two verification reports for assessment AIC-2026-0002:
+
+Earlier independently calculated allocation:
+
+* FY23: ?213.8081 Cr
+* FY24: ?400.0724 Cr
+
+Latest reporting-period report:
+
+* FY23: ?132.8805 Cr
+* FY24: ?481.0000 Cr
+
+Both total ?613.8805 Cr, but the fiscal-year allocations differ.
+
+1. Recalculate fiscal-year spend directly from the authoritative 23,570 transaction records using actual PO/document dates and normalized INR spend.
+2. Use Indian financial years: 1 April�31 March.
+3. Identify why the two reports differ. Check whether they used different source fields, datasets, date interpretations, transaction filters or spend fields.
+4. Confirm that each transaction is assigned to exactly one fiscal year and that all fiscal-year amounts reconcile to ?613.8805 Cr.
+5. Verify that the UI, category matrix, period metadata and exports use the same authoritative allocation.
+6. Do not hardcode either set of totals or change the baseline to force a match.
+7. Preserve the reporting-period improvements and all unrelated functionality.
+
+Return the authoritative FY23 and FY24 totals, the root cause of the discrepancy, the evidence used and whether any correction was required. Run only targeted tests if needed, then stop.
+
+
+## Prompt 501
+
+# FINAL PRE-CUSTOMER-ONBOARDING AUDIT � MODULES 3 & 4
+
+## PCBI Data Lineage, Savings Reconciliation and Executive Reporting
+
+Objective: Complete a targeted, evidence-based audit of Module 3 (PCBI Benchmarking), Module 4 (Savings Engine), Executive Brief and Management Brief before customer data is processed tomorrow morning.
+
+This is an audit and controlled defect-correction task. Do not redesign the application, rebuild working modules or change unrelated functionality.
+
+### 1. Establish the authoritative baseline
+
+Inspect the existing implementation, current assessment data, approved PCBI master/version, Module 1 outputs, Module 2 outputs, Module 4 calculations and report-generation logic.
+
+Identify the authoritative data source and version used by each module.
+
+For assessment AIC-2026-0002, independently verify the established Module 1 baseline:
+
+* Transactions: 23,570
+* Total normalized spend: ?613.8805 Cr
+* Actual transaction date range: 02 Jan 2023�30 Dec 2023
+* FY23 spend: ?213.8081 Cr
+* FY24 spend: ?400.0724 Cr
+
+Use these as reconciliation controls, not as hardcoded application values. Do not modify source transactions or force calculations to match these totals.
+
+### 2. Audit Module 1 ? Module 3 data lineage
+
+Trace actual data through the running code and identify the precise functions, APIs, transformations and data structures involved.
+
+Verify:
+
+* Transaction counts, spend totals, dates, quantities, units, currency normalization and material descriptions.
+* Correct mapping from customer materials to PCBI technical IDs and benchmark series.
+* Mapping confidence, specifications, grades, geography and other relevant comparability constraints.
+* Benchmark source, source version, observation date, frequency, units, currency and quality rating.
+* Correct handling of missing observations, stale data, frequency mismatches, invalid mappings and non-benchmarkable materials.
+* No accidental duplication, dropped transactions, incorrect aggregation or silent substitution of benchmark values.
+* Reconciliation of benchmarkable, non-benchmarkable, excluded and unmatched spend, with clearly defined denominators.
+
+Independently recalculate a representative sample and all material financial totals directly from the underlying records.
+
+Preserve the approved PCBI master and its audit trail. Do not replace validated benchmark series or invent market prices.
+
+### 3. Audit Module 3 benchmark calculations
+
+For every active benchmark calculation, verify:
+
+* Comparable purchase and benchmark units.
+* Correct currency conversion and period alignment.
+* Correct benchmark price and customer purchase-price selection.
+* Correct price-gap formula, sign convention and aggregation.
+* Appropriate treatment of quantity, spend weighting, taxes, freight and other adjustments where relevant.
+* Clear distinction between benchmark price gaps, potential opportunities and validated savings.
+
+Do not treat an index movement as a directly comparable unit price unless the methodology supports that comparison.
+
+Do not silently annualize, extrapolate or interpolate missing observations. Identify any assumptions explicitly.
+
+Compare the active results with the existing approved PCBI master and its documented expected totals. Investigate discrepancies rather than forcing a match.
+
+### 4. Audit Module 3 ? Module 4 handoff
+
+Trace the actual integration path.
+
+Confirm that Module 4 receives the correct approved benchmark outputs, identifiers, periods, units, confidence/quality status and supporting evidence.
+
+Verify that:
+
+* Only valid and comparable benchmark signals are used.
+* Benchmark price gaps are not automatically classified as achievable savings.
+* Benchmark signals do not contaminate unrelated savings calculations.
+* PCBI opportunities are incorporated only through the intended, approved pathway.
+* Duplicate opportunities across PCBI, negotiation, vendor consolidation, PO consolidation and other levers are detected and handled consistently.
+* Every adjustment and exclusion is traceable.
+* Module 3 remains isolated from any savings calculation that has not explicitly been approved for integration.
+
+Do not change the established Module 3 isolation boundary or connect it to a savings formula merely to make the totals appear more complete.
+
+### 5. Audit Module 4 financial calculations
+
+Recalculate opportunity-level and aggregate figures from the authoritative transaction-level data.
+
+Validate the full calculation chain:
+
+1. Addressable spend.
+2. Gross identified opportunity.
+3. Overlap and double-counting deductions.
+4. Net modelled opportunity.
+5. Proven opportunity supported by evidence and validation.
+6. Approved savings commitment, if supported by the implementation.
+7. Realized savings supported by actual results.
+
+Use the application's actual approved definitions and data. Do not assume these measures are interchangeable.
+
+For every total, verify the underlying transactions, formula, inclusion/exclusion rules and reconciliation.
+
+Check that:
+
+* Overlap deductions are not omitted or applied twice.
+* Opportunity percentages use the correct spend denominator.
+* Category and vendor subtotals reconcile with overall totals.
+* Unvalidated assumptions are not represented as proven benefits.
+* Realized savings remain zero unless the records contain evidence of actual realization.
+* Missing data is not silently interpreted as zero.
+* Module 4 totals are consistent across dashboards, APIs and exports.
+
+Produce an opportunity-level reconciliation with identifiers and reasons for any exclusions, overlap deductions or status changes.
+
+### 6. Audit the Executive Brief and Management Brief
+
+Trace every financial KPI, chart, benchmark insight and savings claim back to its source.
+
+Verify that both briefs use the same approved assessment version, reporting period, baseline, benchmark results and Module 4 calculation outputs.
+
+Executive Brief:
+
+* Present the reconciled baseline and reporting period.
+* Show benchmark coverage and material findings.
+* Distinguish benchmark price gaps from net modelled opportunities, proven opportunities and realized savings.
+* Present only supportable business-impact claims.
+* Highlight key decisions and material risks.
+
+Management Brief:
+
+* Show category-level and opportunity-level breakdowns.
+* Explain benchmark mapping, data coverage and material assumptions.
+* Show gross opportunity, overlap deductions, net opportunity and validation status.
+* Provide supporting calculations, exclusions, evidence requirements and recommended actions.
+
+Do not allow either brief to independently recalculate or hardcode financial totals. Both must consume the authoritative approved outputs.
+
+Ensure that stale, unavailable or unvalidated results are labelled clearly. No unsupported claims of savings realization or guaranteed benefits.
+
+### 7. Test the complete flow
+
+Run focused tests covering:
+
+* Module 1 baseline ? Module 3 benchmark mapping.
+* Benchmark calculation and price-gap reconciliation.
+* Module 3 ? Module 4 approved handoff.
+* Savings overlap and double-counting controls.
+* Module 4 totals ? Executive Brief.
+* Module 4 totals ? Management Brief.
+* Missing benchmark data, invalid mappings and unavailable periods.
+* Regression of the existing Module 1 and Module 2 baseline and reporting-period behaviour.
+
+Use the existing test infrastructure and targeted tests. Do not repeat the entire application test suite unless a specific failure requires it.
+
+### 8. Controlled corrections
+
+If a genuine defect is found:
+
+* Identify the root cause and affected files.
+* Make the smallest safe correction.
+* Preserve source data, approved PCBI versions, audit trails and unrelated functionality.
+* Re-run the targeted tests and affected reconciliation checks.
+* Report any remaining issue that cannot be safely resolved.
+
+Do not fabricate evidence, benchmark values, savings or test results. Do not claim a successful UI verification unless it was actually performed.
+
+### 9. Required final audit report
+
+Return a concise but evidence-based report containing:
+
+A. Overall readiness: PASS, PASS WITH RESTRICTIONS or FAIL.
+
+B. Module 1 ? Module 3:
+
+* Data lineage verified.
+* Transaction/spend reconciliation.
+* Mapping and benchmark coverage.
+* Material discrepancies and resolution.
+
+C. Module 3 ? Module 4:
+
+* Approved integration path.
+* Benchmark-gap versus savings separation.
+* Overlap and double-counting controls.
+
+D. Module 4:
+
+* Reconciled financial calculation table.
+* Evidence status of each benefit measure.
+* Any unresolved discrepancy.
+
+E. Executive Brief and Management Brief:
+
+* Figures verified against Module 4.
+* Reporting-period and assessment-version consistency.
+* Any unsupported or inconsistent claims.
+
+F. Tests executed and actual results.
+
+G. Files changed, root causes and corrections made.
+
+H. Outstanding blockers and a clear recommendation on whether customer data can be processed.
+
+Do not start processing new customer data, change the active customer assessment, publish reports or send reports externally as part of this audit.
+
+Stop after producing the audit report and await approval before onboarding customer data.
+
+## Prompt 502 — Final Customer-Specific Release Gate: Modules 3 & 4
+
+The previous audit reports 166 passing tests and no code changes. Do not repeat the full audit, redesign the UI, or rerun all tests.
+
+Two items require evidence before customer onboarding:
+
+1. The Module 3/4 financial tables use VGT Enterprise (AIC-2026-0001), while the baseline being prepared for customer testing is ABC Textile Ltd (AIC-2026-0002).
+2. The reported ₹319.439 Cr "Proven Opportunity" uses a 95% defensibility factor. Verify that this satisfies the application's actual evidence-based definition of proven opportunity.
+
+### A. Verify customer-specific data lineage
+
+Using existing APIs/services and the current data:
+
+* Trace AIC-2026-0002 from Module 1 through Module 3 and Module 4 to the Executive Brief and Management Brief.
+* Record the actual assessment ID, customer name, source dataset/version, transaction count, baseline spend and reporting period at each stage.
+* Verify that customer-specific outputs are derived from AIC-2026-0002 and do not reuse or display VGT financial outputs.
+* Verify that any VGT reference data is explicitly labelled as reference data and cannot be mistaken for ABC Textile's spend or benefits.
+* Do not change the active customer assessment or ingest new customer data.
+
+### B. Verify PCBI results for ABC Textile
+
+Report ABC Textile's actual:
+
+* Directly benchmarkable spend.
+* Partially benchmarkable spend.
+* Unmapped and non-benchmarkable spend.
+* Excluded services.
+* Benchmark series and mapping quality.
+* Benchmark price-gap amount, if validly calculable.
+
+Reconcile the buckets to the appropriate ABC Textile baseline and explain the denominator used for each percentage.
+
+If a result cannot be independently established from available data, label it unavailable. Do not substitute VGT figures or invent prices.
+
+### C. Verify Module 4 financial claims
+
+For ABC Textile, calculate or retrieve the actual values for:
+
+* Addressable sourcing spend.
+* Gross identified opportunity.
+* Overlap deductions.
+* Net modelled opportunity.
+* Proven opportunity.
+* Indicative delivery range, if supported.
+* Realized savings.
+
+Trace each amount to the assessment-specific opportunity records, formulas, evidence and approval status.
+
+For "Proven Opportunity," establish whether the 95% factor is backed by the approved methodology and transaction/opportunity-level evidence. If it is only a model assumption, relabel it as a modelled or estimated opportunity, using the existing terminology and reporting contracts where possible. Do not claim proven savings without evidence.
+
+Confirm that the ₹104.067 Cr overlap deduction belongs to the correct dataset before reusing it.
+
+### D. Verify the actual briefs
+
+Generate or retrieve previews for the Executive Brief and Management Brief for AIC-2026-0002 using the existing workflow, without publishing or externally sending them.
+
+Check the displayed customer name, assessment ID, period, baseline, PCBI results, opportunity measures and realized savings against the underlying records.
+
+Confirm that both briefs show identical values for shared KPIs and clearly distinguish benchmark signals, modelled opportunities, proven opportunities and realized savings.
+
+### E. Corrections and decision
+
+Make only minimal corrections for verified defects. Preserve the Module 3 isolation boundary, approved PCBI master and existing Module 1/2 fixes.
+
+Run targeted tests only for any changed code and relevant assessment isolation.
+
+Return:
+
+1. A customer-specific reconciliation table.
+2. Evidence for the "proven opportunity" classification.
+3. Confirmation that both briefs contain the correct customer-specific values.
+4. Actual test results and any files changed.
+5. Final decision: PASS, PASS WITH RESTRICTIONS, or FAIL.
+
+Do not start customer onboarding or send reports externally. Stop after reporting the findings.
+
+
+
+## Prompt 503 — Customer-Specific Briefs and Website Intelligence
+
+Complete a controlled correction to the Executive Brief and Management Brief generation. Keep the customer-context enhancement to a maximum of TWO slides per brief.
+
+### 1. Fix customer-specific report binding FIRST
+
+The audit found that PDF/PPTX exports retain frozen UltraTech Cement KPI values even when the customer name changes.
+
+* Remove unintended reliance on frozen demonstration KPIs when generating an actual customer assessment.
+* Bind all customer-facing financial figures to the correct assessment ID and its approved Module 1, Module 2, Module 3 and Module 4 outputs.
+* For ABC Textile Ltd (AIC-2026-0002), use the verified baseline of ₹613.8805 Cr, gross modelled opportunity of ₹110.764 Cr, overlap deductions of ₹25.123 Cr and net modelled opportunity of ₹85.641 Cr.
+* Show ₹82.380 Cr as proven opportunity only under the existing evidence-based criteria.
+* Keep realized savings at ₹0 unless actual realization evidence exists.
+* Label the PCBI benchmark price gap as unavailable for this assessment. Never substitute VGT or UltraTech benchmark values.
+* Ensure all shared KPIs reconcile across the Executive Brief, Management Brief, PDF and PPTX exports.
+* Preserve demonstration archetypes as separate, explicitly labelled demo outputs.
+
+### 2. Add the customer website to the Assessment Centre
+
+Add a Company Website field to the existing customer details form. Retrieve publicly accessible company information from the official website and reliable sources where necessary.
+
+Capture only useful information:
+
+* Business description and sector.
+* Main products/services and operating footprint.
+* Revenue or operating profit only when supported by reliable published data.
+* Relevant business priorities.
+
+Allow review and correction. Retain source URLs and reporting periods for material facts. Missing information must not block assessment processing.
+
+### 3. Limit customer context to TWO slides per brief
+
+**Slide 1 — Customer at a Glance**
+
+* Company, sector and principal business.
+* Operating footprint or scale, where verified.
+* One or two relevant business priorities.
+* Revenue/profit only if reliable public figures are available.
+
+**Slide 2 — Procurement Impact on Business**
+
+* Actual assessed spend and relevant categories.
+* Top 2–3 customer-specific procurement priorities.
+* Approved net modelled opportunity and potential business/P&L relevance where supported.
+* Clearly distinguish modelled opportunity, proven opportunity and realized savings.
+* One concise recommended action.
+
+Use a clear headline and no more than 3–5 concise points per slide. Avoid generic filler and duplicate information already covered elsewhere in the brief.
+
+### 4. Financial and governance controls
+
+* Website information must not change transaction data, benchmark prices or savings calculations.
+* Quantified benefits must come from approved assessment-specific outputs.
+* Do not present modelled opportunities as guaranteed profit or realized savings.
+* Preserve Module 3's approved isolation boundary.
+* Use the same assessment ID, reporting period, customer profile and approved financial outputs in both briefs.
+* Do not send or publish reports automatically.
+
+### 5. Validate before completion
+
+Generate actual ABC Textile previews for the Executive and Management Briefs and verify their PDF/PPTX exports. Confirm no UltraTech or VGT financial figures appear as ABC Textile results.
+
+Run targeted tests for customer binding, shared KPI consistency, website-profile handling and Module 3/4 financial controls.
+
+Make minimal changes, report files changed and actual test results, and stop without onboarding new customer data.
+
+---
+
+## Prompt 504
+
+Complete the remaining verification and resolve any confirmed defects in the Executive Brief and Management Brief implementation.
+
+IMPORTANT: Do not treat the missing ABC Textile website as an error. No website was provided. Website intelligence should be optional for existing customers and populated when a website is supplied for a new customer.
+
+1. PROVEN OPPORTUNITY
+   Verify the ₹82.380 Cr Proven Opportunity for ABC Textile assessment AIC-2026-0002 against the actual transaction records, purchase-order history, supplier pricing, rate cards and supporting evidence available in the application.
+
+* Do not accept summary text or passing unit tests as transaction-level proof.
+* Identify the evidence supporting each component of the ₹82.380 Cr.
+* If sufficient evidence is unavailable, retain ₹85.641 Cr as Net Modelled Opportunity and downgrade the unsupported portion of ₹82.380 Cr to Modelled Opportunity Pending Validation.
+* Realized Savings must remain ₹0 until actual savings are evidenced and approved.
+
+2. FINANCIAL RECONCILIATION
+   Verify every financial figure against the active assessment and approved Module 1–4 outputs:
+
+* Evaluated baseline spend: ₹613.8805 Cr.
+* Gross Modelled Opportunity: ₹110.764 Cr.
+* Overlap deductions: ₹25.123 Cr.
+* Net Modelled Opportunity: ₹85.641 Cr.
+* Realized Savings: ₹0 Cr.
+  Confirm the calculations, data lineage, rounding and source records. Do not hardcode these values into generic customer-report templates.
+
+3. PDF AND PPTX EXPORTS
+   Generate fresh PDF and PPTX exports for:
+
+* 30-slide Executive Brief.
+* 10-slide Management Brief.
+  Inspect the actual generated files and verify all customer-specific financial KPIs, slide content, customer identity and audit appendix.
+  Search for contamination from UltraTech Cement, VGT and their demonstration figures. Confirm the two-slide customer-context limit in each brief.
+  Fix only confirmed defects and regenerate affected files.
+
+4. PCBI AND SAVINGS ISOLATION
+   Confirm PCBI Benchmark Price Gap remains UNAVAILABLE for ABC Textile.
+   Ensure no VGT/UltraTech benchmark values enter the ABC Textile assessment, Module 4 savings, Executive Brief or Management Brief.
+
+5. WEBSITE FIELD
+   Confirm the customer website field is optional during customer creation and editing.
+   If no website is provided, do not invent company facts or block report generation. If a website is supplied in future, record sources and retrieval dates and distinguish verified facts from unverified information.
+   Website data must never modify the transaction ledger or financial calculations.
+
+6. FINAL QUALITY CHECK
+   Run relevant tests, backend and frontend type checks, and lint checks.
+   Do not weaken tests, suppress failures, alter unrelated modules or publish/send reports.
+   Preserve existing working changes and Module 1–3 boundaries.
+
+Return a concise evidence-based PASS / FAIL / BLOCKED report. For every failed check, fix the root cause and retest. Distinguish software verification from business evidence verification. Do not claim that an opportunity is proven unless the supporting records establish it.
+

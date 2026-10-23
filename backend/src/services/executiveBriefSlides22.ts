@@ -112,7 +112,7 @@ export function renderSlide22IndexContracting(
     color: BRAND_COLORS.procucevBlue
   });
   canvas.textBlock(
-    'Formula-linked indexing protects both UltraTech and suppliers against unexpected commodity spikes while ' +
+    `Formula-linked indexing protects both ${clientName} and suppliers against unexpected commodity spikes while ` +
     'automatically capturing down-cycle cost reductions without contentious adversarial re-negotiations.',
     PDF_LAYOUT.CONTENT_LEFT + 20,
     banY + 40,

@@ -16,6 +16,23 @@ const APPROVED_UPPER_SET = new Set(
   APPROVED_PROCUREMENT_CATEGORIES.map((c) => c.toUpperCase())
 );
 
+const AUTHORITATIVE_UPPER_MAP: Record<string, string> = {};
+for (const [k, v] of Object.entries(AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY)) {
+  AUTHORITATIVE_UPPER_MAP[k.toUpperCase()] = v;
+}
+
+const UNMAPPED_PLACEHOLDER_SET = new Set([
+  'UNKNOWN',
+  'UNKNOWN_CATEGORY',
+  'UNKNOWN CATEGORY',
+  'UNCATEGORIZED',
+  'N/A',
+  'NA',
+  'NONE',
+  'NULL',
+  'UNDEFINED'
+]);
+
 const CODE_LIKE_PATTERN = /^[A-Z]{1,6}\d+[A-Z0-9_-]*$/i;
 
 /**
@@ -24,10 +41,11 @@ const CODE_LIKE_PATTERN = /^[A-Z]{1,6}\d+[A-Z0-9_-]*$/i;
 export function isInternalCategoryCode(val?: string | null): boolean {
   if (!val) return false;
   const trimmed = val.trim();
-  if (APPROVED_UPPER_SET.has(trimmed.toUpperCase())) {
+  const upper = trimmed.toUpperCase();
+  if (APPROVED_UPPER_SET.has(upper)) {
     return false;
   }
-  if (AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY[trimmed]) {
+  if (AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY[trimmed] || AUTHORITATIVE_UPPER_MAP[upper]) {
     return true;
   }
   return CODE_LIKE_PATTERN.test(trimmed);
@@ -35,11 +53,18 @@ export function isInternalCategoryCode(val?: string | null): boolean {
 
 function matchApprovedOrAuthoritative(val: string): string | null {
   if (!val) return null;
-  const mapped = AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY[val];
+  const upper = val.toUpperCase();
+  if (UNMAPPED_PLACEHOLDER_SET.has(upper)) {
+    return null;
+  }
+  const mapped = AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY[val] || AUTHORITATIVE_UPPER_MAP[upper];
   if (mapped) return mapped;
-  if (APPROVED_UPPER_SET.has(val.toUpperCase())) {
+  if (APPROVED_UPPER_SET.has(upper)) {
+    if (val !== upper) {
+      return val;
+    }
     return APPROVED_PROCUREMENT_CATEGORIES.find(
-      (c) => c.toUpperCase() === val.toUpperCase()
+      (c) => c.toUpperCase() === upper
     ) || val;
   }
   return null;
@@ -66,7 +91,12 @@ export function resolveHumanReadableCategory(
     return groupMatch;
   }
 
-  if (catTrimmed && catTrimmed !== UNMAPPED_CATEGORY_LABEL && !isInternalCategoryCode(catTrimmed)) {
+  if (
+    catTrimmed &&
+    catTrimmed !== UNMAPPED_CATEGORY_LABEL &&
+    !UNMAPPED_PLACEHOLDER_SET.has(catTrimmed.toUpperCase()) &&
+    !isInternalCategoryCode(catTrimmed)
+  ) {
     return catTrimmed;
   }
 

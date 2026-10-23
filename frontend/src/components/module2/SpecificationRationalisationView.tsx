@@ -14,6 +14,7 @@ import {
   SPECIFICATION_FINANCIAL_DISCLOSURES
 } from '../../constants/module2SpecificationRationalisation';
 import { SpecificationRationalisationReviewModal } from './SpecificationRationalisationReviewModal';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 export const SpecificationRationalisationView: React.FC<SpecificationRationalisationViewProps> = ({
   assessmentId = 'AIC-2026-0002',
@@ -274,7 +275,7 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
                 <tr key={c.candidateId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
                   <td className="p-3 font-mono font-bold text-blue-600">{c.candidateId}</td>
                   <td className="p-3">
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">{c.spendCategory}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{resolveHumanReadableCategory(c.spendCategory)}</p>
                     <span className="text-[10px] text-slate-500 block">
                       {SPECIFICATION_IDENTIFICATION_LABELS[c.identificationType] || c.identificationType}
                     </span>

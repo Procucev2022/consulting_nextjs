@@ -54,11 +54,7 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
             }`}
           >
             <span className="text-[11px]">
-              {months.length === 10
-                ? 'All 10 Months'
-                : months.length === 36
-                ? 'All 36 Months'
-                : UI_STRINGS.documentSummary.month.allMonthsFilter(months.length)}
+              {UI_STRINGS.documentSummary.month.allMonthsFilter(months.length)}
             </span>
           </button>
           {Array.from(new Set(months.map((m) => m.fiscal_year))).filter(Boolean).map((fy) => (

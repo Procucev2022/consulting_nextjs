@@ -43,6 +43,19 @@ export interface ReviewGateResult {
   message: string;
 }
 
+export interface CustomerWebsiteProfile {
+  companyWebsite: string;
+  businessDescription: string;
+  sector: string;
+  mainProducts: string[];
+  operatingFootprint: string;
+  revenueOrProfit?: string;
+  businessPriorities: string[];
+  sourceUrls: string[];
+  reportingPeriod: string;
+  retrievedAt: string;
+}
+
 export interface CustomerRecord {
   id: string;
   customerId?: string;
@@ -51,6 +64,8 @@ export interface CustomerRecord {
   businessUnit?: string;
   region?: string;
   baseCurrency?: string;
+  companyWebsite?: string;
+  websiteProfile?: CustomerWebsiteProfile;
   contactEmail?: string;
   contactPerson?: string;
   status?: 'ACTIVE' | 'ARCHIVED' | 'ONBOARDING';
@@ -65,6 +80,7 @@ export interface CreateCustomerInput {
   businessUnit?: string;
   region?: string;
   baseCurrency?: string;
+  companyWebsite?: string;
   contactEmail?: string;
   contactPerson?: string;
   notes?: string;
@@ -76,6 +92,7 @@ export interface UpdateCustomerInput {
   businessUnit?: string;
   region?: string;
   baseCurrency?: string;
+  companyWebsite?: string;
   contactEmail?: string;
   contactPerson?: string;
   status?: 'ACTIVE' | 'ARCHIVED' | 'ONBOARDING';
@@ -89,6 +106,8 @@ export interface AssessmentRecord {
   customerName: string;
   businessUnit?: string;
   industry: string;
+  companyWebsite?: string;
+  websiteProfile?: CustomerWebsiteProfile;
   assessmentPeriod?: string;
   assessmentPeriodStart: string;
   assessmentPeriodEnd: string;

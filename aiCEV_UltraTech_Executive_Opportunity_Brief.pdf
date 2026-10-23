@@ -10,7 +10,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 2923 >>
+<< /Length 2936 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -31,7 +31,7 @@ BT
 /F1 11.00 Tf
 0.357 0.392 0.447 rg
 48.00 458.00 Td
-(UltraTech Cement Limited | CFO / CEO Discussion Edition) Tj
+(UltraTech Cement Limited | Demonstration Archetype Edition) Tj
 ET
 0.863 0.890 0.925 RG
 0.75 w
@@ -157,8 +157,8 @@ ET
 BT
 /F2 11.00 Tf
 0.090 0.412 0.878 rg
-199.72 73.00 Td
-("24 months of transaction-level procurement analysis translated into a defensible value pipeline.") Tj
+171.12 73.00 Td
+("24 months of transaction-level procurement analysis translated into an approved defensible value pipeline.") Tj
 ET
 0.863 0.890 0.925 RG
 0.75 w
@@ -187,7 +187,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 6 0 R >>
 endobj
 6 0 obj
-<< /Length 3568 >>
+<< /Length 3473 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -201,7 +201,7 @@ BT
 /F2 22.00 Tf
 0.090 0.125 0.200 rg
 48.00 478.00 Td
-(What the Procurement Data Tells Us) Tj
+(What the Procurement Data Tells Us [DEMONSTRATION ARCHETYPE]) Tj
 ET
 q 96.00 0 0 35.00 816.00 481.00 cm /Im1 Do Q
 0.863 0.890 0.925 RG
@@ -381,12 +381,6 @@ BT
 68.00 130.00 Td
 (Evaluated across 26 manufacturing plants and 256 material groups over 24 months of invoiced ledger history.) Tj
 ET
-BT
-/F3 9.00 Tf
-0.357 0.392 0.447 rg
-48.00 80.00 Td
-(Detailed evidence: Boardroom & Evidence Edition - Slides 7-10) Tj
-ET
 0.863 0.890 0.925 RG
 0.75 w
 48.00 32.00 m 912.00 32.00 l s
@@ -414,7 +408,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 8 0 R >>
 endobj
 8 0 obj
-<< /Length 4712 >>
+<< /Length 4738 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -428,7 +422,7 @@ BT
 /F2 22.00 Tf
 0.090 0.125 0.200 rg
 48.00 478.00 Td
-(WHERE THE OPPORTUNITY IS CONCENTRATED) Tj
+(WHERE THE OPPORTUNITY IS CONCENTRATED [DEMONSTRATION ARCHETYPE]) Tj
 ET
 q 96.00 0 0 35.00 816.00 481.00 cm /Im1 Do Q
 0.863 0.890 0.925 RG
@@ -964,7 +958,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 12 0 R >>
 endobj
 12 0 obj
-<< /Length 3404 >>
+<< /Length 4037 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -991,21 +985,21 @@ q 96.00 0 0 35.00 816.00 481.00 cm /Im1 Do Q
 0.090 0.412 0.878 rg
 48.00 428.00 164.00 4.00 re f
 BT
-/F2 24.00 Tf
+/F2 20.00 Tf
 0.090 0.125 0.200 rg
-62.00 385.00 Td
+60.00 398.00 Td
 (31,671) Tj
 ET
 BT
 /F2 10.00 Tf
 0.090 0.412 0.878 rg
-62.00 355.00 Td
+60.00 372.00 Td
 (Transaction Records) Tj
 ET
 BT
-/F1 8.50 Tf
+/F1 9.00 Tf
 0.357 0.392 0.447 rg
-62.00 328.00 Td
+60.00 350.00 Td
 (Audited PO & invoice lines) Tj
 ET
 1.000 1.000 1.000 rg
@@ -1015,21 +1009,21 @@ ET
 0.090 0.412 0.878 rg
 227.00 428.00 164.00 4.00 re f
 BT
-/F2 24.00 Tf
+/F2 20.00 Tf
 0.090 0.125 0.200 rg
-241.00 385.00 Td
+239.00 398.00 Td
 (974) Tj
 ET
 BT
 /F2 10.00 Tf
 0.090 0.412 0.878 rg
-241.00 355.00 Td
+239.00 372.00 Td
 (Suppliers) Tj
 ET
 BT
-/F1 8.50 Tf
+/F1 9.00 Tf
 0.357 0.392 0.447 rg
-241.00 328.00 Td
+239.00 350.00 Td
 (Vendor master profiled) Tj
 ET
 1.000 1.000 1.000 rg
@@ -1039,21 +1033,21 @@ ET
 0.090 0.412 0.878 rg
 406.00 428.00 164.00 4.00 re f
 BT
-/F2 24.00 Tf
+/F2 20.00 Tf
 0.090 0.125 0.200 rg
-420.00 385.00 Td
+418.00 398.00 Td
 (256) Tj
 ET
 BT
 /F2 10.00 Tf
 0.090 0.412 0.878 rg
-420.00 355.00 Td
+418.00 372.00 Td
 (Material Groups) Tj
 ET
 BT
-/F1 8.50 Tf
+/F1 9.00 Tf
 0.357 0.392 0.447 rg
-420.00 328.00 Td
+418.00 350.00 Td
 (Clean taxonomy categories) Tj
 ET
 1.000 1.000 1.000 rg
@@ -1063,22 +1057,22 @@ ET
 0.090 0.412 0.878 rg
 585.00 428.00 164.00 4.00 re f
 BT
-/F2 24.00 Tf
+/F2 20.00 Tf
 0.090 0.125 0.200 rg
-599.00 385.00 Td
+597.00 398.00 Td
 (26) Tj
 ET
 BT
 /F2 10.00 Tf
 0.090 0.412 0.878 rg
-599.00 355.00 Td
+597.00 372.00 Td
 (Plants) Tj
 ET
 BT
-/F1 8.50 Tf
+/F1 9.00 Tf
 0.357 0.392 0.447 rg
-599.00 328.00 Td
-(Pan-India manufacturing sites) Tj
+597.00 350.00 Td
+(Manufacturing plant sites) Tj
 ET
 1.000 1.000 1.000 rg
 0.863 0.890 0.925 RG
@@ -1087,62 +1081,106 @@ ET
 0.090 0.412 0.878 rg
 764.00 428.00 164.00 4.00 re f
 BT
-/F2 24.00 Tf
+/F2 20.00 Tf
 0.090 0.125 0.200 rg
-778.00 385.00 Td
+776.00 398.00 Td
 (24 Months) Tj
 ET
 BT
 /F2 10.00 Tf
 0.090 0.412 0.878 rg
-778.00 355.00 Td
+776.00 372.00 Td
 (Analysis Period) Tj
 ET
 BT
-/F1 8.50 Tf
+/F1 9.00 Tf
 0.357 0.392 0.447 rg
-778.00 328.00 Td
+776.00 350.00 Td
 (April 2024 - March 2026) Tj
 ET
-1.000 1.000 1.000 rg
-0.863 0.890 0.925 RG
+0.937 0.965 1.000 rg
+0.749 0.859 0.996 RG
 1.00 w
-48.00 205.00 864.00 75.00 re B
-BT
-/F2 9.00 Tf
+48.00 205.00 864.00 70.00 re B
 0.090 0.412 0.878 rg
-68.00 256.00 Td
-(ROBUST VALUE PROVENANCE ARCHITECTURE) Tj
-ET
+48.00 205.00 4.00 70.00 re f
 BT
-/F2 11.00 Tf
-0.090 0.125 0.200 rg
-68.00 226.00 Td
-(Transaction-level analysis  ->  Category intelligence  ->  Sourcing opportunities  ->  Overlap controls  ->  Defensible pipeline) Tj
-ET
-0.973 0.980 0.988 rg
-0.863 0.890 0.925 RG
-1.00 w
-48.00 125.00 864.00 60.00 re B
-0.392 0.455 0.545 rg
-48.00 125.00 4.00 60.00 re f
-BT
-/F2 9.00 Tf
-0.090 0.125 0.200 rg
-68.00 163.00 Td
-(DATA GOVERNANCE & INTEGRITY ASSURANCE) Tj
+/F2 10.50 Tf
+0.090 0.412 0.878 rg
+68.00 247.00 Td
+(Every rupee is traced to specific PO line items and supplier rate differentials. Zero high-level extrapolation.) Tj
 ET
 BT
 /F1 9.50 Tf
+0.090 0.125 0.200 rg
+68.00 225.00 Td
+(Reconciled against verified baseline of Rs. 5920.3500 Cr under strict data isolation.) Tj
+ET
+1.000 1.000 1.000 rg
+0.863 0.890 0.925 RG
+0.75 w
+48.00 95.00 280.00 90.00 re B
+BT
+/F2 9.50 Tf
+0.090 0.412 0.878 rg
+62.00 161.00 Td
+(STEP 1: Data Ingestion & Hygiene) Tj
+ET
+BT
+/F1 9.00 Tf
 0.357 0.392 0.447 rg
-68.00 141.00 Td
-(Customer procurement data is handled under configured tenant isolation, access controls, confidentiality and data-governance controls.) Tj
+62.00 141.00 Td
+(100% line-item normalization; duplicate elimination.) Tj
+ET
+1.000 1.000 1.000 rg
+0.863 0.890 0.925 RG
+0.75 w
+348.00 95.00 280.00 90.00 re B
+BT
+/F2 9.50 Tf
+0.090 0.412 0.878 rg
+362.00 161.00 Td
+(STEP 2: Isolation & Encryption) Tj
+ET
+BT
+/F1 9.00 Tf
+0.357 0.392 0.447 rg
+362.00 141.00 Td
+(Customer data processed under dedicated AES-256) Tj
+ET
+BT
+/F1 9.00 Tf
+0.357 0.392 0.447 rg
+362.00 127.00 Td
+(isolation.) Tj
+ET
+1.000 1.000 1.000 rg
+0.863 0.890 0.925 RG
+0.75 w
+648.00 95.00 280.00 90.00 re B
+BT
+/F2 9.50 Tf
+0.090 0.412 0.878 rg
+662.00 161.00 Td
+(STEP 3: Independent Validation) Tj
+ET
+BT
+/F1 9.00 Tf
+0.357 0.392 0.447 rg
+662.00 141.00 Td
+(Multi-lever overlap deductions eliminate) Tj
+ET
+BT
+/F1 9.00 Tf
+0.357 0.392 0.447 rg
+662.00 127.00 Td
+(double-counting.) Tj
 ET
 BT
 /F3 9.00 Tf
 0.357 0.392 0.447 rg
-48.00 80.00 Td
-(Full methodology and audit trail: Boardroom & Evidence Edition - Slides 7 & 30) Tj
+48.00 75.00 Td
+(Full audit methodology: Boardroom & Evidence Edition - Slides 7-10) Tj
 ET
 0.863 0.890 0.925 RG
 0.75 w
@@ -1476,7 +1514,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 16 0 R >>
 endobj
 16 0 obj
-<< /Length 4510 >>
+<< /Length 4525 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -1506,7 +1544,7 @@ BT
 /F2 9.50 Tf
 0.024 0.373 0.275 rg
 68.00 412.00 Td
-(VALIDATED WAVE 1 OPPORTUNITY) Tj
+(PROVEN WAVE 1 OPPORTUNITY) Tj
 ET
 BT
 /F2 24.00 Tf
@@ -1724,7 +1762,7 @@ BT
 /F1 8.50 Tf
 0.357 0.392 0.447 rg
 64.00 120.00 Td
-(Note: Validated Wave 1 is the immediate execution tranche, not additive to the Rs. 78.72 Cr direct pipeline.) Tj
+(Note: Proven Opportunity \(Rs. 47.90 Cr\) is the immediate execution tranche, distinct from Realized Savings \(Rs. 68.00 Cr\).) Tj
 ET
 BT
 /F3 9.00 Tf
@@ -1759,7 +1797,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 18 0 R >>
 endobj
 18 0 obj
-<< /Length 4369 >>
+<< /Length 4377 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -1969,7 +2007,7 @@ BT
 /F2 10.00 Tf
 0.090 0.412 0.878 rg
 68.00 166.00 Td
-(HERO TARGET: Rs. 47.90 Cr Validated Wave 1 Targeted for 90-Day Cash Realization) Tj
+(HERO TARGET: Rs. 47.90 Cr Proven Opportunity Targeted for 90-Day Commercial Realization) Tj
 ET
 BT
 /F1 9.00 Tf
@@ -2016,7 +2054,7 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [ 0 0 960 540 ] /Resources << /Font << /F1 23 0 R /F2 24 0 R /F3 25 0 R >> /XObject << /Im1 26 0 R >> >> /Contents 20 0 R >>
 endobj
 20 0 obj
-<< /Length 4608 >>
+<< /Length 4607 >>
 stream
 0.969 0.976 0.988 rg
 0.00 0.00 960.00 540.00 re f
@@ -2124,13 +2162,13 @@ BT
 /F1 8.00 Tf
 0.090 0.125 0.200 rg
 285.00 304.00 Td
-(- Multi-plant ex-works price dispersion) Tj
+(- Multi-plant price dispersion detection) Tj
 ET
 BT
 /F1 8.00 Tf
 0.090 0.125 0.200 rg
 285.00 292.50 Td
-(detection on identical SKUs) Tj
+(across 26 operating units) Tj
 ET
 BT
 /F1 8.00 Tf
@@ -2856,31 +2894,31 @@ xref
 0000000068 00000 n 
 0000000188 00000 n 
 0000000366 00000 n 
-0000003341 00000 n 
-0000003519 00000 n 
-0000007139 00000 n 
-0000007317 00000 n 
-0000012081 00000 n 
-0000012260 00000 n 
-0000016501 00000 n 
-0000016681 00000 n 
-0000020138 00000 n 
-0000020318 00000 n 
-0000025115 00000 n 
-0000025295 00000 n 
-0000029858 00000 n 
-0000030038 00000 n 
-0000034460 00000 n 
-0000034640 00000 n 
-0000039301 00000 n 
-0000039481 00000 n 
-0000043058 00000 n 
-0000043156 00000 n 
-0000043259 00000 n 
-0000043365 00000 n 
-0000114376 00000 n 
+0000003354 00000 n 
+0000003532 00000 n 
+0000007057 00000 n 
+0000007235 00000 n 
+0000012025 00000 n 
+0000012204 00000 n 
+0000016445 00000 n 
+0000016625 00000 n 
+0000020715 00000 n 
+0000020895 00000 n 
+0000025692 00000 n 
+0000025872 00000 n 
+0000030450 00000 n 
+0000030630 00000 n 
+0000035060 00000 n 
+0000035240 00000 n 
+0000039900 00000 n 
+0000040080 00000 n 
+0000043657 00000 n 
+0000043755 00000 n 
+0000043858 00000 n 
+0000043964 00000 n 
+0000114975 00000 n 
 trailer
 << /Size 28 /Root 1 0 R >>
 startxref
-122025
+122624
 %%EOF

@@ -65,8 +65,8 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
   });
 
   it('should correctly format modals templates', () => {
-    expect(UI_STRINGS.modals.topItems.categoryTitle('Packaging')).toBe('Packaging — Top 10 Line Items & 3-Year Price Trends');
-    expect(UI_STRINGS.modals.topItems.vendorTitle('Amcor')).toBe('Amcor — Top Line Items & 3-Year Price Trends');
+    expect(UI_STRINGS.modals.topItems.categoryTitle('Packaging')).toBe('Packaging — Top Line Items & Price Trends');
+    expect(UI_STRINGS.modals.topItems.vendorTitle('Amcor')).toBe('Amcor — Top Line Items & Price Trends');
     expect(UI_STRINGS.modals.dpsNXT.qualifiedBiddersCount(6)).toBe('6 Qualified Bidders Invited');
     expect(UI_STRINGS.modals.mergeVendor.issueLabel).toBe('Issue Description');
     expect(UI_STRINGS.modals.mergeVendor.ignoreButton).toBe('Ignore Issue');

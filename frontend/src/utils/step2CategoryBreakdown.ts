@@ -124,7 +124,8 @@ function buildFallbackCategoryDetail(
   total: number
 ): CategoryYearDetail {
   const spend = c.spend_inr_crores ?? c.total_3yr_spend_inr_cr ?? 0;
-  const catName = c.name ?? c.category ?? 'Direct Materials';
+  const rawCatName = c.name ?? c.category ?? 'Direct Materials';
+  const catName = resolveHumanReadableCategory(rawCatName, c.column_l_code);
   const bucket = getFallbackBucket(catName);
   const { fy24, fy25, fy26 } = extractFallbackYearSpends(c);
   const yoyGrowth = calculateFallbackYoY(fy25, fy26);
@@ -134,6 +135,7 @@ function buildFallbackCategoryDetail(
     category: catName,
     core_bucket: bucket,
     sample_column_l_code: c.column_l_code || '00000000',
+    sample_column_l_title: c.sample_column_l_title || 'General Category',
     spend_fy24_cr: fy24,
     spend_fy25_cr: fy25,
     spend_fy26_cr: fy26,
@@ -148,18 +150,46 @@ function buildFallbackCategoryDetail(
   };
 }
 
+function addVal(a?: number, b?: number): number {
+  return (a ?? 0) + (b ?? 0);
+}
+
+function accumulateFallbackCategory(existing: SpendCategorySummary, c: SpendCategorySummary): void {
+  existing.spend_inr_crores = addVal(existing.spend_inr_crores, c.spend_inr_crores);
+  existing.spend_fy24_cr = addVal(existing.spend_fy24_cr, c.spend_fy24_cr);
+  existing.spend_fy25_cr = addVal(existing.spend_fy25_cr, c.spend_fy25_cr);
+  existing.spend_fy26_cr = addVal(existing.spend_fy26_cr, c.spend_fy26_cr);
+  existing.supplier_count = addVal(existing.supplier_count, c.supplier_count);
+  existing.lineItemsCount = addVal(existing.lineItemsCount, c.lineItemsCount);
+}
+
 function transformFallbackCategories(fallbackCategories: SpendCategorySummary[]): CategoryYearDetail[] {
   if (!fallbackCategories || fallbackCategories.length === 0) return [];
-  const total = fallbackCategories.reduce((s, c) => s + (c.spend_inr_crores || 0), 0) || 1;
-  return fallbackCategories.map((c, idx) => buildFallbackCategoryDetail(c, idx, total));
+  const aggregatedMap = new Map<string, SpendCategorySummary>();
+
+  for (const c of fallbackCategories) {
+    const rawCatName = c.name || c.category || 'Direct Materials';
+    const catName = resolveHumanReadableCategory(rawCatName, c.column_l_code);
+    const existing = aggregatedMap.get(catName);
+    if (!existing) {
+      aggregatedMap.set(catName, { ...c, name: catName, category: catName });
+    } else {
+      accumulateFallbackCategory(existing, c);
+    }
+  }
+
+  const consolidatedList = Array.from(aggregatedMap.values()).sort(
+    (a, b) => (b.spend_inr_crores || 0) - (a.spend_inr_crores || 0)
+  );
+
+  const total = consolidatedList.reduce((s, c) => s + (c.spend_inr_crores || 0), 0) || 1;
+  return consolidatedList.map((c, idx) => buildFallbackCategoryDetail(c, idx, total));
 }
 
 function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
   const descMatch = lookupUNSPSCByDescription(item.raw_desc);
   const isClassified = descMatch?.classificationStatus === 'CLASSIFIED';
   const fallback = lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-  const rawCat = item.unspsc_category_name || item.core_bucket;
-  const humanCat = resolveHumanReadableCategory(rawCat, item.material_code);
   return {
     spendFY24: 0,
     spendFY25: 0,
@@ -170,7 +200,7 @@ function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
     coreBucket: item.core_bucket || 'Direct Materials',
     sampleColumnL: item.unspsc_code || (isClassified ? descMatch?.commodityCode : '00000000') || '00000000',
     sampleColumnLTitle:
-      humanCat || item.unspsc_commodity_title || (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') || fallback.commodityTitle,
+      item.unspsc_commodity_title || (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') || fallback.commodityTitle,
     lineItemsCount: 0
   };
 }

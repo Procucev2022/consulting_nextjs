@@ -7,7 +7,9 @@ import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
   BRAND_COLORS,
-  TYPOGRAPHY
+  TYPOGRAPHY,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide7DiagnosticBaseline(
@@ -17,6 +19,9 @@ export function renderSlide7DiagnosticBaseline(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader(
     'Diagnostic Baseline: Transaction Ingestion & Invariant Provenance',
@@ -35,8 +40,8 @@ export function renderSlide7DiagnosticBaseline(
     cardW,
     cardH,
     'Total Spend Evaluated',
-    '₹5,920.35 Cr',
-    '24 Months (Apr 2024 - Mar 2026)',
+    `₹${contract.totalCustomerSpendCr.toFixed(isCust ? 4 : 2)} Cr`,
+    contract.analysisPeriod,
     BRAND_COLORS.procucevBlue
   );
   canvas.kpiCard(
@@ -45,7 +50,7 @@ export function renderSlide7DiagnosticBaseline(
     cardW,
     cardH,
     'Invoiced Transactions',
-    '31,671 Records',
+    `${contract.baselineTransactions.toLocaleString('en-IN')} Records`,
     '100% Cleansed & Normalized',
     BRAND_COLORS.accentGreen
   );
@@ -55,7 +60,7 @@ export function renderSlide7DiagnosticBaseline(
     cardW,
     cardH,
     'Active Supplier Base',
-    '974 Suppliers',
+    `${contract.baselineSuppliers} Suppliers`,
     'Transacting Commercial Vendors',
     '#0284C7'
   );
@@ -65,7 +70,7 @@ export function renderSlide7DiagnosticBaseline(
     cardW,
     cardH,
     'Procurement Taxonomy',
-    '256 Material Groups',
+    `${contract.baselineMaterialGroups} Material Groups`,
     'UNSPSC Level 4 Mapped',
     BRAND_COLORS.secondaryText
   );
@@ -80,12 +85,12 @@ export function renderSlide7DiagnosticBaseline(
 
   // Visual Process Flow: CUSTOMER DATA -> MODULE 1 -> MODULE 2 -> MODULE 3 -> MODULE 4 -> EXECUTIVE VALUE BRIEF
   const flowStages = [
-    { name: 'CUSTOMER DATA', desc: 'Raw SAP/ERP invoices & POs', metric: '31,671 Records' },
-    { name: 'MODULE 1', desc: 'Spend Diagnostic & Taxonomy', metric: '₹5,920.35 Cr' },
-    { name: 'MODULE 2', desc: 'Strategic Sourcing Levers', metric: '10 Sourcing Levers' },
-    { name: 'MODULE 3', desc: 'PCBI Market Benchmarks', metric: '28 Commodity Indices' },
-    { name: 'MODULE 4', desc: 'Execution & Realization', metric: '₹47.90 Cr Wave 1' },
-    { name: 'EXECUTIVE BRIEF', desc: 'Boardroom Decision Report', metric: '₹93.60 Cr Net Pipeline' }
+    { name: 'CUSTOMER DATA', desc: 'Raw SAP/ERP invoices & POs', metric: `${contract.baselineTransactions.toLocaleString('en-IN')} Records` },
+    { name: 'MODULE 1', desc: 'Spend Diagnostic & Taxonomy', metric: `₹${contract.totalCustomerSpendCr.toFixed(isCust ? 4 : 2)} Cr` },
+    { name: 'MODULE 2', desc: 'Strategic Sourcing Levers', metric: isCust ? '4 Sourcing Levers' : '10 Sourcing Levers' },
+    { name: 'MODULE 3', desc: 'PCBI Market Benchmarks', metric: isCust ? 'UNAVAILABLE (Isolated)' : '28 Commodity Indices' },
+    { name: 'MODULE 4', desc: 'Execution & Realization', metric: `₹${contract.validatedSavingsCr.toFixed(isCust ? 3 : 2)} Cr Proven` },
+    { name: 'EXECUTIVE BRIEF', desc: 'Boardroom Decision Report', metric: `₹${contract.netDefensiblePipelineCr.toFixed(isCust ? 3 : 2)} Cr Net Pipeline` }
   ];
 
   const stageW = 138;

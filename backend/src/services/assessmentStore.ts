@@ -34,6 +34,7 @@ import {
   sanitizePersistencePath,
   getPersistenceEnvironment
 } from './assessmentPersistence';
+import { customerWebsiteService } from './customerWebsiteService';
 import logger from '../utils/logger';
 
 export class AssessmentStore {
@@ -415,6 +416,8 @@ export class AssessmentStore {
       businessUnit: input.businessUnit?.trim() || undefined,
       region: input.region?.trim() || 'GLOBAL',
       baseCurrency: input.baseCurrency?.trim() || 'INR',
+      companyWebsite: input.companyWebsite?.trim() || undefined,
+      websiteProfile: customerWebsiteService.getProfileForCustomer(input.customerName.trim(), input.companyWebsite?.trim()),
       contactEmail: input.contactEmail?.trim() || undefined,
       contactPerson: input.contactPerson?.trim() || undefined,
       status: 'ACTIVE',
@@ -443,6 +446,8 @@ export class AssessmentStore {
     if (input.baseCurrency !== undefined) record.baseCurrency = input.baseCurrency?.trim() || undefined;
     if (input.contactEmail !== undefined) record.contactEmail = input.contactEmail?.trim() || undefined;
     if (input.contactPerson !== undefined) record.contactPerson = input.contactPerson?.trim() || undefined;
+    if (input.companyWebsite !== undefined) record.companyWebsite = input.companyWebsite?.trim() || undefined;
+    record.websiteProfile = customerWebsiteService.getProfileForCustomer(record.customerName, record.companyWebsite);
     if (input.status) record.status = input.status;
     if (input.notes !== undefined) record.notes = input.notes?.trim() || undefined;
     record.updatedAt = new Date().toISOString();
@@ -498,6 +503,7 @@ export class AssessmentStore {
       customerName: input.customerName,
       industry: input.industry,
       businessUnit: input.businessUnit || 'Default BU',
+      companyWebsite: input.companyWebsite?.trim() || undefined,
       assessmentOwner: input.assessmentOwner || actorEmail,
       currency: input.currency || 'INR',
       assessmentPeriodStart: input.assessmentPeriodStart,
