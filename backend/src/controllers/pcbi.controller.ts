@@ -43,9 +43,10 @@ export class PCBIController {
   /**
    * 1. Get PCBI Dashboard Executive Summary & Aggregations
    */
-  public async getDashboard(_req: Request, res: Response): Promise<void> {
+  public async getDashboard(req: Request, res: Response): Promise<void> {
     try {
-      const results = db.getPCBILastCalculationResults();
+      const assessmentId = (req.query?.assessmentId as string) || (req.headers?.['x-assessment-id'] as string) || undefined;
+      const results = db.getPCBILastCalculationResults(assessmentId);
       res.json({
         success: true,
         summary: results.executiveSummary,

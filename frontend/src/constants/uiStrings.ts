@@ -1050,7 +1050,8 @@ export const UI_STRINGS = {
       lme: 'LME Industrial Metals',
       cass: 'Cass Global Freight',
       cassIndex: 'Cass Global Freight Index',
-      fastmarkets: 'Fastmarkets Paper & Pulp'
+      fastmarkets: 'Fastmarkets Paper & Pulp',
+      unavailableTextile: 'UNAVAILABLE (No Valid Textile Index)'
     },
     chartHeading: 'Raw Material Base Price Index vs Vendor Markup (36-Mo Horizon)',
     chartSubheading: 'Continuous 36-month timeline indexed to baseline (100.0) pegged to market indices',

@@ -58,9 +58,10 @@ export const deployOpportunity = async (req: Request, res: Response): Promise<Re
 /**
  * Module 4 Consolidated Savings & De-Duplication API Endpoint (Prompt 100)
  */
-export const getConsolidatedSavings = async (_req: Request, res: Response): Promise<Response | void> => {
+export const getConsolidatedSavings = async (req: Request, res: Response): Promise<Response | void> => {
   try {
-    const consolidated = db.getConsolidatedSavings();
+    const assessmentId = (req.query?.assessmentId as string) || (req.headers?.['x-assessment-id'] as string) || undefined;
+    const consolidated = db.getConsolidatedSavings(assessmentId);
     logger.info('Fetched consolidated savings with overlap de-duplication', {
       opportunitiesCount: consolidated.opportunities.length,
       overlapsCount: consolidated.overlaps.length,

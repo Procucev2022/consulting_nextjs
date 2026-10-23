@@ -112703,3 +112703,114 @@ Stop making changes and return:
 * The specific corrective action required.
 
 **Important:** Execute the diagnosis and fix; do not merely propose commands. Do not claim success unless the HTTP request succeeds and the browser page is verified.
+
+---
+
+## Prompt 511
+### Objective
+
+Correct the live Module 3 PCBI Benchmark & Trend Analysis and Module 4 Savings Engine for ABC Textile Ltd (`AIC-2026-0002`).
+
+The application is running locally at `http://localhost:3001`.
+
+The supplied screenshots show:
+
+* Module 3: all spend and benchmark cards show ₹0.00 Cr; Material Spend percentage shows `NaN%`; the benchmark selector shows ICIS Chemicals & Resins.
+* Module 4: Total Spend ₹100.00 Cr, Addressable Spend ₹76.00 Cr and Identified Opportunities ₹19.80 Cr, which do not match the reported ABC Textile assessment.
+
+**Do not change only the frontend labels. Trace the data from the canonical assessment through the backend calculation and API response to the frontend. Fix the root cause.**
+
+### A. Protect existing work
+
+1. Inspect the current implementation before editing.
+2. Identify the actual source of the Module 3 and Module 4 values.
+3. Preserve working Modules 1 and 2, authentication, customer isolation, report generation and existing business logic.
+4. Do not modify the canonical `Textile1.xlsx` dataset.
+5. Do not run unrelated presentation refactoring, general audits or report regeneration.
+6. Do not replace the application with mocks or demo data.
+
+### B. Module 3 — PCBI
+
+Bind the screen to the active assessment ID `AIC-2026-0002`.
+
+Use the actual transaction-level data and the established UNSPSC mapping to calculate:
+
+* Total evaluated spend
+* Material spend
+* Service spend
+* UNSPSC-mapped spend
+* PCBI-mapped spend
+* Benchmarkable spend
+* A/B/C benchmark-quality spend
+* Spend not currently benchmarkable
+
+Requirements:
+
+1. Reconcile the total to ₹613.8805 Cr when using the complete evaluated baseline and the same inclusion rules as Module 1.
+2. Document the classification and reconciliation rules so mapped, unmapped, service and excluded amounts are not double-counted.
+3. Do not assume that UNSPSC mapping means PCBI benchmark mapping.
+4. A benchmark series is applicable only when its commodity/specification, geography, currency, unit and period are compatible.
+5. Keep PCBI benchmark price gap as `UNAVAILABLE` where no valid ABC Textile-specific benchmark is available.
+6. Never use another customer's data, cement benchmarks or unrelated indices as substitutes.
+7. Do not manufacture a benchmark opportunity when no valid comparable price exists.
+8. Replace `NaN%`, `NaN`, and misleading zero values with safe, explicit states such as `N/A`, `UNAVAILABLE`, or `0` only when zero is factually established.
+9. If a card cannot be calculated from existing data, explain which field or source is missing rather than fabricating a result.
+
+### C. Module 4 — Savings Engine
+
+Trace every displayed value to its source and remove any unintended generic demo or fallback figures from the ABC Textile customer view.
+
+Use the current Module 2 calculation output as the source of truth. The latest reported values are:
+
+* Evaluated baseline spend: ₹613.8805 Cr
+* Addressable sourcing spend: ₹315.021 Cr, only if reproducible from the canonical dataset and current calculation engine
+* Gross opportunity: ₹110.764 Cr
+* Overlap deductions: ₹25.123 Cr
+* Net modelled opportunity: ₹85.641 Cr
+* Reported proven opportunity: ₹82.380 Cr
+* Discovery opportunity: ₹3.261 Cr
+* Realized savings: ₹0.00 Cr
+
+Reconcile:
+`Gross opportunity − overlap deductions = net modelled opportunity`
+
+And:
+`Proven opportunity + discovery opportunity = net modelled opportunity`
+
+Use the authoritative calculation results rather than hardcoding these amounts.
+
+Requirements:
+
+1. Bind the Savings Engine to `AIC-2026-0002`, not a generic ₹100 Cr demonstration baseline.
+2. Show modelled opportunity separately from validated, approved and realized savings.
+3. Keep validated, approved and realized savings at ₹0 until the corresponding evidence and workflow approvals exist.
+4. Prevent Module 3 from contributing invented benchmark savings when PCBI is unavailable.
+5. Inspect the source of the 16.4% realization target. Retain it only if its formula and business meaning are documented; clearly label it as a target, never as achieved savings.
+6. Preserve existing action-plan and overlap-deduplication logic.
+
+### D. Validation
+
+After the minimum necessary code changes:
+
+1. Refresh the local application in Chrome.
+2. Open ABC Textile Ltd and verify Modules 3 and 4.
+3. Verify the baseline against Module 1.
+4. Verify the opportunity waterfall against Module 2.
+5. Verify PCBI remains `UNAVAILABLE` when appropriate.
+6. Confirm no `NaN%` values or generic ₹100/₹76/₹19.80 Cr fallback values remain in the ABC Textile view unless independently supported by that customer's data.
+7. Run only the targeted tests relevant to the changes.
+8. If the correct value cannot be derived from existing data, report the missing dependency instead of inventing a value.
+
+### E. Required response
+
+Return:
+
+* Root cause of the incorrect values.
+* Files changed and why.
+* Reconciled Module 3 spend figures.
+* Reconciled Module 4 opportunity figures.
+* Tests executed and results.
+* Confirmation of what was actually verified in Chrome.
+* Any unresolved data or benchmark limitations.
+
+Do not claim success based solely on passing tests. Do not publish, email or deploy anything.

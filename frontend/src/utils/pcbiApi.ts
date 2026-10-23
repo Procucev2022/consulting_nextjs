@@ -31,9 +31,10 @@ export interface SubmitUpgradePayload {
 }
 
 export const pcbiApiClient = {
-  async getPCBIDashboard(): Promise<Record<string, unknown>> {
-    frontendLogger.debug('Fetching PCBI dashboard analytics');
-    const res = await fetch(`${API_BASE}/api/pcbi/dashboard`);
+  async getPCBIDashboard(assessmentId?: string): Promise<Record<string, unknown>> {
+    frontendLogger.debug('Fetching PCBI dashboard analytics', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/pcbi/dashboard${query}`);
     return await res.json();
   },
 

@@ -2341,6 +2341,7 @@ export default function Home() {
         {activeTab === 'module3' && (
           <Module3TrendAnalytics
             vendorRankings={vendorRankings}
+            assessmentId={activeAssessment?.assessmentId}
             onProceedToSavings={() => {
               setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true, step3: true }));
               setActiveTab('module4');
@@ -2355,6 +2356,7 @@ export default function Home() {
         {activeTab === 'module4' && (
           <Module4SavingsEngine
             opportunities={opportunities}
+            assessmentId={activeAssessment?.assessmentId}
             onOpenProCPX={(opp) => setSelectedOppForProCPX(opp)}
             onOpenDPSNXT={(opp) => setSelectedOppForDPSNXT(opp)}
             onProceedToConversion={() => {

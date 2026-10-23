@@ -138,6 +138,7 @@ export interface Module3TrendAnalyticsProps {
   theme?: 'light' | 'dark';
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
+  assessmentId?: string;
 }
 
 export interface Module4SavingsEngineProps {
@@ -148,6 +149,7 @@ export interface Module4SavingsEngineProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   onNavigateToSection?: (targetModule: PipelineActiveTab, targetSectionId: string) => void;
+  assessmentId?: string;
 }
 
 export interface Module5ConversionMatrixProps {

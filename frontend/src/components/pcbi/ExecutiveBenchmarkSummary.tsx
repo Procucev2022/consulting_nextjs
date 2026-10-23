@@ -23,24 +23,35 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
   const s = UI_STRINGS.module3.executiveBenchmarkSummary;
 
   const totalSpendCr = summary?.total_spend_inr_cr ?? 100.0;
-  const materialSpendCr = summary?.material_spend_inr_cr ?? 92.0;
-  const serviceSpendCr = summary?.service_spend_inr_cr ?? 8.0;
-  const unspscMappedCr = summary?.unspsc_mapped_spend_inr_cr ?? 88.0;
-  const unspscMappingPct = summary?.unspsc_mapping_percent ?? 95.7;
-  const pcbiMappedCr = summary?.pcbi_mapped_spend_inr_cr ?? 88.0;
-  const pcbiCoveragePct = summary?.pcbi_coverage_percent ?? 95.7;
-  const benchmarkableCr = summary?.benchmarkable_spend_inr_cr ?? 70.0;
-  const benchmarkabilityPct = summary?.benchmarkability_percent ?? 76.1;
-  const aQualityCr = summary?.a_quality_spend_inr_cr ?? 35.0;
-  const bQualityCr = summary?.b_quality_spend_inr_cr ?? 28.0;
-  const cQualityCr = summary?.c_quality_spend_inr_cr ?? 7.0;
-  const notBenchmarkableCr = summary?.not_benchmarkable_spend_inr_cr ?? 22.0;
+  const materialSpendCr = summary?.material_spend_inr_cr ?? (summary ? 0.0 : 70.0);
+  const serviceSpendCr = summary?.service_spend_inr_cr ?? (summary ? 0.0 : 30.0);
+  const unspscMappedCr = summary?.unspsc_mapped_spend_inr_cr ?? (summary ? 0.0 : 92.0);
+  const unspscMappingPct = summary?.unspsc_mapping_percent ?? (summary ? 0.0 : 92.0);
+  const pcbiMappedCr = summary?.pcbi_mapped_spend_inr_cr ?? (summary ? 0.0 : 88.0);
+  const pcbiCoveragePct = summary?.pcbi_coverage_percent ?? (summary ? 0.0 : 88.0);
+  const benchmarkableCr = summary?.benchmarkable_spend_inr_cr ?? (summary ? 0.0 : 70.0);
+  const benchmarkabilityPct = summary?.benchmarkability_percent ?? (summary ? 0.0 : 70.0);
+  const aQualityCr = summary?.a_quality_spend_inr_cr ?? (summary ? 0.0 : 35.0);
+  const bQualityCr = summary?.b_quality_spend_inr_cr ?? (summary ? 0.0 : 25.0);
+  const cQualityCr = summary?.c_quality_spend_inr_cr ?? (summary ? 0.0 : 10.0);
+  const notBenchmarkableCr = summary?.not_benchmarkable_spend_inr_cr ?? (summary ? totalSpendCr : 30.0);
   const potentialOppCr = summary?.total_opportunity_inr_cr ?? 8.2;
+
+  const formatCr = (val: number): string => {
+    if (val === 0) return '₹0.00 Cr';
+    const str = val.toString();
+    const decimals = str.includes('.') ? str.split('.')[1].length : 2;
+    return `₹${val.toFixed(Math.min(4, Math.max(2, decimals)))} Cr`;
+  };
+
+  const materialPctStr = totalSpendCr > 0
+    ? `${((materialSpendCr / totalSpendCr) * 100).toFixed(1)}%`
+    : 'N/A';
 
   const kpiItems = [
     {
       label: s.totalSpend,
-      value: `₹${totalSpendCr.toFixed(2)} Cr`,
+      value: formatCr(totalSpendCr),
       badge: '100% Base',
       color: 'border-slate-300 dark:border-slate-700 bg-white dark:bg-white',
       textColor: 'text-slate-900 dark:text-white',
@@ -48,23 +59,23 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
     },
     {
       label: s.materialSpend,
-      value: `₹${materialSpendCr.toFixed(2)} Cr`,
-      badge: `${((materialSpendCr / totalSpendCr) * 100).toFixed(1)}%`,
+      value: formatCr(materialSpendCr),
+      badge: materialPctStr,
       color: 'border-blue-200 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20',
       textColor: 'text-blue-700 dark:text-blue-400',
       icon: <Package className="w-4 h-4 text-blue-600" />
     },
     {
       label: s.serviceSpend,
-      value: `₹${serviceSpendCr.toFixed(2)} Cr`,
-      badge: 'Excluded PCBI',
+      value: formatCr(serviceSpendCr),
+      badge: serviceSpendCr > 0 ? `${((serviceSpendCr / totalSpendCr) * 100).toFixed(1)}%` : '0.0% (No Services)',
       color: 'border-purple-200 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/20',
       textColor: 'text-purple-700 dark:text-purple-400',
       icon: <Layers className="w-4 h-4 text-purple-600" />
     },
     {
       label: s.unspscMappedSpend,
-      value: `₹${unspscMappedCr.toFixed(2)} Cr`,
+      value: formatCr(unspscMappedCr),
       badge: `${unspscMappingPct.toFixed(1)}% Mapped`,
       color: 'border-cyan-200 dark:border-cyan-900/40 bg-cyan-50/40 dark:bg-cyan-950/20',
       textColor: 'text-cyan-700 dark:text-cyan-400',
@@ -72,56 +83,56 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
     },
     {
       label: s.pcbiMappedSpend,
-      value: `₹${pcbiMappedCr.toFixed(2)} Cr`,
-      badge: `${pcbiCoveragePct.toFixed(1)}% Coverage`,
+      value: formatCr(pcbiMappedCr),
+      badge: pcbiMappedCr > 0 ? `${pcbiCoveragePct.toFixed(1)}% Coverage` : 'UNAVAILABLE',
       color: 'border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/40 dark:bg-indigo-950/20',
       textColor: 'text-indigo-700 dark:text-indigo-400',
       icon: <BarChart3 className="w-4 h-4 text-indigo-600" />
     },
     {
       label: s.benchmarkableSpend,
-      value: `₹${benchmarkableCr.toFixed(2)} Cr`,
-      badge: `${benchmarkabilityPct.toFixed(1)}% Benchmarkable`,
+      value: formatCr(benchmarkableCr),
+      badge: benchmarkableCr > 0 ? `${benchmarkabilityPct.toFixed(1)}% Benchmarkable` : 'UNAVAILABLE',
       color: 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20',
       textColor: 'text-emerald-700 dark:text-emerald-400',
       icon: <Award className="w-4 h-4 text-emerald-600" />
     },
     {
       label: s.aQualitySpend,
-      value: `₹${aQualityCr.toFixed(2)} Cr`,
-      badge: 'Quality A',
+      value: formatCr(aQualityCr),
+      badge: aQualityCr > 0 ? 'Quality A' : 'UNAVAILABLE',
       color: 'border-emerald-300 dark:border-emerald-800 bg-emerald-100/50 dark:bg-emerald-950/40',
       textColor: 'text-emerald-800 dark:text-emerald-300',
       icon: <ShieldCheck className="w-4 h-4 text-emerald-700" />
     },
     {
       label: s.bQualitySpend,
-      value: `₹${bQualityCr.toFixed(2)} Cr`,
-      badge: 'Quality B',
+      value: formatCr(bQualityCr),
+      badge: bQualityCr > 0 ? 'Quality B' : 'UNAVAILABLE',
       color: 'border-cyan-300 dark:border-cyan-800 bg-cyan-100/50 dark:bg-cyan-950/40',
       textColor: 'text-cyan-800 dark:text-cyan-300',
       icon: <Layers className="w-4 h-4 text-cyan-700" />
     },
     {
       label: s.cQualitySpend,
-      value: `₹${cQualityCr.toFixed(2)} Cr`,
-      badge: 'Quality C (Proxy)',
+      value: formatCr(cQualityCr),
+      badge: cQualityCr > 0 ? 'Quality C (Proxy)' : 'UNAVAILABLE',
       color: 'border-amber-300 dark:border-amber-800 bg-amber-100/50 dark:bg-amber-950/40',
       textColor: 'text-amber-800 dark:text-amber-300',
       icon: <HelpCircle className="w-4 h-4 text-amber-700" />
     },
     {
       label: s.notBenchmarkableSpend,
-      value: `₹${notBenchmarkableCr.toFixed(2)} Cr`,
-      badge: 'Excluded',
+      value: formatCr(notBenchmarkableCr),
+      badge: notBenchmarkableCr > 0 && totalSpendCr > 0 ? `${((notBenchmarkableCr / totalSpendCr) * 100).toFixed(1)}% Excluded` : '0.0%',
       color: 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-white',
       textColor: 'text-slate-600 dark:text-slate-400',
       icon: <HelpCircle className="w-4 h-4 text-slate-400" />
     },
     {
       label: s.potentialPcbiOpportunity,
-      value: `₹${potentialOppCr.toFixed(2)} Cr`,
-      badge: 'Potential Gap',
+      value: potentialOppCr > 0 ? formatCr(potentialOppCr) : 'UNAVAILABLE',
+      badge: potentialOppCr > 0 ? 'Potential Gap' : 'UNAVAILABLE',
       color: 'border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30 col-span-2 lg:col-span-2',
       textColor: 'text-rose-600 dark:text-rose-400',
       icon: <TrendingUp className="w-4 h-4 text-rose-600" />
