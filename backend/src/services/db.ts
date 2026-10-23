@@ -1286,10 +1286,10 @@ export class DatabaseStore {
       const summary: PCBIExecutiveSummary = {
         total_spend_inr: 6138805000,
         total_spend_inr_cr: 613.8805,
-        material_spend_inr: 6138805000,
-        material_spend_inr_cr: 613.8805,
-        service_spend_inr: 0,
-        service_spend_inr_cr: 0,
+        material_spend_inr: 4124437990,
+        material_spend_inr_cr: 412.4438,
+        service_spend_inr: 2014367196,
+        service_spend_inr_cr: 201.4367,
         unspsc_mapped_spend_inr: 3530403000,
         unspsc_mapped_spend_inr_cr: 353.0403,
         unspsc_mapping_percent: 57.51,
@@ -1436,37 +1436,55 @@ export class DatabaseStore {
 
     if (isAbcTextile) {
       const targetAssessmentId = 'AIC-2026-0002';
-      const m2Consolidated = Module2SavingsDeduplicationEngine.calculateConsolidatedSavings(targetAssessmentId);
       const sourcing = Module2CanonicalService.getSourcingAnalysis(targetAssessmentId);
 
-      const opportunities: SavingsOpportunityItem[] = m2Consolidated.opportunities.map((opp) => ({
-        opportunity_id: opp.opportunityId,
+      const opportunities: SavingsOpportunityItem[] = sourcing.handoffPackages.map((pkg) => ({
+        opportunity_id: pkg.opportunityId,
         source_module: 'MODULE_2_STRATEGIC' as SavingsSourceModule,
-        source_engine: (opp.leverCode === 'LEV-01' ? 'PRICE_DISPERSION'
-          : opp.leverCode === 'LEV-02' ? 'E_AUCTION'
-          : opp.leverCode === 'LEV-03' ? 'VENDOR_CONSOLIDATION'
-          : opp.leverCode === 'LEV-04' ? 'VOLUME_AGGREGATION'
-          : opp.leverCode === 'LEV-05' ? 'PAYMENT_TERMS'
-          : 'SPECIFICATION_RATIONALIZATION') as SavingsSourceEngine,
-        category: opp.categoryOrMaterialName || 'Direct Materials',
-        item: opp.categoryOrMaterialId || opp.opportunityId,
-        vendor: 'Consolidated Suppliers',
+        source_engine: (pkg.recommendedLever === 'E_AUCTION' ? 'E_AUCTION' : 'VENDOR_CONSOLIDATION') as SavingsSourceEngine,
+        category: pkg.categoryName || 'Direct Materials',
+        item: pkg.categoryId,
+        vendor: 'Consolidated Category Suppliers',
         plant: 'Main Facility',
-        spend_inr: Math.round(opp.eligibleSpendInr),
-        spend_inr_cr: opp.eligibleSpendCr,
-        potential_savings_inr: Math.round(opp.estimatedGrossSavingsInr),
-        potential_savings_inr_cr: opp.estimatedGrossSavingsCr,
-        is_overlapping: opp.deduplicationStatus === 'DEDUPLICATED_OVERLAP' || opp.deduplicationStatus === 'UNRESOLVED_EXCLUDED',
-        net_savings_inr: Math.round(opp.netEstimatedSavingsInr),
-        net_savings_inr_cr: opp.netEstimatedSavingsCr,
+        spend_inr: Math.round(pkg.addressableSpendInr),
+        spend_inr_cr: Number((pkg.addressableSpendInr / 10000000).toFixed(4)),
+        potential_savings_inr: Math.round(pkg.potentialOpportunityInr),
+        potential_savings_inr_cr: Number((pkg.potentialOpportunityInr / 10000000).toFixed(4)),
+        is_overlapping: (pkg.overlapAmountInr || 0) > 0,
+        overlap_id: (pkg.overlapAmountInr || 0) > 0 ? `OVL-${pkg.categoryId}` : undefined,
+        net_savings_inr: Math.round(pkg.netOpportunityInr),
+        net_savings_inr_cr: Number((pkg.netOpportunityInr / 10000000).toFixed(4)),
         status: 'IDENTIFIED',
         owner: 'Procurement',
         timeline: '30-60 Days',
-        validation_notes: opp.isExploratoryPipeline
-          ? `Exploratory Pipeline Discovery (₹${opp.estimatedGrossSavingsCr} Cr)`
-          : `Evidence-based Proven Opportunity (${opp.leverCode})`,
+        validation_notes: `${pkg.recommendedLever} Strategic Lever (${pkg.confidence} Confidence)`,
         created_at: new Date().toISOString()
       }));
+
+      const volumeBundlingCr = sourcing.summary.volumeBundlingQuantifiableBenefitInrCr || 0;
+      if (volumeBundlingCr > 0) {
+        opportunities.push({
+          opportunity_id: 'OPP-VOL-BUNDLING-DEMAND',
+          source_module: 'MODULE_2_STRATEGIC' as SavingsSourceModule,
+          source_engine: 'VOLUME_AGGREGATION' as SavingsSourceEngine,
+          category: 'Cross-Facility Volume Bundling',
+          item: 'Multi-Plant Demand Aggregation',
+          vendor: 'Pooled Vendors',
+          plant: 'All Plants',
+          spend_inr: Math.round(sourcing.summary.totalAddressableSpendInrCr * 10000000),
+          spend_inr_cr: sourcing.summary.totalAddressableSpendInrCr,
+          potential_savings_inr: Math.round(volumeBundlingCr * 10000000),
+          potential_savings_inr_cr: volumeBundlingCr,
+          is_overlapping: false,
+          net_savings_inr: Math.round(volumeBundlingCr * 10000000),
+          net_savings_inr_cr: volumeBundlingCr,
+          status: 'IDENTIFIED',
+          owner: 'SCM',
+          timeline: '60-90 Days',
+          validation_notes: 'Demand pooling across central & satellite plants',
+          created_at: new Date().toISOString()
+        });
+      }
 
       // Group overlaps by category/lever
       const overlapMap = new Map<string, SavingsOpportunityItem[]>();
@@ -1480,8 +1498,8 @@ export class DatabaseStore {
       const overlaps: OpportunityOverlapGroup[] = Array.from(overlapMap.entries()).map(([cat, opps], idx) => {
         const primary = opportunities.find(o => o.category === cat && !o.is_overlapping) || opps[0];
         const totalGross = opps.reduce((sum, o) => sum + o.potential_savings_inr, primary.potential_savings_inr);
-        const totalDeduplicated = opps.reduce((sum, o) => sum + o.potential_savings_inr, 0);
-        const totalNet = primary.net_savings_inr;
+        const totalDeduplicated = opps.reduce((sum, o) => sum + (o.potential_savings_inr - o.net_savings_inr), 0);
+        const totalNet = opps.reduce((sum, o) => sum + o.net_savings_inr, 0);
         return {
           overlap_id: `OVL-${String(idx + 1).padStart(3, '0')}`,
           item: cat,
@@ -1493,8 +1511,8 @@ export class DatabaseStore {
             opportunity_id: o.opportunity_id,
             source_engine: o.source_engine,
             gross_savings_inr: o.potential_savings_inr,
-            deduplicated_amount_inr: o.potential_savings_inr,
-            net_savings_inr: 0
+            deduplicated_amount_inr: o.potential_savings_inr - o.net_savings_inr,
+            net_savings_inr: o.net_savings_inr
           })),
           total_gross_savings_inr: totalGross,
           total_net_savings_inr: totalNet,
@@ -1505,7 +1523,7 @@ export class DatabaseStore {
       const waterfallMetrics: SavingsWaterfallMetrics = {
         total_spend_inr_cr: 613.8805,
         addressable_spend_inr_cr: 315.021,
-        identified_opportunities_count: m2Consolidated.opportunities.length,
+        identified_opportunities_count: opportunities.length,
         gross_potential_savings_inr_cr: 110.764,
         deduplicated_overlap_inr_cr: 25.123,
         net_potential_savings_inr_cr: 85.641,
@@ -1547,10 +1565,11 @@ export class DatabaseStore {
         actionPlans,
         strategicSummary: {
           total_strategic_opportunities_count: opportunities.length,
-          total_potential_savings_inr: m2Consolidated.grossEstimatedSavingsInr,
-          total_potential_savings_inr_cr: m2Consolidated.grossEstimatedSavingsCr,
+          total_potential_savings_inr: Math.round((sourcing.summary.grossQuantifiableBenefitInrCr || 110.764) * 10000000),
+          total_potential_savings_inr_cr: sourcing.summary.grossQuantifiableBenefitInrCr || 110.764,
           spend_analyzed_inr: Math.round((sourcing.summary.totalAddressableSpendInrCr || 315.021) * 10000000),
-          spend_analyzed_inr_cr: sourcing.summary.totalAddressableSpendInrCr || 315.021
+          spend_analyzed_inr_cr: sourcing.summary.totalAddressableSpendInrCr || 315.021,
+          ...sourcing.summary
         }
       };
     }

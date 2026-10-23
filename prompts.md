@@ -112814,3 +112814,233 @@ Return:
 * Any unresolved data or benchmark limitations.
 
 Do not claim success based solely on passing tests. Do not publish, email or deploy anything.
+
+## Prompt 512
+
+The previous correction reports that Modules 3 and 4 now return the expected ABC Textile figures and that targeted tests pass.
+
+Before making further changes, verify the implementation against the canonical dataset.
+
+**Do not redesign the UI, repeat unrelated audits, regenerate presentations, or overwrite working changes.**
+
+### 1. Verify Module 3 transaction classifications
+
+Using `Textile1.xlsx` and the canonical assessment `AIC-2026-0002`:
+
+* Independently calculate total evaluated spend.
+* Reconcile material, service, excluded, mapped and unmapped spend using the existing documented classification rules.
+* Investigate why the current result classifies ₹613.8805 Cr entirely as material spend and ₹0 as service spend.
+* Confirm that the reported ₹353.0403 Cr UNSPSC-mapped spend is reproducible from actual transaction mappings.
+* Ensure all categories are mutually exclusive where required and totals reconcile without double counting.
+* Keep benchmark price gaps `UNAVAILABLE` when no compatible benchmark series exists.
+
+Do not force the material/service split to match an earlier report. Derive it from the canonical transaction records and document any genuine classification differences.
+
+### 2. Verify Module 4 calculation lineage
+
+Trace these metrics from the canonical dataset through Module 2 and into the Savings Engine:
+
+* Evaluated baseline spend: ₹613.8805 Cr
+* Addressable sourcing spend: ₹315.021 Cr
+* Gross opportunity: ₹110.764 Cr
+* Overlap deductions: ₹25.123 Cr
+* Net modelled opportunity: ₹85.641 Cr
+* Reported proven opportunity: ₹82.380 Cr
+* Discovery opportunity: ₹3.261 Cr
+* Validated, approved and realized savings: ₹0.00 Cr
+
+Confirm that these values are generated from the authoritative calculation engine. Do not hardcode customer-specific financial outputs merely to make the screen match an expected table.
+
+If an existing calculation engine cannot reproduce a figure, identify the exact calculation or data gap instead of substituting a fixed number.
+
+### 3. Verify customer isolation
+
+Confirm that:
+
+* The selected assessment ID is passed through the UI, API and calculation service.
+* A different assessment cannot receive ABC Textile's financial values.
+* Missing assessment context does not silently fall back to ABC Textile or generic demo values.
+* PCBI never contributes invented benchmark opportunities.
+
+### 4. Verify in Chrome
+
+Refresh `http://localhost:3001` and open Modules 3 and 4 for ABC Textile Ltd.
+
+Confirm the actual visible figures and that the page has no runtime errors.
+
+Run only the targeted tests required for these checks.
+
+### 5. Return results
+
+Provide:
+
+1. Reconciled material/service and UNSPSC mapping figures.
+2. Evidence that each Module 4 figure is calculated rather than hardcoded.
+3. Results of customer-isolation tests.
+4. Actual Chrome verification status.
+5. Any remaining discrepancies.
+
+Preserve all existing work and do not publish or deploy anything.
+
+---
+
+## Prompt 513
+**Priority: High — Module 4 financial discrepancy**
+
+The live Module 4 screen displays:
+
+* Evaluated operational baseline: ₹3019.00 Cr
+* Identified enterprise savings: ₹166.30 Cr
+* Four sourcing levers with ₹0.00 Cr
+* One sourcing lever containing ₹3019.00 Cr spend and ₹166.30 Cr identified savings.
+
+These figures conflict with the reported ABC Textile assessment `AIC-2026-0002`.
+
+### 1. Trace the incorrect figures
+
+Inspect the Module 4 frontend, API endpoint, backend calculation service, opportunity records, and any aggregation or fallback logic.
+
+Determine precisely why:
+
+* ₹3019.00 Cr appears as the evaluated baseline.
+* ₹166.30 Cr appears as identified savings.
+* Four sourcing levers show zero.
+* All spend and savings appear under UNSPSC Category Specification & Price Creep Pipeline.
+
+Do not assume the root cause. Identify the exact source of each displayed value.
+
+### 2. Enforce assessment-specific data binding
+
+For ABC Textile Ltd (`AIC-2026-0002`):
+
+* Evaluated baseline: ₹613.8805 Cr.
+* Addressable sourcing spend: ₹315.021 Cr, only if reproduced by the current authoritative calculation.
+* Gross opportunity: ₹110.764 Cr.
+* Overlap deductions: ₹25.123 Cr.
+* Net modelled opportunity: ₹85.641 Cr.
+* Reported proven opportunity: ₹82.380 Cr.
+* Discovery opportunity: ₹3.261 Cr.
+* Validated savings: ₹0.00 Cr.
+* Approved savings: ₹0.00 Cr.
+* Realized savings: ₹0.00 Cr.
+
+Use the authoritative assessment-specific calculation results. Do not hardcode these numbers into the UI.
+
+### 3. Correct sourcing lever allocation
+
+Trace each opportunity to its actual sourcing lever and eligible transaction/category spend.
+
+* Populate each lever only from real opportunity records.
+* Do not allocate spend or savings arbitrarily.
+* Do not duplicate opportunities across levers.
+* Apply the existing overlap-deduplication engine.
+* If an opportunity cannot be reliably allocated to a lever, label it unallocated or unavailable and report the reason.
+* Never interpret a realization target as achieved savings.
+
+### 4. Preserve PCBI isolation
+
+PCBI benchmark price gaps must remain `UNAVAILABLE` where valid customer-specific benchmark data is absent. Do not add benchmark savings from unrelated series or customers.
+
+### 5. Validate the actual screen
+
+Refresh `http://localhost:3001`, open ABC Textile Ltd, and inspect Module 4.
+
+Verify that:
+
+* The headline baseline matches the selected assessment.
+* The identified opportunity reconciles to Module 2.
+* The individual levers reconcile to the consolidated opportunity without double counting.
+* Validated, approved and realized savings remain zero until supported by evidence and workflow approval.
+* Switching to another assessment does not show ABC Textile's values.
+
+Run only the relevant targeted tests.
+
+### 6. Return evidence
+
+Report:
+
+1. Root cause of the ₹3019 Cr baseline.
+2. Root cause of the ₹166.30 Cr savings figure.
+3. Corrected figures returned by the API.
+4. Individual sourcing lever values and their calculation sources.
+5. Actual Chrome verification status.
+6. Any remaining discrepancies.
+
+Preserve existing working changes. Do not redesign the UI, rerun unrelated audits, regenerate presentations, publish, or deploy.
+
+---
+
+## Prompt 514
+Correct the Module 4 presentation for ABC Textile Ltd (`AIC-2026-0002`). The latest Chrome screenshot shows the baseline is now correct, but the headline still presents gross opportunity as total savings and some lever labels may not match their underlying calculations.
+
+Preserve the existing implementation and current data-binding fixes. Do not rebuild the module or repeat unrelated audits.
+
+### 1. Correct the headline and waterfall
+
+Use the authoritative Module 2 calculation results:
+
+* Evaluated baseline: ₹613.8805 Cr
+* Addressable spend: ₹315.021 Cr
+* Gross opportunity: ₹110.764 Cr
+* Overlap deductions: ₹25.123 Cr
+* Net modelled opportunity: ₹85.641 Cr
+* Reported proven opportunity: ₹82.380 Cr
+* Discovery opportunity: ₹3.261 Cr
+* Realized savings: ₹0.00 Cr
+
+Display:
+
+* Main headline: **₹85.64 Cr Net Modelled Opportunity**
+* Supporting metric: Gross Identified Opportunity ₹110.76 Cr
+* Supporting deduction: Overlap Deductions ₹25.12 Cr
+* Reported Proven Opportunity: ₹82.38 Cr, clearly distinguished from realized savings
+* Discovery / Pending Validation: ₹3.261 Cr
+* Realized Savings: ₹0.00 Cr
+
+Do not label gross opportunity as net savings or achieved savings. Keep the existing approved calculations; do not hardcode numbers into the frontend.
+
+### 2. Correct sourcing lever names and allocations
+
+Inspect the authoritative lever definitions and their calculation sources.
+
+The current reported amounts are:
+
+* Vendor consolidation: ₹49.76 Cr
+* Volume consolidation: ₹5.85 Cr
+* Strategic sourcing / reverse e-auction: ₹55.15 Cr
+
+Ensure that each card's title accurately describes its calculation source. Do not display the strategic sourcing/e-auction amount under a misleading single/dominant vendor risk label.
+
+Do not assign amounts to levers arbitrarily. If the source engine cannot support a more specific allocation, use its actual lever name and disclose the limitation.
+
+### 3. Clarify eligible spend
+
+The ₹315.021 Cr addressable spend appears on multiple sourcing lever cards.
+
+Retain this figure on each card only if it represents the spend eligible for that particular strategy. Add a clear explanation that lever eligibility can overlap and must not be added to calculate unique spend.
+
+Ensure overlap deductions are applied once in the consolidated opportunity calculation.
+
+### 4. Preserve governance
+
+* Validated savings remain ₹0 until client validation is recorded.
+* Approved savings remain ₹0 until management approval is recorded.
+* Realized savings remain ₹0 until implementation and supporting commercial evidence are recorded.
+* PCBI contributes no invented savings while its benchmark gap remains `UNAVAILABLE`.
+* Keep customer isolation and the existing assessment-specific calculation logic intact.
+
+### 5. Verify
+
+Refresh the live Module 4 screen in Chrome.
+
+Confirm:
+
+* The headline displays ₹85.64 Cr Net Modelled Opportunity.
+* Gross opportunity and overlap deductions are separately visible.
+* The lever labels match their actual calculations.
+* Realized savings remain ₹0.00 Cr.
+* The figures reconcile to the Module 2 assessment.
+
+Run only the relevant targeted tests and report the actual Chrome verification result.
+
+Do not publish, deploy, regenerate presentations, or modify unrelated modules.

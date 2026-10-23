@@ -141,6 +141,13 @@ export const calculateDefaultStrategicSavingsMetrics = (): StrategicSavingsSumma
   return {
     grandTotalSpendInrCr,
     grandTotalSavingsInrCr,
+    netModelledOpportunityInrCr: grandTotalSavingsInrCr,
+    grossOpportunityInrCr: grandTotalSavingsInrCr,
+    overlapDeductionsInrCr: 0,
+    provenOpportunityInrCr: grandTotalSavingsInrCr,
+    discoveryOpportunityInrCr: 0,
+    realizedSavingsInrCr: 0,
+    addressableSpendInrCr: grandTotalSpendInrCr,
     overallSavingsPct,
     module2SpendInrCr,
     module2SavingsInrCr,

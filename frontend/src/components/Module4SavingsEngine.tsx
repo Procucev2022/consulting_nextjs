@@ -120,7 +120,8 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         contract_leak_type: o.validation_notes || 'Strategic Sourcing Lever',
         push_to_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
         recommended_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
-        status: o.status === 'IDENTIFIED' ? 'Pending Action' : o.status
+        status: o.status === 'IDENTIFIED' ? 'Pending Action' : o.status,
+        lever: o.source_engine
       }));
     }
     return [];
@@ -267,7 +268,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           opportunities: effectiveOpportunities,
           consolidationItems: effectiveOpportunities.length > 0 ? undefined : [],
           poItems: effectiveOpportunities.length > 0 ? undefined : [],
-          strategicRiskItems: effectiveOpportunities.length > 0 ? undefined : []
+          strategicRiskItems: effectiveOpportunities.length > 0 ? undefined : [],
+          waterfallMetrics: consolidatedData?.waterfallMetrics,
+          strategicSummary: consolidatedData?.strategicSummary
         })}
         onNavigateToSection={handleNavigate}
       />
