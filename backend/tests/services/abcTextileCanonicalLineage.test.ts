@@ -8,11 +8,14 @@ import { Module2MaterialMappingRegister } from '../../src/services/module2Materi
 import { db } from '../../src/services/db';
 
 describe('ABC Textile Canonical Lineage & Classification Verification', () => {
-  const textilePath = path.resolve(__dirname, '../../../data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx');
+  const testDataDir = path.resolve(__dirname, '../../../data/test');
+  const textilePath = path.resolve(testDataDir, 'assessments/AIC-2026-0002/uploads/Textile1.xlsx');
 
   beforeAll(() => {
-    const devDataDir = path.resolve(__dirname, '../../../data/dev');
-    AssessmentStore.getInstance().setCustomDataDir(devDataDir);
+    const store = AssessmentStore.getInstance();
+    store.setCustomDataDir(testDataDir);
+    store.reloadFromDisk();
+    Module2CanonicalService.clearCache();
   });
 
   it('1. Independently calculates total evaluated spend and material/service split from Textile1.xlsx', () => {

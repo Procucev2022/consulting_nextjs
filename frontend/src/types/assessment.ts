@@ -111,6 +111,16 @@ export interface AssessmentRecord {
   assessmentPeriod?: string;
   assessmentPeriodStart: string;
   assessmentPeriodEnd: string;
+  actualDataCoverageStart?: string;
+  actualDataCoverageEnd?: string;
+  dataCoverageNotice?: string;
+  includedEntities?: string[];
+  excludedEntities?: string[];
+  sourceRowCount?: number;
+  includedRowCount?: number;
+  excludedRowCount?: number;
+  annualizedSpendEstimateCr?: number;
+  annualizedSpendNotice?: string;
   dataReceivedAt?: string;
   ndaStatus: NdaStatus;
   dataStatus: DataStatus;
@@ -351,6 +361,11 @@ export interface AssessmentDetailWorkflowProps {
   assessmentId: string;
   onBack: () => void;
   onUpdate: (updated: AssessmentRecord) => void;
+}
+
+export interface AssessmentDataCoverageBannerProps {
+  assessment: AssessmentRecord;
+  className?: string;
 }
 
 export interface SystemBuildInfo {

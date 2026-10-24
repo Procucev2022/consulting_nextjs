@@ -85,8 +85,8 @@ export const AssessmentPipelineTab: React.FC<AssessmentPipelineTabProps> = ({
             <p className="text-lg font-bold text-white mt-1 font-mono">
               {hasCompletedRun && validatedSpend !== undefined ? `₹${validatedSpend.toFixed(4)} Cr` : emptyVal}
             </p>
-            <span className="text-[10px] text-slate-500">
-              {hasCompletedRun ? '100% FX Normalized' : UI_STRINGS.ASSESSMENT.financial.pendingLabel}
+            <span className="text-[10px] text-slate-500 block truncate" title={`${UI_STRINGS.ASSESSMENT.dataCoverage.badgeCoverage} · Excl: BSL PUNE`}>
+              {hasCompletedRun ? `${UI_STRINGS.ASSESSMENT.dataCoverage.badgeCoverage} · Excl: BSL PUNE` : UI_STRINGS.ASSESSMENT.financial.pendingLabel}
             </span>
           </div>
 

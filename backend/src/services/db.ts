@@ -46,6 +46,7 @@ import { PCBICalculationEngine } from './pcbiCalculationEngine';
 import { StrategicSourcingEngine } from './strategicSourcingEngine';
 import { SavingsDeduplicationEngine } from './savingsDeduplicationEngine';
 import { Module2CanonicalService } from './module2CanonicalService';
+import { AssessmentStore } from './assessmentStore';
 import type {
   CategoryStrategicSourcingProfile,
   Module2StrategicSourcingDashboardSummary,
@@ -1431,8 +1432,10 @@ export class DatabaseStore {
     actionPlans: ActionPlanItem[];
     strategicSummary: StrategicSourcingResult['summary'];
   } {
+    const hasAssessment = assessmentId ? AssessmentStore.getInstance().getAssessmentById(assessmentId) : null;
     const isAbcTextile =
-      assessmentId === 'AIC-2026-0002' || (!assessmentId && this.tenant.tenant_id === 'AIC-2026-0002');
+      (assessmentId === 'AIC-2026-0002' || (!assessmentId && this.tenant.tenant_id === 'AIC-2026-0002')) &&
+      !!hasAssessment;
 
     if (isAbcTextile) {
       const targetAssessmentId = 'AIC-2026-0002';

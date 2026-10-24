@@ -64,8 +64,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const assessmentId =
     propAssessmentId ||
     (typeof window !== 'undefined'
-      ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002'
-      : 'AIC-2026-0002');
+      ? localStorage.getItem('aicev_selected_assessment_id') || undefined
+      : undefined);
   const [isCategorizing, setIsCategorizing] = useState<boolean>(false);
   const [isCategorized, setIsCategorized] = useState<boolean>(false);
   const [selectedBucket, setSelectedBucket] = useState<string>('ALL');

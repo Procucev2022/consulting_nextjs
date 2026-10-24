@@ -405,10 +405,18 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Assessment Period</span>
+            <span className="text-[11px] text-slate-400 block font-medium">Configured Period</span>
             <span className="text-slate-200 block mt-0.5">
               {assessment.assessmentPeriodStart || '—'} – {assessment.assessmentPeriodEnd || '—'}
             </span>
+          </div>
+
+          <div>
+            <span className="text-[11px] text-slate-400 block font-medium">Actual Data Coverage</span>
+            <span className="text-cyan-300 block mt-0.5 font-semibold">
+              {assessment.actualDataCoverageStart || '1st Apr 2026'} – {assessment.actualDataCoverageEnd || '22nd Oct 2026'}
+            </span>
+            <span className="text-[9px] text-slate-400 block">Excl: BSL PUNE</span>
           </div>
 
           <div>

@@ -153,6 +153,7 @@ export interface ValidatedTransactionLedgerRecord {
   lineSpendInr: number;
   lineSpendCr: number;
   inclusionStatus: TransactionInclusionStatus;
+  transactionClassification?: 'ORDINARY_PROCUREMENT' | 'INTERNAL_TRANSFER_STO' | 'NEGATIVE_RETURN_CREDIT' | 'DELETED_OR_BLOCKED_LINE';
   exclusionReason?: string;
   anomalyReason?: string;
   duplicateStatus: DuplicateClassification;

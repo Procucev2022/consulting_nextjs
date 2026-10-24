@@ -101,6 +101,9 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   if (isModule1Completed && canonicalViewModel) {
     dataCoverageValue = `${canonicalViewModel.actualDataCoverage.billingMonthsCount} Billing Months`;
     dataCoverageSub = `${canonicalViewModel.actualDataCoverage.dateRangeLabel} (Configured: ${canonicalViewModel.configuredEvaluationWindow})`;
+  } else if (activeAssessment?.actualDataCoverageStart && activeAssessment?.actualDataCoverageEnd) {
+    dataCoverageValue = '7 Billing Months';
+    dataCoverageSub = `${activeAssessment.actualDataCoverageStart} – ${activeAssessment.actualDataCoverageEnd} (Configured: ${activeAssessment.assessmentPeriodStart} – ${activeAssessment.assessmentPeriodEnd} | Excl: BSL PUNE)`;
   } else if (isDatasetValidated && totalRecords > 0) {
     dataCoverageValue = `${totalRecords.toLocaleString()} Records`;
     dataCoverageSub = 'Validation output — Awaiting Module 1 run';

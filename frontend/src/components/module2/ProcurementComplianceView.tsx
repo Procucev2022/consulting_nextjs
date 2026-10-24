@@ -15,11 +15,11 @@ import { logger } from '../../utils/logger';
 import { authApiClient } from '../../utils/authApi';
 
 export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps> = ({
-  assessmentId = 'AIC-2026-0002',
+  assessmentId = '',
   onNavigateBack
 }) => {
   const [data, setData] = useState<ProcurementComplianceResult | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(!!assessmentId);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'ALL' | 'AWAITING' | 'VERIFIED' | 'DISMISSED' | 'GAPS'>('ALL');
@@ -30,6 +30,11 @@ export const ProcurementComplianceView: React.FC<ProcurementComplianceViewProps>
   const downloadLinkRef = useRef<HTMLAnchorElement | null>(null);
 
   const loadData = useCallback(async (): Promise<void> => {
+    if (!assessmentId) {
+      setData(null);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {

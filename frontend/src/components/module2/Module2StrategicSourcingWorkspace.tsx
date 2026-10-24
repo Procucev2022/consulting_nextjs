@@ -59,7 +59,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
 
   const effectiveAssessmentId =
     assessmentId ||
-    (typeof window !== 'undefined' ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002' : 'AIC-2026-0002');
+    (typeof window !== 'undefined' ? localStorage.getItem('aicev_selected_assessment_id') || undefined : undefined);
 
   useEffect(() => {
     isMountedRef.current = true;

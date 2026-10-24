@@ -17,15 +17,20 @@ import { Module2Lever5Callout } from './Module2Lever5Callout';
 import logger from '../../utils/logger';
 
 export const Module2ConsolidatedSavingsView: React.FC<Module2ConsolidatedSavingsViewProps> = ({
-  assessmentId = 'AIC-2026-0002',
+  assessmentId = '',
   initialData = null
 }) => {
   const strings = UI_STRINGS.module2SavingsDeduplication;
   const [data, setData] = useState<Module2ConsolidatedSavingsSummary | null>(initialData);
-  const [loading, setLoading] = useState<boolean>(!initialData);
+  const [loading, setLoading] = useState<boolean>(!initialData && !!assessmentId);
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    if (!assessmentId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

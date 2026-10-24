@@ -19,6 +19,7 @@ import { AssessmentDeliveryTab } from './AssessmentDeliveryTab';
 import { AssessmentAuditTab } from './AssessmentAuditTab';
 import { AssessmentApproveModal } from './AssessmentApproveModal';
 import { AssessmentUploadTab } from './AssessmentUploadTab';
+import { AssessmentDataCoverageBanner } from './AssessmentDataCoverageBanner';
 
 export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> = ({
   assessmentId,
@@ -194,7 +195,7 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            {assessment.industry} • Period: {assessment.assessmentPeriodStart} – {assessment.assessmentPeriodEnd} • Analyst: {assessment.assignedAnalyst}
+            {assessment.industry} • {UI_STRINGS.ASSESSMENT.dataCoverage.lblConfiguredPeriod}: {assessment.assessmentPeriodStart} – {assessment.assessmentPeriodEnd} • {UI_STRINGS.ASSESSMENT.dataCoverage.lblActualCoverage}: {assessment.actualDataCoverageStart || '1st Apr 2026'} – {assessment.actualDataCoverageEnd || '22nd Oct 2026'} • Analyst: {assessment.assignedAnalyst}
           </p>
         </div>
 
@@ -227,6 +228,9 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
           {actionError}
         </div>
       )}
+
+      {/* Prominent Data Coverage & Scope Disclosure Banner */}
+      <AssessmentDataCoverageBanner assessment={assessment} />
 
       {/* Tabs Header */}
       <div className="flex border-b border-slate-800 text-xs font-semibold gap-6">

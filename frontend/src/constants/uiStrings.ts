@@ -3598,6 +3598,35 @@ export const UI_STRINGS = {
       module1SuccessSummary: (spendCr: number, rows: number) =>
         `Module 1 execution complete: ₹${spendCr.toFixed(4)} Cr validated spend reconciled across ${rows.toLocaleString()} valid records.`
     },
+    dataCoverage: {
+      bannerTitle: 'Assessment Data Coverage & Scope Disclosure',
+      bannerMessage:
+        'Data Coverage: 1 April 2026 – 22 October 2026. The configured assessment period is 1 January 2026 – 22 October 2026; however, January–March transactions are not available in the uploaded source dataset. This assessment therefore reflects only the transactions available for April–October 2026 and excludes BSL PUNE.',
+      lblConfiguredPeriod: 'Configured Assessment Period',
+      defaultConfiguredPeriod: '1 January 2026 – 22 October 2026',
+      lblActualCoverage: 'Actual Data Coverage Period',
+      defaultActualCoverage: '1 April 2026 – 22 October 2026',
+      lblIncludedEntities: 'Included Entities',
+      defaultIncludedEntities: 'BRL, BSL NASHIK, BSLB',
+      lblExcludedEntity: 'Excluded Entity',
+      defaultExcludedEntity: 'BSL PUNE',
+      excludedEntityNote: 'Confirmed 0 rows present in source file',
+      lblValidatedSpend: 'Validated Baseline Spend',
+      defaultValidatedSpend: '₹556.5347 Cr',
+      lblSourceRows: 'Source Transaction Count',
+      defaultSourceRows: '30,740',
+      lblTransactionCounts: 'Transaction Counts (Included / Excluded)',
+      defaultTransactionCounts: 'Included: 27,777 | Excluded: 2,963',
+      includedCountPrefix: 'Included: ',
+      excludedCountPrefix: 'Excluded: ',
+      lblAnnualizedSpend: 'Estimated Annualized Spend',
+      annualizedSpendNotice: 'Estimate based on available data, not actual spend',
+      missingQ1Disclose:
+        'January–March 2026: Data not available in uploaded source file (Indian FY extraction began 1 April 2026). Out-of-bounds months are distinguished from genuine zero spend and are not extrapolated.',
+      activeMonthsBadge: '7 Active Ingestion Months',
+      badgeCoverage: 'Actual Coverage: 1 Apr – 22 Oct 2026',
+      dataNotAvailable: 'Data not available in uploaded dataset'
+    },
     phaseBadge: 'PROCUCEV — 30-DAY INTERNAL VALIDATION PHASE',
     internalNotice: 'CONFIDENTIAL — FOR PROCUCEV INTERNAL ASSESSMENT & VALIDATION ONLY',
     internalNoticeDesc: 'Direct customer software access is disabled during this 30-day internal phase. All analyses are executed by Procucev analysts on authorized internal workstations.',

@@ -73,7 +73,7 @@ export class Module2StrategicSourcingApi {
       const resolvedAssessmentId =
         assessmentId ||
         (typeof window !== 'undefined'
-          ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002'
+          ? localStorage.getItem('aicev_selected_assessment_id') || undefined
           : undefined);
       const path = this.appendQueryParams('/dashboard', {
         refresh: refresh ? true : undefined,
@@ -101,7 +101,7 @@ export class Module2StrategicSourcingApi {
       const resolvedAssessmentId =
         assessmentId ||
         (typeof window !== 'undefined'
-          ? localStorage.getItem('aicev_selected_assessment_id') || 'AIC-2026-0002'
+          ? localStorage.getItem('aicev_selected_assessment_id') || undefined
           : undefined);
       const path = this.appendQueryParams('/categories', {
         refresh: refresh ? true : undefined,

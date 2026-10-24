@@ -21,8 +21,15 @@ function createMockReqRes(body: Record<string, unknown> = {}, params: Record<str
 }
 
 describe('AssessmentController', () => {
+  let iso: { testDir: string; cleanup: () => void };
+
   beforeEach(() => {
+    iso = assessmentStore.useIsolatedTestDir();
     assessmentStore.resetToDefaultSeed();
+  });
+
+  afterEach(() => {
+    iso.cleanup();
   });
 
   it('handles getOperatingMode', () => {
@@ -214,10 +221,12 @@ describe('AssessmentController', () => {
       })
     );
 
+    const createdCustomerId = (createRes.json as unknown as { mock: { calls: Array<Array<{ data: { customerId: string } }>> } }).mock.calls[0][0].data.customerId;
+
     // 3. Update customer
     const { req: updateReq, res: updateRes } = createMockReqRes(
       { customerName: 'Updated Test Enterprise Ltd' },
-      { id: 'CUST-2026-0002' }
+      { id: createdCustomerId }
     );
     AssessmentController.updateCustomer(updateReq, updateRes);
     expect(updateRes.json).toHaveBeenCalledWith(
@@ -230,13 +239,13 @@ describe('AssessmentController', () => {
     );
 
     // 4. Get customer by ID
-    const { req: getByIdReq, res: getByIdRes } = createMockReqRes({}, { id: 'CUST-2026-0002' });
+    const { req: getByIdReq, res: getByIdRes } = createMockReqRes({}, { id: createdCustomerId });
     AssessmentController.getCustomerById(getByIdReq, getByIdRes);
     expect(getByIdRes.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: true,
         data: expect.objectContaining({
-          id: 'CUST-2026-0002'
+          id: createdCustomerId
         })
       })
     );

@@ -27,16 +27,16 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
 }) => {
   const strings = UI_STRINGS.module2EAuction;
   const [effectiveAssessmentId, setEffectiveAssessmentId] = useState<string>(
-    assessmentId || 'AIC-2026-0002'
+    assessmentId || ''
   );
   const [result, setResult] = useState<EAuctionResult | null>(null);
   const [selectedFy, setSelectedFy] = useState<string>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<EAuctionCategoryCandidate | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (assessmentId && assessmentId !== effectiveAssessmentId) {
+    if (assessmentId !== undefined && assessmentId !== effectiveAssessmentId) {
       setEffectiveAssessmentId(assessmentId);
       setSelectedFy('ALL');
       setSelectedCategory(null);
@@ -44,6 +44,11 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
   }, [assessmentId, effectiveAssessmentId]);
 
   const fetchEAuctionData = useCallback(async (cId: string, fy: string): Promise<void> => {
+    if (!cId) {
+      setResult(null);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setErrorMessage(null);
     try {

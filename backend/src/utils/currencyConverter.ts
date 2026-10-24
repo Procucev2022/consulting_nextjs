@@ -99,9 +99,9 @@ function getYearlyRate(fxObj: (typeof yahooFinanceFXRates)[string], year: number
  * Get the Yahoo Finance exchange rate to INR for a specific currency and transaction date or year
  */
 export function getYahooFinanceRateToINR(fromCurrency: string, dateOrYear?: string | number | Date): number {
-  const curr = (fromCurrency || 'USD').toUpperCase().trim();
+  const curr = (fromCurrency || '').toUpperCase().trim();
   const fxObj = yahooFinanceFXRates[curr];
-  if (!fxObj) return 83.80;
+  if (!fxObj) return 0;
 
   const { year, monthKey } = parseDateOrYear(dateOrYear);
   if (monthKey && yahooFinanceHistoricalMonthlyRates[curr]?.[monthKey] !== undefined) {
@@ -124,8 +124,17 @@ export function getYahooFinanceRateAsOfDate(
   currency: string;
   isHistorical: boolean;
 } {
-  const curr = (fromCurrency || 'USD').toUpperCase().trim();
-  const fxObj = yahooFinanceFXRates[curr] || yahooFinanceFXRates.USD;
+  const curr = (fromCurrency || '').toUpperCase().trim();
+  const fxObj = yahooFinanceFXRates[curr];
+  if (!fxObj) {
+    return {
+      rate: 0,
+      dateStr: '',
+      ticker: '',
+      currency: curr,
+      isHistorical: false
+    };
+  }
   const { year, monthKey, formattedDate } = parseDateOrYear(dateOrYear);
 
   let rate = fxObj.currentRate;

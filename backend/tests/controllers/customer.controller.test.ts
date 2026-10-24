@@ -21,14 +21,20 @@ function createMockReqRes(body: Record<string, unknown> = {}, params: Record<str
 
 describe('CustomerController', () => {
   let createdCustomerId: string;
+  let iso: { testDir: string; cleanup: () => void };
 
   beforeEach(() => {
+    iso = assessmentStore.useIsolatedTestDir();
     assessmentStore.resetToDefaultSeed();
     const customer = assessmentStore.createCustomer({
       customerName: 'Enterprise Client Alpha',
       industry: 'Automotive'
     });
     createdCustomerId = customer.id || customer.customerId;
+  });
+
+  afterEach(() => {
+    iso.cleanup();
   });
 
   it('handles getCustomers with and without filter', () => {

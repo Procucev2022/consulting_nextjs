@@ -67,6 +67,16 @@ export interface AssessmentRecord {
   websiteProfile?: CustomerWebsiteProfile;
   assessmentPeriodStart: string;
   assessmentPeriodEnd: string;
+  actualDataCoverageStart?: string;
+  actualDataCoverageEnd?: string;
+  dataCoverageNotice?: string;
+  includedEntities?: string[];
+  excludedEntities?: string[];
+  sourceRowCount?: number;
+  includedRowCount?: number;
+  excludedRowCount?: number;
+  annualizedSpendEstimateCr?: number;
+  annualizedSpendNotice?: string;
   dataReceivedAt?: string;
   ndaStatus: NdaStatus;
   dataStatus: DataStatus;

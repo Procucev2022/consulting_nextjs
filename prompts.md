@@ -113049,3 +113049,588 @@ Do not publish, deploy, regenerate presentations, or modify unrelated modules.
 
 ## Prompt 515
 resume
+
+---
+
+## Prompt 516
+resume
+
+---
+
+## Prompt 517
+Perform a complete, controlled cleanup of the existing aiCEV application data to prepare for a fresh customer assessment.
+
+**Objective:** Remove all old customer assessment data and reset the application to a clean state before uploading the new Borosil dataset.
+
+### 1. Identify Existing Data
+
+Inspect the complete application architecture, including frontend, backend, database, local storage, session storage, uploaded files, caches, and assessment history.
+
+Identify all data associated with previous customer assessments, including ABC Textile and any other test customers.
+
+### 2. Clear Old Assessment Data
+
+Remove all existing customer-specific assessment records and associated derived data, including:
+
+* Uploaded customer datasets and temporary copies.
+* Assessment records and transaction-level data.
+* Module 1 spend analysis results.
+* Module 2 categorization and sourcing opportunity results.
+* Module 3 customer-specific benchmark analysis results.
+* Module 4 savings calculations and recommendations.
+* Supplier, category, and transaction-level assessment outputs.
+* Assessment-specific reports, exports, temporary files, and cached results.
+* Old assessment IDs, test sessions, and stale browser state.
+
+Ensure no orphaned records or stale derived results remain.
+
+### 3. Preserve Critical Application Assets
+
+**DO NOT DELETE OR MODIFY:**
+
+* Application source code or configuration.
+* Database schema, migrations, or system configuration.
+* Authentication, user accounts, roles, and permissions.
+* Master reference data and standard categorization mappings, including UNSPSC.
+* PCBI master benchmark index, benchmark history, and licensed-source configuration.
+* Reusable application logic, prompts, and calculation rules.
+* Environment variables, API keys, credentials, or integration settings.
+* Existing backups or audit logs.
+
+Do not drop the entire database or delete files using broad wildcards.
+
+### 4. Reset Application State
+
+* Clear stale assessment-related browser local storage, session storage, and caches where appropriate.
+* Reset the UI to its clean initial state.
+* Ensure the assessment list contains no old assessments.
+* Ensure no old customer data appears in dashboards, reports, or module summaries.
+* Restart the application services only if required and safe.
+
+### 5. Validate the Cleanup
+
+Run the available automated tests and verify:
+
+1. No old customer assessments remain accessible.
+2. No ABC Textile or other previous customer data appears in the UI.
+3. No old assessment results are loaded from caches or browser storage.
+4. Application login and navigation still work.
+5. Master data and PCBI benchmark assets remain intact.
+6. The application is ready to create a new assessment and upload the Borosil file.
+
+### 6. Safety and Reporting
+
+Before executing destructive operations, identify the affected tables, files, and storage locations. Create a backup of the relevant assessment data if feasible.
+
+Execute only the targeted cleanup after confirming that the affected records are customer-assessment data and not shared master data.
+
+If the database contains mixed customer and master data and the safe deletion scope is unclear, stop and report the proposed deletion plan rather than guessing.
+
+Finally, report:
+
+* Records and files deleted.
+* Records and assets preserved.
+* Backup location, if created.
+* Automated test results.
+* Any cleanup failures or remaining data.
+* Confirmation that the application is ready for the new Borosil assessment.
+
+Do not upload the new Borosil dataset or create a new assessment yet.
+
+---
+
+## Prompt 518
+Perform a read-only financial and data-quality audit of the current Borosil Ltd assessment using the uploaded file `Borosil_PO_Consol_Excluding_BSL_Pune.xlsx`.
+
+Do not run Module 2 or modify, delete, overwrite, or reclassify any transaction records.
+
+### A. Duplicate PO-Line Investigation
+
+The dashboard flags 30,657 excess rows based on repeated Purchasing Document + Item identifiers.
+
+1. Export the complete duplicate exception list.
+2. Identify the exact duplicate-detection key and algorithm.
+3. Separate exact duplicate records from legitimate repeated PO-line records.
+4. Check whether release indicators, document dates, supplier, material, quantity, price, currency, deletion indicators, or other fields distinguish repeated records.
+5. Report counts and spend for each exception type.
+6. Do not automatically remove any record.
+
+### B. Financial Baseline Reconciliation
+
+Independently recalculate transaction-level spend using the source workbook.
+
+1. Identify the exact source columns used for order quantity, net price, price unit, currency, and order value.
+2. Determine whether Net Price is expressed per unit or per price unit.
+3. Compare the calculated line value with Net Order Value, where applicable.
+4. Identify blank, zero, negative, cancelled, deleted, and reversed transactions.
+5. Validate every currency conversion rate and its effective date.
+6. Confirm whether foreign-currency amounts were actually converted into INR using documented exchange rates.
+7. Never assume a missing currency is INR without evidence.
+8. Reconcile the original source total, calculated total, excluded amount, and final evaluated spend.
+
+### C. Scope and Date Validation
+
+Confirm that:
+
+* BSL Pune is excluded.
+* Only BRL, BSL Nashik, and BSLB remain.
+* The assessment date range is 1 January 2026 to 22 October 2026.
+* The actual transaction date range and monthly coverage are reported accurately.
+
+### D. Material-Group Validation
+
+1. Inspect the 137 material groups and their source-column mappings.
+2. Identify generic, unmapped, defaulted, or potentially incorrect categories.
+3. Verify that material descriptions and codes have not been lost.
+4. Report the top 20 groups by spend and the value classified as generic or unmapped.
+
+### E. Required Deliverables
+
+Produce:
+
+* A concise audit report.
+* An Excel exception workbook containing duplicate records, currency exceptions, financial mismatches, and category-mapping issues.
+* A financial reconciliation showing source spend versus calculated spend.
+* A list of confirmed issues, unresolved questions, and recommended corrections.
+
+Preserve the existing assessment unchanged. Do not fabricate missing information or claim that a record is validated merely because it passed a technical check.
+
+Stop after the audit. Do not execute AI categorization or calculate procurement savings.
+
+---
+
+## Prompt 519
+We have completed a read-only financial audit of Borosil assessment AIC-2026-0002. Correct the confirmed Module 1 ingestion defects and revalidate the financial baseline.
+
+CRITICAL: Do not execute Module 2, Module 3, or Module 4. Do not calculate or publish savings. Preserve the current assessment and create a backup before making changes.
+
+### 1. Fix SAP Duplicate Detection
+
+File: backend/src/services/assessmentDatasetParser.ts
+
+Update PO number extraction to recognise the actual source header:
+`Purchasing Document`
+
+Support existing aliases, including:
+`r['Purchasing Document'] ?? r['Purch.Doc.'] ?? r['Purchase Doc.']`
+
+Use the composite key Purchasing Document + Item.
+
+Reprocess duplicate diagnostics and verify:
+
+* 30,740 source rows.
+* 30,740 unique PO-line keys, if confirmed by the source data.
+* Zero false duplicate alerts.
+* No transaction rows deleted or silently deduplicated.
+
+Add a regression test using the Borosil source headers.
+
+### 2. Correct Multi-Currency Normalization
+
+File: backend/src/services/assessmentDatasetRowNormalizer.ts and related FX services.
+
+Investigate why `Net Order Value` was treated as INR when the source currency was not INR.
+
+Requirements:
+
+* Preserve the original transaction amount and source currency.
+* Never treat USD, EUR, CNY, JPY, CHF or GBP as INR.
+* Never use an FX rate of 1.0 as a fallback for foreign currencies.
+* Use documented, approved FX rates with an explicit effective date and source.
+* Apply the rate consistently and exactly once.
+* Retain INR transactions at a rate of 1.0.
+* If a required rate is unavailable, flag and quarantine the affected transaction from validated INR spend until resolved.
+* Prevent double conversion and double counting.
+* Record the FX rate and converted amount at transaction level.
+
+The audit's estimated ₹584.94 Cr total is a reconciliation target, not an automatically approved baseline. Validate every currency total and rate before accepting it.
+
+### 3. Correct Transaction Status Classification
+
+Inspect SAP Deletion Indicator, Release Indicator, Document Type, Net Order Value and relevant status columns.
+
+Create transparent classifications for:
+
+* Deleted/blocked PO lines: 755 reported rows, ₹21.55 Cr.
+* Stock Transport Orders: 2,357 reported rows.
+* Negative return/credit transactions: 1,986 reported rows, approximately -₹1.02 Cr.
+* Ordinary external procurement transactions.
+
+Do not silently delete these records. Retain the source rows and make the inclusion/exclusion treatment explicit.
+
+Do not assume every negative transaction should be excluded. Preserve credit/return transactions separately and document how they affect the baseline.
+
+Do not treat the 755 deletion/lock indicator rows as cancelled without validating the precise SAP indicator semantics.
+
+### 4. Correct Assessment Date Coverage
+
+The actual dataset runs from 1 April 2026 through 22 October 2026.
+
+Update the assessment period to this range unless the user provides January–March data.
+
+Report April–October coverage by month. Do not fabricate Q1 transactions.
+
+### 5. Validate the Financial Formula
+
+Inspect the source fields:
+
+* Order Quantity
+* Net Price
+* Price unit
+* Currency
+* Net Order Value
+* Document Date
+
+Confirm whether `Net Order Value` is already a complete document-currency line amount. Avoid multiplying it by quantity again.
+
+Compare the normalized value with the independently calculated amount using the correct price-unit logic.
+
+Produce a reconciliation with:
+
+* Original document-currency totals by currency.
+* FX rates and sources.
+* Converted INR totals.
+* Zero-value and negative-value transactions.
+* Deleted/blocked records.
+* Internal transfers.
+* Excluded or quarantined values.
+* Final gross source spend and final validated external procurement baseline.
+
+### 6. Acceptance Tests
+
+Run relevant unit tests and regression tests.
+
+Verify:
+
+* Source transaction count remains 30,740.
+* No BSL Pune rows are present.
+* Only BRL, BSL Nashik and BSLB remain.
+* No missing or unsupported currency is silently converted.
+* No duplicate alert is generated from the incorrect key.
+* The INR baseline reconciles to the sum of validated transaction-level INR amounts.
+* PCBI master benchmarks remain unchanged.
+* No Module 2–4 results or savings are generated.
+
+### 7. Final Deliverables
+
+Produce:
+
+1. A corrected Module 1 assessment.
+2. A transaction-level financial reconciliation workbook.
+3. An exception workbook covering FX, status, pricing and duplicate issues.
+4. A concise before-and-after audit report.
+5. Test results and unresolved business decisions.
+
+Do not proceed automatically if any critical reconciliation fails. Stop and report the specific discrepancy for review.
+
+---
+
+## Prompt 520
+Before proceeding to Module 2, perform a final read-only reconciliation of Borosil assessment AIC-2026-0002.
+
+1. Reconcile all 30,740 source rows into mutually exclusive transaction classifications.
+2. Confirm whether the 755 deleted/blocked rows overlap with ordinary procurement or return/credit classifications.
+3. Verify the exact arithmetic from gross spend of ₹585.3049 Cr to the proposed net baseline of ₹556.5347 Cr.
+4. Reconcile the source-currency amounts, FX rates, converted INR amounts, and status-based exclusions.
+5. Confirm that all rows are accounted for exactly once and that no transaction has been double-counted or omitted.
+6. Verify that the ₹556.5347 Cr baseline matches the live assessment API, dashboard, and transaction reconciliation workbook.
+7. Keep the primary assessment window at 1 April–22 October 2026. Any annualized figure must be clearly labelled as an estimate.
+8. Confirm that the 30,657 false duplicate alerts remain resolved and that no Module 2–4 calculations have run.
+
+Do not modify the baseline or proceed to Module 2 if any reconciliation fails. Report the exact discrepancy and the affected transaction records.
+
+---
+
+## Prompt 521
+Investigate and correct the assessment period for Borosil Ltd, assessment AIC-2026-0002.
+
+The intended assessment period is **1 January 2026 to 22 October 2026**, not 1 April to 22 October.
+
+1. Inspect the original uploaded file `Borosil_PO_Consol_Excluding_BSL_Pune.xlsx` and report the minimum and maximum valid `Document Date`.
+2. Count transactions and calculate spend separately for January, February, March, April, May, June, July, August, September, and October 2026.
+3. Determine why the previous audit reported that the dataset starts on 1 April 2026.
+4. Check whether January–March transactions were omitted, filtered, rejected, or absent from the source file.
+5. Do not fabricate missing transactions or silently change the source data.
+6. If January–March transactions exist, restore their inclusion and rerun Module 1 reconciliation, including FX conversion and transaction classifications.
+7. If those months are genuinely absent, retain the requested assessment window of 1 January–22 October 2026 but clearly disclose the missing source coverage. Do not imply that January–March spend is included.
+8. Verify the corrected assessment period and baseline against the source ledger, backend API, frontend dashboard, and reconciliation workbook.
+9. Preserve all existing backups and the source dataset. Do not run Modules 2, 3, or 4.
+
+Return the monthly reconciliation, explain the discrepancy, and report the corrected baseline. Stop for review before proceeding to Module 2.
+
+---
+
+## Prompt 522
+Update the Borosil Ltd assessment (`AIC-2026-0002`) to display the assessment period and actual data coverage accurately.
+
+**1. Assessment period and data coverage**
+
+* Configured assessment period: 1 January 2026 – 22 October 2026.
+* Actual transaction data available: 1 April 2026 – 22 October 2026.
+* January–March 2026: Data not available in the uploaded source file. Do not display this period as zero spend or imply that the assessment covers these months.
+* Clearly distinguish the configured assessment period from the actual transaction coverage throughout the UI, dashboards, exports, and reports.
+
+**2. Data scope**
+
+* Continue using the current uploaded dataset, which excludes BSL PUNE.
+* Included entities: BRL, BSL NASHIK and BSLB.
+* Do not restore BSL PUNE or add synthetic transactions.
+* Retain the validated currency conversion, transaction classification, duplicate detection, return/credit handling, and deleted/blocked line exclusions currently implemented.
+* Do not change financial calculations unless a reconciliation error is discovered.
+
+**3. Display requirements**
+Show a prominent information banner on the assessment dashboard:
+
+“Data Coverage: 1 April 2026 – 22 October 2026. The configured assessment period is 1 January 2026 – 22 October 2026; however, January–March transactions are not available in the uploaded source dataset. This assessment therefore reflects only the transactions available for April–October 2026 and excludes BSL PUNE.”
+
+Display the following separately:
+
+* Configured assessment period
+* Actual data coverage period
+* Included entities
+* Excluded entity: BSL PUNE
+* Validated baseline spend
+* Source transaction count
+* Included and excluded transaction counts
+
+**4. Reports and exports**
+Apply the same disclosure to all relevant dashboards, Excel exports, PDF reports and executive summaries. Do not label January–March spend as ₹0 or calculate a full-period total that implies those months were covered.
+
+Any annualized spend must be explicitly labelled as an estimate based on the available data, not actual spend.
+
+**5. Validation and module controls**
+
+* Run Module 1 validation and reconcile the dashboard, API and financial reconciliation workbook.
+* Confirm that the displayed dates and spend figures are consistent across all three.
+* Do not execute Module 2, Module 3 (PCBI benchmarking), or Module 4 (Savings Engine).
+* Do not modify unrelated code, master data or benchmark assets.
+
+After completion, provide a concise report confirming the UI changes, reconciliation results, files updated, tests passed and any remaining exceptions. Do not claim completion until the changes are verified.
+
+---
+
+## Prompt 523
+Proceed with **Module 2: AI Categorization and Strategic Sourcing Opportunities** for Borosil Ltd.
+
+**Assessment ID:** AIC-2026-0002
+
+### 1. Mandatory Scope Controls
+
+* Use only the current validated Borosil dataset.
+* Retain the existing Module 1 results and financial reconciliation.
+* Actual data coverage: 1 April 2026 – 22 October 2026.
+* Included entities: BRL, BSL Nashik and BSLB.
+* BSL PUNE remains excluded.
+* Use the validated baseline spend of ₹556.5347 Cr as the starting reference, subject to Module 2's documented inclusion and exclusion rules.
+* Do not re-upload, replace or modify the source dataset.
+* Do not change Module 1 calculations or configuration.
+
+### 2. Execute AI Categorization
+
+Analyze the included transactions and:
+
+* Validate existing material groups and item descriptions.
+* Map items to appropriate procurement categories and subcategories.
+* Use UNSPSC where the required mapping data is available.
+* Identify direct materials, indirect materials, packing materials, MRO, capital items and services wherever the transaction data supports these classifications.
+* Identify duplicate or inconsistent descriptions, generic descriptions, missing material codes and potentially incorrect material-group assignments.
+* Separate confirmed classifications from AI-suggested classifications.
+* Assign a confidence score to each AI-suggested mapping.
+* Flag ambiguous, low-confidence and unmapped items for human review.
+* Do not invent item attributes, UNSPSC codes, material specifications or classifications.
+
+### 3. Identify Strategic Sourcing Opportunities
+
+Analyze the categorized spend for potential opportunities, including:
+
+* Supplier consolidation.
+* Purchase order consolidation.
+* Category-level sourcing opportunities.
+* Spend fragmentation across suppliers and entities.
+* Potential competitive bidding or e-auction opportunities.
+* Maverick or non-standard purchasing patterns, where the available data supports the finding.
+* Opportunities to standardize specifications and descriptions.
+* Categories requiring further procurement or stakeholder investigation.
+
+For every opportunity, show:
+
+* Opportunity type.
+* Relevant procurement category.
+* Addressable spend.
+* Supporting transaction or supplier evidence.
+* Rationale.
+* Recommended next action.
+* Data limitations and confidence level.
+
+Distinguish evidence-backed findings from hypotheses requiring customer validation.
+
+### 4. Financial and Data Integrity
+
+* Reconcile Module 2 category totals against the Module 1 baseline.
+* Explain any differences caused by classification exclusions, unclassified transactions or aggregation rules.
+* Prevent double counting across categories and opportunities.
+* Do not treat the same spend as independently addressable under multiple opportunities without explicitly identifying the overlap.
+* Do not calculate or publish realized savings.
+* Do not assume a savings percentage without evidence and an explicitly documented methodology.
+* Preserve the January–March disclosure: data is unavailable for these months, not zero.
+* Retain the existing foreign-currency conversion assumptions and disclose that they require customer/finance validation.
+
+### 5. Required Outputs
+
+Provide:
+
+1. Category-wise spend and percentage of baseline.
+2. Direct, indirect, packing, MRO, capital and service spend breakdown, where supported.
+3. UNSPSC mapping coverage and confidence distribution.
+4. Unclassified and low-confidence transaction report.
+5. Supplier concentration and consolidation analysis.
+6. Purchase order consolidation opportunities.
+7. Strategic sourcing opportunity register with supporting evidence.
+8. Data-quality exceptions requiring customer confirmation.
+9. Executive summary of the most material findings.
+10. An Excel workbook containing detailed category mapping, reconciliations and opportunity registers.
+
+### 6. Strict Module Boundaries
+
+* Execute Module 2 only.
+* Keep Module 3 (PCBI Benchmarking) disconnected and unexecuted.
+* Keep Module 4 (Savings Engine) unexecuted.
+* Do not generate benchmark-based recommendations or savings calculations.
+* Do not modify PCBI master data, benchmark files or unrelated assessments.
+* Preserve backups and follow the existing project change-control process.
+
+### 7. Final Validation
+
+After execution:
+
+* Run relevant automated tests and typechecks.
+* Verify that category totals reconcile to the appropriate Module 1 baseline.
+* Confirm that the frontend, backend API and exported workbook agree.
+* Report the actual results, exceptions, files created and tests passed.
+* List the five most important sourcing opportunities, with their supporting spend and rationale.
+* Explicitly confirm that Modules 3 and 4 remain unexecuted.
+
+Do not report completion until the results have been verified. If a material financial reconciliation fails, stop and report the discrepancy rather than proceeding silently.
+
+---
+
+## Prompt 524
+Perform a READ-ONLY AUDIT of the completed Module 2 execution for Borosil Ltd, Assessment ID AIC-2026-0002.
+
+Do not rerun categorization, change financial calculations, modify source data, or execute Modules 3 or 4. Preserve all current results and files.
+
+Investigate and report the following:
+
+1. FINANCIAL RECONCILIATION
+
+* Explain why the Module 2 execution report states categorized spend of ₹556.5347 Cr, while the live dashboard API reports totalSpendAnalyzedInrCr of approximately ₹585.305 Cr.
+* Trace the exact source field and calculation used by the dashboard.
+* Confirm whether the dashboard includes deleted/blocked lines or other excluded transactions.
+* Reconcile gross spend, deleted/blocked lines, internal transfers, returns/credits and net baseline.
+* Identify the authoritative spend metric that each Module 2 screen should display.
+
+2. SPEND-FAMILY RECONCILIATION
+
+* Recalculate the six spend-family totals directly from the 27,777 included transaction records.
+* Confirm that the totals, including credit returns, reconcile exactly to ₹556.5347 Cr.
+* Explain whether credit returns are allocated to their original spend families or shown separately.
+* Detect overlapping, missing or double-counted transactions.
+* Provide the reconciliation in ₹ Cr and transaction counts.
+
+3. OPPORTUNITY OVERLAP
+
+* Independently validate the spend supporting each of the five sourcing opportunities.
+* Calculate pairwise and total overlap between opportunity spend pools.
+* Do not add opportunity values together unless overlap has been eliminated.
+* Distinguish addressable spend from estimated savings.
+* Verify that the same transaction is not counted multiple times within an opportunity.
+
+4. UNSPSC MAPPING QUALITY
+
+* Inspect the actual codes and descriptions in UNSPSC_Mapping_Register.
+* Verify that codes exist in the available taxonomy/master data and that their descriptions match the assigned categories.
+* Report the number of distinct material groups and transactions with verified codes, suggested mappings and unresolved mappings.
+* Flag mappings that were inferred only from keywords.
+* Do not invent missing UNSPSC codes.
+
+5. SUPPLIER AND PO ANALYSIS
+
+* Verify the 1,561 supplier count, Pareto percentages and the 619 PO fragmentation instances using the source transactions.
+* Confirm that supplier identities are normalized appropriately and that PO counts use the correct purchasing-document key.
+* Check that freight, packaging and other opportunity spend amounts reconcile to their underlying transactions.
+
+6. OUTPUT
+   Create a concise audit report with:
+
+* Finding and severity
+* Evidence and calculation
+* Financial impact
+* Required correction, if any
+* Pass/fail status
+
+Run read-only checks and relevant tests only. Do not change the existing assessment, dashboard, source data or Excel workbook during this audit.
+
+STRICT BOUNDARIES:
+
+* Module 2 remains executed; audit only.
+* Module 3 PCBI remains disconnected and unexecuted.
+* Module 4 Savings Engine remains unexecuted.
+* Do not publish savings estimates or claim realized savings.
+
+Return the audit results and identify which findings require correction before the client report can be approved.
+
+---
+
+## Prompt 525
+Apply the required corrections identified in the read-only audit for Borosil Ltd, Assessment ID AIC-2026-0002.
+
+This is a controlled correction task. Preserve the existing source dataset and completed Module 1 and Module 2 results. Back up affected files before editing.
+
+### CORR-1: Dashboard financial metrics
+
+* Change the primary Module 2 dashboard spend KPI to the validated net baseline of ₹556.5347 Cr.
+* Display gross uploaded spend of ₹585.3049 Cr separately.
+* Clearly explain that ₹28.7702 Cr of deleted/blocked SAP lines is excluded from the net baseline.
+* Ensure the API, UI, category totals, executive summary and Excel exports distinguish gross spend from net baseline.
+* Do not silently change the underlying transaction calculations.
+
+### CORR-2: Supplier count standardization
+
+* Normalize supplier names using safe, documented text normalization.
+* Report 1,561 distinct raw supplier strings and 1,537 normalized supplier entities where verified.
+* Apply consistent supplier counts across dashboards, reports and exports.
+* Do not merge genuinely different legal entities solely because their names are similar.
+
+### CORR-3: UNSPSC mapping granularity
+
+* Review the top five direct-material chemical items, including Soda Ash, Antimony and ARC Liquid.
+* Identify exact 8-digit UNSPSC commodity codes only when supported by authoritative taxonomy records and sufficient item-description/specification evidence.
+* Do not infer exact commodity codes from keywords alone.
+* Retain broader segment-level mappings when the available information does not support a precise commodity code.
+* Mark unresolved mappings for procurement review.
+
+### ADDITIONAL FINANCIAL CONTROL: Spend-family reconciliation
+
+* Recalculate spend-family totals from the original transaction-level INR values used to create the Module 1 baseline.
+* Use the same approved transaction-level FX rates and rounding rules as Module 1.
+* Reconcile all six spend families, including net credit returns, exactly to ₹556.5347 Cr, subject only to documented rounding.
+* Explain the ₹0.5322 Cr difference between the audit's static-rate calculation and the historical-rate baseline.
+* If the difference cannot be reconciled, report the discrepancy and stop financial sign-off. Do not force totals to match.
+
+### Validation
+
+* Run relevant tests and typechecks.
+* Verify consistency between the backend API, frontend dashboard and Excel exports.
+* Report the exact before-and-after values and any unresolved issues.
+* Preserve the actual coverage period of 1 April 2026 – 22 October 2026 and the disclosure that January–March data is unavailable.
+* Do not change the source dataset or Module 1 baseline.
+* Do not execute Module 3 (PCBI Benchmarking) or Module 4 (Savings Engine).
+* Do not calculate or claim realized savings.
+
+Do not declare financial sign-off until the dashboard metrics and spend-family totals have been reconciled.
+
+
+
+
+
+

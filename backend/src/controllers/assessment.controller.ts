@@ -35,6 +35,7 @@ export class AssessmentController {
   public static previewWebsiteProfile = CustomerController.previewWebsiteProfile;
 
   public static getAssessments(req: Request, res: Response): void {
+    assessmentStore.reloadFromDisk();
     const statusFilter = typeof req.query.status === 'string' ? req.query.status : undefined;
     const assessments = assessmentStore.getAssessments(statusFilter);
     const sanitized = assessments.map((a) => {
@@ -45,6 +46,7 @@ export class AssessmentController {
   }
 
   public static getAssessmentById(req: Request, res: Response): void {
+    assessmentStore.reloadFromDisk();
     const { id } = req.params;
     const assessment = assessmentStore.getAssessmentById(id);
     if (!assessment) {

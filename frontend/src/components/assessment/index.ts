@@ -12,3 +12,4 @@ export * from './CustomerManagementView';
 export * from './DesktopUpdateBanner';
 export * from './NewAssessmentModal';
 export * from './SystemInfoModal';
+export * from './AssessmentDataCoverageBanner';

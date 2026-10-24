@@ -27,6 +27,7 @@ import {
 } from '../constants/assessment';
 import {
   getAuthoritativeDataDir,
+  getDevelopmentDataDir,
   loadAssessmentStoreFromDisk,
   persistAssessmentStoreToDisk,
   isTestMode,
@@ -72,8 +73,15 @@ export class AssessmentStore {
   }
 
   public setCustomDataDir(dir?: string): void {
-    this.customDataDir = dir;
-    if (dir) {
+    let targetDir = dir;
+    if (isTestMode() && targetDir && path.resolve(targetDir).toLowerCase() === path.resolve(getDevelopmentDataDir()).toLowerCase()) {
+      const testDir = path.resolve(__dirname, '../../../data/test');
+      if (fs.existsSync(testDir)) {
+        targetDir = testDir;
+      }
+    }
+    this.customDataDir = targetDir;
+    if (targetDir) {
       const loaded = this.loadFromDisk();
       if (!loaded) {
         this.assessments.clear();

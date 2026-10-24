@@ -44,11 +44,23 @@ export class Module2CanonicalService {
     }
     if (fs.existsSync(resolved)) return resolved;
 
+    if (filePath.includes('/data/dev/') || filePath.includes('\\data\\dev\\')) {
+      const testPath = filePath.replace(/([/\\])data[/\\]dev[/\\]/i, '$1data$1test$1');
+      if (fs.existsSync(testPath)) return testPath;
+    }
+
     const root = process.cwd();
-    const fn = fileName || '';
+    const baseFn = path.basename(filePath);
+    const fn = fileName || baseFn;
     const candidates = [
       path.resolve(root, filePath), path.resolve(root, 'backend', filePath),
+      path.resolve(store.getDataDir(), filePath), path.resolve(store.getDataDir(), 'assessments', fn),
+      path.resolve(store.getDataDir(), 'assessments', baseFn),
+      path.resolve(__dirname, '../../../data/test/storage', baseFn),
+      path.resolve(__dirname, '../../../data/test/storage', fn),
+      path.resolve(root, 'data/test/storage', baseFn), path.resolve(root, 'data/test/storage', fn),
       path.resolve(root, fn), path.resolve(root, 'backend', fn),
+      path.resolve(root, baseFn), path.resolve(root, 'backend', baseFn),
       path.resolve(root, '..', 'backend', fn), path.resolve(root, '..', fn)
     ];
     const found = candidates.find((c) => fs.existsSync(c));

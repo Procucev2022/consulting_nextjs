@@ -27,7 +27,7 @@ const LEVER_TAB_MAP: Record<number, string> = {
 };
 
 export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
-  assessmentId = 'AIC-2026-0002',
+  assessmentId = '',
   onSelectLever,
   directPriceOppCr
 }) => {
@@ -41,7 +41,7 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
     }));
   };
 
-  const resolvedDirectPriceOpp = directPriceOppCr ?? (assessmentId === 'AIC-2026-0003' ? 8.8873 : 17.1155);
+  const resolvedDirectPriceOpp = directPriceOppCr ?? (assessmentId === 'AIC-2026-0003' ? 8.8873 : (assessmentId === 'AIC-2026-0002' ? 17.1155 : 0));
 
   const renderStatusBadge = (lever: LeverOverviewItem) => {
     if (lever.implementationStatus === 'IMPLEMENTED') {

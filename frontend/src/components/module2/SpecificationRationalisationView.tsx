@@ -17,11 +17,11 @@ import { SpecificationRationalisationReviewModal } from './SpecificationRational
 import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 export const SpecificationRationalisationView: React.FC<SpecificationRationalisationViewProps> = ({
-  assessmentId = 'AIC-2026-0002',
+  assessmentId = '',
   onNavigateBack
 }) => {
   const [data, setData] = useState<SpecificationRationalisationResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!!assessmentId);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'awaiting' | 'verified' | 'rejected' | 'dataGaps'>('all');
   const [selectedCandidate, setSelectedCandidate] = useState<SpecificationCandidateItem | null>(null);
@@ -29,6 +29,11 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const fetchData = useCallback(async () => {
+    if (!assessmentId) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

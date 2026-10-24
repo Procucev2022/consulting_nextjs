@@ -684,7 +684,7 @@ export default function Home() {
                     storedAssessmentId = validated ? validated.assessmentId : list[0].assessmentId;
                   }
                 } catch {
-                  storedAssessmentId = 'AIC-2026-0002';
+                  storedAssessmentId = undefined;
                 }
               }
             }

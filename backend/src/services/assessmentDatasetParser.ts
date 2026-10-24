@@ -91,6 +91,51 @@ function resolveStoreBaseCurrency(options: ParseOptions): void {
   }
 }
 
+function extractPoNumber(r: Record<string, unknown>): string {
+  const keys = ['Purchasing Document', 'Purch.Doc.', 'Purchase Doc.', 'PO Number', 'PO NO', 'PO', 'Document', 'EBELN'];
+  for (const k of keys) {
+    const val = r[k];
+    if (val !== undefined && val !== null && String(val).trim().length > 0) {
+      return String(val).trim();
+    }
+  }
+  return '';
+}
+
+function extractPoItem(r: Record<string, unknown>): string {
+  const keys = ['Item', 'Line Item', 'Line', 'PO Line', 'EBELP'];
+  for (const k of keys) {
+    const val = r[k];
+    if (val !== undefined && val !== null && String(val).trim().length > 0) {
+      return String(val).trim();
+    }
+  }
+  return '';
+}
+
+function countSuspectedDuplicates(rawRows: Record<string, unknown>[]): number {
+  const poLineKeyCount = new Map<string, number>();
+  for (const r of rawRows) {
+    const key = `${extractPoNumber(r)}|${extractPoItem(r)}`;
+    poLineKeyCount.set(key, (poLineKeyCount.get(key) ?? 0) + 1);
+  }
+  return [...poLineKeyCount.values()].reduce((sum, cnt) => sum + Math.max(0, cnt - 1), 0);
+}
+
+function readExcelWorkbook(filePath: string): {
+  rawRows: Record<string, unknown>[];
+  fileSha256: string;
+  sheetNames: string[];
+} {
+  const fileBuf = fs.readFileSync(filePath);
+  const fileSha256 = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
+  const wb = XLSX.read(fileBuf, { type: 'buffer' });
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
+  return { rawRows, fileSha256, sheetNames: wb.SheetNames };
+}
+
 export class AssessmentDatasetParser {
   public static parseDataset(filePath: string, options: ParseOptions): VgtProcessingResult {
     if (isVgtTarget(options)) {
@@ -111,29 +156,9 @@ export class AssessmentDatasetParser {
 
     resolveStoreBaseCurrency(options);
 
-    const fileBuf = fs.readFileSync(filePath);
-    const fileSha256 = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
-    const wb = XLSX.read(fileBuf, { type: 'buffer' });
-    const sheetName = wb.SheetNames[0];
-    const ws = wb.Sheets[sheetName];
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
-
+    const { rawRows, fileSha256, sheetNames } = readExcelWorkbook(filePath);
     const sourceRowCount = rawRows.length;
-
-    // Detect suspected duplicate PO-lines: rows sharing the same Purch.Doc. + Item key.
-    // Only excess rows (count − 1 per group) are flagged; originals are preserved.
-    const poLineKeyCount = new Map<string, number>();
-    for (const r of rawRows) {
-      const key =
-        String(r['Purch.Doc.'] ?? r['Purchase Doc.'] ?? '').trim() +
-        '|' +
-        String(r['Item'] ?? r['Line Item'] ?? '').trim();
-      poLineKeyCount.set(key, (poLineKeyCount.get(key) ?? 0) + 1);
-    }
-    const suspectedDuplicateRowCount = [...poLineKeyCount.values()].reduce(
-      (sum, cnt) => sum + Math.max(0, cnt - 1),
-      0
-    );
+    const suspectedDuplicateRowCount = countSuspectedDuplicates(rawRows);
 
     const aggregated = aggregateDatasetRows(rawRows, filePath, options);
     const {
@@ -194,7 +219,7 @@ export class AssessmentDatasetParser {
         filename: options.fileName || path.basename(filePath),
         sha256: fileSha256,
         sourceRowCount,
-        sheetNames: wb.SheetNames,
+        sheetNames,
         columnsFound: Object.keys(rawRows[0] || {})
       },
       data: {
@@ -266,8 +291,8 @@ export class AssessmentDatasetParser {
       evidence: {
         workbookPath: filePath,
         workbookSha256: fileSha256,
-        sheetsCount: wb.SheetNames.length,
-        sheets: wb.SheetNames
+        sheetsCount: sheetNames.length,
+        sheets: sheetNames
       },
       dataVersion: {
         dataVersionId: options.dataVersionId,
