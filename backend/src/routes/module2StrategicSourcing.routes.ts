@@ -44,12 +44,16 @@ import { Module2CategorySpecialisationController } from '../controllers/module2C
 import { Module2SpecificationRationalisationController } from '../controllers/module2SpecificationRationalisation.controller';
 import { Module2ProcurementComplianceController } from '../controllers/module2ProcurementCompliance.controller';
 import { Module2AlternateSourcingController } from '../controllers/module2AlternateSourcing.controller';
+import { Module2OpportunityRegisterController } from '../controllers/module2OpportunityRegister.controller';
 import { requireFeature } from '../utils/entitlementMiddleware';
 import { FEATURE_PERMISSIONS } from '../constants/subscription';
 
 const router = Router();
 
 router.get('/dashboard', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getDashboardSummary);
+router.get('/executive-dashboard', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), Module2OpportunityRegisterController.getExecutiveDashboard);
+router.get('/opportunity-register', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), Module2OpportunityRegisterController.getOpportunityRegister);
+router.get('/opportunity-register/export-csv', requireFeature(FEATURE_PERMISSIONS.DETAILED_DATA_EXPORT), Module2OpportunityRegisterController.exportOpportunityRegisterCsv);
 router.get('/categories', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getCategoryProfiles);
 router.get('/category/:id', requireFeature(FEATURE_PERMISSIONS.MODULE_2_SUMMARY), getCategoryProfileById);
 router.get('/suppliers', requireFeature(FEATURE_PERMISSIONS.MODULE_2_FULL), getSupplierDeepDive);

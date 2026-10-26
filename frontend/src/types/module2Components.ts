@@ -76,3 +76,12 @@ export interface Module2LeverOverviewProps {
   onSelectLever: (leverCode: string) => void;
   directPriceOppCr?: number;
 }
+
+export interface MaterialOpportunityRegisterViewProps {
+  assessmentId: string;
+}
+
+export interface ExecutiveOpportunityDashboardViewProps {
+  assessmentId: string;
+  onNavigateToRegister?: () => void;
+}

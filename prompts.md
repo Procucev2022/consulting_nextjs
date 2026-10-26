@@ -114516,3 +114516,107 @@ The reconciliation is provisionally accepted. Perform one final, read-only check
 
 Return PASS/FAIL for each check and stop.
 
+---
+
+## Prompt 541
+
+# APPROVED: Borosil Module 2 — Stage 2 Implementation
+
+Customer: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+The final read-only reconciliation gate is accepted. Proceed with Stage 2: Material-Level Opportunity Register and Executive Opportunity Dashboard.
+
+## 1. Mandatory Data Integrity
+
+* Preserve the authoritative Module 1 baseline of ₹556.5346426 Cr across 27,777 included transactions.
+* Do not modify the original source workbook or baseline calculations.
+* Preserve negative returns and credit notes in financial reconciliation.
+* Maintain complete customer and assessment isolation.
+* Use the existing approved material-group mappings and governance flags.
+
+## 2. Build the Material-Level Opportunity Register
+
+Create a traceable register of potential sourcing opportunities covering:
+
+A. Direct Price Improvement
+
+* Compare only genuinely comparable materials.
+* Normalize prices to INR using authoritative transaction-level values.
+* Require compatible material codes, specifications, grades and units.
+* Show comparable supplier prices, quantities, historical spend and price dispersion.
+* Record exclusions and the reason for each exclusion.
+* Do not invent benchmark prices or apply arbitrary savings percentages.
+
+B. Supplier Consolidation
+
+* Identify identical materials sourced from multiple suppliers.
+* Show supplier count, spend, volumes, plants and consolidation rationale.
+* Do not combine services or dissimilar materials.
+* Keep description-matched items without authoritative material codes in review status until approved.
+
+C. Volume and Demand Consolidation
+
+* Identify compatible materials purchased across plants, suppliers or periods.
+* Validate specifications, units, quantities, demand patterns and supply constraints.
+* Distinguish an aggregation candidate from a commercially qualified opportunity.
+* Do not assign savings without a defensible calculation.
+
+D. Specification and Process Review
+
+* Identify potential standardization, specification rationalization and process-improvement candidates.
+* Show the supporting transaction evidence and the validation required.
+* Do not recommend technically unsafe substitutions or assume that different specifications are interchangeable.
+
+## 3. Governance and Evidence
+
+Every opportunity must include:
+
+* Unique opportunity ID.
+* Procurement category and material identifier.
+* Supporting transaction count and historical spend.
+* Suppliers and plants involved, where available.
+* Opportunity type and rationale.
+* Calculation methodology and source fields.
+* Data-quality and comparability checks.
+* Confidence level and review flags.
+* Required procurement action and responsible validation team.
+* Status: Identified, Under Review, Validated, Negotiation, Awarded or Rejected.
+
+Do not mark opportunities Validated, Awarded or Realized without the required evidence and approvals.
+
+## 4. Executive Dashboard
+
+Display:
+
+* Authoritative baseline spend.
+* Direct price-comparison eligible spend.
+* Supplier-consolidation eligible spend.
+* Volume-consolidation candidate spend.
+* Spend requiring material-code or category review.
+* Number of opportunities by type and status.
+* Opportunity values only where a defensible calculation exists.
+* Data limitations, exclusions and validation requirements.
+
+Clearly distinguish overlapping opportunity populations. Do not add overlapping spend or opportunity estimates into a misleading total.
+
+Keep certified and realized savings at ₹0 unless supported by actual evidence.
+
+## 5. Strict Module Boundaries
+
+* Module 3 (PCBI Benchmarking): DO NOT EXECUTE.
+* Module 4 (Savings Engine): DO NOT EXECUTE.
+* Do not import external benchmark curves or generate hypothetical benchmark results.
+* Do not modify Module 1 or unrelated customer assessments.
+
+## 6. Testing and Acceptance
+
+* Add and run relevant automated tests.
+* Test reconciliation, duplicate prevention, comparability, exclusion logic, opportunity overlap and customer isolation.
+* Verify that all opportunity records trace back to source transactions.
+* Verify dashboard figures against backend API results.
+* Confirm the baseline remains unchanged.
+* Report all test results and any unresolved limitations.
+
+Implement Stage 2 only. Stop before executing Modules 3 or 4, and provide a completion report with files changed, test results, reconciliations, sample opportunities and outstanding issues.
+

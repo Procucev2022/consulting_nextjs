@@ -23,6 +23,8 @@ import { ProcurementComplianceView } from './ProcurementComplianceView';
 import { AlternateSourcingView } from './AlternateSourcingView';
 import { Module2LeverOverview } from './Module2LeverOverview';
 import { Module2ConsolidatedSavingsView } from './Module2ConsolidatedSavingsView';
+import { ExecutiveOpportunityDashboardView } from './ExecutiveOpportunityDashboardView';
+import { MaterialOpportunityRegisterView } from './MaterialOpportunityRegisterView';
 import { logger } from '../../utils/logger';
 
 export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = ({
@@ -31,6 +33,8 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const strings = UI_STRINGS.module2Sourcing;
 
   const [activeTab, setActiveTab] = useState<
+    | 'executiveDashboard'
+    | 'opportunityRegister'
     | 'overview'
     | 'consolidatedSavings'
     | 'directPrice'
@@ -43,7 +47,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
     | 'procurementCompliance'
     | 'alternateSourcing'
     | 'strategy'
-  >('overview');
+  >('executiveDashboard');
   const [summary, setSummary] = useState<Module2StrategicSourcingDashboardSummary | null>(null);
   const [profiles, setProfiles] = useState<CategoryStrategicSourcingProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<CategoryStrategicSourcingProfile | null>(null);
@@ -238,6 +242,36 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       <div className="flex items-center overflow-x-auto scrollbar-thin border-b border-slate-200 dark:border-slate-800 gap-1 pb-1">
         <button
           type="button"
+          data-testid="subtab-btn-executiveDashboard"
+          onClick={() => setActiveTab('executiveDashboard')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'executiveDashboard'
+              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Executive Decision Dashboard</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 font-bold">
+            STAGE 2
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-opportunityRegister"
+          onClick={() => setActiveTab('opportunityRegister')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'opportunityRegister'
+              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Material Opportunity Register</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            TRACEABLE
+          </span>
+        </button>
+        <button
+          type="button"
           data-testid="subtab-btn-overview"
           onClick={() => setActiveTab('overview')}
           className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
@@ -423,6 +457,19 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           <span>Category Sourcing Strategy</span>
         </button>
       </div>
+
+      {activeTab === 'executiveDashboard' && (
+        <ExecutiveOpportunityDashboardView
+          assessmentId={effectiveAssessmentId || 'AIC-2026-0002'}
+          onNavigateToRegister={() => setActiveTab('opportunityRegister')}
+        />
+      )}
+
+      {activeTab === 'opportunityRegister' && (
+        <MaterialOpportunityRegisterView
+          assessmentId={effectiveAssessmentId || 'AIC-2026-0002'}
+        />
+      )}
 
       {activeTab === 'overview' && (
         <Module2LeverOverview

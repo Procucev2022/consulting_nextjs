@@ -42,3 +42,5 @@ export * from './ProcurementComplianceReviewModal';
 export * from './ProcurementComplianceTable';
 export * from './Module2ConsolidatedOpportunityTable';
 export * from './Module2ConsolidatedSavingsView';
+export * from './ExecutiveOpportunityDashboardView';
+export * from './MaterialOpportunityRegisterView';
