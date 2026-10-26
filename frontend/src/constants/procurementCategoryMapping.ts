@@ -11,7 +11,7 @@ export const UNMAPPED_CATEGORY_LABEL = 'Unmapped Category';
 export const AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY: Record<string, string> =
   authoritativeMapRaw as Record<string, string>;
 
-export const APPROVED_PROCUREMENT_CATEGORIES: readonly string[] = [
+const BASE_APPROVED_CATEGORIES: string[] = [
   'SERVICES',
   'E&I',
   'PROJECT CAPEX',
@@ -63,5 +63,11 @@ export const APPROVED_PROCUREMENT_CATEGORIES: readonly string[] = [
   'Raw Materials',
   'Equipment',
   'Indirect & MRO',
-  'Logistics & Freight'
+  'Logistics & Freight',
+  'Unclassified / Review Required'
 ];
+
+export const APPROVED_PROCUREMENT_CATEGORIES: readonly string[] = Array.from(
+  new Set([...BASE_APPROVED_CATEGORIES, ...Object.values(AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY)])
+);
+

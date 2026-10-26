@@ -35,36 +35,77 @@ interface InternalGroup {
   txs: StrategicInputTransaction[];
 }
 
-function isTxInvalid(t: StrategicInputTransaction, isDuplicate: boolean): boolean {
+interface IneligibleTracking {
+  eligible: StrategicInputTransaction[];
+  ineligibleCount: number;
+  ineligibleSpend: number;
+  exclusionReasons: Record<string, number>;
+}
+
+interface ExtendedTransaction extends StrategicInputTransaction {
+  normalizedUnitPriceInr?: number;
+}
+
+function getIneligibilityReason(
+  t: StrategicInputTransaction,
+  isDuplicate: boolean
+): string | null {
+  if (isDuplicate) return 'DUPLICATE_TRANSACTION';
+  if ((t.quantity || 0) <= 0) return 'NON_POSITIVE_QUANTITY';
   const spend = t.total_spend_inr || 0;
-  const qty = t.quantity || 0;
-  const price = t.unit_price || 0;
+  if (spend <= 0) return 'RETURN_OR_CREDIT_NOTE';
   const mat = (t.material_code || '').trim();
-  return isDuplicate || qty <= 0 || spend <= 0 || price <= 0 || !mat || mat === 'UNKNOWN_MAT';
+  if (!mat || mat === 'UNKNOWN_MAT') return 'MISSING_MATERIAL_CODE';
+  const curr = (t.currency || 'INR').trim().toUpperCase();
+  if (curr !== 'INR' && spend <= 0) return 'UNKNOWN_CURRENCY_OR_MISSING_FX';
+  return null;
+}
+
+function resolveNormalizedPrice(t: StrategicInputTransaction): number {
+  const qty = t.quantity || 0;
+  const spend = t.total_spend_inr || 0;
+  if (spend > 0 && qty > 0) return spend / qty;
+  const curr = (t.currency || 'INR').trim().toUpperCase();
+  return curr === 'INR' ? (t.unit_price || 0) : 0;
+}
+
+function checkTransactionEligibility(
+  t: StrategicInputTransaction,
+  isDuplicate: boolean
+): { eligible: boolean; reason?: string; unitPriceInr?: number } {
+  const structuralReason = getIneligibilityReason(t, isDuplicate);
+  if (structuralReason) return { eligible: false, reason: structuralReason };
+
+  const unitPriceInr = resolveNormalizedPrice(t);
+  if (unitPriceInr <= 0) return { eligible: false, reason: 'MISSING_OR_INVALID_UNIT_PRICE' };
+  return { eligible: true, unitPriceInr };
 }
 
 function filterEligibleTransactions(
   transactions: StrategicInputTransaction[]
-): { eligible: StrategicInputTransaction[]; ineligibleCount: number; ineligibleSpend: number } {
+): IneligibleTracking {
   const seenSignatures = new Set<string>();
   const eligible: StrategicInputTransaction[] = [];
   let ineligibleCount = 0;
   let ineligibleSpend = 0;
+  const exclusionReasons: Record<string, number> = {};
 
   for (const t of transactions) {
     const sig = buildTransactionSignature(t);
     const isDuplicate = seenSignatures.has(sig);
     seenSignatures.add(sig);
 
-    const spend = t.total_spend_inr || 0;
-    if (isTxInvalid(t, isDuplicate)) {
+    const check = checkTransactionEligibility(t, isDuplicate);
+    if (!check.eligible && check.reason) {
       ineligibleCount++;
-      ineligibleSpend += spend;
+      ineligibleSpend += (t.total_spend_inr || 0);
+      exclusionReasons[check.reason] = (exclusionReasons[check.reason] || 0) + 1;
     } else {
+      (t as ExtendedTransaction).normalizedUnitPriceInr = check.unitPriceInr;
       eligible.push(t);
     }
   }
-  return { eligible, ineligibleCount, ineligibleSpend };
+  return { eligible, ineligibleCount, ineligibleSpend, exclusionReasons };
 }
 
 function groupTransactionsByFyAndItem(
@@ -74,7 +115,7 @@ function groupTransactionsByFyAndItem(
 
   for (const t of transactions) {
     const fy = parseIndianFinancialYear(t.po_date);
-    const compKey = buildComparabilityKey(t.material_code, t.uom, t.currency);
+    const compKey = buildComparabilityKey(t.material_code, t.uom, 'INR');
     const groupKey = `${fy}::${compKey}`;
 
     let g = map.get(groupKey);
@@ -85,7 +126,7 @@ function groupTransactionsByFyAndItem(
         materialDesc: (t.material_desc || '').trim(),
         spendCategory: (t.spend_category || 'General').trim(),
         uom: (t.uom || 'UNKNOWN').trim().toUpperCase(),
-        currency: (t.currency || 'INR').trim().toUpperCase(),
+        currency: 'INR',
         txs: []
       };
       map.set(groupKey, g);
@@ -97,7 +138,14 @@ function groupTransactionsByFyAndItem(
 }
 
 function buildItemOpportunity(groupKey: string, g: InternalGroup): DirectPriceItemOpportunity {
-  const prices = g.txs.map((t) => t.unit_price || 0);
+  const prices = g.txs.map((t) => {
+    const ext = t as ExtendedTransaction;
+    if (ext.normalizedUnitPriceInr && ext.normalizedUnitPriceInr > 0) {
+      return ext.normalizedUnitPriceInr;
+    }
+    const qty = t.quantity || 0;
+    return t.total_spend_inr && qty > 0 ? t.total_spend_inr / qty : (t.unit_price || 0);
+  });
   const lowestPrice = Math.min(...prices);
   const highestPrice = Math.max(...prices);
   const distinctPrices = new Set(prices).size;
@@ -154,7 +202,8 @@ export class Module2DirectPriceImprovementEngine {
     options?: DirectPriceQueryOptions
   ): DirectPriceImprovementResult {
     const canonical = Module2CanonicalService.getCanonicalInput(assessmentId);
-    const { eligible, ineligibleCount, ineligibleSpend } = filterEligibleTransactions(canonical.transactions);
+    const { eligible, ineligibleCount, ineligibleSpend, exclusionReasons } =
+      filterEligibleTransactions(canonical.transactions);
     const groupsMap = groupTransactionsByFyAndItem(eligible);
 
     const allItems: DirectPriceItemOpportunity[] = [];
@@ -259,6 +308,7 @@ export class Module2DirectPriceImprovementEngine {
       categoriesAnalysedCount: categorySummaries.length,
       categoriesRequiringReviewCount: categoriesRequiringReview,
       certificationNotice: DIRECT_PRICE_CONFIG.CERTIFICATION_NOTICE,
+      exclusionReasonsBreakdown: exclusionReasons,
       fySummaries,
       categorySummaries,
       items: filteredItems

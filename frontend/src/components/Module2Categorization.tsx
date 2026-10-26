@@ -210,20 +210,54 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     let packaging = 0;
     let logistics = 0;
     let mro = 0;
+    let unclassified = 0;
     let total = 0;
 
     lineItems.forEach((it) => {
       const spend = it.inr_crores ?? (it.total_spend ? it.total_spend / 10000000 : 0);
       total += spend;
       const bucket = it.core_bucket || '';
-      if (bucket === 'Direct Materials') {
+      if (bucket === 'Direct Materials' || bucket.startsWith('Direct Materials') || bucket === 'Chemicals' || bucket === 'Raw Materials') {
         direct += spend;
-      } else if (bucket === 'Packaging Materials') {
+      } else if (bucket === 'Packaging Materials' || bucket.startsWith('Packaging Materials') || bucket === 'Packing' || bucket === 'PACKING') {
         packaging += spend;
-      } else if (bucket === 'Logistics & Freight') {
+      } else if (bucket === 'Logistics & Freight' || bucket.startsWith('Logistics & Freight')) {
         logistics += spend;
-      } else {
+      } else if (bucket === 'Indirect & MRO' || bucket === 'General Plant MRO' || bucket.includes('Spares') || bucket.includes('Maintenance')) {
         mro += spend;
+      } else if (bucket === 'Unclassified / Review Required' || bucket === 'Unmapped Category' || !bucket) {
+        unclassified += spend;
+      } else {
+        const upper = bucket.toUpperCase();
+        if (upper.includes('PACK')) {
+          packaging += spend;
+        } else if (upper.includes('FREIGHT') || upper.includes('LOGISTIC') || upper.includes('TRANSPORT')) {
+          logistics += spend;
+        } else if (
+          upper.includes('SPARE') ||
+          upper.includes('MAINT') ||
+          upper.includes('MRO') ||
+          upper.includes('SERVICE') ||
+          upper.includes('CAPEX') ||
+          upper.includes('ADMIN') ||
+          upper.includes('HARDWARE') ||
+          upper.includes('LUBRICANT') ||
+          upper.includes('SAFETY')
+        ) {
+          mro += spend;
+        } else if (
+          upper.includes('CHEMICAL') ||
+          upper.includes('RAW') ||
+          upper.includes('DIRECT') ||
+          upper.includes('GLASS') ||
+          upper.includes('MINERAL') ||
+          upper.includes('FUEL') ||
+          upper.includes('BATCH')
+        ) {
+          direct += spend;
+        } else {
+          unclassified += spend;
+        }
       }
     });
 
@@ -237,6 +271,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       logisticsPct: total > 0 ? Number(((logistics / safeTotal) * 100).toFixed(1)) : 0,
       mroCr: Number(mro.toFixed(2)),
       mroPct: total > 0 ? Number(((mro / safeTotal) * 100).toFixed(1)) : 0,
+      unclassifiedCr: Number(unclassified.toFixed(2)),
+      unclassifiedPct: total > 0 ? Number(((unclassified / safeTotal) * 100).toFixed(1)) : 0,
       totalSpendCr: Number(total.toFixed(2))
     };
   }, [lineItems]);
@@ -542,6 +578,23 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 ))}
               </div>
             </div>
+
+            {actualBucketSpend.unclassifiedCr > 0 && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Unclassified / Review Required</span>
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300">
+                    ₹{actualBucketSpend.unclassifiedCr.toFixed(2)} Cr ({actualBucketSpend.unclassifiedPct}%)
+                  </span>
+                </div>
+                <div className="text-[10px] text-amber-800 leading-tight">
+                  Uncertain classifications flagged for human procurement review rather than forced into MRO.
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

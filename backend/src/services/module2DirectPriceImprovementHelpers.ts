@@ -84,6 +84,38 @@ export function classifyItemQualification(
   return { status: 'QUALIFIED', warnings: [] };
 }
 
+function getTxEffectivePrice(t: StrategicInputTransaction): number {
+  const norm = (t as { normalizedUnitPriceInr?: number }).normalizedUnitPriceInr;
+  if (norm && norm > 0) return norm;
+  const qty = t.quantity || 0;
+  return t.total_spend_inr && qty > 0 ? t.total_spend_inr / qty : (t.unit_price || 0);
+}
+
+function mapSupplierEntry(
+  code: string,
+  e: { name: string; count: number; qty: number; spend: number; prices: number[] },
+  lowestPrice: number
+): SupplierPriceComparison {
+  const minP = Math.min(...e.prices);
+  const maxP = Math.max(...e.prices);
+  const weightedAvg = e.qty > 0 ? e.spend / e.qty : minP;
+  const benchSpend = e.qty * lowestPrice;
+  const lostOpp = Math.max(0, e.spend - benchSpend);
+
+  return {
+    supplierCode: code,
+    supplierName: e.name,
+    transactionCount: e.count,
+    totalQuantity: Math.round(e.qty * 1000) / 1000,
+    totalSpendInr: Math.round(e.spend * 100) / 100,
+    weightedAveragePrice: Math.round(weightedAvg * 100) / 100,
+    lowestUnitPrice: Math.round(minP * 100) / 100,
+    highestUnitPrice: Math.round(maxP * 100) / 100,
+    historicalLostOpportunityInr: Math.round(lostOpp * 100) / 100,
+    isLowestPriceSupplier: minP === lowestPrice
+  };
+}
+
 export function buildSupplierComparisons(
   txs: StrategicInputTransaction[],
   lowestPrice: number
@@ -105,34 +137,17 @@ export function buildSupplierComparisons(
       map.set(code, entry);
     }
     const qty = t.quantity || 0;
-    const price = t.unit_price || 0;
-    const spend = qty * price;
+    const price = getTxEffectivePrice(t);
+    const spend = t.total_spend_inr ?? (qty * price);
     entry.count++;
     entry.qty += qty;
     entry.spend += spend;
     entry.prices.push(price);
   }
 
-  return Array.from(map.entries()).map(([code, e]) => {
-    const minP = Math.min(...e.prices);
-    const maxP = Math.max(...e.prices);
-    const weightedAvg = e.qty > 0 ? e.spend / e.qty : minP;
-    const benchSpend = e.qty * lowestPrice;
-    const lostOpp = Math.max(0, e.spend - benchSpend);
-
-    return {
-      supplierCode: code,
-      supplierName: e.name,
-      transactionCount: e.count,
-      totalQuantity: Math.round(e.qty * 1000) / 1000,
-      totalSpendInr: Math.round(e.spend * 100) / 100,
-      weightedAveragePrice: Math.round(weightedAvg * 100) / 100,
-      lowestUnitPrice: Math.round(minP * 100) / 100,
-      highestUnitPrice: Math.round(maxP * 100) / 100,
-      historicalLostOpportunityInr: Math.round(lostOpp * 100) / 100,
-      isLowestPriceSupplier: minP === lowestPrice
-    };
-  }).sort((a, b) => b.totalSpendInr - a.totalSpendInr);
+  return Array.from(map.entries())
+    .map(([code, e]) => mapSupplierEntry(code, e, lowestPrice))
+    .sort((a, b) => b.totalSpendInr - a.totalSpendInr);
 }
 
 export function buildPlantComparisons(
@@ -154,8 +169,8 @@ export function buildPlantComparisons(
       map.set(plant, entry);
     }
     const qty = t.quantity || 0;
-    const price = t.unit_price || 0;
-    const spend = qty * price;
+    const price = getTxEffectivePrice(t);
+    const spend = t.total_spend_inr ?? (qty * price);
     entry.count++;
     entry.qty += qty;
     entry.spend += spend;
@@ -195,12 +210,44 @@ export function computeGroupTotals(txs: StrategicInputTransaction[]): {
     suppliersSet.add((t.vendor_code || t.vendor_name || 'UNKNOWN').trim());
     plantsSet.add((t.plant || 'DEFAULT_PLANT').trim());
     const q = t.quantity || 0;
-    const p = t.unit_price || 0;
+    const p = getTxEffectivePrice(t);
     totalQty += q;
-    actualCost += (q * p);
+    actualCost += (t.total_spend_inr ?? (q * p));
   }
 
   return { suppliersSet, plantsSet, totalQty, actualCost };
+}
+
+function mapSingleDirectPriceRecord(
+  t: StrategicInputTransaction,
+  idx: number,
+  fy: string,
+  lowestPrice: number,
+  qualification: { status: ItemQualificationStatus; warnings: string[] }
+): DirectPriceTransactionRecord {
+  const q = t.quantity || 0;
+  const p = getTxEffectivePrice(t);
+  const spend = t.total_spend_inr || (q * p);
+  const bCost = q * lowestPrice;
+  const opp = Math.max(0, (p - lowestPrice) * q);
+  return {
+    id: t.id || `TX-${fy}-${idx + 1}`,
+    poNumber: t.po_number || 'N/A',
+    poDate: t.po_date || 'N/A',
+    financialYear: fy,
+    supplierName: t.vendor_name || 'Unknown Supplier',
+    supplierCode: t.vendor_code || 'UNKNOWN',
+    plantCode: t.plant || 'DEFAULT_PLANT',
+    quantity: Math.round(q * 1000) / 1000,
+    unitPrice: Math.round(p * 100) / 100,
+    totalSpendInr: Math.round(spend * 100) / 100,
+    benchmarkUnitPrice: Math.round(lowestPrice * 100) / 100,
+    benchmarkCostInr: Math.round(bCost * 100) / 100,
+    historicalLostOpportunityInr: Math.round(opp * 100) / 100,
+    isBenchmarkTransaction: p === lowestPrice,
+    qualificationStatus: qualification.status,
+    warning: qualification.warnings[0]
+  };
 }
 
 export function mapDirectPriceTransactionRecords(
@@ -209,29 +256,7 @@ export function mapDirectPriceTransactionRecords(
   lowestPrice: number,
   qualification: { status: ItemQualificationStatus; warnings: string[] }
 ): DirectPriceTransactionRecord[] {
-  return txs.map((t, idx) => {
-    const q = t.quantity || 0;
-    const p = t.unit_price || 0;
-    const spend = t.total_spend_inr || (q * p);
-    const bCost = q * lowestPrice;
-    const opp = Math.max(0, (p - lowestPrice) * q);
-    return {
-      id: t.id || `TX-${fy}-${idx + 1}`,
-      poNumber: t.po_number || 'N/A',
-      poDate: t.po_date || 'N/A',
-      financialYear: fy,
-      supplierName: t.vendor_name || 'Unknown Supplier',
-      supplierCode: t.vendor_code || 'UNKNOWN',
-      plantCode: t.plant || 'DEFAULT_PLANT',
-      quantity: Math.round(q * 1000) / 1000,
-      unitPrice: Math.round(p * 100) / 100,
-      totalSpendInr: Math.round(spend * 100) / 100,
-      benchmarkUnitPrice: Math.round(lowestPrice * 100) / 100,
-      benchmarkCostInr: Math.round(bCost * 100) / 100,
-      historicalLostOpportunityInr: Math.round(opp * 100) / 100,
-      isBenchmarkTransaction: p === lowestPrice,
-      qualificationStatus: qualification.status,
-      warning: qualification.warnings[0]
-    };
-  }).sort((a, b) => b.historicalLostOpportunityInr - a.historicalLostOpportunityInr);
+  return txs
+    .map((t, idx) => mapSingleDirectPriceRecord(t, idx, fy, lowestPrice, qualification))
+    .sort((a, b) => b.historicalLostOpportunityInr - a.historicalLostOpportunityInr);
 }

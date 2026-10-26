@@ -27,7 +27,6 @@ import {
 } from '../constants/assessment';
 import {
   getAuthoritativeDataDir,
-  getDevelopmentDataDir,
   loadAssessmentStoreFromDisk,
   persistAssessmentStoreToDisk,
   isTestMode,

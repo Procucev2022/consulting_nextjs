@@ -114350,3 +114350,169 @@ Return:
 * Any remaining limitations.
 
 Stop after Stage 1 and await approval before proceeding to the next stage.
+
+---
+
+## Prompt 538
+
+# Borosil Module 2 — Stage 1 Final Reconciliation Gate
+
+Stage 1 remediation is provisionally accepted. Before Stage 2, perform a focused, read-only verification of the implemented changes.
+
+Assessment: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+Do not modify code or data during this audit.
+
+### 1. Detailed category accuracy
+
+Produce a transaction-level reconciliation showing all 133 Borosil material groups, with:
+
+* Original SAP material group code and description.
+* Mapped procurement category.
+* Transaction count.
+* Net spend in INR crores.
+* Percentage of the ₹556.5347 Cr baseline.
+* Mapping confidence and any review flags.
+
+Confirm that CAPEX, fuel, services, laboratory materials, engineering spares, refractory, safety, utilities and other meaningful procurement categories remain identifiable in the detailed breakdown.
+
+Do not infer classification accuracy from a balanced total alone.
+
+### 2. Currency-normalized price comparisons
+
+Inspect representative INR and foreign-currency transactions. Verify that:
+
+* Unit prices use the correct transaction-level INR amount and positive quantity.
+* Returns and credit notes are excluded from ordinary unit-price comparisons.
+* Incompatible units, grades and specifications are not compared.
+* Missing or unreliable data results in exclusion or review, not a fabricated price.
+
+### 3. Supplier consolidation
+
+Confirm that no empty material code produces a combined same-material opportunity. Review the handling of missing-code physical materials and services.
+
+### 4. Metric-tonne aggregation
+
+Verify the Soda Ash example against source transactions:
+
+* Valid quantity and UOM.
+* Material and grade comparability.
+* Supplier and plant coverage.
+* Spend reconciliation.
+* Whether the output is a genuine sourcing opportunity or only a candidate requiring commercial validation.
+
+Do not call an aggregation candidate a savings result without a defensible calculation.
+
+### 5. Integrity checks
+
+Confirm:
+
+* Module 1 baseline remains ₹556.5347 Cr across 27,777 included transactions.
+* Original source data and exclusions are unchanged.
+* Other customer assessments remain isolated.
+* Modules 3 and 4 remain unexecuted.
+* No savings are represented as validated, negotiated or realized without evidence.
+
+### Deliverable
+
+Return the detailed category table, exceptions, reconciliation results and PASS/FAIL for each check.
+
+This is a read-only audit. Do not implement Stage 2 or modify files. Stop after reporting.
+
+---
+
+## Prompt 539
+
+Assessment: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+The Stage 1 report is provisionally accepted, but Stage 2 is NOT approved yet.
+
+Perform a final, strictly read-only reconciliation of the existing audit report against the underlying transaction-level data.
+
+### 1. Resolve financial discrepancies
+
+Reconcile the following:
+
+* Authoritative baseline: ₹556.5347 Cr
+* Procurement domain table: ₹556.5346 Cr
+* 133-material-group table: ₹556.5350 Cr
+
+Calculate the exact variance in INR and paise using unrounded source values. Identify the precise source of every discrepancy. Do not adjust or overwrite the authoritative Module 1 baseline to force a match.
+
+### 2. Resolve exclusion-count discrepancies
+
+Reconcile the counts and spend for:
+
+* Missing material codes
+* Non-positive quantities
+* Returns and credit notes
+* Other price-comparison exclusions
+
+Show whether these exclusion reasons are mutually exclusive or overlapping. Provide record counts and spend for each reason, plus the eligible population.
+
+Every included or excluded transaction must be accounted for exactly once in the final reconciliation, unless overlapping diagnostic flags are explicitly identified separately.
+
+### 3. Validate material-group mappings
+
+For all 133 SAP material groups, report:
+
+* Original code and description
+* Mapped procurement category
+* Transaction count and net spend
+* Evidence supporting the mapping
+* Confidence level and review requirement
+
+Do not automatically assign 100% confidence merely because a mapping exists. Flag ambiguous, inferred, or potentially misclassified groups for review.
+
+### 4. Verify the audit calculations
+
+Recalculate all category totals, percentages, exclusion totals and eligible-spend figures from the underlying records. Use unrounded amounts for calculations and round only for display.
+
+### 5. Preserve boundaries
+
+* Do not modify code, source data, mappings, or Module 1 results.
+* Do not execute Module 3 (PCBI) or Module 4 (Savings Engine).
+* Keep certified savings at ₹0 unless independently supported by actual evidence.
+* Do not implement Stage 2.
+
+### Deliverable
+
+Return a concise discrepancy register showing:
+
+* Reported value
+* Recalculated value
+* Variance
+* Root cause
+* PASS/FAIL
+
+Then provide an explicit final gate decision: PASS or FAIL for Stage 2 readiness.
+
+Stop after reporting. Wait for my approval.
+
+---
+
+## Prompt 540
+
+Assessment: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+The reconciliation is provisionally accepted. Perform one final, read-only check before Stage 2 approval.
+
+1. Confirm that the ₹556.5346426 Cr Module 1 net baseline continues to include negative returns and credit notes exactly as originally recorded.
+2. Confirm that excluding returns from direct unit-price comparisons does not remove their credits from the financial baseline or category-spend reconciliation.
+3. Confirm that the four mutually exclusive direct-price eligibility populations reconcile exactly to all 27,777 included transactions and ₹5,565,346,426.19.
+4. Ensure the report distinguishes:
+
+   * Financial baseline inclusion
+   * Direct price-comparison eligibility
+   * Supplier-consolidation eligibility
+   * Savings certification
+5. Confirm that the five material groups flagged for review remain visible in Module 2 and are not silently treated as fully validated opportunities.
+6. Do not modify Module 1, source data, material mappings, or other customer assessments.
+7. Do not execute Module 3 or Module 4.
+8. Do not implement Stage 2 or claim savings.
+
+Return PASS/FAIL for each check and stop.
+

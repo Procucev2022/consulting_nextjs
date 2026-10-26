@@ -40,6 +40,22 @@ function resolveUnspscClassification(t: StrategicInputTransaction): UnspscClassi
   };
 }
 
+const MRO_REGEX = /SPARE|MAINT|MRO|SERVICE|ADMIN|CAPEX|HARDWARE|LUBRICANT|SAFETY|ELECTRICAL|MECHANICAL/i;
+const DIRECT_REGEX = /CHEMICAL|RAW|DIRECT|GLASS|MINERAL|FUEL|GAS|BATCH/i;
+const LOGISTICS_REGEX = /FREIGHT|LOGISTIC|TRANSPORT/i;
+
+const resolveCoreBucket = (humanCat: string): string => {
+  const upper = humanCat.toUpperCase();
+  if (upper.includes('UNCLASSIFIED') || upper.includes('UNMAPPED') || upper.includes('REVIEW REQUIRED')) {
+    return 'Unclassified / Review Required';
+  }
+  if (upper.includes('PACK')) return 'Packaging Materials';
+  if (LOGISTICS_REGEX.test(upper)) return 'Logistics & Freight';
+  if (MRO_REGEX.test(upper)) return 'Indirect & MRO';
+  if (DIRECT_REGEX.test(upper)) return 'Direct Materials';
+  return 'Unclassified / Review Required';
+};
+
 const mapTxToLineItem = (t: StrategicInputTransaction, idx: number, offset: number): StrategicLineItemDto => {
   const globalIdx = offset + idx + 1;
   const yearParsed = Number(t.po_date?.slice(0, 4));
@@ -61,7 +77,7 @@ const mapTxToLineItem = (t: StrategicInputTransaction, idx: number, offset: numb
     unspsc_commodity_title: unspscTitle,
     unspsc_class_title: unspscClass,
     unspsc_category_name: humanCat,
-    core_bucket: humanCat,
+    core_bucket: resolveCoreBucket(humanCat),
     inr_crores: Number((spend / 10000000).toFixed(6)),
     total_spend: spend,
     qty: t.quantity ?? 1,

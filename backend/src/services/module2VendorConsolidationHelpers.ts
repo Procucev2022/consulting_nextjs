@@ -185,6 +185,28 @@ function buildSingleSameMaterialOpportunity(
   };
 }
 
+const SERVICE_REGEX = /SERVICE|AUDIT|CONSULT|HIRING|CHARGE/i;
+const GENERIC_WORDS_SET = new Set([
+  'MISC', 'MISCELLANEOUS', 'GENERAL', 'ITEM', 'GOODS', 'PURCHASE', 'EXPENSE', 'CHARGES'
+]);
+
+function resolveTransactionGroupKey(t: StrategicInputTransaction, spendCategory: string): string | null {
+  const rawMat = (t.material_code || '').trim();
+  if (rawMat && rawMat !== 'UNKNOWN_MAT') {
+    return rawMat;
+  }
+  const desc = (t.material_desc || '').trim();
+  const cat = (t.spend_category || spendCategory || '');
+  if (SERVICE_REGEX.test(cat) || SERVICE_REGEX.test(desc)) {
+    return null;
+  }
+  const cleanDesc = desc.replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase();
+  if (cleanDesc.length >= 6 && !GENERIC_WORDS_SET.has(cleanDesc)) {
+    return `DESC::${spendCategory}::${cleanDesc}`;
+  }
+  return null;
+}
+
 export function evaluateSameMaterialOpportunities(
   txs: StrategicInputTransaction[],
   spendCategory: string,
@@ -193,24 +215,36 @@ export function evaluateSameMaterialOpportunities(
   materialMappingMap?: Map<string, MaterialMappingEntry>
 ): SameMaterialOpportunity[] {
   const itemMap = new Map<string, StrategicInputTransaction[]>();
+
   for (const t of txs) {
-    const mat = (t.material_code ?? 'UNKNOWN_MAT').trim();
-    if (mat === 'UNKNOWN_MAT') continue;
-    let list = itemMap.get(mat);
+    const groupKey = resolveTransactionGroupKey(t, spendCategory);
+    if (!groupKey) continue;
+
+    let list = itemMap.get(groupKey);
     if (!list) {
       list = [];
-      itemMap.set(mat, list);
+      itemMap.set(groupKey, list);
     }
     list.push(t);
   }
 
   const results: SameMaterialOpportunity[] = [];
   const meta = { spendCategory, unspscCode, unspscCategory };
-  for (const [matCode, mtxs] of itemMap.entries()) {
-    const vendors = new Set(mtxs.map(t => (t.vendor_code ?? t.vendor_name).trim()));
+  for (const [groupKey, mtxs] of itemMap.entries()) {
+    const vendors = new Set(mtxs.map((t) => (t.vendor_code ?? t.vendor_name).trim()));
     if (vendors.size >= VENDOR_CONSOLIDATION_CONFIG.MIN_SUPPLIERS_FOR_MULTI_SOURCING) {
+      const isMissingCode = groupKey.startsWith('DESC::');
+      const matCode = isMissingCode
+        ? `DESC_MATCH_${mtxs[0].material_desc?.slice(0, 16).trim() || 'UNCODED'}`
+        : groupKey;
       const mapping = materialMappingMap?.get(matCode);
-      results.push(buildSingleSameMaterialOpportunity(matCode, mtxs, meta, mapping));
+      const opp = buildSingleSameMaterialOpportunity(matCode, mtxs, meta, mapping);
+      if (isMissingCode) {
+        opp.classificationReviewStatus = 'AWAITING_REVIEW';
+        opp.opportunityReason =
+          `Missing material code: Grouped conservatively by normalized description & category match with review flag. (${vendors.size} suppliers).`;
+      }
+      results.push(opp);
     }
   }
 

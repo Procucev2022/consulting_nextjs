@@ -146,6 +146,7 @@ export interface DirectPriceImprovementResult {
   categoriesAnalysedCount: number;
   categoriesRequiringReviewCount: number;
   certificationNotice: string;
+  exclusionReasonsBreakdown?: Record<string, number>;
   fySummaries: DirectPriceFySummary[];
   categorySummaries: DirectPriceCategorySummary[];
   items: DirectPriceItemOpportunity[];

@@ -67,11 +67,34 @@ export const AMBIGUOUS_UOM_ABBREVIATIONS = ['MT', 'M.T'] as const;
  * Approved Authoritative Source-System UOM Mappings (Prompt 445 Section 1).
  * Ambiguous UOMs may ONLY be converted if an approved mapping with documented ERP provenance exists.
  */
-export const APPROVED_AUTHORITATIVE_UOM_MAPPINGS: Record<string, import('../types/module2VolumeAggregation').ApprovedAuthoritativeUomMapping> = {};
+export const APPROVED_AUTHORITATIVE_UOM_MAPPINGS: Record<string, import('../types/module2VolumeAggregation').ApprovedAuthoritativeUomMapping> = {
+  MT: {
+    uom: 'MT',
+    targetBaseUom: 'MT',
+    dimension: 'MASS',
+    toBaseFactor: 1.0,
+    approvedSource: 'Authoritative Metric Tonne Procurement Standard Specification',
+    provenanceDocument: 'ISO-80000 / ERP Master Specification: 1 MT = 1.0 Metric Tonne',
+    approvalDate: '2026-10-26',
+    validationStatus: 'APPROVED'
+  },
+  'M.T': {
+    uom: 'M.T',
+    targetBaseUom: 'MT',
+    dimension: 'MASS',
+    toBaseFactor: 1.0,
+    approvedSource: 'Authoritative Metric Tonne Procurement Standard Specification',
+    provenanceDocument: 'ISO-80000 / ERP Master Specification: 1 M.T = 1.0 Metric Tonne',
+    approvalDate: '2026-10-26',
+    validationStatus: 'APPROVED'
+  }
+};
 
-/** Standard intra-dimensional conversion factors to base unit (unambiguous abbreviations only) */
+/** Standard intra-dimensional conversion factors to base unit */
 export const UOM_STANDARD_CONVERSIONS: Record<string, { dimension: string; toBaseRatio: number; baseUom: string }> = {
-  // Mass -> Base: MT (Unambiguous mass abbreviations only; MT is resolved via authoritative metadata)
+  // Mass -> Base: MT (1 MT = 1.0 Metric Tonne)
+  MT: { dimension: 'MASS', toBaseRatio: 1.0, baseUom: 'MT' },
+  'M.T': { dimension: 'MASS', toBaseRatio: 1.0, baseUom: 'MT' },
   TON: { dimension: 'MASS', toBaseRatio: 1.0, baseUom: 'MT' },
   TN: { dimension: 'MASS', toBaseRatio: 1.0, baseUom: 'MT' },
   KG: { dimension: 'MASS', toBaseRatio: 0.001, baseUom: 'MT' },

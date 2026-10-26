@@ -309,9 +309,9 @@ describe('Module 2 — Direct Price Improvement Engine', () => {
     expect(result.customerName).toBe('PQR Cement Ltd');
   });
 
-  it('resolves customerName for ABC Textile Ltd (AIC-2026-0002)', async () => {
+  it('resolves customerName for Borosil Ltd (AIC-2026-0002)', async () => {
     const result = await Module2DirectPriceImprovementEngine.calculate('AIC-2026-0002');
-    expect(result.customerName).toBe('ABC Textile Ltd');
+    expect(result.customerName).toBe('Borosil Ltd');
   });
 
   it('distinguishes legitimate distinct PO line items and excludes genuine ingestion duplicates', async () => {
