@@ -89,7 +89,7 @@ describe('step2VendorConsolidation', () => {
     expect(calculateVendorConsolidation(undefined as unknown as LineItemMapping[])).toEqual([]);
   });
 
-  it('calculates vendor consolidation groups with >= 2 suppliers', () => {
+  it('calculates vendor consolidation groups with >= 2 suppliers (unquantified savings when unit rates are identical)', () => {
     const results = calculateVendorConsolidation(sampleItems);
     expect(results.length).toBe(1);
     expect(results[0].total_spend_inr_cr).toBe(7.5);
@@ -98,7 +98,53 @@ describe('step2VendorConsolidation', () => {
     expect(results[0].suppliers[0].status).toBe('Primary');
     expect(results[0].suppliers[1].status).toBe('Incumbent');
     expect(results[0].suppliers[2].status).toBe('Spot / Peripheral');
+    // All 3 suppliers in sampleItems have identical unit_price (500) -> 0 savings derived, not fabricated from rank
+    expect(results[0].est_volume_savings_cr).toBe(0);
+    expect(results[0].price_variance_pct).toBe(0);
+    expect(results[0].suppliers.every(s => s.unit_rate_index === 1.0)).toBe(true);
+  });
+
+  it('calculates genuine savings when actual unit price differentials exist across suppliers', () => {
+    const itemsWithDelta: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 500,
+        qty: 5000,
+        inr_crores: 2.5
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 550,
+        qty: 7000,
+        inr_crores: 3.85
+      },
+      {
+        ...sampleItems[2],
+        unit_price: 600,
+        qty: 3000,
+        inr_crores: 1.8
+      }
+    ];
+    const results = calculateVendorConsolidation(itemsWithDelta);
+    expect(results.length).toBe(1);
     expect(results[0].est_volume_savings_cr).toBeGreaterThan(0);
+    expect(results[0].price_variance_pct).toBeGreaterThan(0);
+  });
+
+  it('guarantees that supplier rank cannot determine an assumed price premium', () => {
+    // 3 suppliers with identical prices but sorted in different rank orders
+    const uniformItems: LineItemMapping[] = [
+      { ...sampleItems[0], vendor_identified: 'Vendor A', unit_price: 1000, qty: 1000, inr_crores: 0.1 },
+      { ...sampleItems[1], vendor_identified: 'Vendor B', unit_price: 1000, qty: 1000, inr_crores: 0.2 },
+      { ...sampleItems[2], vendor_identified: 'Vendor C', unit_price: 1000, qty: 1000, inr_crores: 0.3 }
+    ];
+    const results = calculateVendorConsolidation(uniformItems);
+    expect(results[0].est_volume_savings_cr).toBe(0);
+    expect(results[0].est_volume_savings_pct).toBe(0);
+    // Unit rate indices must remain 1.0, not inflated by (sIdx * 0.03)
+    results[0].suppliers.forEach(s => {
+      expect(s.unit_rate_index).toBe(1.0);
+    });
   });
 
   it('calculates vendor consolidation summary', () => {
@@ -108,8 +154,8 @@ describe('step2VendorConsolidation', () => {
     expect(summary.categoriesCount).toBe(1);
     expect(summary.totalActiveVendors).toBe(3);
     expect(summary.avgVendorsPerCategory).toBe(3);
-    expect(summary.potentialVolumeSavingsCr).toBeGreaterThan(0);
-    expect(summary.avgSavingsPct).toBeGreaterThan(0);
+    expect(summary.potentialVolumeSavingsCr).toBe(0);
+    expect(summary.avgSavingsPct).toBe(0);
   });
 
   it('calculates empty summary when items are empty', () => {
@@ -117,6 +163,78 @@ describe('step2VendorConsolidation', () => {
     expect(summary.totalFragmentedSpendCr).toBe(0);
     expect(summary.avgVendorsPerCategory).toBe(0);
     expect(summary.avgSavingsPct).toBe(0);
+  });
+
+  it('computes tail excess spend when supplier has zero totalUnits but higher price', () => {
+    const items: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 100,
+        qty: 1000,
+        inr_crores: 1.0,
+        vendor_identified: 'Vendor Baseline'
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 150,
+        qty: 0,
+        total_spend: 15000000,
+        inr_crores: 1.5,
+        vendor_identified: 'Vendor ZeroUnits'
+      }
+    ];
+    const results = calculateVendorConsolidation(items);
+    expect(results.length).toBe(1);
+    expect(results[0].est_volume_savings_cr).toBeGreaterThan(0);
+  });
+
+  it('derives effective price from spend and total units when unit_price is falsy', () => {
+    const items: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 100,
+        qty: 1000,
+        inr_crores: 1.0,
+        vendor_identified: 'Vendor A'
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 0 as any,
+        qty: 2000,
+        total_spend: 20000000,
+        inr_crores: 2.0,
+        vendor_identified: 'Vendor B Derived'
+      }
+    ];
+    const results = calculateVendorConsolidation(items);
+    expect(results.length).toBe(1);
+    const derivedSupplier = results[0].suppliers.find(s => s.vendor_name === 'Vendor B Derived');
+    expect(derivedSupplier).toBeDefined();
+    expect(derivedSupplier?.unit_rate_index).toBe(100);
+  });
+
+  it('handles zero total spend group returning 0% savings', () => {
+    const items: LineItemMapping[] = [
+      {
+        ...sampleItems[0],
+        unit_price: 100,
+        qty: 0,
+        total_spend: 0,
+        inr_crores: 0,
+        vendor_identified: 'Zero Vendor A'
+      },
+      {
+        ...sampleItems[1],
+        unit_price: 100,
+        qty: 0,
+        total_spend: 0,
+        inr_crores: 0,
+        vendor_identified: 'Zero Vendor B'
+      }
+    ];
+    const results = calculateVendorConsolidation(items);
+    expect(results.length).toBe(1);
+    expect(results[0].est_volume_savings_pct).toBe(0);
   });
 });
 
@@ -303,7 +421,7 @@ describe('step2VendorConsolidation extended branch coverage (lines 112-116, 125,
   // Need 3+ suppliers in same group so sortedSuppliersList.slice(1) runs with more entries
   // and the tail excess spend loops multiple times, exercising lines 121-122
 
-  it('calculates tail excess spend across 3 suppliers (exercises slice(1) loop and sIdx branches)', () => {
+  it('calculates tail excess spend across 3 suppliers with demonstrable unit price differentials', () => {
     const items = [
       {
         mapping_id: 'M-V1', line_item_id: 'L-V1',
@@ -311,6 +429,7 @@ describe('step2VendorConsolidation extended branch coverage (lines 112-116, 125,
         core_bucket: 'Direct Materials',
         vendor_identified: 'Tata Steel', master_supplier_id: 'VND-TS',
         inr_crores: 8.0, status: 'Confirmed', ai_confidence: 93,
+        unit_price: 1000, qty: 80000,
         po_number: 'PO-S1', invoice_date: '2024-04-01'
       },
       {
@@ -318,7 +437,8 @@ describe('step2VendorConsolidation extended branch coverage (lines 112-116, 125,
         raw_desc: 'Carbon Steel Pipe 2 inch',
         core_bucket: 'Direct Materials',
         vendor_identified: 'JSW Steel', master_supplier_id: 'VND-JSW',
-        inr_crores: 3.0, status: 'Confirmed', ai_confidence: 91,
+        inr_crores: 3.3, status: 'Confirmed', ai_confidence: 91,
+        unit_price: 1100, qty: 30000,
         po_number: 'PO-S2', invoice_date: '2024-05-01'
       },
       {
@@ -326,7 +446,8 @@ describe('step2VendorConsolidation extended branch coverage (lines 112-116, 125,
         raw_desc: 'Carbon Steel Pipe 2 inch',
         core_bucket: 'Direct Materials',
         vendor_identified: 'SAIL Ltd', master_supplier_id: 'VND-SAIL',
-        inr_crores: 2.0, status: 'Confirmed', ai_confidence: 90,
+        inr_crores: 2.4, status: 'Confirmed', ai_confidence: 90,
+        unit_price: 1200, qty: 20000,
         po_number: 'PO-S3', invoice_date: '2024-06-01'
       },
       {
@@ -334,18 +455,17 @@ describe('step2VendorConsolidation extended branch coverage (lines 112-116, 125,
         raw_desc: 'Carbon Steel Pipe 2 inch',
         core_bucket: 'Direct Materials',
         vendor_identified: 'SAIL Ltd', master_supplier_id: 'VND-SAIL',
-        inr_crores: 1.0, status: 'Confirmed', ai_confidence: 90,
+        inr_crores: 1.2, status: 'Confirmed', ai_confidence: 90,
+        unit_price: 1200, qty: 10000,
         po_number: 'PO-S4', invoice_date: '2024-07-01'
       }
     ] as any[];
 
     const results = calculateVendorConsolidation(items);
     expect(results.length).toBeGreaterThanOrEqual(1);
-    // 3 distinct suppliers ? status mapping: Primary, Incumbent, Spot/Peripheral
     const statuses = results[0].suppliers.map((s: any) => s.status);
     expect(statuses).toContain('Primary');
     expect(statuses).toContain('Incumbent');
-    // savings_pct should be > 0 since tail suppliers exist
     expect(results[0].est_volume_savings_pct).toBeGreaterThan(0);
   });
 });
@@ -377,7 +497,7 @@ describe('step2PoConsolidation extended branch coverage (lines 40, 41, 42, 56, 6
 });
 
 describe('step2VendorConsolidation comprehensive branch coverage (lines 58, 60, 61, 84, 94, 95, 102, 105, 106)', () => {
-  it('covers fallbacks when core_bucket, raw_desc, inr_crores, qty, and vendor IDs are missing', () => {
+  it('covers fallbacks when core_bucket, raw_desc, inr_crores, qty, and vendor IDs are missing without inventing synthetic quantities', () => {
     const items = [
       // Item 1: has unspsc_category_name, no raw_desc, has total_spend, no qty, no master_supplier_id
       {
@@ -387,7 +507,7 @@ describe('step2VendorConsolidation comprehensive branch coverage (lines 58, 60, 
         total_spend: 15000000,
         status: 'Confirmed', ai_confidence: 90
       },
-      // Item 2: same groupKey, second vendor to form a group with >= 2 suppliers, no inr_crores, no total_spend (0.5 Cr)
+      // Item 2: same groupKey, second vendor to form a group with >= 2 suppliers, no inr_crores, no total_spend (0 Cr)
       {
         mapping_id: 'MAP-VC2', line_item_id: 'LINE-VC2',
         unspsc_category_name: 'Raw Metals',
@@ -400,7 +520,7 @@ describe('step2VendorConsolidation comprehensive branch coverage (lines 58, 60, 
     expect(results.length).toBe(1);
     expect(results[0].category).toBe('Raw Metals');
     expect(results[0].item_group_title).toContain('Supply Group');
-    expect(results[0].annual_units).toBeGreaterThanOrEqual(200); // 100 per fallback item
+    expect(results[0].annual_units).toBe(0); // 0 when qty is missing, no synthetic 100 per fallback item
     expect(results[0].suppliers.length).toBe(2);
     expect(results[0].suppliers[0].vendor_id).toMatch(/VND-10/);
   });

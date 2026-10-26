@@ -49,13 +49,23 @@ export class AnalysisOrchestrationService {
    * Seed baseline initial job for testing and development continuity
    */
   private seedDefaultJob(): void {
-    const tenant = db.getTenant();
+    let tenant: any = null;
+    try {
+      tenant = (typeof db !== 'undefined' && db && typeof (db as any)?.getTenant === 'function')
+        ? (db as any).getTenant()
+        : null;
+    } catch {
+      tenant = null;
+    }
+    if (!tenant) {
+      tenant = { tenant_id: 'TNT-GLOBAL-8902', enterprise_name: 'Varroc Polymers (VGT)', total_spend_evaluated_inr: 428.5 };
+    }
     const defaultJobId = 'job-init-default-001';
     const createdAt = new Date(Date.now() - 3600000 * 12).toISOString(); // 12 hours ago
 
     const initialJob: AnalysisJob = {
       analysisJobId: defaultJobId,
-      tenantId: tenant.tenant_id || 'DEFAULT_TENANT',
+      tenantId: tenant.tenant_id || 'TNT-GLOBAL-8902',
       customerName: tenant.enterprise_name || 'Enterprise Client',
       uploadedBy: 'srini@procucev.com',
       originalUploadId: 'doc-initial-001',
@@ -66,7 +76,7 @@ export class AnalysisOrchestrationService {
       queuedAt: createdAt,
       module1ReadyAt: createdAt,
       lastUpdatedAt: createdAt,
-      totalSpendCr: tenant.total_spend_evaluated_inr || 428.5,
+      totalSpendCr: (tenant as any)?.total_spend_evaluated_inr || 428.5,
       totalTransactions: 31671,
       analysisPeriod: 'FY 2023 - FY 2026',
       slaHoursTarget: DEFAULT_SLA_HOURS,

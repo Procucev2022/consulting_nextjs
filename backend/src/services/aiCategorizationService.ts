@@ -1,7 +1,7 @@
 import { geminiService } from './geminiService';
 import { CATEGORIZATION_SYSTEM_PROMPT, EXTRACTION_STATUS, CLASSIFICATION_STATUS, AI_MAX_LINE_ITEMS_IN_PROMPT } from '../constants/ai';
 import type { AiCategorizationItem, CategorizationResult, AiCategorizationMapping } from '../types/ai';
-import { lookupUNSPSCByDescription, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
+import { lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
 import logger from '../utils/logger';
 
 interface RawAiMapping {
@@ -53,17 +53,29 @@ export class AiCategorizationService {
 
       const fallbackMappings: AiCategorizationMapping[] = items.map((item) => {
         const descMatch = lookupUNSPSCByDescription(item.rawLineText);
-        const details = descMatch || lookupUNSPSCDetails(item.rawLineText);
+        const isClassified = Boolean(descMatch && descMatch.classificationStatus === 'CLASSIFIED');
+
+        if (isClassified && descMatch) {
+          return {
+            rawLineText: item.rawLineText,
+            vendorIdentified: item.vendorIdentified || 'Unknown',
+            mappedUnspscCode: descMatch.commodityCode,
+            unspscTitle: descMatch.commodityTitle,
+            suggestedBucket: descMatch.coreBucket || 'Direct Materials',
+            confidenceScore: 95.0,
+            reason: `Matched official UNSPSC Segment [${descMatch.segmentTitle}] / Class [${descMatch.classTitle}]`
+          };
+        }
+
+        // UNCLASSIFIED item: do not claim official match or assign false high confidence
         return {
           rawLineText: item.rawLineText,
           vendorIdentified: item.vendorIdentified || 'Unknown',
-          mappedUnspscCode: descMatch?.commodityCode || '43211500',
-          unspscTitle: descMatch?.commodityTitle || details.commodityTitle,
-          suggestedBucket: descMatch?.coreBucket || 'Direct Materials',
-          confidenceScore: 99.4,
-          reason: descMatch
-            ? `Matched official UNSPSC Segment [${descMatch.segmentTitle}] / Class [${descMatch.classTitle}]`
-            : `Taxonomy classified under ${details.classTitle}`
+          mappedUnspscCode: '00000000',
+          unspscTitle: 'Unclassified Commodity',
+          suggestedBucket: 'Unclassified (Review Required)',
+          confidenceScore: 0.0,
+          reason: 'UNCLASSIFIED: No confirmed official UNSPSC match found. Item preserved and marked for classification review.'
         };
       });
 

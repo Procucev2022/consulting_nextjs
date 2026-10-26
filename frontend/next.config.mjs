@@ -20,7 +20,7 @@ const nextConfig = {
     const rawBackendUrl =
       process.env.BACKEND_INTERNAL_URL ||
       process.env.NEXT_PUBLIC_BACKEND_URL ||
-      'https://consulting-nextjs-backend.mukul93028.workers.dev';
+      (process.env.APP_OPERATING_MODE === 'INTERNAL_ASSESSMENT' ? 'http://127.0.0.1:5000' : 'https://consulting-nextjs-backend.mukul93028.workers.dev');
 
     // Normalize the backend URL so the rewrite destination is always a valid
     // absolute URL. A schemeless value (e.g. "host.workers.dev") or a bare

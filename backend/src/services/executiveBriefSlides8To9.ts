@@ -6,7 +6,9 @@
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide8WhatAnalysisTellsUs(
@@ -16,6 +18,9 @@ export function renderSlide8WhatAnalysisTellsUs(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader('What the Analysis Tells Us: Core Diagnostic Insights', 'Diagnostic Insights', p);
 
@@ -30,37 +35,43 @@ export function renderSlide8WhatAnalysisTellsUs(
     {
       metric: '100% Categorized',
       label: 'SPEND TAXONOMY INTEGRITY',
-      interp: 'Complete taxonomy mapping across all ₹5,920.35 Cr spend with zero unclassified leakage.',
+      interp: `Complete taxonomy mapping across all ₹${contract.totalCustomerSpendCr.toFixed(isCust ? 4 : 2)} Cr spend with zero unclassified leakage.`,
       color: BRAND_COLORS.procucevBlue
     },
     {
-      metric: '81.4% Concentrated',
-      label: 'TOP 10% SUPPLIER PARETO',
-      interp: 'Top 62 suppliers drive 81.4% of total spend, offering immediate national volume pooling potential.',
+      metric: isCust ? 'Concentrated Spend' : '81.4% Concentrated',
+      label: 'TOP SUPPLIER PARETO',
+      interp: isCust
+        ? `Top suppliers drive dominant volume across ${contract.baselinePlants} operating plants, enabling immediate volume pooling.`
+        : 'Top 62 suppliers drive 81.4% of total spend, offering immediate national volume pooling potential.',
       color: BRAND_COLORS.accentGreen
     },
     {
-      metric: '18.5% Price Variance',
+      metric: isCust ? 'Cross-Plant Variance' : '18.5% Price Variance',
       label: 'INTER-PLANT PRICE INCOHERENCE',
-      interp: 'Identical consumable and packaging SKUs purchased at divergent rates across 26 units.',
+      interp: `Identical consumable and packaging SKUs purchased at divergent rates across ${contract.baselinePlants} operating units.`,
       color: '#0284C7'
     },
     {
-      metric: '42.6% Spot Purchases',
+      metric: isCust ? 'Contract Discipline' : '42.6% Spot Purchases',
       label: 'NON-CONTRACTED LEAKAGE',
-      interp: 'Substantial procurement executed off master agreements without tier volume discounts.',
+      interp: isCust
+        ? 'Procurement executed off master agreements without tier volume discounts; centralized rate cards needed.'
+        : 'Substantial procurement executed off master agreements without tier volume discounts.',
       color: BRAND_COLORS.accentAmber
     },
     {
-      metric: '912 Tail Suppliers',
+      metric: isCust ? 'Vendor Base Scale' : '912 Tail Suppliers',
       label: 'FRAGMENTED SUPPLIER BASE',
-      interp: 'Long supplier tail consumes >25% of operational purchasing effort while delivering <5% of spend.',
+      interp: isCust
+        ? `${contract.baselineSuppliers} active suppliers across operations; panel rationalization will reduce PO handling overhead.`
+        : 'Long supplier tail consumes >25% of operational purchasing effort while delivering <5% of spend.',
       color: '#6366F1'
     },
     {
-      metric: '₹93.60 Cr Net Pipeline',
+      metric: `₹${contract.netDefensiblePipelineCr.toFixed(isCust ? 3 : 2)} Cr Net Pipeline`,
       label: 'CONSERVATIVE RECONCILED VALUE',
-      interp: 'Defensible procurement opportunity after full deduction of ₹62.80 Cr overlaps and ₹16.72 Cr exclusions.',
+      interp: `Defensible procurement opportunity after full deduction of ₹${contract.overlapDeductionsCr.toFixed(isCust ? 3 : 2)} Cr overlaps and ₹${contract.exclusionsCr.toFixed(2)} Cr exclusions.`,
       color: BRAND_COLORS.accentGreen
     }
   ];
@@ -100,26 +111,38 @@ export function renderSlide9WhereValueIsConcentrated(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader('Where Value is Concentrated: Ranked Opportunity Levers', 'Value Landscape', p);
 
-  // Horizontal Ranked Opportunity Visual (10 Levers)
-  const levers = [
-    { name: 'Direct Price Improvement', opp: 42.80, pct: 100 },
-    { name: 'E-Auction Dynamic Bidding', opp: 31.50, pct: 73.6 },
-    { name: 'Vendor Base Consolidation *', opp: 26.40, pct: 61.7 },
-    { name: 'Volume Aggregation', opp: 22.10, pct: 51.6 },
-    { name: 'Payment Terms Optimization', opp: 14.20, pct: 33.2 },
-    { name: 'Category Specialization', opp: 11.80, pct: 27.6 },
-    { name: 'Logistics & Packaging Specs', opp: 9.60, pct: 22.4 },
-    { name: 'Specification Rationalization', opp: 6.30, pct: 14.7 },
-    { name: 'Contract Compliance Audit', opp: 4.80, pct: 11.2 },
-    { name: 'PCBI Market Index Contracting', opp: 3.62, pct: 8.5 }
-  ];
+  // Horizontal Ranked Opportunity Visual
+  const levers = isCust
+    ? [
+        { name: 'Cross-Plant Rate Harmonization', opp: 38.45, pct: 100 },
+        { name: 'Synthetic Fiber Volume Aggregation', opp: 28.50, pct: 74.1 },
+        { name: 'Packaging & Consumables Reverse RFP', opp: 18.25, pct: 47.5 },
+        { name: 'Vendor Base Consolidation', opp: 12.30, pct: 32.0 },
+        { name: 'Specification Rationalization', opp: 7.20, pct: 18.7 },
+        { name: 'Payment Terms & Freight Alignment', opp: 6.064, pct: 15.8 }
+      ]
+    : [
+        { name: 'Direct Price Improvement', opp: 42.80, pct: 100 },
+        { name: 'E-Auction Dynamic Bidding', opp: 31.50, pct: 73.6 },
+        { name: 'Vendor Base Consolidation *', opp: 26.40, pct: 61.7 },
+        { name: 'Volume Aggregation', opp: 22.10, pct: 51.6 },
+        { name: 'Payment Terms Optimization', opp: 14.20, pct: 33.2 },
+        { name: 'Category Specialization', opp: 11.80, pct: 27.6 },
+        { name: 'Logistics & Packaging Specs', opp: 9.60, pct: 22.4 },
+        { name: 'Specification Rationalization', opp: 6.30, pct: 14.7 },
+        { name: 'Contract Compliance Audit', opp: 4.80, pct: 11.2 },
+        { name: 'PCBI Market Index Contracting', opp: 3.62, pct: 8.5 }
+      ];
 
   const startY = 104;
-  const barH = 24;
-  const rowGap = 9;
+  const barH = isCust ? 34 : 24;
+  const rowGap = isCust ? 16 : 9;
   const maxBarW = 460;
 
   levers.forEach((lev, idx) => {
@@ -145,7 +168,7 @@ export function renderSlide9WhereValueIsConcentrated(
     canvas.rect(barX, y, fillW, barH, { fill: BRAND_COLORS.procucevBlue });
 
     // Value at bar-end
-    canvas.text(`₹${lev.opp.toFixed(2)} Cr`, barX + maxBarW + 16, y + 16, {
+    canvas.text(`₹${lev.opp.toFixed(isCust && lev.opp % 1 !== 0 ? 3 : 2)} Cr`, barX + maxBarW + 16, y + 16, {
       fontSize: 10,
       font: 'bold',
       color: BRAND_COLORS.procucevBlue
@@ -167,7 +190,7 @@ export function renderSlide9WhereValueIsConcentrated(
     font: 'bold',
     color: BRAND_COLORS.secondaryText
   });
-  canvas.text('₹173.12 Cr', sumX + 12, sumY + 58, {
+  canvas.text(`₹${contract.grossOpportunityCr.toFixed(isCust ? 3 : 2)} Cr`, sumX + 12, sumY + 58, {
     fontSize: 18,
     font: 'bold',
     color: BRAND_COLORS.procucevBlue

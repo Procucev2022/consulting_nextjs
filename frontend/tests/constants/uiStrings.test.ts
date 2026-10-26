@@ -65,8 +65,8 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
   });
 
   it('should correctly format modals templates', () => {
-    expect(UI_STRINGS.modals.topItems.categoryTitle('Packaging')).toBe('Packaging — Top 10 Line Items & 3-Year Price Trends');
-    expect(UI_STRINGS.modals.topItems.vendorTitle('Amcor')).toBe('Amcor — Top Line Items & 3-Year Price Trends');
+    expect(UI_STRINGS.modals.topItems.categoryTitle('Packaging')).toBe('Packaging — Top Line Items & Price Trends');
+    expect(UI_STRINGS.modals.topItems.vendorTitle('Amcor')).toBe('Amcor — Top Line Items & Price Trends');
     expect(UI_STRINGS.modals.dpsNXT.qualifiedBiddersCount(6)).toBe('6 Qualified Bidders Invited');
     expect(UI_STRINGS.modals.mergeVendor.issueLabel).toBe('Issue Description');
     expect(UI_STRINGS.modals.mergeVendor.ignoreButton).toBe('Ignore Issue');
@@ -231,6 +231,49 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(auth.builtForEvidenceQuote).toBe('Built for procurement teams that want evidence before action.');
     expect(auth.procurementIntelligenceBadge).toBe('Procurement Intelligence');
     expect(auth.howAiCevCreatesValue).toBe('HOW aiCEV CREATES PROCUREMENT VALUE');
+  });
+
+  it('should correctly format module5 parameterized templates', () => {
+    expect(UI_STRINGS.module5.annualSpendVal(100)).toBe('₹100.00 Crores');
+    expect(UI_STRINGS.module5.savingsRateVal(16.4)).toBe('16.4%');
+    expect(UI_STRINGS.module5.platformFeeVal(2.5, 15.0)).toBe('2.50% of spend (₹15.00 Cr/yr)');
+    expect(UI_STRINGS.module5.grossSavingsCrVal(50)).toBe('₹50.00 Cr');
+    expect(UI_STRINGS.module5.netBenefitCrVal(45)).toBe('₹45.00 Cr');
+    expect(UI_STRINGS.module5.roiMultipleVal(6.0)).toBe('6.0x');
+    expect(UI_STRINGS.module5.paybackMonthsVal(2.3)).toContain('2.3');
+  });
+
+  it('should correctly format ASSESSMENT section parameterized templates', () => {
+    const banner = UI_STRINGS.ASSESSMENT.customerManagement.selectedCustomerBanner('Tata Motors', 'CUST-001');
+    expect(banner).toBe('Active Customer: Tata Motors (CUST-001)');
+
+    const valSummary = UI_STRINGS.ASSESSMENT.uploadPipeline.validationPassedSummary(7357, 50, 5);
+    expect(valSummary).toContain('7,357 valid rows');
+    expect(valSummary).toContain('50');
+    expect(valSummary).toContain('5 anomalies');
+
+    const m1Summary = UI_STRINGS.ASSESSMENT.uploadPipeline.module1SuccessSummary(613.8805, 7357);
+    expect(m1Summary).toContain('613.8805');
+    expect(m1Summary).toContain('7,357');
+
+    const updateMsg = UI_STRINGS.ASSESSMENT.updater.updateSuccessMessage('2.1.0');
+    expect(updateMsg).toContain('2.1.0');
+  });
+
+  it('should correctly format reportingPeriod parameterized templates', () => {
+    const fyLabel = UI_STRINGS.reportingPeriod.fy.fiscalYearLabel('FY2024-25');
+    expect(fyLabel).toContain('FY2024-25');
+    expect(fyLabel).toContain('1 Apr');
+
+    const historyBody = UI_STRINGS.reportingPeriod.disclosure.insufficientHistoryBody(12, 8, 4);
+    expect(historyBody).toContain('12 months');
+    expect(historyBody).toContain('8 months');
+    expect(historyBody).toContain('4 months');
+
+    const partialFy = UI_STRINGS.reportingPeriod.disclosure.partialFyBody('FY2024-25', 9, 'Apr–Dec');
+    expect(partialFy).toContain('FY2024-25');
+    expect(partialFy).toContain('9');
+    expect(partialFy).toContain('Apr');
   });
 });
 

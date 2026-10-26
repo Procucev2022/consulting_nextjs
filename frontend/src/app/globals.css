@@ -58,6 +58,10 @@
     --transition-slow:   all 0.30s ease;
   }
 
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

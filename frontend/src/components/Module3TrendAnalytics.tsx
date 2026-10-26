@@ -58,9 +58,13 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   onProceedToSavings,
   theme = 'light',
   currentTier = 'GOLD',
-  onUpgrade
+  onUpgrade,
+  assessmentId
 }) => {
-  const [selectedCommodity, setSelectedCommodity] = useState<string>(UI_STRINGS.module3.commodities.icis);
+  const isTextileAssessment = assessmentId === 'AIC-2026-0002';
+  const [selectedCommodity, setSelectedCommodity] = useState<string>(
+    isTextileAssessment ? UI_STRINGS.module3.commodities.unavailableTextile : UI_STRINGS.module3.commodities.icis
+  );
   const [filterRisk, setFilterRisk] = useState<'ALL' | 'CREEP_ANOMALY' | 'ALIGNED'>('ALL');
   const [pcbiSummary, setPcbiSummary] = useState<PCBIExecutiveSummary | null>(null);
   const [calculations] = useState<PCBITransactionCalculation[]>([]);
@@ -69,9 +73,12 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
 
   useEffect(() => {
     let isMounted = true;
+    if (isTextileAssessment) {
+      setSelectedCommodity(UI_STRINGS.module3.commodities.unavailableTextile);
+    }
     apiClient
-      .getPCBIDashboard()
-      .then((data) => {
+      .getPCBIDashboard(assessmentId)
+      .then((data: any) => {
         if (isMounted && data?.summary) {
           setPcbiSummary(data.summary);
         }
@@ -83,7 +90,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [assessmentId, isTextileAssessment]);
 
   const totalLeakageCr = vendorRankings.reduce(
     (sum, v) => sum + (v.variance_leakage_inr_cr || (v.variance_leakage_usd ? (v.variance_leakage_usd * 83.8) / 10000000 : 0) || 0),
@@ -98,12 +105,13 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   const avgMarkupPct = vendorRankings.length > 0
     ? (vendorRankings.reduce((sum, v) => sum + (v.price_creep_pct || 0), 0) / vendorRankings.length).toFixed(1)
     : '0.0';
+  const avgCreepNum = Number(avgMarkupPct);
+  const invoicedDeltaText = `${avgCreepNum >= 0 ? '+' : ''}${avgCreepNum.toFixed(1)}%`;
 
   const isDark = theme === 'dark';
 
-  const avgCreepNum = Number(avgMarkupPct);
-  const invoicedDeltaText = avgCreepNum >= 0 ? `+${avgMarkupPct}%` : `${avgMarkupPct}%`;
-  const marketDeltaText = vendorRankings.length > 0 ? '-3.5%' : '0.0%';
+  const isCommodityUnavailable = selectedCommodity === UI_STRINGS.module3.commodities.unavailableTextile;
+  const marketDeltaText = isCommodityUnavailable ? 'UNAVAILABLE' : (vendorRankings.length > 0 ? '-3.5%' : '0.0%');
 
   const dynamicInvoicedTrend = React.useMemo(() => {
     if (!vendorRankings || vendorRankings.length === 0) return [];
@@ -123,7 +131,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
   }, [vendorRankings, avgCreepNum]);
 
   const dynamicMarketTrend = React.useMemo(() => {
-    if (!vendorRankings || vendorRankings.length === 0) return [];
+    if (isCommodityUnavailable || !vendorRankings || vendorRankings.length === 0) return [];
     const marketChange = -3.5;
     const step = marketChange / 9;
     return [
@@ -138,7 +146,7 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
       Number((100 + step * 9.0).toFixed(1)),
       Number((100 + marketChange).toFixed(1))
     ];
-  }, [vendorRankings]);
+  }, [vendorRankings, isCommodityUnavailable]);
 
   const chartData = {
     labels: TIMELINE_MONTHS as unknown as string[],
@@ -292,6 +300,11 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
             onChange={(e) => setSelectedCommodity(e.target.value as any)}
             className="bg-transparent text-xs font-bold text-cyan-700 focus:outline-none cursor-pointer"
           >
+            {(isTextileAssessment || isCommodityUnavailable) && (
+              <option value={UI_STRINGS.module3.commodities.unavailableTextile}>
+                {UI_STRINGS.module3.commodities.unavailableTextile}
+              </option>
+            )}
             <option value={UI_STRINGS.module3.commodities.icis}>{UI_STRINGS.module3.commodities.icis}</option>
             <option value={UI_STRINGS.module3.commodities.lme}>{UI_STRINGS.module3.commodities.lme}</option>
             <option value={UI_STRINGS.module3.commodities.cass}>{UI_STRINGS.module3.commodities.cassIndex}</option>
@@ -299,6 +312,21 @@ export const Module3TrendAnalytics: React.FC<Module3TrendAnalyticsProps> = ({
           </select>
         </div>
       </div>
+
+      {/* Explanatory Banner for ABC Textile Benchmark Isolation */}
+      {isTextileAssessment && (
+        <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 flex items-start space-x-3">
+          <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-bold text-slate-900">
+              PCBI Benchmark Price Gap: UNAVAILABLE for ABC Textile Ltd (AIC-2026-0002)
+            </span>
+            <p className="text-slate-600 leading-relaxed">
+              ABC Textile evaluated baseline spend comprises 23,570 line items valued at ₹613.8805 Cr (₹353.0403 Cr mapped to UNSPSC taxonomy). Because no valid textile commodity benchmark series exists in the index master matching domestic Indian geography, INR currency, and physical yarn/fabric specifications, PCBI benchmark price gap is strictly maintained as <strong>UNAVAILABLE</strong>. Unrelated chemical, cement, or metals indices are excluded to guarantee full defensibility and prevent artificial benchmark opportunity creation.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 1. Executive Benchmark Summary (14 Top KPIs - Master Product Spec) */}
       <ExecutiveBenchmarkSummary summary={pcbiSummary as any} />

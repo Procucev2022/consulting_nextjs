@@ -2,7 +2,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const GEMINI_CONFIG = {
-  API_KEY: process.env.GEMINI_API_KEY || 'AQ.Ab8RN6J9nGFqiaLfwux7vVNQekjTkyCvoRLz1kGBWGfHmNPbgg',
+  API_KEY: process.env.GEMINI_API_KEY || '',
+  BACKUP_KEYS: (
+    process.env.GEMINI_BACKUP_KEYS ||
+    ''
+  )
+    .split(',')
+    .map((k) => k.trim())
+    .filter(Boolean),
   BASE_URL: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/models',
   PRIMARY_MODEL: process.env.GEMINI_PRIMARY_MODEL || 'gemini-3.6-flash',
   FALLBACK_MODELS: (

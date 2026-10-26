@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { StrategicSourcingCategoryTableProps } from '../../types';
 import { UI_STRINGS } from '../../constants';
+import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
 
 type SortField =
   | 'totalSpendInr'
@@ -142,6 +143,7 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
           <thead>
             <tr className="bg-slate-100/80 dark:bg-[#F8FBFE] border-b border-slate-200 dark:border-slate-800 font-semibold text-slate-600 dark:text-slate-400">
               <th className="py-2.5 px-3 whitespace-nowrap">{strings.colCategory}</th>
+              <th className="py-2.5 px-3 whitespace-nowrap">Column L Code</th>
               <th
                 onClick={() => handleSort('totalSpendInr')}
                 className="py-2.5 px-3 whitespace-nowrap cursor-pointer hover:text-cyan-600"
@@ -205,10 +207,16 @@ export const StrategicSourcingCategoryTable: React.FC<StrategicSourcingCategoryT
                   {/* Category */}
                   <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white">
                     <div className="flex items-center space-x-1.5">
-                      <span>{p.categoryName}</span>
+                      <span>{resolveHumanReadableCategory(p.categoryName, p.unspscCode)}</span>
                       <ExternalLink className="w-3 h-3 text-slate-400 opacity-60 hover:opacity-100" />
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">{p.unspscCode}</div>
+                  </td>
+
+                  {/* Column L Code */}
+                  <td className="py-2.5 px-3 font-mono text-[11px] text-cyan-700">
+                    <span className="bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                      {p.unspscCode || '—'}
+                    </span>
                   </td>
 
                   {/* Spend */}

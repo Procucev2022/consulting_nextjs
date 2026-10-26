@@ -1,17 +1,24 @@
 import type { LineItemMapping, CategoryTopItem } from '../types';
 
 export function addSpendToFiscalYear(
-  target: { spendFY24: number; spendFY25: number; spendFY26: number },
+  target: { spendFY24: number; spendFY25: number; spendFY26: number; spendFY27?: number },
   spendCr: number,
   spendYear?: number
 ): void {
-  const year = Number(spendYear) || 2024;
+  const year = Number(spendYear);
+  if (!year || isNaN(year)) return;
   if (year <= 2023) {
     target.spendFY24 += spendCr;
   } else if (year === 2024) {
     target.spendFY25 += spendCr;
-  } else {
+  } else if (year === 2025) {
     target.spendFY26 += spendCr;
+  } else if (year === 2026) {
+    if (target.spendFY27 !== undefined) {
+      target.spendFY27 += spendCr;
+    } else {
+      target.spendFY26 += spendCr;
+    }
   }
 }
 
@@ -29,13 +36,14 @@ export interface UnitPricesResult {
 }
 
 export function computeUnitPrices(item: LineItemMapping, spendCr: number): UnitPricesResult {
-  const qty = item.qty || 100;
-  const unitPrice = item.unit_price || (qty > 0 ? Number(((spendCr * 10000000) / qty).toFixed(2)) : 100);
+  const qty = item.qty || 0;
+  const unitPrice = item.unit_price || (qty > 0 ? Number(((spendCr * 10000000) / qty).toFixed(2)) : 0);
+  const basePrice = Number(unitPrice.toFixed(2));
   return {
     qty,
-    priceFy24: Number(unitPrice.toFixed(2)),
-    priceFy25: Number((unitPrice * 1.05).toFixed(2)),
-    priceFy26: Number((unitPrice * 1.10).toFixed(2))
+    priceFy24: basePrice,
+    priceFy25: item.unit_price_fy25 ? Number(item.unit_price_fy25.toFixed(2)) : basePrice,
+    priceFy26: item.unit_price_fy26 ? Number(item.unit_price_fy26.toFixed(2)) : basePrice
   };
 }
 
@@ -51,6 +59,17 @@ export function updateExistingItem(
   existing.opportunity_potential_inr_lakhs = Number((currOpt + optLakhs).toFixed(2));
 }
 
+export function computePriceChangePct(p24: number, p25: number, p26: number): number {
+  if (p24 === p25 && p25 === p26) return 0.0;
+  if (p24 > 0 && p26 > 0 && p26 !== p24) {
+    return Number((((p26 - p24) / p24) * 100).toFixed(1));
+  }
+  if (p24 > 0 && p25 > 0 && p25 !== p24) {
+    return Number((((p25 - p24) / p24) * 100).toFixed(1));
+  }
+  return 0.0;
+}
+
 export function createNewTopItem(
   item: LineItemMapping,
   rawDesc: string,
@@ -61,7 +80,7 @@ export function createNewTopItem(
   prices: { priceFy24: number; priceFy25: number; priceFy26: number },
   optLakhs: number
 ): CategoryTopItem {
-  const priceChangePct = 10.0;
+  const priceChangePct = computePriceChangePct(prices.priceFy24, prices.priceFy25, prices.priceFy26);
   return {
     item_id: item.material_code || item.line_item_id || `ITM-${Math.floor(1000 + Math.random() * 9000)}`,
     item_name: rawDesc,
@@ -96,7 +115,8 @@ export function upsertTopItem(
 ): void {
   const existing = itemsMap.get(rawDesc);
   const { qty, ...prices } = computeUnitPrices(item, spendCr);
-  const optLakhs = Number((spendCr * 100 * 0.08).toFixed(2));
+  const priceChangePct = computePriceChangePct(prices.priceFy24, prices.priceFy25, prices.priceFy26);
+  const optLakhs = priceChangePct > 0 ? Number(((spendCr * 100 * (priceChangePct / 100)).toFixed(2))) : 0;
 
   if (existing) {
     updateExistingItem(existing, spendCr, qty, optLakhs);

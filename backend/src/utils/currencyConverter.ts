@@ -100,7 +100,7 @@ function getYearlyRate(fxObj: (typeof yahooFinanceFXRates)[string], year: number
  */
 export function getYahooFinanceRateToINR(fromCurrency: string, dateOrYear?: string | number | Date): number {
   const curr = (fromCurrency || 'USD').toUpperCase().trim();
-  const fxObj = yahooFinanceFXRates[curr];
+  const fxObj = yahooFinanceFXRates[curr] || yahooFinanceFXRates['USD'];
   if (!fxObj) return 83.80;
 
   const { year, monthKey } = parseDateOrYear(dateOrYear);
@@ -125,7 +125,16 @@ export function getYahooFinanceRateAsOfDate(
   isHistorical: boolean;
 } {
   const curr = (fromCurrency || 'USD').toUpperCase().trim();
-  const fxObj = yahooFinanceFXRates[curr] || yahooFinanceFXRates.USD;
+  const fxObj = yahooFinanceFXRates[curr] || yahooFinanceFXRates['USD'];
+  if (!fxObj) {
+    return {
+      rate: 83.80,
+      dateStr: '',
+      ticker: 'USDINR=X',
+      currency: 'USD',
+      isHistorical: false
+    };
+  }
   const { year, monthKey, formattedDate } = parseDateOrYear(dateOrYear);
 
   let rate = fxObj.currentRate;

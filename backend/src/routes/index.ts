@@ -24,6 +24,11 @@ import executiveBriefExportRoutes from './executiveBriefExport.routes';
 import subscriptionRoutes from './subscription.routes';
 import analysisOrchestrationRoutes from './analysisOrchestration.routes';
 import evidenceExportRoutes from './evidenceExport.routes';
+import assessmentRoutes from './assessment.routes';
+import module3CanonicalRoutes from './module3Canonical.routes';
+import module4CanonicalRoutes from './module4Canonical.routes';
+import { operatingModeService } from '../services/operatingModeService';
+import { SYSTEM_BUILD_IDENTITY } from '../constants/assessment';
 
 const router = Router();
 
@@ -31,6 +36,9 @@ const router = Router();
 router.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
+    operatingMode: operatingModeService.getMode(),
+    version: SYSTEM_BUILD_IDENTITY.APP_VERSION,
+    buildNumber: SYSTEM_BUILD_IDENTITY.BUILD_NUMBER,
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });
@@ -58,9 +66,16 @@ router.use('/pcbi', pcbiRoutes);
 router.use('/upgrade', upgradeRoutes);
 router.use('/admin/pcbi', pcbiAdminRoutes);
 router.use('/module2/sourcing', module2SourcingRoutes);
+router.use('/module2-sourcing', module2SourcingRoutes);
+router.use('/module2/levers', module2SourcingRoutes);
+router.use('/module2-levers', module2SourcingRoutes);
+router.use('/module3', module3CanonicalRoutes);
+router.use('/module4', module4CanonicalRoutes);
 router.use('/subscription', subscriptionRoutes);
 router.use('/orchestration', analysisOrchestrationRoutes);
 router.use('/evidence', evidenceExportRoutes);
+router.use('/assessment', assessmentRoutes);
+router.use('/customers', assessmentRoutes);
 
 export default router;
 

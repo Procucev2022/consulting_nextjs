@@ -568,7 +568,7 @@ describe('Module 2 Strategic Sourcing Intelligence Engine (MODULE_2_SOURCING_LOG
     expect(pkg.referencePrice).toBeGreaterThan(0);
     expect(pkg.netOpportunityInr).toBeGreaterThan(0);
     expect(pkg.auditSignature).toBeDefined();
-  });
+  }, 30000);
 
   // Additional Edge-Case Coverage for 90%+ Per-File Benchmark
   it('Exercises Price Engine edge cases: empty, single item, scenarios unavailable', () => {

@@ -119,8 +119,10 @@ function buildCadenceOption(
 ): CadenceSavingsBenefit {
   const redPct = Number((((poCount - targetPos) / poCount) * 100).toFixed(1));
   const scaleSavCr = Number(((annualSpend * discPct) / 100).toFixed(2));
-  const adminSavLakhs = Number(((poCount - targetPos) * 0.15).toFixed(1));
-  const totalBenefit = Number((scaleSavCr + adminSavLakhs / 100).toFixed(2));
+  // Administrative cost per PO must not be assumed without verified client-specific internal accounting data.
+  // Marked as 0 (not yet quantifiable) to prevent unsupported savings claims.
+  const adminSavLakhs = 0;
+  const totalBenefit = scaleSavCr;
 
   return {
     cadence: cad,

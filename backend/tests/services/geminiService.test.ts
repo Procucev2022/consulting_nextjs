@@ -18,6 +18,9 @@ describe('GeminiService Unit Tests', () => {
     const chain = service.resolveModelChain();
     expect(Array.isArray(chain)).toBe(true);
     expect(chain.length).toBeGreaterThan(0);
+    const keyChain = service.resolveKeyChain();
+    expect(Array.isArray(keyChain)).toBe(true);
+    expect(keyChain.length).toBeGreaterThan(1);
   });
 
   it('should extract response text from multi-part candidates', () => {
@@ -167,5 +170,74 @@ describe('GeminiService Unit Tests', () => {
 
     const result = await service.extractLineItems({ documentText: 'Blank receipt text' });
     expect(result.status).toBe(EXTRACTION_STATUS.NO_ITEMS_FOUND);
+  });
+
+  it('should handle failure in extractLineItems across models and keys', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => 'Model not found'
+    } as any);
+
+    const result = await service.extractLineItems({ documentText: 'Line item text' });
+    expect(result.status).toBe(EXTRACTION_STATUS.AI_FAILED);
+    expect(result.error).toContain('404');
+  });
+
+  it('should rotate to backup key when first key responds with 429', async () => {
+    let callCount = 0;
+    vi.spyOn(global, 'fetch').mockImplementation(async (url, init: any) => {
+      callCount++;
+      const apiKey = init?.headers?.['x-goog-api-key'];
+      if (callCount === 1) {
+        return {
+          ok: false,
+          status: 429,
+          text: async () => 'Rate limit exceeded'
+        } as any;
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{ content: { parts: [{ text: JSON.stringify({ keyUsed: apiKey, success: true }) }] } }]
+        })
+      } as any;
+    });
+
+    const result = await service.generateJson<{ keyUsed: string; success: boolean }>({ prompt: 'Test backup key' });
+    expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
+    expect(result.data?.success).toBe(true);
+    expect(callCount).toBe(2);
+  });
+
+  it('should return NOT_CONFIGURED when API key is missing', async () => {
+    const unconfiguredService = new GeminiService();
+    vi.spyOn(unconfiguredService, 'isConfigured').mockReturnValue(false);
+    const result = await unconfiguredService.extractLineItems({ documentText: 'sample text' });
+    expect(result.status).toBe(EXTRACTION_STATUS.NOT_CONFIGURED);
+  });
+
+  it('should compute totalSpend from items reduce if not provided in JSON', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        candidates: [{
+          content: {
+            parts: [{
+              text: JSON.stringify({
+                items: [
+                  { poNumber: 'PO-1', vendorName: 'V1', itemDescription: 'D1', quantity: 1, unitPrice: 100, totalAmount: 100 },
+                  { poNumber: 'PO-2', vendorName: 'V2', itemDescription: 'D2', quantity: 2, unitPrice: 200, totalAmount: 400 }
+                ]
+              })
+            }]
+          }
+        }]
+      })
+    } as any);
+
+    const result = await service.extractLineItems({ documentText: 'text' });
+    expect(result.status).toBe(EXTRACTION_STATUS.SUCCESS);
+    expect(result.totalSpend).toBe(500);
   });
 });

@@ -3,6 +3,7 @@ import {
   addSpendToFiscalYear,
   getItemSpendCr,
   computeUnitPrices,
+  computePriceChangePct,
   updateExistingItem,
   createNewTopItem,
   upsertTopItem
@@ -82,12 +83,31 @@ describe('step2BreakdownShared', () => {
       const r = computeUnitPrices(item, 1.0);
       expect(r.priceFy24).toBeGreaterThan(0);
     });
-    it('uses 0 price when qty defaults to 100 but spendCr is 0 and no unit_price', () => {
-      // qty 0 || 100 = 100; unit_price undefined; 100 > 0 so (0 * 10M / 100) = 0
+    it('uses 0 price when qty is 0 and spendCr is 0 and no unit_price', () => {
       const item = { ...baseItem, qty: 0, unit_price: undefined };
       const r = computeUnitPrices(item, 0);
-      expect(r.qty).toBe(100);
+      expect(r.qty).toBe(0);
       expect(r.priceFy24).toBe(0);
+    });
+  });
+
+  describe('computePriceChangePct', () => {
+    it('returns 0.0 when all three fiscal prices are identical', () => {
+      expect(computePriceChangePct(100, 100, 100)).toBe(0.0);
+    });
+
+    it('computes change between FY26 and FY24 when p24 > 0 and p26 > 0 and p26 !== p24', () => {
+      expect(computePriceChangePct(100, 110, 120)).toBe(20.0);
+    });
+
+    it('computes change between FY25 and FY24 when p26 is 0 or equal to p24 and p25 !== p24', () => {
+      expect(computePriceChangePct(100, 115, 0)).toBe(15.0);
+      expect(computePriceChangePct(100, 115, 100)).toBe(15.0);
+    });
+
+    it('returns 0.0 for fallback edge conditions', () => {
+      expect(computePriceChangePct(0, 0, 100)).toBe(0.0);
+      expect(computePriceChangePct(100, 100, 0)).toBe(0.0);
     });
   });
 
@@ -149,7 +169,24 @@ describe('step2CategoryBreakdown', () => {
     const fallback = [{ id: 'C1', name: 'Chemicals', category: 'Chemicals', spend_inr_crores: 10, lineItemsCount: 5 }];
     const r = calculateCategoryYearDetails([], fallback);
     expect(r[0].category).toBe('Chemicals');
-    expect(r[0].spend_fy24_cr).toBeCloseTo(2.8);
+    expect(r[0].total_3yr_spend_inr_cr).toBe(10);
+    expect(r[0].spend_fy24_cr).toBe(0);
+    expect(r[0].yoy_growth_pct).toBeUndefined();
+  });
+  it('consolidates duplicate fallback categories and accumulates spend', () => {
+    const fallback = [
+      { id: 'C1', name: 'Chemicals', category: 'Chemicals', spend_inr_crores: 10, spend_fy24_cr: 5, supplier_count: 2, lineItemsCount: 5 },
+      { id: 'C2', name: 'Chemicals', category: 'Chemicals', spend_inr_crores: 8, spend_fy24_cr: 4, supplier_count: 3, lineItemsCount: 6 },
+      { id: 'C3', name: 'Packaging', category: 'Packaging', spend_inr_crores: 25, spend_fy24_cr: 10, supplier_count: 4, lineItemsCount: 8 }
+    ];
+    const r = calculateCategoryYearDetails([], fallback);
+    expect(r.length).toBe(2);
+    expect(r[0].category).toBe('Packaging');
+    expect(r[1].category).toBe('Chemicals');
+    expect(r[1].total_3yr_spend_inr_cr).toBe(18);
+    expect(r[1].spend_fy24_cr).toBe(9);
+    expect(r[1].vendor_count).toBe(5);
+    expect(r[1].item_count).toBe(11);
   });
   it('handles Packaging bucket in fallback', () => {
     const fallback = [{ id: 'C2', name: 'Packaging Materials', spend_inr_crores: 5 }];
@@ -222,11 +259,13 @@ describe('step2VendorBreakdown', () => {
     const r = calculateVendorYearDetails([item], 100);
     expect(r.length).toBeGreaterThanOrEqual(1);
   });
-  it('uses fallback FY splits when FY25 is 0 (spend sent to FY24)', () => {
-    // spend_year 2023 → year <= 2023 → FY24 gets spend, FY25 stays 0 → fallback 0.34 multiplier
+  it('records spend in FY24 without fabricating FY25 spend when FY25 is 0', () => {
+    // spend_year 2023 -> year <= 2023 -> FY24 gets spend, FY25 stays 0 (no synthetic 0.34 multiplier)
     const item = { ...baseItem, spend_year: 2023, inr_crores: 4.0 };
     const r = calculateVendorYearDetails([item]);
-    expect(r[0].spend_fy25_cr).toBeCloseTo(4.0 * 0.34, 1);
+    expect(r[0].spend_fy24_cr).toBeCloseTo(4.0, 1);
+    expect(r[0].spend_fy25_cr).toBe(0);
+    expect(r[0].yoy_growth_pct).toBeUndefined();
   });
 });
 
@@ -559,6 +598,133 @@ describe('step2VendorBreakdown branch coverage (lines 30, 39, 50, 53, 54, 79, 10
 
     const schneider = results.find(v => v.vendor_name === 'Schneider');
     expect(schneider).toBeDefined();
-    expect(schneider?.yoy_growth_pct).toBe(7.5);
+    expect(schneider?.yoy_growth_pct).toBeUndefined();
+  });
+
+  it('covers fy24 > 0 && fy25 > 0 YoY branch in calculateVendorYearDetails and zero totalCalculated fallback', () => {
+    const items = [
+      {
+        mapping_id: 'MAP-V4A',
+        line_item_id: 'LINE-V4A',
+        vendor_identified: 'Vendor A',
+        spend_year: 2023,
+        inr_crores: 10.0,
+        total_spend: 100000000,
+        status: 'Confirmed',
+        ai_confidence: 90
+      },
+      {
+        mapping_id: 'MAP-V4B',
+        line_item_id: 'LINE-V4B',
+        vendor_identified: 'Vendor A',
+        spend_year: 2024,
+        inr_crores: 15.0,
+        total_spend: 150000000,
+        status: 'Confirmed',
+        ai_confidence: 90
+      }
+    ] as any[];
+    const res = calculateVendorYearDetails(items);
+    expect(res.length).toBe(1);
+    expect(res[0].yoy_growth_pct).toBe(50.0);
+
+    const emptyRes = calculateVendorYearDetails([], 42.0);
+    expect(emptyRes.length).toBe(0);
+  });
+});
+
+describe('step2CategoryBreakdown branch coverage (lines 63, 116-117)', () => {
+  it('covers fy24 > 0 && fy25 > 0 YoY branch in calculateCategoryYearDetails', () => {
+    const items = [
+      {
+        mapping_id: 'MAP-C1A',
+        line_item_id: 'LINE-C1A',
+        core_bucket: 'Packaging Materials',
+        spend_year: 2023,
+        inr_crores: 20.0,
+        total_spend: 200000000,
+        status: 'Confirmed',
+        ai_confidence: 95
+      },
+      {
+        mapping_id: 'MAP-C1B',
+        line_item_id: 'LINE-C1B',
+        core_bucket: 'Packaging Materials',
+        spend_year: 2024,
+        inr_crores: 30.0,
+        total_spend: 300000000,
+        status: 'Confirmed',
+        ai_confidence: 95
+      }
+    ] as any[];
+    const res = calculateCategoryYearDetails(items);
+    expect(res.length).toBe(1);
+    expect(res[0].yoy_growth_pct).toBe(50.0);
+  });
+
+  it('covers calculateFallbackYoY returning number when fy25 and fy26 > 0, and undefined when 0', () => {
+    const fallbackCats = [
+      {
+        id: 'FB-1',
+        name: 'Logistics & Freight',
+        spend_fy24_cr: 10.0,
+        spend_fy25_cr: 20.0,
+        spend_fy26_cr: 30.0,
+        spend_inr_crores: 60.0
+      },
+      {
+        id: 'FB-2',
+        name: 'Packaging Materials',
+        spend_fy24_cr: 10.0,
+        spend_fy25_cr: 0,
+        spend_fy26_cr: 15.0,
+        spend_inr_crores: 25.0
+      }
+    ] as any[];
+    const res = calculateCategoryYearDetails([], fallbackCats, 85.0);
+    expect(res.length).toBe(2);
+    expect(res[0].yoy_growth_pct).toBe(50.0);
+    expect(res[1].yoy_growth_pct).toBeUndefined();
+  });
+
+  it('covers fallback categories with spend_inr_2023/2024/2025_26 and classified commodity matching', () => {
+    const fallbackCats = [
+      {
+        id: 'FB-INR',
+        name: 'Direct Materials',
+        spend_inr_2023: 100000000,
+        spend_inr_2024: 150000000,
+        spend_inr_2025_26: 200000000,
+        spend_inr_crores: 45.0
+      }
+    ] as any[];
+    const resFallback = calculateCategoryYearDetails([], fallbackCats, 45.0);
+    expect(resFallback.length).toBe(1);
+    expect(resFallback[0].spend_fy24_cr).toBe(10.0);
+    expect(resFallback[0].spend_fy25_cr).toBe(15.0);
+    expect(resFallback[0].spend_fy26_cr).toBe(20.0);
+
+    const items = [
+      {
+        mapping_id: 'MAP-CLASS-1',
+        line_item_id: 'LINE-CLASS-1',
+        raw_desc: 'Valves 50mm flanged',
+        unspsc_category_name: 'Pumps & Motors',
+        inr_crores: 12.0,
+        spend_year: 2024,
+        status: 'Confirmed',
+        ai_confidence: 90
+      },
+      {
+        mapping_id: 'MAP-CLASS-2',
+        line_item_id: 'LINE-CLASS-2',
+        inr_crores: 5.0,
+        spend_year: 2024,
+        status: 'Confirmed',
+        ai_confidence: 85
+      }
+    ] as any[];
+    const resItems = calculateCategoryYearDetails(items);
+    expect(resItems.length).toBe(2);
   });
 });

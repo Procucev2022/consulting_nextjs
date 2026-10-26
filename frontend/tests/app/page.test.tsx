@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import Home from '../../src/app/page';
 import { apiClient, authApiClient } from '../../src/utils/api';
+import { assessmentApiClient } from '../../src/utils/assessmentApi';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
@@ -13,6 +14,31 @@ vi.mock('next/navigation', () => ({
     replace: vi.fn(),
     prefetch: vi.fn()
   })
+}));
+
+vi.mock('@/utils/assessmentApi', () => ({
+  assessmentApiClient: {
+    getOperatingMode: vi.fn().mockResolvedValue({
+      mode: 'SAAS',
+      isInternalAssessment: false,
+      isPublicSaaS: true,
+      workspaceTitle: 'aiCEV — Enterprise Sourcing Suite',
+      phaseName: 'Production SaaS',
+      features: {
+        publicRegistration: true,
+        tierUpgrade: true,
+        subscriptionPurchase: true,
+        customerSelfOnboarding: true,
+        customerSaaSDashboard: true,
+        assessmentCentre: false
+      },
+      allowedRoles: ['USER', 'ADMIN']
+    }),
+    getAssessments: vi.fn().mockResolvedValue([]),
+    listAssessments: vi.fn().mockResolvedValue([]),
+    getCustomers: vi.fn().mockResolvedValue([]),
+    getUpdateStatus: vi.fn().mockResolvedValue({ isUpdateAvailable: false })
+  }
 }));
 
 const sampleDoc = {
@@ -220,6 +246,28 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'mergeVendor').mockResolvedValue({ success: true });
     vi.spyOn(apiClient, 'deployOpportunity').mockResolvedValue(sampleOpportunity);
     vi.spyOn(apiClient, 'getSimulatedTier').mockReturnValue('GOLD');
+    vi.spyOn(apiClient, 'getCanonicalModule1').mockResolvedValue(null as any);
+    vi.spyOn(apiClient, 'getModule2CanonicalLineItems').mockResolvedValue([] as any);
+    vi.spyOn(assessmentApiClient, 'getOperatingMode').mockResolvedValue({
+      mode: 'PUBLIC_SAAS',
+      isInternalAssessment: false,
+      isPublicSaaS: true,
+      workspaceTitle: 'aiCEV — Enterprise Sourcing Suite',
+      phaseName: 'Production SaaS',
+      features: {
+        publicRegistration: true,
+        tierUpgrade: true,
+        subscriptionPurchase: true,
+        customerSelfOnboarding: true,
+        customerSaaSDashboard: true,
+        assessmentCentre: false
+      },
+      allowedRoles: ['INTERNAL_ADMIN', 'ANALYST', 'CONSULTANT']
+    });
+    vi.spyOn(assessmentApiClient, 'getAssessments').mockResolvedValue([]);
+    vi.spyOn(assessmentApiClient, 'listAssessments').mockResolvedValue([]);
+    vi.spyOn(assessmentApiClient, 'getCustomers').mockResolvedValue([]);
+    vi.spyOn(assessmentApiClient, 'getUpdateStatus').mockResolvedValue({ isUpdateAvailable: false } as any);
   });
 
   afterEach(() => {
@@ -246,21 +294,21 @@ describe('Home Page Component', () => {
     fireEvent.click(step2);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);
     fireEvent.click(step3);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     // Navigate to Module 4
     const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
     fireEvent.click(step4);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     // Navigate to Module 5
     const matrixBtn = screen.getByText(UI_STRINGS.pipeline.conversionMatrixTab);

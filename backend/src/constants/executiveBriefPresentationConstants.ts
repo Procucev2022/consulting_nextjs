@@ -209,6 +209,46 @@ export const EXECUTIVE_BRIEF_PRESENTATION_CONTRACT: ExecutiveBriefPresentationCo
   classifications: PRESENTATION_VALUE_CLASSIFICATIONS
 };
 
+export const DEMO_ARCHETYPE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationContract = {
+  ...EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+};
+
+export {
+  ABC_TEXTILE_VALUE_CLASSIFICATIONS,
+  ABC_TEXTILE_PRESENTATION_CONTRACT,
+  formatPresentationValues,
+  type PresentationFormattedValues
+} from './customerBriefPresentationConstants';
+import { ABC_TEXTILE_PRESENTATION_CONTRACT } from './customerBriefPresentationConstants';
+
+/**
+ * Checks whether client name or assessment ID belongs to actual customer assessment.
+ */
+export function isCustomerAssessment(clientNameOrAssessmentId?: string): boolean {
+  if (!clientNameOrAssessmentId) return false;
+  const clean = clientNameOrAssessmentId.trim().toLowerCase();
+  return (
+    clean.includes('abc') ||
+    clean.includes('textile') ||
+    clean.includes('0002') ||
+    clean.startsWith('aic-')
+  );
+}
+
+/**
+ * Resolves the presentation contract based on client name or assessment ID.
+ * Returns ABC_TEXTILE_PRESENTATION_CONTRACT for ABC Textile Ltd / AIC-2026-0002,
+ * and DEMO_ARCHETYPE_PRESENTATION_CONTRACT for UltraTech Cement / demonstration archetypes.
+ */
+export function getExecutiveBriefPresentationContract(
+  clientNameOrAssessmentId?: string
+): ExecutiveBriefPresentationContract {
+  if (isCustomerAssessment(clientNameOrAssessmentId)) {
+    return ABC_TEXTILE_PRESENTATION_CONTRACT;
+  }
+  return DEMO_ARCHETYPE_PRESENTATION_CONTRACT;
+}
+
 export const EXECUTIVE_BRIEF_PRESENTATION_CONSTANTS = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;
 
 /**
@@ -222,24 +262,29 @@ export function isAdditiveDirectSaving(type: ValueClassificationType): boolean {
 /**
  * Validates that mathematical relationship between Gross, Overlaps, Exclusions, and Net matches exactly.
  */
-export function validateWaterfallMath(): boolean {
+export function validateWaterfallMath(
+  contract: ExecutiveBriefPresentationContract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+): boolean {
   const calculatedNet =
-    PRESENTATION_GROSS_OPPORTUNITY_CR -
-    PRESENTATION_OVERLAP_DEDUCTIONS_CR -
-    PRESENTATION_EXCLUSIONS_CR;
-  return Math.abs(calculatedNet - PRESENTATION_NET_DEFENSIBLE_PIPELINE_CR) < 0.001;
+    contract.grossOpportunityCr -
+    contract.overlapDeductionsCr -
+    contract.exclusionsCr;
+  return Math.abs(calculatedNet - contract.netDefensiblePipelineCr) < 0.001;
 }
 
 /**
  * Validates that Net Defensible Pipeline equals Direct Savings + Strategic Market Value.
  */
-export function validateNetComposition(): boolean {
+export function validateNetComposition(
+  contract: ExecutiveBriefPresentationContract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+): boolean {
   const sum =
-    PRESENTATION_NET_DIRECT_SAVINGS_CR +
-    PRESENTATION_STRATEGIC_MARKET_VALUE_CR;
-  return Math.abs(sum - PRESENTATION_NET_DEFENSIBLE_PIPELINE_CR) < 0.001;
+    contract.netDirectSavingsCr +
+    contract.strategicMarketValueCr;
+  return Math.abs(sum - contract.netDefensiblePipelineCr) < 0.001;
 }
 
 export * from './executiveBriefLayoutConstants';
+
 
 

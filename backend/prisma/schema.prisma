@@ -809,3 +809,84 @@ model FxReferenceRate {
   @@index([rate_date])
 }
 
+model AssessmentMaster {
+  assessment_id           String   @id
+  customer_name           String
+  industry                String
+  period_start            String
+  period_end              String
+  data_received_at        DateTime?
+  nda_status              String   @default("NOT_REQUESTED")
+  data_status             String   @default("AWAITING_DATA")
+  assigned_analyst        String
+  status                  String   @default("DRAFT")
+  active_data_version_id  String?
+  active_analysis_run_id  String?
+  total_spend_cr          Float?
+  validated_spend_cr      Float?
+  potential_savings_cr    Float?
+  savings_pct             Float?
+  approved_by             String?
+  approved_at             DateTime?
+  approval_comment        String?
+  delivered_by            String?
+  delivered_at            DateTime?
+  closed_at               DateTime?
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  @@index([customer_name])
+  @@index([status])
+  @@index([assigned_analyst])
+}
+
+model AssessmentDataVersion {
+  data_version_id         String   @id
+  assessment_id           String
+  version_number          Int
+  file_name               String
+  file_size               Int
+  checksum                String
+  file_path               String
+  uploaded_by             String
+  uploaded_at             DateTime @default(now())
+  record_count            Int      @default(0)
+  notes                   String?
+  is_superseded           Boolean  @default(false)
+
+  @@index([assessment_id])
+  @@index([version_number])
+}
+
+model AssessmentAnalysisRun {
+  analysis_run_id         String   @id
+  assessment_id           String
+  data_version_id         String
+  status                  String   @default("IN_PROGRESS")
+  total_spend_cr          Float
+  validated_spend_cr      Float
+  potential_savings_cr    Float
+  savings_pct             Float
+  review_gates_json       String
+  all_gates_passed        Boolean  @default(false)
+  is_approved             Boolean  @default(false)
+  is_superseded           Boolean  @default(false)
+  created_at              DateTime @default(now())
+
+  @@index([assessment_id])
+  @@index([data_version_id])
+}
+
+model AssessmentAuditLog {
+  id                      String   @id @default(cuid())
+  assessment_id           String
+  actor_email             String
+  actor_role              String
+  action                  String
+  details_json            String?
+  timestamp               DateTime @default(now())
+
+  @@index([assessment_id])
+  @@index([action])
+  @@index([timestamp])
+}

@@ -27,9 +27,14 @@
     "check:fast": "npm run quality:fast",
     "pre-commit": "npm run quality",
     "deps:check": "npm --prefix backend outdated || exit 0 && npm --prefix frontend outdated || exit 0",
-    "deps:audit": "npm --prefix backend audit && npm --prefix frontend audit"
+    "deps:audit": "npm --prefix backend audit && npm --prefix frontend audit",
+    "desktop:push": "node scripts/push-to-desktop.js",
+    "push:desktop": "node scripts/push-to-desktop.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.43.1"
   }
 }

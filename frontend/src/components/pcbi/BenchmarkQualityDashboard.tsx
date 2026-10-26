@@ -10,21 +10,21 @@ export const BenchmarkQualityDashboard: React.FC<BenchmarkQualityDashboardProps>
   className = ''
 }) => {
   const qStrings = UI_STRINGS.module3.benchmarkQuality;
-  const totalSpendCr = summary?.total_spend_inr_cr ?? 100.0;
+  const totalSpendCr = summary?.total_spend_inr_cr ?? 0.0;
 
-  const aSpendCr = summary?.a_quality_spend_inr_cr ?? 35.0;
-  const bSpendCr = summary?.b_quality_spend_inr_cr ?? 28.0;
-  const cSpendCr = summary?.c_quality_spend_inr_cr ?? 7.0;
-  const notBenchSpendCr = summary?.not_benchmarkable_spend_inr_cr ?? 22.0;
+  const aSpendCr = summary?.a_quality_spend_inr_cr ?? 0.0;
+  const bSpendCr = summary?.b_quality_spend_inr_cr ?? 0.0;
+  const cSpendCr = summary?.c_quality_spend_inr_cr ?? 0.0;
+  const notBenchSpendCr = summary?.not_benchmarkable_spend_inr_cr ?? (totalSpendCr > 0 ? totalSpendCr : 0.0);
 
   const cards = [
     {
       title: qStrings.aBadge,
       desc: qStrings.aDesc,
       spendCr: aSpendCr,
-      spendPct: totalSpendCr > 0 ? ((aSpendCr / totalSpendCr) * 100).toFixed(1) : '35.0',
-      txCount: summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.45) : 450,
-      matCount: summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.4)) : 18,
+      spendPct: totalSpendCr > 0 ? ((aSpendCr / totalSpendCr) * 100).toFixed(1) : '0.0',
+      txCount: aSpendCr > 0 && summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.45) : 0,
+      matCount: aSpendCr > 0 && summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.4)) : 0,
       oppCr: Number((aSpendCr * 0.08).toFixed(2)),
       accentBorder: 'border-emerald-300 dark:border-emerald-800',
       accentBg: 'bg-emerald-50/50 dark:bg-emerald-950/20',
@@ -35,9 +35,9 @@ export const BenchmarkQualityDashboard: React.FC<BenchmarkQualityDashboardProps>
       title: qStrings.bBadge,
       desc: qStrings.bDesc,
       spendCr: bSpendCr,
-      spendPct: totalSpendCr > 0 ? ((bSpendCr / totalSpendCr) * 100).toFixed(1) : '28.0',
-      txCount: summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.35) : 320,
-      matCount: summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.35)) : 14,
+      spendPct: totalSpendCr > 0 ? ((bSpendCr / totalSpendCr) * 100).toFixed(1) : '0.0',
+      txCount: bSpendCr > 0 && summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.35) : 0,
+      matCount: bSpendCr > 0 && summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.35)) : 0,
       oppCr: Number((bSpendCr * 0.09).toFixed(2)),
       accentBorder: 'border-cyan-300 dark:border-cyan-800',
       accentBg: 'bg-cyan-50/50 dark:bg-cyan-950/20',
@@ -48,9 +48,9 @@ export const BenchmarkQualityDashboard: React.FC<BenchmarkQualityDashboardProps>
       title: qStrings.cBadge,
       desc: qStrings.cDesc,
       spendCr: cSpendCr,
-      spendPct: totalSpendCr > 0 ? ((cSpendCr / totalSpendCr) * 100).toFixed(1) : '7.0',
-      txCount: summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.15) : 110,
-      matCount: summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.15)) : 6,
+      spendPct: totalSpendCr > 0 ? ((cSpendCr / totalSpendCr) * 100).toFixed(1) : '0.0',
+      txCount: cSpendCr > 0 && summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.15) : 0,
+      matCount: cSpendCr > 0 && summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.15)) : 0,
       oppCr: Number((cSpendCr * 0.05).toFixed(2)),
       accentBorder: 'border-amber-300 dark:border-amber-800',
       accentBg: 'bg-amber-50/50 dark:bg-amber-950/20',
@@ -61,9 +61,9 @@ export const BenchmarkQualityDashboard: React.FC<BenchmarkQualityDashboardProps>
       title: qStrings.notBenchmarkableBadge,
       desc: qStrings.notBenchmarkableDesc,
       spendCr: notBenchSpendCr,
-      spendPct: totalSpendCr > 0 ? ((notBenchSpendCr / totalSpendCr) * 100).toFixed(1) : '22.0',
-      txCount: summary?.benchmarkable_transactions ? Math.round(summary.benchmarkable_transactions * 0.05) : 45,
-      matCount: summary?.material_aggregations ? Math.max(1, Math.round(summary.material_aggregations.length * 0.1)) : 4,
+      spendPct: totalSpendCr > 0 ? ((notBenchSpendCr / totalSpendCr) * 100).toFixed(1) : '100.0',
+      txCount: summary?.mapping_required_transactions ?? summary?.total_transactions ?? 0,
+      matCount: summary?.material_aggregations ? summary.material_aggregations.length : 262,
       oppCr: 0.0,
       accentBorder: 'border-slate-300 dark:border-slate-800',
       accentBg: 'bg-slate-50 dark:bg-white',

@@ -11,13 +11,13 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
 }) => {
   const wStrings = UI_STRINGS.module3.waterfall;
 
-  const totalSpendCr = summary?.total_spend_inr_cr ?? 100.0;
-  const materialSpendCr = summary?.material_spend_inr_cr ?? 92.0;
-  const unspscMappedCr = summary?.unspsc_mapped_spend_inr_cr ?? 88.0;
-  const pcbiMappedCr = summary?.pcbi_mapped_spend_inr_cr ?? 88.0;
-  const benchmarkableCr = summary?.benchmarkable_spend_inr_cr ?? 70.0;
-  const positiveGapSpendCr = Number((benchmarkableCr * 0.45).toFixed(2)); // ~₹31.50 Cr with positive variance
-  const potentialOppCr = summary?.total_opportunity_inr_cr ?? 8.2;
+  const totalSpendCr = summary?.total_spend_inr_cr ?? 0.0;
+  const materialSpendCr = summary?.material_spend_inr_cr ?? 0.0;
+  const unspscMappedCr = summary?.unspsc_mapped_spend_inr_cr ?? 0.0;
+  const pcbiMappedCr = summary?.pcbi_mapped_spend_inr_cr ?? 0.0;
+  const benchmarkableCr = summary?.benchmarkable_spend_inr_cr ?? 0.0;
+  const positiveGapSpendCr = Number((benchmarkableCr * 0.45).toFixed(2));
+  const potentialOppCr = summary?.total_opportunity_inr_cr ?? 0.0;
 
   const steps = [
     {
@@ -31,7 +31,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
     {
       title: wStrings.step2,
       valueCr: materialSpendCr,
-      pctOfTotal: totalSpendCr > 0 ? Number(((materialSpendCr / totalSpendCr) * 100).toFixed(1)) : 92.0,
+      pctOfTotal: totalSpendCr > 0 ? Number(((materialSpendCr / totalSpendCr) * 100).toFixed(1)) : 0.0,
       color: 'from-blue-600 to-indigo-700 text-white',
       barColor: 'bg-blue-600 dark:bg-blue-500',
       note: 'Services safely isolated'
@@ -39,7 +39,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
     {
       title: wStrings.step3,
       valueCr: unspscMappedCr,
-      pctOfTotal: totalSpendCr > 0 ? Number(((unspscMappedCr / totalSpendCr) * 100).toFixed(1)) : 88.0,
+      pctOfTotal: totalSpendCr > 0 ? Number(((unspscMappedCr / totalSpendCr) * 100).toFixed(1)) : 0.0,
       color: 'from-cyan-600 to-teal-700 text-white',
       barColor: 'bg-cyan-600 dark:bg-cyan-500',
       note: 'Taxonomy Commodity Level'
@@ -47,7 +47,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
     {
       title: wStrings.step4,
       valueCr: pcbiMappedCr,
-      pctOfTotal: totalSpendCr > 0 ? Number(((pcbiMappedCr / totalSpendCr) * 100).toFixed(1)) : 88.0,
+      pctOfTotal: totalSpendCr > 0 ? Number(((pcbiMappedCr / totalSpendCr) * 100).toFixed(1)) : 0.0,
       color: 'from-teal-600 to-emerald-700 text-white',
       barColor: 'bg-teal-600 dark:bg-teal-500',
       note: 'PCBI Master index mapped'
@@ -55,7 +55,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
     {
       title: wStrings.step5,
       valueCr: benchmarkableCr,
-      pctOfTotal: totalSpendCr > 0 ? Number(((benchmarkableCr / totalSpendCr) * 100).toFixed(1)) : 70.0,
+      pctOfTotal: totalSpendCr > 0 ? Number(((benchmarkableCr / totalSpendCr) * 100).toFixed(1)) : 0.0,
       color: 'from-emerald-600 to-green-700 text-white',
       barColor: 'bg-emerald-600 dark:bg-emerald-500',
       note: 'Constituents weighted %'
@@ -63,7 +63,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
     {
       title: wStrings.step6,
       valueCr: positiveGapSpendCr,
-      pctOfTotal: totalSpendCr > 0 ? Number(((positiveGapSpendCr / totalSpendCr) * 100).toFixed(1)) : 31.5,
+      pctOfTotal: totalSpendCr > 0 ? Number(((positiveGapSpendCr / totalSpendCr) * 100).toFixed(1)) : 0.0,
       color: 'from-amber-600 to-orange-700 text-white',
       barColor: 'bg-amber-600 dark:bg-amber-500',
       note: 'Actual Price > Expected Price'
@@ -71,7 +71,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
     {
       title: wStrings.step7,
       valueCr: potentialOppCr,
-      pctOfTotal: totalSpendCr > 0 ? Number(((potentialOppCr / totalSpendCr) * 100).toFixed(1)) : 8.2,
+      pctOfTotal: totalSpendCr > 0 ? Number(((potentialOppCr / totalSpendCr) * 100).toFixed(1)) : 0.0,
       color: 'from-rose-600 to-red-700 text-white',
       barColor: 'bg-rose-600 dark:bg-rose-500',
       note: 'Gross Gap × Benchmarkability %'
@@ -116,7 +116,7 @@ export const BenchmarkCoverageWaterfall: React.FC<BenchmarkCoverageWaterfallProp
 
               <div>
                 <div className="text-base font-black font-mono text-slate-900 dark:text-white">
-                  ₹{step.valueCr.toFixed(2)} Cr
+                  ₹{step.valueCr > 0 && step.valueCr.toString().split('.')[1]?.length > 2 ? step.valueCr.toFixed(4) : step.valueCr.toFixed(2)} Cr
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-[#EEF4FC] h-1.5 rounded-full overflow-hidden mt-1.5">
                   <div

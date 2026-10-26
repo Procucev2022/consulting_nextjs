@@ -203,3 +203,42 @@ export const updateOpportunityStatusSchema = z.object({
   ])
 });
 
+// Customer Management Form Schemas (Internal Command Centre)
+export const createCustomerFormSchema = z.object({
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
+  industry: z.string().min(2, 'Industry is required'),
+  businessUnit: z.string().optional(),
+  region: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export const updateCustomerFormSchema = z.object({
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters').optional(),
+  industry: z.string().min(2, 'Industry is required').optional(),
+  businessUnit: z.string().optional(),
+  region: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  status: z.enum(['ACTIVE', 'ARCHIVED', 'ONBOARDING']).optional(),
+  notes: z.string().optional()
+});
+
+export const newAssessmentFormSchema = z.object({
+  customerId: z.string().optional(),
+  customerName: z.string().min(2, 'Customer name is required'),
+  businessUnit: z.string().optional(),
+  industry: z.string().min(2, 'Industry is required'),
+  assessmentPeriodStart: z.string().min(3, 'Period start is required'),
+  assessmentPeriodEnd: z.string().min(3, 'Period end is required'),
+  assignedAnalyst: z.string().email('Valid analyst email is required'),
+  assessmentOwner: z.string().optional(),
+  currency: z.string().optional(),
+  ndaStatus: z.enum(['NOT_REQUESTED', 'SENT', 'SIGNED', 'EXPIRED']).optional(),
+  dataReceivedDate: z.string().optional(),
+  notes: z.string().optional()
+});
+

@@ -1,4 +1,9 @@
 import type { PipelineActiveTab } from './components';
+import type { SavingsOpportunity } from './models';
+import type { RecurringConsolidationItem } from './vendorConsolidation';
+import type { StrategicSingleVendorItem } from './strategicVendorRisk';
+import type { MultiplePoItem } from './poConsolidation';
+import type { SavingsWaterfallMetrics } from './savings';
 
 export type SavingsInitiativeSource = 'MODULE2_AI_CATEGORIZATION' | 'MODULE4_SAVINGS_ENGINE';
 
@@ -30,6 +35,13 @@ export interface StrategicSavingsInitiative {
 export interface StrategicSavingsSummaryMetrics {
   grandTotalSpendInrCr: number;
   grandTotalSavingsInrCr: number;
+  netModelledOpportunityInrCr: number;
+  grossOpportunityInrCr: number;
+  overlapDeductionsInrCr: number;
+  provenOpportunityInrCr: number;
+  discoveryOpportunityInrCr: number;
+  realizedSavingsInrCr: number;
+  addressableSpendInrCr: number;
   overallSavingsPct: number;
   module2SpendInrCr: number;
   module2SavingsInrCr: number;
@@ -44,4 +56,24 @@ export interface StrategicSavingsSummaryBannerProps {
   onNavigateToSection?: (targetModule: PipelineActiveTab, targetSectionId: string) => void;
   currentTier?: string;
   onUpgrade?: (tier: string) => void;
+}
+
+export interface WaterfallBreakdownResult {
+  netModelled: number;
+  gross: number;
+  overlap: number;
+  proven: number;
+  discovery: number;
+  realized: number;
+  addressable: number;
+}
+
+export interface StrategicSavingsBuildOptions {
+  opportunities?: SavingsOpportunity[];
+  consolidationItems?: RecurringConsolidationItem[];
+  poItems?: MultiplePoItem[];
+  strategicRiskItems?: StrategicSingleVendorItem[];
+  waterfallMetrics?: SavingsWaterfallMetrics;
+  strategicSummary?: Record<string, unknown>;
+  evaluatedBaselineSpendCr?: number;
 }

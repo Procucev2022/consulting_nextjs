@@ -1,6 +1,7 @@
 /**
- * Executive Opportunity Brief Export Service (Prompt 286)
+ * Executive Opportunity Brief Export Service (Prompt 286 & Prompt 503)
  * Generates and saves the 10-slide CFO/CEO Executive Opportunity Brief in PDF and PPTX formats.
+ * Binds customer assessment ID and ensures customer-specific filenames and data reconciliation.
  */
 
 import fs from 'fs';
@@ -24,16 +25,21 @@ export class ExecutiveOpportunityBriefExportService {
     pptxBuffer: Buffer;
     pdfPath: string;
     pptxPath: string;
+    pdfFilename: string;
+    pptxFilename: string;
   }> {
     const cwd = process.cwd();
     const isBackendCwd = path.basename(cwd) === 'backend';
     const backendDir = isBackendCwd ? cwd : path.resolve(cwd, 'backend');
     const rootDir = isBackendCwd ? path.resolve(cwd, '..') : cwd;
 
+    const pdfFilename = ExecutiveOpportunityBriefService.getPdfFilename(clientName);
+    const pptxFilename = ExecutiveOpportunityBriefService.getPptxFilename(clientName);
+
     // 1. Generate PDF
     const pdfBuffer = ExecutiveOpportunityBriefService.generatePdfBuffer(clientName);
-    const pdfBackendPath = path.resolve(backendDir, this.PDF_FILENAME);
-    const pdfRootPath = path.resolve(rootDir, this.PDF_FILENAME);
+    const pdfBackendPath = path.resolve(backendDir, pdfFilename);
+    const pdfRootPath = path.resolve(rootDir, pdfFilename);
 
     fs.writeFileSync(pdfBackendPath, pdfBuffer);
     if (rootDir !== backendDir) {
@@ -42,8 +48,8 @@ export class ExecutiveOpportunityBriefExportService {
 
     // 2. Generate PPTX
     const pptxBuffer = await ExecutiveOpportunityBriefPptxGenerator.generateBuffer(clientName);
-    const pptxBackendPath = path.resolve(backendDir, this.PPTX_FILENAME);
-    const pptxRootPath = path.resolve(rootDir, this.PPTX_FILENAME);
+    const pptxBackendPath = path.resolve(backendDir, pptxFilename);
+    const pptxRootPath = path.resolve(rootDir, pptxFilename);
 
     fs.writeFileSync(pptxBackendPath, pptxBuffer);
     if (rootDir !== backendDir) {
@@ -55,6 +61,8 @@ export class ExecutiveOpportunityBriefExportService {
       pptxBytes: pptxBuffer.length,
       pdfPath: pdfRootPath,
       pptxPath: pptxRootPath,
+      pdfFilename,
+      pptxFilename,
       clientName
     });
 
@@ -62,7 +70,9 @@ export class ExecutiveOpportunityBriefExportService {
       pdfBuffer,
       pptxBuffer,
       pdfPath: pdfRootPath,
-      pptxPath: pptxRootPath
+      pptxPath: pptxRootPath,
+      pdfFilename,
+      pptxFilename
     };
   }
 }

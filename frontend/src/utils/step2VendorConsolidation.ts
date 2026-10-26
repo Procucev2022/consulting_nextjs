@@ -6,9 +6,18 @@ import type {
   LineItemMapping,
   RecurringConsolidationItem,
   ConsolidationCategory,
+  ConsolidationSupplier,
   VendorConsolidationSummary
 } from '../types';
 import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
+
+interface SupplierAggregateData {
+  spend: number;
+  poCount: number;
+  vendorId: string;
+  totalUnits: number;
+  unitPrice?: number;
+}
 
 interface ConsolidationGroupAggregate {
   category: string;
@@ -17,7 +26,7 @@ interface ConsolidationGroupAggregate {
   unspscCode: string;
   unspscFamily: string;
   totalSpend: number;
-  suppliers: Map<string, { spend: number; poCount: number; vendorId: string }>;
+  suppliers: Map<string, SupplierAggregateData>;
   totalPos: number;
   totalUnits: number;
 }
@@ -34,7 +43,7 @@ export function calculateVendorConsolidation(
   let counter = 0;
 
   groupMap.forEach((grp) => {
-    if (grp.suppliers.size >= 2 && grp.totalSpend > 0) {
+    if (grp.suppliers.size >= 2) {
       consolidationItems.push(buildConsolidationItem(grp, counter++));
     }
   });
@@ -45,9 +54,15 @@ export function calculateVendorConsolidation(
 function resolveConsolidationTaxonomy(desc: string, bucket: string): { code: string; family: string } {
   const descMatch = lookupUNSPSCByDescription(desc);
   const fallback = lookupUNSPSCDetails(desc, bucket);
+  if (descMatch?.classificationStatus === 'UNCLASSIFIED') {
+    return {
+      code: '00000000',
+      family: 'Unclassified (Review Required)'
+    };
+  }
   return {
-    code: descMatch?.commodityCode || /* c8 ignore next */ '10000000',
-    family: descMatch?.classTitle || fallback.classTitle || /* c8 ignore next */ 'Industrial Supplies'
+    code: descMatch?.commodityCode || '10000000',
+    family: descMatch?.classTitle || fallback.classTitle || 'Industrial Supplies'
   };
 }
 
@@ -71,19 +86,38 @@ function upsertGroupSupplier(
   vName: string,
   spendCr: number,
   masterId?: string,
-  idx?: number
+  idx?: number,
+  qty?: number,
+  unitPrice?: number
 ): void {
   const existingS = entry.suppliers.get(vName);
+  const units = qty && qty > 0 ? qty : 0;
   if (existingS) {
     existingS.spend += spendCr;
     existingS.poCount += 1;
+    existingS.totalUnits += units;
+    if (unitPrice && unitPrice > 0) {
+      existingS.unitPrice = unitPrice;
+    }
   } else {
     entry.suppliers.set(vName, {
       spend: spendCr,
       poCount: 1,
-      vendorId: masterId || `VND-${100 + (idx || 0)}`
+      vendorId: masterId || `VND-${100 + (idx || 0)}`,
+      totalUnits: units,
+      unitPrice: unitPrice && unitPrice > 0 ? unitPrice : undefined
     });
   }
+}
+
+function resolveItemSpendAndPrice(item: LineItemMapping): { spendCr: number; qty: number; unitPrice?: number } {
+  const spendCr = item.inr_crores ?? (item.total_spend ? item.total_spend / 10000000 : 0);
+  const qty = item.qty && item.qty > 0 ? item.qty : 0;
+  let unitPrice = item.unit_price && item.unit_price > 0 ? item.unit_price : undefined;
+  if (!unitPrice && qty > 0 && item.total_spend) {
+    unitPrice = item.total_spend / qty;
+  }
+  return { spendCr, qty, unitPrice };
 }
 
 function aggregateConsolidationRecord(
@@ -99,45 +133,104 @@ function aggregateConsolidationRecord(
     groupMap.set(groupKey, entry);
   }
 
-  const spendCr = item.inr_crores || (item.total_spend ? item.total_spend / 10000000 : 0.5);
+  const { spendCr, qty, unitPrice } = resolveItemSpendAndPrice(item);
   entry.totalSpend += spendCr;
   entry.totalPos += 1;
-  entry.totalUnits += item.qty || 100;
-  upsertGroupSupplier(entry, item.vendor_identified || 'Supplier', spendCr, item.master_supplier_id, idx);
+  entry.totalUnits += qty;
+  upsertGroupSupplier(
+    entry,
+    item.vendor_identified || 'Supplier',
+    spendCr,
+    item.master_supplier_id,
+    idx,
+    qty,
+    unitPrice
+  );
+}
+
+function extractSupplierPrices(
+  sortedSuppliersList: [string, SupplierAggregateData][]
+): { vendorName: string; price: number; data: SupplierAggregateData }[] {
+  const supplierPrices: { vendorName: string; price: number; data: SupplierAggregateData }[] = [];
+  for (const [vName, sData] of sortedSuppliersList) {
+    let effectivePrice = sData.unitPrice;
+    if (!effectivePrice && sData.totalUnits > 0 && sData.spend > 0) {
+      effectivePrice = (sData.spend * 10000000) / sData.totalUnits;
+    }
+    if (effectivePrice && effectivePrice > 0) {
+      supplierPrices.push({ vendorName: vName, price: effectivePrice, data: sData });
+    }
+  }
+  return supplierPrices;
+}
+
+function computeTailExcessSpend(
+  supplierPrices: { vendorName: string; price: number; data: SupplierAggregateData }[],
+  baselinePrice?: number
+): number {
+  if (!baselinePrice || baselinePrice <= 0) return 0;
+  let totalTailExcessSpendCr = 0;
+  for (const { price, data } of supplierPrices) {
+    if (price > baselinePrice) {
+      if (data.totalUnits > 0) {
+        totalTailExcessSpendCr += ((price - baselinePrice) * data.totalUnits) / 10000000;
+      } else {
+        const ratePremium = (price - baselinePrice) / baselinePrice;
+        totalTailExcessSpendCr += data.spend * (ratePremium / (1 + ratePremium));
+      }
+    }
+  }
+  return totalTailExcessSpendCr;
+}
+
+function formatConsolidationSuppliers(
+  sortedSuppliersList: [string, SupplierAggregateData][],
+  totalSpend: number,
+  baselinePrice?: number
+): ConsolidationSupplier[] {
+  return sortedSuppliersList.map(([vName, sData], sIdx) => {
+    let effectivePrice = sData.unitPrice;
+    if (!effectivePrice && sData.totalUnits > 0 && sData.spend > 0) {
+      effectivePrice = (sData.spend * 10000000) / sData.totalUnits;
+    }
+    const unitRateIndex = baselinePrice && effectivePrice && baselinePrice > 0
+      ? Number((effectivePrice / baselinePrice).toFixed(2))
+      : 1.0;
+
+    return {
+      vendor_id: sData.vendorId,
+      vendor_name: vName,
+      annual_spend_inr_cr: Number(sData.spend.toFixed(2)),
+      spend_share_pct: Number(((sData.spend / (totalSpend || 1)) * 100).toFixed(1)),
+      unit_rate_index: unitRateIndex,
+      monthly_po_count: Math.max(1, Math.round(sData.poCount / 12)),
+      status: (sIdx === 0 ? 'Primary' : sIdx === 1 ? 'Incumbent' : 'Spot / Peripheral') as
+        | 'Primary'
+        | 'Incumbent'
+        | 'Spot / Peripheral'
+    };
+  });
 }
 
 function buildConsolidationItem(grp: ConsolidationGroupAggregate, counter: number): RecurringConsolidationItem {
   const vendorCount = grp.suppliers.size;
   const sortedSuppliersList = Array.from(grp.suppliers.entries()).sort((a, b) => b[1].spend - a[1].spend);
-  const topSupplierSpend = sortedSuppliersList[0]?.[1].spend || /* c8 ignore next */ 0;
-  const tailSpend = grp.totalSpend - topSupplierSpend;
 
-  // Empirical price dispersion: derived from core vs tail rate differentials
-  const tailRatio = grp.totalSpend > 0 ? tailSpend / grp.totalSpend : /* c8 ignore next */ 0;
-  const priceVariance = Math.round(tailRatio * 25 * 10) / 10;
-  // Opportunity based strictly on empirical rate differential between tail suppliers and core supplier
-  let totalTailExcessSpendCr = 0;
-  sortedSuppliersList.slice(1).forEach(([, sData], sIdx) => {
-    const ratePremium = (sIdx + 1) * 0.03;
-    totalTailExcessSpendCr += sData.spend * (ratePremium / (1 + ratePremium));
-  });
+  const supplierPrices = extractSupplierPrices(sortedSuppliersList);
+  const prices = supplierPrices.map((sp) => sp.price);
+  const baselinePrice = supplierPrices.length >= 2 ? Math.min(...prices) : undefined;
+  const maxPrice = supplierPrices.length >= 2 ? Math.max(...prices) : undefined;
+  const priceVariance = baselinePrice && maxPrice && baselinePrice > 0
+    ? Number((((maxPrice - baselinePrice) / baselinePrice) * 100).toFixed(1))
+    : 0;
+
+  const totalTailExcessSpendCr = computeTailExcessSpend(supplierPrices, baselinePrice);
   const savingsCr = Number(totalTailExcessSpendCr.toFixed(2));
   const savingsPct = grp.totalSpend > 0
     ? Number(((savingsCr / grp.totalSpend) * 100).toFixed(1))
-    : /* c8 ignore next */ 0;
+    : 0;
 
-  const sortedSuppliers = sortedSuppliersList.map(([vName, sData], sIdx) => ({
-    vendor_id: sData.vendorId,
-    vendor_name: vName,
-    annual_spend_inr_cr: Number(sData.spend.toFixed(2)),
-    spend_share_pct: Number(((sData.spend / (grp.totalSpend || /* c8 ignore next */ 1)) * 100).toFixed(1)),
-    unit_rate_index: Number((1.0 + (sIdx > 0 ? (sIdx * 0.03) : 0)).toFixed(2)),
-    monthly_po_count: Math.max(1, Math.round(sData.poCount / 12)),
-    status: (sIdx === 0 ? 'Primary' : sIdx === 1 ? 'Incumbent' : 'Spot / Peripheral') as
-      | 'Primary'
-      | 'Incumbent'
-      | 'Spot / Peripheral'
-  }));
+  const sortedSuppliers = formatConsolidationSuppliers(sortedSuppliersList, grp.totalSpend, baselinePrice);
 
   return {
     id: `CONS-${100 + counter}`,
@@ -163,7 +256,9 @@ function buildConsolidationItem(grp: ConsolidationGroupAggregate, counter: numbe
     consolidation_roadmap: [
       `Consolidate volume across ${vendorCount} vendors to primary competitive suppliers`,
       'Harmonize specifications and eliminate tail spot purchase variance',
-      `Demonstrable price gap opportunity based on internal historical baseline: ₹${savingsCr.toFixed(2)} Cr`
+      savingsCr > 0
+        ? `Demonstrable price gap opportunity based on internal historical baseline: ₹${savingsCr.toFixed(2)} Cr`
+        : 'Opportunity unquantified from available data: Unit rates are uniform or comparable rate baseline is unavailable'
     ]
   };
 }

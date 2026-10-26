@@ -4,14 +4,28 @@ import { VENDOR_SUPPLY_YOY_STYLES } from '../../constants/vendorSupply';
 import { UI_STRINGS } from '../../constants/uiStrings';
 
 export const VendorSupplyYoYBadge: React.FC<VendorSupplyYoYBadgeProps> = ({
-  pct = 0,
+  pct,
   label,
   observationMark,
   remark,
   compact = false
 }) => {
   const strings = UI_STRINGS.module2.vendorSupply;
-  const safePct = typeof pct === 'number' && !isNaN(pct) ? pct : 0;
+
+  if (pct === undefined || pct === null || typeof pct !== 'number' || isNaN(pct)) {
+    return (
+      <div className="inline-flex flex-col items-end space-y-1">
+        <div className="inline-flex items-center space-x-1.5">
+          {label && <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">{label}:</span>}
+          <span className="font-mono text-xs text-slate-400 dark:text-slate-500" title={strings.yoyUnavailableTitle}>
+            {strings.yoyUnavailable}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const safePct = pct;
   const isIncrease = safePct > 0;
   const isDecrease = safePct < 0;
 

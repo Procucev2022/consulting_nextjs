@@ -49,47 +49,28 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
           </span>
           <button
             onClick={() => onSelectFy('ALL')}
-            className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'ALL' ? 'bg-slate-100 font-bold' : ''
+            className={`flex items-center space-x-1.5 px-2.5 py-1 rounded cursor-pointer transition-all ${
+              selectedFy === 'ALL' ? 'bg-slate-900 text-white font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <span className="text-slate-600 text-[11px]">
-              {UI_STRINGS.documentSummary.month.graph.all36Months}
+            <span className="text-[11px]">
+              {UI_STRINGS.documentSummary.month.allMonthsFilter(months.length)}
             </span>
           </button>
-          <button
-            onClick={() => onSelectFy('FY24')}
-            className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'FY24' ? 'bg-cyan-50 font-bold' : ''
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500" />
-            <span className="text-slate-600 text-[11px]">
-              {UI_STRINGS.documentSummary.month.graph.legends.fy24}
-            </span>
-          </button>
-          <button
-            onClick={() => onSelectFy('FY25')}
-            className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'FY25' ? 'bg-emerald-50 font-bold' : ''
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-            <span className="text-slate-600 text-[11px]">
-              {UI_STRINGS.documentSummary.month.graph.legends.fy25}
-            </span>
-          </button>
-          <button
-            onClick={() => onSelectFy('FY26')}
-            className={`flex items-center space-x-1.5 px-2 py-0.5 rounded cursor-pointer ${
-              selectedFy === 'FY26' ? 'bg-indigo-50 font-bold' : ''
-            }`}
-          >
-            <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500" />
-            <span className="text-slate-600 text-[11px]">
-              {UI_STRINGS.documentSummary.month.graph.legends.fy26}
-            </span>
-          </button>
+          {Array.from(new Set(months.map((m) => m.fiscal_year))).filter(Boolean).map((fy) => (
+            <button
+              key={fy}
+              onClick={() => onSelectFy(fy)}
+              className={`flex items-center space-x-1.5 px-2.5 py-1 rounded cursor-pointer transition-all ${
+                selectedFy === fy
+                  ? 'bg-cyan-100 text-cyan-900 ring-1 ring-cyan-400 font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span className="w-2.5 h-2.5 rounded-sm bg-cyan-500" />
+              <span className="text-[11px]">{fy}</span>
+            </button>
+          ))}
         </div>
 
         <span className="text-[11px] text-slate-400 font-sans italic">
@@ -174,7 +155,7 @@ export const MonthTimelineBarChart: React.FC<MonthTimelineBarChartProps> = ({
             {/* Left Column: Month Title, FY Badge, Spend */}
             <div className="space-y-1.5">
               <div className="flex items-center space-x-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-white">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-100 text-cyan-900 border border-cyan-300">
                   {activeMonth.fiscal_year}
                 </span>
                 <h5 className="text-sm font-black font-mono text-slate-900">

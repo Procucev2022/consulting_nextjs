@@ -6,7 +6,9 @@
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide25ExecutionRoadmap(
@@ -16,6 +18,9 @@ export function renderSlide25ExecutionRoadmap(
   total: number,
   conf: string
 ): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.addPage();
   canvas.renderHeader(
     'Priority Execution Roadmap: Phased 90-Day Implementation Timeline',
@@ -24,56 +29,107 @@ export function renderSlide25ExecutionRoadmap(
   );
 
   // 4 Timeline Phases
-  const phases = [
-    {
-      phase: 'DAYS 1-30',
-      title: 'Mobilize & Quick Wins',
-      target: '₹14.50 Cr Tender Ready',
-      color: BRAND_COLORS.accentGreen,
-      items: [
-        'Form joint Procucev-UltraTech commercial working group',
-        'Verify packaging specifications across all 26 operating plants',
-        'Issue RFP for 320M HDPE Cement Bags reverse e-auction',
-        'Lock in ERP price tolerance thresholds to eliminate spot leakage'
+  const phases = isCust
+    ? [
+        {
+          phase: 'DAYS 1-30',
+          title: 'Mobilize & Quick Wins',
+          target: '₹22.50 Cr Tender Ready',
+          color: BRAND_COLORS.accentGreen,
+          items: [
+            `Form joint Procucev-${clientName} commercial working group`,
+            `Verify material specifications across all ${contract.baselinePlants} operating plants`,
+            'Issue RFP for synthetic yarn volume consolidation',
+            'Lock in ERP price tolerance thresholds to eliminate spot leakage'
+          ]
+        },
+        {
+          phase: 'DAYS 31-60',
+          title: 'Market Tenders & Panelling',
+          target: '₹45.00 Cr In Process',
+          color: BRAND_COLORS.procucevBlue,
+          items: [
+            'Conduct reverse RFP for packaging and consumables',
+            'Harmonize cross-plant specialty dye rates to median targets',
+            'Consolidate captive energy and logistics freight corridors',
+            'Issue technical RFPs for plant MRO consumables'
+          ]
+        },
+        {
+          phase: 'DAYS 61-90',
+          title: 'Contract Execution',
+          target: `₹${contract.validatedSavingsCr.toFixed(2)} Cr Proven Locked`,
+          color: '#0284C7',
+          items: [
+            'Execute master frame agreements with qualified Tier-1 winners',
+            `Consolidate ${contract.baselineSuppliers} vendors into preferred supplier panels`,
+            'Enforce purchase order price compliance across all plant units',
+            'Deploy Procucev invoice tracking dashboard for P&L audit'
+          ]
+        },
+        {
+          phase: 'DAYS 90+',
+          title: 'Sustained Value Run-Rate',
+          target: `₹${contract.netDirectSavingsCr.toFixed(3)} Cr Full Run-Rate`,
+          color: BRAND_COLORS.accentAmber,
+          items: [
+            'Expand sourcing interventions to secondary consumable categories',
+            'Automate quarterly review across energy and auxiliary contracts',
+            'Audit supplier delivery SLAs and invoice compliance monthly',
+            'Maintain zero realized savings until vendor invoice audit confirms benefit'
+          ]
+        }
       ]
-    },
-    {
-      phase: 'DAYS 31-60',
-      title: 'Market Tenders & Panelling',
-      target: '₹25.70 Cr In Process',
-      color: BRAND_COLORS.procucevBlue,
-      items: [
-        'Conduct live multi-plant reverse auction for packaging bags',
-        'Harmonize high-chrome grinding media rates to ₹76/kg target',
-        'Execute corridor bidding for secondary coal and fly-ash freight',
-        'Issue technical RFPs for industrial lubricant consolidation'
-      ]
-    },
-    {
-      phase: 'DAYS 61-90',
-      title: 'Contract Execution',
-      target: '₹47.90 Cr Wave 1 Locked',
-      color: '#0284C7',
-      items: [
-        'Execute master frame agreements with qualified Tier-1 winners',
-        'Implement index-linked formula contracts for petcoke and coal',
-        'Consolidate 912 tail suppliers into regional master panels',
-        'Deploy Procucev invoice tracking dashboard for P&L audit'
-      ]
-    },
-    {
-      phase: 'DAYS 90+',
-      title: 'Sustained Value Run-Rate',
-      target: '₹78.72 Cr Full Run-Rate',
-      color: BRAND_COLORS.accentAmber,
-      items: [
-        'Expand sourcing interventions to Wave 2 mechanical spares',
-        'Automate quarterly market index resets across energy contracts',
-        'Audit supplier delivery SLAs and invoice compliance monthly',
-        'Maintain zero off-contract purchase drift across plant network'
-      ]
-    }
-  ];
+    : [
+        {
+          phase: 'DAYS 1-30',
+          title: 'Mobilize & Quick Wins',
+          target: '₹14.50 Cr Tender Ready',
+          color: BRAND_COLORS.accentGreen,
+          items: [
+            'Form joint Procucev-UltraTech commercial working group',
+            'Verify packaging specifications across all 26 operating plants',
+            'Issue RFP for 320M HDPE Cement Bags reverse e-auction',
+            'Lock in ERP price tolerance thresholds to eliminate spot leakage'
+          ]
+        },
+        {
+          phase: 'DAYS 31-60',
+          title: 'Market Tenders & Panelling',
+          target: '₹25.70 Cr In Process',
+          color: BRAND_COLORS.procucevBlue,
+          items: [
+            'Conduct live multi-plant reverse auction for packaging bags',
+            'Harmonize high-chrome grinding media rates to ₹76/kg target',
+            'Execute corridor bidding for secondary coal and fly-ash freight',
+            'Issue technical RFPs for industrial lubricant consolidation'
+          ]
+        },
+        {
+          phase: 'DAYS 61-90',
+          title: 'Contract Execution',
+          target: '₹47.90 Cr Wave 1 Locked',
+          color: '#0284C7',
+          items: [
+            'Execute master frame agreements with qualified Tier-1 winners',
+            'Implement index-linked formula contracts for petcoke and coal',
+            'Consolidate 912 tail suppliers into regional master panels',
+            'Deploy Procucev invoice tracking dashboard for P&L audit'
+          ]
+        },
+        {
+          phase: 'DAYS 90+',
+          title: 'Sustained Value Run-Rate',
+          target: '₹78.72 Cr Full Run-Rate',
+          color: BRAND_COLORS.accentAmber,
+          items: [
+            'Expand sourcing interventions to Wave 2 mechanical spares',
+            'Automate quarterly market index resets across energy contracts',
+            'Audit supplier delivery SLAs and invoice compliance monthly',
+            'Maintain zero off-contract purchase drift across plant network'
+          ]
+        }
+      ];
 
   const colW = 207;
   const colH = 300;

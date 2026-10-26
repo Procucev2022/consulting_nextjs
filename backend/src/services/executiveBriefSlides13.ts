@@ -6,8 +6,18 @@
 import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
-  BRAND_COLORS
+  BRAND_COLORS,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
+
+interface SpendFinding {
+  num: string;
+  title: string;
+  sub: string;
+  desc: string;
+  opp: string;
+}
 
 export function renderSlide13SpendFindings(
   canvas: PdfCanvas,
@@ -23,53 +33,89 @@ export function renderSlide13SpendFindings(
     p
   );
 
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   // 5 Numbered Insight Cards
   const cardW = 166;
   const cardH = 300;
   const startY = 104;
 
-  const findings = [
-    {
-      num: '01',
-      title: 'Plant Price Incoherence',
-      sub: 'Inter-Plant Unit Rate Divergence',
-      desc: 'Identical refractory bricks, grinding media, and packing bags purchased at up to 24% price divergence ' +
-            'across 26 units due to localized negotiations.',
-      opp: 'Arbitrage Opp: ₹42.80 Cr'
-    },
-    {
-      num: '02',
-      title: 'Uncontrolled Spot Buying',
-      sub: '42.6% Non-Contracted Orders',
-      desc: 'Substantial procurement executed off master service agreements without volume discount tiers, ' +
-            'resulting in unbudgeted rate creep.',
-      opp: 'Contract Control: ₹14.20 Cr'
-    },
-    {
-      num: '03',
-      title: 'Single-Plant Vendors',
-      sub: '68% Regional Supplier Lock-In',
-      desc: '68% of suppliers serve only 1 plant despite national footprint, leaving regional units ' +
-            'vulnerable to local pricing power.',
-      opp: 'Panelling Opp: ₹26.40 Cr'
-    },
-    {
-      num: '04',
-      title: 'Payment Terms Disparity',
-      sub: '14 Active Terms Across Units',
-      desc: 'Payment cycles vary from 30 days to 90 days for identical supplier profiles. ' +
-            'Standardizing to 60/90 days unlocks operating cash flow.',
-      opp: 'Working Capital: ₹14.88 Cr'
-    },
-    {
-      num: '05',
-      title: 'Duplicate SKU Masters',
-      sub: 'Inconsistent Item Specs',
-      desc: 'Over 1,200 redundant item descriptions identified for identical chemical consumables ' +
-            'and lubricants, obstructing aggregation.',
-      opp: 'Aggregation: ₹22.10 Cr'
-    }
-  ];
+  const findings: SpendFinding[] = isCust
+    ? [
+        {
+          num: '01',
+          title: 'Plant Price Incoherence',
+          sub: 'Inter-Plant Unit Rate Divergence',
+          desc: `Identical synthetic yarns, finishing chemicals, and packaging bought at up to 22% price divergence across ${contract.baselinePlants} operating units due to localized negotiations.`,
+          opp: 'Arbitrage Opp: ₹24.80 Cr'
+        },
+        {
+          num: '02',
+          title: 'Uncontrolled Spot Buying',
+          sub: '38.4% Non-Contracted Orders',
+          desc: 'Substantial procurement executed off master service agreements without volume discount tiers, resulting in unbudgeted rate creep.',
+          opp: 'Contract Control: ₹12.50 Cr'
+        },
+        {
+          num: '03',
+          title: 'Single-Plant Vendors',
+          sub: 'Fragmented Supplier Allocation',
+          desc: `${contract.baselineSuppliers} active vendors serving regional operating units with high single-plant lock-in, leaving plants vulnerable to local pricing power.`,
+          opp: 'Panelling Opp: ₹18.50 Cr'
+        },
+        {
+          num: '04',
+          title: 'Payment Terms Disparity',
+          sub: 'Disparate Terms Across Units',
+          desc: 'Payment cycles vary from 30 days to 90 days for identical supplier profiles. Standardizing to 60/90 days unlocks operating cash flow.',
+          opp: 'Working Capital: ₹11.20 Cr'
+        },
+        {
+          num: '05',
+          title: 'Duplicate SKU Masters',
+          sub: 'Inconsistent Item Specs',
+          desc: 'Over 850 redundant item descriptions identified for identical chemical consumables and packaging, obstructing aggregation.',
+          opp: 'Aggregation: ₹15.38 Cr'
+        }
+      ]
+    : [
+        {
+          num: '01',
+          title: 'Plant Price Incoherence',
+          sub: 'Inter-Plant Unit Rate Divergence',
+          desc: 'Identical refractory bricks, grinding media, and packing bags purchased at up to 24% price divergence across 26 units due to localized negotiations.',
+          opp: 'Arbitrage Opp: ₹42.80 Cr'
+        },
+        {
+          num: '02',
+          title: 'Uncontrolled Spot Buying',
+          sub: '42.6% Non-Contracted Orders',
+          desc: 'Substantial procurement executed off master service agreements without volume discount tiers, resulting in unbudgeted rate creep.',
+          opp: 'Contract Control: ₹14.20 Cr'
+        },
+        {
+          num: '03',
+          title: 'Single-Plant Vendors',
+          sub: '68% Regional Supplier Lock-In',
+          desc: '68% of suppliers serve only 1 plant despite national footprint, leaving regional units vulnerable to local pricing power.',
+          opp: 'Panelling Opp: ₹26.40 Cr'
+        },
+        {
+          num: '04',
+          title: 'Payment Terms Disparity',
+          sub: '14 Active Terms Across Units',
+          desc: 'Payment cycles vary from 30 days to 90 days for identical supplier profiles. Standardizing to 60/90 days unlocks operating cash flow.',
+          opp: 'Working Capital: ₹14.88 Cr'
+        },
+        {
+          num: '05',
+          title: 'Duplicate SKU Masters',
+          sub: 'Inconsistent Item Specs',
+          desc: 'Over 1,200 redundant item descriptions identified for identical chemical consumables and lubricants, obstructing aggregation.',
+          opp: 'Aggregation: ₹22.10 Cr'
+        }
+      ];
 
   findings.forEach((f, idx) => {
     const x = PDF_LAYOUT.CONTENT_LEFT + idx * (cardW + 8);

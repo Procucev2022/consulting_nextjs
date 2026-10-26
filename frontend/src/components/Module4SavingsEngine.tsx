@@ -11,7 +11,7 @@ import {
   Award,
   Check
 } from 'lucide-react';
-import type { Module4SavingsEngineProps, PipelineActiveTab } from '../types';
+import type { Module4SavingsEngineProps, PipelineActiveTab, SavingsOpportunity } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
 import { StrategicSavingsSummaryBanner } from './savings/StrategicSavingsSummaryBanner';
 import { SavingsWaterfallSection } from './savings/SavingsWaterfallSection';
@@ -35,7 +35,8 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   onProceedToConversion,
   currentTier = 'GOLD',
   onUpgrade,
-  onNavigateToSection
+  onNavigateToSection,
+  assessmentId
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterModule, setFilterModule] = useState<string>('ALL');
@@ -45,7 +46,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   useEffect(() => {
     let isMounted = true;
     apiClient
-      .getConsolidatedSavings()
+      .getConsolidatedSavings(assessmentId)
       .then((data) => {
         if (isMounted && data) {
           setConsolidatedData(data);
@@ -58,7 +59,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [assessmentId]);
 
   const handleNavigate = (targetModule: PipelineActiveTab, targetSectionId: string) => {
     if (targetModule === 'module4' && targetSectionId === 'savings-pipeline-table-section') {
@@ -103,31 +104,54 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     });
   };
 
-  const totalSavingsInrCr = opportunities.reduce(
-    (acc, opp) => acc + (opp.estimated_savings_inr_cr || (opp.estimated_savings_usd ? opp.estimated_savings_usd * 83.8 / 10000000 : 0) || 0),
-    0
-  );
-  const totalEvaluatedSpendInrCr = opportunities.reduce(
-    (acc, opp) => acc + (opp.baseline_spend_inr_cr || (opp.current_spend_usd ? opp.current_spend_usd * 83.8 / 10000000 : 0) || 0),
-    0
-  );
+  const effectiveOpportunities: SavingsOpportunity[] = React.useMemo(() => {
+    if (opportunities && opportunities.length > 0) return opportunities;
+    if (consolidatedData?.opportunities && consolidatedData.opportunities.length > 0) {
+      return consolidatedData.opportunities.map((o) => ({
+        opp_id: o.opportunity_id,
+        title: `${o.category} - ${o.source_engine.replace(/_/g, ' ')}`,
+        category: o.category,
+        current_spend: (o.spend_inr_cr || 0) * 10000000 / 83.8,
+        current_spend_inr_cr: o.spend_inr_cr,
+        baseline_spend_inr_cr: o.spend_inr_cr,
+        target_savings_pct: o.spend_inr > 0 ? Number(((o.potential_savings_inr / o.spend_inr) * 100).toFixed(1)) : 16.4,
+        est_savings: (o.potential_savings_inr_cr || 0) * 10000000 / 83.8,
+        est_savings_inr_cr: o.net_savings_inr_cr || o.potential_savings_inr_cr,
+        contract_leak_type: o.validation_notes || 'Strategic Sourcing Lever',
+        push_to_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
+        recommended_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
+        status: o.status === 'IDENTIFIED' ? 'Pending Action' : o.status,
+        lever: o.source_engine
+      }));
+    }
+    return [];
+  }, [opportunities, consolidatedData]);
 
-  const realizationTargetPct = totalEvaluatedSpendInrCr > 0
-    ? ((totalSavingsInrCr / totalEvaluatedSpendInrCr) * 100).toFixed(1)
-    : '16.4';
+  const totalSavingsInrCr = consolidatedData?.waterfallMetrics?.net_potential_savings_inr_cr
+    ?? effectiveOpportunities.reduce(
+      (acc, opp) => acc + (opp.est_savings_inr_cr || (opp.estimated_savings_usd ? opp.estimated_savings_usd * 83.8 / 10000000 : 0) || 0),
+      0
+    );
+  const totalEvaluatedSpendInrCr = consolidatedData?.waterfallMetrics?.total_spend_inr_cr
+    ?? effectiveOpportunities.reduce(
+      (acc, opp) => acc + (opp.baseline_spend_inr_cr || (opp.current_spend_usd ? opp.current_spend_usd * 83.8 / 10000000 : 0) || 0),
+      0
+    );
 
-  const directSourcingSavingsCr = opportunities
-    .filter((o) => o.push_to_module === 'proCPX')
-    .reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
+  const realizationTargetPct = '16.4';
 
-  const contractRulesSavingsCr = opportunities
-    .filter((o) => o.push_to_module === 'DPS NXT')
-    .reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
+  const directSourcingSavingsCr = effectiveOpportunities
+    .filter((o) => (o.push_to_module || o.recommended_module) === 'proCPX')
+    .reduce((s, o) => s + (o.est_savings_inr_cr || o.estimated_savings_inr_cr || 0), 0);
+
+  const contractRulesSavingsCr = effectiveOpportunities
+    .filter((o) => (o.push_to_module || o.recommended_module) === 'DPS NXT')
+    .reduce((s, o) => s + (o.est_savings_inr_cr || o.estimated_savings_inr_cr || 0), 0);
 
   const getCategoryMetrics = (catName: string) => {
-    const catOpps = opportunities.filter((o) => o.category === catName);
-    const catSavings = catOpps.reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
-    const catSpend = catOpps.reduce((s, o) => s + (o.baseline_spend_inr_cr || (o.current_spend_usd ? o.current_spend_usd * 83.8 / 10000000 : 0) || 0), 0);
+    const catOpps = effectiveOpportunities.filter((o) => o.category === catName || o.category?.includes(catName.split(' ')[0]));
+    const catSavings = catOpps.reduce((s, o) => s + (o.est_savings_inr_cr || o.estimated_savings_inr_cr || 0), 0);
+    const catSpend = catOpps.reduce((s, o) => s + (o.baseline_spend_inr_cr || o.current_spend_inr_cr || (o.current_spend_usd ? o.current_spend_usd * 83.8 / 10000000 : 0) || 0), 0);
     const targetPct = catSpend > 0 ? `${((catSavings / catSpend) * 100).toFixed(1)}%` : (catSavings > 0 ? `${realizationTargetPct}%` : '0.0%');
     return {
       savingsFound: `₹${catSavings.toFixed(2)} Cr`,
@@ -176,9 +200,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     }
   ];
 
-  const filteredOpportunities = opportunities.filter((opp) => {
-    if (selectedCategory !== 'ALL' && opp.category !== selectedCategory) return false;
-    if (filterModule !== 'ALL' && opp.push_to_module !== filterModule) return false;
+  const filteredOpportunities = effectiveOpportunities.filter((opp) => {
+    if (selectedCategory !== 'ALL' && opp.category !== selectedCategory && !opp.category?.includes(selectedCategory.split(' ')[0])) return false;
+    if (filterModule !== 'ALL' && (opp.push_to_module || opp.recommended_module) !== filterModule) return false;
     return true;
   });
 
@@ -217,7 +241,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         <div className="flex items-center space-x-2 shrink-0">
           <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold font-mono">
             <Award className="w-4 h-4" />
-            <span>{realizationTargetPct}% Realization Target</span>
+            <span>16.4% Realization Target (FRD Sourcing Benchmark)</span>
           </span>
         </div>
       </div>
@@ -241,10 +265,12 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
       {/* 4. Cross-Module Strategic Sourcing & AI Categorization Savings Summary Banner */}
       <StrategicSavingsSummaryBanner
         summaryMetrics={buildStrategicSavingsSummary({
-          opportunities,
-          consolidationItems: opportunities.length > 0 ? undefined : [],
-          poItems: opportunities.length > 0 ? undefined : [],
-          strategicRiskItems: opportunities.length > 0 ? undefined : []
+          opportunities: effectiveOpportunities,
+          consolidationItems: effectiveOpportunities.length > 0 ? undefined : [],
+          poItems: effectiveOpportunities.length > 0 ? undefined : [],
+          strategicRiskItems: effectiveOpportunities.length > 0 ? undefined : [],
+          waterfallMetrics: consolidatedData?.waterfallMetrics,
+          strategicSummary: consolidatedData?.strategicSummary
         })}
         onNavigateToSection={handleNavigate}
       />
@@ -259,17 +285,17 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                 {UI_STRINGS.module4.heroBadge}
               </span>
               <span className="text-xs font-bold font-mono text-emerald-700 bg-white/80 px-2 py-0.5 rounded-full border border-emerald-200">
-                {realizationTargetPct}% Net Spend
+                16.4% Target Benchmark
               </span>
             </div>
 
             <div className="mt-4">
-              <span className="text-xs text-slate-500 font-medium">{UI_STRINGS.module4.enterprisePotential}</span>
+              <span className="text-xs text-slate-500 font-medium">Net Modelled Opportunity</span>
               <div className="text-4xl sm:text-5xl font-black font-mono text-emerald-600 tracking-tight mt-1">
-                ₹{totalSavingsInrCr.toFixed(2)} Cr
+                ₹{totalSavingsInrCr > 0 ? totalSavingsInrCr.toFixed(3) : '0.00'} Cr
               </div>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                {UI_STRINGS.module4.historicalProcurementNote(totalEvaluatedSpendInrCr)}
+                Evaluated Baseline Spend: ₹{totalEvaluatedSpendInrCr > 0 ? (totalEvaluatedSpendInrCr.toString().split('.')[1]?.length > 2 ? totalEvaluatedSpendInrCr.toFixed(4) : totalEvaluatedSpendInrCr.toFixed(2)) : '0.00'} Cr across 23,570 canonical purchase transactions. Realized savings remain at ₹0.00 Cr pending post-implementation commercial execution and audited invoices.
               </p>
             </div>
           </div>

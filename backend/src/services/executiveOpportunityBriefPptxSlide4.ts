@@ -1,6 +1,6 @@
 /**
- * Executive Opportunity Brief PPTX Slide 4 (Prompt 286)
- * Strictly adheres to 10-slide executive structure and shared certified contract.
+ * Executive Opportunity Brief PPTX Slide 4 (Prompt 286 & Prompt 503)
+ * Dynamic customer contract binding for financial reconciliation bridge.
  */
 
 import type PptxGenJS from 'pptxgenjs';
@@ -10,40 +10,48 @@ import {
   TYPOGRAPHY
 } from '../constants/executiveBriefLayoutConstants';
 import {
-  EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 import {
   addBriefHeader,
   addBriefFooter
 } from './executiveOpportunityBriefPptxHelpers';
 
-export function renderBriefPptxSlide4(pptx: PptxGenJS): void {
+export function renderBriefPptxSlide4(pptx: PptxGenJS, clientName = 'ABC Textile Ltd'): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   addBriefHeader(slide, 'From Gross Opportunity to Defensible Value', 'Financial Reconciliation', 4);
 
   const steps = [
     {
       t: 'GROSS OPPORTUNITY',
-      v: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.grossOpportunityCr.toFixed(2)} Cr`,
-      d: 'Sum of 10 opportunity levers identified pre-deductions',
+      v: `Rs. ${contract.grossOpportunityCr.toFixed(2)} Cr`,
+      d: isCust
+        ? 'Gross modelled opportunity across evaluated baseline spend'
+        : 'Sum of 10 opportunity levers identified pre-deductions',
       c: BRAND_COLORS.procucevBlue, bg: BRAND_COLORS.lightCard
     },
     {
       t: 'OVERLAP DEDUCTIONS',
-      v: `- Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.overlapDeductionsCr.toFixed(2)} Cr`,
+      v: `- Rs. ${contract.overlapDeductionsCr.toFixed(2)} Cr`,
       d: 'Eliminates cross-lever double-counting',
       c: BRAND_COLORS.accentAmber, bg: 'FFFBEB'
     },
     {
       t: 'POLICY EXCLUSIONS',
-      v: `- Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.exclusionsCr.toFixed(2)} Cr`,
-      d: 'Single-source OEM & statutory boundaries',
+      v: `- Rs. ${contract.exclusionsCr.toFixed(2)} Cr`,
+      d: isCust
+        ? 'Zero policy exclusions applied for this assessment baseline'
+        : 'Single-source OEM & statutory boundaries',
       c: BRAND_COLORS.accentAmber, bg: 'FFFBEB'
     },
     {
       t: 'NET DEFENSIBLE PIPELINE',
-      v: `Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDefensiblePipelineCr.toFixed(2)} Cr`,
+      v: `Rs. ${contract.netDefensiblePipelineCr.toFixed(2)} Cr`,
       d: 'Risk-adjusted value pipeline ready for capture',
       c: BRAND_COLORS.accentGreen, bg: 'ECFDF5'
     }
@@ -60,7 +68,7 @@ export function renderBriefPptxSlide4(pptx: PptxGenJS): void {
       y: stepY,
       w: stepW,
       h: 1.6,
-      fill: { color: s.bg },
+      fill: { color: s.bg.replace('#', '') },
       line: { color: s.c.replace('#', ''), width: 1 }
     });
     slide.addShape('rect', {
@@ -134,7 +142,7 @@ export function renderBriefPptxSlide4(pptx: PptxGenJS): void {
     color: '065F46',
     fontFace
   });
-  slide.addText(`Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDirectSavingsCr.toFixed(2)} Cr`, {
+  slide.addText(`Rs. ${contract.netDirectSavingsCr.toFixed(2)} Cr`, {
     x: PPTX_LAYOUT.CONTENT_LEFT + 0.15,
     y: splitY + 0.32,
     w: splitW - 0.3,
@@ -173,7 +181,7 @@ export function renderBriefPptxSlide4(pptx: PptxGenJS): void {
     color: BRAND_COLORS.procucevBlue.replace('#', ''),
     fontFace
   });
-  slide.addText(`Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.strategicMarketValueCr.toFixed(2)} Cr`, {
+  slide.addText(`Rs. ${contract.strategicMarketValueCr.toFixed(2)} Cr`, {
     x: split2X + 0.15,
     y: splitY + 0.32,
     w: splitW - 0.3,
@@ -183,7 +191,10 @@ export function renderBriefPptxSlide4(pptx: PptxGenJS): void {
     color: BRAND_COLORS.procucevBlue.replace('#', ''),
     fontFace
   });
-  slide.addText('Contract reset timing and market index formula contracting tracked distinctly.', {
+  const stratText = isCust
+    ? 'PCBI benchmark price gap is UNAVAILABLE for this assessment. Zero external surrogate values substituted.'
+    : 'Contract reset timing and market index formula contracting tracked distinctly.';
+  slide.addText(stratText, {
     x: split2X + 0.15,
     y: splitY + 0.72,
     w: splitW - 0.3,

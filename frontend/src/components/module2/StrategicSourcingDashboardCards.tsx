@@ -28,8 +28,10 @@ export const StrategicSourcingDashboardCards: React.FC<StrategicSourcingDashboar
     {
       key: 'ADDRESSABLE_SPEND',
       title: strings.cardAddressableSpend,
-      value: `₹${summary.totalAddressableSpendInrCr.toFixed(2)} Cr`,
-      subtext: `${summary.categoriesAnalyzedCount} Categories Analyzed`,
+      value: `₹${(summary.netBaselineSpendInrCr ?? summary.totalAddressableSpendInrCr).toFixed(2)} Cr`,
+      subtext: summary.grossUploadedSpendInrCr
+        ? `Net Baseline (Gross: ₹${summary.grossUploadedSpendInrCr.toFixed(2)} Cr)`
+        : `${summary.categoriesAnalyzedCount} Categories Analyzed`,
       icon: DollarSign,
       colorClass: 'from-blue-50 to-white dark:from-blue-950/20 dark:to-slate-900 border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400'
     },
@@ -138,6 +140,30 @@ export const StrategicSourcingDashboardCards: React.FC<StrategicSourcingDashboar
           <span>{strings.disclaimer}</span>
         </div>
       </div>
+
+      {Boolean(summary.excludedDeletedBlockedSpendInrCr && summary.excludedDeletedBlockedSpendInrCr > 0) && (
+        <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs flex flex-wrap items-center justify-between gap-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-slate-800 dark:text-slate-200">{strings.reconciliationBannerTitle || 'Baseline Governance'}:</span>
+            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+              {strings.netBaselineLabel || 'Net Baseline'}: ₹{(summary.netBaselineSpendInrCr ?? summary.totalSpendAnalyzedInrCr).toFixed(4)} Cr
+            </span>
+            <span className="text-slate-400">|</span>
+            <span className="font-mono text-slate-600 dark:text-slate-400">
+              {strings.grossUploadedLabel || 'Gross Uploaded'}: ₹{(summary.grossUploadedSpendInrCr ?? summary.totalSpendAnalyzedInrCr).toFixed(4)} Cr
+            </span>
+            <span className="text-slate-400">|</span>
+            <span className="font-mono text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800">
+              {strings.excludedLinesLabel || 'Excluded Lines'}: -₹{summary.excludedDeletedBlockedSpendInrCr?.toFixed(4)} Cr ({summary.excludedDeletedBlockedRowCount} rows)
+            </span>
+          </div>
+          {Boolean(summary.rawSupplierCount && summary.normalizedSupplierCount) && (
+            <div className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">
+              Suppliers: <span className="font-bold text-slate-900 dark:text-slate-100">{summary.normalizedSupplierCount}</span> {strings.suppliersStandardizedLabel || 'normalized entities'} ({summary.rawSupplierCount} {strings.rawStringsLabel || 'raw strings'})
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {cards.map((card) => {

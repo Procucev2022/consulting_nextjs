@@ -7,11 +7,14 @@ import type { SavingsOpportunityItem } from './savings';
 export interface StrategicInputTransaction {
   id?: string;
   po_number?: string;
+  po_line?: string;
   po_date?: string;
   vendor_code?: string;
   vendor_name: string;
   material_code?: string;
   material_desc: string;
+  materialCode?: string;
+  materialDescription?: string;
   quantity: number;
   uom?: string;
   unit_price: number;
@@ -22,8 +25,10 @@ export interface StrategicInputTransaction {
   department?: string;
   spend_category?: string;
   unspsc_code?: string;
+  unspsc_category?: string;
   unspsc_commodity?: string;
   unspsc_class?: string;
+  duplicate_review_required?: boolean;
 }
 
 export interface VendorConsolidationOpportunityDetails {

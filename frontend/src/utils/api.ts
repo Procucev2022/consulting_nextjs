@@ -5,7 +5,8 @@ import type {
   VendorYearDetail,
   VendorPriceRank,
   SavingsOpportunity,
-  DashboardOverviewData
+  DashboardOverviewData,
+  LineItemMapping
 } from '../types';
 import type { PCBIExplainabilityAudit } from '../types/pcbi';
 import frontendLogger from './logger';
@@ -56,6 +57,7 @@ export const apiClient = {
   },
 
   // Ingestion Delegations
+  getCanonicalModule1: ingestionApiClient.getCanonicalModule1.bind(ingestionApiClient),
   getIngestionData: ingestionApiClient.getIngestionData.bind(ingestionApiClient),
   addIngestionFile: ingestionApiClient.addIngestionFile.bind(ingestionApiClient),
   uploadDocumentToObjectStore: ingestionApiClient.uploadDocumentToObjectStore.bind(ingestionApiClient),
@@ -85,6 +87,41 @@ export const apiClient = {
   async getVendors(): Promise<{ vendorRankings: VendorPriceRank[]; vendorDetails: VendorYearDetail[] }> {
     frontendLogger.debug('Fetching vendor price rankings and year details');
     const res = await fetch(`${API_BASE}/api/vendors`);
+    const json = await res.json();
+    return json.data;
+  },
+
+  // Module 2 Canonical Data
+  async getModule2CanonicalLineItems(limit?: number, assessmentId?: string): Promise<LineItemMapping[]> {
+    frontendLogger.debug('Fetching canonical Module 2 line items', { limit, assessmentId });
+    const query = new URLSearchParams();
+    if (limit != null) query.set('limit', String(limit));
+    if (assessmentId) query.set('assessmentId', assessmentId);
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/line-items?${query.toString()}`);
+    const json = await res.json();
+    return json.data?.lineItems || [];
+  },
+
+  async getModule2CanonicalInput(assessmentId?: string): Promise<unknown> {
+    frontendLogger.debug('Fetching canonical Module 2 input contract', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/canonical-input${query}`);
+    const json = await res.json();
+    return json.data;
+  },
+
+  async getModule2OpportunityLedger(assessmentId?: string): Promise<unknown> {
+    frontendLogger.debug('Fetching canonical Module 2 opportunity ledger', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/opportunity-ledger${query}`);
+    const json = await res.json();
+    return json.data;
+  },
+
+  async getModule2MathematicalBridge(assessmentId?: string): Promise<unknown> {
+    frontendLogger.debug('Fetching canonical Module 2 mathematical bridge', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/module2/sourcing/bridge${query}`);
     const json = await res.json();
     return json.data;
   },

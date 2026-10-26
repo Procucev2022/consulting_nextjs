@@ -20,6 +20,14 @@ describe('taxonomyService', () => {
     expect(item?.commodityTitle).toBeDefined();
   });
 
+  it('should return UNCLASSIFIED commodity when query does not match any record', () => {
+    const item = lookupTaxonomy('completely_unknown_token_xyz_999');
+    expect(item).toBeDefined();
+    expect(item?.commodityCode).toBe('00000000');
+    expect(item?.commodityTitle).toBe('Unclassified Commodity');
+    expect(item?.classificationStatus).toBe('UNCLASSIFIED');
+  });
+
   it('should return sample taxonomy records', () => {
     const records = getAllTaxonomyRecords(10);
     expect(records.length).toBe(10);

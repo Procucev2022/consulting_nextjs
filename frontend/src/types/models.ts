@@ -55,6 +55,7 @@ export interface ValidationPreCheckRecord {
   amount?: number;         // Total original currency amount (Q * P)
   spend_inr?: number;
   raw_currency?: string;
+  currency_provenance?: 'SOURCE_PROVIDED' | 'ANALYST_CONFIRMED' | 'SYSTEM_INFERRED' | 'UNRESOLVED' | string;
   amount_inr?: number;     // Q * P * Currency in INR
   inr_crores?: number;     // (Q * P * Currency in INR) / 10,000,000
   fx_rate_applied?: number;
@@ -159,6 +160,10 @@ export interface CategoryYearDetail {
   spend_fy24_cr?: number; // FY24 (1 Apr 2023 - 31 Mar 2024)
   spend_fy25_cr?: number; // FY25 (1 Apr 2024 - 31 Mar 2025)
   spend_fy26_cr?: number; // FY26 (1 Apr 2025 - 31 Mar 2026)
+  spend_fy27_cr?: number; // FY27 (1 Apr 2026 - 31 Mar 2027)
+  actual_period_spend_cr?: number;
+  actual_data_coverage?: string;
+  data_availability_status?: 'ACTUAL_TRANSACTIONS' | 'PRIOR_PERIOD_UNAVAILABLE' | 'ZERO_SPEND';
   total_3yr_spend_inr_cr: number;
   yoy_growth_pct?: number;
   line_items_count?: number;
@@ -191,6 +196,7 @@ export interface VendorYearDetail {
   spend_fy24_cr: number; // 1 Apr 2023 - 31 Mar 2024
   spend_fy25_cr: number; // 1 Apr 2024 - 31 Mar 2025
   spend_fy26_cr: number; // 1 Apr 2025 - 31 Mar 2026
+  spend_fy27_cr?: number; // 1 Apr 2026 - 31 Mar 2027
   spend_inr_2023_cr?: number;
   spend_inr_2024_cr?: number;
   spend_inr_2025_26_cr?: number;
@@ -233,6 +239,9 @@ export interface LineItemMapping {
   invoice_date: string;
   spend_year?: number;
   po_number: string;
+  parent_name?: string;
+  unit_price_fy25?: number;
+  unit_price_fy26?: number;
   industry_sector?: string;
   sector_relevance?: 'CORE_DIRECT' | 'CRITICAL_PACKAGING' | 'SECTOR_LOGISTICS' | 'GENERAL_MRO' | 'CROSS_DOMAIN' | string;
   sector_alignment_score?: number;

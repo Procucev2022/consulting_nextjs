@@ -6,6 +6,8 @@
 import type PptxGenJS from 'pptxgenjs';
 import { PPTX_LAYOUT, BRAND_COLORS, TYPOGRAPHY } from '../constants/executiveBriefLayoutConstants';
 import { addSlideHeader, addSlideFooter, addPptxKpiCard, getLogoBase64 } from './executiveBriefPptxHelpers';
+import { getExecutiveBriefPresentationContract, isCustomerAssessment } from '../constants/executiveBriefPresentationConstants';
+import { renderPptxSlide5 } from './executiveBriefPptxSlide5';
 
 export function renderPptxSlides1To5(
   pptx: PptxGenJS,
@@ -13,6 +15,8 @@ export function renderPptxSlides1To5(
   totalSlides: number
 ): void {
   const fontFace = TYPOGRAPHY.fallbackFont;
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
 
   // Slide 1: Cover
   const s1 = pptx.addSlide();
@@ -56,14 +60,19 @@ export function renderPptxSlides1To5(
     x: PPTX_LAYOUT.CONTENT_LEFT + 0.3, y: 2.7, w: 8.0, h: 0.25,
     fontSize: TYPOGRAPHY.cardLabelSize, bold: true, color: BRAND_COLORS.secondaryText.replace('#', ''), fontFace
   });
-  s1.addText('₹78.72 Cr', {
+  s1.addText(isCust ? '₹85.641 Cr' : '₹78.72 Cr', {
     x: PPTX_LAYOUT.CONTENT_LEFT + 0.3, y: 3.0, w: 8.0, h: 0.55,
     fontSize: 34, bold: true, color: BRAND_COLORS.accentGreen.replace('#', ''), fontFace
   });
-  s1.addText('₹93.60 Cr Net Defensible Pipeline  |  ₹5,920.35 Cr Spend Evaluated  |  24 Months (Apr 2024 - Mar 2026)', {
-    x: PPTX_LAYOUT.CONTENT_LEFT + 0.3, y: 3.65, w: 8.4, h: 0.25,
-    fontSize: 11, color: BRAND_COLORS.secondaryText.replace('#', ''), fontFace
-  });
+  s1.addText(
+    isCust
+      ? '₹85.641 Cr Net Modelled Opportunity  |  ₹613.8805 Cr Spend Evaluated  |  12 Months'
+      : '₹93.60 Cr Net Defensible Pipeline  |  ₹5,920.35 Cr Spend Evaluated  |  24 Months (Apr 2024 - Mar 2026)',
+    {
+      x: PPTX_LAYOUT.CONTENT_LEFT + 0.3, y: 3.65, w: 8.4, h: 0.25,
+      fontSize: 11, color: BRAND_COLORS.secondaryText.replace('#', ''), fontFace
+    }
+  );
 
   // Footer metadata
   s1.addText(`Management Confidential - Prepared exclusively for ${clientName}`, {
@@ -81,10 +90,17 @@ export function renderPptxSlides1To5(
   s2.background = { color: BRAND_COLORS.canvas.replace('#', '') };
   addSlideHeader(s2, 'Executive Opportunity: Certified Value Landscape', 'Executive Opportunity', 2);
 
-  addPptxKpiCard(s2, 0.5, 1.1, 2.15, 0.95, 'Direct Savings Opportunity', '₹78.72 Cr', 'Defensible Direct Cost Reduction', BRAND_COLORS.accentGreen);
-  addPptxKpiCard(s2, 2.78, 1.1, 2.15, 0.95, 'Net Defensible Pipeline', '₹93.60 Cr', 'Direct + Strategic Market Levers', BRAND_COLORS.procucevBlue);
-  addPptxKpiCard(s2, 5.06, 1.1, 2.15, 0.95, 'Strategic Market Value', '₹14.88 Cr', 'Commodity Timing & Index Levers', '#0284C7');
-  addPptxKpiCard(s2, 7.35, 1.1, 2.15, 0.95, 'Spend Evaluated', '₹5,920.35 Cr', '31,671 Invoiced Line Items', BRAND_COLORS.secondaryText);
+  if (isCust) {
+    addPptxKpiCard(s2, 0.5, 1.1, 2.15, 0.95, 'Net Modelled Opportunity', '₹85.641 Cr', 'Approved Net Value Pipeline', BRAND_COLORS.accentGreen);
+    addPptxKpiCard(s2, 2.78, 1.1, 2.15, 0.95, 'Gross Modelled Potential', '₹110.764 Cr', 'Sum Across Sourcing Levers', BRAND_COLORS.procucevBlue);
+    addPptxKpiCard(s2, 5.06, 1.1, 2.15, 0.95, 'Overlap Deductions', '- ₹25.123 Cr', 'Multi-Lever Interaction Carveout', '#0284C7');
+    addPptxKpiCard(s2, 7.35, 1.1, 2.15, 0.95, 'Spend Evaluated', '₹613.8805 Cr', '23,570 Invoiced Transactions', BRAND_COLORS.secondaryText);
+  } else {
+    addPptxKpiCard(s2, 0.5, 1.1, 2.15, 0.95, 'Direct Savings Opportunity', '₹78.72 Cr', 'Defensible Direct Cost Reduction', BRAND_COLORS.accentGreen);
+    addPptxKpiCard(s2, 2.78, 1.1, 2.15, 0.95, 'Net Defensible Pipeline', '₹93.60 Cr', 'Direct + Strategic Market Levers', BRAND_COLORS.procucevBlue);
+    addPptxKpiCard(s2, 5.06, 1.1, 2.15, 0.95, 'Strategic Market Value', '₹14.88 Cr', 'Commodity Timing & Index Levers', '#0284C7');
+    addPptxKpiCard(s2, 7.35, 1.1, 2.15, 0.95, 'Spend Evaluated', '₹5,920.35 Cr', '31,671 Invoiced Line Items', BRAND_COLORS.secondaryText);
+  }
 
   // Horizontal Value Statement
   s2.addShape('rect', { x: 0.5, y: 2.18, w: 9.0, h: 0.44, fill: { color: 'FFFFFF' }, line: { color: BRAND_COLORS.border.replace('#', '') } });
@@ -93,11 +109,17 @@ export function renderPptxSlides1To5(
   });
 
   // 3 Insight Columns
-  const cols = [
-    { title: 'WHERE VALUE LIES', color: BRAND_COLORS.procucevBlue, text: '- 18.5% rate dispersion across 26 plants for identical consumables.\n- High spend concentration in top 10% suppliers enables volume pooling.\n- Competitive e-auctions capture verified supplier margin arbitrage.' },
-    { title: 'MATHEMATICAL INTEGRITY', color: BRAND_COLORS.accentGreen, text: '- ₹62.80 Cr multi-lever overlaps fully deducted to prevent double-counting.\n- ₹16.72 Cr client policy exclusions removed from defensible pipeline.\n- Zero process productivity monetized until time-motion validation.' },
-    { title: 'EXECUTION READINESS', color: '#0284C7', text: '- Wave 1 pre-qualified initiatives represent ₹47.90 Cr ready for tenders.\n- 90-day phased execution roadmap prevents operational plant disruptions.\n- Index-linked pricing protects gross margin against fuel market volatility.' }
-  ];
+  const cols = isCust
+    ? [
+        { title: 'WHERE VALUE LIES', color: BRAND_COLORS.procucevBlue, text: '- Synthetic yarn & dye unit price divergence across 6 operating plants.\n- High spend concentration in top suppliers enables volume pooling.\n- Competitive e-auctions capture verified supplier margin arbitrage.' },
+        { title: 'MATHEMATICAL INTEGRITY', color: BRAND_COLORS.accentGreen, text: '- ₹25.123 Cr multi-lever overlaps fully deducted to prevent double-counting.\n- Approved net opportunity balances to ₹85.641 Cr with ₹0.00 variance.\n- Realized savings strictly ₹0.00 until post-contract deployment.' },
+        { title: 'EXECUTION READINESS', color: '#0284C7', text: '- Wave 1 pre-qualified initiatives ready for immediate sourcing tenders.\n- Phased execution roadmap prevents operational manufacturing disruptions.\n- Index-linked formulas protect gross margins against raw material swings.' }
+      ]
+    : [
+        { title: 'WHERE VALUE LIES', color: BRAND_COLORS.procucevBlue, text: '- 18.5% rate dispersion across 26 plants for identical consumables.\n- High spend concentration in top 10% suppliers enables volume pooling.\n- Competitive e-auctions capture verified supplier margin arbitrage.' },
+        { title: 'MATHEMATICAL INTEGRITY', color: BRAND_COLORS.accentGreen, text: '- ₹62.80 Cr multi-lever overlaps fully deducted to prevent double-counting.\n- ₹16.72 Cr client policy exclusions removed from defensible pipeline.\n- Zero process productivity monetized until time-motion validation.' },
+        { title: 'EXECUTION READINESS', color: '#0284C7', text: '- Wave 1 pre-qualified initiatives represent ₹47.90 Cr ready for tenders.\n- 90-day phased execution roadmap prevents operational plant disruptions.\n- Index-linked pricing protects gross margin against fuel market volatility.' }
+      ];
   cols.forEach((c, idx) => {
     const x = 0.5 + idx * 3.05;
     s2.addShape('rect', { x, y: 2.75, w: 2.9, h: 2.35, fill: { color: 'FFFFFF' }, line: { color: BRAND_COLORS.border.replace('#', '') } });
@@ -112,12 +134,19 @@ export function renderPptxSlides1To5(
   s3.background = { color: BRAND_COLORS.canvas.replace('#', '') };
   addSlideHeader(s3, 'Why Procucev: Industrial Procurement Intelligence & Sourcing Execution', 'Corporate Profile', 3);
 
-  const pillars = [
-    { num: '01', title: 'DOMAIN EXPERTISE', desc: 'Heavy manufacturing veterans with operational category playbooks.\n₹45,000+ Cr Analyzed', color: BRAND_COLORS.procucevBlue },
-    { num: '02', title: 'FORENSIC DATA', desc: '100% line-item audit across 31,671 records with zero interpolation.\n31,671 Invoices Cleansed', color: BRAND_COLORS.accentGreen },
-    { num: '03', title: 'AI DECISION INTELLIGENCE', desc: 'Algorithmic rate benchmarking, outlier isolation, and taxonomy mapping.\n256 Material Groups', color: '#0284C7' },
-    { num: '04', title: 'EXECUTION', desc: 'Hands-on e-auction facilitation, commercial negotiations, and tracking.\n₹47.90 Cr Wave 1 Ready', color: BRAND_COLORS.accentAmber }
-  ];
+  const pillars = isCust
+    ? [
+        { num: '01', title: 'DOMAIN EXPERTISE', desc: 'Manufacturing veterans with operational category playbooks.\nTextiles & Manufacturing', color: BRAND_COLORS.procucevBlue },
+        { num: '02', title: 'FORENSIC DATA', desc: `100% line-item audit across ${contract.baselineTransactions.toLocaleString()} records with zero interpolation.\n${contract.baselineTransactions.toLocaleString()} Invoices Cleansed`, color: BRAND_COLORS.accentGreen },
+        { num: '03', title: 'AI DECISION INTELLIGENCE', desc: `Algorithmic rate benchmarking, outlier isolation, and taxonomy mapping.\n${contract.baselineMaterialGroups} Material Groups`, color: '#0284C7' },
+        { num: '04', title: 'EXECUTION', desc: 'Hands-on e-auction facilitation, commercial negotiations, and tracking.\nWave 1 Ready', color: BRAND_COLORS.accentAmber }
+      ]
+    : [
+        { num: '01', title: 'DOMAIN EXPERTISE', desc: 'Heavy manufacturing veterans with operational category playbooks.\n₹45,000+ Cr Analyzed', color: BRAND_COLORS.procucevBlue },
+        { num: '02', title: 'FORENSIC DATA', desc: '100% line-item audit across 31,671 records with zero interpolation.\n31,671 Invoices Cleansed', color: BRAND_COLORS.accentGreen },
+        { num: '03', title: 'AI DECISION INTELLIGENCE', desc: 'Algorithmic rate benchmarking, outlier isolation, and taxonomy mapping.\n256 Material Groups', color: '#0284C7' },
+        { num: '04', title: 'EXECUTION', desc: 'Hands-on e-auction facilitation, commercial negotiations, and tracking.\n₹47.90 Cr Wave 1 Ready', color: BRAND_COLORS.accentAmber }
+      ];
   pillars.forEach((p, idx) => {
     const x = 0.5 + idx * 2.28;
     s3.addShape('rect', { x, y: 1.15, w: 2.15, h: 2.25, fill: { color: 'FFFFFF' }, line: { color: BRAND_COLORS.border.replace('#', '') } });
@@ -194,42 +223,7 @@ export function renderPptxSlides1To5(
   });
   addSlideFooter(s4, clientName, 4, totalSlides);
 
-  // Slide 5: UltraTech Context
-  const s5 = pptx.addSlide();
-  s5.background = { color: BRAND_COLORS.canvas.replace('#', '') };
-  addSlideHeader(s5, `Operating Scale & Procurement Implications: ${clientName}`, 'Client Context', 5);
 
-  s5.addShape('rect', { x: 0.5, y: 1.15, w: 4.35, h: 3.9, fill: { color: 'FFFFFF' }, line: { color: BRAND_COLORS.border.replace('#', '') } });
-  s5.addShape('rect', { x: 0.5, y: 1.15, w: 4.35, h: 0.05, fill: { color: BRAND_COLORS.procucevBlue.replace('#', '') } });
-  s5.addText('ULTRATECH AT SCALE', { x: 0.7, y: 1.28, w: 3.8, h: 0.25, fontSize: 10, bold: true, color: BRAND_COLORS.procucevBlue.replace('#', ''), fontFace });
-
-  const facts = [
-    { stat: '152.7 MTPA', label: 'Installed Grey Cement Capacity', desc: 'Largest cement manufacturer in India; top 3 globally.' },
-    { stat: '24', label: 'Integrated Manufacturing Plants', desc: 'Major industrial production centers across all four zones.' },
-    { stat: '33', label: 'Grinding Units', desc: 'Distributed regional processing and blending infrastructure.' },
-    { stat: '8', label: 'Bulk Terminals', desc: 'Port terminals enabling multimodal coastal and rail logistics.' }
-  ];
-  facts.forEach((fc, idx) => {
-    const fY = 1.6 + idx * 0.82;
-    s5.addText(fc.stat, { x: 0.7, y: fY, w: 3.8, h: 0.35, fontSize: 18, bold: true, color: BRAND_COLORS.primaryText.replace('#', ''), fontFace });
-    s5.addText(`${fc.label} - ${fc.desc}`, { x: 0.7, y: fY + 0.35, w: 3.9, h: 0.4, fontSize: 8.5, color: BRAND_COLORS.secondaryText.replace('#', ''), fontFace });
-  });
-
-  s5.addShape('rect', { x: 5.15, y: 1.15, w: 4.35, h: 3.9, fill: { color: 'FFFFFF' }, line: { color: BRAND_COLORS.border.replace('#', '') } });
-  s5.addShape('rect', { x: 5.15, y: 1.15, w: 4.35, h: 0.05, fill: { color: BRAND_COLORS.accentGreen.replace('#', '') } });
-  s5.addText('PROCUREMENT IMPLICATIONS FOR VALUE DISCOVERY', { x: 5.35, y: 1.28, w: 3.9, h: 0.25, fontSize: 10, bold: true, color: BRAND_COLORS.accentGreen.replace('#', ''), fontFace });
-
-  const imps = [
-    { title: 'Inter-Plant Variance', desc: 'Decentralized local buying across 26 units leads to substantial unit-price divergence on identical consumable SKUs.' },
-    { title: 'Unmatched Volume Scale', desc: 'National demand pooling unlocks Tier-1 OEM factory pricing across packaging, grinding media, and chemicals.' },
-    { title: 'Tail Spend Fragmentation', desc: '912 vendors in the spend tail dilute purchasing power and generate disproportionate PO administrative load.' },
-    { title: 'Commodity Volatility', desc: 'Fuel and power inputs require dynamic index-linked contracts to lock in favorable market troughs and hedge price creep.' }
-  ];
-  imps.forEach((im, idx) => {
-    const iY = 1.6 + idx * 0.82;
-    s5.addText(im.title, { x: 5.35, y: iY, w: 3.9, h: 0.25, fontSize: 10, bold: true, color: BRAND_COLORS.primaryText.replace('#', ''), fontFace });
-    s5.addText(im.desc, { x: 5.35, y: iY + 0.28, w: 3.9, h: 0.5, fontSize: 8.5, color: BRAND_COLORS.secondaryText.replace('#', ''), fontFace });
-  });
-
-  addSlideFooter(s5, clientName, 5, totalSlides);
+  renderPptxSlide5(pptx, clientName, totalSlides);
 }
+

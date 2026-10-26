@@ -320,4 +320,163 @@ describe('strategicSavingsCalculator', () => {
     const rationInit = getInitiativeByKey(result.initiatives, 'VENDOR_SUPPLY_RATIONALIZATION');
     expect(rationInit).toBeDefined();
   });
+
+  it('calculates metrics accurately when authoritative strategicSummary and waterfallMetrics are provided', () => {
+    const mockWaterfallMetrics = {
+      total_spend_inr_cr: 613.8805,
+      addressable_spend_inr_cr: 315.021,
+      identified_opportunities_count: 191,
+      gross_potential_savings_inr_cr: 110.764,
+      deduplicated_overlap_inr_cr: 25.123,
+      net_potential_savings_inr_cr: 85.641,
+      proven_opportunity_inr_cr: 82.380,
+      discovery_opportunity_inr_cr: 3.261,
+      validated_savings_inr_cr: 0.0,
+      approved_savings_inr_cr: 0.0,
+      realized_savings_inr_cr: 0.0
+    };
+
+    const mockStrategicSummary = {
+      totalSpendAnalyzedInrCr: 613.881,
+      totalAddressableSpendInrCr: 315.021,
+      totalPotentialEAuctionOpportunityInrCr: 55.146,
+      totalPotentialConsolidationOpportunityInrCr: 49.764,
+      volumeBundlingQuantifiableBenefitInrCr: 5.854,
+      grossQuantifiableBenefitInrCr: 110.764,
+      totalOverlappingOpportunityInrCr: 25.123,
+      netQuantifiableOpportunityInrCr: 85.641,
+      provenOpportunityInrCr: 82.380,
+      discoveryOpportunityInrCr: 3.261,
+      vendorConsolidationAddressableSpendInrCr: 315.021,
+      volumeBundlingAddressableSpendInrCr: 315.021,
+      eauctionAddressableSpendInrCr: 315.021,
+      categorySpecialistOpportunityInrCr: 0
+    };
+
+    const result = buildStrategicSavingsSummary({
+      waterfallMetrics: mockWaterfallMetrics,
+      strategicSummary: mockStrategicSummary
+    });
+
+    expect(result.grandTotalSpendInrCr).toBe(613.88);
+    expect(result.grandTotalSavingsInrCr).toBe(85.64);
+    expect(result.netModelledOpportunityInrCr).toBe(85.64);
+    expect(result.grossOpportunityInrCr).toBe(110.76);
+    expect(result.overlapDeductionsInrCr).toBe(25.12);
+    expect(result.provenOpportunityInrCr).toBe(82.38);
+    expect(result.discoveryOpportunityInrCr).toBe(3.261);
+    expect(result.realizedSavingsInrCr).toBe(0.0);
+    expect(result.overallSavingsPct).toBeCloseTo(14.0, 1);
+
+    const vendorConsolidation = getInitiativeByKey(result.initiatives, 'VENDOR_CONSOLIDATION');
+    expect(vendorConsolidation?.spendInrCr).toBe(315.021);
+    expect(vendorConsolidation?.savingsInrCr).toBe(49.764);
+    expect(vendorConsolidation?.savingsPct).toBe(15.8);
+
+    const poConsolidation = getInitiativeByKey(result.initiatives, 'PO_CONSOLIDATION');
+    expect(poConsolidation?.spendInrCr).toBe(315.021);
+    expect(poConsolidation?.savingsInrCr).toBe(5.854);
+    expect(poConsolidation?.savingsPct).toBe(1.9);
+
+    const strategicSingleVendor = getInitiativeByKey(result.initiatives, 'STRATEGIC_SINGLE_VENDOR');
+    expect(strategicSingleVendor?.spendInrCr).toBe(315.021);
+    expect(strategicSingleVendor?.savingsInrCr).toBe(55.146);
+    expect(strategicSingleVendor?.savingsPct).toBe(17.5);
+
+    const supplyRationalization = getInitiativeByKey(result.initiatives, 'VENDOR_SUPPLY_RATIONALIZATION');
+    expect(supplyRationalization?.spendInrCr).toBe(0);
+    expect(supplyRationalization?.savingsInrCr).toBe(0);
+
+    const categoryPipeline = getInitiativeByKey(result.initiatives, 'CATEGORY_SAVINGS_PIPELINE');
+    expect(categoryPipeline?.spendInrCr).toBe(0);
+    expect(categoryPipeline?.savingsInrCr).toBe(0);
+  });
+
+  it('handles edge case where strategicSummary has zero spend and categorySpecialistOpportunityInrCr has a value', () => {
+    const result = buildStrategicSavingsSummary({
+      waterfallMetrics: {
+        total_spend_inr_cr: 0,
+        addressable_spend_inr_cr: 0,
+        identified_opportunities_count: 0,
+        gross_potential_savings_inr_cr: 0,
+        deduplicated_overlap_inr_cr: 0,
+        net_potential_savings_inr_cr: 0,
+        proven_opportunity_inr_cr: 0,
+        discovery_opportunity_inr_cr: 0,
+        validated_savings_inr_cr: 0,
+        approved_savings_inr_cr: 0,
+        realized_savings_inr_cr: 0
+      },
+      strategicSummary: {
+        totalSpendAnalyzedInrCr: 0,
+        totalAddressableSpendInrCr: 0,
+        categorySpecialistOpportunityInrCr: 2.5
+      }
+    });
+
+    expect(result.grandTotalSpendInrCr).toBe(0);
+    expect(result.overallSavingsPct).toBe(0);
+
+    const categoryPipeline = getInitiativeByKey(result.initiatives, 'CATEGORY_SAVINGS_PIPELINE');
+    expect(categoryPipeline?.savingsInrCr).toBe(2.5);
+    expect(categoryPipeline?.savingsPct).toBe(0);
+
+    const vendorConsolidation = getInitiativeByKey(result.initiatives, 'VENDOR_CONSOLIDATION');
+    expect(vendorConsolidation?.savingsPct).toBe(0);
+  });
+
+  it('uses evaluatedBaselineSpendCr when waterfallMetrics total_spend_inr_cr is undefined', () => {
+    const result = buildStrategicSavingsSummary({
+      evaluatedBaselineSpendCr: 450.75,
+      consolidationItems: []
+    });
+
+    expect(result.grandTotalSpendInrCr).toBe(450.75);
+    expect(result.netModelledOpportunityInrCr).toBe(0);
+  });
+
+  it('handles empty options without waterfallMetrics hitting fallback branch in extractWaterfallBreakdown', () => {
+    const result = buildStrategicSavingsSummary({
+      opportunities: []
+    });
+
+    expect(result.grandTotalSavingsInrCr).toBe(0);
+    expect(result.netModelledOpportunityInrCr).toBe(0);
+    expect(result.grossOpportunityInrCr).toBe(0);
+    expect(result.overlapDeductionsInrCr).toBe(0);
+  });
+
+  it('hits the || 0 final fallback when all spend and savings fields on an opportunity are falsy', () => {
+    // Opportunity has every spend/savings field explicitly 0 or undefined,
+    // forcing the || 0 at the end of each chain (lines 71 and 82) to be evaluated.
+    const allFalsyOpp: SavingsOpportunity[] = [
+      {
+        opp_id: 'OPP-ZERO-ALL',
+        category: 'Test Category',
+        title: 'Zero Spend Opp',
+        current_spend_inr_cr: 0,
+        current_spend: 0,
+        baseline_spend_inr_cr: 0,
+        est_savings_inr_cr: 0,
+        est_savings: 0,
+        estimated_savings_inr_cr: 0,
+        target_savings_pct: 10,
+        status: 'Identified',
+        push_to_module: 'proCPX',
+        recommended_action: 'Review',
+        risk_level: 'Low',
+        contract_leak_type: 'None'
+      }
+    ];
+    const result = buildStrategicSavingsSummary({
+      consolidationItems: [],
+      poItems: [],
+      strategicRiskItems: [],
+      opportunities: allFalsyOpp
+    });
+    const categoryInit = getInitiativeByKey(result.initiatives, 'CATEGORY_SAVINGS_PIPELINE');
+    // All fields are 0 → || 0 fallback fires → spend and savings are 0
+    expect(categoryInit?.spendInrCr).toBe(0);
+    expect(categoryInit?.savingsInrCr).toBe(0);
+  });
 });

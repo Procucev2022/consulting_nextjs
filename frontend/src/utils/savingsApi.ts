@@ -15,9 +15,10 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const savingsApiClient = {
-  async getConsolidatedSavings(): Promise<ConsolidatedSavingsData> {
-    frontendLogger.debug('Fetching consolidated savings with overlap de-duplication');
-    const res = await fetch(`${API_BASE}/api/savings/consolidated`);
+  async getConsolidatedSavings(assessmentId?: string): Promise<ConsolidatedSavingsData> {
+    frontendLogger.debug('Fetching consolidated savings with overlap de-duplication', { assessmentId });
+    const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';
+    const res = await fetch(`${API_BASE}/api/savings/consolidated${query}`);
     const json = await res.json();
     return json.data;
   },

@@ -484,7 +484,56 @@ describe('Module 2 Strategic Sourcing Frontend Component Suite', () => {
     await waitFor(() => {
       expect(screen.getByTestId('module2-strategic-sourcing-workspace')).toBeDefined();
       expect(screen.getAllByText(UI_STRINGS.module2Sourcing.title).length).toBeGreaterThan(0);
+    });
+
+    const lever7Btn = screen.getByTestId('subtab-btn-lever7-coming-soon');
+    expect(lever7Btn).toBeInTheDocument();
+    expect(lever7Btn).toBeDisabled();
+    expect(screen.getByText('Lever 7: Logistics & Packaging Specifications')).toBeInTheDocument();
+
+    const strategyTabBtn = screen.getByTestId('subtab-btn-strategy');
+    fireEvent.click(strategyTabBtn);
+
+    await waitFor(() => {
       expect(screen.getByText('Structural Steel Plates')).toBeDefined();
+    });
+  });
+
+  it('Module2StrategicSourcingWorkspace: renders Lever 10 subtab with DISCOVERY badge and navigates to Alternate Sourcing', async () => {
+    vi.spyOn(Module2StrategicSourcingApi, 'getDashboardSummary').mockResolvedValue(mockSummary);
+    vi.spyOn(Module2StrategicSourcingApi, 'getCategoryProfiles').mockResolvedValue([mockProfile]);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          assessmentId: 'AIC-2026-0001',
+          totalOpportunitiesCount: 0,
+          opportunities: [],
+          availableStates: ['MAHARASHTRA'],
+          availableCities: ['MUMBAI'],
+          disclosures: []
+        }
+      })
+    });
+
+    render(<Module2StrategicSourcingWorkspace assessmentId="AIC-2026-0001" />);
+
+    // Verify Lever 10 subtab button
+    const lever10Btn = screen.getByTestId('subtab-btn-alternateSourcing');
+    expect(lever10Btn).toBeInTheDocument();
+    expect(screen.getByText('Lever 10: Alternate Sourcing')).toBeInTheDocument();
+    expect(screen.getByText('DISCOVERY')).toBeInTheDocument();
+
+    // Verify responsive horizontal scroll container
+    const navContainer = lever10Btn.parentElement;
+    expect(navContainer).toHaveClass('overflow-x-auto');
+
+    // Click Lever 10 button
+    fireEvent.click(lever10Btn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('alternate-sourcing-view')).toBeInTheDocument();
     });
   });
 });

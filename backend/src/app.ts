@@ -42,6 +42,8 @@ app.use(
       'x-tenant-id',
       'X-Buyer-Id',
       'X-Tenant-Id',
+      'x-assessment-id',
+      'X-Assessment-Id',
       'x-request-id',
       'X-Request-Id',
       'Accept',

@@ -134,6 +134,24 @@ describe('OrchestrationApiClient Unit Tests', () => {
     expect(trail.length).toBe(1);
   });
 
+  it('should return null or empty array when readiness, kpis, notifications, and audit trail responses are not successful', async () => {
+    mockFetchResponse({ success: false });
+    const readiness = await client.getReadiness('job-failing');
+    expect(readiness).toBeNull();
+
+    mockFetchResponse({ success: false });
+    const kpis = await client.getAdminKPIs();
+    expect(kpis).toBeNull();
+
+    mockFetchResponse({ success: false });
+    const notifs = await client.getNotifications();
+    expect(notifs).toEqual([]);
+
+    mockFetchResponse({ success: false });
+    const trail = await client.getAuditTrail();
+    expect(trail).toEqual([]);
+  });
+
   it('should handle headers when user is admin without explicit tenantId', async () => {
     vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
       role: 'ADMIN',

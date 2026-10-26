@@ -25,6 +25,21 @@ import type {
 } from '../types/crypto';
 import logger from './logger';
 
+function getEnvironmentEncryptionKey(): string {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const envKey = process.env.APP_ENCRYPTION_KEY;
+  if (isProduction) {
+    if (!envKey) {
+      throw new Error('Critical Security Error: APP_ENCRYPTION_KEY must be configured in production environment.');
+    }
+    if (envKey === DEFAULT_DEV_ENCRYPTION_KEY) {
+      throw new Error('Critical Security Error: Development encryption key cannot be used in production environment.');
+    }
+    return envKey;
+  }
+  return envKey || DEFAULT_DEV_ENCRYPTION_KEY;
+}
+
 /**
  * Retrieves the effective 32-byte encryption key from environment or default fallback.
  */
@@ -46,7 +61,7 @@ export function resolveEncryptionKey(providedKey?: string | Buffer): Buffer {
     return buf;
   }
 
-  const envKey = process.env.APP_ENCRYPTION_KEY || DEFAULT_DEV_ENCRYPTION_KEY;
+  const envKey = getEnvironmentEncryptionKey();
   const keyBuf = Buffer.from(envKey, 'hex');
   if (keyBuf.length !== AES_KEY_LENGTH_BYTES) {
     throw new Error(CRYPTO_ERRORS.INVALID_KEY);
@@ -92,7 +107,9 @@ export function encryptData(
 
     if (options?.salt) {
       saltHex = options.salt;
-      const basePassphrase = typeof key === 'string' ? key : key?.toString('utf8') || process.env.APP_ENCRYPTION_KEY || DEFAULT_DEV_ENCRYPTION_KEY;
+      const basePassphrase = typeof key === 'string'
+        ? key
+        : key?.toString('utf8') || getEnvironmentEncryptionKey();
       resolvedKey = deriveKeyFromPassphrase(basePassphrase, saltHex);
     } else {
       resolvedKey = resolveEncryptionKey(key);
@@ -146,12 +163,8 @@ function validateAndExtractBuffers(
   const tag = Buffer.from(payload.tag, encoding);
   const ciphertext = Buffer.from(payload.ciphertext, encoding);
 
-  if (iv.length !== AES_IV_LENGTH_BYTES) {
-    throw new Error(CRYPTO_ERRORS.INVALID_IV);
-  }
-  if (tag.length !== AES_TAG_LENGTH_BYTES) {
-    throw new Error(CRYPTO_ERRORS.INVALID_TAG);
-  }
+  if (iv.length !== AES_IV_LENGTH_BYTES) throw new Error(CRYPTO_ERRORS.INVALID_IV);
+  if (tag.length !== AES_TAG_LENGTH_BYTES) throw new Error(CRYPTO_ERRORS.INVALID_TAG);
 
   return { iv, tag, ciphertext };
 }
@@ -160,7 +173,7 @@ function resolveDecryptionKey(key: string | Buffer | undefined, salt?: string): 
   if (salt) {
     const basePassphrase = typeof key === 'string'
       ? key
-      : key?.toString('utf8') || process.env.APP_ENCRYPTION_KEY || DEFAULT_DEV_ENCRYPTION_KEY;
+      : key?.toString('utf8') || getEnvironmentEncryptionKey();
     return deriveKeyFromPassphrase(basePassphrase, salt);
   }
   return resolveEncryptionKey(key);

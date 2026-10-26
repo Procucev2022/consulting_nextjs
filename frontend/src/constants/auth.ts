@@ -68,7 +68,7 @@ export const DEV_TEMP_CREDENTIALS: DevTempCredential[] =
           label: 'Enterprise Buyer',
           badge: 'Buyer',
           name: 'Enterprise Buyer',
-          company: 'Apex Industrial Dynamics Ltd.'
+          company: 'Enterprise Client'
         }
       ];
 

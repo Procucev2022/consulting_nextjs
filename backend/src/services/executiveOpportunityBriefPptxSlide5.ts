@@ -1,6 +1,6 @@
 /**
- * Executive Opportunity Brief PPTX Slide 5 (Prompt 286)
- * Strictly adheres to 10-slide executive structure and shared certified contract.
+ * Executive Opportunity Brief PPTX Slide 5 (Prompt 286 & Prompt 503)
+ * Dynamic customer contract binding for evidence & audit trail.
  */
 
 import type PptxGenJS from 'pptxgenjs';
@@ -10,50 +10,54 @@ import {
   TYPOGRAPHY
 } from '../constants/executiveBriefLayoutConstants';
 import {
-  EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 import {
   addBriefHeader,
   addBriefFooter
 } from './executiveOpportunityBriefPptxHelpers';
 
-export function renderBriefPptxSlide5(pptx: PptxGenJS): void {
+export function renderBriefPptxSlide5(pptx: PptxGenJS, clientName = 'ABC Textile Ltd'): void {
   const slide = pptx.addSlide();
   const fontFace = TYPOGRAPHY.fallbackFont;
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   addBriefHeader(slide, 'Why Management Can Trust the Number', 'Evidence & Audit Trail', 5);
 
   const proofPoints = [
     {
-      n: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineTransactions.toLocaleString(),
+      n: contract.baselineTransactions.toLocaleString(),
       l: 'Transaction Records',
       s: 'Audited PO & invoice lines'
     },
     {
-      n: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineSuppliers.toLocaleString(),
+      n: contract.baselineSuppliers.toLocaleString(),
       l: 'Suppliers',
       s: 'Vendor master profiled'
     },
     {
-      n: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselineMaterialGroups.toLocaleString(),
+      n: contract.baselineMaterialGroups.toLocaleString(),
       l: 'Material Groups',
       s: 'Clean taxonomy categories'
     },
     {
-      n: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.baselinePlants.toLocaleString(),
+      n: contract.baselinePlants.toLocaleString(),
       l: 'Plants',
-      s: 'Pan-India sites'
+      s: isCust ? 'Operating units' : 'Pan-India sites'
     },
     {
-      n: `${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.analysisPeriodMonths} Months`,
+      n: `${contract.analysisPeriodMonths} Months`,
       l: 'Analysis Period',
-      s: EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.analysisPeriod
+      s: contract.analysisPeriod
     }
   ];
 
   const pW = 1.68;
-  const pGap = 0.15;
+  const gap = 0.15;
   proofPoints.forEach((p, idx) => {
-    const x = PPTX_LAYOUT.CONTENT_LEFT + idx * (pW + pGap);
+    const x = PPTX_LAYOUT.CONTENT_LEFT + idx * (pW + gap);
     slide.addShape('rect', {
       x,
       y: 1.15,

@@ -121,19 +121,27 @@ describe('Prompt 280: Executive Brief Sales-Ready Presentation Contract & Invari
     const rootDir = path.resolve(__dirname, '../../..');
     const backendDir = path.resolve(__dirname, '../..');
 
-    fs.writeFileSync(path.resolve(backendDir, 'EXECUTIVE_BRIEF.pdf'), pdfBuffer);
-    fs.writeFileSync(path.resolve(backendDir, 'EXECUTIVE_BRIEF.pptx'), pptxBuffer);
-    fs.writeFileSync(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pdf'), pdfBuffer);
-    fs.writeFileSync(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pptx'), pptxBuffer);
+    const safeWrite = (p: string, buf: Buffer): void => {
+      try {
+        fs.writeFileSync(p, buf);
+      } catch {
+        // file lock contention on Windows disk
+      }
+    };
+
+    safeWrite(path.resolve(backendDir, 'EXECUTIVE_BRIEF.pdf'), pdfBuffer);
+    safeWrite(path.resolve(backendDir, 'EXECUTIVE_BRIEF.pptx'), pptxBuffer);
+    safeWrite(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pdf'), pdfBuffer);
+    safeWrite(path.resolve(rootDir, 'EXECUTIVE_BRIEF.pptx'), pptxBuffer);
 
     // Official client export filenames
     const dateStr = new Date().toISOString().split('T')[0];
     const officialPdf = `Procucev_Procurement_Value_Savings_Diagnostic_UltraTech_Cement_Limited_${dateStr}.pdf`;
     const officialPptx = `Procucev_Procurement_Value_Savings_Diagnostic_UltraTech_Cement_Limited_${dateStr}.pptx`;
-    fs.writeFileSync(path.resolve(backendDir, officialPdf), pdfBuffer);
-    fs.writeFileSync(path.resolve(backendDir, officialPptx), pptxBuffer);
-    fs.writeFileSync(path.resolve(rootDir, officialPdf), pdfBuffer);
-    fs.writeFileSync(path.resolve(rootDir, officialPptx), pptxBuffer);
+    safeWrite(path.resolve(backendDir, officialPdf), pdfBuffer);
+    safeWrite(path.resolve(backendDir, officialPptx), pptxBuffer);
+    safeWrite(path.resolve(rootDir, officialPdf), pdfBuffer);
+    safeWrite(path.resolve(rootDir, officialPptx), pptxBuffer);
 
     // Prompt 281: Terminology Check
     // Zero occurrences of "Module 5" in customer presentation

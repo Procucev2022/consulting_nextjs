@@ -232,4 +232,33 @@ describe('ValidationPreCheckSection Component', () => {
 
     expect(screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.refreshWithFixes, 'i') })).not.toBeInTheDocument();
   });
+
+  it('renders authoritative canonical dataset metrics and eliminates sample data leakage', () => {
+    const mockCanonical: any = {
+      sourceRowCount: 20505,
+      validRowCount: 20241,
+      excludedRowCount: 252,
+      anomalyRowCount: 12,
+      validFxNormalizedSpendCr: 4073.83,
+      validationSummary: {
+        sourceRows: 20505,
+        validRows: 20241,
+        excludedRows: 252,
+        anomalyRows: 12,
+        cleanSpendYieldPct: 98.7,
+        excludedSpendCr: 108.7,
+        anomalySpendCr: 0.0
+      }
+    };
+
+    render(<ValidationPreCheckSection {...defaultProps} canonicalViewModel={mockCanonical} />);
+
+    expect(screen.getByText('20,505 Source Records Ingested')).toBeInTheDocument();
+    expect(screen.getByText('20,241 Records Active in Validated Spend')).toBeInTheDocument();
+    expect(screen.getByText(/252 Excluded · 12 Anomalies Quarantined/)).toBeInTheDocument();
+    expect(screen.getByText('98.7%')).toBeInTheDocument();
+    expect(screen.getAllByText('₹4073.83 Cr').length).toBeGreaterThan(0);
+    expect(screen.queryByText('30 Sample Records Evaluated')).not.toBeInTheDocument();
+    expect(screen.queryByText('₹0.01 Cr')).not.toBeInTheDocument();
+  });
 });

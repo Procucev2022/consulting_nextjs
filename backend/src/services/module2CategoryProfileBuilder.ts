@@ -17,6 +17,7 @@ import { Module2ItemAnalysisEngine } from './module2ItemAnalysisEngine';
 import { Module2FragmentationHelper } from './module2FragmentationHelper';
 import { Module2CategoryProfileHelper } from './module2CategoryProfileHelper';
 import { Module2OpportunityIntelligenceHelper } from './module2OpportunityIntelligenceHelper';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 
 export class Module2CategoryProfileBuilder {
   public static buildProfile(
@@ -167,9 +168,11 @@ export class Module2CategoryProfileBuilder {
       scorecard.justificationNotes[0] || 'Convene sourcing category review with procurement lead.'
     );
 
+    const humanCategory = resolveHumanReadableCategory(categoryName, transactions[0]?.material_code);
+
     return {
       categoryId: `CAT-${categoryName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 12)}`,
-      categoryName,
+      categoryName: humanCategory,
       module2Classification: classInfo.classification,
       unspscCode: classInfo.unspscCode,
       unspscFamily: classInfo.unspscFamily,

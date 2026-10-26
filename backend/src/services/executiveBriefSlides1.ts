@@ -7,10 +7,15 @@ import type { PdfCanvas } from '../utils/pdfCanvas';
 import {
   PDF_LAYOUT,
   BRAND_COLORS,
-  TYPOGRAPHY
+  TYPOGRAPHY,
+  getExecutiveBriefPresentationContract,
+  isCustomerAssessment
 } from '../constants/executiveBriefPresentationConstants';
 
 export function renderSlide1Cover(canvas: PdfCanvas, clientName: string): void {
+  const contract = getExecutiveBriefPresentationContract(clientName);
+  const isCust = isCustomerAssessment(clientName);
+
   canvas.rect(0, 0, PDF_LAYOUT.PAGE_W, PDF_LAYOUT.PAGE_H, { fill: BRAND_COLORS.canvas });
 
   // Official aiCEV Lockup Image Asset anchored top-right
@@ -48,18 +53,21 @@ export function renderSlide1Cover(canvas: PdfCanvas, clientName: string): void {
   });
   canvas.rect(PDF_LAYOUT.CONTENT_LEFT, 230, 6, 140, { fill: BRAND_COLORS.accentGreen });
 
-  canvas.text('DIRECT SAVINGS OPPORTUNITY', PDF_LAYOUT.CONTENT_LEFT + 28, 260, {
+  const labelSavings = isCust ? 'APPROVED NET MODELLED OPPORTUNITY' : 'DIRECT SAVINGS OPPORTUNITY';
+  canvas.text(labelSavings, PDF_LAYOUT.CONTENT_LEFT + 28, 260, {
     fontSize: TYPOGRAPHY.cardLabelSize,
     font: 'bold',
     color: BRAND_COLORS.secondaryText
   });
-  canvas.text('₹78.72 Cr', PDF_LAYOUT.CONTENT_LEFT + 28, 305, {
+  const heroValue = `₹${contract.netDirectSavingsCr.toFixed(isCust ? 3 : 2)} Cr`;
+  canvas.text(heroValue, PDF_LAYOUT.CONTENT_LEFT + 28, 305, {
     fontSize: TYPOGRAPHY.heroNumberSize + 4,
     font: 'bold',
     color: BRAND_COLORS.accentGreen
   });
+  const subline = `₹${contract.netDefensiblePipelineCr.toFixed(isCust ? 3 : 2)} Cr Net Defensible Pipeline  |  ₹${contract.totalCustomerSpendCr.toFixed(isCust ? 4 : 2)} Cr Spend Evaluated  |  ${contract.analysisPeriod}`;
   canvas.text(
-    '₹93.60 Cr Net Defensible Pipeline  |  ₹5,920.35 Cr Spend Evaluated  |  24 Months (Apr 2024 - Mar 2026)',
+    subline,
     PDF_LAYOUT.CONTENT_LEFT + 28,
     342,
     { fontSize: TYPOGRAPHY.bodySize, font: 'regular', color: BRAND_COLORS.secondaryText }

@@ -3,7 +3,7 @@
  */
 
 import type { LineItemMapping, StrategicSingleVendorItem, CoreBucket } from '../types';
-import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
+import { lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
 
 interface MaterialVendorAggregate {
   materialCode: string;
@@ -57,13 +57,13 @@ export function calculateStrategicVendorRisk(
   return strategicItems.sort((a, b) => b.total_spend_inr_cr - a.total_spend_inr_cr);
 }
 
-function resolveTaxonomyInfo(desc: string, bucket: string): { code: string; commodity: string; classTitle: string } {
+function resolveTaxonomyInfo(desc: string): { code: string; commodity: string; classTitle: string } {
   const descMatch = lookupUNSPSCByDescription(desc);
-  const fallback = lookupUNSPSCDetails(desc, bucket);
+  const isClassified = descMatch?.classificationStatus === 'CLASSIFIED';
   return {
-    code: descMatch?.commodityCode || '10000000',
-    commodity: descMatch?.commodityTitle || fallback.commodityTitle,
-    classTitle: descMatch?.classTitle || fallback.classTitle
+    code: isClassified && descMatch ? descMatch.commodityCode : '00000000',
+    commodity: isClassified && descMatch ? descMatch.commodityTitle : 'Unclassified Commodity',
+    classTitle: isClassified && descMatch ? descMatch.classTitle : 'Unclassified Class'
   };
 }
 
@@ -71,7 +71,7 @@ function createMaterialAggregate(
   item: LineItemMapping,
   idx: number
 ): MaterialVendorAggregate {
-  const tax = resolveTaxonomyInfo(item.raw_desc, item.core_bucket);
+  const tax = resolveTaxonomyInfo(item.raw_desc);
   return {
     materialCode: item.material_code || `MAT-${1000 + idx}`,
     materialDesc: item.raw_desc || item.material_desc || 'Industrial Material',

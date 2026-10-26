@@ -132,7 +132,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
         </div>
       </div>
 
-      {/* Hero Highlight Card: Grand Total Consolidated Savings */}
+      {/* Hero Highlight Card: Net Modelled Opportunity & Supporting Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-12 relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 p-6 sm:p-8 text-white shadow-xl">
           {/* Background overlay accent */}
@@ -164,47 +164,77 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
               </div>
             </div>
 
-            {/* Subtotals: Module 2 vs Module 4 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0 lg:w-96">
-              {/* Module 2 Subtotal */}
+            {/* Supporting Opportunity & Governance Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 shrink-0 lg:w-[500px]">
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
+                <span className="text-[10px] text-emerald-200 block uppercase font-mono">{strings.grossOpportunityLabel}</span>
+                <span className="text-lg font-black font-mono text-white mt-0.5 block">{formatSavingsAmountCr(metrics.grossOpportunityInrCr)}</span>
+                <span className="text-[9px] text-emerald-300/80 font-mono">Pre-Deduplication</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
+                <span className="text-[10px] text-rose-200 block uppercase font-mono">{strings.overlapDeductionsLabel}</span>
+                <span className="text-lg font-black font-mono text-rose-300 mt-0.5 block">-₹{metrics.overlapDeductionsInrCr.toFixed(2)} Cr</span>
+                <span className="text-[9px] text-rose-200/80 font-mono">Multi-Lever Overlap</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
+                <span className="text-[10px] text-cyan-200 block uppercase font-mono">{strings.provenOpportunityLabel}</span>
+                <span className="text-lg font-black font-mono text-cyan-300 mt-0.5 block">{formatSavingsAmountCr(metrics.provenOpportunityInrCr)}</span>
+                <span className="text-[9px] text-cyan-200/80 font-mono">Proven Baseline</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15">
+                <span className="text-[10px] text-amber-200 block uppercase font-mono">{strings.discoveryOpportunityLabel}</span>
+                <span className="text-lg font-black font-mono text-amber-300 mt-0.5 block">{formatSavingsAmountCr(metrics.discoveryOpportunityInrCr)}</span>
+                <span className="text-[9px] text-amber-200/80 font-mono">Pending Validation</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white/10 border border-white/15 col-span-2 sm:col-span-2">
+                <span className="text-[10px] text-teal-200 block uppercase font-mono">{strings.realizedSavingsLabel}</span>
+                <div className="flex items-center space-x-2 mt-0.5">
+                  <span className="text-lg font-black font-mono text-teal-300">{formatSavingsAmountCr(metrics.realizedSavingsInrCr)}</span>
+                  <span className="text-[9px] text-teal-200/90 font-mono bg-teal-900/50 px-2 py-0.5 rounded border border-teal-500/30">
+                    Awaiting Invoices & ERP Realization
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Module Navigation Subtotals & Governance Note */}
+          <div className="relative z-10 mt-5 pt-4 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 data-testid="btn-subtotal-module2"
                 onClick={() => onNavigateToSection?.('module2', 'vendor-consolidation-section')}
-                className="p-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-left group cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-emerald-100 flex items-center space-x-1.5 cursor-pointer"
               >
-                <div className="flex items-center justify-between text-[11px] text-emerald-200">
-                  <span className="font-semibold">{strings.strategicSourcingSubtotalLabel}</span>
-                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-                <div className="text-2xl font-black font-mono text-white mt-1">
-                  {formatSavingsAmountCr(metrics.module2SavingsInrCr)}
-                </div>
-                <div className="text-[10px] text-emerald-200/80 font-mono mt-0.5">
-                  Across 4 Strategic Levers
-                </div>
+                <span>{strings.strategicSourcingSubtotalLabel}:</span>
+                <span className="font-bold text-white font-mono">{formatSavingsAmountCr(metrics.module2SavingsInrCr)}</span>
+                <ExternalLink className="w-3 h-3 ml-1" />
               </button>
-
-              {/* Module 4 Subtotal */}
               <button
                 type="button"
                 data-testid="btn-subtotal-module4"
                 onClick={() => onNavigateToSection?.('module4', 'savings-pipeline-table-section')}
-                className="p-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-left group cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition-all text-emerald-100 flex items-center space-x-1.5 cursor-pointer"
               >
-                <div className="flex items-center justify-between text-[11px] text-emerald-200">
-                  <span className="font-semibold">{strings.savingsEngineSubtotalLabel}</span>
-                  <ExternalLink className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-                <div className="text-2xl font-black font-mono text-white mt-1">
-                  {formatSavingsAmountCr(metrics.module4SavingsInrCr)}
-                </div>
-                <div className="text-[10px] text-emerald-200/80 font-mono mt-0.5">
-                  Direct Category Pipeline
-                </div>
+                <span>{strings.savingsEngineSubtotalLabel}:</span>
+                <span className="font-bold text-white font-mono">{formatSavingsAmountCr(metrics.module4SavingsInrCr)}</span>
+                <ExternalLink className="w-3 h-3 ml-1" />
               </button>
             </div>
+            <span className="text-[11px] text-emerald-200/90 font-mono">
+              {strings.governanceNotice}
+            </span>
           </div>
+        </div>
+      </div>
+
+      {/* Spend Eligibility & Overlap Resolution Callout */}
+      <div className="p-4 rounded-2xl bg-emerald-50/90 dark:bg-[#F0FDF4] border border-emerald-200 dark:border-emerald-800/40 text-xs text-emerald-950 dark:text-emerald-950 flex items-start space-x-3 shadow-xs">
+        <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-600 shrink-0 mt-0.5" />
+        <div className="leading-relaxed">
+          <span className="font-bold">Spend Eligibility Architecture: </span>
+          {strings.spendEligibilityExplanation}
         </div>
       </div>
 
@@ -245,23 +275,30 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
                 </div>
 
                 {/* Metrics Row: Spend Baseline & Target % */}
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between text-xs font-mono">
-                  <div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase block">
-                      Evaluated Spend
-                    </span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">
-                      ₹{init.spendInrCr.toFixed(2)} Cr
-                    </span>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200/70 dark:border-slate-800/70 flex flex-col space-y-1.5 text-xs font-mono">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase block">
+                        Eligible Strategy Spend
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        ₹{init.spendInrCr.toFixed(2)} Cr
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase block">
+                        Target Realization
+                      </span>
+                      <span className={`font-bold ${accent.text}`}>
+                        {init.savingsPct.toFixed(1)}%
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase block">
-                      Target Realization
-                    </span>
-                    <span className={`font-bold ${accent.text}`}>
-                      {init.savingsPct.toFixed(1)}%
-                    </span>
-                  </div>
+                  {init.spendInrCr > 0 && (
+                    <div className="text-[9px] text-slate-500 dark:text-slate-400 border-t border-slate-200/60 dark:border-slate-700/60 pt-1 leading-tight">
+                      {strings.cardSpendNotice}
+                    </div>
+                  )}
                 </div>
 
                 {/* Clickable Savings Number Hero Box */}

@@ -3,36 +3,106 @@ import {
   unspscOfficialDictionary,
   lookupUNSPSCByDescription,
   searchUNSPSCTaxonomy,
-  lookupUNSPSCDetails
+  lookupUNSPSCDetails,
+  UNCLASSIFIED_COMMODITY_RECORD
 } from '../../src/data/unspscTaxonomy';
+import {
+  UNCLASSIFIED_COMMODITY_CODE,
+  UNCLASSIFIED_COMMODITY_TITLE
+} from '../../src/constants/taxonomy';
 
-describe('unspscTaxonomy data module', () => {
+describe('unspscTaxonomy data module (backend)', () => {
   it('should export non-empty official dictionary', () => {
     expect(unspscOfficialDictionary).toBeDefined();
     expect(unspscOfficialDictionary.length).toBeGreaterThan(100);
   });
 
-  describe('lookupUNSPSCByDescription', () => {
-    it('should find match by commodity title', () => {
+  it('should ensure index 0 (African boxwood) has Direct Materials coreBucket, not Packaging Materials', () => {
+    const record0 = unspscOfficialDictionary[0];
+    expect(record0.commodityCode).toBe('10502909');
+    expect(record0.commodityTitle).toBe('Fresh cut african boxwood');
+    expect(record0.coreBucket).toBe('Direct Materials');
+    expect(record0.coreBucket).not.toBe('Packaging Materials');
+  });
+
+  describe('lookupUNSPSCByDescription - Phase 1 Taxonomy & Classification Correction', () => {
+    // Test A: A known valid official UNSPSC lookup returns the correct code and title
+    it('Test A: should return the correct code and title for a known valid official commodity', () => {
       const match = lookupUNSPSCByDescription('Fresh cut african boxwood');
       expect(match).toBeDefined();
-      expect(match.commodityTitle).toContain('boxwood');
+      expect(match?.commodityCode).toBe('10502909');
+      expect(match?.commodityTitle).toBe('Fresh cut african boxwood');
+      expect(match?.classificationStatus).toBe('CLASSIFIED');
     });
 
     it('should find match by class title', () => {
       const match = lookupUNSPSCByDescription('greens');
       expect(match).toBeDefined();
+      expect(match?.classCode).toBe('10502900');
+      expect(match?.classificationStatus).toBe('CLASSIFIED');
     });
 
-    it('should find match by commodity code', () => {
-      const firstCode = unspscOfficialDictionary[0].commodityCode;
-      const match = lookupUNSPSCByDescription(firstCode);
-      expect(match.commodityCode).toBe(firstCode);
+    // Test E: Genuine official commodity code 10502909 remains valid
+    it('Test E: genuine official commodity code 10502909 remains valid when looked up directly', () => {
+      const match = lookupUNSPSCByDescription('10502909');
+      expect(match).toBeDefined();
+      expect(match?.commodityCode).toBe('10502909');
+      expect(match?.commodityTitle).toBe('Fresh cut african boxwood');
+      expect(match?.coreBucket).toBe('Direct Materials');
+      expect(match?.classificationStatus).toBe('CLASSIFIED');
     });
 
-    it('should fallback to first record if nothing matches', () => {
-      const fallback = lookupUNSPSCByDescription('non_existent_super_random_item_123456');
-      expect(fallback).toBe(unspscOfficialDictionary[0]);
+    // Test B: An unknown description returns UNCLASSIFIED, never African boxwood
+    it('Test B: an unknown description returns UNCLASSIFIED and never African boxwood', () => {
+      const result = lookupUNSPSCByDescription('non_existent_super_random_item_123456');
+      expect(result).toBeDefined();
+      expect(result?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
+      expect(result?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
+      expect(result?.classificationStatus).toBe('UNCLASSIFIED');
+      expect(result?.commodityCode).not.toBe('10502909');
+      expect(result?.commodityTitle).not.toBe('Fresh cut african boxwood');
+    });
+
+    // Test C: Textile packaging descriptions do not map to African boxwood
+    it('Test C: textile packaging descriptions return UNCLASSIFIED, never African boxwood', () => {
+      const polybag = lookupUNSPSCByDescription('Textile Polybag LDPE 50 Micron');
+      expect(polybag).toBeDefined();
+      expect(polybag?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
+      expect(polybag?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
+      expect(polybag?.classificationStatus).toBe('UNCLASSIFIED');
+      expect(polybag?.commodityCode).not.toBe('10502909');
+
+      const carton = lookupUNSPSCByDescription('Corrugated Carton 7-Ply Outer Shipper');
+      expect(carton).toBeDefined();
+      expect(carton?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
+      expect(carton?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
+      expect(carton?.classificationStatus).toBe('UNCLASSIFIED');
+      expect(carton?.commodityCode).not.toBe('10502909');
+    });
+
+    // Test D: An ambiguous description does not silently receive an unrelated code
+    it('Test D: an ambiguous description does not silently receive boxwood or unrelated code', () => {
+      // Searching single word "box" must NOT match "Fresh cut african boxwood"
+      const boxResult = lookupUNSPSCByDescription('box');
+      expect(boxResult?.commodityCode).not.toBe('10502909');
+      expect(boxResult?.commodityTitle).not.toBe('Fresh cut african boxwood');
+
+      // Ambiguous description without match must return UNCLASSIFIED
+      const ambiguous = lookupUNSPSCByDescription('miscellaneous ambiguous supplies xyz');
+      expect(ambiguous?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
+      expect(ambiguous?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
+      expect(ambiguous?.classificationStatus).toBe('UNCLASSIFIED');
+    });
+
+    it('should return undefined when query is empty or whitespace only', () => {
+      expect(lookupUNSPSCByDescription('')).toBeUndefined();
+      expect(lookupUNSPSCByDescription('   ')).toBeUndefined();
+    });
+
+    it('should export UNCLASSIFIED_COMMODITY_RECORD matching constant specification', () => {
+      expect(UNCLASSIFIED_COMMODITY_RECORD.commodityCode).toBe('00000000');
+      expect(UNCLASSIFIED_COMMODITY_RECORD.commodityTitle).toBe('Unclassified Commodity');
+      expect(UNCLASSIFIED_COMMODITY_RECORD.classificationStatus).toBe('UNCLASSIFIED');
     });
   });
 

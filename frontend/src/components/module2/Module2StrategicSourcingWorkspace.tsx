@@ -12,11 +12,42 @@ import { StrategicSourcingDashboardCards } from './StrategicSourcingDashboardCar
 import { StrategicSourcingCategoryTable } from './StrategicSourcingCategoryTable';
 import { StrategicSourcingDeepDiveModal } from './StrategicSourcingDeepDiveModal';
 import { HowCalculatedModal, type HowCalculatedData } from './HowCalculatedModal';
+import { DirectPriceImprovementView } from './DirectPriceImprovementView';
+import { EAuctionDynamicBiddingView } from './EAuctionDynamicBiddingView';
+import { VendorConsolidationView } from './VendorConsolidationView';
+import { VolumeAggregationView } from './VolumeAggregationView';
+import { PaymentTermsView } from './PaymentTermsView';
+import { CategorySpecialisationView } from './CategorySpecialisationView';
+import { SpecificationRationalisationView } from './SpecificationRationalisationView';
+import { ProcurementComplianceView } from './ProcurementComplianceView';
+import { AlternateSourcingView } from './AlternateSourcingView';
+import { Module2LeverOverview } from './Module2LeverOverview';
+import { Module2ConsolidatedSavingsView } from './Module2ConsolidatedSavingsView';
+import { ExecutiveOpportunityDashboardView } from './ExecutiveOpportunityDashboardView';
+import { MaterialOpportunityRegisterView } from './MaterialOpportunityRegisterView';
 import { logger } from '../../utils/logger';
 
-export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = () => {
+export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcingWorkspaceProps> = ({
+  assessmentId
+}) => {
   const strings = UI_STRINGS.module2Sourcing;
 
+  const [activeTab, setActiveTab] = useState<
+    | 'executiveDashboard'
+    | 'opportunityRegister'
+    | 'overview'
+    | 'consolidatedSavings'
+    | 'directPrice'
+    | 'eAuction'
+    | 'vendorConsolidation'
+    | 'volumeAggregation'
+    | 'paymentTerms'
+    | 'categorySpecialisation'
+    | 'specificationRationalisation'
+    | 'procurementCompliance'
+    | 'alternateSourcing'
+    | 'strategy'
+  >('executiveDashboard');
   const [summary, setSummary] = useState<Module2StrategicSourcingDashboardSummary | null>(null);
   const [profiles, setProfiles] = useState<CategoryStrategicSourcingProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<CategoryStrategicSourcingProfile | null>(null);
@@ -25,7 +56,14 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const [howCalculatedData, setHowCalculatedData] = useState<HowCalculatedData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeFilterCard, setActiveFilterCard] = useState<string>('ALL');
+  const [downloadPayload, setDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
+  const [handoffSuccessMsg, setHandoffSuccessMsg] = useState<string | null>(null);
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
   const isMountedRef = useRef<boolean>(true);
+
+  const effectiveAssessmentId =
+    assessmentId ||
+    (typeof window !== 'undefined' ? localStorage.getItem('aicev_selected_assessment_id') || undefined : undefined);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -35,11 +73,17 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   }, []);
 
   const loadData = useCallback(async (refresh = false) => {
+    if (!effectiveAssessmentId) {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
+      return;
+    }
     setIsLoading(true);
     try {
       const [sumRes, profRes] = await Promise.all([
-        Module2StrategicSourcingApi.getDashboardSummary(refresh),
-        Module2StrategicSourcingApi.getCategoryProfiles(refresh)
+        Module2StrategicSourcingApi.getDashboardSummary(refresh, effectiveAssessmentId),
+        Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId)
       ]);
       if (isMountedRef.current) {
         if (sumRes) setSummary(sumRes);
@@ -54,7 +98,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [effectiveAssessmentId]);
 
   useEffect(() => {
     loadData();
@@ -66,16 +110,19 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   };
 
   const handleExportAudit = async () => {
+    if (!effectiveAssessmentId) return;
     try {
-      const data = await Module2StrategicSourcingApi.exportAuditDossier();
+      const data = await Module2StrategicSourcingApi.exportAuditDossier(effectiveAssessmentId);
       if (!data) return;
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `MODULE_2_STRATEGIC_SOURCING_AUDIT_${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      setDownloadPayload({
+        url,
+        filename: `MODULE_2_STRATEGIC_SOURCING_AUDIT_${Date.now()}.json`
+      });
+      setTimeout(() => {
+        downloadLinkRef.current?.click();
+      }, 50);
     } catch (err) {
       logger.error('Failed to trigger export', {}, err);
     }
@@ -86,7 +133,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       categoryId: profile.categoryId,
       opportunityId: profile.calculationId
     });
-    alert(`Opportunity ${profile.categoryId} successfully packaged for Module 4 Sourcing Execution.`);
+    setHandoffSuccessMsg(`Opportunity ${profile.categoryId} successfully packaged for Module 4 Sourcing Execution.`);
+    setTimeout(() => {
+      setHandoffSuccessMsg(null);
+    }, 4000);
   };
 
   const handleOpenHowCalculated = (profile?: CategoryStrategicSourcingProfile | null) => {
@@ -125,6 +175,37 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       data-testid="module2-strategic-sourcing-workspace"
       className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-sm space-y-6"
     >
+      {/* Declarative Virtual Download Anchor */}
+      {downloadPayload && (
+        <a
+          ref={downloadLinkRef}
+          href={downloadPayload.url}
+          download={downloadPayload.filename}
+          className="hidden"
+          aria-hidden="true"
+        >
+          Download
+        </a>
+      )}
+
+      {/* Declarative Sourcing Handoff Alert */}
+      {handoffSuccessMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center justify-between"
+        >
+          <span>{handoffSuccessMsg}</span>
+          <button
+            type="button"
+            onClick={() => setHandoffSuccessMsg(null)}
+            className="text-emerald-600 hover:text-emerald-900 font-bold ml-2 cursor-pointer"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
@@ -157,40 +238,361 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         </div>
       </div>
 
-      {/* 10 KPI Dashboard Summary Cards */}
-      {summary && (
-        <StrategicSourcingDashboardCards
-          summary={summary}
-          onFilterCardClick={(key) => setActiveFilterCard(key)}
-          activeFilter={activeFilterCard}
-          onOpenHowCalculated={() => handleOpenHowCalculated()}
+      {/* Workspace Navigation Subtabs */}
+      <div className="flex items-center overflow-x-auto scrollbar-thin border-b border-slate-200 dark:border-slate-800 gap-1 pb-1">
+        <button
+          type="button"
+          data-testid="subtab-btn-executiveDashboard"
+          onClick={() => setActiveTab('executiveDashboard')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'executiveDashboard'
+              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Executive Decision Dashboard</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 font-bold">
+            STAGE 2
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-opportunityRegister"
+          onClick={() => setActiveTab('opportunityRegister')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'opportunityRegister'
+              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400 font-bold'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Material Opportunity Register</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            TRACEABLE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-overview"
+          onClick={() => setActiveTab('overview')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'overview'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>10 Levers Overview</span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-consolidatedSavings"
+          onClick={() => setActiveTab('consolidatedSavings')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'consolidatedSavings'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Consolidated Savings & Deduplication</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 font-bold">
+            PART F
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-directPrice"
+          onClick={() => setActiveTab('directPrice')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'directPrice'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 1: Direct Price Improvement</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-eAuction"
+          onClick={() => setActiveTab('eAuction')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'eAuction'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 2: E-Auction Dynamic Bidding</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-vendorConsolidation"
+          onClick={() => setActiveTab('vendorConsolidation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'vendorConsolidation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 3: Vendor Base Consolidation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-volumeAggregation"
+          onClick={() => setActiveTab('volumeAggregation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'volumeAggregation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 4: Volume Aggregation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-paymentTerms"
+          onClick={() => setActiveTab('paymentTerms')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'paymentTerms'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 5: Payment Terms</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-categorySpecialisation"
+          onClick={() => setActiveTab('categorySpecialisation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'categorySpecialisation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 6: Category Specialisation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-lever7-coming-soon"
+          disabled
+          className="pb-2.5 px-3 font-semibold text-xs border-b-2 border-transparent text-slate-400 dark:text-slate-500 flex items-center gap-1.5 cursor-not-allowed opacity-75 shrink-0 whitespace-nowrap"
+          title="Lever 7: Logistics & Packaging Specifications is coming soon"
+        >
+          <span>Lever 7: Logistics & Packaging Specifications</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold">
+            COMING SOON
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-specificationRationalisation"
+          onClick={() => setActiveTab('specificationRationalisation')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'specificationRationalisation'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 8: Specification Rationalisation</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            PHASE 1
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-procurementCompliance"
+          onClick={() => setActiveTab('procurementCompliance')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'procurementCompliance'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 9: Procurement Compliance</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            ACTIVE
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-alternateSourcing"
+          onClick={() => setActiveTab('alternateSourcing')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'alternateSourcing'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Lever 10: Alternate Sourcing</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold">
+            DISCOVERY
+          </span>
+        </button>
+        <button
+          type="button"
+          data-testid="subtab-btn-strategy"
+          onClick={() => setActiveTab('strategy')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'strategy'
+              ? 'border-cyan-600 text-cyan-600 dark:text-cyan-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <span>Category Sourcing Strategy</span>
+        </button>
+      </div>
+
+      {activeTab === 'executiveDashboard' && (
+        <ExecutiveOpportunityDashboardView
+          assessmentId={effectiveAssessmentId || 'AIC-2026-0002'}
+          onNavigateToRegister={() => setActiveTab('opportunityRegister')}
         />
       )}
 
-      {/* Category Sourcing Table */}
-      <StrategicSourcingCategoryTable
-        profiles={profiles}
-        onSelectCategory={handleSelectCategory}
-        onExportAudit={handleExportAudit}
-        selectedCategoryName={selectedProfile?.categoryName}
-        onOpenHowCalculated={handleOpenHowCalculated}
-      />
+      {activeTab === 'opportunityRegister' && (
+        <MaterialOpportunityRegisterView
+          assessmentId={effectiveAssessmentId || 'AIC-2026-0002'}
+        />
+      )}
 
-      {/* 20-Section Deep Dive Modal */}
-      <StrategicSourcingDeepDiveModal
-        isOpen={isDeepDiveOpen}
-        onClose={() => setIsDeepDiveOpen(false)}
-        profile={selectedProfile}
-        onHandoffToModule4={handleHandoffToModule4}
-        onOpenHowCalculated={handleOpenHowCalculated}
-      />
+      {activeTab === 'overview' && (
+        <Module2LeverOverview
+          assessmentId={effectiveAssessmentId || ''}
+          directPriceOppCr={summary?.directPriceHistoricalOppCr}
+          onSelectLever={(lever) =>
+            setActiveTab(
+              lever as
+                | 'directPrice'
+                | 'eAuction'
+                | 'vendorConsolidation'
+                | 'volumeAggregation'
+                | 'paymentTerms'
+                | 'categorySpecialisation'
+                | 'specificationRationalisation'
+                | 'procurementCompliance'
+                | 'alternateSourcing'
+            )
+          }
+        />
+      )}
 
-      {/* Clickable How Calculated Modal */}
-      <HowCalculatedModal
-        isOpen={isHowCalculatedOpen}
-        onClose={() => setIsHowCalculatedOpen(false)}
-        data={howCalculatedData}
-      />
+      {activeTab === 'consolidatedSavings' && (
+        <Module2ConsolidatedSavingsView assessmentId={effectiveAssessmentId || ''} />
+      )}
+
+      {activeTab === 'directPrice' && (
+        <DirectPriceImprovementView assessmentId={effectiveAssessmentId || ''} />
+      )}
+
+      {activeTab === 'eAuction' && (
+        <EAuctionDynamicBiddingView
+          assessmentId={effectiveAssessmentId || ''}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'vendorConsolidation' && (
+        <VendorConsolidationView
+          assessmentId={effectiveAssessmentId || ''}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'volumeAggregation' && (
+        <VolumeAggregationView
+          assessmentId={effectiveAssessmentId || ''}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'paymentTerms' && (
+        <PaymentTermsView
+          assessmentId={effectiveAssessmentId || ''}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'categorySpecialisation' && (
+        <CategorySpecialisationView
+          assessmentId={effectiveAssessmentId || ''}
+          onBackToOverview={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'specificationRationalisation' && (
+        <SpecificationRationalisationView
+          assessmentId={effectiveAssessmentId || ''}
+          onNavigateBack={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'procurementCompliance' && (
+        <ProcurementComplianceView
+          assessmentId={effectiveAssessmentId || ''}
+          onNavigateBack={() => setActiveTab('overview')}
+        />
+      )}
+
+      {activeTab === 'alternateSourcing' && (
+        <AlternateSourcingView
+          assessmentId={effectiveAssessmentId || ''}
+        />
+      )}
+
+      {activeTab === 'strategy' && (
+        <>
+          {/* 10 KPI Dashboard Summary Cards */}
+          {summary && (
+            <StrategicSourcingDashboardCards
+              summary={summary}
+              onFilterCardClick={(key) => setActiveFilterCard(key)}
+              activeFilter={activeFilterCard}
+              onOpenHowCalculated={() => handleOpenHowCalculated()}
+            />
+          )}
+
+          {/* Category Sourcing Table */}
+          <StrategicSourcingCategoryTable
+            profiles={profiles}
+            onSelectCategory={handleSelectCategory}
+            onExportAudit={handleExportAudit}
+            selectedCategoryName={selectedProfile?.categoryName}
+            onOpenHowCalculated={handleOpenHowCalculated}
+          />
+
+          {/* 20-Section Deep Dive Modal */}
+          <StrategicSourcingDeepDiveModal
+            isOpen={isDeepDiveOpen}
+            onClose={() => setIsDeepDiveOpen(false)}
+            profile={selectedProfile}
+            onHandoffToModule4={handleHandoffToModule4}
+            onOpenHowCalculated={handleOpenHowCalculated}
+          />
+
+          {/* Clickable How Calculated Modal */}
+          <HowCalculatedModal
+            isOpen={isHowCalculatedOpen}
+            onClose={() => setIsHowCalculatedOpen(false)}
+            data={howCalculatedData}
+          />
+        </>
+      )}
     </div>
   );
 };
