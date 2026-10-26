@@ -378,7 +378,229 @@ describe('Module 2 — Stage 2: Opportunity Register Unit Tests', () => {
     });
   });
 
-  describe('4. Controller & CSV Export Verification', () => {
+  describe('4. Module2OpportunityRegisterEngine Verification', () => {
+    it('should generate opportunity register and calculate authoritative summary metrics', async () => {
+      const mockDpi = [
+        {
+          itemKey: 'KEY-001',
+          materialCode: '100DP001IM',
+          materialDesc: 'DOLOMITE POWDER (IMPORTED)',
+          spendCategory: '11100',
+          uom: 'MT',
+          currency: 'INR',
+          financialYear: '2026-2027',
+          transactionCount: 25,
+          totalEligibleQuantity: 1000,
+          lowestUnitPrice: 4152.0,
+          weightedAveragePrice: 10528.43,
+          highestUnitPrice: 14000.0,
+          actualPurchaseCostInr: 293321980,
+          actualPurchaseCostCr: 29.3322,
+          benchmarkCostInr: 115674720,
+          benchmarkCostCr: 11.5675,
+          historicalLostOpportunityInr: 177647260,
+          historicalLostOpportunityCr: 17.7647,
+          priceDispersionPct: 233.3,
+          benchmarkSupplierName: 'COMEFAR ASIA',
+          benchmarkSupplierCode: '600713',
+          benchmarkPoNumber: '4500001',
+          benchmarkPoDate: '2026-05-01',
+          benchmarkPlantCode: '1120',
+          supplierCount: 2,
+          plantCount: 1,
+          qualificationStatus: 'QUALIFIED',
+          warnings: [],
+          suppliers: [],
+          plants: [],
+          transactions: []
+        }
+      ] as any;
+
+      const mockVc = [
+        {
+          materialCode: '100SUA01I',
+          materialDesc: 'SODIUM ANTIMONATE',
+          spendCategory: '11100',
+          unspscCode: '12000000',
+          unspscCategory: 'Chemicals',
+          uom: 'KG',
+          currency: 'INR',
+          totalSpendInr: 418000000,
+          totalSpendCr: 41.8,
+          totalQuantity: 50000,
+          supplierCount: 2,
+          plantCount: 2,
+          suppliers: [],
+          lowestUnitPrice: 8000,
+          highestUnitPrice: 8720,
+          weightedAvgPrice: 8360,
+          priceDispersionPct: 9.0,
+          isComparableUomAndCurrency: true,
+          status: 'MULTI_SOURCED_OPPORTUNITY_IDENTIFIED',
+          opportunityReason: 'Multi-vendor supply',
+          addressableSpendInr: 418000000,
+          addressableSpendCr: 41.8,
+          transactions: []
+        }
+      ] as any;
+
+      const mockVa = [
+        {
+          opportunityId: 'VA-001',
+          tier: 'TIER_1_IDENTICAL',
+          tierLabel: 'Tier 1 Identical',
+          materialCode: '100SA02G',
+          materialDesc: 'SODA ASH DENSE GHCL',
+          category: 'Chemicals',
+          unspscCode: '12000000',
+          baseUom: 'MT',
+          totalHistoricalSpendInr: 581170000,
+          totalHistoricalSpendCr: 58.117,
+          potentiallyAggregatableSpendInr: 581170000,
+          potentiallyAggregatableSpendCr: 58.117,
+          aggregatableQuantity: 19600,
+          excludedQuantity: 0,
+          unmatchedAdjustmentsInr: 0,
+          transactionCount: 45,
+          plantCount: 2,
+          plants: ['1120', '1130'],
+          supplierCount: 1,
+          primarySupplier: 'GHCL LTD',
+          suppliers: ['GHCL LTD'],
+          demandClassification: 'RECURRING_PREDICTABLE',
+          demandClassificationLabel: 'Recurring Predictable',
+          opportunityStatus: 'POTENTIAL_OPPORTUNITY_IDENTIFIED',
+          statusReason: 'High volume across plants',
+          nextRecommendedAction: 'Consolidate annual volume',
+          technicalValidationRequired: false,
+          wavgUnitPriceInr: 29651.53,
+          eligibilityType: 'TEMPORAL_LOT_CONSOLIDATION',
+          isGenuineOpportunity: true
+        }
+      ] as any;
+
+      const mockSpec = [
+        {
+          candidateId: 'CAND-01',
+          identificationType: 'TEXT_SIMILARITY',
+          identificationRationale: 'Potential similar boxes',
+          spendCategory: 'Packaging',
+          primaryItem: {
+            code: 'BOX-A',
+            description: 'Corrugated Box 20x20',
+            normalizedDescription: 'CORRUGATED BOX',
+            plant: '1120',
+            totalSpendInr: 1000000,
+            totalQuantity: 5000,
+            uom: 'NOS',
+            transactionCount: 5,
+            suppliersCount: 1
+          },
+          comparisonItem: {
+            code: 'BOX-B',
+            description: 'Corrugated Box 20x22',
+            normalizedDescription: 'CORRUGATED BOX',
+            plant: '1130',
+            totalSpendInr: 1200000,
+            totalQuantity: 6000,
+            uom: 'NOS',
+            transactionCount: 6,
+            suppliersCount: 1
+          },
+          similarityScore: 92,
+          technicalAttributes: [],
+          differencesIdentified: ['Height variance 2cm'],
+          missingAttributesDisclosed: [],
+          hasMissingTechnicalData: true,
+          expenditureUnderReviewInr: 2200000,
+          expenditureUnderReviewCr: 0.22,
+          quantityUnderReview: 11000,
+          reviewStatus: 'AWAITING_TECHNICAL_REVIEW',
+          reviewHistory: [],
+          financialBenefitStatus: 'DEFERRED_TO_PHASE_2',
+          potentialRelatedLevers: [],
+          nextRequiredAction: 'Technical qualification'
+        }
+      ] as any;
+
+      const { Module2CanonicalService } = await import('../../src/services/module2CanonicalService');
+      const { Module2DirectPriceImprovementEngine } = await import('../../src/services/module2DirectPriceImprovementEngine');
+      const { Module2VendorConsolidationEngine } = await import('../../src/services/module2VendorConsolidationEngine');
+      const { Module2VolumeAggregationEngine } = await import('../../src/services/module2VolumeAggregationEngine');
+      const { Module2SpecificationRationalisationEngine } = await import(
+        '../../src/services/module2SpecificationRationalisationEngine'
+      );
+
+      vi.spyOn(Module2CanonicalService, 'getCanonicalInput').mockReturnValue({
+        totalValidatedSpendCr: 556.5346,
+        validRowCount: 27777
+      } as any);
+
+      vi.spyOn(Module2DirectPriceImprovementEngine, 'calculateSync').mockReturnValue({
+        totalEligibleSpendCr: 29.3322,
+        totalEligibleTransactions: 25,
+        totalIneligibleSpendCr: 101.5189,
+        exclusionReasonsBreakdown: { MISSING_MATERIAL_CODE: 101.5189 },
+        items: mockDpi
+      } as any);
+
+      vi.spyOn(Module2VendorConsolidationEngine, 'calculate').mockResolvedValue({
+        sameMaterialMultiSourcingSpendCr: 41.8,
+        sameMaterialOpportunities: mockVc
+      } as any);
+
+      vi.spyOn(Module2VolumeAggregationEngine, 'calculate').mockResolvedValue({
+        coverageSummary: { uomCompatibleSpendCr: 58.117 },
+        tier1Opportunities: mockVa
+      } as any);
+
+      vi.spyOn(Module2SpecificationRationalisationEngine, 'calculateSpecificationRationalisation').mockResolvedValue({
+        candidates: mockSpec
+      } as any);
+
+      const reg = await Module2OpportunityRegisterEngine.generateRegister('AIC-2026-0002');
+      expect(reg.assessmentId).toBe('AIC-2026-0002');
+      expect(reg.summary.authoritativeBaselineSpendCr).toBe(556.5346);
+      expect(reg.summary.authoritativeBaselineTransactions).toBe(27777);
+      expect(reg.summary.directPriceEligibleSpendCr).toBe(29.3322);
+      expect(reg.summary.supplierConsolidationEligibleSpendCr).toBe(41.8);
+      expect(reg.summary.volumeConsolidationCandidateSpendCr).toBe(58.117);
+      expect(reg.summary.certifiedSavingsCr).toBe(0.0);
+      expect(reg.summary.realizedSavingsCr).toBe(0.0);
+      expect(reg.opportunities.length).toBe(4);
+
+      // Verify Cache hit
+      const cached = await Module2OpportunityRegisterEngine.generateRegister('AIC-2026-0002');
+      expect(cached).toBe(reg);
+
+      // Verify Query filtering
+      const filteredType = await Module2OpportunityRegisterEngine.queryOpportunities({
+        assessmentId: 'AIC-2026-0002',
+        type: 'DIRECT_PRICE_IMPROVEMENT'
+      });
+      expect(filteredType.opportunities.length).toBe(1);
+
+      const filteredStatus = await Module2OpportunityRegisterEngine.queryOpportunities({
+        assessmentId: 'AIC-2026-0002',
+        status: 'UNDER_REVIEW'
+      });
+      expect(filteredStatus.opportunities.length).toBe(1);
+
+      const filteredCat = await Module2OpportunityRegisterEngine.queryOpportunities({
+        assessmentId: 'AIC-2026-0002',
+        category: 'chemical'
+      });
+      expect(filteredCat.opportunities.length).toBe(1);
+
+      const filteredSearch = await Module2OpportunityRegisterEngine.queryOpportunities({
+        assessmentId: 'AIC-2026-0002',
+        search: '100DP001IM'
+      });
+      expect(filteredSearch.opportunities.length).toBe(1);
+    });
+  });
+
+  describe('5. Controller & CSV Export Verification', () => {
     it('should validate query parameters and return 400 on missing or invalid assessmentId', async () => {
       const mockReq = {
         headers: {},
@@ -403,7 +625,98 @@ describe('Module 2 — Stage 2: Opportunity Register Unit Tests', () => {
       expect((jsonBody as any).success).toBe(false);
     });
 
-    it('should return executive dashboard data with 200', async () => {
+    it('should return 200 with opportunities on valid query', async () => {
+      vi.spyOn(Module2OpportunityRegisterEngine, 'queryOpportunities').mockResolvedValue({
+        assessmentId: 'AIC-2026-0002',
+        customerName: 'Borosil Ltd',
+        generatedAt: '2026-10-26T00:00:00.000Z',
+        summary: {} as any,
+        opportunities: [{ opportunityId: 'OPP-1' } as any],
+        exclusionsSummary: {}
+      });
+
+      const mockReq = {
+        headers: {},
+        query: { assessmentId: 'AIC-2026-0002' }
+      } as unknown as Request;
+
+      let statusCode = 0;
+      let jsonBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: unknown) => {
+          jsonBody = data;
+          return mockRes;
+        }
+      } as unknown as Response;
+
+      await Module2OpportunityRegisterController.getOpportunityRegister(mockReq, mockRes);
+      expect(statusCode).toBe(200);
+      expect(jsonBody.success).toBe(true);
+      expect(jsonBody.data.opportunities.length).toBe(1);
+    });
+
+    it('should return 400 when assessmentId is missing in getExecutiveDashboard', async () => {
+      const mockReq = {
+        headers: {},
+        query: { assessmentId: '' }
+      } as unknown as Request;
+
+      let statusCode = 0;
+      let jsonBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: unknown) => {
+          jsonBody = data;
+          return mockRes;
+        }
+      } as unknown as Response;
+
+      await Module2OpportunityRegisterController.getExecutiveDashboard(mockReq, mockRes);
+      expect(statusCode).toBe(400);
+      expect(jsonBody.success).toBe(false);
+    });
+
+    it('should return executive dashboard data with 200 using mocked engine', async () => {
+      const mockSummary = {
+        authoritativeBaselineSpendCr: 556.5346,
+        authoritativeBaselineTransactions: 27777,
+        directPriceEligibleSpendCr: 29.3322,
+        directPriceEligibleTransactions: 25,
+        supplierConsolidationEligibleSpendCr: 41.8,
+        volumeConsolidationCandidateSpendCr: 58.117,
+        spendRequiringReviewCr: 101.5189,
+        totalOpportunitiesCount: 4,
+        byType: {
+          DIRECT_PRICE_IMPROVEMENT: { count: 1, spendCr: 29.3322, defensibleValueCr: 17.7647, materialsCount: 1 },
+          SUPPLIER_CONSOLIDATION: { count: 1, spendCr: 41.8, defensibleValueCr: 0, materialsCount: 1 },
+          VOLUME_DEMAND_CONSOLIDATION: { count: 1, spendCr: 58.117, defensibleValueCr: 0, materialsCount: 1 },
+          SPECIFICATION_PROCESS_REVIEW: { count: 1, spendCr: 0.22, defensibleValueCr: 0, materialsCount: 1 }
+        },
+        byStatus: { IDENTIFIED: 3, UNDER_REVIEW: 1, VALIDATED: 0, NEGOTIATION: 0, AWARDED: 0, REJECTED: 0 },
+        byConfidence: { HIGH: 3, MEDIUM: 0, LOW: 1 },
+        certifiedSavingsCr: 0.0,
+        realizedSavingsCr: 0.0,
+        overlapDeductionNotice: OPPORTUNITY_GOVERNANCE_NOTICES.OVERLAP_NOTICE,
+        dataLimitations: [...OPPORTUNITY_GOVERNANCE_NOTICES.DATA_LIMITATIONS],
+        validationRequirements: [...OPPORTUNITY_GOVERNANCE_NOTICES.VALIDATION_REQUIREMENTS]
+      };
+
+      vi.spyOn(Module2OpportunityRegisterEngine, 'generateRegister').mockResolvedValue({
+        assessmentId: 'AIC-2026-0002',
+        customerName: 'Borosil Ltd',
+        generatedAt: '2026-10-26T00:00:00.000Z',
+        summary: mockSummary as any,
+        opportunities: [],
+        exclusionsSummary: {}
+      });
+
       const mockReq = {
         headers: {},
         query: { assessmentId: 'AIC-2026-0002' }
@@ -431,6 +744,36 @@ describe('Module 2 — Stage 2: Opportunity Register Unit Tests', () => {
     });
 
     it('should export traceable CSV with headers and records', async () => {
+      vi.spyOn(Module2OpportunityRegisterEngine, 'generateRegister').mockResolvedValue({
+        assessmentId: 'AIC-2026-0002',
+        customerName: 'Borosil Ltd',
+        generatedAt: '2026-10-26T00:00:00.000Z',
+        summary: {} as any,
+        opportunities: [
+          {
+            opportunityId: 'OPP-AIC-2026-0002-DPI-0001',
+            opportunityType: 'DIRECT_PRICE_IMPROVEMENT',
+            category: 'Raw Materials',
+            materialCode: '100DP001IM',
+            materialDescription: 'DOLOMITE POWDER',
+            uom: 'MT',
+            supportingTransactionCount: 25,
+            historicalSpendInr: 293321980,
+            historicalSpendCr: 29.3322,
+            defensibleOpportunityValueInr: 177647260,
+            defensibleOpportunityValueCr: 17.7647,
+            status: 'IDENTIFIED',
+            confidenceLevel: 'HIGH',
+            suppliersInvolved: ['COMEFAR ASIA'],
+            plantsInvolved: ['1120'],
+            rationale: 'Direct price dispersion against lowest unit price',
+            requiredProcurementAction: 'Negotiate price alignment',
+            responsibleValidationTeam: 'Category Management'
+          } as any
+        ],
+        exclusionsSummary: {}
+      });
+
       const mockReq = {
         query: { assessmentId: 'AIC-2026-0002' }
       } as unknown as Request;
@@ -452,7 +795,82 @@ describe('Module 2 — Stage 2: Opportunity Register Unit Tests', () => {
       expect(headersMap['Content-Type']).toBe('text/csv');
       expect(headersMap['Content-Disposition']).toContain('OPPORTUNITY_REGISTER_AIC-2026-0002');
       expect(responseText).toContain('Opportunity ID,Type,Category,Material Code');
-      expect(responseText.split('\n').length).toBeGreaterThan(100);
+      expect(responseText).toContain('OPP-AIC-2026-0002-DPI-0001');
+      expect(responseText).toContain('100DP001IM');
+    });
+
+    it('should return 500 when opportunity register query throws error', async () => {
+      vi.spyOn(Module2OpportunityRegisterEngine, 'queryOpportunities').mockRejectedValue(new Error('DB failure'));
+      const mockReq = {
+        headers: {},
+        query: { assessmentId: 'AIC-2026-0002' }
+      } as unknown as Request;
+
+      let statusCode = 0;
+      let jsonBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: unknown) => {
+          jsonBody = data;
+          return mockRes;
+        }
+      } as unknown as Response;
+
+      await Module2OpportunityRegisterController.getOpportunityRegister(mockReq, mockRes);
+      expect(statusCode).toBe(500);
+      expect(jsonBody.success).toBe(false);
+    });
+
+    it('should return 500 when executive dashboard generation throws error', async () => {
+      vi.spyOn(Module2OpportunityRegisterEngine, 'generateRegister').mockRejectedValue(new Error('Compute failure'));
+      const mockReq = {
+        headers: {},
+        query: { assessmentId: 'AIC-2026-0002' }
+      } as unknown as Request;
+
+      let statusCode = 0;
+      let jsonBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: unknown) => {
+          jsonBody = data;
+          return mockRes;
+        }
+      } as unknown as Response;
+
+      await Module2OpportunityRegisterController.getExecutiveDashboard(mockReq, mockRes);
+      expect(statusCode).toBe(500);
+      expect(jsonBody.success).toBe(false);
+    });
+
+    it('should return 500 when CSV export throws error', async () => {
+      vi.spyOn(Module2OpportunityRegisterEngine, 'generateRegister').mockRejectedValue(new Error('Export failure'));
+      const mockReq = {
+        query: { assessmentId: 'AIC-2026-0002' }
+      } as unknown as Request;
+
+      let statusCode = 0;
+      let jsonBody: any = null;
+      const mockRes = {
+        status: (code: number) => {
+          statusCode = code;
+          return mockRes;
+        },
+        json: (data: unknown) => {
+          jsonBody = data;
+          return mockRes;
+        }
+      } as unknown as Response;
+
+      await Module2OpportunityRegisterController.exportOpportunityRegisterCsv(mockReq, mockRes);
+      expect(statusCode).toBe(500);
+      expect(jsonBody.success).toBe(false);
     });
   });
 });

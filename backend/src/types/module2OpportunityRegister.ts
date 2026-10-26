@@ -94,3 +94,5 @@ export interface OpportunityRegisterQueryOptions {
   category?: string;
   search?: string;
 }
+
+export type OpportunityRegisterQueryInput = OpportunityRegisterQueryOptions;

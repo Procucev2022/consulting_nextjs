@@ -46,7 +46,7 @@ export class Module2OpportunityRegisterController {
 
   public static async getExecutiveDashboard(req: Request, res: Response): Promise<Response | void> {
     const requestId = (req.headers['x-request-id'] as string) || `REQ-${Date.now()}`;
-    const assessmentId = (req.query.assessmentId as string) || 'AIC-2026-0002';
+    const assessmentId = (req.query.assessmentId as string) || '';
 
     if (!assessmentId) {
       return res.status(400).json({

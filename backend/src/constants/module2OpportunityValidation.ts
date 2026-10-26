@@ -21,5 +21,3 @@ export const opportunityRegisterQuerySchema = z.object({
   category: z.string().optional(),
   search: z.string().optional()
 });
-
-export type OpportunityRegisterQueryInput = z.infer<typeof opportunityRegisterQuerySchema>;
