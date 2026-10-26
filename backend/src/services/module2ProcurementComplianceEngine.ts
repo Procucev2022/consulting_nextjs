@@ -8,24 +8,18 @@ import logger from '../utils/logger';
 import { Module2CanonicalService } from './module2CanonicalService';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import type {
-  ProcurementComplianceExceptionItem,
-  ProcurementComplianceSummary,
-  ComplianceControlCheckSummary,
-  ProcurementComplianceResult,
-  ProcurementComplianceOptions,
-  ComplianceReviewRecord,
-  ProcurementComplianceStatus,
-  ProcurementComplianceCheckType,
-  ComplianceReviewStatusCounts,
-  ComplianceFinancialAggregation
+  ProcurementComplianceExceptionItem, ProcurementComplianceSummary,
+  ComplianceControlCheckSummary, ProcurementComplianceResult,
+  ProcurementComplianceOptions, ComplianceReviewRecord,
+  ProcurementComplianceStatus, ProcurementComplianceCheckType,
+  ComplianceReviewStatusCounts, ComplianceFinancialAggregation
 } from '../types/module2ProcurementCompliance';
 import {
-  COMPLIANCE_REVIEW_STATUSES,
-  COMPLIANCE_DISCLOSURES,
-  COMPLIANCE_METHODOLOGY_SAFEGUARDS,
-  COMPLIANCE_CONTROL_CHECKS_CONFIG
+  COMPLIANCE_REVIEW_STATUSES, COMPLIANCE_DISCLOSURES,
+  COMPLIANCE_METHODOLOGY_SAFEGUARDS, COMPLIANCE_CONTROL_CHECKS_CONFIG
 } from '../constants/module2ProcurementCompliance';
 import { Module2ProcurementComplianceChecks } from './module2ProcurementComplianceChecks';
+import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
 
 export class Module2ProcurementComplianceEngine {
   private static groupMaterials(
@@ -264,8 +258,7 @@ export class Module2ProcurementComplianceEngine {
     });
 
     const txs = await Module2CanonicalService.getCanonicalTransactions(assessmentId);
-    const customerName = assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' :
-      assessmentId === 'AIC-2026-0003' ? 'PQR Cement Ltd' : `Enterprise Client (${assessmentId})`;
+    const customerName = resolveAssessmentCustomerName(assessmentId);
 
     const materialMap = this.groupMaterials(txs);
     const rawExceptions: ProcurementComplianceExceptionItem[] = [
@@ -292,5 +285,12 @@ export class Module2ProcurementComplianceEngine {
       financialDisclaimer: COMPLIANCE_DISCLOSURES.FINANCIAL_EXPOSURE_NOTICE,
       contractComplianceNotice: COMPLIANCE_DISCLOSURES.CONTRACT_COMPLIANCE_NOTICE
     };
+  }
+
+  public static async calculate(
+    assessmentId: string,
+    options?: ProcurementComplianceOptions
+  ): Promise<ProcurementComplianceResult> {
+    return this.calculateProcurementCompliance(assessmentId, options);
   }
 }

@@ -267,16 +267,17 @@ export default function Home() {
         category: resolveHumanReadableCategory(mg.group_name, mg.group_code),
         column_l_code: mg.group_code,
         spend_inr_crores: mg.spend_inr_cr,
-        spend_fy24_cr: mg.fy24_spend_inr_cr || mg.spend_inr_cr,
-        spend_fy25_cr: mg.fy25_spend_inr_cr || 0,
-        spend_fy26_cr: mg.fy26_spend_inr_cr || 0,
+        spend_fy24_cr: mg.fy24_spend_inr_cr ?? 0,
+        spend_fy25_cr: mg.fy25_spend_inr_cr ?? 0,
+        spend_fy26_cr: mg.fy26_spend_inr_cr ?? 0,
+        spend_fy27_cr: mg.spend_inr_cr,
         vendor_count: mg.unique_vendors_count,
         item_count: mg.unique_items_count,
         line_items_count: mg.records_count,
         share_pct: mg.share_pct,
-        spend_inr_2023: Math.round((mg.fy24_spend_inr_cr || mg.spend_inr_cr) * 10000000),
+        spend_inr_2023: Math.round((mg.fy24_spend_inr_cr || 0) * 10000000),
         spend_inr_2024: Math.round((mg.fy25_spend_inr_cr || 0) * 10000000),
-        spend_inr_2025_26: Math.round((mg.fy26_spend_inr_cr || 0) * 10000000)
+        spend_inr_2025_26: Math.round((mg.spend_inr_cr || 0) * 10000000)
       }));
       setCategories(dynamicCategories);
     }
@@ -299,7 +300,7 @@ export default function Home() {
       setUploadedMonths(canonical.monthlySpend.map((m) => ({
         month_key: m.month_key,
         month_label: m.month_label,
-        fiscal_year: m.fiscalYear || (canonical.periodMetadata?.actualFiscalYears[0] ?? 'FY22'),
+        fiscal_year: m.fiscalYear || (canonical.periodMetadata?.actualFiscalYears[0] ?? 'FY27'),
         records_count: m.records_count,
         po_count: m.records_count,
         unique_items_count: m.unique_items_count,

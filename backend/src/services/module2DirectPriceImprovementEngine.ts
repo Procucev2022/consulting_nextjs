@@ -23,6 +23,7 @@ import {
   mapDirectPriceTransactionRecords
 } from './module2DirectPriceImprovementHelpers';
 import { Module2CategoryAggregationHelper } from './module2CategoryAggregationHelper';
+import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
 
 interface InternalGroup {
   fy: string;
@@ -235,7 +236,7 @@ export class Module2DirectPriceImprovementEngine {
     });
     return {
       assessmentId,
-      customerName: assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' : 'PQR Cement Ltd',
+      customerName: resolveAssessmentCustomerName(assessmentId),
       availableFinancialYears: [DIRECT_PRICE_CONFIG.ALL_FINANCIAL_YEARS, ...availableFys],
       selectedFinancialYear: selectedFy,
       totalEligibleTransactions: eligible.length,

@@ -426,7 +426,8 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
 
       {activeTab === 'overview' && (
         <Module2LeverOverview
-          assessmentId={assessmentId}
+          assessmentId={effectiveAssessmentId || ''}
+          directPriceOppCr={summary?.directPriceHistoricalOppCr}
           onSelectLever={(lever) =>
             setActiveTab(
               lever as
@@ -445,65 +446,65 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       )}
 
       {activeTab === 'consolidatedSavings' && (
-        <Module2ConsolidatedSavingsView assessmentId={assessmentId || 'AIC-2026-0002'} />
+        <Module2ConsolidatedSavingsView assessmentId={effectiveAssessmentId || ''} />
       )}
 
       {activeTab === 'directPrice' && (
-        <DirectPriceImprovementView assessmentId={assessmentId || 'AIC-2026-0002'} />
+        <DirectPriceImprovementView assessmentId={effectiveAssessmentId || ''} />
       )}
 
       {activeTab === 'eAuction' && (
         <EAuctionDynamicBiddingView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'vendorConsolidation' && (
         <VendorConsolidationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'volumeAggregation' && (
         <VolumeAggregationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'paymentTerms' && (
         <PaymentTermsView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'categorySpecialisation' && (
         <CategorySpecialisationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'specificationRationalisation' && (
         <SpecificationRationalisationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onNavigateBack={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'procurementCompliance' && (
         <ProcurementComplianceView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onNavigateBack={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'alternateSourcing' && (
         <AlternateSourcingView
-          assessmentId={assessmentId || 'AIC-2026-0001'}
+          assessmentId={effectiveAssessmentId || ''}
         />
       )}
 

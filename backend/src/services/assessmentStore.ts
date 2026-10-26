@@ -72,16 +72,13 @@ export class AssessmentStore {
     return this.customDataDir || getAuthoritativeDataDir();
   }
 
+  public getCustomDataDir(): string | undefined {
+    return this.customDataDir;
+  }
+
   public setCustomDataDir(dir?: string): void {
-    let targetDir = dir;
-    if (isTestMode() && targetDir && path.resolve(targetDir).toLowerCase() === path.resolve(getDevelopmentDataDir()).toLowerCase()) {
-      const testDir = path.resolve(__dirname, '../../../data/test');
-      if (fs.existsSync(testDir)) {
-        targetDir = testDir;
-      }
-    }
-    this.customDataDir = targetDir;
-    if (targetDir) {
+    this.customDataDir = dir;
+    if (dir) {
       const loaded = this.loadFromDisk();
       if (!loaded) {
         this.assessments.clear();
@@ -376,9 +373,12 @@ export class AssessmentStore {
 
   public resetToDefaultSeed(): void {
     const activeDir = this.getDataDir();
-    if (isTestMode() && isProtectedLiveStore(activeDir)) {
+    const testDir = path.resolve(__dirname, '../../../data/test').toLowerCase();
+    const isProtected = isProtectedLiveStore(activeDir) || path.resolve(activeDir).toLowerCase() === testDir;
+    if (isTestMode() && isProtected) {
       throw new Error(
-        `CRITICAL_TEST_ISOLATION_BREACH: resetToDefaultSeed() cannot be executed on protected live store: ${sanitizePersistencePath(activeDir)}`
+        'CRITICAL_TEST_ISOLATION_BREACH: resetToDefaultSeed() cannot be executed on protected live store: ' +
+          sanitizePersistencePath(activeDir)
       );
     }
     this.assessments.clear();

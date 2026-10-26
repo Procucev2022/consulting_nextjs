@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as XLSX from 'xlsx';
 import { Module2ProcurementComplianceEngine } from '../../src/services/module2ProcurementComplianceEngine';
 import { Module2ProcurementComplianceExcelBuilder } from '../../src/services/module2ProcurementComplianceExcelBuilder';
@@ -172,4 +172,13 @@ describe('Prompt 463 — Lever 9 Financial Classification and Acceptance', () =>
       expect(execText).toContain('Verified Financial Impact');
     });
   });
+
+  afterAll(() => {
+    const store = AssessmentStore.getInstance();
+    store.setCustomDataDir(undefined);
+    store.reloadFromDisk();
+    ComplianceAuditStore.getInstance().setCustomDataDir(undefined);
+    Module2CanonicalService.clearCache();
+  });
 });
+

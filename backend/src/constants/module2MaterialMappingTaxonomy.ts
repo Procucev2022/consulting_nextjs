@@ -62,8 +62,32 @@ const RAW_TAXONOMY_RULES: readonly RawTaxonomyRuleDef[] = [
     code: '24101720', score: 95,
     evidence: 'Explicit technical tension (1250/4) and dimensional (1400mm) specification for heavy conveyor belting'
   },
-
-  // --- PROVISIONAL RULES (Broad Keyword Matches, score 80-85) ---
+  {
+    pattern: rx('soda ash dense|soda ash local|soda ash|sodium carbonate'),
+    code: '12141501', score: 95,
+    evidence:
+      'Authoritative chemical taxonomy match for Sodium Carbonate (Soda Ash, CAS 497-19-8) glass batch component'
+  },
+  {
+    pattern: rx('sodium antimonate|antimonate'),
+    code: '12141544', score: 95,
+    evidence: 'Authoritative chemical taxonomy match for Sodium Antimonate (NaSbO3, CAS 15432-85-6) glass fining agent'
+  },
+  {
+    pattern: rx('silica sand'),
+    code: '11111701', score: 95,
+    evidence: 'Authoritative mineral taxonomy match for high-purity Silica Sand (SiO2) glass batch raw material'
+  },
+  {
+    pattern: rx('dolomite powder|dolomite'),
+    code: '11111611', score: 95,
+    evidence: 'Authoritative mineral taxonomy match for Dolomite Powder (CaMg(CO3)2) glass batch flux'
+  },
+  {
+    pattern: rx('ar coating sk-11|ar coating|arc liquid'),
+    code: '12180000', score: 75,
+    evidence: 'Proprietary chemical formulation (SK-11); retained at family 12180000 pending specification review'
+  },
   {
     pattern: rx('coal linkage auction|coal e-auction|coal market|coking coal|thermal coal|steam coal|lignite'),
     code: '15101601', score: 85,
@@ -125,54 +149,42 @@ const RAW_TAXONOMY_RULES: readonly RawTaxonomyRuleDef[] = [
   },
   {
     pattern: rx('corrugated box|corrugated|carton box|ply box|5 ply|7 ply'),
-    code: '24112502', score: 85,
-    evidence: 'Broad keyword match: Corrugated cartons and distribution packaging specification'
+    code: '24112502', score: 85, evidence: 'Broad keyword match: Corrugated cartons distribution packaging'
   },
   {
-    pattern: rx(
-      'jumbo bag|jumbo bags|fibc|bulk bag|polythene|poly bag|poly bags',
-      'chips bag|hdpe bag|pp woven bag|liner bag'
-    ),
-    code: '24111515', score: 85,
-    evidence: 'Broad keyword match: Industrial polypropylene FIBC jumbo bags and bulk packaging sacks'
+    pattern: rx('jumbo bag|jumbo bags|fibc|bulk bag|polythene|poly bag|chips bag|hdpe bag|pp woven bag|liner bag'),
+    code: '24111515', score: 85, evidence: 'Broad keyword match: Industrial polypropylene FIBC jumbo bags'
   },
   {
     pattern: rx('bale cover|pp bag|polypropylene bag|woven sack|stretch film|packing strip'),
-    code: '24121500', score: 85,
-    evidence: 'Broad keyword match: Polypropylene bale wrapping and sack packaging'
+    code: '24121500', score: 85, evidence: 'Broad keyword match: Polypropylene bale wrapping and sack packaging'
   },
   {
     pattern: rx('pet strap|polyester strap|steel strap|strapping band|cord strap'),
-    code: '24121500', score: 85,
-    evidence: 'Broad keyword match: Industrial packaging strapping bands and bundling materials'
+    code: '24121500', score: 85, evidence: 'Broad keyword match: Industrial packaging strapping bands'
   },
   {
     pattern: rx('pallet|metallic pallet|steel pallet|wooden pallet|plastic pallet|storage rack'),
-    code: '24112701', score: 85,
-    evidence: 'Broad keyword match: Material handling and storage transport pallets'
+    code: '24112701', score: 85, evidence: 'Broad keyword match: Material handling and storage transport pallets'
   },
   {
     pattern: rx('air washer|humidification|scrubber|spray system|ahu|dehumidifier'),
-    code: '40101701', score: 85,
-    evidence: 'Broad keyword match: Textile processing climate and humidity control air washer units'
+    code: '40101701', score: 85, evidence: 'Broad keyword match: Textile processing humidity control air washer'
   },
   {
     pattern: rx(
-      'bagging machine|packing machine|strapping machine|wrapping machine',
-      'checkweigher|weighing machine|filling machine'
+      'bagging machine|packing machine|strapping machine',
+      'wrapping machine|checkweigher|weighing machine|filling machine'
     ),
-    code: '24141514', score: 85,
-    evidence: 'Broad keyword match: Automatic weighing, bagging and packaging machinery'
+    code: '24141514', score: 85, evidence: 'Broad keyword match: Automatic weighing, bagging and packaging machinery'
   },
   {
     pattern: rx('ms plate|steel plate|sheet metal|structural steel|ms angle|channel'),
-    code: '30101704', score: 85,
-    evidence: 'Broad keyword match: Carbon/mild steel dimensional plate and structural metal'
+    code: '30101704', score: 85, evidence: 'Broad keyword match: Carbon/mild steel dimensional plate structural metal'
   },
   {
     pattern: rx('bearing|roller bearing|ball bearing|plummer block|tapered bearing'),
-    code: '31171500', score: 85,
-    evidence: 'Broad keyword match: Mechanical rolling element bearings'
+    code: '31171500', score: 85, evidence: 'Broad keyword match: Mechanical rolling element bearings'
   },
   {
     pattern: rx('bolt|nut|washer|fastener|stud|hex bolt|anchor bolt|screw|rivet'),
@@ -219,60 +231,55 @@ const RAW_TAXONOMY_RULES: readonly RawTaxonomyRuleDef[] = [
   },
   {
     pattern: rx('motor|induction motor|electric motor|drive|vfd'),
-    code: '26101100', score: 85,
-    evidence: 'Broad keyword match: Industrial rotary electric motors and drives'
+    code: '26101100', score: 85, evidence: 'Broad keyword match: Industrial rotary electric motors and drives'
   },
   {
     pattern: rx('safety shoe|safety helmet|goggle|hand glove|safety harness|ear plug|mask|apron|coverall'),
-    code: '46181500', score: 85,
-    evidence: 'Broad keyword match: Industrial workplace personal protective equipment and safety gear'
+    code: '46181500', score: 85, evidence: 'Broad keyword match: Industrial workplace personal protective equipment'
   },
   {
     pattern: rx('tyre|tire|tubeless tyre|radial tyre'),
-    code: '25172500', score: 85,
-    evidence: 'Broad keyword match: Heavy mining equipment dump truck and loader off-road tyres'
+    code: '25172500', score: 85, evidence: 'Broad keyword match: Heavy mining equipment dump truck off-road tyres'
   },
   {
     pattern: rx('girth gear|gear wheel|gearbox|pinion|spur gear|helical gear|bevel gear|reduction gear'),
-    code: '31171701', score: 85,
-    evidence: 'Broad keyword match: Mechanical drive gears and gearboxes'
+    code: '31171701', score: 85, evidence: 'Broad keyword match: Mechanical drive gears and gearboxes'
   },
   {
     pattern: rx('fabrication|erection|installation service|mechanical service|piping work'),
-    code: '72102900', score: 80,
-    evidence: 'Broad keyword match: Site structural/mechanical fabrication service'
+    code: '72102900', score: 80, evidence: 'Broad keyword match: Site structural/mechanical fabrication service'
   },
   {
     pattern: rx('electrical service|electrical work|wiring service'),
-    code: '72151500', score: 80,
-    evidence: 'Broad keyword match: Licensed electrical contractor maintenance service'
+    code: '72151500', score: 80, evidence: 'Broad keyword match: Licensed electrical contractor maintenance service'
   },
   {
     pattern: rx('storage charge|tank rental|demurrage|freight|transport|hydra|crane hire'),
-    code: '78101800', score: 80,
-    evidence: 'Broad keyword match: Material handling equipment hire and tank storage service'
+    code: '78101800', score: 80, evidence: 'Broad keyword match: Material handling equipment hire and tank storage'
   }
 ];
 
 export function buildOfficialTaxonomyRules(
   dictionary = unspscOfficialDictionary
 ): readonly TaxonomyClassificationRule[] {
-  const dictMap = new Map(dictionary.map(item => [item.commodityCode, item]));
+  const dictMap = new Map(dictionary.map((item) => [item.commodityCode, item]));
   return Object.freeze(
     RAW_TAXONOMY_RULES.map((raw) => {
       const taxonomy = dictMap.get(raw.code);
+      const title = taxonomy ? taxonomy.commodityTitle : `Commodity ${raw.code}`;
+      const code = raw.code;
       return {
         pattern: raw.pattern,
-        unspscCode: raw.code,
-        unspscTitle: taxonomy ? taxonomy.commodityTitle : `Commodity ${raw.code}`,
-        segmentCode: taxonomy ? taxonomy.segmentCode : `${raw.code.substring(0, 2)}000000`,
+        unspscCode: code,
+        unspscTitle: title,
+        segmentCode: taxonomy ? taxonomy.segmentCode : `${code.substring(0, 2)}000000`,
         segmentTitle: taxonomy ? taxonomy.segmentTitle : 'Industrial Segment',
-        familyCode: taxonomy ? taxonomy.familyCode : `${raw.code.substring(0, 4)}0000`,
+        familyCode: taxonomy ? taxonomy.familyCode : `${code.substring(0, 4)}0000`,
         familyTitle: taxonomy ? taxonomy.familyTitle : 'Industrial Family',
-        classCode: taxonomy ? taxonomy.classCode : `${raw.code.substring(0, 6)}00`,
+        classCode: taxonomy ? taxonomy.classCode : `${code.substring(0, 6)}00`,
         classTitle: taxonomy ? taxonomy.classTitle : 'Industrial Class',
-        commodityCode: raw.code,
-        commodityTitle: taxonomy ? taxonomy.commodityTitle : `Commodity ${raw.code}`,
+        commodityCode: code,
+        commodityTitle: title,
         confidenceScore: raw.score,
         evidence: raw.evidence
       };
@@ -281,3 +288,7 @@ export function buildOfficialTaxonomyRules(
 }
 
 export const OFFICIAL_UNSPSC_TAXONOMY_RULES: readonly TaxonomyClassificationRule[] = buildOfficialTaxonomyRules();
+
+export function findTaxonomyRuleMatch(desc: string): TaxonomyClassificationRule | undefined {
+  return desc ? OFFICIAL_UNSPSC_TAXONOMY_RULES.find((r) => r.pattern.test(desc)) : undefined;
+}

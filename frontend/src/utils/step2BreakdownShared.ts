@@ -1,17 +1,24 @@
 import type { LineItemMapping, CategoryTopItem } from '../types';
 
 export function addSpendToFiscalYear(
-  target: { spendFY24: number; spendFY25: number; spendFY26: number },
+  target: { spendFY24: number; spendFY25: number; spendFY26: number; spendFY27?: number },
   spendCr: number,
   spendYear?: number
 ): void {
-  const year = Number(spendYear) || 2024;
+  const year = Number(spendYear);
+  if (!year || isNaN(year)) return;
   if (year <= 2023) {
     target.spendFY24 += spendCr;
   } else if (year === 2024) {
     target.spendFY25 += spendCr;
-  } else {
+  } else if (year === 2025) {
     target.spendFY26 += spendCr;
+  } else if (year === 2026) {
+    if (target.spendFY27 !== undefined) {
+      target.spendFY27 += spendCr;
+    } else {
+      target.spendFY26 += spendCr;
+    }
   }
 }
 

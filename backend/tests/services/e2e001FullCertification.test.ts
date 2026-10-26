@@ -3,7 +3,7 @@
  * Formal End-to-End Certification Suite (Prompt 340)
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -26,8 +26,11 @@ const TRACEABILITY_PATH = path.join(QA_DIR, 'certification-report', 'E2E_TRACEAB
 
 describe('P0 COMMAND — aiCEV E2E-001 Full End-to-End Calculation Certification', () => {
   let goldenChecksums: any;
+  let cleanupIso: () => void;
 
   beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
     expect(fs.existsSync(DATASET_PATH)).toBe(true);
     expect(fs.existsSync(CHECKSUMS_PATH)).toBe(true);
     expect(fs.existsSync(EXPECTED_RESULTS_PATH)).toBe(true);
@@ -38,6 +41,11 @@ describe('P0 COMMAND — aiCEV E2E-001 Full End-to-End Calculation Certification
 
     goldenChecksums = JSON.parse(fs.readFileSync(CHECKSUMS_PATH, 'utf-8'));
     assessmentStore.resetToDefaultSeed();
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+    assessmentStore.reloadFromDisk();
   });
 
   describe('Part A — Golden Test Dataset Determinism & Freeze', () => {

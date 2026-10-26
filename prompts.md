@@ -113629,8 +113629,724 @@ This is a controlled correction task. Preserve the existing source dataset and c
 
 Do not declare financial sign-off until the dashboard metrics and spend-family totals have been reconciled.
 
+---
+
+## Prompt 526
+Perform a final READ-ONLY verification for Borosil assessment AIC-2026-0002 before I execute Module 2 through the application.
+
+1. Verify that the live frontend displays ₹556.5347 Cr as the primary net baseline and ₹585.3049 Cr as gross uploaded spend.
+2. Verify that the backend API, frontend dashboard and latest Excel workbook show consistent spend figures.
+3. Confirm the application’s “Run AI Categorization Engine” button triggers only the intended Module 2 workflow.
+4. Confirm that clicking the button will not run Module 3 (PCBI), Module 4 (Savings Engine), or “Apply Blanket AI Fixes”.
+5. Confirm the current assessment and Module 1 results remain intact.
+6. Confirm no further mandatory financial reconciliation or build errors remain.
+
+Do not execute Module 2, modify files, change data or trigger any application action during this check.
+
+Return PASS or FAIL for each check. If any check fails, explain the issue and stop.
+
+---
+
+## Prompt 527
+run locally on chrome
+
+---
+
+## Prompt 528
+# Objective
+
+Perform a comprehensive, root-cause-driven audit and remediation of the aiCEV procurement assessment application.
+
+The immediate problem is that Borosil Ltd is selected in the main application, but the Strategic Sourcing Intelligence & Opportunity Engine and its AI categorization workbench display ABC Textile Ltd data from an earlier assessment.
+
+The objective is to establish permanent customer and assessment isolation, consistent financial calculations, reliable taxonomy classification, accurate opportunity reporting, and automated regression protection.
+
+Do not merely change displayed labels. Correct the underlying data flow, APIs, state management, database queries, and calculation logic.
+
+## 1. Mandatory Safety Restrictions
+
+Before making changes:
+
+1. Inspect the existing codebase, architecture, database schema, API routes, state management, assessment lifecycle, calculation services, caching, exports, and existing tests.
+2. Identify the active Borosil assessment, its source upload, and its authoritative Module 1 baseline.
+3. Create a version-controlled change set or a complete backup of every file that will be modified.
+4. Preserve all existing customer data, uploaded source files, historical assessments, master data, and PCBI assets.
+5. Do not delete or recreate customer assessments to solve context issues.
+6. Do not modify the original Borosil source workbook.
+7. Do not execute Module 3 (PCBI), Module 4 (Savings Engine), Apply Blanket AI Fixes, or any other downstream pipeline.
+8. Do not run sourcing actions that contact vendors, send RFQs, initiate auctions, or change procurement records.
+9. Do not manufacture missing data, supplier identities, UNSPSC mappings, market prices, savings, or historical financial-year values.
+10. Do not mark a test as passed unless it was actually executed and its result recorded.
+
+Implement changes incrementally. If a migration, data repair, or calculation change could affect existing assessments, document the impact and use a reversible approach.
+
+## 2. Establish One Authoritative Assessment Context
+
+Trace how the selected customer and assessment are identified in the application.
+
+Implement or strengthen a single authoritative assessment context containing, as appropriate:
+
+* customerId
+* assessmentId
+* sourceUploadId
+* assessment status
+* configured assessment start and end dates
+* actual source-data start and end dates
+* approved baseline identifier or version
+* baseline currency and FX methodology
+
+The assessment ID must be the authoritative identifier for assessment-specific calculations and records. Customer identity must be validated against that assessment.
+
+Requirements:
+
+* Changing the selected customer or assessment must update every dependent module.
+* A module must not silently fall back to the most recently viewed assessment, a hard-coded assessment ID, ABC Textile, or a default dataset.
+* Backend endpoints must validate the requested assessment and its customer association.
+* Every assessment-specific database query must be appropriately scoped by assessmentId and, where necessary, customerId.
+* Asynchronous requests must not allow a response from a previous assessment to overwrite the currently selected assessment.
+* Clear or invalidate assessment-specific client state when the assessment changes.
+* Cache keys must include all relevant assessment and customer identifiers.
+* Dashboard cards, category tables, supplier rankings, AI workbenches, opportunity registers, drill-downs, and Excel exports must use the same context.
+* Preserve the application's existing authentication and authorization rules. Do not weaken them.
+
+If the current architecture uses a different but sound pattern, adapt the implementation rather than introducing unnecessary duplication.
+
+## 3. Fix the Strategic Sourcing Engine
+
+The Strategic Sourcing Intelligence & Opportunity Engine must load data for the currently selected assessment.
+
+Correct the following areas:
+
+* Assessment/customer selector.
+* Module 2 overview.
+* Each sourcing lever.
+* Consolidated sourcing summary.
+* Category-wise opportunity register.
+* Supplier rankings and concentration analysis.
+* Line-item AI categorization workbench.
+* Material details and drill-downs.
+* Downloadable Excel reports.
+* Any executive summary or management report generated from this engine.
+
+The selected customer and assessment must be visible in the interface.
+
+When the assessment changes, refresh all dependent data and clear previous assessment results immediately. While new data is loading, show a loading state rather than old customer data.
+
+If the assessment has not run Module 2, display a clear status indicating that results are not yet available. Do not silently display another customer's results.
+
+Do not change assessment identifiers or rename old assessment records to disguise the problem.
+
+## 4. Define a Canonical Financial Data Contract
+
+Create or document one authoritative financial data contract shared across Module 1, Module 2, the dashboard, exports and subsequent modules.
+
+For the current Borosil assessment, preserve the established Module 1 reconciliation:
+
+* Gross uploaded/source spend: ₹585.3049 Cr.
+* Net external procurement baseline: ₹556.5347 Cr.
+* Deleted/blocked lines: 755 rows, approximately ₹28.7702 Cr.
+* Internal transfer/STO lines: 2,208 rows, ₹0.00 Cr.
+* Active baseline transactions: 27,777 rows.
+* Total source rows: 30,740.
+* Excluded rows: 2,963.
+* Included entities: BRL, BSL Nashik and BSLB.
+* Excluded entity: BSL Pune.
+* Actual source-data coverage: 1 April 2026 through 22 October 2026.
+* Configured assessment period: 1 January 2026 through 22 October 2026.
+
+These figures are acceptance references, not permission to hard-code them. They must be calculated from the relevant assessment records and reconciled against the existing Module 1 results.
+
+Requirements:
+
+* Preserve the distinction between gross source spend and net external procurement baseline.
+* Apply the approved transaction classification rules consistently.
+* Exclude deleted/blocked lines and internal transfers from the net external procurement baseline as established for Borosil.
+* Treat returns and credits consistently with the existing reconciled methodology.
+* Never treat missing January–March source data as zero spend.
+* Clearly distinguish actual spend, annualized estimates, eligible spend, modelled opportunity, validated opportunity and realized savings.
+* Do not combine figures from different assessments or FX methodologies.
+* Do not change the authoritative baseline merely to make dashboard totals agree.
+
+Use appropriate currency precision internally. Round only for display. Define tolerances for legitimate floating-point and display-rounding differences.
+
+## 5. Correct Financial-Year and Period Reporting
+
+Inspect every financial-year selector and year-wise category matrix.
+
+Requirements:
+
+* Use the Indian financial year convention: 1 April to 31 March.
+* Derive financial-year attribution from transaction dates.
+* Ensure FY24, FY25 and FY26 are calculated from transactions actually present in the selected assessment.
+* Distinguish an unavailable period from a period with verified zero transactions.
+* Display the actual data coverage and configured assessment period separately.
+* Prevent misleading year-on-year trends when prior-year data is unavailable.
+* Remove incorrect generic labels such as "Baseline (FY22)" where they do not reflect the actual dataset.
+* Do not populate historical years with synthetic values.
+* Label annualized projections as estimates, with the assumptions disclosed.
+
+Verify these rules using automated tests and the actual Borosil dataset.
+
+## 6. Correct UNSPSC and Material Classification
+
+Inspect the taxonomy engine, categorization API, AI confidence calculation, material master mapping, and review workflow.
+
+Maintain separate fields for:
+
+* Original supplier material code.
+* Original material description.
+* UNSPSC commodity code.
+* UNSPSC commodity title.
+* UNSPSC class code and title.
+* Internal procurement category.
+* Spend family.
+* Classification method and evidence.
+* Confidence score.
+* Review status.
+* Reviewer corrections and audit history.
+
+Requirements:
+
+1. Never substitute a supplier's internal material code for an official UNSPSC code.
+2. Never display an internal category ID as an official UNSPSC commodity code.
+3. Validate UNSPSC codes against the official catalog available in the application.
+4. Use the most granular code supported by the evidence.
+5. Do not assign a commodity-level code when only a class-level match is supported.
+6. Do not report 0% confidence as a successful classification.
+7. Route unresolved or ambiguous records to an explicit review queue.
+8. Preserve original source descriptions and all manual review decisions.
+9. Ensure that reassignment updates the selected assessment only.
+10. Do not automatically apply blanket corrections to historical records.
+11. Show counts and spend values for classified, unclassified, high-confidence, medium-confidence and low-confidence records.
+
+Review the Borosil material examples shown in the screenshots, including records currently displayed as `00000000`, `Unclassified` and 0% confidence.
+
+Do not claim that all 30,740 source rows must receive a commodity-level UNSPSC code if some records are services or lack sufficient classification evidence.
+
+## 7. Correct Sourcing Opportunity Calculations
+
+Audit every sourcing lever and its calculation service.
+
+For each lever, establish:
+
+* Eligibility rules.
+* Included and excluded transaction types.
+* Addressable spend.
+* Number of eligible transactions.
+* Calculation method.
+* Required data fields.
+* Evidence requirements.
+* Overlap/deduplication rules.
+* Result status.
+* Validation requirements.
+* Audit trail.
+
+Distinguish the following metrics:
+
+1. Evaluated baseline spend.
+2. Eligible spend.
+3. Gross modelled opportunity.
+4. Overlap deductions.
+5. Net modelled opportunity.
+6. Discovery/pending-validation opportunity.
+7. Commercially validated savings.
+8. Realized savings.
+
+Do not use the same value interchangeably for these metrics.
+
+Requirements:
+
+* A sourcing lever must not report an unexplained zero simply because its calculation service is missing.
+* If calculation is not implemented, show "Not calculated" or an equivalent explicit status, not an audited monetary result.
+* "Implemented", "Audited", "Calculated", "Validated" and "Realized" must have distinct meanings.
+* Do not label a lever "Implemented & Audited" unless the relevant functionality and audit evidence support that claim.
+* Do not treat the lowest historical purchase price as a guaranteed achievable future price.
+* Disclose when an opportunity is based on historical internal purchase prices rather than external market benchmarks.
+* Do not claim realized savings without an appropriate approved baseline and supporting transaction or invoice evidence.
+* Do not sum overlapping opportunities without documented deduplication.
+* Do not double-count the same eligible transaction across multiple levers unless the calculation explicitly accounts for overlap.
+* Reconcile every sourcing summary to its underlying opportunity register.
+
+The current screenshot shows ₹368.04 Cr eligible spend and ₹18.54 Cr historical opportunity in a view associated with ABC Textile. Do not reuse these figures for Borosil. Determine their source and calculation path before modifying the engine.
+
+## 8. Standardize APIs and Error Handling
+
+Identify all APIs used by Module 2.
+
+For each endpoint:
+
+* Require or resolve a valid assessment context.
+* Validate assessment existence and customer association.
+* Return a consistent response envelope.
+* Include assessment identity and data-version metadata where appropriate.
+* Return explicit errors for missing assessments, stale requests and unavailable results.
+* Never silently fall back to another assessment.
+* Use consistent definitions for baseline, gross spend, eligible spend and opportunities.
+* Ensure that pagination, filters, sorting and search preserve the same assessment scope.
+
+Inspect API responses directly. Do not rely solely on the frontend appearance.
+
+## 9. Make Reports and Exports Assessment-Safe
+
+Ensure that all Excel downloads and reports:
+
+* Include customer name and assessment ID.
+* Include actual data coverage and configured period.
+* Use the canonical baseline and calculation definitions.
+* Match the values visible in the application.
+* Exclude data belonging to other assessments.
+* Identify provisional or unvalidated results.
+* Include relevant exclusions and data-quality limitations.
+* Do not present unavailable periods as zero.
+* Include generation timestamp and calculation/data version where supported.
+
+## 10. Build Permanent Regression Protection
+
+Create automated tests covering the actual failure mode and the corrected system.
+
+At minimum, test:
+
+### A. Cross-customer isolation
+
+* Select Borosil.
+* Verify every Module 2 API, card, table, workbench and export uses Borosil's assessment ID.
+* Verify no ABC Textile records appear.
+
+### B. Assessment switching
+
+* Switch from Borosil to ABC Textile and back.
+* Verify that all assessment-dependent content refreshes.
+* Simulate delayed API responses and ensure stale responses cannot overwrite the current assessment.
+
+### C. Direct navigation and refresh
+
+* Open a Module 2 route directly.
+* Refresh the browser.
+* Reopen the application.
+* Verify the correct assessment context is restored or the user is prompted to select an assessment.
+
+### D. Financial reconciliation
+
+* Reconcile the Borosil baseline to ₹556.5347 Cr within the documented tolerance.
+* Verify gross spend remains distinct at ₹585.3049 Cr.
+* Verify excluded rows and amounts.
+* Verify all dashboard and export totals.
+
+### E. Financial-year coverage
+
+* Verify April–October 2026 source coverage.
+* Verify January–March is marked unavailable.
+* Verify missing periods are never displayed as verified zero spend.
+
+### F. Taxonomy
+
+* Verify supplier codes are not mistaken for UNSPSC codes.
+* Verify official code validation.
+* Verify low-confidence and unclassified records enter review.
+* Verify assessment-specific reassignment and audit history.
+
+### G. Sourcing calculations
+
+* Verify eligibility, deduplication and overlap handling.
+* Verify unimplemented calculations cannot be presented as audited results.
+* Verify realized savings remain zero until supporting evidence is available.
+* Verify all summary figures reconcile with the detailed opportunity register.
+
+### H. Multi-assessment regression
+
+Use at least two assessments with different customer IDs and distinctive spend values. Confirm that no dashboard, API, cache, export or drill-down can leak records across assessments.
+
+### I. Build quality
+
+Run relevant unit tests, integration tests, type checks, linting and production build checks.
+
+Record the actual command, result and any failures. Do not claim a test passed if it was skipped or not executed.
+
+## 11. Execution Plan
+
+Complete the work in these phases:
+
+Phase 1: Read-only root-cause investigation and evidence collection.
+
+Phase 2: Implement the authoritative assessment-context and data-isolation fix.
+
+Phase 3: Fix financial-year, taxonomy and sourcing-engine calculation inconsistencies.
+
+Phase 4: Correct status labels, data-quality disclosures, reports and exports.
+
+Phase 5: Add and run regression tests.
+
+Phase 6: Conduct a final read-only verification of Borosil and ABC Textile without executing Modules 3 or 4.
+
+Do not stop after identifying the root cause. Implement and verify the fixes unless a genuine blocker requires a decision.
+
+If a major schema migration or irreversible data repair is required, stop before that specific operation, explain the risk and request approval. Continue with safe, reversible work where possible.
+
+## 12. Final Acceptance Criteria
+
+The work is complete only when all of the following are demonstrated:
+
+1. Borosil is selected and Borosil data appears consistently across Module 2.
+2. ABC Textile data appears only when ABC Textile is selected.
+3. Customer and assessment context is preserved across navigation, refresh, API calls, filters, drill-downs and exports.
+4. The Borosil baseline reconciles to the existing Module 1 authoritative result.
+5. Financial-year reporting accurately reflects available source data.
+6. Taxonomy classifications are evidence-based and reviewable.
+7. Opportunity figures are traceable, deduplicated and accurately labeled.
+8. Missing calculations are not presented as audited results.
+9. Automated regression tests cover cross-assessment contamination.
+10. Modules 3 and 4 remain unexecuted and unchanged in this task.
+11. No customer source data or existing assessment records have been lost.
+12. All changes, test results, known limitations and remaining risks are documented.
+
+## Required Final Report
+
+Provide:
+
+* Root cause of the ABC Textile data appearing in Borosil's sourcing engine.
+* Exact files and APIs changed.
+* Database/schema changes, if any.
+* Before-and-after behavior.
+* Financial reconciliation results.
+* Taxonomy and opportunity calculation fixes.
+* Automated tests executed and actual results.
+* Confirmation that other assessments and source data remain intact.
+* Confirmation that Modules 3 and 4 were not executed.
+* Any remaining blockers or unverified assumptions.
+
+Do not declare success based solely on a correct customer label or a successful frontend render. Prove that the underlying records and calculations belong to the selected assessment.
+
+---
+
+## Prompt 529
+continue
+
+## Prompt 530
+continue
+
+---
+
+## Prompt 531
+resume
+
+---
+
+## Prompt 532
+resume
+
+---
+
+## Prompt 533
+
+The forensic report is available. Before making any further changes, I need you to reconcile the report with the actual source data and confirm the final state of the current remediation.
+
+Do not start another broad remediation task. Do not revert changes or reset assessment data.
+
+1. BOROSIL DATE-RANGE VERIFICATION
+
+The report states that Borosil's data spans FY23/FY24, specifically October 2022 to March 2024.
+
+Our established Borosil assessment has a configured period of 1 January–22 October 2026 and actual source coverage of 1 April–22 October 2026.
+
+Inspect the actual source workbook and transaction dates. Explain the discrepancy and identify the exact date range used by the running application. Do not modify dates or fabricate transactions.
+
+2. ASSESSMENT ISOLATION
+
+Verify that Borosil in the development environment resolves to Borosil's own dataset and that ABC Textile in the test environment resolves to Textile1.xlsx.
+
+Explicitly confirm that the identical assessment ID AIC-2026-0002 in these separate environments cannot cause cross-customer data contamination through store selection or caching.
+
+3. DATABASE AND DATA SAFETY
+
+The activity log records npm run db:push and modifications to data/test/assessments.json.
+
+Report:
+
+* What db:push actually changed, if anything.
+* Whether any database schema or stored records were modified.
+* Whether the original Borosil assessment, source upload, Module 1 baseline and PCBI assets remain intact.
+* Whether all three canonical test assessments remain available with their correct datasets.
+
+Do not run db:push again unless a specific, documented requirement exists.
+
+4. FINAL TEST RESULTS
+
+Provide the actual final results for:
+
+* Borosil Module 2 execution and corrections.
+* Cross-customer isolation.
+* Persistence isolation.
+* Type checking and linting.
+* Production build, if completed.
+
+Identify any failing, skipped, timed-out or still-running tests. Distinguish actual executed results from planned tests.
+
+5. LIVE APPLICATION VERIFICATION
+
+Check whether the currently running application is using the corrected backend and whether the Strategic Sourcing Engine returns Borosil data when Borosil is selected.
+
+If this cannot be verified through the current environment, state that explicitly. Do not claim that the browser issue is fixed based only on unit tests.
+
+6. MODULE BOUNDARIES
+
+Confirm that Module 3 (PCBI) and Module 4 (Savings Engine) were not executed as part of this remediation, and that no vendor-facing sourcing actions occurred.
+
+Do not start additional broad refactoring or unrelated test suites.
+
+Return a concise evidence-based report with exact results, remaining blockers and any outstanding actions. Preserve the current changes and wait for further instructions.
+
+---
+
+## Prompt 534
+
+The forensic remediation report is reviewed and accepted as the current testing record.
+
+Proceed ONLY with live application verification. Do not perform further refactoring, broad remediation, database changes, assessment resets, or unrelated tests.
+
+1. Start the existing development backend and frontend using the project's established commands and configuration.
+2. Confirm that both servers start successfully and identify their actual local URLs.
+3. Open the application in the browser and select Borosil Ltd, assessment AIC-2026-0002, in the development environment.
+4. Verify that the displayed customer name is Borosil Ltd, not ABC Textile Ltd.
+5. Verify the following financial and data metrics against the authoritative Module 1 results:
+
+   * Gross uploaded spend: ₹585.3049 Cr.
+   * Net procurement baseline: ₹556.5347 Cr.
+   * Active included transactions: 27,777.
+   * Deleted/blocked lines excluded: 755.
+   * Internal stock transport orders excluded: 2,208.
+   * Actual data coverage: 1 April–22 October 2026.
+6. Confirm that January–March 2026 is disclosed as unavailable data, not zero spend.
+7. Confirm that the original Borosil upload and assessment remain intact.
+8. If the browser shows incorrect data, trace the specific API response, assessment-store selection, cache or frontend state responsible. Make only the smallest necessary correction, and only after identifying the root cause.
+9. Do not click Run AI Categorization Engine, Apply Blanket AI Fixes, PCBI, or Savings Engine. Do not execute Modules 3 or 4.
+
+Return the exact browser URL tested, the actual API values checked, the visible customer name, any discrepancies, and a PASS/FAIL result for each check. If browser automation is unavailable, report that limitation and provide the exact manual verification steps.
+
+Preserve all existing changes and stop after reporting the results.
+
+## Prompt 535
+
+**Final Module 1 and Module 2 Consistency Check — Borosil Ltd**
+
+The live API verification report is reviewed. Perform only the following read-only checks. Do not refactor code, reset assessments, modify the database, or run any processing engines.
+
+1. Compare the authoritative Module 1 baseline with the Module 2 dashboard API, assessment-detail API, and exported Excel workbook.
+2. Investigate the reported difference between ₹556.5347 Cr and ₹556.5346 Cr. Identify the exact source of the difference and determine whether it is only floating-point or display rounding.
+3. Confirm that all modules and exports consistently distinguish:
+
+   * Gross uploaded spend: ₹585.3049 Cr.
+   * Net procurement baseline: ₹556.5347 Cr, if confirmed by the authoritative transaction-level reconciliation.
+   * 27,777 included baseline transactions.
+   * 755 deleted/blocked rows excluded.
+   * 2,208 internal STO rows excluded.
+4. Confirm that the January–March 2026 data gap and the exclusion of BSL PUNE are disclosed in every relevant dashboard and export.
+5. Verify that the Module 2 opportunity pools are calculated from the approved net baseline and that the five opportunity pools are not presented as realized savings.
+6. Do not click Run AI Categorization Engine, Apply Blanket AI Fixes, PCBI, or Savings Engine. Do not execute Modules 3 or 4.
+7. Make no code or data changes unless a specific discrepancy is identified. If one is found, report the root cause and proposed minimal fix before applying it.
+
+Return a concise PASS/FAIL checklist, the exact API values compared, and any unresolved issue. Stop after reporting.
 
 
 
+---
 
+## Prompt 536
 
+# Procucev aiCEV — Borosil Module 2: Actionable Savings Intelligence
+
+## OBJECTIVE
+
+Transform Module 2 from a spend-analysis dashboard into a procurement decision engine that identifies what Borosil should buy, from which suppliers, at what target prices, through which sourcing strategies, and with what defensible savings potential.
+
+Assessment: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+## PHASE 1 — AUDIT BEFORE IMPLEMENTATION
+
+Do not immediately modify the code or rerun any engine.
+
+1. Inspect the existing Module 1 baseline, Module 2 calculations, category mappings, supplier normalization, price-comparison logic, sourcing-lever engines, deduplication controls and exports.
+2. Confirm the authoritative net baseline is ₹556.5347 Cr, covering 27,777 included transactions.
+3. Investigate the apparent classification issue where General Plant MRO displays 100% of spend while chemicals alone displays approximately ₹228.40 Cr.
+4. Validate that category totals reconcile to the baseline and that unclassified transactions are not automatically assigned to MRO.
+5. Check whether material descriptions, purchase units, specifications, currency, plants, supplier identities and transaction dates support valid price comparisons.
+6. Identify implemented, partially implemented and unimplemented sourcing calculations.
+7. Produce a findings report identifying defects, missing calculations, dependencies and the minimum changes required.
+
+Do not execute Modules 3 or 4. Do not modify the PCBI benchmark assets. Do not reset assessments or alter the verified Module 1 baseline.
+
+## PHASE 2 — BUILD A MATERIAL-LEVEL OPPORTUNITY REGISTER
+
+For every eligible material or comparable material group, calculate and display:
+
+* Standardized material description and material code.
+* UNSPSC mapping and classification confidence.
+* Supplier and plant.
+* Historical purchase quantity and spend.
+* Unit of measure and currency-normalized unit price.
+* Lowest comparable historical price, with the comparison period identified.
+* Current or weighted-average comparable purchase price.
+* Eligible spend for the proposed sourcing action.
+* Proposed target price and the evidence supporting it.
+* Potential savings in INR and percentage terms.
+* Recommended sourcing action.
+* Data-quality warnings and comparison confidence.
+* Validation status, owner and next action.
+
+Never compare prices for materials that differ materially in specification, grade, unit of measure, delivery terms or other relevant commercial conditions.
+
+If comparable prices or reliable quantities are unavailable, mark the opportunity as requiring further data. Do not manufacture a target price or savings estimate.
+
+## PHASE 3 — IMPLEMENT AND VALIDATE SOURCING LEVERS
+
+Prioritize:
+
+1. Direct price improvement.
+2. Competitive RFQs and reverse e-auctions.
+3. Supplier consolidation.
+4. Cross-plant volume aggregation.
+5. Specification standardization.
+
+For each lever, identify eligible transactions, calculate the opportunity using a documented methodology, and record exclusions and assumptions.
+
+Prevent double counting across levers. Where opportunities overlap, calculate the consolidated opportunity after deducting the overlap.
+
+Distinguish clearly between:
+
+* Identified opportunity.
+* Validated opportunity.
+* Negotiated savings.
+* Realized savings.
+
+Do not report identified opportunities as realized savings.
+
+## PHASE 4 — EXECUTIVE OPPORTUNITY DASHBOARD
+
+Create a concise executive summary containing:
+
+* Reconciled procurement baseline.
+* Percentage of spend reliably classified.
+* Spend requiring classification review.
+* Number and value of identified sourcing opportunities.
+* Validated opportunity value.
+* Potential value by sourcing lever.
+* Top ten opportunities ranked by estimated financial impact and confidence.
+* Priority categories and suppliers.
+* Recommended actions for the next 30, 60 and 90 days.
+
+Show Not yet quantified wherever a calculation has not been implemented or lacks adequate evidence. Do not confuse missing calculations with zero opportunity.
+
+All displayed values must reconcile to the authoritative baseline. Clearly disclose the actual data coverage of 1 April–22 October 2026, the January–March data gap, the exclusion of BSL PUNE and any unapproved FX assumptions.
+
+## PHASE 5 — TESTING AND CONTROL
+
+Before declaring the work complete:
+
+* Test calculations against transaction-level data.
+* Test category and supplier reconciliation.
+* Test unit-of-measure and currency normalization.
+* Test missing and low-confidence classifications.
+* Test sourcing-lever overlap and consolidated opportunity calculations.
+* Test exports against dashboard values.
+* Verify that ABC Textile and other customer assessments remain isolated from Borosil.
+* Confirm that Module 1 baseline values remain unchanged.
+* Confirm that Modules 3 and 4 have not been executed.
+
+## EXECUTION RULE
+
+Start with Phase 1 only.
+
+Return the audit findings, defects identified, recommended minimal changes and test plan. Do not begin implementation until the findings are reported.
+
+Preserve existing working code and data. Avoid broad refactoring and unrelated UI changes.
+
+---
+
+## Prompt 537
+
+# Borosil Module 2 — Controlled Remediation, Stage 1
+
+The Phase 1 audit findings are accepted as the basis for remediation.
+
+Assessment: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+## Scope
+
+Correct only these four defects:
+
+1. Category mapping and the unconditional General Plant MRO fallback.
+2. Currency normalization for unit-price comparisons.
+3. Empty material-code grouping in supplier consolidation.
+4. Metric tonne (MT) recognition in volume aggregation.
+
+Do not yet build the complete Material-Level Opportunity Register or Executive Opportunity Dashboard.
+
+## Mandatory safeguards
+
+* Preserve the authoritative Module 1 baseline of ₹556.5347 Cr and 27,777 included transactions.
+* Do not change the uploaded source workbook, transaction records, assessment period, exclusions, or approved assessment scope.
+* Do not change PCBI benchmark assets.
+* Do not reset or overwrite any customer assessment.
+* Preserve customer isolation between Borosil, ABC Textile, Varroc and other assessments.
+* Do not execute Modules 3 or 4.
+* Back up every file before modifying it.
+* Do not make unrelated refactoring changes.
+
+## Required corrections
+
+**A. Category mapping**
+
+* Map the Borosil material groups to appropriate human-readable procurement categories.
+* Replace the unconditional MRO fallback with an explicit Unclassified / Review Required category.
+* Reconcile all category totals to the authoritative baseline.
+* Do not force uncertain classifications into a category.
+
+**B. Currency normalization**
+
+* Use INR-normalized unit prices for all cross-currency comparisons.
+* Prefer the authoritative INR transaction value divided by a valid positive quantity when that calculation is appropriate.
+* Exclude returns, non-positive quantities, missing prices and incomparable commercial conditions from unit-price opportunity calculations.
+* Record the reason each transaction is excluded from price comparison.
+* Do not silently substitute an FX rate of 1.0 for an unknown currency.
+
+**C. Supplier consolidation**
+
+* Never group transactions with empty material codes as if they represent one material.
+* Where material codes are missing, use a conservative normalized description and category match, with a review flag.
+* Do not treat services as equivalent merely because their material codes are blank.
+
+**D. Volume aggregation**
+
+* Recognize MT as metric tonnes, with a conversion factor of 1.0 to the metric-tonne standard unit.
+* Keep incompatible units separate.
+* Validate quantities, descriptions and material comparability before recommending volume aggregation.
+
+## Verification
+
+Run targeted tests proving:
+
+1. Category spend reconciles to ₹556.5347 Cr, allowing only documented rounding.
+2. General Plant MRO no longer incorrectly receives 100% of spend.
+3. Foreign-currency unit prices are normalized before comparison.
+4. Empty material codes do not create false same-material opportunities.
+5. Valid metric-tonne purchases are eligible for volume aggregation.
+6. The Module 1 baseline and source data remain unchanged.
+7. Other customer assessments remain isolated.
+8. No PCBI or Savings Engine execution has occurred.
+
+Run relevant tests, typecheck, lint and build.
+
+Do not use hypothetical savings percentages to fill missing calculations.
+
+## Deliverable
+
+Return:
+
+* Files changed and backups created.
+* Root cause fixed for each defect.
+* Before-and-after category reconciliation.
+* Test results.
+* Any remaining limitations.
+
+Stop after Stage 1 and await approval before proceeding to the next stage.

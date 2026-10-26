@@ -4,20 +4,11 @@
  */
 
 import type {
-  ConsolidationSuitability,
-  EAuctionSuitability,
-  ExcludedTransactionRecord,
-  OpportunityScenarioRange,
-  OpportunityWaterfallStage,
-  PriceDispersionMetrics,
-  CrediblePriceReferenceResult,
-  OperationalConsolidationIndicators,
-  SourcingDataConfidence,
-  SourcingLeverRecommendation,
-  SourcingOpportunityStatus,
-  StrategicSourcingLeverKey,
-  StrategicSourcingScorecard,
-  SupplierFragmentationLevel
+  ConsolidationSuitability, EAuctionSuitability, ExcludedTransactionRecord,
+  OpportunityScenarioRange, OpportunityWaterfallStage, PriceDispersionMetrics,
+  CrediblePriceReferenceResult, OperationalConsolidationIndicators,
+  SourcingDataConfidence, SourcingLeverRecommendation, SourcingOpportunityStatus,
+  StrategicSourcingLeverKey, StrategicSourcingScorecard, SupplierFragmentationLevel
 } from './module2StrategicSourcing';
 import type {
   CategoryFiscalYearSpendDenominator,
@@ -210,53 +201,31 @@ export interface CategoryStrategicSourcingProfile {
 }
 
 export interface Module2StrategicSourcingDashboardSummary {
-  // Card 1: Total Addressable Spend
   totalAddressableSpendInr: number;
   totalAddressableSpendInrCr: number;
-
-  // Card 2: E-Auction Addressable Spend
+  directPriceHistoricalOppCr?: number;
   eauctionAddressableSpendInr?: number;
   eauctionAddressableSpendInrCr?: number;
-
-  // Card 3: E-Auction Quantifiable Benefit
   totalPotentialEAuctionOpportunityInr: number;
   totalPotentialEAuctionOpportunityInrCr: number;
-
-  // Card 4: Vendor Consolidation Addressable Spend
   vendorConsolidationAddressableSpendInr?: number;
   vendorConsolidationAddressableSpendInrCr?: number;
-
-  // Card 5: Vendor Consolidation Quantifiable Benefit
   totalPotentialConsolidationOpportunityInr: number;
   totalPotentialConsolidationOpportunityInrCr: number;
-
-  // Card 6: Volume Bundling Addressable Spend & Benefit
   volumeBundlingAddressableSpendInr?: number;
   volumeBundlingAddressableSpendInrCr?: number;
   volumeBundlingQuantifiableBenefitInr?: number;
   volumeBundlingQuantifiableBenefitInrCr?: number;
-
-  // Card 7: Category Specialist Opportunity
   categorySpecialistOpportunityInr?: number;
   categorySpecialistOpportunityInrCr?: number;
-
-  // Card 8: Gross Quantifiable Benefit
   grossQuantifiableBenefitInr?: number;
   grossQuantifiableBenefitInrCr?: number;
-
-  // Card 9: Overlapping Benefit (Removed)
   totalOverlappingOpportunityInr: number;
   totalOverlappingOpportunityInrCr: number;
-
-  // Card 10: Net Defensible Sourcing Opportunity
   netQuantifiableOpportunityInr: number;
   netQuantifiableOpportunityInrCr: number;
-
-  // Card 11: Benefit Not Yet Quantifiable
   benefitNotYetQuantifiableInr?: number;
   benefitNotYetQuantifiableInrCr?: number;
-
-  // Card 12: Overall Data Confidence
   overallDataConfidence: SourcingDataConfidence;
 
   // Opportunity Intelligence V2.0 Summary Metrics
@@ -274,7 +243,6 @@ export interface Module2StrategicSourcingDashboardSummary {
   overallNetDefensibleOpportunityMinInrCr?: number;
   overallNetDefensibleOpportunityMaxInr?: number;
   overallNetDefensibleOpportunityMaxInrCr?: number;
-
   // Counts & Denominators
   categoriesReadyForSourcingCount: number;
   eauctionCandidatesCount: number;
@@ -283,6 +251,21 @@ export interface Module2StrategicSourcingDashboardSummary {
   categoriesAnalyzedCount: number;
   totalSpendAnalyzedInr: number;
   totalSpendAnalyzedInrCr: number;
+  // CORR-1: Financial Metrics & Gross vs Net Baseline
+  netBaselineSpendInr?: number;
+  netBaselineSpendInrCr?: number;
+  grossUploadedSpendInr?: number;
+  grossUploadedSpendInrCr?: number;
+  excludedDeletedBlockedSpendInr?: number;
+  excludedDeletedBlockedSpendInrCr?: number;
+  excludedDeletedBlockedRowCount?: number;
+  excludedStoRowCount?: number;
+  netBaselineRowCount?: number;
+  spendExclusionExplanation?: string;
+  // CORR-2: Supplier Count Standardization
+  rawSupplierCount?: number;
+  normalizedSupplierCount?: number;
+  supplierCountRationale?: string;
   calculationTimestamp: string;
 }
 

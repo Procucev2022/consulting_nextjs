@@ -144,8 +144,12 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
               onChange={(e) => handleSelectCustomer(e.target.value)}
               className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="AIC-2026-0002">{strings.customerAbcTextile}</option>
-              <option value="AIC-2026-0003">{strings.customerPqrCement}</option>
+              <option value={effectiveAssessmentId}>
+                {result?.customerName ? `${result.customerName} (${effectiveAssessmentId})` : (effectiveAssessmentId === 'AIC-2026-0002' ? strings.customerBorosil : effectiveAssessmentId)}
+              </option>
+              {effectiveAssessmentId !== 'AIC-2026-0003' && (
+                <option value="AIC-2026-0003">{strings.customerPqrCement}</option>
+              )}
             </select>
           </div>
 

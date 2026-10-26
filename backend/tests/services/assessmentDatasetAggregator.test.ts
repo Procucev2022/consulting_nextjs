@@ -27,7 +27,7 @@ describe('assessmentDatasetAggregator Unit Tests', () => {
         'Vendor': 'Supplier B',
         'Date': '2025-01-11',
         'Net Value': -200000,
-        'Currency': 'INR'
+        'Currency': ''
       },
       {
         'PO Number': 'PO-103',

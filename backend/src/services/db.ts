@@ -1281,8 +1281,11 @@ export class DatabaseStore {
   }
 
   public getPCBILastCalculationResults(assessmentId?: string) {
-    const isAbcTextile =
-      assessmentId === 'AIC-2026-0002' || (!assessmentId && this.tenant.tenant_id === 'AIC-2026-0002');
+    const assessment = assessmentId ? AssessmentStore.getInstance().getAssessmentById(assessmentId) : null;
+    const isAbcTextile = Boolean(
+      assessment?.customerName?.toLowerCase().includes('textile') ||
+      (!assessmentId && this.tenant.enterprise_name?.toLowerCase().includes('textile'))
+    );
     if (isAbcTextile) {
       const summary: PCBIExecutiveSummary = {
         total_spend_inr: 6138805000,
@@ -1432,13 +1435,9 @@ export class DatabaseStore {
     actionPlans: ActionPlanItem[];
     strategicSummary: StrategicSourcingResult['summary'];
   } {
-    const hasAssessment = assessmentId ? AssessmentStore.getInstance().getAssessmentById(assessmentId) : null;
-    const isAbcTextile =
-      (assessmentId === 'AIC-2026-0002' || (!assessmentId && this.tenant.tenant_id === 'AIC-2026-0002')) &&
-      !!hasAssessment;
-
-    if (isAbcTextile) {
-      const targetAssessmentId = 'AIC-2026-0002';
+    const assessment = assessmentId ? AssessmentStore.getInstance().getAssessmentById(assessmentId) : null;
+    if (assessment) {
+      const targetAssessmentId = assessment.assessmentId;
       const sourcing = Module2CanonicalService.getSourcingAnalysis(targetAssessmentId);
 
       const opportunities: SavingsOpportunityItem[] = sourcing.handoffPackages.map((pkg) => ({
@@ -1523,19 +1522,34 @@ export class DatabaseStore {
         };
       });
 
-      const waterfallMetrics: SavingsWaterfallMetrics = {
-        total_spend_inr_cr: 613.8805,
-        addressable_spend_inr_cr: 315.021,
-        identified_opportunities_count: opportunities.length,
-        gross_potential_savings_inr_cr: 110.764,
-        deduplicated_overlap_inr_cr: 25.123,
-        net_potential_savings_inr_cr: 85.641,
-        proven_opportunity_inr_cr: 82.380,
-        discovery_opportunity_inr_cr: 3.261,
-        validated_savings_inr_cr: 0.00,
-        approved_savings_inr_cr: 0.00,
-        realized_savings_inr_cr: 0.00
-      };
+      const isVgt = targetAssessmentId === 'AIC-2026-0001';
+      const waterfallMetrics: SavingsWaterfallMetrics = isVgt
+        ? {
+            total_spend_inr_cr: 4073.8307,
+            addressable_spend_inr_cr: 443.621,
+            identified_opportunities_count: opportunities.length,
+            gross_potential_savings_inr_cr: 441.833,
+            deduplicated_overlap_inr_cr: 104.067,
+            net_potential_savings_inr_cr: 337.766,
+            proven_opportunity_inr_cr: 319.439,
+            discovery_opportunity_inr_cr: 18.327,
+            validated_savings_inr_cr: 0.00,
+            approved_savings_inr_cr: 0.00,
+            realized_savings_inr_cr: 0.00
+          }
+        : {
+            total_spend_inr_cr: 613.8805,
+            addressable_spend_inr_cr: 315.021,
+            identified_opportunities_count: opportunities.length,
+            gross_potential_savings_inr_cr: 110.764,
+            deduplicated_overlap_inr_cr: 25.123,
+            net_potential_savings_inr_cr: 85.641,
+            proven_opportunity_inr_cr: 82.380,
+            discovery_opportunity_inr_cr: 3.261,
+            validated_savings_inr_cr: 0.00,
+            approved_savings_inr_cr: 0.00,
+            realized_savings_inr_cr: 0.00
+          };
 
       const actionPlans: ActionPlanItem[] = opportunities
         .filter(o => !o.is_overlapping && o.net_savings_inr_cr > 0)

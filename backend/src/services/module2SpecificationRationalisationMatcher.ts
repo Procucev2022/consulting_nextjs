@@ -8,7 +8,8 @@ import type {
   TechnicalAttributeComparison,
   SpecificationMaterialItem,
   SpecificationIdentificationType,
-  SpecificationRationalisationReviewStatus
+  SpecificationRationalisationReviewStatus,
+  TechnicalReviewRecord
 } from '../types/module2SpecificationRationalisation';
 import {
   SPECIFICATION_IDENTIFICATION_TYPES,
@@ -175,5 +176,28 @@ export class Module2SpecificationRationalisationMatcher {
       rationale: `Textual and category similarity identified with ${differences.length} attribute variance(s).`,
       reviewStatus: SPECIFICATION_REVIEW_STATUSES.POTENTIAL_MATCH
     };
+  }
+
+  public static resolveNextAction(finalStatus: SpecificationRationalisationReviewStatus): string {
+    switch (finalStatus) {
+      case SPECIFICATION_REVIEW_STATUSES.TECHNICALLY_VERIFIED:
+        return 'Technical equivalence approved; prepare scope for Phase 2 commercial review';
+      case SPECIFICATION_REVIEW_STATUSES.REJECTED:
+        return 'Candidate rejected by technical reviewer; no further rationalisation action';
+      case SPECIFICATION_REVIEW_STATUSES.POTENTIAL_MATCH:
+        return 'Verify technical attributes and route for technical review';
+      default:
+        return 'Route candidate to authorised engineering/plant technical reviewer';
+    }
+  }
+
+  public static resolveReviewState(
+    overrideReviewRaw: TechnicalReviewRecord | TechnicalReviewRecord[] | undefined,
+    defaultStatus: SpecificationRationalisationReviewStatus
+  ): { history: TechnicalReviewRecord[]; finalStatus: SpecificationRationalisationReviewStatus } {
+    if (!overrideReviewRaw) return { history: [], finalStatus: defaultStatus };
+    const history = Array.isArray(overrideReviewRaw) ? overrideReviewRaw : [overrideReviewRaw];
+    const latestReview = history[history.length - 1];
+    return { history, finalStatus: latestReview ? latestReview.status : defaultStatus };
   }
 }

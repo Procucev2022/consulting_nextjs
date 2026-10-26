@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import { AssessmentStore } from '../../src/services/assessmentStore';
@@ -100,5 +100,13 @@ describe('ABC Textile Canonical Lineage & Classification Verification', () => {
     const otherSavings = db.getConsolidatedSavings('AIC-2026-0001');
     expect(otherSavings.waterfallMetrics.total_spend_inr_cr).not.toBe(613.8805);
     expect(otherSavings.waterfallMetrics.net_potential_savings_inr_cr).not.toBe(85.641);
+  }, 60000);
+
+  afterAll(() => {
+    const store = AssessmentStore.getInstance();
+    store.setCustomDataDir(undefined);
+    store.reloadFromDisk();
+    Module2CanonicalService.clearCache();
   });
 });
+

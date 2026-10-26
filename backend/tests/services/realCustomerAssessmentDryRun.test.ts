@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { assessmentWorkflowService } from '../../src/services/assessmentWorkflowService';
 import { assessmentStore } from '../../src/services/assessmentStore';
 import {
@@ -10,6 +10,18 @@ import {
 } from '../../src/constants/assessment';
 
 describe('P0 — aiCEV Real Customer Assessment Operational Dry Run', () => {
+  let cleanupIso: () => void;
+
+  beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+    assessmentStore.reloadFromDisk();
+  });
+
   beforeEach(() => {
     assessmentStore.resetToDefaultSeed();
   });

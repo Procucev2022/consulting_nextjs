@@ -1,12 +1,23 @@
 import crypto from 'crypto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { assessmentWorkflowService } from '../../src/services/assessmentWorkflowService';
 import { assessmentStore } from '../../src/services/assessmentStore';
 import { Module1CanonicalService } from '../../src/services/module1CanonicalService';
 import { NDA_STATUSES, SYSTEM_BUILD_IDENTITY } from '../../src/constants/assessment';
 
-
 describe('AssessmentWorkflowService', () => {
+  let cleanupIso: () => void;
+
+  beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+    assessmentStore.reloadFromDisk();
+  });
+
   beforeEach(() => {
     assessmentStore.resetToDefaultSeed();
   });

@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
+import path from 'path';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { Module2CanonicalService } from '../../src/services/module2CanonicalService';
 import { db } from '../../src/services/db';
 import { AssessmentStore } from '../../src/services/assessmentStore';
-import { getDevelopmentDataDir } from '../../src/services/assessmentPersistence';
 
 describe('PROMPT 404: Module 2 Customer Data Isolation & Handoff Tests', () => {
   beforeAll(() => {
-    const devDir = getDevelopmentDataDir();
+    const testDir = path.resolve(__dirname, '../../../data/test');
     const store = AssessmentStore.getInstance();
-    store.setCustomDataDir(devDir);
+    store.setCustomDataDir(testDir);
     store.reloadFromDisk();
     Module2CanonicalService.clearCache();
     // Pre-warm caches for all 3 datasets
@@ -16,6 +16,11 @@ describe('PROMPT 404: Module 2 Customer Data Isolation & Handoff Tests', () => {
     Module2CanonicalService.getCanonicalInput('AIC-2026-0003');
     Module2CanonicalService.getCanonicalInput('AIC-2026-0001');
   }, 180000);
+
+  afterAll(() => {
+    AssessmentStore.getInstance().setCustomDataDir(undefined);
+    Module2CanonicalService.clearCache();
+  });
 
   describe('1. ABC Textile Data Integrity (AIC-2026-0002)', () => {
     it('returns ABC Textile canonical input with exact financial metrics', () => {

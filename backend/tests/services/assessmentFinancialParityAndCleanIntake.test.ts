@@ -1,9 +1,21 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { assessmentStore } from '../../src/services/assessmentStore';
 import { assessmentWorkflowService } from '../../src/services/assessmentWorkflowService';
 import { VGT_CERTIFIED_OPPORTUNITY_FIGURES, NDA_STATUSES } from '../../src/constants/assessment';
 
 describe('Assessment Financial Parity & Clean Customer Intake (P0 Release Blocker)', () => {
+  let cleanupIso: () => void;
+
+  beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+    assessmentStore.reloadFromDisk();
+  });
+
   beforeEach(() => {
     assessmentStore.resetToDefaultSeed();
   });

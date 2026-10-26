@@ -3,57 +3,70 @@ import { db } from '../services/db';
 import logger from '../utils/logger';
 import type { StrategicInputTransaction } from '../types';
 import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
-
-interface StrategicLineItemDto {
-  mapping_id: string;
-  line_item_id: string;
-  raw_desc: string;
-  spend_year: number;
-  po_number: string;
-  material_code: string;
-  material_desc: string;
-  vendor_identified: string;
-  master_supplier_id: string;
-  unspsc_code: string;
-  unspsc_commodity_title: string;
-  unspsc_class_title: string;
-  unspsc_category_name: string;
-  core_bucket: string;
-  inr_crores: number;
-  total_spend: number;
-  qty: number;
-  unit_price: number;
-  ai_confidence: number;
-}
+import { findTaxonomyRuleMatch } from '../constants/module2MaterialMappingTaxonomy';
+import type { StrategicLineItemDto, UnspscClassificationInfo } from '../types/module2Canonical';
 
 const safeStr = (val?: string, def = ''): string => (val ? val : def);
+
+function resolveUnspscClassification(t: StrategicInputTransaction): UnspscClassificationInfo {
+  const ruleMatch = findTaxonomyRuleMatch(t.material_desc || '') ||
+    (t.unspsc_code ? findTaxonomyRuleMatch(t.unspsc_code) : undefined);
+
+  if (ruleMatch) {
+    return {
+      unspscCode: ruleMatch.unspscCode,
+      unspscTitle: ruleMatch.commodityTitle,
+      unspscClass: ruleMatch.classTitle,
+      confidence: ruleMatch.confidenceScore
+    };
+  }
+
+  const hasExplicitUnspsc = Boolean(t.unspsc_code && t.unspsc_code.length === 8 && t.unspsc_code !== '00000000');
+  if (hasExplicitUnspsc) {
+    const code = t.unspsc_code ?? '';
+    return {
+      unspscCode: code,
+      unspscTitle: t.unspsc_commodity || `UNSPSC Commodity (${code})`,
+      unspscClass: t.unspsc_category || 'Industrial Class',
+      confidence: 95
+    };
+  }
+
+  return {
+    unspscCode: '',
+    unspscTitle: 'Unclassified Commodity',
+    unspscClass: 'Unclassified Class',
+    confidence: 0
+  };
+}
 
 const mapTxToLineItem = (t: StrategicInputTransaction, idx: number, offset: number): StrategicLineItemDto => {
   const globalIdx = offset + idx + 1;
   const yearParsed = Number(t.po_date?.slice(0, 4));
   const spend = t.total_spend_inr ?? 0;
   const humanCat = resolveHumanReadableCategory(t.spend_category, t.material_code);
+  const { unspscCode, unspscTitle, unspscClass, confidence } = resolveUnspscClassification(t);
 
   return {
     mapping_id: `M2-MAP-${globalIdx}`,
     line_item_id: safeStr(t.id, `TX-${globalIdx}`),
     raw_desc: t.material_desc,
-    spend_year: Number.isFinite(yearParsed) ? yearParsed : 2021,
+    spend_year: Number.isFinite(yearParsed) ? yearParsed : 2026,
     po_number: safeStr(t.po_number, 'PO NOT AVAILABLE'),
     material_code: safeStr(t.material_code, `MAT-${globalIdx}`),
     material_desc: t.material_desc,
     vendor_identified: t.vendor_name,
     master_supplier_id: safeStr(t.vendor_code, `VND-${globalIdx}`),
-    unspsc_code: safeStr(t.unspsc_code, '44101500'),
-    unspsc_commodity_title: humanCat,
-    unspsc_class_title: humanCat,
+    unspsc_code: unspscCode,
+    unspsc_commodity_title: unspscTitle,
+    unspsc_class_title: unspscClass,
     unspsc_category_name: humanCat,
     core_bucket: humanCat,
     inr_crores: Number((spend / 10000000).toFixed(6)),
     total_spend: spend,
     qty: t.quantity ?? 1,
     unit_price: t.unit_price ?? 0,
-    ai_confidence: 94
+    ai_confidence: confidence
   };
 };
 

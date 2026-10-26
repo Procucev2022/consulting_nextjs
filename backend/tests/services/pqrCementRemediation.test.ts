@@ -12,7 +12,12 @@ import type { VgtProcessingResult } from '../../src/types/vgt';
 import type { Module1CanonicalViewModel } from '../../src/types/module1Canonical';
 
 describe('PQR Cement Ltd Module 1 Targeted Remediation (Prompt 395)', () => {
-  const pqrPath = path.resolve('storage/objects/consulting-doc/1791831481295_Cement2.xlsx');
+  const candidatePqrPaths = [
+    path.resolve(__dirname, '../../storage/objects/consulting-doc/1791831481295_Cement2.xlsx'),
+    path.resolve(process.cwd(), 'storage/objects/consulting-doc/1791831481295_Cement2.xlsx'),
+    path.resolve(process.cwd(), 'backend/storage/objects/consulting-doc/1791831481295_Cement2.xlsx')
+  ];
+  const pqrPath = candidatePqrPaths.find((p) => fs.existsSync(p)) || candidatePqrPaths[0];
   const expectedPqrSha256 = '8866eda88a6ee0f1b1cd9d3975e90936dc8e9463d1180c4fd4fee954ba726e27';
   const expectedAbcSha256 = '7c7d5f8a68efe9b60f9d53bd3c0564d27cd187923fd7bf75b6b71a18ef25cca7';
 
@@ -187,7 +192,15 @@ describe('PQR Cement Ltd Module 1 Targeted Remediation (Prompt 395)', () => {
   });
 
   it('Requirement F: Data isolation — ABC Textile and VGT hashes and data remain isolated', () => {
-    const abcPath = path.resolve('..', 'data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx');
+    const candidateAbcPaths = [
+      path.resolve(__dirname, '../../../data/test/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+      path.resolve(__dirname, '../../../data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+      path.resolve(process.cwd(), 'data/test/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+      path.resolve(process.cwd(), 'data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+      path.resolve('..', 'data/test/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+      path.resolve('..', 'data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx')
+    ];
+    const abcPath = candidateAbcPaths.find((p) => fs.existsSync(p)) || candidateAbcPaths[0];
     const abcBuf = fs.readFileSync(abcPath);
     const abcSha = crypto.createHash('sha256').update(abcBuf).digest('hex').toLowerCase();
     expect(abcSha).toBe(expectedAbcSha256);

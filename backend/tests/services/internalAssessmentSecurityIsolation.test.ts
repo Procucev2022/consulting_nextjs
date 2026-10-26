@@ -1,10 +1,22 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { assessmentStore } from '../../src/services/assessmentStore';
 import { assessmentWorkflowService } from '../../src/services/assessmentWorkflowService';
 import { operatingModeService, saasRouteGuard } from '../../src/services/operatingModeService';
 import { SYSTEM_BUILD_IDENTITY, APP_OPERATING_MODES, NDA_STATUSES } from '../../src/constants/assessment';
 
 describe('Security & Isolation Negative Test Suite (Tests A through J)', () => {
+  let cleanupIso: () => void;
+
+  beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+    assessmentStore.reloadFromDisk();
+  });
+
   beforeEach(() => {
     assessmentStore.resetToDefaultSeed();
   });

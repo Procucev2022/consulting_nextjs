@@ -71,7 +71,6 @@ export class CustomerWebsiteService {
   private constructor() {
     this.profileCache.set('abc textile', ABC_TEXTILE_WEBSITE_PROFILE);
     this.profileCache.set('abc textile ltd', ABC_TEXTILE_WEBSITE_PROFILE);
-    this.profileCache.set('aic-2026-0002', ABC_TEXTILE_WEBSITE_PROFILE);
     this.profileCache.set('ultratech', ULTRATECH_WEBSITE_PROFILE);
     this.profileCache.set('ultratech cement', ULTRATECH_WEBSITE_PROFILE);
     this.profileCache.set('demo', ULTRATECH_WEBSITE_PROFILE);

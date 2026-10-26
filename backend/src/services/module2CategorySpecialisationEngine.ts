@@ -21,9 +21,9 @@ import type {
 } from '../types/module2CategorySpecialisation';
 import type { StrategicInputTransaction } from '../types/strategicSourcing';
 import {
-  roundToTwoDecimals,
-  isKnownCustomerAssessment
+  roundToTwoDecimals
 } from './module2CategorySpecialisationCalculators';
+import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
 import {
   classifyCategory,
   buildCategoryProfile
@@ -147,9 +147,7 @@ export class Module2CategorySpecialisationEngine {
       automatedCount
     );
 
-    const customerName = isKnownCustomerAssessment(assessmentId)
-      ? assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' : 'PQR Cement Ltd'
-      : `Assessment ${assessmentId}`;
+    const customerName = resolveAssessmentCustomerName(assessmentId);
 
     logger.info('Completed Lever 6 Category Specialisation calculation', {
       assessmentId,

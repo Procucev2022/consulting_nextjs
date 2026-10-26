@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import * as XLSX from 'xlsx';
+import fs from 'fs';
 import path from 'path';
 import { WorksheetDiscoveryService } from '../../src/services/worksheetDiscoveryService';
 import { GenericSchemaMatcher } from '../../src/services/genericSchemaMatcher';
@@ -9,7 +10,15 @@ import type { VgtProcessingResult } from '../../src/types/vgt';
 import type { WorkbookDiscoveryResult } from '../../src/types/worksheetDiscovery';
 
 describe('ABC Textile Stage 2 Regression Reference Test', () => {
-  const filePath = path.resolve('..', 'data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx');
+  const candidateFilePaths = [
+    path.resolve(__dirname, '../../../data/test/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+    path.resolve(__dirname, '../../../data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+    path.resolve(process.cwd(), 'data/test/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+    path.resolve(process.cwd(), 'data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+    path.resolve('..', 'data/test/assessments/AIC-2026-0002/uploads/Textile1.xlsx'),
+    path.resolve('..', 'data/dev/assessments/AIC-2026-0002/uploads/Textile1.xlsx')
+  ];
+  const filePath = candidateFilePaths.find((p) => fs.existsSync(p)) || candidateFilePaths[0];
   let wb: XLSX.WorkBook;
   let discovery: WorkbookDiscoveryResult;
   let headers: string[];

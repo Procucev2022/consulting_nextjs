@@ -24,6 +24,7 @@ interface CategoryAggregate {
   spendFY24: number;
   spendFY25: number;
   spendFY26: number;
+  spendFY27?: number;
   totalSpend: number;
   vendors: Set<string>;
   items: Map<string, CategoryTopItem>;
@@ -31,6 +32,44 @@ interface CategoryAggregate {
   sampleColumnL: string;
   sampleColumnLTitle: string;
   lineItemsCount: number;
+}
+
+function calculateYoYGrowth(fy24: number, fy25: number, fy26: number): number | undefined {
+  if (fy25 > 0 && fy26 > 0) {
+    return Number((((fy26 - fy25) / fy25) * 100).toFixed(1));
+  }
+  if (fy24 > 0 && fy25 > 0) {
+    return Number((((fy25 - fy24) / fy24) * 100).toFixed(1));
+  }
+  return undefined;
+}
+
+function resolveDataAvailabilityStatus(
+  fy24: number,
+  fy25: number,
+  fy26: number,
+  fy27?: number
+): 'PRIOR_PERIOD_UNAVAILABLE' | 'ACTUAL_TRANSACTIONS' {
+  const hasFutureSpend = (fy27 ?? 0) > 0 || fy26 > 0;
+  if (fy24 === 0 && fy25 === 0 && hasFutureSpend) {
+    return 'PRIOR_PERIOD_UNAVAILABLE';
+  }
+  return 'ACTUAL_TRANSACTIONS';
+}
+
+function buildTopItems(
+  items: Map<string, CategoryTopItem>,
+  totalSpend: number
+): CategoryTopItem[] {
+  const denom = totalSpend || 1;
+  return Array.from(items.values())
+    .sort((a, b) => (b.total_spend_inr_cr ?? 0) - (a.total_spend_inr_cr ?? 0))
+    .slice(0, 10)
+    .map((it, itIdx) => ({
+      ...it,
+      rank: itIdx + 1,
+      spend_share_pct: Number((((it.total_spend_inr_cr ?? 0) / denom) * 100).toFixed(1))
+    }));
 }
 
 export function calculateCategoryYearDetails(
@@ -57,20 +96,9 @@ export function calculateCategoryYearDetails(
     const fy24 = data.spendFY24;
     const fy25 = data.spendFY25;
     const fy26 = data.spendFY26;
-    const yoy = (fy25 > 0 && fy26 > 0)
-      ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1))
-      : (fy24 > 0 && fy25 > 0)
-        ? Number((((fy25 - fy24) / fy24) * 100).toFixed(1))
-        : undefined;
-
-    const topItems = Array.from(data.items.values())
-      .sort((a, b) => (b.total_spend_inr_cr || 0) - (a.total_spend_inr_cr || 0))
-      .slice(0, 10)
-      .map((it, itIdx) => ({
-        ...it,
-        rank: itIdx + 1,
-        spend_share_pct: Number((((it.total_spend_inr_cr || 0) / (data.totalSpend || 1)) * 100).toFixed(1))
-      }));
+    const yoy = calculateYoYGrowth(fy24, fy25, fy26);
+    const topItems = buildTopItems(data.items, data.totalSpend);
+    const lineCount = data.lineItemsCount || data.items.size || /* c8 ignore next */ 1;
 
     return {
       id: `CAT-${idx + 1}`,
@@ -81,12 +109,16 @@ export function calculateCategoryYearDetails(
       spend_fy24_cr: Number(fy24.toFixed(2)),
       spend_fy25_cr: Number(fy25.toFixed(2)),
       spend_fy26_cr: Number(fy26.toFixed(2)),
+      spend_fy27_cr: data.spendFY27 !== undefined ? Number(data.spendFY27.toFixed(2)) : undefined,
+      actual_period_spend_cr: Number(data.totalSpend.toFixed(2)),
+      actual_data_coverage: '1 Apr 2026 - 22 Oct 2026',
+      data_availability_status: resolveDataAvailabilityStatus(fy24, fy25, fy26, data.spendFY27),
       total_3yr_spend_inr_cr: Number(data.totalSpend.toFixed(2)),
       spend_share_pct: Number(((data.totalSpend / totalCalculated) * 100).toFixed(1)),
       yoy_growth_pct: yoy,
       vendor_count: data.vendors.size || /* c8 ignore next */ 1,
-      item_count: data.lineItemsCount || data.items.size || /* c8 ignore next */ 1,
-      line_items_count: data.lineItemsCount || data.items.size || /* c8 ignore next */ 1,
+      item_count: lineCount,
+      line_items_count: lineCount,
       top_items: topItems,
       is_balance_category: false,
       rank: idx + 1
@@ -194,13 +226,16 @@ function createCategoryEntry(item: LineItemMapping): CategoryAggregate {
     spendFY24: 0,
     spendFY25: 0,
     spendFY26: 0,
+    spendFY27: 0,
     totalSpend: 0,
     vendors: new Set(),
     items: new Map(),
     coreBucket: item.core_bucket || 'Direct Materials',
     sampleColumnL: item.unspsc_code || (isClassified ? descMatch?.commodityCode : '00000000') || '00000000',
     sampleColumnLTitle:
-      item.unspsc_commodity_title || (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') || fallback.commodityTitle,
+      item.unspsc_commodity_title ||
+      (isClassified ? descMatch?.commodityTitle : 'Unclassified Commodity') ||
+      fallback.commodityTitle,
     lineItemsCount: 0
   };
 }

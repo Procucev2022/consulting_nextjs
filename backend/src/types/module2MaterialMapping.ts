@@ -40,6 +40,10 @@ export interface MaterialMappingEntry {
   reviewReason?: string;
   reviewedBy?: string;
   auditNotes?: string;
+  unspsc_code?: string;
+  unspsc_commodity_title?: string;
+  unspsc_class_title?: string;
+  unspsc_category_name?: string;
 }
 
 export interface ClassificationCoverageSummary {

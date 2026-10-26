@@ -13,6 +13,8 @@ export interface StrategicInputTransaction {
   vendor_name: string;
   material_code?: string;
   material_desc: string;
+  materialCode?: string;
+  materialDescription?: string;
   quantity: number;
   uom?: string;
   unit_price: number;

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { assessmentWorkflowService } from '../../src/services/assessmentWorkflowService';
 import { assessmentStore } from '../../src/services/assessmentStore';
 import { operatingModeService } from '../../src/services/operatingModeService';
@@ -12,6 +12,18 @@ import fs from 'fs';
 import path from 'path';
 
 describe('P0 — aiCEV Internal Production Safety Gate Certification', () => {
+  let cleanupIso: () => void;
+
+  beforeAll(() => {
+    const iso = assessmentStore.useIsolatedTestDir();
+    cleanupIso = iso.cleanup;
+  });
+
+  afterAll(() => {
+    cleanupIso?.();
+    assessmentStore.reloadFromDisk();
+  });
+
   beforeEach(() => {
     assessmentStore.resetToDefaultSeed();
   });

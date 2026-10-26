@@ -20,6 +20,7 @@ describe('AssessmentStore', () => {
 
   afterAll(() => {
     cleanupIso?.();
+    AssessmentStore.resetInstance();
   });
 
   beforeEach(() => {

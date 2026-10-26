@@ -12,7 +12,8 @@ import type {
   MappingReviewStatus, UpdateMaterialMappingPayload
 } from '../types/module2MaterialMapping';
 import type { TaxonomyClassificationRule } from '../constants/module2MaterialMappingTaxonomy';
-import { OFFICIAL_UNSPSC_TAXONOMY_RULES } from '../constants/module2MaterialMappingTaxonomy';
+import { findTaxonomyRuleMatch } from '../constants/module2MaterialMappingTaxonomy';
+import { extractMappingUpdate, calculateMappingCoverage } from './module2MaterialMappingCoverage';
 
 const TAXONOMY_VERSION = 'UNv260801';
 const PERSISTENCE_FILE = path.resolve(process.cwd(), 'data', 'material_mapping_register.json');
@@ -68,7 +69,7 @@ export class Module2MaterialMappingRegister {
     }
   }
 
-  public static classifyMaterials(txs: StrategicInputTransaction[]): {
+  public static classifyMaterials(txs: StrategicInputTransaction[], assessmentId?: string): {
     register: MaterialMappingEntry[];
     coverage: ClassificationCoverageSummary;
     exceptions: MaterialMappingEntry[];
@@ -80,7 +81,7 @@ export class Module2MaterialMappingRegister {
     const materialCodeToMapping = new Map<string, MaterialMappingEntry>();
 
     for (const [matId, agg] of aggMap.entries()) {
-      const entry = this.classifySingleMaterial(matId, agg);
+      const entry = this.classifySingleMaterial(matId, agg, assessmentId);
       register.push(entry);
       materialCodeToMapping.set(matId, entry);
     }
@@ -116,7 +117,11 @@ export class Module2MaterialMappingRegister {
     return map;
   }
 
-  private static classifySingleMaterial(matId: string, agg: MaterialAggData): MaterialMappingEntry {
+  private static classifySingleMaterial(
+    matId: string,
+    agg: MaterialAggData,
+    assessmentId?: string
+  ): MaterialMappingEntry {
     const totalSpendCr = Math.round((agg.totalSpendInr / 10000000) * 10000) / 10000;
     const baseEntry = {
       sourceMaterialId: matId,
@@ -130,8 +135,9 @@ export class Module2MaterialMappingRegister {
       qualifyingSuppliersCount: agg.suppliers.size
     };
 
-    // Tier 1: Check persistent store
-    const persisted = this.persistentStore.get(matId);
+    // Tier 1: Check persistent store (assessment-scoped first, then global)
+    const scopedKey = assessmentId ? `${assessmentId}::${matId}` : matId;
+    const persisted = this.persistentStore.get(scopedKey) || this.persistentStore.get(matId);
     if (persisted && (persisted.reviewStatus === 'CLIENT_APPROVED' || persisted.reviewStatus === 'APPROVED')) {
       const status: MappingReviewStatus =
         persisted.reviewStatus === 'CLIENT_APPROVED' ? 'CLIENT_APPROVED' : 'TAXONOMY_VERIFIED';
@@ -144,22 +150,13 @@ export class Module2MaterialMappingRegister {
     }
 
     // Tier 2: Strong evidence-based material description match
-    const ruleMatch = this.findTaxonomyRuleMatch(agg.sourceDescription);
+    const ruleMatch = findTaxonomyRuleMatch(agg.sourceDescription);
     if (ruleMatch) {
       return this.buildRuleMatchEntry(baseEntry, ruleMatch);
     }
 
     // Tier 4: Manual review required (unresolved)
     return this.buildAwaitingReviewEntry(baseEntry);
-  }
-
-  private static findTaxonomyRuleMatch(desc: string): TaxonomyClassificationRule | undefined {
-    for (const rule of OFFICIAL_UNSPSC_TAXONOMY_RULES) {
-      if (rule.pattern.test(desc)) {
-        return rule;
-      }
-    }
-    return undefined;
   }
 
   private static buildApprovedTransactionEntry(
@@ -220,79 +217,43 @@ export class Module2MaterialMappingRegister {
     };
   }
 
-  public static updateMapping(payload: UpdateMaterialMappingPayload): MaterialMappingEntry {
+  public static getMapping(sourceMaterialId: string, assessmentId?: string): MaterialMappingEntry | undefined {
     this.initialize();
-    const existing = this.persistentStore.get(payload.sourceMaterialId);
+    const scopedKey = assessmentId ? `${assessmentId}::${sourceMaterialId}` : sourceMaterialId;
+    const directMatch = this.persistentStore.get(scopedKey);
+    return directMatch || (!assessmentId ? this.persistentStore.get(sourceMaterialId) : undefined);
+  }
+
+  public static updateMapping(
+    payloadOrMaterialId: UpdateMaterialMappingPayload | string,
+    partialOrAssessmentId?: Partial<MaterialMappingEntry> | string,
+    assessmentIdParam?: string
+  ): MaterialMappingEntry {
+    this.initialize();
+    const parsed = extractMappingUpdate(payloadOrMaterialId, partialOrAssessmentId, assessmentIdParam);
+    const scopedKey = parsed.assessmentId
+      ? `${parsed.assessmentId}::${parsed.sourceMaterialId}`
+      : parsed.sourceMaterialId;
+    const existing = this.persistentStore.get(scopedKey) || this.persistentStore.get(parsed.sourceMaterialId);
     const updated: MaterialMappingEntry = {
       ...(existing || ({} as MaterialMappingEntry)),
-      sourceMaterialId: payload.sourceMaterialId,
-      assignedUnspscCode: payload.unspscCode,
-      reviewStatus: payload.reviewStatus,
-      reviewedBy: payload.reviewedBy,
-      auditNotes: payload.auditNotes,
+      ...parsed.extra,
+      sourceMaterialId: parsed.sourceMaterialId,
+      assignedUnspscCode: parsed.unspscCode,
+      unspsc_code: parsed.unspscCode,
+      reviewStatus: parsed.reviewStatus,
+      reviewedBy: parsed.reviewedBy,
+      auditNotes: parsed.auditNotes,
       mappingDate: new Date().toISOString().split('T')[0],
       confidenceScore: 100,
       mappingMethod: 'EXACT_IDENTIFIER'
     };
-    this.persistentStore.set(payload.sourceMaterialId, updated);
+    this.persistentStore.set(scopedKey, updated);
     this.persistStore();
     return updated;
   }
 
   private static calculateCoverage(register: MaterialMappingEntry[]): ClassificationCoverageSummary {
-    const totalMaterialsCount = register.length;
-    const totalSpendInr = Math.round(register.reduce((sum, e) => sum + e.totalSpendInr, 0) * 100) / 100;
-    const totalSpendCr = Math.round((totalSpendInr / 10000000) * 10000) / 10000;
-
-    let taxVerCount = 0;
-    let taxVerSpend = 0;
-    let provCount = 0;
-    let provSpend = 0;
-    let revCount = 0;
-    let revSpend = 0;
-    let clientAppCount = 0;
-    let clientAppSpend = 0;
-
-    for (const e of register) {
-      if (e.reviewStatus === 'CLIENT_APPROVED') {
-        clientAppCount++;
-        clientAppSpend += e.totalSpendInr;
-      } else if (e.reviewStatus === 'TAXONOMY_VERIFIED' || e.reviewStatus === 'APPROVED') {
-        taxVerCount++;
-        taxVerSpend += e.totalSpendInr;
-      } else if (e.reviewStatus === 'PROVISIONAL') {
-        provCount++;
-        provSpend += e.totalSpendInr;
-      } else {
-        revCount++;
-        revSpend += e.totalSpendInr;
-      }
-    }
-
-    const calc = (cnt: number, spd: number): { cntPct: number; spdCr: number; spdPct: number } => ({
-      cntPct: totalMaterialsCount > 0 ? Math.round((cnt / totalMaterialsCount) * 1000) / 10 : 0,
-      spdCr: Math.round((spd / 10000000) * 10000) / 10000,
-      spdPct: totalSpendInr > 0 ? Math.round((spd / totalSpendInr) * 1000) / 10 : 0
-    });
-
-    const tv = calc(taxVerCount, taxVerSpend);
-    const ca = calc(clientAppCount, clientAppSpend);
-    const pv = calc(provCount, provSpend);
-    const rv = calc(revCount, revSpend);
-
-    return {
-      totalMaterialsCount, totalSpendInr, totalSpendCr,
-      taxonomyVerifiedCount: taxVerCount, taxonomyVerifiedSpendInr: taxVerSpend,
-      taxonomyVerifiedSpendCr: tv.spdCr, taxonomyVerifiedMaterialPct: tv.cntPct, taxonomyVerifiedSpendPct: tv.spdPct,
-      clientApprovedCount: clientAppCount, clientApprovedSpendInr: clientAppSpend,
-      clientApprovedSpendCr: ca.spdCr, clientApprovedMaterialPct: ca.cntPct, clientApprovedSpendPct: ca.spdPct,
-      approvedCount: taxVerCount, approvedSpendInr: taxVerSpend, approvedSpendCr: tv.spdCr,
-      approvedMaterialPct: tv.cntPct, approvedSpendPct: tv.spdPct,
-      provisionalCount: provCount, provisionalSpendInr: provSpend,
-      provisionalSpendCr: pv.spdCr, provisionalMaterialPct: pv.cntPct, provisionalSpendPct: pv.spdPct,
-      awaitingReviewCount: revCount, awaitingReviewSpendInr: revSpend,
-      awaitingReviewSpendCr: rv.spdCr, awaitingReviewMaterialPct: rv.cntPct, awaitingReviewSpendPct: rv.spdPct,
-      workflowCoveragePct: totalMaterialsCount > 0 ? 100.0 : 0.0
-    };
+    return calculateMappingCoverage(register);
   }
 }

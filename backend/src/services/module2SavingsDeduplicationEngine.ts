@@ -6,19 +6,15 @@
 
 import logger from '../utils/logger';
 import {
-  CONSOLIDATED_SAVINGS_NOTICES,
-  DEDUPLICATION_DISCLOSURES,
-  LEVER_SAFEGUARD_RULES
+  CONSOLIDATED_SAVINGS_NOTICES, DEDUPLICATION_DISCLOSURES, LEVER_SAFEGUARD_RULES
 } from '../constants/module2SavingsDeduplication';
 import type {
-  Module2CanonicalSavingsOpportunity,
-  Module2ConsolidatedSavingsSummary,
-  Module2LeverSavingsSummaryItem,
-  Module2LeverMetaItem,
-  SavingsDeduplicationOptions
+  Module2CanonicalSavingsOpportunity, Module2ConsolidatedSavingsSummary,
+  Module2LeverSavingsSummaryItem, Module2LeverMetaItem, SavingsDeduplicationOptions
 } from '../types/module2SavingsDeduplication';
 import { round2, toCrores } from './module2SavingsDeduplicationHelpers';
 import { Module2SavingsOpportunityCollector } from './module2SavingsOpportunityCollector';
+import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
 
 interface DeduplicationGroupItem {
   opp: Module2CanonicalSavingsOpportunity;
@@ -226,13 +222,10 @@ export class Module2SavingsDeduplicationEngine {
     const wcReleasedInr = l5Opp?.workingCapitalReleasedInr || 0;
 
     const grossInr = round2(grossTotalInr);
-    const overlapInr = round2(overlapDeductionsTotalInr);
-    const unresInr = round2(unresolvedExcludedTotalInr);
+    const overlapInr = round2(overlapDeductionsTotalInr), unresInr = round2(unresolvedExcludedTotalInr);
     const netInr = round2(grossInr - overlapInr - unresInr);
-    const grossEvInr = round2(grossEvidenceTotalInr);
-    const netEvInr = round2(netEvidenceTotalInr);
-    const expInr = round2(exploratoryTotalInr);
-    const valInr = round2(validatedTotalInr);
+    const grossEvInr = round2(grossEvidenceTotalInr), netEvInr = round2(netEvidenceTotalInr);
+    const expInr = round2(exploratoryTotalInr), valInr = round2(validatedTotalInr);
     const balanceInr = round2(grossInr - overlapInr - unresInr - netInr);
     const isBalanced = Math.abs(balanceInr) < 0.01;
     const leverSummaries = this.buildLeverSummaries(allOpportunities);
@@ -243,7 +236,7 @@ export class Module2SavingsDeduplicationEngine {
       l5Summary.workingCapitalReleasedInr = wcReleasedInr;
       l5Summary.workingCapitalReleasedCr = toCrores(wcReleasedInr);
     }
-    const customerName = assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' : (assessmentId === 'AIC-2026-0003' ? 'PQR Cement Ltd' : `Enterprise Client (${assessmentId})`);
+    const customerName = resolveAssessmentCustomerName(assessmentId);
 
     const disclaimerText = 'Estimated savings and exploratory pipeline figures do not constitute contracted, audited, or realized savings. Realized savings require post-implementation transactional verification against audited supplier invoices.';
 
@@ -294,5 +287,12 @@ export class Module2SavingsDeduplicationEngine {
       disclosures: [...DEDUPLICATION_DISCLOSURES],
       disclaimerText
     };
+  }
+
+  public static deduplicate(
+    assessmentId: string,
+    options?: SavingsDeduplicationOptions
+  ): Module2ConsolidatedSavingsSummary {
+    return this.calculateConsolidatedSavings(assessmentId, options);
   }
 }

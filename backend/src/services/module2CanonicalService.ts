@@ -3,8 +3,8 @@ import path from 'path';
 import { VgtModule1Runner } from './vgtModule1Runner';
 import { AssessmentDatasetParser } from './assessmentDatasetParser';
 import { AssessmentStore } from './assessmentStore';
-import { Module2StrategicSourcingEngine } from './module2StrategicSourcingEngine';
-import { Module2CanonicalCalculators } from './module2CanonicalCalculators';
+import { getDevelopmentDataDir } from './assessmentPersistence';
+import { Module2BundleBuilder } from './module2BundleBuilder';
 import logger from '../utils/logger';
 import type {
   StrategicInputTransaction,
@@ -19,11 +19,13 @@ import type {
   Module2PoConsolidationItem,
   Module2RecurringSpendItem,
   Module2ForensicSummary,
-  Module2ValidRowInput,
-  RawBundleInput,
   AssessmentModule2CacheBundle,
   TransactionAttributionLedgerResult,
-  AttributionLeverType
+  AttributionLeverType,
+  PersistedStoreData,
+  AssessmentRecord,
+  AssessmentAnalysisRun,
+  AssessmentDataVersion
 } from '../types';
 import { Module2AttributionLedgerEngine } from './module2AttributionLedgerEngine';
 
@@ -36,155 +38,48 @@ export class Module2CanonicalService {
     this.attributionCache.clear();
   }
 
-  private static resolveFilePath(filePath: string, fileName?: string): string {
-    const store = AssessmentStore.getInstance();
-    let resolved = filePath;
-    if (!path.isAbsolute(resolved)) {
-      resolved = path.resolve(store.getDataDir(), resolved);
-    }
-    if (fs.existsSync(resolved)) return resolved;
-
-    if (filePath.includes('/data/dev/') || filePath.includes('\\data\\dev\\')) {
-      const testPath = filePath.replace(/([/\\])data[/\\]dev[/\\]/i, '$1data$1test$1');
-      if (fs.existsSync(testPath)) return testPath;
-    }
-
-    const root = process.cwd();
-    const baseFn = path.basename(filePath);
-    const fn = fileName || baseFn;
-    const candidates = [
-      path.resolve(root, filePath), path.resolve(root, 'backend', filePath),
-      path.resolve(store.getDataDir(), filePath), path.resolve(store.getDataDir(), 'assessments', fn),
-      path.resolve(store.getDataDir(), 'assessments', baseFn),
-      path.resolve(__dirname, '../../../data/test/storage', baseFn),
-      path.resolve(__dirname, '../../../data/test/storage', fn),
-      path.resolve(root, 'data/test/storage', baseFn), path.resolve(root, 'data/test/storage', fn),
-      path.resolve(root, fn), path.resolve(root, 'backend', fn),
-      path.resolve(root, baseFn), path.resolve(root, 'backend', baseFn),
-      path.resolve(root, '..', 'backend', fn), path.resolve(root, '..', fn)
-    ];
-    const found = candidates.find((c) => fs.existsSync(c));
-    if (found) return found;
-
-    throw new Error(`Data version file not found on disk at: ${filePath}`);
-  }
-
-  private static buildBundleFromTransactions(input: RawBundleInput): AssessmentModule2CacheBundle {
-    const suppliersSet = new Set<string>();
-    const materialGroupsSet = new Set<string>();
-    const plantsSet = new Set<string>();
-    const billingMonthsSet = new Set<string>();
-
-    const transactions: StrategicInputTransaction[] = input.validRows.map((r, i) => {
-      const norm = input.validNormalized[i];
-      const spendInr = norm?.inrNormalizedValue ?? r.lineSpendInr ?? 0;
-      suppliersSet.add(r.vendorName);
-      materialGroupsSet.add(r.materialGroup);
-      plantsSet.add(r.plant);
-      if (r.billingMonth) billingMonthsSet.add(r.billingMonth);
-
-      return {
-        id: r.recordId, po_number: r.poNumber, po_line: r.poLine, po_date: r.transactionDate,
-        vendor_code: r.vendorCode, vendor_name: r.vendorName,
-        material_code: r.itemCode, material_desc: r.itemDescription,
-        quantity: r.quantity, uom: r.uom, unit_price: r.netPrice,
-        total_spend_inr: spendInr, currency: r.currency, plant: r.plant,
-        spend_category: r.materialGroup, unspsc_code: r.itemCode
-      };
-    });
-
-    const canonicalInput: Module2CanonicalInput = {
-      datasetId: input.datasetId.slice(0, 16),
-      dataVersionId: input.dataVersionId,
-      sourceFileName: input.sourceFileName,
-      sourceRowCount: input.sourceRowCount,
-      validRowCount: input.validRowCount,
-      excludedRowCount: input.excludedRowCount,
-      anomalyRowCount: input.anomalyRowCount,
-      suspectedDuplicateRowCount: input.suspectedDuplicateRowCount ?? 0,
-      totalValidatedSpendInr: input.totalValidatedSpendInr,
-      totalValidatedSpendCr: input.totalValidatedSpendCr,
-      suppliersCount: suppliersSet.size,
-      materialGroupsCount: materialGroupsSet.size,
-      plantsCount: plantsSet.size,
-      billingMonthsCount: billingMonthsSet.size,
-      period: {
-        startDate: '2021-04-01',
-        endDate: '2022-01-31',
-        actualBillingMonths: billingMonthsSet.size,
-        fiscalYear: 'FY22',
-        fiscalMonthCoverage: `${billingMonthsSet.size} of 12 months`,
-        isFullFiscalYear: false,
-        missingMonthsNotice: 'Missing 2 billing months (Feb 2022, Mar 2022) - not assumed as zero'
-      },
-      currencyCoverage: {
-        currenciesDetected: input.currenciesDetected,
-        normalizedSpendInr: input.totalValidatedSpendInr
-      },
-      fxNormalization: { masterVersion: 'FX_MASTER_V2.0', checksum: input.fileSha256.slice(0, 16) },
-      transactions
-    };
-
-    const sourcingResult = Module2StrategicSourcingEngine.analyze(transactions);
-    return {
-      canonicalInput,
-      transactions,
-      sourcingResult,
-      ledger: Module2CanonicalCalculators.buildOpportunityLedger(sourcingResult.profiles, transactions),
-      bridge: Module2CanonicalCalculators.buildBridge(canonicalInput, sourcingResult.summary),
-      top50: Module2CanonicalCalculators.buildTop50Vendors(transactions),
-      risk: Module2CanonicalCalculators.buildSupplierRisk(sourcingResult.profiles),
-      po: Module2CanonicalCalculators.buildPoConsolidation(transactions),
-      recurring: Module2CanonicalCalculators.buildRecurringSpend(sourcingResult.profiles)
-    };
-  }
-
-  private static bundleFromParsed(
-    parsed: ReturnType<typeof AssessmentDatasetParser.parseDataset>
-  ): AssessmentModule2CacheBundle {
-    return this.buildBundleFromTransactions({
-      datasetId: parsed.file.sha256,
-      dataVersionId: parsed.dataVersion.dataVersionId,
-      sourceFileName: parsed.file.filename,
-      sourceRowCount: parsed.data.sourceRowCount,
-      validRowCount: parsed.data.validRowCount,
-      excludedRowCount: parsed.data.excludedRowCount,
-      anomalyRowCount: parsed.data.anomalyRowCount,
-      totalValidatedSpendInr: parsed.module1.totalConvertedInrSpend,
-      totalValidatedSpendCr: parsed.module1.totalConvertedInrSpendCr,
-      currenciesDetected: parsed.currency.currenciesDetected,
-      fileSha256: parsed.file.sha256,
-      validRows: (parsed.validRows ?? []) as Module2ValidRowInput[],
-      validNormalized: parsed.validNormalizedTransactions ?? [],
-      suspectedDuplicateRowCount: parsed.data.duplicateRowCount ?? 0
-    });
-  }
-
   private static resolveVgtBundle(cacheKey: string, customPath?: string): AssessmentModule2CacheBundle {
     logger.info('Processing authoritative VGT regression baseline for Module 2', { cacheKey, customPath });
     const vgt = VgtModule1Runner.processVgtDataset(customPath);
-    const bundle = this.bundleFromParsed(vgt);
+    const bundle = Module2BundleBuilder.bundleFromParsed(vgt);
     this.assessmentCache.set(cacheKey, bundle);
     return bundle;
   }
 
-  private static resolveCustomerBundle(assessmentId: string, cacheKey: string): AssessmentModule2CacheBundle {
-    const store = AssessmentStore.getInstance();
-    const assessment = store.getAssessmentById(assessmentId);
-    if (!assessment) {
-      throw new Error(`Assessment '${assessmentId}' was not found in persistence store.`);
+  private static findAssessmentInDevStore(assessmentId: string): {
+    assessment?: AssessmentRecord;
+    runs: AssessmentAnalysisRun[];
+    dataVersions: AssessmentDataVersion[];
+  } {
+    const devJsonPath = path.resolve(getDevelopmentDataDir(), 'assessments.json');
+    if (!fs.existsSync(devJsonPath)) {
+      return { runs: [], dataVersions: [] };
     }
+    try {
+      const devStore: PersistedStoreData = JSON.parse(fs.readFileSync(devJsonPath, 'utf8'));
+      return {
+        assessment: devStore.assessments?.find((a) => a.assessmentId === assessmentId),
+        runs: (devStore.analysisRuns?.[assessmentId] || []) as AssessmentAnalysisRun[],
+        dataVersions: (devStore.dataVersions?.[assessmentId] || []) as AssessmentDataVersion[]
+      };
+    } catch {
+      return { runs: [], dataVersions: [] };
+    }
+  }
 
-    const runs = store.getAnalysisRuns(assessmentId);
+  private static resolveActiveRunAndVersion(
+    assessment: AssessmentRecord,
+    runs: AssessmentAnalysisRun[],
+    dataVersions: AssessmentDataVersion[]
+  ): { targetVersion: AssessmentDataVersion } {
     const activeRun =
       runs.find((r) => r.analysisRunId === assessment.activeAnalysisRunId && !r.isSuperseded) ||
       runs.find((r) => !r.isSuperseded && r.status === 'COMPLETED');
 
     if (!activeRun || activeRun.status !== 'COMPLETED' || !activeRun.canonicalModule1) {
-      throw new Error(`Assessment '${assessmentId}' does not have completed Module 1 canonical results.`);
+      throw new Error(`Assessment '${assessment.assessmentId}' does not have completed Module 1 canonical results.`);
     }
 
-    const dataVersions = store.getDataVersions(assessmentId);
     const targetVersion =
       dataVersions.find(
         (v) => v.dataVersionId === (activeRun.dataVersionId || assessment.activeDataVersionId) && !v.isSuperseded
@@ -193,10 +88,46 @@ export class Module2CanonicalService {
       dataVersions[0];
 
     if (!targetVersion) {
-      throw new Error(`Assessment '${assessmentId}' has no active data version.`);
+      throw new Error(`Assessment '${assessment.assessmentId}' has no active data version.`);
     }
 
-    const physicalPath = this.resolveFilePath(targetVersion.filePath, targetVersion.fileName);
+    return { targetVersion };
+  }
+
+  private static resolveCustomerBundle(assessmentId: string, cacheKey: string): AssessmentModule2CacheBundle {
+    const store = AssessmentStore.getInstance();
+    let assessment: AssessmentRecord | undefined;
+    let runs: AssessmentAnalysisRun[] = [];
+    let dataVersions: AssessmentDataVersion[] = [];
+
+    if (store?.getCustomDataDir?.()) {
+      assessment = store.getAssessmentById(assessmentId);
+      runs = store.getAnalysisRuns(assessmentId);
+      dataVersions = store.getDataVersions(assessmentId);
+    }
+
+    if (!assessment) {
+      const devData = this.findAssessmentInDevStore(assessmentId);
+      if (devData.assessment) {
+        assessment = devData.assessment;
+        runs = devData.runs;
+        dataVersions = devData.dataVersions;
+      }
+    }
+
+    if (!assessment) {
+      assessment = store.getAssessmentById(assessmentId);
+      runs = store.getAnalysisRuns(assessmentId);
+      dataVersions = store.getDataVersions(assessmentId);
+    }
+
+    if (!assessment) {
+      throw new Error(`Assessment '${assessmentId}' was not found in persistence store.`);
+    }
+
+    const { targetVersion } = this.resolveActiveRunAndVersion(assessment, runs, dataVersions);
+
+    const physicalPath = Module2BundleBuilder.resolveFilePath(targetVersion.filePath, targetVersion.fileName);
     logger.info('Processing customer assessment dataset for Module 2', {
       assessmentId,
       customerName: assessment.customerName,
@@ -210,7 +141,7 @@ export class Module2CanonicalService {
       isTestData: assessment.isTestData
     });
 
-    const bundle = this.bundleFromParsed(parsed);
+    const bundle = Module2BundleBuilder.bundleFromParsed(parsed);
     this.assessmentCache.set(cacheKey, bundle);
     return bundle;
   }
@@ -285,9 +216,15 @@ export class Module2CanonicalService {
   public static getForensicSummary(assessmentId?: string): Module2ForensicSummary {
     const b = this.resolveAssessmentBundle(assessmentId);
     return {
-      canonicalInput: b.canonicalInput, bridge: b.bridge, ledger: b.ledger,
-      dashboardSummary: b.sourcingResult.summary, profiles: b.sourcingResult.profiles,
-      top50Vendors: b.top50, supplierRisk: b.risk, poConsolidation: b.po, recurringSpend: b.recurring
+      canonicalInput: b.canonicalInput,
+      bridge: b.bridge,
+      ledger: b.ledger,
+      dashboardSummary: b.sourcingResult.summary,
+      profiles: b.sourcingResult.profiles,
+      top50Vendors: b.top50,
+      supplierRisk: b.risk,
+      poConsolidation: b.po,
+      recurringSpend: b.recurring
     };
   }
 

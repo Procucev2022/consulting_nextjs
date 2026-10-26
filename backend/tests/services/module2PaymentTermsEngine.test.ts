@@ -191,7 +191,7 @@ describe('Module2PaymentTermsController', () => {
     };
     const setHeaderMock = vi.fn();
     const sendMock = vi.fn();
-    const statusMock = vi.fn().mockReturnValue({ send: sendMock });
+    const statusMock = vi.fn().mockReturnValue({ send: sendMock, json: vi.fn() });
     const res: Partial<Response> = {
       setHeader: setHeaderMock,
       status: statusMock

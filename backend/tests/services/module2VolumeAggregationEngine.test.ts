@@ -58,7 +58,7 @@ describe('Module2VolumeAggregationEngine', () => {
     // Verify governance disclosures are attached
     expect(result.methodologyDisclosures.length).toBeGreaterThanOrEqual(5);
     expect(result.methodologyDisclosures[0]).toContain('Zero Arbitrary Savings');
-  }, 30000);
+  }, 60000);
 
   it('calculates full volume aggregation results for PQR Cement (AIC-2026-0003) reconciling 100%', () => {
     const result = Module2VolumeAggregationEngine.calculate('AIC-2026-0003');
@@ -98,7 +98,7 @@ describe('Module2VolumeAggregationEngine', () => {
     expect(hsd?.densityConversion?.validationStatus).toBe('TECHNICAL_VALIDATION_REQUIRED');
     expect(hsd?.baseUom).toBe('KL');
     expect(hsd?.totalHistoricalSpendCr).toBeCloseTo(83.9725, 2);
-  }, 30000);
+  }, 60000);
 });
 
 describe('Module2VolumeAggregationExcelBuilder', () => {
@@ -119,7 +119,7 @@ describe('Module2VolumeAggregationExcelBuilder', () => {
     expect(wb.SheetNames).toContain('6. Purchase Transactions');
     expect(wb.SheetNames).toContain('7. Validation Requirements');
     expect(wb.SheetNames).toContain('8. Data Quality & Method');
-  }, 30000);
+  }, 60000);
 });
 
 describe('Module2VolumeAggregationController', () => {

@@ -66,12 +66,6 @@ export function getAuthoritativeDataDir(): string {
   if (process.env.AICEV_DATA_DIR) {
     return process.env.AICEV_DATA_DIR;
   }
-  if (isTestMode()) {
-    const testDir = path.resolve(__dirname, '../../../data/test');
-    if (fs.existsSync(testDir)) {
-      return testDir;
-    }
-  }
   if (process.env.APPDATA) {
     return path.join(process.env.APPDATA, 'aiCEV', 'data');
   }

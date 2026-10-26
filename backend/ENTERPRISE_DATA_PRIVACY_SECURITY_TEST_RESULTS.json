@@ -1,7 +1,7 @@
 {
   "manifest": {
     "manifestVersion": "ENTERPRISE_DATA_PRIVACY_V1.0",
-    "timestamp": "2026-10-23T13:51:16.116Z",
+    "timestamp": "2026-10-26T07:43:18.224Z",
     "dataPrivacyValidation": "PASS",
     "tenantIsolation": "PASS",
     "authorizationControls": "PASS",

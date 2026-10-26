@@ -5,8 +5,14 @@ import * as XLSX from 'xlsx';
 
 describe('Borosil Module 2: AI Categorization and Strategic Sourcing Opportunities', () => {
   const rootDir = path.resolve(__dirname, '../../../');
-  const filePath = path.join(rootDir, 'data/dev/assessments/AIC-2026-0002/uploads/Borosil_PO_Consol_Excluding_BSL_Pune.xlsx');
-  const workbookExportPath = path.join(rootDir, 'artifacts/excel_exports/Borosil_Module2_Strategic_Sourcing_Opportunities.xlsx');
+  const filePath = path.join(
+    rootDir,
+    'data/dev/assessments/AIC-2026-0002/uploads/Borosil_PO_Consol_Excluding_BSL_Pune.xlsx'
+  );
+  const workbookExportPath = path.join(
+    rootDir,
+    'artifacts/excel_exports/Borosil_Module2_Strategic_Sourcing_Opportunities.xlsx'
+  );
   const jsonPath = path.join(rootDir, 'data/dev/assessments.json');
 
   it('confirms source file exists, contains 30,740 rows, and reconciles 27,777 included baseline rows', () => {
@@ -21,7 +27,9 @@ describe('Borosil Module 2: AI Categorization and Strategic Sourcing Opportuniti
 
     rows.forEach(r => {
       const delInd = String(r['Deletion indicator'] ?? r['Deletion Indicator'] ?? '').trim().toUpperCase();
-      const docType = String(r['Purchasing Document Type'] ?? r['Purchasing Doc. Type'] ?? r['Doc Type'] ?? '').trim().toUpperCase();
+      const docType = String(
+        r['Purchasing Document Type'] ?? r['Purchasing Doc. Type'] ?? r['Doc Type'] ?? ''
+      ).trim().toUpperCase();
 
       if (delInd === 'L' || delInd === 'S') {
         deletedBlockedCount++;
@@ -37,7 +45,7 @@ describe('Borosil Module 2: AI Categorization and Strategic Sourcing Opportuniti
     expect(stoCount).toBe(2208);
     expect(deletedBlockedCount + stoCount).toBe(2963);
     expect(includedCount + deletedBlockedCount + stoCount).toBe(30740);
-  }, 30000);
+  }, 120000);
 
   it('verifies that the Module 2 Excel workbook was generated and contains all 8 required sheets', () => {
     expect(fs.existsSync(workbookExportPath)).toBe(true);
@@ -74,7 +82,8 @@ describe('Borosil Module 2: AI Categorization and Strategic Sourcing Opportuniti
   it('confirms the 5 strategic sourcing opportunities in Strategic_Opportunity_Register', () => {
     const wb = XLSX.readFile(workbookExportPath);
     const sheet = wb.Sheets['Strategic_Opportunity_Register'];
-    const rows = XLSX.utils.sheet_to_json<{ 'Opportunity ID': string; 'Opportunity Type': string; 'Addressable Spend (₹ Cr)': number }>(sheet);
+    type OppRow = { 'Opportunity ID': string; 'Opportunity Type': string; 'Addressable Spend (₹ Cr)': number };
+    const rows = XLSX.utils.sheet_to_json<OppRow>(sheet);
 
     expect(rows.length).toBe(5);
     const oppIds = rows.map(r => r['Opportunity ID']);

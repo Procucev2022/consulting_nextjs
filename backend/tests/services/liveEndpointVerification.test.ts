@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import path from 'path';
+import { describe, it, expect, vi, afterAll } from 'vitest';
 import { getTransactionAttributionLedger } from '../../src/controllers/module2Canonical.controller';
 import { AssessmentStore } from '../../src/services/assessmentStore';
-import { getDevelopmentDataDir } from '../../src/services/assessmentPersistence';
 
 const mockResponse = () => {
   const res: any = {};
@@ -12,9 +12,9 @@ const mockResponse = () => {
 
 describe('Live Attribution-Ledger Endpoint Audit (AIC-2026-0002 & AIC-2026-0003)', () => {
   it('calls getTransactionAttributionLedger controller on ABC Textile and PQR Cement', async () => {
-    const devDir = getDevelopmentDataDir();
+    const testDir = path.resolve(__dirname, '../../../data/test');
     const store = AssessmentStore.getInstance();
-    store.setCustomDataDir(devDir);
+    store.setCustomDataDir(testDir);
     store.reloadFromDisk();
 
     // 1. ABC Textile
@@ -81,4 +81,10 @@ describe('Live Attribution-Ledger Endpoint Audit (AIC-2026-0002 & AIC-2026-0003)
     expect(lrPqr.DIRECT_PRICE_IMPROVEMENT.netAttributedOpportunityInr).toBeCloseTo(4770672.39, 2);
     expect(lrPqr.DIRECT_PRICE_IMPROVEMENT.quantifiedTransactionCount).toBe(539);
   }, 120000);
+
+  afterAll(() => {
+    const store = AssessmentStore.getInstance();
+    store.setCustomDataDir(undefined);
+    store.reloadFromDisk();
+  });
 });

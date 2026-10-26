@@ -135,8 +135,12 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
               onChange={(e) => handleSelectCustomer(e.target.value)}
               className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="AIC-2026-0002">ABC Textile Ltd (AIC-2026-0002)</option>
-              <option value="AIC-2026-0003">PQR Cement Ltd (AIC-2026-0003)</option>
+              <option value={effectiveAssessmentId}>
+                {result?.customerName ? `${result.customerName} (${effectiveAssessmentId})` : (effectiveAssessmentId === 'AIC-2026-0002' ? 'Borosil Ltd (AIC-2026-0002)' : effectiveAssessmentId)}
+              </option>
+              {effectiveAssessmentId !== 'AIC-2026-0003' && (
+                <option value="AIC-2026-0003">PQR Cement Ltd (AIC-2026-0003)</option>
+              )}
             </select>
           </div>
 

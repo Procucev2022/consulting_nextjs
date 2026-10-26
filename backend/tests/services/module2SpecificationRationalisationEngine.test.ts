@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import type { Request, Response } from 'express';
 import * as XLSX from 'xlsx';
 import { Module2SpecificationRationalisationMatcher } from '../../src/services/module2SpecificationRationalisationMatcher';
@@ -21,7 +21,6 @@ describe('Module 2 — Lever 8: Specification Rationalisation (Phase 1)', () => 
     const store = AssessmentStore.getInstance();
     store.setCustomDataDir(devDir);
     store.reloadFromDisk();
-    Module2CanonicalService.clearCache();
     await Module2SpecificationRationalisationEngine.calculateSpecificationRationalisation('AIC-2026-0002');
   }, 180000);
 
@@ -143,10 +142,10 @@ describe('Module 2 — Lever 8: Specification Rationalisation (Phase 1)', () => 
   });
 
   describe('4. Engine Execution, Financial Governance & Reconciliation', () => {
-    it('executes specification rationalisation for ABC Textile (AIC-2026-0002)', async () => {
+    it('executes specification rationalisation for Borosil Ltd (AIC-2026-0002)', async () => {
       const res = await Module2SpecificationRationalisationEngine.calculateSpecificationRationalisation('AIC-2026-0002');
       expect(res.assessmentId).toBe('AIC-2026-0002');
-      expect(res.customerName).toBe('ABC Textile Ltd');
+      expect(res.customerName).toBe('Borosil Ltd');
       expect(res.candidates.length).toBeGreaterThan(0);
 
       // Financial Governance Assertions
@@ -486,5 +485,10 @@ describe('Module 2 — Lever 8: Specification Rationalisation (Phase 1)', () => 
       expect(statusCode).toBe(500);
       expect((jsonPayload as { message: string }).message).toContain('Internal server error');
     });
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
+    AssessmentStore.resetInstance();
   });
 });

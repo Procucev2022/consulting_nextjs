@@ -113,13 +113,17 @@ export const updateMaterialMapping = async (req: Request, res: Response): Promis
       });
     }
 
-    const updated = Module2MaterialMappingRegister.updateMapping({
-      sourceMaterialId,
-      unspscCode,
-      reviewStatus,
-      reviewedBy: reviewedBy || 'Engineering Reviewer',
-      auditNotes
-    });
+    const assessmentId = ((req.query?.assessmentId as string) || (req.body?.assessmentId as string))?.trim();
+    const updated = Module2MaterialMappingRegister.updateMapping(
+      {
+        sourceMaterialId,
+        unspscCode,
+        reviewStatus,
+        reviewedBy: reviewedBy || 'Engineering Reviewer',
+        auditNotes
+      },
+      assessmentId || undefined
+    );
 
     return res.json({
       success: true,

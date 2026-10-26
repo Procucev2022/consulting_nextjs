@@ -5,7 +5,7 @@ import * as http from 'http';
 import request from 'supertest';
 import app from '../../src/app';
 import { operatingModeService } from '../../src/services/operatingModeService';
-import { assessmentStore } from '../../src/services/assessmentStore';
+import { assessmentStore, AssessmentStore } from '../../src/services/assessmentStore';
 import { APP_OPERATING_MODES, SYSTEM_BUILD_IDENTITY, VGT_INVARIANT_FIGURES } from '../../src/constants/assessment';
 import { VGT_FX_MASTER_SHA256 } from '../../src/constants/vgtConstants';
 
@@ -136,18 +136,24 @@ describe('P0 COMMAND — aiCEV Desktop Application Certification (D-001 to D-024
   });
 
   it('D-013: verifies assessment persistence and data isolation across sessions', () => {
-    const sampleAssessment = assessmentStore.createAssessment({
-      customerName: 'Persistence Verification Client',
-      industry: 'Manufacturing',
-      assessmentPeriodStart: '2024-04-01',
-      assessmentPeriodEnd: '2025-03-31',
-      assignedAnalyst: 'analyst@procucev.com',
-      ndaStatus: 'SIGNED'
-    });
+    const iso = assessmentStore.useIsolatedTestDir();
+    try {
+      const sampleAssessment = assessmentStore.createAssessment({
+        customerName: 'Persistence Verification Client',
+        industry: 'Manufacturing',
+        assessmentPeriodStart: '2024-04-01',
+        assessmentPeriodEnd: '2025-03-31',
+        assignedAnalyst: 'analyst@procucev.com',
+        ndaStatus: 'SIGNED'
+      });
 
-    const retrieved = assessmentStore.getAssessmentById(sampleAssessment.assessmentId);
-    expect(retrieved).toBeDefined();
-    expect(retrieved?.customerName).toBe('Persistence Verification Client');
+      const retrieved = assessmentStore.getAssessmentById(sampleAssessment.assessmentId);
+      expect(retrieved).toBeDefined();
+      expect(retrieved?.customerName).toBe('Persistence Verification Client');
+    } finally {
+      iso.cleanup();
+      AssessmentStore.resetInstance();
+    }
   });
 
   it('D-014: verifies application version is exposed via diagnostic endpoint', () => {

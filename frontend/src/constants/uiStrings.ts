@@ -727,10 +727,16 @@ export const UI_STRINGS = {
       fy24: 'FY24',
       fy25: 'FY25',
       fy26: 'FY26',
+      fy27: 'FY27',
+      priorPeriodUnavailableBadge: (coverage?: string) =>
+        coverage
+          ? `Prior Period Unavailable (Upload covers ${coverage})`
+          : 'Prior Period Unavailable (Single period upload)',
       popupReady: 'Pop-up Ready',
       viewTopItems: 'View Top Line Items & POs',
       viewVendorItems: 'View Supplier Items & POs',
       evaluatedSpendLabel: 'TOTAL EVALUATED SPEND',
+      yearSpendLabel: (year: string) => `${year} Spend`,
       unspscColL: 'UNSPSC Col L:',
       masterId: 'Master ID:',
       keyVendorsLabel: 'Key Vendors in Segment:',
@@ -749,7 +755,6 @@ export const UI_STRINGS = {
       hideBalanceCategories: (count: number) => `Hide ${count} Balance Categories`,
       viewBalanceCategories: (count: number) => `View ${count} Balance Categories`,
       hideBalanceSuppliers: (count: number) => `Hide ${count} Balance Suppliers`,
-      viewBalanceSuppliers: (count: number) => `View ${count} Balance Suppliers`,
       balanceTableHeaders: {
         category: 'Tail Segment / Category Name',
         vendor: 'Tail Vendor / Supplier Name',
@@ -757,7 +762,15 @@ export const UI_STRINGS = {
         unspscColL: 'UNSPSC Col L',
         spend: 'Evaluated Spend (₹ Cr)',
         share: 'Spend Share %'
-      }
+      },
+      awaitingDataset: 'Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.',
+      awaitingVendorDataset: 'Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate vendor spend breakdown.',
+      rankLabel: (rank: number) => `Rank #${rank}`,
+      tailSegmentsRank: 'Rank #11 (Tail Segments)',
+      tailSuppliersRank: 'Tail Suppliers (Rank #11 - #52)',
+      shareLabel: (share: string) => `${share}% Share`,
+      coverageLabel: (cov: string) => `Coverage: ${cov}`,
+      defaultCoveragePeriod: '1 Apr 2026 - 22 Oct 2026'
     },
     matrixTitle: 'Year-Wise Category Spend Matrix & Column L Benchmarks (INR in Crores)',
     matrixDesc: 'Annual spend progression in INR Crores (Fiscal Year: 1st April to 31st March), line item counts, and target reduction % mapped to Column L taxonomy.',
@@ -2886,6 +2899,14 @@ export const UI_STRINGS = {
     cardLowEvidenced: 'LOW EVIDENCED OPPORTUNITIES',
     cardDataConfidence: 'OVERALL DATA CONFIDENCE',
 
+    // Financial Reconciliation & Baseline Governance Banner
+    reconciliationBannerTitle: 'Baseline Governance & Reconciled Financial Metrics',
+    netBaselineLabel: 'Net Procurement Baseline',
+    grossUploadedLabel: 'Gross Uploaded Spend',
+    excludedLinesLabel: 'Excluded Cancelled/Blocked Lines',
+    suppliersStandardizedLabel: 'Normalized Entities',
+    rawStringsLabel: 'raw strings',
+
     // Table Headers
     colCategory: 'Category / Spend Cluster',
     colSpend: 'Total Spend',
@@ -3057,8 +3078,10 @@ export const UI_STRINGS = {
     
     // Filter Labels
     filterCustomer: 'Customer Dataset',
-    customerAbcTextile: 'ABC Textile Ltd (AIC-2026-0002)',
+    customerBorosil: 'Borosil Ltd (AIC-2026-0002)',
+    customerAbcTextile: 'Borosil Ltd (AIC-2026-0002)',
     customerPqrCement: 'PQR Cement Ltd (AIC-2026-0003)',
+    customerDatasetOption: (name: string, id: string) => `${name} (${id})`,
     filterFy: 'Financial Year',
     filterStatus: 'Qualification Status',
     filterSearch: 'Search Material Code or Description...',

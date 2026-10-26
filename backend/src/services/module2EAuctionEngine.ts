@@ -25,6 +25,7 @@ import {
 } from './module2EAuctionHelpers';
 import { Module2EAuctionAssumptionStore } from './module2EAuctionAssumptionStore';
 import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
+import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
 
 interface ItemTxGroup {
   financialYear: string;
@@ -174,7 +175,8 @@ function buildSummarySavingsRange(
     confidence: 'MEDIUM',
     isPlanningAssumptionOnly: true,
     notes:
-      'Total indicative dynamic bidding savings range across candidate categories based on proposed planning assumptions. Provisional and editable by authorised user.'
+      'Total indicative dynamic bidding savings range across candidate categories based on proposed planning ' +
+      'assumptions. Provisional and editable by authorised user.'
   };
 
   return { totalAddressableInr, totalAddressableCr, range };
@@ -252,7 +254,7 @@ export class Module2EAuctionEngine {
 
     return {
       assessmentId,
-      customerName: assessmentId === 'AIC-2026-0002' ? 'ABC Textile Ltd' : 'PQR Cement Ltd',
+      customerName: resolveAssessmentCustomerName(assessmentId),
       totalSpendReviewedInr,
       totalSpendReviewedCr: Number((totalSpendReviewedInr / 10000000).toFixed(4)),
       totalAddressableSpendInr: totalAddressableInr,

@@ -183,6 +183,7 @@ export interface Module2ValidRowInput {
   plant: string;
   materialGroup: string;
   billingMonth?: string;
+  transactionClassification?: string;
 }
 
 export interface AssessmentModule2CacheBundle {
@@ -216,6 +217,35 @@ export interface RawBundleInput {
   validRows: Module2ValidRowInput[];
   validNormalized: Array<{ inrNormalizedValue?: number | null } | undefined>;
   suspectedDuplicateRowCount?: number;
+}
+
+export interface StrategicLineItemDto {
+  mapping_id: string;
+  line_item_id: string;
+  raw_desc: string;
+  spend_year: number;
+  po_number: string;
+  material_code: string;
+  material_desc: string;
+  vendor_identified: string;
+  master_supplier_id: string;
+  unspsc_code: string;
+  unspsc_commodity_title: string;
+  unspsc_class_title: string;
+  unspsc_category_name: string;
+  core_bucket: string;
+  inr_crores: number;
+  total_spend: number;
+  qty: number;
+  unit_price: number;
+  ai_confidence: number;
+}
+
+export interface UnspscClassificationInfo {
+  unspscCode: string;
+  unspscTitle: string;
+  unspscClass: string;
+  confidence: number;
 }
 
 

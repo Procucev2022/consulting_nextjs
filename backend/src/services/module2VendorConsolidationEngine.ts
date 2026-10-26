@@ -5,6 +5,7 @@
 
 import logger from '../utils/logger';
 import { Module2CanonicalService } from './module2CanonicalService';
+import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
 import {
   Module2MaterialMappingRegister,
   getStrategicTransactionMaterialId
@@ -86,7 +87,7 @@ export class Module2VendorConsolidationEngine {
       [];
 
     const { register, coverage, exceptions, materialCodeToMapping } =
-      Module2MaterialMappingRegister.classifyMaterials(transactions);
+      Module2MaterialMappingRegister.classifyMaterials(transactions, assessmentId);
 
     const unspscGroupMap = this.groupTransactionsByUnspsc(transactions, materialCodeToMapping);
     const categories: CategoryConsolidationProfile[] = [];
@@ -124,7 +125,7 @@ export class Module2VendorConsolidationEngine {
 
     return {
       assessmentId,
-      customerName: canonical?.datasetId ? undefined : assessmentId,
+      customerName: resolveAssessmentCustomerName(assessmentId),
       reportDate: new Date().toISOString(),
       leverId: VENDOR_CONSOLIDATION_CONFIG.LEVER_ID,
       leverCode: VENDOR_CONSOLIDATION_CONFIG.LEVER_CODE,
