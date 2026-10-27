@@ -115449,3 +115449,136 @@ Return:
 8. Git checkpoint, commit SHA and modified-file list.
 
 Stop after Phase 3 data validation. Do not execute Module 4 or certify savings.
+
+## Prompt 552
+# BOROSIL PCBI — PHASE 3A
+
+## Forensic Verification of Market Data and Coverage
+
+Assessment ID: AIC-2026-0002
+
+### OBJECTIVE
+
+Independently verify the authenticity and traceability of every market observation reported in Phase 3 before any observation is approved for PCBI use.
+
+This is a verification-only phase. Do not calculate PCBI, recalculate savings, execute Module 4, or modify Modules 1 and 2.
+
+### 1. PROTECT EXISTING WORK
+
+* Confirm the Phase 3 commit `3b46cda31bc218784655b48f6e904975f66f4523` exists.
+* Inspect the current branch and working tree.
+* Preserve all existing changes and create a recoverable checkpoint.
+* Do not reset, overwrite or discard Phase 3 work.
+* Preserve the authoritative baseline of ₹556.5346426 Cr across 27,777 transactions.
+* Keep certified and realized savings at ₹0.
+
+### 2. VERIFY THE 14 REPORTED FUEL OBSERVATIONS
+
+Inspect all seven LSHS and seven HSD observations.
+
+For each observation, establish:
+
+1. Whether the cited original IOCL circular or official source document exists.
+2. Whether the original document can be opened or retrieved.
+3. Whether its published price matches the recorded observation.
+4. Whether the observation date and effective period match.
+5. Whether the location, product specification, unit and price basis are correct.
+6. Whether the source is authorized for the intended use.
+7. Whether the recorded SHA-256 hash matches the actual source artifact.
+
+A circular identifier, source name, stored price or hash string alone is not sufficient evidence.
+
+Do not invent URLs, document references, source confirmations or hashes.
+
+Where the original source cannot be independently verified, classify the observation as `UNVERIFIED_SOURCE` and quarantine it from PCBI calculations.
+
+Distinguish clearly between:
+
+* Verified against an original source document.
+* Verified against an official public webpage.
+* Supplied by the user but not independently verified.
+* Source identified but document not acquired.
+* Unverified or unsupported.
+
+Do not claim external retrieval occurred unless the source artifact or retrieval evidence exists.
+
+### 3. CHECK OBSERVATION STORAGE
+
+Inspect the implementation to determine whether the reported observations are:
+
+* Actual records retrieved from source documents.
+* Records imported from source files.
+* Manually entered candidate observations.
+* Hardcoded example or fixture values.
+* Generated placeholders without supporting evidence.
+
+Report the actual implementation status for every observation.
+
+Do not assume that passing unit tests proves data authenticity.
+
+Preserve existing records, but quarantine unsupported observations rather than silently deleting or replacing them.
+
+### 4. RECONCILE COVERAGE AGAINST PHASE 2
+
+Reconcile material-level spend across Phase 2 and Phase 3.
+
+Specifically investigate the differing candidate spend figures for:
+
+* Soda Ash.
+* Silica Sand and Quartz.
+* Kraft Paper and Corrugated Packaging.
+
+For every difference, report the exact material codes, transaction counts, spend, inclusion rules and reason for the change.
+
+Confirm that each transaction is counted once in the coverage denominator and that all seven reported partitions reconcile to ₹556.5346426 Cr and 27,777 transactions.
+
+Do not force agreement by adjusting amounts without transaction-level evidence.
+
+### 5. CHECK THE SOURCE-QUALITY RULES
+
+Verify that the implementation distinguishes:
+
+* Observed market data from estimates.
+* Original values from converted values.
+* Verified observations from unverified candidates.
+* Missing observations from zero prices.
+* Market variance from savings.
+* Pending mappings from approved mappings.
+
+Check that freshness rules are consistent and documented.
+
+Do not relax validation thresholds merely to increase benchmark coverage.
+
+### 6. TESTING
+
+Add or update tests for:
+
+* Missing or inaccessible source documents.
+* Price mismatch between source and stored observation.
+* Invalid or unverified hashes.
+* Incorrect observation dates.
+* Unapproved mappings.
+* Unsupported observations blocked from calculation.
+* Cross-phase coverage reconciliation.
+* Preservation of the authoritative baseline.
+* Zero certified and realized savings.
+* Module 4 isolation.
+
+Run relevant tests, typecheck and lint.
+
+### 7. DELIVERABLES
+
+Return:
+
+1. Observation-by-observation verification results.
+2. Source URLs or original document references wherever genuinely available.
+3. Actual source artifacts and hash-verification results, where available.
+4. A list of verified, unverified and quarantined observations.
+5. Findings on whether any records are hardcoded fixtures or unsupported candidate values.
+6. Phase 2 versus Phase 3 material-level coverage reconciliation.
+7. Tests and results.
+8. Baseline reconciliation.
+9. Git checkpoint, commit SHA and modified-file list.
+
+Stop after forensic verification. Do not build or publish the PCBI index, recalculate savings, execute Module 4 or certify savings.
+

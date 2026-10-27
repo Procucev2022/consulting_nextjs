@@ -1,5 +1,5 @@
 /**
- * Module 3 PCBI Phase 3 — Low Sulphur Heavy Stock (LSHS) Benchmark Observations
+ * Module 3 PCBI Phase 3 / 3A — Low Sulphur Heavy Stock (LSHS) Benchmark Observations
  * Assessment ID: AIC-2026-0002 (Borosil Ltd)
  * Conforms to Rule 8 (constants isolation), Rule 9 (strongly typed), and file length <= 300 lines.
  */
@@ -25,10 +25,16 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'c7d9a1f2e8b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8'
+    traceabilityHash: 'c7d9a1f2e8b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   },
   {
     id: 'OBS-BOR-LSHS-2026-05-01',
@@ -48,10 +54,16 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'd8e0b2a3f9c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9'
+    traceabilityHash: 'd8e0b2a3f9c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   },
   {
     id: 'OBS-BOR-LSHS-2026-06-01',
@@ -71,10 +83,16 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'e9f1c3b4a0d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0'
+    traceabilityHash: 'e9f1c3b4a0d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   },
   {
     id: 'OBS-BOR-LSHS-2026-07-01',
@@ -94,10 +112,16 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'fa02d4e5b1c7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1'
+    traceabilityHash: 'fa02d4e5b1c7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   },
   {
     id: 'OBS-BOR-LSHS-2026-08-01',
@@ -117,10 +141,16 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'ab13e5f6c2d8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2'
+    traceabilityHash: 'ab13e5f6c2d8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   },
   {
     id: 'OBS-BOR-LSHS-2026-09-01',
@@ -140,10 +170,16 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'bc24f6a7d3e9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3'
+    traceabilityHash: 'bc24f6a7d3e9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   },
   {
     id: 'OBS-BOR-LSHS-2026-10-01',
@@ -163,9 +199,15 @@ export const BOROSIL_LSHS_BENCHMARK_OBSERVATIONS: ObservationProvenanceRecord[] 
     convertedUnit: 'INR/MT',
     convertedCurrency: 'INR',
     conversionFormula: 'Direct nominal ex-refinery price (factor 1.0)',
-    validationStatus: 'VALIDATED',
+    validationStatus: 'UNVERIFIED_SOURCE',
+    quarantineReason:
+      'Forensic verification gate: Original IOCL circular PDF artifact not present on disk; SHA-256 hash unverified against physical file; hardcoded candidate fixture.',
     licenseAccessRestrictions: 'PUBLIC_OFFICIAL_CIRCULAR',
     isFresh: true,
-    traceabilityHash: 'cd35a7b8e4f0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4'
+    traceabilityHash: 'cd35a7b8e4f0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4',
+    verificationClassification: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
+    storageImplementationType: 'HARDCODED_FIXTURE',
+    sourceArtifactAvailable: false,
+    hashVerified: false
   }
 ];

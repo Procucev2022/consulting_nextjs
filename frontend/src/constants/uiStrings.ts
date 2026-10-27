@@ -4003,8 +4003,75 @@ export const UI_STRINGS = {
       zeroExtrapolationNote:
         'Missing or unavailable historical periods are distinguished from genuine zero spend and are not extrapolated.'
     }
+  },
+
+  module2ExecutiveDashboard: {
+    stageBadge: 'STAGE 2 DECISION ENGINE',
+    assessmentPrefix: (id: string): string => `ASSESSMENT: ${id}`,
+    title: (customerName: string): string => `${customerName} — Strategic Sourcing Intelligence`,
+    description:
+      'An evidence-based view of procurement spend, price variations, supplier concentration and volume aggregation ' +
+      'opportunities—helping procurement teams prioritize actions and make better sourcing decisions.',
+    viewRegisterButton: 'View Material Register',
+    loadingText: 'Loading Executive Sourcing Intelligence...',
+    baselineTitle: 'Authoritative Baseline',
+    baselineDesc: 'Verified procurement baseline across 27,777 included transactions.',
+    baselineBadge: 'Module 1 Net Certified',
+    directPriceTitle: 'Direct Price Eligible Spend',
+    directPriceDesc: 'Spend eligible for direct price-comparison analysis.',
+    grossModelledPriceOppLabel: (valCr: string | number): string =>
+      `Gross Modelled Price Opportunity: ₹${typeof valCr === 'number' ? valCr.toFixed(2) : valCr} Cr`,
+    grossModelledPriceOppDisclaimer: 'Preliminary modelled potential, not confirmed savings',
+    supplierConsolidationTitle: 'Multi-Supplier Spend Under Review',
+    supplierConsolidationDesc:
+      'Spend associated with materials purchased from multiple suppliers, not savings.',
+    supplierConsolidationBadge: (count: number | string): string =>
+      `${count} Multi-Sourced Materials Under Review`,
+    volumeAggregationTitle: 'High-Volume Spend Under Review',
+    volumeAggregationDesc:
+      'Purchasing groups for possible volume or demand aggregation analysis, not guaranteed savings.',
+    volumeAggregationBadge: (count: number | string): string =>
+      `${count} High-Volume Groups Under Review`,
+    reviewRequiredTitle: 'Review Required',
+    reviewRequiredDesc:
+      'Spend excluded from direct price-comparison analysis and requiring further review.',
+    reviewRequiredTxs: '7,129 Excluded Transactions',
+    reviewRequiredIndicator:
+      'Separate indicator: ₹101.5189 Cr across 5,023 transactions without material codes',
+    warningHeading: 'IMPORTANT: OPPORTUNITIES ARE NOT CONFIRMED SAVINGS',
+    warningMessage:
+      'Identified opportunities may overlap across sourcing levers and must not be added together. All opportunities ' +
+      'require commercial and operational validation. Certified and realized savings remain ₹0 until the relevant ' +
+      'actions are implemented and verified.',
+    matrixTitle: 'Sourcing Levers Decision Matrix',
+    totalTraceableCandidates: (count: number | string): string =>
+      `Total Traceable Candidates: ${typeof count === 'number' ? count.toLocaleString() : count}`,
+    thClassification: 'Lever Classification',
+    thCandidateItems: 'Candidate Items',
+    thHistoricalSpend: 'Historical Spend (₹ Cr)',
+    thDefensibleValuation: 'Defensible Valuation (₹ Cr)',
+    thCommercialStatus: 'Commercial Status',
+    thGoverningTeam: 'Governing Validation Team',
+    dataLimitationsTitle: 'Data Limitations & Analytical Boundaries',
+    validationRequirementsTitle: 'Validation Requirements Before Execution',
+    lever1Label: 'Lever 1: Direct Price Improvement',
+    lever1Status: 'Analytical Rate Dispersion',
+    lever1Team: 'Procurement — Direct Sourcing Team',
+    lever3Label: 'Lever 3: Supplier Base Consolidation',
+    lever3Status: 'Multi-Vendor Fragmentation',
+    lever3Team: 'Strategic Sourcing & Vendor Management',
+    lever4Label: 'Lever 4: Volume & Demand Consolidation',
+    lever4Status: 'Inter-Plant Lot Aggregation',
+    lever4Team: 'Central SCM & Plant Operations',
+    lever8Label: 'Lever 8: Specification Rationalisation',
+    lever8Status: 'Standardization Candidate',
+    lever8Team: 'Technical Review Committee',
+    pendingTerms: 'Pending Terms',
+    pendingTiering: 'Pending Tiering',
+    technicalAudit: 'Technical Audit'
   }
 } as const;
+
 
 
 

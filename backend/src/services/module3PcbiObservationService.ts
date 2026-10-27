@@ -1,31 +1,29 @@
 /**
- * Module 3 PCBI Phase 3 — Observation Provenance & Validation Gate Service
- * Enforces strict provenance gates, rejects unverified synthetic prices, and reconciles coverage.
+ * Module 3 PCBI Phase 3 / 3A — Observation Provenance & Forensic Validation Gate Service
+ * Enforces strict provenance gates, rejects unverified synthetic prices, and quarantines unverified sources.
  */
 
 import {
   BOROSIL_RECONCILED_COVERAGE_REGISTER,
   BOROSIL_ACQUIRED_BENCHMARK_OBSERVATIONS,
-  BOROSIL_QUARANTINED_OBSERVATIONS
+  BOROSIL_QUARANTINED_OBSERVATIONS,
+  BOROSIL_CROSS_PHASE_COVERAGE_RECONCILIATION
 } from '../constants/module3PcbiObservationProvenance';
 import type {
   ObservationProvenanceRecord,
   ObservationValidationStatus,
-  ReconciledCoverageRegister
+  ReconciledCoverageRegister,
+  Phase3CrossReconciliationRegister
 } from '../types/module3PcbiObservationProvenance';
 import logger from '../utils/logger';
 
 export class Module3PcbiObservationService {
   private static observationsStore = new Map<string, ObservationProvenanceRecord>();
   private static quarantinedStore = new Map<string, ObservationProvenanceRecord>();
+  private static allCandidateStore = new Map<string, ObservationProvenanceRecord>();
 
   static {
-    for (const obs of BOROSIL_ACQUIRED_BENCHMARK_OBSERVATIONS) {
-      this.observationsStore.set(obs.id, { ...obs });
-    }
-    for (const q of BOROSIL_QUARANTINED_OBSERVATIONS) {
-      this.quarantinedStore.set(q.id, { ...q });
-    }
+    this.resetStores();
   }
 
   public static getReconciledCoverage(assessmentId: string): ReconciledCoverageRegister {
@@ -36,9 +34,28 @@ export class Module3PcbiObservationService {
     return JSON.parse(JSON.stringify(BOROSIL_RECONCILED_COVERAGE_REGISTER));
   }
 
+  public static getCrossPhaseReconciliation(assessmentId: string): Phase3CrossReconciliationRegister {
+    logger.info('Retrieving Borosil cross-phase coverage reconciliation', { assessmentId });
+    if (assessmentId !== 'AIC-2026-0002') {
+      throw new Error(`Assessment '${assessmentId}' was not found in persistence store.`);
+    }
+    return JSON.parse(JSON.stringify(BOROSIL_CROSS_PHASE_COVERAGE_RECONCILIATION));
+  }
+
   public static getAcquiredObservations(benchmarkSeriesId?: string): ObservationProvenanceRecord[] {
-    logger.info('Fetching acquired benchmark observations', { benchmarkSeriesId });
+    logger.info('Fetching validated acquired benchmark observations', { benchmarkSeriesId });
     const list = Array.from(this.observationsStore.values());
+    if (!benchmarkSeriesId) {
+      return list.map((o) => JSON.parse(JSON.stringify(o)));
+    }
+    return list
+      .filter((o) => o.benchmarkSeriesId === benchmarkSeriesId)
+      .map((o) => JSON.parse(JSON.stringify(o)));
+  }
+
+  public static getAllCandidateObservations(benchmarkSeriesId?: string): ObservationProvenanceRecord[] {
+    logger.info('Fetching all candidate benchmark observations', { benchmarkSeriesId });
+    const list = Array.from(this.allCandidateStore.values());
     if (!benchmarkSeriesId) {
       return list.map((o) => JSON.parse(JSON.stringify(o)));
     }
@@ -89,6 +106,14 @@ export class Module3PcbiObservationService {
   private static checkUnitsAndValues(
     candidate: Partial<ObservationProvenanceRecord>
   ): { isValid: boolean; status?: ObservationValidationStatus; reason?: string } {
+    if ((candidate as Record<string, unknown>)?.priceMismatch === true) {
+      return {
+        isValid: false,
+        status: 'REJECTED_UNTRACEABLE',
+        reason: 'Price mismatch: Published price in source document does not match recorded observation price.'
+      };
+    }
+
     const hasUnits = candidate.originalUnit && candidate.convertedUnit;
     const hasPositiveVal = candidate.originalValue !== undefined && candidate.originalValue > 0;
 
@@ -123,6 +148,22 @@ export class Module3PcbiObservationService {
         isValid: false,
         status: 'QUARANTINED_UNAUTHORIZED_SOURCE',
         reason: 'Source does not authorize commercial extraction or licensing terms are unverified.'
+      };
+    }
+
+    if (candidate.sourceArtifactAvailable === false) {
+      return {
+        isValid: false,
+        status: 'UNVERIFIED_SOURCE',
+        reason: 'Forensic verification gate: Original source document or circular PDF is missing on disk.'
+      };
+    }
+
+    if (candidate.hashVerified === false) {
+      return {
+        isValid: false,
+        status: 'UNVERIFIED_SOURCE',
+        reason: 'Forensic verification gate: SHA-256 hash does not match verified source artifact.'
       };
     }
 
@@ -174,7 +215,6 @@ export class Module3PcbiObservationService {
       };
     }
 
-    // Duplicate check: reject multiple observations for same series and date
     const existing = Array.from(this.observationsStore.values()).find(
       (o) => o.benchmarkSeriesId === candidate.benchmarkSeriesId && o.observationDate === candidate.observationDate
     );
@@ -197,6 +237,7 @@ export class Module3PcbiObservationService {
     };
 
     this.observationsStore.set(verifiedRecord.id, verifiedRecord);
+    this.allCandidateStore.set(verifiedRecord.id, verifiedRecord);
     logger.info('Successfully ingested validated benchmark observation', {
       id: verifiedRecord.id,
       benchmarkSeriesId: verifiedRecord.benchmarkSeriesId,
@@ -212,10 +253,19 @@ export class Module3PcbiObservationService {
   public static resetStores(): void {
     this.observationsStore.clear();
     this.quarantinedStore.clear();
+    this.allCandidateStore.clear();
+
     for (const obs of BOROSIL_ACQUIRED_BENCHMARK_OBSERVATIONS) {
-      this.observationsStore.set(obs.id, { ...obs });
+      this.allCandidateStore.set(obs.id, { ...obs });
+      if (obs.validationStatus === 'VALIDATED') {
+        this.observationsStore.set(obs.id, { ...obs });
+      } else {
+        this.quarantinedStore.set(obs.id, { ...obs });
+      }
     }
+
     for (const q of BOROSIL_QUARANTINED_OBSERVATIONS) {
+      this.allCandidateStore.set(q.id, { ...q });
       this.quarantinedStore.set(q.id, { ...q });
     }
   }

@@ -1,5 +1,5 @@
 /**
- * Module 3 PCBI Phase 3 — Observation Provenance & Reconciled Coverage Constants
+ * Module 3 PCBI Phase 3 / 3A — Observation Provenance & Reconciled Coverage Constants
  * Conforms to Rule 8 (isolated constants), Rule 9 (strongly typed), and file length <= 300 lines.
  */
 
@@ -9,6 +9,10 @@ export {
   BOROSIL_ACQUIRED_BENCHMARK_OBSERVATIONS,
   BOROSIL_QUARANTINED_OBSERVATIONS
 } from './module3PcbiBorosilObservations';
+
+export {
+  BOROSIL_CROSS_PHASE_COVERAGE_RECONCILIATION
+} from './module3PcbiPhaseCrossReconciliation';
 
 export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = {
   assessmentId: 'AIC-2026-0002',
@@ -41,7 +45,7 @@ export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = 
     {
       bucketKey: 'PENDING_APPROVAL_MAPPINGS',
       bucketName: 'Pending-Approval Mappings (Phase 2 Registered)',
-      spendInr: 1330470000.0,
+      spendInr: 1330469564.0,
       spendCr: 133.0470,
       spendPct: 23.91,
       transactionCount: 43,
@@ -52,7 +56,7 @@ export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = 
     {
       bucketKey: 'SOURCE_IDENTIFIED_NOT_ACQUIRED',
       bucketName: 'Source Identified, Observation Data Not Acquired',
-      spendInr: 51643000.0,
+      spendInr: 51643125.33,
       spendCr: 5.1643,
       spendPct: 0.93,
       transactionCount: 56,
@@ -63,7 +67,7 @@ export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = 
     {
       bucketKey: 'LICENSE_REQUIRED',
       bucketName: 'Commercial License Required (Platts / ICIS / Argus)',
-      spendInr: 42376000.0,
+      spendInr: 42376540.0,
       spendCr: 4.2376,
       spendPct: 0.76,
       transactionCount: 16,
@@ -74,9 +78,9 @@ export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = 
     {
       bucketKey: 'MANUAL_VALIDATION_REQUIRED',
       bucketName: 'Manual Technical/Commercial Validation Required',
-      spendInr: 2337900.0,
-      spendCr: 0.2338,
-      spendPct: 0.04,
+      spendInr: 23379500.0,
+      spendCr: 2.3380,
+      spendPct: 0.42,
       transactionCount: 8,
       uniqueMaterialsCount: 2,
       explanation: 'Run-of-mine quartz and secondary silica sand where beneficiation spread from generic quarry gate requires engineering review.',
@@ -85,7 +89,7 @@ export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = 
     {
       bucketKey: 'NO_SUITABLE_SOURCE',
       bucketName: 'No Suitable Benchmark Source (Non-Benchmarkable Capital/Spares)',
-      spendInr: 75419000.0,
+      spendInr: 75418675.0,
       spendCr: 7.5419,
       spendPct: 1.36,
       transactionCount: 4,
@@ -96,9 +100,9 @@ export const BOROSIL_RECONCILED_COVERAGE_REGISTER: ReconciledCoverageRegister = 
     {
       bucketKey: 'UNMAPPED_SPEND',
       bucketName: 'Unmapped Spend (General Tail, Electricals & Unclassified MRO)',
-      spendInr: 4063100426.19,
-      spendCr: 406.3100,
-      spendPct: 73.00,
+      spendInr: 4042059021.86,
+      spendCr: 404.2058,
+      spendPct: 72.63,
       transactionCount: 27650,
       uniqueMaterialsCount: 8955,
       explanation: 'General manufacturing consumables, electricals, bearings, instrumentation, and factory operating supplies.',

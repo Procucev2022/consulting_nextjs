@@ -215,6 +215,21 @@ export class Module3CanonicalController {
       res.status(500).json({ success: false, message: 'Failed to validate candidate observation' });
     }
   }
+
+  public async getCrossPhaseReconciliation(req: Request, res: Response): Promise<void> {
+    try {
+      const targetId = this.resolveAssessmentId(req);
+      if (targetId === 'INVALID' || !targetId) {
+        res.status(400).json({ success: false, message: 'Valid assessment ID is required.' });
+        return;
+      }
+      const crossReconciliation = Module3PcbiObservationService.getCrossPhaseReconciliation(targetId);
+      res.json({ success: true, crossReconciliation });
+    } catch (err: unknown) {
+      logger.error('Failed to get cross-phase reconciliation', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve cross-phase reconciliation' });
+    }
+  }
 }
 
 export const module3CanonicalController = new Module3CanonicalController();

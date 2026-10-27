@@ -3,21 +3,24 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ExecutiveOpportunityDashboardView } from '../../../src/components/module2/ExecutiveOpportunityDashboardView';
 import { Module2OpportunityRegisterApi } from '../../../src/utils/module2OpportunityRegisterApi';
+import { UI_STRINGS } from '../../../src/constants';
 import type { OpportunityRegisterSummary } from '../../../src/types/module2OpportunityRegister';
+
+const strings = UI_STRINGS.module2ExecutiveDashboard;
 
 const mockSummary: OpportunityRegisterSummary = {
   authoritativeBaselineSpendCr: 556.5346,
   authoritativeBaselineTransactions: 27777,
-  directPriceEligibleSpendCr: 29.3322,
-  directPriceEligibleTransactions: 25,
-  supplierConsolidationEligibleSpendCr: 41.8,
-  volumeConsolidationCandidateSpendCr: 58.117,
-  spendRequiringReviewCr: 101.5189,
+  directPriceEligibleSpendCr: 455.8894,
+  directPriceEligibleTransactions: 20648,
+  supplierConsolidationEligibleSpendCr: 258.231,
+  volumeConsolidationCandidateSpendCr: 511.0045,
+  spendRequiringReviewCr: 100.6453,
   totalOpportunitiesCount: 4,
   byType: {
-    DIRECT_PRICE_IMPROVEMENT: { count: 1, spendCr: 29.3322, defensibleValueCr: 17.7647, materialsCount: 1 },
-    SUPPLIER_CONSOLIDATION: { count: 1, spendCr: 41.8, defensibleValueCr: 0, materialsCount: 1 },
-    VOLUME_DEMAND_CONSOLIDATION: { count: 1, spendCr: 58.117, defensibleValueCr: 0, materialsCount: 1 },
+    DIRECT_PRICE_IMPROVEMENT: { count: 1, spendCr: 455.8894, defensibleValueCr: 53.4422, materialsCount: 1 },
+    SUPPLIER_CONSOLIDATION: { count: 1, spendCr: 258.231, defensibleValueCr: 0, materialsCount: 1 },
+    VOLUME_DEMAND_CONSOLIDATION: { count: 1, spendCr: 511.0045, defensibleValueCr: 0, materialsCount: 1 },
     SPECIFICATION_PROCESS_REVIEW: { count: 1, spendCr: 0.22, defensibleValueCr: 0, materialsCount: 1 }
   },
   byStatus: {
@@ -35,7 +38,7 @@ const mockSummary: OpportunityRegisterSummary = {
   },
   certifiedSavingsCr: 0.0,
   realizedSavingsCr: 0.0,
-  overlapDeductionNotice: 'Opportunity values are mutually qualifying candidates and MUST NOT be added together across levers.',
+  overlapDeductionNotice: strings.warningMessage,
   dataLimitations: [
     'Zero external benchmarks applied: All price dispersion is derived strictly from internal transactional variance.'
   ],
@@ -57,19 +60,38 @@ describe('ExecutiveOpportunityDashboardView', () => {
 
     render(<ExecutiveOpportunityDashboardView assessmentId="AIC-2026-0002" />);
 
-    expect(screen.getByText('Loading Executive Sourcing Intelligence...')).toBeInTheDocument();
+    expect(screen.getByText(strings.loadingText)).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText(/Borosil Ltd — Strategic Sourcing Decision Dashboard/)).toBeInTheDocument();
+      expect(screen.getByText(strings.title('Borosil Ltd'))).toBeInTheDocument();
     });
 
+    expect(screen.getByText(strings.description)).toBeInTheDocument();
+    expect(screen.getByText(strings.warningHeading)).toBeInTheDocument();
+    expect(screen.getByText(strings.warningMessage)).toBeInTheDocument();
+
+    // KPI Cards
     expect(screen.getByText('₹556.5346 Cr')).toBeInTheDocument();
-    expect(screen.getByText('27,777 Included Transactions')).toBeInTheDocument();
-    expect(screen.getByText('₹29.3322 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹41.8000 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹58.1170 Cr')).toBeInTheDocument();
-    expect(screen.getByText('₹101.5189 Cr')).toBeInTheDocument();
-    expect(screen.getByText(/Defensible Opp: ₹17.76 Cr/)).toBeInTheDocument();
+    expect(screen.getByText(strings.baselineDesc)).toBeInTheDocument();
+
+    expect(screen.getByText('₹455.8894 Cr')).toBeInTheDocument();
+    expect(screen.getByText(strings.directPriceDesc)).toBeInTheDocument();
+    expect(screen.getByText(strings.grossModelledPriceOppLabel(53.4422))).toBeInTheDocument();
+    expect(screen.getByText(strings.grossModelledPriceOppDisclaimer)).toBeInTheDocument();
+
+    expect(screen.getByText(strings.supplierConsolidationTitle)).toBeInTheDocument();
+    expect(screen.getByText('₹258.2310 Cr')).toBeInTheDocument();
+    expect(screen.getByText(strings.supplierConsolidationDesc)).toBeInTheDocument();
+
+    expect(screen.getByText(strings.volumeAggregationTitle)).toBeInTheDocument();
+    expect(screen.getByText('₹511.0045 Cr')).toBeInTheDocument();
+    expect(screen.getByText(strings.volumeAggregationDesc)).toBeInTheDocument();
+
+    expect(screen.getByText(strings.reviewRequiredTitle)).toBeInTheDocument();
+    expect(screen.getByText('₹100.6453 Cr')).toBeInTheDocument();
+    expect(screen.getByText(strings.reviewRequiredDesc)).toBeInTheDocument();
+    expect(screen.getByText(strings.reviewRequiredTxs)).toBeInTheDocument();
+    expect(screen.getByText(strings.reviewRequiredIndicator)).toBeInTheDocument();
   });
 
   it('calls onNavigateToRegister when button is clicked', async () => {
@@ -87,10 +109,10 @@ describe('ExecutiveOpportunityDashboardView', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('View Material Register')).toBeInTheDocument();
+      expect(screen.getByText(strings.viewRegisterButton)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('View Material Register'));
+    fireEvent.click(screen.getByText(strings.viewRegisterButton));
     expect(handleNavigate).toHaveBeenCalledTimes(1);
   });
 
@@ -102,7 +124,8 @@ describe('ExecutiveOpportunityDashboardView', () => {
     render(<ExecutiveOpportunityDashboardView assessmentId="AIC-2026-0002" />);
 
     await waitFor(() => {
-      expect(screen.queryByText('Loading Executive Sourcing Intelligence...')).not.toBeInTheDocument();
+      expect(screen.queryByText(strings.loadingText)).not.toBeInTheDocument();
     });
   });
 });
+
