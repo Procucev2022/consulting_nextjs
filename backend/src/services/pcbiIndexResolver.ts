@@ -5,6 +5,7 @@ import type {
   PCBIDataQualityReport,
   PCBIQualityRating
 } from '../types/pcbi';
+import { Module3PcbiMappingService } from './module3PcbiMappingService';
 
 const KEYWORD_PATTERNS: Array<{
   keywords: string[];
@@ -102,9 +103,78 @@ export function validateModule2Authority(tx: Partial<PCBIClientPurchaseTransacti
 
 export const UNMAPPED_BENCHMARK_SIGNAL = 'UNMAPPED_BENCHMARK_SIGNAL';
 
+function resolveAuditableAssessmentMapping(
+  materialCode: string,
+  assessmentId: string
+): { pcbiId: string; quality: PCBIQualityRating; method: string; status?: string; action?: string } {
+  const auditable = Module3PcbiMappingService.getMappingByMaterialCode(materialCode, assessmentId);
+  if (!auditable) {
+    return {
+      pcbiId: UNMAPPED_BENCHMARK_SIGNAL,
+      quality: 'C',
+      method: 'UNMAPPED_NO_APPROVED_BENCHMARK',
+      status: 'UNMAPPED_BENCHMARK_SIGNAL',
+      action: 'SIGNAL_UNMAPPED'
+    };
+  }
+
+  if (auditable.approvalStatus !== 'APPROVED') {
+    return {
+      pcbiId: UNMAPPED_BENCHMARK_SIGNAL,
+      quality: 'C',
+      method: 'AUDITABLE_MAPPING_PENDING_APPROVAL',
+      status: 'UNAPPROVED_MAPPING',
+      action: 'BLOCK_VARIANCE'
+    };
+  }
+
+  if (
+    auditable.specificationComparability === 'NOT_COMPARABLE' ||
+    auditable.specificationComparability === 'UNVERIFIED'
+  ) {
+    return {
+      pcbiId: UNMAPPED_BENCHMARK_SIGNAL,
+      quality: 'C',
+      method: 'INCOMPATIBLE_SPECIFICATION',
+      status: 'INCOMPATIBLE_SPECIFICATION',
+      action: 'BLOCK_VARIANCE'
+    };
+  }
+
+  return {
+    pcbiId: auditable.benchmarkSeriesId || UNMAPPED_BENCHMARK_SIGNAL,
+    quality: auditable.confidenceRating === 'HIGH' ? 'A' : 'B',
+    method: 'AUDITABLE_APPROVED_MAPPING',
+    status: 'MAPPED_APPROVED',
+    action: 'ALLOW'
+  };
+}
+
+function resolveUnspscMapping(
+  unspscMappings: Map<string, PCBIUNSPSCMapping>,
+  unspscCode?: string
+): { pcbiId: string; quality: PCBIQualityRating; method: string } | null {
+  if (!unspscCode) return null;
+  const cleanUnspsc = unspscCode.trim();
+  const commodityMap = unspscMappings.get(cleanUnspsc);
+  if (commodityMap) {
+    return { pcbiId: commodityMap.pcbi_id, quality: commodityMap.quality_rating, method: 'UNSPSC_COMMODITY' };
+  }
+
+  if (cleanUnspsc.length >= 6) {
+    const classCode = cleanUnspsc.substring(0, 6) + '00';
+    const classMap = unspscMappings.get(classCode);
+    if (classMap) {
+      return { pcbiId: classMap.pcbi_id, quality: 'B', method: 'UNSPSC_CLASS' };
+    }
+  }
+  return null;
+}
+
 export function resolvePCBIMapping(
   unspscMappings: Map<string, PCBIUNSPSCMapping>,
   tx: PCBIClientPurchaseTransaction & {
+    assessmentId?: string;
     module2_commodity?: string;
     module2_unspsc?: string;
     module3_commodity?: string;
@@ -123,21 +193,14 @@ export function resolvePCBIMapping(
   }
 
   // Use Module 2 UNSPSC input if present
-  const unspscCode = tx.module2_unspsc || tx.unspsc;
-  if (unspscCode) {
-    const cleanUnspsc = unspscCode.trim();
-    const commodityMap = unspscMappings.get(cleanUnspsc);
-    if (commodityMap) {
-      return { pcbiId: commodityMap.pcbi_id, quality: commodityMap.quality_rating, method: 'UNSPSC_COMMODITY' };
-    }
+  const unspscResult = resolveUnspscMapping(unspscMappings, tx.module2_unspsc || tx.unspsc);
+  if (unspscResult) {
+    return unspscResult;
+  }
 
-    if (cleanUnspsc.length >= 6) {
-      const classCode = cleanUnspsc.substring(0, 6) + '00';
-      const classMap = unspscMappings.get(classCode);
-      if (classMap) {
-        return { pcbiId: classMap.pcbi_id, quality: 'B', method: 'UNSPSC_CLASS' };
-      }
-    }
+  // Customer assessment scope: enforce auditable mapping infrastructure & block broad keyword matching
+  if (tx.assessmentId) {
+    return resolveAuditableAssessmentMapping(tx.material_code, tx.assessmentId);
   }
 
   const desc = `${tx.short_text || ''} ${tx.material_code || ''}`.toLowerCase();

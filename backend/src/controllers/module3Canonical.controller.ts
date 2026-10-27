@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 import { Module3PcbiForensicEngine } from '../services/module3PcbiForensicEngine';
 import { Module3PcbiIndependentCalculator } from '../services/module3PcbiIndependentCalculator';
 import { Module3PcbiWorkbookBuilder } from '../services/module3PcbiWorkbookBuilder';
+import { Module3PcbiMappingService } from '../services/module3PcbiMappingService';
 import { logger } from '../utils/logger';
 
 export function getErrorMessage(err: unknown): string {
@@ -99,6 +100,71 @@ export class Module3CanonicalController {
         error: getErrorMessage(err)
       });
       res.status(500).json({ success: false, message: 'Failed to generate evidence workbook' });
+    }
+  }
+
+  public async getBenchmarkRequirements(req: Request, res: Response): Promise<void> {
+    try {
+      const targetId = this.resolveAssessmentId(req);
+      if (targetId === 'INVALID' || !targetId) {
+        res.status(400).json({ success: false, message: 'Valid assessment ID is required.' });
+        return;
+      }
+      const requirements = Module3PcbiMappingService.getRequirementsCatalog(targetId);
+      res.json({ success: true, assessmentId: targetId, count: requirements.length, requirements });
+    } catch (err: unknown) {
+      logger.error('Failed to get benchmark requirements', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve benchmark requirements' });
+    }
+  }
+
+  public async getMaterialMappings(req: Request, res: Response): Promise<void> {
+    try {
+      const targetId = this.resolveAssessmentId(req);
+      if (targetId === 'INVALID' || !targetId) {
+        res.status(400).json({ success: false, message: 'Valid assessment ID is required.' });
+        return;
+      }
+      const mappings = Module3PcbiMappingService.getMappings(targetId);
+      res.json({ success: true, assessmentId: targetId, count: mappings.length, mappings });
+    } catch (err: unknown) {
+      logger.error('Failed to get material mappings', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve material mappings' });
+    }
+  }
+
+  public async updateMappingApproval(req: Request, res: Response): Promise<void> {
+    try {
+      const { mappingId, approvalStatus, actor, comment } = req.body || {};
+      if (!mappingId || (approvalStatus !== 'APPROVED' && approvalStatus !== 'REJECTED')) {
+        res.status(400).json({ success: false, message: 'Invalid mapping approval payload.' });
+        return;
+      }
+      const updated = Module3PcbiMappingService.updateMappingApproval(
+        mappingId,
+        approvalStatus,
+        actor || 'Procurement Admin',
+        comment || 'Manual review decision'
+      );
+      res.json({ success: true, mapping: updated });
+    } catch (err: unknown) {
+      logger.error('Failed to update mapping approval', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to update mapping approval' });
+    }
+  }
+
+  public async getCoverageSummary(req: Request, res: Response): Promise<void> {
+    try {
+      const targetId = this.resolveAssessmentId(req);
+      if (targetId === 'INVALID' || !targetId) {
+        res.status(400).json({ success: false, message: 'Valid assessment ID is required.' });
+        return;
+      }
+      const summary = Module3PcbiMappingService.getCoverageSummary(targetId);
+      res.json({ success: true, summary });
+    } catch (err: unknown) {
+      logger.error('Failed to get benchmark coverage summary', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve coverage summary' });
     }
   }
 }

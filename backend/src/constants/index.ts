@@ -68,4 +68,5 @@ export * from './procurementCategoryMapping';
 export * from './reportingPeriod';
 export * from './module2OpportunityRegister';
 export * from './module2OpportunityValidation';
+export * from './module3PcbiBorosilCatalog';
 
