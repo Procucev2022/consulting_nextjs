@@ -17,7 +17,7 @@ import {
   resolveEntities,
   computeRowSpend
 } from './assessmentDatasetRowNormalizerUtils';
-import { getYahooFinanceRateAsOfDate } from '../utils/currencyConverter';
+import { getYahooFinanceRateAsOfDate, yahooFinanceFXRates } from '../utils/currencyConverter';
 
 export { parseExcelDate, findValueByKeys, isRowDeleted };
 
@@ -68,8 +68,11 @@ function resolveApprovedFx(
   if (rateVal != null && !isNaN(Number(rateVal)) && Number(rateVal) > 0 && Number(rateVal) !== 1.0) {
     return { approvedFxRate: Number(rateVal), fxRateSource: 'SOURCE_PROVIDED' };
   }
+  if (!yahooFinanceFXRates[currency]) {
+    return { approvedFxRate: 0, fxRateSource: 'UNAVAILABLE' };
+  }
   const fxInfo = getYahooFinanceRateAsOfDate(currency, isoDate);
-  if (fxInfo && fxInfo.rate > 0 && fxInfo.currency === currency) {
+  if (fxInfo && fxInfo.rate > 0) {
     return { approvedFxRate: fxInfo.rate, fxRateSource: 'YAHOO_FINANCE_BENCHMARK_2026' };
   }
   return { approvedFxRate: 0, fxRateSource: 'UNAVAILABLE' };

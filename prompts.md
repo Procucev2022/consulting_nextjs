@@ -114626,3 +114626,183 @@ Implement Stage 2 only. Stop before executing Modules 3 or 4, and provide a comp
 ## Prompt 542
 resume
 
+---
+
+## Prompt 543
+Assessment: Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+Stage 2 implementation is provisionally accepted. Before approving its outputs, conduct a read-only audit of the opportunity calculations and dashboard.
+
+Do not modify code, data, mappings or tests. Do not execute Module 3 (PCBI) or Module 4 (Savings Engine).
+
+### 1. Direct Price Improvement
+
+Investigate opportunity OPP-AIC-2026-0002-DPI-0001.
+
+Reported:
+
+* Historical spend: ₹29.3322 Cr
+* Reference price: ₹4,152/MT
+* Weighted average price: ₹10,528.43/MT
+* Opportunity value: ₹17.7647 Cr
+* Supporting transactions: 25
+
+Verify the calculation using the actual source transactions. Establish whether the reference price is a valid comparable purchase price and whether the weighted average uses consistent units, grades, specifications, currency conversion and time periods.
+
+Show the exact formula, quantity eligible for repricing, transaction IDs, excluded records and recalculated opportunity value. Investigate extreme prices and outliers.
+
+If the evidence is insufficient, classify the value as provisional and state what validation is required.
+
+### 2. Supplier Consolidation
+
+Investigate OPP-AIC-2026-0002-SC-0001.
+
+Reported:
+
+* Material: Sodium Antimonate
+* Material code: 100SUA01I
+* Suppliers: 3
+* Historical spend: ₹41.80 Cr
+
+Recalculate material-specific spend directly from the canonical transactions. Verify supplier identities, comparable specifications, quantities, plant coverage and spend attribution.
+
+Determine whether ₹41.80 Cr is the spend for this specific material or an incorrectly attributed aggregate.
+
+Do not assign a savings value without supporting commercial evidence.
+
+### 3. Volume Consolidation
+
+Investigate OPP-AIC-2026-0002-VDC-0001.
+
+Identify the exact material, code, historical spend, quantities, UOM, plants, suppliers and supporting transaction IDs.
+
+Verify that demand can genuinely be consolidated without assuming technical equivalence or guaranteed volume discounts.
+
+If the opportunity cannot be tied to a specific material and supporting transactions, flag it as incomplete.
+
+### 4. Dashboard Reconciliation
+
+Verify that:
+
+* The Module 1 baseline remains ₹556.5346426 Cr across 27,777 transactions.
+* Direct price-comparison eligible spend of ₹455.8894 Cr is distinguished from the smaller spend associated with identified opportunities.
+* Supplier-consolidation and volume-consolidation spend are not presented as additional, non-overlapping spend unless proven.
+* The dashboard does not add overlapping opportunity values into a misleading total.
+* All displayed values match the backend API and source transactions.
+* The ₹101.5189 Cr without material codes remains visible as spend requiring review.
+* Certified and realized savings remain ₹0.
+
+### 5. Final Deliverable
+
+Return a table containing:
+
+* Opportunity ID and type
+* Reported spend and opportunity value
+* Recalculated spend and opportunity value
+* Source transaction evidence
+* Formula and assumptions
+* Overlap risk
+* Confidence and validation status
+* PASS/FAIL
+
+Also report whether the dashboard was tested against the running application or only through automated tests.
+
+Do not modify anything. Stop after reporting.
+
+---
+
+## Prompt 544
+### Borosil — Stage 2 Final Validation and Live Dashboard Verification
+
+**Assessment:** Borosil Ltd
+**Assessment ID:** AIC-2026-0002
+
+The read-only audit is complete. Perform the following final corrections and verification before Stage 2 approval.
+
+### 1. Protect the authoritative baseline
+
+* Preserve the Module 1 baseline of ₹556.5346426 Cr across 27,777 transactions.
+* Do not modify source transactions, historical spend, currency assumptions, or the baseline calculation.
+* Do not execute Module 3 (PCBI) or Module 4 (Savings Engine).
+
+### 2. Correct Direct Price Improvement reporting
+
+Investigate opportunity `OPP-AIC-2026-0002-DPI-0001`.
+
+* Preserve ₹17.7647 Cr only as a provisional opportunity until commercial comparability is established.
+* Correct the benchmark supplier attribution: the ₹4,152/MT reference relates to COMEFAR ASIA MINING INDU, not Visions Mineral Hongkong.
+* Clearly distinguish:
+
+  1. Total baseline spend.
+  2. DPI-eligible spend of ₹455.8894 Cr.
+  3. Spend associated with identified DPI opportunities.
+  4. Gross modelled opportunity.
+  5. Provisional opportunity requiring validation.
+* Reconcile ₹53.4422 Cr, ₹17.7647 Cr and ₹15.32 Cr to their respective source transactions, formulas and material codes.
+* Do not force these figures to match if they represent different populations. Explain their differences.
+* Never label provisional opportunities as realized or certified savings.
+
+### 3. Verify overlap governance
+
+* Identify every material and transaction appearing in more than one opportunity register.
+* Report overlapping opportunity IDs and overlapping spend.
+* Ensure opportunity values are not added into an inflated total.
+* Do not deduct overlap amounts or certify savings in this stage.
+
+### 4. Preserve supplier and volume consolidation controls
+
+* Sodium Antimonate: confirm the two actual suppliers and ₹41.80 Cr material-specific spend.
+* Soda Ash: confirm material `100SA02G`, 19,600 MT, ₹58.117 Cr, one supplier and one plant.
+* Keep both savings values at ₹0 pending commercial validation and negotiation.
+
+### 5. Live dashboard verification
+
+Start the existing development environment and open the application in a running browser.
+
+Verify:
+
+* The Executive Opportunity Dashboard loads without errors.
+* Dashboard figures match the backend API and canonical transaction evidence.
+* No currency, unit, category or transaction-count inconsistencies appear.
+* The baseline, uncoded spend, provisional opportunities, overlap warning and ₹0 certified/realized savings are visible and correctly labelled.
+* No fabricated opportunities or duplicate totals appear.
+* The dashboard is usable at normal desktop resolution.
+
+Fix only confirmed Stage 2 display or calculation defects. Do not change Module 1 baseline logic or unrelated modules. Run relevant tests after any changes.
+
+### 6. Final report
+
+Return:
+
+1. A reconciliation table explaining ₹455.8894 Cr, ₹53.4422 Cr, ₹17.7647 Cr and ₹15.32 Cr.
+2. A transaction-level overlap summary.
+3. A list of code changes, if any.
+4. Automated test results.
+5. Live-browser verification results, including any errors found.
+6. Final PASS/FAIL for Stage 2 approval.
+
+Do not execute Module 3 or Module 4. Do not claim browser verification unless the running application was actually opened and tested.
+
+---
+
+## Prompt 545
+Borosil Ltd — Freeze Stage 2
+
+Assessment ID: AIC-2026-0002
+
+Stage 2 is accepted for the software workflow, subject to the following controls.
+
+1. Preserve the Module 1 baseline at ₹556.5346426 Cr across 27,777 transactions.
+2. Preserve the completed Module 2 categorization, opportunity register, calculations and dashboard.
+3. Retain ₹53.4422 Cr as gross modelled DPI potential, explicitly labelled non-additive and not certified savings.
+4. Retain the Dolomite, Sodium Antimonate and Soda Ash opportunity values as provisional pending commercial validation.
+5. Keep certified and realized savings at ₹0.
+6. Preserve all source transactions, exclusions, calculation logic and audit evidence.
+7. Run the relevant regression checks and report the results.
+8. Review the Git diff and confirm that only intended changes are present. Do not discard or overwrite unrelated work.
+9. Record a stable Git commit or equivalent recoverable checkpoint.
+10. Do not execute Module 3 (PCBI) or Module 4 (Savings Engine).
+
+Return the final commit/checkpoint identifier, regression results, baseline reconciliation and list of modified files. Stop after completing this task.
+

@@ -50,6 +50,7 @@ export interface MaterialOpportunityItem {
   lowestCrediblePriceInr?: number;
   classificationReviewStatus?: string;
   overlapGroupId?: string;
+  benchmarkSupplierName?: string;
 }
 
 export interface OpportunityTypeMetrics {

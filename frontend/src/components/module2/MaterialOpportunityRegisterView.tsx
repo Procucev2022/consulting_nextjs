@@ -291,6 +291,16 @@ export const MaterialOpportunityRegisterView: React.FC<MaterialOpportunityRegist
                     : 'Pending Commercial Agreement'}
                 </div>
               </div>
+              {selectedOpp.benchmarkSupplierName && (
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-2.5 rounded-lg col-span-2">
+                  <span className="text-emerald-700 dark:text-emerald-400 text-[10px] uppercase font-bold">
+                    Benchmark Supplier Attribution
+                  </span>
+                  <div className="font-semibold text-emerald-900 dark:text-emerald-200 mt-0.5">
+                    {selectedOpp.benchmarkSupplierName}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 text-xs">

@@ -20,7 +20,8 @@ import {
   buildSupplierComparisons,
   buildPlantComparisons,
   computeGroupTotals,
-  mapDirectPriceTransactionRecords
+  mapDirectPriceTransactionRecords,
+  getTxEffectivePrice
 } from './module2DirectPriceImprovementHelpers';
 import { Module2CategoryAggregationHelper } from './module2CategoryAggregationHelper';
 import { resolveAssessmentCustomerName } from '../utils/assessmentContextResolver';
@@ -138,14 +139,7 @@ function groupTransactionsByFyAndItem(
 }
 
 function buildItemOpportunity(groupKey: string, g: InternalGroup): DirectPriceItemOpportunity {
-  const prices = g.txs.map((t) => {
-    const ext = t as ExtendedTransaction;
-    if (ext.normalizedUnitPriceInr && ext.normalizedUnitPriceInr > 0) {
-      return ext.normalizedUnitPriceInr;
-    }
-    const qty = t.quantity || 0;
-    return t.total_spend_inr && qty > 0 ? t.total_spend_inr / qty : (t.unit_price || 0);
-  });
+  const prices = g.txs.map((t) => getTxEffectivePrice(t));
   const lowestPrice = Math.min(...prices);
   const highestPrice = Math.max(...prices);
   const distinctPrices = new Set(prices).size;
@@ -155,7 +149,7 @@ function buildItemOpportunity(groupKey: string, g: InternalGroup): DirectPriceIt
   const lostOpportunity = Math.max(0, actualCost - benchmarkCost);
   const weightedPrice = totalQty > 0 ? actualCost / totalQty : lowestPrice;
   const dispersionPct = lowestPrice > 0 ? ((highestPrice - lowestPrice) / lowestPrice) * 100 : 0;
-  const benchmarkTx = g.txs.find((t) => (t.unit_price || 0) === lowestPrice) || g.txs[0];
+  const benchmarkTx = g.txs.find((t) => Math.abs(getTxEffectivePrice(t) - lowestPrice) < 0.01) || g.txs[0];
   const qualification = classifyItemQualification(
     g.materialDesc, g.spendCategory, g.uom, lowestPrice, highestPrice, suppliersSet.size, distinctPrices
   );

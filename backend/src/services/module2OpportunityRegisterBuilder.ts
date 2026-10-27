@@ -66,7 +66,8 @@ function buildSingleDpiItem(
     referenceUnitPriceInr: refPrice,
     weightedAverageUnitPriceInr: wap,
     lowestCrediblePriceInr: refPrice,
-    overlapGroupId: item.materialCode
+    overlapGroupId: item.materialCode,
+    benchmarkSupplierName: item.benchmarkSupplierName
   };
 }
 

@@ -84,7 +84,7 @@ export function classifyItemQualification(
   return { status: 'QUALIFIED', warnings: [] };
 }
 
-function getTxEffectivePrice(t: StrategicInputTransaction): number {
+export function getTxEffectivePrice(t: StrategicInputTransaction): number {
   const norm = (t as { normalizedUnitPriceInr?: number }).normalizedUnitPriceInr;
   if (norm && norm > 0) return norm;
   const qty = t.quantity || 0;
