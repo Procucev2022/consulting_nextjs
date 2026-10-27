@@ -8,6 +8,7 @@ import { Module3PcbiForensicEngine } from '../services/module3PcbiForensicEngine
 import { Module3PcbiIndependentCalculator } from '../services/module3PcbiIndependentCalculator';
 import { Module3PcbiWorkbookBuilder } from '../services/module3PcbiWorkbookBuilder';
 import { Module3PcbiMappingService } from '../services/module3PcbiMappingService';
+import { Module3PcbiObservationService } from '../services/module3PcbiObservationService';
 import { logger } from '../utils/logger';
 
 export function getErrorMessage(err: unknown): string {
@@ -165,6 +166,53 @@ export class Module3CanonicalController {
     } catch (err: unknown) {
       logger.error('Failed to get benchmark coverage summary', { error: getErrorMessage(err) });
       res.status(500).json({ success: false, message: 'Failed to retrieve coverage summary' });
+    }
+  }
+
+  public async getReconciledCoverage(req: Request, res: Response): Promise<void> {
+    try {
+      const targetId = this.resolveAssessmentId(req);
+      if (targetId === 'INVALID' || !targetId) {
+        res.status(400).json({ success: false, message: 'Valid assessment ID is required.' });
+        return;
+      }
+      const register = Module3PcbiObservationService.getReconciledCoverage(targetId);
+      res.json({ success: true, register });
+    } catch (err: unknown) {
+      logger.error('Failed to get reconciled benchmark coverage register', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve coverage register' });
+    }
+  }
+
+  public async getAcquiredObservations(req: Request, res: Response): Promise<void> {
+    try {
+      const seriesId = req.query?.seriesId as string | undefined;
+      const observations = Module3PcbiObservationService.getAcquiredObservations(seriesId);
+      res.json({ success: true, count: observations.length, observations });
+    } catch (err: unknown) {
+      logger.error('Failed to get acquired observations', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve observations' });
+    }
+  }
+
+  public async getQuarantinedObservations(_req: Request, res: Response): Promise<void> {
+    try {
+      const quarantined = Module3PcbiObservationService.getQuarantinedObservations();
+      res.json({ success: true, count: quarantined.length, quarantined });
+    } catch (err: unknown) {
+      logger.error('Failed to get quarantined observations', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to retrieve quarantined observations' });
+    }
+  }
+
+  public async validateCandidateObservation(req: Request, res: Response): Promise<void> {
+    try {
+      const candidate = req.body || {};
+      const validation = Module3PcbiObservationService.validateObservation(candidate);
+      res.json({ success: true, validation });
+    } catch (err: unknown) {
+      logger.error('Failed to validate candidate observation', { error: getErrorMessage(err) });
+      res.status(500).json({ success: false, message: 'Failed to validate candidate observation' });
     }
   }
 }

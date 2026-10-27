@@ -77,3 +77,4 @@ export * from './module2SavingsDeduplicationValidation';
 export * from './reportingPeriod';
 export * from './module2OpportunityRegister';
 export * from './module3PcbiMapping';
+export * from './module3PcbiObservationProvenance';

@@ -69,4 +69,5 @@ export * from './reportingPeriod';
 export * from './module2OpportunityRegister';
 export * from './module2OpportunityValidation';
 export * from './module3PcbiBorosilCatalog';
+export * from './module3PcbiObservationProvenance';
 

@@ -16,5 +16,9 @@ router.get('/benchmark-requirements', (req, res) => module3CanonicalController.g
 router.get('/mappings', (req, res) => module3CanonicalController.getMaterialMappings(req, res));
 router.post('/mappings/approval', (req, res) => module3CanonicalController.updateMappingApproval(req, res));
 router.get('/coverage-summary', (req, res) => module3CanonicalController.getCoverageSummary(req, res));
+router.get('/coverage-reconciliation', (req, res) => module3CanonicalController.getReconciledCoverage(req, res));
+router.get('/observations', (req, res) => module3CanonicalController.getAcquiredObservations(req, res));
+router.get('/observations/quarantined', (req, res) => module3CanonicalController.getQuarantinedObservations(req, res));
+router.post('/observations/validate', (req, res) => module3CanonicalController.validateCandidateObservation(req, res));
 
 export default router;

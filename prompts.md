@@ -115324,3 +115324,128 @@ Return:
 7. Git checkpoint and modified-file list.
 
 Stop after Phase 2. Do not execute Module 4 or certify savings.
+
+## Prompt 551
+# BOROSIL LTD — PCBI PHASE 3
+
+## Benchmark Data Acquisition and Validation
+
+Assessment ID: AIC-2026-0002
+
+### OBJECTIVE
+
+Prepare genuine, traceable benchmark observations for Borosil's approved material-to-benchmark mappings. Do not calculate the full PCBI or execute Module 4 in this phase.
+
+### 1. PROTECT THE EXISTING IMPLEMENTATION
+
+* Inspect the current Git branch, working tree and latest commit.
+* Confirm Phase 2 commit 6ec5d40f58a3f519e5336d18686981b487e0d34 is present.
+* Preserve all existing work and create a recoverable checkpoint before changes.
+* Do not modify Modules 1 or 2.
+* Preserve the baseline of ₹556.5346426 Cr across 27,777 transactions.
+* Keep certified and realized savings at ₹0.
+
+### 2. RECONCILE BENCHMARK COVERAGE
+
+Reconcile every material-level coverage amount against the canonical Borosil baseline.
+
+Report separately:
+
+* Approved benchmark mappings and their spend.
+* Pending-approval mappings and their spend.
+* Source identified but data not acquired.
+* License required.
+* Manual technical/commercial validation required.
+* No suitable benchmark source identified.
+* Unmapped and non-benchmarkable spend.
+
+Ensure each transaction's spend is counted only once in the coverage denominator. Explain any overlaps and reconcile all categories to the authoritative baseline.
+
+Do not treat pending mappings as approved coverage.
+
+### 3. PRIORITIZE DATA ACQUISITION
+
+Start with:
+
+1. Soda Ash Dense and Light, where actually purchased.
+2. Industrial fuel and energy, where applicable.
+3. Silica Sand and Quartz, subject to grade comparability.
+4. Kraft paper and corrugated packaging.
+5. Other materials only where spend, data availability and comparability justify the effort.
+
+Use authorized public data, existing licensed integrations or data explicitly supplied by the user. Do not bypass subscriptions, download unauthorized paid data or assume a source has observations merely because its name appears in the catalog.
+
+### 4. RECORD OBSERVATION PROVENANCE
+
+For every observation acquired, record as applicable:
+
+* Benchmark series identifier.
+* Observation date or effective period.
+* Value and original unit.
+* Currency.
+* Geography and market basis.
+* Source/publisher.
+* Source document, URL or file reference.
+* Acquisition timestamp.
+* Original versus converted value.
+* Conversion formula and source.
+* Validation status.
+* License/access restrictions.
+
+Retain the original observation and make transformations traceable.
+
+### 5. VALIDATION GATES
+
+Reject or quarantine observations when:
+
+* Source provenance cannot be established.
+* The observation period is missing or invalid.
+* Units or currencies cannot be normalized reliably.
+* Geography, grade, specification or delivery terms are incompatible.
+* The observation is stale under the existing freshness policy.
+* The source does not authorize the intended use.
+
+Do not generate synthetic prices, interpolate missing values and present them as observed market prices, or replace missing data with zero.
+
+For silica sand, do not equate generic quarry prices with optical-grade glass sand without a documented and approved technical conversion methodology.
+
+### 6. CALCULATION SAFETY
+
+* Do not run a full Borosil PCBI calculation.
+* Do not replace the customer-facing trend dashboard in this phase.
+* Do not calculate savings.
+* Keep market variance separate from savings.
+* Keep Module 4 unexecuted.
+* Do not change Modules 1 or 2.
+* Do not change the authoritative baseline.
+
+### 7. TESTING
+
+Test:
+
+* Observation provenance and validation.
+* Missing and stale observations.
+* Unit and currency conversion.
+* Incompatible grades and delivery terms.
+* Duplicate observations.
+* Coverage reconciliation and prevention of double counting.
+* Baseline preservation.
+* Zero certified and realized savings.
+* Module 4 isolation.
+
+Run relevant tests, typecheck and lint.
+
+### 8. DELIVERABLES
+
+Return:
+
+1. Reconciled benchmark coverage register.
+2. Actual observations acquired, with source and date evidence.
+3. Data that remains unavailable and why.
+4. Validation results and rejected observations.
+5. Licensing and commercial dependencies.
+6. Tests and results.
+7. Baseline reconciliation.
+8. Git checkpoint, commit SHA and modified-file list.
+
+Stop after Phase 3 data validation. Do not execute Module 4 or certify savings.
