@@ -189,7 +189,10 @@ export class Module3PcbiEngineHelper {
     if (bucket === 'BENCHMARKABLE') {
       const bench = this.evaluateBenchmarkedRecord(r, copperObservations);
       return {
-        record: bench.record,
+        record: {
+          ...bench.record,
+          marketVarianceValue: bench.potentialGapInr
+        },
         bucket,
         spendInr,
         potentialGapInr: bench.potentialGapInr,
@@ -209,7 +212,13 @@ export class Module3PcbiEngineHelper {
           ? 'PARTIAL'
           : bucket === 'ENGINEERED'
             ? 'NOT_BENCHMARKABLE'
-            : 'UNMAPPED';
+            : 'UNMAPPED_BENCHMARK_SIGNAL';
+
+    const unmappedSignal = mappingStatus === 'UNMAPPED_BENCHMARK_SIGNAL' ? 'UNMAPPED_BENCHMARK_SIGNAL' : undefined;
+    const unmappedReason =
+      mappingStatus === 'UNMAPPED_BENCHMARK_SIGNAL'
+        ? `Material '${r.itemCode || r.itemDescription}' has no registered benchmark series (UNMAPPED_BENCHMARK_SIGNAL)`
+        : undefined;
 
     const record: PcbiCustomerTransactionBenchmarkRecord = {
       recordId: r.recordId,
@@ -227,6 +236,9 @@ export class Module3PcbiEngineHelper {
       currency: r.currency,
       transactionSpendInr: spendInr,
       mappingStatus,
+      unmappedSignal,
+      unmappedReason,
+      marketVarianceValue: 0,
       conversionFactor: 1.0,
       direction: 'UNBENCHMARKED',
       isOutlier: false

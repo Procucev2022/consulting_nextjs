@@ -114806,3 +114806,521 @@ Stage 2 is accepted for the software workflow, subject to the following controls
 
 Return the final commit/checkpoint identifier, regression results, baseline reconciliation and list of modified files. Stop after completing this task.
 
+---
+
+## Prompt 546
+run locally on chrome
+
+---
+
+## Prompt 547
+## Borosil Module 2 — Executive Dashboard Wording and Data Integrity Improvements
+
+**Assessment:** Borosil Ltd
+**Assessment ID:** AIC-2026-0002
+
+Update the existing Module 2 Executive Decision Dashboard to improve management clarity and correct misleading labels.
+
+### 1. Improve the KPI cards
+
+Retain the existing design and layout. Change only the labels, explanatory text and any confirmed incorrect transaction counts.
+
+* **Authoritative Baseline:** ₹556.5346 Cr
+
+  * Description: Verified procurement baseline across 27,777 included transactions.
+* **Direct Price Eligible Spend:** ₹455.8894 Cr
+
+  * Description: Spend eligible for direct price-comparison analysis.
+  * Replace “Defensible Opp: ₹53.44 Cr” with “Gross Modelled Price Opportunity: ₹53.44 Cr”.
+  * Clarify that this is preliminary modelled potential, not confirmed savings.
+* **Supplier Consolidation:** Rename to “Multi-Supplier Spend Under Review”.
+
+  * Preserve the existing value only if its underlying population is verified.
+  * Explain that this represents spend associated with materials purchased from multiple suppliers, not savings.
+* **Volume Aggregation:** Rename to “High-Volume Spend Under Review”.
+
+  * Preserve the existing value only if its underlying population is verified.
+  * Explain that it identifies purchasing groups for possible volume or demand aggregation analysis, not guaranteed savings.
+* **Review Required:** ₹100.6453 Cr across 7,129 transactions.
+
+  * Description: Spend excluded from direct price-comparison analysis and requiring further review.
+  * Show a separate indicator for ₹101.5189 Cr across 5,023 transactions without material codes.
+  * Do not label all 7,129 transactions as uncoded.
+
+### 2. Replace the main banner description
+
+Title:
+Borosil Ltd — Strategic Sourcing Intelligence
+
+Description:
+“An evidence-based view of procurement spend, price variations, supplier concentration and volume aggregation opportunities—helping procurement teams prioritize actions and make better sourcing decisions.”
+
+### 3. Replace the yellow warning banner
+
+Heading:
+IMPORTANT: OPPORTUNITIES ARE NOT CONFIRMED SAVINGS
+
+Message:
+“Identified opportunities may overlap across sourcing levers and must not be added together. All opportunities require commercial and operational validation. Certified and realized savings remain ₹0 until the relevant actions are implemented and verified.”
+
+### 4. Data integrity requirements
+
+* Preserve the Module 1 baseline at ₹556.5346426 Cr across 27,777 transactions.
+* Do not alter source transactions, historical spend, FX assumptions or approved mappings.
+* Verify the existing ₹258.2310 Cr supplier-consolidation and ₹511.0045 Cr volume-aggregation figures before displaying them under the revised labels.
+* Do not invent or independently recalculate figures without tracing them to the existing backend data.
+* Keep all provisional opportunity classifications intact.
+* Certified savings and realized savings must remain ₹0.
+* Ensure the review-required total and its component populations are displayed consistently.
+
+### 5. Testing and scope
+
+* Update relevant frontend tests.
+* Run applicable regression tests, typecheck and lint.
+* Verify the dashboard in the running application at desktop resolution.
+* Confirm that labels and figures match the backend API.
+* Do not execute Module 3 (PCBI) or Module 4 (Savings Engine).
+* Do not change unrelated modules or the frozen baseline.
+* Preserve existing unrelated work and inspect the Git diff before committing.
+
+### Final report
+
+Provide:
+
+1. Modified files.
+2. Test results.
+3. Screenshot or evidence of the updated dashboard.
+4. Confirmation that the baseline remains unchanged.
+5. Confirmation that Modules 3 and 4 remain unexecuted.
+
+Stop after completing these changes and reporting the results.
+
+
+
+---
+
+## Prompt 548
+# BOROSIL LTD — MODULE 3 PCBI ARCHITECTURE INSPECTION
+
+## Stage 1: Read-Only Technical Assessment
+
+**Customer:** Borosil Ltd
+**Assessment ID:** AIC-2026-0002
+**Project:** Procucev Procurement Intelligence Platform
+**Module:** Module 3 — Procucev Benchmark Index (PCBI)
+
+### OBJECTIVE
+
+Inspect the existing codebase and determine how Module 3 (PCBI) should be implemented and integrated with the validated Modules 1 and 2.
+
+This is an architecture inspection only.
+
+**DO NOT modify code, data, mappings, database records, configurations or existing tests. Do not execute the PCBI calculation engine.**
+
+### 1. Inspect the Existing Architecture
+
+Identify and document:
+
+* Existing PCBI-related services, components, APIs, types, database models and configuration files.
+* Existing benchmark index data files, reference datasets and historical price series.
+* How benchmark materials are identified and mapped to SAP material codes and UNSPSC classifications.
+* Whether benchmark source metadata, frequency, units, currencies, geographic coverage and access restrictions are already represented.
+* Which components are implemented, incomplete, mocked or missing.
+* Existing tests and validation mechanisms for PCBI.
+
+Search the entire relevant codebase before concluding that a component does not exist.
+
+### 2. Protect the Validated Borosil Baseline
+
+Use the existing frozen checkpoint:
+
+\3c7d547064b400c91fd859f70a75252e1b785e8c\
+
+Expected Module 1 baseline:
+
+* Net procurement spend: ₹556.5346426 Cr
+* Included transactions: 27,777
+* Direct price eligible spend: ₹455.8894 Cr
+* Spend requiring review: ₹100.6453 Cr
+* Spend without material codes: ₹101.5189 Cr
+
+Inspect how Module 3 can consume the validated Module 1 and Module 2 outputs without altering them.
+
+Do not assume that every purchase category is benchmarkable.
+
+Identify how the system should distinguish:
+
+* Benchmarkable commodities and raw materials.
+* Benchmarkable packaging materials.
+* Benchmarkable MRO and industrial inputs.
+* Services and other non-benchmarkable expenditure.
+* Materials requiring technical or commercial review.
+
+Do not change the existing categorization.
+
+### 3. Review the Benchmarking Methodology
+
+Inspect whether the existing architecture supports:
+
+* Mapping customer materials to appropriate external benchmark series.
+* Recording benchmark source, publisher, series identifier, geography and applicable grade or specification.
+* Normalizing units of measurement and currencies.
+* Mapping daily, weekly, monthly or other source frequencies to a common analytical timeline.
+* Maintaining historical benchmark observations with source dates and effective dates.
+* Recording source quality, data provenance and validation status.
+* Distinguishing verified public data, licensed data, paid commercial data and unavailable sources.
+* Preventing incompatible grades, units, currencies or delivery terms from being compared.
+* Flagging missing, stale, estimated or otherwise unreliable benchmark observations.
+* Showing the difference between observed purchase prices and benchmark prices without automatically treating the difference as achievable savings.
+
+Identify any missing capabilities or unsafe assumptions.
+
+Do not invent historical benchmark observations or use fabricated values to fill gaps.
+
+### 4. Review Benchmark Data Availability
+
+Inventory the actual benchmark files, databases, source connectors and historical series already available in the project.
+
+For each source, report:
+
+* Source or publisher.
+* Material or commodity coverage.
+* Earliest and latest observation dates.
+* Update frequency.
+* Unit and currency.
+* Geographic and specification coverage.
+* Data access classification.
+* Missing periods and known limitations.
+* Whether the data is genuinely available or merely referenced in code or documentation.
+
+Do not access paid sources without authorization or bypass licensing restrictions.
+
+Do not claim that a benchmark series is available merely because its name appears in a mapping table.
+
+### 5. Design the Proposed PCBI Data Flow
+
+Recommend a data flow covering:
+
+1. Validated customer spend from Module 1.
+2. Material categorization and technical identifiers from Module 2.
+3. Mapping to suitable benchmark series.
+4. Benchmark observation ingestion and validation.
+5. Unit and currency normalization.
+6. Frequency alignment.
+7. Purchase-price versus benchmark comparison.
+8. Benchmark coverage and confidence reporting.
+9. PCBI results and traceability back to source records.
+
+Clearly separate observed facts, calculated metrics, estimates and assumptions.
+
+Explain how the architecture can support multiple industrial sectors without hardcoding Borosil-specific rules into the general platform.
+
+### 6. Define Required Controls
+
+Recommend safeguards for:
+
+* Source data integrity and reproducibility.
+* Currency conversion and unit conversion.
+* Benchmark frequency mismatches.
+* Material-grade and specification comparability.
+* Missing or stale data.
+* Outlier detection.
+* Licensed data restrictions.
+* Audit logs and calculation lineage.
+* Re-running calculations without modifying the original baseline.
+* Preventing benchmark differences from being presented as certified savings.
+
+### 7. Module Boundaries
+
+Maintain strict separation:
+
+* Module 1: Validated spend ingestion and analysis.
+* Module 2: Categorization and sourcing opportunity identification.
+* Module 3: External benchmark mapping, trend analysis and PCBI.
+* Module 4: Savings modelling, deduplication and savings certification.
+
+Do not execute Module 4 or trigger any savings certification.
+
+### 8. Deliverables
+
+Return a structured report containing:
+
+A. Existing PCBI architecture and relevant file paths.
+
+B. Implemented, incomplete and missing capabilities.
+
+C. Inventory of actual benchmark data and source availability.
+
+D. Proposed data model and processing flow.
+
+E. Benchmark matching and calculation methodology.
+
+F. Integration requirements and API contracts.
+
+G. Risks, dependencies and unresolved decisions.
+
+H. Recommended implementation phases and test plan.
+
+I. Exact list of files that would need modification in a future implementation.
+
+J. Confirmation that no files, code, data, mappings or database records were modified and no PCBI or Savings Engine calculations were executed.
+
+**STOP after producing the report. Do not implement anything.**
+---
+
+## Prompt 549
+# PROCUCEV PCBI — PHASE 1 IMPLEMENTATION
+
+## Dynamic Assessment Integration and Engine Safety
+
+**Customer:** Borosil Ltd
+**Assessment ID:** AIC-2026-0002
+**Frozen checkpoint:** 3c7d547064b400c91fd859f70a75252e1b785e8c
+
+### OBJECTIVE
+
+Implement Phase 1 of Module 3 (PCBI): remove unsafe legacy demonstration-data dependencies and establish a safe integration with the validated Modules 1 and 2.
+
+This is an implementation task, but the changes must be isolated, tested and reversible.
+
+### 1. Protect the existing system
+
+Before editing:
+
+* Inspect Git status and the current commit.
+* Preserve all unrelated existing work.
+* Create a dedicated Git branch or another clearly identified recovery checkpoint.
+* Confirm the Borosil baseline is ₹556.5346426 Cr across 27,777 transactions.
+
+Do not reset the repository, overwrite unrelated changes, or modify Module 1 or Module 2 calculations.
+
+### 2. Connect PCBI to the correct assessment
+
+Refactor the PCBI forensic engine so it consumes the requested assessment through the existing canonical Module 1/2 data services.
+
+For Borosil, use assessment ID \AIC-2026-0002\.
+
+Requirements:
+
+* Remove the dependency on the hardcoded VGT demonstration dataset.
+* Use actual canonical transactions and verified material identifiers.
+* Preserve existing Module 2 categorization and material mappings.
+* Make assessment selection explicit.
+* Reject missing or invalid assessment data with a clear error.
+* Do not silently substitute another customer's data.
+
+### 3. Eliminate unsafe benchmark fallbacks
+
+Remove all fallback behaviour that assigns an unmapped material to steel, copper or the first available benchmark series.
+
+For an unmapped material:
+
+* Return an explicit \UNMAPPED_BENCHMARK_SIGNAL\.
+* Record the material identifier and reason.
+* Preserve the spend in the coverage and exception reports.
+* Do not calculate a benchmark variance for that material.
+
+Never substitute a benchmark solely because its unit or description appears similar.
+
+### 4. Separate price variance from savings
+
+Remove any PCBI logic that automatically labels a benchmark price difference as savings or as a certified opportunity.
+
+Use an analytical field such as \marketVarianceValue\, with clear documentation of the calculation and its assumptions.
+
+Module 3 must not:
+
+* Certify savings.
+* Trigger Module 4.
+* Change realized or certified savings.
+* Modify the Module 1 baseline.
+
+### 5. Preserve strict module boundaries
+
+Do not implement benchmark data acquisition, new benchmark observations, broad material remapping, or customer-facing dashboard redesign in this phase.
+
+Do not invent data to make PCBI calculations run.
+
+If a required benchmark series is missing, report the data gap rather than calculating a result.
+
+### 6. Tests required
+
+Create or update tests to verify:
+
+* Borosil assessment selection.
+* No cross-customer data leakage.
+* No VGT demonstration-data dependency in the Borosil execution path.
+* Unmapped materials never fall back to unrelated indices.
+* Missing benchmark observations produce an explicit unavailable state.
+* Module 1 baseline remains ₹556.5346426 Cr across 27,777 transactions.
+* Module 1 and Module 2 outputs remain unchanged.
+* Certified and realized savings remain ₹0.
+* Module 4 remains unexecuted.
+
+Run relevant backend tests, typecheck and lint.
+
+### 7. Final report
+
+Provide:
+
+1. Files modified.
+2. Git branch and recovery checkpoint.
+3. Tests executed and results.
+4. Evidence that the PCBI path uses Borosil's canonical data.
+5. Confirmation that unsafe fallbacks have been removed.
+6. Baseline reconciliation.
+7. Any remaining blockers.
+
+Do not run a full PCBI benchmark calculation against Borosil yet.
+
+Do not execute Module 4.
+
+Stop after completing Phase 1 and reporting the results.
+
+## Prompt 550
+# BOROSIL LTD — PCBI PHASE 2
+
+## Benchmark Catalog, Source Validation and Material Mapping
+
+**Assessment:** Borosil Ltd
+**Assessment ID:** AIC-2026-0002
+**Phase 1 recovery checkpoint:** 3c7d547064b400c91fd859f70a75252e1b785e8c
+
+### OBJECTIVE
+
+Build the foundation for a genuine Borosil-specific benchmark catalog by identifying the required benchmark series, validating actual data availability, and designing auditable mappings between Borosil material codes and appropriate market benchmarks.
+
+Do not fabricate market observations or claim data availability without evidence.
+
+### 1. Protect Phase 1
+
+Before making changes:
+
+* Inspect the current Git branch, working tree and latest commit.
+* Preserve all Phase 1 work and unrelated user changes.
+* Create a recoverable checkpoint before implementation.
+* Confirm the Module 1 baseline remains ₹556.5346426 Cr across 27,777 transactions.
+
+Do not modify Modules 1 or 2.
+
+### 2. Build the Borosil Benchmark Requirements Catalog
+
+Use the canonical Borosil assessment and its existing material taxonomy to identify the actual materials requiring benchmark coverage.
+
+Prioritize:
+
+1. Soda Ash — dense and light grades where applicable.
+2. Silica Sand and Quartz.
+3. Boric Acid and Borax.
+4. Corrugated Boxes, Cartons and Kraft Paper.
+5. Polypropylene, LDPE and HDPE.
+6. Refractories and furnace consumables.
+7. Fuel and Energy.
+8. Standard MRO materials, including steel, aluminium and lubricants.
+
+Do not assume that every listed category exists in Borosil's spend. Confirm actual material codes, descriptions, units, grades and spend from the canonical data.
+
+For each material group, report:
+
+* SAP material code and description.
+* Module 2 category and UNSPSC classification, where available.
+* Transaction count and historical spend.
+* Purchase unit and normalized unit, if conversion is valid.
+* Required benchmark specification.
+* Candidate benchmark source or publisher.
+* Source frequency and geographic coverage.
+* Currency, unit and delivery-term requirements.
+* Actual source-data availability.
+* Mapping confidence and unresolved questions.
+
+### 3. Verify Actual Benchmark Data
+
+Inspect existing files, databases and source integrations before adding any data.
+
+For each proposed benchmark series, classify it as:
+
+* VERIFIED_DATA_AVAILABLE
+* SOURCE_IDENTIFIED_DATA_NOT_ACQUIRED
+* LICENSE_REQUIRED
+* MANUAL_VALIDATION_REQUIRED
+* NO_SUITABLE_SOURCE_IDENTIFIED
+
+Record the evidence supporting each classification.
+
+Do not treat a source name in a catalog as evidence that historical observations exist.
+
+Do not download or redistribute paid/licensed data without authorization.
+
+Do not create synthetic historical values, extrapolated values presented as observations, or fabricated market prices.
+
+### 4. Implement Auditable Mapping Infrastructure
+
+Where the existing schema supports it, implement or extend the mapping workflow so each material-to-benchmark assignment records:
+
+* Assessment/customer scope where appropriate.
+* SAP material code.
+* UNSPSC commodity mapping, if verified.
+* Benchmark series identifier.
+* Grade/specification comparability.
+* Unit and currency conversion rules.
+* Geography and delivery-term compatibility.
+* Mapping status and confidence.
+* Evidence or rationale.
+* Approval status and audit history.
+
+Unapproved or incompatible mappings must not produce benchmark price variances.
+
+Prefer reusing existing Prisma models and PCBI services over introducing duplicate infrastructure.
+
+Do not automatically map materials based only on broad description keywords.
+
+### 5. Data Quality and Calculation Controls
+
+Ensure:
+
+* Missing observations remain unavailable, not zero-priced.
+* Stale series are flagged.
+* Frequency conversion is explicitly documented.
+* Unit and currency conversions are traceable.
+* Benchmark price comparisons are performed only when the required dimensions are comparable.
+* Unmapped spend remains visible in coverage reporting.
+* Market variance remains distinct from savings.
+
+Do not run a full Borosil PCBI calculation in this phase.
+
+### 6. Frontend Scope
+
+Do not yet replace the customer-facing trend dashboard.
+
+Prepare a clear benchmark coverage and mapping status model that can be connected to the frontend in a later phase.
+
+Do not display synthetic trend curves as actual market data.
+
+### 7. Testing
+
+Add tests for:
+
+* Material mapping and unmapped-material handling.
+* Source-data availability classification.
+* Invalid unit or currency comparisons.
+* Missing and stale benchmark observations.
+* Auditability of mapping approval.
+* Preservation of the Module 1 baseline.
+* Zero certified and realized savings.
+* Module 4 isolation.
+
+Run relevant backend tests, typecheck and lint.
+
+### 8. Final Deliverables
+
+Return:
+
+1. Borosil material-to-benchmark requirements catalog.
+2. Actual benchmark source availability matrix.
+3. Mapping infrastructure implemented and files changed.
+4. Data gaps, licensing dependencies and commercial decisions required.
+5. Test results.
+6. Baseline reconciliation.
+7. Git checkpoint and modified-file list.
+
+Stop after Phase 2. Do not execute Module 4 or certify savings.

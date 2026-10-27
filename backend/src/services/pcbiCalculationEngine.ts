@@ -141,11 +141,13 @@ export class PCBICalculationEngine {
   }
 
   private resolveTxBenchmark(tx: PCBIClientPurchaseTransaction): {
-    benchmark: PCBIBenchmarkMaster;
+    benchmark: PCBIBenchmarkMaster | null;
     quality: PCBIQualityRating;
     currentIndex: number;
     benchmarkability: number;
     residualPct: number;
+    isUnmapped?: boolean;
+    unmappedReason?: string;
   } {
     const explicitPcbiId = tx.pcbi_id;
     const mapping = explicitPcbiId && this.benchmarks.has(explicitPcbiId)
@@ -155,11 +157,50 @@ export class PCBICalculationEngine {
       }
       : this.resolvePCBIMapping(tx);
 
-    const benchmark = this.benchmarks.get(mapping.pcbiId)
-      || this.benchmarks.get('PCBI-STEEL-001')
-      || Array.from(this.benchmarks.values())[0];
-    const indexInfo = benchmark ? this.getIndexForDate(benchmark.pcbi_id, tx.po_date) : null;
-    const currentIndex = indexInfo ? indexInfo.indexValue : 100.0;
+    const isUnmapped =
+      mapping.pcbiId === 'UNMAPPED_BENCHMARK_SIGNAL' ||
+      !this.benchmarks.has(mapping.pcbiId);
+
+    if (isUnmapped) {
+      return {
+        benchmark: null,
+        quality: mapping.quality || 'C',
+        currentIndex: 0,
+        benchmarkability: 0,
+        residualPct: 100,
+        isUnmapped: true,
+        unmappedReason: mapping.pcbiId === 'UNMAPPED_BENCHMARK_SIGNAL'
+          ? `Material '${tx.material_code || tx.short_text}' has no certified benchmark series (UNMAPPED_BENCHMARK_SIGNAL)`
+          : `Benchmark series '${mapping.pcbiId}' is not found in master data (UNAVAILABLE)`
+      };
+    }
+
+    const benchmark = this.benchmarks.get(mapping.pcbiId);
+    if (!benchmark) {
+      return {
+        benchmark: null,
+        quality: mapping.quality || 'C',
+        currentIndex: 0,
+        benchmarkability: 0,
+        residualPct: 100,
+        isUnmapped: true,
+        unmappedReason: `Benchmark series '${mapping.pcbiId}' is not found in master data (UNAVAILABLE)`
+      };
+    }
+    const indexInfo = this.getIndexForDate(benchmark.pcbi_id, tx.po_date);
+    if (!indexInfo) {
+      return {
+        benchmark,
+        quality: mapping.quality,
+        currentIndex: 0,
+        benchmarkability: 0,
+        residualPct: 100,
+        isUnmapped: true,
+        unmappedReason: `Missing benchmark observation for '${benchmark.pcbi_id}' on date '${tx.po_date}' (UNAVAILABLE)`
+      };
+    }
+
+    const currentIndex = indexInfo.indexValue;
     const benchmarkability = benchmark?.benchmarkability_percent !== undefined
       ? benchmark.benchmarkability_percent
       : 70;
@@ -175,7 +216,8 @@ export class PCBICalculationEngine {
     compKey: string,
     info: ReturnType<PCBICalculationEngine['resolveTxBenchmark']>
   ): { baseRec: PCBIBasePurchase; calcRow: PCBITransactionCalculation } {
-    const benchmarkId = info.benchmark ? info.benchmark.pcbi_id : 'PCBI-GENERIC-001';
+    const isUnmapped = Boolean(info.isUnmapped);
+    const benchmarkId = info.benchmark ? info.benchmark.pcbi_id : 'UNMAPPED_BENCHMARK_SIGNAL';
     const baseRec: PCBIBasePurchase = {
       id: `base-${compKey}-${tx.id}`,
       comparable_key: compKey,
@@ -189,13 +231,16 @@ export class PCBICalculationEngine {
       base_quantity: tx.quantity,
       base_pcbi_id: benchmarkId,
       base_pcbi_index: info.currentIndex,
-      benchmarkability_percent: info.benchmarkability,
+      benchmarkability_percent: isUnmapped ? 0 : info.benchmarkability,
       base_version: 1,
-      status: 'ACTIVE',
+      status: isUnmapped ? 'EXCLUDED' : 'ACTIVE',
+      reason_if_excluded: isUnmapped ? info.unmappedReason : undefined,
       created_at: new Date().toISOString()
     };
 
-    const baseBenchSpend = Number(((tx.unit_price * tx.quantity) * (info.benchmarkability / 100)).toFixed(2));
+    const baseBenchSpend = isUnmapped
+      ? 0
+      : Number(((tx.unit_price * tx.quantity) * (info.benchmarkability / 100)).toFixed(2));
     const calcRow: PCBITransactionCalculation = {
       id: `calc-${tx.id}`,
       transaction_id: tx.id,
@@ -215,13 +260,14 @@ export class PCBICalculationEngine {
       base_pcbi_index: info.currentIndex,
       current_date: tx.po_date,
       current_pcbi_index: info.currentIndex,
-      benchmarkability_percent: info.benchmarkability,
-      residual_percent: info.residualPct,
+      benchmarkability_percent: isUnmapped ? 0 : info.benchmarkability,
+      residual_percent: isUnmapped ? 100 : info.residualPct,
       expected_price: Number(tx.unit_price.toFixed(2)),
       actual_price: Number(tx.unit_price.toFixed(2)),
       price_gap_per_unit: 0,
       price_gap_pct: 0,
       gross_opportunity: 0,
+      marketVarianceValue: 0,
       benchmarkable_spend: baseBenchSpend,
       quantity: tx.quantity,
       opportunity_value: 0,
@@ -230,7 +276,8 @@ export class PCBICalculationEngine {
       calculation_method: info.benchmark?.benchmark_type === 'COMPOSITE'
         ? 'COMPOSITE_BENCHMARK'
         : 'SINGLE_BENCHMARK',
-      calculation_status: 'BASE_RECORD',
+      calculation_status: isUnmapped ? 'UNMAPPED_BENCHMARK_SIGNAL' : 'BASE_RECORD',
+      unmappedReason: info.unmappedReason,
       created_at: new Date().toISOString()
     };
 
@@ -243,13 +290,55 @@ export class PCBICalculationEngine {
     baseRec: PCBIBasePurchase,
     info: ReturnType<PCBICalculationEngine['resolveTxBenchmark']>
   ): PCBITransactionCalculation {
+    const actualPrice = Number(tx.unit_price.toFixed(2));
+
+    // Strict safety: Unmapped materials or base records never calculate benchmark variance
+    if (info.isUnmapped || baseRec.base_pcbi_id === 'UNMAPPED_BENCHMARK_SIGNAL' || !info.benchmark) {
+      return {
+        id: `calc-${tx.id}`,
+        transaction_id: tx.id,
+        po_number: tx.po_number,
+        po_date: tx.po_date,
+        material_code: tx.material_code,
+        short_text: tx.short_text,
+        vendor: tx.vendor || 'Generic Vendor',
+        plant: tx.plant || 'Main Plant',
+        sector: tx.sector || 'Industrial',
+        comparable_key: compKey,
+        base_transaction_id: baseRec.transaction_id,
+        base_po_number: baseRec.po_number,
+        base_date: baseRec.base_date,
+        base_price: baseRec.base_price,
+        base_pcbi_id: baseRec.base_pcbi_id,
+        base_pcbi_index: baseRec.base_pcbi_index,
+        current_date: tx.po_date,
+        current_pcbi_index: 0,
+        benchmarkability_percent: 0,
+        residual_percent: 100,
+        expected_price: actualPrice,
+        actual_price: actualPrice,
+        price_gap_per_unit: 0,
+        price_gap_pct: 0,
+        gross_opportunity: 0,
+        marketVarianceValue: 0,
+        benchmarkable_spend: 0,
+        quantity: tx.quantity,
+        opportunity_value: 0,
+        favourable_variance: 0,
+        benchmark_quality: info.quality,
+        calculation_method: 'SINGLE_BENCHMARK',
+        calculation_status: 'UNMAPPED_BENCHMARK_SIGNAL',
+        unmappedReason: info.unmappedReason || 'Explicit UNMAPPED_BENCHMARK_SIGNAL: No certified benchmark series exists',
+        created_at: new Date().toISOString()
+      };
+    }
+
     const P0 = baseRec.base_price;
     const I0 = baseRec.base_pcbi_index > 0 ? baseRec.base_pcbi_index : 100.0;
     const I1 = info.currentIndex;
     const benchPercent = baseRec.benchmarkability_percent !== undefined
       ? baseRec.benchmarkability_percent
       : 70;
-    const actualPrice = Number(tx.unit_price.toFixed(2));
     const currentResidualPct = info.benchmark?.residual_percent !== undefined
       ? info.benchmark.residual_percent
       : Math.max(0, 100 - benchPercent);
@@ -277,6 +366,8 @@ export class PCBICalculationEngine {
     const priceGapPct = expectedPrice > 0 ? Number(((priceGap / expectedPrice) * 100).toFixed(2)) : 0;
     const grossOpportunity = Number((priceGap * tx.quantity).toFixed(2));
     const opportunityValue = Number((grossOpportunity * (benchPercent / 100)).toFixed(2));
+    // Analytical field: market variance represents analytical drift disparity, not certified savings
+    const marketVarianceValue = grossOpportunity;
     const favourableVariance = Math.max(0, Number(((expectedPrice - actualPrice) * tx.quantity).toFixed(2)));
     const benchmarkableSpend = Number(((actualPrice * tx.quantity) * (benchPercent / 100)).toFixed(2));
 
@@ -306,6 +397,7 @@ export class PCBICalculationEngine {
       price_gap_per_unit: priceGap,
       price_gap_pct: priceGapPct,
       gross_opportunity: grossOpportunity,
+      marketVarianceValue,
       benchmarkable_spend: benchmarkableSpend,
       quantity: tx.quantity,
       opportunity_value: opportunityValue,

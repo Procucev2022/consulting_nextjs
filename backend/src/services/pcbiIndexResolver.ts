@@ -100,6 +100,8 @@ export function validateModule2Authority(tx: Partial<PCBIClientPurchaseTransacti
   return { isValid: true, status: 'VALIDATED', action: 'ALLOW' };
 }
 
+export const UNMAPPED_BENCHMARK_SIGNAL = 'UNMAPPED_BENCHMARK_SIGNAL';
+
 export function resolvePCBIMapping(
   unspscMappings: Map<string, PCBIUNSPSCMapping>,
   tx: PCBIClientPurchaseTransaction & {
@@ -144,7 +146,14 @@ export function resolvePCBIMapping(
     return { pcbiId: match.pcbiId, quality: match.quality, method: 'AI_TEXT_CLASSIFICATION' };
   }
 
-  return { pcbiId: 'PCBI-STEEL-001', quality: 'C', method: 'SECTOR_DEFAULT_PROXY' };
+  // Strict Phase 1 Safety: No unsafe proxy fallback to Steel, Copper, or first series
+  return {
+    pcbiId: UNMAPPED_BENCHMARK_SIGNAL,
+    quality: 'C',
+    method: 'UNMAPPED_NO_BENCHMARK_SERIES',
+    status: 'UNMAPPED_BENCHMARK_SIGNAL',
+    action: 'SIGNAL_UNMAPPED'
+  };
 }
 
 

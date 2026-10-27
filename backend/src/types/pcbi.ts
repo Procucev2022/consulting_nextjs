@@ -192,7 +192,9 @@ export interface PCBITransactionCalculation {
   favourable_variance: number;
   benchmark_quality: PCBIQualityRating;
   calculation_method: 'SINGLE_BENCHMARK' | 'COMPOSITE_BENCHMARK';
-  calculation_status: 'SUCCESS' | 'BASE_RECORD' | 'BENCHMARK_DATA_MISSING' | 'MAPPING_REQUIRED';
+  calculation_status: 'SUCCESS' | 'BASE_RECORD' | 'BENCHMARK_DATA_MISSING' | 'MAPPING_REQUIRED' | 'UNMAPPED_BENCHMARK_SIGNAL' | 'UNAVAILABLE';
+  unmappedReason?: string;
+  marketVarianceValue?: number;
   component_breakdowns?: PCBIComponentCalculation[];
   created_at: string;
 }

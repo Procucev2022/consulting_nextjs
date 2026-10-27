@@ -126,7 +126,9 @@
         "src/services/analysisOrchestrationService.ts",
         "src/controllers/analysisOrchestration.controller.ts",
         "src/services/assessmentWorkflowService.ts",
-        "src/services/assessmentStore.ts"
+        "src/services/assessmentStore.ts",
+        "src/services/module3PcbiForensicEngine.ts",
+        "src/services/pcbiCalculationEngine.ts"
       ],
       "rules": {
         "max-lines": "off",

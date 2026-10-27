@@ -129,10 +129,30 @@ function readExcelWorkbook(filePath: string): {
 } {
   const fileBuf = fs.readFileSync(filePath);
   const fileSha256 = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
+  const cachePath = `${filePath}.${fileSha256}.cache.json`;
+
+  if (fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
+      if (Array.isArray(cached?.rawRows) && Array.isArray(cached?.sheetNames)) {
+        return { rawRows: cached.rawRows, fileSha256, sheetNames: cached.sheetNames };
+      }
+    } catch {
+      // Continue to fresh parse on corrupted cache
+    }
+  }
+
   const wb = XLSX.read(fileBuf, { type: 'buffer' });
   const sheetName = wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
   const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: null });
+
+  try {
+    fs.writeFileSync(cachePath, JSON.stringify({ rawRows, sheetNames: wb.SheetNames }), 'utf8');
+  } catch {
+    // Non-fatal if write fails in read-only environment
+  }
+
   return { rawRows, fileSha256, sheetNames: wb.SheetNames };
 }
 

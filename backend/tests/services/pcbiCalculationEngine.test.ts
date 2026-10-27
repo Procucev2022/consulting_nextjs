@@ -460,7 +460,7 @@ describe('PCBI Calculation Engine - Master Product Specification Tests (Prompt 1
     expect(engine.resolvePCBIMapping({ short_text: 'hydraulic lubricant oil grease' } as any).pcbiId).toBe('PCBI-LUB-OIL-001');
     expect(engine.resolvePCBIMapping({ short_text: 'refractory kiln brick alumina' } as any).pcbiId).toBe('PCBI-REFRAC-001');
     expect(engine.resolvePCBIMapping({ short_text: 'structural steel plate' } as any).pcbiId).toBe('PCBI-STEEL-001');
-    expect(engine.resolvePCBIMapping({ short_text: 'completely unmapped miscellaneous' } as any).pcbiId).toBe('PCBI-STEEL-001');
+    expect(engine.resolvePCBIMapping({ short_text: 'completely unmapped miscellaneous' } as any).pcbiId).toBe('UNMAPPED_BENCHMARK_SIGNAL');
 
     // 2. UNSPSC Commodity & Class fallback
     const unspscEngine = new PCBICalculationEngine(

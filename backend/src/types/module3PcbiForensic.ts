@@ -69,7 +69,10 @@ export interface PcbiCustomerTransactionBenchmarkRecord {
   transactionUnitPrice: number;
   currency: string;
   transactionSpendInr: number;
-  mappingStatus: 'MAPPED' | 'PARTIAL' | 'UNMAPPED' | 'NOT_BENCHMARKABLE' | 'SERVICE';
+  mappingStatus: 'MAPPED' | 'PARTIAL' | 'UNMAPPED' | 'NOT_BENCHMARKABLE' | 'SERVICE' | 'UNMAPPED_BENCHMARK_SIGNAL';
+  unmappedSignal?: 'UNMAPPED_BENCHMARK_SIGNAL';
+  unmappedReason?: string;
+  marketVarianceValue?: number;
   pcbiId?: string;
   benchmarkDateUsed?: string;
   rawBenchmarkPrice?: number;
