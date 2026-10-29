@@ -19,8 +19,7 @@
 import type {
   ExecutiveBriefPresentationContract,
   ExecutiveBriefValueClassification,
-  PresentationKpiCard,
-  ValueClassificationType
+  PresentationKpiCard
 } from '../types/executiveBriefPresentation';
 
 export const PRESENTATION_TOTAL_SPEND_CR = 5920.35;
@@ -209,56 +208,6 @@ export const EXECUTIVE_BRIEF_PRESENTATION_CONTRACT: ExecutiveBriefPresentationCo
   classifications: PRESENTATION_VALUE_CLASSIFICATIONS
 };
 
-export const DEMO_ARCHETYPE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationContract = {
-  ...EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
-};
-
-export {
-  ABC_TEXTILE_VALUE_CLASSIFICATIONS,
-  ABC_TEXTILE_PRESENTATION_CONTRACT,
-  formatPresentationValues,
-  type PresentationFormattedValues
-} from './customerBriefPresentationConstants';
-import { ABC_TEXTILE_PRESENTATION_CONTRACT } from './customerBriefPresentationConstants';
-
-/**
- * Checks whether client name or assessment ID belongs to actual customer assessment.
- */
-export function isCustomerAssessment(clientNameOrAssessmentId?: string): boolean {
-  if (!clientNameOrAssessmentId) return false;
-  const clean = clientNameOrAssessmentId.trim().toLowerCase();
-  return (
-    clean.includes('abc') ||
-    clean.includes('textile') ||
-    clean.includes('0002') ||
-    clean.startsWith('aic-')
-  );
-}
-
-/**
- * Resolves the presentation contract based on client name or assessment ID.
- * Returns ABC_TEXTILE_PRESENTATION_CONTRACT for ABC Textile Ltd / AIC-2026-0002,
- * and DEMO_ARCHETYPE_PRESENTATION_CONTRACT for UltraTech Cement / demonstration archetypes.
- */
-export function getExecutiveBriefPresentationContract(
-  clientNameOrAssessmentId?: string
-): ExecutiveBriefPresentationContract {
-  if (isCustomerAssessment(clientNameOrAssessmentId)) {
-    return ABC_TEXTILE_PRESENTATION_CONTRACT;
-  }
-  return DEMO_ARCHETYPE_PRESENTATION_CONTRACT;
-}
-
-export const EXECUTIVE_BRIEF_PRESENTATION_CONSTANTS = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;
-
-/**
- * Validation guard: returns true only if classification represents direct monetized savings.
- * Prevents accidental summation of strategic value, process productivity, or risk avoidance into direct savings.
- */
-export function isAdditiveDirectSaving(type: ValueClassificationType): boolean {
-  return type === 'DIRECT_SAVINGS';
-}
-
 /**
  * Validates that mathematical relationship between Gross, Overlaps, Exclusions, and Net matches exactly.
  */
@@ -284,7 +233,6 @@ export function validateNetComposition(
   return Math.abs(sum - contract.netDefensiblePipelineCr) < 0.001;
 }
 
-export * from './executiveBriefLayoutConstants';
 
 
 

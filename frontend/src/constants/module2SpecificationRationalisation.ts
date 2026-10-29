@@ -80,6 +80,8 @@ export const SPECIFICATION_UI_STRINGS = {
   BTN_EXPORT_EXCEL: 'Export Authoritative Excel (6 Sheets)',
   BTN_BACK_TO_OVERVIEW: 'Back to Sourcing Levers',
   BTN_REVIEW_SPEC: 'Technical Review',
+  REVIEW_WORKFLOW_UNAVAILABLE: 'Technical review recording is unavailable until D1 review history and authenticated ' +
+    'reviewer identity are configured.',
   TAB_ALL_CANDIDATES: 'All Identified Candidates',
   TAB_AWAITING_REVIEW: 'Awaiting Engineering Review',
   TAB_VERIFIED: 'Technically Verified',

@@ -22,7 +22,8 @@ import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolv
 export class Module2CategoryProfileBuilder {
   public static buildProfile(
     categoryName: string,
-    transactions: StrategicInputTransaction[]
+    transactions: StrategicInputTransaction[],
+    includeAuditDetails = true
   ): CategoryStrategicSourcingProfile {
     const totalTxCount = transactions.length;
     const totalSpendInr = Module2CategoryProfileHelper.calculateTotalSpend(transactions);
@@ -163,7 +164,7 @@ export class Module2CategoryProfileBuilder {
     );
     const evidenceData = Module2CategoryProfileHelper.enrichEvidenceChain(
       categoryName,
-      transactions,
+      includeAuditDetails ? transactions : [],
       netCalc.netInr,
       scorecard.justificationNotes[0] || 'Convene sourcing category review with procurement lead.'
     );

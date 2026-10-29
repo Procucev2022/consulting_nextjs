@@ -6,6 +6,18 @@ export type CoreBucket = 'Direct Materials' | 'Packaging Materials' | 'Indirect 
 
 export type TaxonomyClassificationStatus = 'CLASSIFIED' | 'UNCLASSIFIED';
 
+export interface TaxonomyLoadState {
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface UNSPSCLookupDetails {
+  commodityCode: string;
+  commodityTitle: string;
+  classTitle: string;
+  coreBucket: string;
+}
+
 export interface UNSPSCCommodityRecord {
   commodityCode: string;
   commodityTitle: string;

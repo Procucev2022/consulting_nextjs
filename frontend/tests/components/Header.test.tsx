@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
-import { mockTenant } from '../../src/data/mockData';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 import { DEFAULT_SPEND_BASELINE_INR_CR } from '../../src/constants/app';

@@ -1,22 +1,76 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import type { AssessmentUploadTabProps, AssessmentRecord } from '../../types';
-import { UI_STRINGS, ASSESSMENT_STATUS_BADGES } from '../../constants';
+import type { AssessmentUploadTabProps, AssessmentRecord, IngestionWorkflowState } from '../../types';
+import {
+  UI_STRINGS,
+  ASSESSMENT_STATUS_BADGES,
+  ASSESSMENT_UPLOAD_ACCEPT,
+  ASSESSMENT_UPLOAD_EXTENSIONS,
+  ASSESSMENT_UPLOAD_MAX_BYTES,
+  ASSESSMENT_UPLOAD_MAX_MB,
+  ASSESSMENT_CHECKSUM_FALLBACK_HEX,
+  BASE64_ENCODE_CHUNK_BYTES,
+  BYTES_PER_KB,
+  BYTES_PER_MB,
+  DATA_STATUSES
+} from '../../constants';
 import { assessmentApiClient } from '../../utils/assessmentApi';
 import frontendLogger from '../../utils/logger';
 
-export type IngestionWorkflowState =
-  | 'NO_FILE_UPLOADED'
-  | 'FILE_SELECTED'
-  | 'FILE_UPLOADED'
-  | 'VALIDATION_IN_PROGRESS'
-  | 'VALIDATION_PASSED'
-  | 'VALIDATION_FAILED'
-  | 'MODULE_1_NOT_RUN'
-  | 'MODULE_1_RUNNING'
-  | 'MODULE_1_COMPLETED'
-  | 'MODULE_1_FAILED';
+const pipelineStrings = UI_STRINGS.ASSESSMENT.uploadPipeline;
+const screenStrings = UI_STRINGS.ASSESSMENT.uploadScreen;
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes < BYTES_PER_KB) return screenStrings.fileSizeBytes(bytes);
+  if (bytes < BYTES_PER_MB) return screenStrings.fileSizeKilobytes((bytes / BYTES_PER_KB).toFixed(1));
+  return screenStrings.fileSizeMegabytes((bytes / BYTES_PER_MB).toFixed(2));
+};
+
+const readFileBuffer = (file: File): Promise<ArrayBuffer> => {
+  if (typeof file.arrayBuffer === 'function') return file.arrayBuffer();
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+};
+
+const readFailureMessage = (value: unknown): string | undefined => {
+  if (typeof value === 'object' && value !== null && 'message' in value && typeof value.message === 'string') {
+    return value.message;
+  }
+  return undefined;
+};
+
+const encodeBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let offset = 0; offset < bytes.byteLength; offset += BASE64_ENCODE_CHUNK_BYTES) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + BASE64_ENCODE_CHUNK_BYTES));
+  }
+  return btoa(binary);
+};
+
+const fileToBase64 = async (file: File): Promise<string> => {
+  if (typeof file.arrayBuffer === 'function') {
+    try {
+      return encodeBase64(await file.arrayBuffer());
+    } catch {
+      // Fall through to the FileReader path below.
+    }
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1] || result);
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(file);
+  });
+};
 
 export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
   assessment,
@@ -53,6 +107,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
   const [isRunningModule1, setIsRunningModule1] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const targetDvId = activeDataVersionId || assessment.currentDataVersionId;
 
   useEffect(() => {
     if (assessment.canonicalModule1 || (assessment.validatedSpendCr !== undefined && assessment.validatedSpendCr > 0)) {
@@ -72,73 +127,54 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
     border: 'border-slate-700'
   };
 
+  const digestFile = async (file: File): Promise<string> => {
+    const buffer = await readFileBuffer(file);
+    if (typeof crypto === 'undefined' || !crypto.subtle) {
+      return ASSESSMENT_CHECKSUM_FALLBACK_HEX;
+    }
+    const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', uint8);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  };
+
   const computeSha256 = async (file: File): Promise<string> => {
     setIsComputingHash(true);
+    let hex = ASSESSMENT_CHECKSUM_FALLBACK_HEX;
     try {
-      let buffer: ArrayBuffer;
-      if (typeof file.arrayBuffer === 'function') {
-        buffer = await file.arrayBuffer();
-      } else {
-        buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as ArrayBuffer);
-          reader.onerror = reject;
-          reader.readAsArrayBuffer(file);
-        });
-      }
-
-      if (typeof crypto !== 'undefined' && crypto.subtle) {
-        const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', uint8);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-        setChecksum(hashHex);
-        return hashHex;
-      }
-
-      const fallbackHex = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-      setChecksum(fallbackHex);
-      return fallbackHex;
+      hex = await digestFile(file);
     } catch (err: unknown) {
       frontendLogger.error('Failed to compute client SHA-256', { error: err });
-      const fallbackHex = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-      setChecksum(fallbackHex);
-      return fallbackHex;
     } finally {
       setIsComputingHash(false);
     }
+    setChecksum(hex);
+    return hex;
+  };
+
+  const rejectSelectedFile = (message: string): void => {
+    setErrorMessage(message);
+    setSelectedFile(null);
+    setChecksum(null);
+    setWorkflowState('NO_FILE_UPLOADED');
   };
 
   const validateAndSetFile = (file: File): void => {
     setErrorMessage(null);
     setValidationSummary(null);
     setExecutionSummary(null);
-    const validExtensions = ['.xlsx', '.csv', '.xls'];
     const lowerName = file.name.toLowerCase();
-    const isValidExt = validExtensions.some((ext) => lowerName.endsWith(ext));
-
-    if (!isValidExt) {
-      setErrorMessage('Invalid file format. Only .xlsx, .csv, and .xls files are supported.');
-      setSelectedFile(null);
-      setChecksum(null);
-      setWorkflowState('NO_FILE_UPLOADED');
+    if (!ASSESSMENT_UPLOAD_EXTENSIONS.some((ext) => lowerName.endsWith(ext))) {
+      rejectSelectedFile(screenStrings.invalidFileFormat);
       return;
     }
-
-    const maxSizeBytes = 100 * 1024 * 1024; // 100 MB
-    if (file.size > maxSizeBytes) {
-      setErrorMessage('File size exceeds the 100 MB limit. Please select a smaller procurement file.');
-      setSelectedFile(null);
-      setChecksum(null);
-      setWorkflowState('NO_FILE_UPLOADED');
+    if (file.size > ASSESSMENT_UPLOAD_MAX_BYTES) {
+      rejectSelectedFile(screenStrings.fileTooLarge(ASSESSMENT_UPLOAD_MAX_MB));
       return;
     }
-
     if (file.size === 0) {
-      setErrorMessage('Selected file is empty (0 bytes). Please select a valid procurement dataset.');
-      setSelectedFile(null);
-      setChecksum(null);
-      setWorkflowState('NO_FILE_UPLOADED');
+      rejectSelectedFile(screenStrings.emptyFile);
       return;
     }
 
@@ -173,59 +209,24 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
     setIsDragOver(false);
   };
 
-  const fileToBase64 = async (file: File): Promise<string> => {
-    if (typeof file.arrayBuffer === 'function') {
-      try {
-        const buf = await file.arrayBuffer();
-        if (typeof Buffer !== 'undefined') {
-          return Buffer.from(buf).toString('base64');
-        }
-        let binary = '';
-        const bytes = new Uint8Array(buf);
-        for (let i = 0; i < bytes.byteLength; i++) {
-          binary += String.fromCharCode(bytes[i]);
-        }
-        return btoa(binary);
-      } catch {
-        // fallback
-      }
-    }
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64Data = result.split(',')[1] || result;
-        resolve(base64Data);
-      };
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
   // STEP 1: Upload File (without automatic analysis run)
-  const handleUploadFile = async (): Promise<void> => {
-    if (!selectedFile) {
-      setErrorMessage('Please select a procurement file to upload.');
-      return;
-    }
-
+  const handleUploadFile = async (file: File, fileChecksum: string): Promise<void> => {
     try {
       setIsUploading(true);
       setErrorMessage(null);
-      const computedHash = checksum || (await computeSha256(selectedFile));
-      const base64Data = await fileToBase64(selectedFile);
+      const base64Data = await fileToBase64(file);
 
       frontendLogger.info('Uploading dataset version to backend (runAnalysisImmediately=false)', {
         assessmentId: assessment.assessmentId,
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        checksum: computedHash
+        fileName: file.name,
+        fileSize: file.size,
+        checksum: fileChecksum
       });
 
       const response = await assessmentApiClient.uploadDataVersion(assessment.assessmentId, {
-        fileName: selectedFile.name,
-        fileSize: selectedFile.size,
-        checksum: computedHash,
+        fileName: file.name,
+        fileSize: file.size,
+        checksum: fileChecksum,
         fileBase64: base64Data,
         runAnalysisImmediately: false
       });
@@ -237,47 +238,43 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
       setWorkflowState('FILE_UPLOADED');
       frontendLogger.info('File uploaded successfully, dataset ready for validation', { dvId });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Dataset upload failed';
-      frontendLogger.error('Dataset upload failed', { error: msg, assessmentId: assessment.assessmentId });
-      setErrorMessage(msg);
+      const reason = err instanceof Error ? err.message : screenStrings.noErrorDetails;
+      frontendLogger.error('Dataset upload failed', { assessmentId: assessment.assessmentId, fileName: file.name }, err);
+      setErrorMessage(screenStrings.uploadFailed(reason));
     } finally {
       setIsUploading(false);
     }
   };
 
   // STEP 2: Validate Dataset
-  const handleValidateDataset = async (): Promise<void> => {
-    const targetDvId = activeDataVersionId || assessment.currentDataVersionId;
-    if (!targetDvId) {
-      setErrorMessage('No uploaded data version found to validate.');
-      return;
-    }
-
+  const handleValidateDataset = async (dataVersionId: string): Promise<void> => {
     try {
       setIsValidating(true);
       setErrorMessage(null);
       setWorkflowState('VALIDATION_IN_PROGRESS');
 
-      frontendLogger.info('Invoking dataset validation', { assessmentId: assessment.assessmentId, targetDvId });
-      const res = await assessmentApiClient.validateDataset(assessment.assessmentId, targetDvId);
+      frontendLogger.info('Invoking dataset validation', { assessmentId: assessment.assessmentId, targetDvId: dataVersionId });
+      const res = await assessmentApiClient.validateDataset(assessment.assessmentId, dataVersionId);
 
       if (res?.validationSummary) {
-        const rowCount = res.validationSummary.validRowCount ?? (res.validationSummary as { rowCount?: number }).rowCount ?? 0;
-        const excludedCount = res.validationSummary.excludedRowCount ?? (res.validationSummary as { excludedRows?: number }).excludedRows ?? 0;
-        const anomalyCount = res.validationSummary.anomalyRowCount ?? (res.validationSummary as { anomalyCount?: number }).anomalyCount ?? 0;
+        const { validRowCount, excludedRowCount, anomalyRowCount } = res.validationSummary;
         setValidationSummary(
-          `Validation passed: ${rowCount.toLocaleString()} valid rows (${excludedCount} excluded, ${anomalyCount} quarantined anomalies). Dataset verified for analysis.`
+          screenStrings.validationPassed(
+            (validRowCount ?? 0).toLocaleString(),
+            String(excludedRowCount ?? 0),
+            String(anomalyRowCount ?? 0)
+          )
         );
         setWorkflowState('VALIDATION_PASSED');
       } else {
         setWorkflowState('VALIDATION_FAILED');
-        setErrorMessage((res as { message?: string })?.message || 'Dataset validation failed. Please check input columns and formats.');
+        setErrorMessage(screenStrings.validationFailed(readFailureMessage(res) || screenStrings.validationNoDetails));
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Dataset validation failed';
-      frontendLogger.error('Dataset validation failed', { error: msg, assessmentId: assessment.assessmentId });
+      const reason = err instanceof Error ? err.message : screenStrings.noErrorDetails;
+      frontendLogger.error('Dataset validation failed', { assessmentId: assessment.assessmentId, targetDvId: dataVersionId }, err);
       setWorkflowState('VALIDATION_FAILED');
-      setErrorMessage(msg);
+      setErrorMessage(screenStrings.validationFailed(reason));
     } finally {
       setIsValidating(false);
     }
@@ -285,9 +282,8 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
 
   // STEP 3: Explicitly Start Module 1 Analysis
   const handleStartModule1 = async (): Promise<void> => {
-    const targetDvId = activeDataVersionId || assessment.currentDataVersionId;
     if (!targetDvId) {
-      setErrorMessage('No validated data version found for Module 1 execution.');
+      setErrorMessage(screenStrings.noValidatedDataVersion);
       return;
     }
 
@@ -313,48 +309,38 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
         });
       } else {
         setWorkflowState('MODULE_1_FAILED');
-        setErrorMessage('Module 1 execution failed');
+        setErrorMessage(screenStrings.module1Failed(screenStrings.module1NoDetails));
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Module 1 execution failed';
-      frontendLogger.error('Module 1 execution failed', { error: msg, assessmentId: assessment.assessmentId });
+      const reason = err instanceof Error ? err.message : screenStrings.noErrorDetails;
+      frontendLogger.error('Module 1 execution failed', { assessmentId: assessment.assessmentId, targetDvId }, err);
       setWorkflowState('MODULE_1_FAILED');
-      setErrorMessage(msg);
+      setErrorMessage(screenStrings.module1Failed(reason));
     } finally {
       setIsRunningModule1(false);
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-  };
-
-  const strings = UI_STRINGS.ASSESSMENT.uploadPipeline;
-
   const getStateBadge = (): { label: string; bg: string; text: string; border: string } => {
     switch (workflowState) {
       case 'NO_FILE_UPLOADED':
-        return { label: strings.states.notUploaded, bg: 'bg-slate-800', text: 'text-slate-400', border: 'border-slate-700' };
+        return { label: pipelineStrings.states.notUploaded, bg: 'bg-slate-800', text: 'text-slate-400', border: 'border-slate-700' };
       case 'FILE_SELECTED':
-        return { label: strings.states.fileSelected, bg: 'bg-blue-950', text: 'text-blue-400', border: 'border-blue-800' };
+        return { label: pipelineStrings.states.fileSelected, bg: 'bg-blue-950', text: 'text-blue-400', border: 'border-blue-800' };
       case 'FILE_UPLOADED':
-        return { label: strings.states.uploaded, bg: 'bg-amber-950', text: 'text-amber-400', border: 'border-amber-800' };
+        return { label: pipelineStrings.states.uploaded, bg: 'bg-amber-950', text: 'text-amber-400', border: 'border-amber-800' };
       case 'VALIDATION_IN_PROGRESS':
-        return { label: strings.states.validating, bg: 'bg-indigo-950', text: 'text-indigo-400', border: 'border-indigo-800' };
+        return { label: pipelineStrings.states.validating, bg: 'bg-indigo-950', text: 'text-indigo-400', border: 'border-indigo-800' };
       case 'VALIDATION_PASSED':
-        return { label: strings.states.validated, bg: 'bg-emerald-950', text: 'text-emerald-400', border: 'border-emerald-800' };
+        return { label: pipelineStrings.states.validated, bg: 'bg-emerald-950', text: 'text-emerald-400', border: 'border-emerald-800' };
       case 'VALIDATION_FAILED':
-        return { label: strings.states.validationFailed, bg: 'bg-rose-950', text: 'text-rose-400', border: 'border-rose-800' };
-      case 'MODULE_1_NOT_RUN':
-        return { label: strings.states.module1NotRun, bg: 'bg-slate-800', text: 'text-slate-300', border: 'border-slate-700' };
+        return { label: pipelineStrings.states.validationFailed, bg: 'bg-rose-950', text: 'text-rose-400', border: 'border-rose-800' };
       case 'MODULE_1_RUNNING':
-        return { label: strings.states.module1Running, bg: 'bg-cyan-950', text: 'text-cyan-300 animate-pulse', border: 'border-cyan-700' };
+        return { label: pipelineStrings.states.module1Running, bg: 'bg-cyan-950', text: 'text-cyan-300 animate-pulse', border: 'border-cyan-700' };
       case 'MODULE_1_COMPLETED':
-        return { label: strings.states.module1Completed, bg: 'bg-teal-950', text: 'text-teal-300', border: 'border-teal-700' };
+        return { label: pipelineStrings.states.module1Completed, bg: 'bg-teal-950', text: 'text-teal-300', border: 'border-teal-700' };
       case 'MODULE_1_FAILED':
-        return { label: strings.states.module1Failed, bg: 'bg-rose-950', text: 'text-rose-400', border: 'border-rose-800' };
+        return { label: pipelineStrings.states.module1Failed, bg: 'bg-rose-950', text: 'text-rose-400', border: 'border-rose-800' };
     }
   };
 
@@ -367,10 +353,10 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-white tracking-wide">
-              {strings.title}
+              {pipelineStrings.title}
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-              {strings.subtitle}
+              {pipelineStrings.subtitle}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -386,7 +372,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
         {/* Customer Details Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-5 pt-4 border-t border-slate-800/80 text-xs">
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Customer</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.customerHeading}</span>
             <span className="font-semibold text-slate-100 truncate block mt-0.5">
               {assessment.customerName}
             </span>
@@ -398,36 +384,42 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Assessment ID</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.assessmentIdLabel}</span>
             <span className="font-mono font-bold text-cyan-400 block mt-0.5">
               {assessment.assessmentId}
             </span>
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Configured Period</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.configuredPeriodLabel}</span>
             <span className="text-slate-200 block mt-0.5">
-              {assessment.assessmentPeriodStart || '—'} – {assessment.assessmentPeriodEnd || '—'}
+              {screenStrings.dateRange(
+                assessment.assessmentPeriodStart || screenStrings.emptyValue,
+                assessment.assessmentPeriodEnd || screenStrings.emptyValue
+              )}
             </span>
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Actual Data Coverage</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.actualCoverageLabel}</span>
             <span className="text-cyan-300 block mt-0.5 font-semibold">
-              {assessment.actualDataCoverageStart || '1st Apr 2026'} – {assessment.actualDataCoverageEnd || '22nd Oct 2026'}
+              {screenStrings.dateRange(
+                assessment.actualDataCoverageStart || screenStrings.defaultCoverageStart,
+                assessment.actualDataCoverageEnd || screenStrings.defaultCoverageEnd
+              )}
             </span>
-            <span className="text-[9px] text-slate-400 block">Excl: BSL PUNE</span>
+            <span className="text-[9px] text-slate-400 block">{screenStrings.excludedEntityBadge}</span>
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Data Version</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.dataVersionLabel}</span>
             <span className="font-mono text-slate-200 block mt-0.5">
-              {activeDataVersionId || assessment.currentDataVersionId || 'NONE'}
+              {activeDataVersionId || assessment.currentDataVersionId || screenStrings.noDataVersion}
             </span>
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">NDA Status</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.ndaStatusLabel}</span>
             <span
               className={`font-semibold block mt-0.5 ${
                 assessment.ndaStatus === 'SIGNED' ? 'text-emerald-400' : 'text-amber-400'
@@ -438,9 +430,9 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           </div>
 
           <div>
-            <span className="text-[11px] text-slate-400 block font-medium">Dataset Status</span>
+            <span className="text-[11px] text-slate-400 block font-medium">{screenStrings.datasetStatusLabel}</span>
             <span className="text-slate-200 block mt-0.5 font-mono">
-              {assessment.dataStatus || 'AWAITING_DATA'}
+              {assessment.dataStatus || DATA_STATUSES.AWAITING_DATA}
             </span>
           </div>
         </div>
@@ -452,7 +444,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-amber-400 font-bold">⚠</span>
             <span className="text-amber-200 font-medium">
-              {UI_STRINGS.ASSESSMENT.uploadScreen.ndaWarning}
+              {screenStrings.ndaWarning}
             </span>
           </div>
         </div>
@@ -463,7 +455,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".xlsx,.csv,.xls"
+          accept={ASSESSMENT_UPLOAD_ACCEPT}
           className="hidden"
           onChange={handleFileChange}
           data-testid="assessment-file-input"
@@ -485,10 +477,10 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
             ↑
           </div>
           <h3 className="text-sm font-semibold text-slate-200 mb-1">
-            {selectedFile ? selectedFile.name : strings.controls.btnSelectFile}
+            {selectedFile ? selectedFile.name : pipelineStrings.controls.btnSelectFile}
           </h3>
           <p className="text-xs text-slate-400">
-            {UI_STRINGS.ASSESSMENT.uploadScreen.dropzoneSupported}
+            {screenStrings.dropzoneSupported}
           </p>
         </div>
 
@@ -497,19 +489,19 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
               <div>
-                <span className="text-slate-400 mr-2">Selected File:</span>
+                <span className="text-slate-400 mr-2">{screenStrings.selectedFileLabel}</span>
                 <span className="font-bold text-white font-mono">{selectedFile.name}</span>
               </div>
               <div>
-                <span className="text-slate-400 mr-2">File Size:</span>
+                <span className="text-slate-400 mr-2">{screenStrings.fileSizeLabel}</span>
                 <span className="text-slate-200 font-mono">{formatFileSize(selectedFile.size)}</span>
               </div>
             </div>
 
             <div className="text-xs">
-              <span className="text-slate-400 mr-2">SHA-256 Checksum:</span>
+              <span className="text-slate-400 mr-2">{screenStrings.checksumLabel}</span>
               {isComputingHash ? (
-                <span className="text-cyan-400 italic">Computing SHA-256 hash...</span>
+                <span className="text-cyan-400 italic">{screenStrings.computingHash}</span>
               ) : (
                 <span className="font-mono text-[11px] text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/60 break-all select-all">
                   {checksum}
@@ -524,7 +516,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           <div className="p-4 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-rose-300">
               <span>✕</span>
-              <h4>Operation Error</h4>
+              <h4>{screenStrings.operationErrorTitle}</h4>
             </div>
             <p>{errorMessage}</p>
           </div>
@@ -535,7 +527,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           <div className="p-4 rounded-xl bg-indigo-950/70 border border-indigo-800 text-indigo-200 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-indigo-300">
               <span>✓</span>
-              <h4>Dataset Validation Completed</h4>
+              <h4>{screenStrings.validationCompletedTitle}</h4>
             </div>
             <p>{validationSummary}</p>
           </div>
@@ -546,39 +538,39 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
           <div className="p-4 rounded-xl bg-emerald-950/70 border border-emerald-800 text-emerald-200 text-xs space-y-3">
             <div className="flex items-center gap-2 font-bold text-emerald-300 text-sm">
               <span>✓</span>
-              <h4>Module 1 Spend Intelligence Results Reconciled</h4>
+              <h4>{screenStrings.module1ResultsTitle}</h4>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-emerald-900/60 font-mono text-[11px]">
               <div>
-                <span className="text-emerald-400/80 block text-[10px]">Validated Spend</span>
+                <span className="text-emerald-400/80 block text-[10px]">{screenStrings.validatedSpendLabel}</span>
                 <span className="font-bold text-white text-xs">
                   {executionSummary.validatedSpendCr !== undefined
-                    ? `₹${executionSummary.validatedSpendCr.toFixed(4)} Cr`
-                    : '—'}
+                    ? screenStrings.validatedSpendValue(executionSummary.validatedSpendCr.toFixed(4))
+                    : screenStrings.emptyValue}
                 </span>
               </div>
               <div>
-                <span className="text-emerald-400/80 block text-[10px]">Source Rows</span>
+                <span className="text-emerald-400/80 block text-[10px]">{screenStrings.sourceRowsLabel}</span>
                 <span className="font-bold text-white text-xs">
                   {executionSummary.canonicalModule1?.sourceRowCount !== undefined
                     ? executionSummary.canonicalModule1.sourceRowCount.toLocaleString()
-                    : '—'}
+                    : screenStrings.emptyValue}
                 </span>
               </div>
               <div>
-                <span className="text-emerald-400/80 block text-[10px]">Material Groups</span>
+                <span className="text-emerald-400/80 block text-[10px]">{screenStrings.materialGroupsLabel}</span>
                 <span className="font-bold text-white text-xs">
                   {executionSummary.canonicalModule1?.materialGroups !== undefined
                     ? executionSummary.canonicalModule1.materialGroups
-                    : '—'}
+                    : screenStrings.emptyValue}
                 </span>
               </div>
               <div>
-                <span className="text-emerald-400/80 block text-[10px]">Unique Suppliers</span>
+                <span className="text-emerald-400/80 block text-[10px]">{screenStrings.uniqueSuppliersLabel}</span>
                 <span className="font-bold text-cyan-300 text-xs truncate block">
                   {executionSummary.canonicalModule1?.uniqueVendors !== undefined
                     ? executionSummary.canonicalModule1.uniqueVendors
-                    : '—'}
+                    : screenStrings.emptyValue}
                 </span>
               </div>
             </div>
@@ -594,17 +586,17 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
               disabled={isUploading || isValidating || isRunningModule1}
               className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors border border-slate-700"
             >
-              {strings.controls.btnSelectFile}
+              {pipelineStrings.controls.btnSelectFile}
             </button>
 
             {selectedFile && workflowState === 'FILE_SELECTED' && (
               <button
                 type="button"
-                onClick={handleUploadFile}
-                disabled={isUploading || isComputingHash}
+                onClick={() => checksum && handleUploadFile(selectedFile, checksum)}
+                disabled={isUploading || isComputingHash || checksum === null}
                 className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-all shadow-md shadow-cyan-950/40"
               >
-                {isUploading ? 'Uploading Dataset...' : 'Upload File to Dossier'}
+                {isUploading ? screenStrings.btnUploadingDataset : screenStrings.btnUploadFile}
               </button>
             )}
           </div>
@@ -616,19 +608,19 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
               disabled={
                 isValidating ||
                 isRunningModule1 ||
-                (!activeDataVersionId && !assessment.currentDataVersionId) ||
+                !targetDvId ||
                 workflowState === 'NO_FILE_UPLOADED' ||
                 workflowState === 'FILE_SELECTED' ||
                 workflowState === 'VALIDATION_IN_PROGRESS'
               }
-              onClick={handleValidateDataset}
+              onClick={() => targetDvId && handleValidateDataset(targetDvId)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                isValidating || (!activeDataVersionId && !assessment.currentDataVersionId)
+                isValidating || !targetDvId
                   ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
                   : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-950/40'
               }`}
             >
-              {isValidating ? 'Validating Schema & Rows...' : strings.controls.btnValidate}
+              {isValidating ? screenStrings.btnValidating : pipelineStrings.controls.btnValidate}
             </button>
 
             {/* Control 3: Start Module 1 Analysis (Enabled ONLY when validation passed) */}
@@ -646,7 +638,7 @@ export const AssessmentUploadTab: React.FC<AssessmentUploadTabProps> = ({
                   : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/50 active:scale-95'
               }`}
             >
-              {isRunningModule1 ? 'Executing Module 1...' : strings.controls.btnStartModule1}
+              {isRunningModule1 ? screenStrings.btnExecutingModule1 : pipelineStrings.controls.btnStartModule1}
             </button>
           </div>
         </div>

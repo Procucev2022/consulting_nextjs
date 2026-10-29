@@ -59,7 +59,7 @@ export const EAuctionKpiCards: React.FC<EAuctionKpiCardsProps> = ({ result }) =>
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
         </div>
         <div className="mt-1 text-lg font-bold text-emerald-600 dark:text-emerald-400">
-          {result.candidateCategoriesCount} Cat / {result.candidateMaterialsCount} Mat
+          {strings.kpiCandidateCountSummary(result.candidateCategoriesCount, result.candidateMaterialsCount)}
         </div>
         <div className="text-[10px] text-emerald-700/80">Candidates for review</div>
       </div>
@@ -68,7 +68,7 @@ export const EAuctionKpiCards: React.FC<EAuctionKpiCardsProps> = ({ result }) =>
       <div className="bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/60 rounded-xl p-3 shadow-sm hover:shadow transition-shadow">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-semibold tracking-wider text-purple-700 dark:text-purple-400 uppercase">
-            Addressable Spend
+            {strings.colAddressableSpend}
           </span>
           <TrendingUp className="w-3.5 h-3.5 text-purple-600" />
         </div>
@@ -82,7 +82,7 @@ export const EAuctionKpiCards: React.FC<EAuctionKpiCardsProps> = ({ result }) =>
       <div className="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-3 shadow-sm hover:shadow transition-shadow">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-semibold tracking-wider text-emerald-700 dark:text-emerald-400 uppercase">
-            Estimated Savings
+            {strings.kpiEstimatedSavingsLabel}
           </span>
           <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
         </div>
@@ -96,13 +96,13 @@ export const EAuctionKpiCards: React.FC<EAuctionKpiCardsProps> = ({ result }) =>
         <div className="text-[10px] text-slate-500">
           {hasRange && sr ? (
             <>
-              <div>Exp: ₹{sr.expectedEstimatedSavingsCr?.toFixed(2)} Cr ({((sr.expectedSavingsRate || 0) * 100).toFixed(1)}%)</div>
+              <div>{strings.expectedSavingsDetail(sr.expectedEstimatedSavingsCr?.toFixed(2) ?? '', ((sr.expectedSavingsRate || 0) * 100).toFixed(1))}</div>
               <div className="text-[9px] text-amber-600 dark:text-amber-400 font-medium mt-0.5">
                 {strings.provisionalEditableNotice}
               </div>
             </>
           ) : (
-            `${result.recordsRequiringDataReviewCount} need data review`
+            strings.kpiRecordsNeedDataReview(result.recordsRequiringDataReviewCount)
           )}
         </div>
       </div>
@@ -116,7 +116,7 @@ export const EAuctionKpiCards: React.FC<EAuctionKpiCardsProps> = ({ result }) =>
           <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
         </div>
         <div className="mt-1 text-lg font-bold text-slate-700 dark:text-slate-300">
-          ₹0.00 Cr
+          ₹{(result.commerciallyValidatedSavingsCr ?? 0).toFixed(2)} Cr
         </div>
         <div className="text-[10px] text-slate-500">Pre-execution status</div>
       </div>

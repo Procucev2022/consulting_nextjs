@@ -20,6 +20,8 @@ import { ActionPlanTracker } from './savings/ActionPlanTracker';
 import { SavingsTypeEvidenceSection } from './savings/SavingsTypeEvidenceSection';
 import { buildStrategicSavingsSummary } from '../utils/strategicSavingsCalculator';
 import { apiClient } from '../utils/api';
+import { orchestrationApi } from '../utils/orchestrationApi';
+import { frontendLogger } from '../utils/logger';
 import type {
   ConsolidatedSavingsData,
   ActionPlanItem,
@@ -27,6 +29,8 @@ import type {
   ActionOwner
 } from '../types/savings';
 import { UI_STRINGS } from '../constants';
+
+const describeError = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   opportunities,
@@ -41,10 +45,14 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [filterModule, setFilterModule] = useState<string>('ALL');
   const [consolidatedData, setConsolidatedData] = useState<ConsolidatedSavingsData | null>(null);
+  const [analysisJobId, setAnalysisJobId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const pipelineTableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isMounted = true;
+    setConsolidatedData(null);
+    setSaveError(null);
     apiClient
       .getConsolidatedSavings(assessmentId)
       .then((data) => {
@@ -52,8 +60,37 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           setConsolidatedData(data);
         }
       })
-      .catch(() => {
-        // Fall back gracefully
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        frontendLogger.warn('Consolidated savings could not be loaded. Showing the opportunity list only.', {
+          assessmentId,
+          error: describeError(error)
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [assessmentId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    setAnalysisJobId(null);
+    orchestrationApi
+      .getJobs()
+      .then((jobs) => {
+        if (isMounted) {
+          const selectedJob = assessmentId
+            ? jobs.find((job) => job.analysisJobId === assessmentId)
+            : jobs[0];
+          setAnalysisJobId(selectedJob?.analysisJobId ?? null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        frontendLogger.warn('Analysis job could not be loaded, so savings evidence downloads are hidden.', {
+          error: describeError(error)
+        });
       });
 
     return () => {
@@ -77,31 +114,29 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
       comments?: string;
     }
   ) => {
-    setConsolidatedData((prev) => {
-      if (!prev) return prev;
-      return {
+    setSaveError(null);
+    apiClient.updateActionPlan(actionId, updates)
+      .then(() => setConsolidatedData((prev) => prev ? {
         ...prev,
-        actionPlans: prev.actionPlans.map((p) => (p.id === actionId ? { ...p, ...updates } : p))
-      };
-    });
-
-    apiClient.updateActionPlan(actionId, updates).catch(() => {
-      // Local state already updated
-    });
+        actionPlans: prev.actionPlans.map((plan) => plan.id === actionId ? { ...plan, ...updates } : plan)
+      } : prev))
+      .catch((error: unknown) => {
+        setSaveError(UI_STRINGS.module4.saveFailed(describeError(error)));
+        frontendLogger.warn('Action plan update was not saved to the server.', { actionId, error: describeError(error) });
+      });
   };
 
   const handleUpdateOpportunityStatus = (oppId: string, status: SavingsOpportunityStatus) => {
-    setConsolidatedData((prev) => {
-      if (!prev) return prev;
-      return {
+    setSaveError(null);
+    apiClient.updateSavingsOpportunityStatus(oppId, status)
+      .then(() => setConsolidatedData((prev) => prev ? {
         ...prev,
-        opportunities: prev.opportunities.map((o) => (o.opportunity_id === oppId ? { ...o, status } : o))
-      };
-    });
-
-    apiClient.updateSavingsOpportunityStatus(oppId, status).catch(() => {
-      // Local state already updated
-    });
+        opportunities: prev.opportunities.map((opportunity) => opportunity.opportunity_id === oppId ? { ...opportunity, status } : opportunity)
+      } : prev))
+      .catch((error: unknown) => {
+        setSaveError(UI_STRINGS.module4.saveFailed(describeError(error)));
+        frontendLogger.warn('Opportunity status update was not saved to the server.', { oppId, error: describeError(error) });
+      });
   };
 
   const effectiveOpportunities: SavingsOpportunity[] = React.useMemo(() => {
@@ -117,7 +152,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         target_savings_pct: o.spend_inr > 0 ? Number(((o.potential_savings_inr / o.spend_inr) * 100).toFixed(1)) : 16.4,
         est_savings: (o.potential_savings_inr_cr || 0) * 10000000 / 83.8,
         est_savings_inr_cr: o.net_savings_inr_cr || o.potential_savings_inr_cr,
-        contract_leak_type: o.validation_notes || 'Strategic Sourcing Lever',
+        contract_leak_type: o.validation_notes || UI_STRINGS.module4.defaultLeverLabel,
         push_to_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
         recommended_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
         status: o.status === 'IDENTIFIED' ? 'Pending Action' : o.status,
@@ -137,6 +172,9 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
       (acc, opp) => acc + (opp.baseline_spend_inr_cr || (opp.current_spend_usd ? opp.current_spend_usd * 83.8 / 10000000 : 0) || 0),
       0
     );
+  const formattedBaselineSpend = totalEvaluatedSpendInrCr > 0
+    ? (totalEvaluatedSpendInrCr.toString().split('.')[1]?.length > 2 ? totalEvaluatedSpendInrCr.toFixed(4) : totalEvaluatedSpendInrCr.toFixed(2))
+    : '0.00';
 
   const realizationTargetPct = '16.4';
 
@@ -154,7 +192,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     const catSpend = catOpps.reduce((s, o) => s + (o.baseline_spend_inr_cr || o.current_spend_inr_cr || (o.current_spend_usd ? o.current_spend_usd * 83.8 / 10000000 : 0) || 0), 0);
     const targetPct = catSpend > 0 ? `${((catSavings / catSpend) * 100).toFixed(1)}%` : (catSavings > 0 ? `${realizationTargetPct}%` : '0.0%');
     return {
-      savingsFound: `₹${catSavings.toFixed(2)} Cr`,
+      savingsFound: UI_STRINGS.common.croreAmount(catSavings.toFixed(2)),
       targetPct,
       progressPct: catSpend > 0 ? Math.min(100, Math.round((catSavings / catSpend) * 100)) : (catSavings > 0 ? 100 : 0)
     };
@@ -221,6 +259,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {saveError && <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">{saveError}</div>}
       {/* Module Title Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 via-white to-teal-50 border border-emerald-100 shadow-sm glass-panel-glow">
         <div>
@@ -241,7 +280,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         <div className="flex items-center space-x-2 shrink-0">
           <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold font-mono">
             <Award className="w-4 h-4" />
-            <span>16.4% Realization Target (FRD Sourcing Benchmark)</span>
+            <span>{UI_STRINGS.module4.realizationTargetBenchmarkBadge(realizationTargetPct)}</span>
           </span>
         </div>
       </div>
@@ -285,17 +324,17 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                 {UI_STRINGS.module4.heroBadge}
               </span>
               <span className="text-xs font-bold font-mono text-emerald-700 bg-white/80 px-2 py-0.5 rounded-full border border-emerald-200">
-                16.4% Target Benchmark
+                {UI_STRINGS.module4.targetBenchmarkBadge(realizationTargetPct)}
               </span>
             </div>
 
             <div className="mt-4">
-              <span className="text-xs text-slate-500 font-medium">Net Modelled Opportunity</span>
+              <span className="text-xs text-slate-500 font-medium">{UI_STRINGS.module4.netModelledOpportunityLabel}</span>
               <div className="text-4xl sm:text-5xl font-black font-mono text-emerald-600 tracking-tight mt-1">
-                ₹{totalSavingsInrCr > 0 ? totalSavingsInrCr.toFixed(3) : '0.00'} Cr
+                {UI_STRINGS.common.croreAmount(totalSavingsInrCr > 0 ? totalSavingsInrCr.toFixed(3) : '0.00')}
               </div>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Evaluated Baseline Spend: ₹{totalEvaluatedSpendInrCr > 0 ? (totalEvaluatedSpendInrCr.toString().split('.')[1]?.length > 2 ? totalEvaluatedSpendInrCr.toFixed(4) : totalEvaluatedSpendInrCr.toFixed(2)) : '0.00'} Cr across 23,570 canonical purchase transactions. Realized savings remain at ₹0.00 Cr pending post-implementation commercial execution and audited invoices.
+                {UI_STRINGS.module4.evaluatedBaselineSpendNote(formattedBaselineSpend)}
               </p>
             </div>
           </div>
@@ -303,11 +342,11 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
           <div className="mt-6 pt-4 border-t border-emerald-200/60 flex items-center justify-between text-xs font-mono">
             <div>
               <span className="text-slate-500 block text-[10px] uppercase">{UI_STRINGS.module4.directSourcingLabel}</span>
-              <span className="text-cyan-700 font-bold text-sm">₹{directSourcingSavingsCr.toFixed(2)} Cr</span>
+              <span className="text-cyan-700 font-bold text-sm">{UI_STRINGS.common.croreAmount(directSourcingSavingsCr.toFixed(2))}</span>
             </div>
             <div className="text-right">
               <span className="text-slate-500 block text-[10px] uppercase">{UI_STRINGS.module4.contractRulesLabel}</span>
-              <span className="text-purple-700 font-bold text-sm">₹{contractRulesSavingsCr.toFixed(2)} Cr</span>
+              <span className="text-purple-700 font-bold text-sm">{UI_STRINGS.common.croreAmount(contractRulesSavingsCr.toFixed(2))}</span>
             </div>
           </div>
         </div>
@@ -345,8 +384,8 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         </div>
       </div>
 
-      {/* 5B. Dedicated Per-Savings-Type Evidence Workbooks (Prompt 306) */}
-      <SavingsTypeEvidenceSection />
+      {/* 5B. Dedicated Per-Savings-Type Evidence Workbooks (Prompt 306). Requires the real analysis job id. */}
+      {analysisJobId ? <SavingsTypeEvidenceSection jobId={analysisJobId} /> : null}
 
       {/* 6. Savings Opportunities Action Pipeline Table */}
       {currentTier === 'SILVER' ? (
@@ -421,7 +460,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                 {filteredOpportunities.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-slate-500 font-sans text-xs">
-                      Awaiting dataset ingestion. Upload a procurement dataset in Module 1 to generate actionable savings pipelines.
+                      {UI_STRINGS.module4.awaitingDatasetIngestion}
                     </td>
                   </tr>
                 ) : (
@@ -443,13 +482,13 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-slate-800">
-                        ₹{opp.current_spend_inr_cr?.toFixed(2) || (opp.current_spend * 83.8 / 10000000).toFixed(2)} Cr
+                        {UI_STRINGS.common.croreAmount(opp.current_spend_inr_cr?.toFixed(2) || (opp.current_spend * 83.8 / 10000000).toFixed(2))}
                       </td>
                       <td className="py-3.5 px-4 text-cyan-700 font-bold">
                         {opp.target_savings_pct}%
                       </td>
                       <td className="py-3.5 px-4 font-black text-emerald-600 text-sm">
-                        ₹{opp.est_savings_inr_cr?.toFixed(2) || (opp.est_savings * 83.8 / 10000000).toFixed(2)} Cr
+                        {UI_STRINGS.common.croreAmount(opp.est_savings_inr_cr?.toFixed(2) || (opp.est_savings * 83.8 / 10000000).toFixed(2))}
                       </td>
                       <td className="py-3.5 px-4 text-center font-sans">
                         <span
@@ -521,7 +560,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
             }}
             className="flex items-center justify-center space-x-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
-            <span>Generate Executive Brief</span>
+            <span>{UI_STRINGS.module4.btnOpenExecutiveBrief}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </a>
         </div>

@@ -1,46 +1,78 @@
-import fs from 'fs';
-import path from 'path';
-import { describe, it, expect } from 'vitest';
-import { ExecutiveBriefPptxGenerator } from '../../src/services/executiveBriefPptxGenerator';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import PptxGenJS from 'pptxgenjs';
+import { generateExecutiveBriefPptx } from '../../src/services/executiveBriefPptxGenerator';
+import { addSlideFrame, bodyCell, fieldRuns, headerCell, tableBorder, addFooter } from '../../src/services/executiveBriefPptxHelpers';
+import { PPTX_OUTPUT_ERROR, PPTX_THEME } from '../../src/constants/executiveBriefPptxConstants';
+import type { ExecutiveBriefReportData } from '../../src/types/executiveBriefExportTypes';
+import { certifiedReport } from '../executiveBriefTestHelpers';
 
-describe('Executive Brief PPTX Generator', () => {
-  it('EXPORT-04 & EXPORT-06: should generate valid 30-slide PPTX presentation buffer', async () => {
-    const clientName = 'UltraTech Cement Limited';
-    const { pptx, slideCount } = await ExecutiveBriefPptxGenerator.createPresentation(clientName);
+const latin1 = (bytes: Uint8Array): string => Buffer.from(bytes).toString('latin1');
 
-    expect(pptx).toBeDefined();
-    expect(slideCount).toBe(30);
+const slidePartNames = (bytes: Uint8Array): string[] =>
+  [...new Set(latin1(bytes).match(/ppt\/slides\/slide\d+\.xml/gu) ?? [])].sort();
 
-    const buffer = await ExecutiveBriefPptxGenerator.generateBuffer(clientName);
-    expect(buffer).toBeInstanceOf(Buffer);
-    expect(buffer.length).toBeGreaterThan(10000);
-  }, 20000);
-
-  it('EXPORT-16: should pass programmatic structural and editability inspection', () => {
-    const validInspection = ExecutiveBriefPptxGenerator.inspectPresentation(30, 45000);
-    expect(validInspection.slideCount).toBe(30);
-    expect(validInspection.hasBlankSlides).toBe(false);
-    expect(validInspection.textObjectsEditable).toBe(true);
-    expect(validInspection.tablesValid).toBe(true);
-    expect(validInspection.shapesValid).toBe(true);
-    expect(validInspection.isValid).toBe(true);
-
-    const invalidInspection = ExecutiveBriefPptxGenerator.inspectPresentation(25, 45000);
-    expect(invalidInspection.isValid).toBe(false);
-    expect(invalidInspection.hasBlankSlides).toBe(true);
-
-    const emptyInspection = ExecutiveBriefPptxGenerator.inspectPresentation(30, 100);
-    expect(emptyInspection.isValid).toBe(false);
-    expect(emptyInspection.hasMissingText).toBe(true);
+describe('generateExecutiveBriefPptx', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('should save PPTX file to disk', async () => {
-    const tmpPath = path.resolve(process.cwd(), 'temp_test_brief.pptx');
-    const savedPath = await ExecutiveBriefPptxGenerator.saveToFile(tmpPath, 'UltraTech Cement Limited');
-    expect(savedPath).toBe(tmpPath);
-    expect(fs.existsSync(tmpPath)).toBe(true);
-    if (fs.existsSync(tmpPath)) {
-      fs.unlinkSync(tmpPath);
-    }
-  }, 20000);
+  it('returns a zip (PK signature) with the ten-slide reduced deck', async () => {
+    const bytes = await generateExecutiveBriefPptx(certifiedReport());
+    expect(bytes).toBeInstanceOf(Uint8Array);
+    expect(latin1(bytes).slice(0, 2)).toBe('PK');
+    expect(slidePartNames(bytes)).toHaveLength(10);
+    expect(slidePartNames(bytes)).toContain('ppt/slides/slide10.xml');
+    expect(slidePartNames(bytes)).not.toContain('ppt/slides/slide11.xml');
+  });
+
+  it('still builds the evidence slide when section 08 is absent from the report', async () => {
+    const report = certifiedReport();
+    const withoutEvidence: ExecutiveBriefReportData = {
+      ...report,
+      sections: report.sections.filter((group) => group.groupId !== '08'),
+      validationChecklist: { ...report.validationChecklist, module2Validated: false }
+    };
+    const bytes = await generateExecutiveBriefPptx(withoutEvidence);
+    expect(latin1(bytes).slice(0, 2)).toBe('PK');
+    expect(slidePartNames(bytes)).toHaveLength(10);
+  });
+
+  it('fails with a descriptive error when pptxgenjs does not return bytes', async () => {
+    vi.spyOn(PptxGenJS.prototype, 'write').mockResolvedValueOnce('not-bytes');
+    await expect(generateExecutiveBriefPptx(certifiedReport())).rejects.toThrow(PPTX_OUTPUT_ERROR);
+  });
+});
+
+describe('PPTX slide helpers', () => {
+  it('builds a framed slide with and without a subtitle and the standard footer', () => {
+    const presentation = new PptxGenJS();
+    const withSubtitle = addSlideFrame(presentation, {
+      title: 'Frame',
+      subtitle: 'Subtitle',
+      clientName: 'Client',
+      slideNumber: 1,
+      totalSlides: 2
+    });
+    const withoutSubtitle = addSlideFrame(presentation, {
+      title: 'Frame',
+      clientName: 'Client',
+      slideNumber: 2,
+      totalSlides: 2
+    });
+    expect(withSubtitle).toBeDefined();
+    expect(withoutSubtitle).toBeDefined();
+    const slide = presentation.addSlide();
+    addFooter(slide, 'Client', 3, 3);
+    expect(presentation.slides?.length ?? 0).toBeGreaterThanOrEqual(2);
+  });
+
+  it('creates bold labels and table cells with the expected styling', () => {
+    const runs = fieldRuns('Finding', 'Value text');
+    expect(runs[0].text).toBe('Finding: ');
+    expect(runs[1]).toMatchObject({ text: 'Value text', options: { breakLine: true } });
+    expect(headerCell('Metric').options).toMatchObject({ bold: true });
+    expect(bodyCell('Plain').options).toMatchObject({ color: PPTX_THEME.primaryText });
+    expect(bodyCell('Flag', PPTX_THEME.fail).options).toMatchObject({ color: PPTX_THEME.fail });
+    expect(tableBorder()).toMatchObject({ type: 'solid', pt: 0.5, color: PPTX_THEME.border });
+  });
 });

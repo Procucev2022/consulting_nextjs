@@ -208,3 +208,50 @@ export interface VendorConsolidationResult {
   methodologyDisclosures: string[];
   dataQualityExclusions?: DataQualityExclusionSummary[];
 }
+
+/* Component prop and UI state types (moved out of the .tsx files per AGENTS.md section 9) */
+
+export interface VendorConsolidationKpiCardsProps {
+  result: VendorConsolidationResult;
+}
+
+export interface VendorConsolidationCategoryTableProps {
+  categories: CategoryConsolidationProfile[];
+  onSelectCategory: (category: CategoryConsolidationProfile) => void;
+}
+
+export interface VendorConsolidationSupplierTableProps {
+  category: CategoryConsolidationProfile;
+  onBackToCategories: () => void;
+  onSelectSupplierMaterials: (supplier?: SupplierSpendProfile) => void;
+}
+
+export interface VendorConsolidationMaterialTableProps {
+  categoryName: string;
+  sameMaterialOpportunities: SameMaterialOpportunity[];
+  comparableOpportunities: ComparableMaterialOpportunity[];
+  crossPlantOpportunities: CrossPlantOpportunity[];
+  onBackToSuppliers: () => void;
+  onSelectMaterialTransactions: (opportunity: SameMaterialOpportunity) => void;
+}
+
+export interface VendorConsolidationTransactionTableProps {
+  opportunity: SameMaterialOpportunity;
+  onBackToMaterials: () => void;
+}
+
+export interface VendorConsolidationMappingQueueTableProps {
+  exceptions: MaterialMappingEntry[];
+  onMappingUpdated?: () => void;
+}
+
+export interface VendorConsolidationViewProps {
+  assessmentId: string;
+  onBackToOverview?: () => void;
+}
+
+export type VendorConsolidationDimensionType = 'UNSPSC' | 'SOURCE_GROUP' | 'MATERIALS' | 'MAPPING_QUEUE';
+
+export type VendorConsolidationDrillDownLevel = 'CATEGORIES' | 'SUPPLIERS' | 'MATERIALS' | 'TRANSACTIONS';
+
+export type VendorConsolidationSubTab = 'sameMaterial' | 'comparable' | 'crossPlant';

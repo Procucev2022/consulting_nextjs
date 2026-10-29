@@ -1,20 +1,20 @@
 import { geminiService } from './geminiService';
-import { CATEGORIZATION_SYSTEM_PROMPT, EXTRACTION_STATUS, CLASSIFICATION_STATUS, AI_MAX_LINE_ITEMS_IN_PROMPT } from '../constants/ai';
-import type { AiCategorizationItem, CategorizationResult, AiCategorizationMapping } from '../types/ai';
-import { lookupUNSPSCByDescription } from '../data/unspscTaxonomy';
+import {
+  CATEGORIZATION_SYSTEM_PROMPT, EXTRACTION_STATUS, CLASSIFICATION_STATUS,
+  AI_MAX_LINE_ITEMS_IN_PROMPT, AI_TAXONOMY_LOOKUP_UNAVAILABLE
+} from '../constants/ai';
+import type {
+  AiCategorizationItem, CategorizationResult, AiCategorizationMapping, TaxonomyLookup, RawAiMapping
+} from '../types/ai';
 import logger from '../utils/logger';
 
-interface RawAiMapping {
-  rawLineText?: string;
-  vendorIdentified?: string;
-  mappedUnspscCode?: string;
-  unspscTitle?: string;
-  suggestedBucket?: string;
-  confidenceScore?: number;
-  reason?: string;
-}
-
 export class AiCategorizationService {
+  private taxonomyLookup: TaxonomyLookup | undefined;
+
+  public configureTaxonomyLookup(lookup?: TaxonomyLookup): void {
+    this.taxonomyLookup = lookup;
+  }
+
   public async categorizeLineItems(items: AiCategorizationItem[]): Promise<CategorizationResult> {
     if (!Array.isArray(items) || items.length === 0) {
       return {
@@ -46,13 +46,18 @@ export class AiCategorizationService {
       Boolean(result.data?.mappings && Array.isArray(result.data.mappings) && result.data.mappings.length > 0);
 
     if (!hasValidMappings) {
+      const taxonomyLookup = this.taxonomyLookup;
+      if (!taxonomyLookup) {
+        logger.error('Database taxonomy lookup is not configured', { itemCount: items.length });
+        throw new Error(AI_TAXONOMY_LOOKUP_UNAVAILABLE);
+      }
       logger.info('Using high-precision UNSPSC Taxonomy engine fallback for categorization', {
         itemCount: items.length,
         geminiError: result.error
       });
 
-      const fallbackMappings: AiCategorizationMapping[] = items.map((item) => {
-        const descMatch = lookupUNSPSCByDescription(item.rawLineText);
+      const fallbackMappings: AiCategorizationMapping[] = await Promise.all(items.map(async (item) => {
+        const descMatch = await taxonomyLookup(item.rawLineText);
         const isClassified = Boolean(descMatch && descMatch.classificationStatus === 'CLASSIFIED');
 
         if (isClassified && descMatch) {
@@ -67,7 +72,6 @@ export class AiCategorizationService {
           };
         }
 
-        // UNCLASSIFIED item: do not claim official match or assign false high confidence
         return {
           rawLineText: item.rawLineText,
           vendorIdentified: item.vendorIdentified || 'Unknown',
@@ -77,7 +81,7 @@ export class AiCategorizationService {
           confidenceScore: 0.0,
           reason: 'UNCLASSIFIED: No confirmed official UNSPSC match found. Item preserved and marked for classification review.'
         };
-      });
+      }));
 
       return {
         status: CLASSIFICATION_STATUS.SUCCESS,

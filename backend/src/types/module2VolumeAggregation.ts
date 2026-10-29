@@ -5,6 +5,15 @@
 
 import type { StrategicInputTransaction } from './strategicSourcing';
 
+export interface VolumeAggregationMaterialGroup {
+  key: string;
+  code: string;
+  description: string;
+  category: string;
+  unit: string;
+  transactions: StrategicInputTransaction[];
+}
+
 export type VolumeAggregationOpportunityTier = 'TIER_1_IDENTICAL' | 'TIER_2_COMPARABLE' | 'TIER_3_CATEGORY';
 
 export type VolumeAggregationDemandClassification =
@@ -80,6 +89,17 @@ export type VolumeAggregationEligibilityType =
   | 'LIMITED_HISTORY_NO_HISTORICAL_PATTERN'
   | 'SINGLE_PURCHASE_NON_AGGREGATABLE'
   | 'INCOMPATIBLE_UOM';
+
+export interface VolumeAggregationOpportunityEligibility {
+  hasExactIdentity: boolean;
+  singlePurchase: boolean;
+  eligible: boolean;
+}
+
+export interface VolumeAggregationRecommendationCopy {
+  reason: string;
+  nextAction: string;
+}
 
 export interface DemandRecurrenceResult {
   classification: VolumeAggregationDemandClassification;

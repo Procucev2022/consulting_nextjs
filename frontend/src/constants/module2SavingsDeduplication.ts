@@ -44,7 +44,7 @@ export const CALCULATION_BASIS = {
   CATEGORY_CHARTER_STRATEGIC: 'Category Management Charter Planning Head',
   SPECIFICATION_HARMONIZATION_DISCOVERY: 'Specification Rationalisation Technical Review (Phase 1)',
   COMPLIANCE_CONTROL_GAP_AUDIT: 'Procurement Compliance Transaction Audit & Exception Exposure',
-  ALTERNATE_SOURCING_DISCOVERY: 'Alternate Sourcing Repository Matching (600,000+ Vendors)'
+  ALTERNATE_SOURCING_DISCOVERY: 'Alternate Sourcing D1 Aggregate Category Discovery'
 } as const;
 
 export const LEVER_SAFEGUARD_RULES = {

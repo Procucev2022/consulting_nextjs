@@ -19,37 +19,43 @@ import type {
 import {
   ALTERNATE_SOURCING_UI_STRINGS,
   GEOGRAPHIC_PREFERENCE_OPTIONS,
-  MATCH_TYPE_LABELS,
-  STATE_TO_CITIES_MAP
+  MATCH_TYPE_LABELS
 } from '../../constants/module2AlternateSourcing';
 import { AlternateSourcingOpportunityCard } from './AlternateSourcingOpportunityCard';
 import { AlternateSourcingKpiCards } from './AlternateSourcingKpiCards';
 import { authApiClient } from '../../utils/api';
 import logger from '../../utils/logger';
 
-export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ assessmentId = 'AIC-2026-0001' }) => {
+export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ assessmentId }) => {
   const strings = ALTERNATE_SOURCING_UI_STRINGS;
 
   const [data, setData] = useState<AlternateSourcingResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(Boolean(assessmentId));
   const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<'all' | 'singleSource' | 'disclosures'>('all');
   const [geoPreference, setGeoPreference] = useState<GeographicPreference>('ALL_LOCATIONS');
-  const [selectedState, setSelectedState] = useState<string>('MAHARASHTRA');
-  const [selectedCity, setSelectedCity] = useState<string>('ALL_CITIES');
+  const [selectedState, setSelectedState] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedMatchType, setSelectedMatchType] = useState<AlternateVendorMatchType | 'ALL'>('ALL');
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (forceRefresh = false) => {
+    if (!assessmentId?.trim()) {
+      setData(null);
+      setError(strings.ASSESSMENT_REQUIRED);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
         assessmentId,
-        geographicPreference: geoPreference,
-        preferredState: selectedState,
-        preferredCity: selectedCity
+        geographicPreference: geoPreference
       });
+      if (forceRefresh) params.set('refresh', 'true');
+      if (selectedState) params.set('preferredState', selectedState);
+      if (selectedCity) params.set('preferredCity', selectedCity);
       if (selectedMatchType !== 'ALL') {
         params.append('matchType', selectedMatchType);
       }
@@ -74,7 +80,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
     } finally {
       setLoading(false);
     }
-  }, [assessmentId, geoPreference, selectedState, selectedCity, selectedMatchType]);
+  }, [assessmentId, geoPreference, selectedState, selectedCity, selectedMatchType, strings.ASSESSMENT_REQUIRED]);
 
   useEffect(() => {
     fetchData();
@@ -86,8 +92,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
     return true;
   });
 
-  const availableCities =
-    data?.stateToCitiesMap?.[selectedState] || STATE_TO_CITIES_MAP[selectedState] || ['ALL_CITIES'];
+  const availableCities = data?.availableCities || [];
 
   return (
     <div className="space-y-6 animate-fadeIn" data-testid="alternate-sourcing-view">
@@ -98,9 +103,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/80 px-2 py-0.5 rounded border border-blue-300 dark:border-blue-800">
               {strings.BADGE}
             </span>
-            <span className="text-xs text-slate-400 font-mono">
-              600,000+ VENDOR REPOSITORY • ZERO ESTIMATED SAVINGS CLAIMED
-            </span>
+            <span className="text-xs text-slate-400 font-mono">{strings.SUBTITLE}</span>
           </div>
           <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center space-x-2 mt-1">
             <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -113,7 +116,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
 
         <button
           type="button"
-          onClick={() => fetchData()}
+          onClick={() => fetchData(true)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -148,15 +151,11 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
             </label>
             <select
               value={selectedState}
-              onChange={(e) => {
-                const nextState = e.target.value;
-                setSelectedState(nextState);
-                const nextCities = data?.stateToCitiesMap?.[nextState] || STATE_TO_CITIES_MAP[nextState] || ['ALL_CITIES'];
-                setSelectedCity(nextCities[0] || 'ALL_CITIES');
-              }}
+              onChange={(e) => setSelectedState(e.target.value)}
               className="px-2.5 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
             >
-              {(data?.availableStates || Object.keys(STATE_TO_CITIES_MAP)).map((st) => (
+              <option value="">{strings.LABEL_ALL_STATES}</option>
+              {(data?.availableStates || []).map((st) => (
                 <option key={st} value={st}>{st}</option>
               ))}
             </select>
@@ -171,8 +170,9 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
               onChange={(e) => setSelectedCity(e.target.value)}
               className="px-2.5 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
             >
+              <option value="">{strings.LABEL_ALL_CITIES}</option>
               {availableCities.map((ci) => (
-                <option key={ci} value={ci}>{ci === 'ALL_CITIES' ? 'All Cities in State' : ci}</option>
+                <option key={ci} value={ci}>{ci}</option>
               ))}
             </select>
           </div>
@@ -186,11 +186,9 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
               onChange={(e) => setSelectedMatchType(e.target.value as AlternateVendorMatchType | 'ALL')}
               className="px-2.5 py-1.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 font-medium text-slate-800 dark:text-slate-200"
             >
-              <option value="ALL">All Match Types</option>
+              <option value="ALL">{strings.LABEL_ALL_MATCH_TYPES}</option>
               <option value="EXACT">{MATCH_TYPE_LABELS.EXACT}</option>
-              <option value="HIERARCHY">{MATCH_TYPE_LABELS.HIERARCHY}</option>
-              <option value="SYNONYM">{MATCH_TYPE_LABELS.SYNONYM}</option>
-              <option value="RELATED">{MATCH_TYPE_LABELS.RELATED}</option>
+              <option value="UNMATCHED">{MATCH_TYPE_LABELS.UNMATCHED}</option>
             </select>
           </div>
         </div>
@@ -263,7 +261,7 @@ export const AlternateSourcingView: React.FC<AlternateSourcingViewProps> = ({ as
         <div className="space-y-4">
           {filteredOpportunities.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-500 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-              No matching sourcing opportunities found for the selected filter criteria.
+              {strings.EMPTY_OPPORTUNITIES}
             </div>
           ) : (
             filteredOpportunities.map((opp) => (

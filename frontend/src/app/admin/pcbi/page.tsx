@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { AICEV_LOGO_SRC, UI_STRINGS } from '../../../constants';
 import { apiClient } from '../../../utils/api';
+import frontendLogger from '../../../utils/logger';
 import { PCBIAdminMasterView } from '../../../components/admin/pcbi/PCBIAdminMasterView';
 import { PCBICommodityDataLabView } from '../../../components/admin/pcbi/PCBICommodityDataLabView';
 import type { UserProfile } from '../../../types';
@@ -31,24 +32,34 @@ export default function AdminPCBIPage(): React.ReactElement {
   const [topNavTab, setTopNavTab] = useState<PCBIAdminTopNavigationTab>('PCBI_MASTER');
 
   useEffect(() => {
-    let session = apiClient.getStoredUser();
-    if (session?.role !== 'ADMIN') {
-      // Auto-seed development admin session
-      const devAdmin: UserProfile = {
-        id: 'usr-admin-sriman',
-        name: 'Sriman Admin',
-        email: 'sriman@procucev.com',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        subscription_tier: 'GOLD',
-        company_name: 'Procucev Enterprise Solutions Pvt Ltd',
-        created_at: new Date().toISOString()
-      };
-      apiClient.setStoredSession('dev-temp-token-sriman', devAdmin);
-      session = devAdmin;
+    const session = apiClient.getStoredUser();
+    const token = apiClient.getStoredToken();
+    if (!token || session?.role !== 'ADMIN') {
+      apiClient.clearStoredSession();
+      router.push('/admin/login');
+      return;
     }
-    setCurrentUser(session);
-    setLoading(false);
+    let cancelled = false;
+    const authenticate = async (): Promise<void> => {
+      try {
+        const profile = await apiClient.getMe(token);
+        if (cancelled) return;
+        if (!profile.success || profile.user.role !== 'ADMIN' || profile.user.status !== 'ACTIVE') {
+          apiClient.clearStoredSession();
+          router.push('/admin/login');
+          return;
+        }
+        setCurrentUser(profile.user);
+        setLoading(false);
+      } catch (error) {
+        if (cancelled) return;
+        frontendLogger.warn('Administrator session verification failed', { action: 'adminPcbiAuthentication', error });
+        apiClient.clearStoredSession();
+        router.push('/admin/login');
+      }
+    };
+    void authenticate();
+    return () => { cancelled = true; };
   }, [router]);
 
   const handleLogout = (): void => {

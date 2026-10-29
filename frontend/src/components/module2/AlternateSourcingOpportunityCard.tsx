@@ -14,13 +14,9 @@ import {
   Globe,
   Phone
 } from 'lucide-react';
-import type { AlternateVendorDiscoveryOpportunity } from '../../types/module2AlternateSourcing';
+import type { AlternateSourcingOpportunityCardProps } from '../../types/module2AlternateSourcing';
 import { ALTERNATE_SOURCING_UI_STRINGS, MATCH_TYPE_LABELS } from '../../constants/module2AlternateSourcing';
 import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
-
-interface AlternateSourcingOpportunityCardProps {
-  opportunity: AlternateVendorDiscoveryOpportunity;
-}
 
 export const AlternateSourcingOpportunityCard: React.FC<AlternateSourcingOpportunityCardProps> = ({ opportunity }) => {
   const strings = ALTERNATE_SOURCING_UI_STRINGS;
@@ -80,18 +76,18 @@ export const AlternateSourcingOpportunityCard: React.FC<AlternateSourcingOpportu
             {strings.LBL_CURRENT_SUPPLIERS} ({opportunity.currentSupplierCount}):
           </span>
           <span className="font-mono text-slate-600 dark:text-slate-400">
-            {opportunity.currentSuppliers.join(', ') || 'Unspecified'}
+            {opportunity.currentSuppliers.join(', ') || strings.VALUE_UNSPECIFIED}
           </span>
         </div>
 
-        {opportunity.excludedCurrentSuppliersCount > 0 ? (
+        {opportunity.excludedCurrentSuppliersCount != null && opportunity.excludedCurrentSuppliersCount > 0 ? (
           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded">
             <CheckCircle2 className="w-3 h-3" />
             {opportunity.excludedCurrentSuppliersCount} EXCLUDED FROM CATEGORY POOL
           </span>
         ) : (
           <span className="text-[10px] text-slate-500 italic">
-            {opportunity.exclusionLimitationNotice || 'Incumbent not indexed in category vendor master'}
+            {opportunity.exclusionLimitationNotice || strings.EXCLUSION_UNAVAILABLE_NOTICE}
           </span>
         )}
       </div>
@@ -130,7 +126,8 @@ export const AlternateSourcingOpportunityCard: React.FC<AlternateSourcingOpportu
             {strings.LBL_QUALIFICATION_STATUS}
           </span>
           <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1 block">
-            {strings.VALUE_UNQUALIFIED}
+            {opportunity.qualificationStatus === 'DATA_UNAVAILABLE'
+              ? strings.VALUE_DATA_UNAVAILABLE : strings.VALUE_UNQUALIFIED}
           </span>
           <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">
             {strings.LBL_QUALIFIED_ALTERNATIVES}: {strings.VALUE_DATA_UNAVAILABLE}

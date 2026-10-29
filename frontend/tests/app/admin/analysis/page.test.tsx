@@ -7,10 +7,9 @@ import { orchestrationApi } from '../../../../src/utils/orchestrationApi';
 import { UI_STRINGS } from '../../../../src/constants';
 
 const mockPush = vi.fn();
+const mockRouter = { push: mockPush };
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush
-  })
+  useRouter: () => mockRouter
 }));
 
 describe('AdminAnalysisPage Route Tests', () => {
@@ -25,6 +24,8 @@ describe('AdminAnalysisPage Route Tests', () => {
       role: 'ADMIN',
       company_name: 'Procucev Admin'
     } as any);
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('admin-token');
+    vi.spyOn(apiClient, 'getMe').mockResolvedValue({ success: true, user: { ...apiClient.getStoredUser()!, status: 'ACTIVE' } });
 
     vi.spyOn(apiClient, 'clearStoredSession').mockImplementation(() => {});
 

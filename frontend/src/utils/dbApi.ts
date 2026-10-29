@@ -1,9 +1,19 @@
-import type { DBHealthData, DBTableData, DBTestConnectionResponse } from '../types/dbView';
+import type { DBHealthData, DBTableData, DBTestConnectionResponse, DatabaseSchemaEntity } from '../types/dbView';
 import frontendLogger from './logger';
+import { UI_STRINGS } from '../constants/uiStrings';
+import { databaseSchemaResponseSchema } from '../constants/validation';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const dbApiClient = {
+  async getDBSchema(): Promise<DatabaseSchemaEntity[]> {
+    const res = await fetch(`${API_BASE}/api/db/schema`);
+    if (!res.ok) throw new Error(UI_STRINGS.databaseData.schemaLoadFailed);
+    const json = await res.json();
+    const parsed = databaseSchemaResponseSchema.safeParse(json);
+    if (!parsed.success) throw new Error(UI_STRINGS.databaseData.invalidData);
+    return parsed.data.data;
+  },
   async getDBStatus(): Promise<DBHealthData> {
     frontendLogger.debug('Fetching database status & health telemetry');
     const res = await fetch(`${API_BASE}/api/db/status`);

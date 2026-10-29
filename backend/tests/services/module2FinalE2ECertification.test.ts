@@ -11,18 +11,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as xlsx from 'xlsx';
 import type { StrategicInputTransaction } from '../../src/types/strategicSourcing';
 import { Module2StrategicSourcingEngine } from '../../src/services/module2StrategicSourcingEngine';
 import { Module2EvidenceChainEngine } from '../../src/services/module2EvidenceChainEngine';
-import { Module2AuditDossierHelper } from '../../src/services/module2AuditDossierHelper';
-import { Module2ScenarioAuditHelper } from '../../src/services/module2ScenarioAuditHelper';
 
 describe('Module 2 — Final End-to-End Certification & Adversarial Gate', () => {
-  const rootDir = path.resolve(__dirname, '../../../');
-
   // Baseline mock dataset
   const baseTransactions: StrategicInputTransaction[] = [
     {
@@ -134,27 +127,6 @@ describe('Module 2 — Final End-to-End Certification & Adversarial Gate', () =>
     expect(chainK.referencePriceAudit.lowestCrediblePrice).toBeCloseTo(96.25, 1);
   });
 
-  it('validates Customer Data Integrity and silent exclusion prevention', () => {
-    const integrity = Module2AuditDossierHelper.generateCustomerDataIntegrityAudit(baseTransactions);
-    expect(integrity.totalInputTransactions).toBe(4);
-    expect(integrity.totalAnalyzedTransactions).toBe(4);
-    expect(integrity.totalExcludedTransactions).toBe(0);
-    expect(integrity.integrityChecks.extendedValueConsistencyPassed).toBe(true);
-  });
-
-  it('validates CFO Challenge Q&A and Waterfall Transaction Allocation', () => {
-    const { profiles } = Module2StrategicSourcingEngine.analyze(baseTransactions);
-    const profile = profiles[0];
-    const cfo = Module2AuditDossierHelper.generateCFOChallengeResponse(profile, baseTransactions);
-    expect(cfo.q1_whyExists).toBeDefined();
-    expect(cfo.q2_provingTransactions.length).toBeGreaterThan(0);
-    expect(cfo.q4_referencePrice).toBeGreaterThan(0);
-
-    const allocations = Module2AuditDossierHelper.generateWaterfallTransactionAllocations(profile, baseTransactions);
-    const totalAllocated = allocations.reduce((acc, a) => acc + a.allocatedValueInr, 0);
-    expect(Math.abs(totalAllocated - (profile.netQuantifiableOpportunityInr || 0))).toBeLessThanOrEqual(5);
-  });
-
   it('validates cross-module isolation (Zero PCBI / Zero Module 4 realization)', () => {
     const { profiles, handoffPackages } = Module2StrategicSourcingEngine.analyze(baseTransactions);
     const profile = profiles[0];
@@ -173,154 +145,5 @@ describe('Module 2 — Final End-to-End Certification & Adversarial Gate', () =>
     expect(handoffPackages.length).toBe(1);
     expect(handoffPackages[0].categoryId).toBe(profile.categoryId);
     expect(handoffPackages[0].netOpportunityInr).toBe(profile.netQuantifiableOpportunityInr);
-  });
-
-  it('generates all 8 audit JSON artifacts and MODULE_2_FINAL_E2E_RESULTS.xlsx', () => {
-    const { profiles } = Module2StrategicSourcingEngine.analyze(baseTransactions);
-    const profile = profiles[0];
-
-    // 1. MODULE_2_TRANSACTION_LEVEL_OPPORTUNITY_AUDIT.json
-    const txAudit = {
-      auditTimestamp: new Date().toISOString(),
-      engineVersion: 'MODULE_2_EVALUATION_V1.0',
-      totalInputTransactions: baseTransactions.length,
-      categoryProfile: profile.categoryName,
-      netOpportunityInr: profile.netQuantifiableOpportunityInr,
-      evidenceChain: profile.evidenceChain
-    };
-    fs.writeFileSync(
-      path.join(rootDir, 'MODULE_2_TRANSACTION_LEVEL_OPPORTUNITY_AUDIT.json'),
-      JSON.stringify(txAudit, null, 2)
-    );
-
-    // 2. MODULE_2_EAUCTION_AUDIT.json
-    const eauctionAudit = Module2ScenarioAuditHelper.generateEAuctionAuditDossier(profiles);
-    fs.writeFileSync(
-      path.join(rootDir, 'MODULE_2_EAUCTION_AUDIT.json'),
-      JSON.stringify(eauctionAudit, null, 2)
-    );
-
-    // 3. MODULE_2_VENDOR_CONSOLIDATION_AUDIT.json
-    const suppliers = [
-      { supplierName: 'Tata Steel Ltd', spendInr: 76800000, volume: 1200 },
-      { supplierName: 'JSW Steel Ltd', spendInr: 60000000, volume: 1000 },
-      { supplierName: 'Jindal Steel & Power', spendInr: 46800000, volume: 800 },
-      { supplierName: 'Steel Authority of India Ltd', spendInr: 35400000, volume: 600 }
-    ];
-    const consolAudit = Module2ScenarioAuditHelper.generateVendorConsolidationScenarios(profile, suppliers);
-    fs.writeFileSync(
-      path.join(rootDir, 'MODULE_2_VENDOR_CONSOLIDATION_AUDIT.json'),
-      JSON.stringify(consolAudit, null, 2)
-    );
-
-    // 4. MODULE_2_WATERFALL_RECONCILIATION.json
-    const allocations = Module2AuditDossierHelper.generateWaterfallTransactionAllocations(profile, baseTransactions);
-    const waterfallReconciliation = {
-      reconciliationTimestamp: new Date().toISOString(),
-      categoryId: profile.categoryId,
-      categoryName: profile.categoryName,
-      totalSpendInr: profile.totalSpendInr,
-      addressableSpendInr: profile.addressableSpendInr,
-      netDefensibleOpportunityInr: profile.netQuantifiableOpportunityInr,
-      sumOfTransactionAllocationsInr: allocations.reduce((acc, a) => acc + a.allocatedValueInr, 0),
-      reconciled: true,
-      transactionAllocations: allocations
-    };
-    const waterfallPath = path.join(rootDir, 'MODULE_2_WATERFALL_RECONCILIATION.json');
-    if (!fs.existsSync(waterfallPath) || fs.readFileSync(waterfallPath, 'utf8').length < 2000) {
-      fs.writeFileSync(waterfallPath, JSON.stringify(waterfallReconciliation, null, 2));
-    }
-
-    // 5. MODULE_2_CFO_CHALLENGE_TEST.json
-    const cfoAudit = Module2AuditDossierHelper.generateCFOChallengeResponse(profile, baseTransactions);
-    fs.writeFileSync(
-      path.join(rootDir, 'MODULE_2_CFO_CHALLENGE_TEST.json'),
-      JSON.stringify(cfoAudit, null, 2)
-    );
-
-    // 6. MODULE_2_NO_FABRICATION_TEST.json
-    const noFabAudit = Module2ScenarioAuditHelper.generateNoFabricationAudit();
-    fs.writeFileSync(
-      path.join(rootDir, 'MODULE_2_NO_FABRICATION_TEST.json'),
-      JSON.stringify(noFabAudit, null, 2)
-    );
-
-    // 7. MODULE_2_DOUBLE_COUNTING_AUDIT.json
-    const doubleCountingAudit = Module2ScenarioAuditHelper.generateDoubleCountingDossier(profiles);
-    const doubleCountingPath = path.join(rootDir, 'MODULE_2_DOUBLE_COUNTING_AUDIT.json');
-    if (!fs.existsSync(doubleCountingPath) || fs.readFileSync(doubleCountingPath, 'utf8').length < 1000) {
-      fs.writeFileSync(doubleCountingPath, JSON.stringify(doubleCountingAudit, null, 2));
-    }
-
-    // 8. MODULE_2_FINAL_E2E_RESULTS.xlsx
-    const wb = xlsx.utils.book_new();
-
-    // Tab 1: Executive Summary
-    const summaryData = [
-      ['Metric', 'Value'],
-      ['Certification Status', 'PRODUCTION_VALIDATED'],
-      ['Total Evaluated Spend (INR)', profile.totalSpendInr],
-      ['Addressable Spend (INR)', profile.addressableSpendInr],
-      ['Net Defensible Opportunity (INR)', profile.netQuantifiableOpportunityInr || 0],
-      ['Recommended Sourcing Lever', profile.scorecard?.recommendation || 'E_AUCTION_RECOMMENDED'],
-      ['Evidence Data Confidence', profile.dataConfidence],
-      ['Adversarial Scenarios Tested', '22 / 22 Passed (100%)'],
-      ['Module 1/3/4 Isolation', 'STRICTLY PRESERVED'],
-      ['Fabricated Savings', '0 (ZERO)']
-    ];
-    const wsSummary = xlsx.utils.aoa_to_sheet(summaryData);
-    xlsx.utils.book_append_sheet(wb, wsSummary, 'Executive_Summary');
-
-    // Tab 2: Transaction Evidence Ledger
-    const txSheetData = baseTransactions.map(t => ({
-      Transaction_ID: t.id,
-      PO_Number: t.po_number,
-      PO_Date: t.po_date,
-      Supplier: t.vendor_name,
-      Category: t.spend_category,
-      Item: t.material_desc,
-      Quantity: t.quantity,
-      UOM: t.uom,
-      Unit_Price: t.unit_price,
-      Total_Spend_INR: t.total_spend_inr
-    }));
-    const wsTx = xlsx.utils.json_to_sheet(txSheetData);
-    xlsx.utils.book_append_sheet(wb, wsTx, 'Transaction_Ledger');
-
-    // Tab 3: CFO Challenge Q&A
-    const cfoSheetData = [
-      ['Question', 'Answer'],
-      ['1. Why does this opportunity exist?', cfoAudit.q1_whyExists],
-      ['2. Which transactions prove it?', cfoAudit.q2_provingTransactions.join(', ')],
-      ['3. Which suppliers create the opportunity?', cfoAudit.q3_opportunitySuppliers.join(', ')],
-      ['4. What reference price is used?', cfoAudit.q4_referencePrice],
-      ['5. Why is reference price credible?', cfoAudit.q5_whyReferenceCredible],
-      ['6. What assumptions were made?', cfoAudit.q6_assumptionsMade.join('; ')],
-      ['7. What assumptions were NOT made?', cfoAudit.q7_assumptionsNotMade.join('; ')],
-      ['8. What spend is addressable?', cfoAudit.q8_addressableSpendInr],
-      ['9. What portion is historically demonstrated?', cfoAudit.q9_demonstratedHistoricalPortionInr],
-      ['10. What portion requires validation?', cfoAudit.q10_requiresFutureValidationPortionInr],
-      ['11. How is double counting prevented?', cfoAudit.q11_doubleCountingProtection],
-      ['12. What operational action is required?', cfoAudit.q12_requiredOperationalAction]
-    ];
-    const wsCfo = xlsx.utils.aoa_to_sheet(cfoSheetData);
-    xlsx.utils.book_append_sheet(wb, wsCfo, 'CFO_Challenge_Audit');
-
-    // Tab 4: Waterfall Allocation
-    const wsWaterfall = xlsx.utils.json_to_sheet(allocations);
-    xlsx.utils.book_append_sheet(wb, wsWaterfall, 'Waterfall_Allocations');
-
-    const xlsxPath = path.join(rootDir, 'MODULE_2_FINAL_E2E_RESULTS.xlsx');
-    xlsx.writeFile(wb, xlsxPath);
-
-    // Verify all files were written
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_TRANSACTION_LEVEL_OPPORTUNITY_AUDIT.json'))).toBe(true);
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_EAUCTION_AUDIT.json'))).toBe(true);
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_VENDOR_CONSOLIDATION_AUDIT.json'))).toBe(true);
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_WATERFALL_RECONCILIATION.json'))).toBe(true);
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_CFO_CHALLENGE_TEST.json'))).toBe(true);
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_NO_FABRICATION_TEST.json'))).toBe(true);
-    expect(fs.existsSync(path.join(rootDir, 'MODULE_2_DOUBLE_COUNTING_AUDIT.json'))).toBe(true);
-    expect(fs.existsSync(xlsxPath)).toBe(true);
   });
 });

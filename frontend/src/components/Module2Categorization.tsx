@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
+import { useUNSPSCTaxonomy } from '../hooks/useUNSPSCTaxonomy';
 import { formatINRAmount } from '../utils/currencyConverter';
 import {
   calculateCategoryYearDetails,
@@ -61,6 +62,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   targetSection,
   assessmentId: propAssessmentId
 }) => {
+  const taxonomyState = useUNSPSCTaxonomy();
   const assessmentId =
     propAssessmentId ||
     (typeof window !== 'undefined'
@@ -244,16 +246,19 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
 
   const dynamicCategoryDetails = useMemo(() => {
+    if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateCategoryYearDetails(lineItems, categoriesList, totalEvaluatedSpendInrCr);
-  }, [lineItems, categoriesList, totalEvaluatedSpendInrCr]);
+  }, [lineItems, categoriesList, totalEvaluatedSpendInrCr, taxonomyState]);
 
   const dynamicVendorDetails = useMemo(() => {
+    if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateVendorYearDetails(lineItems, totalEvaluatedSpendInrCr);
-  }, [lineItems, totalEvaluatedSpendInrCr]);
+  }, [lineItems, totalEvaluatedSpendInrCr, taxonomyState]);
 
   const dynamicStrategicRiskItems = useMemo(() => {
+    if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateStrategicVendorRisk(lineItems);
-  }, [lineItems]);
+  }, [lineItems, taxonomyState]);
 
   const handleUpgradeSilver = () => {
     onUpgrade?.('SILVER');
@@ -797,6 +802,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
         {/* View 2: Official UNSPSC English File Column L Live Taxonomy Engine & Search (Preserved in DOM) */}
         <div className={columnLTab === 'catalog' ? 'space-y-4' : 'hidden'}>
+          {taxonomyState.isLoading && <p role="status">{UI_STRINGS.taxonomyData.loading}</p>}
+          {taxonomyState.error && <p role="alert">{taxonomyState.error}</p>}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
             <div className="flex items-center space-x-2.5">
               <div className="p-2 rounded-xl bg-cyan-100 text-cyan-700 border border-cyan-300">

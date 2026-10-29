@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { CustomerAnalysisStatusCard } from '../../../src/components/orchestration/CustomerAnalysisStatusCard';
 import { orchestrationApi } from '../../../src/utils/orchestrationApi';
 import { UI_STRINGS } from '../../../src/constants';
@@ -223,7 +223,7 @@ describe('CustomerAnalysisStatusCard Component Tests', () => {
     expect(handleViewReport).toHaveBeenCalledTimes(1);
 
     const refreshBtn = screen.getByRole('button', { name: /refresh status/i });
-    fireEvent.click(refreshBtn);
+    await act(async () => { fireEvent.click(refreshBtn); });
     expect(loadSpy).toHaveBeenCalled();
   });
 

@@ -3,10 +3,12 @@ import {
   pcbiCommodityDataLabApi,
   PCBICommodityDataLabApiClient
 } from '../../src/utils/pcbiCommodityDataLabApi';
+import { authApiClient } from '../../src/utils/authApi';
 
 describe('PCBICommodityDataLabApiClient Unit Tests', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(null);
     global.fetch = vi.fn();
   });
 
@@ -16,6 +18,15 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
 
     const customClient = new PCBICommodityDataLabApiClient('http://localhost:5000');
     expect(customClient).toBeDefined();
+  });
+
+  it('includes the authenticated administrator token on protected database requests', async () => {
+    vi.mocked(authApiClient.getStoredToken).mockReturnValue('d1-admin-session');
+    vi.mocked(global.fetch).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, metrics: {} }) } as Response);
+    await pcbiCommodityDataLabApi.getDashboard();
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/data-lab/dashboard'), {
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer d1-admin-session' }
+    });
   });
 
   it('getDashboard should fetch /api/admin/pcbi/data-lab/dashboard', async () => {
@@ -42,7 +53,7 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
     });
 
     const res = await pcbiCommodityDataLabApi.getDashboard();
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/data-lab/dashboard'));
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/data-lab/dashboard'), { headers: { 'Content-Type': 'application/json' } });
     expect(res).toEqual(mockData);
   });
 
@@ -68,7 +79,7 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
     });
 
     const res = await pcbiCommodityDataLabApi.getQueue();
-    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/data-lab/queue'));
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/api/admin/pcbi/data-lab/queue'), { headers: { 'Content-Type': 'application/json' } });
     expect(res).toEqual(mockData);
   });
 
@@ -94,7 +105,8 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
 
     const res = await pcbiCommodityDataLabApi.getCommodityWorkspace('PCBI-FEMO-65-001', 'SOURCE_REGISTER');
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/admin/pcbi/data-lab/commodity/PCBI-FEMO-65-001?tab=SOURCE_REGISTER')
+      expect.stringContaining('/api/admin/pcbi/data-lab/commodity/PCBI-FEMO-65-001?tab=SOURCE_REGISTER'),
+      { headers: { 'Content-Type': 'application/json' } }
     );
     expect(res).toEqual(mockData);
   });

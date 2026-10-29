@@ -6,25 +6,22 @@ import {
   Layers, Package, Factory, Clock
 } from 'lucide-react';
 import type {
-  VendorConsolidationResult,
   CategoryConsolidationProfile,
-  SameMaterialOpportunity
+  SameMaterialOpportunity,
+  VendorConsolidationDimensionType,
+  VendorConsolidationDrillDownLevel,
+  VendorConsolidationResult,
+  VendorConsolidationViewProps
 } from '../../types/module2VendorConsolidation';
 import { UI_STRINGS } from '../../constants';
 import { Module2StrategicSourcingApi } from '../../utils/module2StrategicSourcingApi';
+import { logger } from '../../utils/logger';
 import { VendorConsolidationKpiCards } from './VendorConsolidationKpiCards';
 import { VendorConsolidationCategoryTable } from './VendorConsolidationCategoryTable';
 import { VendorConsolidationSupplierTable } from './VendorConsolidationSupplierTable';
 import { VendorConsolidationMaterialTable } from './VendorConsolidationMaterialTable';
 import { VendorConsolidationTransactionTable } from './VendorConsolidationTransactionTable';
 import { VendorConsolidationMappingQueueTable } from './VendorConsolidationMappingQueueTable';
-
-export interface VendorConsolidationViewProps {
-  assessmentId: string;
-  onBackToOverview?: () => void;
-}
-
-export type DimensionType = 'UNSPSC' | 'SOURCE_GROUP' | 'MATERIALS' | 'MAPPING_QUEUE';
 
 export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = ({
   assessmentId,
@@ -33,37 +30,50 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
   const strings = UI_STRINGS.module2VendorConsolidation;
   const [result, setResult] = useState<VendorConsolidationResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorCause, setErrorCause] = useState<string | null>(null);
 
-  const [activeDimension, setActiveDimension] = useState<DimensionType>('UNSPSC');
-  const [drillDownLevel, setDrillDownLevel] = useState<'CATEGORIES' | 'SUPPLIERS' | 'MATERIALS' | 'TRANSACTIONS'>('CATEGORIES');
+  const [activeDimension, setActiveDimension] = useState<VendorConsolidationDimensionType>('UNSPSC');
+  const [drillDownLevel, setDrillDownLevel] = useState<VendorConsolidationDrillDownLevel>('CATEGORIES');
   const [selectedCategory, setSelectedCategory] = useState<CategoryConsolidationProfile | null>(null);
   const [selectedMaterialOpp, setSelectedMaterialOpp] = useState<SameMaterialOpportunity | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (): Promise<void> => {
     setIsLoading(true);
-    setErrorMessage(null);
+    setErrorCause(null);
     try {
       const data = await Module2StrategicSourcingApi.getVendorConsolidation(assessmentId);
       if (data) {
         setResult(data);
       } else {
-        setErrorMessage('Failed to load Vendor Base Consolidation data.');
+        logger.warn('Vendor consolidation view received no data for the assessment', {
+          assessmentId,
+          userMessage: strings.loadFailedNoPayloadCause
+        });
+        setErrorCause(strings.loadFailedNoPayloadCause);
       }
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Unknown evaluation error');
+      const cause = err instanceof Error ? err.message : strings.loadFailedUnknownCause;
+      logger.error('Vendor consolidation view failed to load', { assessmentId, userMessage: cause }, err);
+      setErrorCause(cause);
     } finally {
       setIsLoading(false);
     }
-  }, [assessmentId]);
+  }, [assessmentId, strings]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleSelectCategory = (category: CategoryConsolidationProfile) => {
+  const handleSelectCategory = (category: CategoryConsolidationProfile): void => {
     setSelectedCategory(category);
     setDrillDownLevel('SUPPLIERS');
+  };
+
+  // Clearing the category keeps a later transaction drill-down that started from the enterprise
+  // material view from being redirected into the category-level material view.
+  const handleBackToCategories = (): void => {
+    setSelectedCategory(null);
+    setDrillDownLevel('CATEGORIES');
   };
 
   const excelUrl = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl(assessmentId);
@@ -78,7 +88,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
               {strings.badge}
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              UNSPSC TAXONOMY &rarr; SUPPLIER FRAGMENTATION &rarr; REALLOCATION
+              {strings.headerFlow}
             </span>
           </div>
           <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -113,6 +123,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
 
           <button
             type="button"
+            aria-label={strings.ariaRefreshData}
             onClick={fetchData}
             disabled={isLoading}
             className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
@@ -137,14 +148,23 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
       {isLoading && (
         <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
           <RotateCw className="w-6 h-6 animate-spin text-blue-600" />
-          <span className="text-xs font-semibold">Evaluating Lever 3 Vendor Consolidation Baseline...</span>
+          <span className="text-xs font-semibold">{strings.loadingBaseline}</span>
         </div>
       )}
 
-      {errorMessage && !isLoading && (
-        <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl flex items-center gap-2 text-xs text-red-800 dark:text-red-300">
-          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-          <span>{errorMessage}</span>
+      {errorCause && !isLoading && (
+        <div
+          role="alert"
+          className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-xl flex items-start gap-2 text-xs text-red-800 dark:text-red-300"
+        >
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">{strings.loadFailedTitle}</p>
+            <p>
+              <span>{strings.loadFailedCauseLabel}</span> <span>{errorCause}</span>
+            </p>
+            <p>{strings.loadFailedNextSteps}</p>
+          </div>
         </div>
       )}
 
@@ -166,7 +186,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
                 }`}
               >
                 <Layers className="w-3.5 h-3.5" />
-                <span>UNSPSC Hierarchy (Primary)</span>
+                <span>{strings.dimensionUnspsc}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                   {result.categories.length}
                 </span>
@@ -182,7 +202,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
                 }`}
               >
                 <Factory className="w-3.5 h-3.5" />
-                <span>Client SAP Groups</span>
+                <span>{strings.dimensionSourceGroup}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
                   {result.sourceGroupCategories?.length || 0}
                 </span>
@@ -198,7 +218,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
                 }`}
               >
                 <Package className="w-3.5 h-3.5" />
-                <span>Material Opportunities</span>
+                <span>{strings.tabMaterialAnalysis}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
                   {result.sameMaterialOpportunities.length}
                 </span>
@@ -214,7 +234,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
                 }`}
               >
                 <Clock className="w-3.5 h-3.5" />
-                <span>Mapping Exceptions Queue</span>
+                <span>{strings.dimensionMappingQueue}</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
                   {result.mappingExceptions?.length || 0}
                 </span>
@@ -239,7 +259,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
 
           {drillDownLevel === 'CATEGORIES' && activeDimension === 'MATERIALS' && (
             <VendorConsolidationMaterialTable
-              categoryName="All Enterprise Categories"
+              categoryName={strings.allEnterpriseCategories}
               sameMaterialOpportunities={result.sameMaterialOpportunities}
               comparableOpportunities={result.comparableMaterialOpportunities}
               crossPlantOpportunities={result.crossPlantOpportunities}
@@ -258,7 +278,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
           {drillDownLevel === 'SUPPLIERS' && selectedCategory && (
             <VendorConsolidationSupplierTable
               category={selectedCategory}
-              onBackToCategories={() => setDrillDownLevel('CATEGORIES')}
+              onBackToCategories={handleBackToCategories}
               onSelectSupplierMaterials={() => setDrillDownLevel('MATERIALS')}
             />
           )}

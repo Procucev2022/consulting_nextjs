@@ -20,6 +20,8 @@ export const SUBSCRIPTION_TIERS = {
 } as const;
 
 export const AUTH_TOKEN_EXPIRY_SECONDS = 86400; // 24 hours
+export const AUTH_LEGACY_PASSWORD_PATTERN = /^[0-9a-f]{32}:[0-9a-f]{128}$/iu;
+export const AUTH_HEX_BYTE_PATTERN = /[0-9a-f]{2}/giu;
 
 export const AUTH_MESSAGES = {
   REGISTER_SUCCESS: 'User account registered successfully',

@@ -1,11 +1,38 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { savingsApiClient } from '../../src/utils/savingsApi';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import frontendLogger from '../../src/utils/logger';
 
 describe('savingsApiClient Unit Tests', () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(frontendLogger, 'warn').mockImplementation(() => ({}) as never);
+  });
+
+  it('rejects an unavailable action-plan route instead of reporting an unsaved change as successful', async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: false, message: 'Action-plan persistence is not configured' }), {
+      status: 501, headers: { 'Content-Type': 'application/json', 'x-request-id': 'REQUEST-501' }
+    }));
+    await expect(savingsApiClient.updateActionPlan('ACT-001', { status: 'Completed' })).rejects.toThrow(
+      UI_STRINGS.module4.apiRequestFailed(UI_STRINGS.module4.apiOperations.actionPlan, 501, 'Action-plan persistence is not configured', 'REQUEST-501')
+    );
+  });
+
+  it('rejects an unsuccessful opportunity response even if its HTTP status is 200', async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: false, message: 'Status transition rejected' }), { status: 200 }));
+    await expect(savingsApiClient.updateSavingsOpportunityStatus('OPP-101', 'APPROVED')).rejects.toThrow('Status transition rejected');
+  });
+
+  it('rejects missing data and a non-JSON gateway response with actionable savings context', async () => {
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('Gateway unavailable', { status: 502 }));
+    await expect(savingsApiClient.getConsolidatedSavings('AIC-1')).rejects.toThrow(UI_STRINGS.module4.apiNoDetails);
+    await expect(savingsApiClient.getConsolidatedSavings('AIC-1')).rejects.toThrow(
+      UI_STRINGS.module4.apiRequestFailed(UI_STRINGS.module4.apiOperations.load, 502, UI_STRINGS.module4.apiNoDetails, UI_STRINGS.common.notAvailable)
+    );
   });
 
   afterEach(() => {

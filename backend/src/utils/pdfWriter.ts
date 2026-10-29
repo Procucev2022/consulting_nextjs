@@ -1,92 +1,101 @@
 /**
- * PDF Writer Utility for PDF 1.4 Binary Buffer Assembly
+ * PDF 1.4 object assembly for the Executive Brief. Pure JavaScript: no filesystem access and no image assets, so it
+ * runs on Cloudflare Workers. Pages use three base-14 Helvetica fonts (F1 regular, F2 bold, F3 italic) with
+ * WinAnsi encoding. Content streams are stored uncompressed.
  */
+import {
+  PDF_BASE_FONTS,
+  PDF_BINARY_MARKER,
+  PDF_FIRST_PAGE_OBJECT_ID,
+  PDF_FONT_ENCODING,
+  PDF_HEADER_LINE,
+  PDF_TRAILER_ROOT_REFERENCE,
+  PDF_XREF_FREE_ENTRY,
+  PDF_XREF_IN_USE_SUFFIX,
+  PDF_XREF_OFFSET_WIDTH
+} from '../constants/executiveBriefPdfConstants';
 
-import { getPreparedLogo } from './pdfImageHelper';
+const encoder = new TextEncoder();
 
-export function buildPdfObjects(pages: string[], width: number, height: number): (string | Buffer)[] {
-  const totalPages = pages.length;
-  const bodyObjects: (string | Buffer)[] = [];
-  const pageObjStartId = 3;
-  const pageObjCount = totalPages * 2;
-  const kids = Array.from({ length: totalPages }, (_, i) => `${pageObjStartId + i * 2} 0 R`).join(' ');
+const encodeText = (text: string): Uint8Array => encoder.encode(text);
 
-  bodyObjects.push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
-  bodyObjects.push(`2 0 obj\n<< /Type /Pages /Kids [ ${kids} ] /Count ${totalPages} >>\nendobj\n`);
-
-  const fontRegularId = pageObjStartId + pageObjCount;
-  const fontBoldId = fontRegularId + 1;
-  const fontItalicId = fontBoldId + 1;
-  const logoImgId = fontItalicId + 1;
-  const logoMaskId = logoImgId + 1;
-
-  pages.forEach((contentStream, idx) => {
-    const pageId = pageObjStartId + idx * 2;
-    const contentId = pageId + 1;
-    const contentBytes = Buffer.from(contentStream, 'utf-8');
-
-    bodyObjects.push(
-      `${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 ${width} ${height} ] ` +
-        `/Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R /F3 ${fontItalicId} 0 R >> ` +
-        `/XObject << /Im1 ${logoImgId} 0 R >> >> ` +
-        `/Contents ${contentId} 0 R >>\nendobj\n`
-    );
-    bodyObjects.push(
-      `${contentId} 0 obj\n<< /Length ${contentBytes.length} >>\nstream\n${contentStream}\nendstream\nendobj\n`
-    );
-  });
-
-  bodyObjects.push(
-    `${fontRegularId} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n`
-  );
-  bodyObjects.push(
-    `${fontBoldId} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>\nendobj\n`
-  );
-  bodyObjects.push(
-    `${fontItalicId} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>\nendobj\n`
-  );
-
-  const logo = getPreparedLogo();
-  const imgHeader = Buffer.from(
-    `${logoImgId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} ` +
-      `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode /SMask ${logoMaskId} 0 R ` +
-      `/Length ${logo.compRgb.length} >>\nstream\n`
-  );
-  const imgFooter = Buffer.from('\nendstream\nendobj\n');
-  bodyObjects.push(Buffer.concat([imgHeader, logo.compRgb, imgFooter]));
-
-  const maskHeader = Buffer.from(
-    `${logoMaskId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} ` +
-      `/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${logo.compAlpha.length} >>\nstream\n`
-  );
-  const maskFooter = Buffer.from('\nendstream\nendobj\n');
-  bodyObjects.push(Buffer.concat([maskHeader, logo.compAlpha, maskFooter]));
-
-  return bodyObjects;
-}
-
-export function assemblePdfBuffer(bodyObjects: (string | Buffer)[]): Buffer {
+const concatBytes = (parts: Uint8Array[]): Uint8Array => {
+  const total = parts.reduce((sum, part) => sum + part.byteLength, 0);
+  const output = new Uint8Array(total);
   let offset = 0;
-  const header = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
-  offset += Buffer.byteLength(header, 'utf-8');
-  const offsets: number[] = [0];
-  const chunks: Buffer[] = [Buffer.from(header, 'utf-8')];
-
-  bodyObjects.forEach((obj) => {
-    offsets.push(offset);
-    const b = typeof obj === 'string' ? Buffer.from(obj, 'utf-8') : obj;
-    chunks.push(b);
-    offset += b.length;
+  parts.forEach((part) => {
+    output.set(part, offset);
+    offset += part.byteLength;
   });
+  return output;
+};
 
-  const startXref = offset;
-  const totalObjs = offsets.length;
-  let xref = `xref\n0 ${totalObjs}\n0000000000 65535 f \n`;
-  for (let i = 1; i < totalObjs; i++) {
-    xref += `${offsets[i].toString().padStart(10, '0')} 00000 n \n`;
-  }
-  const trailer = `trailer\n<< /Size ${totalObjs} /Root 1 0 R >>\nstartxref\n${startXref}\n%%EOF\n`;
-  chunks.push(Buffer.from(xref));
-  chunks.push(Buffer.from(trailer));
-  return Buffer.concat(chunks);
-}
+const indirectObject = (objectId: number, body: string): Uint8Array =>
+  encodeText(`${objectId} 0 obj\n${body}\nendobj\n`);
+
+const streamObject = (objectId: number, content: string): Uint8Array => {
+  const contentBytes = encodeText(content);
+  return concatBytes([
+    encodeText(`${objectId} 0 obj\n<< /Length ${contentBytes.byteLength} >>\nstream\n`),
+    contentBytes,
+    encodeText('\nendstream\nendobj\n')
+  ]);
+};
+
+const fontObject = (objectId: number, baseFont: string): Uint8Array =>
+  indirectObject(objectId, `<< /Type /Font /Subtype /Type1 /BaseFont /${baseFont} /Encoding /${PDF_FONT_ENCODING} >>`);
+
+/**
+ * Builds the indirect objects in object-number order: catalog (1), page tree (2), then a page and its content stream
+ * for each page, followed by the three font dictionaries.
+ */
+export const buildPdfObjects = (pages: string[], width: number, height: number): Uint8Array[] => {
+  const pageCount = pages.length;
+  const kids = pages.map((_page, index) => `${PDF_FIRST_PAGE_OBJECT_ID + index * 2} 0 R`).join(' ');
+  const regularFontId = PDF_FIRST_PAGE_OBJECT_ID + pageCount * 2;
+  const boldFontId = regularFontId + 1;
+  const italicFontId = boldFontId + 1;
+  const objects: Uint8Array[] = [
+    indirectObject(1, '<< /Type /Catalog /Pages 2 0 R >>'),
+    indirectObject(2, `<< /Type /Pages /Kids [ ${kids} ] /Count ${pageCount} >>`)
+  ];
+  pages.forEach((content, index) => {
+    const pageId = PDF_FIRST_PAGE_OBJECT_ID + index * 2;
+    const contentId = pageId + 1;
+    objects.push(indirectObject(
+      pageId,
+      `<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 ${width} ${height} ] ` +
+        `/Resources << /Font << /F1 ${regularFontId} 0 R /F2 ${boldFontId} 0 R /F3 ${italicFontId} 0 R >> >> ` +
+        `/Contents ${contentId} 0 R >>`
+    ));
+    objects.push(streamObject(contentId, content));
+  });
+  objects.push(fontObject(regularFontId, PDF_BASE_FONTS.regular));
+  objects.push(fontObject(boldFontId, PDF_BASE_FONTS.bold));
+  objects.push(fontObject(italicFontId, PDF_BASE_FONTS.italic));
+  return objects;
+};
+
+/**
+ * Assembles the header, the indirect objects, the cross-reference table, and the trailer. Offsets are byte positions.
+ */
+export const assemblePdfBuffer = (objects: Uint8Array[]): Uint8Array => {
+  const header = concatBytes([
+    encodeText(`${PDF_HEADER_LINE}%`),
+    Uint8Array.from(PDF_BINARY_MARKER),
+    encodeText('\n')
+  ]);
+  let position = header.byteLength;
+  const offsets = objects.map((object) => {
+    const offset = position;
+    position += object.byteLength;
+    return offset;
+  });
+  const xrefEntries = offsets
+    .map((offset) => `${offset.toString().padStart(PDF_XREF_OFFSET_WIDTH, '0')}${PDF_XREF_IN_USE_SUFFIX}`)
+    .join('');
+  const objectCount = objects.length + 1;
+  const xref = `xref\n0 ${objectCount}\n${PDF_XREF_FREE_ENTRY}${xrefEntries}`;
+  const trailer = `trailer\n<< /Size ${objectCount} /Root ${PDF_TRAILER_ROOT_REFERENCE} >>\nstartxref\n${position}\n%%EOF\n`;
+  return concatBytes([header, ...objects, encodeText(xref), encodeText(trailer)]);
+};

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AssessmentUploadTab from '../../../src/components/assessment/AssessmentUploadTab';
-import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { UI_STRINGS, ASSESSMENT_UPLOAD_MAX_MB } from '../../../src/constants';
 import { assessmentApiClient } from '../../../src/utils/assessmentApi';
 import type { AssessmentRecord } from '../../../src/types';
 
@@ -84,7 +84,7 @@ describe('AssessmentUploadTab', () => {
 
     fireEvent.change(input, { target: { files: [invalidFile] } });
 
-    expect(screen.getByText(/Invalid file format/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.invalidFileFormat)).toBeInTheDocument();
   });
 
   it('rejects oversized file (> 100 MB)', () => {
@@ -101,7 +101,7 @@ describe('AssessmentUploadTab', () => {
 
     fireEvent.change(input, { target: { files: [largeFile] } });
 
-    expect(screen.getByText(/File size exceeds the 100 MB limit/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.fileTooLarge(ASSESSMENT_UPLOAD_MAX_MB))).toBeInTheDocument();
   });
 
   it('rejects empty file (0 bytes)', () => {
@@ -118,7 +118,7 @@ describe('AssessmentUploadTab', () => {
 
     fireEvent.change(input, { target: { files: [emptyFile] } });
 
-    expect(screen.getByText(/Selected file is empty/i)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.emptyFile)).toBeInTheDocument();
   });
 
   it('handles file selection, upload, validation, and explicit Module 1 execution cleanly', async () => {
@@ -136,9 +136,11 @@ describe('AssessmentUploadTab', () => {
     (assessmentApiClient.validateDataset as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true,
       validationSummary: {
-        rowCount: 1000,
-        excludedRows: 5,
-        anomalyCount: 2
+        sourceRowCount: 1000,
+        validRowCount: 1000,
+        excludedRowCount: 5,
+        anomalyRowCount: 2,
+        cleanSpendYieldPct: 99.5
       }
     });
 
@@ -184,11 +186,12 @@ describe('AssessmentUploadTab', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText('spend.xlsx').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText('Upload File to Dossier')).toBeInTheDocument();
+      // Upload stays disabled until the SHA-256 checksum has been computed.
+      expect(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.uploadScreen.btnUploadFile })).toBeEnabled();
     });
 
     // Upload file
-    fireEvent.click(screen.getByText('Upload File to Dossier'));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.uploadScreen.btnUploadFile }));
 
     await waitFor(() => {
       expect(assessmentApiClient.uploadDataVersion).toHaveBeenCalledWith(
@@ -203,12 +206,12 @@ describe('AssessmentUploadTab', () => {
 
     // Validate dataset
     const validateBtn = screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.uploadPipeline.controls.btnValidate });
-    expect(validateBtn).not.toBeDisabled();
+    await waitFor(() => expect(validateBtn).not.toBeDisabled());
     fireEvent.click(validateBtn);
 
     await waitFor(() => {
       expect(assessmentApiClient.validateDataset).toHaveBeenCalledWith('AIC-2026-0003', 'DV-TEST-001');
-      expect(screen.getByText(/Validation passed/i)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.validationPassed((1000).toLocaleString(), '5', '2'))).toBeInTheDocument();
       // Start Module 1 is now enabled
       expect(startM1Btn).not.toBeDisabled();
     });
@@ -219,8 +222,8 @@ describe('AssessmentUploadTab', () => {
     await waitFor(() => {
       expect(assessmentApiClient.runModule1).toHaveBeenCalledWith('AIC-2026-0003', 'DV-TEST-001');
       expect(onUploadSuccessMock).toHaveBeenCalledWith(completedAssessment);
-      expect(screen.getByText(/Module 1 Spend Intelligence Results Reconciled/i)).toBeInTheDocument();
-      expect(screen.getByText('₹55.4000 Cr')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.module1ResultsTitle)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.validatedSpendValue((55.4).toFixed(4)))).toBeInTheDocument();
     });
   });
 
@@ -247,7 +250,7 @@ describe('AssessmentUploadTab', () => {
     fireEvent.click(validateBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Missing mandatory column PO_NUMBER')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.validationFailed('Missing mandatory column PO_NUMBER'))).toBeInTheDocument();
       expect(screen.getByRole('button', { name: UI_STRINGS.ASSESSMENT.uploadPipeline.controls.btnStartModule1 })).toBeDisabled();
     });
   });
@@ -275,7 +278,7 @@ describe('AssessmentUploadTab', () => {
     fireEvent.click(startM1Btn);
 
     await waitFor(() => {
-      expect(screen.getByText('Engine calculation timeout')).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.ASSESSMENT.uploadScreen.module1Failed('Engine calculation timeout'))).toBeInTheDocument();
     });
   });
 });

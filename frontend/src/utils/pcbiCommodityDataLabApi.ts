@@ -4,6 +4,7 @@
 
 import { BACKEND_API_BASE_URL } from '../constants';
 import frontendLogger from './logger';
+import { authApiClient } from './authApi';
 import type {
   CommodityResearchQueueRow,
   CommoditySourceEvidenceObject,
@@ -20,10 +21,17 @@ export class PCBICommodityDataLabApiClient {
     this.baseUrl = baseUrl;
   }
 
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const token = authApiClient.getStoredToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  }
+
   public async getDashboard(): Promise<{ success: boolean; metrics: PCBIResearchDashboardMetrics }> {
     try {
       frontendLogger.info('Calling API: getCommodityDataLabDashboard');
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/dashboard`);
+      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/dashboard`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch Data Lab dashboard: HTTP ${res.status}`);
       }
@@ -39,7 +47,7 @@ export class PCBICommodityDataLabApiClient {
   public async getQueue(): Promise<{ success: boolean; total: number; queue: CommodityResearchQueueRow[] }> {
     try {
       frontendLogger.info('Calling API: getCommodityResearchQueue');
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/queue`);
+      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/queue`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch Commodity Research Queue: HTTP ${res.status}`);
       }
@@ -59,7 +67,8 @@ export class PCBICommodityDataLabApiClient {
     try {
       frontendLogger.info('Calling API: getCommodityWorkspaceDetail', { pcbiId, tab });
       const res = await fetch(
-        `${this.baseUrl}/api/admin/pcbi/data-lab/commodity/${encodeURIComponent(pcbiId)}?tab=${tab}`
+        `${this.baseUrl}/api/admin/pcbi/data-lab/commodity/${encodeURIComponent(pcbiId)}?tab=${tab}`,
+        { headers: this.getHeaders() }
       );
       if (!res.ok) {
         throw new Error(`Failed to fetch workspace for ${pcbiId}: HTTP ${res.status}`);
@@ -83,7 +92,7 @@ export class PCBICommodityDataLabApiClient {
       frontendLogger.info('Calling API: detectUploadDomain', { fileName, targetArea });
       const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/detect-domain`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ fileName, fileContentSnippet, targetArea })
       });
       if (!res.ok) {
@@ -130,7 +139,7 @@ export class PCBICommodityDataLabApiClient {
       });
       const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/upload-source`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify(payload)
       });
       if (!res.ok) {
@@ -170,7 +179,7 @@ export class PCBICommodityDataLabApiClient {
       });
       const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify(payload)
       });
       if (!res.ok) {

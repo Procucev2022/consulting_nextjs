@@ -45,7 +45,7 @@ export class Module2StrategicSourcingApi {
     if (typeof window !== 'undefined' && window.location?.origin) {
       return `${window.location.origin}${this.baseUrl}${path}`;
     }
-    return `http://localhost:5000${this.baseUrl}${path}`;
+    return `${this.baseUrl}${path}`;
   }
 
   private static appendQueryParams(

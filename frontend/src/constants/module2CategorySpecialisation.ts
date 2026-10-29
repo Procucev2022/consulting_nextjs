@@ -187,7 +187,10 @@ export const CATEGORY_SPECIALISATION_UI_STRINGS = {
   TITLE: 'Lever 6: Category Specialisation',
   SUBTITLE:
     'Prioritises procurement categories, establishes actionable opportunity heads, and guides specialised resource deployment.',
-  EXPORT_BUTTON: 'Download 8-Sheet Excel Audit Dossier',
+  EXPORT_BUTTON: 'Download Category Audit Workbook',
+  HISTORICAL_SPEND_LABEL: 'Historical Spend',
+  NO_D1_PLANNING_ASSUMPTIONS:
+    'No planning assumptions are configured in D1. Category evidence is available, but monetary opportunity estimates are withheld.',
   KPI_TOTAL_SPEND_ASSESSED: 'Total Procurement Spend Assessed',
   KPI_CATEGORIES_ASSESSED: 'Categories Assessed',
   KPI_GROSS_OPPORTUNITY: 'Gross Tentative Opportunity (Base)',

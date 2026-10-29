@@ -141,7 +141,11 @@ export const DirectPriceItemDrillDownModal: React.FC<DirectPriceItemDrillDownMod
                       <td className="py-2.5 px-3 text-right">{s.totalQuantity.toLocaleString()}</td>
                       <td className="py-2.5 px-3 text-right">₹{s.totalSpendInr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="py-2.5 px-3 text-right font-medium text-emerald-600">₹{s.lowestUnitPrice.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right">₹{s.weightedAveragePrice.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right">
+                        {Number.isFinite(s.weightedAveragePrice)
+                          ? `₹${s.weightedAveragePrice.toFixed(2)}`
+                          : UI_STRINGS.common.notAvailable}
+                      </td>
                       <td className="py-2.5 px-3 text-right">₹{s.highestUnitPrice.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right font-bold text-emerald-600">
                         ₹{s.historicalLostOpportunityInr.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -177,7 +181,11 @@ export const DirectPriceItemDrillDownModal: React.FC<DirectPriceItemDrillDownMod
                       <td className="py-2.5 px-3 text-right">{p.totalQuantity.toLocaleString()}</td>
                       <td className="py-2.5 px-3 text-right">₹{p.totalSpendInr.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
                       <td className="py-2.5 px-3 text-right font-medium text-emerald-600">₹{p.lowestUnitPrice.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right">₹{p.weightedAveragePrice.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right">
+                        {Number.isFinite(p.weightedAveragePrice)
+                          ? `₹${p.weightedAveragePrice.toFixed(2)}`
+                          : UI_STRINGS.common.notAvailable}
+                      </td>
                       <td className="py-2.5 px-3 text-right font-bold text-emerald-600">
                         ₹{p.historicalLostOpportunityInr.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
@@ -235,7 +243,7 @@ export const DirectPriceItemDrillDownModal: React.FC<DirectPriceItemDrillDownMod
                       <td className="py-2.5 px-3 text-right font-bold text-emerald-600">
                         {tx.historicalLostOpportunityInr > 0
                           ? `₹${tx.historicalLostOpportunityInr.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                          : '-'}
+                          : strings.noOpportunityPlaceholder}
                       </td>
                     </tr>
                   ))}

@@ -1,13 +1,35 @@
 /**
- * Constants for Output Evidence & Validation Workbooks (Prompt 305)
+ * Evidence workbook catalogue: workbook and savings types, filenames, titles, sheet layouts,
+ * sheet headers, and labels. Sheet lists here are the single source for the inventory sheet count.
  */
 
 import type {
-  EvidenceWorkbookType,
   CanonicalSavingsType,
-  EvidenceInventoryItem,
-  SavingsTypeEvidenceInventoryItem
+  EvidenceSavingsMetadata,
+  EvidenceWorkbookType
 } from '../types/evidenceWorkbook';
+
+export const EVIDENCE_WORKBOOK_TYPES = [
+  'MODULE_1_EVIDENCE',
+  'MODULE_2_EVIDENCE',
+  'PCBI_EVIDENCE',
+  'SAVINGS_ENGINE_EVIDENCE',
+  'FINANCIAL_VALIDATION',
+  'DATA_VERSION_DIFF',
+  'REPORT_EVIDENCE',
+  'MANAGEMENT_QUICK_SUMMARY_EVIDENCE',
+  'ANALYSIS_RUN_CONTROL'
+] as const satisfies readonly EvidenceWorkbookType[];
+
+export const EVIDENCE_SAVINGS_TYPES = [
+  'VENDOR_CONSOLIDATION',
+  'BENCHMARK_PRICE_GAP',
+  'STRATEGIC_SOURCING',
+  'STRATEGIC_MARKET_VALUE',
+  'PROCESS_PRODUCTIVITY',
+  'COST_AVOIDANCE_RISK',
+  'REALIZED_SAVINGS'
+] as const satisfies readonly CanonicalSavingsType[];
 
 export const EVIDENCE_WORKBOOK_FILENAMES: Record<EvidenceWorkbookType, string> = {
   MODULE_1_EVIDENCE: '01_Module_1_Evidence.xlsx',
@@ -21,247 +43,203 @@ export const EVIDENCE_WORKBOOK_FILENAMES: Record<EvidenceWorkbookType, string> =
   ANALYSIS_RUN_CONTROL: '09_Analysis_Run_Control.xlsx'
 };
 
-export const SAVINGS_TYPE_FILENAMES: Record<CanonicalSavingsType, string> = {
-  VENDOR_CONSOLIDATION: '04A_Vendor_Consolidation_Evidence.xlsx',
-  BENCHMARK_PRICE_GAP: '04B_Benchmark_Price_Gap_Evidence.xlsx',
-  STRATEGIC_SOURCING: '04C_Strategic_Sourcing_Evidence.xlsx',
-  STRATEGIC_MARKET_VALUE: '04D_Strategic_Market_Value_Evidence.xlsx',
-  PROCESS_PRODUCTIVITY: '04E_Process_Productivity_Evidence.xlsx',
-  COST_AVOIDANCE_RISK: '04F_Cost_Avoidance_Risk_Evidence.xlsx',
-  REALIZED_SAVINGS: '04G_Realized_Savings_Evidence.xlsx'
+export const EVIDENCE_WORKBOOK_TITLES: Record<EvidenceWorkbookType, string> = {
+  MODULE_1_EVIDENCE: 'Module 1 — Spend Ingestion & Baseline Evidence',
+  MODULE_2_EVIDENCE: 'Module 2 — AI Categorization & Strategic Sourcing Evidence',
+  PCBI_EVIDENCE: 'Module 3 — PCBI & Commodity Benchmarking Evidence',
+  SAVINGS_ENGINE_EVIDENCE: 'Module 4 — Savings Engine & Initiative Ledger',
+  FINANCIAL_VALIDATION: 'Financial Validation & Integrity Workbook',
+  DATA_VERSION_DIFF: 'Data Version Comparison & Reanalysis Diff',
+  REPORT_EVIDENCE: 'Report Version Evidence & Governance Audit',
+  MANAGEMENT_QUICK_SUMMARY_EVIDENCE: 'Management Quick Summary (10-Slide) Evidence',
+  ANALYSIS_RUN_CONTROL: 'Analysis Run Master Control & QA Ledger'
 };
 
-export const EVIDENCE_PACKAGE_ZIP_FILENAME = 'Complete_Analysis_Evidence_Package.zip';
+export const EVIDENCE_WORKBOOK_DESCRIPTIONS: Record<EvidenceWorkbookType, string> = {
+  MODULE_1_EVIDENCE: 'Spend baseline from the ProcurementTransaction ledger for this job: supplier, plant, and material-group spend, plus capped transaction rows.',
+  MODULE_2_EVIDENCE: 'Module 2 category and sourcing-lever evidence.',
+  PCBI_EVIDENCE: 'PCBI benchmark evidence for this job.',
+  SAVINGS_ENGINE_EVIDENCE: 'Run-level savings bridge (gross, overlap, net defensible, potential savings, savings %) from the approved analysis run, reconciled to the assessment record.',
+  FINANCIAL_VALIDATION: 'Tie-out checks between the ledger, the approved analysis run, and the assessment record.',
+  DATA_VERSION_DIFF: 'Data version history for this job with record-count and checksum deltas between consecutive versions.',
+  REPORT_EVIDENCE: 'Report version evidence and governance audit.',
+  MANAGEMENT_QUICK_SUMMARY_EVIDENCE: 'Headline KPI reconciliation from the assessment record to the approved run and the ledger.',
+  ANALYSIS_RUN_CONTROL: 'Analysis run control log for this job: status, gates, approval, supersession, and totals per run.'
+};
 
-export const EVIDENCE_STANDARD_SHEETS = {
-  README: '01_README',
-  EXECUTIVE_SUMMARY: '02_EXECUTIVE_SUMMARY',
-  CALCULATION_BRIDGE: '03_CALCULATION_BRIDGE',
-  SUPPORTING_ANALYSIS: '04_SUPPORTING_ANALYSIS',
-  SOURCE_RECORDS: '05_SOURCE_RECORDS',
-  RECONCILIATION: '06_RECONCILIATION',
-  ASSUMPTIONS: '07_ASSUMPTIONS',
-  EXCLUSIONS: '08_EXCLUSIONS',
-  AUDIT_TRAIL: '09_AUDIT_TRAIL'
+export const EVIDENCE_STATIC_UNAVAILABLE_REASONS = {
+  MODULE_2_EVIDENCE: 'Module 2 category and sourcing-lever detail is not persisted per analysis run in D1. Some run payloads keep summary counters only.',
+  PCBI_EVIDENCE: 'PCBI benchmark matches for this job are not persisted in D1. PCBIBenchmarkMaster holds reference benchmarks, not per-job matches.',
+  REPORT_EVIDENCE: 'Report version records are not persisted in D1, so the report-to-dataset trace cannot be produced.'
 } as const;
 
-export const EVIDENCE_CERTIFIED_BENCHMARKS = {
-  TOTAL_SPEND_CR: 5920.35,
-  TOTAL_SPEND_INR: 59203500000,
-  ANALYSIS_PERIOD: 'April 2024 – March 2026',
-  TOTAL_TRANSACTIONS: 31671,
-  TOTAL_SUPPLIERS: 974,
-  TOTAL_CATEGORIES: 256,
-  TOTAL_PLANTS: 26,
-  TOTAL_POS: 15884,
+export const EVIDENCE_SHEET_NAMES = {
+  README: '01_README',
+  SUMMARY: '02_SUMMARY',
+  PARITY: 'PARITY',
+  SUPPLIER_SPEND: '03_SUPPLIER_SPEND',
+  PLANT_SPEND: '04_PLANT_SPEND',
+  MATERIAL_GROUPS: '05_MATERIAL_GROUPS',
+  TRANSACTIONS: '06_TRANSACTIONS',
+  CALCULATION_BRIDGE: '03_CALCULATION_BRIDGE',
+  VALIDATION_CHECKS: '03_VALIDATION_CHECKS',
+  DATA_VERSIONS: '03_DATA_VERSIONS',
+  VERSION_DIFF: '04_VERSION_DIFF',
+  KPI_RECONCILIATION: '03_KPI_RECONCILIATION',
+  ANALYSIS_RUNS: '03_ANALYSIS_RUNS'
+} as const;
 
-  // PCBI Metrics
-  PCBI_TECHNICAL_IDS_COUNT: 290,
-  PCBI_ADDRESSABLE_SPEND_CR: 5524.92,
-  QUARANTINED_SERVICES_SPEND_CR: 113.39,
-  QUARANTINED_NON_BENCHMARKABLE_SPEND_CR: 282.05,
-
-  // Opportunity Bridge
-  GROSS_OPPORTUNITY_CR: 173.12,
-  OVERLAP_DEDUCTIONS_CR: 62.80,
-  EXCLUSIONS_CR: 16.72,
-  NET_DEFENSIBLE_PIPELINE_CR: 93.60,
-  STRATEGIC_MARKET_VALUE_CR: 14.88,
-  NET_DIRECT_SAVINGS_CR: 78.72,
-  MATHEMATICAL_VARIANCE_CR: 0.00,
-  REALIZED_SAVINGS_CR: 68.00,
-  COST_AVOIDANCE_SPEND_DERISKED_CR: 420.00,
-
-  // Initiatives
-  OPP_001_VENDOR_CONSOLIDATION_GROSS_CR: 6.17,
-  OPP_001_VENDOR_CONSOLIDATION_OVERLAP_CR: 0.00,
-  OPP_001_VENDOR_CONSOLIDATION_NET_CR: 6.17,
-
-  OPP_003_PRICE_GAP_GROSS_CR: 80.67,
-  OPP_003_PRICE_GAP_OVERLAP_CR: 40.20,
-  OPP_003_PRICE_GAP_NET_CR: 40.47,
-  OPP_003_PRICE_GAP_EXCLUSION_ADJ_CR: 29.73,
-
-  OPP_004_STRATEGIC_SOURCING_GROSS_CR: 71.40,
-  OPP_004_STRATEGIC_SOURCING_OVERLAP_CR: 22.60,
-  OPP_004_STRATEGIC_SOURCING_NET_CR: 48.80,
-  OPP_004_STRATEGIC_SOURCING_EXCLUSION_ADJ_CR: 42.82,
-
-  OPP_006_STRATEGIC_MARKET_VALUE_CR: 14.88,
-
-  // Mathematical Tolerances
-  FINANCIAL_TOLERANCE_CR: 0.0001
+export const EVIDENCE_WORKBOOK_SHEETS: Record<EvidenceWorkbookType, readonly string[]> = {
+  MODULE_1_EVIDENCE: [
+    EVIDENCE_SHEET_NAMES.README, EVIDENCE_SHEET_NAMES.SUMMARY, EVIDENCE_SHEET_NAMES.SUPPLIER_SPEND,
+    EVIDENCE_SHEET_NAMES.PLANT_SPEND, EVIDENCE_SHEET_NAMES.MATERIAL_GROUPS, EVIDENCE_SHEET_NAMES.TRANSACTIONS,
+    EVIDENCE_SHEET_NAMES.PARITY
+  ],
+  MODULE_2_EVIDENCE: [],
+  PCBI_EVIDENCE: [],
+  SAVINGS_ENGINE_EVIDENCE: [
+    EVIDENCE_SHEET_NAMES.README, EVIDENCE_SHEET_NAMES.SUMMARY, EVIDENCE_SHEET_NAMES.CALCULATION_BRIDGE,
+    EVIDENCE_SHEET_NAMES.PARITY
+  ],
+  FINANCIAL_VALIDATION: [
+    EVIDENCE_SHEET_NAMES.README, EVIDENCE_SHEET_NAMES.SUMMARY, EVIDENCE_SHEET_NAMES.VALIDATION_CHECKS,
+    EVIDENCE_SHEET_NAMES.PARITY
+  ],
+  DATA_VERSION_DIFF: [
+    EVIDENCE_SHEET_NAMES.README, EVIDENCE_SHEET_NAMES.SUMMARY, EVIDENCE_SHEET_NAMES.DATA_VERSIONS,
+    EVIDENCE_SHEET_NAMES.VERSION_DIFF, EVIDENCE_SHEET_NAMES.PARITY
+  ],
+  REPORT_EVIDENCE: [],
+  MANAGEMENT_QUICK_SUMMARY_EVIDENCE: [
+    EVIDENCE_SHEET_NAMES.README, EVIDENCE_SHEET_NAMES.SUMMARY, EVIDENCE_SHEET_NAMES.KPI_RECONCILIATION,
+    EVIDENCE_SHEET_NAMES.PARITY
+  ],
+  ANALYSIS_RUN_CONTROL: [
+    EVIDENCE_SHEET_NAMES.README, EVIDENCE_SHEET_NAMES.SUMMARY, EVIDENCE_SHEET_NAMES.ANALYSIS_RUNS,
+    EVIDENCE_SHEET_NAMES.PARITY
+  ]
 };
 
-export const EVIDENCE_README_MANDATORY_NOTICE =
-  'This workbook provides the calculation and evidence trail supporting the corresponding aiCEV output. ' +
-  'It is generated from the same backend source of truth used by the application.';
-
-export const EVIDENCE_README_WARNING =
-  'WARNING: This workbook contains proprietary evidence, validation traces, and forensic calculations. ' +
-  'It is intended for independent audit and verification, not merely as a raw transactional data dump.';
-
-export const EVIDENCE_INVENTORY: EvidenceInventoryItem[] = [
-  {
-    type: 'MODULE_1_EVIDENCE',
-    filename: '01_Module_1_Evidence.xlsx',
-    title: 'Module 1 — Spend Ingestion & Baseline Evidence',
-    description: 'Detailed proof of spend concentration, supplier rankings, plant breakdowns, and source records.',
-    sheetCount: 8,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'MODULE_2_EVIDENCE',
-    filename: '02_Module_2_Evidence.xlsx',
-    title: 'Module 2 — AI Categorization & Strategic Sourcing Evidence',
-    description: 'UNSPSC confidence, spend by category, sourcing lever assignments, and opportunity indicators.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'PCBI_EVIDENCE',
-    filename: '03_PCBI_Evidence.xlsx',
-    title: 'Module 3 — PCBI & Commodity Benchmarking Evidence',
-    description: '290 Technical IDs, benchmark sources, price gap derivations, and quarantine registries.',
-    sheetCount: 11,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'SAVINGS_ENGINE_EVIDENCE',
-    filename: '04_Savings_Engine_Evidence.xlsx',
-    title: 'Module 4 — Savings Engine & Initiative Ledger',
-    description: 'Mathematical derivation of Wave-1 initiatives, overlap deductions, and exclusion adjustments.',
-    sheetCount: 10,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'FINANCIAL_VALIDATION',
-    filename: '05_Financial_Validation.xlsx',
-    title: 'Financial Validation & Integrity Workbook',
-    description: 'Automated 9-point CFO/CEO mathematical audit proving ₹0.00 variance and strict isolation.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'DATA_VERSION_DIFF',
-    filename: '06_Data_Version_Diff.xlsx',
-    title: 'Data Version Comparison & Reanalysis Diff',
-    description: 'Granular delta between previous and current datasets across records, suppliers, and spend.',
-    sheetCount: 5,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'REPORT_EVIDENCE',
-    filename: '07_Report_Evidence.xlsx',
-    title: 'Report Version Evidence & Governance Audit',
-    description: 'Complete trace connecting certified report versions to dataset states and admin approvals.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'MANAGEMENT_QUICK_SUMMARY_EVIDENCE',
-    filename: '08_Management_Quick_Summary_Evidence.xlsx',
-    title: 'Management Quick Summary (10-Slide) Evidence',
-    description: 'Slide-by-slide KPI reconciliation mapping headline board figures to underlying ledgers.',
-    sheetCount: 5,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  },
-  {
-    type: 'ANALYSIS_RUN_CONTROL',
-    filename: '09_Analysis_Run_Control.xlsx',
-    title: 'Analysis Run Master Control & QA Ledger',
-    description: 'System master control log recording module execution timestamps, gates, and hashes.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
-  }
-];
-
-export const SAVINGS_TYPES_INVENTORY: SavingsTypeEvidenceInventoryItem[] = [
-  {
-    savingsType: 'VENDOR_CONSOLIDATION',
+export const EVIDENCE_SAVINGS_METADATA: Record<CanonicalSavingsType, EvidenceSavingsMetadata> = {
+  VENDOR_CONSOLIDATION: {
     initiativeId: 'OPP-001',
     filename: '04A_Vendor_Consolidation_Evidence.xlsx',
-    title: 'Vendor Consolidation & Tail Rationalization Evidence',
-    displayedValue: '₹6.17 Cr',
-    description: 'Detailed derivation of ₹6.17 Cr consolidation opportunity based on 5% indicative tail model.',
-    sheetCount: 7,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Vendor Consolidation & Tail Rationalization',
+    description: 'Rationalization of fragmented tail suppliers across MRO and consumables.'
   },
-  {
-    savingsType: 'BENCHMARK_PRICE_GAP',
+  BENCHMARK_PRICE_GAP: {
     initiativeId: 'OPP-003',
     filename: '04B_Benchmark_Price_Gap_Evidence.xlsx',
-    title: 'PCBI Benchmark Price Gap Evidence',
-    displayedValue: '₹29.73 Cr',
-    description: 'Traces ₹80.67 Cr Gross to ₹40.20 Cr Overlap and ₹10.74 Cr Exclusions = ₹29.73 Cr net direct.',
-    sheetCount: 8,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Benchmark Price Gap Analysis',
+    description: 'PCBI direct commodity price variance derivation against published indices.'
   },
-  {
-    savingsType: 'STRATEGIC_SOURCING',
+  STRATEGIC_SOURCING: {
     initiativeId: 'OPP-004',
     filename: '04C_Strategic_Sourcing_Evidence.xlsx',
-    title: 'Strategic Sourcing & Commercial Negotiation Evidence',
-    displayedValue: '₹42.82 Cr',
-    description: 'Traces ₹71.40 Cr Gross to ₹22.60 Cr Overlap and ₹5.98 Cr Exclusions = ₹42.82 Cr net direct.',
-    sheetCount: 8,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Strategic Sourcing & Commercial Levers',
+    description: 'Commercial renegotiation, e-auction events, and multi-plant volume aggregation.'
   },
-  {
-    savingsType: 'STRATEGIC_MARKET_VALUE',
+  STRATEGIC_MARKET_VALUE: {
     initiativeId: 'OPP-006',
     filename: '04D_Strategic_Market_Value_Evidence.xlsx',
-    title: 'Strategic Market Value (Contract Restructuring) Evidence',
-    displayedValue: '₹14.88 Cr',
-    description: 'Proves ₹14.88 Cr non-direct strategic value and isolation from ₹78.72 Cr net direct savings.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Strategic Market Value (Non-Direct)',
+    description: 'Procurement value from payment terms, SLA enhancements, and price index de-linking.'
   },
-  {
-    savingsType: 'PROCESS_PRODUCTIVITY',
-    initiativeId: 'OPP-007',
+  PROCESS_PRODUCTIVITY: {
+    initiativeId: 'PROC-001',
     filename: '04E_Process_Productivity_Evidence.xlsx',
-    title: 'Process Productivity & PO Effort Reduction Evidence',
-    displayedValue: '20% Effort Reduction',
-    description: '20% PO effort reduction across 824 POs; direct monetary savings strictly ₹0.00 until baseline validation.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Process Productivity (PO Effort Reduction)',
+    description: '20% PO effort reduction targeting low-value purchase orders.'
   },
-  {
-    savingsType: 'COST_AVOIDANCE_RISK',
-    initiativeId: 'OPP-008',
+  COST_AVOIDANCE_RISK: {
+    initiativeId: 'RSK-001',
     filename: '04F_Cost_Avoidance_Risk_Evidence.xlsx',
-    title: 'Spend De-Risked & Supplier Risk Contingency Evidence',
-    displayedValue: '₹420.00 Cr De-risked',
-    description: 'Evidence supporting ₹420.00 Cr spend de-risking; strictly NOT monetized as savings.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Cost Avoidance & Supplier Risk Mitigation',
+    description: 'Supply disruption protection on critical single-source materials. Not monetised as savings.'
   },
-  {
-    savingsType: 'REALIZED_SAVINGS',
-    initiativeId: 'OPP-009',
+  REALIZED_SAVINGS: {
+    initiativeId: 'REAL-001',
     filename: '04G_Realized_Savings_Evidence.xlsx',
-    title: 'Realized Savings Audit & Historical Verification Evidence',
-    displayedValue: '₹68.00 Cr Realized',
-    description: 'Audited historical ERP savings of ₹68.00 Cr; strictly non-additive to Wave-1 opportunity pipeline.',
-    sheetCount: 6,
-    isAvailable: true,
-    requiredRole: 'ADMIN'
+    title: 'Historical Audited Realized Savings',
+    description: 'Historical audited ERP cost reductions from prior financial cycles.'
   }
-];
+};
 
+export const EVIDENCE_REQUIRED_ROLE = {
+  WORKBOOK: 'CUSTOMER_ANALYST',
+  SAVINGS: 'CONSULTANT'
+} as const;
+
+export const EVIDENCE_PACKAGE_FILENAME_PREFIX = 'Complete_Analysis_Evidence_Package_';
+
+export const EVIDENCE_PACKAGE_INDEX_FILENAME = '00_PACKAGE_INDEX.txt';
+
+export const EVIDENCE_WORKBOOK_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+export const EVIDENCE_PACKAGE_MIME_TYPE = 'application/zip';
+
+export const EVIDENCE_CALCULATION_SOURCE =
+  'Cloudflare D1: ProcurementTransaction ledger rows, AssessmentAnalysisRun totals, AssessmentRecord headline figures';
+
+export const EVIDENCE_DISCLAIMER = 'Generated by the Worker from D1 rows. This is not a client-side export of the UI.';
+
+export const EVIDENCE_SHEET_HEADERS = {
+  README: ['Field', 'Value'],
+  SUMMARY_METRIC: ['Metric', 'Value'],
+  KPI: ['KPI', 'UI Value', 'Evidence Value', 'Source Value', 'Unit', 'Status'],
+  PARITY: ['KPI', 'UI Value', 'Evidence Value', 'Source Value', 'Unit', 'Variance', 'Tolerance', 'Status', 'Supporting Sheet', 'Notes'],
+  GROUP: ['Group', 'Ledger Rows', 'Spend (INR Cr)', 'Share of Ledger (%)'],
+  TRANSACTION: ['Transaction ID', 'Source Row', 'PO Number', 'PO Line', 'Document Date', 'Supplier', 'Material Code', 'Description', 'Material Group', 'Plant', 'Quantity', 'UOM', 'Net Price', 'Currency', 'Spend (INR)', 'Spend (INR Cr)'],
+  BRIDGE: ['Step', 'Component', 'UI Value (INR Cr)', 'Source Value (INR Cr)', 'Status', 'Formula'],
+  VALIDATION: ['Check', 'Expected', 'Observed', 'Variance', 'Status', 'Notes'],
+  DATA_VERSION: ['Version', 'Data Version ID', 'File Name', 'Record Count', 'File Size (bytes)', 'Checksum', 'Uploaded By', 'Uploaded At', 'Superseded'],
+  VERSION_DIFF: ['From Version', 'To Version', 'Record Count From', 'Record Count To', 'Record Delta', 'File Changed', 'Checksum Changed'],
+  RUN: ['Analysis Run ID', 'Data Version ID', 'Status', 'Total Spend (INR Cr)', 'Validated Spend (INR Cr)', 'Gross Opportunity (INR Cr)', 'Overlap (INR Cr)', 'Net Defensible (INR Cr)', 'Potential Savings (INR Cr)', 'Savings %', 'All Gates Passed', 'Approved', 'Superseded', 'Created At']
+} as const;
+
+export const EVIDENCE_SHEET_LABELS = {
+  workbook: 'Workbook',
+  title: 'Title',
+  filename: 'Filename',
+  jobId: 'Job ID',
+  customer: 'Customer',
+  tenant: 'Tenant',
+  dataVersion: 'Active data version',
+  analysisRun: 'Active analysis run',
+  generatedAt: 'Generated at (UTC)',
+  generatedBy: 'Generated by',
+  source: 'Calculation source',
+  disclaimer: 'Disclaimer',
+  ledgerRows: 'Ledger rows in scope',
+  ledgerSpend: 'Ledger spend (INR Cr)',
+  transactionRows: 'Transaction rows shown',
+  transactionCap: 'Transaction sheet cap',
+  notRecorded: 'Not recorded',
+  parityStatus: 'Parity status',
+  checksPassed: 'Checks passed',
+  checksFailed: 'Checks failed',
+  packageTitle: 'Complete Analysis Evidence Package index',
+  packageIncluded: 'Included workbooks',
+  packageExcluded: 'Workbooks not included',
+  noPriorVersion: 'No prior version to compare',
+  yes: 'Yes',
+  no: 'No'
+} as const;
+
+export const EVIDENCE_CHECK_LABELS = {
+  PASS: 'PASS',
+  FAIL: 'FAIL',
+  LEDGER_ROWS_CHECK: 'Ledger rows in scope',
+  LEDGER_ROWS_EXPECTED: 'greater than 0',
+  LEDGER_ROWS_SOURCE: 'Rows with this assessment_id and tenant_id',
+  BRIDGE_GROSS: 'Gross opportunity',
+  BRIDGE_GROSS_FORMULA: 'Gross opportunity as displayed',
+  BRIDGE_OVERLAP: 'Overlap deductions',
+  BRIDGE_OVERLAP_FORMULA: 'Overlap deducted from gross',
+  BRIDGE_NET: 'Net defensible opportunity',
+  BRIDGE_NET_FORMULA: 'Gross - Overlap = Net defensible',
+  BRIDGE_POTENTIAL: 'Potential savings',
+  BRIDGE_POTENTIAL_FORMULA: 'Potential savings equals net defensible',
+  BRIDGE_PERCENT: 'Savings percentage',
+  BRIDGE_PERCENT_FORMULA: 'Net defensible / ledger spend x 100'
+} as const;

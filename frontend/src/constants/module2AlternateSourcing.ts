@@ -16,7 +16,7 @@ export const ALTERNATE_SOURCING_DISCLOSURES = {
   CONTACT_PRIVACY:
     'Vendor privacy protection: Executive discovery displays aggregate counts only. Individual contact records and directory exports are withheld.',
   DEDUPLICATION_POLICY:
-    'Distinct business entities are deduplicated across categories and locations. Row counts do not equate to distinct vendors.',
+    'Category aggregates can overlap. Cross-category unique counts are shown only when D1 identity records support the calculation.',
   QUALIFICATION_SEPARATION:
     'Vendor discovery is strictly separate from technical qualification, quality certification, or financial auditing.'
 } as const;
@@ -29,19 +29,6 @@ export const MATCH_TYPE_LABELS = {
   UNMATCHED: 'No Verified Category Match'
 } as const;
 
-export const STATE_TO_CITIES_MAP: Record<string, string[]> = {
-  'MAHARASHTRA': ['ALL_CITIES', 'MUMBAI', 'PUNE', 'NAGPUR', 'NAVI MUMBAI', 'THANE'],
-  'GUJARAT': ['ALL_CITIES', 'AHMEDABAD', 'SURAT', 'VADODARA', 'RAJKOT', 'JAMNAGAR', 'BHAVNAGAR'],
-  'TAMIL NADU': ['ALL_CITIES', 'CHENNAI', 'COIMBATORE', 'SALEM', 'ERODE', 'KANCHEEPURAM'],
-  'KARNATAKA': ['ALL_CITIES', 'BENGALURU', 'MYSURU', 'MANGALURU', 'KALABURAGI', 'TUMAKURU'],
-  'DELHI NCR': ['ALL_CITIES', 'DELHI', 'NEW DELHI', 'NOIDA', 'GURUGRAM', 'FARIDABAD', 'GHAZIABAD'],
-  'RAJASTHAN': ['ALL_CITIES', 'JAIPUR', 'JODHPUR', 'KOTA'],
-  'UTTAR PRADESH': ['ALL_CITIES', 'LUCKNOW', 'KANPUR', 'PRAYAGRAJ', 'BAREILLY', 'GORAKHPUR'],
-  'KERALA': ['ALL_CITIES', 'KOCHI', 'THIRUVANANTHAPURAM', 'KOZHIKODE', 'KOLLAM', 'MALAPPURAM'],
-  'TELANGANA': ['ALL_CITIES', 'HYDERABAD'],
-  'PUNJAB': ['ALL_CITIES', 'LUDHIANA', 'JALANDHAR', 'MOHALI']
-};
-
 export const GEOGRAPHIC_PREFERENCE_OPTIONS = [
   { value: 'ALL_LOCATIONS', label: 'All Available Locations' },
   { value: 'SAME_STATE', label: 'Preferred State Only' },
@@ -51,7 +38,7 @@ export const GEOGRAPHIC_PREFERENCE_OPTIONS = [
 
 export const ALTERNATE_SOURCING_UI_STRINGS = {
   TITLE: 'Module 2 — Lever 10: New-Vendor Development & Alternate Sourcing',
-  SUBTITLE: 'Initial Alternate Vendor Discovery Engine (Database of ~600,000 Verified Commercial Vendors)',
+  SUBTITLE: 'Assessment-scoped category discovery from aggregate vendor directory data stored in D1.',
   BADGE: 'LEVER 10 — ALTERNATE VENDOR DISCOVERY',
   DISCOVERY_NOTICE: 'Discovery Capability Only • Zero Inferred Financial Savings • Zero Raw Vendor Contact Exposure',
   KPI_ELIGIBLE_MATERIALS: 'Eligible Materials Analyzed',
@@ -63,7 +50,7 @@ export const ALTERNATE_SOURCING_UI_STRINGS = {
   KPI_SAVINGS_PROTECTION: 'Commercial Savings Calculated',
   VALUE_ZERO_SAVINGS: '₹0.00 Cr (Discovery Stage)',
   SUB_UNVERIFIED_PRICE: 'ZERO ESTIMATED SAVINGS CLAIMED',
-  SUB_VERIFIED_COUNT: 'DISTINCT BUSINESS ENTITIES',
+  SUB_VERIFIED_COUNT: 'AGGREGATE DIRECTORY COUNT',
   SUB_CROSS_CATEGORY: 'DEDUPLICATED UNIQUE ENTITIES',
   SUB_DEDUPLICATED_POOL: 'DISTINCT DEDUPLICATED POOL',
   SUB_CUMULATIVE_INSTANCES: 'CUMULATIVE LINE-ITEM INSTANCES',
@@ -104,7 +91,21 @@ export const ALTERNATE_SOURCING_UI_STRINGS = {
   NOTICE_DEDUPLICATION: 'Distinct business entities are deduplicated. Database rows do not equate to distinct vendors.',
   BTN_REFRESH: 'Refresh Discovery Pool',
   BTN_RESET_FILTERS: 'Reset Filters',
-  LOADING_TEXT: 'Scanning 600,000+ vendor directory records and matching categories...',
+  LOADING_TEXT: 'Loading assessment-scoped category matches from D1...',
   ERROR_TITLE: 'Alternate Vendor Discovery Error',
-  ERROR_RETRY: 'Retry Discovery Query'
+  ERROR_RETRY: 'Retry Discovery Query',
+  VALUE_UNAVAILABLE: 'Unavailable',
+  LABEL_ALL_STATES: 'All states',
+  LABEL_ALL_CITIES: 'All cities',
+  LABEL_ALL_MATCH_TYPES: 'All Match Types',
+  MASTER_MATCH_UNAVAILABLE: 'Incumbent-to-directory identity match is unavailable.',
+  ASSESSMENT_REQUIRED: 'Select an assessment to load its alternate sourcing report.',
+  EMPTY_OPPORTUNITIES: 'No category-matched material groups are available for this assessment and filter.',
+  KPI_SUB_ANALYZED_MATERIALS: 'MATERIAL GROUPS WITH EXACT CATEGORY MATCH',
+  KPI_SUB_SINGLE_SOURCE: 'SINGLE OBSERVED SUPPLIER',
+  KPI_SUB_UNIQUE_POOL: 'DISTINCT DIRECTORY ENTITIES',
+  KPI_SUB_REGION_POOL: 'DEDUPLICATED REGION COUNT',
+  KPI_SUB_SAVINGS: 'NO SAVINGS INFERRED FROM DISCOVERY',
+  EXCLUSION_UNAVAILABLE_NOTICE: 'Incumbent supplier identities are not present in the aggregate directory.',
+  VALUE_UNSPECIFIED: 'Unspecified'
 } as const;

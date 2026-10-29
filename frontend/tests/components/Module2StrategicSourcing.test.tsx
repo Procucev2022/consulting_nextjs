@@ -478,8 +478,9 @@ describe('Module 2 Strategic Sourcing Frontend Component Suite', () => {
   it('Module2StrategicSourcingWorkspace: loads data and renders master workspace container', async () => {
     vi.spyOn(Module2StrategicSourcingApi, 'getDashboardSummary').mockResolvedValue(mockSummary);
     vi.spyOn(Module2StrategicSourcingApi, 'getCategoryProfiles').mockResolvedValue([mockProfile]);
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement').mockResolvedValue(null);
 
-    render(<Module2StrategicSourcingWorkspace />);
+    render(<Module2StrategicSourcingWorkspace assessmentId="assessment-test" />);
 
     await waitFor(() => {
       expect(screen.getByTestId('module2-strategic-sourcing-workspace')).toBeDefined();

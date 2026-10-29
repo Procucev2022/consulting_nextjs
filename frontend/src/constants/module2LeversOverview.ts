@@ -128,13 +128,13 @@ export const TEN_LEVERS_OVERVIEW_CONFIG: LeverOverviewItem[] = [
     id: 10,
     code: 'LEV-10',
     name: 'New-Vendor Development & Alternate Sourcing',
-    purpose: 'Discovers potential alternate suppliers across 600,000+ national vendor repository based on category mapping and Option C geographic filtering for single-sourced and critical materials, maintaining strict separation between vendor discovery and qualification.',
+    purpose: 'Matches assessment materials to exact D1 directory categories and shows aggregate supplier location and contact counts. Supplier identities and qualification are unavailable.',
     implementationStatus: 'IMPLEMENTED',
-    statusLabel: 'IMPLEMENTED (VENDOR DISCOVERY)',
+    statusLabel: 'IMPLEMENTED (AGGREGATE CATEGORY DISCOVERY)',
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Algorithmic category and geographic matching against 600,000+ vendor records, single-source dependency risk identification, and conservative entity deduplication. Commercial savings and technical qualification deferred.',
+    methodologySummary: 'Exact normalized category joins against D1 aggregate profiles. Hierarchy matching, incumbent exclusion, and preferred-region deduplication require directory identity and location records. No savings or qualification is inferred.',
     requiredFields: ['material_code', 'spend_category', 'customer_plant', 'current_supplier_count', 'relevant_spend_inr'],
-    preconditions: ['Category taxonomy alignment', 'Deterministic customer supplier exclusion', 'Administrative location mapping']
+    preconditions: ['Assessment-linked transaction evidence', 'Exact category alignment', 'Alternate vendor aggregates seeded in D1']
   }
 ];

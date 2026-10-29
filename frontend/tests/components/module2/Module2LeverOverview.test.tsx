@@ -34,7 +34,8 @@ describe('Module2LeverOverview Component', () => {
     // Specific Phase / Sourcing Badges
     expect(screen.getByText('IMPLEMENTED (PHASE 1)')).toBeInTheDocument();
     expect(screen.getByText('IMPLEMENTED (CONTROL & AUDIT)')).toBeInTheDocument();
-    expect(screen.getByText('IMPLEMENTED (VENDOR DISCOVERY)')).toBeInTheDocument();
+    const vendorStatusLabel = TEN_LEVERS_OVERVIEW_CONFIG.find((lever) => lever.id === 3)?.statusLabel ?? '';
+    expect(screen.getAllByText(vendorStatusLabel).length).toBeGreaterThan(0);
 
     const openBtns = screen.getAllByText(UI_STRINGS.module2LeversOverview.btnOpenAnalysis);
     expect(openBtns).toHaveLength(9);
@@ -111,15 +112,10 @@ describe('Module2LeverOverview Component', () => {
     expect(screen.queryByText(/Annual lowest comparable historical unit price methodology/)).not.toBeInTheDocument();
   });
 
-  it('uses default fallback opportunities when directPriceOppCr prop is not provided', () => {
-    const { rerender } = render(
-      <Module2LeverOverview assessmentId="AIC-2026-0002" onSelectLever={vi.fn()} />
+  it('does not invent a direct-price opportunity when the D1-backed value is absent', () => {
+    render(<Module2LeverOverview assessmentId="AIC-2026-0002" onSelectLever={vi.fn()} />);
+    expect(screen.getAllByText(UI_STRINGS.module2LeversOverview.unquantifiedNotice)).toHaveLength(
+      TEN_LEVERS_OVERVIEW_CONFIG.length
     );
-    expect(screen.getByText('₹17.12 Cr')).toBeInTheDocument();
-
-    rerender(
-      <Module2LeverOverview assessmentId="AIC-2026-0003" onSelectLever={vi.fn()} />
-    );
-    expect(screen.getByText('₹8.89 Cr')).toBeInTheDocument();
   });
 });

@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DocumentSummaryView } from '../../src/components/DocumentSummaryView';
-import { mockTenant, initialIngestionQueue } from '../../src/data/mockData';
+import { mockTenant, initialIngestionQueue } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { MonthWiseSummary } from '../../src/types';
 

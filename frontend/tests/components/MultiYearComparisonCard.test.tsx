@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MultiYearComparisonCard } from '../../src/components/MultiYearComparisonCard';
-import { mockMonthWiseSummaries } from '../../src/data/mockData';
+import { mockMonthWiseSummaries } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('MultiYearComparisonCard Component', () => {

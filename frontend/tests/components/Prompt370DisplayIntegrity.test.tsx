@@ -5,7 +5,7 @@ import { Header } from '../../src/components/Header';
 import { PipelineBar } from '../../src/components/PipelineBar';
 import { AssessmentWorkspace } from '../../src/components/assessment/AssessmentWorkspace';
 import { assessmentApiClient } from '../../src/utils/assessmentApi';
-import { mockTenant } from '../../src/data/mockData';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { AssessmentRecord, CustomerRecord, Module1CanonicalViewModel, OperatingModeConfig } from '../../src/types';
 

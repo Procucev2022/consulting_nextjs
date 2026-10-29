@@ -1,5 +1,15 @@
-import type { ValidatedTransactionLedgerRecord } from './module1Forensic';
+import type { RawTransactionLedgerRecord, ValidatedTransactionLedgerRecord } from './module1Forensic';
 import type { FxNormalizedTransaction } from './fxReference';
+
+export interface VgtDatasetInput {
+  fileBuffer?: Buffer;
+  fileSizeBytes: number;
+  fileSha256: string;
+  sourceFileName: string;
+  sheetNames: string[];
+  columnsFound: string[];
+  rawLedger: RawTransactionLedgerRecord[];
+}
 
 export interface VgtForeignTransactionForensicBridge {
   transactionId: string;

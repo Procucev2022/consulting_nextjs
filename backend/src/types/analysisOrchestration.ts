@@ -1,5 +1,9 @@
 /**
- * Analysis Orchestration, PCBI Quality Gate & Admin Reanalysis Types (Prompt 302)
+ * Analysis Orchestration, PCBI Quality Gate & Report Workflow Types (Prompt 302)
+ *
+ * Mirrors frontend/src/types/analysisOrchestration.ts so the Worker API and the
+ * frontend share one contract. Fields marked "Worker extension" are optional and
+ * additive; the frontend ignores them.
  */
 
 export type AnalysisJobStatus =
@@ -60,6 +64,17 @@ export type ReanalysisReason =
   | 'PCBI_MAPPING_CORRECTION'
   | 'OTHER';
 
+/**
+ * Worker extension: the detailed workflow state of a report. The frontend
+ * `ReportVersion.status` is derived from this value (see REPORT_API_STATUS).
+ */
+export type ReportWorkflowState =
+  | 'ADMIN_REVIEW'
+  | 'SUBMITTED_TO_CUSTOMER'
+  | 'CUSTOMER_VIEWED'
+  | 'CUSTOMER_ACKNOWLEDGED'
+  | 'SUPERSEDED';
+
 export interface PCBIGapCategory {
   gapId: string;
   tenantId: string;
@@ -115,7 +130,6 @@ export interface DatasetVersion {
   spendInrCr: number;
   categoryCount: number;
   plantCount: number;
-  datasetJson?: string;
 }
 
 export interface DataVersionDiffSummary {
@@ -186,6 +200,8 @@ export interface ReportVersion {
     savingsPct: number;
     coveredCategories: number;
   };
+  /** Worker extension: exact workflow state (SUBMITTED covers three states). */
+  workflowState?: ReportWorkflowState;
 }
 
 export interface AnalysisJob {
@@ -218,10 +234,6 @@ export interface AnalysisJob {
   totalTransactions: number;
   analysisPeriod: string;
   slaHoursTarget: number;
-  fxMasterVersion?: string;
-  fxMasterFileName?: string;
-  fxMasterChecksum?: string;
-  fxMasterAsOfDate?: string;
 }
 
 export interface CustomerReportAcknowledgement {
@@ -263,6 +275,14 @@ export interface AnalysisAuditEvent {
   metadata?: Record<string, unknown>;
 }
 
+/** Worker extension: email status of a notification. The Worker has no email provider yet. */
+export interface OrchestrationEmailDelivery {
+  status: 'NOT_SENT' | 'QUEUED' | 'SENT' | 'DELIVERED' | 'FAILED';
+  sentAt?: string;
+  lastError?: string;
+  retryCount: number;
+}
+
 export interface OrchestrationNotification {
   notificationId: string;
   recipientType: 'ADMIN' | 'CUSTOMER';
@@ -272,12 +292,8 @@ export interface OrchestrationNotification {
   severity: 'INFO' | 'ACTION_REQUIRED' | 'WARNING' | 'SUCCESS';
   createdAt: string;
   read: boolean;
-  emailDelivery?: {
-    status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'FAILED';
-    sentAt?: string;
-    lastError?: string;
-    retryCount: number;
-  };
+  /** Worker extension: present only when an email was requested for this notification. */
+  emailDelivery?: OrchestrationEmailDelivery;
 }
 
 export interface AdminOrchestrationKPIs {
@@ -289,4 +305,15 @@ export interface AdminOrchestrationKPIs {
   customerAcknowledgementsPending: number;
   blockedAnalyses: number;
   totalAnalyses: number;
+}
+
+export interface AnalysisJobDetailPayload {
+  job: AnalysisJob;
+  versions: DatasetVersion[];
+  pcbiGaps: PCBIGapCategory[];
+  readiness: AnalysisReadinessSummary;
+  reports: ReportVersion[];
+  checklist?: AdminQualityGateChecklist;
+  acknowledgement?: CustomerReportAcknowledgement;
+  correctionRequests: CustomerCorrectionRequest[];
 }

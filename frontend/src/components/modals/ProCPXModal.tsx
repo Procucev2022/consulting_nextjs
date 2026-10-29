@@ -35,6 +35,8 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
 
   if (!isOpen || !opportunity) return null;
 
+  const identifiedSavings = opportunity.est_savings ?? ((opportunity.est_savings_inr_cr || 0) * 10000000 / 83.8);
+
   const handleLaunch = (): void => {
     const validation = validateInput(proCPXFormSchema, {
       oppId: opportunity.opp_id,
@@ -101,7 +103,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.proCPX.deployedSuccess}</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                {UI_STRINGS.modals.proCPX.deployedDesc(opportunity.opp_id, invitedSuppliers.length, `$${opportunity.est_savings.toLocaleString()}`)}
+                {UI_STRINGS.modals.proCPX.deployedDesc(opportunity.opp_id, invitedSuppliers.length, `$${identifiedSavings.toLocaleString()}`)}
               </p>
             </div>
           ) : (
@@ -120,7 +122,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                   <div className="text-right">
                     <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.proCPX.identifiedSavings}</span>
                     <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                      ${(opportunity.est_savings ?? ((opportunity.est_savings_inr_cr || 0) * 10000000 / 83.8)).toLocaleString()}
+                      ${identifiedSavings.toLocaleString()}
                     </p>
                   </div>
                 </div>

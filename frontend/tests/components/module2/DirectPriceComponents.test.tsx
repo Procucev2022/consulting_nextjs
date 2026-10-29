@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DirectPriceCards } from '../../../src/components/module2/DirectPriceCards';
 import { DirectPriceTable } from '../../../src/components/module2/DirectPriceTable';
 import { DirectPriceItemDrillDownModal } from '../../../src/components/module2/DirectPriceItemDrillDownModal';
@@ -10,6 +10,25 @@ import type {
   DirectPriceItemOpportunity
 } from '../../../src/types/module2DirectPriceImprovement';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { Module2StrategicSourcingApi } from '../../../src/utils/module2StrategicSourcingApi';
+import { resolveHumanReadableCategory } from '../../../src/utils/procurementCategoryResolver';
+import { assessmentApiClient } from '../../../src/utils/assessmentApi';
+import type { AssessmentRecord } from '../../../src/types/assessment';
+
+const assessmentChoices: AssessmentRecord[] = [
+  {
+    assessmentId: 'AIC-2026-0002', customerName: 'ABC Textile Ltd', industry: 'Textiles',
+    assessmentPeriodStart: '2023-04-01', assessmentPeriodEnd: '2024-03-31', ndaStatus: 'SIGNED',
+    dataStatus: 'VALIDATED', assignedAnalyst: 'Analyst', status: 'IN_PROGRESS',
+    createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    assessmentId: 'AIC-2026-0003', customerName: 'PQR Cement Ltd', industry: 'Cement',
+    assessmentPeriodStart: '2023-04-01', assessmentPeriodEnd: '2024-03-31', ndaStatus: 'SIGNED',
+    dataStatus: 'VALIDATED', assignedAnalyst: 'Analyst', status: 'IN_PROGRESS',
+    createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z'
+  }
+];
 
 const mockItemOpportunity: DirectPriceItemOpportunity = {
   itemKey: 'FY2023-24::MAT-100::KG::INR',
@@ -304,13 +323,13 @@ describe('DirectPriceItemDrillDownModal Component', () => {
     );
     expect(container.firstChild).toBeNull();
 
-    rerender(<DirectPriceItemDrillDownModal isOpen={true} onClose={vi.fn()} item={null} />);
+    rerender(<DirectPriceItemDrillDownModal isOpen onClose={vi.fn()} item={null} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders suppliers, plants, transactions tabs and closes on button click', () => {
     const handleClose = vi.fn();
-    render(<DirectPriceItemDrillDownModal isOpen={true} onClose={handleClose} item={mockItemOpportunity} />);
+    render(<DirectPriceItemDrillDownModal isOpen onClose={handleClose} item={mockItemOpportunity} />);
 
     expect(screen.getByText('ORGANIC COTTON FIBRE 30MM')).toBeInTheDocument();
     expect(screen.getByText(/PO-2023-8891/)).toBeInTheDocument();
@@ -343,6 +362,7 @@ describe('DirectPriceItemDrillDownModal Component', () => {
 describe('DirectPriceImprovementView Component', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(assessmentApiClient, 'getAssessments').mockResolvedValue(assessmentChoices);
   });
 
   it('fetches data, displays loading skeleton, renders cards, table and customer filter', async () => {
@@ -363,7 +383,7 @@ describe('DirectPriceImprovementView Component', () => {
     });
 
     // Check Customer Dataset filter exists and can switch
-    const customerSelect = screen.getByLabelText('Customer Dataset Filter');
+    const customerSelect = screen.getByLabelText(UI_STRINGS.module2DirectPrice.filterCustomer);
     expect(customerSelect).toBeInTheDocument();
     fireEvent.change(customerSelect, { target: { value: 'AIC-2026-0003' } });
 
@@ -408,5 +428,394 @@ describe('DirectPriceImprovementView Component', () => {
     await waitFor(() => {
       fireEvent.click(refreshBtn);
     });
+  });
+});
+
+const ENGINE_ERROR_MESSAGE = 'Sourcing engine unavailable';
+
+const createDeferred = (): {
+  promise: Promise<DirectPriceImprovementResult | null>;
+  resolve: (value: DirectPriceImprovementResult | null) => void;
+  reject: (reason: unknown) => void;
+} => {
+  let resolve: (value: DirectPriceImprovementResult | null) => void = () => undefined;
+  let reject: (reason: unknown) => void = () => undefined;
+  const promise = new Promise<DirectPriceImprovementResult | null>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+};
+
+const buildResultForCategory = (categoryName: string): DirectPriceImprovementResult => ({
+  ...mockResult,
+  categorySummaries: [
+    {
+      ...mockResult.categorySummaries[0],
+      unspscCategory: categoryName,
+      spendCategory: categoryName,
+      materials: [mockItemOpportunity]
+    }
+  ]
+});
+
+describe('DirectPriceImprovementView data flow and error handling', () => {
+  beforeEach(() => {
+    vi.spyOn(assessmentApiClient, 'getAssessments').mockResolvedValue(assessmentChoices);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('shows the loading state until the dataset resolves and disables refresh while loading', async () => {
+    const pending = createDeferred();
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement').mockReturnValue(pending.promise);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    const refreshButton = screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnRefresh });
+    expect(refreshButton).toBeDisabled();
+    expect(screen.queryByText(UI_STRINGS.module2DirectPrice.certificationNotice)).not.toBeInTheDocument();
+
+    await act(async () => {
+      pending.resolve(mockResult);
+    });
+
+    expect(await screen.findByText(UI_STRINGS.module2DirectPrice.certificationNotice)).toBeInTheDocument();
+    expect(refreshButton).toBeEnabled();
+  });
+
+  it('requests the chosen financial year and clears it when ALL is selected', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    fireEvent.change(await screen.findByDisplayValue(UI_STRINGS.module2DirectPrice.allFys), {
+      target: { value: 'FY2023-24' }
+    });
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0002', { financialYear: 'FY2023-24' });
+    });
+
+    fireEvent.change(screen.getByDisplayValue('FY2023-24'), { target: { value: 'ALL' } });
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0002', { financialYear: undefined });
+    });
+  });
+
+  it('reports customer dataset changes to the parent and loads the new assessment', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+    const onCustomerChange = vi.fn();
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" onCustomerChange={onCustomerChange} />);
+
+    fireEvent.change(await screen.findByDisplayValue(UI_STRINGS.module2DirectPrice.assessmentOptionLabel('ABC Textile Ltd', 'AIC-2026-0002')), {
+      target: { value: 'AIC-2026-0003' }
+    });
+
+    expect(onCustomerChange).toHaveBeenCalledWith('AIC-2026-0003');
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0003', { financialYear: undefined });
+    });
+    expect(screen.getByDisplayValue(UI_STRINGS.module2DirectPrice.assessmentOptionLabel('PQR Cement Ltd', 'AIC-2026-0003'))).toBeInTheDocument();
+  });
+
+  it('switches customer datasets when no change callback is provided', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    fireEvent.change(await screen.findByDisplayValue(UI_STRINGS.module2DirectPrice.assessmentOptionLabel('ABC Textile Ltd', 'AIC-2026-0002')), {
+      target: { value: 'AIC-2026-0003' }
+    });
+
+    expect(screen.getByDisplayValue(UI_STRINGS.module2DirectPrice.assessmentOptionLabel('PQR Cement Ltd', 'AIC-2026-0003'))).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('resets the drill-down when the assessment prop changes and ignores an unchanged id', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+    const { rerender } = render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewMaterials }));
+    expect(
+      screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnBackToCategories })
+    ).toBeInTheDocument();
+
+    rerender(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+    expect(getSpy).toHaveBeenCalledTimes(1);
+
+    rerender(<DirectPriceImprovementView assessmentId="AIC-2026-0003" />);
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0003', { financialYear: undefined });
+    });
+    expect(
+      await screen.findByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewMaterials })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: UI_STRINGS.module2DirectPrice.btnBackToCategories })
+    ).not.toBeInTheDocument();
+  });
+
+  it('drills into a category, opens item evidence, closes it and returns to the category summary', async () => {
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement').mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    fireEvent.click(await screen.findByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewMaterials }));
+    expect(
+      screen.getByText(UI_STRINGS.module2DirectPrice.drilldownCategoryTitle('Natural fibers'))
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewEvidence })[0]);
+    expect(
+      screen.getByRole('heading', { level: 2, name: mockItemOpportunity.materialDesc })
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnClose }));
+    expect(
+      screen.queryByRole('heading', { level: 2, name: mockItemOpportunity.materialDesc })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnBackToCategories }));
+    expect(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewMaterials })).toBeInTheDocument();
+  });
+
+  it('returns to the category summary when the financial year changes inside the material view', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+    fireEvent.click(await screen.findByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewMaterials }));
+
+    const [headerFinancialYearSelect] = screen.getAllByDisplayValue(UI_STRINGS.module2DirectPrice.allFys);
+    fireEvent.change(headerFinancialYearSelect, { target: { value: 'FY2022-23' } });
+
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0002', { financialYear: 'FY2022-23' });
+    });
+    expect(await screen.findByRole('button', { name: UI_STRINGS.module2DirectPrice.btnViewMaterials })).toBeInTheDocument();
+  });
+
+  it('opens the Excel export for all years and then for the selected financial year', async () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+    await screen.findByText(UI_STRINGS.module2DirectPrice.certificationNotice);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnDownloadExcel }));
+    expect(openSpy).toHaveBeenLastCalledWith(expect.stringContaining('/direct-price-improvement/export-excel'), '_blank');
+    expect(openSpy.mock.lastCall?.[0]).toContain('assessmentId=AIC-2026-0002');
+    expect(openSpy.mock.lastCall?.[0]).not.toContain('financialYear=');
+
+    fireEvent.change(screen.getByDisplayValue(UI_STRINGS.module2DirectPrice.allFys), {
+      target: { value: 'FY2023-24' }
+    });
+    await waitFor(() => {
+      expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0002', { financialYear: 'FY2023-24' });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnDownloadExcel }));
+    expect(openSpy.mock.lastCall?.[0]).toContain('financialYear=FY2023-24');
+  });
+
+  it('refetches the current selection when refresh is pressed and keeps the data visible', async () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+    await screen.findByText(UI_STRINGS.module2DirectPrice.certificationNotice);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnRefresh }));
+    expect(getSpy).toHaveBeenCalledTimes(2);
+    expect(getSpy).toHaveBeenLastCalledWith('AIC-2026-0002', { financialYear: undefined });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnRefresh })).toBeEnabled();
+    });
+    expect(screen.getByText(UI_STRINGS.module2DirectPrice.certificationNotice)).toBeInTheDocument();
+  });
+
+  it('shows the engine error message when the request rejects', async () => {
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement').mockRejectedValue(
+      new Error(ENGINE_ERROR_MESSAGE)
+    );
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    expect(await screen.findByText(ENGINE_ERROR_MESSAGE)).toBeInTheDocument();
+  });
+
+  it('shows the load failure message when the engine returns no dataset', async () => {
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement').mockResolvedValue(null);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    expect(await screen.findByText(UI_STRINGS.module2DirectPrice.loadFailedError)).toBeInTheDocument();
+  });
+
+  it('shows the unknown error message when a non-Error value is thrown', async () => {
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement').mockRejectedValue('connection reset');
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+
+    expect(await screen.findByText(UI_STRINGS.module2DirectPrice.unknownError)).toBeInTheDocument();
+  });
+
+  it('ignores an older response that finishes after a newer financial year request', async () => {
+    const initialRequest = createDeferred();
+    const olderRequest = createDeferred();
+    const newerRequest = createDeferred();
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockReturnValueOnce(initialRequest.promise)
+      .mockReturnValueOnce(olderRequest.promise)
+      .mockReturnValueOnce(newerRequest.promise);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+    await act(async () => {
+      initialRequest.resolve(mockResult);
+    });
+    const financialYearSelect = await screen.findByDisplayValue(UI_STRINGS.module2DirectPrice.allFys);
+
+    fireEvent.change(financialYearSelect, { target: { value: 'FY2023-24' } });
+    fireEvent.change(financialYearSelect, { target: { value: 'FY2022-23' } });
+
+    await act(async () => {
+      newerRequest.resolve(buildResultForCategory('Packaging Films'));
+    });
+    expect(await screen.findByText(resolveHumanReadableCategory('Packaging Films'))).toBeInTheDocument();
+
+    await act(async () => {
+      olderRequest.resolve(buildResultForCategory('Industrial Gases'));
+    });
+    expect(screen.queryByText(resolveHumanReadableCategory('Industrial Gases'))).not.toBeInTheDocument();
+    expect(screen.getByText(resolveHumanReadableCategory('Packaging Films'))).toBeInTheDocument();
+    expect(getSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it('ignores an older failure once a newer request has succeeded', async () => {
+    const initialRequest = createDeferred();
+    const olderRequest = createDeferred();
+    const newerRequest = createDeferred();
+    vi.spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockReturnValueOnce(initialRequest.promise)
+      .mockReturnValueOnce(olderRequest.promise)
+      .mockReturnValueOnce(newerRequest.promise);
+
+    render(<DirectPriceImprovementView assessmentId="AIC-2026-0002" />);
+    await act(async () => {
+      initialRequest.resolve(mockResult);
+    });
+    const financialYearSelect = await screen.findByDisplayValue(UI_STRINGS.module2DirectPrice.allFys);
+
+    fireEvent.change(financialYearSelect, { target: { value: 'FY2023-24' } });
+    fireEvent.change(financialYearSelect, { target: { value: 'FY2022-23' } });
+
+    await act(async () => {
+      newerRequest.resolve(buildResultForCategory('Packaging Films'));
+    });
+    expect(await screen.findByText(resolveHumanReadableCategory('Packaging Films'))).toBeInTheDocument();
+
+    await act(async () => {
+      olderRequest.reject(new Error(ENGINE_ERROR_MESSAGE));
+    });
+    expect(screen.queryByText(ENGINE_ERROR_MESSAGE)).not.toBeInTheDocument();
+    expect(screen.getByText(resolveHumanReadableCategory('Packaging Films'))).toBeInTheDocument();
+  });
+
+  it('skips the request and shows no dataset when no assessment is selected', () => {
+    const getSpy = vi
+      .spyOn(Module2StrategicSourcingApi, 'getDirectPriceImprovement')
+      .mockResolvedValue(mockResult);
+
+    render(<DirectPriceImprovementView assessmentId={undefined} />);
+
+    expect(getSpy).not.toHaveBeenCalled();
+    expect(screen.queryByText(UI_STRINGS.module2DirectPrice.certificationNotice)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnRefresh })).toBeEnabled();
+  });
+});
+
+describe('DirectPriceItemDrillDownModal evidence tabs', () => {
+  it('lists supplier, plant and transaction evidence with counts and benchmark rows', () => {
+    render(<DirectPriceItemDrillDownModal isOpen onClose={vi.fn()} item={mockItemOpportunity} />);
+
+    expect(screen.getByRole('heading', { level: 2, name: mockItemOpportunity.materialDesc })).toBeInTheDocument();
+    expect(screen.getByText('₹0.150 Cr')).toBeInTheDocument();
+
+    const supplierRow = within(screen.getByRole('table')).getByRole('row', { name: /PREMIER AGRO FIBRES/ });
+    expect(within(supplierRow).getByText('₹220.00')).toBeInTheDocument();
+    expect(within(supplierRow).getByText('₹240.00')).toBeInTheDocument();
+    expect(within(supplierRow).getByText('₹250.00')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: `${UI_STRINGS.module2DirectPrice.tabPlants} (2)` }));
+    const plantRow = within(screen.getByRole('table')).getByRole('row', { name: /PLANT-02/ });
+    expect(within(plantRow).getByText('₹225.00')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: `${UI_STRINGS.module2DirectPrice.tabTransactions} (2)` }));
+    const transactionTable = screen.getByRole('table');
+    const benchmarkRow = within(transactionTable).getByRole('row', { name: /PO-2023-8891/ });
+    expect(within(benchmarkRow).getByText(UI_STRINGS.module2DirectPrice.noOpportunityPlaceholder)).toBeInTheDocument();
+    const lossRow = within(transactionTable).getByRole('row', { name: /PO-2023-9102/ });
+    expect(within(lossRow).getByText('₹240.00')).toBeInTheDocument();
+    expect(within(lossRow).getByText('₹180.00')).toBeInTheDocument();
+    const lossInr = mockItemOpportunity.transactions[1].historicalLostOpportunityInr;
+    expect(
+      within(lossRow).getByText(`₹${lossInr.toLocaleString(undefined, { maximumFractionDigits: 0 })}`)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: `${UI_STRINGS.module2DirectPrice.tabSuppliers} (2)` }));
+    expect(
+      within(screen.getByRole('table')).getByRole('row', { name: /ABC COTTON MILLS LTD/ })
+    ).toBeInTheDocument();
+  });
+
+  it('shows not available for supplier and plant weighted prices that are missing or infinite', () => {
+    const item: DirectPriceItemOpportunity = {
+      ...mockItemOpportunity,
+      suppliers: [
+        { ...mockItemOpportunity.suppliers[0], weightedAveragePrice: null },
+        mockItemOpportunity.suppliers[1]
+      ],
+      plants: [
+        { ...mockItemOpportunity.plants[0], weightedAveragePrice: Number.POSITIVE_INFINITY },
+        mockItemOpportunity.plants[1]
+      ]
+    };
+    render(<DirectPriceItemDrillDownModal isOpen onClose={vi.fn()} item={item} />);
+
+    const supplierRow = within(screen.getByRole('table')).getByRole('row', { name: /ABC COTTON MILLS LTD/ });
+    expect(within(supplierRow).getByText(UI_STRINGS.common.notAvailable)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: `${UI_STRINGS.module2DirectPrice.tabPlants} (2)` }));
+    const plantRow = within(screen.getByRole('table')).getByRole('row', { name: /PLANT-01/ });
+    expect(within(plantRow).getByText(UI_STRINGS.common.notAvailable)).toBeInTheDocument();
+    expect(screen.queryByText(/Infinity/)).not.toBeInTheDocument();
+  });
+
+  it('closes from the footer button', () => {
+    const handleClose = vi.fn();
+    render(<DirectPriceItemDrillDownModal isOpen onClose={handleClose} item={mockItemOpportunity} />);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2DirectPrice.btnClose }));
+
+    expect(handleClose).toHaveBeenCalledTimes(1);
   });
 });

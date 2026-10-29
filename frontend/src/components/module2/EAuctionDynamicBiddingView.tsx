@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RotateCw,
   AlertCircle,
@@ -16,6 +16,9 @@ import type {
 } from '../../types/module2EAuction';
 import { UI_STRINGS } from '../../constants';
 import { Module2StrategicSourcingApi } from '../../utils/module2StrategicSourcingApi';
+import { assessmentApiClient } from '../../utils/assessmentApi';
+import type { AssessmentRecord } from '../../types/assessment';
+import { logger } from '../../utils/logger';
 import { EAuctionKpiCards } from './EAuctionKpiCards';
 import { EAuctionCategoryTable } from './EAuctionCategoryTable';
 import { EAuctionMaterialTable } from './EAuctionMaterialTable';
@@ -34,16 +37,40 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
   const [selectedCategory, setSelectedCategory] = useState<EAuctionCategoryCandidate | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [availableAssessments, setAvailableAssessments] = useState<AssessmentRecord[]>([]);
+  const [assessmentListError, setAssessmentListError] = useState(false);
+  const latestRequestIdRef = useRef(0);
 
   useEffect(() => {
-    if (assessmentId !== undefined && assessmentId !== effectiveAssessmentId) {
+    let isCurrent = true;
+    assessmentApiClient.getAssessments()
+      .then((records) => {
+        if (isCurrent) setAvailableAssessments(Array.isArray(records) ? records.filter((record) => record.assessmentId) : []);
+      })
+      .catch((error: unknown) => {
+        if (!isCurrent) return;
+        setAssessmentListError(true);
+        logger.warn('E-Auction assessment choices failed to load', {}, error);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Follow only changes of the parent prop. Also depending on the local selection would revert a customer
+    // chosen in the dropdown whenever the parent does not pass the new id back.
+    if (assessmentId !== undefined) {
       setEffectiveAssessmentId(assessmentId);
       setSelectedFy('ALL');
       setSelectedCategory(null);
     }
-  }, [assessmentId, effectiveAssessmentId]);
+  }, [assessmentId]);
 
   const fetchEAuctionData = useCallback(async (cId: string, fy: string): Promise<void> => {
+    // Only the newest request may update state, so a slow earlier response cannot overwrite newer data.
+    const requestId = latestRequestIdRef.current + 1;
+    latestRequestIdRef.current = requestId;
     if (!cId) {
       setResult(null);
       setIsLoading(false);
@@ -55,15 +82,19 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
       const data = await Module2StrategicSourcingApi.getEAuctionDynamicBidding(cId, {
         financialYear: fy !== 'ALL' ? fy : undefined
       });
+      if (requestId !== latestRequestIdRef.current) return;
       if (!data) {
-        throw new Error('Failed to load E-Auction dynamic bidding candidates from sourcing engine');
+        throw new Error(UI_STRINGS.module2EAuction.errorLoadFailed);
       }
       setResult(data);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      setErrorMessage(msg);
+      if (requestId !== latestRequestIdRef.current) return;
+      logger.error('E-Auction dynamic bidding candidates failed to load', { assessmentId: cId, financialYear: fy }, err);
+      setErrorMessage(err instanceof Error ? err.message : UI_STRINGS.module2EAuction.errorUnknown);
     } finally {
-      setIsLoading(false);
+      if (requestId === latestRequestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -127,18 +158,26 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
           {/* Customer Dataset Selector */}
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Customer:
+              {strings.customerFilterTitle}:
             </span>
             <select
-              aria-label="Customer Dataset Filter"
+              aria-label={strings.customerFilterLabel}
               value={effectiveAssessmentId}
               onChange={(e) => handleSelectCustomer(e.target.value)}
               className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="AIC-2026-0002">ABC Textile Ltd (AIC-2026-0002)</option>
-              <option value="AIC-2026-0003">PQR Cement Ltd (AIC-2026-0003)</option>
+              {!effectiveAssessmentId && <option value="">{strings.selectAssessmentPlaceholder}</option>}
+              {effectiveAssessmentId && !availableAssessments.some((record) => record.assessmentId === effectiveAssessmentId) && (
+                <option value={effectiveAssessmentId}>{effectiveAssessmentId}</option>
+              )}
+              {availableAssessments.map((record) => (
+                <option key={record.assessmentId} value={record.assessmentId}>
+                  {strings.assessmentOptionLabel(record.customerName, record.assessmentId)}
+                </option>
+              ))}
             </select>
           </div>
+          {assessmentListError && <span role="status">{strings.assessmentListFailed}</span>}
 
           {/* Financial Year Selector */}
           {result?.availableFinancialYears && (
@@ -147,14 +186,14 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
                 FY:
               </span>
               <select
-                aria-label="Financial Year Filter"
+                aria-label={strings.financialYearFilterLabel}
                 value={selectedFy}
                 onChange={(e) => handleSelectFy(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
               >
                 {result.availableFinancialYears.map((fy) => (
                   <option key={fy} value={fy}>
-                    {fy === 'ALL' ? 'All Financial Years' : fy}
+                    {fy === 'ALL' ? strings.allFinancialYears : fy}
                   </option>
                 ))}
               </select>
@@ -179,7 +218,7 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
             className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {strings.btnRefresh}
           </button>
         </div>
       </div>

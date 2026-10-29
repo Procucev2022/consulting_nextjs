@@ -4,12 +4,8 @@ import React from 'react';
 import {
   Layers, ShieldCheck, TrendingDown, Users, Package, Factory, HelpCircle, CheckCircle, Clock, AlertTriangle
 } from 'lucide-react';
-import type { VendorConsolidationResult } from '../../types/module2VendorConsolidation';
+import type { VendorConsolidationKpiCardsProps } from '../../types/module2VendorConsolidation';
 import { UI_STRINGS } from '../../constants';
-
-interface VendorConsolidationKpiCardsProps {
-  result: VendorConsolidationResult;
-}
 
 export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsProps> = ({ result }) => {
   const strings = UI_STRINGS.module2VendorConsolidation;
@@ -23,15 +19,16 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-blue-200/60 dark:border-blue-900/40">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-wider text-blue-900 dark:text-blue-200">
-                Material UNSPSC Classification Coverage Waterfall
+                {strings.kpiWaterfallTitle}
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-emerald-600" />
-                <span>100.0% Workflow Coverage</span>
+                <span>{strings.kpiWorkflowCoverageBadge}</span>
               </span>
             </div>
             <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
-              Taxonomy: <span className="font-mono font-bold text-slate-800 dark:text-slate-200">UNSPSC UNv260801</span>
+              {strings.kpiTaxonomyLabel}{' '}
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{strings.kpiTaxonomyVersion}</span>
             </div>
           </div>
 
@@ -41,18 +38,20 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
               <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 mb-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Taxonomy-Verified</span>
+                  <span>{strings.kpiTaxonomyVerified}</span>
                 </span>
                 <span className="text-xs font-mono font-black">
-                  {(cov.taxonomyVerifiedSpendPct ?? cov.approvedSpendPct)}% Spend
+                  {strings.kpiSpendShare(cov.taxonomyVerifiedSpendPct ?? cov.approvedSpendPct)}
                 </span>
               </div>
               <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
-                ₹{(cov.taxonomyVerifiedSpendCr ?? cov.approvedSpendCr).toFixed(4)} Cr
+                {strings.formatCrore((cov.taxonomyVerifiedSpendCr ?? cov.approvedSpendCr).toFixed(4))}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {cov.taxonomyVerifiedCount ?? cov.approvedCount} materials (
-                {(cov.taxonomyVerifiedMaterialPct ?? cov.approvedMaterialPct)}% of total)
+                {strings.kpiMaterialsOfTotal(
+                  cov.taxonomyVerifiedCount ?? cov.approvedCount,
+                  cov.taxonomyVerifiedMaterialPct ?? cov.approvedMaterialPct
+                )}
               </div>
             </div>
 
@@ -61,15 +60,15 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
               <div className="flex items-center justify-between text-blue-700 dark:text-blue-400 mb-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Provisional</span>
+                  <span>{strings.kpiProvisional}</span>
                 </span>
-                <span className="text-xs font-mono font-black">{cov.provisionalSpendPct}% Spend</span>
+                <span className="text-xs font-mono font-black">{strings.kpiSpendShare(cov.provisionalSpendPct)}</span>
               </div>
               <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
-                ₹{cov.provisionalSpendCr.toFixed(4)} Cr
+                {strings.formatCrore(cov.provisionalSpendCr.toFixed(4))}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {cov.provisionalCount} materials ({cov.provisionalMaterialPct}% of total)
+                {strings.kpiMaterialsOfTotal(cov.provisionalCount, cov.provisionalMaterialPct)}
               </div>
             </div>
 
@@ -78,15 +77,15 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
               <div className="flex items-center justify-between text-amber-700 dark:text-amber-400 mb-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Awaiting Review</span>
+                  <span>{strings.kpiAwaitingReview}</span>
                 </span>
-                <span className="text-xs font-mono font-black">{cov.awaitingReviewSpendPct}% Spend</span>
+                <span className="text-xs font-mono font-black">{strings.kpiSpendShare(cov.awaitingReviewSpendPct)}</span>
               </div>
               <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
-                ₹{cov.awaitingReviewSpendCr.toFixed(4)} Cr
+                {strings.formatCrore(cov.awaitingReviewSpendCr.toFixed(4))}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {cov.awaitingReviewCount} materials ({cov.awaitingReviewMaterialPct}% of total)
+                {strings.kpiMaterialsOfTotal(cov.awaitingReviewCount, cov.awaitingReviewMaterialPct)}
               </div>
             </div>
 
@@ -95,17 +94,17 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
               <div className="flex items-center justify-between text-purple-700 dark:text-purple-400 mb-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Client-Approved</span>
+                  <span>{strings.kpiClientApproved}</span>
                 </span>
                 <span className="text-xs font-mono font-black">
-                  {cov.clientApprovedSpendPct ?? 0}% Spend
+                  {strings.kpiSpendShare(cov.clientApprovedSpendPct ?? 0)}
                 </span>
               </div>
               <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
-                ₹{(cov.clientApprovedSpendCr ?? 0).toFixed(4)} Cr
+                {strings.formatCrore((cov.clientApprovedSpendCr ?? 0).toFixed(4))}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {cov.clientApprovedCount ?? 0} materials ({cov.clientApprovedMaterialPct ?? 0}%)
+                {strings.kpiMaterialsShare(cov.clientApprovedCount ?? 0, cov.clientApprovedMaterialPct ?? 0)}
               </div>
             </div>
           </div>
@@ -121,7 +120,7 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
             <Layers className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
-            ₹{result.totalAssessmentSpendCr.toFixed(4)} Cr
+            {strings.formatCrore(result.totalAssessmentSpendCr.toFixed(4))}
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
             {result.categoriesAnalysedCount} {strings.cardCategoriesAnalysed.toLowerCase()}
@@ -135,10 +134,10 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
             <Users className="w-4 h-4 text-blue-500" />
           </div>
           <div className="text-lg font-black text-blue-900 dark:text-blue-200 font-mono">
-            ₹{result.sameMaterialMultiSourcingSpendCr.toFixed(4)} Cr
+            {strings.formatCrore(result.sameMaterialMultiSourcingSpendCr.toFixed(4))}
           </div>
           <div className="text-[11px] text-blue-700 dark:text-blue-400 mt-0.5">
-            {result.multiSourcedMaterialsCount} multi-sourced items
+            {strings.kpiMultiSourcedItems(result.multiSourcedMaterialsCount)}
           </div>
         </div>
 
@@ -152,7 +151,7 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
             {strings.statusNotYetQuantifiable}
           </div>
           <div className="text-[10px] text-purple-700 dark:text-purple-400 mt-0.5 leading-tight">
-            {result.categoryConsolidationOpportunitiesCount} multi-vendor categories
+            {strings.kpiMultiVendorCategories(result.categoryConsolidationOpportunitiesCount)}
           </div>
         </div>
 
@@ -177,10 +176,10 @@ export const VendorConsolidationKpiCards: React.FC<VendorConsolidationKpiCardsPr
             <ShieldCheck className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
-            ₹0.0000 Cr
+            {strings.kpiValidatedSavingsPlaceholder}
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Validated upon execution
+            {strings.kpiValidatedUponExecution}
           </div>
         </div>
       </div>

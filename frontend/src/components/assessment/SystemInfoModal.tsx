@@ -3,27 +3,24 @@
 /**
  * SystemInfoModal Component
  * 
- * Part 9: Version Verification & Diagnostic Transparency:
- * Distinguishes Source version, Packaged version, Staged version,
- * Installed version, and Currently running version.
+ * Shows the running application version, build identity, operating mode,
+ * and the certified FX and PCBI master data checksums.
  */
 
 import React, { useState, useEffect } from 'react';
 import type { SystemInfoModalProps, SystemBuildInfo } from '../../types';
-import type { DesktopUpdateCheckResult } from '../../types/assessment';
 import { UI_STRINGS } from '../../constants';
 import { assessmentApiClient } from '../../utils/assessmentApi';
 
 export const SystemInfoModal: React.FC<SystemInfoModalProps> = ({ isOpen, onClose }) => {
   const [info, setInfo] = useState<SystemBuildInfo | null>(null);
-  const [updateStatus, setUpdateStatus] = useState<DesktopUpdateCheckResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      Promise.all([
-        assessmentApiClient.getSystemInfo().catch(() => ({
+      assessmentApiClient.getSystemInfo()
+        .catch(() => ({
           applicationVersion: '1.0.2',
           buildNumber: 'E2E-003-CERTIFIED',
           gitCommit: '2378cd054fdcd528ec2815362a44a6461c72fa8e',
@@ -39,12 +36,9 @@ export const SystemInfoModal: React.FC<SystemInfoModalProps> = ({ isOpen, onClos
             version: 'v2.0',
             checksum: 'df4299ffa183cb21c59d80f66e258604f5c376615d83a7a7d075dd53787e1411'
           }
-        })),
-        assessmentApiClient.getUpdateStatus().catch(() => null)
-      ])
-        .then(([sysInfo, updStatus]) => {
+        }))
+        .then((sysInfo) => {
           setInfo(sysInfo);
-          setUpdateStatus(updStatus);
         })
         .finally(() => setIsLoading(false));
     }
@@ -78,19 +72,10 @@ export const SystemInfoModal: React.FC<SystemInfoModalProps> = ({ isOpen, onClos
               <span className="text-[10px] text-slate-500 font-mono">{info?.buildNumber || 'E2E-003-CERTIFIED'}</span>
             </div>
             <div className="p-2.5 rounded bg-slate-950 border border-slate-800/80">
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">{updaterStrings.modalStagedVersion}</span>
-              <p className="font-mono font-bold text-emerald-400 mt-0.5">
-                {updateStatus?.isUpdateAvailable ? `v${updateStatus.availableVersion}` : 'No staged update'}
-              </p>
-              <span className="text-[10px] text-slate-500 font-mono">
-                {updateStatus?.isUpdateAvailable ? updateStatus.availableBuildNumber : 'Current build is active'}
-              </span>
-            </div>
-            <div className="p-2.5 rounded bg-slate-950 border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">{strings.operatingMode}</span>
               <p className="font-mono font-bold text-amber-400 mt-0.5">{info?.operatingMode || 'INTERNAL_ASSESSMENT'}</p>
             </div>
-            <div className="p-2.5 rounded bg-slate-950 border border-slate-800/80">
+            <div className="col-span-2 p-2.5 rounded bg-slate-950 border border-slate-800/80">
               <span className="text-[10px] text-slate-400 uppercase font-semibold">{strings.certificationStatus}</span>
               <p className="font-mono font-bold text-emerald-400 mt-0.5">{info?.certificationStatus || 'CERTIFIED'}</p>
             </div>

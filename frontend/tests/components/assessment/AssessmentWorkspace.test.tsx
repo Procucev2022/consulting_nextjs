@@ -12,9 +12,7 @@ vi.mock('../../../src/utils/assessmentApi', () => ({
     listAssessments: vi.fn(),
     createAssessment: vi.fn(),
     getAssessmentById: vi.fn(),
-    getAuditLogs: vi.fn(),
-    getUpdateStatus: vi.fn().mockResolvedValue({ isUpdateAvailable: false }),
-    installUpdate: vi.fn().mockResolvedValue({ success: true })
+    getAuditLogs: vi.fn()
   },
   assessmentApi: {
     getCustomers: vi.fn(),
@@ -22,9 +20,7 @@ vi.mock('../../../src/utils/assessmentApi', () => ({
     listAssessments: vi.fn(),
     createAssessment: vi.fn(),
     getAssessmentById: vi.fn(),
-    getAuditLogs: vi.fn(),
-    getUpdateStatus: vi.fn().mockResolvedValue({ isUpdateAvailable: false }),
-    installUpdate: vi.fn().mockResolvedValue({ success: true })
+    getAuditLogs: vi.fn()
   }
 }));
 

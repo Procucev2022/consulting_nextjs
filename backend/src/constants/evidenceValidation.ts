@@ -1,51 +1,30 @@
 /**
- * Zod validation schemas for Output Evidence & Validation Workbooks (Prompt 305)
+ * Input schemas for evidence route parameters and query strings.
+ * Route params come from the URL path; the query string is parsed by parityQuery.
  */
 
 import { z } from 'zod';
+import { EVIDENCE_JOB_ID_PATTERN } from './evidenceRoutes';
+import { EVIDENCE_SAVINGS_TYPES, EVIDENCE_WORKBOOK_TYPES } from './evidenceWorkbook';
 
-export const evidenceWorkbookTypeSchema = z.enum([
-  'MODULE_1_EVIDENCE',
-  'MODULE_2_EVIDENCE',
-  'PCBI_EVIDENCE',
-  'SAVINGS_ENGINE_EVIDENCE',
-  'FINANCIAL_VALIDATION',
-  'DATA_VERSION_DIFF',
-  'REPORT_EVIDENCE',
-  'MANAGEMENT_QUICK_SUMMARY_EVIDENCE',
-  'ANALYSIS_RUN_CONTROL'
-]);
+const jobIdSchema = z
+  .string()
+  .regex(EVIDENCE_JOB_ID_PATTERN, 'jobId must be 1-128 characters: letters, digits, dot, underscore, or hyphen');
 
-export const downloadWorkbookParamSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
-  workbookType: evidenceWorkbookTypeSchema
+export const evidenceJobParamsSchema = z.object({
+  jobId: jobIdSchema
 });
 
-export const downloadPackageParamSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required')
+export const evidenceWorkbookParamsSchema = z.object({
+  jobId: jobIdSchema,
+  workbookType: z.enum(EVIDENCE_WORKBOOK_TYPES)
 });
 
-export const parityQuerySchema = z.object({
-  workbookType: evidenceWorkbookTypeSchema.optional()
+export const evidenceSavingsParamsSchema = z.object({
+  jobId: jobIdSchema,
+  savingsType: z.enum(EVIDENCE_SAVINGS_TYPES)
 });
 
-export const savingsTypeSchema = z.enum([
-  'VENDOR_CONSOLIDATION',
-  'BENCHMARK_PRICE_GAP',
-  'STRATEGIC_SOURCING',
-  'STRATEGIC_MARKET_VALUE',
-  'PROCESS_PRODUCTIVITY',
-  'COST_AVOIDANCE_RISK',
-  'REALIZED_SAVINGS'
-]);
-
-export const downloadSavingsTypeParamSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
-  savingsType: savingsTypeSchema
+export const evidenceParityQuerySchema = z.object({
+  workbookType: z.enum(EVIDENCE_WORKBOOK_TYPES).optional()
 });
-
-export const savingsTypeInventoryParamSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
-  savingsType: savingsTypeSchema.optional()
-});
-

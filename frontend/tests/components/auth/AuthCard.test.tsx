@@ -237,21 +237,14 @@ describe('AuthCard Component', () => {
     }, { timeout: 1500 });
   });
 
-  it('handles quick fill credentials and direct admin bypass from dev login bypass', () => {
+  it('requires explicit registered credentials even in development', () => {
     process.env = { ...originalEnv, NODE_ENV: 'development' };
-    render(<AuthCard initialTab="REGISTER" />);
-
-    // Click quick fill test account button
-    const buyerBtn = screen.getByRole('button', { name: /Enterprise Buyer/i });
-    fireEvent.click(buyerBtn);
-
+    render(<AuthCard initialTab="LOGIN" />);
+    expect(screen.getByRole('note')).toHaveTextContent(UI_STRINGS.auth.developmentAuthNotice);
     const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel) as HTMLInputElement;
-    expect(emailInput.value).toBe('buyer@procucev.com');
-
-    // Click direct admin bypass shortcut
-    const adminBypassBtn = screen.getByRole('button', { name: /Open Admin Portal Directly/i });
-    fireEvent.click(adminBypassBtn);
-    expect(mockPush).toHaveBeenCalledWith('/admin');
+    expect(emailInput.value).toBe('');
+    expect(screen.getByLabelText(UI_STRINGS.auth.passwordLabel)).toHaveValue('');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('handles switching between login and register using form links', () => {

@@ -20,10 +20,41 @@ import {
   loginFormSchema,
   adminUserQuerySchema,
   adminUpdateUserTierSchema,
-  changePasswordFormSchema
+  changePasswordFormSchema,
+  pcbiBenchmarkResponseSchema,
+  pcbiWeeklyIndexResponseSchema,
+  procurementCategoryMappingsResponseSchema
 } from '../../src/constants/validation';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
+  it('validates persisted PCBI benchmark and weekly index API records', () => {
+    expect(pcbiBenchmarkResponseSchema.safeParse([{
+      pcbi_id: 'PCBI-TEST', benchmark_name: 'Benchmark', benchmark_unit: 'MT', currency: 'INR'
+    }]).success).toBe(true);
+    expect(pcbiBenchmarkResponseSchema.safeParse([{ pcbi_id: '', benchmark_name: '', benchmark_unit: '', currency: '' }]).success).toBe(false);
+    expect(pcbiWeeklyIndexResponseSchema.safeParse([{
+      pcbi_id: 'PCBI-TEST', week_start: '2026-01-05', index_value: 100, unit: 'MT', currency: 'INR'
+    }]).success).toBe(true);
+    expect(pcbiWeeklyIndexResponseSchema.safeParse([{
+      pcbi_id: 'PCBI-TEST', week_start: '', index_value: Number.NaN
+    }]).success).toBe(false);
+  });
+
+  it('validates procurement category mapping data from D1', () => {
+    expect(procurementCategoryMappingsResponseSchema.parse({
+      success: true,
+      data: { mappings: { P11: 'Packing' }, categories: ['Packing'] }
+    }).data.mappings).toEqual({ P11: 'Packing' });
+    expect(procurementCategoryMappingsResponseSchema.safeParse({
+      success: true,
+      data: { mappings: { P11: 12 }, categories: ['Packing'] }
+    }).success).toBe(false);
+    expect(procurementCategoryMappingsResponseSchema.safeParse({
+      success: true,
+      data: { mappings: {}, categories: [''] }
+    }).success).toBe(false);
+  });
+
   describe('headerTenantSchema', () => {
     it('should validate non-empty tenant ID', () => {
       expect(headerTenantSchema.safeParse({ tenantId: 'TENANT-1' }).success).toBe(true);

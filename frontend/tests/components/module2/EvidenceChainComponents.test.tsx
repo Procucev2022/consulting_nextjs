@@ -4,8 +4,9 @@
  */
 
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { UI_STRINGS } from '@/constants/uiStrings';
 import {
   TransactionEvidenceDrawer,
   EvidenceCalculationTraceModal,
@@ -17,7 +18,9 @@ import type {
   TransactionEvidenceRecord,
   OpportunityExclusionLedgerEntry,
   SupplierPairPriceComparisonProof,
-  CategoryStrategicSourcingProfile
+  CategoryStrategicSourcingProfile,
+  EvidenceStatisticPopulation,
+  OpportunityEvidenceChain
 } from '../../../src/types';
 
 const mockRecords: TransactionEvidenceRecord[] = [
@@ -369,19 +372,217 @@ describe('Module 2 — Evidence Chain & Traceability UI Components', () => {
     expect(screen.getByText(/ERP_PURCHASE_ORDER/i)).toBeDefined();
   });
 
-  it('EvidenceCalculationTraceModal: renders derivation trace and exports evidence pack', () => {
-    const handleClose = vi.fn();
-    render(
-      <EvidenceCalculationTraceModal
-        isOpen={true}
-        onClose={handleClose}
-        profile={mockProfile}
-      />
-    );
-    expect(screen.getByText('Why ₹5.0 Lakhs (₹0.05 Cr)?')).toBeDefined();
-    expect(screen.getByText(/CONSERVATIVE \(P25\)/i)).toBeDefined();
-    expect(screen.getByText(/BASE \(CREDIBLE\)/i)).toBeDefined();
-    expect(screen.getByText(/Export Evidence Pack \(JSON\)/i)).toBeDefined();
+  describe('EvidenceCalculationTraceModal', () => {
+    const copy = UI_STRINGS.evidenceCalculationTrace;
+    const QUESTION_PROMPT = 'Why ₹5.0 Lakhs (₹0.05 Cr)?';
+    const EXPORT_TIMESTAMP = '2026-01-20T10:00:00.000Z';
+    const DATA_URL_PREFIX = 'data:text/json;charset=utf-8,';
+    const EVIDENCE_LOGIC_VERSION = 'MODULE_2_EVIDENCE_LOGIC_V1.0';
+
+    const mockStatistics: EvidenceStatisticPopulation[] = [
+      {
+        statisticName: 'MEDIAN',
+        label: 'Median observed price',
+        value: 62500,
+        uom: 'MT',
+        transactionCount: 2,
+        supplierCount: 2,
+        totalQuantity: 180,
+        totalSpendInr: 11300000,
+        eligibleTransactionCount: 2,
+        excludedTransactionCount: 1,
+        exclusionReasonsBreakdown: { EXCLUDED_LOW_VOLUME: 1 },
+        contributingTransactionIds: ['TX-001', 'TX-002']
+      }
+    ];
+
+    const requireChain = (): OpportunityEvidenceChain => {
+      const chain = mockProfile.evidenceChain;
+      if (!chain) {
+        throw new Error('mockProfile must define an evidence chain');
+      }
+      return chain;
+    };
+
+    const renderModal = (profile: CategoryStrategicSourcingProfile, onClose: () => void = vi.fn()): void => {
+      render(<EvidenceCalculationTraceModal isOpen onClose={onClose} profile={profile} />);
+    };
+
+    const readAnchor = (anchor: HTMLAnchorElement) => ({
+      href: anchor.getAttribute('href') ?? '',
+      fileName: anchor.getAttribute('download') ?? '',
+      connected: anchor.isConnected
+    });
+
+    // Records each anchor click instead of letting jsdom attempt a real navigation.
+    const pressExport = (profile: CategoryStrategicSourcingProfile): Array<ReturnType<typeof readAnchor>> => {
+      const clicks: Array<ReturnType<typeof readAnchor>> = [];
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement): void {
+        clicks.push(readAnchor(this));
+      });
+      renderModal(profile);
+      fireEvent.click(screen.getByRole('button', { name: copy.exportEvidencePack }));
+      return clicks;
+    };
+
+    const decodePack = (href: string): unknown => {
+      expect(href.startsWith(DATA_URL_PREFIX)).toBe(true);
+      return JSON.parse(decodeURIComponent(href.slice(DATA_URL_PREFIX.length)));
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it('renders nothing while closed and shows the trace once it is opened', () => {
+      const { container, rerender } = render(
+        <EvidenceCalculationTraceModal isOpen={false} onClose={vi.fn()} profile={mockProfile} />
+      );
+      expect(container).toBeEmptyDOMElement();
+
+      rerender(<EvidenceCalculationTraceModal isOpen onClose={vi.fn()} profile={mockProfile} />);
+      expect(screen.getByRole('heading', { level: 3, name: QUESTION_PROMPT })).toBeInTheDocument();
+    });
+
+    it('shows the question, derivation, opportunity ranges, spend funnel and actions for a populated profile', () => {
+      renderModal(mockProfile);
+      const chain = requireChain();
+
+      expect(screen.getByText(copy.badge)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: QUESTION_PROMPT })).toBeInTheDocument();
+
+      expect(screen.getByText(copy.derivationHeading)).toBeInTheDocument();
+      expect(screen.getByText(copy.baselineWap)).toBeInTheDocument();
+      expect(screen.getByText(copy.rupeeAmount('62777.78'))).toBeInTheDocument();
+      expect(screen.getByText(copy.selectedReference)).toBeInTheDocument();
+      expect(screen.getByText(copy.rupeeAmount('60000.00'))).toBeInTheDocument();
+      expect(screen.getByText(copy.priceDifferential)).toBeInTheDocument();
+      expect(screen.getByText(copy.rupeeAmount('2777.78'))).toBeInTheDocument();
+      expect(
+        screen.getByText(copy.formula('62777.78', '60000.00', (180).toLocaleString(), (500000).toLocaleString()))
+      ).toBeInTheDocument();
+      expect(screen.getByText(chain.referencePriceAudit.selectionRationale)).toBeInTheDocument();
+
+      expect(screen.getByText(copy.conservativeLabel)).toBeInTheDocument();
+      expect(screen.getByText(copy.lakhValue('4.0'))).toBeInTheDocument();
+      expect(screen.getByText(copy.referenceValue('61250.00'))).toBeInTheDocument();
+      expect(screen.getByText(copy.baseLabel)).toBeInTheDocument();
+      expect(screen.getByText(copy.lakhValue('5.0'))).toBeInTheDocument();
+      expect(screen.getByText(copy.referenceValue('60000.00'))).toBeInTheDocument();
+      expect(screen.getByText(copy.upsideLabel)).toBeInTheDocument();
+      expect(screen.getByText(copy.lakhValue('7.0'))).toBeInTheDocument();
+      expect(screen.getByText(copy.referenceValue('58000.00'))).toBeInTheDocument();
+
+      expect(screen.getByText(copy.funnelHeading)).toBeInTheDocument();
+      expect(screen.getByText(copy.funnelTotal('1.13'))).toBeInTheDocument();
+      expect(screen.getByText(copy.funnelComparable('1.13'))).toBeInTheDocument();
+      expect(screen.getByText(copy.funnelAddressable('1.13'))).toBeInTheDocument();
+      expect(screen.getByText(copy.funnelRealized)).toBeInTheDocument();
+
+      expect(screen.getByText(copy.confidence('HIGH'))).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: copy.closeLabel })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: copy.exportEvidencePack })).toBeInTheDocument();
+      expect(screen.queryAllByRole('link', { hidden: true })).toHaveLength(0);
+    });
+
+    it('builds the question from the net opportunity when no calculation trace is attached', () => {
+      renderModal({ ...mockProfile, completeCalculationTrace: undefined, netQuantifiableOpportunityInrCr: 0.05 });
+
+      expect(screen.getByRole('heading', { level: 3, name: copy.fallbackTitle('0.05') })).toBeInTheDocument();
+    });
+
+    it('uses the unquantified question when the trace and the opportunity amount are both missing', () => {
+      renderModal({ ...mockProfile, completeCalculationTrace: undefined, netQuantifiableOpportunityInrCr: null });
+
+      expect(
+        screen.getByRole('heading', { level: 3, name: copy.fallbackTitleUnquantified })
+      ).toBeInTheDocument();
+    });
+
+    it('shows zero placeholders and the default confidence when the evidence chain is missing', () => {
+      renderModal({ ...mockProfile, evidenceChain: undefined });
+
+      expect(screen.getByRole('heading', { level: 3, name: QUESTION_PROMPT })).toBeInTheDocument();
+      expect(screen.getAllByText(copy.rupeeAmount('0.00'))).toHaveLength(3);
+      expect(screen.getAllByText(copy.lakhValue('0.0'))).toHaveLength(3);
+      expect(screen.getByText(copy.confidence('HIGH'))).toBeInTheDocument();
+    });
+
+    it('shows zero lakhs for a range whose opportunity amount is zero', () => {
+      const chain = requireChain();
+      renderModal({
+        ...mockProfile,
+        evidenceChain: {
+          ...chain,
+          realisticOpportunityRange: { ...chain.realisticOpportunityRange, conservativeOpportunityInr: 0 }
+        }
+      });
+
+      expect(screen.getAllByText(copy.lakhValue('0.0'))).toHaveLength(1);
+      expect(screen.getByText(copy.lakhValue('5.0'))).toBeInTheDocument();
+    });
+
+    it('calls onClose when the close button is pressed', () => {
+      const onClose = vi.fn();
+      renderModal(mockProfile, onClose);
+
+      fireEvent.click(screen.getByRole('button', { name: copy.closeLabel }));
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('downloads the evidence pack as JSON with the trace, evidence chain and transaction count', () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(EXPORT_TIMESTAMP));
+
+      const clicks = pressExport({
+        ...mockProfile,
+        transactionCount: 7,
+        evidenceBackedStatistics: mockStatistics
+      });
+
+      expect(clicks).toHaveLength(1);
+      const [download] = clicks;
+      expect(download.connected).toBe(true);
+      expect(download.fileName).toBe(
+        `EVIDENCE_PACK_${mockProfile.categoryId}_${new Date(EXPORT_TIMESTAMP).getTime()}.json`
+      );
+      expect(decodePack(download.href)).toMatchObject({
+        exportTimestamp: EXPORT_TIMESTAMP,
+        version: EVIDENCE_LOGIC_VERSION,
+        category: mockProfile.categoryName,
+        trace: mockProfile.completeCalculationTrace,
+        chain: mockProfile.evidenceChain,
+        priceStatistics: mockStatistics,
+        pairwiseProofs: mockProofs,
+        exclusions: mockExclusions,
+        transactionsCount: mockRecords.length
+      });
+      expect(screen.queryAllByRole('link', { hidden: true })).toHaveLength(0);
+    });
+
+    it('counts transactions from transactionCount when no evidence records are attached', () => {
+      const clicks = pressExport({ ...mockProfile, transactionCount: 7, transactionEvidenceRecords: undefined });
+
+      expect(decodePack(clicks[0].href)).toMatchObject({ transactionsCount: 7 });
+    });
+
+    it('counts transactions from transactionCount when the evidence record list is empty', () => {
+      const clicks = pressExport({ ...mockProfile, transactionCount: 7, transactionEvidenceRecords: [] });
+
+      expect(decodePack(clicks[0].href)).toMatchObject({ transactionsCount: 7 });
+    });
+
+    it('starts a new download each time the export button is pressed', () => {
+      const clicks = pressExport(mockProfile);
+
+      fireEvent.click(screen.getByRole('button', { name: copy.exportEvidencePack }));
+
+      expect(clicks).toHaveLength(2);
+      expect(clicks.every((click) => click.connected)).toBe(true);
+      expect(screen.queryAllByRole('link', { hidden: true })).toHaveLength(0);
+    });
   });
 
   it('CategoryEvidenceAuditTab: renders Tab 6 and opens trace and drawer modals', () => {

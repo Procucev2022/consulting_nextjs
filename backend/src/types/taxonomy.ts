@@ -18,3 +18,10 @@ export interface UNSPSCCommodityRecord {
   coreBucket?: CoreBucket;
   classificationStatus?: TaxonomyClassificationStatus;
 }
+
+export interface UNSPSCDetails {
+  commodityCode: string;
+  commodityTitle: string;
+  classTitle: string;
+  coreBucket: string;
+}

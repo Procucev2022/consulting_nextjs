@@ -57,3 +57,10 @@ export interface DBTestConnectionResponse {
   latencyMs?: number;
   timestamp: string;
 }
+export interface DatabaseSchemaEntity {
+  entity_name: string;
+  primary_attributes: string;
+  system_usage: string;
+  sample_records: Record<string, unknown>[];
+  ddl: string;
+}

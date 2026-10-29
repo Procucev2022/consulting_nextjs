@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module1Ingestion } from '../../src/components/Module1Ingestion';
-import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../../src/data/mockData';
+import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 const sampleIngestionQueue = [

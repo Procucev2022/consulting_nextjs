@@ -1,5 +1,7 @@
 import { loginUserSchema, registerUserSchema, changePasswordSchema } from './constants/validation';
-import { AUTH_ROLES, AUTH_STATUS, AUTH_TOKEN_EXPIRY_SECONDS } from './constants/auth';
+import {
+  AUTH_HEX_BYTE_PATTERN, AUTH_LEGACY_PASSWORD_PATTERN, AUTH_ROLES, AUTH_STATUS, AUTH_TOKEN_EXPIRY_SECONDS
+} from './constants/auth';
 import type { AuthRouteResult, CloudflareEnvironment } from './types/cloudflare';
 
 const encodeBase64Url = (bytes: Uint8Array): string => {
@@ -12,6 +14,14 @@ const decodeBase64Url = (value: string): Uint8Array => {
   const cleanValue = value.replace(/[\s=]/g, '').replace(/-/g, '+').replace(/_/g, '/');
   const padded = cleanValue + '==='.slice((cleanValue.length + 3) % 4);
   return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0));
+};
+
+const tryDecodeBase64Url = (value: string): Uint8Array | null => {
+  try {
+    return decodeBase64Url(value);
+  } catch {
+    return null;
+  }
 };
 
 const derivePasswordHash = async (password: string, salt: Uint8Array): Promise<Uint8Array> => {
@@ -28,10 +38,18 @@ const hashPassword = async (password: string): Promise<string> => {
 };
 
 const verifyPassword = async (password: string, storedHash: string): Promise<boolean> => {
-  const [encodedSalt, encodedHash] = storedHash.split(':');
+  const parts = storedHash.split(':');
+  if (parts.length !== 2) return false;
+  const [encodedSalt, encodedHash] = parts;
   if (!encodedSalt || !encodedHash) return false;
-  const expected = decodeBase64Url(encodedHash);
-  const actual = await derivePasswordHash(password, decodeBase64Url(encodedSalt));
+  const legacy = AUTH_LEGACY_PASSWORD_PATTERN.test(storedHash);
+  // Express used the hexadecimal salt string itself as PBKDF2 input, not decoded salt bytes.
+  const salt = legacy ? new TextEncoder().encode(encodedSalt) : tryDecodeBase64Url(encodedSalt);
+  const expected = legacy
+    ? Uint8Array.from(encodedHash.matchAll(AUTH_HEX_BYTE_PATTERN), ([byte]) => Number.parseInt(byte, 16))
+    : tryDecodeBase64Url(encodedHash);
+  if (!salt || !expected) return false;
+  const actual = await derivePasswordHash(password, salt);
   if (actual.length !== expected.length) return false;
   return actual.reduce((result, byte, index) => result | (byte ^ expected[index]), 0) === 0;
 };
@@ -51,11 +69,13 @@ const createToken = async (user: Record<string, unknown>, secret: string): Promi
   return `${header}.${payload}.${encodeBase64Url(new Uint8Array(signature))}`;
 };
 
-const verifyToken = async (token: string, secret: string): Promise<Record<string, unknown> | null> => {
+export const verifyToken = async (token: string, secret: string): Promise<Record<string, unknown> | null> => {
   const [header, encodedPayload, encodedSignature] = token.split('.');
   if (!header || !encodedPayload || !encodedSignature) return null;
+  const signature = tryDecodeBase64Url(encodedSignature);
+  if (!signature) return null;
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
-  const valid = await crypto.subtle.verify('HMAC', key, decodeBase64Url(encodedSignature), new TextEncoder().encode(`${header}.${encodedPayload}`));
+  const valid = await crypto.subtle.verify('HMAC', key, signature, new TextEncoder().encode(`${header}.${encodedPayload}`));
   if (!valid) return null;
   const payload = JSON.parse(new TextDecoder().decode(decodeBase64Url(encodedPayload))) as Record<string, unknown>;
   return typeof payload.exp === 'number' && payload.exp > Date.now() ? payload : null;
@@ -84,10 +104,11 @@ const register = async (request: Request, environment: CloudflareEnvironment): P
   const existing = await environment.DB?.prepare('SELECT id FROM User WHERE email = ?1').bind(parsed.data.email).first();
   if (existing) return result({ success: false, message: 'An account with this organization email already exists' }, 409);
   const now = new Date().toISOString();
+  const { password, ...profile } = parsed.data;
   const user = {
     id: `usr-${crypto.randomUUID()}`,
-    ...parsed.data,
-    password_hash: await hashPassword(parsed.data.password),
+    ...profile,
+    password_hash: await hashPassword(password),
     role: AUTH_ROLES.USER,
     status: AUTH_STATUS.ACTIVE,
     subscription_tier: parsed.data.subscription_tier || 'BRONZE',
@@ -283,4 +304,4 @@ export const handleAdminRoute = async (
   }
 
   return result({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404);
-};
+};

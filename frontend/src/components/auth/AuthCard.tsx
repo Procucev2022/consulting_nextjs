@@ -94,16 +94,6 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
     }
   };
 
-  const handleQuickFillCred = (email: string, pass: string): void => {
-    setLoginForm({ email, password: pass });
-    setActiveTab('LOGIN');
-    setErrorMessage(null);
-  };
-
-  const handleDirectAdminBypass = (): void => {
-    router.push('/admin');
-  };
-
   return (
     <div className="w-full max-w-[560px] bg-white border border-[#DCE7F5] rounded-3xl p-6 sm:p-7 shadow-[0_20px_45px_rgba(11,27,51,0.07),0_4px_12px_rgba(11,27,51,0.04)] transition-all">
       {/* Top Conversion Anchor (Prompt 293 Section 4) */}
@@ -209,12 +199,9 @@ export const AuthCard: React.FC<AuthCardProps> = ({ initialTab = 'LOGIN' }) => {
         {UI_STRINGS.auth.builtForEvidenceQuote}
       </div>
 
-      {/* Development Access Bypass (Strictly Local Development Only) */}
+      {/* Local development uses the same database-backed sign-in flow. */}
       {process.env.NODE_ENV === 'development' && (
-        <DevLoginBypass
-          onFillCred={handleQuickFillCred}
-          onAdminBypass={handleDirectAdminBypass}
-        />
+        <DevLoginBypass />
       )}
     </div>
   );

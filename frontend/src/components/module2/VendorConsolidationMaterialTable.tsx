@@ -3,22 +3,12 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ChevronRight, CheckCircle, Clock, AlertTriangle, Info } from 'lucide-react';
 import type {
-  SameMaterialOpportunity,
-  ComparableMaterialOpportunity,
-  CrossPlantOpportunity
+  VendorConsolidationMaterialTableProps,
+  VendorConsolidationSubTab
 } from '../../types/module2VendorConsolidation';
 import { UI_STRINGS } from '../../constants';
 
-interface VendorConsolidationMaterialTableProps {
-  categoryName: string;
-  sameMaterialOpportunities: SameMaterialOpportunity[];
-  comparableOpportunities: ComparableMaterialOpportunity[];
-  crossPlantOpportunities: CrossPlantOpportunity[];
-  onBackToSuppliers: () => void;
-  onSelectMaterialTransactions: (opportunity: SameMaterialOpportunity) => void;
-}
-
-function getActionableBadge(status?: string): string {
+function getActionableBadgeClass(status?: string): string {
   switch (status) {
     case 'Validated for Sourcing Action':
       return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border-emerald-300';
@@ -33,6 +23,14 @@ function getActionableBadge(status?: string): string {
   }
 }
 
+function getSubTabClass(isActive: boolean): string {
+  return `px-3 py-1 rounded-md font-semibold transition-colors ${
+    isActive
+      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+      : 'text-slate-600 dark:text-slate-400'
+  }`;
+}
+
 export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMaterialTableProps> = ({
   categoryName,
   sameMaterialOpportunities,
@@ -42,7 +40,7 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
   onSelectMaterialTransactions
 }) => {
   const strings = UI_STRINGS.module2VendorConsolidation;
-  const [subTab, setSubTab] = useState<'sameMaterial' | 'comparable' | 'crossPlant'>('sameMaterial');
+  const [subTab, setSubTab] = useState<VendorConsolidationSubTab>('sameMaterial');
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden space-y-4">
@@ -51,7 +49,7 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
         <div className="flex items-center gap-3">
           <button
             type="button"
-            aria-label="Back to Suppliers"
+            aria-label={strings.ariaBackToSuppliers}
             onClick={onBackToSuppliers}
             className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 transition-colors"
           >
@@ -59,7 +57,7 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
           </button>
           <div>
             <div className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400">
-              {strings.breadcrumbSupplier(categoryName)} &rarr; {strings.tabMaterialAnalysis}
+              {strings.breadcrumbTrail(strings.breadcrumbSupplier(categoryName), strings.tabMaterialAnalysis)}
             </div>
             <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
               {strings.materialDrilldownTitle(categoryName)}
@@ -75,35 +73,23 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
           <button
             type="button"
             onClick={() => setSubTab('sameMaterial')}
-            className={`px-3 py-1 rounded-md font-semibold transition-colors ${
-              subTab === 'sameMaterial'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
+            className={getSubTabClass(subTab === 'sameMaterial')}
           >
-            Same Material ({sameMaterialOpportunities.length})
+            {strings.subTabSameMaterial(sameMaterialOpportunities.length)}
           </button>
           <button
             type="button"
             onClick={() => setSubTab('comparable')}
-            className={`px-3 py-1 rounded-md font-semibold transition-colors ${
-              subTab === 'comparable'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
+            className={getSubTabClass(subTab === 'comparable')}
           >
-            Comparable ({comparableOpportunities.length})
+            {strings.subTabComparable(comparableOpportunities.length)}
           </button>
           <button
             type="button"
             onClick={() => setSubTab('crossPlant')}
-            className={`px-3 py-1 rounded-md font-semibold transition-colors ${
-              subTab === 'crossPlant'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-600 dark:text-slate-400'
-            }`}
+            className={getSubTabClass(subTab === 'crossPlant')}
           >
-            Cross-Plant ({crossPlantOpportunities.length})
+            {strings.subTabCrossPlant(crossPlantOpportunities.length)}
           </button>
         </div>
       </div>
@@ -115,14 +101,14 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
                 <th className="py-2.5 px-3">{strings.colMaterialCode}</th>
-                <th className="py-2.5 px-3">Classification</th>
+                <th className="py-2.5 px-3">{strings.colClassificationLabel}</th>
                 <th className="py-2.5 px-3 text-right">{strings.colTotalSpend}</th>
                 <th className="py-2.5 px-3 text-right">{strings.colQuantity}</th>
                 <th className="py-2.5 px-3 text-center">{strings.colDistinctSuppliers}</th>
                 <th className="py-2.5 px-3 text-center">{strings.colPlantCount}</th>
                 <th className="py-2.5 px-3 text-right">{strings.colPriceRange}</th>
                 <th className="py-2.5 px-3 text-right">{strings.colPriceDispersion}</th>
-                <th className="py-2.5 px-3">Actionable Status & Next Steps</th>
+                <th className="py-2.5 px-3">{strings.colActionableStatus}</th>
                 <th className="py-2.5 px-3 text-center">{UI_STRINGS.common.action}</th>
               </tr>
             </thead>
@@ -130,78 +116,87 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
               {sameMaterialOpportunities.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-6 text-center text-slate-500">
-                    No multi-sourced materials identified in this category.
+                    {strings.noSameMaterialOpportunities}
                   </td>
                 </tr>
               ) : (
-                sameMaterialOpportunities.map((m) => {
-                  const actStatus = m.actionableStatus || m.status;
-                  const status = m.classificationReviewStatus;
-                  const isVerified = status === 'TAXONOMY_VERIFIED' || status === 'APPROVED';
-                  const isClientApproved = status === 'CLIENT_APPROVED';
-                  const isProv = status === 'PROVISIONAL';
+                sameMaterialOpportunities.map((opportunity) => {
+                  const actionableStatus = opportunity.actionableStatus || opportunity.status;
+                  const reviewStatus = opportunity.classificationReviewStatus;
+                  const isVerified = reviewStatus === 'TAXONOMY_VERIFIED' || reviewStatus === 'APPROVED';
+                  const isClientApproved = reviewStatus === 'CLIENT_APPROVED';
+                  const isProvisional = reviewStatus === 'PROVISIONAL';
                   const displayStatus = isClientApproved
-                    ? 'Client Approved'
+                    ? strings.reviewStatusClientApproved
                     : isVerified
-                    ? 'Taxonomy Verified'
-                    : isProv
-                    ? 'Provisional'
-                    : 'Awaiting Review';
+                    ? strings.reviewStatusTaxonomyVerified
+                    : isProvisional
+                    ? strings.reviewStatusProvisional
+                    : strings.reviewStatusAwaitingReview;
+
                   return (
-                    <tr key={m.materialCode || m.materialDesc} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
+                    <tr
+                      key={opportunity.materialCode || opportunity.materialDesc}
+                      className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors"
+                    >
                       <td className="py-2.5 px-3 font-mono font-semibold text-slate-900 dark:text-white">
-                        <div>{m.materialCode || 'N/A'}</div>
+                        <div>{opportunity.materialCode || UI_STRINGS.common.notAvailable}</div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 font-normal font-sans">
-                          {m.materialDesc}
+                          {opportunity.materialDesc}
                         </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-1 font-mono text-[10px] text-slate-600 dark:text-slate-300">
                           {(isVerified || isClientApproved) && <CheckCircle className="w-3 h-3 text-emerald-500" />}
-                          {isProv && <Clock className="w-3 h-3 text-blue-500" />}
-                          {!isVerified && !isClientApproved && !isProv && <AlertTriangle className="w-3 h-3 text-amber-500" />}
-                          <span>{m.unspscCode}</span>
+                          {isProvisional && <Clock className="w-3 h-3 text-blue-500" />}
+                          {!isVerified && !isClientApproved && !isProvisional && (
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          )}
+                          <span>{opportunity.unspscCode}</span>
                         </div>
                         <div className="text-[10px] text-slate-400 line-clamp-1">
                           {displayStatus}
                         </div>
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white">
-                        ₹{m.totalSpendCr.toFixed(4)} Cr
+                        {strings.formatCrore(opportunity.totalSpendCr.toFixed(4))}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300">
-                        {m.totalQuantity.toLocaleString()} {m.uom}
+                        {opportunity.totalQuantity.toLocaleString()} {opportunity.uom}
                       </td>
                       <td className="py-2.5 px-3 text-center font-bold text-blue-600 dark:text-blue-400">
-                        {m.supplierCount}
+                        {opportunity.supplierCount}
                       </td>
                       <td className="py-2.5 px-3 text-center text-slate-600 dark:text-slate-300 font-semibold">
-                        {m.plantCount}
+                        {opportunity.plantCount}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300">
-                        ₹{m.lowestUnitPrice.toFixed(2)} – ₹{m.highestUnitPrice.toFixed(2)}
+                        {strings.formatPriceRange(
+                          opportunity.lowestUnitPrice.toFixed(2),
+                          opportunity.highestUnitPrice.toFixed(2)
+                        )}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                        {m.priceDispersionPct.toFixed(1)}%
+                        {strings.formatPercent(opportunity.priceDispersionPct.toFixed(1))}
                       </td>
                       <td className="py-2.5 px-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border inline-block ${getActionableBadge(actStatus)}`}>
-                          {actStatus}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold border inline-block ${getActionableBadgeClass(actionableStatus)}`}>
+                          {actionableStatus}
                         </span>
-                        {m.nextRecommendedAction && (
+                        {opportunity.nextRecommendedAction && (
                           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 flex items-center gap-1">
                             <Info className="w-3 h-3 text-slate-400 shrink-0" />
-                            <span>{m.nextRecommendedAction}</span>
+                            <span>{opportunity.nextRecommendedAction}</span>
                           </div>
                         )}
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <button
                           type="button"
-                          onClick={() => onSelectMaterialTransactions(m)}
+                          onClick={() => onSelectMaterialTransactions(opportunity)}
                           className="px-2.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 rounded-md transition-colors border border-blue-200 dark:border-blue-800 flex items-center gap-1 mx-auto"
                         >
-                          <span>Transactions</span>
+                          <span>{strings.btnDrillDownTxs}</span>
                           <ChevronRight className="w-3 h-3" />
                         </button>
                       </td>
@@ -219,14 +214,16 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
         <div className="p-4 text-xs text-slate-600 dark:text-slate-400 space-y-2">
           {comparableOpportunities.length === 0 ? (
             <div className="py-6 text-center text-slate-500">
-              No comparable material groups identified in this category.
+              {strings.noComparableGroups}
             </div>
           ) : (
             comparableOpportunities.map((comp) => (
               <div key={comp.groupId} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-800">
                 <div className="font-semibold text-slate-900 dark:text-white flex items-center justify-between">
-                  <span>{comp.groupId}: {comp.relationshipLabel}</span>
-                  <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">₹{comp.addressableSpendCr.toFixed(4)} Cr</span>
+                  <span>{strings.comparableGroupHeading(comp.groupId, comp.relationshipLabel)}</span>
+                  <span className="font-mono text-blue-600 dark:text-blue-400 font-bold">
+                    {strings.formatCrore(comp.addressableSpendCr.toFixed(4))}
+                  </span>
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">{comp.similarityBasis}</div>
               </div>
@@ -240,16 +237,20 @@ export const VendorConsolidationMaterialTable: React.FC<VendorConsolidationMater
         <div className="p-4 text-xs text-slate-600 dark:text-slate-400 space-y-2">
           {crossPlantOpportunities.length === 0 ? (
             <div className="py-6 text-center text-slate-500">
-              No cross-plant multi-sourced opportunities identified in this category.
+              {strings.noCrossPlantOpportunities}
             </div>
           ) : (
-            crossPlantOpportunities.map((cp) => (
-              <div key={cp.code} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-800">
+            crossPlantOpportunities.map((crossPlant) => (
+              <div key={crossPlant.code} className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg border border-slate-200 dark:border-slate-800">
                 <div className="font-semibold text-slate-900 dark:text-white flex items-center justify-between">
-                  <span>{cp.code}: {cp.description}</span>
-                  <span className="font-mono text-purple-600 dark:text-purple-400 font-bold">₹{cp.totalSpendCr.toFixed(4)} Cr</span>
+                  <span>{strings.crossPlantHeading(crossPlant.code, crossPlant.description)}</span>
+                  <span className="font-mono text-purple-600 dark:text-purple-400 font-bold">
+                    {strings.formatCrore(crossPlant.totalSpendCr.toFixed(4))}
+                  </span>
                 </div>
-                <div className="text-[11px] text-slate-500 mt-1">Plants: {cp.plants.join(', ')} | Coordination: {cp.coordinationPotential}</div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  {strings.crossPlantDetail(crossPlant.plants.join(', '), crossPlant.coordinationPotential)}
+                </div>
               </div>
             ))
           )}

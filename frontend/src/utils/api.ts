@@ -6,7 +6,8 @@ import type {
   VendorPriceRank,
   SavingsOpportunity,
   DashboardOverviewData,
-  LineItemMapping
+  LineItemMapping,
+  ConversionFunnelPhase
 } from '../types';
 import type { PCBIExplainabilityAudit } from '../types/pcbi';
 import frontendLogger from './logger';
@@ -22,13 +23,44 @@ import {
   apiUpdateTenantPayloadSchema,
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
-  apiCalculateConversionPayloadSchema
+  apiCalculateConversionPayloadSchema,
+  conversionStagesResponseSchema,
+  procurementCategoryMappingsResponseSchema
 } from '../constants/validation';
+import { PROCUREMENT_CATEGORY_MAPPINGS_API_PATH } from '../constants/procurementCategoryMapping';
+import { setProcurementCategoryMappings } from './procurementCategoryResolver';
 import { fetchDashboardOverview } from './graphqlClient';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const apiClient = {
+  async getProcurementCategoryMappings() {
+    frontendLogger.debug('Fetching procurement category mappings from D1');
+    const res = await fetch(`${API_BASE}${PROCUREMENT_CATEGORY_MAPPINGS_API_PATH}`);
+    const requestId = res.headers.get('x-request-id');
+    if (!res.ok) {
+      const message = UI_STRINGS.databaseData.procurementMappingsLoadFailed;
+      frontendLogger.error('D1 procurement category mapping request failed', { status: res.status, requestId, message });
+      throw new Error(message);
+    }
+    const parsed = procurementCategoryMappingsResponseSchema.safeParse(await res.json());
+    if (!parsed.success) {
+      const message = UI_STRINGS.databaseData.procurementMappingsLoadFailed;
+      frontendLogger.error('D1 procurement category mapping response was invalid', {
+        requestId, issues: parsed.error.issues, message
+      });
+      throw new Error(message);
+    }
+    setProcurementCategoryMappings(parsed.data.data.mappings);
+    frontendLogger.info('Loaded procurement category mappings from D1', {
+      mappingCount: Object.keys(parsed.data.data.mappings).length,
+      categoryCount: parsed.data.data.categories.length,
+      requestId
+    });
+    return parsed.data.data;
+  },
+
   // Tenant
   async getTenant(buyerId?: string): Promise<TenantMaster> {
     frontendLogger.debug('Fetching tenant master data', { buyerId });
@@ -174,6 +206,8 @@ export const apiClient = {
 
   // PCBI Benchmark Intelligence (Module 3 - Prompt 100)
   getPCBIDashboard: pcbiApiClient.getPCBIDashboard.bind(pcbiApiClient),
+  getPCBIMasterBenchmarks: pcbiApiClient.getPCBIMasterBenchmarks.bind(pcbiApiClient),
+  getPCBIWeeklyIndices: pcbiApiClient.getPCBIWeeklyIndices.bind(pcbiApiClient),
   async getPCBIExplainabilityAudit(id: string): Promise<PCBIExplainabilityAudit> {
     frontendLogger.debug('Fetching PCBI explainability audit record', { id });
     const res = await fetch(`${API_BASE}/api/pcbi/opportunity/${encodeURIComponent(id)}`);
@@ -187,6 +221,20 @@ export const apiClient = {
   updateSavingsOpportunityStatus: savingsApiClient.updateSavingsOpportunityStatus.bind(savingsApiClient),
 
   // Conversion
+  async getConversionStages(): Promise<ConversionFunnelPhase[]> {
+    frontendLogger.debug('Fetching D1 conversion funnel stages');
+    const res = await fetch(`${API_BASE}/api/conversion`);
+    if (!res.ok) {
+      const message = UI_STRINGS.databaseData.conversionLoadFailed(res.status);
+      frontendLogger.error('Conversion funnel load failed', { status: res.status, requestId: res.headers.get('x-request-id'), message });
+      throw new Error(message);
+    }
+    const json = await res.json();
+    const parsed = conversionStagesResponseSchema.safeParse(json);
+    if (!parsed.success) throw new Error(UI_STRINGS.databaseData.invalidData);
+    return parsed.data.data;
+  },
+
   async calculateCommercialSaaS(annualSpendCr: number, savingsRate: number, saasFeeRate: number) {
     frontendLogger.debug('Calculating SaaS commercial projection', { annualSpendCr, savingsRate, saasFeeRate });
     const validation = validateInput(apiCalculateConversionPayloadSchema, { annualSpendCr, savingsRate, saasFeeRate });

@@ -13,7 +13,6 @@ import { NewAssessmentModal } from './NewAssessmentModal';
 import { SystemInfoModal } from './SystemInfoModal';
 import { AssessmentDetailWorkflow } from './AssessmentDetailWorkflow';
 import { CustomerManagementView } from './CustomerManagementView';
-import { DesktopUpdateBanner } from './DesktopUpdateBanner';
 import { isAssessmentFinancialDisplayEligible } from '../../utils/assessmentFinancialDisplayGate';
 import frontendLogger from '../../utils/logger';
 
@@ -232,8 +231,6 @@ export const AssessmentWorkspace: React.FC<AssessmentWorkspaceProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-6 space-y-6">
-      <DesktopUpdateBanner />
-
       {/* Top Navigation Bar */}
       <nav aria-label="Assessment Navigation" className="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-3 text-xs">
         <div className="flex items-center gap-1 overflow-x-auto">

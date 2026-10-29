@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
 import { Module1Ingestion } from '@/components/Module1Ingestion';
@@ -51,12 +52,15 @@ import { assessmentApiClient } from '@/utils/assessmentApi';
 import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from '@/types/assessment';
 import { frontendLogger } from '@/utils/logger';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
-import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '@/data/unspscTaxonomy';
+import { lookupUNSPSCDetails, lookupUNSPSCByDescription, loadUNSPSCTaxonomy, getTaxonomyLoadState } from '@/data/unspscTaxonomy';
+import { useUNSPSCTaxonomy } from '@/hooks/useUNSPSCTaxonomy';
 import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
+import { INR_CRORES_DIVISOR } from '@/constants/currency';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
+import { EMPTY_TENANT } from '@/constants/app';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -96,14 +100,6 @@ const DetailedAnalysisModal = dynamic(
   { ssr: false }
 );
 
-// Mock Data Seed
-import {
-  mockTenant,
-  initialIngestionQueue,
-  initialValidationRecords,
-  conversionFunnelStages
-} from '@/data/mockData';
-
 import type {
   TenantMaster,
   RawDocumentIngestion,
@@ -124,11 +120,23 @@ import type {
   SubscriptionTier,
   AnalysisJob,
   Module1CanonicalViewModel,
-  ParetoHierarchyParent
+  ParetoHierarchyParent,
+  ConversionFunnelPhase,
+  ReportVersion
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
+const SUPERSEDED_REPORT_STATUS: ReportVersion['status'] = 'SUPERSEDED';
+
+// Newest report that has not been superseded. The API lists reports in ascending sequence order, so sort by generation time.
+const selectActiveReport = (reports: ReportVersion[]): ReportVersion | null => {
+  const candidates = reports.filter((report) => report.status !== SUPERSEDED_REPORT_STATUS);
+  const [newest] = [...candidates].sort((a, b) => Date.parse(b.generatedAt) - Date.parse(a.generatedAt));
+  return newest ?? null;
+};
+
 export default function Home() {
+  useUNSPSCTaxonomy();
   let router: { push: (url: string) => void } | null = null;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -174,26 +182,46 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>('GOLD');
   const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
-  const [tenant, setTenant] = useState<TenantMaster>({
-    ...mockTenant,
-    enterprise_name: 'Enterprise Client',
-    total_spend_evaluated_inr: 0,
-    total_spend_evaluated: 0
-  });
+  const [tenant, setTenant] = useState<TenantMaster>(EMPTY_TENANT);
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
   const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
   const [briefDownloadPayload, setBriefDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
   const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
 
-  const handleBriefDownload = (format: 'pdf' | 'pptx'): void => {
+  // Clicks the declarative download link once a verified brief is loaded, and releases its object URL afterwards.
+  useEffect(() => {
+    if (!briefDownloadPayload) return undefined;
+    briefDownloadLinkRef.current?.click();
+    const objectUrl = briefDownloadPayload.url;
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [briefDownloadPayload]);
+
+  // The brief endpoint answers with JSON errors until it is implemented. Only a successful response is saved as a file.
+  const handleBriefDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
     const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
     const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
-    setBriefDownloadPayload({ url, filename });
-    setTimeout(() => {
-      if (briefDownloadLinkRef.current) {
-        briefDownloadLinkRef.current.click();
+    const formatLabel = format.toUpperCase();
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const requestId = response.headers.get('x-request-id') ?? UI_STRINGS.opportunityBrief.requestIdNotReturned;
+        frontendLogger.error('Opportunity brief download was rejected by the server', {
+          format,
+          url,
+          statusCode: response.status,
+          requestId
+        });
+        showToast(UI_STRINGS.opportunityBrief.downloadFailed(formatLabel, response.status, requestId));
+        return;
       }
-    }, 50);
+      const blob = await response.blob();
+      setBriefDownloadPayload({ url: URL.createObjectURL(blob), filename });
+    } catch (error: unknown) {
+      frontendLogger.error('Opportunity brief download request failed', { format, url }, error);
+      showToast(UI_STRINGS.opportunityBrief.downloadNetworkFailed(formatLabel));
+    }
   };
 
   // Application Data States
@@ -413,12 +441,7 @@ export default function Home() {
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
   const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
   const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>([]);
-  const [funnelStages] = useState(() =>
-    conversionFunnelStages.map((stage) => ({
-      ...stage,
-      spend_inr_crores: 0
-    }))
-  );
+  const [funnelStages, setFunnelStages] = useState<ConversionFunnelPhase[]>([]);
 
   const [completedSteps, setCompletedSteps] = useState<{
     step1: boolean;
@@ -434,6 +457,26 @@ export default function Home() {
 
   const [activeAnalysisJob, setActiveAnalysisJob] = useState<AnalysisJob | null>(null);
   const [isDetailedAnalysisModalOpen, setIsDetailedAnalysisModalOpen] = useState(false);
+  const [activeReport, setActiveReport] = useState<ReportVersion | null>(null);
+  const activeJobId = activeAnalysisJob?.analysisJobId ?? null;
+
+  // Resolve the customer's active report for the active job from its job details.
+  useEffect(() => {
+    setActiveReport(null);
+    if (!activeJobId) return undefined;
+    let isCurrent = true;
+    orchestrationApi
+      .getJobDetails(activeJobId)
+      .then((details) => {
+        if (isCurrent) setActiveReport(selectActiveReport(details?.reports ?? []));
+      })
+      .catch((error: unknown) => {
+        frontendLogger.warn('Could not load report versions for the active analysis job', { analysisJobId: activeJobId }, error);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeJobId]);
 
   // Explicit lifecycle predicates (Prompt 313)
   const hasValidDataVersion = Boolean(
@@ -452,10 +495,7 @@ export default function Home() {
     )
   );
 
-  const hasActiveDetailedAnalysis = Boolean(
-    activeAnalysisJob?.analysisJobId &&
-    activeAnalysisJob.analysisJobId !== 'job-init-default-001'
-  );
+  const hasActiveDetailedAnalysis = Boolean(activeAnalysisJob?.analysisJobId);
 
   const shouldShowDetailedAnalysisStatus = Boolean(
     hasValidDataVersion &&
@@ -609,6 +649,15 @@ export default function Home() {
 
     async function loadBackendData() {
       try {
+        try {
+          await apiClient.getProcurementCategoryMappings();
+        } catch (error: unknown) {
+          frontendLogger.error('Could not load procurement category mappings from D1', {}, error);
+          setToastMessage(UI_STRINGS.databaseData.procurementMappingsLoadFailed);
+        }
+        void apiClient.getConversionStages().then(setFunnelStages).catch((error: unknown) => {
+          frontendLogger.error('Unable to hydrate conversion stages from D1', {}, error);
+        });
         let modeRes: OperatingModeConfig | null = null;
         try {
           modeRes = await assessmentApiClient.getOperatingMode();
@@ -720,7 +769,7 @@ export default function Home() {
             } else {
               setTenant({
                 ...tenantData.value,
-                enterprise_name: tenantData.value.enterprise_name || mockTenant.enterprise_name
+                enterprise_name: tenantData.value.enterprise_name || EMPTY_TENANT.enterprise_name
               });
             }
           }
@@ -801,7 +850,7 @@ export default function Home() {
 
         // Global analysis state synced with active assessment
       } catch (err) {
-        frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
+        frontendLogger.error('Backend API hydration failed; database data remains unavailable', {}, err);
       }
     }
     loadBackendData();
@@ -957,47 +1006,30 @@ export default function Home() {
   const handleApplyCurrencyFix = async (recordId: string, selectedCurrency: string, convertedAmount: number) => {
     const record = validationRecords.find((r) => r.record_id === recordId) || validationRecords[0];
     const fxRate = getYahooFinanceRateToINR(selectedCurrency, record.transaction_date || record.spend_year);
-    const inrCrores = Number(((record.order_quantity * record.net_price * fxRate) / 10000000).toFixed(2));
+    const inrCrores = Number((convertedAmount / INR_CRORES_DIVISOR).toFixed(4));
 
-    setValidationRecords((prev) =>
-      prev.map((r) =>
-        r.record_id === recordId
-          ? {
-              ...r,
-              raw_currency: selectedCurrency,
-              currency_provenance: 'ANALYST_CONFIRMED',
-              issue_flag: 'Passed Clean',
-              action_status: 'Ready',
-              resolved: true,
-              amount: convertedAmount,
-              fx_rate_applied: fxRate,
-              inr_crores: inrCrores
-            }
-          : r
-      )
-    );
-
-    apiClient
-      .updateValidationRecord(recordId, {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
         raw_currency: selectedCurrency,
         issue_flag: 'Passed Clean',
         action_status: 'Ready',
         resolved: true,
-        amount: convertedAmount,
+        amount: record.amount,
+        amount_inr: convertedAmount,
         fx_rate_applied: fxRate,
         inr_crores: inrCrores
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for currency fix', { error: e });
       });
+    } catch (error: unknown) {
+      frontendLogger.warn('Currency correction was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
+    setValidationRecords((prev) => prev.map((r) => r.record_id === recordId
+      ? { ...r, raw_currency: selectedCurrency, currency_provenance: 'ANALYST_CONFIRMED', issue_flag: 'Passed Clean', action_status: 'Ready', resolved: true, amount_inr: convertedAmount, fx_rate_applied: fxRate, inr_crores: inrCrores }
+      : r));
 
     setIsDataRefreshed(true);
-    setIngestionQueue((prev) =>
-      prev.map((doc) => ({
-        ...doc,
-        converted_inr_crores: Number(((doc.converted_inr_crores || 8066.86) + inrCrores).toFixed(2))
-      }))
-    );
 
     showToast(UI_STRINGS.toasts.recordNormalized(recordId, selectedCurrency));
   };
@@ -1027,6 +1059,19 @@ export default function Home() {
   };
 
   const handleApplyVendorMerge = async (recordId: string, masterVendorId: string, masterVendorName: string) => {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
+        vendor_name: `${masterVendorName} (${masterVendorId})`,
+        issue_flag: 'Passed Clean',
+        action_status: 'Ready',
+        resolved: true
+      });
+    } catch (error: unknown) {
+      frontendLogger.warn('Supplier correction was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
     setValidationRecords((prev) =>
       prev.map((r) =>
         r.record_id === recordId
@@ -1042,27 +1087,6 @@ export default function Home() {
     );
 
     setIsDataRefreshed(true);
-    setUploadedUniqueVendors((prev) => Math.max(1, (prev !== undefined ? prev : 1073) - 1));
-    setIngestionQueue((prev) =>
-      prev.map((doc) => ({
-        ...doc,
-        unique_vendors_count: Math.max(1, (doc.unique_vendors_count || 1073) - 1)
-      }))
-    );
-
-    apiClient
-      .updateValidationRecord(recordId, {
-        vendor_name: `${masterVendorName} (${masterVendorId})`,
-        issue_flag: 'Passed Clean',
-        action_status: 'Ready',
-        resolved: true
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for vendor merge', { error: e });
-      });
-    apiClient.mergeVendor(masterVendorName, masterVendorId, masterVendorName).catch((e) => {
-      frontendLogger.warn('Backend sync warning for vendor merge', { error: e });
-    });
 
     showToast(UI_STRINGS.toasts.recordMapped(recordId, masterVendorId));
   };
@@ -1072,6 +1096,19 @@ export default function Home() {
   };
 
   const handleApplyItemMerge = async (recordId: string, masterItemCode: string, masterItemName: string) => {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
+        raw_desc: `${masterItemName} (${masterItemCode})`,
+        issue_flag: 'Passed Clean',
+        action_status: 'Ready',
+        resolved: true
+      });
+    } catch (error: unknown) {
+      frontendLogger.warn('Item correction was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
     setValidationRecords((prev) =>
       prev.map((r) =>
         r.record_id === recordId
@@ -1087,29 +1124,23 @@ export default function Home() {
     );
 
     setIsDataRefreshed(true);
-    setUploadedUniqueItems((prev) => Math.max(1, (prev !== undefined ? prev : 7357) - 1));
-    setIngestionQueue((prev) =>
-      prev.map((doc) => ({
-        ...doc,
-        unique_items_count: Math.max(1, (doc.unique_items_count || 7357) - 1)
-      }))
-    );
-
-    apiClient
-      .updateValidationRecord(recordId, {
-        raw_desc: `${masterItemName} (${masterItemCode})`,
-        issue_flag: 'Passed Clean',
-        action_status: 'Ready',
-        resolved: true
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for item merge', { error: e });
-      });
 
     showToast(UI_STRINGS.toasts.recordItemMerged(recordId, masterItemCode));
   };
 
   const handleIgnoreValidationIssue = async (recordId: string) => {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
+        issue_flag: 'Passed Clean',
+        action_status: 'Reviewed',
+        resolved: true
+      });
+    } catch (error: unknown) {
+      frontendLogger.warn('Validation review was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
     setValidationRecords((prev) =>
       prev.map((r) =>
         r.record_id === recordId
@@ -1125,86 +1156,25 @@ export default function Home() {
 
     setIsDataRefreshed(true);
 
-    apiClient
-      .updateValidationRecord(recordId, {
-        issue_flag: 'Passed Clean',
-        action_status: 'Reviewed',
-        resolved: true
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for ignore validation issue', { error: e });
-      });
-
     showToast(UI_STRINGS.toasts.issueIgnored(recordId));
   };
 
-  // Blanket AI Remediation for All Anomalies
+  // Recalculate only currency totals supported by the D1 FX reference table.
   const handleApplyBlanketFixes = async () => {
-    setValidationRecords((prev) =>
-      prev.map((r) => {
-        let vendorName = r.vendor_name;
-        let itemDesc = r.raw_desc;
-        let fxRate = r.fx_rate_applied;
-        let inrCrores = r.inr_crores;
-
-        if (r.record_id === 'REC-8842') {
-          vendorName = 'DHL Global Forwarding (VND-DHL-404)';
-          fxRate = 84.80;
-        }
-        if (r.record_id === 'REC-8844') {
-          // Retain Tax Discrepancy as an active continuous audit/governance validation
-          return {
-            ...r,
-            vendor_name: 'Acme Chemical Global LLC (VND-ACM-101)',
-            action_status: 'Reviewed',
-            issue_flag: 'Tax Discrepancy',
-            resolved: false
-          };
-        }
-        if (r.record_id === 'REC-8841') {
-          fxRate = 91.40;
-          inrCrores = 1.33;
-        }
-        if (r.record_id === 'REC-8847') {
-          itemDesc = 'High Density Polyethylene (HDPE) Polymers (ITM-HDPE-101)';
-        }
-
-        return {
-          ...r,
-          vendor_name: vendorName,
-          raw_desc: itemDesc,
-          issue_flag: 'Passed Clean',
-          action_status: 'Ready',
-          resolved: true,
-          fx_rate_applied: fxRate,
-          inr_crores: inrCrores
-        };
-      })
-    );
-
-    setIsDataRefreshed(true);
-
-    apiClient.applyBlanketRemediation().catch((e) => {
-      frontendLogger.warn('Backend sync warning for blanket fixes', { error: e });
-    });
-
-    setAnalyzingLoaderState({
-      isOpen: true,
-      title: 'Applying Blanket AI Remediation Across Dataset',
-      subtitle: 'Normalizing 100% of vendor entities, currency conversions, and SKU descriptions...',
-      metrics: {
-        totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
-        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
-        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
-      },
-      onComplete: () => {
-        setAnalyzingLoaderState(null);
-      }
-    });
-
-    showToast(UI_STRINGS.toasts.blanketFixesApplied);
+    try {
+      const result = await apiClient.applyBlanketRemediation();
+      const updates = new Map<string, ValidationPreCheckRecord>(
+        result.records.map((record): [string, ValidationPreCheckRecord] => [record.record_id, record])
+      );
+      setValidationRecords((previous) => previous.map((record) => updates.get(record.record_id) || record));
+      setIsDataRefreshed(result.updatedCount > 0);
+      showToast(result.updatedCount > 0
+        ? UI_STRINGS.toasts.blanketFixesApplied(result.updatedCount)
+        : UI_STRINGS.toasts.blanketFixesNoChanges);
+    } catch (error: unknown) {
+      frontendLogger.warn('D1-backed currency remediation failed', { error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+    }
   };
 
   const handleRefreshWithFixes = () => {
@@ -1273,18 +1243,28 @@ export default function Home() {
   };
 
   const handleResetValidationRecords = async () => {
-    setValidationRecords(initialValidationRecords);
+    try {
+      await apiClient.resetValidationRecords();
+    } catch (error: unknown) {
+      frontendLogger.warn('Validation reset was not persisted', { error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
+    setValidationRecords([]);
     setIsDataRefreshed(false);
-    setUploadedUniqueItems(undefined);
-    setUploadedUniqueVendors(undefined);
-    setIngestionQueue(initialIngestionQueue);
-    apiClient.resetValidationRecords().catch((e) => {
-      frontendLogger.warn('Backend sync warning for reset validation records', { error: e });
-    });
     showToast(UI_STRINGS.toasts.validationReset);
   };
 
-  const handleDeleteDocument = async (_docId?: string) => {
+  const handleDeleteDocument = async (docId?: string) => {
+    let remainingDocuments: RawDocumentIngestion[];
+    try {
+      remainingDocuments = await apiClient.deleteIngestionDocument(docId);
+    } catch (error: unknown) {
+      frontendLogger.warn('Document deletion was not persisted', { docId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
     try {
       if (typeof window !== 'undefined' && window.sessionStorage) {
         window.sessionStorage.removeItem('procucev_uploaded_dataset');
@@ -1292,7 +1272,7 @@ export default function Home() {
     } catch {
       // Safe fallback
     }
-    setIngestionQueue([]);
+    setIngestionQueue(remainingDocuments);
     setValidationRecords([]);
     setUploadedMaterialGroups(undefined);
     setUploadedPlants(undefined);
@@ -1314,11 +1294,7 @@ export default function Home() {
     });
     setActiveTab('module1');
 
-    apiClient.deleteIngestionDocument(_docId).catch((e) => {
-      frontendLogger.warn('Backend sync warning for delete ingestion document', { error: e });
-    });
-
-    showToast('Uploaded dataset removed successfully. You can now upload a new dataset.');
+    showToast(UI_STRINGS.toasts.datasetRemoved);
   };
 
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
@@ -1326,6 +1302,13 @@ export default function Home() {
     if (!loggedUser) {
       showToast('Please sign in to upload datasets');
       router.push('/login');
+      return;
+    }
+
+    try {
+      await loadUNSPSCTaxonomy();
+    } catch {
+      showToast(getTaxonomyLoadState().error || UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable));
       return;
     }
 
@@ -1911,7 +1894,13 @@ export default function Home() {
       doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
       tenant_id: loggedUser.id || tenant.tenant_id,
       file_name: file.name,
-      file_type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
+      file_type: file.name.endsWith('.pdf')
+        ? 'PDF'
+        : file.name.endsWith('.xlsx')
+          ? 'XLSX'
+          : file.name.endsWith('.xls')
+            ? 'XLS'
+            : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
       file_size_mb: Number((file.size / (1024 * 1024)).toFixed(2)),
       ocr_status: 'Completed',
       progress: 100,
@@ -1948,16 +1937,32 @@ export default function Home() {
 
       uploadRes = await apiClient.uploadDocumentToObjectStore({
         fileName: file.name,
-        fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
+        fileType: file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.xls') ? 'XLS' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
         fileBase64: fileBase64 || undefined,
+        parseTransactions: true,
         fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)) || 1.0,
         recordsCount,
         convertedInrCrores: totalSpendInrCr,
         detectedCurrencies: dynamicDetectedCurrencies,
         datasetType: _datasetType,
         buyer_id: loggedUser.id,
-        tenant_id: activeAssessment?.assessmentId || loggedUser.id
+        tenant_id: loggedUser.id || tenant.tenant_id,
+        assessment_id: activeAssessment?.assessmentId
       });
+      if (typeof uploadRes?.data?.docId === 'string') {
+        const persistedIngestion = await apiClient.getIngestionData(loggedUser.id || tenant.tenant_id);
+        setIngestionQueue(persistedIngestion.queue);
+        setValidationRecords(persistedIngestion.validationRecords);
+      }
+      if (Number.isFinite(Number(uploadRes?.data?.totalInrCrores)) && uploadRes?.data?.importedCount > 0) {
+        const d1SpendCrores = Number(uploadRes.data.totalInrCrores);
+        setTenant((prev) => ({
+          ...prev,
+          total_spend_evaluated_inr: d1SpendCrores,
+          total_spend_evaluated: Math.round((d1SpendCrores * 10000000) / 83.8)
+        }));
+        totalSpendInrCr = d1SpendCrores;
+      }
       if (
         uploadRes?.data?.canonical &&
         activeAssessment?.activeDataVersionId &&
@@ -2035,7 +2040,14 @@ export default function Home() {
   };
 
   const handleStartAICategorization = async () => {
+    try {
+      await loadUNSPSCTaxonomy();
+    } catch {
+      showToast(getTaxonomyLoadState().error || UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable));
+      return;
+    }
     showToast(UI_STRINGS.toasts.runningAiCat);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     setAnalyzingLoaderState({
       isOpen: true,
       title: 'Running Google Gemini UNSPSC AI Categorization',
@@ -2552,14 +2564,31 @@ export default function Home() {
             <ExecutiveOpportunityBriefView
               clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
               onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
-              onDownloadPdf={() => handleBriefDownload('pdf')}
-              onDownloadPptx={() => handleBriefDownload('pptx')}
+              onDownloadPdf={() => {
+                void handleBriefDownload('pdf');
+              }}
+              onDownloadPptx={() => {
+                void handleBriefDownload('pptx');
+              }}
               currentTier={effectiveTier}
             />
-            <ReportAcknowledgementSection
-              jobId="job-init-default-001"
-              reportVersionId="RPT-v1"
-            />
+            {activeAnalysisJob && activeReport ? (
+              <ReportAcknowledgementSection
+                key={activeReport.reportVersionId}
+                jobId={activeAnalysisJob.analysisJobId}
+                reportVersionId={activeReport.reportVersionId}
+              />
+            ) : (
+              <div className="flex justify-center my-8" data-testid="management-report-empty-state">
+                <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white border border-amber-200 shadow-sm max-w-md w-full">
+                  <AlertTriangle className="w-10 h-10 text-amber-500" />
+                  <h2 className="text-base font-bold text-[#0B1B33]">{UI_STRINGS.orchestration.noActiveReportTitle}</h2>
+                  <p className="text-xs text-slate-600 text-center leading-relaxed">
+                    {UI_STRINGS.orchestration.noActiveReportMessage}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2573,7 +2602,7 @@ export default function Home() {
           aria-hidden="true"
           tabIndex={-1}
         >
-          Download
+          {UI_STRINGS.opportunityBrief.downloadLinkLabel}
         </a>
       )}
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   RotateCw,
   AlertCircle,
@@ -16,6 +16,9 @@ import type {
 } from '../../types';
 import { UI_STRINGS } from '../../constants';
 import { Module2StrategicSourcingApi } from '../../utils/module2StrategicSourcingApi';
+import { assessmentApiClient } from '../../utils/assessmentApi';
+import type { AssessmentRecord } from '../../types/assessment';
+import { logger } from '../../utils/logger';
 import { DirectPriceCards } from './DirectPriceCards';
 import { DirectPriceCategoryTable } from './DirectPriceCategoryTable';
 import { DirectPriceTable } from './DirectPriceTable';
@@ -36,16 +39,45 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
   const [isDrilldownOpen, setIsDrilldownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [availableAssessments, setAvailableAssessments] = useState<AssessmentRecord[]>([]);
+  const [assessmentListError, setAssessmentListError] = useState(false);
+  const latestRequestRef = useRef(0);
+
+  const lastAssessmentIdRef = useRef(assessmentId);
 
   useEffect(() => {
-    if (assessmentId !== undefined && assessmentId !== effectiveAssessmentId) {
+    let isCurrent = true;
+    assessmentApiClient.getAssessments()
+      .then((records) => {
+        if (isCurrent) setAvailableAssessments(Array.isArray(records) ? records.filter((record) => record.assessmentId) : []);
+      })
+      .catch((error: unknown) => {
+        if (!isCurrent) return;
+        setAssessmentListError(true);
+        logger.warn('Direct price assessment choices failed to load', {}, error);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Follow the parent only when its assessmentId prop changes. Re-syncing whenever the internal
+    // selection changes would revert a customer picked here when the parent does not pass it back.
+    if (assessmentId !== undefined && assessmentId !== lastAssessmentIdRef.current) {
+      lastAssessmentIdRef.current = assessmentId;
       setEffectiveAssessmentId(assessmentId);
       setSelectedFy('ALL');
       setSelectedCategory(null);
     }
-  }, [assessmentId, effectiveAssessmentId]);
+  }, [assessmentId]);
 
   const fetchDirectPriceData = useCallback(async (cId: string, fy: string): Promise<void> => {
+    // Responses from superseded requests are ignored, so a slow earlier request for another
+    // financial year or customer cannot overwrite the dataset the user is currently viewing.
+    const requestId = latestRequestRef.current + 1;
+    latestRequestRef.current = requestId;
+    const isLatestRequest = (): boolean => requestId === latestRequestRef.current;
     if (!cId) {
       setResult(null);
       setIsLoading(false);
@@ -57,17 +89,21 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
       const data = await Module2StrategicSourcingApi.getDirectPriceImprovement(cId, {
         financialYear: fy !== 'ALL' ? fy : undefined
       });
+      if (!isLatestRequest()) return;
       if (!data) {
-        throw new Error('Failed to load direct price improvement data from sourcing engine');
+        throw new Error(strings.loadFailedError);
       }
       setResult(data);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
+      if (!isLatestRequest()) return;
+      const msg = err instanceof Error ? err.message : strings.unknownError;
       setErrorMessage(msg);
     } finally {
-      setIsLoading(false);
+      if (isLatestRequest()) {
+        setIsLoading(false);
+      }
     }
-  }, []);
+  }, [strings]);
 
   useEffect(() => {
     void fetchDirectPriceData(effectiveAssessmentId, selectedFy);
@@ -139,15 +175,23 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
               {strings.filterCustomer}:
             </span>
             <select
-              aria-label="Customer Dataset Filter"
+              aria-label={strings.filterCustomer}
               value={effectiveAssessmentId}
               onChange={(e) => handleSelectCustomer(e.target.value)}
               className="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
-              <option value="AIC-2026-0002">{strings.customerAbcTextile}</option>
-              <option value="AIC-2026-0003">{strings.customerPqrCement}</option>
+              {!effectiveAssessmentId && <option value="">{strings.selectAssessmentPlaceholder}</option>}
+              {effectiveAssessmentId && !availableAssessments.some((record) => record.assessmentId === effectiveAssessmentId) && (
+                <option value={effectiveAssessmentId}>{effectiveAssessmentId}</option>
+              )}
+              {availableAssessments.map((record) => (
+                <option key={record.assessmentId} value={record.assessmentId}>
+                  {strings.assessmentOptionLabel(record.customerName, record.assessmentId)}
+                </option>
+              ))}
             </select>
           </div>
+          {assessmentListError && <span role="status">{strings.assessmentListFailed}</span>}
 
           {/* Financial Year Filter */}
           {result?.availableFinancialYears && (
@@ -188,7 +232,7 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
             className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
           >
             <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            {strings.btnRefresh}
           </button>
         </div>
       </div>
@@ -229,6 +273,7 @@ export const DirectPriceImprovementView: React.FC<DirectPriceImprovementViewProp
                   <button
                     type="button"
                     onClick={handleBackToCategories}
+                    aria-label={strings.btnBackToCategories}
                     className="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />

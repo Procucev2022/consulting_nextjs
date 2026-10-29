@@ -450,53 +450,6 @@ describe('assessmentApi', () => {
     await expect(assessmentApi.getSystemInfo()).rejects.toThrow('Failed to fetch system info: HTTP 500');
   });
 
-  it('fetches update status with and without params successfully', async () => {
-    const mockUpdate = { isUpdateAvailable: true, availableVersion: '1.0.2' };
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true, data: mockUpdate })
-    });
-
-    const res1 = await assessmentApi.getUpdateStatus();
-    expect(res1.isUpdateAvailable).toBe(true);
-
-    const res2 = await assessmentApi.getUpdateStatus({
-      installedVersion: '1.0.0',
-      installedBuild: 'E2E-001-CERTIFIED',
-      stagedDir: 'C:\\test'
-    });
-    expect(res2.availableVersion).toBe('1.0.2');
-    expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('installedVersion=1.0.0')
-    );
-  });
-
-  it('throws error when getUpdateStatus fails', async () => {
-    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    await expect(assessmentApi.getUpdateStatus()).rejects.toThrow('Failed to check update status: HTTP 500');
-  });
-
-  it('installs update successfully', async () => {
-    const mockRes = { success: true, message: 'Installer launched' };
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true, data: mockRes })
-    });
-
-    const res = await assessmentApi.installUpdate();
-    expect(res.success).toBe(true);
-  });
-
-  it('throws error when installUpdate fails', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 400,
-      json: async () => ({ success: false, message: 'Update rejected' })
-    });
-
-    await expect(assessmentApi.installUpdate()).rejects.toThrow('Update rejected');
-  });
-
   it('fetches customers successfully', async () => {
     const mockCustomers = [{ id: 'CUST-2026-0001', customerName: 'Acme Heavy Engineering Ltd' }];
     global.fetch = vi.fn().mockResolvedValue({

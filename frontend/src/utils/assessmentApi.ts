@@ -16,9 +16,7 @@ import type {
   NdaStatus,
   DataStatus,
   AssessmentStatus,
-  SystemBuildInfo,
-  DesktopUpdateCheckResult,
-  DesktopInstallUpdateResponse
+  SystemBuildInfo
 } from '../types/assessment';
 import frontendLogger from './logger';
 import { API_BASE, getJson, postJson } from './assessmentApiHelpers';
@@ -186,26 +184,6 @@ export const assessmentApiClient = {
   async getSystemInfo(): Promise<SystemBuildInfo> {
     frontendLogger.debug('Fetching system build info');
     return getJson(`${API_BASE}/api/assessment/system-info`, 'Failed to fetch system info');
-  },
-
-  async getUpdateStatus(params?: {
-    stagedDir?: string;
-    installedVersion?: string;
-    installedBuild?: string;
-  }): Promise<DesktopUpdateCheckResult> {
-    frontendLogger.debug('Checking desktop update status');
-    const query = new URLSearchParams();
-    if (params?.stagedDir) query.set('stagedDir', params.stagedDir);
-    if (params?.installedVersion) query.set('installedVersion', params.installedVersion);
-    if (params?.installedBuild) query.set('installedBuild', params.installedBuild);
-    const qs = query.toString();
-    const url = `${API_BASE}/api/assessment/update-status${qs ? `?${qs}` : ''}`;
-    return getJson(url, 'Failed to check update status');
-  },
-
-  async installUpdate(): Promise<DesktopInstallUpdateResponse> {
-    frontendLogger.info('Requesting desktop application update installation');
-    return postJson(`${API_BASE}/api/assessment/install-update`, {}, 'Failed to initiate update');
   }
 };
 

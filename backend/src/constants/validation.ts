@@ -6,6 +6,47 @@
  */
 
 import { z } from 'zod';
+import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from './d1';
+import { MODULE2_D1_EAUCTION } from './module2D1Scoped';
+import { MODULE2_D1_VENDOR_CONSOLIDATION } from './module2VendorConsolidationD1';
+export { alternateSourcingQuerySchema } from './module2AlternateSourcingD1';
+
+export const pcbiReferenceQuerySchema = z.object({
+  sector: z.string().trim().min(1).max(120).optional(),
+  pcbiId: z.string().trim().min(1).max(120).optional(),
+  limit: z.coerce.number().int().min(1).max(D1_REPORTING.maxIndexLimit).default(D1_REPORTING.weeklyIndexLimit)
+});
+
+export const d1DatasetScopeSchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120).optional(),
+  tenantId: z.string().trim().min(1).max(120).optional(),
+  limit: z.coerce.number().int().min(1).max(D1_REPORTING.maxDatasetLimit).default(D1_REPORTING.datasetLimit)
+});
+
+export const eAuctionQuerySchema = z.object({
+  financialYear: z.string().trim().regex(/^(?:ALL|UNKNOWN|FY\d{4}-\d{2})$/).optional(),
+  category: z.string().trim().min(1).max(200).optional(),
+  suitability: z.enum([
+    MODULE2_D1_EAUCTION.FILTER_ALL,
+    MODULE2_D1_EAUCTION.SUITABILITY.CANDIDATE,
+    MODULE2_D1_EAUCTION.SUITABILITY.MORE_DATA,
+    MODULE2_D1_EAUCTION.SUITABILITY.NOT_SUITABLE
+  ]).optional(),
+  materialCode: z.string().trim().min(1).max(120).optional()
+});
+
+export const directPriceQuerySchema = z.object({
+  financialYear: z.string().trim().regex(/^(?:ALL|UNKNOWN|FY\d{4}-\d{2})$/).optional(),
+  category: z.string().trim().min(1).max(200).optional(),
+  materialCode: z.string().trim().min(1).max(120).optional()
+});
+
+export const vendorConsolidationQuerySchema = z.object({
+  category: z.string().trim().min(1).max(200).optional(),
+  status: z.enum(Object.values(MODULE2_D1_VENDOR_CONSOLIDATION.STATUS)).optional(),
+  materialCode: z.string().trim().min(1).max(120).optional(),
+  supplierCode: z.string().trim().min(1).max(120).optional()
+});
 
 // Request Headers Validation Schema
 export const requestHeadersSchema = z.object({
@@ -54,14 +95,27 @@ export const addIngestionFileSchema = z.object({
 
 // Ingestion Update Validation Record Body Schema
 export const updateValidationRecordSchema = z.object({
-  record_id: z.string().min(1, 'record_id is required'),
-  vendor_raw: z.string().optional(),
-  vendor_normalized: z.string().optional(),
-  currency_original: z.string().optional(),
-  currency_normalized: z.string().optional(),
+  record_id: z.string().trim().min(1, 'record_id is required').max(120),
+  po_number: z.string().trim().min(1).max(200).optional(),
+  vendor_name: z.string().trim().min(1).max(300).optional(),
+  raw_desc: z.string().trim().min(1).max(1000).optional(),
+  order_quantity: z.number().finite().nonnegative().optional(),
+  net_price: z.number().finite().nonnegative().optional(),
+  subtotal_raw: z.number().finite().nonnegative().optional(),
+  amount: z.number().finite().nonnegative().optional(),
+  raw_currency: z.string().trim().regex(/^[A-Z]{3}$/).optional(),
+  amount_inr: z.number().finite().nonnegative().optional(),
+  inr_crores: z.number().finite().nonnegative().optional(),
+  fx_rate_applied: z.number().finite().positive().optional(),
+  spend_year: z.number().int().min(1900).max(2200).optional(),
+  transaction_date: z.string().trim().max(40).optional(),
+  column_l_code: z.string().trim().max(120).optional(),
+  core_category: z.string().trim().max(120).optional(),
   resolved: z.boolean().optional(),
-  issue_flag: z.string().optional(),
-  notes: z.string().optional()
+  issue_flag: z.string().trim().min(1).max(120).optional(),
+  action_status: z.string().trim().min(1).max(120).optional()
+}).refine((value) => Object.keys(value).some((key) => key !== 'record_id'), {
+  message: 'At least one validation field must be updated'
 });
 
 // Vendor Merge Body Schema
@@ -91,17 +145,22 @@ export const categoryQuerySchema = z.object({
 
 // Currency Query Schema
 export const currencyQuerySchema = z.object({
-  from: z.string().optional(),
-  amount: z.string().or(z.number()).optional(),
-  year: z.string().or(z.number()).optional(),
-  date: z.string().optional()
+  from: z.string().trim().regex(/^[A-Za-z]{3}$/).transform((value) => value.toUpperCase()).optional(),
+  amount: z.union([
+    z.string().regex(/^\d+(?:\.\d+)?$/),
+    z.number().finite().nonnegative()
+  ]).optional(),
+  year: z.union([z.string().regex(/^\d{4}$/), z.number().int().min(1900).max(2200)]).optional(),
+  date: z.string().trim().regex(/^\d{4}(?:[-/]\d{2}(?:[-/]\d{2})?)?(?:T.*)?$/).optional()
 });
 
 // Taxonomy Query Schema
 export const taxonomyQuerySchema = z.object({
-  q: z.string().optional(),
-  category: z.string().optional(),
-  lookup: z.string().optional()
+  q: z.string().max(200).default(''),
+  category: z.enum(['', 'ALL', 'Direct Materials', 'Packaging Materials', 'Indirect & MRO', 'Logistics & Freight']).default(''),
+  lookup: z.string().max(200).default(''),
+  limit: z.coerce.number().int().min(1).max(D1_TAXONOMY_MAX_LIMIT).default(D1_TAXONOMY_DEFAULT_LIMIT),
+  offset: z.coerce.number().int().nonnegative().default(0)
 });
 
 // Logs Search Query Schema

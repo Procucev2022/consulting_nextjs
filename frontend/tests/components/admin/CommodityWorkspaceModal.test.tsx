@@ -202,6 +202,7 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     render(
       <CommodityWorkspaceModal isOpen={true} pcbiId="PCBI-FEMO-65-001" onClose={onClose} />
     );
+    await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
 
     const closeBtn = screen.getAllByRole('button')[0];
     fireEvent.click(closeBtn);

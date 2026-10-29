@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VendorConsolidationKpiCards } from '../../../src/components/module2/VendorConsolidationKpiCards';
 import { VendorConsolidationCategoryTable } from '../../../src/components/module2/VendorConsolidationCategoryTable';
 import { VendorConsolidationSupplierTable } from '../../../src/components/module2/VendorConsolidationSupplierTable';
@@ -17,7 +17,12 @@ import type {
 } from '../../../src/types/module2VendorConsolidation';
 import type { MaterialMappingEntry } from '../../../src/types/module2MaterialMapping';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { VENDOR_CONSOLIDATION_UI_CONFIG } from '../../../src/constants/module2VendorConsolidation';
 import { Module2StrategicSourcingApi } from '../../../src/utils/module2StrategicSourcingApi';
+import { logger } from '../../../src/utils/logger';
+import { buildLogEntry } from '../../fixtures/vendorConsolidation';
+
+const strings = UI_STRINGS.module2VendorConsolidation;
 
 const mockCategory: CategoryConsolidationProfile = {
   spendCategory: 'Packaging',
@@ -279,10 +284,13 @@ const mockResult: VendorConsolidationResult = {
   ]
 };
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe('VendorConsolidationKpiCards Component', () => {
   it('renders all KPI cards with proper headers and values', () => {
     render(<VendorConsolidationKpiCards result={mockResult} />);
-    const strings = UI_STRINGS.module2VendorConsolidation;
 
     expect(screen.getByText(strings.cardTotalSpend)).toBeDefined();
     expect(screen.getByText(strings.cardAddressableSpend)).toBeDefined();
@@ -310,9 +318,9 @@ describe('VendorConsolidationCategoryTable Component', () => {
     expect(screen.getByText(mockCategory.spendCategory)).toBeDefined();
     expect(screen.getByText(new RegExp(mockCategory.unspscCode))).toBeDefined();
 
-    expect(screen.getByText('Analyse')).toBeDefined();
+    expect(screen.getByText(strings.btnAnalyse)).toBeDefined();
 
-    fireEvent.click(screen.getByText('Analyse'));
+    fireEvent.click(screen.getByText(strings.btnAnalyse));
     expect(onSelect).toHaveBeenCalledWith(mockCategory);
   });
 
@@ -363,7 +371,10 @@ describe('VendorConsolidationCategoryTable Component', () => {
 
     expect(screen.getByText('Chemicals')).toBeDefined();
     expect(screen.getByText('Hardware')).toBeDefined();
-    expect(screen.getByText('Services')).toBeDefined();
+    // The category name resolver maps the raw spend category 'Services' to the canonical D1
+    // mapping label 'SERVICES' (see backend/d1-category-mapping-seed.sql). The table renders
+    // that canonical label, so the expectation must use it. getByText matching is case-sensitive.
+    expect(screen.getByText('SERVICES')).toBeDefined();
   });
 });
 
@@ -383,13 +394,13 @@ describe('VendorConsolidationSupplierTable Component', () => {
     expect(screen.getByText('Beta Packaging')).toBeDefined();
     expect(screen.getByText('Alpha Supplies')).toBeDefined();
     expect(screen.getByText('Gamma Containers')).toBeDefined();
-    expect(screen.getByText('View Category Materials')).toBeDefined();
+    expect(screen.getByText(strings.btnViewCategoryMaterials)).toBeDefined();
 
-    fireEvent.click(screen.getByText('View Category Materials'));
+    fireEvent.click(screen.getByText(strings.btnViewCategoryMaterials));
     expect(onSelectMaterials).toHaveBeenCalled();
 
     // Click back to categories
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Categories' }));
+    fireEvent.click(screen.getByRole('button', { name: strings.ariaBackToCategories }));
     expect(onBack).toHaveBeenCalled();
   });
 });
@@ -411,12 +422,12 @@ describe('VendorConsolidationMaterialTable Component', () => {
 
     expect(screen.getByText(mockSameMatOpp.materialCode)).toBeDefined();
     expect(screen.getByText(mockSameMatOpp.materialDesc)).toBeDefined();
-    expect(screen.getByText('Transactions')).toBeDefined();
+    expect(screen.getByText(strings.btnDrillDownTxs)).toBeDefined();
 
-    fireEvent.click(screen.getByText('Transactions'));
+    fireEvent.click(screen.getByText(strings.btnDrillDownTxs));
     expect(onSelectTx).toHaveBeenCalledWith(mockSameMatOpp);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Suppliers' }));
+    fireEvent.click(screen.getByRole('button', { name: strings.ariaBackToSuppliers }));
     expect(onBack).toHaveBeenCalled();
   });
 
@@ -433,12 +444,17 @@ describe('VendorConsolidationMaterialTable Component', () => {
     );
 
     // Click Comparable Subtab
-    fireEvent.click(screen.getByText('Comparable (1)'));
-    expect(screen.getAllByText(/Potential Comparable/i).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByText(strings.subTabComparable(1)));
+    expect(
+      screen.getAllByText(strings.comparableGroupHeading(mockCompMatOpp.groupId, mockCompMatOpp.relationshipLabel))
+        .length
+    ).toBeGreaterThan(0);
 
     // Click Cross-Plant Subtab
-    fireEvent.click(screen.getByText('Cross-Plant (1)'));
-    expect(screen.getByText(/PLANT-A, PLANT-B/i)).toBeDefined();
+    fireEvent.click(screen.getByText(strings.subTabCrossPlant(1)));
+    expect(
+      screen.getByText(strings.crossPlantDetail('PLANT-A, PLANT-B', mockCrossPlantOpp.coordinationPotential))
+    ).toBeDefined();
   });
 
   it('renders empty state when no multi-sourced materials in category', () => {
@@ -452,7 +468,7 @@ describe('VendorConsolidationMaterialTable Component', () => {
         onSelectMaterialTransactions={vi.fn()}
       />
     );
-    expect(screen.getByText('No multi-sourced materials identified in this category.')).toBeDefined();
+    expect(screen.getByText(strings.noSameMaterialOpportunities)).toBeDefined();
   });
 });
 
@@ -469,7 +485,7 @@ describe('VendorConsolidationTransactionTable Component', () => {
     expect(screen.getByText('PO-001')).toBeDefined();
     expect(screen.getByText('PO-002')).toBeDefined();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Materials' }));
+    fireEvent.click(screen.getByRole('button', { name: strings.ariaBackToMaterials }));
     expect(onBack).toHaveBeenCalled();
   });
 
@@ -480,7 +496,7 @@ describe('VendorConsolidationTransactionTable Component', () => {
         onBackToMaterials={vi.fn()}
       />
     );
-    expect(screen.getByText('No transaction records available for this material.')).toBeDefined();
+    expect(screen.getByText(strings.noTransactionRecords)).toBeDefined();
   });
 });
 
@@ -493,7 +509,6 @@ describe('VendorConsolidationView Orchestration Component', () => {
   it('loads and renders the full Lever 3 view through all 4 drilldown levels and back', async () => {
     const onBackOverview = vi.fn();
     render(<VendorConsolidationView assessmentId="TEST-ASSESSMENT-001" onBackToOverview={onBackOverview} />);
-    const strings = UI_STRINGS.module2VendorConsolidation;
 
     await waitFor(() => {
       expect(screen.getByText(strings.pageTitle)).toBeDefined();
@@ -506,28 +521,28 @@ describe('VendorConsolidationView Orchestration Component', () => {
     expect(onBackOverview).toHaveBeenCalled();
 
     // 2. Drill down to Level 2: Suppliers
-    fireEvent.click(screen.getByText('Analyse'));
+    fireEvent.click(screen.getByText(strings.btnAnalyse));
     expect(screen.getByText('Beta Packaging')).toBeDefined();
 
     // 3. Drill down to Level 3: Materials
-    fireEvent.click(screen.getByText('View Category Materials'));
+    fireEvent.click(screen.getByText(strings.btnViewCategoryMaterials));
     expect(screen.getByText(mockSameMatOpp.materialCode)).toBeDefined();
 
     // 4. Drill down to Level 4: Transactions
-    fireEvent.click(screen.getByText('Transactions'));
+    fireEvent.click(screen.getByText(strings.btnDrillDownTxs));
     expect(screen.getByText('PO-001')).toBeDefined();
     expect(screen.getByText('PO-002')).toBeDefined();
 
     // Navigate back up: Transactions -> Materials
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Materials' }));
+    fireEvent.click(screen.getByRole('button', { name: strings.ariaBackToMaterials }));
     expect(screen.getByText(mockSameMatOpp.materialCode)).toBeDefined();
 
     // Navigate back up: Materials -> Suppliers
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Suppliers' }));
+    fireEvent.click(screen.getByRole('button', { name: strings.ariaBackToSuppliers }));
     expect(screen.getByText('Beta Packaging')).toBeDefined();
 
     // Navigate back up: Suppliers -> Categories
-    fireEvent.click(screen.getByRole('button', { name: 'Back to Categories' }));
+    fireEvent.click(screen.getByRole('button', { name: strings.ariaBackToCategories }));
     expect(screen.getByText(mockCategory.spendCategory)).toBeDefined();
   });
 
@@ -536,11 +551,17 @@ describe('VendorConsolidationView Orchestration Component', () => {
     vi.spyOn(Module2StrategicSourcingApi, 'getVendorConsolidation').mockRejectedValueOnce(
       new Error('API Connection Timeout')
     );
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockReturnValue(buildLogEntry());
 
     render(<VendorConsolidationView assessmentId="FAIL-001" />);
     await waitFor(() => {
       expect(screen.getByText('API Connection Timeout')).toBeDefined();
     });
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ assessmentId: 'FAIL-001' }),
+      expect.any(Error)
+    );
   });
 
   it('renders VendorConsolidationKpiCards with coverage waterfall banner', () => {
@@ -579,10 +600,10 @@ describe('VendorConsolidationView Orchestration Component', () => {
       }
     };
     render(<VendorConsolidationKpiCards result={resultWithCov} />);
-    expect(screen.getByText('Material UNSPSC Classification Coverage Waterfall')).toBeDefined();
-    expect(screen.getByText('Taxonomy-Verified')).toBeDefined();
-    expect(screen.getByText('Provisional')).toBeDefined();
-    expect(screen.getByText('Awaiting Review')).toBeDefined();
+    expect(screen.getByText(strings.kpiWaterfallTitle)).toBeDefined();
+    expect(screen.getByText(strings.kpiTaxonomyVerified)).toBeDefined();
+    expect(screen.getByText(strings.kpiProvisional)).toBeDefined();
+    expect(screen.getByText(strings.kpiAwaitingReview)).toBeDefined();
   });
 
   describe('VendorConsolidationMappingQueueTable', () => {
@@ -650,7 +671,7 @@ describe('VendorConsolidationView Orchestration Component', () => {
       expect(screen.getByText('Centrifugal Pump Impeller')).toBeDefined();
 
       // Search filter
-      const searchInput = screen.getByPlaceholderText(/search/i);
+      const searchInput = screen.getByPlaceholderText(strings.mappingQueueSearchPlaceholder);
       fireEvent.change(searchInput, { target: { value: 'Hydraulic' } });
       expect(screen.getByText('Hydraulic Valve A1')).toBeDefined();
       expect(screen.queryByText('Centrifugal Pump Impeller')).toBeNull();
@@ -660,12 +681,12 @@ describe('VendorConsolidationView Orchestration Component', () => {
       expect(screen.getByText('Centrifugal Pump Impeller')).toBeDefined();
 
       // Approve mapping for first item
-      const approveButtons = screen.getAllByRole('button', { name: /approve/i });
+      const approveButtons = screen.getAllByRole('button', { name: strings.btnApproveMapping });
       fireEvent.click(approveButtons[0]);
 
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/module2/sourcing/vendor-consolidation/mappings/update',
+          VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_UPDATE_ENDPOINT,
           expect.objectContaining({
             method: 'POST'
           })
@@ -675,4 +696,3 @@ describe('VendorConsolidationView Orchestration Component', () => {
     });
   });
 });
-

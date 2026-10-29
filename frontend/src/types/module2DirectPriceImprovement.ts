@@ -59,6 +59,8 @@ export interface DirectPriceItemOpportunity {
   spendCategory: string;
   uom: string;
   currency: string;
+  unspscCode?: string;
+  unspscCategory?: string;
   financialYear: string;
   transactionCount: number;
   totalEligibleQuantity: number;

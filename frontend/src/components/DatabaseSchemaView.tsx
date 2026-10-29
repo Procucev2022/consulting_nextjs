@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Table,
   ShieldCheck,
@@ -8,90 +8,30 @@ import {
   Lock,
   ArrowRight
 } from 'lucide-react';
-import { schemaEntities } from '../data/mockData';
-import type { DatabaseSchemaViewProps } from '../types';
+import { dbApiClient } from '../utils/dbApi';
+import frontendLogger from '../utils/logger';
+import type { DatabaseSchemaViewProps, DatabaseSchemaEntity } from '../types';
 import { UI_STRINGS } from '../constants';
 
 export const DatabaseSchemaView: React.FC<DatabaseSchemaViewProps> = () => {
-  const [selectedEntity, setSelectedEntity] = useState<string>('Tenant_Master');
+  const [selectedEntity, setSelectedEntity] = useState<string>('');
+  const [schemaEntities, setSchemaEntities] = useState<DatabaseSchemaEntity[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    void dbApiClient.getDBSchema().then((entities) => {
+      if (active) setSchemaEntities(entities);
+    }).catch((cause: unknown) => {
+      frontendLogger.error('D1 database schema load failed', { message: UI_STRINGS.databaseData.schemaLoadFailed }, cause);
+      if (active) setError(UI_STRINGS.databaseData.schemaLoadFailed);
+    });
+    return () => { active = false; };
+  }, []);
   const [queryConsoleMode, setQueryConsoleMode] = useState<'SCHEMA' | 'SAMPLE_DATA' | 'SQL_DDL'>('SCHEMA');
 
   const currentEntity = schemaEntities.find((e) => e.entity_name === selectedEntity) || schemaEntities[0];
 
-  const getDdlForEntity = (entityName: string): string => {
-    switch (entityName) {
-      case 'Tenant_Master':
-        return `CREATE TABLE Tenant_Master (
-    tenant_id VARCHAR(64) PRIMARY KEY,
-    enterprise_name VARCHAR(255) NOT NULL,
-    region VARCHAR(32) NOT NULL CHECK (region IN ('NA', 'EU', 'APAC', 'GLOBAL')),
-    base_currency VARCHAR(8) DEFAULT 'USD',
-    status VARCHAR(32) DEFAULT 'ACTIVE',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX idx_tenant_status ON Tenant_Master(status);`;
-      case 'Raw_Document_Ingestion':
-        return `CREATE TABLE Raw_Document_Ingestion (
-    doc_id VARCHAR(64) PRIMARY KEY,
-    tenant_id VARCHAR(64) REFERENCES Tenant_Master(tenant_id),
-    file_name VARCHAR(255) NOT NULL,
-    file_type VARCHAR(16) NOT NULL,
-    file_size_mb NUMERIC(10, 2),
-    ocr_status VARCHAR(32) DEFAULT 'Pending',
-    uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX idx_ingestion_tenant ON Raw_Document_Ingestion(tenant_id, uploaded_at);`;
-      case 'Spend_Line_Items':
-        return `CREATE TABLE Spend_Line_Items (
-    line_item_id VARCHAR(64) PRIMARY KEY,
-    doc_id VARCHAR(64) REFERENCES Raw_Document_Ingestion(doc_id),
-    tenant_id VARCHAR(64) REFERENCES Tenant_Master(tenant_id),
-    po_number VARCHAR(128),
-    invoice_date DATE NOT NULL,
-    vendor_id VARCHAR(64),
-    raw_desc TEXT NOT NULL,
-    unit_price NUMERIC(14, 4),
-    qty NUMERIC(14, 4),
-    total_spend NUMERIC(16, 2) NOT NULL
-);
-CREATE INDEX idx_spend_items ON Spend_Line_Items(tenant_id, po_number, invoice_date);`;
-      case 'AI_Taxonomy_Mapping':
-        return `CREATE TABLE AI_Taxonomy_Mapping (
-    mapping_id VARCHAR(64) PRIMARY KEY,
-    line_item_id VARCHAR(64) REFERENCES Spend_Line_Items(line_item_id),
-    unspsc_code VARCHAR(16) NOT NULL,
-    core_category VARCHAR(64) NOT NULL,
-    confidence_score NUMERIC(5, 2) NOT NULL,
-    verified_by_user BOOLEAN DEFAULT FALSE,
-    mapped_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX idx_taxonomy_unspsc ON AI_Taxonomy_Mapping(unspsc_code, core_category);`;
-      case 'Market_Indices':
-        return `CREATE TABLE Market_Indices (
-    index_id VARCHAR(64) PRIMARY KEY,
-    index_code VARCHAR(32) NOT NULL,
-    commodity_name VARCHAR(128) NOT NULL,
-    price_date DATE NOT NULL,
-    benchmark_value NUMERIC(14, 4) NOT NULL
-);
-CREATE INDEX idx_commodity_date ON Market_Indices(index_code, price_date);`;
-      case 'Savings_Opportunities':
-        return `CREATE TABLE Savings_Opportunities (
-    opp_id VARCHAR(64) PRIMARY KEY,
-    tenant_id VARCHAR(64) REFERENCES Tenant_Master(tenant_id),
-    category VARCHAR(64) NOT NULL,
-    current_spend NUMERIC(16, 2) NOT NULL,
-    target_savings_pct NUMERIC(5, 2) NOT NULL,
-    savings_usd NUMERIC(16, 2) NOT NULL,
-    status VARCHAR(32) DEFAULT 'Identified',
-    pushed_to_module VARCHAR(32) CHECK (pushed_to_module IN ('proCPX', 'DPS NXT', NULL)),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
-      default:
-        return '-- DDL Schema Definition';
-    }
-  };
+  if (!currentEntity) return <p role={error ? 'alert' : 'status'}>{error || UI_STRINGS.databaseData.loadingSchema}</p>;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -232,7 +172,7 @@ CREATE INDEX idx_savings_status ON Savings_Opportunities(tenant_id, status);`;
           {queryConsoleMode === 'SQL_DDL' && (
             <div className="p-4 rounded-xl bg-white border border-slate-800 overflow-x-auto shadow-sm">
               <pre className="text-xs font-mono text-cyan-300 leading-relaxed whitespace-pre-wrap">
-                {getDdlForEntity(currentEntity.entity_name)}
+                {currentEntity.ddl}
               </pre>
             </div>
           )}

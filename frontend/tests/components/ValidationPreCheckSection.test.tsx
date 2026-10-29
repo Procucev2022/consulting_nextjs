@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ValidationPreCheckSection } from '../../src/components/ValidationPreCheckSection';
-import { initialValidationRecords } from '../../src/data/mockData';
+import { initialValidationRecords } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants';
 
 const sampleRecords: any[] = [

@@ -4,7 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Header } from '../../src/components/Header';
 import { AssessmentWorkspace } from '../../src/components/assessment/AssessmentWorkspace';
 import { assessmentApiClient } from '../../src/utils/assessmentApi';
-import { mockTenant } from '../../src/data/mockData';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { AssessmentRecord, CustomerRecord, OperatingModeConfig } from '../../src/types';
 
@@ -82,7 +82,6 @@ describe('Prompt 371: Assessment Centre Stability & Top Ribbon Alignment (Requir
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(assessmentApiClient, 'getUpdateStatus').mockResolvedValue({ isUpdateAvailable: false } as any);
   });
 
   // A. Initial assessment loading shows a stable loading state

@@ -43,7 +43,9 @@ export const CategorySpecialisationCategoriesTab: React.FC<CategoriesTabProps> =
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
                 <th style={{ padding: '10px 14px' }}>Category</th>
                 <th style={{ padding: '10px 14px' }}>Priority</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Annual Spend</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>
+                  {CATEGORY_SPECIALISATION_UI_STRINGS.HISTORICAL_SPEND_LABEL}
+                </th>
                 <th style={{ padding: '10px 14px', textAlign: 'right' }}>Share (%)</th>
                 <th style={{ padding: '10px 14px', textAlign: 'center' }}>Tx / Supp / Mat</th>
                 <th style={{ padding: '10px 14px' }}>Top Vendor Share</th>
@@ -151,6 +153,13 @@ export const CategorySpecialisationCategoriesTab: React.FC<CategoriesTabProps> =
                                   </tr>
                                 </thead>
                                 <tbody>
+                                  {c.opportunities.length === 0 && (
+                                    <tr>
+                                      <td colSpan={6} style={{ padding: '8px', color: '#64748b' }}>
+                                        {CATEGORY_SPECIALISATION_UI_STRINGS.NO_D1_PLANNING_ASSUMPTIONS}
+                                      </td>
+                                    </tr>
+                                  )}
                                   {c.opportunities.map((opp: CategoryOpportunityBenefit) => (
                                     <tr key={opp.headKey} style={{ borderBottom: '1px solid #e2e8f0' }}>
                                       <td style={{ padding: '6px 8px', fontWeight: 600 }}>

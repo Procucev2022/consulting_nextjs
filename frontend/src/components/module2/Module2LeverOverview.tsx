@@ -41,8 +41,6 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
     }));
   };
 
-  const resolvedDirectPriceOpp = directPriceOppCr ?? (assessmentId === 'AIC-2026-0003' ? 8.8873 : (assessmentId === 'AIC-2026-0002' ? 17.1155 : 0));
-
   const renderStatusBadge = (lever: LeverOverviewItem) => {
     if (lever.implementationStatus === 'IMPLEMENTED') {
       const label = lever.statusLabel || strings.statusImplemented;
@@ -127,7 +125,9 @@ export const Module2LeverOverview: React.FC<Module2LeverOverviewProps> = ({
         {TEN_LEVERS_OVERVIEW_CONFIG.map((lever: LeverOverviewItem) => {
           const isImplemented = lever.implementationStatus === 'IMPLEMENTED';
           const isExpanded = !!expandedDiagnostics[lever.id];
-          const histOppText = lever.id === 1 ? `₹${resolvedDirectPriceOpp.toFixed(2)} Cr` : strings.unquantifiedNotice;
+          const histOppText = lever.id === 1 && directPriceOppCr !== undefined
+            ? `₹${directPriceOppCr.toFixed(2)} Cr`
+            : strings.unquantifiedNotice;
 
           return (
             <div

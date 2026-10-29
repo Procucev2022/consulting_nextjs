@@ -1,17 +1,14 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import AdminDashboardPage from '../../../src/app/admin/dashboard/page';
 import { apiClient } from '../../../src/utils/api';
 import { authApiClient } from '../../../src/utils/authApi';
 
 const mockPush = vi.fn();
+const mockRouter = { push: mockPush, replace: vi.fn(), prefetch: vi.fn() };
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-    replace: vi.fn(),
-    prefetch: vi.fn()
-  })
+  useRouter: () => mockRouter
 }));
 
 vi.mock('next/image', () => ({
@@ -39,6 +36,8 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.spyOn(apiClient, 'getStoredUser').mockReturnValue(mockAdmin);
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('mock-admin-token');
+    vi.spyOn(apiClient, 'getMe').mockResolvedValue({ success: true, user: mockAdmin });
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('mock-admin-token');
     vi.spyOn(apiClient, 'getAdminUsers').mockResolvedValue({
       success: true,
@@ -49,8 +48,8 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
     });
   });
 
-  it('renders the central admin console successfully', () => {
-    render(<AdminDashboardPage />);
+  it('renders the central admin console successfully', async () => {
+    await act(async () => { render(<AdminDashboardPage />); });
     expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
     expect(screen.getByText('Change Password')).toBeInTheDocument();
   });
@@ -61,7 +60,7 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
       message: 'Admin password updated successfully'
     });
 
-    render(<AdminDashboardPage />);
+    await act(async () => { render(<AdminDashboardPage />); });
 
     const changePwBtn = screen.getByTitle('Change Administrator Account Password');
     expect(changePwBtn).toBeInTheDocument();
@@ -97,7 +96,7 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
   });
 
   it('shows error if new passwords do not match', async () => {
-    render(<AdminDashboardPage />);
+    await act(async () => { render(<AdminDashboardPage />); });
 
     fireEvent.click(screen.getByTitle('Change Administrator Account Password'));
 
@@ -117,14 +116,14 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
   });
 
   it('handles search filtering and role/status dropdown selection', async () => {
-    render(<AdminDashboardPage />);
+    await act(async () => { render(<AdminDashboardPage />); });
 
     const searchInput = screen.getByPlaceholderText(/Search by name, email/i);
-    fireEvent.change(searchInput, { target: { value: 'System' } });
+    await act(async () => { fireEvent.change(searchInput, { target: { value: 'System' } }); });
     expect(searchInput).toHaveValue('System');
 
     const roleSelect = screen.getByDisplayValue('All Roles');
-    fireEvent.change(roleSelect, { target: { value: 'ADMIN' } });
+    await act(async () => { fireEvent.change(roleSelect, { target: { value: 'ADMIN' } }); });
     expect(roleSelect).toHaveValue('ADMIN');
   });
 
@@ -138,7 +137,7 @@ describe('Admin Dashboard Page (/admin/dashboard)', () => {
       message: 'Tier updated'
     } as any);
 
-    render(<AdminDashboardPage />);
+    await act(async () => { render(<AdminDashboardPage />); });
 
     await waitFor(() => {
       expect(screen.getByText('System Administrator')).toBeInTheDocument();

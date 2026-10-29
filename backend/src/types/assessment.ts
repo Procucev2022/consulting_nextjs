@@ -290,12 +290,6 @@ export interface SystemBuildInfo {
   persistence?: PersistenceInfo;
 }
 
-export type {
-  DesktopReleaseManifest,
-  DesktopUpdateCheckResult,
-  DesktopInstallUpdateResponse
-} from './desktop';
-
 export interface PersistenceInfo {
   environment: PersistenceEnvironment;
   activeDataDir: string;

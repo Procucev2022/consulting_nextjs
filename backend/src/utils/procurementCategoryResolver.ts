@@ -5,20 +5,23 @@
  */
 
 import {
-  AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY,
-  UNMAPPED_CATEGORY_LABEL,
-  APPROVED_PROCUREMENT_CATEGORIES
+  UNMAPPED_CATEGORY_LABEL
 } from '../constants/procurementCategoryMapping';
 
-export { UNMAPPED_CATEGORY_LABEL, APPROVED_PROCUREMENT_CATEGORIES };
+export { UNMAPPED_CATEGORY_LABEL };
 
-const APPROVED_UPPER_SET = new Set(
-  APPROVED_PROCUREMENT_CATEGORIES.map((c) => c.toUpperCase())
-);
+let authoritativeMap: Record<string, string> = {};
+let authoritativeUpperMap: Record<string, string> = {};
+let approvedUpperMap: Record<string, string> = {};
 
-const AUTHORITATIVE_UPPER_MAP: Record<string, string> = {};
-for (const [k, v] of Object.entries(AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY)) {
-  AUTHORITATIVE_UPPER_MAP[k.toUpperCase()] = v;
+export function setProcurementCategoryMappings(mappings: Record<string, string>): void {
+  authoritativeMap = { ...mappings };
+  authoritativeUpperMap = {};
+  approvedUpperMap = {};
+  for (const [key, value] of Object.entries(authoritativeMap)) {
+    authoritativeUpperMap[key.toUpperCase()] = value;
+    approvedUpperMap[value.toUpperCase()] = value;
+  }
 }
 
 const UNMAPPED_PLACEHOLDER_SET = new Set([
@@ -42,12 +45,10 @@ export function isInternalCategoryCode(val?: string | null): boolean {
   if (!val) return false;
   const trimmed = val.trim();
   const upper = trimmed.toUpperCase();
-  if (APPROVED_UPPER_SET.has(upper)) {
-    return false;
-  }
-  if (AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY[trimmed] || AUTHORITATIVE_UPPER_MAP[upper]) {
+  if (authoritativeMap[trimmed] || authoritativeUpperMap[upper]) {
     return true;
   }
+  if (approvedUpperMap[upper]) return false;
   return CODE_LIKE_PATTERN.test(trimmed);
 }
 
@@ -57,16 +58,8 @@ function matchApprovedOrAuthoritative(val: string): string | null {
   if (UNMAPPED_PLACEHOLDER_SET.has(upper)) {
     return null;
   }
-  const mapped = AUTHORITATIVE_MATERIAL_GROUP_TO_CATEGORY[val] || AUTHORITATIVE_UPPER_MAP[upper];
+  const mapped = authoritativeMap[val] || authoritativeUpperMap[upper] || approvedUpperMap[upper];
   if (mapped) return mapped;
-  if (APPROVED_UPPER_SET.has(upper)) {
-    if (val !== upper) {
-      return val;
-    }
-    return APPROVED_PROCUREMENT_CATEGORIES.find(
-      (c) => c.toUpperCase() === upper
-    ) || val;
-  }
   return null;
 }
 

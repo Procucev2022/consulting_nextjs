@@ -1,432 +1,349 @@
 import {
-  CLOUDFLARE_ALLOWED_HEADERS,
-  CLOUDFLARE_ALLOWED_METHODS,
   CLOUDFLARE_API_PREFIX,
   CLOUDFLARE_HEALTH_PATH,
-  CLOUDFLARE_MAX_AGE_SECONDS,
   CLOUDFLARE_SERVICE_NAME
 } from './constants/cloudflare';
 import type { CloudflareEnvironment, CloudflareExecutionContext, CloudflareD1Database } from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
+import {
+  ensureD1Initialized,
+  getCanonicalModule1Data,
+  handleModule2Route,
+  handlePcbiRoute,
+  handleSavingsRoute,
+  handleAssessmentRoute,
+  handleCryptoRoute,
+  getTenantFromD1,
+  getIngestionDataFromD1,
+  getTaxonomyFromD1,
+  lookupTaxonomyRecordFromD1,
+  getCurrencyRatesFromD1,
+  getProcurementCategoryMappingsFromD1
+} from './workerD1';
+import { buildSchema, graphql, type GraphQLSchema } from 'graphql';
+import { GRAPHQL_SCHEMA_SDL } from './constants/graphql';
+import { createD1GraphqlResolvers } from './resolvers/d1GraphqlResolvers';
 import { geminiService } from './services/geminiService';
 import { aiCategorizationService } from './services/aiCategorizationService';
 import { aiReportService } from './services/aiReportService';
 import { aiAnomalyService } from './services/aiAnomalyService';
-import { lookupTaxonomy, searchTaxonomy, getAllTaxonomyRecords } from './services/taxonomyService';
 import { EXTRACTION_STATUS, CLASSIFICATION_STATUS } from './constants/ai';
 import type { AiCategorizationItem } from './types/ai';
+import {
+  currencyQuerySchema, d1DatasetScopeSchema, deployOpportunitySchema, mergeVendorSchema,
+  taxonomyQuerySchema, updateValidationRecordSchema
+} from './constants/validation';
+import logger from './utils/logger';
+import { D1_REPORTING, D1_ROUTE_MESSAGES, D1_SCHEMA_TABLES_QUERY, D1_SCHEMA_COLUMNS_QUERY } from './constants/d1';
+import type { D1SchemaTableRow, D1SchemaColumnRow } from './types/d1';
+import { apiData, jsonResponse, notFoundResponse, readJson, withCors } from './workerHttp';
+import { handleOrchestrationRoute } from './workerD1Orchestration';
+import { handleEvidenceRoute } from './workerD1Evidence';
+import { handleExecutiveBriefRoute } from './workerD1ExecutiveBrief';
+import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
 
-const getCorsHeaders = (request: Request): Headers => {
-  const origin = request.headers.get('Origin') || '*';
-  const reqHeaders = request.headers.get('Access-Control-Request-Headers') || CLOUDFLARE_ALLOWED_HEADERS;
-  const headers = new Headers({
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': CLOUDFLARE_ALLOWED_METHODS,
-    'Access-Control-Allow-Headers': reqHeaders,
-    'Access-Control-Max-Age': CLOUDFLARE_MAX_AGE_SECONDS,
-    Vary: 'Origin'
-  });
-  if (origin !== '*') {
-    headers.set('Access-Control-Allow-Credentials', 'true');
-  }
-  return headers;
+let cachedGraphqlSchema: GraphQLSchema | undefined;
+
+// Built on first use. Building it at module scope fails on the Workers runtime, which rejects some
+// operations (including the parser's tracing hooks) in global scope.
+const getGraphqlSchema = (): GraphQLSchema => {
+  cachedGraphqlSchema ??= buildSchema(GRAPHQL_SCHEMA_SDL);
+  return cachedGraphqlSchema;
 };
-
-
-const withCors = (response: Response, request: Request): Response => {
-  const headers = new Headers(response.headers);
-  const corsHeaders = getCorsHeaders(request);
-  corsHeaders.forEach((value, key) => headers.set(key, value));
-  return new Response(response.body, { status: response.status, headers });
-};
-
-const jsonResponse = (body: Record<string, unknown>, status: number, request: Request): Response => {
-  return withCors(
-    new Response(JSON.stringify(body), {
-      status,
-      headers: { 'Content-Type': 'application/json' }
-    }),
-    request
-  );
-};
-
-const readJson = async (request: Request): Promise<Record<string, unknown>> => {
-  try {
-    const body: unknown = await request.json();
-    return body && typeof body === 'object' ? body as Record<string, unknown> : {};
-  } catch {
-    return {};
-  }
-};
-
-let d1TablesInitialized = false;
 
 const ensureD1Tables = async (db?: CloudflareD1Database): Promise<void> => {
-  if (!db || d1TablesInitialized) return;
-  try {
-    const tableSqls = [
-      `CREATE TABLE IF NOT EXISTS TenantMaster (
-        tenant_id TEXT PRIMARY KEY NOT NULL,
-        enterprise_name TEXT NOT NULL,
-        region TEXT NOT NULL DEFAULT 'GLOBAL',
-        base_currency TEXT NOT NULL DEFAULT 'INR',
-        status TEXT NOT NULL DEFAULT 'ACTIVE',
-        total_spend_evaluated REAL NOT NULL DEFAULT 0,
-        total_spend_evaluated_inr REAL,
-        major_sector TEXT DEFAULT 'Chemical & Petrochemicals',
-        minor_sector TEXT DEFAULT 'Specialty Chemicals',
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )`,
-      `INSERT OR IGNORE INTO TenantMaster (tenant_id, enterprise_name, region, base_currency, status) VALUES ('TNT-GLOBAL-8902', 'Global Enterprise Procurement', 'GLOBAL', 'INR', 'ACTIVE')`,
-      `CREATE TABLE IF NOT EXISTS User (
-        id TEXT PRIMARY KEY NOT NULL,
-        name TEXT NOT NULL,
-        mobile_number TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        company_name TEXT NOT NULL,
-        company_address TEXT NOT NULL,
-        password_hash TEXT NOT NULL,
-        role TEXT NOT NULL DEFAULT 'USER',
-        status TEXT NOT NULL DEFAULT 'ACTIVE',
-        subscription_tier TEXT NOT NULL DEFAULT 'BRONZE',
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )`,
-      `CREATE TABLE IF NOT EXISTS RawDocumentIngestion (
-        doc_id TEXT PRIMARY KEY NOT NULL,
-        tenant_id TEXT NOT NULL DEFAULT 'TNT-GLOBAL-8902',
-        file_name TEXT NOT NULL,
-        file_type TEXT NOT NULL DEFAULT 'XLSX',
-        file_size_mb REAL NOT NULL DEFAULT 1.0,
-        ocr_status TEXT NOT NULL DEFAULT 'Completed',
-        progress REAL NOT NULL DEFAULT 100,
-        uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        records_count INTEGER NOT NULL DEFAULT 0,
-        detected_currencies TEXT DEFAULT '["INR"]',
-        converted_inr_crores REAL DEFAULT 0,
-        unique_items_count INTEGER DEFAULT 0,
-        unique_vendors_count INTEGER DEFAULT 0,
-        material_groups_count INTEGER DEFAULT 0,
-        plants_count INTEGER DEFAULT 0
-      )`,
-      `CREATE TABLE IF NOT EXISTS ValidationPreCheckRecord (
-        record_id TEXT PRIMARY KEY NOT NULL,
-        po_number TEXT NOT NULL,
-        vendor_name TEXT NOT NULL,
-        raw_desc TEXT NOT NULL,
-        order_quantity REAL,
-        net_price REAL,
-        subtotal_raw REAL,
-        amount REAL NOT NULL DEFAULT 0,
-        raw_currency TEXT DEFAULT 'INR',
-        amount_inr REAL,
-        inr_crores REAL,
-        fx_rate_applied REAL,
-        yahoo_ticker TEXT,
-        spend_year INTEGER,
-        transaction_date TEXT,
-        column_l_code TEXT,
-        core_category TEXT,
-        issue_flag TEXT NOT NULL DEFAULT 'Passed Clean',
-        action_status TEXT NOT NULL DEFAULT 'Ready',
-        resolved INTEGER NOT NULL DEFAULT 1
-      )`,
-      `CREATE TABLE IF NOT EXISTS SpendCategorySummary (
-        id TEXT PRIMARY KEY NOT NULL,
-        name TEXT NOT NULL,
-        spend REAL NOT NULL DEFAULT 0,
-        spend_inr REAL,
-        spend_inr_crores REAL,
-        targetReductionPct REAL DEFAULT 0,
-        lineItemsCount INTEGER DEFAULT 0,
-        color TEXT DEFAULT '#38bdf8',
-        column_l_code TEXT
-      )`,
-      `CREATE TABLE IF NOT EXISTS SavingsOpportunity (
-        opp_id TEXT PRIMARY KEY NOT NULL,
-        category TEXT NOT NULL,
-        title TEXT,
-        current_spend REAL,
-        current_spend_inr_cr REAL,
-        target_savings_pct REAL,
-        est_savings REAL,
-        est_savings_inr_cr REAL,
-        savings_percentage REAL,
-        lever TEXT,
-        recommended_action TEXT,
-        push_to_module TEXT DEFAULT 'proCPX',
-        recommended_module TEXT DEFAULT 'proCPX',
-        status TEXT DEFAULT 'Identified'
-      )`,
-      `CREATE TABLE IF NOT EXISTS ConversionFunnelPhase (
-        phase_num INTEGER PRIMARY KEY NOT NULL,
-        phase_name TEXT NOT NULL,
-        platform_actionable_focus TEXT NOT NULL,
-        value_outcome_delivered TEXT NOT NULL,
-        commercial_lock_in_metric TEXT NOT NULL,
-        completion_pct REAL NOT NULL DEFAULT 0,
-        status TEXT NOT NULL DEFAULT 'Upcoming'
-      )`
-    ];
-
-    for (const sql of tableSqls) {
-      try {
-        await db.prepare(sql).run();
-      } catch {
-        // ignore
-      }
-    }
-    d1TablesInitialized = true;
-  } catch {
-    // ignore
-  }
+  await ensureD1Initialized(db);
 };
 
 const getTenant = async (environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
-  if (environment.DB) {
-    try {
-      await ensureD1Tables(environment.DB);
-      const tenant = await environment.DB.prepare('SELECT * FROM TenantMaster LIMIT 1').first<Record<string, unknown>>();
-      if (tenant) return tenant;
-    } catch {
-      // fallback to baseline tenant
-    }
-  }
-  return {
-    tenant_id: 'TNT-GLOBAL-8902',
-    enterprise_name: 'Enterprise Client',
-    region: 'GLOBAL',
-    base_currency: 'INR',
-    status: 'ACTIVE',
-    total_spend_evaluated: 0,
-    total_spend_evaluated_inr: 0,
-    major_sector: 'Direct & Indirect Procurement',
-    minor_sector: 'Strategic Sourcing'
-  };
+  await ensureD1Tables(environment.DB);
+  return { ...await getTenantFromD1(environment.DB) };
 };
 
-const apiData = (data: unknown, request: Request, extra: Record<string, unknown> = {}): Response => {
-  return jsonResponse({ success: true, data, timestamp: new Date().toISOString(), ...extra }, 200, request);
-};
 
 const getIngestionData = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
-  if (environment.DB) {
-    try {
-      await ensureD1Tables(environment.DB);
-      const tenantId = url.searchParams.get('buyerId') || url.searchParams.get('tenantId');
-      const queueStmt = tenantId
-        ? environment.DB.prepare('SELECT * FROM RawDocumentIngestion WHERE tenant_id = ? ORDER BY uploaded_at DESC').bind(tenantId)
-        : environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC');
-      const queueRes = await queueStmt.all<Record<string, unknown>>();
-      const queue = (queueRes.results || []).map((row: any) => ({
-        ...row,
-        detected_currencies: typeof row.detected_currencies === 'string'
-          ? (() => { try { return JSON.parse(row.detected_currencies); } catch { return ['INR']; } })()
-          : (row.detected_currencies || ['INR'])
-      }));
+  await ensureD1Tables(environment.DB);
+  const tenantId = url.searchParams.get('buyerId') || url.searchParams.get('tenantId') || undefined;
+  return { data: await getIngestionDataFromD1(environment.DB as CloudflareD1Database, tenantId) };
+};
 
-      let validationRecords: any[] = [];
-      try {
-        const valRes = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all<Record<string, unknown>>();
-        validationRecords = (valRes.results || []).map((row: any) => ({
-          ...row,
-          resolved: Boolean(row.resolved)
-        }));
-      } catch {
-        validationRecords = [];
-      }
-
-      return {
-        data: {
-          queue,
-          validationRecords,
-          summary: {
-            totalFiles: queue.length,
-            totalRecords: validationRecords.length,
-            cleanCount: validationRecords.filter((item: any) => item.issue_flag === 'Passed Clean').length,
-            anomaliesCount: validationRecords.filter((item: any) => item.issue_flag !== 'Passed Clean').length
-          }
-        }
-      };
-    } catch {
-      // fallback
-    }
-  }
-  return {
-    data: {
-      queue: [],
-      validationRecords: [],
-      summary: { totalFiles: 0, totalRecords: 0, cleanCount: 0, anomaliesCount: 0 }
-    }
-  };
+const remediationEffectiveDate = (record: Record<string, unknown>): string | null => {
+  const transactionDate = String(record.transaction_date || '').slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(transactionDate)) return transactionDate;
+  const spendYear = Number(record.spend_year);
+  return Number.isInteger(spendYear) && spendYear >= 1900 && spendYear <= 2200
+    ? `${spendYear}-12-31`
+    : null;
 };
 
 const remediateIngestion = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
-  if (environment.DB) {
-    try {
-      await ensureD1Tables(environment.DB);
-      await environment.DB.prepare("UPDATE ValidationPreCheckRecord SET resolved = 1, issue_flag = 'Passed Clean', action_status = 'Ready'").run();
-      const records = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC LIMIT 500').all();
-      return { data: { updatedCount: records.results?.length || 0, records: records.results || [] } };
-    } catch {
-      // ignore
+  await ensureD1Tables(environment.DB);
+  const database = environment.DB as CloudflareD1Database;
+  const candidates = await database.prepare(`
+    SELECT * FROM ValidationPreCheckRecord
+    WHERE COALESCE(amount, 0) > 0 AND COALESCE(raw_currency, '') <> ''
+    ORDER BY created_at DESC LIMIT ?
+  `).bind(D1_REPORTING.maxDatasetLimit).all<Record<string, unknown>>();
+  const updatedIds: string[] = [];
+
+  for (const record of candidates.results || []) {
+    const currency = String(record.raw_currency || '').trim().toUpperCase();
+    const amount = Number(record.amount);
+    const effectiveDate = remediationEffectiveDate(record);
+    let rate = 0;
+    if (currency === 'INR') {
+      rate = 1;
+    } else if (effectiveDate) {
+      const reference = await database.prepare(`
+        SELECT inr_per_unit FROM FxReferenceRate
+        WHERE currency = ? AND rate_date <= ?
+        ORDER BY rate_date DESC LIMIT 1
+      `).bind(currency, effectiveDate).first<{ inr_per_unit: number }>();
+      rate = Number(reference?.inr_per_unit || 0);
     }
-  }
-  return { data: { updatedCount: 0, records: [] } };
-};
+    if (!Number.isFinite(rate) || rate <= 0) continue;
 
-const addIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
-  const body = await readJson(request);
-  const docId = String(body.doc_id || `DOC-INGEST-${Date.now()}`);
-  const tenantId = String(body.tenant_id || 'TNT-GLOBAL-8902');
-  const fileName = String(body.file_name || 'dataset.xlsx');
-  const fileType = String(body.file_type || 'XLSX');
-  const fileSizeMb = Number(body.file_size_mb || 1.0);
-  const recordsCount = Number(body.records_count || 0);
-  const convertedInrCrores = Number(body.converted_inr_crores || 0);
-  const detectedCurrencies = JSON.stringify(Array.isArray(body.detected_currencies) ? body.detected_currencies : ['INR']);
+    const amountInr = amount * rate;
+    const inrCrores = amountInr / D1_REPORTING.inrPerCrore;
+    const clearsCurrencyIssue = /missing currency/i.test(String(record.issue_flag || '')) &&
+      Boolean(String(record.vendor_name || '').trim()) && Boolean(String(record.raw_desc || '').trim());
+    const resolved = clearsCurrencyIssue ? 1 : Number(record.resolved || 0);
+    const issueFlag = clearsCurrencyIssue ? 'Passed Clean' : String(record.issue_flag || 'Passed Clean');
+    const actionStatus = clearsCurrencyIssue ? 'Ready' : String(record.action_status || 'Ready');
+    const changed = Number(record.fx_rate_applied || 0) !== rate ||
+      Number(record.amount_inr || 0) !== amountInr || Number(record.inr_crores || 0) !== inrCrores ||
+      Number(record.resolved || 0) !== resolved || String(record.issue_flag || '') !== issueFlag ||
+      String(record.action_status || '') !== actionStatus;
+    if (!changed) continue;
 
-  if (environment.DB) {
-    try {
-      await ensureD1Tables(environment.DB);
-      await environment.DB.prepare(`
-        INSERT INTO RawDocumentIngestion (
-          doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
-        ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
-      `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
-      const res = await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all();
-      return { data: res.results || [] };
-    } catch {
-      // ignore
-    }
-  }
-  return { data: [] };
-};
-
-const uploadIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
-  const body = await readJson(request);
-  const fileName = String(body.fileName || 'dataset.xlsx');
-  const effectiveTenantId = String(
-    body.tenant_id ||
-    body.buyer_id ||
-    request.headers.get('x-buyer-id') ||
-    request.headers.get('x-tenant-id') ||
-    'TNT-GLOBAL-8902'
-  );
-  const fileSizeMb = Number(body.fileSizeMb || 1.0);
-  const docId = `DOC-INGEST-${Date.now()}`;
-  const fileType = String(body.fileType || 'XLSX');
-  const recordsCount = Number(body.recordsCount || 0);
-  const convertedInrCrores = Number(body.convertedInrCrores || 0);
-  const detectedCurrencies = JSON.stringify(Array.isArray(body.detectedCurrencies) ? body.detectedCurrencies : ['INR']);
-
-  if (environment.DB) {
-    try {
-      await ensureD1Tables(environment.DB);
-      await environment.DB.prepare(`
-        INSERT INTO RawDocumentIngestion (
-          doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
-        ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
-      `).bind(docId, effectiveTenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
-    } catch {
-      // ignore
-    }
+    await database.prepare(`
+      UPDATE ValidationPreCheckRecord
+      SET fx_rate_applied = ?, amount_inr = ?, inr_crores = ?, resolved = ?, issue_flag = ?, action_status = ?
+      WHERE record_id = ?
+    `).bind(rate, amountInr, inrCrores, resolved, issueFlag, actionStatus, record.record_id).run();
+    updatedIds.push(String(record.record_id));
   }
 
-  let queueRows: Record<string, unknown>[] = [];
-  if (environment.DB) {
-    try {
-      const queueRes = await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all<Record<string, unknown>>();
-      queueRows = queueRes.results || [];
-    } catch {
-      queueRows = [];
-    }
-  }
-
-  const parsedQueue = queueRows.map((row: any) => ({
-    ...row,
-    detected_currencies: typeof row.detected_currencies === 'string'
-      ? (() => { try { return JSON.parse(row.detected_currencies); } catch { return ['INR']; } })()
-      : (Array.isArray(row.detected_currencies) ? row.detected_currencies : ['INR'])
-  }));
-
-  const objectKey = `${Date.now()}_${fileName}`;
-
-  if (environment.OBJECTS && body.fileBase64) {
-    try {
-      const cleanBase64 = String(body.fileBase64).replace(/^data:[^;]+;base64,/, '').replace(/\s+/g, '');
-      const binaryString = atob(cleanBase64);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-      await environment.OBJECTS.put(objectKey, bytes, {
-        httpMetadata: {
-          contentType: fileType === 'XLSX'
-            ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            : 'text/csv'
-        }
-      });
-    } catch {
-      // ignore
-    }
-  }
-
-  const objectMeta = {
-    key: objectKey,
-    size: Math.round(fileSizeMb * 1024 * 1024),
-    uploadedAt: new Date().toISOString(),
-    bucket: 'consulting-doc'
-  };
-
+  const records = await Promise.all(updatedIds.map((recordId) =>
+    database.prepare('SELECT * FROM ValidationPreCheckRecord WHERE record_id = ?').bind(recordId).first<Record<string, unknown>>()
+  ));
+  logger.info('D1-backed validation currency remediation completed', {
+    updatedCount: updatedIds.length,
+    candidateCount: candidates.results?.length || 0
+  });
   return {
     data: {
-      objectMeta,
-      ingestionQueue: parsedQueue
+      updatedCount: updatedIds.length,
+      skippedCount: Math.max(0, (candidates.results?.length || 0) - updatedIds.length),
+      records: records.filter((record): record is Record<string, unknown> => Boolean(record)).map((record) => ({
+        ...record,
+        resolved: Boolean(record.resolved)
+      }))
     }
   };
+};
+
+const addIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
+  const body = await readJson(request);
+  const fileName = typeof body.file_name === 'string' ? body.file_name.trim() : '';
+  if (!fileName) return { data: { success: false, message: 'file_name is required for ingestion' }, status: 400 };
+  const database = environment.DB;
+  await ensureD1Tables(database);
+  const tenantHeader = request.headers.get('x-buyer-id') || request.headers.get('x-tenant-id');
+  const tenantId = String(body.tenant_id || body.buyer_id || tenantHeader || (await getTenantFromD1(database)).tenant_id);
+  const docId = String(body.doc_id || crypto.randomUUID());
+  const fileType = String(body.file_type || 'XLSX');
+  const fileSizeMb = Number(body.file_size_mb || 1);
+  const recordsCount = Number(body.records_count || 0);
+  const convertedInrCrores = Number(body.converted_inr_crores || 0);
+  const detectedCurrencies = JSON.stringify(Array.isArray(body.detected_currencies) ? body.detected_currencies : []);
+  const result = await database?.prepare(`
+    INSERT INTO RawDocumentIngestion (
+      doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
+    ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
+  `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, detectedCurrencies).run();
+  void result;
+  const rows = await database?.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all();
+  return { data: rows?.results || [] };
+};
+
+const uploadIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
+  const database = environment.DB;
+  await ensureD1Tables(database);
+  if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+  const body = await readJson(request);
+  const fileName = typeof body.fileName === 'string' ? body.fileName.trim() : '';
+  if (!fileName) return { data: { success: false, message: 'fileName is required for upload' }, status: 400 };
+  const tenantId = String(
+    body.tenant_id || body.buyer_id || request.headers.get('x-buyer-id') || request.headers.get('x-tenant-id') ||
+    (await getTenantFromD1(database)).tenant_id
+  );
+  const fileSizeMb = Number(body.fileSizeMb || 1);
+  const docId = `DOC-INGEST-${crypto.randomUUID()}`;
+  const fileType = String(body.fileType || 'XLSX').toUpperCase();
+  const fileBase64 = typeof body.fileBase64 === 'string' ? body.fileBase64 : '';
+  const parseTransactions = body.parseTransactions === true;
+  const objectKey = `${docId}_${fileName}`;
+  let imported = { importedCount: 0, validationCount: 0, totalInrCrores: 0, detectedCurrencies: [] as string[] };
+  let bytes: Uint8Array | null = null;
+  let objectStored = false;
+  try {
+    if (fileBase64) {
+      if (!environment.OBJECTS) throw new Error('Cloudflare R2 binding OBJECTS is required for binary uploads');
+      const cleanBase64 = fileBase64.replace(/^data:[^;]+;base64,/, '').replace(/\s+/g, '');
+      const binaryString = atob(cleanBase64);
+      bytes = new Uint8Array(binaryString.length);
+      for (let index = 0; index < binaryString.length; index += 1) bytes[index] = binaryString.charCodeAt(index);
+      const contentType = fileType === 'XLSX'
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : fileType === 'XLS' ? 'application/vnd.ms-excel'
+          : fileType === 'CSV' ? 'text/csv'
+            : fileType === 'PDF' ? 'application/pdf' : 'application/octet-stream';
+      await environment.OBJECTS.put(objectKey, bytes, { httpMetadata: { contentType } });
+      objectStored = true;
+      if (parseTransactions && ['XLSX', 'XLS', 'CSV'].includes(fileType)) {
+        imported = await importIngestionWorkbook({
+          db: database,
+          bytes,
+          fileName,
+          fileType,
+          docId,
+          tenantId,
+          assessmentId: typeof body.assessment_id === 'string' ? body.assessment_id : undefined
+        });
+      }
+    }
+
+    const recordsCount = imported.importedCount || Number(body.recordsCount || 0);
+    const convertedInrCrores = imported.importedCount ? imported.totalInrCrores : Number(body.convertedInrCrores || 0);
+    const currencies = imported.importedCount
+      ? imported.detectedCurrencies
+      : Array.isArray(body.detectedCurrencies) ? body.detectedCurrencies : [];
+    await database.prepare(`
+      INSERT INTO RawDocumentIngestion (
+        doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
+      ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
+    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, JSON.stringify(currencies)).run();
+
+    if (bytes) {
+      await database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+        .bind(objectKey, tenantId, fileName, fileType, bytes.byteLength, '', environment.R2_BUCKET || '').run();
+    }
+  } catch (error) {
+    try {
+      await database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ?').bind(docId).run();
+      await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ?').bind(`REC-${docId}-ROW-%`).run();
+      await database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ?').bind(docId).run();
+      await database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ?').bind(objectKey).run();
+    } catch (cleanupError) {
+      logger.error('Failed to roll back a D1 ingestion upload', { docId }, cleanupError);
+    }
+    if (objectStored) {
+      try {
+        await environment.OBJECTS?.delete(objectKey);
+      } catch (cleanupError) {
+        logger.error('Failed to remove the uploaded object after a D1 import failure', { docId }, cleanupError);
+      }
+    }
+    if (error instanceof Error && /workbook|row import limit|Only XLSX/u.test(error.message)) {
+      return { data: { success: false, message: error.message }, status: 400 };
+    }
+    throw error;
+  }
+
+  logger.info('Persisted uploaded ingestion dataset in D1', {
+    requestId: request.headers.get('x-request-id') || undefined,
+    docId,
+    tenantId,
+    importedCount: imported.importedCount,
+    validationCount: imported.validationCount
+  });
+
+  const queueRows = await database.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all<Record<string, unknown>>();
+  const ingestionQueue = queueRows.results.map((row) => ({
+    ...row,
+    detected_currencies: typeof row.detected_currencies === 'string' ? (() => {
+      try { return JSON.parse(row.detected_currencies as string); } catch { return []; }
+    })() : []
+  }));
+  return { data: {
+    docId,
+    importedCount: imported.importedCount,
+    validationCount: imported.validationCount,
+    totalInrCrores: imported.totalInrCrores,
+    detectedCurrencies: imported.detectedCurrencies,
+    objectMeta: { key: objectKey, size: bytes?.byteLength ?? Math.round(fileSizeMb * 1024 * 1024), uploadedAt: new Date().toISOString(), bucket: environment.R2_BUCKET || '' },
+    ingestionQueue
+  } };
 };
 
 const updateIngestion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
-  const body = await readJson(request);
-  const recordId = String(body.record_id || '');
-  if (!recordId) return { data: { success: false, message: 'Missing record_id.' }, status: 400 };
-
-  if (environment.DB) {
-    try {
-      await environment.DB.prepare(`
-        UPDATE ValidationPreCheckRecord
-        SET issue_flag = COALESCE(?, issue_flag),
-            action_status = COALESCE(?, action_status),
-            resolved = COALESCE(?, resolved)
-        WHERE record_id = ?
-      `).bind(body.issue_flag ?? null, body.action_status ?? null, body.resolved !== undefined ? (body.resolved ? 1 : 0) : null, recordId).run();
-      const updated = await environment.DB.prepare('SELECT * FROM ValidationPreCheckRecord WHERE record_id = ?').first();
-      return { data: updated || {} };
-    } catch {
-      // ignore
-    }
+  const database = environment.DB;
+  await ensureD1Tables(database);
+  if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+  const parsed = updateValidationRecordSchema.safeParse(await readJson(request));
+  if (!parsed.success) {
+    return { data: { success: false, message: 'Validation update is invalid.', errors: parsed.error.issues }, status: 400 };
   }
-  return { data: { success: false, message: 'Validation record not found.' }, status: 404 };
+  const body = parsed.data;
+  await database.prepare(`
+    UPDATE ValidationPreCheckRecord
+    SET po_number = COALESCE(?, po_number), vendor_name = COALESCE(?, vendor_name), raw_desc = COALESCE(?, raw_desc),
+        order_quantity = COALESCE(?, order_quantity), net_price = COALESCE(?, net_price),
+        subtotal_raw = COALESCE(?, subtotal_raw), amount = COALESCE(?, amount), raw_currency = COALESCE(?, raw_currency),
+        amount_inr = COALESCE(?, amount_inr), inr_crores = COALESCE(?, inr_crores),
+        fx_rate_applied = COALESCE(?, fx_rate_applied), spend_year = COALESCE(?, spend_year),
+        transaction_date = COALESCE(?, transaction_date), column_l_code = COALESCE(?, column_l_code),
+        core_category = COALESCE(?, core_category), issue_flag = COALESCE(?, issue_flag),
+        action_status = COALESCE(?, action_status), resolved = COALESCE(?, resolved)
+    WHERE record_id = ?
+  `).bind(
+    body.po_number ?? null, body.vendor_name ?? null, body.raw_desc ?? null,
+    body.order_quantity ?? null, body.net_price ?? null, body.subtotal_raw ?? null, body.amount ?? null,
+    body.raw_currency ?? null, body.amount_inr ?? null, body.inr_crores ?? null, body.fx_rate_applied ?? null,
+    body.spend_year ?? null, body.transaction_date ?? null, body.column_l_code ?? null, body.core_category ?? null,
+    body.issue_flag ?? null, body.action_status ?? null, body.resolved === undefined ? null : Number(body.resolved), body.record_id
+  ).run();
+  const updated = await database.prepare('SELECT * FROM ValidationPreCheckRecord WHERE record_id = ?').bind(body.record_id).first();
+  return updated ? { data: { ...updated, resolved: Boolean((updated as Record<string, unknown>).resolved) } } : { data: { success: false, message: 'Validation record not found.' }, status: 404 };
 };
 
-const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
-  const docId = url.pathname.includes('/document/') ? url.pathname.split('/').pop() : null;
-  if (environment.DB) {
-    try {
-      if (docId) {
-        await environment.DB.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ?').bind(docId).run();
-      } else {
-        await environment.DB.prepare('DELETE FROM RawDocumentIngestion').run();
-      }
-      const queue = await environment.DB.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all();
-      return { data: queue.results || [] };
-    } catch {
-      // ignore
-    }
+const deleteIngestion = async (url: URL, environment: CloudflareEnvironment): Promise<{ data: unknown; status?: number }> => {
+  const database = environment.DB;
+  await ensureD1Tables(database);
+  if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+  // "/document/" with an empty id must never fall through to the clear-all branch below.
+  const documentId = url.pathname.includes('/document/') ? url.pathname.split('/document/').pop() : null;
+  if (documentId === '') {
+    return { data: { success: false, message: 'A document id is required after /document/ to delete one ingestion record.' }, status: 400 };
   }
-  return { data: [] };
+  const documents = documentId
+    ? await database.prepare('SELECT doc_id FROM RawDocumentIngestion WHERE doc_id = ?').bind(documentId).all<{ doc_id: string }>()
+    : await database.prepare('SELECT doc_id FROM RawDocumentIngestion').all<{ doc_id: string }>();
+  for (const document of documents.results) {
+    const objectRows = await database.prepare('SELECT object_key FROM ObjectMetadata WHERE object_key LIKE ?').bind(`${document.doc_id}_%`).all<{ object_key: string }>();
+    for (const object of objectRows.results) {
+      if (environment.OBJECTS) await environment.OBJECTS.delete(object.object_key);
+      await database.prepare('DELETE FROM ObjectMetadata WHERE object_key = ?').bind(object.object_key).run();
+    }
+    await database.prepare('DELETE FROM ProcurementTransaction WHERE source_document_id = ?').bind(document.doc_id).run();
+    await database.prepare('DELETE FROM ValidationPreCheckRecord WHERE record_id LIKE ?').bind(`REC-${document.doc_id}-ROW-%`).run();
+    await database.prepare('DELETE FROM RawDocumentIngestion WHERE doc_id = ?').bind(document.doc_id).run();
+  }
+  logger.info('Deleted D1 ingestion documents and linked data', {
+    documentCount: documents.results.length,
+    requestedDocumentId: documentId || undefined
+  });
+  const queue = await database.prepare('SELECT * FROM RawDocumentIngestion ORDER BY uploaded_at DESC').all();
+  return { data: queue.results || [] };
+};
+
+const resetValidationRecords = async (environment: CloudflareEnvironment): Promise<{ data: unknown }> => {
+  await ensureD1Tables(environment.DB);
+  const database = environment.DB as CloudflareD1Database;
+  await database.prepare('DELETE FROM ValidationPreCheckRecord').run();
+  const records = await database.prepare('SELECT * FROM ValidationPreCheckRecord ORDER BY created_at DESC').all();
+  return { data: records.results || [] };
 };
 
 const handleIngestion = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<{ data: unknown; status?: number }> => {
@@ -435,21 +352,18 @@ const handleIngestion = async (request: Request, environment: CloudflareEnvironm
   if (request.method === 'POST' && url.pathname.endsWith('/remediate')) return remediateIngestion(environment);
   if (request.method === 'POST') return addIngestion(request, environment);
   if (request.method === 'PATCH') return updateIngestion(request, environment);
+  if (request.method === 'DELETE' && url.pathname.endsWith('/validation-records')) return resetValidationRecords(environment);
   if (request.method === 'DELETE') return deleteIngestion(url, environment);
   return { data: { success: false, message: 'Unsupported ingestion operation.' }, status: 405 };
 };
 
 const handleConversion = async (request: Request, environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
   if (request.method === 'GET') {
-    if (environment.DB) {
-      try {
-        const stages = await environment.DB.prepare('SELECT * FROM ConversionFunnelPhase').all();
-        if (stages.results && stages.results.length > 0) return { data: stages.results };
-      } catch {
-        // ignore
-      }
-    }
-    return { data: [] };
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+    const stages = await database.prepare('SELECT * FROM ConversionFunnelPhase ORDER BY phase_num ASC').all();
+    return { data: stages.results || [] };
   }
   const body = await readJson(request);
   const annualSpendCr = Number(body.annualSpendCr || 0);
@@ -457,44 +371,56 @@ const handleConversion = async (request: Request, environment: CloudflareEnviron
   const saasFeeRate = Number(body.saasFeeRate || 0);
   const grossSavingsCr = annualSpendCr * savingsRate / 100;
   const platformFeeCr = annualSpendCr * saasFeeRate / 100;
-  return {
-    data: {
-      annualSpendCr,
-      savingsRate,
-      saasFeeRate,
-      grossSavingsCr,
-      platformFeeCr,
-      netClientBenefitCr: grossSavingsCr - platformFeeCr,
-      roiMultiple: platformFeeCr > 0 ? grossSavingsCr / platformFeeCr : 0
-    }
-  };
+  return { data: { annualSpendCr, savingsRate, saasFeeRate, grossSavingsCr, platformFeeCr, netClientBenefitCr: grossSavingsCr - platformFeeCr, roiMultiple: platformFeeCr > 0 ? grossSavingsCr / platformFeeCr : 0 } };
 };
 
 const handleDatabase = async (request: Request, environment: CloudflareEnvironment): Promise<Response> => {
   const path = new URL(request.url).pathname;
+  if (path.endsWith('/schema')) {
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+    const start = Date.now();
+    const tables = await database.prepare(D1_SCHEMA_TABLES_QUERY).all<D1SchemaTableRow>();
+    const data = await Promise.all(tables.results.map(async (table) => {
+      const columns = await database.prepare(D1_SCHEMA_COLUMNS_QUERY).bind(table.name).all<D1SchemaColumnRow>();
+      return {
+        entity_name: table.name,
+        primary_attributes: columns.results.map((column) => column.name).join(', '),
+        system_usage: 'Cloudflare D1',
+        sample_records: [],
+        ddl: table.sql
+      };
+    }));
+    logger.info('Read D1 database schema', { operation: 'SELECT', model: 'sqlite_master', affectedRows: data.length, cache: 'miss', durationMs: Date.now() - start, requestId: request.headers.get('x-request-id') });
+    return apiData(data, request);
+  }
+  if (path.endsWith('/init') || path.endsWith('/seed')) {
+    return jsonResponse({
+      success: false,
+      message: 'D1 schema and seed are deployment operations. Run the D1 migration and seed commands before serving traffic.'
+    }, 405, request);
+  }
   if (path.endsWith('/status')) {
-    let totalRecords = 0;
-    if (environment.DB) {
-      try {
-        const [t1, t2, t3, t4, t5, t6] = await Promise.all([
-          environment.DB.prepare('SELECT COUNT(*) as c FROM TenantMaster').first<any>(),
-          environment.DB.prepare('SELECT COUNT(*) as c FROM RawDocumentIngestion').first<any>(),
-          environment.DB.prepare('SELECT COUNT(*) as c FROM ValidationPreCheckRecord').first<any>(),
-          environment.DB.prepare('SELECT COUNT(*) as c FROM SpendCategorySummary').first<any>(),
-          environment.DB.prepare('SELECT COUNT(*) as c FROM VendorYearDetail').first<any>(),
-          environment.DB.prepare('SELECT COUNT(*) as c FROM User').first<any>()
-        ]);
-        totalRecords = (t1?.c || 0) + (t2?.c || 0) + (t3?.c || 0) + (t4?.c || 0) + (t5?.c || 0) + (t6?.c || 0);
-      } catch {
-        // ignore
-      }
-    }
+    const database = environment.DB;
+    if (!database) return jsonResponse({ success: false, message: 'Cloudflare D1 binding DB is not configured.' }, 503, request);
+    await ensureD1Initialized(database);
+    const tables = await database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'").all<{ name: string }>();
+    const recordCount = await database.prepare(`SELECT
+      (SELECT COUNT(*) FROM TenantMaster) +
+      (SELECT COUNT(*) FROM RawDocumentIngestion) +
+      (SELECT COUNT(*) FROM ValidationPreCheckRecord) +
+      (SELECT COUNT(*) FROM SpendCategorySummary) +
+      (SELECT COUNT(*) FROM VendorYearDetail) +
+      (SELECT COUNT(*) FROM AssessmentRecord) +
+      (SELECT COUNT(*) FROM ProcurementTransaction) AS totalRecords`).first<{ totalRecords: number }>();
     return apiData({
-      isConnected: Boolean(environment.DB),
-      provider: 'Cloudflare D1 (consulting-db)',
+      isConnected: true,
+      provider: 'Cloudflare D1',
+      databaseName: environment.D1_DATABASE_NAME || null,
       serverTime: new Date().toISOString(),
-      tablesCount: 11,
-      totalRecords
+      tablesCount: tables.results.length,
+      totalRecords: Number(recordCount?.totalRecords || 0)
     }, request);
   }
   if (path.endsWith('/test-connection')) {
@@ -515,45 +441,71 @@ const handleIngestionRoute = async (request: Request, environment: CloudflareEnv
 
 const handleStaticDataRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/categories`) {
-    if (environment.DB) {
-      try {
-        const [cats, details] = await Promise.all([
-          environment.DB.prepare('SELECT * FROM SpendCategorySummary').all(),
-          environment.DB.prepare('SELECT * FROM CategoryYearDetail').all()
-        ]);
-        return apiData({ categories: cats.results || [], categoryDetails: details.results || [] }, request);
-      } catch {
-        // ignore
-      }
-    }
-    return apiData({ categories: [], categoryDetails: [] }, request);
+    if (request.method !== 'GET') return jsonResponse({ success: false, message: 'Categories support GET requests only.' }, 405, request);
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+    const [categories, categoryDetails] = await Promise.all([
+      database.prepare('SELECT * FROM SpendCategorySummary ORDER BY spend_inr_crores DESC').all(),
+      database.prepare('SELECT * FROM CategoryYearDetail ORDER BY rank ASC').all()
+    ]);
+    return apiData({ categories: categories.results, categoryDetails: categoryDetails.results }, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/vendors`) {
-    if (environment.DB) {
-      try {
-        const [ranks, details] = await Promise.all([
-          environment.DB.prepare('SELECT * FROM VendorPriceRank').all(),
-          environment.DB.prepare('SELECT * FROM VendorYearDetail').all()
-        ]);
-        return apiData({ vendorRankings: ranks.results || [], vendorDetails: details.results || [] }, request);
-      } catch {
-        // ignore
-      }
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+    if (request.method === 'POST') {
+      const parsed = mergeVendorSchema.safeParse(await readJson(request));
+      if (!parsed.success) return jsonResponse({ success: false, message: 'Vendor merge request is invalid.', errors: parsed.error.issues }, 400, request);
+      const { targetName, masterId, canonicalName } = parsed.data;
+      const [vendorDetailCount, vendorRankCount] = await Promise.all([
+        database.prepare('SELECT COUNT(*) AS count FROM VendorYearDetail WHERE master_vendor_id = ?').bind(masterId).first<{ count: number }>(),
+        database.prepare('SELECT COUNT(*) AS count FROM VendorPriceRank WHERE master_id = ?').bind(masterId).first<{ count: number }>()
+      ]);
+      const affected = Number(vendorDetailCount?.count || 0) + Number(vendorRankCount?.count || 0);
+      if (affected === 0) return jsonResponse({ success: false, message: `Supplier master ${masterId} was not found.` }, 404, request);
+      const statements = [
+        database.prepare('UPDATE VendorYearDetail SET vendor_name = ? WHERE master_vendor_id = ?').bind(canonicalName, masterId),
+        database.prepare('UPDATE VendorPriceRank SET vendor_name = ? WHERE master_id = ?').bind(canonicalName, masterId)
+      ];
+      if (database.batch) await database.batch(statements);
+      else await Promise.all(statements.map((statement) => statement.run()));
+      logger.info('Supplier master name updated in D1', {
+        targetName, masterId, canonicalName, affected, requestId: request.headers.get('x-request-id') || undefined
+      });
+      return apiData({ success: true, affected }, request);
     }
-    return apiData({ vendorRankings: [], vendorDetails: [] }, request);
+    if (request.method !== 'GET') return jsonResponse({ success: false, message: 'Vendor data supports GET and POST requests only.' }, 405, request);
+    const [vendorRankings, vendorDetails] = await Promise.all([
+      database.prepare('SELECT * FROM VendorPriceRank ORDER BY total_spend_inr_cr DESC').all(),
+      database.prepare('SELECT * FROM VendorYearDetail ORDER BY total_3yr_spend_inr_cr DESC').all()
+    ]);
+    return apiData({ vendorRankings: vendorRankings.results, vendorDetails: vendorDetails.results }, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/savings`) {
-    if (environment.DB) {
-      try {
-        const opps = await environment.DB.prepare('SELECT * FROM SavingsOpportunity').all();
-        const opportunities = opps.results || [];
-        const total = opportunities.reduce((sum: number, item: any) => sum + (Number(item.est_savings_inr_cr) || 0), 0);
-        return apiData({ opportunities, totalPotentialSavingsCr: total }, request);
-      } catch {
-        // ignore
-      }
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+    if (request.method === 'POST') {
+      const parsed = deployOpportunitySchema.safeParse(await readJson(request));
+      if (!parsed.success) return jsonResponse({ success: false, message: 'Opportunity deployment request is invalid.', errors: parsed.error.issues }, 400, request);
+      const { opp_id: opportunityId, targetModule } = parsed.data;
+      await database.prepare(`
+        UPDATE SavingsOpportunity SET recommended_module = ?, push_to_module = ?, status = 'DEPLOYED'
+        WHERE opp_id = ?
+      `).bind(targetModule, targetModule, opportunityId).run();
+      const deployed = await database.prepare('SELECT * FROM SavingsOpportunity WHERE opp_id = ?').bind(opportunityId).first<Record<string, unknown>>();
+      if (!deployed) return jsonResponse({ success: false, message: `Savings opportunity ${opportunityId} was not found.` }, 404, request);
+      logger.info('Savings opportunity deployed from D1', {
+        opportunityId, targetModule, requestId: request.headers.get('x-request-id') || undefined
+      });
+      return apiData(deployed, request);
     }
-    return apiData({ opportunities: [], totalPotentialSavingsCr: 0 }, request);
+    if (request.method !== 'GET') return jsonResponse({ success: false, message: 'Savings data supports GET and POST requests only.' }, 405, request);
+    const opportunities = await database.prepare('SELECT * FROM SavingsOpportunity ORDER BY est_savings_inr_cr DESC').all();
+    const totalPotentialSavingsCr = opportunities.results.reduce((total, item) => total + Number((item as Record<string, unknown>).est_savings_inr_cr || 0), 0);
+    return apiData({ opportunities: opportunities.results, totalPotentialSavingsCr }, request);
   }
   return null;
 };
@@ -564,98 +516,71 @@ const handleFinancialRoute = async (request: Request, environment: CloudflareEnv
     return apiData(result.data, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/currency`) {
-    const from = url.searchParams.get('from')?.toUpperCase().trim();
-    const amount = Number(url.searchParams.get('amount') || 0);
-
-    const baseFXRates: Record<string, { ticker: string; currencyPair: string; currencyCode: string; name: string; currentRate: number; lastUpdated: string }> = {
-      USD: { ticker: 'USDINR=X', currencyPair: 'USD / INR', currencyCode: 'USD', name: 'US Dollar', currentRate: 83.9, lastUpdated: 'Live Global FX Market (API)' },
-      EUR: { ticker: 'EURINR=X', currencyPair: 'EUR / INR', currencyCode: 'EUR', name: 'Euro', currentRate: 91.2, lastUpdated: 'Live Global FX Market (API)' },
-      GBP: { ticker: 'GBPINR=X', currencyPair: 'GBP / INR', currencyCode: 'GBP', name: 'British Pound', currentRate: 109.5, lastUpdated: 'Live Global FX Market (API)' },
-      AED: { ticker: 'AEDINR=X', currencyPair: 'AED / INR', currencyCode: 'AED', name: 'UAE Dirham', currentRate: 22.8, lastUpdated: 'Live Global FX Market (API)' },
-      JPY: { ticker: 'JPYINR=X', currencyPair: 'JPY / INR', currencyCode: 'JPY', name: 'Japanese Yen', currentRate: 0.56, lastUpdated: 'Live Global FX Market (API)' },
-      SGD: { ticker: 'SGDINR=X', currencyPair: 'SGD / INR', currencyCode: 'SGD', name: 'Singapore Dollar', currentRate: 64.8, lastUpdated: 'Live Global FX Market (API)' },
-      INR: { ticker: 'INR=X', currencyPair: 'INR / INR', currencyCode: 'INR', name: 'Indian Rupee (Base)', currentRate: 1.0, lastUpdated: 'Base Currency' }
-    };
-
-    try {
-      const openRes = await globalThis.fetch('https://open.er-api.com/v6/latest/USD', {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ConsultingPlatform/1.0' }
-      });
-      if (openRes.ok) {
-        const openData: any = await openRes.json();
-        const inrPerUsd = openData.rates?.INR;
-        if (inrPerUsd && typeof inrPerUsd === 'number') {
-          baseFXRates.USD.currentRate = Number(inrPerUsd.toFixed(2));
-          if (openData.rates?.EUR) baseFXRates.EUR.currentRate = Number((inrPerUsd / openData.rates.EUR).toFixed(2));
-          if (openData.rates?.GBP) baseFXRates.GBP.currentRate = Number((inrPerUsd / openData.rates.GBP).toFixed(2));
-          if (openData.rates?.AED) baseFXRates.AED.currentRate = Number((inrPerUsd / openData.rates.AED).toFixed(2));
-          if (openData.rates?.JPY) baseFXRates.JPY.currentRate = Number((inrPerUsd / openData.rates.JPY).toFixed(2));
-          if (openData.rates?.SGD) baseFXRates.SGD.currentRate = Number((inrPerUsd / openData.rates.SGD).toFixed(2));
-        }
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+    const parsed = currencyQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
+    if (!parsed.success) return jsonResponse({ success: false, message: 'Validation failed', errors: parsed.error.issues }, 400, request);
+    const from = parsed.data.from || '';
+    const amount = Number(parsed.data.amount || 0);
+    const rates = await getCurrencyRatesFromD1(database);
+    if (!from) return apiData(rates, request);
+    const selected = rates[from] as { currentRate?: number; lastUpdated?: string | null } | undefined;
+    if (!selected && from !== 'INR') return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.currencyNotFound(from) }, 400, request);
+    const requestedDate = parsed.data.date || parsed.data.year;
+    const effectiveDate = requestedDate == null ? null : /^\d{4}$/.test(String(requestedDate))
+      ? `${requestedDate}-12-31`
+      : String(requestedDate).slice(0, 10).replaceAll('/', '-');
+    let rate = from === 'INR' ? 1 : Number(selected?.currentRate || 0);
+    let rateDate = from === 'INR' ? effectiveDate : selected?.lastUpdated || null;
+    if (from !== 'INR' && effectiveDate) {
+      const historicalRate = await database.prepare(`
+        SELECT inr_per_unit, rate_date FROM FxReferenceRate
+        WHERE currency = ? AND rate_date <= ?
+        ORDER BY rate_date DESC LIMIT 1
+      `).bind(from, effectiveDate).first<{ inr_per_unit: number; rate_date: string }>();
+      if (!historicalRate) {
+        return jsonResponse({ success: false, message: D1_ROUTE_MESSAGES.currencyRateUnavailable(from, effectiveDate) }, 400, request);
       }
-    } catch {
-      // Safe live fallback
+      rate = Number(historicalRate.inr_per_unit);
+      rateDate = historicalRate.rate_date;
     }
-
-    if (from) {
-      const rate = baseFXRates[from]?.currentRate || 1.0;
-      return apiData({
-        amount,
-        fromCurrency: from,
-        amountINR: Number((amount * rate).toFixed(2)),
-        exchangeRate: rate
-      }, request);
-    }
-    return apiData(baseFXRates, request);
+    return apiData({ amount, fromCurrency: from, amountINR: Number((amount * rate).toFixed(2)), exchangeRate: rate, rateDate }, request);
   }
   return null;
 };
 
 const handleReportRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
-  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/report`) {
-    const tenant: any = await getTenant(environment);
-    let totalSpendEvaluatedCr = 0;
-    let totalLineItemsAudited = 0;
-    let categoryHighlights: any[] = [];
-    let topActionableOpportunities: any[] = [];
-
-    if (environment.DB) {
-      try {
-        const [docSpend, recordsCount, catDetails, opps] = await Promise.all([
-          environment.DB.prepare('SELECT SUM(converted_inr_crores) as totalSpend FROM RawDocumentIngestion').first<any>(),
-          environment.DB.prepare('SELECT COUNT(*) as cnt FROM ValidationPreCheckRecord').first<any>(),
-          environment.DB.prepare('SELECT * FROM CategoryYearDetail').all(),
-          environment.DB.prepare('SELECT * FROM SavingsOpportunity').all()
-        ]);
-        totalSpendEvaluatedCr = docSpend?.totalSpend || tenant.total_spend_evaluated_inr || 0;
-        totalLineItemsAudited = recordsCount?.cnt || 0;
-        categoryHighlights = catDetails.results || [];
-        topActionableOpportunities = opps.results || [];
-      } catch {
-        // ignore
-      }
-    }
-
-    const totalIdentifiedSavingsCr = topActionableOpportunities.reduce(
-      (sum: number, item: any) => sum + (Number(item.est_savings_inr_cr) || 0),
-      0
-    );
-
-    return apiData({
-      tenant,
-      executiveSummary: {
-        totalSpendEvaluatedCr: Number(totalSpendEvaluatedCr.toFixed(2)),
-        totalIdentifiedSavingsCr: Number(totalIdentifiedSavingsCr.toFixed(2)),
-        totalLineItemsAudited
-      },
-      categoryHighlights,
-      topActionableOpportunities
-    }, request);
-  }
-  return null;
+  if (url.pathname !== `${CLOUDFLARE_API_PREFIX}/report`) return null;
+  const database = environment.DB;
+  await ensureD1Tables(database);
+  if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+  const tenant = await getTenant(environment);
+  const [docSpend, recordsCount, categoryDetails, opportunities] = await Promise.all([
+    database.prepare('SELECT SUM(converted_inr_crores) AS totalSpend FROM RawDocumentIngestion').first<{ totalSpend: number }>(),
+    database.prepare('SELECT COUNT(*) AS count FROM ValidationPreCheckRecord').first<{ count: number }>(),
+    database.prepare('SELECT * FROM CategoryYearDetail ORDER BY rank ASC').all(),
+    database.prepare('SELECT * FROM SavingsOpportunity ORDER BY est_savings_inr_cr DESC').all()
+  ]);
+  const totalSpendEvaluatedCr = Number(docSpend?.totalSpend || tenant.total_spend_evaluated_inr || 0);
+  const totalIdentifiedSavingsCr = opportunities.results.reduce((total, row) => total + Number((row as Record<string, unknown>).est_savings_inr_cr || 0), 0);
+  return apiData({
+    tenant,
+    executiveSummary: {
+      totalSpendEvaluatedCr: Number(totalSpendEvaluatedCr.toFixed(2)),
+      totalIdentifiedSavingsCr: Number(totalIdentifiedSavingsCr.toFixed(2)),
+      totalLineItemsAudited: Number(recordsCount?.count || 0)
+    },
+    categoryHighlights: categoryDetails.results,
+    topActionableOpportunities: opportunities.results
+  }, request);
 };
 
-const handleAiRoute = async (request: Request, url: URL): Promise<Response> => {
+const handleAiRoute = async (request: Request, url: URL, environment: CloudflareEnvironment): Promise<Response> => {
+  geminiService.configureForEnvironment(environment);
+  aiCategorizationService.configureTaxonomyLookup(
+    environment.DB ? (query) => lookupTaxonomyRecordFromD1(environment.DB as CloudflareD1Database, query) : undefined
+  );
   const start = Date.now();
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ai/config` && request.method === 'GET') {
     const isConfigured = geminiService.isConfigured();
@@ -764,37 +689,116 @@ const handleAiRoute = async (request: Request, url: URL): Promise<Response> => {
   return jsonResponse({ success: false, message: 'Endpoint not found in the Cloudflare Worker.' }, 404, request);
 };
 
-const handleTaxonomyRoute = (request: Request, url: URL): Response => {
-  const query = url.searchParams.get('q') || '';
-  const category = url.searchParams.get('category') || undefined;
-  const lookup = url.searchParams.get('lookup') || undefined;
-
-  if (lookup) {
-    const match = lookupTaxonomy(lookup);
-    return apiData(match || null, request);
+const handleTaxonomyRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
+  const validation = taxonomyQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const requestId = request.headers.get('x-request-id') || crypto.randomUUID();
+  if (!validation.success) {
+    logger.warn('Rejected invalid taxonomy query', { requestId, errors: validation.error.issues });
+    return jsonResponse({ success: false, message: 'Validation failed', errors: validation.error.issues }, 400, request);
   }
+  const start = Date.now();
+  const database = environment.DB;
+  await ensureD1Tables(database);
+  if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
+  const { q, category, lookup, limit, offset } = validation.data;
+  const data = await getTaxonomyFromD1(database, q, category, lookup, limit, offset);
+  const total = Array.isArray(data) ? data.length : data ? 1 : 0;
+  logger.info('Read D1 commodity catalog page', { requestId, durationMs: Date.now() - start, operation: 'SELECT', model: 'UNSPSCCommodity', affectedRows: total, cache: 'miss' });
+  const response = jsonResponse({ success: true, data, total, timestamp: new Date().toISOString() }, 200, request);
+  response.headers.set('x-request-id', requestId);
+  return response;
+};
 
-  if (!query) {
-    const sample = getAllTaxonomyRecords(30);
-    return jsonResponse({
-      success: true,
-      data: sample,
-      total: sample.length,
-      timestamp: new Date().toISOString()
-    }, 200, request);
+const handleGraphQLRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
+  try {
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) return jsonResponse({ errors: [{ message: 'Cloudflare D1 binding DB is not configured.' }] }, 503, request);
+    let source = '';
+    let variableValues: Record<string, unknown> | undefined;
+    let operationName: string | undefined;
+
+    if (request.method === 'POST') {
+      const body = await readJson(request);
+      source = String(body.query || '');
+      variableValues = body.variables as Record<string, unknown> | undefined;
+      operationName = body.operationName as string | undefined;
+    } else if (request.method === 'GET') {
+      source = url.searchParams.get('query') || '';
+    }
+
+    if (!source) return jsonResponse({ errors: [{ message: 'GraphQL query is required' }] }, 400, request);
+    const tenant = await getTenantFromD1(database);
+    const result = await graphql({
+      schema: getGraphqlSchema(),
+      source,
+      rootValue: createD1GraphqlResolvers(),
+      contextValue: {
+        requestId: request.headers.get('x-request-id') || crypto.randomUUID(),
+        tenantId: tenant.tenant_id,
+        timestamp: new Date().toISOString(),
+        db: database
+      },
+      variableValues,
+      operationName
+    });
+    return jsonResponse(result as Record<string, unknown>, 200, request);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    return jsonResponse({ errors: [{ message: errorMsg }] }, 500, request);
   }
-
-  const results = searchTaxonomy(query, category);
-  return jsonResponse({
-    success: true,
-    data: results,
-    total: results.length,
-    timestamp: new Date().toISOString()
-  }, 200, request);
 };
 
 const handleDataRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/procurement/category-mappings` && request.method === 'GET') {
+    await ensureD1Tables(environment.DB);
+    if (!environment.DB) throw new Error('Cloudflare D1 binding DB is not configured');
+    return apiData(await getProcurementCategoryMappingsFromD1(
+      environment.DB,
+      request.headers.get('x-request-id') || undefined
+    ), request);
+  }
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/ingestion/canonical`) {
+    const scope = d1DatasetScopeSchema.safeParse({
+      assessmentId: url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id') ?? undefined
+    });
+    if (!scope.success) return jsonResponse({
+      success: false, message: 'Validation failed', errors: scope.error.issues
+    }, 400, request);
+    const canonicalData = await getCanonicalModule1Data(environment.DB, scope.data.assessmentId);
+    return apiData(canonicalData, request);
+  }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ingestion`)) return handleIngestionRoute(request, environment, url);
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/module2`)) {
+    const subPath = url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/module2`.length) || '/';
+    const result = await handleModule2Route(environment.DB, subPath, request, url);
+    if (result.response) return withCors(result.response, request);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/pcbi`)) {
+    const subPath = url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/pcbi`.length) || '/';
+    const result = await handlePcbiRoute(environment.DB, subPath, request, url);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/savings/`)) {
+    const subPath = url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/savings`.length);
+    const result = await handleSavingsRoute(environment.DB, subPath, request, url);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/assessment`)) {
+    const subPath = url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/assessment`.length) || '/';
+    const result = await handleAssessmentRoute(environment.DB, subPath, request, url, environment);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/customers`)) {
+    const subPath = '/customers' + (url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/customers`.length) || '');
+    const result = await handleAssessmentRoute(environment.DB, subPath, request, url, environment);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/crypto`)) {
+    const result = await handleCryptoRoute(request, url, environment);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
+  }
   const staticResponse = await handleStaticDataRoute(request, environment, url);
   if (staticResponse) return staticResponse;
   const financialResponse = await handleFinancialRoute(request, environment, url);
@@ -816,33 +820,18 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
   }
 
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/tenant` && request.method === 'PUT') {
+    const database = environment.DB;
+    await ensureD1Tables(database);
+    if (!database) throw new Error('Cloudflare D1 binding DB is not configured');
     const body = await readJson(request);
-    if (environment.DB) {
-      try {
-        const tenantId = String(body.tenant_id || 'TNT-GLOBAL-8902');
-        await environment.DB.prepare(`
-          UPDATE TenantMaster 
-          SET enterprise_name = COALESCE(?, enterprise_name),
-              region = COALESCE(?, region),
-              base_currency = COALESCE(?, base_currency),
-              status = COALESCE(?, status),
-              major_sector = COALESCE(?, major_sector),
-              minor_sector = COALESCE(?, minor_sector),
-              updated_at = CURRENT_TIMESTAMP
-          WHERE tenant_id = ?
-        `).bind(
-          body.enterprise_name ?? null,
-          body.region ?? null,
-          body.base_currency ?? null,
-          body.status ?? null,
-          body.major_sector ?? null,
-          body.minor_sector ?? null,
-          tenantId
-        ).run();
-      } catch {
-        // ignore
-      }
-    }
+    const tenantId = typeof body.tenant_id === 'string' ? body.tenant_id : (await getTenantFromD1(database)).tenant_id;
+    await database.prepare(`
+      UPDATE TenantMaster
+      SET enterprise_name = COALESCE(?, enterprise_name), region = COALESCE(?, region), base_currency = COALESCE(?, base_currency),
+          status = COALESCE(?, status), major_sector = COALESCE(?, major_sector), minor_sector = COALESCE(?, minor_sector),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE tenant_id = ?
+    `).bind(body.enterprise_name ?? null, body.region ?? null, body.base_currency ?? null, body.status ?? null, body.major_sector ?? null, body.minor_sector ?? null, tenantId).run();
     return apiData(await getTenant(environment), request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/auth/`)) {
@@ -854,10 +843,22 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
     return jsonResponse(adminResult.body, adminResult.status, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ai`)) {
-    return handleAiRoute(request, url);
+    return handleAiRoute(request, url, environment);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/taxonomy`)) {
-    return handleTaxonomyRoute(request, url);
+    return handleTaxonomyRoute(request, environment, url);
+  }
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/graphql`) {
+    return handleGraphQLRoute(request, environment, url);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/orchestration`)) {
+    return (await handleOrchestrationRoute(request, environment, url)) ?? notFoundResponse(request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/evidence`)) {
+    return (await handleEvidenceRoute(request, environment, url)) ?? notFoundResponse(request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/reports/executive-brief`)) {
+    return (await handleExecutiveBriefRoute(request, environment, url)) ?? notFoundResponse(request);
   }
   return handleDataRoute(request, environment, url);
 };
@@ -887,15 +888,12 @@ export const fetch = async (
       return await handleApiRequest(request, environment);
     }
 
-    if (url.pathname === `${CLOUDFLARE_API_PREFIX}${CLOUDFLARE_HEALTH_PATH}`) {
-      return jsonResponse({ status: 'ok', service: CLOUDFLARE_SERVICE_NAME }, 200, request);
-    }
-
     executionContext.passThroughOnException();
     return jsonResponse({ success: false, message: 'Endpoint not found.' }, 404, request);
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    return jsonResponse({ success: false, message: errorMsg }, 500, request);
+    const status = errorMsg.includes('Cloudflare D1') ? 503 : 500;
+    return jsonResponse({ success: false, message: errorMsg }, status, request);
   }
 };
 

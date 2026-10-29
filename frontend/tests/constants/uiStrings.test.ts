@@ -255,9 +255,6 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     const m1Summary = UI_STRINGS.ASSESSMENT.uploadPipeline.module1SuccessSummary(613.8805, 7357);
     expect(m1Summary).toContain('613.8805');
     expect(m1Summary).toContain('7,357');
-
-    const updateMsg = UI_STRINGS.ASSESSMENT.updater.updateSuccessMessage('2.1.0');
-    expect(updateMsg).toContain('2.1.0');
   });
 
   it('should correctly format reportingPeriod parameterized templates', () => {

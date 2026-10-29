@@ -227,3 +227,14 @@ export const DELIVERY_PACKAGE_TEMPLATES = [
   { id: 'DATA_QUALITY_OBSERVATIONS', title: 'Data quality observations', format: 'PDF', suffix: 'Data_Quality_Observations.pdf' },
   { id: 'RECOMMENDED_WAVE_1_ACTIONS', title: 'Recommended Wave 1 actions', format: 'PDF', suffix: 'Recommended_Wave_1_Actions.pdf' }
 ] as const;
+
+export const BYTES_PER_KB = 1024;
+export const BYTES_PER_MB = 1024 * BYTES_PER_KB;
+export const ASSESSMENT_UPLOAD_MAX_MB = 100;
+export const ASSESSMENT_UPLOAD_MAX_BYTES = ASSESSMENT_UPLOAD_MAX_MB * BYTES_PER_MB;
+export const ASSESSMENT_UPLOAD_EXTENSIONS = ['.xlsx', '.csv', '.xls'] as const;
+export const ASSESSMENT_UPLOAD_ACCEPT = ASSESSMENT_UPLOAD_EXTENSIONS.join(',');
+// SHA-256 digest of an empty input. Used only when the Web Crypto API is unavailable or fails.
+export const ASSESSMENT_CHECKSUM_FALLBACK_HEX = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+// Bytes converted per String.fromCharCode call when base64-encoding an uploaded file.
+export const BASE64_ENCODE_CHUNK_BYTES = 0x8000;

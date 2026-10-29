@@ -16,8 +16,7 @@ vi.mock('../../src/utils/assessmentApi', () => ({
     getCustomers: vi.fn(),
     getAssessmentById: vi.fn(),
     getOperatingMode: vi.fn(),
-    getSystemInfo: vi.fn(),
-    getDesktopUpdateStatus: vi.fn().mockResolvedValue({ isUpdateAvailable: false })
+    getSystemInfo: vi.fn()
   }
 }));
 

@@ -4,6 +4,8 @@
  */
 
 import { BRIEF_FINDING_CARDS } from './executiveBriefConstants';
+import { EXECUTIVE_BRIEF_ENDPOINTS } from './executiveBriefRouteConstants';
+import { EXECUTIVE_BRIEF_ARTIFACT_FILENAMES } from './executiveBriefExportConstants';
 import type {
   ExecutiveBriefSlideGroup,
   ExecutiveBriefTraceabilityItem,
@@ -180,35 +182,33 @@ export const BRIEF_TRACEABILITY_LINEAGE: ExecutiveBriefTraceabilityItem[] = [
   }
 ];
 
+/**
+ * Artifacts the Worker serves. The 30-slide validation report and the 30-slide deck from the Express backend are
+ * not produced here, so they are not advertised.
+ */
 export const BRIEF_REPORT_ARTIFACTS: ExecutiveBriefArtifactItem[] = [
   {
     name: 'Executive Brief Audit',
-    filename: 'EXECUTIVE_BRIEF_AUDIT.md',
-    description: 'Forensic audit trail of spend baseline, methodology, and numerical reconciliations.',
-    endpoint: '/api/reports/executive-brief/audit'
-  },
-  {
-    name: 'Executive Brief Validation Report',
-    filename: 'EXECUTIVE_BRIEF_VALIDATION_REPORT.md',
-    description: '30-slide structural completeness, chart inventory, and gate verification sign-off.',
-    endpoint: '/api/reports/executive-brief/report?format=validation'
+    filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.AUDIT,
+    description: 'Audit trail of the certified figures, reconciliation results, checklist, artifacts, and lineage.',
+    endpoint: EXECUTIVE_BRIEF_ENDPOINTS.audit
   },
   {
     name: 'Executive Brief JSON Data',
-    filename: 'EXECUTIVE_BRIEF_REPORT.json',
+    filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.JSON,
     description: 'Structured machine-readable report metadata and certified financial metrics.',
-    endpoint: '/api/reports/executive-brief/report'
+    endpoint: EXECUTIVE_BRIEF_ENDPOINTS.report
   },
   {
-    name: 'Official Executive Report (PDF)',
-    filename: 'EXECUTIVE_BRIEF.pdf',
-    description: 'High-definition 30-slide 16:9 board presentation deliverable.',
-    endpoint: '/api/reports/executive-brief/download/pdf'
+    name: 'Executive Report (PDF)',
+    filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.PDF,
+    description: 'Board-ready PDF rendered from the certified report data: summary, eight sections, checklist, lineage.',
+    endpoint: EXECUTIVE_BRIEF_ENDPOINTS.downloadPdf
   },
   {
     name: 'Editable Executive Presentation (PPTX)',
-    filename: 'EXECUTIVE_BRIEF.pptx',
-    description: 'Fully editable PowerPoint presentation with identical certified data.',
-    endpoint: '/api/reports/executive-brief/download/pptx'
+    filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.PPTX,
+    description: 'Editable 10-slide PowerPoint built from the same certified report data.',
+    endpoint: EXECUTIVE_BRIEF_ENDPOINTS.downloadPptx
   }
 ];

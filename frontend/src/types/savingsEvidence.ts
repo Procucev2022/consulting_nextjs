@@ -5,7 +5,7 @@
 import type { CanonicalSavingsType, SavingsTypeEvidenceInventoryItem } from './evidenceWorkbook';
 
 export interface SavingsTypeEvidenceSectionProps {
-  jobId?: string;
+  jobId: string;
   className?: string;
   onViewDetails?: (savingsType: CanonicalSavingsType) => void;
 }

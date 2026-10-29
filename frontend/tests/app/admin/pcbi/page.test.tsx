@@ -3,12 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AdminPCBIPage from '../../../../src/app/admin/pcbi/page';
 import { apiClient } from '../../../../src/utils/api';
+import { pcbiAdminApi } from '../../../../src/utils/pcbiAdminApi';
 
 const mockPush = vi.fn();
+const mockRouter = { push: mockPush };
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush
-  })
+  useRouter: () => mockRouter
 }));
 
 describe('AdminPCBIPage Component (/admin/pcbi)', () => {
@@ -26,6 +26,9 @@ describe('AdminPCBIPage Component (/admin/pcbi)', () => {
       company_name: 'Procucev Admin',
       created_at: new Date().toISOString()
     });
+    vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('admin-token');
+    vi.spyOn(apiClient, 'getMe').mockResolvedValue({ success: true, user: apiClient.getStoredUser()! });
+    vi.spyOn(pcbiAdminApi, 'getVersions').mockResolvedValue({ success: true, total: 0, active_version: null, versions: [] });
 
     vi.spyOn(apiClient, 'clearStoredSession').mockImplementation(() => {});
   });

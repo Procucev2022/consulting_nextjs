@@ -17,13 +17,13 @@ const mockResult: AlternateSourcingResult = {
     singleSourceMaterialsCount: 13,
     totalPotentialVendorsAllLocations: 21103,
     totalPotentialVendorsPreferredRegion: 3159,
-    deduplicatedDistinctVendorsAllLocations: 21103,
-    deduplicatedDistinctVendorsPreferredRegion: 3159,
+    deduplicatedDistinctVendorsAllLocations: 2,
+    deduplicatedDistinctVendorsPreferredRegion: null,
     cumulativeOpportunityVendorMatches: 25695,
     totalCurrentSuppliersIdentified: 2,
-    totalCurrentSuppliersMatchedInMaster: 2,
-    totalCurrentSuppliersExcluded: 2,
-    overallDistinctVendorPoolEstimate: 614864,
+    totalCurrentSuppliersMatchedInMaster: null,
+    totalCurrentSuppliersExcluded: null,
+    overallDistinctVendorPoolEstimate: 2,
     potentialFinancialSavingsInr: 0,
     potentialFinancialSavingsCr: 0,
     isDiscoveryOnly: true
@@ -51,11 +51,12 @@ const mockResult: AlternateSourcingResult = {
       exactMatchesCount: 258,
       hierarchyMatchesCount: 0,
       synonymMatchesCount: 0,
-      relatedMatchesCount: 11047,
+      relatedMatchesCount: 0,
       qualifiedAlternativesCount: 'DATA_UNAVAILABLE',
-      qualificationStatus: 'UNQUALIFIED',
-      excludedCurrentSuppliersCount: 1,
-      excludedSupplierNames: ['VEDANTA LIMITED'],
+      qualificationStatus: 'DATA_UNAVAILABLE',
+      excludedCurrentSuppliersCount: null,
+      exclusionLimitationNotice: ALTERNATE_SOURCING_UI_STRINGS.EXCLUSION_UNAVAILABLE_NOTICE,
+      excludedSupplierNames: [],
       geographicBreakdown: {
         sameCityCount: 0,
         sameStateCount: 17,
@@ -97,10 +98,11 @@ const mockResult: AlternateSourcingResult = {
       exactMatchesCount: 4399,
       hierarchyMatchesCount: 0,
       synonymMatchesCount: 0,
-      relatedMatchesCount: 3321,
+      relatedMatchesCount: 0,
       qualifiedAlternativesCount: 'DATA_UNAVAILABLE',
-      qualificationStatus: 'UNQUALIFIED',
-      excludedCurrentSuppliersCount: 0,
+      qualificationStatus: 'DATA_UNAVAILABLE',
+      excludedCurrentSuppliersCount: null,
+      exclusionLimitationNotice: ALTERNATE_SOURCING_UI_STRINGS.EXCLUSION_UNAVAILABLE_NOTICE,
       excludedSupplierNames: [],
       geographicBreakdown: {
         sameCityCount: 10,
@@ -124,10 +126,6 @@ const mockResult: AlternateSourcingResult = {
   ],
   availableStates: ['MAHARASHTRA', 'GUJARAT'],
   availableCities: ['MUMBAI', 'PUNE'],
-  stateToCitiesMap: {
-    MAHARASHTRA: ['ALL_CITIES', 'MUMBAI', 'PUNE'],
-    GUJARAT: ['ALL_CITIES', 'AHMEDABAD']
-  },
   disclosures: [
     ALTERNATE_SOURCING_UI_STRINGS.NOTICE_DISCOVERY_ONLY,
     ALTERNATE_SOURCING_UI_STRINGS.NOTICE_SAVINGS_SAFEGUARD
@@ -158,10 +156,10 @@ describe('AlternateSourcingView Component', () => {
     expect(screen.getByText('3,887')).toBeInTheDocument();
     expect(screen.getByText(ALTERNATE_SOURCING_UI_STRINGS.KPI_SINGLE_SOURCE_RISKS)).toBeInTheDocument();
     expect(screen.getByText('13')).toBeInTheDocument();
-    expect(screen.getByText('21,103')).toBeInTheDocument();
-    expect(screen.getByText('3,159')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getAllByText(ALTERNATE_SOURCING_UI_STRINGS.VALUE_UNAVAILABLE).length).toBeGreaterThan(0);
     expect(screen.getByText(ALTERNATE_SOURCING_UI_STRINGS.VALUE_ZERO_SAVINGS)).toBeInTheDocument();
-    expect(screen.getByText(ALTERNATE_SOURCING_UI_STRINGS.SUB_UNVERIFIED_PRICE)).toBeInTheDocument();
+    expect(screen.getByText(ALTERNATE_SOURCING_UI_STRINGS.KPI_SUB_SAVINGS)).toBeInTheDocument();
   });
 
   it('renders opportunity cards with customer data, supplier counts, and vendor pool', async () => {
@@ -170,7 +168,7 @@ describe('AlternateSourcingView Component', () => {
     expect(await screen.findByText('CC COPPER WIRE ROD 8MM')).toBeInTheDocument();
     expect(screen.getByText('EXPANSION BOLT L TYPE M 8 X 60')).toBeInTheDocument();
     expect(screen.getByText('SINGLE-SOURCE RISK')).toBeInTheDocument();
-    expect(screen.getByText('1 EXCLUDED FROM CATEGORY POOL')).toBeInTheDocument();
+    expect(screen.getAllByText(ALTERNATE_SOURCING_UI_STRINGS.EXCLUSION_UNAVAILABLE_NOTICE).length).toBeGreaterThan(0);
   });
 
   it('toggles tabs between all materials, single source, and disclosures', async () => {
@@ -212,7 +210,7 @@ describe('AlternateSourcingView Component', () => {
     await screen.findByText('CC COPPER WIRE ROD 8MM');
 
     // Change state
-    const stateSelect = screen.getByDisplayValue('MAHARASHTRA');
+    const stateSelect = screen.getAllByRole('combobox')[1];
     fireEvent.change(stateSelect, { target: { value: 'GUJARAT' } });
 
     await waitFor(() => {
@@ -221,5 +219,12 @@ describe('AlternateSourcingView Component', () => {
         expect.anything()
       );
     });
+  });
+
+  it('does not guess an assessment id or call the API when the parent has no selected assessment', async () => {
+    render(<AlternateSourcingView />);
+
+    expect(await screen.findByText(ALTERNATE_SOURCING_UI_STRINGS.ASSESSMENT_REQUIRED)).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

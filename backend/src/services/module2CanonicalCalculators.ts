@@ -121,13 +121,16 @@ export class Module2CanonicalCalculators {
       let existing = vendorMap.get(vName);
       if (!existing) {
         existing = {
-          code: t.vendor_code || 'VND-UNKNOWN',
+          code: '',
           name: vName,
           spendInr: 0,
           categories: new Set(),
           txCount: 0
         };
         vendorMap.set(vName, existing);
+      }
+      if (!existing.code && t.vendor_code) {
+        existing.code = t.vendor_code;
       }
       existing.spendInr += t.total_spend_inr;
       existing.txCount += 1;
@@ -148,7 +151,7 @@ export class Module2CanonicalCalculators {
 
       return {
         rank: idx + 1,
-        vendorCode: v.code,
+        vendorCode: v.code || 'VND-UNKNOWN',
         vendorName: v.name,
         totalSpendInr: Math.round(v.spendInr),
         totalSpendCr: Number((v.spendInr / 10000000).toFixed(4)),
@@ -190,7 +193,7 @@ export class Module2CanonicalCalculators {
         primarySupplierSpendCr: primarySpendCr,
         primarySupplierSharePct: primaryShare,
         riskClassification: riskClass,
-        hhiScore: p.scorecard.dimensions.find((d) => d.dimension === 'SUPPLIER_STRUCTURE')?.score ?? 50
+        hhiScore: p.hhiScore
       });
     }
 

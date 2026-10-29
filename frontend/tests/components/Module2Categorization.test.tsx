@@ -1,9 +1,18 @@
 import React from 'react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
 import { Module2Categorization } from '../../src/components/Module2Categorization';
-import { mockTenant } from '../../src/data/mockData';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { unspscOfficialDictionary } from '../../src/data/unspscTaxonomy';
+import { taxonomyRecords } from '../fixtures/taxonomy';
+
+// tests/setup.ts seeds the shared catalog. Replace it so every fixture record appears exactly once.
+beforeAll(() => { unspscOfficialDictionary.splice(0, unspscOfficialDictionary.length, ...taxonomyRecords); });
+
+// UNSPSCDetailModal is loaded through next/dynamic, so it mounts after an async module import.
+// A cold import (slower under coverage instrumentation) can exceed findByRole's 1s default.
+const LAZY_MODAL_TIMEOUT_MS = 5000;
 
 const sampleSpendCategories = [
   {
@@ -37,19 +46,6 @@ const sampleSpendCategories = [
     top_items: [
       { item_name: 'Cartons', vendor_name: 'Amcor Packaging', spend_inr_cr: 12.0, total_spend_inr_cr: 12.0, share_pct: 26.5 }
     ]
-  }
-];
-
-const sampleCategoryYearDetails = [
-  {
-    category: 'Direct Materials',
-    total_spend_evaluated_cr: 120.5,
-    total_items_count: 420,
-    years: {
-      fy24: { spend_cr: 38.0, share_pct: 31.5, item_count: 130, items: [] },
-      fy25: { spend_cr: 40.5, share_pct: 33.6, item_count: 140, items: [] },
-      fy26: { spend_cr: 42.0, share_pct: 34.9, item_count: 150, items: [] }
-    }
   }
 ];
 
@@ -495,7 +491,7 @@ describe('Module2Categorization Component', () => {
     fireEvent.click(moreDetailsButtons[0]);
 
     // Verify UNSPSCDetailModal opens
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {}, { timeout: LAZY_MODAL_TIMEOUT_MS })).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.modals.unspscDetail.title)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.modals.unspscDetail.taxonomyTreeTitle)).toBeInTheDocument();
 
@@ -524,7 +520,7 @@ describe('Module2Categorization Component', () => {
 
     // Enter key
     fireEvent.keyDown(catalogCard, { key: 'Enter' });
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {}, { timeout: LAZY_MODAL_TIMEOUT_MS })).toBeInTheDocument();
     const closeBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
     fireEvent.click(closeBtns[0]);
     await waitFor(() => {
@@ -533,7 +529,7 @@ describe('Module2Categorization Component', () => {
 
     // Space key
     fireEvent.keyDown(catalogCard, { key: ' ' });
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {}, { timeout: LAZY_MODAL_TIMEOUT_MS })).toBeInTheDocument();
     const closeBtns2 = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
     fireEvent.click(closeBtns2[0]);
     await waitFor(() => {

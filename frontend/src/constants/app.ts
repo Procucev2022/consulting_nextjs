@@ -2,6 +2,19 @@
  * Application Constants Module (Frontend)
  */
 
+import type { TenantMaster } from '../types/models';
+import { UI_STRINGS } from './uiStrings';
+
+export const EMPTY_TENANT: TenantMaster = {
+  tenant_id: '',
+  enterprise_name: UI_STRINGS.header.noActiveCustomer,
+  region: 'GLOBAL',
+  base_currency: 'INR',
+  status: 'ONBOARDING',
+  total_spend_evaluated: 0,
+  total_spend_evaluated_inr: 0
+};
+
 export const DEFAULT_SPEND_BASELINE_INR_CR = 732.41;
 export const DEFAULT_SAVINGS_TARGET_INR_CR = 119.67;
 export const DEFAULT_SAVINGS_TARGET_PCT = 16.4;

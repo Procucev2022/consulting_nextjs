@@ -51,8 +51,8 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
         return true;
       })
       .sort((a, b) => {
-        let valA = a.actualPurchaseCostInr;
-        let valB = b.actualPurchaseCostInr;
+        let valA = a.eligibleSpendInr;
+        let valB = b.eligibleSpendInr;
         if (sortField === 'opp') {
           valA = a.historicalLostOpportunityInr;
           valB = b.historicalLostOpportunityInr;
@@ -68,10 +68,12 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
   }, [categories, statusFilter, searchTerm, sortField, sortAsc]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / pageSize));
+  // Clamp the page so a smaller result set (for example after a financial year change) never shows an empty page.
+  const activePage = Math.min(currentPage, totalPages);
   const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start = (activePage - 1) * pageSize;
     return filteredCategories.slice(start, start + pageSize);
-  }, [filteredCategories, currentPage, pageSize]);
+  }, [filteredCategories, activePage, pageSize]);
 
   const handleSort = (field: 'spend' | 'opp' | 'txs' | 'mats'): void => {
     if (sortField === field) {
@@ -109,7 +111,7 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
             }}
             className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none"
           >
-            <option value="ALL">All Qualification States</option>
+            <option value="ALL">{strings.allStatuses}</option>
             <option value="Qualified">Qualified</option>
             <option value="Requires Data Review">Requires Data Review</option>
           </select>
@@ -185,7 +187,7 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
             {paginatedCategories.length === 0 ? (
               <tr>
                 <td colSpan={11} className="py-8 text-center text-slate-500">
-                  No UNSPSC categories matching the selected criteria.
+                  {strings.noCategoriesMatch}
                 </td>
               </tr>
             ) : (
@@ -228,7 +230,7 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
                       {c.historicalLostOpportunityCr > 0 ? `₹${c.historicalLostOpportunityCr.toFixed(4)} Cr` : '₹0.00'}
                     </td>
                     <td className="py-3 px-3 text-right font-medium text-slate-700 dark:text-slate-300">
-                      {c.opportunityPct.toFixed(1)}%
+                      {Number.isFinite(c.opportunityPct) ? `${c.opportunityPct.toFixed(1)}%` : UI_STRINGS.common.notAvailable}
                     </td>
                     <td className="py-3 px-3">
                       <span
@@ -267,24 +269,24 @@ export const DirectPriceCategoryTable: React.FC<DirectPriceCategoryTableProps> =
       {/* Pagination Footer */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
         <div>
-          Showing {paginatedCategories.length} of {filteredCategories.length} categories analysed
+          {strings.showingCategories(paginatedCategories.length, filteredCategories.length)}
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            disabled={currentPage <= 1}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            aria-label={strings.previousPageLabel}
+            disabled={activePage <= 1}
+            onClick={() => setCurrentPage(Math.max(1, activePage - 1))}
             className="p-1.5 rounded border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
+          <span>{strings.pageOfTotal(activePage, totalPages)}</span>
           <button
             type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            aria-label={strings.nextPageLabel}
+            disabled={activePage >= totalPages}
+            onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
             className="p-1.5 rounded border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronRight className="w-4 h-4" />

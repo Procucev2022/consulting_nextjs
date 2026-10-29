@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import * as mockData from '../../src/data/mockData';
+import * as mockData from '../fixtures/mockData';
 
 describe('mockData module', () => {
   it('should export all required mock datasets', () => {

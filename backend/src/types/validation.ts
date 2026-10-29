@@ -6,6 +6,10 @@
 
 import type { z } from 'zod';
 import type {
+  pcbiReferenceQuerySchema,
+  d1DatasetScopeSchema,
+  alternateSourcingQuerySchema,
+  vendorConsolidationQuerySchema,
   requestHeadersSchema,
   tenantUpdateSchema,
   addIngestionFileSchema,
@@ -27,6 +31,10 @@ import type {
 } from '../constants/validation';
 
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
+export type PcbiReferenceQueryInput = z.infer<typeof pcbiReferenceQuerySchema>;
+export type D1DatasetScopeInput = z.infer<typeof d1DatasetScopeSchema>;
+export type AlternateSourcingQueryInput = z.infer<typeof alternateSourcingQuerySchema>;
+export type VendorConsolidationQueryInput = z.infer<typeof vendorConsolidationQuerySchema>;
 export type TenantUpdateInput = z.infer<typeof tenantUpdateSchema>;
 export type AddIngestionFileInput = z.infer<typeof addIngestionFileSchema>;
 export type UpdateValidationRecordInput = z.infer<typeof updateValidationRecordSchema>;

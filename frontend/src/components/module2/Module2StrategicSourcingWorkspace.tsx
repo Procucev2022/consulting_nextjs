@@ -45,6 +45,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
     | 'strategy'
   >('overview');
   const [summary, setSummary] = useState<Module2StrategicSourcingDashboardSummary | null>(null);
+  const [directPriceOppCr, setDirectPriceOppCr] = useState<number | undefined>(undefined);
   const [profiles, setProfiles] = useState<CategoryStrategicSourcingProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<CategoryStrategicSourcingProfile | null>(null);
   const [isDeepDiveOpen, setIsDeepDiveOpen] = useState<boolean>(false);
@@ -60,6 +61,9 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   const effectiveAssessmentId =
     assessmentId ||
     (typeof window !== 'undefined' ? localStorage.getItem('aicev_selected_assessment_id') || undefined : undefined);
+  const activeAssessmentRef = useRef(effectiveAssessmentId);
+  activeAssessmentRef.current = effectiveAssessmentId;
+  const selectedCategoryRef = useRef<string | null>(null);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -70,20 +74,23 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
 
   const loadData = useCallback(async (refresh = false) => {
     if (!effectiveAssessmentId) {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
+      setSummary(null);
+      setProfiles([]);
+      setDirectPriceOppCr(undefined);
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-      const [sumRes, profRes] = await Promise.all([
+      const [sumRes, profRes, directPriceRes] = await Promise.all([
         Module2StrategicSourcingApi.getDashboardSummary(refresh, effectiveAssessmentId),
-        Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId)
+        Module2StrategicSourcingApi.getCategoryProfiles(refresh, effectiveAssessmentId),
+        Module2StrategicSourcingApi.getDirectPriceImprovement(effectiveAssessmentId)
       ]);
       if (isMountedRef.current) {
         if (sumRes) setSummary(sumRes);
         if (profRes) setProfiles(profRes);
+        setDirectPriceOppCr(directPriceRes?.historicalLostOpportunityCr);
       }
     } catch (err) {
       if (isMountedRef.current) {
@@ -97,12 +104,21 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
   }, [effectiveAssessmentId]);
 
   useEffect(() => {
+    setSelectedProfile(null);
+    setIsDeepDiveOpen(false);
+    selectedCategoryRef.current = null;
     loadData();
   }, [loadData]);
 
-  const handleSelectCategory = (profile: CategoryStrategicSourcingProfile) => {
-    setSelectedProfile(profile);
-    setIsDeepDiveOpen(true);
+  const handleSelectCategory = async (profile: CategoryStrategicSourcingProfile): Promise<void> => {
+    if (!effectiveAssessmentId) return;
+    const requestedAssessmentId = effectiveAssessmentId;
+    selectedCategoryRef.current = profile.categoryId;
+    const fullProfile = await Module2StrategicSourcingApi.getCategoryProfileById(profile.categoryId, requestedAssessmentId);
+    if (isMountedRef.current && activeAssessmentRef.current === requestedAssessmentId && selectedCategoryRef.current === profile.categoryId) {
+      setSelectedProfile(fullProfile || profile);
+      setIsDeepDiveOpen(true);
+    }
   };
 
   const handleExportAudit = async () => {
@@ -233,6 +249,12 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           </button>
         </div>
       </div>
+
+      {!effectiveAssessmentId && (
+        <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {strings.assessmentRequiredMessage}
+        </div>
+      )}
 
       {/* Workspace Navigation Subtabs */}
       <div className="flex items-center overflow-x-auto scrollbar-thin border-b border-slate-200 dark:border-slate-800 gap-1 pb-1">
@@ -426,7 +448,8 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
 
       {activeTab === 'overview' && (
         <Module2LeverOverview
-          assessmentId={assessmentId}
+          assessmentId={effectiveAssessmentId || ''}
+          directPriceOppCr={directPriceOppCr}
           onSelectLever={(lever) =>
             setActiveTab(
               lever as
@@ -445,65 +468,65 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
       )}
 
       {activeTab === 'consolidatedSavings' && (
-        <Module2ConsolidatedSavingsView assessmentId={assessmentId || 'AIC-2026-0002'} />
+        <Module2ConsolidatedSavingsView assessmentId={effectiveAssessmentId || ''} />
       )}
 
       {activeTab === 'directPrice' && (
-        <DirectPriceImprovementView assessmentId={assessmentId || 'AIC-2026-0002'} />
+        <DirectPriceImprovementView assessmentId={effectiveAssessmentId || ''} />
       )}
 
       {activeTab === 'eAuction' && (
         <EAuctionDynamicBiddingView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'vendorConsolidation' && (
         <VendorConsolidationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'volumeAggregation' && (
         <VolumeAggregationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'paymentTerms' && (
         <PaymentTermsView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'categorySpecialisation' && (
         <CategorySpecialisationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'specificationRationalisation' && (
         <SpecificationRationalisationView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onNavigateBack={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'procurementCompliance' && (
         <ProcurementComplianceView
-          assessmentId={assessmentId || 'AIC-2026-0002'}
+          assessmentId={effectiveAssessmentId || ''}
           onNavigateBack={() => setActiveTab('overview')}
         />
       )}
 
       {activeTab === 'alternateSourcing' && (
         <AlternateSourcingView
-          assessmentId={assessmentId || 'AIC-2026-0001'}
+          assessmentId={effectiveAssessmentId || ''}
         />
       )}
 

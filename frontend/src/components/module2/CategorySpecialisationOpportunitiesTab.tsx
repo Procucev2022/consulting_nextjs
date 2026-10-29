@@ -55,7 +55,11 @@ export const CategorySpecialisationOpportunitiesTab: React.FC<OpportunitiesTabPr
           </p>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
+        {assumptions.length === 0 ? (
+          <p style={{ margin: 0, padding: '16px', fontSize: '12px', color: '#475569' }}>
+            {CATEGORY_SPECIALISATION_UI_STRINGS.NO_D1_PLANNING_ASSUMPTIONS}
+          </p>
+        ) : <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
@@ -121,7 +125,7 @@ export const CategorySpecialisationOpportunitiesTab: React.FC<OpportunitiesTabPr
               ))}
             </tbody>
           </table>
-        </div>
+        </div>}
       </div>
 
       {/* Specific Governance Callouts */}

@@ -60,9 +60,10 @@ export class Module2StrategicSourcingEngine {
 
   public static buildCategoryProfile(
     categoryName: string,
-    transactions: StrategicInputTransaction[]
+    transactions: StrategicInputTransaction[],
+    includeAuditDetails = true
   ): CategoryStrategicSourcingProfile {
-    return Module2CategoryProfileBuilder.buildProfile(categoryName, transactions);
+    return Module2CategoryProfileBuilder.buildProfile(categoryName, transactions, includeAuditDetails);
   }
 
   public static createHandoffPackage(

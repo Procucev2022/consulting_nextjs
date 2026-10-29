@@ -1,43 +1,35 @@
 /**
- * Executive Brief Export Constants (Prompt 258)
+ * Executive Brief export naming, content types, and R2 storage layout.
+ * Official download names carry the report date. Published R2 artifacts keep stable names so each regenerate
+ * overwrites the previous publication instead of accumulating dated copies.
  */
+import type { ExecutiveBriefFormat } from '../types/executiveBriefServices';
 
-export const REPORT_EXPORT_VERSION = '1.1';
-export const REPORT_ID_PREFIX = 'RPT-EXEC-';
 export const REPORT_FILENAME_PREFIX = 'Procucev_Procurement_Value_Savings_Diagnostic_';
+export const EXECUTIVE_BRIEF_STORAGE_PREFIX = 'executive-brief';
 
-export const EXPORT_CONFIDENTIALITY_PREFIX = 'CONFIDENTIAL — PREPARED EXCLUSIVELY FOR ';
-
-export const EXPORT_STATUSES = {
-  PREPARING: 'Preparing Executive Brief...',
-  GENERATING_PDF: 'Generating PDF...',
-  GENERATING_PPTX: 'Generating PowerPoint...',
-  VALIDATING: 'Validating...',
-  READY_FOR_DOWNLOAD: 'Ready for Download',
-  EXPORT_BLOCKED: 'Export Blocked'
+export const EXECUTIVE_BRIEF_CONTENT_TYPES = {
+  PDF: 'application/pdf',
+  PPTX: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  JSON: 'application/json; charset=utf-8',
+  MARKDOWN: 'text/markdown; charset=utf-8'
 } as const;
 
-export const EXPORT_VALIDATION_ERRORS = {
-  VARIANCE_DETECTED: 'Financial reconciliation failure: Non-zero variance detected against certified ledger.',
-  PPTX_SLIDE_MISMATCH: 'PowerPoint validation failure: Slide count does not match certified specification.',
-  PPTX_BLANK_SLIDES: 'PowerPoint validation failure: Detected empty or unpopulated slide containers.',
-  PDF_RENDER_FAILURE: 'PDF validation failure: Page count mismatch or vector stream corruption.',
-  DATA_INCONSISTENCY: 'Report consistency failure: Values in export artifacts do not reconcile.'
+export const EXECUTIVE_BRIEF_ARTIFACT_FILENAMES = {
+  PDF: 'EXECUTIVE_BRIEF.pdf',
+  PPTX: 'EXECUTIVE_BRIEF.pptx',
+  JSON: 'EXECUTIVE_BRIEF_REPORT.json',
+  AUDIT: 'EXECUTIVE_BRIEF_AUDIT.md'
 } as const;
 
-export const DEFAULT_EXPORT_HISTORY = [
-  {
-    reportId: 'RPT-EXEC-20261001-001',
-    reportVersion: '1.0',
-    generatedDate: '2026-10-01 09:30 AM',
-    generatedBy: 'Procucev Automated Savings Engine',
-    dataVersion: 'MODULE_1_4_CERTIFIED_V1.0',
-    clientName: 'UltraTech Cement Limited',
-    analysisPeriod: 'April 2024 – March 2026 (24 Months)',
-    pdfFileName: 'Procucev_Procurement_Value_Savings_Diagnostic_UltraTech_Cement_Limited_2026-10-01.pdf',
-    pptxFileName: 'Procucev_Procurement_Value_Savings_Diagnostic_UltraTech_Cement_Limited_2026-10-01.pptx',
-    pdfPath: 'EXECUTIVE_BRIEF.pdf',
-    pptxPath: 'EXECUTIVE_BRIEF.pptx',
-    exportStatus: 'CERTIFIED'
-  }
-];
+export const FILENAME_FALLBACK_PART = 'Client';
+export const FILENAME_UNSAFE_CHARACTERS = /[/\\:*?"<>|]/gu;
+export const FILENAME_WHITESPACE_RUN = /\s+/gu;
+export const FILENAME_REPEATED_UNDERSCORES = /_+/gu;
+export const FILENAME_EDGE_UNDERSCORES = /^_|_$/gu;
+export const STORAGE_UNSAFE_CHARACTERS = /[^A-Za-z0-9_-]+/gu;
+
+export const EXECUTIVE_BRIEF_PUBLISHED_FORMATS: readonly ExecutiveBriefFormat[] = ['pdf', 'pptx', 'json', 'markdown'];
+export const JSON_INDENT_SPACES = 2;
+export const FILENAME_SEPARATOR = '_';
+export const REPORT_DATE_SEPARATOR = 'T';

@@ -1,20 +1,28 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import {
   unspscOfficialDictionary,
   lookupUNSPSCByDescription,
   searchUNSPSCTaxonomy,
   lookupUNSPSCDetails,
-  UNCLASSIFIED_COMMODITY_RECORD
+  UNCLASSIFIED_COMMODITY_RECORD,
+  loadUNSPSCTaxonomy
 } from '../../src/data/unspscTaxonomy';
 import {
   UNCLASSIFIED_COMMODITY_CODE,
   UNCLASSIFIED_COMMODITY_TITLE
 } from '../../src/constants/taxonomy';
+import { taxonomyRecords } from '../fixtures/taxonomy';
+
+beforeAll(async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true, data: taxonomyRecords }))));
+  await loadUNSPSCTaxonomy();
+  vi.unstubAllGlobals();
+});
 
 describe('unspscTaxonomy data module (frontend)', () => {
   it('should export non-empty official dictionary', () => {
     expect(unspscOfficialDictionary).toBeDefined();
-    expect(unspscOfficialDictionary.length).toBeGreaterThan(100);
+    expect(unspscOfficialDictionary.length).toBe(taxonomyRecords.length);
   });
 
   it('should ensure index 0 (African boxwood) has Direct Materials coreBucket, not Packaging Materials', () => {

@@ -58,10 +58,10 @@ export class Module2ItemAnalysisEngine {
     first: StrategicInputTransaction,
     key: string
   ): { itemCode: string; desc: string; uom: string; spec: string } {
-    const itemCode = first.material_code ?? key.split('__')[0];
-    const desc = first.material_desc ?? itemCode;
-    const uom = first.uom ?? 'EA';
-    const spec = (first as { specification?: string }).specification ?? desc;
+    const itemCode = first.material_code || key.split('__')[0];
+    const desc = first.material_desc || itemCode;
+    const uom = first.uom || 'EA';
+    const spec = (first as { specification?: string }).specification || desc;
     return { itemCode, desc, uom, spec };
   }
 

@@ -103,6 +103,13 @@ export const uploadDataVersionSchema = z.object({
   runAnalysisImmediately: z.boolean().optional().default(false)
 });
 
+export const validateAssessmentDatasetSchema = z.object({
+  dataVersionId: z.string().min(1).optional()
+});
+
+export const ASSESSMENT_DATA_VERSION_MAX_BYTES = 100 * 1024 * 1024;
+export const ASSESSMENT_DATA_VERSION_ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'] as const;
+
 export const analystApprovalSchema = z.object({
   approvalComment: z.string().min(5, 'Approval comment must be at least 5 characters'),
   analysisRunId: z.string().optional(),
@@ -113,4 +120,21 @@ export const deliverPackageSchema = z.object({
   deliveredToEmail: z.string().email('Valid recipient email required'),
   deliveryNotes: z.string().optional(),
   isTestDelivery: z.boolean().optional().default(false)
+});
+
+export const assessmentDeliverySchema = z.object({
+  recipientEmail: z.string().email('Valid recipient email required').optional(),
+  deliveredToEmail: z.string().email('Valid recipient email required').optional(),
+  deliveryChannel: z.enum(['EMAIL', 'PORTAL', 'SECURE_LINK', 'MANUAL']).optional(),
+  notes: z.string().optional(),
+  deliveryNotes: z.string().optional(),
+  isTestDelivery: z.boolean().optional().default(false)
+}).refine((input) => Boolean(input.recipientEmail || input.deliveredToEmail), {
+  path: ['recipientEmail'],
+  message: 'A valid delivery recipient email is required'
+});
+
+export const assessmentAcceptanceSchema = z.object({
+  acceptanceComment: z.string().max(2000).optional(),
+  acceptedBy: z.string().email().optional()
 });

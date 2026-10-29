@@ -33,21 +33,21 @@ function getSuitabilityBadge(status: AuctionSuitabilityClassification): React.Re
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-          Candidate for Review
+          {UI_STRINGS.module2EAuction.suitabilityCandidateForReview}
         </span>
       );
     case 'Further Data Required':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
           <Clock className="w-3 h-3 text-amber-600" />
-          Further Data Required
+          {UI_STRINGS.module2EAuction.suitabilityFurtherDataRequired}
         </span>
       );
     case 'Not Currently Suitable':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
           <AlertCircle className="w-3 h-3 text-slate-500" />
-          Not Currently Suitable
+          {UI_STRINGS.module2EAuction.suitabilityNotCurrentlySuitable}
         </span>
       );
     case 'Not Assessed':
@@ -55,7 +55,7 @@ function getSuitabilityBadge(status: AuctionSuitabilityClassification): React.Re
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300">
           <HelpCircle className="w-3 h-3 text-rose-600" />
-          Not Assessed
+          {UI_STRINGS.module2EAuction.suitabilityNotAssessed}
         </span>
       );
   }
@@ -105,10 +105,12 @@ export const EAuctionCategoryTable: React.FC<EAuctionCategoryTableProps> = ({
   }, [categories, suitabilityFilter, searchTerm, sortField, sortAsc]);
 
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / pageSize));
+  // A shrinking result set (for example after a financial year change) must not leave the table on an empty page.
+  const activePage = Math.min(currentPage, totalPages);
   const paginatedCategories = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
+    const start = (activePage - 1) * pageSize;
     return filteredCategories.slice(start, start + pageSize);
-  }, [filteredCategories, currentPage, pageSize]);
+  }, [filteredCategories, activePage, pageSize]);
 
   const handleSort = (field: 'spend' | 'mats' | 'pos' | 'suppliers'): void => {
     if (sortField === field) setSortAsc(!sortAsc);
@@ -138,6 +140,7 @@ export const EAuctionCategoryTable: React.FC<EAuctionCategoryTableProps> = ({
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <select
+            aria-label={strings.filterSuitability}
             value={suitabilityFilter}
             onChange={(e) => {
               setSuitabilityFilter(e.target.value);
@@ -146,13 +149,14 @@ export const EAuctionCategoryTable: React.FC<EAuctionCategoryTableProps> = ({
             className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none"
           >
             <option value="ALL">{strings.allSuitabilities}</option>
-            <option value="Candidate for Review">Candidate for Review</option>
-            <option value="Further Data Required">Further Data Required</option>
-            <option value="Not Currently Suitable">Not Currently Suitable</option>
-            <option value="Not Assessed">Not Assessed</option>
+            <option value="Candidate for Review">{strings.suitabilityCandidateForReview}</option>
+            <option value="Further Data Required">{strings.suitabilityFurtherDataRequired}</option>
+            <option value="Not Currently Suitable">{strings.suitabilityNotCurrentlySuitable}</option>
+            <option value="Not Assessed">{strings.suitabilityNotAssessed}</option>
           </select>
 
           <select
+            aria-label={strings.rowsPerPageLabel}
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
@@ -276,7 +280,7 @@ export const EAuctionCategoryTable: React.FC<EAuctionCategoryTableProps> = ({
                             ₹{sr.minEstimatedSavingsCr?.toFixed(2)} - ₹{sr.maxEstimatedSavingsCr?.toFixed(2)} Cr
                           </div>
                           <div className="text-[10px] text-slate-500">
-                            Exp: ₹{sr.expectedEstimatedSavingsCr?.toFixed(2)} Cr ({((sr.expectedSavingsRate || 0) * 100).toFixed(1)}%)
+                            {strings.expectedSavingsDetail(sr.expectedEstimatedSavingsCr?.toFixed(2) ?? '', ((sr.expectedSavingsRate || 0) * 100).toFixed(1))}
                           </div>
                           <div className="text-[9px] text-amber-600 dark:text-amber-400 font-medium">
                             {strings.planningAssumptionBadge}
@@ -317,24 +321,26 @@ export const EAuctionCategoryTable: React.FC<EAuctionCategoryTableProps> = ({
       {/* Pagination Footer */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
         <div>
-          Showing {paginatedCategories.length} of {filteredCategories.length} categories reviewed
+          {strings.categoriesShowingSummary(paginatedCategories.length, filteredCategories.length)}
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            disabled={currentPage <= 1}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            aria-label={strings.btnPreviousPage}
+            disabled={activePage <= 1}
+            onClick={() => setCurrentPage(Math.max(1, activePage - 1))}
             className="p-1.5 rounded border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <span>
-            Page {currentPage} of {totalPages}
+            {strings.paginationStatus(activePage, totalPages)}
           </span>
           <button
             type="button"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            aria-label={strings.btnNextPage}
+            disabled={activePage >= totalPages}
+            onClick={() => setCurrentPage(Math.min(totalPages, activePage + 1))}
             className="p-1.5 rounded border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronRight className="w-4 h-4" />

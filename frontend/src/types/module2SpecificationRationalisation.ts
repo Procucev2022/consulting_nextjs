@@ -114,6 +114,7 @@ export interface SpecificationRationalisationResult {
   assessmentId: string;
   customerName: string;
   calculatedAt: string;
+  reviewWorkflowAvailable?: boolean;
   summary: SpecificationRationalisationSummary;
   candidates: SpecificationCandidateItem[];
   methodologyDisclosures: string[];

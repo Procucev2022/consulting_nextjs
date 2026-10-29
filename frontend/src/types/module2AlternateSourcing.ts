@@ -57,7 +57,7 @@ export interface AlternateVendorDiscoveryOpportunity {
   relatedMatchesCount: number;
   qualifiedAlternativesCount: number | 'DATA_UNAVAILABLE';
   qualificationStatus: AlternateVendorQualificationStatus;
-  excludedCurrentSuppliersCount: number;
+  excludedCurrentSuppliersCount: number | null;
   excludedSupplierNames: string[];
   geographicBreakdown: GeographicVendorBreakdown;
   contactCompleteness: ContactCompletenessMetrics;
@@ -69,13 +69,13 @@ export interface AlternateSourcingSummary {
   singleSourceMaterialsCount: number;
   totalPotentialVendorsAllLocations: number;
   totalPotentialVendorsPreferredRegion: number;
-  deduplicatedDistinctVendorsAllLocations: number;
-  deduplicatedDistinctVendorsPreferredRegion: number;
+  deduplicatedDistinctVendorsAllLocations: number | null;
+  deduplicatedDistinctVendorsPreferredRegion: number | null;
   cumulativeOpportunityVendorMatches: number;
   totalCurrentSuppliersIdentified: number;
-  totalCurrentSuppliersMatchedInMaster: number;
-  totalCurrentSuppliersExcluded: number;
-  overallDistinctVendorPoolEstimate: number;
+  totalCurrentSuppliersMatchedInMaster: number | null;
+  totalCurrentSuppliersExcluded: number | null;
+  overallDistinctVendorPoolEstimate: number | null;
   potentialFinancialSavingsInr: number;
   potentialFinancialSavingsCr: number;
   isDiscoveryOnly: boolean;
@@ -89,6 +89,15 @@ export interface AlternateSourcingResult {
   availableCities: string[];
   stateToCitiesMap?: Record<string, string[]>;
   disclosures: string[];
+}
+
+export interface AlternateSourcingKpiCardsProps {
+  summary?: AlternateSourcingSummary;
+  selectedState: string;
+}
+
+export interface AlternateSourcingOpportunityCardProps {
+  opportunity: AlternateVendorDiscoveryOpportunity;
 }
 
 export interface AlternateSourcingViewProps {

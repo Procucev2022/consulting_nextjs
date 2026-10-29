@@ -3,6 +3,7 @@
  */
 
 export * from './models';
+export * from './ingestion';
 export * from './logger';
 export * from './currency';
 export * from './taxonomy';

@@ -314,13 +314,19 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
                     </span>
                   </td>
                   <td className="p-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenReview(c)}
-                      className="px-2.5 py-1 text-xs font-semibold rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 hover:bg-blue-100 border border-blue-200 dark:border-blue-800"
-                    >
-                      {SPECIFICATION_UI_STRINGS.BTN_REVIEW_SPEC}
-                    </button>
+                    {data.reviewWorkflowAvailable === false ? (
+                      <span role="status" className="text-xs text-slate-500">
+                        {SPECIFICATION_UI_STRINGS.REVIEW_WORKFLOW_UNAVAILABLE}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenReview(c)}
+                        className="px-2.5 py-1 text-xs font-semibold rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 hover:bg-blue-100 border border-blue-200 dark:border-blue-800"
+                      >
+                        {SPECIFICATION_UI_STRINGS.BTN_REVIEW_SPEC}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
@@ -330,14 +336,16 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
       </div>
 
       {/* Technical Review Modal */}
-      <SpecificationRationalisationReviewModal
-        isOpen={isModalOpen}
-        candidate={selectedCandidate}
-        assessmentId={assessmentId}
-        onClose={() => setIsModalOpen(false)}
-        onSubmitReview={handleSubmitReview}
-        isSubmitting={isSubmitting}
-      />
+      {data.reviewWorkflowAvailable === false ? null : (
+        <SpecificationRationalisationReviewModal
+          isOpen={isModalOpen}
+          candidate={selectedCandidate}
+          assessmentId={assessmentId}
+          onClose={() => setIsModalOpen(false)}
+          onSubmitReview={handleSubmitReview}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </div>
   );
 };

@@ -1,8 +1,12 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Module3TrendAnalytics } from '../../src/components/Module3TrendAnalytics';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { MODULE3_PCBI_INDEX_HISTORY_LIMIT } from '../../src/constants/module3';
+import { apiClient } from '../../src/utils/api';
+import frontendLogger from '../../src/utils/logger';
+import type { ReactElement } from 'react';
 
 const sampleVendorPriceRanks = [
   {
@@ -31,19 +35,52 @@ const sampleVendorPriceRanks = [
   }
 ];
 
+const renderAndFlushD1 = async (element: ReactElement) => {
+  const result = render(element);
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  return result;
+};
+
 describe('Module3TrendAnalytics Component', () => {
-  it('renders cold zero-data state when vendorRankings is empty', () => {
-    render(
+  beforeEach(() => {
+    vi.spyOn(apiClient, 'getPCBIMasterBenchmarks').mockResolvedValue({
+      data: [{ pcbi_id: 'PCBI-TEST', benchmark_name: 'Persisted benchmark', benchmark_unit: 'MT', currency: 'INR' }]
+    });
+    vi.spyOn(apiClient, 'getPCBIWeeklyIndices').mockResolvedValue({
+      data: [
+        { pcbi_id: 'PCBI-TEST', week_start: '2026-02-02', index_value: 110, unit: 'MT', currency: 'INR' },
+        { pcbi_id: 'PCBI-TEST', week_start: '2026-01-05', index_value: 100, unit: 'MT', currency: 'INR' }
+      ]
+    });
+    vi.spyOn(frontendLogger, 'error').mockImplementation(vi.fn());
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('renders cold zero-data state when vendorRankings is empty', async () => {
+    await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={[]}
         onProceedToSavings={vi.fn()}
       />
     );
-    expect(screen.getByText('Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate supplier price volatility.')).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module3.noVendorRankings).length).toBeGreaterThan(0);
   });
 
-  it('renders correctly with light and dark themes', () => {
-    const { rerender } = render(
+  it('renders correctly with light and dark themes', async () => {
+    const { rerender } = await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
@@ -64,42 +101,94 @@ describe('Module3TrendAnalytics Component', () => {
     expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
   });
 
-  it('handles changing commodity benchmark', () => {
-    render(
+  it('loads benchmark options and weekly history from the D1 API', async () => {
+    await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
       />
     );
 
-    const selects = screen.getAllByRole('combobox');
-    const benchmarkSelect = selects[0];
-
-    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.lme } });
-    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.cass } });
-    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.fastmarkets } });
-    fireEvent.change(benchmarkSelect, { target: { value: UI_STRINGS.module3.commodities.icis } });
+    await waitFor(() => expect(screen.getByRole('option', { name: 'Persisted benchmark' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument());
+    expect(apiClient.getPCBIWeeklyIndices).toHaveBeenCalledWith('PCBI-TEST', MODULE3_PCBI_INDEX_HISTORY_LIMIT);
+    expect(screen.getByText(UI_STRINGS.module3.indexChangeLabel('+10.0%'))).toBeInTheDocument();
   });
 
-  it('handles risk filtering', () => {
-    render(
+  it('fetches a new persisted series when the selected benchmark changes', async () => {
+    vi.spyOn(apiClient, 'getPCBIMasterBenchmarks').mockResolvedValue({
+      data: [
+        { pcbi_id: 'PCBI-TEST', benchmark_name: 'First benchmark', benchmark_unit: 'MT', currency: 'INR' },
+        { pcbi_id: 'PCBI-OTHER', benchmark_name: 'Second benchmark', benchmark_unit: 'KG', currency: 'INR' }
+      ]
+    });
+    vi.spyOn(apiClient, 'getPCBIWeeklyIndices').mockImplementation(async (pcbiId) => ({
+      data: [{ pcbi_id: pcbiId, week_start: '2026-01-05', index_value: 100, unit: 'KG', currency: 'INR' }]
+    }));
+    await renderAndFlushD1(<Module3TrendAnalytics vendorRankings={[]} onProceedToSavings={vi.fn()} />);
+
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'PCBI-OTHER' } });
+    await waitFor(() => expect(apiClient.getPCBIWeeklyIndices).toHaveBeenCalledWith('PCBI-OTHER', MODULE3_PCBI_INDEX_HISTORY_LIMIT));
+    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
+  });
+
+  it('shows the empty state when D1 has no reference benchmarks', async () => {
+    vi.spyOn(apiClient, 'getPCBIMasterBenchmarks').mockResolvedValue({ data: [] });
+    await renderAndFlushD1(<Module3TrendAnalytics vendorRankings={[]} onProceedToSavings={vi.fn()} />);
+    expect(await screen.findByRole('option', { name: UI_STRINGS.module3.noBenchmarks })).toBeInTheDocument();
+  });
+
+  it('shows a database error state when weekly history cannot be fetched', async () => {
+    vi.spyOn(apiClient, 'getPCBIWeeklyIndices').mockRejectedValue(new Error('D1 unavailable'));
+    await renderAndFlushD1(<Module3TrendAnalytics vendorRankings={[]} onProceedToSavings={vi.fn()} />);
+    expect(await screen.findByText(UI_STRINGS.module3.indexLoadFailed)).toBeInTheDocument();
+  });
+
+  it('reports a benchmark load failure without substituting sample chart data', async () => {
+    vi.spyOn(apiClient, 'getPCBIMasterBenchmarks').mockRejectedValue(new Error('D1 unavailable'));
+    await renderAndFlushD1(<Module3TrendAnalytics vendorRankings={[]} onProceedToSavings={vi.fn()} />);
+    expect(await screen.findByRole('option', { name: UI_STRINGS.module3.benchmarkLoadFailed })).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-line-chart')).not.toBeInTheDocument();
+  });
+
+  it('handles risk filtering', async () => {
+    await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
       />
     );
 
-    const creepBtn = screen.getByRole('button', { name: /Creep Anomaly/i });
+    const creepBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterCreepAnomaly(1) });
     fireEvent.click(creepBtn);
 
-    const alignedBtn = screen.getByRole('button', { name: /Aligned/i });
+    const alignedBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAligned(0) });
     fireEvent.click(alignedBtn);
 
     const allBtn = screen.getByRole('button', { name: UI_STRINGS.module3.filterAllVendors(sampleVendorPriceRanks.length) });
     fireEvent.click(allBtn);
   });
 
-  it('handles fallback spend calculations and triggers onProceedToSavings', () => {
+  it('renders missing INR fields and persisted review/aligned risk statuses', async () => {
+    const rankings = [
+      { ...sampleVendorPriceRanks[0], price_creep_pct: undefined, variance_leakage_inr_cr: 0, risk_status: 'REVIEW' },
+      { ...sampleVendorPriceRanks[1], price_creep_pct: -1, variance_leakage_inr_cr: 0, risk_status: 'ALIGNED' },
+      { ...sampleVendorPriceRanks[0], vendor_name: 'High risk persisted vendor', risk_status: 'HIGH CREEP' }
+    ];
+    await renderAndFlushD1(
+      <Module3TrendAnalytics vendorRankings={rankings as any} onProceedToSavings={vi.fn()} />
+    );
+
+    expect(screen.getByText('Acme Chemicals LLC')).toBeInTheDocument();
+    expect(screen.getByText('Amcor Packaging')).toBeInTheDocument();
+    expect(screen.getByText('High risk persisted vendor')).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module3.unavailableMetric).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module3.alignedLeakageVal).length).toBeGreaterThan(0);
+    expect(screen.getByText('REVIEW')).toBeInTheDocument();
+    expect(screen.getByText('ALIGNED')).toBeInTheDocument();
+  });
+
+  it('handles missing D1-sourced INR spend and triggers onProceedToSavings', async () => {
     const customRankings = [
       {
         ...sampleVendorPriceRanks[0],
@@ -118,23 +207,23 @@ describe('Module3TrendAnalytics Component', () => {
     ];
 
     const onProceed = vi.fn();
-    render(
+    await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={customRankings as any}
         onProceedToSavings={onProceed}
       />
     );
 
-    expect(screen.getByText(UI_STRINGS.module3.alignedLeakageVal)).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module3.unavailableMetric).length).toBeGreaterThan(0);
 
     const ctaBtn = screen.getByRole('button', { name: UI_STRINGS.module3.ctaProceedButton });
     fireEvent.click(ctaBtn);
     expect(onProceed).toHaveBeenCalled();
   });
 
-  it('renders masked overlay for Bronze customer and handles upgrade to silver', () => {
+  it('renders masked overlay for Bronze customer and handles upgrade to silver', async () => {
     const onUpgrade = vi.fn();
-    render(
+    await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}
@@ -149,9 +238,9 @@ describe('Module3TrendAnalytics Component', () => {
     expect(onUpgrade).toHaveBeenCalledWith('SILVER');
   });
 
-  it('renders macro trend chart for Silver customer and masks rankings table with Gold upgrade trigger', () => {
+  it('renders macro trend chart for Silver customer and masks rankings table with Gold upgrade trigger', async () => {
     const onUpgrade = vi.fn();
-    render(
+    await renderAndFlushD1(
       <Module3TrendAnalytics
         vendorRankings={sampleVendorPriceRanks}
         onProceedToSavings={vi.fn()}

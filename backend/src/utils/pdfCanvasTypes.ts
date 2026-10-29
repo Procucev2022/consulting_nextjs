@@ -1,25 +1,4 @@
 /**
- * 16:9 PDF Canvas Types & Options (Prompt 257)
+ * Re-export shim for the PDF canvas option types. The declarations live in types/executiveBriefPdf.ts.
  */
-
-export interface PdfTextOptions {
-  fontSize?: number;
-  font?: 'regular' | 'bold' | 'italic';
-  color?: string;
-  align?: 'left' | 'center' | 'right';
-  lineHeight?: number;
-}
-
-
-export interface PdfShapeOptions {
-  fill?: string;
-  stroke?: string;
-  lineWidth?: number;
-}
-
-export interface WaterfallStage {
-  label: string;
-  valueDisplay: string;
-  amount: number;
-  type: 'total' | 'positive' | 'negative' | 'subtotal';
-}
+export type { PdfTextOptions, PdfShapeOptions } from '../types/executiveBriefPdf';

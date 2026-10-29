@@ -172,6 +172,7 @@ export class Module2EvidenceStatisticsHelper {
     const eligible = records.filter(r => r.isEligible && r.unitPrice > 0);
     const excluded = records.filter(r => !r.isEligible);
     const sortedPrices = eligible.map(r => r.unitPrice).sort((a, b) => a - b);
+    const eligibleByPrice = [...eligible].sort((a, b) => a.unitPrice - b.unitPrice);
 
     const totalQty = eligible.reduce((s, r) => s + r.quantity, 0);
     const totalSpend = eligible.reduce((s, r) => s + r.totalValue, 0);
@@ -206,13 +207,13 @@ export class Module2EvidenceStatisticsHelper {
     };
 
     return [
-      { statisticName: 'MIN', label: 'Lowest Observed Historical Price', value: min, contributingTransactionIds: eligibleTxIds.slice(0, 1), ...baseMetrics },
+      { statisticName: 'MIN', label: 'Lowest Observed Historical Price', value: min, contributingTransactionIds: eligibleByPrice.slice(0, 1).map(r => r.transactionId), ...baseMetrics },
       { statisticName: 'LOWEST_CREDIBLE', label: 'Lowest Credible Reference Price', value: credibleRes.lowestCrediblePrice, contributingTransactionIds: credibleRes.supportingTxnIds, ...baseMetrics },
       { statisticName: 'P25', label: '25th Percentile Price Quartile', value: p25, contributingTransactionIds: eligibleTxIds, ...baseMetrics },
       { statisticName: 'MEDIAN', label: 'Median Historical Price (P50)', value: median, contributingTransactionIds: eligibleTxIds, ...baseMetrics },
       { statisticName: 'WAP', label: 'Quantity-Weighted Average Price', value: wap, contributingTransactionIds: eligibleTxIds, ...baseMetrics },
       { statisticName: 'P75', label: '75th Percentile Price Quartile', value: p75, contributingTransactionIds: eligibleTxIds, ...baseMetrics },
-      { statisticName: 'MAX', label: 'Highest Observed Historical Price', value: max, contributingTransactionIds: eligibleTxIds.slice(-1), ...baseMetrics },
+      { statisticName: 'MAX', label: 'Highest Observed Historical Price', value: max, contributingTransactionIds: eligibleByPrice.slice(-1).map(r => r.transactionId), ...baseMetrics },
       { statisticName: 'IQR', label: 'Interquartile Range (P75 - P25)', value: iqr, contributingTransactionIds: eligibleTxIds, ...baseMetrics }
     ];
   }

@@ -7,6 +7,10 @@
 
 import type { UNSPSCCommodityRecord } from '../types/taxonomy';
 
+export const TAXONOMY_API_PATH = '/api/taxonomy';
+export const TAXONOMY_PAGE_SIZE = 1000;
+export const TAXONOMY_PREVIEW_LIMIT = 50;
+
 export const UNCLASSIFIED_COMMODITY_CODE = '00000000';
 export const UNCLASSIFIED_COMMODITY_TITLE = 'Unclassified Commodity';
 export const UNCLASSIFIED_CLASS_CODE = '00000000';
@@ -110,3 +114,5 @@ export function resolveUNSPSCCategoryDisplay(
     isCommodity: level === 'COMMODITY'
   };
 }
+
+export const TAXONOMY_MODAL_RESULT_LIMIT = 15;

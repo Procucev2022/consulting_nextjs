@@ -5,7 +5,26 @@
  * For dynamic strings requiring runtime substitution, parameterized template functions are provided.
  */
 
+const describeRequestId = (requestId: string | null): string =>
+  requestId ? `Request ID: ${requestId}.` : 'No request ID was returned by the server.';
+
 export const UI_STRINGS = {
+  databaseData: {
+    conversionLoadFailed: (status: number) => `The conversion stages could not be loaded because the database API returned HTTP ${status}. Refresh the page and ask support to verify the D1 conversion stage seed if the error continues.`,
+    schemaLoadFailed: 'The database schema could not be loaded. Check your connection and retry; ask support to verify the D1 database binding if the issue continues.',
+    loadingSchema: 'Loading the database schema...',
+    invalidData: 'Database records could not be loaded because the API returned an invalid response. Refresh and ask support to verify that the D1 migration and Worker deployment use the same version.',
+    procurementMappingsLoadFailed: 'Category mappings could not be loaded from D1. Check the database connection and retry; unmapped codes may be displayed until the reference data is available.'
+  },
+  taxonomyData: {
+    loading: 'Loading the commodity catalog from the database…',
+    loadFailed: (reason: string, requestId: string) => `The commodity catalog could not be loaded: ${reason}. Check your connection and retry. If the issue continues, ask support to verify the D1 taxonomy seed and quote request ${requestId}.`,
+    invalidResponse: 'The database returned an invalid commodity catalog response',
+    emptyResponse: 'The D1 commodity catalog has no seeded records',
+    httpFailure: (status: number) => `The taxonomy API returned HTTP ${status}`,
+    unknownFailure: 'The taxonomy API did not provide a valid response',
+    requestUnavailable: 'unavailable'
+  },
   common: {
     brand: 'PROCUCEV',
     appName: 'PROCUCEV',
@@ -39,7 +58,8 @@ export const UI_STRINGS = {
     success: 'Success',
     notAvailable: 'N/A',
     viewDetails: 'View Details',
-    selectOption: 'Select an option'
+    selectOption: 'Select an option',
+    croreAmount: (amountCr: string): string => `₹${amountCr} Cr`
   },
 
   header: {
@@ -1043,43 +1063,38 @@ export const UI_STRINGS = {
     badge: 'PCBI Commodity Benchmark Intelligence & Variance Engine',
     valuationBadge: 'INR Crores Valuation',
     heading: 'PCBI BENCHMARK & TREND ANALYSIS',
-    description: 'Market Index, Price Movement & Benchmark Opportunity across 36-month timeline with A/B/C Quality ratings and Constituent Decomposition.',
-    benchmarkLabel: 'Benchmark:',
-    commodities: {
-      icis: 'ICIS Chemicals & Resins',
-      lme: 'LME Industrial Metals',
-      cass: 'Cass Global Freight',
-      cassIndex: 'Cass Global Freight Index',
-      fastmarkets: 'Fastmarkets Paper & Pulp',
-      unavailableTextile: 'UNAVAILABLE (No Valid Textile Index)'
-    },
-    chartHeading: 'Raw Material Base Price Index vs Vendor Markup (36-Mo Horizon)',
-    chartSubheading: 'Continuous 36-month timeline indexed to baseline (100.0) pegged to market indices',
-    chartMarketLabel: 'Market: -4.2%',
-    chartInvoicedLabel: 'Invoiced: +8.5%',
-    invoicedDatasetLabel: 'Actual Vendor Invoiced Price (+8.5%)',
-    marketDatasetLabel: 'Market Index Movement (-4.2%) [LME / ICIS Baseline]',
-    leakageBoxTitle: 'Identified Unjustified Price Creep Leakage',
-    leakageBoxDesc: 'Vendor invoices escalated despite raw material commodity deflation over 36 months.',
+    description: 'Browse persisted commodity benchmark records and their weekly index history from the D1 reference database.',
+    benchmarkLabel: 'Reference index:',
+    benchmarkLoading: 'Loading benchmark records from D1…',
+    benchmarkLoadFailed: 'Benchmark records could not be loaded from D1. Check the database connection and retry.',
+    noBenchmarks: 'No benchmark records are available in D1.',
+    indexLoadFailed: 'Index history could not be loaded from D1. Check the database connection and retry.',
+    noIndexHistory: 'No weekly index history is stored for this benchmark.',
+    indexChangeLabel: (change: string) => `Index change: ${change}`,
+    noVendorRankings: 'No supplier price rankings are stored for this assessment.',
+    unavailableMetric: 'Not reported',
+    chartHeading: 'Persisted Weekly Commodity Benchmark Index',
+    chartSubheading: 'Index values and reporting dates are loaded from D1. Supplier price movement is shown separately from the reference series.',
+    assessmentSummaryUnavailable: 'The D1 API has no assessment-level PCBI calculation details to display yet.',
+    leakageBoxTitle: 'Persisted Supplier Price Leakage',
+    leakageBoxDesc: 'Calculated from supplier price ranking records stored for this assessment.',
     varianceLeakageLabel: 'Variance Leakage',
-    leakageAmountVal: '₹20.53 Cr Leakage',
-    leakageUsdNote: '($2.45M USD converted @ FX rate)',
     creepAnomalyTitle: 'Creep Anomaly Detector (FR-TRD-02)',
-    creepAnomalyBadge: '> 5.0% Flag',
-    creepAnomalyDesc: 'Algorithms continuously monitor invoice price deltas against global benchmark indices and multi-currency FX trends.',
+    creepAnomalyBadge: (threshold: number) => `>${threshold.toFixed(1)}% Flag`,
+    filterCreepAnomaly: (count: number) => `Creep Anomaly (${count})`,
+    filterAligned: (count: number) => `Aligned (${count})`,
+    highCreepVendorCount: (count: number) => `${count} Vendors`,
+    highCreepLeakage: (amount: number) => amount > 0
+      ? `Accounting for ₹${amount.toFixed(2)} Cr of total variance`
+      : 'No high-creep anomalies flagged',
+    leakageValueSource: 'Amount reported from D1 supplier ranking records',
+    creepAnomalyDesc: 'Supplier price movement is summarized from the persisted ranking records for this assessment.',
     avgMarkupLabel: 'Average Supplier Markup Spread',
-    avgMarkupVal: '+12.7% Delta',
-    avgMarkupSub: 'Above market benchmark movement',
+    avgMarkupSub: 'Average of persisted supplier price creep values',
     highCreepVendorsLabel: 'High Creep Vendors Detected',
-    highCreepVendorsVal: '3 Key Suppliers',
-    highCreepVendorsSub: 'Accounting for ₹17.01 Cr of total variance',
-    advisoryPlayLabel: 'PROCUCEV Advisory Play:',
-    advisoryPlayDesc: 'Deploy index-linked dynamic price caps in DPS NXT to automate retroactive supplier clawbacks in INR.',
     rankingsTableTitle: 'Vendor Price Volatility & Inflation Rankings (INR Crores)',
-    rankingsTableDesc: 'Ranked by price variance over time with automatic >5% inflation anomaly flags converted via time-series FX rates.',
+    rankingsTableDesc: 'Ranked by the supplier price creep and leakage values stored in D1.',
     filterAllVendors: (count: number) => `All Vendors (${count})`,
-    filterCreepAnomaly: '>5% Creep Anomaly (3)',
-    filterAligned: 'Aligned (1)',
     tableHeaders: {
       rank: 'Rank',
       vendor: 'Vendor Name',
@@ -1096,8 +1111,8 @@ export const UI_STRINGS = {
       priceCreepPct: 'Price Creep %',
       unjustifiedLeakage: 'Unjustified Leakage (₹ Cr)'
     },
-    alignedLeakageVal: '₹0 (Aligned)',
-    ctaBadge: '36-Month Volatility & Price Creep Variance fully isolated in INR Crores',
+    alignedLeakageVal: '₹0.00 Cr',
+    ctaBadge: 'Supplier price movement and persisted benchmark history are shown in INR Crores where available',
     ctaProceedButton: 'Proceed to Real-Time Savings Engine',
     vendorRankingsTitle: 'Top 5 Volatile Vendors (Price Creep Ranking)',
     spendTrendTitle: 'Multi-Year Spend Growth & Inflation Trend',
@@ -1248,6 +1263,14 @@ export const UI_STRINGS = {
   },
 
   module4: {
+    apiOperations: {
+      load: 'load consolidated savings',
+      actionPlan: 'save the action plan',
+      opportunity: 'save the opportunity status'
+    },
+    apiNoDetails: 'The server returned no usable savings data or error detail',
+    apiRequestFailed: (operation: string, status: number, detail: string, requestId: string): string => `Could not ${operation} (HTTP ${status}): ${detail}. Retry after checking Worker route availability. If this continues, contact support with request ${requestId}.`,
+    saveFailed: (reason: string): string => `The savings change was not saved: ${reason}. The last persisted values are still displayed; retry after the service is available.`,
     title: 'SAVINGS ENGINE',
     subtitle: 'Consolidated Savings, Actions & Realization',
     badge: 'Consolidated Savings Engine & Action Plan Tracking',
@@ -1335,6 +1358,14 @@ export const UI_STRINGS = {
     pushToDPSNXT: 'Push to DPS NXT',
     ctaSubtitle: 'Ready to calculate Client ROI and Transition to Commercial Lock-in Funnel',
     ctaProceedButton: 'Proceed to Conversion Matrix & ROI Engine',
+    realizationTargetBenchmarkBadge: (pct: string): string => `${pct}% Realization Target (FRD Sourcing Benchmark)`,
+    targetBenchmarkBadge: (pct: string): string => `${pct}% Target Benchmark`,
+    netModelledOpportunityLabel: 'Net Modelled Opportunity',
+    evaluatedBaselineSpendNote: (spendCr: string): string =>
+      `Evaluated Baseline Spend: ₹${spendCr} Cr across 23,570 canonical purchase transactions. Realized savings remain at ₹0.00 Cr pending post-implementation commercial execution and audited invoices.`,
+    awaitingDatasetIngestion: 'Awaiting dataset ingestion. Upload a procurement dataset in Module 1 to generate actionable savings pipelines.',
+    defaultLeverLabel: 'Strategic Sourcing Lever',
+    btnOpenExecutiveBrief: 'Generate Executive Brief',
     savingsWaterfall: {
       title: 'Consolidated Savings Waterfall',
       subtitle: 'Value progression from Total Spend to Realized Savings across all strategic levers',
@@ -1366,12 +1397,15 @@ export const UI_STRINGS = {
       },
       nonOverlappingBadge: 'Non-Overlapping',
       overlappingBadge: 'Overlapping',
+      emptyState: 'No opportunity-overlap records are stored for this savings workspace.',
       netSavingsSummary: (netCr: number, grossCr: number, dedupCr: number) =>
         `Net Non-Overlapping: ₹${netCr.toFixed(2)} Cr (Gross: ₹${grossCr.toFixed(2)} Cr, Deduplicated Overlap: ₹${dedupCr.toFixed(2)} Cr)`
     },
     actionPlan: {
       title: 'Executive Action Plan & Implementation Tracker',
       subtitle: 'Converting high-value validated opportunities into time-bound procurement initiatives with owner accountability',
+      activeCount: (count: number) => `${count} saved action plans`,
+      emptyState: 'No action plans are stored for this savings workspace.',
       tableHeaders: {
         oppId: 'Opportunity ID',
         action: 'Procurement Action',
@@ -1695,7 +1729,15 @@ export const UI_STRINGS = {
       selectCategory: 'Select Target Category:',
       selectBucket: 'Select Core Sourcing Bucket:',
       cancel: 'Cancel',
-      saveMapping: 'Apply Column L Mapping'
+      saveMapping: 'Apply Column L Mapping',
+      vendorLabel: (vendor: string) => `Vendor: ${vendor}`,
+      spendLabel: (amount: string) => `$${amount} Spend`,
+      bucketFilterAll: 'All Core Buckets',
+      bucketPackaging: 'Packaging',
+      bucketDirectMaterials: 'Direct Materials',
+      bucketIndirectMro: 'Indirect & MRO',
+      bucketLogistics: 'Logistics & Freight',
+      hierarchyPath: (segment: string, family: string, classTitle: string) => `${segment} > ${family} > ${classTitle}`
     },
     unspscDetail: {
       title: 'UNSPSC Official Taxonomy & Commodity Specification',
@@ -1912,12 +1954,14 @@ export const UI_STRINGS = {
     openingConversion: 'Opening Commercial Realization & SaaS Lock-in Portal...',
     pushedToProCPX: (oppId: string) => `Opportunity ${oppId} successfully pushed to proCPX Sourcing Engine.`,
     deployedToDPSNXT: (oppId: string) => `Rate cards & index pegging deployed to DPS NXT for Opportunity ${oppId}.`,
-    recordNormalized: (recordId: string, curr: string) => `Record ${recordId} normalized to base currency ${curr} (Reconciled in Spend Analytics)`,
-    recordMapped: (recordId: string, masterVendorId: string) => `Record ${recordId} mapped to Master Supplier: ${masterVendorId} (Reconciled in Spend Analytics)`,
-    recordItemMerged: (recordId: string, itemCode: string) => `Record ${recordId} unified under Master Item: ${itemCode} (Spend and unique items recalculated)`,
+    recordNormalized: (recordId: string, curr: string) => `Record ${recordId} normalized to base currency ${curr} and saved. Refresh analytics to recalculate totals.`,
+    recordMapped: (recordId: string, masterVendorId: string) => `Validation record ${recordId} saved with supplier reference ${masterVendorId}. Refresh analytics to recalculate totals.`,
+    recordItemMerged: (recordId: string, itemCode: string) => `Validation record ${recordId} saved with item reference ${itemCode}. Refresh analytics to recalculate totals.`,
     sheetRefreshedAndRecalculated: 'Data refreshed: Document Summary, Material Groups, Facilities & Multi-Year Trends updated with revised figures.',
-    blanketFixesApplied: '⚡ Blanket AI Fixes Applied: 100% of vendor entities, item descriptions & currency rates reconciled under INR Crores (₹732.41 Cr)',
-    validationReset: 'Validation records reset to initial pre-check state (2 pending anomalies).',
+    blanketFixesApplied: (count: number) => `D1 FX rates recalculated for ${count} validation ${count === 1 ? 'record' : 'records'}. Other issues remain pending review.`,
+    blanketFixesNoChanges: 'No validation currency totals were changed. Check that each record has a supported currency, amount, and transaction date.',
+    validationReset: 'Validation records cleared from D1. Uploaded documents remain in the queue.',
+    datasetRemoved: 'Uploaded dataset removed from D1.',
     batchUploadSpend: (fileName: string, spendCr: number, recordsCount: number) => `Calculated total spend for "${fileName}": ₹${spendCr.toFixed(2)} Cr across ${recordsCount.toLocaleString()} records [Order Qty × Net Price × FX].`,
     unspscConfirmed: (mappingId: string) => `UNSPSC mapping ${mappingId} confirmed and locked into QUA taxonomy.`,
     taxonomyReassigned: (code: string, bucket: string) => `Taxonomy re-assigned to UNSPSC ${code} (${bucket}).`,
@@ -2375,16 +2419,8 @@ export const UI_STRINGS = {
     benefitCard2Title: 'See Where Savings Are',
     benefitCard3Title: 'Benchmark & Compare',
     benefitCard4Title: 'Move From Insight to Action',
-    quickTestLogins: process.env.NODE_ENV !== 'production' ? 'Quick Test Accounts:' : '',
-    tempDevCredentialsBadge: process.env.NODE_ENV !== 'production' ? 'Temporary Development Access' : '',
-    quickDevAdmin: process.env.NODE_ENV !== 'production' ? 'Sriman (Admin): sriman@procucev.com' : '',
-    quickAdmin: process.env.NODE_ENV !== 'production' ? 'Admin: admin@procucev.com' : '',
-    quickUser: process.env.NODE_ENV !== 'production' ? 'Buyer: buyer@procucev.com' : '',
-    goToAdminDirectly: process.env.NODE_ENV !== 'production' ? '🛡️ Open Admin Portal Directly' : '',
-    devBypassNotice:
-      process.env.NODE_ENV !== 'production'
-        ? 'Development Mode: Click any account below to auto-fill credentials or enter the admin portal directly.'
-        : '',
+    developmentAuthTitle: 'Database authentication in development',
+    developmentAuthNotice: 'Sign in with an account registered in the configured D1 database. Use Create Account if you need a new account; administrator access requires a database-assigned administrator role.',
     logout: 'Sign Out',
     loggedInAs: (name: string, role: string) => `Logged in as ${name} (${role})`,
     passwordMismatchError: 'Passwords do not match. Please re-enter identical passwords.',
@@ -2612,6 +2648,14 @@ export const UI_STRINGS = {
   },
 
   pcbiAdmin: {
+    activePublishedBaseline: 'Active Published Baseline',
+    selectedReferenceVersion: 'Selected Reference Version',
+    noPublishedBaseline: 'No Published Baseline',
+    noReferenceDataFile: 'No database reference file',
+    governanceDataUnavailable: 'Governance counts are unavailable because the database version response does not include definition or historical coverage assessments. Review the PCBI Data Library before approving benchmark readiness.',
+    governanceHistoryScopeUnknown: 'Coverage not assessed',
+    versionsLoadFailed: (reason: string): string => `PCBI version history could not be loaded: ${reason}. Check that the Worker PCBI administration routes are configured, then retry.`,
+    versionsRetry: 'Retry loading PCBI versions',
     sectionTitle: 'ADMIN / PCBI MASTER',
     title: 'PCBI Master Administration',
     subtitle: 'System-Level Benchmark Reference Repository & Multi-Sector Index Engine',
@@ -2854,6 +2898,7 @@ export const UI_STRINGS = {
     subtitle: 'Module 2: Strategic Sourcing Opportunity Intelligence, Market Discovery & Procurement Maturity (V2.0)',
     versionBadge: 'VERSION: MODULE_2_OPPORTUNITY_INTELLIGENCE_V2.0',
     disclaimer: 'Indicative opportunity potential based on customer historical comparable transactions — NOT realized savings.',
+    assessmentRequiredMessage: 'Select an assessment before opening sourcing analysis. Module 2 reads only D1 records linked to the selected assessment; use the assessment selector in the application header.',
     noFabricationNotice: 'Calculated strictly from internal customer purchase history without external market benchmarks.',
     notQuantifiableText: 'Opportunity Identified — Benefit Not Yet Quantifiable',
 
@@ -3057,8 +3102,9 @@ export const UI_STRINGS = {
     
     // Filter Labels
     filterCustomer: 'Customer Dataset',
-    customerAbcTextile: 'ABC Textile Ltd (AIC-2026-0002)',
-    customerPqrCement: 'PQR Cement Ltd (AIC-2026-0003)',
+    selectAssessmentPlaceholder: 'Select an assessment',
+    assessmentOptionLabel: (customerName: string, assessmentId: string) => `${customerName} (${assessmentId})`,
+    assessmentListFailed: 'Assessment choices could not be loaded. Reload this view or contact your administrator if the problem continues.',
     filterFy: 'Financial Year',
     filterStatus: 'Qualification Status',
     filterSearch: 'Search Material Code or Description...',
@@ -3108,7 +3154,16 @@ export const UI_STRINGS = {
     benchmarkTxBadge: 'Benchmark PO',
     closeBtn: 'Close Evidence',
     btnClose: 'Close Evidence',
-    noTransactionsNotice: 'No transaction records found matching the current criteria.'
+    noTransactionsNotice: 'No transaction records found matching the current criteria.',
+    btnRefresh: 'Refresh',
+    unknownError: 'Unknown error',
+    loadFailedError: 'Failed to load direct price improvement data from sourcing engine',
+    noCategoriesMatch: 'No UNSPSC categories matching the selected criteria.',
+    showingCategories: (shown: number, total: number) => `Showing ${shown} of ${total} categories analysed`,
+    pageOfTotal: (page: number, total: number) => `Page ${page} of ${total}`,
+    previousPageLabel: 'Previous page',
+    nextPageLabel: 'Next page',
+    noOpportunityPlaceholder: '-'
   },
 
   module2EAuction: {
@@ -3178,7 +3233,34 @@ export const UI_STRINGS = {
     categoryDrilldownTitle: (cat: string) => `Material-Level Candidate Breakdown for Category: ${cat}`,
     categoryDrilldownSubtitle: 'Assessed candidate and non-candidate materials with purchase history and evidence rationale.',
     materialEvidenceTitle: (mat: string) => `Purchase History Evidence for Material: ${mat}`,
-    materialEvidenceSubtitle: 'Supporting purchase order transactions used to evaluate bidding suitability.'
+    materialEvidenceSubtitle: 'Supporting purchase order transactions used to evaluate bidding suitability.',
+
+    // E-Auction KPI cards, candidate tables and dynamic bidding view copy
+    kpiEstimatedSavingsLabel: 'Estimated Savings',
+    kpiCandidateCountSummary: (categories: number, materials: number) => `${categories} Cat / ${materials} Mat`,
+    kpiRecordsNeedDataReview: (count: number) => `${count} need data review`,
+    expectedSavingsDetail: (amountCr: string, ratePct: string) => `Exp: ₹${amountCr} Cr (${ratePct}%)`,
+    customerFilterLabel: 'Customer Dataset Filter',
+    customerFilterTitle: 'Customer',
+    selectAssessmentPlaceholder: 'Select an assessment',
+    assessmentOptionLabel: (customerName: string, assessmentId: string) => `${customerName} (${assessmentId})`,
+    assessmentListFailed: 'Assessment choices could not be loaded. Reload this view or contact your administrator if the problem continues.',
+    financialYearFilterLabel: 'Financial Year Filter',
+    allFinancialYears: 'All Financial Years',
+    btnRefresh: 'Refresh',
+    errorLoadFailed: 'Failed to load E-Auction dynamic bidding candidates from sourcing engine',
+    errorUnknown: 'Unknown error',
+    suitabilityCandidateForReview: 'Candidate for Review',
+    suitabilityFurtherDataRequired: 'Further Data Required',
+    suitabilityNotCurrentlySuitable: 'Not Currently Suitable',
+    suitabilityNotAssessed: 'Not Assessed',
+    rowsPerPageLabel: 'Rows Per Page',
+    btnPreviousPage: 'Previous page',
+    btnNextPage: 'Next page',
+    paginationStatus: (current: number, total: number) => `Page ${current} of ${total}`,
+    categoriesShowingSummary: (shown: number, total: number) => `Showing ${shown} of ${total} categories reviewed`,
+    materialsShowingSummary: (shown: number, total: number) => `Showing ${shown} of ${total} materials assessed`,
+    defaultReviewRequirement: 'Technical specification alignment required'
   },
 
   module2VendorConsolidation: {
@@ -3283,7 +3365,110 @@ export const UI_STRINGS = {
     crossPlantTitle: 'Cross-Plant Sourcing Coordination Opportunities',
     crossPlantSubtitle: 'Materials and categories procured across multiple operating facilities from disparate suppliers.',
     comparableTitle: 'Potential Comparable Materials Requiring Technical Validation',
-    comparableSubtitle: 'Shared commodity profiles flagged for engineering review. Technical equivalence not assumed.'
+    comparableSubtitle: 'Shared commodity profiles flagged for engineering review. Technical equivalence not assumed.',
+
+    // Shared formatters and labels for the vendor consolidation components
+    formatCrore: (value: string) => `₹${value} Cr`,
+    formatRupees: (value: string) => `₹${value}`,
+    formatPercent: (value: string) => `${value}%`,
+    formatPriceRange: (low: string, high: string) => `₹${low} – ₹${high}`,
+    breadcrumbTrail: (crumb: string, section: string) => `${crumb} → ${section}`,
+    emptyCodePlaceholder: '—',
+    btnAnalyse: 'Analyse',
+    btnViewCategoryMaterials: 'View Category Materials',
+    ariaBackToCategories: 'Back to Categories',
+    ariaBackToSuppliers: 'Back to Suppliers',
+    ariaBackToMaterials: 'Back to Materials',
+    ariaRefreshData: 'Refresh vendor consolidation data',
+    tabCategorySubtitle: 'Categories assessed for supplier fragmentation, multi-sourcing, and enterprise consolidation.',
+    filterOptionOpportunityIdentified: 'Opportunity Identified',
+    filterOptionPotentialOpportunity: 'Potential Opportunity',
+    filterOptionNoClearOpportunity: 'No Clear Opportunity',
+    tailSupplierBadge: (threshold: number) => `TAIL (<${threshold}%)`,
+    coreSupplierBadge: 'CORE',
+    colPoLines: 'PO Lines',
+    summaryCategorySpend: 'Category Spend: ',
+    summarySuppliers: 'Suppliers: ',
+    summaryTop1Share: 'Top 1 Share: ',
+    summaryCr3Concentration: 'CR3 Concentration: ',
+    summaryHhi: 'HHI Index: ',
+    summaryFragmentation: 'Fragmentation: ',
+
+    // Classification coverage KPI cards
+    kpiWaterfallTitle: 'Material UNSPSC Classification Coverage Waterfall',
+    kpiWorkflowCoverageBadge: '100.0% Workflow Coverage',
+    kpiTaxonomyLabel: 'Taxonomy:',
+    kpiTaxonomyVersion: 'UNSPSC UNv260801',
+    kpiTaxonomyVerified: 'Taxonomy-Verified',
+    kpiProvisional: 'Provisional',
+    kpiAwaitingReview: 'Awaiting Review',
+    kpiClientApproved: 'Client-Approved',
+    kpiSpendShare: (pct: number | string) => `${pct}% Spend`,
+    kpiMaterialsOfTotal: (count: number | string, pct: number | string) => `${count} materials (${pct}% of total)`,
+    kpiMaterialsShare: (count: number | string, pct: number | string) => `${count} materials (${pct}%)`,
+    kpiValidatedUponExecution: 'Validated upon execution',
+    kpiValidatedSavingsPlaceholder: '₹0.0000 Cr',
+    kpiMultiSourcedItems: (count: number) => `${count} multi-sourced items`,
+    kpiMultiVendorCategories: (count: number) => `${count} multi-vendor categories`,
+
+    // Material opportunities drill-down
+    subTabSameMaterial: (count: number) => `Same Material (${count})`,
+    subTabComparable: (count: number) => `Comparable (${count})`,
+    subTabCrossPlant: (count: number) => `Cross-Plant (${count})`,
+    colClassificationLabel: 'Classification',
+    colActionableStatus: 'Actionable Status & Next Steps',
+    reviewStatusClientApproved: 'Client Approved',
+    reviewStatusTaxonomyVerified: 'Taxonomy Verified',
+    reviewStatusProvisional: 'Provisional',
+    reviewStatusAwaitingReview: 'Awaiting Review',
+    noSameMaterialOpportunities: 'No multi-sourced materials identified in this category.',
+    noComparableGroups: 'No comparable material groups identified in this category.',
+    noCrossPlantOpportunities: 'No cross-plant multi-sourced opportunities identified in this category.',
+    comparableGroupHeading: (groupId: string, label: string) => `${groupId}: ${label}`,
+    crossPlantHeading: (code: string, description: string) => `${code}: ${description}`,
+    crossPlantDetail: (plants: string, coordination: string) => `Plants: ${plants} | Coordination: ${coordination}`,
+
+    // Mapping exceptions and engineering review queue
+    mappingQueueTitle: 'Mapping Exceptions & Engineering Review Queue',
+    mappingQueuePendingCount: (count: number) => `${count} Pending Review`,
+    mappingQueueSubtitle: 'Materials lacking specific taxonomy keywords or client-proprietary codes queued for engineering verification.',
+    mappingQueueSearchPlaceholder: 'Search material ID, description, or client group...',
+    colMaterialIdDescription: 'Material ID & Description',
+    colClientGroup: 'Client Group',
+    colAssignedUnspsc: 'Assigned UNSPSC',
+    colSpendCr: 'Spend (Cr)',
+    colPoCount: 'POs',
+    colReviewReasonStatus: 'Review Reason & Status',
+    pendingReviewFallback: 'Pending review',
+    btnApproveMapping: 'Approve',
+    btnSavingMapping: 'Saving...',
+    mappingQueueTruncationNotice: (shown: number, total: number) =>
+      `Showing ${shown} of ${total} pending review items. Use search to locate specific material records.`,
+    mappingApproveFailedHttp: (materialId: string, status: number) =>
+      `Approval for material ${materialId} was rejected by the server with HTTP ${status}. Select Approve to retry; if the error continues, quote material ${materialId} and HTTP ${status} to support.`,
+    mappingApproveFailedNetwork: (materialId: string, reason: string) =>
+      `Approval for material ${materialId} did not reach the server: ${reason}. Check the network connection, then select Approve to retry.`,
+    mappingApproveUnknownReason: 'an unidentified error was returned by the browser',
+
+    // Purchase transaction drill-down
+    transactionSubtitle: (description: string, count: number) => `${description} • ${count} supporting transaction records`,
+    colPoLine: 'Line',
+    noTransactionRecords: 'No transaction records available for this material.',
+    unknownVendor: 'Unknown Vendor',
+    defaultPlantLabel: 'HQ',
+
+    // Vendor consolidation view: loading, error, and dimension labels
+    loadingBaseline: 'Evaluating Lever 3 Vendor Consolidation Baseline...',
+    headerFlow: 'UNSPSC TAXONOMY → SUPPLIER FRAGMENTATION → REALLOCATION',
+    loadFailedTitle: 'Vendor base consolidation data could not be loaded.',
+    loadFailedCauseLabel: 'Cause:',
+    loadFailedNoPayloadCause: 'The consolidation API returned no data for this assessment.',
+    loadFailedUnknownCause: 'An unidentified error was returned while calling the consolidation API.',
+    loadFailedNextSteps: 'Select the refresh button to retry. If the error continues, confirm the assessment ID and check that the backend API is reachable.',
+    dimensionUnspsc: 'UNSPSC Hierarchy (Primary)',
+    dimensionSourceGroup: 'Client SAP Groups',
+    dimensionMappingQueue: 'Mapping Exceptions Queue',
+    allEnterpriseCategories: 'All Enterprise Categories'
   },
 
 
@@ -3338,6 +3523,33 @@ export const UI_STRINGS = {
       'Data retention and deletion are governed by your organization\'s configured data-retention policy.'
   },
 
+  executiveBriefPage: {
+    loadingTitle: 'Preparing Certified Executive Brief...',
+    defaultClientName: 'Client',
+    downloadFilename: (clientName: string, format: string): string => `Procucev_Executive_Brief_${clientName}.${format}`,
+    footer: {
+      encryptedBadge: 'AES-256-GCM ENCRYPTED',
+      confidentialNotice: 'Management Confidential · For Authorised Recipients Only',
+      productLine: 'Procucev / aiCEV v2.0 · Executive Brief',
+      copyright: (year: number): string => `© ${year} Procucev Pvt. Ltd.`
+    },
+    regenerate: {
+      noServerDetail: 'The server did not return a readable error message.',
+      unauthorized: (serverMessage: string, requestId: string | null): string =>
+        `Regeneration was rejected because the request is not signed in. ${serverMessage} Sign in with an ADMIN account, then retry. ${describeRequestId(requestId)}`,
+      forbidden: (serverMessage: string, requestId: string | null): string =>
+        `Regeneration was rejected because this account does not have the ADMIN role. ${serverMessage} Ask an administrator to run the regeneration. ${describeRequestId(requestId)}`,
+      conflict: (serverMessage: string, requestId: string | null): string =>
+        `Regeneration was blocked because the financial reconciliation does not match the certified figures. ${serverMessage} Review the certified constants, then retry. ${describeRequestId(requestId)}`,
+      unavailable: (serverMessage: string, requestId: string | null): string =>
+        `Regeneration is unavailable because a required Worker setting or storage binding is missing. ${serverMessage} Fix the configuration, then retry. ${describeRequestId(requestId)}`,
+      failed: (statusCode: number, serverMessage: string, requestId: string | null): string =>
+        `Regeneration failed with HTTP ${statusCode}. ${serverMessage} Retry, and if the error repeats, send the request ID to support. ${describeRequestId(requestId)}`,
+      networkFailed: (reason: string): string =>
+        `Regeneration did not reach the server (${reason}). Check your connection and retry.`
+    }
+  },
+
   opportunityBrief: {
     title: 'Procurement Value Opportunity Brief',
     tenSlideEdition: '10-Slide Executive Edition',
@@ -3370,9 +3582,18 @@ export const UI_STRINGS = {
     executeSub: 'Launch approved competitive sourcing initiatives',
     moveFromDiag: 'Move from diagnostic to execution.',
     contactEmail: 'Contact: leadership@procucev.com',
-    confidentialFooter: 'Management Confidential | CFO / CEO Discussion Edition'
+    confidentialFooter: 'Management Confidential | CFO / CEO Discussion Edition',
+    downloadLinkLabel: 'Download',
+    downloadFailed: (formatLabel: string, status: number, requestId: string) =>
+      `The Opportunity Brief ${formatLabel} could not be downloaded, so no file was saved. The server responded with HTTP ${status}. Try again later. If the problem continues, contact Procucev support and quote request ID ${requestId}.`,
+    downloadNetworkFailed: (formatLabel: string) =>
+      `The Opportunity Brief ${formatLabel} could not be downloaded because the request did not reach the server. Check your network connection and try the download again.`,
+    requestIdNotReturned: 'unavailable'
   },
   orchestration: {
+    noActiveReportTitle: 'No approved report is available yet',
+    noActiveReportMessage:
+      'Procucev has not yet submitted a report for your analysis. Refresh this page after your analysis is complete. If you expect a report, contact your Procucev account team.',
     customerStatusCardTitle: 'Procurement Analysis',
     customerStatusCardSubtitle: 'Enterprise Analysis & Quality Gate Pipeline',
     detailedAnalysisInProgressTitle: 'Your Detailed Procurement Analysis is in Progress',
@@ -3472,7 +3693,112 @@ export const UI_STRINGS = {
     checkModule3Reviewed: 'Module 3/PCBI reviewed',
     checkModule4Reviewed: 'Module 4 reviewed',
     checkExecutiveSummary: 'Executive summary reviewed',
-    modalConfirmChecklist: 'Confirm Quality Checklist'
+    modalConfirmChecklist: 'Confirm Quality Checklist',
+    searchPlaceholder: 'Search by customer name, job ID or tenant...',
+    btnRefresh: 'Refresh',
+    btnCloseModal: 'Close dialog',
+    btnDismissMessage: 'Dismiss message',
+    colCustomer: 'Customer',
+    colPeriod: 'Period',
+    colSpendAnalysed: 'Spend Analysed',
+    colDataVersion: 'Data Version',
+    colWorkflowStatus: 'Workflow Status',
+    colElapsedTime: 'Elapsed Time',
+    colAction: 'Action',
+    loadingJobs: 'Loading analysis pipeline jobs...',
+    noJobsFound: 'No analysis jobs found matching the selected criteria.',
+    elapsedHoursOfSla: (hours: number, slaHours: number): string => `${hours}h / ${slaHours}h`,
+    btnOpenWorkspace: 'Open Workspace',
+    statusSubmitted: 'SUBMITTED',
+    statusAcknowledged: 'ACKNOWLEDGED',
+    statusReadyToSubmit: 'READY TO SUBMIT',
+    statusAdminReview: 'ADMIN REVIEW',
+    statusPcbiReview: 'PCBI REVIEW',
+    statusBlocked: 'BLOCKED',
+    btnCloseWorkspace: 'Close Workspace',
+    updatingDetails: 'Updating...',
+    labelDataVersion: 'Data Version:',
+    labelUploadedBy: 'Uploaded by:',
+    labelTotalSpend: 'Total Spend:',
+    actionItemsTitle: 'Action Items Required Before Generation:',
+    reportGenerationNote: 'Report generation compiles Module 1 through 4 under the certified financial truth.',
+    colCategoryClassification: 'Category / Classification',
+    colSpend: 'Spend',
+    colTransactions: 'Transactions',
+    colPcbiStatus: 'PCBI Status',
+    colResolution: 'Resolution',
+    excludedReason: (reason: string): string => `Excluded: ${reason}`,
+    resolutionActionRequired: 'Action Required',
+    btnResolve: 'Resolve',
+    dataCorrectionTitle: 'Admin Data Reanalysis & Versioning',
+    dataCorrectionDescription: 'Original customer uploads remain strictly immutable. Corrected uploads generate verified new data versions.',
+    datasetDownloadUnavailable: 'Dataset download is not yet available. The server has not implemented this route yet (HTTP 501).',
+    dataVersionChangeTitle: (previousVersionId: string, newVersionId: string): string =>
+      `DATA VERSION CHANGE (${previousVersionId} → ${newVersionId})`,
+    diffTransactions: 'Transactions:',
+    diffSuppliers: 'Suppliers:',
+    diffSpend: 'Spend:',
+    diffCategories: 'Categories:',
+    colVersion: 'Version',
+    colSourceRole: 'Source & Role',
+    colCorrectionReason: 'Correction Reason',
+    colUploadedAt: 'Uploaded At',
+    originalBaselineUpload: 'Original baseline upload',
+    auditTrailTitle: 'Immutable Event Audit Trail',
+    auditDataUploaded: (tenantId: string, versionId: string): string =>
+      `[Audit Event] DATA_UPLOADED • Tenant: ${tenantId} • File: ${versionId}`,
+    auditModule1Completed: (spendCr: string): string => `[Audit Event] MODULE1_COMPLETED • Spend Verified: ₹${spendCr} Cr`,
+    auditAnalysisQueued: (status: string): string => `[Audit Event] ANALYSIS_QUEUED • Status: ${status}`,
+    auditReportGenerated: (versionId: string): string => `[Audit Event] REPORT_GENERATED • Version: ${versionId}`,
+    auditReportSubmitted: (recipient: string): string =>
+      `[Audit Event] REPORT_APPROVED & SUBMITTED • Dispatched to ${recipient}`,
+    auditReportAcknowledged: (timestamp: string): string => `[Audit Event] REPORT_ACKNOWLEDGED • Timestamp: ${timestamp}`,
+    resolveGapModalTitle: 'Resolve PCBI Gap',
+    fieldResolutionAction: 'Resolution Action',
+    actionMapExisting: 'Map to Existing PCBI Series',
+    actionAddMapPcbi: 'Add / Map New PCBI Data',
+    actionExclude: 'Exclude from Benchmarking (Mandatory Reason)',
+    actionMarkNotBenchmarkable: 'Mark Not Benchmarkable',
+    actionMarkService: 'Mark as Service / Non-Commodity',
+    actionRequestResearch: 'Request Data Research',
+    fieldExclusionReason: 'Mandatory Exclusion Reason',
+    fieldExplanatoryNotes: 'Explanatory Notes',
+    placeholderExclusionNotes: 'Explain justification for exclusion...',
+    fieldTargetSeriesId: 'Target PCBI Series ID',
+    placeholderSeriesId: 'PCBI-SERIES-...',
+    btnSaveResolution: 'Save Resolution',
+    savingResolution: 'Saving...',
+    uploadCorrectedModalTitle: 'Upload Corrected Dataset',
+    uploadCorrectedModalSubtitle: 'Creates a new verified data version and re-runs Module 1',
+    fieldFileName: 'File Name',
+    placeholderFileName: 'e.g. Corrected_Procurement_Data_v2.xlsx',
+    defaultCorrectedFileName: 'Corrected_Spend_Analysis_v2.xlsx',
+    fieldReanalysisReason: 'Reason for Reanalysis',
+    fieldCorrectionNotes: 'Detailed Correction Notes',
+    placeholderCorrectionNotes: 'Describe corrected items, vendor updates, or transaction modifications...',
+    uploadingDataset: 'Uploading...',
+    btnGenerateNewVersion: 'Generate New Data Version',
+    supersedePromptReason: 'Please enter the reason for superseding this report:',
+    gapResolvedSuccess: (classification: string): string => `PCBI Gap ${classification} resolved`,
+    unknownFailureReason: 'the server did not return a readable reason',
+    errorLoadControlCenter: (reason: string): string =>
+      `The analysis jobs could not be loaded: ${reason}. Check your connection, then select Refresh to retry.`,
+    errorLoadWorkspace: (reason: string): string =>
+      `The job workspace could not be loaded: ${reason}. Select the job again to retry.`,
+    errorResolveGap: (reason: string): string =>
+      `The PCBI gap was not saved: ${reason}. Check the series ID or exclusion reason, then save again.`,
+    errorUploadCorrected: (reason: string): string =>
+      `The corrected dataset was not uploaded: ${reason}. Check the file name and reason, then retry.`,
+    errorGenerateReport: (reason: string): string =>
+      `The report was not generated: ${reason}. Complete the readiness items, then retry.`,
+    errorConfirmChecklist: (reason: string): string =>
+      `The quality checklist was not confirmed: ${reason}. Review the checklist, then retry.`,
+    errorApproveReport: (reason: string): string =>
+      `The report was not approved and submitted: ${reason}. Confirm the quality checklist, then retry.`,
+    errorResendNotification: (reason: string): string =>
+      `The notification was not resent: ${reason}. Retry in a few minutes.`,
+    errorSupersedeReport: (reason: string): string =>
+      `The report was not superseded: ${reason}. Retry with a clear reason.`
   },
 
   evidence: {
@@ -3514,7 +3840,44 @@ export const UI_STRINGS = {
       nonDirectLabel: 'Non-Direct Strategic Value',
       processReductionLabel: '20% PO Effort Reduction',
       spendDeRiskedLabel: 'Spend De-Risked',
-      realizedLabel: 'Historical Realized Savings'
+      realizedLabel: 'Historical Realized Savings',
+      moduleBadge: 'MODULE 4 EVIDENCE',
+      parityBadge: 'Three-Way Parity Guaranteed',
+      canonicalTypesCount: (count: number): string => `${count} Canonical Types Available`,
+      sheetCount: (count: number): string => `${count} sheets`
+    },
+    downloadFailure: {
+      noServerDetail: 'The server did not return a readable error message.',
+      httpFailure: (filename: string, statusCode: number, detail: string, requestId: string | null): string =>
+        `Could not download ${filename} (HTTP ${statusCode}): ${detail}${requestId ? ` Request ID: ${requestId}.` : ''} Resolve the reason above and retry. If it persists, send the request ID to support.`,
+      networkFailure: (filename: string, detail: string): string =>
+        `Could not download ${filename} because the request did not complete (${detail}). Check your connection and retry.`
+    },
+    panel: {
+      clientLabel: 'Client:',
+      baselineSpendLabel: 'Evaluated Baseline Spend:',
+      parityAuditTitle: 'Automated Parity Audit (UI vs. Evidence Workbook vs. Canonical Source)',
+      evaluatedChecksLabel: 'Evaluated Checks',
+      verificationRules: (count: number): string => `${count} Verification Rules`,
+      reconciliationStatusLabel: 'Reconciliation Status',
+      passedOfTotal: (passed: number, total: number): string => `${passed} of ${total} passed`,
+      notEvaluated: 'Not evaluated',
+      mathematicalVarianceLabel: 'Mathematical Variance',
+      sourceAuthorityLabel: 'Source Authority',
+      backendSourceOfTruth: 'Backend Source of Truth',
+      directoryTitle: 'Evidence Workbooks Directory (9 Modules)',
+      directoryNote: 'All workbooks contain 01_README, Calculation Bridges, and Reconciliation Layers',
+      colWorkbookCode: 'Workbook Code',
+      colModuleOutput: 'Module / Output Name',
+      colDescription: 'Description & Scope',
+      colSheets: 'Sheets',
+      colAuditStatus: 'Audit Status',
+      colAction: 'Action',
+      sheetCount: (count: number): string => `${count} Sheets`,
+      auditPass: 'PASS',
+      unavailable: 'Unavailable',
+      btnDownloadXlsx: 'Download XLSX',
+      formatNote: 'Format: Microsoft Excel (.xlsx)'
     }
   },
   ASSESSMENT: {
@@ -3756,7 +4119,46 @@ export const UI_STRINGS = {
       uploadSuccess: 'Dataset successfully ingested and verified with Module 1 analytical run.',
       uploadErrorTitle: 'Dataset Ingestion Failed',
       btnRetry: 'Retry Ingestion',
-      ndaWarning: 'NDA is currently NOT_SIGNED. Please confirm NDA status before processing confidential data.'
+      ndaWarning: 'NDA is currently NOT_SIGNED. Please confirm NDA status before processing confidential data.',
+      emptyValue: '—',
+      customerHeading: 'Customer',
+      configuredPeriodLabel: 'Configured Period',
+      dateRange: (start: string, end: string) => `${start} – ${end}`,
+      actualCoverageLabel: 'Actual Data Coverage',
+      defaultCoverageStart: '1st Apr 2026',
+      defaultCoverageEnd: '22nd Oct 2026',
+      excludedEntityBadge: 'Excl: BSL PUNE',
+      dataVersionLabel: 'Data Version',
+      noDataVersion: 'NONE',
+      datasetStatusLabel: 'Dataset Status',
+      fileSizeBytes: (bytes: number) => `${bytes} B`,
+      fileSizeKilobytes: (kilobytes: string) => `${kilobytes} KB`,
+      fileSizeMegabytes: (megabytes: string) => `${megabytes} MB`,
+      computingHash: 'Computing SHA-256 hash...',
+      btnUploadFile: 'Upload File to Dossier',
+      btnUploadingDataset: 'Uploading Dataset...',
+      btnValidating: 'Validating Schema & Rows...',
+      btnExecutingModule1: 'Executing Module 1...',
+      operationErrorTitle: 'Operation Error',
+      validationCompletedTitle: 'Dataset Validation Completed',
+      validationPassed: (rows: string, excluded: string, anomalies: string) =>
+        `Validation passed: ${rows} valid rows (${excluded} excluded, ${anomalies} quarantined anomalies). Dataset verified for analysis.`,
+      validationNoDetails: 'the server did not return a validation summary',
+      module1ResultsTitle: 'Module 1 Spend Intelligence Results Reconciled',
+      validatedSpendLabel: 'Validated Spend',
+      validatedSpendValue: (spendCr: string) => `₹${spendCr} Cr`,
+      sourceRowsLabel: 'Source Rows',
+      materialGroupsLabel: 'Material Groups',
+      uniqueSuppliersLabel: 'Unique Suppliers',
+      module1NoDetails: 'the server did not return an analysis result',
+      noErrorDetails: 'the server did not return an error message',
+      invalidFileFormat: 'Invalid file format. Only .xlsx, .csv, and .xls files are supported.',
+      fileTooLarge: (limitMb: number) => `File size exceeds the ${limitMb} MB limit. Please select a smaller procurement file.`,
+      emptyFile: 'Selected file is empty (0 bytes). Please select a valid procurement dataset.',
+      uploadFailed: (reason: string) => `Dataset upload failed: ${reason}. Check the file and your network connection, then retry the upload.`,
+      validationFailed: (reason: string) => `Dataset validation failed: ${reason}. Check the required columns and formats, correct the file, and upload it again.`,
+      noValidatedDataVersion: 'No validated data version was found for this assessment. Validate the dataset before starting Module 1 analysis.',
+      module1Failed: (reason: string) => `Module 1 analysis failed: ${reason}. Confirm the dataset passed validation, then retry Start Module 1 Analysis.`
     },
     modalNew: {
       title: 'Initialize New Customer Assessment',
@@ -3825,7 +4227,7 @@ export const UI_STRINGS = {
       createFailed: 'Failed to create assessment. Please check required fields and retry.',
       gatesPending: 'Approval Blocked: All 26 review gates must pass before formal analyst approval.',
       packagePending: 'Package generation is only available for APPROVED or DELIVERED assessments.',
-      networkError: 'Network Error: Cannot connect to backend server at http://localhost:5000.'
+      networkError: 'Network Error: Cannot connect to backend API server. Please check your network and configuration.'
     },
     systemInfoModal: {
       btnOpen: 'System Information',
@@ -3846,30 +4248,7 @@ export const UI_STRINGS = {
       btnClose: 'Close'
     },
     updater: {
-      updateAvailableBannerTitle: 'aiCEV Desktop Update Available',
-      installedVersionLabel: 'Installed Version:',
-      availableVersionLabel: 'Available Version:',
-      buildNumberLabel: 'Build Identifier:',
-      releaseDateLabel: 'Release Date:',
-      verificationStatusLabel: 'Verification Status:',
-      statusCertified: 'Certified & SHA-256 Verified',
-      installAndRestartBtn: 'Install Update & Restart',
-      remindMeLaterBtn: 'Remind Me Later',
-      confirmPrompt: 'Save or finish any active assessment operation before updating. The application will close safely, execute the verified installer, and restart.',
-      preventActiveJobMessage: 'Cannot install update while assessment data file operations are in progress. Please wait for completion.',
-      updateFailedTitle: 'Update Verification Failed',
-      updateSuccessMessage: (version: string) => `aiCEV Desktop updated successfully to version ${version}`,
-      recoveryPathMessage: 'If installation fails, the previous installation is preserved. Launch from desktop shortcut or reinstall from installer.',
-      stagedOnlyNote: 'Update is staged and verified. Awaiting user restart.',
-      checkingUpdates: 'Checking for certified desktop updates...',
-      noUpdateAvailable: 'Desktop application is up to date.',
-      installingTitle: 'Preparing Update Installation...',
-      installingDesc: 'Closing background services and launching trusted installer...',
-      modalRunningVersion: 'Currently Running Version',
-      modalStagedVersion: 'Staged Release',
-      modalInstalledVersion: 'Installed Release',
-      modalSourceVersion: 'Source Version',
-      modalPackagedVersion: 'Packaged Version'
+      modalRunningVersion: 'Currently Running Version'
     }
   },
 
@@ -3980,6 +4359,31 @@ export const UI_STRINGS = {
       zeroExtrapolationNote:
         'Missing or unavailable historical periods are distinguished from genuine zero spend and are not extrapolated.'
     }
+  },
+  evidenceCalculationTrace: {
+    badge: 'AUDIT-READY CALCULATION TRACE (SECTION 15)',
+    fallbackTitle: (opportunityCr: string): string => `Why ₹${opportunityCr} Cr Opportunity?`,
+    fallbackTitleUnquantified: 'Why this opportunity?',
+    closeLabel: 'Close calculation trace',
+    derivationHeading: 'Complete Mathematical Derivation Trace',
+    baselineWap: 'Baseline WAP',
+    selectedReference: 'Selected Reference',
+    priceDifferential: 'Price Differential',
+    rupeeAmount: (amount: string): string => `₹${amount}`,
+    referenceValue: (price: string): string => `Ref: ₹${price}`,
+    formula: (wap: string, reference: string, volume: string, grossOpportunity: string): string =>
+      `Formula: (WAP ₹${wap} - Ref ₹${reference}) × Addressable Volume ${volume} = ₹${grossOpportunity}`,
+    conservativeLabel: 'CONSERVATIVE (P25)',
+    baseLabel: 'BASE (CREDIBLE)',
+    upsideLabel: 'UPSIDE (MIN OBSERVED)',
+    lakhValue: (lakhs: string): string => `₹${lakhs} L`,
+    funnelHeading: 'Spend Addressability Funnel (Section 8)',
+    funnelTotal: (crore: string): string => `Total: ₹${crore} Cr`,
+    funnelComparable: (crore: string): string => `Comparable: ₹${crore} Cr`,
+    funnelAddressable: (crore: string): string => `Addressable: ₹${crore} Cr`,
+    funnelRealized: 'Realized: Module 4 Only',
+    confidence: (level: string): string => `Confidence: ${level} (Trace Verified)`,
+    exportEvidencePack: 'Export Evidence Pack (JSON)'
   }
 } as const;
 

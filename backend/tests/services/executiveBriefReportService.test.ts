@@ -1,51 +1,86 @@
-import { describe, it, expect } from 'vitest';
-import { executiveBriefReportService } from '../../src/services/executiveBriefReportService';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  assembleExecutiveBriefReport,
+  buildSummaryCards,
+  buildValidationChecklist
+} from '../../src/services/executiveBriefReportService';
+import {
+  buildExecutiveBriefMetadata,
+  reconcileExecutiveBrief,
+  verifyFinancialConsistency
+} from '../../src/services/executiveBriefMetadataService';
+import { EXECUTIVE_BRIEF_STATUS_LABELS } from '../../src/constants/executiveBriefCertifiedFigureConstants';
+import { DEFAULT_CLIENT_PROFILE } from '../../src/constants/executiveBriefConstants';
+import { TEST_REPORT_DATE, certifiedReport } from '../executiveBriefTestHelpers';
 
-describe('ExecutiveBriefReportService', () => {
-  it('should return 9 summary KPI cards', () => {
-    const cards = executiveBriefReportService.getSummaryCards();
-    expect(cards).toHaveLength(9);
-    expect(cards[0].id).toBe('kpi-total-spend');
-    expect(cards[1].id).toBe('kpi-addressable-spend');
-    expect(cards[2].id).toBe('kpi-identified-opp');
-    expect(cards[3].id).toBe('kpi-approved-savings');
-    expect(cards[4].id).toBe('kpi-realized-savings');
-    expect(cards[5].id).toBe('kpi-opp-count');
-    expect(cards[6].id).toBe('kpi-transactions');
-    expect(cards[7].id).toBe('kpi-suppliers');
-    expect(cards[8].id).toBe('kpi-categories');
+vi.mock('../../src/services/executiveBriefMetadataService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/services/executiveBriefMetadataService')>();
+  return { ...actual, reconcileExecutiveBrief: vi.fn(actual.reconcileExecutiveBrief) };
+});
+
+describe('assembleExecutiveBriefReport', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('should return 8 slide groups covering all 30 slides', () => {
-    const groups = executiveBriefReportService.getSlideGroups();
-    expect(groups).toHaveLength(8);
-    expect(groups[0].title).toBe('Executive Overview');
-    expect(groups[1].title).toBe('Procucev & Client Context');
-    expect(groups[2].title).toBe('Module 1: Spend Diagnostic');
-    expect(groups[3].title).toBe('Module 2: Strategic Sourcing');
-    expect(groups[4].title).toBe('Module 3: PCBI Benchmarking');
-    expect(groups[5].title).toBe('Module 4: Savings Execution');
-    expect(groups[6].title).toBe('Recommendations & Roadmap');
-    expect(groups[7].title).toBe('Evidence & Audit');
-  });
-
-  it('should return full traceability lineage items', () => {
-    const lineage = executiveBriefReportService.getTraceabilityLineage();
-    expect(lineage.length).toBeGreaterThan(0);
-    expect(lineage[0].findingId).toBe('FIND-01');
-    expect(lineage[0].module).toBe('Module 1');
-    expect(lineage[0].erpRecord).toBeDefined();
-    expect(lineage[0].calculation).toBeDefined();
-  });
-
-  it('should assemble full report data bundle', () => {
-    const report = executiveBriefReportService.assembleFullReport('UltraTech Cement Limited');
-    expect(report.metadata.client).toBe('UltraTech Cement Limited');
-    expect(report.summaryCards).toHaveLength(9);
+  it('returns the report shape the executive brief page reads', () => {
+    const report = certifiedReport();
+    expect(Object.keys(report).sort()).toEqual([
+      'artifacts',
+      'clientProfile',
+      'metadata',
+      'sections',
+      'summaryCards',
+      'traceabilityLineage',
+      'validationChecklist'
+    ]);
+    expect(report.clientProfile).toMatchObject({
+      clientName: DEFAULT_CLIENT_PROFILE.clientName,
+      group: DEFAULT_CLIENT_PROFILE.group,
+      status: EXECUTIVE_BRIEF_STATUS_LABELS.certified,
+      confidentiality: EXECUTIVE_BRIEF_STATUS_LABELS.confidentiality
+    });
     expect(report.sections).toHaveLength(8);
-    expect(report.traceabilityLineage.length).toBeGreaterThan(0);
-    expect(report.validationChecklist.module1Validated).toBe(true);
+    expect(report.traceabilityLineage).toHaveLength(4);
+    expect(report.artifacts).toHaveLength(4);
     expect(report.validationChecklist.financialReconciliation).toBe(true);
-    expect(report.artifacts.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('formats the summary cards from certified metrics and counts', () => {
+    const values = Object.fromEntries(certifiedReport().summaryCards.map((card) => [card.id, card.formattedValue]));
+    expect(values['kpi-total-spend']).toBe('₹5920.35 Cr');
+    expect(values['kpi-transactions']).toBe('31,671 Invoices');
+    expect(values['kpi-suppliers']).toBe('974 Vendors');
+    expect(values['kpi-categories']).toBe('256 Material Groups');
+    expect(values['kpi-opp-count']).toBe('10 Initiatives');
+  });
+
+  it('marks the brief blocked when the reconciliation fails', () => {
+    const metadata = buildExecutiveBriefMetadata(DEFAULT_CLIENT_PROFILE.clientName, TEST_REPORT_DATE);
+    vi.mocked(reconcileExecutiveBrief).mockReturnValueOnce({
+      consistency: verifyFinancialConsistency({ ...metadata, totalSpendInr: 0 }),
+      waterfallValid: true,
+      netCompositionValid: true,
+      isReconciled: false
+    });
+    const report = assembleExecutiveBriefReport(DEFAULT_CLIENT_PROFILE.clientName, TEST_REPORT_DATE);
+    expect(report.clientProfile.status).toBe(EXECUTIVE_BRIEF_STATUS_LABELS.blocked);
+    expect(report.validationChecklist.financialReconciliation).toBe(false);
+  });
+});
+
+describe('report building blocks', () => {
+  it('builds one card per definition from the metadata', () => {
+    const cards = buildSummaryCards(buildExecutiveBriefMetadata(DEFAULT_CLIENT_PROFILE.clientName, TEST_REPORT_DATE));
+    expect(cards).toHaveLength(9);
+    expect(cards[0]).toMatchObject({ id: 'kpi-total-spend', module: 'Module 1', valueInr: 59203477681.66 });
+  });
+
+  it('keeps the certified attestations and sets only the reconciliation flag from the caller', () => {
+    const checklist = buildValidationChecklist(false);
+    expect(checklist.financialReconciliation).toBe(false);
+    expect(checklist.module1Validated).toBe(true);
+    expect(checklist.reportGenerationValidation).toBe(true);
+    expect(buildValidationChecklist(true).financialReconciliation).toBe(true);
   });
 });

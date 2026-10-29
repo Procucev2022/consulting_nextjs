@@ -5,7 +5,7 @@ import {
   DEFAULT_SERVICE_NAME,
   DEFAULT_RETENTION_DAYS,
   DEFAULT_MIN_LEVEL
-} from '../constants';
+} from '../constants/logger';
 
 export interface ResolvedLoggerConfig {
   serviceName: string;

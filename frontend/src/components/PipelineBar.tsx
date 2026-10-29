@@ -140,7 +140,10 @@ export const PipelineBar: React.FC<PipelineBarProps> = ({
   let cleanSpendYieldValue = '—';
   let cleanSpendYieldSub = hasUploadedDataset ? 'Available after Module 1 execution' : 'Pipeline Ready';
   if (isModule1Completed && canonicalViewModel) {
-    cleanSpendYieldValue = `${canonicalViewModel.validationSummary.cleanSpendYieldPct.toFixed(1)}%`;
+    const cleanYieldPct = canonicalViewModel.validationSummary.cleanSpendYieldPct;
+    if (typeof cleanYieldPct === 'number') {
+      cleanSpendYieldValue = `${cleanYieldPct.toFixed(1)}%`;
+    }
     cleanSpendYieldSub = `${canonicalViewModel.excludedRowCount} Excluded · ${canonicalViewModel.anomalyRowCount} Quarantined`;
   }
 

@@ -111,7 +111,6 @@
         "src/services/db.ts",
         "src/worker*.ts",
         "tests/**",
-        "prisma/**",
         "src/services/certificationEngine.ts",
         "src/services/pcbiAdminService.ts",
         "src/services/pcbiGapGovernanceService.ts",

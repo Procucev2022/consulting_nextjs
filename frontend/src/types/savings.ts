@@ -118,3 +118,9 @@ export interface ConsolidatedSavingsData {
   actionPlans: ActionPlanItem[];
   strategicSummary?: Record<string, unknown>;
 }
+
+export interface SavingsApiResponse<T> {
+  success?: boolean;
+  data?: T;
+  message?: string;
+}

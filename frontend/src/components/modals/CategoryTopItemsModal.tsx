@@ -48,7 +48,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
   });
 
   const categorySpendCr = category.total_3yr_spend_inr_cr || 0;
-  const sharePct = ((categorySpendCr / totalEvaluatedSpendInrCr) * 100).toFixed(1);
+  const sharePct = (totalEvaluatedSpendInrCr > 0 ? (categorySpendCr / totalEvaluatedSpendInrCr) * 100 : 0).toFixed(1);
   const highCreepCount = rawItems.filter((i) => i.price_change_pct >= 15).length;
   const totalPotentialLakhs = rawItems.reduce((acc, i) => acc + (i.opportunity_potential_inr_lakhs || 0), 0);
   const activeCount = category.line_items_count || category.item_count || rawItems.length;
