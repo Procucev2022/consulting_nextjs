@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { pbkdf2Sync } from 'node:crypto';
 import { AUTH_MESSAGES, AUTH_ROLES, AUTH_TOKEN_EXPIRY_SECONDS } from '../src/constants/auth';
-import { handleAdminRoute, handleAuthRoute, verifyToken } from '../src/workerAuth';
+import {
+  authenticateWorkerUser, createWorkerAuthToken, handleAdminRoute, handleAuthRoute, verifyToken
+} from '../src/workerAuth';
 import type { AuthRouteResult, CloudflareEnvironment } from '../src/types/cloudflare';
 import { issueEvidenceToken } from './helpers/evidenceSqlite';
 import {
@@ -129,6 +131,48 @@ describe('workerAuth route guards', () => {
     });
 
     expect(result.status).toBe(503);
+  });
+});
+
+describe('authenticateWorkerUser', () => {
+  it('requires configured D1 and an unexpired token for an active account', async () => {
+    const request = new Request(`${AUTH_URL}/mutation`);
+    await expect(authenticateWorkerUser(request, environmentWith({ DB: undefined })))
+      .resolves.toMatchObject({ status: 503 });
+    await expect(authenticateWorkerUser(request, environmentWith({ AUTH_SECRET: undefined })))
+      .resolves.toMatchObject({ status: 503 });
+    await expect(authenticateWorkerUser(request, environmentWith()))
+      .resolves.toMatchObject({ status: 401 });
+
+    const missingUserToken = await tokenFor('usr-missing');
+    await expect(authenticateWorkerUser(
+      new Request(`${AUTH_URL}/mutation`, { headers: bearer(missingUserToken) }), environmentWith()
+    )).resolves.toMatchObject({ status: 401 });
+  });
+
+  it('uses the active D1 role and identity instead of trusting token claims', async () => {
+    seedRegistry();
+    const regularToken = await tokenFor('usr-asha', { role: AUTH_ROLES.ADMIN });
+    const regularRequest = new Request(`${AUTH_URL}/mutation`, { headers: bearer(regularToken) });
+    await expect(authenticateWorkerUser(regularRequest, environmentWith()))
+      .resolves.toMatchObject({ status: 200, user: { id: 'usr-asha', role: 'USER', name: 'Asha Rao' } });
+    await expect(authenticateWorkerUser(regularRequest, environmentWith(), true))
+      .resolves.toMatchObject({ status: 403 });
+
+    const suspendedToken = await tokenFor('usr-ravi');
+    await expect(authenticateWorkerUser(
+      new Request(`${AUTH_URL}/mutation`, { headers: bearer(suspendedToken) }), environmentWith()
+    )).resolves.toMatchObject({ status: 401 });
+
+    const guestToken = await tokenFor('usr-guest');
+    await expect(authenticateWorkerUser(
+      new Request(`${AUTH_URL}/mutation`, { headers: bearer(guestToken) }), environmentWith()
+    )).resolves.toMatchObject({ status: 403 });
+
+    const adminToken = await tokenFor('usr-admin', { role: AUTH_ROLES.ADMIN });
+    await expect(authenticateWorkerUser(
+      new Request(`${AUTH_URL}/mutation`, { headers: bearer(adminToken) }), environmentWith(), true
+    )).resolves.toMatchObject({ status: 200, user: { id: 'usr-admin', role: 'ADMIN' } });
   });
 });
 
@@ -619,5 +663,43 @@ describe('workerAuth admin routes', () => {
     });
 
     expect(result).toEqual({ status: 404, body: { success: false, message: ENDPOINT_NOT_FOUND } });
+  });
+});
+
+describe('administrator account provisioning', () => {
+  const payload = {
+    name: 'New Administrator', email: 'admin.new@example.com', mobile_number: '+919876543210',
+    company_name: 'Acme Holdings', company_address: 'Bengaluru, India', password: 'SecureAdmin123',
+    role: 'ADMIN', subscription_tier: 'GOLD'
+  };
+
+  it('allows first-admin bootstrap once, then requires the provisioned admin token', async () => {
+    const created = await adminCall('/create-admin', { method: 'POST', body: payload });
+    expect(created).toMatchObject({ status: 201, body: { success: true, user: { role: 'ADMIN' } } });
+    const blocked = await adminCall('/create-admin', { method: 'POST', body: { ...payload, email: 'second@example.com' } });
+    expect(blocked.status).toBe(401);
+    const createdUser = created.body.user as Record<string, unknown>;
+    const token = await createWorkerAuthToken(
+      { id: createdUser.id, email: payload.email, role: 'ADMIN', subscription_tier: 'GOLD' }, WORKER_CORE_SECRET
+    );
+    const updated = await adminCall('/create-admin', {
+      method: 'POST', body: { ...payload, name: 'Updated Administrator' }, headers: bearer(token)
+    });
+    expect(updated).toMatchObject({ status: 200, body: { success: true, user: { name: 'Updated Administrator' } } });
+    expect(await countUsers()).toBe(1);
+  });
+
+  it('rejects invalid provisioning fields and unavailable D1 bindings', async () => {
+    const invalid = await adminCall('/create-admin', { method: 'POST', body: { ...payload, password: 'short' } });
+    const unavailable = await adminCall('/create-admin', {
+      method: 'POST', body: payload, environment: environmentWith({ DB: undefined })
+    });
+    expect(invalid.status).toBe(400);
+    expect(unavailable.status).toBe(503);
+  });
+
+  it('returns a signed worker token from the centralized issuer', async () => {
+    const token = await createWorkerAuthToken({ id: 'usr-token', role: 'USER', subscription_tier: 'SILVER' }, WORKER_CORE_SECRET);
+    expect(await verifyToken(token, WORKER_CORE_SECRET)).toMatchObject({ userId: 'usr-token', tier: 'SILVER' });
   });
 });

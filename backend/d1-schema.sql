@@ -577,6 +577,76 @@ CREATE TABLE IF NOT EXISTS MaterialMappingRegister (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS AssessmentMaterialMapping (
+  assessment_id TEXT NOT NULL,
+  source_material_id TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  reviewed_by TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (assessment_id, source_material_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_assessment_material_mapping_assessment
+  ON AssessmentMaterialMapping(assessment_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS Module2SpecificationReview (
+  review_id TEXT PRIMARY KEY NOT NULL,
+  assessment_id TEXT NOT NULL,
+  candidate_id TEXT NOT NULL,
+  reviewer_name TEXT NOT NULL,
+  reviewer_role TEXT,
+  review_date TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('TECHNICALLY_VERIFIED', 'REJECTED', 'AWAITING_TECHNICAL_REVIEW')),
+  technical_justification TEXT NOT NULL,
+  proposed_standard TEXT,
+  application_scope TEXT,
+  rejection_reason TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_module2_specification_review_candidate
+  ON Module2SpecificationReview(assessment_id, candidate_id, review_date, review_id);
+
+CREATE TABLE IF NOT EXISTS Module2ComplianceReview (
+  review_id TEXT PRIMARY KEY NOT NULL,
+  assessment_id TEXT NOT NULL,
+  exception_id TEXT NOT NULL,
+  reviewer_name TEXT NOT NULL,
+  reviewer_role TEXT,
+  review_date TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('VERIFIED_EXCEPTION', 'NOT_AN_EXCEPTION', 'AWAITING_REVIEW')),
+  technical_justification TEXT NOT NULL,
+  corrective_action_plan TEXT,
+  dismissal_reason TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_module2_compliance_review_exception
+  ON Module2ComplianceReview(assessment_id, exception_id, review_date, review_id);
+
+CREATE TABLE IF NOT EXISTS Module2EAuctionPlanningAssumption (
+  assumption_id TEXT PRIMARY KEY NOT NULL,
+  category_or_material TEXT NOT NULL,
+  min_savings_rate REAL NOT NULL CHECK (min_savings_rate >= 0 AND min_savings_rate <= 1),
+  expected_savings_rate REAL NOT NULL CHECK (expected_savings_rate >= min_savings_rate AND expected_savings_rate <= max_savings_rate),
+  max_savings_rate REAL NOT NULL CHECK (max_savings_rate >= expected_savings_rate AND max_savings_rate <= 1),
+  rate_source TEXT NOT NULL,
+  reference_period TEXT NOT NULL,
+  applicability TEXT NOT NULL,
+  approval_status TEXT NOT NULL CHECK (approval_status IN (
+    'Proposed Planning Assumption — Approval Required', 'APPROVED', 'PENDING_APPROVAL', 'UNQUANTIFIABLE'
+  )),
+  approved_by TEXT,
+  approved_date TEXT,
+  confidence TEXT NOT NULL CHECK (confidence IN ('HIGH', 'MEDIUM', 'LOW', 'NOT_ESTABLISHED')),
+  is_planning_assumption_only INTEGER NOT NULL DEFAULT 1 CHECK (is_planning_assumption_only = 1),
+  notes TEXT,
+  updated_by TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  CHECK (approval_status <> 'APPROVED' OR (approved_by IS NOT NULL AND approved_date IS NOT NULL))
+);
+
+CREATE INDEX IF NOT EXISTS idx_module2_eauction_assumption_category
+  ON Module2EAuctionPlanningAssumption(category_or_material, assumption_id);
+
 CREATE TABLE IF NOT EXISTS ProcurementCategoryMapping (
   material_group_code TEXT PRIMARY KEY NOT NULL,
   category_name TEXT NOT NULL,
@@ -812,3 +882,85 @@ CREATE TABLE IF NOT EXISTS OrchestrationAuditEvent (
 );
 
 CREATE INDEX IF NOT EXISTS idx_orch_audit_created ON OrchestrationAuditEvent(created_at);
+
+CREATE TABLE IF NOT EXISTS UpgradeRequest (
+  id TEXT PRIMARY KEY NOT NULL,
+  customer_user_id TEXT,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  company_name TEXT NOT NULL,
+  company_details TEXT,
+  current_tier TEXT NOT NULL CHECK (current_tier IN ('BRONZE', 'SILVER', 'GOLD')),
+  requested_tier TEXT NOT NULL CHECK (requested_tier IN ('SILVER', 'GOLD', 'ENTERPRISE')),
+  requirements_note TEXT,
+  status TEXT NOT NULL DEFAULT 'PENDING_ADMIN_ACTION' CHECK (
+    status IN ('PENDING_ADMIN_ACTION', 'OTP_VERIFIED_CODE_SENT', 'UPGRADE_COMPLETED', 'REJECTED')
+  ),
+  generated_unique_code_hash TEXT,
+  code_generated_at TEXT,
+  code_expires_at INTEGER,
+  code_redeemed_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_upgrade_request_status_created ON UpgradeRequest(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_upgrade_request_email_status ON UpgradeRequest(lower(customer_email), status);
+
+CREATE TABLE IF NOT EXISTS AdminOtpSession (
+  id TEXT PRIMARY KEY NOT NULL,
+  purpose TEXT NOT NULL CHECK (purpose IN ('UPGRADE_APPROVAL', 'SUBSCRIPTION_PROVISION')),
+  request_id TEXT,
+  customer_id TEXT,
+  requested_by TEXT NOT NULL,
+  otp_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
+  verified_at TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_otp_session_request ON AdminOtpSession(request_id, purpose, created_at);
+
+CREATE TABLE IF NOT EXISTS SubscriptionRecord (
+  id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL,
+  customer_id TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  company_name TEXT NOT NULL,
+  tier TEXT NOT NULL CHECK (tier IN ('BRONZE', 'SILVER', 'GOLD')),
+  status TEXT NOT NULL CHECK (status IN ('FREE', 'PENDING_ACTIVATION', 'ACTIVE', 'SUSPENDED', 'EXPIRED', 'CANCELLED')),
+  commercial_status TEXT NOT NULL CHECK (commercial_status IN ('FREE_TIER', 'QUOTED', 'INVOICED', 'PAYMENT_RECEIVED', 'COMPLETED')),
+  payment_reference TEXT,
+  payment_confirmed INTEGER NOT NULL DEFAULT 0 CHECK (payment_confirmed IN (0, 1)),
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  provisioned_by TEXT,
+  provisioned_at TEXT,
+  activated_by TEXT,
+  activated_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscription_status_updated ON SubscriptionRecord(status, updated_at);
+CREATE INDEX IF NOT EXISTS idx_subscription_customer_email ON SubscriptionRecord(lower(customer_email));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subscription_one_paid_active_customer
+  ON SubscriptionRecord(lower(customer_email)) WHERE status IN ('PENDING_ACTIVATION', 'ACTIVE');
+
+CREATE TABLE IF NOT EXISTS SubscriptionAuditEvent (
+  id TEXT PRIMARY KEY NOT NULL,
+  timestamp TEXT NOT NULL,
+  subscription_id TEXT NOT NULL,
+  tenant_id TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  actor_role TEXT NOT NULL CHECK (actor_role IN ('ADMIN', 'SYSTEM')),
+  action TEXT NOT NULL,
+  result TEXT NOT NULL CHECK (result IN ('SUCCESS', 'FAILURE')),
+  details_json TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscription_audit_subscription_time ON SubscriptionAuditEvent(subscription_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_subscription_audit_time ON SubscriptionAuditEvent(timestamp);

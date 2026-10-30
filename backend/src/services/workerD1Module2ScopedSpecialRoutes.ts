@@ -6,6 +6,8 @@ import { MODULE2_D1_SCOPED_MESSAGES } from '../constants/module2D1Scoped';
 import { loadPaymentTermsResultFromD1 } from './workerD1PaymentTermsD1';
 import { buildVendorConsolidationResult } from './workerD1VendorConsolidation';
 import { loadAlternateSourcingResultFromD1 } from './workerD1AlternateSourcingD1';
+import { loadAssessmentMaterialMappings } from './workerD1MaterialMappings';
+import { buildProcurementComplianceResult, loadProcurementComplianceReviewHistory } from './workerD1ProcurementCompliance';
 
 const scopeRequired = (): WorkerD1Result => ({
   status: 409,
@@ -31,8 +33,9 @@ const handleVendorConsolidationRoute = async (
   if (!scope.assessmentId) return scopeRequired();
   const result = await loaders.loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId);
   const customerName = await loaders.loadCustomerName(db, scope, path, requestId);
+  const mappingOverrides = await loadAssessmentMaterialMappings(db, scope.assessmentId);
   return { data: buildVendorConsolidationResult(
-    scope.assessmentId, customerName, result.transactions, options
+    scope.assessmentId, customerName, result.transactions, options, mappingOverrides
   ) };
 };
 
@@ -53,6 +56,25 @@ const handleAlternateSourcingRoute = async (
   return { data: alternateSourcing };
 };
 
+const handleProcurementComplianceRoute = async (
+  db: CloudflareD1Database,
+  scope: ProcurementTransactionScope,
+  path: string,
+  url: URL,
+  requestId: string,
+  loaders: ScopedModule2RouteLoaders
+): Promise<WorkerD1Result> => {
+  if (!scope.assessmentId) return scopeRequired();
+  const [analysis, customerName, reviews] = await Promise.all([
+    loaders.loadAnalysis(db, scope, url.searchParams.get('refresh') === 'true', requestId),
+    loaders.loadCustomerName(db, scope, path, requestId),
+    loadProcurementComplianceReviewHistory(db, scope.assessmentId)
+  ]);
+  return { data: buildProcurementComplianceResult(
+    scope.assessmentId, scope.tenantId || '', customerName, analysis.transactions, { reviews }
+  ) };
+};
+
 export const handleScopedSpecialRoute = async (
   db: CloudflareD1Database,
   path: string,
@@ -63,6 +85,9 @@ export const handleScopedSpecialRoute = async (
   loaders: ScopedModule2RouteLoaders
 ): Promise<WorkerD1Result | null> => {
   if (path.startsWith('/category-specialisation') && !scope.assessmentId) return scopeRequired();
+  if (path.startsWith('/procurement-compliance')) return handleProcurementComplianceRoute(
+    db, scope, path, url, requestId, loaders
+  );
   if (path.startsWith('/payment-terms')) return handlePaymentTermsRoute(db, scope, requestId);
   if (path.startsWith('/vendor-consolidation')) return handleVendorConsolidationRoute(
     db, scope, path, url, requestId, filterOptions.vendorConsolidationOptions, loaders

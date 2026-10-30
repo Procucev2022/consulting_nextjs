@@ -19,6 +19,21 @@ export const buildEAuctionWorkbook = (result: EAuctionResult): Uint8Array => {
     evidence: material.evidenceRationale
   })));
   const limitations = result.importantLimitations.map((limitation) => ({ limitation }));
+  const planningAssumptions = result.planningAssumptions.map((assumption) => ({
+    categoryOrMaterial: assumption.categoryOrMaterial,
+    minSavingsRatePct: assumption.minSavingsRate * 100,
+    expectedSavingsRatePct: assumption.expectedSavingsRate * 100,
+    maxSavingsRatePct: assumption.maxSavingsRate * 100,
+    rateSource: assumption.rateSource,
+    referencePeriod: assumption.referencePeriod,
+    applicability: assumption.applicability,
+    approvalStatus: assumption.approvalStatus,
+    approvedBy: assumption.approvedBy || '',
+    approvedDate: assumption.approvedDate || '',
+    confidence: assumption.confidence,
+    isPlanningAssumptionOnly: assumption.isPlanningAssumptionOnly,
+    notes: assumption.notes || ''
+  }));
   const summaryRows = [
     { metric: 'assessmentId', value: result.assessmentId },
     { metric: 'selectedFinancialYear', value: result.selectedFinancialYear },
@@ -39,7 +54,12 @@ export const buildEAuctionWorkbook = (result: EAuctionResult): Uint8Array => {
       header: ['category', 'materialCode', 'materialDescription', 'uom', 'financialYear', 'historicalSpendInr',
         'addressableSpendInr', 'purchaseOrderCount', 'supplierCount', 'plantCount', 'suitability', 'evidence']
     }),
-    XLSX.utils.json_to_sheet(limitations, { header: ['limitation'] })
+    XLSX.utils.json_to_sheet(limitations, { header: ['limitation'] }),
+    XLSX.utils.json_to_sheet(planningAssumptions, { header: [
+      'categoryOrMaterial', 'minSavingsRatePct', 'expectedSavingsRatePct', 'maxSavingsRatePct', 'rateSource',
+      'referencePeriod', 'applicability', 'approvalStatus', 'approvedBy', 'approvedDate', 'confidence',
+      'isPlanningAssumptionOnly', 'notes'
+    ] })
   ];
   sheets.forEach((sheet, index) => XLSX.utils.book_append_sheet(
     workbook,

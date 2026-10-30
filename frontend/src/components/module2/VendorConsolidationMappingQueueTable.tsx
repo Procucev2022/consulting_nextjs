@@ -6,6 +6,7 @@ import type { MaterialMappingEntry, UpdateMaterialMappingPayload } from '../../t
 import type { VendorConsolidationMappingQueueTableProps } from '../../types/module2VendorConsolidation';
 import { UI_STRINGS, VENDOR_CONSOLIDATION_CONFIG, VENDOR_CONSOLIDATION_UI_CONFIG } from '../../constants';
 import { logger } from '../../utils/logger';
+import { authApiClient } from '../../utils/authApi';
 
 function matchesSearchQuery(entry: MaterialMappingEntry, query: string): boolean {
   return (
@@ -16,13 +17,8 @@ function matchesSearchQuery(entry: MaterialMappingEntry, query: string): boolean
   );
 }
 
-function resolveApprovalUnspscCode(assignedCode: string): string {
-  return assignedCode !== VENDOR_CONSOLIDATION_CONFIG.UNMAPPED_UNSPSC_CODE
-    ? assignedCode
-    : VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_FALLBACK_UNSPSC_CODE;
-}
-
 export const VendorConsolidationMappingQueueTable: React.FC<VendorConsolidationMappingQueueTableProps> = ({
+  assessmentId,
   exceptions,
   onMappingUpdated
 }) => {
@@ -30,6 +26,7 @@ export const VendorConsolidationMappingQueueTable: React.FC<VendorConsolidationM
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [mappingCodes, setMappingCodes] = useState<Record<string, string>>({});
 
   const filtered = useMemo(() => {
     return exceptions.filter((entry) => {
@@ -39,19 +36,30 @@ export const VendorConsolidationMappingQueueTable: React.FC<VendorConsolidationM
   }, [exceptions, searchTerm]);
 
   const handleApprove = async (entry: MaterialMappingEntry): Promise<void> => {
+    const unspscCode = mappingCodes[entry.sourceMaterialId] ?? (
+      entry.assignedUnspscCode === VENDOR_CONSOLIDATION_CONFIG.UNMAPPED_UNSPSC_CODE
+        ? '' : entry.assignedUnspscCode
+    );
+    if (!/^\d{8}$/.test(unspscCode)) {
+      setApprovalError(strings.mappingCodeRequired);
+      return;
+    }
     setUpdatingId(entry.sourceMaterialId);
     setApprovalError(null);
     try {
       const payload: UpdateMaterialMappingPayload = {
+        assessmentId,
         sourceMaterialId: entry.sourceMaterialId,
-        unspscCode: resolveApprovalUnspscCode(entry.assignedUnspscCode),
+        unspscCode,
         reviewStatus: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_STATUS,
-        reviewedBy: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_REVIEWER,
         auditNotes: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_AUDIT_NOTE
       };
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      const token = authApiClient.getStoredToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
       const response = await fetch(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_UPDATE_ENDPOINT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       });
       if (!response.ok) {
@@ -148,6 +156,20 @@ export const VendorConsolidationMappingQueueTable: React.FC<VendorConsolidationM
                   </td>
                   <td className="px-4 py-3 font-mono text-[11px] text-slate-500 dark:text-slate-400">
                     {entry.assignedUnspscCode}
+                    <input
+                      aria-label={strings.mappingCodeInputLabel(entry.sourceMaterialId)}
+                      inputMode="numeric"
+                      maxLength={8}
+                      placeholder={strings.mappingCodeInputPlaceholder}
+                      value={mappingCodes[entry.sourceMaterialId] ?? (
+                        entry.assignedUnspscCode === VENDOR_CONSOLIDATION_CONFIG.UNMAPPED_UNSPSC_CODE
+                          ? '' : entry.assignedUnspscCode
+                      )}
+                      onChange={(event) => setMappingCodes((current) => ({
+                        ...current, [entry.sourceMaterialId]: event.target.value.replace(/\D/g, '').slice(0, 8)
+                      }))}
+                      className="mt-1 block w-40 rounded border border-slate-300 bg-white px-2 py-1 text-[10px] text-slate-700"
+                    />
                   </td>
                   <td className="px-4 py-3 text-right font-mono font-bold text-slate-900 dark:text-white">
                     {strings.formatRupees(entry.totalSpendCr.toFixed(4))}

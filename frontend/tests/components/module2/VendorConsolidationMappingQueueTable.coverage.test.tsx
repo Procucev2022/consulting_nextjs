@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { VendorConsolidationMappingQueueTable } from '../../../src/components/module2/VendorConsolidationMappingQueueTable';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { AUTH_STORAGE_KEYS } from '../../../src/constants/auth';
 import { VENDOR_CONSOLIDATION_CONFIG, VENDOR_CONSOLIDATION_UI_CONFIG } from '../../../src/constants/module2VendorConsolidation';
 import { logger } from '../../../src/utils/logger';
 import { buildLogEntry, buildMappingEntry } from '../../fixtures/vendorConsolidation';
@@ -27,11 +28,12 @@ const searchInputFor = (): HTMLElement => screen.getByPlaceholderText(strings.ma
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH_TOKEN);
 });
 
 describe('VendorConsolidationMappingQueueTable search filter', () => {
   it('matches the search query against the source material identifier', () => {
-    render(<VendorConsolidationMappingQueueTable exceptions={exceptions} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={exceptions} />);
 
     fireEvent.change(searchInputFor(), { target: { value: 'mat-002' } });
 
@@ -40,7 +42,7 @@ describe('VendorConsolidationMappingQueueTable search filter', () => {
   });
 
   it('matches the search query against the source description', () => {
-    render(<VendorConsolidationMappingQueueTable exceptions={exceptions} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={exceptions} />);
 
     fireEvent.change(searchInputFor(), { target: { value: 'impeller' } });
 
@@ -49,7 +51,7 @@ describe('VendorConsolidationMappingQueueTable search filter', () => {
   });
 
   it('matches the search query against the source category', () => {
-    render(<VendorConsolidationMappingQueueTable exceptions={exceptions} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={exceptions} />);
 
     fireEvent.change(searchInputFor(), { target: { value: 'fluid' } });
 
@@ -58,7 +60,7 @@ describe('VendorConsolidationMappingQueueTable search filter', () => {
   });
 
   it('matches the search query against the review reason and ignores entries without one', () => {
-    render(<VendorConsolidationMappingQueueTable exceptions={exceptions} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={exceptions} />);
 
     fireEvent.change(searchInputFor(), { target: { value: 'manufacturer' } });
 
@@ -67,7 +69,7 @@ describe('VendorConsolidationMappingQueueTable search filter', () => {
   });
 
   it('keeps the pending count while showing no rows when nothing matches', () => {
-    render(<VendorConsolidationMappingQueueTable exceptions={exceptions} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={exceptions} />);
 
     fireEvent.change(searchInputFor(), { target: { value: 'zzz-no-match' } });
 
@@ -82,7 +84,7 @@ describe('VendorConsolidationMappingQueueTable search filter', () => {
       sourceDescription: 'Unnamed component',
       reviewReason: undefined
     });
-    render(<VendorConsolidationMappingQueueTable exceptions={[sparse]} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[sparse]} />);
 
     expect(screen.getByText(UI_STRINGS.common.notAvailable)).toBeDefined();
     expect(screen.getByText(strings.pendingReviewFallback)).toBeDefined();
@@ -90,11 +92,19 @@ describe('VendorConsolidationMappingQueueTable search filter', () => {
 });
 
 describe('VendorConsolidationMappingQueueTable approval', () => {
-  it('sends the fallback UNSPSC code for an unclassified entry and succeeds without a callback', async () => {
+  it('requires a real UNSPSC commodity code for an unclassified entry', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[pumpImpeller]} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[pumpImpeller]} />);
+    fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe(strings.mappingCodeRequired);
+    localStorage.setItem(AUTH_STORAGE_KEYS.AUTH_TOKEN, 'stored-session-token');
+    fireEvent.change(screen.getByLabelText(strings.mappingCodeInputLabel('MAT-002')), {
+      target: { value: '12345678' }
+    });
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
 
     await waitFor(() => {
@@ -103,12 +113,13 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     const [url, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_UPDATE_ENDPOINT);
     expect(JSON.parse(String(requestInit.body))).toEqual({
+      assessmentId: 'A1',
       sourceMaterialId: 'MAT-002',
-      unspscCode: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_FALLBACK_UNSPSC_CODE,
+      unspscCode: '12345678',
       reviewStatus: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_STATUS,
-      reviewedBy: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_REVIEWER,
       auditNotes: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_AUDIT_NOTE
     });
+    expect(requestInit.headers).toMatchObject({ Authorization: 'Bearer stored-session-token' });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: strings.btnApproveMapping })).toBeDefined();
     });
@@ -120,7 +131,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
 
     await waitFor(() => {
@@ -139,7 +150,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending));
     const onUpdated = vi.fn();
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
 
     const savingButton = await screen.findByRole('button', { name: strings.btnSavingMapping });
@@ -157,7 +168,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
     const loggerErrorSpy = vi.spyOn(logger, 'error').mockReturnValue(buildLogEntry());
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
 
     expect(await screen.findByRole('alert')).toBeDefined();
@@ -175,7 +186,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(failure));
     const loggerErrorSpy = vi.spyOn(logger, 'error').mockReturnValue(buildLogEntry());
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[hydraulicValve]} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[hydraulicValve]} />);
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
 
     expect(
@@ -188,7 +199,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue('offline'));
     vi.spyOn(logger, 'error').mockReturnValue(buildLogEntry());
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[hydraulicValve]} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[hydraulicValve]} />);
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
 
     expect(
@@ -207,7 +218,7 @@ describe('VendorConsolidationMappingQueueTable approval', () => {
     vi.stubGlobal('fetch', fetchMock);
     vi.spyOn(logger, 'error').mockReturnValue(buildLogEntry());
 
-    render(<VendorConsolidationMappingQueueTable exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={[hydraulicValve]} onMappingUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: strings.btnApproveMapping }));
     expect(await screen.findByRole('alert')).toBeDefined();
 
@@ -226,7 +237,7 @@ describe('VendorConsolidationMappingQueueTable row limit', () => {
     const largeQueue = Array.from({ length: totalRows }, (_unused, index) =>
       buildMappingEntry({ sourceMaterialId: `MAT-${index + 1}`, sourceDescription: `Item ${index + 1}` })
     );
-    render(<VendorConsolidationMappingQueueTable exceptions={largeQueue} />);
+    render(<VendorConsolidationMappingQueueTable assessmentId="A1" exceptions={largeQueue} />);
 
     expect(screen.getByText(`MAT-${rowLimit}`)).toBeDefined();
     expect(screen.queryByText(`MAT-${rowLimit + 1}`)).toBeNull();

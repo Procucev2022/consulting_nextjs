@@ -37,6 +37,10 @@ export interface CloudflareEnvironment {
   D1_DATABASE_NAME?: string;
   ADMIN_EMAIL?: string;
   ADMIN_MOBILE?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM?: string;
+  ENVIRONMENT?: string;
+  APP_OPERATING_MODE?: string;
   GEMINI_API_KEY?: string;
   GEMINI_BACKUP_KEYS?: string;
   GEMINI_BASE_URL?: string;

@@ -10,6 +10,15 @@ import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from '
 import { MODULE2_D1_EAUCTION } from './module2D1Scoped';
 import { MODULE2_D1_VENDOR_CONSOLIDATION } from './module2VendorConsolidationD1';
 export { alternateSourcingQuerySchema } from './module2AlternateSourcingD1';
+export {
+  eAuctionPlanningAssumptionSchema,
+  materialMappingRecordSchema,
+  materialMappingUpdateSchema,
+  procurementComplianceReviewSchema,
+  specificationReviewSchema
+} from './module2ReviewValidation';
+export { directPriceQuerySchema } from './module2D1Validation';
+export * from './commercialValidation';
 
 export const pcbiReferenceQuerySchema = z.object({
   sector: z.string().trim().min(1).max(120).optional(),
@@ -35,12 +44,6 @@ export const eAuctionQuerySchema = z.object({
   materialCode: z.string().trim().min(1).max(120).optional()
 });
 
-export const directPriceQuerySchema = z.object({
-  financialYear: z.string().trim().regex(/^(?:ALL|UNKNOWN|FY\d{4}-\d{2})$/).optional(),
-  category: z.string().trim().min(1).max(200).optional(),
-  materialCode: z.string().trim().min(1).max(120).optional()
-});
-
 export const vendorConsolidationQuerySchema = z.object({
   category: z.string().trim().min(1).max(200).optional(),
   status: z.enum(Object.values(MODULE2_D1_VENDOR_CONSOLIDATION.STATUS)).optional(),
@@ -48,7 +51,6 @@ export const vendorConsolidationQuerySchema = z.object({
   supplierCode: z.string().trim().min(1).max(120).optional()
 });
 
-// Request Headers Validation Schema
 export const requestHeadersSchema = z.object({
   'x-request-id': z.string().optional(),
   'content-type': z.string().optional(),

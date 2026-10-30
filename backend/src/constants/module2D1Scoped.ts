@@ -33,19 +33,29 @@ export const MODULE2_D1_SCOPED_MESSAGES = {
   invalidAlternateSourcingFilter: 'Alternate sourcing filters are invalid. Choose an available state or city and a supported match type.'
 } as const;
 
-export const MODULE2_D1_PENDING_ROUTES: ReadonlySet<string> = new Set([
-  '/e-auction/planning-assumptions',
-  '/vendor-consolidation/mappings/update',
-  '/specification-rationalisation/review',
-  '/procurement-compliance',
-  '/procurement-compliance/review', '/procurement-compliance/export-excel'
-]);
+export const MODULE2_D1_PENDING_ROUTES: ReadonlySet<string> = new Set<string>();
 
 export const MODULE2_D1_ROUTE_MESSAGES = {
   pending: 'This sourcing action or export has not been migrated to the D1 Worker. No changes or export files were created.',
   method: 'This sourcing endpoint supports GET only. No sourcing data was changed.',
   unknown: 'This sourcing endpoint does not exist. Refresh the sourcing workspace and select a supported action.',
-  handoffScope: 'Select an assessment before requesting its sourcing handoff. No global handoff result is persisted in D1.'
+  handoffScope: 'Select an assessment before requesting its sourcing handoff. No global handoff result is persisted in D1.',
+  invalidSpecificationReview: 'The specification review is incomplete or invalid. Correct the listed fields and retry.',
+  specificationCandidateNotFound: 'The candidate is not present in the selected D1 assessment. Refresh the assessment and retry.',
+  specificationReviewSaved: 'Technical review saved to the selected assessment.',
+  invalidMaterialMapping: 'The material mapping is incomplete or invalid. Enter a valid 8-digit UNSPSC commodity code.',
+  materialMappingTargetNotFound: 'The material is not present in the selected D1 assessment. Refresh the mapping queue and retry.',
+  materialMappingTaxonomyNotFound: 'That UNSPSC commodity code is not in the D1 taxonomy. Select a code from the taxonomy and retry.',
+  materialMappingSaved: 'Material classification saved to the selected assessment.',
+  invalidComplianceReview: 'The compliance review is invalid. Add a clear justification and provide a dismissal reason when dismissing an exception.',
+  complianceExceptionNotFound: 'The exception is not present in the selected D1 assessment. Refresh the assessment and retry.',
+  complianceReviewSaved: 'Procurement compliance review saved to the selected assessment.',
+  complianceScopeRequired: 'Select an assessment to review its procurement compliance evidence.',
+  invalidEAuctionPlanningAssumption: 'The e-auction planning assumption is invalid. Check its category, rate range, evidence source, and approval details.',
+  eAuctionPlanningAssumptionSaved: 'The e-auction planning assumption was saved to D1. It remains planning-only until commercial execution is verified.',
+  eAuctionPlanningAssumptionAdminOnly: 'Only an authenticated administrator can change e-auction planning assumptions.',
+  eAuctionPlanningAssumptionMethod: 'This planning-assumption endpoint supports GET and PUT only.',
+  postRequired: 'This sourcing workflow requires POST. No data was changed.'
 } as const;
 
 export const MODULE2_D1_PROFILE_DETAIL_FIELDS = [
@@ -123,7 +133,7 @@ export const MODULE2_D1_EAUCTION = {
   EXPORT: {
     MIME_TYPE: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     FILENAME_PREFIX: 'EAuction_Candidates_',
-    SHEETS: ['Summary', 'Categories', 'Materials', 'Limitations']
+    SHEETS: ['Summary', 'Categories', 'Materials', 'Limitations', 'Planning Assumptions']
   }
 } as const;
 

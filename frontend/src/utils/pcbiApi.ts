@@ -1,6 +1,14 @@
 import frontendLogger from './logger';
+import { authApiClient } from './authApi';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+const adminApiHeaders = (includeJson = false): Record<string, string> => {
+  const token = authApiClient.getStoredToken();
+  return {
+    ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+};
 
 export interface PCBIOpportunityParams {
   search?: string;
@@ -104,7 +112,7 @@ export const pcbiApiClient = {
     frontendLogger.info('Submitting customer upgrade request', { payload });
     const res = await fetch(`${API_BASE}/api/upgrade/request`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminApiHeaders(true),
       body: JSON.stringify(payload)
     });
     return await res.json();
@@ -114,7 +122,7 @@ export const pcbiApiClient = {
     const url = status
       ? `${API_BASE}/api/upgrade/requests?status=${encodeURIComponent(status)}`
       : `${API_BASE}/api/upgrade/requests`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: adminApiHeaders() });
     return await res.json();
   },
 
@@ -122,7 +130,7 @@ export const pcbiApiClient = {
     frontendLogger.info('Admin generating upgrade OTP code', { requestId });
     const res = await fetch(`${API_BASE}/api/upgrade/generate-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminApiHeaders(true),
       body: JSON.stringify({ requestId, adminUserId })
     });
     return await res.json();
@@ -136,7 +144,7 @@ export const pcbiApiClient = {
   async requestAdminUpgradeOTP(requestId: string): Promise<Record<string, unknown>> {
     const res = await fetch(`${API_BASE}/api/upgrade/admin/request-otp`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminApiHeaders(true),
       body: JSON.stringify({ request_id: requestId })
     });
     return await res.json();
@@ -145,7 +153,7 @@ export const pcbiApiClient = {
   async verifyAdminUpgradeOTP(requestId: string, otp: string): Promise<Record<string, unknown>> {
     const res = await fetch(`${API_BASE}/api/upgrade/admin/verify-otp-and-generate-code`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: adminApiHeaders(true),
       body: JSON.stringify({ request_id: requestId, otp })
     });
     return await res.json();

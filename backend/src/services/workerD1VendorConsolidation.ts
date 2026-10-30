@@ -177,7 +177,8 @@ const coverageSummary = (
 
 export const buildVendorConsolidationResult = (
   assessmentId: string, customerName: string, transactions: StrategicInputTransaction[],
-  options: VendorConsolidationQueryInput = {}
+  options: VendorConsolidationQueryInput = {},
+  mappingOverrides: MaterialMappingEntry[] = []
 ): VendorConsolidationResult => {
   const requestedTransactions = transactions.filter((row) => {
     const category = options.category?.toLocaleLowerCase('en-US');
@@ -196,7 +197,19 @@ export const buildVendorConsolidationResult = (
   const totalSpendInr = scopedTransactions.reduce((total, row) => total + spendOf(row), 0);
   const groups = groupTransactions(scopedTransactions);
   const sourceGroups = groupTransactions(scopedTransactions, false);
-  const mappingRegister = sourceMaterials(scopedTransactions).map(mappingEntry);
+  const overrideById = new Map(mappingOverrides.map((entry) => [entry.sourceMaterialId, entry]));
+  const mappingRegister = sourceMaterials(scopedTransactions).map((material) => {
+    const inferred = mappingEntry(material);
+    const override = overrideById.get(inferred.sourceMaterialId);
+    return override ? {
+      ...inferred,
+      ...override,
+      totalSpendInr: inferred.totalSpendInr,
+      totalSpendCr: inferred.totalSpendCr,
+      transactionCount: inferred.transactionCount,
+      qualifyingSuppliersCount: inferred.qualifyingSuppliersCount
+    } : inferred;
+  });
   const mappingExceptions = mappingRegister.filter((entry) => entry.reviewStatus === 'AWAITING_REVIEW');
   let categories = buildCategoryProfiles(scopedTransactions, groups, mappingRegister, true);
   let sourceGroupCategories = buildCategoryProfiles(scopedTransactions, sourceGroups, mappingRegister, false);

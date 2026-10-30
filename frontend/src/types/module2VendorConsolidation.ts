@@ -241,6 +241,7 @@ export interface VendorConsolidationTransactionTableProps {
 }
 
 export interface VendorConsolidationMappingQueueTableProps {
+  assessmentId: string;
   exceptions: MaterialMappingEntry[];
   onMappingUpdated?: () => void;
 }

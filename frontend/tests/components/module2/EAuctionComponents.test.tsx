@@ -660,6 +660,31 @@ describe('EAuctionDynamicBiddingView Component', () => {
     expect(screen.getByRole('option', { name: strings.allFinancialYears })).toBeInTheDocument();
   });
 
+  it('shows planning ranges returned from D1 with their approval and evidence details', async () => {
+    vi.mocked(Module2StrategicSourcingApi.getEAuctionDynamicBidding).mockResolvedValueOnce({
+      ...mockEAuctionResult,
+      planningAssumptions: [
+        { id: 'ASSUMP-1', categoryOrMaterial: 'Packaging', minSavingsRate: 0.03,
+          expectedSavingsRate: 0.055, maxSavingsRate: 0.09, rateSource: 'Auction benchmark',
+          referencePeriod: 'FY2024-FY2025', applicability: 'Standard packaging',
+          approvalStatus: 'PENDING_APPROVAL', confidence: 'MEDIUM', isPlanningAssumptionOnly: true,
+          notes: 'Procurement approval is required.' },
+        { id: 'ASSUMP-2', categoryOrMaterial: 'Chemicals', minSavingsRate: 0.01,
+          expectedSavingsRate: 0.02, maxSavingsRate: 0.03, rateSource: 'Chemical index',
+          referencePeriod: 'FY2025-FY2026', applicability: 'Bulk chemicals',
+          approvalStatus: 'APPROVED', confidence: 'HIGH', isPlanningAssumptionOnly: true }
+      ]
+    });
+
+    render(<EAuctionDynamicBiddingView assessmentId="AIC-2026-0002" />);
+
+    expect(await screen.findByRole('heading', { name: strings.planningAssumptionsTitle })).toBeInTheDocument();
+    expect(screen.getByText(strings.planningAssumptionRange(3, 5.5, 9))).toBeInTheDocument();
+    expect(screen.getByText('Auction benchmark · FY2024-FY2025')).toBeInTheDocument();
+    expect(screen.getByText('Procurement approval is required.')).toBeInTheDocument();
+    expect(screen.getByText('Chemicals')).toBeInTheDocument();
+  });
+
   it('requests the chosen financial year and returns to all years', async () => {
     render(<EAuctionDynamicBiddingView assessmentId="AIC-2026-0002" />);
     await screen.findByText('₹311.28 Cr');

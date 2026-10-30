@@ -76,6 +76,8 @@ export * from './module2PaymentTermsD1';
 export * from './module2VendorConsolidationD1';
 export * from './module2CategorySpecialisation';
 export * from './module2SpecificationRationalisation';
+export * from './module2ReviewD1';
+export * from './commercialWorkflow';
 export * from './module2ProcurementCompliance';
 export * from './module2AlternateSourcing';
 export * from './module2SavingsDeduplication';

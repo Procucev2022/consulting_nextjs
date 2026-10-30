@@ -82,7 +82,5 @@ export const VENDOR_CONSOLIDATION_UI_CONFIG = {
   MAPPING_QUEUE_ROW_LIMIT: 50,
   MAPPING_UPDATE_ENDPOINT: '/api/module2/sourcing/vendor-consolidation/mappings/update',
   MAPPING_APPROVAL_STATUS: 'CLIENT_APPROVED',
-  MAPPING_APPROVAL_FALLBACK_UNSPSC_CODE: '10000000',
-  MAPPING_APPROVAL_REVIEWER: 'Client Procurement Reviewer',
   MAPPING_APPROVAL_AUDIT_NOTE: 'Client approved during manual engineering review session'
 } as const;

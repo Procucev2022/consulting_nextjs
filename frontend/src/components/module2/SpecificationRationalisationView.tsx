@@ -15,6 +15,7 @@ import {
 } from '../../constants/module2SpecificationRationalisation';
 import { SpecificationRationalisationReviewModal } from './SpecificationRationalisationReviewModal';
 import { resolveHumanReadableCategory } from '../../utils/procurementCategoryResolver';
+import { authApiClient } from '../../utils/authApi';
 
 export const SpecificationRationalisationView: React.FC<SpecificationRationalisationViewProps> = ({
   assessmentId = '',
@@ -74,9 +75,12 @@ export const SpecificationRationalisationView: React.FC<SpecificationRationalisa
   const handleSubmitReview = async (payload: SpecificationRationalisationReviewPayload): Promise<void> => {
     setIsSubmitting(true);
     try {
+      const token = authApiClient.getStoredToken();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch('/api/module2/sourcing/specification-rationalisation/review', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(`Review submission failed (HTTP ${res.status})`);

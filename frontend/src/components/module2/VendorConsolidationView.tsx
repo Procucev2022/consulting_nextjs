@@ -270,6 +270,7 @@ export const VendorConsolidationView: React.FC<VendorConsolidationViewProps> = (
 
           {drillDownLevel === 'CATEGORIES' && activeDimension === 'MAPPING_QUEUE' && (
             <VendorConsolidationMappingQueueTable
+              assessmentId={assessmentId}
               exceptions={result.mappingExceptions || []}
               onMappingUpdated={fetchData}
             />

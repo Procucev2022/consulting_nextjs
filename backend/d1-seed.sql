@@ -194,3 +194,26 @@ INSERT OR IGNORE INTO AssessmentAuditLog (
 ('LOG-003', 'AIC-2026-0002', 'admin@procucev.com', 'INTERNAL_ADMIN', 'ASSESSMENT_CREATED', '{"assessmentId":"AIC-2026-0002"}', '2026-04-01T09:00:00.000Z'),
 ('LOG-004', 'AIC-2026-0002', 'admin@procucev.com', 'INTERNAL_ADMIN', 'ANALYSIS_APPROVED', '{"status":"APPROVED"}', '2026-04-15T12:00:00.000Z'),
 ('LOG-005', 'AIC-2026-0003', 'analyst@procucev.com', 'INTERNAL_SENIOR_ANALYST', 'ASSESSMENT_CREATED', '{"assessmentId":"AIC-2026-0003"}', '2026-10-08T10:00:00.000Z');
+
+-- 17. E-Auction Planning Assumptions (provisional governance inputs; never realized savings)
+INSERT OR IGNORE INTO Module2EAuctionPlanningAssumption (
+  assumption_id, category_or_material, min_savings_rate, expected_savings_rate, max_savings_rate,
+  rate_source, reference_period, applicability, approval_status, approved_by, approved_date,
+  confidence, is_planning_assumption_only, notes, updated_by, updated_at
+) VALUES
+('ASSUMP-PACKAGING', 'Packaging', 0.03, 0.055, 0.09,
+ 'Industrial Packaging Dynamic Reverse Auction Index', '2023-2025 Historical Dynamic Bidding Indices',
+ 'Multi-supplier corrugated, polybags, boxes and industrial packaging', 'Proposed Planning Assumption — Approval Required',
+ NULL, NULL, 'HIGH', 1, 'Provisional planning assumption. Procurement approval is required before any use.', 'D1 seed', '2026-10-30T00:00:00.000Z'),
+('ASSUMP-CHEMICALS', 'Chemicals', 0.02, 0.04, 0.065,
+ 'Chemical Industry Reverse Auction Procurement Benchmarks', 'FY2023-FY2025',
+ 'Standardized bulk industrial chemicals and dyes with at least two active suppliers', 'Proposed Planning Assumption — Approval Required',
+ NULL, NULL, 'HIGH', 1, 'Provisional planning assumption. Procurement approval is required before any use.', 'D1 seed', '2026-10-30T00:00:00.000Z'),
+('ASSUMP-MRO-SPARES', 'MRO', 0.04, 0.07, 0.12,
+ 'MRO and Standard Hardware Dynamic Bidding Benchmarks', 'FY2023-FY2025',
+ 'Standardized off-the-shelf industrial parts, fasteners and hardware', 'Proposed Planning Assumption — Approval Required',
+ NULL, NULL, 'MEDIUM', 1, 'Provisional planning assumption. Procurement approval is required before any use.', 'D1 seed', '2026-10-30T00:00:00.000Z'),
+('ASSUMP-GENERAL-SOURCING', 'DEFAULT', 0.02, 0.035, 0.05,
+ 'Enterprise Strategic Sourcing Conservative Planning Baseline', 'FY2024-FY2025',
+ 'Multi-supplier candidate materials with documented price dispersion', 'Proposed Planning Assumption — Approval Required',
+ NULL, NULL, 'MEDIUM', 1, 'Provisional planning assumption. Procurement approval is required before any use.', 'D1 seed', '2026-10-30T00:00:00.000Z');

@@ -4,7 +4,8 @@ import { handleModule2Route } from '../src/workerD1Module2';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES } from '../src/constants/module2D1Scoped';
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from '../src/constants/module2SpecificationRationalisationD1';
-import { createWorkerDatabase } from './helpers/workerCoreFixtures';
+import { createWorkerDatabase, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
+import { issueEvidenceToken } from './helpers/evidenceSqlite';
 
 const mockDb = (records: {
   categories?: any[];
@@ -179,12 +180,18 @@ describe('workerD1Module2 handler', () => {
         'MAT-A', 2, 'EA', 10, 'INR', 20, 'Plant 1', '{}');
       insert.run('SPEC-B', 'T1', 'A1', 'Supplier B', 'SUP-B', ' bolt   m12 ', 'hardware',
         'MAT-B', 3, 'EA', 15, 'INR', 45, 'Plant 2', '{}');
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'usr-reviewer', 'Asha Reviewer', '+910000000010', 'reviewer@example.test', 'Example', 'Pune',
+        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD'
+      );
 
       const dataRequest = req('/sourcing/specification-rationalisation?assessmentId=A1&tenantId=T1');
       const data = await handleModule2Route(fixture.d1, '/sourcing/specification-rationalisation', dataRequest,
         new URL(dataRequest.url));
       expect(data.data).toMatchObject({
-        assessmentId: 'A1', reviewWorkflowAvailable: false,
+        assessmentId: 'A1', reviewWorkflowAvailable: true,
         summary: {
           totalMaterialsAssessedCount: 2, totalCandidatesIdentifiedCount: 1,
           totalExpenditureUnderReviewInr: 65, commercialSavingsQuantifiedInr: 0
@@ -205,12 +212,236 @@ describe('workerD1Module2 handler', () => {
       expect(workbook.SheetNames).toEqual([...MODULE2_D1_SPECIFICATION_RATIONALISATION.EXPORT.SHEETS]);
       expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation')).toBe(false);
       expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation/export-excel')).toBe(false);
-      expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation/review')).toBe(true);
-      const review = req('/sourcing/specification-rationalisation/review?assessmentId=A1', { method: 'POST' });
-      expect(await handleModule2Route(fixture.d1, '/sourcing/specification-rationalisation/review', review,
-        new URL(review.url))).toMatchObject({ status: 501 });
+      expect(MODULE2_D1_PENDING_ROUTES.has('/specification-rationalisation/review')).toBe(false);
+      const token = await issueEvidenceToken({ userId: 'usr-reviewer' }, WORKER_CORE_SECRET);
+      const review = req('/sourcing/specification-rationalisation/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', candidateId: 'SPEC-1', status: 'TECHNICALLY_VERIFIED',
+          reviewerName: 'Untrusted UI name', technicalJustification: 'Compared approved engineering drawings.',
+          proposedStandard: 'Bolt M12', applicationScope: 'Line 1 assembly', rejectionReason: 'Not applicable' })
+      });
+      const savedReview = await handleModule2Route(fixture.d1, '/sourcing/specification-rationalisation/review', review,
+        new URL(review.url), WORKER_CORE_SECRET);
+      expect(savedReview.data).toMatchObject({
+        reviewWorkflowAvailable: true,
+        summary: { technicallyVerifiedCount: 1, commercialSavingsQuantifiedInr: 0 },
+        candidates: [expect.objectContaining({
+          candidateId: 'SPEC-1', reviewStatus: 'TECHNICALLY_VERIFIED',
+          reviewHistory: [expect.objectContaining({ reviewerName: 'Asha Reviewer' })]
+        })]
+      });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM Module2SpecificationReview')
+        .get()).toMatchObject({ count: 1 });
     } finally {
       fixture.close();
+    }
+  });
+
+  it('persists authenticated assessment-scoped UNSPSC mapping decisions and reuses them in D1 reports', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, assessment_id, supplier_name, short_text, material_group, material_code,
+        order_quantity, order_unit, net_price, currency, total_inr_raw, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run('MAP-TX-1', 'T1', 'A1', 'Supplier A', 'Resin grade 1', 'Chemicals', 'MAT-1', 2, 'KG', 50, 'INR', 100, '{}');
+      fixture.db.prepare(`INSERT INTO UNSPSCCommodity (
+        commodity_code, commodity_title, class_code, class_title, family_code, family_title,
+        segment_code, segment_title, taxonomy_version
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run('12345678', 'Resins', '123456', 'Chemical Products', '1234', 'Materials', '12', 'Chemicals', 'v1');
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run('usr-mapper', 'Mapping Reviewer', '+910000000011', 'mapper@example.test', 'Example', 'Pune',
+          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD');
+      const token = await issueEvidenceToken({ userId: 'usr-mapper' }, WORKER_CORE_SECRET);
+      const update = req('/sourcing/vendor-consolidation/mappings/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', sourceMaterialId: 'MAT-1', unspscCode: '12345678',
+          reviewStatus: 'CLIENT_APPROVED', auditNotes: 'Engineering reviewed.' })
+      });
+      const saved = await handleModule2Route(fixture.d1, '/sourcing/vendor-consolidation/mappings/update', update,
+        new URL(update.url), WORKER_CORE_SECRET);
+      expect(saved.data).toMatchObject({ success: true, mapping: {
+        sourceMaterialId: 'MAT-1', assignedUnspscCode: '12345678', reviewStatus: 'CLIENT_APPROVED',
+        reviewedBy: 'Mapping Reviewer'
+      } });
+      const reportRequest = req('/sourcing/vendor-consolidation?assessmentId=A1&tenantId=T1');
+      const report = await handleModule2Route(fixture.d1, '/sourcing/vendor-consolidation', reportRequest,
+        new URL(reportRequest.url));
+      expect(report.data).toMatchObject({
+        mappingRegister: [expect.objectContaining({ sourceMaterialId: 'MAT-1', reviewStatus: 'CLIENT_APPROVED' })],
+        mappingExceptions: []
+      });
+
+      const badTaxonomyRequest = req('/sourcing/vendor-consolidation/mappings/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', sourceMaterialId: 'MAT-1', unspscCode: '99999999',
+          reviewStatus: 'CLIENT_APPROVED' })
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/vendor-consolidation/mappings/update', badTaxonomyRequest,
+        new URL(badTaxonomyRequest.url), WORKER_CORE_SECRET)).toMatchObject({ status: 400 });
+
+      const missingTargetRequest = req('/sourcing/vendor-consolidation/mappings/update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', sourceMaterialId: 'MISSING', unspscCode: '12345678',
+          reviewStatus: 'CLIENT_APPROVED' })
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/vendor-consolidation/mappings/update', missingTargetRequest,
+        new URL(missingTargetRequest.url), WORKER_CORE_SECRET)).toMatchObject({ status: 404 });
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('loads, reviews, and exports procurement compliance exclusively from assessment D1 evidence', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      const insert = fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, assessment_id, po_number, po_line, document_date_raw, supplier_code,
+        supplier_name, material_code, short_text, material_group, order_quantity, order_unit, net_price,
+        currency, total_inr_raw, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+      insert.run('COMPLIANCE-TX-1', 'T1', 'A1', 'PO-1', '10', '2026-04-01', 'SUP-1', 'Supplier One',
+        'MAT-1', 'Resin Grade A', 'Chemicals', 10, 'KG', 100, 'INR', 1000, '{}');
+      insert.run('COMPLIANCE-TX-2', 'T1', 'A1', 'PO-2', '20', '2026-04-02', 'SUP-2', 'Supplier Two',
+        'MAT-1', 'Resin Grade A', 'Chemicals', 10, 'KG', 140, 'INR', 1400, '{}');
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'usr-compliance-reviewer', 'Compliance Reviewer', '+910000000012', 'compliance@example.test', 'Example',
+        'Pune', 'unused-test-hash', 'USER', 'ACTIVE', 'GOLD'
+      );
+      const token = await issueEvidenceToken({ userId: 'usr-compliance-reviewer' }, WORKER_CORE_SECRET);
+      const get = req('/sourcing/procurement-compliance?assessmentId=A1&tenantId=T1');
+      const report = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', get, new URL(get.url));
+      const result = report.data as { assessmentId: string; summary: Record<string, unknown>;
+        exceptions: Array<{ exceptionId: string; checkType: string }> };
+      expect(result).toMatchObject({ assessmentId: 'A1', summary: {
+        tenantId: 'T1', customerName: 'A1', totalTransactionsReviewedCount: 2,
+        totalExceptionsIdentifiedCount: 1, totalPotentialFinancialExposureInr: 200
+      }, exceptions: [expect.objectContaining({ checkType: 'PRICE_INCONSISTENCY' })] });
+      expect(MODULE2_D1_PENDING_ROUTES.has('/procurement-compliance')).toBe(false);
+
+      const exportRequest = req('/sourcing/procurement-compliance/export-excel?assessmentId=A1&tenantId=T1');
+      const exported = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/export-excel',
+        exportRequest, new URL(exportRequest.url));
+      expect(exported.response?.headers.get('Content-Disposition')).toContain('Procurement_Compliance_A1.xlsx');
+      expect(XLSX.read(await exported.response?.arrayBuffer(), { type: 'array' }).SheetNames)
+        .toEqual(['Summary', 'Exceptions', 'Control Checks', 'Methodology']);
+
+      const review = req('/sourcing/procurement-compliance/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', candidateId: result.exceptions[0].exceptionId,
+          status: 'VERIFIED_EXCEPTION', reviewerName: 'Untrusted UI reviewer',
+          technicalJustification: 'Confirmed against the source purchase orders and specifications.',
+          correctiveActionPlan: 'Reconcile the price against the contract.' })
+      });
+      const saved = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/review', review,
+        new URL(review.url), WORKER_CORE_SECRET);
+      expect(saved.data).toMatchObject({ summary: { verifiedExceptionsCount: 1, verifiedFinancialImpactInr: 0 },
+        exceptions: [expect.objectContaining({ reviewStatus: 'VERIFIED_EXCEPTION', reviewHistory: [
+          expect.objectContaining({ reviewerName: 'Compliance Reviewer', status: 'VERIFIED_EXCEPTION' })
+        ] })] });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM Module2ComplianceReview').get())
+        .toMatchObject({ count: 1 });
+
+      const dismissedReview = req('/sourcing/procurement-compliance/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', candidateId: result.exceptions[0].exceptionId,
+          status: 'NOT_AN_EXCEPTION', technicalJustification: 'Confirmed against the signed contract.',
+          dismissalReason: 'The contract supports the observed difference.' })
+      });
+      const dismissed = await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/review', dismissedReview,
+        new URL(dismissedReview.url), WORKER_CORE_SECRET);
+      expect(dismissed.data).toMatchObject({ summary: { dismissedCount: 1 }, exceptions: [
+        expect.objectContaining({ reviewStatus: 'NOT_AN_EXCEPTION', reviewHistory: [
+          expect.objectContaining({ status: 'VERIFIED_EXCEPTION' }),
+          expect.objectContaining({ dismissalReason: 'The contract supports the observed difference.' })
+        ] })
+      ] });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM Module2ComplianceReview').get())
+        .toMatchObject({ count: 2 });
+
+      const invalidReview = req('/sourcing/procurement-compliance/review', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A1', candidateId: 'MISSING', status: 'NOT_AN_EXCEPTION',
+          technicalJustification: 'This source row is valid.', dismissalReason: '' })
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/review', invalidReview,
+        new URL(invalidReview.url), WORKER_CORE_SECRET)).toMatchObject({ status: 400 });
+
+      const noScope = req('/sourcing/procurement-compliance');
+      expect(await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', noScope, new URL(noScope.url)))
+        .toMatchObject({ status: 409 });
+      const wrongMethod = req('/sourcing/procurement-compliance', { method: 'POST' });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance', wrongMethod,
+        new URL(wrongMethod.url))).toMatchObject({ status: 405 });
+      const unknown = req('/sourcing/procurement-compliance/unknown?assessmentId=A1');
+      expect(await handleModule2Route(fixture.d1, '/sourcing/procurement-compliance/unknown', unknown,
+        new URL(unknown.url))).toMatchObject({ status: 404 });
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('validates all D1 review routes before authentication and rejects unsupported methods', async () => {
+    const db = mockDb();
+    const requests = [
+      {
+        path: '/sourcing/specification-rationalisation/review',
+        body: { assessmentId: 'A1', candidateId: 'SPEC-1', status: 'TECHNICALLY_VERIFIED',
+          reviewerName: 'Reviewer', technicalJustification: 'Reviewed the source specification.' }
+      },
+      {
+        path: '/sourcing/vendor-consolidation/mappings/update',
+        body: { assessmentId: 'A1', sourceMaterialId: 'MAT-1', unspscCode: '12345678',
+          reviewStatus: 'CLIENT_APPROVED' }
+      },
+      {
+        path: '/sourcing/procurement-compliance/review',
+        body: { assessmentId: 'A1', candidateId: 'CMP-1', status: 'AWAITING_REVIEW',
+          technicalJustification: 'Reviewed the source purchase orders.' }
+      }
+    ];
+
+    for (const { path, body } of requests) {
+      const wrongMethod = req(path);
+      expect(await handleModule2Route(db, path, wrongMethod, new URL(wrongMethod.url), WORKER_CORE_SECRET))
+        .toMatchObject({ status: 405 });
+
+      const malformed = req(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' });
+      expect(await handleModule2Route(db, path, malformed, new URL(malformed.url), WORKER_CORE_SECRET))
+        .toMatchObject({ status: 400 });
+
+      const unauthenticated = req(path, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+      expect(await handleModule2Route(db, path, unauthenticated, new URL(unauthenticated.url), WORKER_CORE_SECRET))
+        .toMatchObject({ status: 401 });
+    }
+  });
+
+  it('returns scoped D1 validation errors instead of building invalid workbooks', async () => {
+    const db = mockDb();
+    const invalidAssessmentId = 'A'.repeat(121);
+    const paths = [
+      '/sourcing/volume-aggregation/export-excel',
+      '/sourcing/e-auction/export-excel',
+      '/sourcing/direct-price-improvement/export-excel',
+      '/sourcing/payment-terms',
+      '/sourcing/vendor-consolidation',
+      '/sourcing/alternate-sourcing'
+    ];
+    for (const path of paths) {
+      const request = req(`${path}?assessmentId=${invalidAssessmentId}`);
+      expect(await handleModule2Route(db, path, request, new URL(request.url))).toMatchObject({
+        status: 400, data: { success: false }
+      });
     }
   });
 
@@ -352,7 +583,7 @@ describe('workerD1Module2 handler', () => {
     const workbook = XLSX.read(new Uint8Array(await exportResult.response!.arrayBuffer()), { type: 'array' });
     expect(exportResult.response?.headers.get('Content-Type')).toContain('spreadsheetml.sheet');
     expect(exportResult.response?.headers.get('Content-Disposition')).toContain('EAuction_Candidates_A-1.xlsx');
-    expect(workbook.SheetNames).toEqual(['Summary', 'Categories', 'Materials', 'Limitations']);
+    expect(workbook.SheetNames).toEqual(['Summary', 'Categories', 'Materials', 'Limitations', 'Planning Assumptions']);
 
     const invalid = req('/sourcing/e-auction?assessmentId=A-1&financialYear=FY2025');
     expect(await handleModule2Route(db, '/sourcing/e-auction', invalid, new URL(invalid.url)))
@@ -360,6 +591,90 @@ describe('workerD1Module2 handler', () => {
     const unscoped = req('/sourcing/e-auction');
     expect(await handleModule2Route(db, '/sourcing/e-auction', unscoped, new URL(unscoped.url)))
       .toMatchObject({ status: 409, data: { success: false } });
+  });
+
+  it('loads, updates, and exports D1 planning assumptions with authenticated approval history', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'auction-admin', 'Auction Admin', '+910000000021', 'auction-admin@example.test', 'Example', 'Pune',
+        'unused-test-hash', 'ADMIN', 'ACTIVE', 'GOLD'
+      );
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        'auction-user', 'Auction User', '+910000000022', 'auction-user@example.test', 'Example', 'Pune',
+        'unused-test-hash', 'USER', 'ACTIVE', 'GOLD'
+      );
+      const adminToken = await issueEvidenceToken({ userId: 'auction-admin' }, WORKER_CORE_SECRET);
+      const userToken = await issueEvidenceToken({ userId: 'auction-user' }, WORKER_CORE_SECRET);
+      const list = req('/sourcing/e-auction/planning-assumptions');
+      expect((await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', list,
+        new URL(list.url))).data).toEqual([]);
+      expect(MODULE2_D1_PENDING_ROUTES.has('/e-auction/planning-assumptions')).toBe(false);
+
+      const assumption = {
+        id: 'ASSUMP-1', categoryOrMaterial: 'Packaging', minSavingsRate: 0.02,
+        expectedSavingsRate: 0.04, maxSavingsRate: 0.06, rateSource: 'Approved benchmark',
+        referencePeriod: 'FY2024-FY2025', applicability: 'Standard packaging',
+        approvalStatus: 'APPROVED', confidence: 'HIGH', isPlanningAssumptionOnly: true
+      };
+      const invalid = req('/sourcing/e-auction/planning-assumptions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...assumption, expectedSavingsRate: 0.07 })
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', invalid,
+        new URL(invalid.url), WORKER_CORE_SECRET)).toMatchObject({ status: 400 });
+
+      const unauthenticated = req('/sourcing/e-auction/planning-assumptions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(assumption)
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', unauthenticated,
+        new URL(unauthenticated.url), WORKER_CORE_SECRET)).toMatchObject({ status: 401 });
+
+      const nonAdmin = req('/sourcing/e-auction/planning-assumptions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
+        body: JSON.stringify(assumption)
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', nonAdmin,
+        new URL(nonAdmin.url), WORKER_CORE_SECRET)).toMatchObject({ status: 403 });
+
+      const update = req('/sourcing/e-auction/planning-assumptions', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ ...assumption, approvedBy: 'Forged reviewer',
+          approvedDate: '2020-01-01T00:00:00.000Z' })
+      });
+      const updated = await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', update,
+        new URL(update.url), WORKER_CORE_SECRET);
+      expect(updated.data).toMatchObject({ success: true, assumption: {
+        id: 'ASSUMP-1', approvalStatus: 'APPROVED', approvedBy: 'Auction Admin', isPlanningAssumptionOnly: true
+      } });
+      expect((updated.data as { assumption: { approvedDate: string } }).assumption.approvedDate)
+        .not.toBe('2020-01-01T00:00:00.000Z');
+
+      const reportRequest = req('/sourcing/e-auction?assessmentId=A1');
+      const report = await handleModule2Route(fixture.d1, '/sourcing/e-auction', reportRequest,
+        new URL(reportRequest.url));
+      expect(report.data).toMatchObject({ planningAssumptions: [
+        expect.objectContaining({ id: 'ASSUMP-1', expectedSavingsRate: 0.04 })
+      ], commerciallyValidatedSavingsInr: 0 });
+
+      const exportRequest = req('/sourcing/e-auction/export-excel?assessmentId=A1');
+      const exported = await handleModule2Route(fixture.d1, '/sourcing/e-auction/export-excel', exportRequest,
+        new URL(exportRequest.url));
+      const workbook = XLSX.read(new Uint8Array(await exported.response?.arrayBuffer()), { type: 'array' });
+      expect(XLSX.utils.sheet_to_json(workbook.Sheets['Planning Assumptions'])).toContainEqual(
+        expect.objectContaining({ categoryOrMaterial: 'Packaging', approvalStatus: 'APPROVED', approvedBy: 'Auction Admin' })
+      );
+
+      const wrongMethod = req('/sourcing/e-auction/planning-assumptions', { method: 'POST' });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/e-auction/planning-assumptions', wrongMethod,
+        new URL(wrongMethod.url), WORKER_CORE_SECRET)).toMatchObject({ status: 405 });
+    } finally {
+      fixture.close();
+    }
   });
 
   it('serves D1-backed direct-price comparisons and an assessment-scoped XLSX export', async () => {

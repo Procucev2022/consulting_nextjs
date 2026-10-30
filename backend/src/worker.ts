@@ -5,6 +5,8 @@ import {
 } from './constants/cloudflare';
 import type { CloudflareEnvironment, CloudflareExecutionContext, CloudflareD1Database } from './types/cloudflare';
 import { handleAuthRoute, handleAdminRoute } from './workerAuth';
+import { handleUpgradeRoute } from './services/workerCommercialUpgrade';
+import { handleSubscriptionRoute } from './services/workerCommercialSubscriptions';
 import {
   ensureD1Initialized,
   getCanonicalModule1Data,
@@ -771,7 +773,7 @@ const handleDataRoute = async (request: Request, environment: CloudflareEnvironm
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ingestion`)) return handleIngestionRoute(request, environment, url);
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/module2`)) {
     const subPath = url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/module2`.length) || '/';
-    const result = await handleModule2Route(environment.DB, subPath, request, url);
+    const result = await handleModule2Route(environment.DB, subPath, request, url, environment.AUTH_SECRET);
     if (result.response) return withCors(result.response, request);
     return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
   }
@@ -841,6 +843,14 @@ const handleApiRequest = async (request: Request, environment: CloudflareEnviron
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/admin`)) {
     const adminResult = await handleAdminRoute(request, environment, url);
     return jsonResponse(adminResult.body, adminResult.status, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/upgrade`)) {
+    const commercialResult = await handleUpgradeRoute(request, environment, url);
+    if (commercialResult) return jsonResponse(commercialResult.body, commercialResult.status, request);
+  }
+  if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/subscription`)) {
+    const subscriptionResult = await handleSubscriptionRoute(request, environment, url);
+    if (subscriptionResult) return jsonResponse(subscriptionResult.body, subscriptionResult.status, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ai`)) {
     return handleAiRoute(request, url, environment);

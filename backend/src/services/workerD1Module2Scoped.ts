@@ -142,7 +142,8 @@ const analysisLeverDetails = (
 
 const isCustomerScopedPath = (path: string): boolean =>
   path.startsWith('/e-auction') || path.startsWith('/direct-price-improvement') ||
-  path.startsWith('/vendor-consolidation') || path.startsWith('/category-specialisation');
+  path.startsWith('/vendor-consolidation') || path.startsWith('/category-specialisation') ||
+  path.startsWith('/procurement-compliance');
 
 const requestDatasetScope = (request: Request, url: URL): ScopedModule2ScopeResult => {
   const assessmentId = url.searchParams.get('assessmentId') ??

@@ -33,7 +33,11 @@ import {
   uploadCommoditySourceSchema,
   approveCommodityDataSchema,
   vendorConsolidationQuerySchema,
-  alternateSourcingQuerySchema
+  directPriceQuerySchema,
+  alternateSourcingQuerySchema,
+  specificationReviewSchema,
+  procurementComplianceReviewSchema,
+  eAuctionPlanningAssumptionSchema
 } from '../../src/constants/validation';
 import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from '../../src/constants/d1';
 import { MODULE2_D1_VENDOR_CONSOLIDATION } from '../../src/constants/module2VendorConsolidationD1';
@@ -665,6 +669,95 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
       expect(alternateSourcingQuerySchema.safeParse({ matchType: 'RELATED' }).success).toBe(false);
       expect(alternateSourcingQuerySchema.safeParse({ materialCode: 'x'.repeat(121) }).success).toBe(false);
       expect(alternateSourcingQuerySchema.safeParse({ spendCategory: '' }).success).toBe(false);
+    });
+  });
+
+  describe('module 2 review and direct-price schemas', () => {
+    it('requires documented evidence when a specification review is rejected', () => {
+      const review = {
+        assessmentId: 'ASSESSMENT-1',
+        candidateId: 'CANDIDATE-1',
+        status: 'REJECTED',
+        reviewerName: 'Reviewer One',
+        technicalJustification: 'The proposed standard does not match the approved application.'
+      };
+      expect(specificationReviewSchema.safeParse(review).success).toBe(false);
+      expect(specificationReviewSchema.safeParse({ ...review, rejectionReason: 'Standard mismatch' }).success)
+        .toBe(true);
+    });
+
+    it('validates direct-price filters while allowing omitted filters', () => {
+      expect(directPriceQuerySchema.safeParse({}).success).toBe(true);
+      expect(directPriceQuerySchema.safeParse({ financialYear: 'FY2025-26', category: 'Resin' }).success)
+        .toBe(true);
+      expect(directPriceQuerySchema.safeParse({ financialYear: '2025', category: '' }).success).toBe(false);
+    });
+  });
+
+  describe('procurementComplianceReviewSchema', () => {
+    const validReview = {
+      assessmentId: 'A-1', candidateId: 'CMP-1', status: 'VERIFIED_EXCEPTION',
+      reviewerName: 'Reviewer', technicalJustification: 'Confirmed by source purchase order.'
+    };
+
+    it('accepts supported review decisions and trims text', () => {
+      expect(procurementComplianceReviewSchema.safeParse({
+        ...validReview, assessmentId: ' A-1 ', technicalJustification: ' Confirmed by source purchase order. '
+      })).toMatchObject({ success: true, data: {
+        assessmentId: 'A-1', technicalJustification: 'Confirmed by source purchase order.'
+      } });
+      expect(procurementComplianceReviewSchema.safeParse({
+        ...validReview, status: 'AWAITING_REVIEW'
+      }).success).toBe(true);
+    });
+
+    it('requires a dismissal reason and rejects invalid or oversized review inputs', () => {
+      expect(procurementComplianceReviewSchema.safeParse({ ...validReview, status: 'NOT_AN_EXCEPTION' }).success)
+        .toBe(false);
+      expect(procurementComplianceReviewSchema.safeParse({ ...validReview, status: 'NOT_AN_EXCEPTION',
+        dismissalReason: 'Not a valid exception.' }).success).toBe(true);
+      expect(procurementComplianceReviewSchema.safeParse({ ...validReview, technicalJustification: 'short' }).success)
+        .toBe(false);
+      expect(procurementComplianceReviewSchema.safeParse({ ...validReview, candidateId: 'x'.repeat(121) }).success)
+        .toBe(false);
+      expect(procurementComplianceReviewSchema.safeParse({ ...validReview, status: 'DATA_INSUFFICIENT' }).success)
+        .toBe(false);
+    });
+  });
+
+  describe('eAuctionPlanningAssumptionSchema', () => {
+    const validAssumption = {
+      id: 'ASSUMP-1', categoryOrMaterial: 'Packaging', minSavingsRate: 0.02,
+      expectedSavingsRate: 0.04, maxSavingsRate: 0.06, rateSource: 'Approved benchmark file',
+      referencePeriod: 'FY2024-FY2025', applicability: 'Standard packaging categories',
+      approvalStatus: 'Proposed Planning Assumption — Approval Required', confidence: 'MEDIUM',
+      isPlanningAssumptionOnly: true
+    };
+
+    it('accepts bounded, ordered, planning-only assumptions and trims their text', () => {
+      expect(eAuctionPlanningAssumptionSchema.safeParse({
+        ...validAssumption, id: ' ASSUMP-1 ', categoryOrMaterial: ' Packaging '
+      })).toMatchObject({ success: true, data: { id: 'ASSUMP-1', categoryOrMaterial: 'Packaging' } });
+      expect(eAuctionPlanningAssumptionSchema.safeParse({
+        ...validAssumption, approvalStatus: 'APPROVED', approvedBy: 'Admin',
+        approvedDate: '2026-10-30T00:00:00.000Z'
+      }).success).toBe(true);
+    });
+
+    it('rejects inverted rates, unsupported states and non-planning records', () => {
+      expect(eAuctionPlanningAssumptionSchema.safeParse({
+        ...validAssumption, minSavingsRate: 0.05, expectedSavingsRate: 0.04
+      }).success).toBe(false);
+      expect(eAuctionPlanningAssumptionSchema.safeParse({
+        ...validAssumption, expectedSavingsRate: 0.07, maxSavingsRate: 0.06
+      }).success).toBe(false);
+      expect(eAuctionPlanningAssumptionSchema.safeParse({
+        ...validAssumption, approvalStatus: 'APPROVED', approvedDate: 'yesterday'
+      }).success).toBe(false);
+      expect(eAuctionPlanningAssumptionSchema.safeParse({ ...validAssumption, isPlanningAssumptionOnly: false }).success)
+        .toBe(false);
+      expect(eAuctionPlanningAssumptionSchema.safeParse({ ...validAssumption, confidence: 'CERTAIN' }).success)
+        .toBe(false);
     });
   });
 });

@@ -2644,7 +2644,9 @@ export const UI_STRINGS = {
     activationCodePlaceholder: 'PCV-XXXX-XXXX-XXXX',
     activationSuccess: 'Subscription successfully activated. Welcome to your upgraded tier!',
     adminSubscriptionTitle: 'Subscription Management',
-    adminSubscriptionSubtitle: 'Controlled offline commercial provisioning, OTP validation and customer activation lifecycle'
+    adminSubscriptionSubtitle: 'Controlled offline commercial provisioning, OTP validation and customer activation lifecycle',
+    adminOtpDelivery: 'Enter the six-digit code sent to your administrator email.',
+    adminOtpCodeLabel: 'Administrator verification code'
   },
 
   pcbiAdmin: {
@@ -3245,6 +3247,10 @@ export const UI_STRINGS = {
     selectAssessmentPlaceholder: 'Select an assessment',
     assessmentOptionLabel: (customerName: string, assessmentId: string) => `${customerName} (${assessmentId})`,
     assessmentListFailed: 'Assessment choices could not be loaded. Reload this view or contact your administrator if the problem continues.',
+    planningAssumptionsTitle: 'D1 planning assumptions',
+    planningAssumptionsDisclosure: 'These provisional ranges are governance inputs only. They are not savings forecasts, validated benefits, or realized outcomes.',
+    planningAssumptionRange: (minimum: number, expected: number, maximum: number) =>
+      `Planning range: ${minimum.toFixed(1)}% minimum, ${expected.toFixed(1)}% expected, ${maximum.toFixed(1)}% maximum`,
     financialYearFilterLabel: 'Financial Year Filter',
     allFinancialYears: 'All Financial Years',
     btnRefresh: 'Refresh',
@@ -3436,6 +3442,9 @@ export const UI_STRINGS = {
     colMaterialIdDescription: 'Material ID & Description',
     colClientGroup: 'Client Group',
     colAssignedUnspsc: 'Assigned UNSPSC',
+    mappingCodeInputLabel: (materialId: string) => `UNSPSC commodity code for ${materialId}`,
+    mappingCodeInputPlaceholder: 'Enter 8-digit UNSPSC commodity code',
+    mappingCodeRequired: 'Enter a valid 8-digit UNSPSC commodity code before approving this material.',
     colSpendCr: 'Spend (Cr)',
     colPoCount: 'POs',
     colReviewReasonStatus: 'Review Reason & Status',

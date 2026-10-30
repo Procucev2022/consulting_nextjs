@@ -1,4 +1,4 @@
-export const D1_SCHEMA_VERSION = '2026-10-29-006';
+export const D1_SCHEMA_VERSION = '2026-10-30-010';
 
 export const D1_TABLES = {
   tenant: 'TenantMaster',
@@ -39,7 +39,13 @@ export const D1_TABLES = {
   objectMetadata: 'ObjectMetadata',
   alternateVendorCompany: 'AlternateVendorCompany',
   pcbiSnapshot: 'PCBICommoditySnapshot',
-  procurementCategoryMappings: 'ProcurementCategoryMapping'
+  procurementCategoryMappings: 'ProcurementCategoryMapping',
+  complianceReviews: 'Module2ComplianceReview',
+  eAuctionPlanningAssumptions: 'Module2EAuctionPlanningAssumption',
+  upgradeRequests: 'UpgradeRequest',
+  adminOtpSessions: 'AdminOtpSession',
+  subscriptionRecords: 'SubscriptionRecord',
+  subscriptionAuditEvents: 'SubscriptionAuditEvent'
 } as const;
 
 export const D1_TABLE_COUNT = Object.keys(D1_TABLES).length;

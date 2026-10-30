@@ -91,9 +91,10 @@ export type DimensionViewType =
   | 'MAPPING_QUEUE';
 
 export interface UpdateMaterialMappingPayload {
+  assessmentId: string;
   sourceMaterialId: string;
   unspscCode: string;
   reviewStatus: MappingReviewStatus;
-  reviewedBy: string;
+  reviewedBy?: string;
   auditNotes?: string;
 }

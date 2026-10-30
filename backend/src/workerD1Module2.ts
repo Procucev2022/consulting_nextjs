@@ -2,9 +2,13 @@ import { D1_LEVERS, D1_REPORTING, D1_ROUTE_MESSAGES, D1_TABLES, D1_UNCLASSIFIED_
 import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
 import { queryD1Rows as queryAll } from './services/workerD1Query';
-import { d1DatasetScopeSchema } from './constants/validation';
+import {
+  d1DatasetScopeSchema, materialMappingUpdateSchema, specificationReviewSchema,
+  procurementComplianceReviewSchema, eAuctionPlanningAssumptionSchema
+} from './constants/validation';
 import logger from './utils/logger';
-import { handleScopedModule2Route } from './services/workerD1Module2Scoped';
+import { clearScopedModule2Cache, handleScopedModule2Route } from './services/workerD1Module2Scoped';
+import { authenticateWorkerUser } from './workerAuth';
 import {
   MODULE2_D1_DIRECT_PRICE, MODULE2_D1_EAUCTION, MODULE2_D1_PENDING_ROUTES, MODULE2_D1_ROUTE_MESSAGES,
   MODULE2_D1_SCOPED_MESSAGES, MODULE2_D1_VOLUME_EXPORT
@@ -27,6 +31,14 @@ import { buildCategorySpecialisationWorkbook } from './services/workerD1Category
 import { MODULE2_D1_SPECIFICATION_RATIONALISATION } from './constants/module2SpecificationRationalisationD1';
 import type { SpecificationRationalisationResult } from './types/module2SpecificationRationalisation';
 import { buildSpecificationRationalisationWorkbook } from './services/workerD1SpecificationRationalisationWorkbook';
+import { applySpecificationReviewHistory, loadSpecificationReviewHistory } from './services/workerD1SpecificationReviews';
+import type { MaterialMappingEntry } from './types/module2MaterialMapping';
+import { MODULE2_D1_COMPLIANCE } from './constants/module2ProcurementComplianceD1';
+import { buildProcurementComplianceWorkbook } from './services/workerD1ProcurementComplianceWorkbook';
+import type { ProcurementComplianceResult } from './types/module2ProcurementCompliance';
+import {
+  loadEAuctionPlanningAssumptions, saveEAuctionPlanningAssumption
+} from './services/workerD1EAuctionPlanningAssumptions';
 
 const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, values: unknown[] = []): Promise<T | null> => {
   const statement = db.prepare(sql);
@@ -103,16 +115,267 @@ const buildDashboardData = (
   };
 };
 
+const readRequestBody = async (request: Request): Promise<unknown> => {
+  try { return await request.json(); } catch { return null; }
+};
+
+const withAssessmentScope = (url: URL, assessmentId: string): URL => {
+  const scopedUrl = new URL(url);
+  scopedUrl.searchParams.set('assessmentId', assessmentId);
+  return scopedUrl;
+};
+
+const rejectUnauthenticatedMutation = async (
+  request: Request, db: CloudflareD1Database, authSecret?: string
+): Promise<{ user: { id: string; name: string; email: string; role: 'USER' | 'ADMIN' } } | WorkerD1Result> => {
+  const authentication = await authenticateWorkerUser(request, { DB: db, AUTH_SECRET: authSecret });
+  return authentication.user ? { user: authentication.user } : {
+    status: authentication.status,
+    data: { success: false, message: authentication.message || 'Authentication required.' }
+  };
+};
+
+const specificationReport = async (
+  db: CloudflareD1Database, request: Request, url: URL, assessmentId: string
+): Promise<WorkerD1Result | null> => {
+  const report = await handleScopedModule2Route(
+    db, '/specification-rationalisation', request, withAssessmentScope(url, assessmentId)
+  );
+  if (!report || (report.status && report.status >= 400)) return report;
+  const history = await loadSpecificationReviewHistory(db, assessmentId);
+  return { ...report, data: applySpecificationReviewHistory(
+    report.data as SpecificationRationalisationResult, history
+  ) };
+};
+
+const handleSpecificationReview = async (
+  db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
+): Promise<WorkerD1Result> => {
+  const parsed = specificationReviewSchema.safeParse(await readRequestBody(request));
+  if (!parsed.success) return { status: 400, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidSpecificationReview,
+    errors: parsed.error.issues
+  } };
+  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
+  const payload = parsed.data;
+  const current = await specificationReport(db, request, url, payload.assessmentId);
+  const candidate = (current?.data as SpecificationRationalisationResult | undefined)?.candidates
+    .find((item) => item.candidateId === payload.candidateId);
+  if (!candidate) return { status: 404, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.specificationCandidateNotFound
+  } };
+  const reviewedAt = new Date().toISOString();
+  const reviewId = `SPEC-REV-${crypto.randomUUID()}`;
+  await db.prepare(`
+    INSERT INTO Module2SpecificationReview (
+      review_id, assessment_id, candidate_id, reviewer_name, reviewer_role, review_date, status,
+      technical_justification, proposed_standard, application_scope, rejection_reason
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    reviewId, payload.assessmentId, payload.candidateId, auth.user.name,
+    auth.user.role, reviewedAt, payload.status, payload.technicalJustification,
+    payload.proposedStandard || null, payload.applicationScope || null, payload.rejectionReason || null
+  ).run();
+  const updated = await specificationReport(db, request, url, payload.assessmentId);
+  logger.info('Persisted D1 specification technical review', {
+    assessmentId: payload.assessmentId, candidateId: payload.candidateId,
+    reviewId, reviewerId: auth.user.id, status: payload.status
+  });
+  return { data: updated?.data };
+};
+
+const handleMaterialMappingUpdate = async (
+  db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
+): Promise<WorkerD1Result> => {
+  const parsed = materialMappingUpdateSchema.safeParse(await readRequestBody(request));
+  if (!parsed.success) return { status: 400, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidMaterialMapping,
+    errors: parsed.error.issues
+  } };
+  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
+  const payload = parsed.data;
+  const scopedUrl = withAssessmentScope(url, payload.assessmentId);
+  const current = await handleScopedModule2Route(db, '/vendor-consolidation', request, scopedUrl);
+  const report = current?.data as VendorConsolidationResult | undefined;
+  const mapping = report?.mappingRegister?.find((item) => item.sourceMaterialId === payload.sourceMaterialId);
+  if (!mapping) return { status: 404, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingTargetNotFound
+  } };
+  const taxonomy = await db.prepare(`
+    SELECT commodity_code, commodity_title, class_code, family_code, segment_code, taxonomy_version
+    FROM UNSPSCCommodity WHERE commodity_code = ? LIMIT 1
+  `).bind(payload.unspscCode).first<Record<string, unknown>>();
+  if (!taxonomy) return { status: 400, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingTaxonomyNotFound
+  } };
+  const now = new Date().toISOString();
+  const updatedMapping: MaterialMappingEntry = {
+    ...mapping,
+    assignedUnspscCode: String(taxonomy.commodity_code),
+    assignedUnspscTitle: String(taxonomy.commodity_title),
+    unspscSegment: String(taxonomy.segment_code),
+    unspscFamily: String(taxonomy.family_code),
+    unspscClass: String(taxonomy.class_code),
+    unspscCommodity: String(taxonomy.commodity_code),
+    taxonomyVersion: String(taxonomy.taxonomy_version),
+    mappingMethod: 'MANUAL_REVIEW_REQUIRED',
+    confidenceScore: 1,
+    evidence: 'UNSPSC commodity selected from the D1 taxonomy and approved by an authenticated reviewer.',
+    reviewStatus: payload.reviewStatus,
+    mappingDate: now,
+    reviewedBy: auth.user.name,
+    auditNotes: payload.auditNotes
+  };
+  await db.prepare(`
+    INSERT INTO AssessmentMaterialMapping (
+      assessment_id, source_material_id, payload_json, reviewed_by, updated_at
+    ) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(assessment_id, source_material_id) DO UPDATE SET
+      payload_json = excluded.payload_json, reviewed_by = excluded.reviewed_by,
+      updated_at = excluded.updated_at
+  `).bind(
+    payload.assessmentId, payload.sourceMaterialId, JSON.stringify(updatedMapping), auth.user.email, now
+  ).run();
+  clearScopedModule2Cache();
+  logger.info('Persisted D1 assessment material classification', {
+    assessmentId: payload.assessmentId, sourceMaterialId: payload.sourceMaterialId,
+    reviewerId: auth.user.id, unspscCode: payload.unspscCode
+  });
+  return { data: { success: true, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingSaved, mapping: updatedMapping } };
+};
+
+const procurementComplianceReport = async (
+  db: CloudflareD1Database, request: Request, url: URL, assessmentId: string
+): Promise<WorkerD1Result | null> => handleScopedModule2Route(
+  db, '/procurement-compliance', request, withAssessmentScope(url, assessmentId)
+);
+
+const handleProcurementComplianceReview = async (
+  db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
+): Promise<WorkerD1Result> => {
+  const parsed = procurementComplianceReviewSchema.safeParse(await readRequestBody(request));
+  if (!parsed.success) return { status: 400, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidComplianceReview,
+    errors: parsed.error.issues
+  } };
+  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
+  const payload = parsed.data;
+  const current = await procurementComplianceReport(db, request, url, payload.assessmentId);
+  if (!current || (current.status && current.status >= 400)) return current || {
+    status: 409, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.complianceExceptionNotFound }
+  };
+  const exception = (current.data as ProcurementComplianceResult).exceptions
+    .find((item) => item.exceptionId === payload.candidateId);
+  if (!exception) return { status: 404, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.complianceExceptionNotFound
+  } };
+  const reviewedAt = new Date().toISOString();
+  const reviewId = `COMPLIANCE-REV-${crypto.randomUUID()}`;
+  await db.prepare(`
+    INSERT INTO Module2ComplianceReview (
+      review_id, assessment_id, exception_id, reviewer_name, reviewer_role, review_date, status,
+      technical_justification, corrective_action_plan, dismissal_reason
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    reviewId, payload.assessmentId, payload.candidateId, auth.user.name,
+    auth.user.role, reviewedAt, payload.status, payload.technicalJustification,
+    payload.correctiveActionPlan || null, payload.dismissalReason || null
+  ).run();
+  const updated = await procurementComplianceReport(db, request, url, payload.assessmentId);
+  logger.info('Persisted D1 procurement compliance review', {
+    assessmentId: payload.assessmentId, exceptionId: payload.candidateId,
+    reviewId, reviewerId: auth.user.id, status: payload.status
+  });
+  return { data: updated?.data };
+};
+
 export const handleModule2Route = async (
   db: CloudflareD1Database | undefined,
   subPath: string,
   request: Request,
-  url: URL
+  url: URL,
+  authSecret?: string
 ): Promise<WorkerD1Result> => {
   if (!db) throw new Error('Cloudflare D1 binding DB is not configured');
   await db.prepare('SELECT 1 AS ok').first();
 
   const normalized = subPath.replace(/^\/(sourcing|levers)/, '') || '/';
+  if (normalized === '/e-auction/planning-assumptions') {
+    if (request.method === 'GET') return { data: await loadEAuctionPlanningAssumptions(db) };
+    if (request.method !== 'PUT') return { status: 405, data: {
+      success: false, message: MODULE2_D1_ROUTE_MESSAGES.eAuctionPlanningAssumptionMethod
+    } };
+    const parsed = eAuctionPlanningAssumptionSchema.safeParse(await readRequestBody(request));
+    if (!parsed.success) return { status: 400, data: {
+      success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidEAuctionPlanningAssumption,
+      errors: parsed.error.issues
+    } };
+    const authentication = await authenticateWorkerUser(request, { DB: db, AUTH_SECRET: authSecret }, true);
+    if (!authentication.user) return { status: authentication.status, data: {
+      success: false, message: authentication.message || MODULE2_D1_ROUTE_MESSAGES.eAuctionPlanningAssumptionAdminOnly
+    } };
+    const updatedAt = new Date().toISOString();
+    const reviewedAssumption = {
+      ...parsed.data,
+      ...(parsed.data.approvalStatus === 'APPROVED'
+        ? { approvedBy: authentication.user.name, approvedDate: updatedAt }
+        : { approvedBy: undefined, approvedDate: undefined })
+    };
+    const assumption = await saveEAuctionPlanningAssumption(
+      db, reviewedAssumption, authentication.user.email, updatedAt
+    );
+    clearScopedModule2Cache();
+    logger.info('Persisted D1 e-auction planning assumption', {
+      assumptionId: assumption.id, categoryOrMaterial: assumption.categoryOrMaterial,
+      approved: assumption.approvalStatus === 'APPROVED', updatedBy: authentication.user.id
+    });
+    return { data: { success: true, message: MODULE2_D1_ROUTE_MESSAGES.eAuctionPlanningAssumptionSaved, assumption } };
+  }
+  if (normalized === '/specification-rationalisation/review') {
+    if (request.method !== 'POST') return {
+      status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
+    };
+    return handleSpecificationReview(db, request, url, authSecret);
+  }
+  if (normalized === '/vendor-consolidation/mappings/update') {
+    if (request.method !== 'POST') return {
+      status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
+    };
+    return handleMaterialMappingUpdate(db, request, url, authSecret);
+  }
+  if (normalized.startsWith('/procurement-compliance')) {
+    if (normalized === '/procurement-compliance/review') {
+      if (request.method !== 'POST') return { status: 405, data: {
+        success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired
+      } };
+      return handleProcurementComplianceReview(db, request, url, authSecret);
+    }
+    if (normalized !== '/procurement-compliance' && normalized !== '/procurement-compliance/export-excel') {
+      return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
+    }
+    if (request.method !== 'GET') return { status: 405, data: {
+      success: false, message: MODULE2_D1_ROUTE_MESSAGES.method
+    } };
+    const assessmentId = url.searchParams.get('assessmentId') ?? request.headers.get('x-assessment-id');
+    if (!assessmentId) return { status: 409, data: {
+      success: false, message: MODULE2_D1_ROUTE_MESSAGES.complianceScopeRequired
+    } };
+    const report = await procurementComplianceReport(db, request, url, assessmentId);
+    if (!report || (report.status && report.status >= 400)) return report || {
+      status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown }
+    };
+    if (normalized === '/procurement-compliance') return report;
+    const file = buildProcurementComplianceWorkbook(report.data as ProcurementComplianceResult);
+    const filename = `${MODULE2_D1_COMPLIANCE.EXPORT.FILENAME_PREFIX}` +
+      `${assessmentId.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
+    return { data: null, response: new Response(file, { status: 200, headers: {
+      'Content-Type': MODULE2_D1_COMPLIANCE.EXPORT.MIME_TYPE,
+      'Content-Disposition': `attachment; filename="${filename}"`
+    } }) };
+  }
   if (MODULE2_D1_PENDING_ROUTES.has(normalized)) {
     logger.warn('Rejected sourcing action that has not been migrated to D1', {
       normalized, method: request.method, requestId: request.headers.get('x-request-id')
@@ -127,11 +390,10 @@ export const handleModule2Route = async (
     if (!assessmentId) return { status: 409, data: {
       success: false, message: MODULE2_D1_SCOPED_MESSAGES.scopeRequired
     } };
-    if (normalized !== '/specification-rationalisation' &&
-        normalized !== '/specification-rationalisation/export-excel') {
+    if (normalized !== '/specification-rationalisation' && normalized !== '/specification-rationalisation/export-excel') {
       return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
     }
-    const report = await handleScopedModule2Route(db, '/specification-rationalisation', request, url);
+    const report = await specificationReport(db, request, url, assessmentId);
     if (!report) return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
     if (report.status && report.status >= 400) return report;
     if (normalized === '/specification-rationalisation') return report;
@@ -181,9 +443,13 @@ export const handleModule2Route = async (
     } };
     if (normalized === '/volume-aggregation/export-excel') {
       const report = await handleScopedModule2Route(db, '/volume-aggregation', request, url);
-      if (!report || typeof report.data !== 'object' || report.data === null) {
+      if (!report) {
         return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
       }
+      if (report.status && report.status >= 400) return report;
+      if (typeof report.data !== 'object' || report.data === null) return {
+        status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown }
+      };
       const file = buildVolumeAggregationWorkbook(report.data as VolumeAggregationResult);
       const filename = `${MODULE2_D1_VOLUME_EXPORT.FILENAME_PREFIX}${assessmentId.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
       return { data: null, response: new Response(file, { status: 200, headers: {
@@ -203,7 +469,9 @@ export const handleModule2Route = async (
         return { status: 404, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.unknown } };
       }
       if (report.status && report.status >= 400) return report;
-      const file = buildEAuctionWorkbook(report.data as EAuctionResult);
+      const data = { ...(report.data as EAuctionResult),
+        planningAssumptions: await loadEAuctionPlanningAssumptions(db) };
+      const file = buildEAuctionWorkbook(data);
       const filename = `${MODULE2_D1_EAUCTION.EXPORT.FILENAME_PREFIX}${assessmentId.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`;
       return { data: null, response: new Response(file, { status: 200, headers: {
         'Content-Type': MODULE2_D1_EAUCTION.EXPORT.MIME_TYPE,
@@ -283,6 +551,11 @@ export const handleModule2Route = async (
     return report;
   }
   const scoped = await handleScopedModule2Route(db, normalized, request, url);
+  if (normalized === '/e-auction' && scoped && !(scoped.status && scoped.status >= 400) &&
+      typeof scoped.data === 'object' && scoped.data !== null) {
+    return { ...scoped, data: { ...(scoped.data as EAuctionResult),
+      planningAssumptions: await loadEAuctionPlanningAssumptions(db) } };
+  }
   if (scoped) return scoped;
   if (normalized.startsWith('/attribution-ledger') || normalized.startsWith('/supplier-risk') ||
       normalized.startsWith('/po-consolidation') || normalized.startsWith('/recurring-spend')) {

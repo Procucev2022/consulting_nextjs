@@ -662,6 +662,7 @@ describe('VendorConsolidationView Orchestration Component', () => {
 
       render(
         <VendorConsolidationMappingQueueTable
+          assessmentId="A1"
           exceptions={mockExceptions}
           onMappingUpdated={onUpdated}
         />

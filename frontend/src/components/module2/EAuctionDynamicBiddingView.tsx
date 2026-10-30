@@ -248,6 +248,38 @@ export const EAuctionDynamicBiddingView: React.FC<EAuctionDynamicBiddingViewProp
         </div>
       </div>
 
+      {result?.planningAssumptions.length ? (
+        <section aria-labelledby="eauction-planning-assumptions-title"
+          className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+          <h2 id="eauction-planning-assumptions-title" className="text-sm font-bold text-amber-950 dark:text-amber-100">
+            {strings.planningAssumptionsTitle}
+          </h2>
+          <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">
+            {strings.planningAssumptionsDisclosure}
+          </p>
+          <ul className="mt-3 grid gap-3 md:grid-cols-2">
+            {result.planningAssumptions.map((assumption) => (
+              <li key={assumption.id} className="rounded-lg border border-amber-200 bg-white p-3 dark:border-amber-800 dark:bg-slate-900">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  {assumption.categoryOrMaterial}
+                </h3>
+                <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">
+                  {strings.planningAssumptionRange(assumption.minSavingsRate * 100,
+                    assumption.expectedSavingsRate * 100, assumption.maxSavingsRate * 100)}
+                </p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                  {assumption.rateSource} · {assumption.referencePeriod}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-200">
+                  {assumption.approvalStatus}
+                </p>
+                {assumption.notes && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">{assumption.notes}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {/* Error Banner */}
       {errorMessage && (
         <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center gap-3 text-red-800 dark:text-red-300">

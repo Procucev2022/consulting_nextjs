@@ -27,7 +27,20 @@ import type {
   decryptRequestSchema,
   detectUploadDomainSchema,
   uploadCommoditySourceSchema,
-  approveCommodityDataSchema
+  approveCommodityDataSchema,
+  specificationReviewSchema,
+  materialMappingUpdateSchema,
+  materialMappingRecordSchema,
+  procurementComplianceReviewSchema,
+  eAuctionPlanningAssumptionSchema,
+  upgradeRequestSchema,
+  upgradeRequestQuerySchema,
+  commercialOtpRequestSchema,
+  commercialOtpVerifySchema,
+  upgradeCodeLoginSchema,
+  subscriptionProvisionSchema,
+  subscriptionStatusSchema,
+  adminProvisionSchema
 } from '../constants/validation';
 
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
@@ -52,6 +65,19 @@ export type DecryptRequestInput = z.infer<typeof decryptRequestSchema>;
 export type DetectUploadDomainInput = z.infer<typeof detectUploadDomainSchema>;
 export type UploadCommoditySourceInput = z.infer<typeof uploadCommoditySourceSchema>;
 export type ApproveCommodityDataInput = z.infer<typeof approveCommodityDataSchema>;
+export type SpecificationReviewInput = z.infer<typeof specificationReviewSchema>;
+export type MaterialMappingUpdateInput = z.infer<typeof materialMappingUpdateSchema>;
+export type MaterialMappingRecordInput = z.infer<typeof materialMappingRecordSchema>;
+export type ProcurementComplianceReviewInput = z.infer<typeof procurementComplianceReviewSchema>;
+export type EAuctionPlanningAssumptionInput = z.infer<typeof eAuctionPlanningAssumptionSchema>;
+export type UpgradeRequestInput = z.infer<typeof upgradeRequestSchema>;
+export type UpgradeRequestQueryInput = z.infer<typeof upgradeRequestQuerySchema>;
+export type CommercialOtpRequestInput = z.infer<typeof commercialOtpRequestSchema>;
+export type CommercialOtpVerifyInput = z.infer<typeof commercialOtpVerifySchema>;
+export type UpgradeCodeLoginInput = z.infer<typeof upgradeCodeLoginSchema>;
+export type SubscriptionProvisionInput = z.infer<typeof subscriptionProvisionSchema>;
+export type SubscriptionStatusInput = z.infer<typeof subscriptionStatusSchema>;
+export type AdminProvisionInput = z.infer<typeof adminProvisionSchema>;
 
 export interface ValidationErrorDetail {
   path: string;

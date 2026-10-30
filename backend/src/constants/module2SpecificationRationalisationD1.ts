@@ -13,7 +13,7 @@ export const MODULE2_D1_SPECIFICATION_RATIONALISATION = {
     'Description similarity is only a retrieval aid; it is not evidence that products are interchangeable.',
     'Rows missing material code, description, category, or unit are excluded from candidate matching.',
     'Candidate spend is historical D1 spend under review and is not a savings estimate.',
-    'Technical review decisions are unavailable until D1 review persistence and authenticated reviewer identity are configured.'
+    'Review decisions are written to the assessment-scoped D1 audit table and are not technical proof of equivalence.'
   ],
   FINANCIAL_DISCLAIMER: 'No savings, technical equivalence, compliance, or realised benefit is asserted. ' +
     'Historical spend is shown only to scope manual review.',

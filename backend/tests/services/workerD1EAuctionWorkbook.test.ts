@@ -18,8 +18,18 @@ const rows: StrategicInputTransaction[] = [
 ];
 
 describe('buildEAuctionWorkbook', () => {
-  it('exports assessment-backed summary, category, material and limitation worksheets', () => {
-    const result = buildEAuctionResult('A-1', rows);
+  it('exports assessment evidence, limitations, and planning assumptions in the workbook', () => {
+    const result = { ...buildEAuctionResult('A-1', rows), planningAssumptions: [
+      { id: 'A-1', categoryOrMaterial: 'Packaging', minSavingsRate: 0.03, expectedSavingsRate: 0.055,
+        maxSavingsRate: 0.09, rateSource: 'Auction index', referencePeriod: 'FY2024-FY2025',
+        applicability: 'Standard packaging', approvalStatus: 'PENDING_APPROVAL' as const,
+        confidence: 'MEDIUM' as const, isPlanningAssumptionOnly: true, notes: 'Review before use.' },
+      { id: 'A-2', categoryOrMaterial: 'Chemicals', minSavingsRate: 0.01, expectedSavingsRate: 0.02,
+        maxSavingsRate: 0.03, rateSource: 'Chemical index', referencePeriod: 'FY2025-FY2026',
+        applicability: 'Bulk chemicals', approvalStatus: 'APPROVED' as const,
+        approvedBy: 'Admin', approvedDate: '2026-10-30T00:00:00.000Z', confidence: 'HIGH' as const,
+        isPlanningAssumptionOnly: true }
+    ] };
     const bytes = buildEAuctionWorkbook(result);
     const workbook = XLSX.read(bytes, { type: 'array' });
 
@@ -31,6 +41,13 @@ describe('buildEAuctionWorkbook', () => {
       materialCode: 'M1', historicalSpendInr: 1200000, suitability: 'Candidate for Review'
     }));
     expect(XLSX.utils.sheet_to_json(workbook.Sheets.Limitations)).toHaveLength(4);
+    expect(XLSX.utils.sheet_to_json(workbook.Sheets['Planning Assumptions'])).toContainEqual(expect.objectContaining({
+      categoryOrMaterial: 'Packaging', minSavingsRatePct: 3, expectedSavingsRatePct: 5.5,
+      approvalStatus: 'PENDING_APPROVAL', approvedBy: '', notes: 'Review before use.'
+    }));
+    expect(XLSX.utils.sheet_to_json(workbook.Sheets['Planning Assumptions'])).toContainEqual(expect.objectContaining({
+      categoryOrMaterial: 'Chemicals', approvedBy: 'Admin', notes: ''
+    }));
   });
 
   it('retains all named worksheets for assessments without rows', () => {
@@ -39,5 +56,6 @@ describe('buildEAuctionWorkbook', () => {
     expect(workbook.SheetNames).toEqual(MODULE2_D1_EAUCTION.EXPORT.SHEETS);
     expect(XLSX.utils.sheet_to_json(workbook.Sheets.Categories)).toEqual([]);
     expect(XLSX.utils.sheet_to_json(workbook.Sheets.Materials)).toEqual([]);
+    expect(XLSX.utils.sheet_to_json(workbook.Sheets['Planning Assumptions'])).toEqual([]);
   });
 });
