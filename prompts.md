@@ -113881,3 +113881,9 @@ Please continue adding remaining missing features & functionalities
 ## Prompt 567
 
 Please continue adding remaining missing features & functionalities
+
+## Prompt 568
+
+Can you Please review the all the changes done so far now,. As per business feature perspective, no feature should be impacted with all these cleaning & code changes, can you please check once, all features should work, which all features won't work with this, improve unit test coverage to meet pre-commit requirements,
+Only major change which we targeted in code cleaning of unncessary files, all data should be fetched from D1 database not any hardcoded file in codebase, some D1 seeding may be, etc.
+All previous functionality are supposed to be working after this cleaning as well. tell all features which are missing.

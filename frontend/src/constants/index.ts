@@ -31,7 +31,6 @@ export * from './pcbiControlledValidation';
 export * from './pcbiPilotExpansion';
 export * from './pcbiProductionPilot';
 export * from './pcbiProductionReady';
-export * from './pcbiCommodityCoverage';
 export * from './pcbiPlatformIntegration';
 export * from './pcbiCommodityDataLab';
 export * from './statusDesign';
