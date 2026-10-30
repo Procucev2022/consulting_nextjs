@@ -29,9 +29,9 @@ export interface VendorItemYoYDetail {
   po_number: string;
   unspsc_code: string;
   unspsc_title: string;
-  spend_yoy_pct: number;
-  qty_yoy_pct: number;
-  price_yoy_pct: number;
+  spend_yoy_pct?: number | null;
+  qty_yoy_pct?: number | null;
+  price_yoy_pct?: number | null;
   observation_mark?: string;
   remark?: string;
 }
@@ -44,7 +44,7 @@ export interface VendorSupplyRecord {
   spend_fy24_cr: number;
   spend_fy25_cr: number;
   spend_fy26_cr: number;
-  yoy_growth_pct: number;
+  yoy_growth_pct?: number | null;
   category_type: VendorSupplyCategoryType;
   category_count: number;
   primary_category: string;
@@ -54,9 +54,9 @@ export interface VendorSupplyRecord {
   risk_level: VendorSupplyRiskLevel;
   observation_note: string;
   spend_share_pct: number;
-  spend_yoy_pct?: number;
-  qty_yoy_pct?: number;
-  price_yoy_pct?: number;
+  spend_yoy_pct?: number | null;
+  qty_yoy_pct?: number | null;
+  price_yoy_pct?: number | null;
   yoy_observation_mark?: string;
   yoy_remark?: string;
   top_items?: VendorItemYoYDetail[];
@@ -144,7 +144,7 @@ export interface VendorSupplyFilterBarProps {
 }
 
 export interface VendorSupplyYoYBadgeProps {
-  pct: number;
+  pct?: number | null;
   label?: string;
   observationMark?: string;
   remark?: string;

@@ -1,8 +1,5 @@
 /**
- * Executive Procurement Value & Savings Brief Constants (Prompt 257)
- * Centralized Re-export Barrel
+ * Executive Brief content barrel. Exposes the certified client profile, report version, and finding cards.
  */
-
 export * from './executiveBriefCorporateConstants';
 export * from './executiveBriefLeverConstants';
-export * from './executiveBriefSavingsConstants';

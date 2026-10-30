@@ -93,3 +93,43 @@ export interface AnomalyAnalysisResult {
   model: string | null;
   error: string | null;
 }
+
+export interface GeminiConfig {
+  API_KEY: string;
+  BACKUP_KEYS: string[];
+  BASE_URL: string;
+  PRIMARY_MODEL: string;
+  FALLBACK_MODELS: string[];
+  REQUEST_TIMEOUT_MS: number;
+  TOTAL_BUDGET_MS: number;
+  MIN_ATTEMPT_MS: number;
+  MAX_DOCUMENT_BYTES: number;
+  MAX_DOCUMENT_TEXT_CHARS: number;
+  TEMPERATURE: number;
+}
+
+export interface GeminiEnvironmentValues {
+  GEMINI_API_KEY?: string;
+  GEMINI_BACKUP_KEYS?: string;
+  GEMINI_BASE_URL?: string;
+  GEMINI_PRIMARY_MODEL?: string;
+  GEMINI_FALLBACK_MODELS?: string;
+  GEMINI_REQUEST_TIMEOUT_MS?: string | number;
+  GEMINI_TOTAL_BUDGET_MS?: string | number;
+  GEMINI_MIN_ATTEMPT_MS?: string | number;
+  GEMINI_MAX_DOCUMENT_BYTES?: string | number;
+  GEMINI_MAX_DOCUMENT_TEXT_CHARS?: string | number;
+}
+
+import type { UNSPSCCommodityRecord } from './taxonomy';
+export type TaxonomyLookup = (query: string) => Promise<UNSPSCCommodityRecord | undefined>;
+
+export interface RawAiMapping {
+  rawLineText?: string;
+  vendorIdentified?: string;
+  mappedUnspscCode?: string;
+  unspscTitle?: string;
+  suggestedBucket?: string;
+  confidenceScore?: number;
+  reason?: string;
+}

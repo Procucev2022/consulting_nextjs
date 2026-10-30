@@ -31,56 +31,7 @@ export const ActionPlanTracker: React.FC<ActionPlanTrackerProps> = ({
     'Deferred'
   ];
 
-  // Default fallback matching Prompt 100 sample (Lubricant PCBI Price Gap, Tata Steel, etc.)
-  const plans = actionPlans.length > 0
-    ? actionPlans
-    : [
-        {
-          id: 'ACT-001',
-          opportunity_id: 'OPP-PCBI-LUB-01',
-          action: 'Renegotiate industrial lubricant contract rate with ABC Vendor based on PCBI gap',
-          owner: 'Procurement' as const,
-          department: 'Direct Materials Sourcing',
-          target_date: '2026-10-30',
-          priority: 'HIGH' as const,
-          expected_value_inr: 2500000,
-          expected_value_inr_cr: 0.25,
-          status: 'Open' as const,
-          comments: 'Benchmark shows ₹22.86/L gap vs expected price of ₹157.14',
-          created_at: '2026-09-20T00:00:00Z',
-          updated_at: '2026-09-20T00:00:00Z'
-        },
-        {
-          id: 'ACT-002',
-          opportunity_id: 'OPP-VEND-STL-02',
-          action: 'Execute volume consolidation RFP for Structural Steel Plate 12mm across Jamshedpur plant',
-          owner: 'Procurement' as const,
-          department: 'Metals & Heavy Sourcing',
-          target_date: '2026-11-15',
-          priority: 'HIGH' as const,
-          expected_value_inr: 6000000,
-          expected_value_inr_cr: 0.60,
-          status: 'In Progress' as const,
-          comments: 'Consolidating volume between Tata Steel and JSW Steel',
-          created_at: '2026-09-20T00:00:00Z',
-          updated_at: '2026-09-20T00:00:00Z'
-        },
-        {
-          id: 'ACT-003',
-          opportunity_id: 'OPP-PO-FAST-03',
-          action: 'Establish annual blanket rate contract (SAP ME31K) for high-frequency fastener POs',
-          owner: 'SCM' as const,
-          department: 'Plant Operations & Maintenance',
-          target_date: '2026-12-01',
-          priority: 'MEDIUM' as const,
-          expected_value_inr: 1200000,
-          expected_value_inr_cr: 0.12,
-          status: 'Open' as const,
-          comments: 'Eliminate 15 spot POs issued per month with master agreement',
-          created_at: '2026-09-20T00:00:00Z',
-          updated_at: '2026-09-20T00:00:00Z'
-        }
-      ];
+  const plans = actionPlans ?? [];
 
   return (
     <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
@@ -96,7 +47,7 @@ export const ActionPlanTracker: React.FC<ActionPlanTrackerProps> = ({
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-            {plans.length} Action Plans Active
+            {aStrings.activeCount(plans.length)}
           </span>
         </div>
       </div>
@@ -117,6 +68,13 @@ export const ActionPlanTracker: React.FC<ActionPlanTrackerProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+              {plans.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-6 px-4 text-center font-sans text-slate-500">
+                    {aStrings.emptyState}
+                  </td>
+                </tr>
+              )}
               {plans.map((p) => (
                 <tr
                   key={p.id}

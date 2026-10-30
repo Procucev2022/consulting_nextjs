@@ -22,44 +22,19 @@ const FISCAL_MONTHS = [
 export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
   months,
   spendCurrency,
-  visibleYears,
+  visibleYears = { FY24: true, FY25: true, FY26: true },
   onToggleYear,
-  selectedMonthIndex,
-  onSelectMonthIndex
+  selectedMonthIndex = 0,
+  onSelectMonthIndex,
+  periodMetadata
 }) => {
   const currSymbol = spendCurrency === 'INR' ? '₹' : '$';
   const currUnit = spendCurrency === 'INR' ? 'Cr' : 'M';
 
-  // Extract month series per fiscal year (12 data points each)
-  const { fy24Points, fy25Points, fy26Points, yMax } = useMemo(() => {
-    let peakVal = 0;
-
-    const mapYear = (fy: 'FY24' | 'FY25' | 'FY26'): (MonthWiseSummary | null)[] => {
-      return FISCAL_MONTHS.map((mDef) => {
-        const match = months.find((m) => m.fiscal_year === fy && m.month_label.startsWith(mDef.key));
-        if (match) {
-          const val = spendCurrency === 'INR' ? match.spend_inr_cr : match.spend_usd_m;
-          if (val > peakVal) peakVal = val;
-          return match;
-        }
-        return null;
-      });
-    };
-
-    const fy24 = mapYear('FY24');
-    const fy25 = mapYear('FY25');
-    const fy26 = mapYear('FY26');
-
-    // Round up yMax to a round ceiling
-    const roundedMax = peakVal > 0 ? Math.ceil(peakVal / 50) * 50 : 100;
-
-    return {
-      fy24Points: fy24,
-      fy25Points: fy25,
-      fy26Points: fy26,
-      yMax: Math.max(100, roundedMax)
-    };
-  }, [months, spendCurrency]);
+  // Determine whether this dataset genuinely supports multi-year comparison
+  const hasMultiYearComparison = Boolean(
+    periodMetadata?.hasMultiYearComparison ?? (new Set(months.map((m) => m.fiscal_year)).size >= 2)
+  );
 
   // SVG Coordinate Constants
   const svgWidth = 800;
@@ -71,42 +46,380 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
   const plotWidth = svgWidth - padLeft - padRight;
   const plotHeight = svgHeight - padTop - padBottom;
 
-  const getX = (index: number): number => {
+  // Single-Year Actual Spend Trend Points
+  const actualPoints = useMemo(() => {
+    return [...months].sort((a, b) => a.month_key.localeCompare(b.month_key));
+  }, [months]);
+
+  const actualYMax = useMemo(() => {
+    let peakVal = 0;
+    actualPoints.forEach((m) => {
+      const val = spendCurrency === 'INR' ? m.spend_inr_cr : (m.spend_usd_m ?? 0);
+      if (val > peakVal) peakVal = val;
+    });
+    return Math.max(100, Math.ceil(peakVal / 50) * 50);
+  }, [actualPoints, spendCurrency]);
+
+  const getActualX = (idx: number): number => {
+    const total = Math.max(1, actualPoints.length - 1);
+    return padLeft + (idx / total) * plotWidth;
+  };
+
+  const getActualY = (val: number): number => {
+    return padTop + plotHeight - (val / actualYMax) * plotHeight;
+  };
+
+  const buildActualPath = (pts: MonthWiseSummary[]): string => {
+    if (pts.length === 0) return '';
+    return pts
+      .map((pt, i) => {
+        const val = spendCurrency === 'INR' ? pt.spend_inr_cr : (pt.spend_usd_m ?? 0);
+        return `${i === 0 ? 'M' : 'L'} ${getActualX(i).toFixed(1)} ${getActualY(val).toFixed(1)}`;
+      })
+      .join(' ');
+  };
+
+  const buildActualAreaPath = (pts: MonthWiseSummary[]): string => {
+    if (pts.length === 0) return '';
+    const firstX = getActualX(0).toFixed(1);
+    const lastX = getActualX(pts.length - 1).toFixed(1);
+    const bottomY = (padTop + plotHeight).toFixed(1);
+    const lineParts = pts
+      .map((pt, i) => {
+        const val = spendCurrency === 'INR' ? pt.spend_inr_cr : (pt.spend_usd_m ?? 0);
+        return `${i === 0 ? 'M' : 'L'} ${getActualX(i).toFixed(1)} ${getActualY(val).toFixed(1)}`;
+      })
+      .join(' ');
+    return `${lineParts} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
+  };
+
+  // Multi-Year Series Calculation (only used when multi-year data genuinely exists)
+  const { fy24Points, fy25Points, fy26Points, multiYMax } = useMemo(() => {
+    let peakVal = 0;
+
+    const mapYear = (fy: string): (MonthWiseSummary | null)[] => {
+      return FISCAL_MONTHS.map((mDef) => {
+        const match = months.find((m) => m.fiscal_year === fy && m.month_label.startsWith(mDef.key));
+        if (match) {
+          const val = spendCurrency === 'INR' ? match.spend_inr_cr : (match.spend_usd_m ?? 0);
+          if (val > peakVal) peakVal = val;
+          return match;
+        }
+        return null;
+      });
+    };
+
+    const fy24 = mapYear('FY24');
+    const fy25 = mapYear('FY25');
+    const fy26 = mapYear('FY26');
+    const roundedMax = peakVal > 0 ? Math.ceil(peakVal / 50) * 50 : 100;
+
+    return {
+      fy24Points: fy24,
+      fy25Points: fy25,
+      fy26Points: fy26,
+      multiYMax: Math.max(100, roundedMax)
+    };
+  }, [months, spendCurrency]);
+
+  const getMultiX = (index: number): number => {
     return padLeft + (index / 11) * plotWidth;
   };
 
-  const getY = (val: number): number => {
-    return padTop + plotHeight - (val / yMax) * plotHeight;
+  const getMultiY = (val: number): number => {
+    return padTop + plotHeight - (val / multiYMax) * plotHeight;
   };
 
-  // Y-axis tick intervals (5 ticks)
-  const yTicks = [
-    { value: yMax, y: getY(yMax) },
-    { value: Math.round(yMax * 0.75), y: getY(yMax * 0.75) },
-    { value: Math.round(yMax * 0.5), y: getY(yMax * 0.5) },
-    { value: Math.round(yMax * 0.25), y: getY(yMax * 0.25) },
-    { value: 0, y: getY(0) }
-  ];
-
-  // Helper to generate SVG polyline path
-  const buildPath = (points: (MonthWiseSummary | null)[]): string => {
+  const buildMultiPath = (points: (MonthWiseSummary | null)[]): string => {
     const validCoords: { x: number; y: number }[] = [];
     points.forEach((pt, idx) => {
       if (pt) {
-        const val = spendCurrency === 'INR' ? pt.spend_inr_cr : pt.spend_usd_m;
-        validCoords.push({ x: getX(idx), y: getY(val) });
+        const val = spendCurrency === 'INR' ? pt.spend_inr_cr : (pt.spend_usd_m ?? 0);
+        validCoords.push({ x: getMultiX(idx), y: getMultiY(val) });
       }
     });
     if (validCoords.length === 0) return '';
     return validCoords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ');
   };
 
+  // If no months are loaded, render an explicit empty state
+  if (months.length === 0) {
+    return (
+      <div className="py-16 text-center text-slate-400 font-sans text-xs">
+        {UI_STRINGS.documentSummary.month.graph.noData}
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // VIEW MODE A: SINGLE-YEAR ACTUAL SPEND TREND (VGT 10-MONTH CASE)
+  // -------------------------------------------------------------
+  if (!hasMultiYearComparison) {
+    const safeIndex = Math.min(Math.max(0, selectedMonthIndex), actualPoints.length - 1);
+    const selectedMonth = actualPoints[safeIndex] || actualPoints[0];
+
+    const actualYTicks = [
+      { value: actualYMax, y: getActualY(actualYMax) },
+      { value: Math.round(actualYMax * 0.75), y: getActualY(actualYMax * 0.75) },
+      { value: Math.round(actualYMax * 0.5), y: getActualY(actualYMax * 0.5) },
+      { value: Math.round(actualYMax * 0.25), y: getActualY(actualYMax * 0.25) },
+      { value: 0, y: getActualY(0) }
+    ];
+
+    return (
+      <div className="space-y-4">
+        {/* Header Legend & Verified Coverage Status */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+            <span className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-cyan-100 text-cyan-900 ring-1 ring-cyan-400 font-bold">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500" />
+              <span>{UI_STRINGS.documentSummary.month.graph.legends.actualTrend}</span>
+            </span>
+            <span className="text-slate-400">|</span>
+            <span className="text-slate-700 font-semibold">
+              {periodMetadata?.fiscalMonthCoverage || 'FY22 | 10 of 12 months available'}
+            </span>
+          </div>
+
+          <span className="text-[11px] text-slate-500 font-mono">
+            {UI_STRINGS.documentSummary.month.actualCoverageLabel(
+              periodMetadata
+                ? `${periodMetadata.minTransactionDate.slice(0, 3)} ${periodMetadata.minTransactionDate.slice(-4)} – ${periodMetadata.maxTransactionDate.slice(0, 3)} ${periodMetadata.maxTransactionDate.slice(-4)}`
+                : 'Apr 2021 – Jan 2022',
+              actualPoints.length
+            )}
+          </span>
+        </div>
+
+        {/* SVG Plot Canvas */}
+        <div className="w-full overflow-x-auto">
+          <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto min-w-[650px] select-none">
+            <defs>
+              <linearGradient id="area-actual" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Background Grid Lines & Y-Axis Labels */}
+            {actualYTicks.map((tick, i) => (
+              <g key={`actual-ytick-${i}`}>
+                <line
+                  x1={padLeft}
+                  y1={tick.y}
+                  x2={padLeft + plotWidth}
+                  y2={tick.y}
+                  stroke="#e2e8f0"
+                  strokeDasharray={i === actualYTicks.length - 1 ? 'none' : '3 3'}
+                  strokeWidth="1"
+                />
+                <text
+                  x={padLeft - 10}
+                  y={tick.y + 4}
+                  textAnchor="end"
+                  className="text-[10px] font-mono font-medium fill-slate-400"
+                >
+                  {tick.value}
+                </text>
+              </g>
+            ))}
+
+            {/* Y-Axis Title */}
+            <text
+              x={14}
+              y={padTop + plotHeight / 2}
+              textAnchor="middle"
+              transform={`rotate(-90 14 ${padTop + plotHeight / 2})`}
+              className="text-[10px] font-mono font-bold fill-slate-500 uppercase tracking-wider"
+            >
+              {UI_STRINGS.documentSummary.month.graph.yAxisLabel(currUnit)}
+            </text>
+
+            {/* X-Axis Month Ticks & Labels */}
+            {actualPoints.map((m, idx) => {
+              const x = getActualX(idx);
+              const isSelected = safeIndex === idx;
+              return (
+                <g key={`actual-xtick-${m.month_key}`}>
+                  <line x1={x} y1={padTop + plotHeight} x2={x} y2={padTop + plotHeight + 6} stroke="#cbd5e1" strokeWidth="1" />
+                  <text
+                    x={x}
+                    y={padTop + plotHeight + 20}
+                    textAnchor="middle"
+                    className={`text-[10px] font-mono cursor-pointer transition-all ${
+                      isSelected ? 'fill-slate-900 scale-110 font-black' : 'fill-slate-500 font-medium'
+                    }`}
+                  >
+                    {m.month_label.split(' ')[0]}
+                  </text>
+                  <text
+                    x={x}
+                    y={padTop + plotHeight + 32}
+                    textAnchor="middle"
+                    className="text-[8px] font-mono fill-slate-400"
+                  >
+                    {m.month_label.split(' ')[1] || m.fiscal_year}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Vertical Guideline for Selected Month */}
+            {safeIndex >= 0 && (
+              <g>
+                <line
+                  x1={getActualX(safeIndex)}
+                  y1={padTop}
+                  x2={getActualX(safeIndex)}
+                  y2={padTop + plotHeight}
+                  stroke="#0284c7"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 3"
+                  opacity="0.8"
+                />
+                <rect
+                  x={getActualX(safeIndex) - 24}
+                  y={padTop - 20}
+                  width="48"
+                  height="16"
+                  rx="4"
+                  className="fill-slate-900"
+                />
+                <text
+                  x={getActualX(safeIndex)}
+                  y={padTop - 8}
+                  textAnchor="middle"
+                  className="text-[9px] font-mono font-bold fill-white"
+                >
+                  {selectedMonth ? selectedMonth.month_label.split(' ')[0] : ''}
+                </text>
+              </g>
+            )}
+
+            {/* Area Fill Under Actual Spend Line */}
+            <path d={buildActualAreaPath(actualPoints)} fill="url(#area-actual)" />
+
+            {/* Actual Spend Line */}
+            <path
+              d={buildActualPath(actualPoints)}
+              fill="none"
+              stroke="#0ea5e9"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+
+            {/* Points on Actual Spend Line */}
+            {actualPoints.map((pt, idx) => {
+              const val = spendCurrency === 'INR' ? pt.spend_inr_cr : (pt.spend_usd_m ?? 0);
+              const cx = getActualX(idx);
+              const cy = getActualY(val);
+              const isSelected = safeIndex === idx;
+              return (
+                <g key={`actual-pt-${pt.month_key}`}>
+                  {isSelected && (
+                    <circle cx={cx} cy={cy} r={11} fill="none" stroke="#0ea5e9" strokeWidth="2" opacity="0.4" />
+                  )}
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={isSelected ? 6 : 4.5}
+                    fill="#0ea5e9"
+                    stroke="#ffffff"
+                    strokeWidth="2.5"
+                    className="cursor-pointer transition-transform"
+                    onClick={() => onSelectMonthIndex?.(idx)}
+                  />
+                </g>
+              );
+            })}
+
+            {/* Interactive Hit Areas */}
+            {actualPoints.map((m, idx) => {
+              const x = getActualX(idx);
+              const colW = plotWidth / Math.max(1, actualPoints.length - 1);
+              return (
+                <rect
+                  key={`hit-actual-${m.month_key}`}
+                  x={x - colW / 2}
+                  y={padTop}
+                  width={colW}
+                  height={plotHeight}
+                  fill="transparent"
+                  className="cursor-pointer"
+                  onMouseEnter={() => onSelectMonthIndex?.(idx)}
+                  onClick={() => onSelectMonthIndex?.(idx)}
+                />
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Selected Month Detail Card (Zero false YoY comparison) */}
+        {selectedMonth && (
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono flex flex-wrap items-center justify-between gap-4 shadow-2xs">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-900 border border-cyan-300">
+                  {selectedMonth.fiscal_year}
+                </span>
+                <h5 className="text-sm font-black text-slate-900">
+                  {selectedMonth.month_label}
+                </h5>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Top Category: <span className="font-bold text-slate-700">{selectedMonth.top_material_group}</span> | Facility: <span className="font-bold text-slate-700">{selectedMonth.top_plant}</span>
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6">
+              <div>
+                <span className="text-[10px] uppercase text-slate-400 font-bold block">Validated Spend</span>
+                <span className="text-base font-black text-emerald-700">
+                  {currSymbol}{(spendCurrency === 'INR' ? selectedMonth.spend_inr_cr : (selectedMonth.spend_usd_m ?? 0)).toFixed(2)} {currUnit}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase text-slate-400 font-bold block">Line Items</span>
+                <span className="text-sm font-black text-cyan-700">
+                  {(selectedMonth.records_count ?? selectedMonth.po_count ?? 0).toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase text-slate-400 font-bold block">Active Vendors</span>
+                <span className="text-sm font-black text-indigo-700">
+                  {(selectedMonth.unique_vendors_count ?? selectedMonth.vendors_count ?? 1).toLocaleString()}
+                </span>
+              </div>
+              {selectedMonth.mom_change_pct !== undefined && selectedMonth.mom_change_pct !== 0 && (
+                <div>
+                  <span className="text-[10px] uppercase text-slate-400 font-bold block">MoM Shift</span>
+                  <span
+                    className={`text-sm font-black ${
+                      selectedMonth.mom_change_pct > 0 ? 'text-amber-600' : 'text-emerald-600'
+                    }`}
+                  >
+                    {selectedMonth.mom_change_pct > 0
+                      ? `+${selectedMonth.mom_change_pct.toFixed(1)}%`
+                      : `${selectedMonth.mom_change_pct.toFixed(1)}%`}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // VIEW MODE B: MULTI-YEAR COMPARISON GRAPH (ONLY IF 2+ FYs EXIST)
+  // -------------------------------------------------------------
   const selectedMonthDef = FISCAL_MONTHS[selectedMonthIndex] || FISCAL_MONTHS[0];
   const selectedFy24 = fy24Points[selectedMonthIndex];
   const selectedFy25 = fy25Points[selectedMonthIndex];
   const selectedFy26 = fy26Points[selectedMonthIndex];
 
-  // Calculate YoY change percentages for inspection
   const fy25YoY =
     selectedFy24 && selectedFy25
       ? ((selectedFy25.spend_inr_cr - selectedFy24.spend_inr_cr) / selectedFy24.spend_inr_cr) * 100
@@ -116,51 +429,54 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
       ? ((selectedFy26.spend_inr_cr - selectedFy25.spend_inr_cr) / selectedFy25.spend_inr_cr) * 100
       : null;
 
+  const multiYTicks = [
+    { value: multiYMax, y: getMultiY(multiYMax) },
+    { value: Math.round(multiYMax * 0.75), y: getMultiY(multiYMax * 0.75) },
+    { value: Math.round(multiYMax * 0.5), y: getMultiY(multiYMax * 0.5) },
+    { value: Math.round(multiYMax * 0.25), y: getMultiY(multiYMax * 0.25) },
+    { value: 0, y: getMultiY(0) }
+  ];
+
   return (
     <div className="space-y-4">
       {/* Chart Header & Year Legend Toggles */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-          <span className="text-slate-600 dark:text-slate-400 font-bold">
+          <span className="text-slate-600 font-bold">
             {UI_STRINGS.documentSummary.month.graph.fiscalYearsLabel}
           </span>
-          {/* FY24 Toggle */}
           <button
-            onClick={() => onToggleYear('FY24')}
+            onClick={() => onToggleYear?.('FY24')}
             className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-all ${
               visibleYears.FY24
-                ? 'bg-sky-100 text-sky-900 dark:bg-sky-950/80 dark:text-sky-300 ring-1 ring-sky-400'
-                : 'bg-slate-100 text-slate-400 dark:bg-[#EEF4FC] dark:text-slate-500 opacity-60'
+                ? 'bg-sky-100 text-sky-900 ring-1 ring-sky-400 font-bold'
+                : 'bg-slate-100 text-slate-400 opacity-60'
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
-            <span className="font-bold">{UI_STRINGS.documentSummary.month.graph.legends.fy24}</span>
+            <span>{UI_STRINGS.documentSummary.month.graph.legends.fy24}</span>
           </button>
-
-          {/* FY25 Toggle */}
           <button
-            onClick={() => onToggleYear('FY25')}
+            onClick={() => onToggleYear?.('FY25')}
             className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-all ${
               visibleYears.FY25
-                ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300 ring-1 ring-emerald-400'
-                : 'bg-slate-100 text-slate-400 dark:bg-[#EEF4FC] dark:text-slate-500 opacity-60'
+                ? 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-400 font-bold'
+                : 'bg-slate-100 text-slate-400 opacity-60'
             }`}
           >
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="font-bold">{UI_STRINGS.documentSummary.month.graph.legends.fy25}</span>
+            <span>{UI_STRINGS.documentSummary.month.graph.legends.fy25}</span>
           </button>
-
-          {/* FY26 Toggle */}
           <button
-            onClick={() => onToggleYear('FY26')}
+            onClick={() => onToggleYear?.('FY26')}
             className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-md cursor-pointer transition-all ${
               visibleYears.FY26
-                ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-300 ring-1 ring-purple-400'
-                : 'bg-slate-100 text-slate-400 dark:bg-[#EEF4FC] dark:text-slate-500 opacity-60'
+                ? 'bg-indigo-100 text-indigo-900 ring-1 ring-indigo-400 font-bold'
+                : 'bg-slate-100 text-slate-400 opacity-60'
             }`}
           >
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-            <span className="font-bold">{UI_STRINGS.documentSummary.month.graph.legends.fy26}</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+            <span>{UI_STRINGS.documentSummary.month.graph.legends.fy26}</span>
           </button>
         </div>
 
@@ -169,86 +485,37 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
         </span>
       </div>
 
-      {/* SVG Multi-Line Graph Canvas */}
-      <div className="relative w-full overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-          className="w-full h-auto min-w-[620px] select-none"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* Defs for gradients */}
-          <defs>
-            <linearGradient id="area-fy24" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0.0" />
-            </linearGradient>
-            <linearGradient id="area-fy25" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-            </linearGradient>
-            <linearGradient id="area-fy26" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* Horizontal Gridlines & Y-Axis Amount Labels */}
-          {yTicks.map((t, idx) => (
-            <g key={idx}>
+      {/* SVG Canvas for Multi-Year Line Graph */}
+      <div className="w-full overflow-x-auto">
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto min-w-[650px] select-none">
+          {multiYTicks.map((tick, i) => (
+            <g key={`multi-ytick-${i}`}>
               <line
                 x1={padLeft}
-                y1={t.y}
-                x2={svgWidth - padRight}
-                y2={t.y}
+                y1={tick.y}
+                x2={padLeft + plotWidth}
+                y2={tick.y}
                 stroke="#e2e8f0"
+                strokeDasharray={i === multiYTicks.length - 1 ? 'none' : '3 3'}
                 strokeWidth="1"
-                strokeDasharray={t.value === 0 ? undefined : '3 3'}
-                className="dark:stroke-slate-800"
               />
-              <text
-                x={padLeft - 10}
-                y={t.y + 4}
-                textAnchor="end"
-                className="text-[10px] font-mono fill-slate-400 font-semibold"
-              >
-                {currSymbol}{t.value} {currUnit}
+              <text x={padLeft - 10} y={tick.y + 4} textAnchor="end" className="text-[10px] font-mono fill-slate-400">
+                {tick.value}
               </text>
             </g>
           ))}
 
-          {/* Y-Axis Label (Vertical) */}
-          <text
-            x={-padTop - plotHeight / 2}
-            y={16}
-            transform="rotate(-90)"
-            textAnchor="middle"
-            className="text-[10px] font-mono uppercase tracking-wider fill-slate-400 font-bold"
-          >
-            {UI_STRINGS.documentSummary.month.graph.yAxisLabel(`${currSymbol} ${currUnit}`)}
-          </text>
-
-          {/* X-Axis Month Labels */}
           {FISCAL_MONTHS.map((mDef) => {
-            const x = getX(mDef.index);
+            const x = getMultiX(mDef.index);
             const isSelected = selectedMonthIndex === mDef.index;
             return (
-              <g key={mDef.key}>
-                <line
-                  x1={x}
-                  y1={padTop + plotHeight}
-                  x2={x}
-                  y2={padTop + plotHeight + 5}
-                  stroke={isSelected ? '#0f172a' : '#cbd5e1'}
-                  strokeWidth={isSelected ? '2' : '1'}
-                  className="dark:stroke-slate-700"
-                />
+              <g key={`multi-xtick-${mDef.key}`}>
+                <line x1={x} y1={padTop + plotHeight} x2={x} y2={padTop + plotHeight + 6} stroke="#cbd5e1" strokeWidth="1" />
                 <text
                   x={x}
-                  y={padTop + plotHeight + 18}
+                  y={padTop + plotHeight + 20}
                   textAnchor="middle"
-                  className={`text-[11px] font-mono font-bold transition-all ${
-                    isSelected ? 'fill-slate-900 dark:fill-white scale-110 font-black' : 'fill-slate-500'
-                  }`}
+                  className={`text-[10px] font-mono ${isSelected ? 'fill-slate-900 font-black' : 'fill-slate-500'}`}
                 >
                   {mDef.label}
                 </text>
@@ -256,165 +523,38 @@ export const MultiYearLineGraph: React.FC<MultiYearLineGraphProps> = ({
             );
           })}
 
-          {/* Vertical Crosshair Guideline for Selected Month */}
-          {selectedMonthIndex >= 0 && (
-            <g>
-              <line
-                x1={getX(selectedMonthIndex)}
-                y1={padTop}
-                x2={getX(selectedMonthIndex)}
-                y2={padTop + plotHeight}
-                stroke="#64748b"
-                strokeWidth="1.5"
-                strokeDasharray="3 3"
-                opacity="0.75"
-              />
-              <rect
-                x={getX(selectedMonthIndex) - 22}
-                y={padTop + plotHeight + 24}
-                width="44"
-                height="16"
-                rx="4"
-                className="fill-slate-900 dark:fill-emerald-600"
-              />
-              <text
-                x={getX(selectedMonthIndex)}
-                y={padTop + plotHeight + 35}
-                textAnchor="middle"
-                className="text-[9px] font-mono font-bold fill-white"
-              >
-                {selectedMonthDef.label}
-              </text>
-            </g>
-          )}
-
-          {/* FY24 Line & Area */}
           {visibleYears.FY24 && (
-            <g>
-              <path
-                d={buildPath(fy24Points)}
-                fill="none"
-                stroke="#0ea5e9"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {fy24Points.map((pt, idx) => {
-                if (!pt) return null;
-                const val = spendCurrency === 'INR' ? pt.spend_inr_cr : pt.spend_usd_m;
-                const cx = getX(idx);
-                const cy = getY(val);
-                const isSelected = selectedMonthIndex === idx;
-                return (
-                  <g key={`fy24-pt-${idx}`}>
-                    {isSelected && <circle cx={cx} cy={cy} r={10} fill="none" stroke="#0ea5e9" strokeWidth="1.5" opacity="0.5" />}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={isSelected ? 6 : 4}
-                      fill="#0ea5e9"
-                      stroke="#ffffff"
-                      strokeWidth="2"
-                      className="cursor-pointer transition-transform"
-                    />
-                  </g>
-                );
-              })}
-            </g>
+            <path d={buildMultiPath(fy24Points)} fill="none" stroke="#0ea5e9" strokeWidth="3" strokeLinecap="round" />
           )}
-
-          {/* FY25 Line & Area */}
           {visibleYears.FY25 && (
-            <g>
-              <path
-                d={buildPath(fy25Points)}
-                fill="none"
-                stroke="#10b981"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {fy25Points.map((pt, idx) => {
-                if (!pt) return null;
-                const val = spendCurrency === 'INR' ? pt.spend_inr_cr : pt.spend_usd_m;
-                const cx = getX(idx);
-                const cy = getY(val);
-                const isSelected = selectedMonthIndex === idx;
-                return (
-                  <g key={`fy25-pt-${idx}`}>
-                    {isSelected && <circle cx={cx} cy={cy} r={10} fill="none" stroke="#10b981" strokeWidth="1.5" opacity="0.5" />}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={isSelected ? 6 : 4}
-                      fill="#10b981"
-                      stroke="#ffffff"
-                      strokeWidth="2"
-                      className="cursor-pointer transition-transform"
-                    />
-                  </g>
-                );
-              })}
-            </g>
+            <path d={buildMultiPath(fy25Points)} fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" />
           )}
-
-          {/* FY26 Line & Area */}
           {visibleYears.FY26 && (
-            <g>
-              <path
-                d={buildPath(fy26Points)}
-                fill="none"
-                stroke="#8b5cf6"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {fy26Points.map((pt, idx) => {
-                if (!pt) return null;
-                const val = spendCurrency === 'INR' ? pt.spend_inr_cr : pt.spend_usd_m;
-                const cx = getX(idx);
-                const cy = getY(val);
-                const isSelected = selectedMonthIndex === idx;
-                return (
-                  <g key={`fy26-pt-${idx}`}>
-                    {isSelected && <circle cx={cx} cy={cy} r={10} fill="none" stroke="#8b5cf6" strokeWidth="1.5" opacity="0.5" />}
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r={isSelected ? 6 : 4}
-                      fill="#8b5cf6"
-                      stroke="#ffffff"
-                      strokeWidth="2"
-                      className="cursor-pointer transition-transform"
-                    />
-                  </g>
-                );
-              })}
-            </g>
+            <path d={buildMultiPath(fy26Points)} fill="none" stroke="#8b5cf6" strokeWidth="3" strokeLinecap="round" />
           )}
 
-          {/* Interactive Invisible Overlay Rects for Easy Hover & Click */}
+          {/* Interactive Hit Areas for Multi-Year */}
           {FISCAL_MONTHS.map((mDef) => {
-            const x = getX(mDef.index);
+            const x = getMultiX(mDef.index);
             const colW = plotWidth / 11;
             return (
               <rect
-                key={`hit-${mDef.key}`}
+                key={`hit-multi-${mDef.key}`}
                 x={x - colW / 2}
                 y={padTop}
                 width={colW}
                 height={plotHeight}
                 fill="transparent"
                 className="cursor-pointer"
-                onMouseEnter={() => onSelectMonthIndex(mDef.index)}
-                onClick={() => onSelectMonthIndex(mDef.index)}
+                onMouseEnter={() => onSelectMonthIndex?.(mDef.index)}
+                onClick={() => onSelectMonthIndex?.(mDef.index)}
               />
             );
           })}
         </svg>
       </div>
 
-      {/* 3-Year Comparison Card for Selected Month */}
+      {/* Multi-Year Comparison Card */}
       <MultiYearComparisonCard
         selectedMonthDef={selectedMonthDef}
         selectedFy24={selectedFy24}

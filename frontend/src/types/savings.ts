@@ -6,6 +6,7 @@ export type SavingsSourceModule = 'MODULE_2_STRATEGIC' | 'MODULE_3_PCBI';
 
 export type SavingsSourceEngine =
   | 'PCBI_PRICE'
+  | 'PRICE_DISPERSION'
   | 'VENDOR_CONSOLIDATION'
   | 'PO_CONSOLIDATION'
   | 'E_AUCTION'
@@ -14,6 +15,8 @@ export type SavingsSourceEngine =
   | 'DEMAND_CONSOLIDATION'
   | 'NEW_VENDOR_DEVELOPMENT'
   | 'ALTERNATE_MATERIAL'
+  | 'PAYMENT_TERMS'
+  | 'VOLUME_AGGREGATION'
   | 'OTHER_STRATEGIC';
 
 export type SavingsOpportunityStatus =
@@ -85,6 +88,8 @@ export interface SavingsWaterfallMetrics {
   gross_potential_savings_inr_cr: number;
   deduplicated_overlap_inr_cr: number;
   net_potential_savings_inr_cr: number;
+  proven_opportunity_inr_cr?: number;
+  discovery_opportunity_inr_cr?: number;
   validated_savings_inr_cr: number;
   approved_savings_inr_cr: number;
   realized_savings_inr_cr: number;
@@ -112,4 +117,10 @@ export interface ConsolidatedSavingsData {
   waterfallMetrics: SavingsWaterfallMetrics;
   actionPlans: ActionPlanItem[];
   strategicSummary?: Record<string, unknown>;
+}
+
+export interface SavingsApiResponse<T> {
+  success?: boolean;
+  data?: T;
+  message?: string;
 }

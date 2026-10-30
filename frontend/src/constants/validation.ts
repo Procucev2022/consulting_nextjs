@@ -6,6 +6,77 @@
  */
 
 import { z } from 'zod';
+import { TAXONOMY_PAGE_SIZE } from './taxonomy';
+
+export const taxonomyPageRequestSchema = z.object({
+  limit: z.number().int().min(1).max(TAXONOMY_PAGE_SIZE),
+  offset: z.number().int().nonnegative()
+});
+
+export const taxonomyPageResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.array(z.object({
+    commodityCode: z.string().min(1),
+    commodityTitle: z.string().min(1),
+    classCode: z.string().min(1),
+    classTitle: z.string().min(1),
+    familyCode: z.string().min(1),
+    familyTitle: z.string().min(1),
+    segmentCode: z.string().min(1),
+    segmentTitle: z.string().min(1),
+    coreBucket: z.enum(['Direct Materials', 'Packaging Materials', 'Indirect & MRO', 'Logistics & Freight']).optional()
+  }))
+});
+
+export const conversionStagesResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.array(z.object({
+    phase_num: z.number().int().positive(),
+    phase_name: z.string().min(1),
+    platform_actionable_focus: z.string(),
+    value_outcome_delivered: z.string(),
+    commercial_lock_in_metric: z.string(),
+    completion_pct: z.number().min(0).max(100),
+    status: z.string(),
+    spend_evaluated_cr: z.number().optional(),
+    count_elements: z.number().optional(),
+    percentage_leakage_identified: z.number().optional()
+  }))
+});
+
+export const databaseSchemaResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.array(z.object({
+    entity_name: z.string().min(1),
+    primary_attributes: z.string(),
+    system_usage: z.string(),
+    sample_records: z.array(z.record(z.string(), z.unknown())),
+    ddl: z.string()
+  }))
+});
+
+export const procurementCategoryMappingsResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.object({
+    mappings: z.record(z.string(), z.string()).refine((value) => Object.keys(value).length > 0),
+    categories: z.array(z.string().min(1)).min(1)
+  })
+});
+
+export const pcbiBenchmarkResponseSchema = z.array(z.object({
+  pcbi_id: z.string().min(1),
+  benchmark_name: z.string().min(1),
+  benchmark_unit: z.string().min(1),
+  currency: z.string().min(1)
+}).passthrough());
+
+export const pcbiWeeklyIndexResponseSchema = z.array(z.object({
+  pcbi_id: z.string().min(1),
+  week_start: z.string().min(1),
+  index_value: z.number().finite(),
+  unit: z.string().optional(),
+  currency: z.string().optional()
+}).passthrough());
 
 // Header Selection Schemas
 export const headerTenantSchema = z.object({
@@ -114,15 +185,28 @@ export const apiAddIngestionFilePayloadSchema = z.object({
 }).passthrough();
 
 export const apiUpdateValidationRecordPayloadSchema = z.object({
-  record_id: z.string().min(1, 'Record ID is required'),
-  vendor_raw: z.string().optional(),
-  vendor_normalized: z.string().optional(),
-  currency_original: z.string().optional(),
-  currency_normalized: z.string().optional(),
+  record_id: z.string().trim().min(1, 'Record ID is required').max(120),
+  po_number: z.string().trim().min(1).max(200).optional(),
+  vendor_name: z.string().trim().min(1).max(300).optional(),
+  raw_desc: z.string().trim().min(1).max(1000).optional(),
+  order_quantity: z.number().finite().nonnegative().optional(),
+  net_price: z.number().finite().nonnegative().optional(),
+  subtotal_raw: z.number().finite().nonnegative().optional(),
+  amount: z.number().finite().nonnegative().optional(),
+  raw_currency: z.string().trim().regex(/^[A-Z]{3}$/).optional(),
+  amount_inr: z.number().finite().nonnegative().optional(),
+  inr_crores: z.number().finite().nonnegative().optional(),
+  fx_rate_applied: z.number().finite().positive().optional(),
+  spend_year: z.number().int().min(1900).max(2200).optional(),
+  transaction_date: z.string().trim().max(40).optional(),
+  column_l_code: z.string().trim().max(120).optional(),
+  core_category: z.string().trim().max(120).optional(),
   resolved: z.boolean().optional(),
-  issue_flag: z.string().optional(),
-  notes: z.string().optional()
-}).passthrough();
+  issue_flag: z.string().trim().min(1).max(120).optional(),
+  action_status: z.string().trim().min(1).max(120).optional()
+}).passthrough().refine((value) => Object.keys(value).some((key) => key !== 'record_id'), {
+  message: 'At least one validation field must be updated'
+});
 
 
 export const apiMergeVendorPayloadSchema = z.object({
@@ -201,5 +285,44 @@ export const updateOpportunityStatusSchema = z.object({
     'REJECTED',
     'DEFERRED'
   ])
+});
+
+// Customer Management Form Schemas (Internal Command Centre)
+export const createCustomerFormSchema = z.object({
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
+  industry: z.string().min(2, 'Industry is required'),
+  businessUnit: z.string().optional(),
+  region: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export const updateCustomerFormSchema = z.object({
+  customerName: z.string().min(2, 'Customer name must be at least 2 characters').optional(),
+  industry: z.string().min(2, 'Industry is required').optional(),
+  businessUnit: z.string().optional(),
+  region: z.string().optional(),
+  baseCurrency: z.string().optional(),
+  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+  status: z.enum(['ACTIVE', 'ARCHIVED', 'ONBOARDING']).optional(),
+  notes: z.string().optional()
+});
+
+export const newAssessmentFormSchema = z.object({
+  customerId: z.string().optional(),
+  customerName: z.string().min(2, 'Customer name is required'),
+  businessUnit: z.string().optional(),
+  industry: z.string().min(2, 'Industry is required'),
+  assessmentPeriodStart: z.string().min(3, 'Period start is required'),
+  assessmentPeriodEnd: z.string().min(3, 'Period end is required'),
+  assignedAnalyst: z.string().email('Valid analyst email is required'),
+  assessmentOwner: z.string().optional(),
+  currency: z.string().optional(),
+  ndaStatus: z.enum(['NOT_REQUESTED', 'SENT', 'SIGNED', 'EXPIRED']).optional(),
+  dataReceivedDate: z.string().optional(),
+  notes: z.string().optional()
 });
 

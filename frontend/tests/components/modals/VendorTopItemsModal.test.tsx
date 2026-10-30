@@ -1,8 +1,8 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VendorTopItemsModal } from '../../../src/components/modals/VendorTopItemsModal';
-import { mockVendorYearDetails } from '../../../src/data/mockData';
+import { mockVendorYearDetails } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 const sampleVendor: any = {
@@ -34,6 +34,10 @@ const sampleVendor: any = {
 };
 
 describe('VendorTopItemsModal Component', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
   it('renders null when not open or vendor is null', () => {
     const { container } = render(
       <VendorTopItemsModal
@@ -79,6 +83,7 @@ describe('VendorTopItemsModal Component', () => {
     // Export CSV
     const exportBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.exportCSV });
     fireEvent.click(exportBtn);
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
 
     const closeBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.closePopUp });
     fireEvent.click(closeBtn);

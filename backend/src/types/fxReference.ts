@@ -59,6 +59,7 @@ export interface FxNormalizedTransaction {
   fxConversionStatus: FxConversionStatus;
   inrNormalizedValue: number | null;
   fxMasterVersion: string;
+  currencyProvenance?: string;
 }
 
 export interface FxSpendSummary {
@@ -93,6 +94,59 @@ export interface FxReferenceRecord {
   conversionMethod: string;
   rateStatus: string;
   fxMasterVersion: string;
+}
+
+export interface FxReferenceRateD1Row {
+  currency: string;
+  rate_date: string;
+  inr_per_unit: number;
+  raw_rate: number | null;
+  raw_unit: number | null;
+  raw_quote_convention: string | null;
+  source_id: string | null;
+  source_name: string | null;
+  rate_type: string | null;
+  conversion_method: string | null;
+  rate_status: string | null;
+  fx_master_version: string;
+}
+
+export interface FxCurrencyMasterD1Row {
+  currency: string;
+  currency_name: string;
+  coverage_status: string;
+  approved_source: string | null;
+}
+
+export interface FxRateRuleD1Row {
+  rule_id: string;
+  rule: string;
+  implementation_requirement: string;
+  control_type: string;
+}
+
+export interface FxMasterVersionD1Row {
+  version_id: string;
+  workbook_name: string;
+  created_date: string | null;
+  coverage_start: string | null;
+  coverage_end: string | null;
+  currencies: number | null;
+  total_records: number | null;
+  source_mix: string | null;
+  created_by: string | null;
+  sha256_checksum: string;
+  validation_status: string;
+}
+
+export interface LoadedFxMasterData {
+  verifiedChecksum: string;
+  filePathUsed: string;
+  dailyRatesMap: Map<string, FxReferenceRecord>;
+  datesByCurrency: Map<string, string[]>;
+  currenciesMetadata: Map<string, FxCurrencyMasterMetadata>;
+  rateRules: FxRateRuleMetadata[];
+  versionMetadata: FxMasterVersionMetadata | null;
 }
 
 export interface FxCurrencyMasterMetadata {

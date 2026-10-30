@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MergeItemModal } from '../../../src/components/modals/MergeItemModal';
-import { initialValidationRecords } from '../../../src/data/mockData';
+import { initialValidationRecords } from '../../fixtures/mockData';
 import { UI_STRINGS, DEFAULT_MASTER_ITEMS } from '../../../src/constants';
 
 describe('MergeItemModal Component', () => {

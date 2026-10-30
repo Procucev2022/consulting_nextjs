@@ -1,22 +1,19 @@
+import type { GeminiConfig, GeminiEnvironmentValues } from '../types/ai';
+
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const GEMINI_CONFIG = {
-  API_KEY: process.env.GEMINI_API_KEY || 'AQ.Ab8RN6J9nGFqiaLfwux7vVNQekjTkyCvoRLz1kGBWGfHmNPbgg',
-  BASE_URL: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/models',
-  PRIMARY_MODEL: process.env.GEMINI_PRIMARY_MODEL || 'gemini-3.6-flash',
-  FALLBACK_MODELS: (
-    process.env.GEMINI_FALLBACK_MODELS ||
-    'gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest,gemini-3.7-flash,gemini-3.5-flash'
-  )
-    .split(',')
-    .map((m) => m.trim())
-    .filter(Boolean),
-  REQUEST_TIMEOUT_MS: Number(process.env.GEMINI_REQUEST_TIMEOUT_MS || 20000),
-  TOTAL_BUDGET_MS: Number(process.env.GEMINI_TOTAL_BUDGET_MS || 45000),
-  MIN_ATTEMPT_MS: Number(process.env.GEMINI_MIN_ATTEMPT_MS || 3000),
-  MAX_DOCUMENT_BYTES: Number(process.env.GEMINI_MAX_DOCUMENT_BYTES || 10485760),
-  MAX_DOCUMENT_TEXT_CHARS: Number(process.env.GEMINI_MAX_DOCUMENT_TEXT_CHARS || 120000),
+export const GEMINI_CONFIG: GeminiConfig = {
+  API_KEY: process.env.GEMINI_API_KEY ?? '',
+  BACKUP_KEYS: (process.env.GEMINI_BACKUP_KEYS ?? '').split(',').map((key) => key.trim()).filter(Boolean),
+  BASE_URL: process.env.GEMINI_BASE_URL ?? '',
+  PRIMARY_MODEL: process.env.GEMINI_PRIMARY_MODEL ?? '',
+  FALLBACK_MODELS: (process.env.GEMINI_FALLBACK_MODELS ?? '').split(',').map((model) => model.trim()).filter(Boolean),
+  REQUEST_TIMEOUT_MS: Number(process.env.GEMINI_REQUEST_TIMEOUT_MS ?? 0),
+  TOTAL_BUDGET_MS: Number(process.env.GEMINI_TOTAL_BUDGET_MS ?? 0),
+  MIN_ATTEMPT_MS: Number(process.env.GEMINI_MIN_ATTEMPT_MS ?? 0),
+  MAX_DOCUMENT_BYTES: Number(process.env.GEMINI_MAX_DOCUMENT_BYTES ?? 0),
+  MAX_DOCUMENT_TEXT_CHARS: Number(process.env.GEMINI_MAX_DOCUMENT_TEXT_CHARS ?? 0),
   TEMPERATURE: 0.1
 };
 
@@ -158,3 +155,21 @@ Return a SINGLE JSON object with EXACTLY this shape:
   ],
   "summary": "String summarizing overall data quality score and key risks"
 }`;
+
+export const AI_TAXONOMY_LOOKUP_UNAVAILABLE =
+  'Taxonomy classification is unavailable because no database taxonomy lookup is configured. Configure the D1 database and retry classification.';
+
+export const resolveGeminiConfig = (environment: GeminiEnvironmentValues): GeminiConfig => ({
+  API_KEY: environment.GEMINI_API_KEY || '',
+  BACKUP_KEYS: (environment.GEMINI_BACKUP_KEYS || '').split(',').map((key) => key.trim()).filter(Boolean),
+  BASE_URL: environment.GEMINI_BASE_URL || GEMINI_CONFIG.BASE_URL,
+  PRIMARY_MODEL: environment.GEMINI_PRIMARY_MODEL || GEMINI_CONFIG.PRIMARY_MODEL,
+  FALLBACK_MODELS: (environment.GEMINI_FALLBACK_MODELS || GEMINI_CONFIG.FALLBACK_MODELS.join(','))
+    .split(',').map((model) => model.trim()).filter(Boolean),
+  REQUEST_TIMEOUT_MS: Number(environment.GEMINI_REQUEST_TIMEOUT_MS || GEMINI_CONFIG.REQUEST_TIMEOUT_MS),
+  TOTAL_BUDGET_MS: Number(environment.GEMINI_TOTAL_BUDGET_MS || GEMINI_CONFIG.TOTAL_BUDGET_MS),
+  MIN_ATTEMPT_MS: Number(environment.GEMINI_MIN_ATTEMPT_MS || GEMINI_CONFIG.MIN_ATTEMPT_MS),
+  MAX_DOCUMENT_BYTES: Number(environment.GEMINI_MAX_DOCUMENT_BYTES || GEMINI_CONFIG.MAX_DOCUMENT_BYTES),
+  MAX_DOCUMENT_TEXT_CHARS: Number(environment.GEMINI_MAX_DOCUMENT_TEXT_CHARS || GEMINI_CONFIG.MAX_DOCUMENT_TEXT_CHARS),
+  TEMPERATURE: GEMINI_CONFIG.TEMPERATURE
+});

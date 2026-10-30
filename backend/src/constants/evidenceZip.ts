@@ -1,0 +1,76 @@
+/**
+ * ZIP (PKWARE APPNOTE) constants for the STORE-only evidence package writer.
+ */
+
+export const ZIP_LOCAL_FILE_HEADER_SIGNATURE = 0x04034b50;
+export const ZIP_CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
+export const ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06054b50;
+export const ZIP_VERSION_NEEDED = 20;
+export const ZIP_UTF8_FLAG = 0x0800;
+export const ZIP_METHOD_STORE = 0;
+export const ZIP_MAX_ENTRIES = 0xffff;
+export const ZIP_MAX_OFFSET = 0xffffffff;
+
+export const ZIP_LOCAL_HEADER_BYTES = 30;
+export const ZIP_CENTRAL_HEADER_BYTES = 46;
+export const ZIP_END_RECORD_BYTES = 22;
+
+export const ZIP_LOCAL_HEADER_LAYOUT = {
+  SIGNATURE: 0,
+  VERSION_NEEDED: 4,
+  FLAGS: 6,
+  METHOD: 8,
+  TIME: 10,
+  DATE: 12,
+  CRC32: 14,
+  COMPRESSED_SIZE: 18,
+  UNCOMPRESSED_SIZE: 22,
+  NAME_LENGTH: 26,
+  EXTRA_LENGTH: 28
+} as const;
+
+export const ZIP_CENTRAL_HEADER_LAYOUT = {
+  SIGNATURE: 0,
+  VERSION_MADE_BY: 4,
+  VERSION_NEEDED: 6,
+  FLAGS: 8,
+  METHOD: 10,
+  TIME: 12,
+  DATE: 14,
+  CRC32: 16,
+  COMPRESSED_SIZE: 20,
+  UNCOMPRESSED_SIZE: 24,
+  NAME_LENGTH: 28,
+  EXTRA_LENGTH: 30,
+  COMMENT_LENGTH: 32,
+  DISK_START: 34,
+  INTERNAL_ATTRIBUTES: 36,
+  EXTERNAL_ATTRIBUTES: 38,
+  LOCAL_HEADER_OFFSET: 42
+} as const;
+
+export const ZIP_END_RECORD_LAYOUT = {
+  SIGNATURE: 0,
+  DISK_NUMBER: 4,
+  CENTRAL_DISK_NUMBER: 6,
+  ENTRIES_ON_DISK: 8,
+  ENTRIES_TOTAL: 10,
+  CENTRAL_DIRECTORY_SIZE: 12,
+  CENTRAL_DIRECTORY_OFFSET: 16,
+  COMMENT_LENGTH: 20
+} as const;
+
+export const CRC32_POLYNOMIAL = 0xedb88320;
+export const CRC32_TABLE_SIZE = 256;
+export const CRC32_BITS_PER_BYTE = 8;
+export const CRC32_INITIAL_VALUE = 0xffffffff;
+export const CRC32_BYTE_MASK = 0xff;
+export const CRC32_BYTE_SHIFT = 8;
+export const UINT32_MASK = 0xffffffff;
+
+export const DOS_EPOCH_YEAR = 1980;
+export const DOS_HOUR_SHIFT = 11;
+export const DOS_MINUTE_SHIFT = 5;
+export const DOS_YEAR_SHIFT = 9;
+export const DOS_MONTH_SHIFT = 5;
+export const DOS_SECOND_STEP = 2;

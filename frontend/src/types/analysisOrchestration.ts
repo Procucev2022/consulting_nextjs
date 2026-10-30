@@ -290,3 +290,9 @@ export interface AnalysisJobDetailPayload {
   acknowledgement?: CustomerReportAcknowledgement;
   correctionRequests: CustomerCorrectionRequest[];
 }
+
+export interface AnalysisStatusBadge {
+  label: string;
+  bg: string;
+  text: string;
+}

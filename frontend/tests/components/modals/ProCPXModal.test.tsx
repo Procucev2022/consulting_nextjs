@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ProCPXModal } from '../../../src/components/modals/ProCPXModal';
-import { mockSavingsOpportunities } from '../../../src/data/mockData';
+import { mockSavingsOpportunities } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 const sampleOpp: any = {

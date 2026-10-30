@@ -1,7 +1,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { apiClient } from '../../src/utils/api';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { setProcurementCategoryMappings, resolveHumanReadableCategory } from '../../src/utils/procurementCategoryResolver';
+import { conversionFunnelStages } from '../fixtures/mockData';
+import { getD1CategoryMappingsFixture } from '../../../tests/fixtures/d1CategoryMappings';
+
+const materialGroupMappings = getD1CategoryMappingsFixture();
 
 describe('apiClient', () => {
+  it('loads conversion stages from D1 and rejects HTTP failures', async () => {
+    const data = conversionFunnelStages;
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data })));
+    await expect(apiClient.getConversionStages()).resolves.toEqual(data);
+    expect(fetch).toHaveBeenCalledWith('/api/conversion');
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{}', { status: 503 }));
+    await expect(apiClient.getConversionStages()).rejects.toThrow(UI_STRINGS.databaseData.conversionLoadFailed(503));
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: [{ phase_num: -1 }] })));
+    await expect(apiClient.getConversionStages()).rejects.toThrow(UI_STRINGS.databaseData.invalidData);
+  });
   const originalFetch = global.fetch;
 
   beforeEach(() => {
@@ -10,7 +26,23 @@ describe('apiClient', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    setProcurementCategoryMappings(materialGroupMappings);
     vi.restoreAllMocks();
+  });
+
+  it('loads category mappings from D1 and updates the shared resolver', async () => {
+    const responseData = { mappings: { P11: 'Packing' }, categories: ['Packing'] };
+    global.fetch = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: responseData })));
+    await expect(apiClient.getProcurementCategoryMappings()).resolves.toEqual(responseData);
+    expect(global.fetch).toHaveBeenCalledWith('/api/procurement/category-mappings');
+    expect(resolveHumanReadableCategory('P11')).toBe('Packing');
+  });
+
+  it('reports D1 category mapping HTTP and response errors', async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce(new Response('{}', { status: 503 }));
+    await expect(apiClient.getProcurementCategoryMappings()).rejects.toThrow(UI_STRINGS.databaseData.procurementMappingsLoadFailed);
+    global.fetch = vi.fn().mockResolvedValueOnce(new Response('{}'));
+    await expect(apiClient.getProcurementCategoryMappings()).rejects.toThrow(UI_STRINGS.databaseData.procurementMappingsLoadFailed);
   });
 
   it('getTenant should perform GET /api/tenant and return data', async () => {
@@ -56,6 +88,8 @@ describe('apiClient', () => {
   it('addIngestionFile should perform POST /api/ingestion and return data', async () => {
     const mockFile = { file_name: 'test.xlsx' };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: [mockFile] })
     });
 
@@ -74,6 +108,8 @@ describe('apiClient', () => {
   it('updateValidationRecord should perform PATCH /api/ingestion and return data', async () => {
     const updated = { record_id: 'REC-1', po_number: 'PO-UPDATED' };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: updated })
     });
 
@@ -90,8 +126,10 @@ describe('apiClient', () => {
   });
 
   it('applyBlanketRemediation should perform POST /api/ingestion/remediate', async () => {
-    const mockRes = { updatedCount: 5, records: [] };
+    const mockRes = { updatedCount: 5, skippedCount: 0, records: [] };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: mockRes })
     });
 
@@ -103,14 +141,16 @@ describe('apiClient', () => {
     expect(res).toEqual(mockRes);
   });
 
-  it('resetValidationRecords should perform DELETE /api/ingestion', async () => {
+  it('resetValidationRecords should perform DELETE /api/ingestion/validation-records', async () => {
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      headers: new Headers(),
       json: async () => ({ success: true, data: [] })
     });
 
     const res = await apiClient.resetValidationRecords();
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/ingestion',
+      '/api/ingestion/validation-records',
       expect.objectContaining({ method: 'DELETE' })
     );
     expect(res).toEqual([]);
@@ -272,9 +312,7 @@ describe('apiClient', () => {
 
   it('getConsolidatedSavings should perform GET /api/savings/consolidated', async () => {
     const mockData = { opportunities: [], overlaps: [], waterfallMetrics: {} };
-    (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: mockData })
-    });
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: mockData })));
 
     const res = await apiClient.getConsolidatedSavings();
     expect(global.fetch).toHaveBeenCalledWith('/api/savings/consolidated');
@@ -283,9 +321,7 @@ describe('apiClient', () => {
 
   it('updateActionPlan should perform POST /api/savings/action-plan/update', async () => {
     const mockPlan = { id: 'ACT-01', status: 'In Progress' };
-    (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: mockPlan })
-    });
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: mockPlan })));
 
     const res = await apiClient.updateActionPlan('ACT-01', { status: 'In Progress', owner: 'Procurement' });
     expect(global.fetch).toHaveBeenCalledWith(
@@ -301,9 +337,7 @@ describe('apiClient', () => {
 
   it('updateSavingsOpportunityStatus should perform POST /api/savings/opportunity/status', async () => {
     const mockOpp = { opportunity_id: 'OPP-01', status: 'APPROVED' };
-    (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: mockOpp })
-    });
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: mockOpp })));
 
     const res = await apiClient.updateSavingsOpportunityStatus('OPP-01', 'APPROVED');
     expect(global.fetch).toHaveBeenCalledWith(
@@ -390,6 +424,42 @@ describe('apiClient', () => {
     const res = await apiClient.getDBStatus();
     expect(global.fetch).toHaveBeenCalledWith('/api/db/status');
     expect(res).toEqual(mockHealth);
+  });
+
+  it('getModule2OpportunityLedger fetches opportunity ledger with or without assessmentId', async () => {
+    const mockLedger = [{ oppId: 'OPP-1' }];
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockLedger })
+    });
+
+    const res1 = await apiClient.getModule2OpportunityLedger('ASS-1');
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/opportunity-ledger?assessmentId=ASS-1');
+    expect(res1).toEqual(mockLedger);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockLedger })
+    });
+    const res2 = await apiClient.getModule2OpportunityLedger();
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/opportunity-ledger');
+    expect(res2).toEqual(mockLedger);
+  });
+
+  it('getModule2MathematicalBridge fetches mathematical bridge with or without assessmentId', async () => {
+    const mockBridge = { totalIdentifiedSavingsCr: 12.5 };
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockBridge })
+    });
+
+    const res1 = await apiClient.getModule2MathematicalBridge('ASS-1');
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/bridge?assessmentId=ASS-1');
+    expect(res1).toEqual(mockBridge);
+
+    (global.fetch as any).mockResolvedValueOnce({
+      json: async () => ({ success: true, data: mockBridge })
+    });
+    const res2 = await apiClient.getModule2MathematicalBridge();
+    expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/bridge');
+    expect(res2).toEqual(mockBridge);
   });
 
   describe('apiClient Input Validation Failures', () => {

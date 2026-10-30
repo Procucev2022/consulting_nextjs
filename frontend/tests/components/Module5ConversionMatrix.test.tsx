@@ -1,11 +1,13 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { act, render, screen, fireEvent } from '@testing-library/react';
+import confetti from 'canvas-confetti';
 import { Module5ConversionMatrix } from '../../src/components/Module5ConversionMatrix';
-import { mockTenant, mockConversionFunnel } from '../../src/data/mockData';
+import { mockTenant, mockConversionFunnel } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module5ConversionMatrix Component', () => {
+  afterEach(() => { vi.restoreAllMocks(); });
   it('renders all funnel stages and conversion matrix cards', () => {
     const onOpenReport = vi.fn();
     render(
@@ -20,7 +22,11 @@ describe('Module5ConversionMatrix Component', () => {
     expect(screen.getByText(UI_STRINGS.module5.calculatorTitle)).toBeInTheDocument();
   });
 
-  it('updates sliders and triggers simulate lock-in confetti', () => {
+  it('updates sliders and triggers simulate lock-in confetti', async () => {
+    const sendEmail = vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, messageId: 'EMAIL-COMMERCIAL-1' })
+    } as Response);
     render(
       <Module5ConversionMatrix
         tenant={mockTenant}
@@ -43,15 +49,17 @@ describe('Module5ConversionMatrix Component', () => {
 
     // Click lock in button
     const lockInBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module5.lockInButton, 'i') });
-    fireEvent.click(lockInBtn);
+    await act(async () => { fireEvent.click(lockInBtn); });
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(confetti).toHaveBeenCalled();
 
     // Test zero fee rate to exercise || 1 fallback
     fireEvent.change(sliders[2], { target: { value: '0' } });
-    fireEvent.click(lockInBtn);
+    await act(async () => { fireEvent.click(lockInBtn); });
 
     // Test non-positive annual spend to exercise validation return early
     fireEvent.change(sliders[0], { target: { value: '0' } });
-    fireEvent.click(lockInBtn);
+    await act(async () => { fireEvent.click(lockInBtn); });
   });
 
 

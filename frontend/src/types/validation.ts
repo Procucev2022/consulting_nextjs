@@ -6,6 +6,13 @@
 
 import type { z } from 'zod';
 import type {
+  taxonomyPageRequestSchema,
+  taxonomyPageResponseSchema,
+  conversionStagesResponseSchema,
+  databaseSchemaResponseSchema,
+  procurementCategoryMappingsResponseSchema,
+  pcbiBenchmarkResponseSchema,
+  pcbiWeeklyIndexResponseSchema,
   headerTenantSchema,
   headerCurrencySchema,
   clientIngestionSetupFormSchema,
@@ -23,6 +30,14 @@ import type {
   apiDeployOpportunityPayloadSchema,
   apiCalculateConversionPayloadSchema
 } from '../constants/validation';
+
+export type TaxonomyPageRequest = z.infer<typeof taxonomyPageRequestSchema>;
+export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;
+export type ConversionStagesResponse = z.infer<typeof conversionStagesResponseSchema>;
+export type DatabaseSchemaResponse = z.infer<typeof databaseSchemaResponseSchema>;
+export type ProcurementCategoryMappingsResponse = z.infer<typeof procurementCategoryMappingsResponseSchema>;
+export type PcbiBenchmarkResponse = z.infer<typeof pcbiBenchmarkResponseSchema>;
+export type PcbiWeeklyIndexResponse = z.infer<typeof pcbiWeeklyIndexResponseSchema>;
 
 export type HeaderTenantInput = z.infer<typeof headerTenantSchema>;
 export type HeaderCurrencyInput = z.infer<typeof headerCurrencySchema>;

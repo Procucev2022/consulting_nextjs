@@ -1,7 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { dbApiClient } from '../../src/utils/dbApi';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('dbApiClient', () => {
+  it('loads the live D1 schema and rejects unavailable database responses', async () => {
+    const data = [{ entity_name: 'D1Only', ddl: 'CREATE TABLE D1Only (id TEXT)', primary_attributes: 'id', system_usage: 'D1', sample_records: [] }];
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data })));
+    await expect(dbApiClient.getDBSchema()).resolves.toEqual(data);
+    expect(fetch).toHaveBeenCalledWith('/api/db/schema');
+    vi.mocked(fetch).mockResolvedValueOnce(new Response('{}', { status: 503 }));
+    await expect(dbApiClient.getDBSchema()).rejects.toThrow(UI_STRINGS.databaseData.schemaLoadFailed);
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: [{ ddl: null }] })));
+    await expect(dbApiClient.getDBSchema()).rejects.toThrow(UI_STRINGS.databaseData.invalidData);
+  });
   beforeEach(() => {
     vi.restoreAllMocks();
     global.fetch = vi.fn();

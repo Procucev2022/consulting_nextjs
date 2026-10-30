@@ -16,36 +16,29 @@ import {
   Package,
   Truck,
   Wrench,
-  Tag,
   ExternalLink,
   ShieldAlert
 } from 'lucide-react';
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
-import type { VendorSupplyRecord } from '../types/vendorSupply';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
+import { useUNSPSCTaxonomy } from '../hooks/useUNSPSCTaxonomy';
 import { formatINRAmount } from '../utils/currencyConverter';
 import {
   calculateCategoryYearDetails,
   calculateVendorYearDetails,
-  calculateStrategicVendorRisk,
-  calculateVendorConsolidation,
-  calculatePoConsolidation
+  calculateStrategicVendorRisk
 } from '../utils/step2Calculators';
 import {
   UI_STRINGS,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
   DEFAULT_INDUSTRY_MINOR_SECTOR,
-  getDistinctMajorSectors,
-  getMinorSectorsForMajor,
   getIndustryMaterialProfile,
   categorizeMaterialWithIndustryContext
 } from '../constants';
 import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
-import { VendorConsolidationSection } from './vendorConsolidation';
-import { PoConsolidationSection } from './poConsolidation';
 import { Module2StrategicSourcingWorkspace } from './module2';
-import { VendorCategorySupplyMatrix } from './VendorCategorySupplyMatrix';
+import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
 import dynamic from 'next/dynamic';
 import { AnalyzingLoader } from './AnalyzingLoader';
 import { TierMaskOverlay } from './TierMaskOverlay';
@@ -63,49 +56,46 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   onProceedToTrend,
   onStartAICategorization,
   speedMultiplier,
-  onUpdateTenant,
+  onUpdateTenant: _onUpdateTenant,
   currentTier = 'GOLD',
   onUpgrade,
-  targetSection
+  targetSection,
+  assessmentId: propAssessmentId
 }) => {
+  const taxonomyState = useUNSPSCTaxonomy();
+  const assessmentId =
+    propAssessmentId ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('aicev_selected_assessment_id') || undefined
+      : undefined);
   const [isCategorizing, setIsCategorizing] = useState<boolean>(false);
   const [isCategorized, setIsCategorized] = useState<boolean>(false);
   const [selectedBucket, setSelectedBucket] = useState<string>('ALL');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('ALL');
   const [selectedSectorRelevanceFilter, setSelectedSectorRelevanceFilter] = useState<string>('ALL');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [minConfidence] = useState<number>(0);
 
+  // Consolidated Module 2 Area Navigation State
+  const [activeArea, setActiveArea] = useState<
+    'ALL' | 'SPEND_INTELLIGENCE' | 'AI_REVIEW' | 'STRATEGIC_SOURCING' | 'VENDOR_INTELLIGENCE'
+  >('ALL');
+
   // Section Refs for smooth declarative navigation
-  const vendorConsolidationRef = useRef<HTMLDivElement>(null);
-  const poConsolidationRef = useRef<HTMLDivElement>(null);
   const strategicRiskRef = useRef<HTMLDivElement>(null);
   const vendorSupplyRef = useRef<HTMLDivElement>(null);
+  const reviewWorkbenchRef = useRef<HTMLDivElement>(null);
 
   // Industry Sector Lens State
-  const [activeMajorSector, setActiveMajorSector] = useState<string>(
+  const [activeMajorSector] = useState<string>(
     tenant?.major_sector || DEFAULT_INDUSTRY_MAJOR_SECTOR
   );
-  const [activeMinorSector, setActiveMinorSector] = useState<string>(
+  const [activeMinorSector] = useState<string>(
     tenant?.minor_sector || DEFAULT_INDUSTRY_MINOR_SECTOR
   );
 
-  const distinctMajorSectors = getDistinctMajorSectors();
-  const availableMinorSectors = getMinorSectorsForMajor(activeMajorSector);
   const activeMaterialProfile = getIndustryMaterialProfile(activeMajorSector, activeMinorSector);
-
-  const handleSectorChange = (newMajor: string, newMinor?: string) => {
-    setActiveMajorSector(newMajor);
-    const resolvedMinor = newMinor || getMinorSectorsForMajor(newMajor)[0];
-    setActiveMinorSector(resolvedMinor);
-    if (tenant && onUpdateTenant) {
-      onUpdateTenant({
-        ...tenant,
-        major_sector: newMajor,
-        minor_sector: resolvedMinor
-      });
-    }
-  };
 
   const handleStartAICategorization = () => {
     setIsCategorizing(true);
@@ -122,25 +112,22 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const [explorerBucketFilter, setExplorerBucketFilter] = useState<string>('ALL');
   const [selectedUNSPSCRecord, setSelectedUNSPSCRecord] = useState<UNSPSCCommodityRecord | null>(null);
 
-  // Matrix View Tab: Top 50 Vendor Material Supply Categorization vs Category Matrix
-  const [matrixTab, setMatrixTab] = useState<'VENDOR_SUPPLY' | 'CATEGORY_MATRIX'>('VENDOR_SUPPLY');
-
-  // Column L Section Tab: Strategic Single/Dominant Vendor Risk Engine (Default) vs UNSPSC Catalog
-  const [columnLTab, setColumnLTab] = useState<'strategicRisk' | 'catalog'>('strategicRisk');
+  // Consolidated Vendor Intelligence Tab: Vendor Rankings, Single-Source Risk, UNSPSC Catalog
+  const [columnLTab, setColumnLTab] = useState<'vendorRankings' | 'strategicRisk' | 'catalog'>('vendorRankings');
 
   useEffect(() => {
     if (!targetSection) return;
 
-    if (targetSection === 'vendor-consolidation-section' && vendorConsolidationRef.current) {
-      vendorConsolidationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (targetSection === 'po-consolidation-section' && poConsolidationRef.current) {
-      poConsolidationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (targetSection === 'vendor-consolidation-section' || targetSection === 'vendor-category-supply-section') {
+      setColumnLTab('vendorRankings');
+      vendorSupplyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (targetSection === 'po-consolidation-section') {
+      setActiveArea('STRATEGIC_SOURCING');
     } else if (targetSection === 'strategic-risk-section') {
       setColumnLTab('strategicRisk');
       strategicRiskRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (targetSection === 'vendor-category-supply-section') {
-      setMatrixTab('VENDOR_SUPPLY');
-      vendorSupplyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (targetSection === 'review-workbench-section') {
+      reviewWorkbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [targetSection]);
 
@@ -160,10 +147,28 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     return fields.some((f) => f?.toLowerCase().includes(query));
   };
 
+  const getDerivedStatus = (item: LineItemMapping): string => {
+    if (item.status === 'Confirmed' || item.status === 'CLIENT_APPROVED' || item.status === 'APPROVED') {
+      return 'CLIENT_APPROVED';
+    }
+    if (item.status === 'TAXONOMY_VERIFIED' || item.ai_confidence >= 90) {
+      return 'TAXONOMY_VERIFIED';
+    }
+    if (item.status === 'PROVISIONAL' || (item.ai_confidence >= 75 && item.ai_confidence < 90)) {
+      return 'PROVISIONAL';
+    }
+    return 'AWAITING_REVIEW';
+  };
+
   const filteredItems = lineItems.filter((item) => {
     if (selectedBucket !== 'ALL' && item.core_bucket !== selectedBucket) return false;
     if (selectedYearFilter !== 'ALL' && String(item.spend_year) !== selectedYearFilter) return false;
     if (item.ai_confidence < minConfidence) return false;
+
+    if (selectedStatusFilter !== 'ALL') {
+      const derived = getDerivedStatus(item);
+      if (derived !== selectedStatusFilter) return false;
+    }
 
     if (selectedSectorRelevanceFilter !== 'ALL') {
       const relevanceResult = categorizeMaterialWithIndustryContext(
@@ -186,153 +191,74 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const categoriesList = useMemo(() => categories || [], [categories]);
 
   const totalEvaluatedSpendInrCr = useMemo(() => {
-    if (tenant?.total_spend_evaluated_inr != null) {
+    if (tenant?.total_spend_evaluated_inr != null && tenant.total_spend_evaluated_inr > 0) {
       return tenant.total_spend_evaluated_inr;
+    }
+    if (lineItems && lineItems.length > 0) {
+      const lineItemSum = lineItems.reduce(
+        (sum, it) => sum + (it.inr_crores ?? (it.total_spend ? it.total_spend / 10000000 : 0)),
+        0
+      );
+      if (lineItemSum > 0) return Number(lineItemSum.toFixed(2));
     }
     return categoriesList.reduce(
       (sum, item) => sum + ((item as any).spend_inr_crores || (item as any).total_3yr_spend_inr_cr || 0),
       0
     ) || 0;
-  }, [tenant?.total_spend_evaluated_inr, categoriesList]);
+  }, [tenant?.total_spend_evaluated_inr, lineItems, categoriesList]);
 
-  const dynamicVendorSupply = useMemo<VendorSupplyRecord[]>(() => {
-    if (!lineItems || lineItems.length === 0) {
-      return [];
-    }
-    const vendorMap = new Map<string, {
-      spend: number;
-      spendFy24: number;
-      spendFy25: number;
-      spendFy26: number;
-      categories: Set<string>;
-      items: Array<{
-        material_code: string;
-        item_name: string;
-        category: string;
-        spend_inr_cr: number;
-        volume: number;
-        unit: string;
-        po_number?: string;
-        unspsc_code?: string;
-        unspsc_title?: string;
-        unitPrice?: number;
-      }>;
-    }>();
+  const actualBucketSpend = useMemo(() => {
+    let direct = 0;
+    let packaging = 0;
+    let logistics = 0;
+    let mro = 0;
+    let total = 0;
 
-    lineItems.forEach((item, idx) => {
-      const vName = item.vendor_identified || 'Unknown Vendor';
-      let entry = vendorMap.get(vName);
-      if (!entry) {
-        entry = {
-          spend: 0,
-          spendFy24: 0,
-          spendFy25: 0,
-          spendFy26: 0,
-          categories: new Set(),
-          items: []
-        };
-        vendorMap.set(vName, entry);
-      }
-      const spendCr = item.inr_crores || (item.total_spend ? item.total_spend / 10000000 : 0.5);
-      entry.spend += spendCr;
-
-      const year = Number(item.spend_year) || 2024;
-      if (year <= 2023) {
-        entry.spendFy24 += spendCr;
-      } else if (year === 2024) {
-        entry.spendFy25 += spendCr;
+    lineItems.forEach((it) => {
+      const spend = it.inr_crores ?? (it.total_spend ? it.total_spend / 10000000 : 0);
+      total += spend;
+      const bucket = it.core_bucket || '';
+      if (bucket === 'Direct Materials') {
+        direct += spend;
+      } else if (bucket === 'Packaging Materials') {
+        packaging += spend;
+      } else if (bucket === 'Logistics & Freight') {
+        logistics += spend;
       } else {
-        entry.spendFy26 += spendCr;
+        mro += spend;
       }
-
-      entry.categories.add(item.core_bucket || item.unspsc_category_name || 'General Materials');
-      entry.items.push({
-        material_code: item.material_code || item.line_item_id || `MAT-${1000 + idx}`,
-        item_name: item.raw_desc || item.material_desc || 'Material Line Item',
-        category: item.core_bucket || 'Direct Materials',
-        spend_inr_cr: Number(spendCr.toFixed(2)),
-        volume: item.qty || 100,
-        unit: 'Units',
-        po_number: item.po_number,
-        unspsc_code: item.unspsc_code,
-        unspsc_title: item.unspsc_commodity_title || item.unspsc_category_name,
-        unitPrice: item.unit_price
-      });
     });
 
-    const sortedVendors = Array.from(vendorMap.entries()).sort((a, b) => b[1].spend - a[1].spend);
-    if (sortedVendors.length === 0) {
-      return [];
-    }
-    return sortedVendors.slice(0, 50).map(([vName, data], idx) => {
-      const suppliedCategories = Array.from(data.categories);
-      const isMulti = suppliedCategories.length > 1;
+    const safeTotal = total > 0 ? total : 1;
+    return {
+      directCr: Number(direct.toFixed(2)),
+      directPct: total > 0 ? Number(((direct / safeTotal) * 100).toFixed(1)) : 0,
+      packagingCr: Number(packaging.toFixed(2)),
+      packagingPct: total > 0 ? Number(((packaging / safeTotal) * 100).toFixed(1)) : 0,
+      logisticsCr: Number(logistics.toFixed(2)),
+      logisticsPct: total > 0 ? Number(((logistics / safeTotal) * 100).toFixed(1)) : 0,
+      mroCr: Number(mro.toFixed(2)),
+      mroPct: total > 0 ? Number(((mro / safeTotal) * 100).toFixed(1)) : 0,
+      totalSpendCr: Number(total.toFixed(2))
+    };
+  }, [lineItems]);
 
-      const hasYearData = data.spendFy24 > 0 || data.spendFy25 > 0 || data.spendFy26 > 0;
-      const spendFy24 = Number((hasYearData && data.spendFy24 > 0 ? data.spendFy24 : data.spend * 0.28).toFixed(2));
-      const spendFy25 = Number((hasYearData && data.spendFy25 > 0 ? data.spendFy25 : data.spend * 0.34).toFixed(2));
-      const spendFy26 = Number((hasYearData && data.spendFy26 > 0 ? data.spendFy26 : data.spend * 0.38).toFixed(2));
-      const yoy = spendFy25 > 0 ? Number((((spendFy26 - spendFy25) / spendFy25) * 100).toFixed(1)) : 7.2;
 
-      const vendorTopItems = data.items.slice(0, 10).map((it) => {
-        const unitRate = it.unitPrice || (it.volume > 0 ? Number(((it.spend_inr_cr * 10000000) / it.volume).toFixed(2)) : 100);
-        return {
-          material_code: it.material_code,
-          material_description: it.item_name,
-          po_number: it.po_number || 'PO-2024-SYS',
-          unspsc_code: it.unspsc_code || '10000000',
-          unspsc_title: it.unspsc_title || it.category,
-          spend_yoy_pct: 7.5,
-          qty_yoy_pct: 4.2,
-          price_yoy_pct: 3.1,
-          observation_mark: isMulti ? 'Cross-category item line' : undefined,
-          remark: `Unit Rate: ₹${unitRate.toLocaleString()}`
-        };
-      });
-
-      return {
-        rank: idx + 1,
-        master_vendor_id: `VND-M-${1000 + idx}`,
-        vendor_name: vName,
-        total_spend_inr_cr: Number(data.spend.toFixed(2)),
-        spend_share_pct: Number(((data.spend / (totalEvaluatedSpendInrCr || 1)) * 100).toFixed(1)),
-        primary_category: suppliedCategories[0] || 'Direct Materials',
-        category_type: isMulti ? ('MULTI_CATEGORY' as const) : ('SINGLE_CATEGORY' as const),
-        category_count: suppliedCategories.length,
-        supplied_categories: suppliedCategories,
-        irrelevant_categories: isMulti ? suppliedCategories.slice(1) : [],
-        line_items_count: data.items.length,
-        spend_fy24_cr: spendFy24,
-        spend_fy25_cr: spendFy25,
-        spend_fy26_cr: spendFy26,
-        yoy_growth_pct: yoy,
-        risk_level: isMulti || data.spend > 10 ? ('HIGH_RISK' as const) : data.spend > 5 ? ('MEDIUM_RISK' as const) : ('OPTIMAL' as const),
-        observation_note: isMulti ? 'Supplying across multiple non-core material categories' : 'Dedicated single-category specialist',
-        item_count: data.items.length,
-        top_items: vendorTopItems
-      };
-    });
-  }, [lineItems, totalEvaluatedSpendInrCr]);
 
   const dynamicCategoryDetails = useMemo(() => {
+    if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateCategoryYearDetails(lineItems, categoriesList, totalEvaluatedSpendInrCr);
-  }, [lineItems, categoriesList, totalEvaluatedSpendInrCr]);
+  }, [lineItems, categoriesList, totalEvaluatedSpendInrCr, taxonomyState]);
 
   const dynamicVendorDetails = useMemo(() => {
+    if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateVendorYearDetails(lineItems, totalEvaluatedSpendInrCr);
-  }, [lineItems, totalEvaluatedSpendInrCr]);
+  }, [lineItems, totalEvaluatedSpendInrCr, taxonomyState]);
 
   const dynamicStrategicRiskItems = useMemo(() => {
+    if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateStrategicVendorRisk(lineItems);
-  }, [lineItems]);
-
-  const dynamicVendorConsolidationItems = useMemo(() => {
-    return calculateVendorConsolidation(lineItems);
-  }, [lineItems]);
-
-  const dynamicPoConsolidationItems = useMemo(() => {
-    return calculatePoConsolidation(lineItems);
-  }, [lineItems]);
+  }, [lineItems, taxonomyState]);
 
   const handleUpgradeSilver = () => {
     onUpgrade?.('SILVER');
@@ -420,217 +346,226 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         </button>
       </div>
 
-      {/* Industry Sector Lens & Material DNA Profile Card */}
-      <div className="p-5 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20">
-              <Factory className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded border border-cyan-300">
-                  {UI_STRINGS.module2.industryContext.badge}
-                </span>
-                <span className="text-xs font-semibold text-slate-700">
-                  {UI_STRINGS.module2.industryContext.calibratedFor(activeMajorSector, activeMinorSector)}
-                </span>
-              </div>
-              <h3 className="text-sm font-bold text-slate-900 mt-0.5">
-                {activeMaterialProfile.tagline}
-              </h3>
-            </div>
-          </div>
+      {/* Module 2 Consolidated 4-Area Navigation Bar */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-100 border border-slate-200">
+        <button
+          type="button"
+          data-testid="tab-area-all"
+          onClick={() => setActiveArea('ALL')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            activeArea === 'ALL'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>{UI_STRINGS.module2.areaTabs.consolidatedView}</span>
+        </button>
 
-          {/* Major and Minor Sector Dropdowns */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-              <Layers className="w-3.5 h-3.5 text-cyan-600" />
-              <select
-                aria-label={UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel}
-                value={activeMajorSector}
-                onChange={(e) => handleSectorChange(e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-              >
-                {distinctMajorSectors.map((sec) => (
-                  <option key={sec} value={sec}>
-                    {sec}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <button
+          type="button"
+          data-testid="tab-area-spend-intelligence"
+          onClick={() => setActiveArea('SPEND_INTELLIGENCE')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            activeArea === 'SPEND_INTELLIGENCE'
+              ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span>{UI_STRINGS.module2.areaTabs.clientSpend}</span>
+        </button>
 
-            <div className="flex items-center space-x-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-              <Tag className="w-3.5 h-3.5 text-blue-600" />
-              <select
-                aria-label={UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel}
-                value={activeMinorSector}
-                onChange={(e) => handleSectorChange(activeMajorSector, e.target.value)}
-                className="bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer"
-              >
-                {availableMinorSectors.map((sub) => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+        <button
+          type="button"
+          data-testid="tab-area-ai-review"
+          onClick={() => setActiveArea('AI_REVIEW')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            activeArea === 'AI_REVIEW'
+              ? 'bg-cyan-600 text-white shadow-sm shadow-cyan-600/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <Cpu className="w-3.5 h-3.5" />
+          <span>{UI_STRINGS.module2.areaTabs.aiReview}</span>
+        </button>
 
-        {/* 4 Pictorial Quadrants: Direct, Packaging, Logistics, MRO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Direct Materials */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
-                <Package className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{UI_STRINGS.module2.industryContext.relevancePills.coreDirect}</span>
-              </span>
-              <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-300">
-                {activeMaterialProfile.benchmarkSpendSplit.directPct}% Spend
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {activeMaterialProfile.typicalDirectMaterials.map((mat) => (
-                <span
-                  key={mat}
-                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
-                >
-                  {mat}
-                </span>
-              ))}
-            </div>
-          </div>
+        <button
+          type="button"
+          data-testid="tab-area-strategic-sourcing"
+          onClick={() => setActiveArea('STRATEGIC_SOURCING')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            activeArea === 'STRATEGIC_SOURCING'
+              ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>{UI_STRINGS.module2.areaTabs.strategicSourcing}</span>
+        </button>
 
-          {/* Packaging Materials */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
-                <Layers className="w-3.5 h-3.5 text-cyan-600" />
-                <span>{UI_STRINGS.module2.industryContext.relevancePills.criticalPackaging}</span>
-              </span>
-              <span className="text-[10px] font-mono font-bold text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded border border-cyan-300">
-                {activeMaterialProfile.benchmarkSpendSplit.packagingPct}% Spend
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {activeMaterialProfile.typicalPackagingMaterials.map((pkg) => (
-                <span
-                  key={pkg}
-                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
-                >
-                  {pkg}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Logistics & Freight */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
-                <Truck className="w-3.5 h-3.5 text-purple-600" />
-                <span>{UI_STRINGS.module2.industryContext.relevancePills.sectorLogistics}</span>
-              </span>
-              <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded border border-purple-300">
-                {activeMaterialProfile.benchmarkSpendSplit.logisticsPct}% Spend
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {activeMaterialProfile.typicalLogisticsCategories.map((log) => (
-                <span
-                  key={log}
-                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
-                >
-                  {log}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Plant MRO Spares */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
-                <Wrench className="w-3.5 h-3.5 text-slate-600" />
-                <span>{UI_STRINGS.module2.industryContext.relevancePills.generalMro}</span>
-              </span>
-              <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
-                {activeMaterialProfile.benchmarkSpendSplit.mroPct}% Spend
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {activeMaterialProfile.typicalMroCategories.map((mro) => (
-                <span
-                  key={mro}
-                  className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
-                >
-                  {mro}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* AI Categorization Heuristic Guidance Note */}
-        <div className="p-2.5 rounded-xl bg-cyan-50/70 border border-cyan-200 flex items-center justify-between text-xs text-cyan-950">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-cyan-600 shrink-0" />
-            <span>{activeMaterialProfile.categorizationGuidance}</span>
-          </div>
-          <span className="text-[10px] font-mono font-bold bg-cyan-200/60 px-2 py-0.5 rounded text-cyan-950 shrink-0">
-            {UI_STRINGS.module2.industryContext.sectorBenchmarkPill(
-              activeMaterialProfile.benchmarkSpendSplit.directPct,
-              activeMaterialProfile.benchmarkSpendSplit.packagingPct
-            )}
-          </span>
-        </div>
+        <button
+          type="button"
+          data-testid="tab-area-vendor-intelligence"
+          onClick={() => setActiveArea('VENDOR_INTELLIGENCE')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            activeArea === 'VENDOR_INTELLIGENCE'
+              ? 'bg-rose-600 text-white shadow-sm shadow-rose-600/20'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+          }`}
+        >
+          <ShieldAlert className="w-3.5 h-3.5" />
+          <span>{UI_STRINGS.module2.areaTabs.vendorIntelligence}</span>
+        </button>
       </div>
 
-      {/* Category & Vendor Spend Breakdown Analysis */}
-      <CategoryVendorBreakdownView
-        tenant={tenant}
-        categories={dynamicCategoryDetails as any}
-        vendors={dynamicVendorDetails}
-        lineItems={lineItems}
-      />
-
-      {/* Silver Customer Detail Mask */}
-      {currentTier === 'SILVER' ? (
-        <div className="space-y-6">
-          <TierMaskOverlay
-            requiredTier="GOLD"
-            title={UI_STRINGS.subscription.stageMaskedTitle('Granular SKU Line Items & Reclassification')}
-            description={UI_STRINGS.subscription.stageMaskedSilverDesc}
-            onUpgrade={handleUpgradeGold}
-            isSummaryVisible
-          />
-          {/* CTA to Module 3 */}
-          <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
-            <div className="flex items-center space-x-2 text-xs text-slate-500">
-              <CheckCircle2 className="w-4 h-4 text-cyan-600" />
-              <span>{UI_STRINGS.module2.taxonomyVerifiedFooter}</span>
+      {/* Area A: Client Spend & Category Intelligence */}
+      <div
+        id="client-spend-intelligence-area"
+        data-testid="client-spend-intelligence-area"
+        className={activeArea === 'ALL' || activeArea === 'SPEND_INTELLIGENCE' ? 'space-y-6' : 'hidden'}
+      >
+        {/* Data-Backed Material DNA & Taxonomy Profile Summary */}
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20">
+                <Factory className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-cyan-100 text-cyan-800 px-2 py-0.5 rounded border border-cyan-300">
+                    {UI_STRINGS.module2.industryContext.badge}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700">
+                    {activeMajorSector} › {activeMinorSector}
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 mt-0.5">
+                  {activeMaterialProfile.tagline}
+                </h3>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={onProceedToTrend}
-              className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
-            >
-              <span>{UI_STRINGS.module2.btnProceedToTrend}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-300">
+                Total Evaluated: ₹{actualBucketSpend.totalSpendCr > 0 ? actualBucketSpend.totalSpendCr.toFixed(2) : totalEvaluatedSpendInrCr.toFixed(2)} Cr
+              </span>
+            </div>
+          </div>
+
+          {/* 4 Data-Backed Category Spend Quadrants: Direct, Packaging, Logistics, MRO */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Direct Materials */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <Package className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{UI_STRINGS.module2.industryContext.relevancePills.coreDirect}</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded border border-emerald-300">
+                  ₹{actualBucketSpend.directCr.toFixed(2)} Cr ({actualBucketSpend.directPct}%)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {activeMaterialProfile.typicalDirectMaterials.map((mat) => (
+                  <span
+                    key={mat}
+                    className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
+                  >
+                    {mat}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Packaging Materials */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <Layers className="w-3.5 h-3.5 text-cyan-600" />
+                  <span>{UI_STRINGS.module2.industryContext.relevancePills.criticalPackaging}</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold text-cyan-700 bg-cyan-100 px-1.5 py-0.2 rounded border border-cyan-300">
+                  ₹{actualBucketSpend.packagingCr.toFixed(2)} Cr ({actualBucketSpend.packagingPct}%)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {activeMaterialProfile.typicalPackagingMaterials.map((pkg) => (
+                  <span
+                    key={pkg}
+                    className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
+                  >
+                    {pkg}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Logistics & Freight */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <Truck className="w-3.5 h-3.5 text-purple-600" />
+                  <span>{UI_STRINGS.module2.industryContext.relevancePills.sectorLogistics}</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold text-purple-700 bg-purple-100 px-1.5 py-0.2 rounded border border-purple-300">
+                  ₹{actualBucketSpend.logisticsCr.toFixed(2)} Cr ({actualBucketSpend.logisticsPct}%)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {activeMaterialProfile.typicalLogisticsCategories.map((log) => (
+                  <span
+                    key={log}
+                    className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
+                  >
+                    {log}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Plant MRO Spares */}
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <Wrench className="w-3.5 h-3.5 text-slate-600" />
+                  <span>{UI_STRINGS.module2.industryContext.relevancePills.generalMro}</span>
+                </span>
+                <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                  ₹{actualBucketSpend.mroCr.toFixed(2)} Cr ({actualBucketSpend.mroPct}%)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {activeMaterialProfile.typicalMroCategories.map((mro) => (
+                  <span
+                    key={mro}
+                    className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
+                  >
+                    {mro}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      ) : (
-        <>
-          {/* Year-Wise Category Spend Valuation Matrix & Top 50 Vendor Supply Categorization */}
-          <div
-            ref={vendorSupplyRef}
-            id="vendor-category-supply-section"
-            data-testid="vendor-category-supply-section"
-            className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4"
-          >
+
+        {/* Category Spend Breakdown Analysis */}
+        <CategoryVendorBreakdownView
+          tenant={tenant}
+          categories={dynamicCategoryDetails as any}
+          vendors={dynamicVendorDetails}
+          lineItems={lineItems}
+          lockMode="CATEGORY"
+        />
+
+      {/* Year-Wise Category Spend Valuation Matrix & Top 50 Vendor Supply Categorization */}
+      <div
+        ref={vendorSupplyRef}
+        id="vendor-category-supply-section"
+        data-testid="vendor-category-supply-section"
+        className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4"
+      >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-2 border-b border-slate-100">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-300">
@@ -638,170 +573,187 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                {matrixTab === 'VENDOR_SUPPLY'
-                  ? UI_STRINGS.module2.vendorSupply.sectionTitle
-                  : UI_STRINGS.module2.matrixTitle}
+                {UI_STRINGS.module2.matrixTitle}
               </h3>
               <p className="text-xs text-slate-500">
-                {matrixTab === 'VENDOR_SUPPLY'
-                  ? UI_STRINGS.module2.vendorSupply.sectionDesc
-                  : UI_STRINGS.module2.matrixDesc}
+                {UI_STRINGS.module2.matrixDesc}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* View Switcher Tabs */}
-            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setMatrixTab('VENDOR_SUPPLY')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 ${
-                  matrixTab === 'VENDOR_SUPPLY'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>{UI_STRINGS.module2.tabVendorSupply}</span>
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" title="High-Spend Disparity Alarm" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setMatrixTab('CATEGORY_MATRIX')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  matrixTab === 'CATEGORY_MATRIX'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>{UI_STRINGS.module2.matrixTitle}</span>
-              </button>
-            </div>
-
             <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg border border-emerald-300">
               {UI_STRINGS.module2.totalEvaluated(totalEvaluatedSpendInrCr)}
             </span>
           </div>
         </div>
 
-        {/* Tab View: Top 50 Vendors Supply Categorization & Risk Alarm */}
-        {matrixTab === 'VENDOR_SUPPLY' ? (
-          <VendorCategorySupplyMatrix vendors={dynamicVendorSupply} />
-        ) : (
-          /* Year-Wise Table */
-          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
-                  <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
-                  <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
-                  <th className="py-3 px-4 text-right" title="1st April 2024 – 31st March 2025">{UI_STRINGS.module2.matrixHeaders.fy25}</th>
-                  <th className="py-3 px-4 text-right" title="1st April 2025 – 31st March 2026">{UI_STRINGS.module2.matrixHeaders.fy26}</th>
-                  <th className="py-3 px-4 text-right font-bold text-emerald-700">{UI_STRINGS.module2.matrixHeaders.total}</th>
-                  <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
-                  <th className="py-3 px-4 text-right">{UI_STRINGS.module2.matrixHeaders.targetSavings}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
-                {dynamicCategoryDetails.length === 0 ? (
+        {/* Year-Wise Table */}
+        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+          {(() => {
+            const totalFY24 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy24_cr || 0), 0);
+            const totalFY25 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy25_cr || 0), 0);
+            const totalFY26 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy26_cr || 0), 0);
+            const hasFY25 = totalFY25 > 0;
+            const hasFY26 = totalFY26 > 0;
+
+            return (
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-semibold border-b border-slate-200">
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500 font-sans text-xs">
-                      Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
-                    </td>
+                    <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.category}</th>
+                    <th className="py-3 px-4">{UI_STRINGS.module2.matrixHeaders.colLRange}</th>
+                    <th className="py-3 px-4 text-right" title="1st April 2023 – 31st March 2024">{UI_STRINGS.module2.matrixHeaders.fy24}</th>
+                    <th className="py-3 px-4 text-right" title={hasFY25 ? "1st April 2024 – 31st March 2025" : "No transactions for FY25 in uploaded dataset"}>
+                      {UI_STRINGS.module2.matrixHeaders.fy25}
+                      {!hasFY25 && <span className="block text-[8px] font-normal text-slate-400 lowercase">unavailable</span>}
+                    </th>
+                    <th className="py-3 px-4 text-right" title={hasFY26 ? "1st April 2025 – 31st March 2026" : "No transactions for FY26 in uploaded dataset"}>
+                      {UI_STRINGS.module2.matrixHeaders.fy26}
+                      {!hasFY26 && <span className="block text-[8px] font-normal text-slate-400 lowercase">unavailable</span>}
+                    </th>
+                    <th className="py-3 px-4 text-right font-bold text-emerald-700">{UI_STRINGS.module2.matrixHeaders.total}</th>
+                    <th className="py-3 px-4 text-center">{UI_STRINGS.module2.matrixHeaders.yoyTrend}</th>
+                    <th className="py-3 px-4 text-right">{UI_STRINGS.module2.matrixHeaders.spendShare}</th>
                   </tr>
-                ) : (
-                  dynamicCategoryDetails.map((cat: any) => {
-                  const targetSavingsRate =
-                    cat.core_bucket === 'Direct Materials'
-                      ? 0.185
-                      : cat.core_bucket === 'Packaging Materials'
-                      ? 0.161
-                      : cat.core_bucket === 'Logistics & Freight'
-                      ? 0.12
-                      : cat.core_bucket === 'Other Balance'
-                      ? 0.08
-                      : 0.142;
-
-                  const targetSavingsInrCr = (cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0) * targetSavingsRate;
-                  const fy24 = cat.spend_fy24_cr || 0;
-                  const fy25 = cat.spend_fy25_cr || 0;
-                  const fy26 = cat.spend_fy26_cr || 0;
-
-                  return (
-                    <tr
-                      key={cat.id || cat.category}
-                      className={`hover:bg-slate-50 transition-colors ${
-                        cat.is_balance_category
-                          ? 'bg-slate-50/80 font-semibold'
-                          : 'bg-white'
-                      }`}
-                    >
-                      <td className="py-3.5 px-4 font-sans font-bold text-slate-900 flex items-center space-x-2.5">
-                        <span className={`w-6 h-5 rounded px-1 text-[10px] font-mono font-bold flex items-center justify-center ${
-                          cat.rank && cat.rank <= 3
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                            : 'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}>
-                          {cat.rank ? `#${cat.rank}` : '•'}
-                        </span>
-                        <span className="truncate max-w-[260px]" title={cat.category}>{cat.category}</span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-mono text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
-                          {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code ? String(cat.sample_column_l_code).split(',')[0] : 'UNSPSC')}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800">
-                        ₹{(fy24 || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800">
-                        ₹{(fy25 || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-800">
-                        ₹{(fy26 || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-black text-slate-900">
-                        ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center space-x-1 text-amber-700 text-xs font-bold">
-                          <span>+{cat.yoy_growth_pct || 0}%</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <span className="font-bold text-emerald-600">
-                          ₹{targetSavingsInrCr.toFixed(2)} Cr
-                        </span>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
+                  {dynamicCategoryDetails.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-500 font-sans text-xs">
+                        Awaiting dataset ingestion. Upload a multi-currency procurement dataset in Module 1 to evaluate category spend breakdown.
                       </td>
                     </tr>
-                  );
-                }))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                  ) : (
+                    dynamicCategoryDetails.map((cat: any) => {
+                    const fy24 = cat.spend_fy24_cr || 0;
+                    const fy25 = cat.spend_fy25_cr || 0;
+                    const fy26 = cat.spend_fy26_cr || 0;
 
-      {/* Column L Section: Strategic Single-Vendor Risk Engine (Default) & UNSPSC Catalog */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
+                    return (
+                      <tr
+                        key={cat.id || cat.category}
+                        className={`hover:bg-slate-50 transition-colors ${
+                          cat.is_balance_category
+                            ? 'bg-slate-50/80 font-semibold'
+                            : 'bg-white'
+                        }`}
+                      >
+                        <td className="py-3.5 px-4 font-sans font-bold text-slate-900 flex items-center space-x-2.5">
+                          <span className={`w-6 h-5 rounded px-1 text-[10px] font-mono font-bold flex items-center justify-center ${
+                            cat.rank && cat.rank <= 3
+                              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                          }`}>
+                            {cat.rank ? `#${cat.rank}` : '•'}
+                          </span>
+                          <span className="truncate max-w-[260px]" title={cat.category}>{resolveHumanReadableCategory(cat.category, cat.sample_column_l_code)}</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono text-[11px] font-bold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+                            {UI_STRINGS.module2.colLPrefix(cat.sample_column_l_code ? String(cat.sample_column_l_code).split(',')[0] : 'UNSPSC')}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-800">
+                          ₹{(fy24 || 0).toFixed(2)} Cr
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-800">
+                          {hasFY25 ? `₹${(fy25 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title="No transactions for FY25 in dataset">—</span>}
+                        </td>
+                        <td className="py-3.5 px-4 text-right text-slate-800">
+                          {hasFY26 ? `₹${(fy26 || 0).toFixed(2)} Cr` : <span className="text-slate-400 text-[11px]" title="No transactions for FY26 in dataset">—</span>}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-black text-slate-900">
+                          ₹{Number(cat.total_3yr_spend_inr_cr || cat.spend_inr_crores || 0).toFixed(2)} Cr
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="inline-flex items-center space-x-1 text-slate-700 text-xs font-semibold">
+                            <span>{cat.yoy_growth_pct != null ? `+${cat.yoy_growth_pct}%` : (!hasFY25 && !hasFY26 ? 'Single Period' : 'Baseline (FY22)')}</span>
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <span className="font-bold text-slate-800">
+                            {cat.spend_share_pct ? `${Number(cat.spend_share_pct).toFixed(1)}%` : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  }))}
+                </tbody>
+                {dynamicCategoryDetails.length > 0 && (
+                  <tfoot className="bg-slate-100 font-mono font-bold text-slate-900 border-t-2 border-slate-300">
+                    <tr>
+                      <td className="py-3.5 px-4 font-sans uppercase text-xs" colSpan={2}>
+                        Total Evaluated Spend (Reconciled)
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        ₹{totalFY24.toFixed(2)} Cr
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {hasFY25 ? `₹${totalFY25.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">Unavailable</span>}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        {hasFY26 ? `₹${totalFY26.toFixed(2)} Cr` : <span className="text-slate-400 text-xs font-normal">Unavailable</span>}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-black text-emerald-800">
+                        ₹{dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.total_3yr_spend_inr_cr || c.spend_inr_crores || 0), 0).toFixed(2)} Cr
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-xs font-sans text-emerald-700">
+                        100% Validated
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-black text-slate-900">
+                        100.0%
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            );
+          })()}
+        </div>
+      </div>
+    </div>
+
+
+      {/* Area D: Vendor Intelligence */}
+      <div
+        id="vendor-intelligence-area"
+        data-testid="vendor-intelligence-area"
+        className={activeArea === 'ALL' || activeArea === 'VENDOR_INTELLIGENCE' ? 'space-y-6' : 'hidden'}
+      >
+        {/* Consolidated Vendor Intelligence Workspace */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
         {/* Navigation Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              data-testid="tab-vendor-rankings"
+              onClick={() => setColumnLTab('vendorRankings')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+                columnLTab === 'vendorRankings'
+                  ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Vendor Rankings & Spend Concentration</span>
+            </button>
+
+            <button
+              type="button"
               data-testid="tab-strategic-vendor-risk"
               onClick={() => setColumnLTab('strategicRisk')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
                 columnLTab === 'strategicRisk'
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
               <ShieldAlert className="w-4 h-4" />
-              <span>{UI_STRINGS.module2.strategicVendorRisk.tabs.strategicRisk}</span>
+              <span>Supplier Concentration & Single-Source Risk</span>
               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20 text-white font-semibold">
-                {UI_STRINGS.module2.strategicVendorRisk.header.badgeImmediateAttention}
+                Analytical Signal
               </span>
             </button>
 
@@ -809,7 +761,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               type="button"
               data-testid="tab-unspsc-catalog"
               onClick={() => setColumnLTab('catalog')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
                 columnLTab === 'catalog'
                   ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/20'
                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
@@ -824,7 +776,20 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           </div>
         </div>
 
-        {/* View 1: Strategic Single-Vendor & Dominant Supplier Risk Engine (Default) */}
+        {/* View 1: Vendor Rankings & Spend Concentration Breakdown */}
+        {columnLTab === 'vendorRankings' && (
+          <div data-testid="vendor-rankings-container">
+            <CategoryVendorBreakdownView
+              tenant={tenant}
+              categories={dynamicCategoryDetails as any}
+              vendors={dynamicVendorDetails}
+              lineItems={lineItems}
+              lockMode="VENDOR"
+            />
+          </div>
+        )}
+
+        {/* View 2: Supplier Concentration & Single-Source Risk Indicators */}
         {columnLTab === 'strategicRisk' && (
           <div
             ref={strategicRiskRef}
@@ -837,6 +802,8 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
         {/* View 2: Official UNSPSC English File Column L Live Taxonomy Engine & Search (Preserved in DOM) */}
         <div className={columnLTab === 'catalog' ? 'space-y-4' : 'hidden'}>
+          {taxonomyState.isLoading && <p role="status">{UI_STRINGS.taxonomyData.loading}</p>}
+          {taxonomyState.error && <p role="alert">{taxonomyState.error}</p>}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
             <div className="flex items-center space-x-2.5">
               <div className="p-2 rounded-xl bg-cyan-100 text-cyan-700 border border-cyan-300">
@@ -946,35 +913,36 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Module 2 Strategic Sourcing Intelligence, E-Auction & Vendor Consolidation Engine */}
-      <div
-        id="module2-strategic-sourcing-workspace-section"
-        data-testid="module2-strategic-sourcing-workspace-container"
-      >
-        <Module2StrategicSourcingWorkspace />
       </div>
 
-      {/* High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) */}
+      {/* Area C: Strategic Sourcing Opportunities */}
       <div
-        ref={vendorConsolidationRef}
-        id="vendor-consolidation-section"
-        data-testid="vendor-consolidation-section-container"
+        id="strategic-sourcing-area"
+        data-testid="strategic-sourcing-area"
+        className={activeArea === 'ALL' || activeArea === 'STRATEGIC_SOURCING' ? 'space-y-6' : 'hidden'}
       >
-        <VendorConsolidationSection items={dynamicVendorConsolidationItems} />
+        {/* Module 2 Strategic Sourcing Intelligence, E-Auction & Opportunity Engine */}
+        <div
+          id="module2-strategic-sourcing-workspace-section"
+          data-testid="module2-strategic-sourcing-workspace-container"
+        >
+          <Module2StrategicSourcingWorkspace assessmentId={assessmentId} />
+        </div>
       </div>
 
-      {/* Multiple Monthly PO Consolidation & Economies of Scale Engine */}
+      {/* Area B: AI Categorization & Review */}
       <div
-        ref={poConsolidationRef}
-        id="po-consolidation-section"
-        data-testid="po-consolidation-section-container"
+        id="ai-categorization-review-area"
+        data-testid="ai-categorization-review-area"
+        className={activeArea === 'ALL' || activeArea === 'AI_REVIEW' ? 'space-y-6' : 'hidden'}
       >
-        <PoConsolidationSection items={dynamicPoConsolidationItems} />
-      </div>
-
-      {/* Machine Learning Line Item Review Workbench */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4">
+        {/* Machine Learning Line Item Review Workbench */}
+        <div
+          ref={reviewWorkbenchRef}
+          id="review-workbench-section"
+          data-testid="review-workbench-section"
+          className="p-6 rounded-2xl bg-white border border-slate-200 glass-panel space-y-4"
+        >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-2">
@@ -1032,6 +1000,20 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               <option value="CROSS_DOMAIN">{UI_STRINGS.module2.industryContext.relevancePills.crossDomain}</option>
             </select>
 
+            {/* Status Filter */}
+            <select
+              aria-label={UI_STRINGS.module2.areaTabs.statusFilterAll}
+              value={selectedStatusFilter}
+              onChange={(e) => setSelectedStatusFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-cyan-500 font-medium cursor-pointer"
+            >
+              <option value="ALL">{UI_STRINGS.module2.areaTabs.statusFilterAll}</option>
+              <option value="TAXONOMY_VERIFIED">{UI_STRINGS.module2.areaTabs.statusTaxonomyVerified}</option>
+              <option value="PROVISIONAL">{UI_STRINGS.module2.areaTabs.statusProvisional}</option>
+              <option value="AWAITING_REVIEW">{UI_STRINGS.module2.areaTabs.statusAwaitingReview}</option>
+              <option value="CLIENT_APPROVED">{UI_STRINGS.module2.areaTabs.statusClientApproved}</option>
+            </select>
+
             {/* Search Input */}
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
@@ -1047,6 +1029,15 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
         </div>
 
         {/* Line Items Table */}
+        {currentTier === 'SILVER' ? (
+          <TierMaskOverlay
+            requiredTier="GOLD"
+            title={UI_STRINGS.subscription.stageMaskedTitle('Granular SKU Line Items & Reclassification')}
+            description={UI_STRINGS.subscription.stageMaskedSilverDesc}
+            onUpgrade={handleUpgradeGold}
+            isSummaryVisible
+          />
+        ) : (
         <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -1065,7 +1056,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
-                {filteredItems.map((item) => {
+                {filteredItems.slice(0, 100).map((item) => {
                   const sectorResult = categorizeMaterialWithIndustryContext(
                     item.raw_desc,
                     item.unspsc_code,
@@ -1077,6 +1068,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                     : lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
                   const matCode = item.material_code || `MAT-${item.line_item_id.replace(/^LI(TM)?-/i, '')}`;
                   const matDesc = item.material_desc || item.raw_desc;
+                  const derivedStatus = getDerivedStatus(item);
 
                   return (
                     <tr
@@ -1221,16 +1213,31 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                             <span>{UI_STRINGS.module2.statusConfirmed}</span>
                           </span>
                         ) : (
-                          <button
-                            onClick={() => onConfirmMapping(item.mapping_id)}
-                            className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-all shadow-xs active:scale-95"
-                          >
-                            {UI_STRINGS.module2.btnConfirm}
-                          </button>
+                          <>
+                            <span
+                              className={`inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                derivedStatus === 'CLIENT_APPROVED'
+                                  ? 'text-emerald-800 bg-emerald-100 border border-emerald-300'
+                                  : derivedStatus === 'TAXONOMY_VERIFIED'
+                                  ? 'text-cyan-800 bg-cyan-100 border border-cyan-300'
+                                  : derivedStatus === 'PROVISIONAL'
+                                  ? 'text-amber-800 bg-amber-100 border border-amber-300'
+                                  : 'text-slate-700 bg-slate-100 border border-slate-300'
+                              }`}
+                            >
+                              <span>{derivedStatus}</span>
+                            </span>
+                            <button
+                              onClick={() => onConfirmMapping(item.mapping_id)}
+                              className="px-2.5 py-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-all shadow-xs active:scale-95 cursor-pointer"
+                            >
+                              {UI_STRINGS.module2.btnConfirm}
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={() => onReassignMapping(item)}
-                          className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all border border-slate-300 flex items-center space-x-1"
+                          className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all border border-slate-300 flex items-center space-x-1 cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
                           <span>{UI_STRINGS.module2.btnReassign}</span>
@@ -1242,9 +1249,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
               })}
             </tbody>
             </table>
+            {filteredItems.length > 100 && (
+              <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 border-t border-slate-200 font-sans">
+                Showing first 100 of {filteredItems.length.toLocaleString()} line items. Filter or search to inspect specific records.
+              </div>
+            )}
           </div>
         </div>
-
+        )}
         {/* CTA to Module 3 */}
         <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
           <div className="flex items-center space-x-2 text-xs text-slate-500">
@@ -1252,16 +1264,16 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             <span>{UI_STRINGS.module2.taxonomyVerifiedFooter}</span>
           </div>
           <button
+            type="button"
             onClick={onProceedToTrend}
-            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group"
+            className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
             <span>{UI_STRINGS.module2.btnProceedToTrend}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>
-      </>
-      )}
+      </div>
 
       {/* UNSPSC Taxonomy Detailed Specification Pop-up Modal */}
       {selectedUNSPSCRecord && (

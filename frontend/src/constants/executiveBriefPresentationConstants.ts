@@ -198,23 +198,62 @@ export const EXECUTIVE_BRIEF_PRESENTATION_CONTRACT: ExecutiveBriefPresentationCo
   classifications: PRESENTATION_VALUE_CLASSIFICATIONS
 };
 
+export const DEMO_ARCHETYPE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationContract = {
+  ...EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+};
+
+export {
+  ABC_TEXTILE_VALUE_CLASSIFICATIONS,
+  ABC_TEXTILE_PRESENTATION_CONTRACT
+} from './customerBriefPresentationConstants';
+
+import {
+  ABC_TEXTILE_PRESENTATION_CONTRACT
+} from './customerBriefPresentationConstants';
+
+export function isCustomerAssessment(clientNameOrAssessmentId?: string): boolean {
+  if (!clientNameOrAssessmentId) return false;
+  const clean = clientNameOrAssessmentId.trim().toLowerCase();
+  return (
+    clean.includes('abc') ||
+    clean.includes('textile') ||
+    clean.includes('0002') ||
+    clean.startsWith('aic-')
+  );
+}
+
+export function getExecutiveBriefPresentationContract(
+  clientNameOrAssessmentId?: string
+): ExecutiveBriefPresentationContract {
+  if (isCustomerAssessment(clientNameOrAssessmentId)) {
+    return ABC_TEXTILE_PRESENTATION_CONTRACT;
+  }
+  return DEMO_ARCHETYPE_PRESENTATION_CONTRACT;
+}
+
 export const EXECUTIVE_BRIEF_PRESENTATION_CONSTANTS = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;
 
 export function isAdditiveDirectSaving(type: ValueClassificationType): boolean {
   return type === 'DIRECT_SAVINGS';
 }
 
-export function validateWaterfallMath(): boolean {
+export function validateWaterfallMath(
+  contract: ExecutiveBriefPresentationContract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+): boolean {
   const calculatedNet =
-    PRESENTATION_GROSS_OPPORTUNITY_CR -
-    PRESENTATION_OVERLAP_DEDUCTIONS_CR -
-    PRESENTATION_EXCLUSIONS_CR;
-  return Math.abs(calculatedNet - PRESENTATION_NET_DEFENSIBLE_PIPELINE_CR) < 0.001;
+    contract.grossOpportunityCr -
+    contract.overlapDeductionsCr -
+    contract.exclusionsCr;
+  return Math.abs(calculatedNet - contract.netDefensiblePipelineCr) < 0.001;
 }
 
-export function validateNetComposition(): boolean {
+export function validateNetComposition(
+  contract: ExecutiveBriefPresentationContract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+): boolean {
   const sum =
-    PRESENTATION_NET_DIRECT_SAVINGS_CR +
-    PRESENTATION_STRATEGIC_MARKET_VALUE_CR;
-  return Math.abs(sum - PRESENTATION_NET_DEFENSIBLE_PIPELINE_CR) < 0.001;
+    contract.netDirectSavingsCr +
+    contract.strategicMarketValueCr;
+  return Math.abs(sum - contract.netDefensiblePipelineCr) < 0.001;
 }
+
+

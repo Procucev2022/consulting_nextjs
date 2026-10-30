@@ -196,6 +196,20 @@ describe('Savings Components Suite', () => {
         />
       );
       expect(screen.getByText(UI_STRINGS.module4.overlapDeduplication.title)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module4.overlapDeduplication.emptyState)).toBeInTheDocument();
+      expect(screen.queryByText(/Deep Groove Ball Bearing/)).not.toBeInTheDocument();
+    });
+
+    it('uses the identified status when a stored overlap has no matching D1 opportunity row', () => {
+      render(
+        <OverlapDeduplicationTable
+          overlaps={mockOverlaps}
+          opportunities={[]}
+          onUpdateStatus={vi.fn()}
+        />
+      );
+
+      expect(screen.getAllByRole('combobox')[0]).toHaveValue('IDENTIFIED');
     });
   });
 
@@ -234,6 +248,8 @@ describe('Savings Components Suite', () => {
         />
       );
       expect(screen.getByText(UI_STRINGS.module4.actionPlan.title)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module4.actionPlan.emptyState)).toBeInTheDocument();
+      expect(screen.queryByText('ACT-001')).not.toBeInTheDocument();
     });
   });
 });

@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { Check, X, Search, FileSpreadsheet } from 'lucide-react';
 import type { ReassignModalProps, UNSPSCCommodityRecord } from '../../types';
 import { searchUNSPSCTaxonomy } from '../../data/unspscTaxonomy';
-import { UI_STRINGS, reassignTaxonomyFormSchema } from '../../constants';
+import { UI_STRINGS, TAXONOMY_MODAL_RESULT_LIMIT, reassignTaxonomyFormSchema } from '../../constants';
 import { validateInput } from '../../utils/validation';
+import { useUNSPSCTaxonomy } from '../../hooks/useUNSPSCTaxonomy';
 
 export const ReassignModal: React.FC<ReassignModalProps> = ({
   item,
@@ -12,22 +13,21 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
   onClose,
   onSave
 }) => {
+  const taxonomyState = useUNSPSCTaxonomy(isOpen && Boolean(item));
   const [search, setSearch] = useState('');
   const [selectedBucketFilter, setSelectedBucketFilter] = useState<string>('ALL');
   const [selectedRecord, setSelectedRecord] = useState<UNSPSCCommodityRecord | null>(null);
 
   if (!isOpen || !item) return null;
 
-  const searchResults = searchUNSPSCTaxonomy(search, selectedBucketFilter).slice(0, 15);
+  const searchResults = searchUNSPSCTaxonomy(search, selectedBucketFilter).slice(0, TAXONOMY_MODAL_RESULT_LIMIT);
 
-  const handleConfirm = (): void => {
-    if (!selectedRecord) return;
-
+  const handleConfirm = (record: UNSPSCCommodityRecord): void => {
     const validation = validateInput(reassignTaxonomyFormSchema, {
       mappingId: item.mapping_id,
-      newCode: selectedRecord.commodityCode,
-      newName: `${selectedRecord.coreBucket} (${selectedRecord.commodityTitle})`,
-      bucket: selectedRecord.coreBucket
+      newCode: record.commodityCode,
+      newName: `${record.coreBucket} (${record.commodityTitle})`,
+      bucket: record.coreBucket
     });
     if (!validation.success) return;
 
@@ -60,18 +60,26 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
               <h3 className="text-base font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.reassign.title}</h3>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg">
+          <button
+            onClick={onClose}
+            aria-label={UI_STRINGS.common.close}
+            className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
+          {taxonomyState.isLoading && <p role="status">{UI_STRINGS.taxonomyData.loading}</p>}
+          {taxonomyState.error && <p role="alert">{taxonomyState.error}</p>}
           <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
             <span className="text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.reassign.targetLineItemLabel}</span>
             <p className="font-semibold text-slate-900 dark:text-white text-sm">{item.raw_desc}</p>
             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
-              <span>Vendor: {item.vendor_identified}</span>
-              <span className="font-mono text-cyan-700 dark:text-cyan-400 font-semibold">${item.total_spend.toLocaleString()} Spend</span>
+              <span>{UI_STRINGS.modals.reassign.vendorLabel(item.vendor_identified)}</span>
+              <span className="font-mono text-cyan-700 dark:text-cyan-400 font-semibold">
+                {UI_STRINGS.modals.reassign.spendLabel(item.total_spend.toLocaleString())}
+              </span>
             </div>
           </div>
 
@@ -91,11 +99,11 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
               onChange={(e) => setSelectedBucketFilter(e.target.value)}
               className="bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:border-cyan-500"
             >
-              <option value="ALL">All Core Buckets</option>
-              <option value="Packaging Materials">Packaging</option>
-              <option value="Direct Materials">Direct Materials</option>
-              <option value="Indirect & MRO">Indirect & MRO</option>
-              <option value="Logistics & Freight">Logistics & Freight</option>
+              <option value="ALL">{UI_STRINGS.modals.reassign.bucketFilterAll}</option>
+              <option value="Packaging Materials">{UI_STRINGS.modals.reassign.bucketPackaging}</option>
+              <option value="Direct Materials">{UI_STRINGS.modals.reassign.bucketDirectMaterials}</option>
+              <option value="Indirect & MRO">{UI_STRINGS.modals.reassign.bucketIndirectMro}</option>
+              <option value="Logistics & Freight">{UI_STRINGS.modals.reassign.bucketLogistics}</option>
             </select>
           </div>
 
@@ -124,7 +132,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
                     {rec.commodityTitle}
                   </p>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    {rec.segmentTitle} &gt; {rec.familyTitle} &gt; {rec.classTitle}
+                    {UI_STRINGS.modals.reassign.hierarchyPath(rec.segmentTitle, rec.familyTitle, rec.classTitle)}
                   </p>
                 </div>
               );
@@ -140,7 +148,7 @@ export const ReassignModal: React.FC<ReassignModalProps> = ({
             {UI_STRINGS.common.cancel}
           </button>
           <button
-            onClick={handleConfirm}
+            onClick={() => selectedRecord && handleConfirm(selectedRecord)}
             disabled={!selectedRecord}
             className={`flex items-center space-x-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-colors shadow-xs ${
               selectedRecord

@@ -1,5 +1,6 @@
-import { GEMINI_CONFIG, GEMINI_INLINE_MIME_TYPES, EXTRACTION_STATUS, EXTRACTION_SYSTEM_PROMPT } from '../constants/ai';
-import type { ExtractionResult, ExtractionStatus, ExtractedProcurementItem } from '../types/ai';
+import { GEMINI_CONFIG, resolveGeminiConfig, GEMINI_INLINE_MIME_TYPES, EXTRACTION_STATUS, EXTRACTION_SYSTEM_PROMPT } from '../constants/ai';
+import type { CloudflareEnvironment } from '../types/cloudflare';
+import type { ExtractionResult, ExtractionStatus, ExtractedProcurementItem, GeminiConfig } from '../types/ai';
 import logger from '../utils/logger';
 
 interface GeminiContentPart {
@@ -32,12 +33,22 @@ interface RawExtractedPayload {
 }
 
 export class GeminiService {
+  private config: GeminiConfig = GEMINI_CONFIG;
+
+  public configureForEnvironment(environment: CloudflareEnvironment): void {
+    this.config = resolveGeminiConfig(environment);
+  }
+
   public isConfigured(): boolean {
-    return Boolean(GEMINI_CONFIG.API_KEY);
+    return Boolean(this.config.API_KEY || (this.config.BACKUP_KEYS && this.config.BACKUP_KEYS.length > 0));
   }
 
   public resolveModelChain(): string[] {
-    return [GEMINI_CONFIG.PRIMARY_MODEL, ...GEMINI_CONFIG.FALLBACK_MODELS].filter(Boolean);
+    return [this.config.PRIMARY_MODEL, ...this.config.FALLBACK_MODELS].filter(Boolean);
+  }
+
+  public resolveKeyChain(): string[] {
+    return Array.from(new Set([this.config.API_KEY, ...(this.config.BACKUP_KEYS || [])].filter(Boolean)));
   }
 
   public extractResponseText(payload: GeminiApiResponse | null | undefined): string {
@@ -83,23 +94,24 @@ export class GeminiService {
 
     return {
       contents: [{ role: 'user', parts }],
-      generationConfig: { temperature: GEMINI_CONFIG.TEMPERATURE, response_mime_type: 'application/json' }
+      generationConfig: { temperature: this.config.TEMPERATURE, response_mime_type: 'application/json' }
     };
   }
 
   public async callModel<T = unknown>(
     model: string,
     requestBody: unknown,
-    timeoutMs: number = GEMINI_CONFIG.REQUEST_TIMEOUT_MS
+    timeoutMs: number = this.config.REQUEST_TIMEOUT_MS,
+    apiKey: string = this.config.API_KEY
   ): Promise<T> {
-    const url = `${GEMINI_CONFIG.BASE_URL}/${model}:generateContent`;
+    const url = `${this.config.BASE_URL}/${model}:generateContent`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_CONFIG.API_KEY },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify(requestBody),
         signal: controller.signal
       });
@@ -134,27 +146,34 @@ export class GeminiService {
 
     const requestBody = {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: GEMINI_CONFIG.TEMPERATURE, response_mime_type: 'application/json' }
+      generationConfig: { temperature: this.config.TEMPERATURE, response_mime_type: 'application/json' }
     };
     const failures: string[] = [];
-    const deadline = Date.now() + GEMINI_CONFIG.TOTAL_BUDGET_MS;
+    const deadline = Date.now() + this.config.TOTAL_BUDGET_MS;
+    const keys = this.resolveKeyChain();
 
     for (const model of this.resolveModelChain()) {
-      const remainingMs = deadline - Date.now();
-      if (remainingMs < GEMINI_CONFIG.MIN_ATTEMPT_MS) break;
+      for (const apiKey of keys) {
+        const remainingMs = deadline - Date.now();
+        if (remainingMs < this.config.MIN_ATTEMPT_MS) break;
 
-      try {
-        const parsed = await this.callModel<T>(
-          model,
-          requestBody,
-          Math.min(GEMINI_CONFIG.REQUEST_TIMEOUT_MS, remainingMs)
-        );
-        logger.info(`Gemini ${model} completed ${label} successfully`, { model, label });
-        return { status: EXTRACTION_STATUS.SUCCESS, data: parsed, model, error: null };
-      } catch (err: unknown) {
-        const errorObj = err as Error;
-        failures.push(`${model}: ${errorObj.message}`);
-        logger.warn(`Gemini ${label} attempt failed on ${model}`, { error: errorObj.message });
+        try {
+          const parsed = await this.callModel<T>(
+            model,
+            requestBody,
+            Math.min(this.config.REQUEST_TIMEOUT_MS, remainingMs),
+            apiKey
+          );
+          logger.info(`Gemini ${model} completed ${label} successfully`, { model, label });
+          return { status: EXTRACTION_STATUS.SUCCESS, data: parsed, model, error: null };
+        } catch (err: unknown) {
+          const errorObj = err as Error;
+          failures.push(`${model}: ${errorObj.message}`);
+          logger.warn(`Gemini ${label} attempt failed on ${model}`, { error: errorObj.message });
+          if (errorObj.message.includes('404')) {
+            break;
+          }
+        }
       }
     }
 
@@ -186,7 +205,7 @@ export class GeminiService {
         };
       }
       const approxBytes = Math.floor(((input.inlineData || '').length * 3) / 4);
-      if (approxBytes > GEMINI_CONFIG.MAX_DOCUMENT_BYTES) {
+      if (approxBytes > this.config.MAX_DOCUMENT_BYTES) {
         return {
           isValid: false,
           errorStatus: EXTRACTION_STATUS.DOCUMENT_TOO_LARGE,
@@ -217,12 +236,14 @@ export class GeminiService {
     model: string,
     requestBody: unknown,
     remainingMs: number,
-    fileName?: string
+    fileName?: string,
+    apiKey: string = this.config.API_KEY
   ): Promise<ExtractionResult | null> {
     const parsed = await this.callModel<RawExtractedPayload>(
       model,
       requestBody,
-      Math.min(GEMINI_CONFIG.REQUEST_TIMEOUT_MS, remainingMs)
+      Math.min(this.config.REQUEST_TIMEOUT_MS, remainingMs),
+      apiKey
     );
 
     const items = this.transformRawItems(parsed?.items || []);
@@ -284,26 +305,32 @@ export class GeminiService {
     const trimmedText = typeof input.documentText === 'string' ? input.documentText.trim() : '';
     const requestBody = this.buildRequestBody({
       promptText: EXTRACTION_SYSTEM_PROMPT,
-      documentText: trimmedText.slice(0, GEMINI_CONFIG.MAX_DOCUMENT_TEXT_CHARS),
+      documentText: trimmedText.slice(0, this.config.MAX_DOCUMENT_TEXT_CHARS),
       inlineData: input.inlineData,
       mimeType: input.mimeType,
       fileName: input.fileName
     });
 
     const failures: string[] = [];
-    const deadline = Date.now() + GEMINI_CONFIG.TOTAL_BUDGET_MS;
+    const deadline = Date.now() + this.config.TOTAL_BUDGET_MS;
+    const keys = this.resolveKeyChain();
 
     for (const model of this.resolveModelChain()) {
-      const remainingMs = deadline - Date.now();
-      if (remainingMs < GEMINI_CONFIG.MIN_ATTEMPT_MS) break;
+      for (const apiKey of keys) {
+        const remainingMs = deadline - Date.now();
+        if (remainingMs < this.config.MIN_ATTEMPT_MS) break;
 
-      try {
-        const result = await this.attemptModelExtraction(model, requestBody, remainingMs, input.fileName);
-        if (result) return result;
-      } catch (err: unknown) {
-        const errorObj = err as Error;
-        failures.push(`${model}: ${errorObj.message}`);
-        logger.warn(`Gemini extraction attempt failed on ${model}`, { error: errorObj.message });
+        try {
+          const result = await this.attemptModelExtraction(model, requestBody, remainingMs, input.fileName, apiKey);
+          if (result) return result;
+        } catch (err: unknown) {
+          const errorObj = err as Error;
+          failures.push(`${model}: ${errorObj.message}`);
+          logger.warn(`Gemini extraction attempt failed on ${model}`, { error: errorObj.message });
+          if (errorObj.message.includes('404')) {
+            break;
+          }
+        }
       }
     }
 

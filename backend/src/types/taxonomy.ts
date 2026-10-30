@@ -4,6 +4,8 @@
 
 export type CoreBucket = 'Direct Materials' | 'Packaging Materials' | 'Indirect & MRO' | 'Logistics & Freight';
 
+export type TaxonomyClassificationStatus = 'CLASSIFIED' | 'UNCLASSIFIED';
+
 export interface UNSPSCCommodityRecord {
   commodityCode: string;
   commodityTitle: string;
@@ -14,4 +16,12 @@ export interface UNSPSCCommodityRecord {
   segmentCode: string;
   segmentTitle: string;
   coreBucket?: CoreBucket;
+  classificationStatus?: TaxonomyClassificationStatus;
+}
+
+export interface UNSPSCDetails {
+  commodityCode: string;
+  commodityTitle: string;
+  classTitle: string;
+  coreBucket: string;
 }

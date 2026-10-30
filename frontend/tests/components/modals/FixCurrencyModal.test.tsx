@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FixCurrencyModal } from '../../../src/components/modals/FixCurrencyModal';
-import { initialValidationRecords } from '../../../src/data/mockData';
+import { initialValidationRecords } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 const sampleRec: any = {

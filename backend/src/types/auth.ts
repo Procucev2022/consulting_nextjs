@@ -52,6 +52,19 @@ export interface AuthSessionResponse {
   expires_in_seconds: number;
 }
 
+export interface WorkerAuthIdentity {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface WorkerAuthCheckResult {
+  user?: WorkerAuthIdentity;
+  status: number;
+  message?: string;
+}
+
 export interface AdminUserListResponse {
   users: UserProfileResponse[];
   total: number;

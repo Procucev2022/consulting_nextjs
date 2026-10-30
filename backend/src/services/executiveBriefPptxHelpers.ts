@@ -1,186 +1,113 @@
 /**
- * Executive Brief PPTX Helper Functions (Prompt 283 Redesign)
- * Strictly adheres to 10 x 5.625 inch grid, Aptos/Arial typography, and official image logo embedding.
+ * Shared PPTX building blocks for the Executive Brief deck: backdrop, title frame, footer, text runs, and table cells.
  */
-
-import fs from 'fs';
-import path from 'path';
 import type PptxGenJS from 'pptxgenjs';
-import { PPTX_LAYOUT, BRAND_COLORS, TYPOGRAPHY } from '../constants/executiveBriefLayoutConstants';
+import type { ExecutiveBriefSlideFrameOptions } from '../types/executiveBriefPptx';
+import { EXECUTIVE_BRIEF_LABELS } from '../constants/executiveBriefLabelConstants';
+import {
+  PPTX_FONT_FACE,
+  PPTX_FONT_SIZES,
+  PPTX_GEOMETRY,
+  PPTX_THEME
+} from '../constants/executiveBriefPptxConstants';
 
-let cachedLogoBase64: string | null = null;
-
-export function getLogoBase64(): string {
-  if (!cachedLogoBase64) {
-    const logoPath = path.resolve(__dirname, '../../assets/aicev-logo.png');
-    if (fs.existsSync(logoPath)) {
-      cachedLogoBase64 = 'image/png;base64,' + fs.readFileSync(logoPath).toString('base64');
-    } else {
-      cachedLogoBase64 = '';
-    }
-  }
-  return cachedLogoBase64;
-}
-
-export function addSlideHeader(
-  slide: PptxGenJS.Slide,
-  title: string,
-  category: string,
-  _slideNum: number
-): void {
-  // Category Pill
-  slide.addText(category.toUpperCase(), {
-    x: PPTX_LAYOUT.CONTENT_LEFT,
-    y: PPTX_LAYOUT.HEADER_Y,
-    w: 2.4,
-    h: 0.24,
-    fontSize: TYPOGRAPHY.sectionLabelSize,
-    bold: true,
-    color: BRAND_COLORS.procucevBlue.replace('#', ''),
-    fontFace: TYPOGRAPHY.fallbackFont
+export const addBackdrop = (presentation: PptxGenJS, slide: PptxGenJS.Slide): void => {
+  slide.background = { color: PPTX_THEME.background };
+  slide.addShape(presentation.ShapeType.rect, {
+    x: 0,
+    y: 0,
+    w: PPTX_GEOMETRY.SLIDE_WIDTH,
+    h: PPTX_GEOMETRY.ACCENT_HEIGHT,
+    fill: { color: PPTX_THEME.accent },
+    line: { color: PPTX_THEME.accent }
   });
+};
 
-  // Slide Title (22 pt)
-  slide.addText(title, {
-    x: PPTX_LAYOUT.CONTENT_LEFT,
-    y: PPTX_LAYOUT.TITLE_Y,
-    w: 7.5,
-    h: 0.38,
-    fontSize: TYPOGRAPHY.executiveTitleSize,
-    bold: true,
-    color: BRAND_COLORS.primaryText.replace('#', ''),
-    fontFace: TYPOGRAPHY.fallbackFont
-  });
-
-  // Top-Right: Official aiCEV Lockup Image Asset (Zero text-based logo)
-  const logoData = getLogoBase64();
-  if (logoData) {
-    slide.addImage({
-      data: logoData,
-      x: PPTX_LAYOUT.LOGO_X,
-      y: PPTX_LAYOUT.LOGO_Y,
-      w: PPTX_LAYOUT.LOGO_W,
-      h: PPTX_LAYOUT.LOGO_H
-    });
-  }
-}
-
-export function addSlideFooter(
+export const addFooter = (
   slide: PptxGenJS.Slide,
   clientName: string,
-  slideNum: number,
+  slideNumber: number,
   totalSlides: number
-): void {
-  const y = PPTX_LAYOUT.FOOTER_Y;
-  const fontFace = TYPOGRAPHY.fallbackFont;
-  const color = BRAND_COLORS.secondaryText.replace('#', '');
-
-  // Subtle separator line
-  slide.addShape('rect', {
-    x: PPTX_LAYOUT.CONTENT_LEFT,
-    y: y - 0.08,
-    w: PPTX_LAYOUT.CONTENT_WIDTH,
-    h: 0.01,
-    fill: { color: BRAND_COLORS.border.replace('#', '') }
+): void => {
+  slide.addText(`${EXECUTIVE_BRIEF_LABELS.confidentialityPrefix} ${clientName}`, {
+    x: PPTX_GEOMETRY.MARGIN_X,
+    y: PPTX_GEOMETRY.FOOTER_Y,
+    w: PPTX_GEOMETRY.FOOTER_LEFT_WIDTH,
+    h: PPTX_GEOMETRY.FOOTER_HEIGHT,
+    fontFace: PPTX_FONT_FACE,
+    fontSize: PPTX_FONT_SIZES.footer,
+    color: PPTX_THEME.secondaryText
   });
-
-  // Left: Confidentiality
-  slide.addText(`Management Confidential - Prepared exclusively for ${clientName}`, {
-    x: PPTX_LAYOUT.CONTENT_LEFT,
-    y,
-    w: 4.8,
-    h: 0.2,
-    fontSize: TYPOGRAPHY.footerSize,
-    color,
-    fontFace
+  slide.addText(`${slideNumber} / ${totalSlides}`, {
+    x: PPTX_GEOMETRY.FOOTER_RIGHT_X,
+    y: PPTX_GEOMETRY.FOOTER_Y,
+    w: PPTX_GEOMETRY.FOOTER_RIGHT_WIDTH,
+    h: PPTX_GEOMETRY.FOOTER_HEIGHT,
+    fontFace: PPTX_FONT_FACE,
+    fontSize: PPTX_FONT_SIZES.footer,
+    color: PPTX_THEME.secondaryText,
+    align: 'right'
   });
+};
 
-  // Center: Brand lockup text
-  slide.addText('aiCEV by Procucev', {
-    x: 4.0,
-    y,
-    w: 2.0,
-    h: 0.2,
-    fontSize: TYPOGRAPHY.footerSize,
+/**
+ * Creates a content slide with a title, an optional subtitle, and the standard footer.
+ */
+export const addSlideFrame = (presentation: PptxGenJS, options: ExecutiveBriefSlideFrameOptions): PptxGenJS.Slide => {
+  const slide = presentation.addSlide();
+  addBackdrop(presentation, slide);
+  slide.addText(options.title, {
+    x: PPTX_GEOMETRY.MARGIN_X,
+    y: PPTX_GEOMETRY.TITLE_Y,
+    w: PPTX_GEOMETRY.CONTENT_WIDTH,
+    h: PPTX_GEOMETRY.TITLE_HEIGHT,
+    fontFace: PPTX_FONT_FACE,
+    fontSize: PPTX_FONT_SIZES.title,
     bold: true,
-    align: 'center',
-    color,
-    fontFace
+    color: PPTX_THEME.primaryText,
+    valign: 'middle'
   });
+  if (options.subtitle !== undefined) {
+    slide.addText(options.subtitle, {
+      x: PPTX_GEOMETRY.MARGIN_X,
+      y: PPTX_GEOMETRY.SUBTITLE_Y,
+      w: PPTX_GEOMETRY.CONTENT_WIDTH,
+      h: PPTX_GEOMETRY.SUBTITLE_HEIGHT,
+      fontFace: PPTX_FONT_FACE,
+      fontSize: PPTX_FONT_SIZES.subtitle,
+      color: PPTX_THEME.secondaryText
+    });
+  }
+  addFooter(slide, options.clientName, options.slideNumber, options.totalSlides);
+  return slide;
+};
 
-  // Right: Page Number
-  slide.addText(`PAGE ${slideNum} OF ${totalSlides}`, {
-    x: PPTX_LAYOUT.SAFE_RIGHT - 1.5,
-    y,
-    w: 1.5,
-    h: 0.2,
-    fontSize: TYPOGRAPHY.footerSize,
-    bold: true,
-    align: 'right',
-    color,
-    fontFace
-  });
-}
+/**
+ * A bold label followed by its value on its own line.
+ */
+export const fieldRuns = (label: string, value: string): PptxGenJS.TextProps[] => [
+  {
+    text: `${label}${EXECUTIVE_BRIEF_LABELS.fieldSeparator}`,
+    options: { bold: true, color: PPTX_THEME.accent }
+  },
+  {
+    text: value,
+    options: { color: PPTX_THEME.primaryText, breakLine: true }
+  }
+];
 
-export function addPptxKpiCard(
-  slide: PptxGenJS.Slide,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  title: string,
-  value: string,
-  subtitle: string,
-  accentColor: string = BRAND_COLORS.procucevBlue
-): void {
-  const fontFace = TYPOGRAPHY.fallbackFont;
-  slide.addShape('rect', {
-    x,
-    y,
-    w,
-    h,
-    fill: { color: BRAND_COLORS.lightCard.replace('#', '') },
-    line: { color: BRAND_COLORS.border.replace('#', ''), width: 1 }
-  });
+export const headerCell = (text: string): PptxGenJS.TableCell => ({
+  text,
+  options: { bold: true, color: PPTX_THEME.primaryText, fill: { color: PPTX_THEME.headerFill } }
+});
 
-  // Left vertical accent strip
-  slide.addShape('rect', {
-    x,
-    y,
-    w: 0.06,
-    h,
-    fill: { color: accentColor.replace('#', '') }
-  });
+export const bodyCell = (text: string, color: string = PPTX_THEME.primaryText): PptxGenJS.TableCell => ({
+  text,
+  options: { color }
+});
 
-  slide.addText(title.toUpperCase(), {
-    x: x + 0.16,
-    y: y + 0.12,
-    w: w - 0.24,
-    h: 0.22,
-    fontSize: TYPOGRAPHY.cardLabelSize,
-    bold: true,
-    color: BRAND_COLORS.secondaryText.replace('#', ''),
-    fontFace
-  });
-
-  slide.addText(value, {
-    x: x + 0.16,
-    y: y + 0.36,
-    w: w - 0.24,
-    h: 0.44,
-    fontSize: TYPOGRAPHY.keyNumberSize,
-    bold: true,
-    color: BRAND_COLORS.primaryText.replace('#', ''),
-    fontFace
-  });
-
-  slide.addText(subtitle, {
-    x: x + 0.16,
-    y: y + 0.82,
-    w: w - 0.24,
-    h: 0.22,
-    fontSize: TYPOGRAPHY.cardLabelSize,
-    color: accentColor.replace('#', ''),
-    fontFace
-  });
-}
+export const tableBorder = (): PptxGenJS.BorderProps => ({
+  type: 'solid',
+  pt: 0.5,
+  color: PPTX_THEME.border
+});

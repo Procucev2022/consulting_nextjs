@@ -51,6 +51,7 @@ export const PCBIAdminMasterView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PCBISubTab>('DASHBOARD');
   const [versions, setVersions] = useState<PCBIVersionRecord[]>([]);
   const [activeVersion, setActiveVersion] = useState<PCBIVersionRecord | null>(null);
+  const [versionLoadError, setVersionLoadError] = useState<string | null>(null);
 
   // File Upload & Staging State
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -76,6 +77,7 @@ export const PCBIAdminMasterView: React.FC = () => {
 
   // Load Versions List
   const loadVersions = useCallback(async () => {
+    setVersionLoadError(null);
     try {
       const res = await pcbiAdminApi.getVersions();
       if (res.success && Array.isArray(res.versions)) {
@@ -84,6 +86,9 @@ export const PCBIAdminMasterView: React.FC = () => {
         setActiveVersion(active);
       }
     } catch (err: unknown) {
+      setVersions([]);
+      setActiveVersion(null);
+      setVersionLoadError(UI_STRINGS.pcbiAdmin.versionsLoadFailed(err instanceof Error ? err.message : String(err)));
       frontendLogger.error('Failed to load PCBI versions', {
         error: err instanceof Error ? err.message : String(err)
       });
@@ -150,9 +155,9 @@ export const PCBIAdminMasterView: React.FC = () => {
     try {
       setIsImporting(true);
 
-      // Compute next version: find highest existing version number and increment
+      // Compute next version: find highest existing major version number (e.g. "V2.0" -> 2) and increment
       const existingNumbers = versions
-        .map((v) => parseInt(v.version.replace(/[^0-9]/g, ''), 10))
+        .map((v) => parseInt(v.version.replace(/^V/i, '').split('.')[0], 10))
         .filter((n) => !isNaN(n));
       const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
       const nextVersion = `V${nextNumber}.0`;
@@ -209,6 +214,14 @@ export const PCBIAdminMasterView: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {versionLoadError && (
+        <div role="alert" className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
+          <p>{versionLoadError}</p>
+          <button type="button" onClick={() => void loadVersions()} className="mt-2 font-semibold underline">
+            {UI_STRINGS.pcbiAdmin.versionsRetry}
+          </button>
+        </div>
+      )}
       {/* Breadcrumb Navigation (Part P) */}
       <PCBIBreadcrumb
         items={[

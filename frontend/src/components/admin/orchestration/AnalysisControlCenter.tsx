@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { UI_STRINGS } from '../../../constants';
 import { orchestrationApi } from '../../../utils/orchestrationApi';
+import { frontendLogger } from '../../../utils/logger';
 import { EvidenceWorkbooksPanel } from './EvidenceWorkbooksPanel';
 import type {
   AnalysisJob,
@@ -37,11 +38,57 @@ import type {
   PCBIResolutionAction,
   PCBIExclusionReason,
   ReanalysisReason,
+  ReportVersion,
+  AnalysisStatusBadge,
   AdminQualityGateChecklist,
   AdminOrchestrationKPIs,
   DataVersionDiffSummary
 } from '../../../types/analysisOrchestration';
 import { EXCLUSION_REASONS, REANALYSIS_REASONS } from '../../../constants/analysisOrchestration';
+
+const toTimestamp = (value: string): number => {
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? 0 : time;
+};
+
+// The active report is the newest report that has not been superseded.
+const getActiveReport = (reports: ReportVersion[]): ReportVersion | undefined =>
+  reports
+    .filter((report) => report.status !== 'SUPERSEDED')
+    .sort((a, b) => toTimestamp(b.generatedAt) - toTimestamp(a.generatedAt))[0];
+
+const failureReason = (err: unknown): string =>
+  err instanceof Error && err.message ? err.message : UI_STRINGS.orchestration.unknownFailureReason;
+
+const describeActionFailure = (action: string, err: unknown, describe: (reason: string) => string): string => {
+  frontendLogger.error('Analysis control center action failed', { action, reason: failureReason(err) }, err);
+  return describe(failureReason(err));
+};
+
+const getStatusBadge = (status: AnalysisJobStatus): AnalysisStatusBadge => {
+  const labels = UI_STRINGS.orchestration;
+  switch (status) {
+    case 'SUBMITTED_TO_CUSTOMER':
+    case 'CUSTOMER_VIEWED':
+      return { label: labels.statusSubmitted, bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' };
+    case 'CUSTOMER_ACKNOWLEDGED':
+      return { label: labels.statusAcknowledged, bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700' };
+    case 'ADMIN_APPROVED':
+      return { label: labels.statusReadyToSubmit, bg: 'bg-purple-50 border-purple-200', text: 'text-purple-700' };
+    case 'REPORT_GENERATED':
+    case 'ADMIN_REVIEW':
+      return { label: labels.statusAdminReview, bg: 'bg-indigo-50 border-indigo-200', text: 'text-indigo-700' };
+    case 'READY_FOR_GENERATION':
+      return { label: labels.statusReadyToGenerate, bg: 'bg-teal-50 border-teal-200', text: 'text-teal-700' };
+    case 'PCBI_REVIEW_REQUIRED':
+    case 'PCBI_REVIEW_IN_PROGRESS':
+      return { label: labels.statusPcbiReview, bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700' };
+    case 'ANALYSIS_BLOCKED':
+      return { label: labels.statusBlocked, bg: 'bg-red-50 border-red-200', text: 'text-red-700' };
+    default:
+      return { label: status, bg: 'bg-slate-50 border-slate-200', text: 'text-slate-700' };
+  }
+};
 
 export function AnalysisControlCenter(): React.ReactElement {
   // Main Jobs State
@@ -88,6 +135,8 @@ export function AnalysisControlCenter(): React.ReactElement {
   const [submittingChecklist, setSubmittingChecklist] = useState(false);
   const [submittingApproval, setSubmittingApproval] = useState(false);
 
+  const activeReport = getActiveReport(jobDetails?.reports ?? []);
+
   // Load KPI & Job Directory
   const loadData = useCallback(async () => {
     try {
@@ -100,8 +149,7 @@ export function AnalysisControlCenter(): React.ReactElement {
       setJobs(jobsData);
       setKpis(kpisData);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load analysis control center data';
-      setActionError(msg);
+      setActionError(describeActionFailure('loadControlCenter', err, UI_STRINGS.orchestration.errorLoadControlCenter));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -125,8 +173,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         }
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load job workspace';
-      setActionError(msg);
+      setActionError(describeActionFailure('loadJobWorkspace', err, UI_STRINGS.orchestration.errorLoadWorkspace));
     } finally {
       setLoadingDetails(false);
     }
@@ -153,7 +200,7 @@ export function AnalysisControlCenter(): React.ReactElement {
       });
 
       if (res.success) {
-        setActionSuccess(`PCBI Gap ${selectedGap.relevantClassification} resolved`);
+        setActionSuccess(UI_STRINGS.orchestration.gapResolvedSuccess(selectedGap.relevantClassification));
         setSelectedGap(null);
         await loadJobWorkspace(selectedJobId);
         await loadData();
@@ -161,7 +208,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to resolve PCBI gap');
+      setActionError(describeActionFailure('resolvePcbiGap', err, UI_STRINGS.orchestration.errorResolveGap));
     } finally {
       setSubmittingGap(false);
     }
@@ -176,7 +223,7 @@ export function AnalysisControlCenter(): React.ReactElement {
       setSubmittingUpload(true);
       setActionError(null);
       const res = await orchestrationApi.uploadCorrectedDataset(selectedJobId, {
-        fileName: correctedFileName || 'Corrected_Spend_Analysis_v2.xlsx',
+        fileName: correctedFileName || UI_STRINGS.orchestration.defaultCorrectedFileName,
         reason: reanalysisReason,
         notes: reanalysisNotes || undefined
       });
@@ -193,7 +240,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to upload corrected dataset');
+      setActionError(describeActionFailure('uploadCorrectedDataset', err, UI_STRINGS.orchestration.errorUploadCorrected));
     } finally {
       setSubmittingUpload(false);
     }
@@ -213,7 +260,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to generate report');
+      setActionError(describeActionFailure('generateReport', err, UI_STRINGS.orchestration.errorGenerateReport));
     }
   };
 
@@ -231,7 +278,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to confirm checklist');
+      setActionError(describeActionFailure('confirmQualityGate', err, UI_STRINGS.orchestration.errorConfirmChecklist));
     } finally {
       setSubmittingChecklist(false);
     }
@@ -252,7 +299,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to approve report');
+      setActionError(describeActionFailure('approveAndSubmitReport', err, UI_STRINGS.orchestration.errorApproveReport));
     } finally {
       setSubmittingApproval(false);
     }
@@ -269,14 +316,14 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to resend notification');
+      setActionError(describeActionFailure('resendNotification', err, UI_STRINGS.orchestration.errorResendNotification));
     }
   };
 
   // Supersede Report
   const handleSupersedeReport = async (reportVersionId: string): Promise<void> => {
     if (!selectedJobId) return;
-    const reason = window.prompt('Please enter the reason for superseding this report:');
+    const reason = window.prompt(UI_STRINGS.orchestration.supersedePromptReason);
     if (!reason) return;
 
     try {
@@ -289,33 +336,37 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionError(res.message);
       }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to supersede report');
+      setActionError(describeActionFailure('supersedeReport', err, UI_STRINGS.orchestration.errorSupersedeReport));
     }
   };
 
-  const getStatusBadge = (status: AnalysisJobStatus): { label: string; bg: string; text: string } => {
-    switch (status) {
-      case 'SUBMITTED_TO_CUSTOMER':
-      case 'CUSTOMER_VIEWED':
-        return { label: 'SUBMITTED', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' };
-      case 'CUSTOMER_ACKNOWLEDGED':
-        return { label: 'ACKNOWLEDGED', bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700' };
-      case 'ADMIN_APPROVED':
-        return { label: 'READY TO SUBMIT', bg: 'bg-purple-50 border-purple-200', text: 'text-purple-700' };
-      case 'REPORT_GENERATED':
-      case 'ADMIN_REVIEW':
-        return { label: 'ADMIN REVIEW', bg: 'bg-indigo-50 border-indigo-200', text: 'text-indigo-700' };
-      case 'READY_FOR_GENERATION':
-        return { label: 'READY TO GENERATE', bg: 'bg-teal-50 border-teal-200', text: 'text-teal-700' };
-      case 'PCBI_REVIEW_REQUIRED':
-      case 'PCBI_REVIEW_IN_PROGRESS':
-        return { label: 'PCBI REVIEW', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700' };
-      case 'ANALYSIS_BLOCKED':
-        return { label: 'BLOCKED', bg: 'bg-red-50 border-red-200', text: 'text-red-700' };
-      default:
-        return { label: status, bg: 'bg-slate-50 border-slate-200', text: 'text-slate-700' };
-    }
-  };
+  const orchestrationStrings = UI_STRINGS.orchestration;
+  const checklistDataQualityItems = [
+    { key: 'sourceDataValidated', label: orchestrationStrings.checkSourceData },
+    { key: 'spendReconciles', label: orchestrationStrings.checkSpendReconciles },
+    { key: 'duplicateChecksCompleted', label: orchestrationStrings.checkDuplicates },
+    { key: 'classificationReviewed', label: orchestrationStrings.checkClassification }
+  ] as const;
+  const checklistPcbiItems = [
+    { key: 'requiredPcbiCategoriesResolved', label: orchestrationStrings.checkPcbiCategories },
+    { key: 'benchmarkSourcesValidated', label: orchestrationStrings.checkBenchmarkSources },
+    { key: 'exclusionsDocumented', label: orchestrationStrings.checkExclusionsDoc },
+    { key: 'pcbiCoverageAcceptable', label: orchestrationStrings.checkPcbiCoverage }
+  ] as const;
+  const checklistFinancialItems = [
+    { key: 'savingsCalculationsValidated', label: orchestrationStrings.checkSavingsCalculations },
+    { key: 'noDoubleCounting', label: orchestrationStrings.checkNoDoubleCounting },
+    { key: 'overlapsHandled', label: orchestrationStrings.checkOverlapsHandled },
+    { key: 'exclusionsApplied', label: orchestrationStrings.checkExclusionsApplied },
+    { key: 'totalsReconcile', label: orchestrationStrings.checkTotalsReconcile }
+  ] as const;
+  const checklistReportItems = [
+    { key: 'module1Reviewed', label: orchestrationStrings.checkModule1Reviewed },
+    { key: 'module2Reviewed', label: orchestrationStrings.checkModule2Reviewed },
+    { key: 'module3Reviewed', label: orchestrationStrings.checkModule3Reviewed },
+    { key: 'module4Reviewed', label: orchestrationStrings.checkModule4Reviewed },
+    { key: 'executiveSummaryReviewed', label: orchestrationStrings.checkExecutiveSummary }
+  ] as const;
 
   return (
     <div data-testid="analysis-control-center" className="space-y-6">
@@ -335,6 +386,8 @@ export function AnalysisControlCenter(): React.ReactElement {
           <button
             type="button"
             onClick={loadData}
+            aria-label={orchestrationStrings.btnRefresh}
+            title={orchestrationStrings.btnRefresh}
             className="p-2 rounded-lg border border-[#DCE7F5] bg-white text-[#64748B] hover:text-[#0B1B33] hover:bg-[#F8FBFE] transition-colors shadow-xs"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
@@ -345,13 +398,13 @@ export function AnalysisControlCenter(): React.ReactElement {
       {actionSuccess && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-lg flex items-center justify-between">
           <span>{actionSuccess}</span>
-          <button type="button" onClick={() => setActionSuccess(null)}><X size={14} /></button>
+          <button type="button" aria-label={orchestrationStrings.btnDismissMessage} onClick={() => setActionSuccess(null)}><X size={14} /></button>
         </div>
       )}
       {actionError && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center justify-between">
+        <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg flex items-center justify-between">
           <span>{actionError}</span>
-          <button type="button" onClick={() => setActionError(null)}><X size={14} /></button>
+          <button type="button" aria-label={orchestrationStrings.btnDismissMessage} onClick={() => setActionError(null)}><X size={14} /></button>
         </div>
       )}
 
@@ -359,37 +412,37 @@ export function AnalysisControlCenter(): React.ReactElement {
       {kpis && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiNewAnalyses}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiNewAnalyses}</span>
             <span className="text-base font-extrabold text-[#0B1B33] mt-1 block">{kpis.newAnalyses}</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiPcbiReviewsPending}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiPcbiReviewsPending}</span>
             <span className="text-base font-extrabold text-amber-600 mt-1 block">{kpis.pcbiReviewsPending}</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiDataCorrectionsPending}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiDataCorrectionsPending}</span>
             <span className="text-base font-extrabold text-teal-600 mt-1 block">{kpis.dataCorrectionsPending}</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiReportsPendingReview}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiReportsPendingReview}</span>
             <span className="text-base font-extrabold text-indigo-600 mt-1 block">{kpis.reportsPendingReview}</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiReportsReadyToSubmit}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiReportsReadyToSubmit}</span>
             <span className="text-base font-extrabold text-purple-600 mt-1 block">{kpis.reportsReadyToSubmit}</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiCustomerAcksPending}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiCustomerAcksPending}</span>
             <span className="text-base font-extrabold text-blue-600 mt-1 block">{kpis.customerAcknowledgementsPending}</span>
           </div>
 
           <div className="p-3 bg-white rounded-xl border border-[#DCE7F5] shadow-xs">
-            <span className="text-[#64748B] block font-medium">{UI_STRINGS.orchestration.kpiBlockedAnalyses}</span>
+            <span className="text-[#64748B] block font-medium">{orchestrationStrings.kpiBlockedAnalyses}</span>
             <span className="text-base font-extrabold text-red-600 mt-1 block">{kpis.blockedAnalyses}</span>
           </div>
         </div>
@@ -403,7 +456,7 @@ export function AnalysisControlCenter(): React.ReactElement {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by customer name, job ID or tenant..."
+            placeholder={orchestrationStrings.searchPlaceholder}
             className="w-full bg-transparent focus:outline-hidden text-[#0B1B33]"
           />
         </div>
@@ -411,13 +464,13 @@ export function AnalysisControlCenter(): React.ReactElement {
         <div className="flex flex-wrap items-center gap-1.5">
           <Filter size={14} className="text-[#64748B] mr-1" />
           {[
-            { id: 'ALL', label: UI_STRINGS.orchestration.filterAll },
-            { id: 'PCBI_REVIEW_REQUIRED', label: UI_STRINGS.orchestration.filterPcbiReview },
-            { id: 'READY_FOR_GENERATION', label: UI_STRINGS.orchestration.filterReadyToGenerate },
-            { id: 'ADMIN_REVIEW', label: UI_STRINGS.orchestration.filterAdminReview },
-            { id: 'SUBMITTED_TO_CUSTOMER', label: UI_STRINGS.orchestration.filterSubmitted },
-            { id: 'CUSTOMER_ACKNOWLEDGED', label: UI_STRINGS.orchestration.filterAcknowledged },
-            { id: 'ANALYSIS_BLOCKED', label: UI_STRINGS.orchestration.filterBlocked }
+            { id: 'ALL', label: orchestrationStrings.filterAll },
+            { id: 'PCBI_REVIEW_REQUIRED', label: orchestrationStrings.filterPcbiReview },
+            { id: 'READY_FOR_GENERATION', label: orchestrationStrings.filterReadyToGenerate },
+            { id: 'ADMIN_REVIEW', label: orchestrationStrings.filterAdminReview },
+            { id: 'SUBMITTED_TO_CUSTOMER', label: orchestrationStrings.filterSubmitted },
+            { id: 'CUSTOMER_ACKNOWLEDGED', label: orchestrationStrings.filterAcknowledged },
+            { id: 'ANALYSIS_BLOCKED', label: orchestrationStrings.filterBlocked }
           ].map((f) => (
             <button
               key={f.id}
@@ -441,26 +494,26 @@ export function AnalysisControlCenter(): React.ReactElement {
           <table className="w-full text-left text-xs">
             <thead className="bg-[#F8FBFE] text-[#64748B] border-b border-[#DCE7F5] font-bold uppercase tracking-wider">
               <tr>
-                <th className="py-3 px-4">Customer</th>
-                <th className="py-3 px-4">Period</th>
-                <th className="py-3 px-4">Spend Analysed</th>
-                <th className="py-3 px-4">Data Version</th>
-                <th className="py-3 px-4">Workflow Status</th>
-                <th className="py-3 px-4">Elapsed Time</th>
-                <th className="py-3 px-4 text-right">Action</th>
+                <th className="py-3 px-4">{orchestrationStrings.colCustomer}</th>
+                <th className="py-3 px-4">{orchestrationStrings.colPeriod}</th>
+                <th className="py-3 px-4">{orchestrationStrings.colSpendAnalysed}</th>
+                <th className="py-3 px-4">{orchestrationStrings.colDataVersion}</th>
+                <th className="py-3 px-4">{orchestrationStrings.colWorkflowStatus}</th>
+                <th className="py-3 px-4">{orchestrationStrings.colElapsedTime}</th>
+                <th className="py-3 px-4 text-right">{orchestrationStrings.colAction}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EEF2F6]">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-[#64748B]">
-                    Loading analysis pipeline jobs...
+                    {orchestrationStrings.loadingJobs}
                   </td>
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-[#64748B]">
-                    No analysis jobs found matching the selected criteria.
+                    {orchestrationStrings.noJobsFound}
                   </td>
                 </tr>
               ) : (
@@ -485,7 +538,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                       </td>
                       <td className="py-3.5 px-4 text-[#475569]">{job.analysisPeriod}</td>
                       <td className="py-3.5 px-4 font-bold text-[#0284C7]">
-                        ₹{job.totalSpendCr.toFixed(2)} Cr
+                        {UI_STRINGS.common.croreAmount(job.totalSpendCr.toFixed(2))}
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[#475569]">
                         {job.currentDataVersionId}
@@ -500,7 +553,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                       <td className="py-3.5 px-4 text-[#64748B]">
                         <span className="inline-flex items-center gap-1 font-medium">
                           <Clock size={12} />
-                          {elapsedHours}h / 48h
+                          {orchestrationStrings.elapsedHoursOfSla(elapsedHours, job.slaHoursTarget)}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
@@ -509,7 +562,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                           onClick={() => handleSelectJob(job.analysisJobId)}
                           className="px-3 py-1.5 rounded-md border border-[#0284C7] bg-white text-[#0284C7] hover:bg-[#0284C7] hover:text-white font-bold transition-all shadow-xs"
                         >
-                          Open Workspace
+                          {orchestrationStrings.btnOpenWorkspace}
                         </button>
                       </td>
                     </tr>
@@ -535,21 +588,21 @@ export function AnalysisControlCenter(): React.ReactElement {
                 </h3>
                 {loadingDetails && (
                   <span className="text-[11px] text-[#0284C7] font-semibold animate-pulse">
-                    Updating...
+                    {orchestrationStrings.updatingDetails}
                   </span>
                 )}
               </div>
               <p className="text-xs text-[#64748B] mt-1">
-                Data Version: <strong>{jobDetails.job.currentDataVersionId}</strong> • Uploaded by:{' '}
-                <strong>{jobDetails.job.uploadedBy}</strong> • Total Spend:{' '}
-                <strong className="text-[#0284C7]">₹{jobDetails.job.totalSpendCr.toFixed(2)} Cr</strong>
+                {orchestrationStrings.labelDataVersion} <strong>{jobDetails.job.currentDataVersionId}</strong> • {orchestrationStrings.labelUploadedBy}{' '}
+                <strong>{jobDetails.job.uploadedBy}</strong> • {orchestrationStrings.labelTotalSpend}{' '}
+                <strong className="text-[#0284C7]">{UI_STRINGS.common.croreAmount(jobDetails.job.totalSpendCr.toFixed(2))}</strong>
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                aria-label="Close Workspace"
+                aria-label={orchestrationStrings.btnCloseWorkspace}
                 onClick={() => setSelectedJobId(null)}
                 className="p-1.5 rounded-md text-[#64748B] hover:text-[#0B1B33]"
               >
@@ -560,18 +613,18 @@ export function AnalysisControlCenter(): React.ReactElement {
 
           {/* Navigation Tabs */}
           <div className="flex items-center gap-2 border-b border-[#EEF2F6] pb-2 text-xs font-bold">
-            {[
-              { id: 'readiness', label: UI_STRINGS.orchestration.tabWorkflowReadiness, icon: <Sparkles size={14} /> },
-              { id: 'pcbiGaps', label: UI_STRINGS.orchestration.tabPcbiGapReview, icon: <Layers size={14} /> },
-              { id: 'dataCorrection', label: UI_STRINGS.orchestration.tabDataCorrection, icon: <FileCheck2 size={14} /> },
-              { id: 'qualityGate', label: UI_STRINGS.orchestration.tabQualityGate, icon: <ShieldCheck size={14} /> },
+            {([
+              { id: 'readiness', label: orchestrationStrings.tabWorkflowReadiness, icon: <Sparkles size={14} /> },
+              { id: 'pcbiGaps', label: orchestrationStrings.tabPcbiGapReview, icon: <Layers size={14} /> },
+              { id: 'dataCorrection', label: orchestrationStrings.tabDataCorrection, icon: <FileCheck2 size={14} /> },
+              { id: 'qualityGate', label: orchestrationStrings.tabQualityGate, icon: <ShieldCheck size={14} /> },
               { id: 'evidence', label: UI_STRINGS.evidence.title, icon: <FileSpreadsheet size={14} /> },
-              { id: 'audit', label: UI_STRINGS.orchestration.tabAuditTrail, icon: <History size={14} /> }
-            ].map((t) => (
+              { id: 'audit', label: orchestrationStrings.tabAuditTrail, icon: <History size={14} /> }
+            ] as const).map((t) => (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setActiveTab(t.id as any)}
+                onClick={() => setActiveTab(t.id)}
                 className={`px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all ${
                   activeTab === t.id
                     ? 'bg-[#0284C7] text-white shadow-xs'
@@ -589,13 +642,13 @@ export function AnalysisControlCenter(): React.ReactElement {
             <div className="space-y-4">
               <div className="p-4 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#0284C7] mb-3">
-                  {UI_STRINGS.orchestration.readinessTitle}
+                  {orchestrationStrings.readinessTitle}
                 </h4>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
                   <div className="p-3 bg-white rounded-lg border border-[#E2E8F0]">
                     <span className="text-[#64748B] block font-medium mb-1">
-                      {UI_STRINGS.orchestration.spendCoverageLabel}
+                      {orchestrationStrings.spendCoverageLabel}
                     </span>
                     <span className="text-lg font-extrabold text-[#0284C7]">
                       {jobDetails.readiness.spendCoveragePct}%
@@ -604,7 +657,7 @@ export function AnalysisControlCenter(): React.ReactElement {
 
                   <div className="p-3 bg-white rounded-lg border border-[#E2E8F0]">
                     <span className="text-[#64748B] block font-medium mb-1">
-                      {UI_STRINGS.orchestration.pcbiCoverageLabel}
+                      {orchestrationStrings.pcbiCoverageLabel}
                     </span>
                     <span className="text-lg font-extrabold text-[#0B1B33]">
                       {jobDetails.readiness.categoryCoveragePct}%
@@ -613,7 +666,7 @@ export function AnalysisControlCenter(): React.ReactElement {
 
                   <div className="p-3 bg-white rounded-lg border border-[#E2E8F0]">
                     <span className="text-[#64748B] block font-medium mb-1">
-                      {UI_STRINGS.orchestration.categoriesRequiringReviewLabel}
+                      {orchestrationStrings.categoriesRequiringReviewLabel}
                     </span>
                     <span className="text-lg font-extrabold text-amber-600">
                       {jobDetails.readiness.categoriesRequiringReview}
@@ -622,7 +675,7 @@ export function AnalysisControlCenter(): React.ReactElement {
 
                   <div className="p-3 bg-white rounded-lg border border-[#E2E8F0]">
                     <span className="text-[#64748B] block font-medium mb-1">
-                      {UI_STRINGS.orchestration.overallStatusLabel}
+                      {orchestrationStrings.overallStatusLabel}
                     </span>
                     <span
                       className={`inline-block px-2.5 py-1 rounded-md font-bold text-xs ${
@@ -632,15 +685,15 @@ export function AnalysisControlCenter(): React.ReactElement {
                       }`}
                     >
                       {jobDetails.readiness.overallReadiness === 'READY_TO_GENERATE'
-                        ? UI_STRINGS.orchestration.statusReadyToGenerate
-                        : UI_STRINGS.orchestration.statusActionRequired}
+                        ? orchestrationStrings.statusReadyToGenerate
+                        : orchestrationStrings.statusActionRequired}
                     </span>
                   </div>
                 </div>
 
                 {jobDetails.readiness.blockingReasons.length > 0 && (
                   <div className="mt-4 p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg">
-                    <span className="font-bold block mb-1">Action Items Required Before Generation:</span>
+                    <span className="font-bold block mb-1">{orchestrationStrings.actionItemsTitle}</span>
                     <ul className="list-disc list-inside space-y-0.5">
                       {jobDetails.readiness.blockingReasons.map((reason, idx) => (
                         <li key={idx}>{reason}</li>
@@ -652,7 +705,7 @@ export function AnalysisControlCenter(): React.ReactElement {
 
               <div className="flex items-center justify-between pt-2">
                 <span className="text-xs text-[#64748B]">
-                  Report generation compiles Module 1 through 4 under the certified financial truth.
+                  {orchestrationStrings.reportGenerationNote}
                 </span>
                 <button
                   type="button"
@@ -660,7 +713,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                   disabled={jobDetails.readiness.overallReadiness !== 'READY_TO_GENERATE'}
                   className="px-5 py-2.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition-all shadow-xs disabled:opacity-40"
                 >
-                  {UI_STRINGS.orchestration.btnGenerateReport}
+                  {orchestrationStrings.btnGenerateReport}
                 </button>
               </div>
             </div>
@@ -673,12 +726,12 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#F8FBFE] text-[#64748B] border-b border-[#DCE7F5] font-bold">
                     <tr>
-                      <th className="py-2.5 px-3">Category / Classification</th>
-                      <th className="py-2.5 px-3">Spend</th>
-                      <th className="py-2.5 px-3">Transactions</th>
-                      <th className="py-2.5 px-3">PCBI Status</th>
-                      <th className="py-2.5 px-3">Resolution</th>
-                      <th className="py-2.5 px-3 text-right">Action</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colCategoryClassification}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colSpend}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colTransactions}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colPcbiStatus}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colResolution}</th>
+                      <th className="py-2.5 px-3 text-right">{orchestrationStrings.colAction}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#EEF2F6]">
@@ -689,7 +742,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                           <span className="text-[#64748B] text-[11px]">{gap.relevantClassification}</span>
                         </td>
                         <td className="py-3 px-3 font-bold text-[#0284C7]">
-                          ₹{gap.customerSpendInrCr.toFixed(2)} Cr
+                          {UI_STRINGS.common.croreAmount(gap.customerSpendInrCr.toFixed(2))}
                         </td>
                         <td className="py-3 px-3 text-[#475569]">{gap.transactionCount}</td>
                         <td className="py-3 px-3">
@@ -712,10 +765,10 @@ export function AnalysisControlCenter(): React.ReactElement {
                             </span>
                           ) : gap.resolutionStatus === 'EXCLUDED' ? (
                             <span className="text-slate-600 italic">
-                              Excluded: {gap.exclusionReason}
+                              {orchestrationStrings.excludedReason(gap.exclusionReason ?? '')}
                             </span>
                           ) : (
-                            <span className="text-amber-700 font-bold">Action Required</span>
+                            <span className="text-amber-700 font-bold">{orchestrationStrings.resolutionActionRequired}</span>
                           )}
                         </td>
                         <td className="py-3 px-3 text-right">
@@ -724,7 +777,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                             onClick={() => setSelectedGap(gap)}
                             className="px-2.5 py-1 rounded-md border border-[#0284C7] bg-white text-[#0284C7] hover:bg-[#0284C7] hover:text-white font-bold transition-all text-xs"
                           >
-                            Resolve
+                            {orchestrationStrings.btnResolve}
                           </button>
                         </td>
                       </tr>
@@ -740,23 +793,21 @@ export function AnalysisControlCenter(): React.ReactElement {
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">
                 <div>
-                  <h4 className="text-xs font-bold text-[#0B1B33]">Admin Data Reanalysis & Versioning</h4>
+                  <h4 className="text-xs font-bold text-[#0B1B33]">{orchestrationStrings.dataCorrectionTitle}</h4>
                   <p className="text-xs text-[#64748B] mt-0.5">
-                    Original customer uploads remain strictly immutable. Corrected uploads generate verified new data versions.
+                    {orchestrationStrings.dataCorrectionDescription}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a
-                    href={orchestrationApi.getDownloadDatasetUrl(
-                      jobDetails.job.analysisJobId,
-                      jobDetails.job.currentDataVersionId
-                    )}
-                    download
-                    className="px-3.5 py-2 rounded-lg border border-[#DCE7F5] bg-white hover:bg-[#F8FBFE] text-[#0B1B33] text-xs font-bold flex items-center gap-1.5 shadow-xs"
+                  <button
+                    type="button"
+                    disabled
+                    aria-describedby="dataset-download-unavailable"
+                    className="px-3.5 py-2 rounded-lg border border-[#DCE7F5] bg-white text-[#0B1B33] text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download size={14} className="text-[#0284C7]" />
-                    <span>{UI_STRINGS.orchestration.btnDownloadForCorrection}</span>
-                  </a>
+                    <span>{orchestrationStrings.btnDownloadForCorrection}</span>
+                  </button>
 
                   <button
                     type="button"
@@ -764,37 +815,41 @@ export function AnalysisControlCenter(): React.ReactElement {
                     className="px-3.5 py-2 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs"
                   >
                     <Upload size={14} />
-                    <span>{UI_STRINGS.orchestration.btnUploadCorrectedData}</span>
+                    <span>{orchestrationStrings.btnUploadCorrectedData}</span>
                   </button>
                 </div>
               </div>
 
+              <p id="dataset-download-unavailable" className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                {orchestrationStrings.datasetDownloadUnavailable}
+              </p>
+
               {lastDiff && (
                 <div className="p-4 bg-white border border-[#DCE7F5] rounded-xl space-y-2 text-xs">
                   <h5 className="font-extrabold text-[#0B1B33] uppercase tracking-wider text-[11px]">
-                    DATA VERSION CHANGE ({lastDiff.previousVersionId} → {lastDiff.newVersionId})
+                    {orchestrationStrings.dataVersionChangeTitle(lastDiff.previousVersionId, lastDiff.newVersionId)}
                   </h5>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                     <div className="p-2 bg-[#F8FBFE] rounded-lg">
-                      <span className="text-[#64748B] block">Transactions:</span>
+                      <span className="text-[#64748B] block">{orchestrationStrings.diffTransactions}</span>
                       <span className="font-bold">
                         {(lastDiff.previousTransactions ?? 0).toLocaleString()} → {(lastDiff.newTransactions ?? 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="p-2 bg-[#F8FBFE] rounded-lg">
-                      <span className="text-[#64748B] block">Suppliers:</span>
+                      <span className="text-[#64748B] block">{orchestrationStrings.diffSuppliers}</span>
                       <span className="font-bold">
                         {lastDiff.previousSuppliers ?? 0} → {lastDiff.newSuppliers ?? 0}
                       </span>
                     </div>
                     <div className="p-2 bg-[#F8FBFE] rounded-lg">
-                      <span className="text-[#64748B] block">Spend:</span>
+                      <span className="text-[#64748B] block">{orchestrationStrings.diffSpend}</span>
                       <span className="font-bold text-[#0284C7]">
-                        ₹{(lastDiff.previousSpendCr ?? 0).toFixed(2)} Cr → ₹{(lastDiff.newSpendCr ?? 0).toFixed(2)} Cr
+                        {UI_STRINGS.common.croreAmount((lastDiff.previousSpendCr ?? 0).toFixed(2))} → {UI_STRINGS.common.croreAmount((lastDiff.newSpendCr ?? 0).toFixed(2))}
                       </span>
                     </div>
                     <div className="p-2 bg-[#F8FBFE] rounded-lg">
-                      <span className="text-[#64748B] block">Categories:</span>
+                      <span className="text-[#64748B] block">{orchestrationStrings.diffCategories}</span>
                       <span className="font-bold">
                         {lastDiff.previousCategories ?? 0} → {lastDiff.newCategories ?? 0}
                       </span>
@@ -808,12 +863,12 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#F8FBFE] text-[#64748B] border-b border-[#DCE7F5] font-bold">
                     <tr>
-                      <th className="py-2.5 px-3">Version</th>
-                      <th className="py-2.5 px-3">Source & Role</th>
-                      <th className="py-2.5 px-3">Transactions</th>
-                      <th className="py-2.5 px-3">Spend</th>
-                      <th className="py-2.5 px-3">Correction Reason</th>
-                      <th className="py-2.5 px-3">Uploaded At</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colVersion}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colSourceRole}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colTransactions}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colSpend}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colCorrectionReason}</th>
+                      <th className="py-2.5 px-3">{orchestrationStrings.colUploadedAt}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#EEF2F6]">
@@ -827,9 +882,9 @@ export function AnalysisControlCenter(): React.ReactElement {
                           <span className="text-[#64748B] text-[11px]">{ver.uploaderRole}</span>
                         </td>
                         <td className="py-3 px-3">{ver.transactionCount.toLocaleString()}</td>
-                        <td className="py-3 px-3 font-bold">₹{ver.spendInrCr.toFixed(2)} Cr</td>
+                        <td className="py-3 px-3 font-bold">{UI_STRINGS.common.croreAmount(ver.spendInrCr.toFixed(2))}</td>
                         <td className="py-3 px-3 text-[#64748B]">
-                          {ver.correctionReason || 'Original baseline upload'}
+                          {ver.correctionReason || orchestrationStrings.originalBaselineUpload}
                         </td>
                         <td className="py-3 px-3 text-[#64748B]">
                           {new Date(ver.uploadedAt).toLocaleString()}
@@ -850,18 +905,13 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <div className="p-4 bg-white rounded-xl border border-[#DCE7F5] shadow-xs space-y-2">
                   <h5 className="font-extrabold text-[#0B1B33] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <FileText size={14} className="text-[#0284C7]" />
-                    {UI_STRINGS.orchestration.checklistDataQualityTitle}
+                    {orchestrationStrings.checklistDataQualityTitle}
                   </h5>
-                  {[
-                    { key: 'sourceDataValidated', label: UI_STRINGS.orchestration.checkSourceData },
-                    { key: 'spendReconciles', label: UI_STRINGS.orchestration.checkSpendReconciles },
-                    { key: 'duplicateChecksCompleted', label: UI_STRINGS.orchestration.checkDuplicates },
-                    { key: 'classificationReviewed', label: UI_STRINGS.orchestration.checkClassification }
-                  ].map((item) => (
+                  {checklistDataQualityItems.map((item) => (
                     <label key={item.key} className="flex items-center gap-2 cursor-pointer py-1">
                       <input
                         type="checkbox"
-                        checked={(checklist.dataQuality as any)[item.key]}
+                        checked={checklist.dataQuality[item.key]}
                         onChange={(e) =>
                           setChecklist((prev) => ({
                             ...prev,
@@ -879,18 +929,13 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <div className="p-4 bg-white rounded-xl border border-[#DCE7F5] shadow-xs space-y-2">
                   <h5 className="font-extrabold text-[#0B1B33] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <Layers size={14} className="text-[#0284C7]" />
-                    {UI_STRINGS.orchestration.checklistPcbiTitle}
+                    {orchestrationStrings.checklistPcbiTitle}
                   </h5>
-                  {[
-                    { key: 'requiredPcbiCategoriesResolved', label: UI_STRINGS.orchestration.checkPcbiCategories },
-                    { key: 'benchmarkSourcesValidated', label: UI_STRINGS.orchestration.checkBenchmarkSources },
-                    { key: 'exclusionsDocumented', label: UI_STRINGS.orchestration.checkExclusionsDoc },
-                    { key: 'pcbiCoverageAcceptable', label: UI_STRINGS.orchestration.checkPcbiCoverage }
-                  ].map((item) => (
+                  {checklistPcbiItems.map((item) => (
                     <label key={item.key} className="flex items-center gap-2 cursor-pointer py-1">
                       <input
                         type="checkbox"
-                        checked={(checklist.pcbi as any)[item.key]}
+                        checked={checklist.pcbi[item.key]}
                         onChange={(e) =>
                           setChecklist((prev) => ({
                             ...prev,
@@ -908,19 +953,13 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <div className="p-4 bg-white rounded-xl border border-[#DCE7F5] shadow-xs space-y-2">
                   <h5 className="font-extrabold text-[#0B1B33] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <Sparkles size={14} className="text-[#0284C7]" />
-                    {UI_STRINGS.orchestration.checklistFinancialTitle}
+                    {orchestrationStrings.checklistFinancialTitle}
                   </h5>
-                  {[
-                    { key: 'savingsCalculationsValidated', label: UI_STRINGS.orchestration.checkSavingsCalculations },
-                    { key: 'noDoubleCounting', label: UI_STRINGS.orchestration.checkNoDoubleCounting },
-                    { key: 'overlapsHandled', label: UI_STRINGS.orchestration.checkOverlapsHandled },
-                    { key: 'exclusionsApplied', label: UI_STRINGS.orchestration.checkExclusionsApplied },
-                    { key: 'totalsReconcile', label: UI_STRINGS.orchestration.checkTotalsReconcile }
-                  ].map((item) => (
+                  {checklistFinancialItems.map((item) => (
                     <label key={item.key} className="flex items-center gap-2 cursor-pointer py-1">
                       <input
                         type="checkbox"
-                        checked={(checklist.financial as any)[item.key]}
+                        checked={checklist.financial[item.key]}
                         onChange={(e) =>
                           setChecklist((prev) => ({
                             ...prev,
@@ -938,19 +977,13 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <div className="p-4 bg-white rounded-xl border border-[#DCE7F5] shadow-xs space-y-2">
                   <h5 className="font-extrabold text-[#0B1B33] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <ShieldCheck size={14} className="text-[#0284C7]" />
-                    {UI_STRINGS.orchestration.checklistReportTitle}
+                    {orchestrationStrings.checklistReportTitle}
                   </h5>
-                  {[
-                    { key: 'module1Reviewed', label: UI_STRINGS.orchestration.checkModule1Reviewed },
-                    { key: 'module2Reviewed', label: UI_STRINGS.orchestration.checkModule2Reviewed },
-                    { key: 'module3Reviewed', label: UI_STRINGS.orchestration.checkModule3Reviewed },
-                    { key: 'module4Reviewed', label: UI_STRINGS.orchestration.checkModule4Reviewed },
-                    { key: 'executiveSummaryReviewed', label: UI_STRINGS.orchestration.checkExecutiveSummary }
-                  ].map((item) => (
+                  {checklistReportItems.map((item) => (
                     <label key={item.key} className="flex items-center gap-2 cursor-pointer py-1">
                       <input
                         type="checkbox"
-                        checked={(checklist.report as any)[item.key]}
+                        checked={checklist.report[item.key]}
                         onChange={(e) =>
                           setChecklist((prev) => ({
                             ...prev,
@@ -973,40 +1006,40 @@ export function AnalysisControlCenter(): React.ReactElement {
                   className="px-4 py-2 rounded-lg border border-[#0284C7] bg-white text-[#0284C7] hover:bg-[#F0F7FF] text-xs font-bold flex items-center gap-1.5"
                 >
                   <CheckSquare size={14} />
-                  <span>{UI_STRINGS.orchestration.modalConfirmChecklist}</span>
+                  <span>{orchestrationStrings.modalConfirmChecklist}</span>
                 </button>
 
-                {jobDetails.reports.length > 0 && (
+                {activeReport && (
                   <div className="flex items-center gap-2">
-                    {jobDetails.reports[0].status === 'SUBMITTED' ? (
+                    {activeReport.status === 'SUBMITTED' ? (
                       <>
                         <button
                           type="button"
-                          onClick={() => handleResendEmail(jobDetails.reports[0].reportVersionId)}
+                          onClick={() => handleResendEmail(activeReport.reportVersionId)}
                           className="px-3.5 py-2 rounded-lg border border-[#DCE7F5] bg-white text-[#0B1B33] hover:bg-[#F8FBFE] text-xs font-bold flex items-center gap-1.5 shadow-xs"
                         >
                           <Send size={14} className="text-[#0284C7]" />
-                          <span>{UI_STRINGS.orchestration.btnResendNotification}</span>
+                          <span>{orchestrationStrings.btnResendNotification}</span>
                         </button>
 
                         <button
                           type="button"
-                          onClick={() => handleSupersedeReport(jobDetails.reports[0].reportVersionId)}
+                          onClick={() => handleSupersedeReport(activeReport.reportVersionId)}
                           className="px-3.5 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5"
                         >
                           <Ban size={14} />
-                          <span>{UI_STRINGS.orchestration.btnSupersedeReport}</span>
+                          <span>{orchestrationStrings.btnSupersedeReport}</span>
                         </button>
                       </>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => handleApproveAndSubmit(jobDetails.reports[0].reportVersionId)}
+                        onClick={() => handleApproveAndSubmit(activeReport.reportVersionId)}
                         disabled={submittingApproval || !jobDetails.checklist?.confirmedAt}
                         className="px-5 py-2 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-2 disabled:opacity-40"
                       >
                         <CheckCircle2 size={16} />
-                        <span>{UI_STRINGS.orchestration.btnApproveAndSubmit}</span>
+                        <span>{orchestrationStrings.btnApproveAndSubmit}</span>
                       </button>
                     )}
                   </div>
@@ -1019,31 +1052,31 @@ export function AnalysisControlCenter(): React.ReactElement {
           {activeTab === 'audit' && (
             <div className="space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-[#0B1B33]">
-                Immutable Event Audit Trail
+                {orchestrationStrings.auditTrailTitle}
               </h4>
               <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-xs space-y-2">
                 <div className="font-mono text-[11px] text-[#64748B]">
-                  [Audit Event] DATA_UPLOADED • Tenant: {jobDetails.job.tenantId} • File: {jobDetails.job.currentDataVersionId}
+                  {orchestrationStrings.auditDataUploaded(jobDetails.job.tenantId, jobDetails.job.currentDataVersionId)}
                 </div>
                 <div className="font-mono text-[11px] text-[#64748B]">
-                  [Audit Event] MODULE1_COMPLETED • Spend Verified: ₹{jobDetails.job.totalSpendCr.toFixed(2)} Cr
+                  {orchestrationStrings.auditModule1Completed(jobDetails.job.totalSpendCr.toFixed(2))}
                 </div>
                 <div className="font-mono text-[11px] text-[#64748B]">
-                  [Audit Event] ANALYSIS_QUEUED • Status: {jobDetails.job.status}
+                  {orchestrationStrings.auditAnalysisQueued(jobDetails.job.status)}
                 </div>
                 {jobDetails.job.reportGeneratedAt && (
                   <div className="font-mono text-[11px] text-indigo-700">
-                    [Audit Event] REPORT_GENERATED • Version: {jobDetails.job.reportVersionId}
+                    {orchestrationStrings.auditReportGenerated(jobDetails.job.reportVersionId ?? '')}
                   </div>
                 )}
                 {jobDetails.job.approvedAt && (
                   <div className="font-mono text-[11px] text-emerald-700">
-                    [Audit Event] REPORT_APPROVED & SUBMITTED • Dispatched to {jobDetails.job.uploadedBy}
+                    {orchestrationStrings.auditReportSubmitted(jobDetails.job.uploadedBy)}
                   </div>
                 )}
                 {jobDetails.job.acknowledgedAt && (
                   <div className="font-mono text-[11px] text-blue-700">
-                    [Audit Event] REPORT_ACKNOWLEDGED • Timestamp: {jobDetails.job.acknowledgedAt}
+                    {orchestrationStrings.auditReportAcknowledged(jobDetails.job.acknowledgedAt)}
                   </div>
                 )}
               </div>
@@ -1067,36 +1100,36 @@ export function AnalysisControlCenter(): React.ReactElement {
           <div className="bg-white rounded-xl max-w-md w-full border border-[#DCE7F5] shadow-xl overflow-hidden text-xs">
             <div className="px-5 py-4 bg-[#F8FBFE] border-b border-[#DCE7F5] flex items-center justify-between">
               <div>
-                <h4 className="font-extrabold text-[#0B1B33]">Resolve PCBI Gap</h4>
+                <h4 className="font-extrabold text-[#0B1B33]">{orchestrationStrings.resolveGapModalTitle}</h4>
                 <p className="text-[#64748B] mt-0.5">{selectedGap.relevantClassification}</p>
               </div>
-              <button type="button" onClick={() => setSelectedGap(null)}><X size={16} /></button>
+              <button type="button" aria-label={orchestrationStrings.btnCloseModal} onClick={() => setSelectedGap(null)}><X size={16} /></button>
             </div>
 
             <form onSubmit={handleResolveGap} className="p-5 space-y-4">
               <div>
-                <label className="block font-bold mb-1">Resolution Action</label>
+                <label className="block font-bold mb-1">{orchestrationStrings.fieldResolutionAction}</label>
                 <select
                   value={resolutionAction}
-                  onChange={(e) => setResolutionAction(e.target.value as any)}
+                  onChange={(e) => setResolutionAction(e.target.value as PCBIResolutionAction)}
                   className="w-full px-3 py-2 border rounded-lg bg-white"
                 >
-                  <option value="MAP_EXISTING">Map to Existing PCBI Series</option>
-                  <option value="ADD_MAP_PCBI">Add / Map New PCBI Data</option>
-                  <option value="EXCLUDE">Exclude from Benchmarking (Mandatory Reason)</option>
-                  <option value="MARK_NOT_BENCHMARKABLE">Mark Not Benchmarkable</option>
-                  <option value="MARK_SERVICE">Mark as Service / Non-Commodity</option>
-                  <option value="REQUEST_RESEARCH">Request Data Research</option>
+                  <option value="MAP_EXISTING">{orchestrationStrings.actionMapExisting}</option>
+                  <option value="ADD_MAP_PCBI">{orchestrationStrings.actionAddMapPcbi}</option>
+                  <option value="EXCLUDE">{orchestrationStrings.actionExclude}</option>
+                  <option value="MARK_NOT_BENCHMARKABLE">{orchestrationStrings.actionMarkNotBenchmarkable}</option>
+                  <option value="MARK_SERVICE">{orchestrationStrings.actionMarkService}</option>
+                  <option value="REQUEST_RESEARCH">{orchestrationStrings.actionRequestResearch}</option>
                 </select>
               </div>
 
               {resolutionAction === 'EXCLUDE' && (
                 <>
                   <div>
-                    <label className="block font-bold mb-1">Mandatory Exclusion Reason</label>
+                    <label className="block font-bold mb-1">{orchestrationStrings.fieldExclusionReason}</label>
                     <select
                       value={exclusionReason}
-                      onChange={(e) => setExclusionReason(e.target.value as any)}
+                      onChange={(e) => setExclusionReason(e.target.value as PCBIExclusionReason)}
                       className="w-full px-3 py-2 border rounded-lg bg-white"
                     >
                       {EXCLUSION_REASONS.map((r) => (
@@ -1105,12 +1138,12 @@ export function AnalysisControlCenter(): React.ReactElement {
                     </select>
                   </div>
                   <div>
-                    <label className="block font-bold mb-1">Explanatory Notes</label>
+                    <label className="block font-bold mb-1">{orchestrationStrings.fieldExplanatoryNotes}</label>
                     <textarea
                       value={exclusionNotes}
                       onChange={(e) => setExclusionNotes(e.target.value)}
                       rows={3}
-                      placeholder="Explain justification for exclusion..."
+                      placeholder={orchestrationStrings.placeholderExclusionNotes}
                       className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
@@ -1119,12 +1152,12 @@ export function AnalysisControlCenter(): React.ReactElement {
 
               {(resolutionAction === 'MAP_EXISTING' || resolutionAction === 'ADD_MAP_PCBI') && (
                 <div>
-                  <label className="block font-bold mb-1">Target PCBI Series ID</label>
+                  <label className="block font-bold mb-1">{orchestrationStrings.fieldTargetSeriesId}</label>
                   <input
                     type="text"
                     value={targetSeries}
                     onChange={(e) => setTargetSeries(e.target.value)}
-                    placeholder={selectedGap.requiredPcbiSeries || 'PCBI-SERIES-...'}
+                    placeholder={selectedGap.requiredPcbiSeries || orchestrationStrings.placeholderSeriesId}
                     className="w-full px-3 py-2 border rounded-lg font-mono"
                   />
                 </div>
@@ -1136,14 +1169,14 @@ export function AnalysisControlCenter(): React.ReactElement {
                   onClick={() => setSelectedGap(null)}
                   className="px-3 py-1.5 border rounded-lg"
                 >
-                  Cancel
+                  {orchestrationStrings.btnCancel}
                 </button>
                 <button
                   type="submit"
                   disabled={submittingGap}
                   className="px-4 py-1.5 bg-[#0284C7] text-white font-bold rounded-lg"
                 >
-                  {submittingGap ? 'Saving...' : 'Save Resolution'}
+                  {submittingGap ? orchestrationStrings.savingResolution : orchestrationStrings.btnSaveResolution}
                 </button>
               </div>
             </form>
@@ -1157,29 +1190,29 @@ export function AnalysisControlCenter(): React.ReactElement {
           <div className="bg-white rounded-xl max-w-md w-full border border-[#DCE7F5] shadow-xl overflow-hidden text-xs">
             <div className="px-5 py-4 bg-[#F8FBFE] border-b border-[#DCE7F5] flex items-center justify-between">
               <div>
-                <h4 className="font-extrabold text-[#0B1B33]">Upload Corrected Dataset</h4>
-                <p className="text-[#64748B] mt-0.5">Creates a new verified data version and re-runs Module 1</p>
+                <h4 className="font-extrabold text-[#0B1B33]">{orchestrationStrings.uploadCorrectedModalTitle}</h4>
+                <p className="text-[#64748B] mt-0.5">{orchestrationStrings.uploadCorrectedModalSubtitle}</p>
               </div>
-              <button type="button" onClick={() => setIsCorrectionModalOpen(false)}><X size={16} /></button>
+              <button type="button" aria-label={orchestrationStrings.btnCloseModal} onClick={() => setIsCorrectionModalOpen(false)}><X size={16} /></button>
             </div>
 
             <form onSubmit={handleUploadCorrectedData} className="p-5 space-y-4">
               <div>
-                <label className="block font-bold mb-1">File Name</label>
+                <label className="block font-bold mb-1">{orchestrationStrings.fieldFileName}</label>
                 <input
                   type="text"
                   value={correctedFileName}
                   onChange={(e) => setCorrectedFileName(e.target.value)}
-                  placeholder="e.g. Corrected_Procurement_Data_v2.xlsx"
+                  placeholder={orchestrationStrings.placeholderFileName}
                   className="w-full px-3 py-2 border rounded-lg font-mono"
                 />
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Reason for Reanalysis</label>
+                <label className="block font-bold mb-1">{orchestrationStrings.fieldReanalysisReason}</label>
                 <select
                   value={reanalysisReason}
-                  onChange={(e) => setReanalysisReason(e.target.value as any)}
+                  onChange={(e) => setReanalysisReason(e.target.value as ReanalysisReason)}
                   className="w-full px-3 py-2 border rounded-lg bg-white"
                 >
                   {REANALYSIS_REASONS.map((r) => (
@@ -1189,12 +1222,12 @@ export function AnalysisControlCenter(): React.ReactElement {
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Detailed Correction Notes</label>
+                <label className="block font-bold mb-1">{orchestrationStrings.fieldCorrectionNotes}</label>
                 <textarea
                   value={reanalysisNotes}
                   onChange={(e) => setReanalysisNotes(e.target.value)}
                   rows={3}
-                  placeholder="Describe corrected items, vendor updates, or transaction modifications..."
+                  placeholder={orchestrationStrings.placeholderCorrectionNotes}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
@@ -1205,14 +1238,14 @@ export function AnalysisControlCenter(): React.ReactElement {
                   onClick={() => setIsCorrectionModalOpen(false)}
                   className="px-3 py-1.5 border rounded-lg"
                 >
-                  Cancel
+                  {orchestrationStrings.btnCancel}
                 </button>
                 <button
                   type="submit"
                   disabled={submittingUpload}
                   className="px-4 py-1.5 bg-[#0284C7] text-white font-bold rounded-lg"
                 >
-                  {submittingUpload ? 'Uploading...' : 'Generate New Data Version'}
+                  {submittingUpload ? orchestrationStrings.uploadingDataset : orchestrationStrings.btnGenerateNewVersion}
                 </button>
               </div>
             </form>

@@ -1,6 +1,13 @@
-import type { RawDocumentIngestion, ValidationPreCheckRecord } from '../types';
+import type {
+  IngestionUploadPayload,
+  IngestionUploadResponse,
+  RawDocumentIngestion,
+  ValidationPreCheckRecord,
+  Module1CanonicalViewModel
+} from '../types';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
+import { UI_STRINGS } from '../constants/uiStrings';
 import {
   apiAddIngestionFilePayloadSchema,
   apiUpdateValidationRecordPayloadSchema
@@ -9,6 +16,21 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const ingestionApiClient = {
+  async getCanonicalModule1(filePath?: string, assessmentId?: string): Promise<Module1CanonicalViewModel | null> {
+    frontendLogger.debug('Fetching authoritative Module 1 canonical view model', { filePath, assessmentId });
+    const params = new URLSearchParams();
+    if (filePath) params.set('filePath', filePath);
+    if (assessmentId) params.set('assessmentId', assessmentId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const headers: Record<string, string> = {};
+    if (assessmentId) {
+      headers['x-assessment-id'] = assessmentId;
+    }
+    const res = await fetch(`${API_BASE}/api/ingestion/canonical${query}`, { headers });
+    const json = await res.json();
+    return json.data ?? null;
+  },
+
   async getIngestionData(buyerId?: string): Promise<{
     queue: RawDocumentIngestion[];
     validationRecords: ValidationPreCheckRecord[];
@@ -33,17 +55,15 @@ export const ingestionApiClient = {
       body: JSON.stringify(validation.data)
     });
     const json = await res.json();
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      throw new Error(UI_STRINGS.module4.apiRequestFailed('add the ingestion record', res.status, detail, requestId));
+    }
     return json.data;
   },
 
-  async uploadDocumentToObjectStore(payload: {
-    fileName: string;
-    fileType: string;
-    fileBase64?: string;
-    fileSizeMb?: number;
-    recordsCount?: number;
-    buyerId?: string;
-  }): Promise<{ success: boolean; ingestion: RawDocumentIngestion; validationCount: number }> {
+  async uploadDocumentToObjectStore(payload: IngestionUploadPayload): Promise<IngestionUploadResponse> {
     frontendLogger.info('Uploading document to server object store', { fileName: payload.fileName });
     const res = await fetch(`${API_BASE}/api/ingestion/upload-object`, {
       method: 'POST',
@@ -55,10 +75,15 @@ export const ingestionApiClient = {
 
   async deleteIngestionFile(docId: string): Promise<RawDocumentIngestion[]> {
     frontendLogger.info('Deleting ingestion file', { docId });
-    const res = await fetch(`${API_BASE}/api/ingestion/${encodeURIComponent(docId)}`, {
+    const res = await fetch(`${API_BASE}/api/ingestion/document/${encodeURIComponent(docId)}`, {
       method: 'DELETE'
     });
     const json = await res.json();
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      throw new Error(UI_STRINGS.module4.apiRequestFailed('delete the ingestion document', res.status, detail, requestId));
+    }
     return json.data;
   },
 
@@ -81,24 +106,43 @@ export const ingestionApiClient = {
       body: JSON.stringify(validation.data)
     });
     const json = await res.json();
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      throw new Error(UI_STRINGS.module4.apiRequestFailed('update the validation record', res.status, detail, requestId));
+    }
     return json.data;
   },
 
-  async applyBlanketRemediation(): Promise<{ updatedCount: number; records: ValidationPreCheckRecord[] }> {
-    frontendLogger.info('Executing blanket AI remediation across anomalous records');
+  async applyBlanketRemediation(): Promise<{
+    updatedCount: number;
+    skippedCount: number;
+    records: ValidationPreCheckRecord[];
+  }> {
+    frontendLogger.info('Applying D1-backed currency corrections to eligible validation records');
     const res = await fetch(`${API_BASE}/api/ingestion/remediate`, {
       method: 'POST'
     });
     const json = await res.json();
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      throw new Error(UI_STRINGS.module4.apiRequestFailed('recalculate validation currency totals', res.status, detail, requestId));
+    }
     return json.data;
   },
 
   async resetValidationRecords(): Promise<ValidationPreCheckRecord[]> {
     frontendLogger.warn('Resetting validation records to baseline');
-    const res = await fetch(`${API_BASE}/api/ingestion`, {
+    const res = await fetch(`${API_BASE}/api/ingestion/validation-records`, {
       method: 'DELETE'
     });
     const json = await res.json();
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      throw new Error(UI_STRINGS.module4.apiRequestFailed('reset validation records', res.status, detail, requestId));
+    }
     return json.data;
   },
 
@@ -114,6 +158,11 @@ export const ingestionApiClient = {
       method: 'DELETE'
     });
     const json = await res.json();
+    if (!res.ok) {
+      const detail = typeof json?.message === 'string' ? json.message : UI_STRINGS.module4.apiNoDetails;
+      const requestId = res.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      throw new Error(UI_STRINGS.module4.apiRequestFailed('delete the ingestion document', res.status, detail, requestId));
+    }
     return json.data;
   },
 

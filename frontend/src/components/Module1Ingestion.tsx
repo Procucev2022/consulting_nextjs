@@ -42,16 +42,18 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   onRefreshWithFixes,
   currentTier = 'GOLD',
   onUpgrade,
+  canonicalViewModel,
+  onConfirmDatasetBaseCurrency,
   ...restProps
 }: Module1IngestionProps & { rawUploadRecords?: any[] }) => {
   const rawUploadRecords = (restProps as any).rawUploadRecords;
-  const hasActiveData = (ingestionQueue && ingestionQueue.length > 0) || (validationRecords && validationRecords.length > 0) || Boolean(rawUploadRecords && rawUploadRecords.length > 0) || Boolean(isDataRefreshed);
+  const hasActiveData = Boolean(canonicalViewModel) || (ingestionQueue && ingestionQueue.length > 0) || (validationRecords && validationRecords.length > 0) || Boolean(rawUploadRecords && rawUploadRecords.length > 0) || Boolean(isDataRefreshed);
   const [dragActive, setDragActive] = useState(false);
 
   // Client & File Details Pop-up State
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
   const [activeDatasetType, setActiveDatasetType] = useState<DatasetType>('Purchase History');
-  const [spendPeriod, setSpendPeriod] = useState<string>('36 Months (FY24 - FY26: 1 Apr 2023 - 31 Mar 2026)');
+  const [spendPeriod, setSpendPeriod] = useState<string>('All Available Transaction Data');
 
   // Live Real-Time Financial Exchange Rates
   const [liveFXRates, setLiveFXRates] = useState<Record<string, { currentRate: number; name?: string }> | null>(null);
@@ -209,9 +211,9 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
         <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 shrink-0">
           <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxRatesLabel}</span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 font-semibold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Live Market Feed
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+            Reference Market Rates — Informational Only
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] overflow-x-auto">
@@ -265,9 +267,21 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
           <span className="text-slate-300 dark:text-slate-700">|</span>
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">Evaluation Window:</span>
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{spendPeriod}</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              {canonicalViewModel?.periodMetadata?.fiscalMonthCoverage || canonicalViewModel?.configuredEvaluationWindow || spendPeriod}
+            </span>
           </div>
-          {monthWiseSummaries && monthWiseSummaries.length > 0 && (
+          {canonicalViewModel ? (
+            <>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <div className="flex items-center space-x-2" title="Actual Verified Transaction Date Coverage from ERP file">
+                <span className="text-slate-500 font-medium">Actual Coverage:</span>
+                <span className="font-bold text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-200 dark:border-cyan-800/60 font-mono text-[11px]">
+                  {canonicalViewModel.actualDataCoverage.billingMonthsCount} Billing Months ({canonicalViewModel.actualDataCoverage.dateRangeLabel})
+                </span>
+              </div>
+            </>
+          ) : monthWiseSummaries && monthWiseSummaries.length > 0 ? (
             <>
               <span className="text-slate-300 dark:text-slate-700">|</span>
               <div className="flex items-center space-x-2" title="Actual Verified Transaction Date Coverage from ERP file">
@@ -277,7 +291,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
                 </span>
               </div>
             </>
-          )}
+          ) : null}
           <span className="text-slate-300 dark:text-slate-700">|</span>
           <div className="flex items-center space-x-2">
             <span className="text-slate-500 font-medium">Reporting Base:</span>
@@ -360,6 +374,8 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             uniqueVendorsCount={uniqueVendorsCount}
             isDataRefreshed={isDataRefreshed}
             onNavigateToCategorization={onRunAICategorization}
+            periodMetadata={canonicalViewModel?.periodMetadata}
+            canonicalViewModel={canonicalViewModel}
           />
 
           {/* 80% Pareto Spend Hierarchy Section (Excel Pivot Breakdown) */}
@@ -380,6 +396,8 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
             onRunAICategorization={onRunAICategorization}
             isDataRefreshed={isDataRefreshed}
             onRefreshWithFixes={onRefreshWithFixes}
+            canonicalViewModel={canonicalViewModel}
+            onConfirmDatasetBaseCurrency={onConfirmDatasetBaseCurrency}
           />
         </>
       ) : (

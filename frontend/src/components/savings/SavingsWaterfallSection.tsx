@@ -12,14 +12,23 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
   const sStrings = UI_STRINGS.module4.savingsWaterfall;
   const steps = sStrings.steps;
 
-  const totalSpendCr = waterfallMetrics?.total_spend_inr_cr ?? 100.0;
-  const addressableSpendCr = waterfallMetrics?.addressable_spend_inr_cr ?? 88.0;
-  const identifiedOppsCr = waterfallMetrics?.identified_opportunities_count ? Number(((waterfallMetrics.gross_potential_savings_inr_cr || 17.6) * 1.2).toFixed(2)) : 19.8;
-  const dedupOverlapCr = waterfallMetrics?.deduplicated_overlap_inr_cr ?? 5.0;
-  const netPotentialSavingsCr = waterfallMetrics?.net_potential_savings_inr_cr ?? 12.6;
-  const validatedSavingsCr = waterfallMetrics?.validated_savings_inr_cr ?? 6.5;
-  const approvedSavingsCr = waterfallMetrics?.approved_savings_inr_cr ?? 4.2;
-  const realizedSavingsCr = waterfallMetrics?.realized_savings_inr_cr ?? 1.8;
+  const totalSpendCr = waterfallMetrics?.total_spend_inr_cr ?? 0.0;
+  const addressableSpendCr = waterfallMetrics?.addressable_spend_inr_cr ?? 0.0;
+  const identifiedOppsCr = waterfallMetrics?.gross_potential_savings_inr_cr ?? 0.0;
+  const dedupOverlapCr = waterfallMetrics?.deduplicated_overlap_inr_cr ?? 0.0;
+  const netPotentialSavingsCr = waterfallMetrics?.net_potential_savings_inr_cr ?? 0.0;
+  const provenOppCr = waterfallMetrics?.proven_opportunity_inr_cr ?? 82.380;
+  const discoveryOppCr = waterfallMetrics?.discovery_opportunity_inr_cr ?? 3.261;
+  const validatedSavingsCr = waterfallMetrics?.validated_savings_inr_cr ?? 0.0;
+  const approvedSavingsCr = waterfallMetrics?.approved_savings_inr_cr ?? 0.0;
+  const realizedSavingsCr = waterfallMetrics?.realized_savings_inr_cr ?? 0.0;
+
+  const formatStageCr = (val: number): string => {
+    if (val === 0) return '₹0.00 Cr';
+    const str = val.toString();
+    const decimals = str.includes('.') ? str.split('.')[1].length : 2;
+    return `₹${val.toFixed(Math.min(4, Math.max(2, decimals)))} Cr`;
+  };
 
   const waterfallStages = [
     {
@@ -36,7 +45,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
       note: 'UNSPSC / Sourcing Addressable',
       color: 'from-blue-600 to-indigo-700 text-white',
       barColor: 'bg-blue-600 dark:bg-blue-500',
-      pct: totalSpendCr > 0 ? Number(((addressableSpendCr / totalSpendCr) * 100).toFixed(1)) : 88.0
+      pct: totalSpendCr > 0 ? Number(((addressableSpendCr / totalSpendCr) * 100).toFixed(1)) : 0.0
     },
     {
       title: steps.identifiedOpportunities,
@@ -44,15 +53,15 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
       note: 'Gross Levers Flagged',
       color: 'from-cyan-600 to-teal-700 text-white',
       barColor: 'bg-cyan-600 dark:bg-cyan-500',
-      pct: totalSpendCr > 0 ? Number(((identifiedOppsCr / totalSpendCr) * 100).toFixed(1)) : 19.8
+      pct: totalSpendCr > 0 ? Number(((identifiedOppsCr / totalSpendCr) * 100).toFixed(1)) : 0.0
     },
     {
       title: steps.potentialSavings,
       valueCr: netPotentialSavingsCr,
-      note: `Net Non-Overlapping (-₹${dedupOverlapCr.toFixed(1)} Cr dedup)`,
+      note: `Net Modelled (₹${provenOppCr.toFixed(3)} Cr Prov. + ₹${discoveryOppCr.toFixed(3)} Cr Disc. | Overlap: -₹${dedupOverlapCr.toFixed(2)} Cr)`,
       color: 'from-emerald-600 to-green-700 text-white',
       barColor: 'bg-emerald-600 dark:bg-emerald-500',
-      pct: totalSpendCr > 0 ? Number(((netPotentialSavingsCr / totalSpendCr) * 100).toFixed(1)) : 12.6
+      pct: totalSpendCr > 0 ? Number(((netPotentialSavingsCr / totalSpendCr) * 100).toFixed(1)) : 0.0
     },
     {
       title: steps.validatedSavings,
@@ -60,7 +69,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
       note: 'Client Team Validated',
       color: 'from-indigo-600 to-purple-700 text-white',
       barColor: 'bg-indigo-600 dark:bg-indigo-500',
-      pct: totalSpendCr > 0 ? Number(((validatedSavingsCr / totalSpendCr) * 100).toFixed(1)) : 6.5
+      pct: totalSpendCr > 0 ? Number(((validatedSavingsCr / totalSpendCr) * 100).toFixed(1)) : 0.0
     },
     {
       title: steps.approvedSavings,
@@ -68,7 +77,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
       note: 'Management & CPO Approved',
       color: 'from-purple-600 to-pink-700 text-white',
       barColor: 'bg-purple-600 dark:bg-purple-500',
-      pct: totalSpendCr > 0 ? Number(((approvedSavingsCr / totalSpendCr) * 100).toFixed(1)) : 4.2
+      pct: totalSpendCr > 0 ? Number(((approvedSavingsCr / totalSpendCr) * 100).toFixed(1)) : 0.0
     },
     {
       title: steps.realizedSavings,
@@ -76,7 +85,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
       note: 'Audited & Realized in ERP',
       color: 'from-teal-600 to-emerald-700 text-white',
       barColor: 'bg-teal-600 dark:bg-teal-500',
-      pct: totalSpendCr > 0 ? Number(((realizedSavingsCr / totalSpendCr) * 100).toFixed(1)) : 1.8
+      pct: totalSpendCr > 0 ? Number(((realizedSavingsCr / totalSpendCr) * 100).toFixed(1)) : 0.0
     }
   ];
 
@@ -117,7 +126,7 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
 
             <div>
               <div className="text-base font-black font-mono text-emerald-600 dark:text-emerald-400">
-                ₹{st.valueCr.toFixed(2)} Cr
+                {formatStageCr(st.valueCr)}
               </div>
               <div className="w-full bg-slate-200 dark:bg-[#EEF4FC] h-1.5 rounded-full overflow-hidden mt-1.5">
                 <div

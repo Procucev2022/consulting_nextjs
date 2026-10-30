@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { AlertTriangle } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { PipelineBar } from '@/components/PipelineBar';
 import { Module1Ingestion } from '@/components/Module1Ingestion';
@@ -40,14 +41,26 @@ const AnalyzingLoader = dynamic(
   { ssr: false }
 );
 
+const AssessmentWorkspace = dynamic(
+  () => import('@/components/assessment/AssessmentWorkspace').then((mod) => mod.AssessmentWorkspace),
+  { ssr: false }
+);
+
 import { getYahooFinanceRateToINR, parseDateOrYear } from '@/utils/currencyConverter';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
+import { assessmentApiClient } from '@/utils/assessmentApi';
+import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from '@/types/assessment';
 import { frontendLogger } from '@/utils/logger';
 import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
-import { lookupUNSPSCDetails, lookupUNSPSCByDescription } from '@/data/unspscTaxonomy';
+import { lookupUNSPSCDetails, lookupUNSPSCByDescription, loadUNSPSCTaxonomy, getTaxonomyLoadState } from '@/data/unspscTaxonomy';
+import { useUNSPSCTaxonomy } from '@/hooks/useUNSPSCTaxonomy';
 import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
+import { INR_CRORES_DIVISOR } from '@/constants/currency';
+import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
+import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
+import { EMPTY_TENANT } from '@/constants/app';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -87,14 +100,6 @@ const DetailedAnalysisModal = dynamic(
   { ssr: false }
 );
 
-// Mock Data Seed
-import {
-  mockTenant,
-  initialIngestionQueue,
-  initialValidationRecords,
-  conversionFunnelStages
-} from '@/data/mockData';
-
 import type {
   TenantMaster,
   RawDocumentIngestion,
@@ -113,11 +118,25 @@ import type {
   SpendCategorySummary,
   UserProfile,
   SubscriptionTier,
-  AnalysisJob
+  AnalysisJob,
+  Module1CanonicalViewModel,
+  ParetoHierarchyParent,
+  ConversionFunnelPhase,
+  ReportVersion
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
+const SUPERSEDED_REPORT_STATUS: ReportVersion['status'] = 'SUPERSEDED';
+
+// Newest report that has not been superseded. The API lists reports in ascending sequence order, so sort by generation time.
+const selectActiveReport = (reports: ReportVersion[]): ReportVersion | null => {
+  const candidates = reports.filter((report) => report.status !== SUPERSEDED_REPORT_STATUS);
+  const [newest] = [...candidates].sort((a, b) => Date.parse(b.generatedAt) - Date.parse(a.generatedAt));
+  return newest ?? null;
+};
+
 export default function Home() {
+  useUNSPSCTaxonomy();
   let router: { push: (url: string) => void } | null = null;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -141,51 +160,68 @@ export default function Home() {
     return 'light';
   });
 
-  // Navigation & User Session State
-  const [activeTab, setActiveTab] = useState<PipelineActiveTab>('module1');
-  const [targetSection, setTargetSection] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+  const [operatingMode, setOperatingMode] = useState<OperatingModeConfig | null>(null);
+  const [activeTab, setActiveTab] = useState<PipelineActiveTab>(() => {
     if (typeof window !== 'undefined') {
-      const stored = authApiClient.getStoredUser();
-      return stored && stored.role !== 'ADMIN' ? stored : null;
-    }
-    return null;
-  });
-  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>('GOLD');
-  const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
-  const [tenant, setTenant] = useState<TenantMaster>(() => {
-    if (typeof window !== 'undefined') {
-      const user = authApiClient.getStoredUser();
-      if (user) {
-        return {
-          ...mockTenant,
-          enterprise_name: user.company_name || 'Enterprise Client',
-          total_spend_evaluated_inr: 0,
-          total_spend_evaluated: 0
-        };
+      const hash = window.location.hash.replace('#', '');
+      if (['module1', 'module2', 'module3', 'module4', 'assessment'].includes(hash)) {
+        return hash as PipelineActiveTab;
+      }
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['module1', 'module2', 'module3', 'module4', 'assessment'].includes(tabParam)) {
+        return tabParam as PipelineActiveTab;
       }
     }
-    return {
-      ...mockTenant,
-      enterprise_name: 'Enterprise Client',
-      total_spend_evaluated_inr: 0,
-      total_spend_evaluated: 0
-    };
+    return 'module1';
   });
+  const [activeAssessment, setActiveAssessment] = useState<AssessmentRecord | null>(null);
+  const [activeCustomer, setActiveCustomer] = useState<CustomerRecord | null>(null);
+  const activeAssessmentIdRef = useRef<string | null>(null);
+  const [targetSection, setTargetSection] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [simulatedTier, setSimulatedTier] = useState<SubscriptionTier | null>('GOLD');
+  const [isClientSetupModalOpen, setIsClientSetupModalOpen] = useState(false);
+  const [tenant, setTenant] = useState<TenantMaster>(EMPTY_TENANT);
   const [currency, setCurrency] = useState<HeaderCurrency>('USD');
   const [isManagementSummaryOpen, setIsManagementSummaryOpen] = useState(false);
   const [briefDownloadPayload, setBriefDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
   const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
 
-  const handleBriefDownload = (format: 'pdf' | 'pptx'): void => {
+  // Clicks the declarative download link once a verified brief is loaded, and releases its object URL afterwards.
+  useEffect(() => {
+    if (!briefDownloadPayload) return undefined;
+    briefDownloadLinkRef.current?.click();
+    const objectUrl = briefDownloadPayload.url;
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [briefDownloadPayload]);
+
+  // The brief endpoint answers with JSON errors until it is implemented. Only a successful response is saved as a file.
+  const handleBriefDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
     const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
     const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
-    setBriefDownloadPayload({ url, filename });
-    setTimeout(() => {
-      if (briefDownloadLinkRef.current) {
-        briefDownloadLinkRef.current.click();
+    const formatLabel = format.toUpperCase();
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const requestId = response.headers.get('x-request-id') ?? UI_STRINGS.opportunityBrief.requestIdNotReturned;
+        frontendLogger.error('Opportunity brief download was rejected by the server', {
+          format,
+          url,
+          statusCode: response.status,
+          requestId
+        });
+        showToast(UI_STRINGS.opportunityBrief.downloadFailed(formatLabel, response.status, requestId));
+        return;
       }
-    }, 50);
+      const blob = await response.blob();
+      setBriefDownloadPayload({ url: URL.createObjectURL(blob), filename });
+    } catch (error: unknown) {
+      frontendLogger.error('Opportunity brief download request failed', { format, url }, error);
+      showToast(UI_STRINGS.opportunityBrief.downloadNetworkFailed(formatLabel));
+    }
   };
 
   // Application Data States
@@ -196,17 +232,216 @@ export default function Home() {
   const [uploadedUniqueItems, setUploadedUniqueItems] = useState<number | undefined>(undefined);
   const [uploadedUniqueVendors, setUploadedUniqueVendors] = useState<number | undefined>(undefined);
   const [uploadedParetoData, setUploadedParetoData] = useState<ParetoSpendData | undefined>(undefined);
+  const [canonicalModule1, setCanonicalModule1] = useState<Module1CanonicalViewModel | null>(null);
+
+  const applyCanonicalViewModel = (canonical: Module1CanonicalViewModel): void => {
+    if (activeAssessmentIdRef.current && canonical.assessmentId && canonical.assessmentId !== activeAssessmentIdRef.current) {
+      frontendLogger.warn('Rejected canonical view model from mismatched assessment', {
+        active: activeAssessmentIdRef.current,
+        canonical: canonical.assessmentId
+      });
+      return;
+    }
+    setCanonicalModule1(canonical);
+    setTenant((prev) => ({
+      ...prev,
+      total_spend_evaluated_inr: canonical.validFxNormalizedSpendCr,
+      total_spend_evaluated: Math.round((canonical.validFxNormalizedSpendCr * 10000000) / 83.8)
+    }));
+
+    const canonicalDoc: RawDocumentIngestion = {
+      doc_id: canonical.dataVersionId || `DOC-${canonical.datasetId || 'ASSESSMENT'}`,
+      tenant_id: canonical.datasetId,
+      file_name: canonical.sourceFileName,
+      file_type: 'XLSX',
+      file_size_mb: 2.14,
+      ocr_status: 'Completed',
+      progress: 100,
+      uploaded_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      records_count: canonical.sourceRowCount,
+      detected_currencies: canonical.detectedCurrencies,
+      converted_inr_crores: canonical.validFxNormalizedSpendCr,
+      unique_items_count: canonical.uniqueItems,
+      unique_vendors_count: canonical.uniqueVendors,
+      material_groups_count: canonical.materialGroups,
+      plants_count: canonical.operatingPlants
+    };
+    setIngestionQueue([canonicalDoc]);
+    setUploadedUniqueItems(canonical.uniqueItems);
+    setUploadedUniqueVendors(canonical.uniqueVendors);
+
+    if (canonical.materialGroupSpend && canonical.materialGroupSpend.length > 0) {
+      setUploadedMaterialGroups(canonical.materialGroupSpend.map((mg) => ({
+        group_code: mg.group_code,
+        group_name: mg.group_name,
+        records_count: mg.records_count,
+        unique_items_count: mg.unique_items_count,
+        unique_vendors_count: mg.unique_vendors_count,
+        po_count: mg.po_count,
+        spend_inr_cr: mg.spend_inr_cr,
+        spend_usd_m: mg.spend_usd_m,
+        share_pct: mg.share_pct,
+        sample_item: mg.sample_item,
+        primary_segment: mg.primary_segment,
+        color: mg.color,
+        fy24_spend_inr_cr: mg.fy24_spend_inr_cr,
+        fy25_spend_inr_cr: mg.fy25_spend_inr_cr,
+        fy26_spend_inr_cr: mg.fy26_spend_inr_cr
+      })));
+
+      const dynamicCategories: SpendCategorySummary[] = canonical.materialGroupSpend.map((mg, idx) => ({
+        id: `CAT-${idx + 1}`,
+        name: resolveHumanReadableCategory(mg.group_name, mg.group_code),
+        category: resolveHumanReadableCategory(mg.group_name, mg.group_code),
+        column_l_code: mg.group_code,
+        spend_inr_crores: mg.spend_inr_cr,
+        spend_fy24_cr: mg.fy24_spend_inr_cr || mg.spend_inr_cr,
+        spend_fy25_cr: mg.fy25_spend_inr_cr || 0,
+        spend_fy26_cr: mg.fy26_spend_inr_cr || 0,
+        vendor_count: mg.unique_vendors_count,
+        item_count: mg.unique_items_count,
+        line_items_count: mg.records_count,
+        share_pct: mg.share_pct,
+        spend_inr_2023: Math.round((mg.fy24_spend_inr_cr || mg.spend_inr_cr) * 10000000),
+        spend_inr_2024: Math.round((mg.fy25_spend_inr_cr || 0) * 10000000),
+        spend_inr_2025_26: Math.round((mg.fy26_spend_inr_cr || 0) * 10000000)
+      }));
+      setCategories(dynamicCategories);
+    }
+
+    if (canonical.plantSpend && canonical.plantSpend.length > 0) {
+      setUploadedPlants(canonical.plantSpend.map((p) => ({
+        plant_code: p.plant_code,
+        plant_name: p.plant_name,
+        region: 'Central',
+        location: 'Operational Site',
+        records_count: p.records_count,
+        unique_items_count: p.unique_items_count,
+        unique_vendors_count: p.unique_vendors_count,
+        spend_inr_cr: p.spend_inr_cr,
+        share_pct: p.share_pct
+      })));
+    }
+
+    if (canonical.monthlySpend && canonical.monthlySpend.length > 0) {
+      setUploadedMonths(canonical.monthlySpend.map((m) => ({
+        month_key: m.month_key,
+        month_label: m.month_label,
+        fiscal_year: m.fiscalYear || (canonical.periodMetadata?.actualFiscalYears[0] ?? 'FY22'),
+        records_count: m.records_count,
+        po_count: m.records_count,
+        unique_items_count: m.unique_items_count,
+        unique_vendors_count: m.unique_vendors_count,
+        spend_inr_cr: m.spend_inr_cr,
+        share_pct: m.share_pct ?? 0,
+        mom_change_pct: m.mom_change_pct ?? 0,
+        top_material_group: 'DIRECT',
+        top_plant: 'Plant 1000'
+      })));
+    }
+
+    if (canonical.paretoHierarchy) {
+      setUploadedParetoData({
+        totalSpendCr: canonical.validFxNormalizedSpendCr,
+        paretoSpendCr: canonical.paretoHierarchy.reconciliation.vendorParetoSpendCr,
+        paretoPct: canonical.paretoHierarchy.reconciliation.vendorParetoSpendPct,
+        vendorHierarchy: canonical.paretoHierarchy.supplierToShortText,
+        itemHierarchy: canonical.paretoHierarchy.shortTextToSupplier
+      });
+    } else if (canonical.supplierSpend && canonical.supplierSpend.length > 0) {
+      let runningSpend = 0;
+      const vendorParents: ParetoHierarchyParent[] = canonical.supplierSpend.slice(0, 20).map((s, idx) => {
+        const spend = s.spend_inr_cr ?? s.spendCr ?? 0;
+        runningSpend += spend;
+        return {
+          id: `VENDOR-${idx + 1}`,
+          name: s.supplier_name || s.supplierName || `Vendor ${idx + 1}`,
+          totalSpendCr: spend,
+          sharePct: s.share_pct ?? s.sharePct ?? 0,
+          cumulativeSpendCr: Number(runningSpend.toFixed(2)),
+          cumulativePct: s.cumulative_share_pct ?? s.cumulativePct ?? 0,
+          children: []
+        };
+      });
+      setUploadedParetoData({
+        totalSpendCr: canonical.validFxNormalizedSpendCr,
+        paretoSpendCr: canonical.pareto ? canonical.pareto.top80SpendCr : 0,
+        paretoPct: canonical.pareto ? canonical.pareto.top80SpendPct : 0,
+        vendorHierarchy: vendorParents,
+        itemHierarchy: []
+      });
+    }
+
+    if (canonical.moduleStatuses) {
+      setCompletedSteps({
+        step1: canonical.moduleStatuses.module1 === 'READY' || canonical.moduleStatuses.module1 === 'COMPLETED',
+        step2: canonical.moduleStatuses.module2 === 'COMPLETED',
+        step3: canonical.moduleStatuses.module3 === 'COMPLETED',
+        step4: canonical.moduleStatuses.module4 === 'COMPLETED'
+      });
+    }
+  };
+
+  const handleActiveAssessmentChange = useCallback((assessment: AssessmentRecord | null): void => {
+    activeAssessmentIdRef.current = assessment ? assessment.assessmentId : null;
+
+    // Reset transient analytical state to prevent cross-assessment leakage (Prompt 370 Phase 6)
+    setCanonicalModule1(null);
+    setIngestionQueue([]);
+    setValidationRecords([]);
+    setUploadedMaterialGroups(undefined);
+    setUploadedPlants(undefined);
+    setUploadedMonths(undefined);
+    setUploadedUniqueItems(undefined);
+    setUploadedUniqueVendors(undefined);
+    setUploadedParetoData(undefined);
+    setCategories([]);
+    setLineItems([]);
+    setVendorRankings([]);
+    setOpportunities([]);
+    setIsDataRefreshed(false);
+    setAnalystConfirmedBaseCurrency(null);
+    setCompletedSteps({ step1: false, step2: false, step3: false, step4: false });
+
+    setActiveAssessment(assessment);
+
+    if (assessment) {
+      const isEligible = isAssessmentFinancialDisplayEligible(assessment);
+      const isM1Complete = Boolean(
+        assessment.activeDataVersionId &&
+        assessment.activeAnalysisRunId &&
+        (assessment.status !== 'DRAFT' && assessment.status !== 'DATA_AWAITING') &&
+        assessment.validatedSpendCr &&
+        assessment.validatedSpendCr > 0
+      );
+
+      setTenant((prev) => ({
+        ...prev,
+        enterprise_name: assessment.customerName,
+        total_spend_evaluated_inr: isEligible ? (assessment.validatedSpendCr ?? 0) : 0,
+        total_spend_evaluated: isEligible ? Math.round(((assessment.validatedSpendCr ?? 0) * 10000000) / 83.8) : 0
+      }));
+
+      if (isM1Complete && assessment.canonicalModule1) {
+        applyCanonicalViewModel(assessment.canonicalModule1);
+      }
+    } else {
+      setTenant((prev) => ({
+        ...prev,
+        enterprise_name: activeCustomer ? activeCustomer.customerName : UI_STRINGS.header.noActiveCustomer,
+        total_spend_evaluated_inr: 0,
+        total_spend_evaluated: 0
+      }));
+    }
+  }, [activeCustomer]);
+
   const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
+  const [analystConfirmedBaseCurrency, setAnalystConfirmedBaseCurrency] = useState<string | null>(null);
   const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
   const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
   const [opportunities, setOpportunities] = useState<SavingsOpportunity[]>([]);
-  const [funnelStages] = useState(() =>
-    conversionFunnelStages.map((stage) => ({
-      ...stage,
-      spend_inr_crores: 0
-    }))
-  );
+  const [funnelStages, setFunnelStages] = useState<ConversionFunnelPhase[]>([]);
 
   const [completedSteps, setCompletedSteps] = useState<{
     step1: boolean;
@@ -222,6 +457,26 @@ export default function Home() {
 
   const [activeAnalysisJob, setActiveAnalysisJob] = useState<AnalysisJob | null>(null);
   const [isDetailedAnalysisModalOpen, setIsDetailedAnalysisModalOpen] = useState(false);
+  const [activeReport, setActiveReport] = useState<ReportVersion | null>(null);
+  const activeJobId = activeAnalysisJob?.analysisJobId ?? null;
+
+  // Resolve the customer's active report for the active job from its job details.
+  useEffect(() => {
+    setActiveReport(null);
+    if (!activeJobId) return undefined;
+    let isCurrent = true;
+    orchestrationApi
+      .getJobDetails(activeJobId)
+      .then((details) => {
+        if (isCurrent) setActiveReport(selectActiveReport(details?.reports ?? []));
+      })
+      .catch((error: unknown) => {
+        frontendLogger.warn('Could not load report versions for the active analysis job', { analysisJobId: activeJobId }, error);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeJobId]);
 
   // Explicit lifecycle predicates (Prompt 313)
   const hasValidDataVersion = Boolean(
@@ -240,10 +495,7 @@ export default function Home() {
     )
   );
 
-  const hasActiveDetailedAnalysis = Boolean(
-    activeAnalysisJob?.analysisJobId &&
-    activeAnalysisJob.analysisJobId !== 'job-init-default-001'
-  );
+  const hasActiveDetailedAnalysis = Boolean(activeAnalysisJob?.analysisJobId);
 
   const shouldShowDetailedAnalysisStatus = Boolean(
     hasValidDataVersion &&
@@ -251,31 +503,29 @@ export default function Home() {
   );
 
   const isStep1Complete = Boolean(
+    canonicalModule1?.moduleStatuses?.module1 === 'READY' ||
+    canonicalModule1?.moduleStatuses?.module1 === 'COMPLETED' ||
     completedSteps.step1 ||
     (ingestionQueue && ingestionQueue.length > 0) ||
-    (lineItems && lineItems.length > 0) ||
     (tenant.total_spend_evaluated_inr > 0)
   );
 
   const isStep2Complete = Boolean(
-    isStep1Complete && (
-      completedSteps.step2 ||
-      (vendorRankings && vendorRankings.length > 0)
-    )
+    canonicalModule1
+      ? canonicalModule1.moduleStatuses?.module2 === 'COMPLETED'
+      : (completedSteps.step2 && isStep1Complete)
   );
 
   const isStep3Complete = Boolean(
-    isStep2Complete && (
-      completedSteps.step3 ||
-      (opportunities && opportunities.length > 0)
-    )
+    canonicalModule1
+      ? canonicalModule1.moduleStatuses?.module3 === 'COMPLETED'
+      : (completedSteps.step3 && isStep2Complete)
   );
 
   const isStep4Complete = Boolean(
-    isStep3Complete && (
-      completedSteps.step4 ||
-      (opportunities && opportunities.length > 0)
-    )
+    canonicalModule1
+      ? canonicalModule1.moduleStatuses?.module4 === 'COMPLETED'
+      : (completedSteps.step4 && isStep3Complete)
   );
 
   const isTabAccessible = (_tab: PipelineActiveTab): boolean => {
@@ -352,8 +602,8 @@ export default function Home() {
       return;
     }
 
-    // Redirect admin users to /admin/dashboard
-    if (storedUser?.role === 'ADMIN') {
+    // Redirect admin users to /admin/dashboard only in standard SaaS mode
+    if (storedUser?.role === 'ADMIN' && !operatingMode?.isInternalAssessment) {
       if (router) {
         router.push('/admin/dashboard');
       } else if (typeof window !== 'undefined') {
@@ -365,7 +615,7 @@ export default function Home() {
     const handleHash = () => {
       if (typeof window !== 'undefined') {
         const rawHash = window.location.hash.replace('#', '');
-        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(rawHash)) {
+        if (['module1', 'module2', 'module3', 'module4', 'module5', 'schema', 'assessment'].includes(rawHash)) {
           setActiveTab(rawHash as PipelineActiveTab);
         }
       }
@@ -380,6 +630,12 @@ export default function Home() {
       const user = apiClient.getStoredUser();
       if (user && user.role !== 'ADMIN') {
         setCurrentUser(user);
+        if (user.company_name) {
+          setTenant(prev => ({
+            ...prev,
+            enterprise_name: user.company_name || 'Enterprise Client'
+          }));
+        }
       } else {
         setCurrentUser(null);
       }
@@ -393,90 +649,189 @@ export default function Home() {
 
     async function loadBackendData() {
       try {
-        const storedUser = authApiClient.getStoredUser();
-        const buyerUser = storedUser && storedUser.role !== 'ADMIN' ? storedUser : null;
-        const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
-          apiClient.getTenant(buyerUser?.id),
-          apiClient.getIngestionData(buyerUser?.id),
-          apiClient.getCategories(),
-          apiClient.getVendors(),
-          apiClient.getSavingsOpportunities()
-        ]);
-
-        if (tenantData.status === 'fulfilled' && tenantData.value) {
-          if (buyerUser) {
-            setTenant((prev) => ({
-              ...tenantData.value,
-              enterprise_name: buyerUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
-              total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
-              total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
-            }));
-          } else {
-            setTenant({
-              ...tenantData.value,
-              enterprise_name: tenantData.value.enterprise_name || mockTenant.enterprise_name
-            });
+        try {
+          await apiClient.getProcurementCategoryMappings();
+        } catch (error: unknown) {
+          frontendLogger.error('Could not load procurement category mappings from D1', {}, error);
+          setToastMessage(UI_STRINGS.databaseData.procurementMappingsLoadFailed);
+        }
+        void apiClient.getConversionStages().then(setFunnelStages).catch((error: unknown) => {
+          frontendLogger.error('Unable to hydrate conversion stages from D1', {}, error);
+        });
+        let modeRes: OperatingModeConfig | null = null;
+        try {
+          modeRes = await assessmentApiClient.getOperatingMode();
+          setOperatingMode(modeRes);
+          const currentHash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
+          const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const currentTabParam = currentParams?.get('tab') || '';
+          const effectiveNav = currentHash || currentTabParam;
+          if (modeRes.isInternalAssessment && !['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
+            setActiveTab('assessment');
+          } else if (effectiveNav && ['module1', 'module2', 'module3', 'module4', 'module5', 'schema'].includes(effectiveNav)) {
+            setActiveTab(effectiveNav as PipelineActiveTab);
           }
+        } catch {
+          modeRes = {
+            mode: 'INTERNAL_ASSESSMENT',
+            isInternalAssessment: true,
+            isPublicSaaS: false,
+            workspaceTitle: 'aiCEV — Procurement Assessment Centre',
+            phaseName: '30-Day Internal Validation Phase',
+            features: {
+              publicRegistration: false,
+              tierUpgrade: false,
+              subscriptionPurchase: false,
+              customerSelfOnboarding: false,
+              customerSaaSDashboard: false,
+              assessmentCentre: true
+            },
+            allowedRoles: ['INTERNAL_ADMIN', 'ANALYST', 'CONSULTANT']
+          };
+          setOperatingMode(modeRes);
         }
 
-        if (ingestionData.status === 'fulfilled' && ingestionData.value) {
-          const backendQueue = ingestionData.value.queue || [];
-          const queueToHydrate = buyerUser?.id
-            ? backendQueue.filter(
-                (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
-              )
-            : backendQueue;
+        const isInternalMode = Boolean(modeRes?.isInternalAssessment);
 
-          if (queueToHydrate.length === 0) {
-            // Current buyer has NO uploaded documents!
-            setIngestionQueue([]);
-            setValidationRecords([]);
-            setUploadedMaterialGroups(undefined);
-            setUploadedPlants(undefined);
-            setUploadedMonths(undefined);
-            setUploadedUniqueItems(undefined);
-            setUploadedUniqueVendors(undefined);
-            setUploadedParetoData(undefined);
-            setCategories([]);
-            setLineItems([]);
-            setVendorRankings([]);
-            setOpportunities([]);
-            setIsDataRefreshed(false);
-            setTenant((prev) => ({
-              ...prev,
-              total_spend_evaluated_inr: 0,
-              total_spend_evaluated: 0
-            }));
-          } else {
-            const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
-              doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
-              tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
-              file_name: doc.file_name || 'Uploaded_Document.xlsx',
-              file_type: doc.file_type || 'XLSX',
-              file_size_mb: doc.file_size_mb || 1.0,
-              ocr_status: doc.ocr_status || 'Completed',
-              progress: doc.progress ?? 100,
-              uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
-              records_count: doc.records_count ?? 0,
-              detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
-              converted_inr_crores: doc.converted_inr_crores ?? 0,
-              unique_items_count: doc.unique_items_count,
-              unique_vendors_count: doc.unique_vendors_count,
-              material_groups_count: doc.material_groups_count,
-              plants_count: doc.plants_count
-            }));
-            setIngestionQueue(sanitizedQueue.slice(0, 1));
-            if (ingestionData.value.validationRecords) {
-              setValidationRecords(ingestionData.value.validationRecords);
+        if (isInternalMode) {
+          // In INTERNAL_ASSESSMENT mode:
+          // Active customer and assessment are resolved exclusively from assessment store.
+          // Do not overwrite tenant or queue with global mock SaaS tenant data!
+          setTenant((prev) => ({
+            ...prev,
+            enterprise_name: UI_STRINGS.header.noActiveCustomer,
+            total_spend_evaluated_inr: 0,
+            total_spend_evaluated: 0
+          }));
+          setIngestionQueue([]);
+          setValidationRecords([]);
+          setUploadedMaterialGroups(undefined);
+          setUploadedPlants(undefined);
+          setUploadedMonths(undefined);
+          setUploadedUniqueItems(undefined);
+          setUploadedUniqueVendors(undefined);
+          setUploadedParetoData(undefined);
+          setCategories([]);
+          setLineItems([]);
+          setVendorRankings([]);
+          setOpportunities([]);
+
+          try {
+            const currentParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+            let storedAssessmentId = typeof window !== 'undefined'
+              ? localStorage.getItem('aicev_selected_assessment_id')
+              : null;
+            if (!storedAssessmentId) {
+              const assessmentParam = currentParams?.get('assessmentId');
+              if (assessmentParam) {
+                storedAssessmentId = assessmentParam;
+              } else {
+                try {
+                  const list = await assessmentApiClient.getAssessments();
+                  if (list && list.length > 0) {
+                    const validated = list.find((a: any) => a.validatedSpendCr && a.validatedSpendCr > 0);
+                    storedAssessmentId = validated ? validated.assessmentId : list[0].assessmentId;
+                  }
+                } catch {
+                  storedAssessmentId = undefined;
+                }
+              }
             }
-            if (categoryData.status === 'fulfilled' && categoryData.value) {
-              setCategories(categoryData.value.categories || []);
+            if (storedAssessmentId) {
+              const res: any = await assessmentApiClient.getAssessmentById(storedAssessmentId);
+              const record = res?.assessment || res;
+              if (record?.assessmentId === storedAssessmentId) {
+                handleActiveAssessmentChange(record);
+              }
             }
-            if (vendorData.status === 'fulfilled' && vendorData.value) {
-              setVendorRankings(vendorData.value.vendorRankings || []);
+          } catch (storageErr) {
+            frontendLogger.warn('Failed to restore active assessment from storage', { error: storageErr });
+          }
+        } else {
+          const storedUser = authApiClient.getStoredUser();
+          const buyerUser = storedUser?.role !== 'ADMIN' ? storedUser : null;
+          const [tenantData, ingestionData, categoryData, vendorData, savingsData] = await Promise.allSettled([
+            apiClient.getTenant(buyerUser?.id),
+            apiClient.getIngestionData(buyerUser?.id),
+            apiClient.getCategories(),
+            apiClient.getVendors(),
+            apiClient.getSavingsOpportunities()
+          ]);
+
+          if (tenantData.status === 'fulfilled' && tenantData.value) {
+            if (buyerUser) {
+              setTenant((prev) => ({
+                ...prev,
+                enterprise_name: buyerUser.company_name || tenantData.value.enterprise_name || prev.enterprise_name,
+                total_spend_evaluated_inr: tenantData.value.total_spend_evaluated_inr ?? 0,
+                total_spend_evaluated: tenantData.value.total_spend_evaluated ?? 0
+              }));
+            } else {
+              setTenant({
+                ...tenantData.value,
+                enterprise_name: tenantData.value.enterprise_name || EMPTY_TENANT.enterprise_name
+              });
             }
-            if (savingsData.status === 'fulfilled' && savingsData.value) {
-              setOpportunities(savingsData.value.opportunities || []);
+          }
+
+          if (ingestionData.status === 'fulfilled' && ingestionData.value) {
+            const backendQueue = ingestionData.value.queue || [];
+            const queueToHydrate = buyerUser?.id
+              ? backendQueue.filter(
+                  (d: any) => !d.tenant_id || d.tenant_id === buyerUser.id || d.tenant_id === buyerUser.email
+                )
+              : backendQueue;
+
+            if (queueToHydrate.length === 0) {
+              setIngestionQueue([]);
+              setValidationRecords([]);
+              setUploadedMaterialGroups(undefined);
+              setUploadedPlants(undefined);
+              setUploadedMonths(undefined);
+              setUploadedUniqueItems(undefined);
+              setUploadedUniqueVendors(undefined);
+              setUploadedParetoData(undefined);
+              setCategories([]);
+              setLineItems([]);
+              setVendorRankings([]);
+              setOpportunities([]);
+              setIsDataRefreshed(false);
+              setTenant((prev) => ({
+                ...prev,
+                total_spend_evaluated_inr: 0,
+                total_spend_evaluated: 0
+              }));
+            } else {
+              const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
+                doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
+                tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
+                file_name: doc.file_name || 'Uploaded_Document.xlsx',
+                file_type: doc.file_type || 'XLSX',
+                file_size_mb: doc.file_size_mb || 1.0,
+                ocr_status: doc.ocr_status || 'Completed',
+                progress: doc.progress ?? 100,
+                uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
+                records_count: doc.records_count ?? 0,
+                detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
+                converted_inr_crores: doc.converted_inr_crores ?? 0,
+                unique_items_count: doc.unique_items_count,
+                unique_vendors_count: doc.unique_vendors_count,
+                material_groups_count: doc.material_groups_count,
+                plants_count: doc.plants_count
+              }));
+              setIngestionQueue(sanitizedQueue.slice(0, 1));
+              if (ingestionData.value.validationRecords) {
+                setValidationRecords(ingestionData.value.validationRecords);
+              }
+              if (categoryData.status === 'fulfilled' && categoryData.value) {
+                setCategories(categoryData.value.categories || []);
+              }
+              if (vendorData.status === 'fulfilled' && vendorData.value) {
+                setVendorRankings(vendorData.value.vendorRankings || []);
+              }
+              if (savingsData.status === 'fulfilled' && savingsData.value) {
+                setOpportunities(savingsData.value.opportunities || []);
+              }
             }
           }
         }
@@ -492,8 +847,10 @@ export default function Home() {
         } catch {
           setActiveAnalysisJob(null);
         }
+
+        // Global analysis state synced with active assessment
       } catch (err) {
-        frontendLogger.warn('Backend API hydration warning, using local seed state', { error: err });
+        frontendLogger.error('Backend API hydration failed; database data remains unavailable', {}, err);
       }
     }
     loadBackendData();
@@ -505,6 +862,80 @@ export default function Home() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Synchronize Module 1-4 analytical data strictly with the active assessment
+  useEffect(() => {
+    async function syncActiveAssessmentData(): Promise<void> {
+      if (!activeAssessment?.assessmentId || !activeAssessment.activeDataVersionId) {
+        setCanonicalModule1(null);
+        setIngestionQueue([]);
+        setValidationRecords([]);
+        setUploadedMaterialGroups(undefined);
+        setUploadedPlants(undefined);
+        setUploadedMonths(undefined);
+        setUploadedUniqueItems(undefined);
+        setUploadedUniqueVendors(undefined);
+        setUploadedParetoData(undefined);
+        setCategories([]);
+        setLineItems([]);
+        setVendorRankings([]);
+        setOpportunities([]);
+        setCompletedSteps({
+          step1: false,
+          step2: false,
+          step3: false,
+          step4: false
+        });
+        setActiveAnalysisJob(null);
+        return;
+      }
+
+      try {
+        const canonicalRes = await apiClient.getCanonicalModule1(undefined, activeAssessment.assessmentId);
+        const canonicalData = (canonicalRes as any)?.data ?? canonicalRes;
+        frontendLogger.info('syncActiveAssessmentData evaluation', {
+          hasCanonicalData: Boolean(canonicalData),
+          validFx: canonicalData?.validFxNormalizedSpendCr,
+          sourceRows: canonicalData?.sourceRowCount,
+          cDataVersion: canonicalData?.dataVersionId,
+          aDataVersion: activeAssessment?.activeDataVersionId,
+          match: !canonicalData?.dataVersionId || canonicalData?.dataVersionId === activeAssessment?.activeDataVersionId
+        });
+        if (
+          canonicalData &&
+          (canonicalData.validFxNormalizedSpendCr || canonicalData.sourceRowCount) &&
+          (!canonicalData.dataVersionId || canonicalData.dataVersionId === activeAssessment.activeDataVersionId)
+        ) {
+          applyCanonicalViewModel(canonicalData);
+        } else {
+          frontendLogger.warn('syncActiveAssessmentData failed predicate, resetting state', {
+            canonicalDataNull: !canonicalData,
+            noSpendOrRows: !(canonicalData?.validFxNormalizedSpendCr || canonicalData?.sourceRowCount),
+            mismatchedVersion: canonicalData?.dataVersionId !== activeAssessment.activeDataVersionId
+          });
+          setCanonicalModule1(null);
+          setIngestionQueue([]);
+        }
+      } catch (err: any) {
+        frontendLogger.error(`syncActiveAssessmentData caught error: ${err?.message || String(err)}`, {
+          message: err?.message,
+          stack: err?.stack
+        }, err);
+        setCanonicalModule1(null);
+        setIngestionQueue([]);
+      }
+
+      try {
+        const m2Items = await apiClient.getModule2CanonicalLineItems(undefined, activeAssessment?.assessmentId);
+        if (m2Items && m2Items.length > 0) {
+          setLineItems(m2Items);
+        }
+      } catch {
+        // safe fallback
+      }
+    }
+    void syncActiveAssessmentData();
+  }, [activeAssessment]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -575,48 +1006,52 @@ export default function Home() {
   const handleApplyCurrencyFix = async (recordId: string, selectedCurrency: string, convertedAmount: number) => {
     const record = validationRecords.find((r) => r.record_id === recordId) || validationRecords[0];
     const fxRate = getYahooFinanceRateToINR(selectedCurrency, record.transaction_date || record.spend_year);
-    const inrCrores = Number(((record.order_quantity * record.net_price * fxRate) / 10000000).toFixed(2));
+    const inrCrores = Number((convertedAmount / INR_CRORES_DIVISOR).toFixed(4));
 
-    setValidationRecords((prev) =>
-      prev.map((r) =>
-        r.record_id === recordId
-          ? {
-              ...r,
-              raw_currency: selectedCurrency,
-              issue_flag: 'Passed Clean',
-              action_status: 'Ready',
-              resolved: true,
-              amount: convertedAmount,
-              fx_rate_applied: fxRate,
-              inr_crores: inrCrores
-            }
-          : r
-      )
-    );
-
-    apiClient
-      .updateValidationRecord(recordId, {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
         raw_currency: selectedCurrency,
         issue_flag: 'Passed Clean',
         action_status: 'Ready',
         resolved: true,
-        amount: convertedAmount,
+        amount: record.amount,
+        amount_inr: convertedAmount,
         fx_rate_applied: fxRate,
         inr_crores: inrCrores
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for currency fix', { error: e });
       });
+    } catch (error: unknown) {
+      frontendLogger.warn('Currency correction was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
+    setValidationRecords((prev) => prev.map((r) => r.record_id === recordId
+      ? { ...r, raw_currency: selectedCurrency, currency_provenance: 'ANALYST_CONFIRMED', issue_flag: 'Passed Clean', action_status: 'Ready', resolved: true, amount_inr: convertedAmount, fx_rate_applied: fxRate, inr_crores: inrCrores }
+      : r));
 
     setIsDataRefreshed(true);
-    setIngestionQueue((prev) =>
-      prev.map((doc) => ({
-        ...doc,
-        converted_inr_crores: Number(((doc.converted_inr_crores || 8066.86) + inrCrores).toFixed(2))
-      }))
-    );
 
     showToast(UI_STRINGS.toasts.recordNormalized(recordId, selectedCurrency));
+  };
+
+  const handleConfirmDatasetBaseCurrency = (confirmedCurrency: string = 'INR') => {
+    setAnalystConfirmedBaseCurrency(confirmedCurrency);
+    setValidationRecords((prev) =>
+      prev.map((r) => {
+        if (!r.raw_currency || r.currency_provenance === 'UNRESOLVED' || r.issue_flag === 'Missing Currency Code') {
+          return {
+            ...r,
+            raw_currency: confirmedCurrency,
+            currency_provenance: 'ANALYST_CONFIRMED',
+            issue_flag: 'Passed Clean',
+            action_status: 'Ready',
+            resolved: true
+          };
+        }
+        return r;
+      })
+    );
+    showToast(`Analyst confirmed dataset base currency: ${confirmedCurrency}`);
   };
 
   const handleMergeVendor = (record: ValidationPreCheckRecord) => {
@@ -624,6 +1059,19 @@ export default function Home() {
   };
 
   const handleApplyVendorMerge = async (recordId: string, masterVendorId: string, masterVendorName: string) => {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
+        vendor_name: `${masterVendorName} (${masterVendorId})`,
+        issue_flag: 'Passed Clean',
+        action_status: 'Ready',
+        resolved: true
+      });
+    } catch (error: unknown) {
+      frontendLogger.warn('Supplier correction was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
     setValidationRecords((prev) =>
       prev.map((r) =>
         r.record_id === recordId
@@ -639,27 +1087,6 @@ export default function Home() {
     );
 
     setIsDataRefreshed(true);
-    setUploadedUniqueVendors((prev) => Math.max(1, (prev !== undefined ? prev : 1073) - 1));
-    setIngestionQueue((prev) =>
-      prev.map((doc) => ({
-        ...doc,
-        unique_vendors_count: Math.max(1, (doc.unique_vendors_count || 1073) - 1)
-      }))
-    );
-
-    apiClient
-      .updateValidationRecord(recordId, {
-        vendor_name: `${masterVendorName} (${masterVendorId})`,
-        issue_flag: 'Passed Clean',
-        action_status: 'Ready',
-        resolved: true
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for vendor merge', { error: e });
-      });
-    apiClient.mergeVendor(masterVendorName, masterVendorId, masterVendorName).catch((e) => {
-      frontendLogger.warn('Backend sync warning for vendor merge', { error: e });
-    });
 
     showToast(UI_STRINGS.toasts.recordMapped(recordId, masterVendorId));
   };
@@ -669,6 +1096,19 @@ export default function Home() {
   };
 
   const handleApplyItemMerge = async (recordId: string, masterItemCode: string, masterItemName: string) => {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
+        raw_desc: `${masterItemName} (${masterItemCode})`,
+        issue_flag: 'Passed Clean',
+        action_status: 'Ready',
+        resolved: true
+      });
+    } catch (error: unknown) {
+      frontendLogger.warn('Item correction was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
     setValidationRecords((prev) =>
       prev.map((r) =>
         r.record_id === recordId
@@ -684,29 +1124,23 @@ export default function Home() {
     );
 
     setIsDataRefreshed(true);
-    setUploadedUniqueItems((prev) => Math.max(1, (prev !== undefined ? prev : 7357) - 1));
-    setIngestionQueue((prev) =>
-      prev.map((doc) => ({
-        ...doc,
-        unique_items_count: Math.max(1, (doc.unique_items_count || 7357) - 1)
-      }))
-    );
-
-    apiClient
-      .updateValidationRecord(recordId, {
-        raw_desc: `${masterItemName} (${masterItemCode})`,
-        issue_flag: 'Passed Clean',
-        action_status: 'Ready',
-        resolved: true
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for item merge', { error: e });
-      });
 
     showToast(UI_STRINGS.toasts.recordItemMerged(recordId, masterItemCode));
   };
 
   const handleIgnoreValidationIssue = async (recordId: string) => {
+    try {
+      await apiClient.updateValidationRecord(recordId, {
+        issue_flag: 'Passed Clean',
+        action_status: 'Reviewed',
+        resolved: true
+      });
+    } catch (error: unknown) {
+      frontendLogger.warn('Validation review was not persisted', { recordId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
     setValidationRecords((prev) =>
       prev.map((r) =>
         r.record_id === recordId
@@ -722,86 +1156,25 @@ export default function Home() {
 
     setIsDataRefreshed(true);
 
-    apiClient
-      .updateValidationRecord(recordId, {
-        issue_flag: 'Passed Clean',
-        action_status: 'Reviewed',
-        resolved: true
-      })
-      .catch((e) => {
-        frontendLogger.warn('Backend sync warning for ignore validation issue', { error: e });
-      });
-
     showToast(UI_STRINGS.toasts.issueIgnored(recordId));
   };
 
-  // Blanket AI Remediation for All Anomalies
+  // Recalculate only currency totals supported by the D1 FX reference table.
   const handleApplyBlanketFixes = async () => {
-    setValidationRecords((prev) =>
-      prev.map((r) => {
-        let vendorName = r.vendor_name;
-        let itemDesc = r.raw_desc;
-        let fxRate = r.fx_rate_applied;
-        let inrCrores = r.inr_crores;
-
-        if (r.record_id === 'REC-8842') {
-          vendorName = 'DHL Global Forwarding (VND-DHL-404)';
-          fxRate = 84.80;
-        }
-        if (r.record_id === 'REC-8844') {
-          // Retain Tax Discrepancy as an active continuous audit/governance validation
-          return {
-            ...r,
-            vendor_name: 'Acme Chemical Global LLC (VND-ACM-101)',
-            action_status: 'Reviewed',
-            issue_flag: 'Tax Discrepancy',
-            resolved: false
-          };
-        }
-        if (r.record_id === 'REC-8841') {
-          fxRate = 91.40;
-          inrCrores = 1.33;
-        }
-        if (r.record_id === 'REC-8847') {
-          itemDesc = 'High Density Polyethylene (HDPE) Polymers (ITM-HDPE-101)';
-        }
-
-        return {
-          ...r,
-          vendor_name: vendorName,
-          raw_desc: itemDesc,
-          issue_flag: 'Passed Clean',
-          action_status: 'Ready',
-          resolved: true,
-          fx_rate_applied: fxRate,
-          inr_crores: inrCrores
-        };
-      })
-    );
-
-    setIsDataRefreshed(true);
-
-    apiClient.applyBlanketRemediation().catch((e) => {
-      frontendLogger.warn('Backend sync warning for blanket fixes', { error: e });
-    });
-
-    setAnalyzingLoaderState({
-      isOpen: true,
-      title: 'Applying Blanket AI Remediation Across Dataset',
-      subtitle: 'Normalizing 100% of vendor entities, currency conversions, and SKU descriptions...',
-      metrics: {
-        totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
-        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
-        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
-      },
-      onComplete: () => {
-        setAnalyzingLoaderState(null);
-      }
-    });
-
-    showToast(UI_STRINGS.toasts.blanketFixesApplied);
+    try {
+      const result = await apiClient.applyBlanketRemediation();
+      const updates = new Map<string, ValidationPreCheckRecord>(
+        result.records.map((record): [string, ValidationPreCheckRecord] => [record.record_id, record])
+      );
+      setValidationRecords((previous) => previous.map((record) => updates.get(record.record_id) || record));
+      setIsDataRefreshed(result.updatedCount > 0);
+      showToast(result.updatedCount > 0
+        ? UI_STRINGS.toasts.blanketFixesApplied(result.updatedCount)
+        : UI_STRINGS.toasts.blanketFixesNoChanges);
+    } catch (error: unknown) {
+      frontendLogger.warn('D1-backed currency remediation failed', { error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+    }
   };
 
   const handleRefreshWithFixes = () => {
@@ -853,7 +1226,7 @@ export default function Home() {
     setAnalyzingLoaderState({
       isOpen: true,
       title: 'Recalculating Enterprise Spend & Refreshing Final Numbers',
-      subtitle: `Auditing ${currentRecordsCount ? currentRecordsCount.toLocaleString() : 'all'} line items across facilities, material groups, and 3-year timelines...`,
+      subtitle: `Auditing ${currentRecordsCount ? currentRecordsCount.toLocaleString() : 'all'} line items across facilities, material groups, and transaction timelines...`,
       metrics: {
         totalRecords: currentRecordsCount,
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
@@ -870,18 +1243,28 @@ export default function Home() {
   };
 
   const handleResetValidationRecords = async () => {
-    setValidationRecords(initialValidationRecords);
+    try {
+      await apiClient.resetValidationRecords();
+    } catch (error: unknown) {
+      frontendLogger.warn('Validation reset was not persisted', { error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
+
+    setValidationRecords([]);
     setIsDataRefreshed(false);
-    setUploadedUniqueItems(undefined);
-    setUploadedUniqueVendors(undefined);
-    setIngestionQueue(initialIngestionQueue);
-    apiClient.resetValidationRecords().catch((e) => {
-      frontendLogger.warn('Backend sync warning for reset validation records', { error: e });
-    });
     showToast(UI_STRINGS.toasts.validationReset);
   };
 
-  const handleDeleteDocument = async (_docId?: string) => {
+  const handleDeleteDocument = async (docId?: string) => {
+    let remainingDocuments: RawDocumentIngestion[];
+    try {
+      remainingDocuments = await apiClient.deleteIngestionDocument(docId);
+    } catch (error: unknown) {
+      frontendLogger.warn('Document deletion was not persisted', { docId, error });
+      showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
+      return;
+    }
     try {
       if (typeof window !== 'undefined' && window.sessionStorage) {
         window.sessionStorage.removeItem('procucev_uploaded_dataset');
@@ -889,7 +1272,7 @@ export default function Home() {
     } catch {
       // Safe fallback
     }
-    setIngestionQueue([]);
+    setIngestionQueue(remainingDocuments);
     setValidationRecords([]);
     setUploadedMaterialGroups(undefined);
     setUploadedPlants(undefined);
@@ -911,11 +1294,7 @@ export default function Home() {
     });
     setActiveTab('module1');
 
-    apiClient.deleteIngestionDocument(_docId).catch((e) => {
-      frontendLogger.warn('Backend sync warning for delete ingestion document', { error: e });
-    });
-
-    showToast('Uploaded dataset removed successfully. You can now upload a new dataset.');
+    showToast(UI_STRINGS.toasts.datasetRemoved);
   };
 
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
@@ -923,6 +1302,13 @@ export default function Home() {
     if (!loggedUser) {
       showToast('Please sign in to upload datasets');
       router.push('/login');
+      return;
+    }
+
+    try {
+      await loadUNSPSCTaxonomy();
+    } catch {
+      showToast(getTaxonomyLoadState().error || UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable));
       return;
     }
 
@@ -972,6 +1358,7 @@ export default function Home() {
     let dynamicLineItems: LineItemMapping[] | undefined = undefined;
     let dynamicVendorRankings: VendorPriceRank[] | undefined = undefined;
     let dynamicOpportunities: SavingsOpportunity[] | undefined = undefined;
+    const detectedCurrenciesSet = new Set<string>();
 
     if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
       try {
@@ -986,8 +1373,11 @@ export default function Home() {
           recordsCount = rows.length; // Header row is automatically excluded by sheet_to_json!
           const keys = Array.from(new Set(rows.slice(0, 5).flatMap((r) => Object.keys(r || {}))));
           const qtyKey = keys.find((k) => /qty|quantity|order_qty|ordered|units/i.test(k));
-          const priceKey = keys.find((k) => /price|net_price|unit_price|rate|cost/i.test(k));
-          const currKey = keys.find((k) => /curr|currency|waers/i.test(k));
+          const priceKey = keys.find((k) =>
+            /^(?:net[_\s-]*price|unit[_\s-]*price|netpr)$/i.test(k) ||
+            (/price|rate|cost/i.test(k) && !/unit|curr|type|code|grp/i.test(k))
+          );
+          const currKey = keys.find((k) => /crcy|curr|currency|waers/i.test(k));
 
           const matPatterns = [
             /^(?:material[_\s-]*code|material[_\s-]*no|material[_\s-]*num(?:ber)?|matnr|item[_\s-]*code)$/i,
@@ -1003,12 +1393,11 @@ export default function Home() {
             /^short[_\s-]*text$/i,
             /^txz01$/i,
             /short[_\s-]*text/i,
-            /(?:material|product|part|goods)[_\s-]*(?:desc(?:ription)?|text|name)/i,
+            /(?:item|product|part|goods)[_\s-]*(?:desc(?:ription)?|text|name)/i,
             /^item[_\s-]*(?:desc(?:ription)?|text|name)$/i,
             /item[_\s-]*(?:desc(?:ription)?|text|name)/i,
             /^desc(?:ription)?$/i,
-            /description|desc/i,
-            /material/i
+            /description/i
           ];
           const descKey = keys.find((k) =>
             descPatterns.some((p) => p.test(k) && !/(?:code|id|no|num|group|grp|type|plant|cat)/i.test(k))
@@ -1036,18 +1425,25 @@ export default function Home() {
             poPatterns.some((p) => p.test(k) && !/(?:type|date|status)/i.test(k))
           );
           const yearKey = keys.find((k) => /year|date/i.test(k));
-          const totalCrKey = keys.find((k) => /total.*in.*cr|total.*cr/i.test(k));
-          const totalInrKey = keys.find((k) => /total.*inr|inr.*total/i.test(k));
+          const totalCrKey = keys.find((k) => /net[_\s-]*value[_\s-]*in[_\s-]*crs?|total.*in.*cr|total.*cr/i.test(k));
+          const totalInrKey = keys.find((k) => /net[_\s-]*value[_\s-]*in[_\s-]*inr|total.*inr|inr.*total/i.test(k));
           const mgPatterns = [
-            /^(?:material[_\s-]*group|mat[_\s-]*grp|matkl)$/i,
-            /material.*group/i,
-            /mat[_\s-]*grp/i,
+            /^(?:material[_\s-]*group|matl[_\s-]*group|mat[_\s-]*grp|matl[_\s-]*grp|matkl)$/i,
+            /mat(?:erial|l).*group/i,
+            /matl[_\s-]*grp/i,
             /matkl/i
           ];
           const mgKey = keys.find((k) =>
             mgPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
           );
-          const plantKey = keys.find((k) => /plant|werks|facility|site/i.test(k));
+          const deptPatterns = [
+            /^(?:department|dept|procurement[_\s-]*category|spend[_\s-]*category)$/i,
+            /department/i
+          ];
+          const deptKey = keys.find((k) =>
+            deptPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
+          );
+          const plantKey = keys.find((k) => /plnt|plant|werks|facility|site/i.test(k));
           const dateKey = keys.find((k) => /doc.*date|document.*date|posting.*date|date/i.test(k));
 
           let cumulativeFileTotalINR = 0;
@@ -1055,6 +1451,7 @@ export default function Home() {
 
           const uniqueItemsSet = new Set<string>();
           const uniqueVendorsSet = new Set<string>();
+          detectedCurrenciesSet.clear();
           dynamicParetoRecords.length = 0;
           const mgMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string>; sampleItem: string }>();
           const plantMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
@@ -1066,6 +1463,7 @@ export default function Home() {
             const hasExplicitPrice = priceKey && r[priceKey] != null && !isNaN(Number(r[priceKey]));
             const rawPrice = hasExplicitPrice ? Math.max(0, Number(r[priceKey])) : 0;
             const rawCurr = currKey && r[currKey] != null ? String(r[currKey]).trim().toUpperCase() : '';
+            if (rawCurr) detectedCurrenciesSet.add(rawCurr);
             const rawDateVal = dateKey ? r[dateKey] : null;
             const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || new Date().getFullYear());
             const rawYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
@@ -1100,9 +1498,11 @@ export default function Home() {
             if (isValidItem) uniqueItemsSet.add(rowItem);
             if (isValidVendor) uniqueVendorsSet.add(rowVendor);
 
-            // Grouping by Material Group
-            let rowMg = (mgKey && r[mgKey] != null ? String(r[mgKey]).trim() : '') || 'DIRECT';
-            rowMg = rowMg.toUpperCase();
+            // Grouping by Material Group or Department
+            const rawRowMg = (mgKey && r[mgKey] != null && String(r[mgKey]).trim()) ||
+                             (deptKey && r[deptKey] != null && String(r[deptKey]).trim()) ||
+                             '';
+            const rowMg = (rawRowMg ? rawRowMg.toUpperCase() : 'UNKNOWN_CATEGORY').trim();
             const existingMg = mgMap.get(rowMg) || {
               count: 0,
               spendCr: 0,
@@ -1154,16 +1554,35 @@ export default function Home() {
               });
             }
 
-            // Real anomaly pre-check classification
+            // Real anomaly pre-check classification with explicit currency provenance
             const unspscMatch = lookupUNSPSCByDescription(rowItem);
             const columnLCode = unspscMatch?.commodityCode || '13101502';
             const coreCategory = (unspscMatch?.coreBucket as ValidationPreCheckRecord['core_category']) || 'Direct Materials';
+
+            let finalCurrency = rawCurr;
+            let currencyProvenance: 'SOURCE_PROVIDED' | 'ANALYST_CONFIRMED' | 'SYSTEM_INFERRED' | 'UNRESOLVED' = 'UNRESOLVED';
+
+            const effectiveConfirmedCurrency =
+              analystConfirmedBaseCurrency ||
+              activeCustomer?.baseCurrency ||
+              (activeAssessment?.currency?.includes('INR') ? 'INR' : null);
+
+            if (rawCurr) {
+              currencyProvenance = 'SOURCE_PROVIDED';
+              finalCurrency = rawCurr;
+            } else if (effectiveConfirmedCurrency) {
+              currencyProvenance = 'ANALYST_CONFIRMED';
+              finalCurrency = effectiveConfirmedCurrency;
+            } else {
+              currencyProvenance = 'UNRESOLVED';
+              finalCurrency = '';
+            }
 
             let issueFlag: ValidationPreCheckRecord['issue_flag'] = 'Passed Clean';
             let actionStatus: ValidationPreCheckRecord['action_status'] = 'Ready';
             let isResolved = true;
 
-            if (!rawCurr) {
+            if (currencyProvenance === 'UNRESOLVED') {
               issueFlag = 'Missing Currency Code';
               actionStatus = 'Fix (INR)';
               isResolved = false;
@@ -1188,7 +1607,8 @@ export default function Home() {
                 net_price: rawPrice,
                 subtotal_raw: rawQty * rawPrice,
                 amount: rawQty * rawPrice,
-                raw_currency: rawCurr || 'INR',
+                raw_currency: finalCurrency || 'INR',
+                currency_provenance: currencyProvenance,
                 amount_inr: lineTotalINR,
                 inr_crores: Number((lineTotalINR / 10000000).toFixed(2)),
                 fx_rate_applied: fxRate,
@@ -1216,23 +1636,26 @@ export default function Home() {
 
           dynamicMgs = Array.from(mgMap.entries())
             .sort((a, b) => b[1].spendCr - a[1].spendCr)
-            .map(([code, data], mIdx) => ({
-              group_code: code,
-              group_name: `${code} Materials & Consumables`,
-              records_count: data.count,
-              unique_items_count: data.items.size,
-              unique_vendors_count: data.vendors.size,
-              po_count: Math.max(1, Math.round(data.count * 0.18)),
-              spend_inr_cr: Number(data.spendCr.toFixed(2)),
-              spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
-              share_pct: Number(((data.spendCr / Math.max(1, totalSpendInrCr)) * 100).toFixed(1)),
-              sample_item: data.sampleItem,
-              primary_segment: `${code} - Enterprise Spend Segment`,
-              fy24_spend_inr_cr: Number((data.spendCr * 0.3).toFixed(2)),
-              fy25_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
-              fy26_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
-              color: ['#0284c7', '#059669', '#d97706', '#7c3aed', '#ea580c', '#0891b2'][mIdx % 6]
-            }));
+            .map(([code, data], mIdx) => {
+              const humanName = resolveHumanReadableCategory(code);
+              return {
+                group_code: code,
+                group_name: humanName,
+                records_count: data.count,
+                unique_items_count: data.items.size,
+                unique_vendors_count: data.vendors.size,
+                po_count: Math.max(1, Math.round(data.count * 0.18)),
+                spend_inr_cr: Number(data.spendCr.toFixed(2)),
+                spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
+                share_pct: Number(((data.spendCr / Math.max(1, totalSpendInrCr)) * 100).toFixed(1)),
+                sample_item: data.sampleItem,
+                primary_segment: `${humanName} - Enterprise Spend Segment`,
+                fy24_spend_inr_cr: Number((data.spendCr * 0.3).toFixed(2)),
+                fy25_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
+                fy26_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
+                color: ['#0284c7', '#059669', '#d97706', '#7c3aed', '#ea580c', '#0891b2'][mIdx % 6]
+              };
+            });
 
           dynamicPlants = Array.from(plantMap.entries())
             .sort((a, b) => b[1].spendCr - a[1].spendCr)
@@ -1292,7 +1715,7 @@ export default function Home() {
 
           dynamicCategories = dynamicMgs.map((mg, mIdx) => ({
             id: `CAT-${mg.group_code}`,
-            name: mg.group_name,
+            name: resolveHumanReadableCategory(mg.group_name, mg.group_code),
             spend: Math.round((mg.spend_inr_cr * 10000000) / 83.8),
             spend_inr: Math.round(mg.spend_inr_cr * 10000000),
             spend_inr_crores: mg.spend_inr_cr,
@@ -1374,20 +1797,41 @@ export default function Home() {
           });
           setLineItems(dynamicLineItems);
 
+          const vendorYearSpendMap = new Map<string, { fy24: number; fy25: number; fy26: number }>();
+          dynamicLineItems.forEach((it) => {
+            const vName = it.parent_name || it.vendor_identified || 'Unknown';
+            let vYears = vendorYearSpendMap.get(vName);
+            if (!vYears) {
+              vYears = { fy24: 0, fy25: 0, fy26: 0 };
+              vendorYearSpendMap.set(vName, vYears);
+            }
+            const yr = it.spend_year || (it.invoice_date ? new Date(it.invoice_date).getFullYear() : undefined);
+            const cr = it.inr_crores || 0;
+            if (yr && yr <= 2023) vYears.fy24 += cr;
+            else if (yr === 2024) vYears.fy25 += cr;
+            else if (yr) vYears.fy26 += cr;
+          });
+
           const riskStatuses: VendorPriceRank['risk_status'][] = ['HIGH CREEP', 'REVIEW', 'ALIGNED', 'FAVORABLE'];
-          dynamicVendorRankings = vendorPareto.parents.slice(0, 10).map((v, idx) => ({
-            vendor_name: v.name,
-            master_id: `VEN-M-${5000 + idx}`,
-            category: idx % 2 === 0 ? 'Direct Mat.' : 'Packaging',
-            price_creep_pct: Number(((idx * 1.8) - 1.2).toFixed(1)),
-            total_spend: Math.round((v.totalSpendCr * 10000000) / 83.8),
-            total_spend_inr_cr: v.totalSpendCr,
-            risk_status: riskStatuses[idx % riskStatuses.length],
-            variance_leakage_usd: Math.round((v.totalSpendCr * 0.04 * 10000000) / 83.8),
-            variance_leakage_inr_cr: Number((v.totalSpendCr * 0.04).toFixed(2)),
-            benchmark_index: 'ICIS / S&P Global',
-            last_36mo_trend: [v.totalSpendCr * 0.28, v.totalSpendCr * 0.34, v.totalSpendCr * 0.38]
-          }));
+          dynamicVendorRankings = vendorPareto.parents.slice(0, 10).map((v, idx) => {
+            const yData = vendorYearSpendMap.get(v.name);
+            const trend = yData && (yData.fy24 > 0 || yData.fy25 > 0 || yData.fy26 > 0)
+              ? [Number(yData.fy24.toFixed(2)), Number(yData.fy25.toFixed(2)), Number(yData.fy26.toFixed(2))]
+              : [0, 0, v.totalSpendCr];
+            return {
+              vendor_name: v.name,
+              master_id: `VEN-M-${5000 + idx}`,
+              category: idx % 2 === 0 ? 'Direct Mat.' : 'Packaging',
+              price_creep_pct: Number(((idx * 1.8) - 1.2).toFixed(1)),
+              total_spend: Math.round((v.totalSpendCr * 10000000) / 83.8),
+              total_spend_inr_cr: v.totalSpendCr,
+              risk_status: riskStatuses[idx % riskStatuses.length],
+              variance_leakage_usd: Math.round((v.totalSpendCr * 0.04 * 10000000) / 83.8),
+              variance_leakage_inr_cr: Number((v.totalSpendCr * 0.04).toFixed(2)),
+              benchmark_index: 'ICIS / S&P Global',
+              last_36mo_trend: trend
+            };
+          });
           setVendorRankings(dynamicVendorRankings);
 
           const oppCategories: SavingsOpportunity['category'][] = [
@@ -1442,17 +1886,27 @@ export default function Home() {
       total_spend_evaluated: Math.round((totalSpendInrCr * 10000000) / 83.8)
     }));
 
+    const dynamicDetectedCurrencies = (detectedCurrenciesSet && detectedCurrenciesSet.size > 0)
+      ? Array.from(detectedCurrenciesSet)
+      : ['INR'];
+
     const newDoc: RawDocumentIngestion = {
       doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
       tenant_id: loggedUser.id || tenant.tenant_id,
       file_name: file.name,
-      file_type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
+      file_type: file.name.endsWith('.pdf')
+        ? 'PDF'
+        : file.name.endsWith('.xlsx')
+          ? 'XLSX'
+          : file.name.endsWith('.xls')
+            ? 'XLS'
+            : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
       file_size_mb: Number((file.size / (1024 * 1024)).toFixed(2)),
       ocr_status: 'Completed',
       progress: 100,
       uploaded_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
       records_count: recordsCount, // Header row strictly excluded
-      detected_currencies: ['INR'],
+      detected_currencies: dynamicDetectedCurrencies,
       converted_inr_crores: totalSpendInrCr, // Sum of Order Qty * Net Price * FX Rate
       unique_items_count: dynamicUniqueItems,
       unique_vendors_count: dynamicUniqueVendors,
@@ -1462,6 +1916,7 @@ export default function Home() {
 
     setIngestionQueue([newDoc]);
 
+    let uploadRes: any = null;
     try {
       let fileBase64 = '';
       try {
@@ -1480,18 +1935,41 @@ export default function Home() {
         // Base64 conversion fallback
       }
 
-      const uploadRes: any = await apiClient.uploadDocumentToObjectStore({
+      uploadRes = await apiClient.uploadDocumentToObjectStore({
         fileName: file.name,
-        fileType: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'XLSX' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
+        fileType: file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.xls') ? 'XLS' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
         fileBase64: fileBase64 || undefined,
+        parseTransactions: true,
         fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)) || 1.0,
         recordsCount,
         convertedInrCrores: totalSpendInrCr,
-        detectedCurrencies: ['USD', 'EUR', 'INR'],
+        detectedCurrencies: dynamicDetectedCurrencies,
         datasetType: _datasetType,
         buyer_id: loggedUser.id,
-        tenant_id: loggedUser.id
+        tenant_id: loggedUser.id || tenant.tenant_id,
+        assessment_id: activeAssessment?.assessmentId
       });
+      if (typeof uploadRes?.data?.docId === 'string') {
+        const persistedIngestion = await apiClient.getIngestionData(loggedUser.id || tenant.tenant_id);
+        setIngestionQueue(persistedIngestion.queue);
+        setValidationRecords(persistedIngestion.validationRecords);
+      }
+      if (Number.isFinite(Number(uploadRes?.data?.totalInrCrores)) && uploadRes?.data?.importedCount > 0) {
+        const d1SpendCrores = Number(uploadRes.data.totalInrCrores);
+        setTenant((prev) => ({
+          ...prev,
+          total_spend_evaluated_inr: d1SpendCrores,
+          total_spend_evaluated: Math.round((d1SpendCrores * 10000000) / 83.8)
+        }));
+        totalSpendInrCr = d1SpendCrores;
+      }
+      if (
+        uploadRes?.data?.canonical &&
+        activeAssessment?.activeDataVersionId &&
+        uploadRes.data.canonical.dataVersionId === activeAssessment.activeDataVersionId
+      ) {
+        applyCanonicalViewModel(uploadRes.data.canonical);
+      }
       if (uploadRes?.data?.analysisJob) {
         setActiveAnalysisJob(uploadRes.data.analysisJob);
       } else {
@@ -1507,7 +1985,9 @@ export default function Home() {
       frontendLogger.warn('Backend sync warning for document upload', { error: e });
     }
 
-    showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, totalSpendInrCr, recordsCount));
+    const finalSpendCr = uploadRes?.data?.canonical?.validFxNormalizedSpendCr || totalSpendInrCr;
+    const finalRecordsCount = uploadRes?.data?.canonical?.sourceRowCount || recordsCount;
+    showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, finalSpendCr, finalRecordsCount));
   };
 
   // Handlers for Module 2
@@ -1560,7 +2040,14 @@ export default function Home() {
   };
 
   const handleStartAICategorization = async () => {
+    try {
+      await loadUNSPSCTaxonomy();
+    } catch {
+      showToast(getTaxonomyLoadState().error || UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable));
+      return;
+    }
     showToast(UI_STRINGS.toasts.runningAiCat);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     setAnalyzingLoaderState({
       isOpen: true,
       title: 'Running Google Gemini UNSPSC AI Categorization',
@@ -1745,10 +2232,14 @@ export default function Home() {
         currentTier={effectiveTier}
         onSelectSimulatedTier={handleSelectSimulatedTier}
         user={currentUser}
+        operatingMode={operatingMode}
+        onToggleAssessmentMode={() => setActiveTab((prev) => (prev === 'assessment' ? 'module1' : 'assessment'))}
+        activeAssessment={activeAssessment}
+        activeCustomer={activeCustomer}
       />
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 space-y-6">
+      <main className="w-full max-w-[1920px] mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 pt-6 pb-12 space-y-6">
         {/* Pipeline & Strategic Vision Navigation */}
         <PipelineBar
           activeTab={activeTab}
@@ -1765,7 +2256,30 @@ export default function Home() {
           opportunities={opportunities}
           ingestionQueue={ingestionQueue}
           totalSpendCr={tenant.total_spend_evaluated_inr}
+          canonicalViewModel={canonicalModule1}
+          activeAssessment={activeAssessment}
         />
+
+        {activeTab === 'assessment' && (
+          <AssessmentWorkspace
+            onActiveAssessmentChange={handleActiveAssessmentChange}
+            onSelectCustomer={(c) => {
+              setActiveCustomer(c);
+              if (!activeAssessment) {
+                setTenant((prev) => ({
+                  ...prev,
+                  enterprise_name: c ? c.customerName : UI_STRINGS.header.noActiveCustomer,
+                  total_spend_evaluated_inr: 0,
+                  total_spend_evaluated: 0
+                }));
+              }
+            }}
+            onNavigateToModule1={(assessment) => {
+              handleActiveAssessmentChange(assessment);
+              setActiveTab('module1');
+            }}
+          />
+        )}
 
         {/* Tab Modules */}
         {activeTab === 'module1' && (
@@ -1808,6 +2322,8 @@ export default function Home() {
             onRefreshWithFixes={handleRefreshWithFixes}
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
+            canonicalViewModel={canonicalModule1}
+            onConfirmDatasetBaseCurrency={handleConfirmDatasetBaseCurrency}
           />
           </>
         )}
@@ -1829,6 +2345,7 @@ export default function Home() {
             currentTier={effectiveTier}
             onUpgrade={handleUpgradeTier}
             targetSection={targetSection}
+            assessmentId={activeAssessment?.assessmentId}
           />
         )}
 
@@ -1836,6 +2353,7 @@ export default function Home() {
         {activeTab === 'module3' && (
           <Module3TrendAnalytics
             vendorRankings={vendorRankings}
+            assessmentId={activeAssessment?.assessmentId}
             onProceedToSavings={() => {
               setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true, step3: true }));
               setActiveTab('module4');
@@ -1850,6 +2368,7 @@ export default function Home() {
         {activeTab === 'module4' && (
           <Module4SavingsEngine
             opportunities={opportunities}
+            assessmentId={activeAssessment?.assessmentId}
             onOpenProCPX={(opp) => setSelectedOppForProCPX(opp)}
             onOpenDPSNXT={(opp) => setSelectedOppForDPSNXT(opp)}
             onProceedToConversion={() => {
@@ -1892,7 +2411,7 @@ export default function Home() {
               AES-256-GCM ENCRYPTED
             </span>
             <span className="hidden sm:inline text-slate-300 dark:text-slate-600">|</span>
-            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit · ISO 27001 · SOC 2 Type II compliant</span>
+            <span className="hidden sm:inline">All data encrypted at rest &amp; in transit</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400 dark:text-slate-500 font-mono">
             <span>Procucev / aiCEV v2.0</span>
@@ -2045,14 +2564,31 @@ export default function Home() {
             <ExecutiveOpportunityBriefView
               clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
               onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
-              onDownloadPdf={() => handleBriefDownload('pdf')}
-              onDownloadPptx={() => handleBriefDownload('pptx')}
+              onDownloadPdf={() => {
+                void handleBriefDownload('pdf');
+              }}
+              onDownloadPptx={() => {
+                void handleBriefDownload('pptx');
+              }}
               currentTier={effectiveTier}
             />
-            <ReportAcknowledgementSection
-              jobId="job-init-default-001"
-              reportVersionId="RPT-v1"
-            />
+            {activeAnalysisJob && activeReport ? (
+              <ReportAcknowledgementSection
+                key={activeReport.reportVersionId}
+                jobId={activeAnalysisJob.analysisJobId}
+                reportVersionId={activeReport.reportVersionId}
+              />
+            ) : (
+              <div className="flex justify-center my-8" data-testid="management-report-empty-state">
+                <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white border border-amber-200 shadow-sm max-w-md w-full">
+                  <AlertTriangle className="w-10 h-10 text-amber-500" />
+                  <h2 className="text-base font-bold text-[#0B1B33]">{UI_STRINGS.orchestration.noActiveReportTitle}</h2>
+                  <p className="text-xs text-slate-600 text-center leading-relaxed">
+                    {UI_STRINGS.orchestration.noActiveReportMessage}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2066,7 +2602,7 @@ export default function Home() {
           aria-hidden="true"
           tabIndex={-1}
         >
-          Download
+          {UI_STRINGS.opportunityBrief.downloadLinkLabel}
         </a>
       )}
     </div>

@@ -1,8 +1,8 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoryTopItemsModal } from '../../../src/components/modals/CategoryTopItemsModal';
-import { mockCategoryYearDetails } from '../../../src/data/mockData';
+import { mockCategoryYearDetails } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 const sampleCategory: any = {
@@ -33,6 +33,10 @@ const sampleCategory: any = {
 };
 
 describe('CategoryTopItemsModal Component', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+  });
+  afterEach(() => vi.restoreAllMocks());
   it('renders null when not open or category is null', () => {
     const { container } = render(
       <CategoryTopItemsModal
@@ -95,6 +99,7 @@ describe('CategoryTopItemsModal Component', () => {
 
     const exportBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.exportCSV });
     fireEvent.click(exportBtn);
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
 
     const closePopUpBtn = screen.getByRole('button', { name: UI_STRINGS.modals.topItems.closePopUp });
     fireEvent.click(closePopUpBtn);

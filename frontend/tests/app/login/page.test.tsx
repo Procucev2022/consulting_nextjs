@@ -205,27 +205,22 @@ describe('Login & Registration Page Component', () => {
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN = 'true';
 
     render(<LoginPage />);
-    expect(screen.queryByText(UI_STRINGS.auth.tempDevCredentialsBadge)).not.toBeInTheDocument();
-    expect(screen.queryByText(UI_STRINGS.auth.goToAdminDirectly)).not.toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.auth.developmentAuthTitle)).not.toBeInTheDocument();
     expect(screen.queryByTitle('Fill sriman@procucev.com')).not.toBeInTheDocument();
   });
 
-  it('should render dev logins and allow quick-fill and bypass ONLY when NODE_ENV is development', () => {
+  it('shows database sign-in guidance and leaves credentials empty in development', () => {
     (process.env as Record<string, string | undefined>).NODE_ENV = 'development';
     delete process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN;
 
     render(<LoginPage />);
-    expect(screen.getByText(UI_STRINGS.auth.tempDevCredentialsBadge)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.auth.goToAdminDirectly)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.auth.developmentAuthTitle)).toBeInTheDocument();
 
     const emailInput = screen.getByLabelText(UI_STRINGS.auth.emailLabel) as HTMLInputElement;
     const passwordInput = screen.getByLabelText(UI_STRINGS.auth.passwordLabel) as HTMLInputElement;
 
-    fireEvent.click(screen.getByTitle('Fill sriman@procucev.com'));
-    expect(emailInput.value).toBe('sriman@procucev.com');
-    expect(passwordInput.value).toBe('sriman@123');
-
-    fireEvent.click(screen.getByText(UI_STRINGS.auth.goToAdminDirectly));
-    expect(mockPush).toHaveBeenCalledWith('/admin');
+    expect(emailInput.value).toBe('');
+    expect(passwordInput.value).toBe('');
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });

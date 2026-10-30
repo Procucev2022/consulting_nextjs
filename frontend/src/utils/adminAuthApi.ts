@@ -2,7 +2,7 @@
  * Dedicated Admin Management API Service (Frontend)
  */
 
-import type { UserProfile, CreateAdminDetailsPayload, CreateAdminResponse } from '../types';
+import type { CreateAdminDetailsPayload, CreateAdminResponse } from '../types';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
 import { createAdminDetailsSchema } from '../constants/adminValidation';
@@ -15,21 +15,6 @@ function buildFullAdminPayload(payload?: Partial<CreateAdminDetailsPayload>): Cr
     role: 'ADMIN' as const,
     subscription_tier: 'GOLD' as const
   });
-}
-
-function createFallbackAdminUser(payload: CreateAdminDetailsPayload): UserProfile {
-  return {
-    id: `usr-admin-${Date.now()}`,
-    name: payload.name,
-    email: payload.email,
-    mobile_number: payload.mobile_number,
-    company_name: payload.company_name,
-    company_address: payload.company_address,
-    role: 'ADMIN',
-    status: 'ACTIVE',
-    subscription_tier: 'GOLD',
-    created_at: new Date().toISOString()
-  };
 }
 
 export const adminAuthApiClient = {
@@ -54,34 +39,20 @@ export const adminAuthApiClient = {
       headers.Authorization = `Bearer ${authToken}`;
     }
 
-    try {
-      const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CREATE_ADMIN}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(validation.data)
-      });
+    const res = await fetch(`${getApiBaseUrl()}${AUTH_API_ENDPOINTS.CREATE_ADMIN}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(validation.data)
+    });
 
-      if (!res.ok) {
-        const errorJson = await res.json().catch(() => null);
-        const errorMsg = errorJson?.message ?? `Failed to provision administrator (HTTP ${res.status})`;
-        throw new Error(errorMsg);
-      }
-
-      const json = await res.json();
-      return json as CreateAdminResponse;
-    } catch (err: unknown) {
-      if (process.env.NODE_ENV !== 'production') {
-        frontendLogger.warn('Backend unavailable, using local mock fallback for admin provisioning', {
-          email: fullPayload.email
-        });
-        return {
-          success: true,
-          message: 'Admin details created and verified successfully (Development Fallback)',
-          user: createFallbackAdminUser(fullPayload)
-        };
-      }
-      throw err;
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => null);
+      const errorMsg = errorJson?.message ?? `Failed to provision administrator (HTTP ${res.status})`;
+      throw new Error(errorMsg);
     }
+
+    const json = await res.json();
+    return json as CreateAdminResponse;
   }
 };
 

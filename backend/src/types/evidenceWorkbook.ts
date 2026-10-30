@@ -1,6 +1,18 @@
 /**
- * Types & Interfaces for Output Evidence & Validation Workbooks (Prompt 305)
+ * Types for the Output Evidence & Validation Workbooks API served by the Cloudflare Worker.
+ *
+ * The response interfaces mirror frontend/src/types/evidenceWorkbook.ts field for field.
+ * Internal read-model and generation types follow the response contract.
  */
+
+import type { z } from 'zod';
+import type { CloudflareD1Database, CloudflareEnvironment } from './cloudflare';
+import type {
+  evidenceJobParamsSchema,
+  evidenceParityQuerySchema,
+  evidenceSavingsParamsSchema,
+  evidenceWorkbookParamsSchema
+} from '../constants/evidenceValidation';
 
 export type EvidenceWorkbookType =
   | 'MODULE_1_EVIDENCE'
@@ -21,8 +33,6 @@ export type CanonicalSavingsType =
   | 'PROCESS_PRODUCTIVITY'
   | 'COST_AVOIDANCE_RISK'
   | 'REALIZED_SAVINGS';
-
-export type AnyEvidenceType = EvidenceWorkbookType | CanonicalSavingsType;
 
 export type ParityCheckStatus = 'PASS' | 'FAIL';
 
@@ -60,59 +70,6 @@ export interface ParityValidationSummary {
   checks: ParityCheckResult[];
 }
 
-export interface WorkbookReadmeMeta {
-  customerName: string;
-  analysisRunId: string;
-  dataVersionId: string;
-  reportVersionId?: string;
-  moduleName: string;
-  workbookType: AnyEvidenceType;
-  generatedAt: string;
-  generatedBy: string;
-  calculationVersion: string;
-  sourceRecordCount: number;
-  totalSourceSpendCr: number;
-  purpose: string;
-  validationInstructions: string;
-  importantDefinitions: Record<string, string>;
-  disclaimer: string;
-}
-
-export interface ExecutiveSummaryRow {
-  'KPI Metric': string;
-  'UI Value': string;
-  'Evidence Value': string;
-  'Unit': string;
-  'Calculation Method': string;
-  'Supporting Sheet': string;
-  'Reconciliation Status': ParityCheckStatus;
-  'Variance': string;
-}
-
-export interface CalculationBridgeRow {
-  'Step #': number;
-  'Initiative / Component': string;
-  'Lever': string;
-  'Gross Opportunity (₹ Cr)': number;
-  'Overlap Deductions (₹ Cr)': number;
-  'Exclusions (₹ Cr)': number;
-  'Net Pipeline (₹ Cr)': number;
-  'Strategic Market Value (₹ Cr)': number;
-  'Net Direct Opportunity (₹ Cr)': number;
-  'Mathematical Formula': string;
-  'Reconciliation Status': ParityCheckStatus;
-}
-
-export interface FinancialCheckRow {
-  'Check #': string;
-  'Validation Rule': string;
-  'Target Value': string;
-  'Evaluated Value': string;
-  'Variance': string;
-  'Status': ParityCheckStatus;
-  'Audit Notes': string;
-}
-
 export interface EvidenceInventoryItem {
   type: EvidenceWorkbookType;
   filename: string;
@@ -123,30 +80,259 @@ export interface EvidenceInventoryItem {
   requiredRole: 'ADMIN' | 'CUSTOMER_ANALYST';
 }
 
+export interface EvidenceInventoryResponse {
+  success: boolean;
+  jobId: string;
+  tenantId: string;
+  items: EvidenceInventoryItem[];
+}
+
+export interface EvidenceParityResponse {
+  success: boolean;
+  parity: ParityValidationSummary;
+}
+
 export interface SavingsTypeEvidenceInventoryItem {
   savingsType: CanonicalSavingsType;
+  initiativeId?: string;
+  filename: string;
+  title: string;
+  description: string;
+  grossAmountCr?: number;
+  overlapAmountCr?: number;
+  netAmountCr: number;
+  classificationNote?: string;
+  sheetCount: number;
+  isAvailable: boolean;
+  requiredRole: 'ADMIN' | 'CONSULTANT';
+}
+
+export interface SavingsTypeEvidenceInventoryResponse {
+  success: boolean;
+  jobId: string;
+  tenantId: string;
+  items: SavingsTypeEvidenceInventoryItem[];
+}
+
+export type EvidenceJobParams = z.infer<typeof evidenceJobParamsSchema>;
+export type EvidenceWorkbookParams = z.infer<typeof evidenceWorkbookParamsSchema>;
+export type EvidenceSavingsParams = z.infer<typeof evidenceSavingsParamsSchema>;
+export type EvidenceParityQuery = z.infer<typeof evidenceParityQuerySchema>;
+
+export type EvidenceParityKey = 'TOTAL_SPEND' | 'VALIDATED_SPEND' | 'NET_DEFENSIBLE_OPPORTUNITY' | 'SAVINGS_PERCENT';
+
+export type EvidenceLedgerGroupColumn = 'supplier_name' | 'plant' | 'material_group';
+
+export interface EvidenceUserRecord {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+}
+
+export interface EvidenceJobAccessRecord {
+  assessmentId: string;
+  customerName: string;
+  status: string;
+  totalSpendCr: number | null;
+  validatedSpendCr: number | null;
+  grossOpportunityCr: number | null;
+  overlapDeductionsCr: number | null;
+  netDefensibleOpportunityCr: number | null;
+  potentialSavingsCr: number | null;
+  savingsPct: number | null;
+  customerContactEmail: string | null;
+}
+
+export interface EvidenceRunRecord {
+  analysisRunId: string;
+  dataVersionId: string;
+  status: string;
+  totalSpendCr: number | null;
+  validatedSpendCr: number | null;
+  grossOpportunityCr: number | null;
+  overlapDeductionsCr: number | null;
+  netDefensibleOpportunityCr: number | null;
+  potentialSavingsCr: number | null;
+  savingsPct: number | null;
+  allGatesPassed: boolean;
+  isApproved: boolean;
+  isSuperseded: boolean;
+  createdAt: string;
+}
+
+export interface EvidenceVersionRecord {
+  dataVersionId: string;
+  versionNumber: number;
+  fileName: string;
+  fileSize: number | null;
+  checksum: string | null;
+  uploadedBy: string | null;
+  uploadedAt: string | null;
+  recordCount: number | null;
+  isSuperseded: boolean;
+}
+
+export interface EvidenceLedgerTotals {
+  rowCount: number;
+  totalCr: number;
+}
+
+export interface EvidenceGroupRecord {
+  groupKey: string;
+  rowCount: number;
+  totalCr: number;
+}
+
+export interface EvidenceLedgerRecord {
+  transactionId: string;
+  sourceRowNumber: number | null;
+  poNumber: string | null;
+  poLine: string | null;
+  documentDateRaw: string | null;
+  supplierName: string | null;
+  materialCode: string | null;
+  shortText: string | null;
+  materialGroup: string | null;
+  plant: string | null;
+  orderQuantity: number | null;
+  orderUnit: string | null;
+  netPrice: number | null;
+  currency: string | null;
+  totalInrRaw: number | null;
+  totalInCrRaw: number | null;
+}
+
+export interface EvidenceLedgerDetail {
+  suppliers: EvidenceGroupRecord[];
+  plants: EvidenceGroupRecord[];
+  materialGroups: EvidenceGroupRecord[];
+  sample: EvidenceLedgerRecord[];
+  sampleLimit: number;
+}
+
+export interface EvidenceSnapshot {
+  jobId: string;
+  tenantId: string;
+  generatedAt: string;
+  assessment: EvidenceJobAccessRecord;
+  runs: EvidenceRunRecord[];
+  versions: EvidenceVersionRecord[];
+  activeRun: EvidenceRunRecord | null;
+  activeVersion: EvidenceVersionRecord | null;
+  ledger: EvidenceLedgerTotals;
+  detail: EvidenceLedgerDetail | null;
+}
+
+export interface EvidenceSavingsMetadata {
   initiativeId: string;
   filename: string;
   title: string;
-  displayedValue: string;
   description: string;
-  sheetCount: number;
-  isAvailable: boolean;
-  requiredRole: 'ADMIN' | 'CUSTOMER_ANALYST';
 }
 
-export interface EvidenceDownloadAuditEvent {
-  eventId: string;
+export interface EvidenceParityCheckDefinition {
+  key: EvidenceParityKey;
+  kpi: string;
+  unit: string;
+  tolerance: number;
+  supportingSheet: string;
+  workbookTypes: readonly EvidenceWorkbookType[];
+}
+
+export interface EvidenceParityInputs {
+  uiValue: number | null;
+  evidenceValue: number | null;
+  sourceValue: number | null;
+}
+
+export type EvidenceAvailability = { isAvailable: true } | { isAvailable: false; reason: string };
+
+export type EvidenceCell = string | number;
+
+export interface EvidenceSheet {
+  name: string;
+  rows: EvidenceCell[][];
+}
+
+export interface EvidenceSnapshotOptions {
+  requestId: string;
+  generatedAt?: string;
+}
+
+export interface EvidenceRouteInput {
+  request: Request;
+  environment: CloudflareEnvironment;
+  requestId: string;
+  action: string;
+  rawParams: Record<string, string>;
+  searchParams: URLSearchParams;
+}
+
+export interface EvidenceFileResponseInput {
+  bytes: Uint8Array;
+  contentType: string;
+  filename: string;
+}
+
+export interface EvidenceParityRequest {
   jobId: string;
-  dataVersionId: string;
-  reportVersionId?: string;
-  workbookType: AnyEvidenceType | 'PACKAGE_ZIP';
-  userId: string;
-  userRole: string;
-  tenantId: string;
-  timestamp: string;
-  fileSizeBytes: number;
-  checksum: string;
-  ipAddress?: string;
+  workbookType: EvidenceWorkbookType | null;
 }
 
+export interface PreparedEvidenceRequest<T extends { jobId: string }> {
+  params: T;
+  user: EvidenceUserRecord;
+  snapshot: EvidenceSnapshot;
+  database: CloudflareD1Database;
+}
+
+export type EvidenceRouteHandler = (input: EvidenceRouteInput) => Promise<Response>;
+
+export interface EvidenceRouteMatch {
+  action: string;
+  rawParams: Record<string, string>;
+  handler: EvidenceRouteHandler;
+}
+
+export interface EvidenceFailureContext {
+  requestId: string;
+  action: string;
+  path: string;
+  durationMs: number;
+}
+
+export interface EvidenceWorkbookMeta {
+  generatedAt: string;
+  generatedBy: string;
+}
+
+export interface EvidenceGeneratedWorkbook {
+  type: EvidenceWorkbookType;
+  filename: string;
+  bytes: Uint8Array;
+  sheetCount: number;
+}
+
+export interface EvidenceZipEntry {
+  name: string;
+  bytes: Uint8Array;
+}
+
+export interface EvidenceDosStamp {
+  time: number;
+  date: number;
+}
+
+export interface EvidencePackageExclusion {
+  filename: string;
+  reason: string;
+}
+
+export interface EvidencePackageFile {
+  filename: string;
+  bytes: Uint8Array;
+  includedCount: number;
+  excludedCount: number;
+}

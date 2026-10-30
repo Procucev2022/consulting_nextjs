@@ -1,75 +1,151 @@
-/**
- * Executive Brief Markdown Formatters (Prompt 257)
+﻿/**
+ * Audit trail for the Executive Brief in Markdown. Every reconciliation status is computed from the report at request
+ * time, so the audit states the actual variance against the certified figures.
  */
+import {
+  AUDIT_CURRENCY_DECIMALS,
+  AUDIT_NEWLINE_PATTERN,
+  AUDIT_PIPE_ESCAPE,
+  AUDIT_PIPE_PATTERN,
+  AUDIT_SPACE,
+  AUDIT_TABLE_SEPARATOR_CELL
+} from '../constants/executiveBriefAuditConstants';
+import {
+  CERTIFIED_ADDRESSABLE_SPEND_INR,
+  CERTIFIED_APPROVED_SAVINGS_INR,
+  CERTIFIED_GROSS_OPPORTUNITY_INR,
+  CERTIFIED_NET_DEFENSIBLE_INR,
+  CERTIFIED_REALIZED_SAVINGS_INR,
+  CERTIFIED_SOURCE_DATA_VERSION,
+  CERTIFIED_TOTAL_SPEND_INR,
+  RECONCILIATION_TOLERANCE_INR
+} from '../constants/executiveBriefCertifiedFigureConstants';
+import {
+  EXECUTIVE_BRIEF_CHECKLIST_KEYS,
+  EXECUTIVE_BRIEF_CHECKLIST_LABELS,
+  EXECUTIVE_BRIEF_LABELS
+} from '../constants/executiveBriefLabelConstants';
+import type { ExecutiveBriefReportData, FinancialConsistencyCheck } from '../types/executiveBriefExportTypes';
+import { reconcileExecutiveBrief } from './executiveBriefMetadataService';
 
-import { formatINRCrore } from '../utils/moneyModel';
-import { EXECUTIVE_BRIEF_VERSION } from '../constants/executiveBriefConstants';
-import type {
-  ExecutiveBriefMetadata,
-  ExecutiveBriefValidationResult
-} from '../types/executiveBriefTypes';
+const escapeCell = (value: string): string =>
+  value.replace(AUDIT_NEWLINE_PATTERN, AUDIT_SPACE).replace(AUDIT_PIPE_PATTERN, AUDIT_PIPE_ESCAPE);
 
-export function formatExecutiveBriefAuditMarkdown(meta: ExecutiveBriefMetadata): string {
-  return `# EXECUTIVE BRIEF AUDIT TRAIL
-**Version**: \`${EXECUTIVE_BRIEF_VERSION}\`  
-**Client**: \`${meta.client}\`  
-**Report Date**: \`${meta.reportDate}\`  
+const tableRow = (cells: string[]): string => `| ${cells.map(escapeCell).join(' | ')} |`;
 
----
+const separatorRow = (columnCount: number): string =>
+  tableRow(Array.from({ length: columnCount }, () => AUDIT_TABLE_SEPARATOR_CELL));
 
-## 1. Absolute Financial Invariant Reconciliation
-All numbers are evaluated on raw absolute numeric INR values.
+const statusFor = (variance: number): string =>
+  variance <= RECONCILIATION_TOLERANCE_INR
+    ? EXECUTIVE_BRIEF_LABELS.checklistPass
+    : EXECUTIVE_BRIEF_LABELS.checklistFail;
 
-| Metric | Raw INR Value | Display Value | Status | Provenance Rule |
-|---|---|---|---|---|
-| Total Spend | \`${meta.totalSpendInr}\` | ${formatINRCrore(meta.totalSpendInr)} | **PASS** | Module 1 INV-01 |
-| Addressable Spend | \`${meta.addressableSpendInr}\` | ${formatINRCrore(meta.addressableSpendInr)} | **PASS** | Carveout ledger |
-| Gross Opportunity | \`${meta.grossOpportunityInr}\` | ${formatINRCrore(meta.grossOpportunityInr)} | **PASS** | Module 2 INV-05 |
-| Net Defensible Opp | \`${meta.netDefensibleOpportunityInr}\` | ${formatINRCrore(meta.netDefensibleOpportunityInr)} | **PASS** | Module 2 INV-06 |
-| Approved Wave 1 | \`${meta.approvedSavingsInr}\` | ${formatINRCrore(meta.approvedSavingsInr)} | **PASS** | Module 4 INV-07 |
-| Realized Benefit | \`${meta.realizedSavingsInr}\` | ${formatINRCrore(meta.realizedSavingsInr)} | **PASS** | Audited vouchers |
-| **Variance** | **0.00** | **₹0.00** | **PASS** | **Zero Discrepancy** |
+const metricRow = (label: string, actual: number, certified: number, variance: number): string =>
+  tableRow([
+    label,
+    actual.toFixed(AUDIT_CURRENCY_DECIMALS),
+    certified.toFixed(AUDIT_CURRENCY_DECIMALS),
+    variance.toFixed(AUDIT_CURRENCY_DECIMALS),
+    statusFor(variance)
+  ]);
 
----
+const reconciliationRows = (report: ExecutiveBriefReportData, consistency: FinancialConsistencyCheck): string[] => {
+  const labels = EXECUTIVE_BRIEF_LABELS.audit.metricLabels;
+  const metadata = report.metadata;
+  return [
+    metricRow(labels.totalSpend, metadata.totalSpendInr, CERTIFIED_TOTAL_SPEND_INR, consistency.totalSpendVarianceInr),
+    metricRow(
+      labels.addressableSpend,
+      metadata.addressableSpendInr,
+      CERTIFIED_ADDRESSABLE_SPEND_INR,
+      consistency.addressableSpendVarianceInr
+    ),
+    metricRow(
+      labels.grossOpportunity,
+      metadata.grossOpportunityInr,
+      CERTIFIED_GROSS_OPPORTUNITY_INR,
+      consistency.grossOpportunityVarianceInr
+    ),
+    metricRow(
+      labels.netDefensibleOpportunity,
+      metadata.netDefensibleOpportunityInr,
+      CERTIFIED_NET_DEFENSIBLE_INR,
+      consistency.netDefensibleVarianceInr
+    ),
+    metricRow(
+      labels.approvedSavings,
+      metadata.approvedSavingsInr,
+      CERTIFIED_APPROVED_SAVINGS_INR,
+      consistency.approvedSavingsVarianceInr
+    ),
+    metricRow(
+      labels.realizedSavings,
+      metadata.realizedSavingsInr,
+      CERTIFIED_REALIZED_SAVINGS_INR,
+      consistency.realizedSavingsVarianceInr
+    )
+  ];
+};
 
-## 2. Lineage & Traceability Audit
-- **Every KPI has a source**: Verified. Total spend derives from 31,671 invoice line items.
-- **Every opportunity has lineage**: Verified. All 10 levers map to ERP part numbers and historical POs.
-- **Every chart uses certified data**: Verified. All charts render certified Module 1-4 metrics.
-- **Every external client fact has a source**: Verified. 5 of 5 facts cite official reports and filings.
-- **Zero synthetic savings**: Verified.
-- **Zero cross-tenant data**: Verified.
-- **Customer data security**: Verified (AES-256-GCM, tenant isolation, zero AI retraining).
-`;
-}
+const controlRows = (report: ExecutiveBriefReportData): string[] =>
+  EXECUTIVE_BRIEF_CHECKLIST_KEYS.map((key) =>
+    tableRow([
+      EXECUTIVE_BRIEF_CHECKLIST_LABELS[key],
+      report.validationChecklist[key]
+        ? EXECUTIVE_BRIEF_LABELS.checklistPass
+        : EXECUTIVE_BRIEF_LABELS.checklistFail
+    ])
+  );
 
-export function formatExecutiveBriefValidationMarkdown(val: ExecutiveBriefValidationResult): string {
-  return `# EXECUTIVE BRIEF VALIDATION REPORT
-**Release Target**: \`Executive Procurement Value & Savings Brief\`  
-**Decision**: **${val.finalStatus}**  
-
----
-
-## 1. Quality & Completeness Matrix
-- **Total Slides / Pages**: ${val.totalPages} (Target: 25-35 pages: **PASS**)
-- **Total Diagnostic Charts & Cards**: ${val.totalCharts}
-- **Total Major Findings**: ${val.totalFindings}
-- **Total Opportunity Levers**: ${val.totalOpportunities}
-- **Total Evidence References**: ${val.totalEvidenceReferences}
-- **Total External Verified Sources**: ${val.totalExternalSources}
-- **Financial Variance**: **₹${val.financialVariance.toFixed(2)}** (**PASS**)
-- **Module 1 Linkage**: **${val.module1Linkage}**
-- **Module 2 Linkage**: **${val.module2Linkage}**
-- **Module 3 Linkage**: **${val.module3Linkage}**
-- **Module 4 Linkage**: **${val.module4Linkage}**
-- **Security & Confidentiality Status**: **${val.securityStatus}**
-- **PDF 16:9 Presentation Rendering**: **${val.pdfRenderingStatus}**
-
----
-
-## 2. Production Gate Status
-\`\`\`text
-${val.finalStatus}
-\`\`\`
-`;
-}
+export const formatExecutiveBriefAuditMarkdown = (report: ExecutiveBriefReportData): string => {
+  const labels = EXECUTIVE_BRIEF_LABELS.audit;
+  const reconciliation = reconcileExecutiveBrief(report.metadata);
+  const lines = [
+    `# ${labels.title}`,
+    '',
+    `- **${labels.clientLabel}:** ${report.clientProfile.clientName}`,
+    `- **${labels.reportDateLabel}:** ${report.metadata.reportDate}`,
+    `- **${labels.reportVersionLabel}:** ${report.metadata.reportVersion}`,
+    `- **${labels.sourceDataLabel}:** ${CERTIFIED_SOURCE_DATA_VERSION}`,
+    '',
+    `## ${labels.reconciliationTitle}`,
+    '',
+    tableRow([
+      labels.metricHeader,
+      labels.actualHeader,
+      labels.certifiedHeader,
+      labels.varianceHeader,
+      labels.statusHeader
+    ]),
+    separatorRow(5),
+    ...reconciliationRows(report, reconciliation.consistency),
+    '',
+    `${labels.overallLabel}: **${reconciliation.isReconciled ? EXECUTIVE_BRIEF_LABELS.checklistPass : EXECUTIVE_BRIEF_LABELS.checklistFail}**`,
+    '',
+    `## ${labels.controlsTitle}`,
+    '',
+    tableRow([labels.controlHeader, labels.statusHeader]),
+    separatorRow(2),
+    ...controlRows(report),
+    '',
+    `## ${labels.artifactsTitle}`,
+    '',
+    tableRow([labels.artifactHeader, labels.fileHeader, labels.endpointHeader]),
+    separatorRow(3),
+    ...report.artifacts.map((artifact) => tableRow([artifact.name, artifact.filename, artifact.endpoint])),
+    '',
+    `## ${labels.lineageTitle}`,
+    '',
+    tableRow([
+      labels.findingHeader,
+      labels.moduleHeader,
+      EXECUTIVE_BRIEF_LABELS.traceabilityFields.item,
+      labels.savingsHeader
+    ]),
+    separatorRow(4),
+    ...report.traceabilityLineage.map((item) => tableRow([item.findingId, item.module, item.item, item.savings])),
+    ''
+  ];
+  return lines.join('\n');
+};

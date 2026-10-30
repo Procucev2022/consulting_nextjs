@@ -1,9 +1,18 @@
 import React from 'react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, act, waitFor, cleanup } from '@testing-library/react';
 import { Module2Categorization } from '../../src/components/Module2Categorization';
-import { mockTenant } from '../../src/data/mockData';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { unspscOfficialDictionary } from '../../src/data/unspscTaxonomy';
+import { taxonomyRecords } from '../fixtures/taxonomy';
+
+// tests/setup.ts seeds the shared catalog. Replace it so every fixture record appears exactly once.
+beforeAll(() => { unspscOfficialDictionary.splice(0, unspscOfficialDictionary.length, ...taxonomyRecords); });
+
+// UNSPSCDetailModal is loaded through next/dynamic, so it mounts after an async module import.
+// A cold import (slower under coverage instrumentation) can exceed findByRole's 1s default.
+const LAZY_MODAL_TIMEOUT_MS = 5000;
 
 const sampleSpendCategories = [
   {
@@ -37,19 +46,6 @@ const sampleSpendCategories = [
     top_items: [
       { item_name: 'Cartons', vendor_name: 'Amcor Packaging', spend_inr_cr: 12.0, total_spend_inr_cr: 12.0, share_pct: 26.5 }
     ]
-  }
-];
-
-const sampleCategoryYearDetails = [
-  {
-    category: 'Direct Materials',
-    total_spend_evaluated_cr: 120.5,
-    total_items_count: 420,
-    years: {
-      fy24: { spend_cr: 38.0, share_pct: 31.5, item_count: 130, items: [] },
-      fy25: { spend_cr: 40.5, share_pct: 33.6, item_count: 140, items: [] },
-      fy26: { spend_cr: 42.0, share_pct: 34.9, item_count: 150, items: [] }
-    }
   }
 ];
 
@@ -323,9 +319,9 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    expect(screen.getByText(UI_STRINGS.module2.breakdown.inrValuation)).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module2.breakdown.inrValuation)[0]).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.breakdown.categorySpendBreakdown)).toBeInTheDocument();
-    expect(screen.getByText(mockTenant.enterprise_name)).toBeInTheDocument();
+    expect(screen.getAllByText(mockTenant.enterprise_name)[0]).toBeInTheDocument();
   });
 
   it('triggers onStartAICategorization and transitions to completed state after timer', async () => {
@@ -355,7 +351,7 @@ describe('Module2Categorization Component', () => {
     vi.useRealTimers();
   });
 
-  it('toggles between Top 50 Vendor Supply view and Category Spend Matrix view', async () => {
+  it('renders Year-Wise Category Spend Valuation Matrix with multi-year comparisons and drilldowns', async () => {
     render(
       <Module2Categorization
         categories={sampleSpendCategories}
@@ -366,25 +362,17 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    // By default, Top 50 Vendor Supply categorization is active
-    expect(screen.getByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
-
-    // Switch to Category Spend Matrix tab
-    const categoryMatrixTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.matrixTitle });
-    fireEvent.click(categoryMatrixTabBtn);
+    // Verify Year-Wise Category Spend Matrix is rendered directly in Area A
+    expect(screen.getByText(UI_STRINGS.module2.matrixTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.matrixDesc)).toBeInTheDocument();
 
     // Verify Category Spend Matrix table headers are shown
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.category)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.colLRange)).toBeInTheDocument();
-
-    // Switch back to Top 50 Vendors tab
-    const vendorSupplyTabBtn = screen.getByRole('button', { name: UI_STRINGS.module2.tabVendorSupply });
-    fireEvent.click(vendorSupplyTabBtn);
-    expect(await screen.findByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.total)).toBeInTheDocument();
   }, 15000);
 
-  it('renders Industry Sector Lens card, allows switching sector, and filters by sector relevance', () => {
-    const handleUpdateTenantMock = vi.fn();
+  it('renders data-backed Material DNA profile summary and filters by sector relevance', () => {
     render(
       <Module2Categorization
         categories={sampleSpendCategories}
@@ -392,33 +380,19 @@ describe('Module2Categorization Component', () => {
         onConfirmMapping={vi.fn()}
         onReassignMapping={vi.fn()}
         onProceedToTrend={vi.fn()}
-        tenant={mockTenant}
-        onUpdateTenant={handleUpdateTenantMock}
+        tenant={{
+          ...mockTenant,
+          major_sector: 'Automotive & Transportation',
+          minor_sector: 'Precision Auto Components'
+        }}
       />
     );
 
-    // Verify Sector Lens Badge is rendered
+    // Verify Sector Badge and Material DNA profile are rendered
     expect(screen.getAllByText(UI_STRINGS.module2.industryContext.badge).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Automotive & Transportation › Precision Auto Components/i)[0]).toBeInTheDocument();
 
-    // Switch Major Sector
-    const majorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel);
-    fireEvent.change(majorSelect, { target: { value: 'Manufacturing & Industrial' } });
-    expect(handleUpdateTenantMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        major_sector: 'Manufacturing & Industrial'
-      })
-    );
-
-    // Switch Minor Sector
-    const minorSelect = screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel);
-    fireEvent.change(minorSelect, { target: { value: 'Precision Engineering & Tooling' } });
-    expect(handleUpdateTenantMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        minor_sector: 'Precision Engineering & Tooling'
-      })
-    );
-
-    // Filter by Sector Relevance
+    // Filter by Sector Relevance in workbench
     const sectorRelevanceFilter = screen.getByLabelText(UI_STRINGS.module2.industryContext.badge);
     fireEvent.change(sectorRelevanceFilter, { target: { value: 'CORE_DIRECT' } });
     fireEvent.change(sectorRelevanceFilter, { target: { value: 'CRITICAL_PACKAGING' } });
@@ -517,7 +491,7 @@ describe('Module2Categorization Component', () => {
     fireEvent.click(moreDetailsButtons[0]);
 
     // Verify UNSPSCDetailModal opens
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {}, { timeout: LAZY_MODAL_TIMEOUT_MS })).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.modals.unspscDetail.title)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.modals.unspscDetail.taxonomyTreeTitle)).toBeInTheDocument();
 
@@ -546,7 +520,7 @@ describe('Module2Categorization Component', () => {
 
     // Enter key
     fireEvent.keyDown(catalogCard, { key: 'Enter' });
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {}, { timeout: LAZY_MODAL_TIMEOUT_MS })).toBeInTheDocument();
     const closeBtns = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
     fireEvent.click(closeBtns[0]);
     await waitFor(() => {
@@ -555,7 +529,7 @@ describe('Module2Categorization Component', () => {
 
     // Space key
     fireEvent.keyDown(catalogCard, { key: ' ' });
-    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', {}, { timeout: LAZY_MODAL_TIMEOUT_MS })).toBeInTheDocument();
     const closeBtns2 = screen.getAllByRole('button', { name: UI_STRINGS.modals.unspscDetail.closeBtn });
     fireEvent.click(closeBtns2[0]);
     await waitFor(() => {
@@ -563,7 +537,7 @@ describe('Module2Categorization Component', () => {
     });
   });
 
-  it('renders Strategic High-Value Single-Vendor Risk Engine by default and toggles to UNSPSC Catalog tab', () => {
+  it('renders Vendor Rankings by default and toggles between Strategic Risk and UNSPSC Catalog tabs', () => {
     render(
       <Module2Categorization
         categories={sampleSpendCategories}
@@ -574,7 +548,12 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    // Verify Strategic Risk container is displayed by default
+    // Verify Vendor Rankings is displayed by default
+    expect(screen.getByTestId('vendor-rankings-container')).toBeInTheDocument();
+
+    // Click tab to switch to Strategic Risk tab
+    const strategicTab = screen.getByTestId('tab-strategic-vendor-risk');
+    fireEvent.click(strategicTab);
     expect(screen.getByTestId('strategic-vendor-risk-container')).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.strategicVendorRisk.kpis.totalAtRiskSpend)).toBeInTheDocument();
 
@@ -586,12 +565,11 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByPlaceholderText(UI_STRINGS.module2.catalogSearchPlaceholder)).toBeInTheDocument();
 
     // Switch back to Strategic Risk tab
-    const strategicTab = screen.getByTestId('tab-strategic-vendor-risk');
     fireEvent.click(strategicTab);
     expect(screen.getByTestId('strategic-vendor-risk-container')).toBeInTheDocument();
   });
 
-  it('renders High-Value Recurring Spend & Vendor Consolidation Engine (> 5 Vendors) above the ML workbench', () => {
+  it('renders consolidated Vendor Intelligence area with Vendor Rankings, Concentration Risk, and Catalog tabs', () => {
     render(
       <Module2Categorization
         categories={sampleSpendCategories}
@@ -602,12 +580,13 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    expect(screen.getByTestId('vendor-consolidation-section')).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.vendorConsolidation.title)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.vendorConsolidation.badge)).toBeInTheDocument();
+    expect(screen.getByTestId('vendor-intelligence-area')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-vendor-rankings')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-strategic-vendor-risk')).toBeInTheDocument();
+    expect(screen.getByTestId('tab-unspsc-catalog')).toBeInTheDocument();
   });
 
-  it('renders Multiple Monthly PO Consolidation & Economies of Scale Engine above the ML workbench', () => {
+  it('renders authoritative Strategic Sourcing workspace in Area C without standalone duplicate engines', () => {
     render(
       <Module2Categorization
         categories={sampleSpendCategories}
@@ -618,9 +597,9 @@ describe('Module2Categorization Component', () => {
       />
     );
 
-    expect(screen.getByTestId('po-consolidation-section')).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.poConsolidation.title)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.poConsolidation.badge)).toBeInTheDocument();
+    expect(screen.getByTestId('strategic-sourcing-area')).toBeInTheDocument();
+    expect(screen.getByTestId('module2-strategic-sourcing-workspace-container')).toBeInTheDocument();
+    expect(screen.queryByTestId('po-consolidation-section-container')).not.toBeInTheDocument();
   });
 
   it('renders masked overlay for Bronze customer and handles upgrade trigger', () => {
@@ -679,9 +658,9 @@ describe('Module2Categorization Component', () => {
     );
 
     expect(scrollIntoViewMock).toHaveBeenCalled();
-    expect(screen.getByTestId('vendor-consolidation-section-container')).toBeInTheDocument();
+    expect(screen.getByTestId('vendor-rankings-container')).toBeInTheDocument();
 
-    // Rerender with po-consolidation-section
+    // Rerender with po-consolidation-section activates Strategic Sourcing area
     rerender(
       <Module2Categorization
         categories={sampleSpendCategories}
@@ -692,7 +671,7 @@ describe('Module2Categorization Component', () => {
         targetSection="po-consolidation-section"
       />
     );
-    expect(screen.getByTestId('po-consolidation-section-container')).toBeInTheDocument();
+    expect(screen.getByTestId('strategic-sourcing-area')).not.toHaveClass('hidden');
 
     // Rerender with strategic-risk-section
     rerender(
@@ -718,7 +697,83 @@ describe('Module2Categorization Component', () => {
         targetSection="vendor-category-supply-section"
       />
     );
-    expect(screen.getByTestId('vendor-category-supply-section')).toBeInTheDocument();
+    expect(screen.getByTestId('vendor-rankings-container')).toBeInTheDocument();
+  });
+
+  it('navigates across the 4 consolidated areas via primary navigation tabs', () => {
+    render(
+      <Module2Categorization
+        categories={sampleSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    // Verify all 4 area containers are rendered in the DOM
+    expect(screen.getByTestId('client-spend-intelligence-area')).toBeInTheDocument();
+    expect(screen.getByTestId('ai-categorization-review-area')).toBeInTheDocument();
+    expect(screen.getByTestId('strategic-sourcing-area')).toBeInTheDocument();
+    expect(screen.getByTestId('vendor-intelligence-area')).toBeInTheDocument();
+
+    // Click Spend Intelligence Tab
+    const spendTab = screen.getByTestId('tab-area-spend-intelligence');
+    fireEvent.click(spendTab);
+    expect(screen.getByTestId('client-spend-intelligence-area')).not.toHaveClass('hidden');
+
+    // Click AI Review Tab
+    const aiReviewTab = screen.getByTestId('tab-area-ai-review');
+    fireEvent.click(aiReviewTab);
+    expect(screen.getByTestId('ai-categorization-review-area')).not.toHaveClass('hidden');
+
+    // Click Strategic Sourcing Tab
+    const sourcingTab = screen.getByTestId('tab-area-strategic-sourcing');
+    fireEvent.click(sourcingTab);
+    expect(screen.getByTestId('strategic-sourcing-area')).not.toHaveClass('hidden');
+
+    // Click Vendor Intelligence Tab
+    const vendorTab = screen.getByTestId('tab-area-vendor-intelligence');
+    fireEvent.click(vendorTab);
+    expect(screen.getByTestId('vendor-intelligence-area')).not.toHaveClass('hidden');
+
+    // Return to Consolidated Overview Tab
+    const allTab = screen.getByTestId('tab-area-all');
+    fireEvent.click(allTab);
+    expect(screen.getByTestId('client-spend-intelligence-area')).not.toHaveClass('hidden');
+    expect(screen.getByTestId('strategic-sourcing-area')).not.toHaveClass('hidden');
+  });
+
+  it('filters line items by review status in AI Review workbench and displays distinct status chips', () => {
+    render(
+      <Module2Categorization
+        categories={sampleSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    const statusFilter = screen.getByLabelText(UI_STRINGS.module2.areaTabs.statusFilterAll);
+    expect(statusFilter).toBeInTheDocument();
+
+    // Filter to TAXONOMY_VERIFIED
+    fireEvent.change(statusFilter, { target: { value: 'TAXONOMY_VERIFIED' } });
+    expect(screen.getByText('LINE-1')).toBeInTheDocument();
+
+    // Filter to CLIENT_APPROVED
+    fireEvent.change(statusFilter, { target: { value: 'CLIENT_APPROVED' } });
+    expect(screen.getByText('LINE-2')).toBeInTheDocument();
+
+    // Filter to AWAITING_REVIEW
+    fireEvent.change(statusFilter, { target: { value: 'AWAITING_REVIEW' } });
+    expect(screen.getByText('LINE-3')).toBeInTheDocument();
+
+    // Reset to ALL
+    fireEvent.change(statusFilter, { target: { value: 'ALL' } });
+    expect(screen.getByText('LINE-1')).toBeInTheDocument();
+    expect(screen.getByText('LINE-2')).toBeInTheDocument();
   });
 });
 

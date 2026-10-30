@@ -43,14 +43,15 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
     if (!matchesSearch) return false;
 
     if (trendFilter === 'HIGH_CREEP') return item.price_change_pct >= 15;
-    if (trendFilter === 'STEADY') return item.price_change_pct < 10;
+    if (trendFilter === 'STEADY') return item.price_change_pct < 15;
     return true;
   });
 
   const vendorSpendCr = vendor.total_3yr_spend_inr_cr || 0;
-  const sharePct = ((vendorSpendCr / totalEvaluatedSpendInrCr) * 100).toFixed(1);
+  const sharePct = (totalEvaluatedSpendInrCr > 0 ? (vendorSpendCr / totalEvaluatedSpendInrCr) * 100 : 0).toFixed(1);
   const highCreepCount = rawItems.filter((i) => i.price_change_pct >= 15).length;
   const totalPotentialLakhs = rawItems.reduce((acc, i) => acc + (i.opportunity_potential_inr_lakhs || 0), 0);
+  const activeCount = vendor.line_items_count || vendor.item_count || rawItems.length;
 
   const handleExportCSV = () => {
     const headers = [
@@ -66,7 +67,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
       'FY25 Price',
       'FY26 Price',
       'Price Variance %',
-      '3-Yr Total Spend (INR Cr)',
+      'Total Period Spend (INR Cr)',
       'Savings Potential (Lakhs)'
     ];
 
@@ -158,7 +159,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
           <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.contractedItems}</span>
             <p className="text-base font-black text-cyan-700 dark:text-cyan-400">
-              {UI_STRINGS.modals.topItems.lineItemsCount(vendor.line_items_count)}
+              {UI_STRINGS.modals.topItems.lineItemsCount(activeCount)}
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
@@ -195,7 +196,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
               onClick={() => setTrendFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 trendFilter === 'ALL'
-                  ? 'bg-white text-white dark:bg-emerald-600 dark:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white'
                   : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
@@ -276,16 +277,16 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                             <span className="font-bold">{item.po_number}</span>
                           </td>
                           <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
-                            {item.order_qty_annual.toLocaleString()} {item.unit_of_measure}
+                            {(item.order_qty_annual ?? 0).toLocaleString()} {item.unit_of_measure}
                           </td>
                           <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {curr} {item.price_fy24.toLocaleString()}
+                            {curr} {(item.price_fy24 ?? 0).toLocaleString()}
                           </td>
                           <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {curr} {item.price_fy25.toLocaleString()}
+                            {curr} {(item.price_fy25 ?? 0).toLocaleString()}
                           </td>
                           <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
-                            {curr} {item.price_fy26.toLocaleString()}
+                            {curr} {(item.price_fy26 ?? 0).toLocaleString()}
                           </td>
                           <td className="py-3 px-3 text-center">
                             <span
@@ -298,7 +299,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                               }`}
                             >
                               <TrendingUp className="w-3 h-3" />
-                              <span>+{item.price_change_pct}%</span>
+                              <span>+{item.price_change_pct ?? 0}%</span>
                             </span>
                             {item.leakage_flag && (
                               <span className="text-[9px] text-rose-600 dark:text-rose-400 font-sans block mt-0.5 font-semibold">
@@ -308,7 +309,7 @@ export const VendorTopItemsModal: React.FC<VendorTopItemsModalProps> = ({
                           </td>
                           <td className="py-3 px-3 text-right">
                             <span className="font-black text-emerald-700 dark:text-emerald-400 text-sm block">
-                              ₹{item.total_spend_inr_cr.toFixed(2)} Cr
+                              ₹{(item.total_spend_inr_cr ?? 0).toFixed(2)} Cr
                             </span>
                             <span className="text-[9px] text-slate-400 font-mono">
                               &sum;(Q &times; P &times; FX)

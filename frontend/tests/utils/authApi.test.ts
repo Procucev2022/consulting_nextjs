@@ -116,7 +116,7 @@ describe('authApiClient and auth utilities', () => {
 
       await expect(
         authApiClient.getMe('some-token')
-      ).rejects.toThrow('Server error (503): Please ensure backend is running on port 5000');
+      ).rejects.toThrow('Server error (503): Please ensure backend API server is running');
     });
   });
 
@@ -229,20 +229,29 @@ describe('authApiClient and auth utilities', () => {
       await expect(authApiClient.login(loginData)).rejects.toThrow('Invalid credentials');
     });
 
-    it('should authenticate using dev fallback credentials when server fetch fails', async () => {
+    it('rejects an offline login for a development account without creating a local admin session', async () => {
       const loginData: LoginFormData = {
         email: 'sriman@procucev.com',
         password: 'sriman@123'
       };
 
-      // Simulate network/server failure so it falls through to dev credentials
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      const res = await authApiClient.login(loginData);
-      expect(res.success).toBe(true);
-      expect(res.user.email).toBe('sriman@procucev.com');
-      expect(res.user.role).toBe('ADMIN');
-      expect(res.token).toMatch(/^dev-temp-token-/);
+      await expect(authApiClient.login(loginData)).rejects.toThrow('Network error');
+      expect(authApiClient.getStoredToken()).toBeNull();
+      expect(authApiClient.getStoredUser()).toBeNull();
+    });
+
+    it('honors a D1 authentication rejection for a development account without granting GOLD access', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => ({ success: false, message: 'Invalid credentials' })
+      });
+
+      await expect(authApiClient.login({ email: 'sriman@procucev.com', password: 'sriman@123' })).rejects.toThrow('Invalid credentials');
+      expect(authApiClient.getStoredToken()).toBeNull();
+      expect(authApiClient.getStoredUser()).toBeNull();
     });
 
     it('should re-throw error when fetch fails and no matching dev credential exists', async () => {

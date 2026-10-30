@@ -1,8 +1,13 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ReassignModal } from '../../../src/components/modals/ReassignModal';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { unspscOfficialDictionary } from '../../../src/data/unspscTaxonomy';
+import { taxonomyRecords } from '../../fixtures/taxonomy';
+
+// tests/setup.ts already seeds the shared catalog. Replace it so every fixture record appears exactly once.
+beforeAll(() => { unspscOfficialDictionary.splice(0, unspscOfficialDictionary.length, ...taxonomyRecords); });
 
 describe('ReassignModal Component', () => {
   const sampleItem = {
@@ -38,11 +43,12 @@ describe('ReassignModal Component', () => {
   it('renders and allows searching taxonomy, changing bucket filter, selecting record, and saving', () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
+    const target = taxonomyRecords[0];
 
     render(
       <ReassignModal
         item={sampleItem}
-        isOpen={true}
+        isOpen
         onClose={onClose}
         onSave={onSave}
       />
@@ -56,11 +62,11 @@ describe('ReassignModal Component', () => {
     fireEvent.change(bucketSelect, { target: { value: 'ALL' } });
 
     // Search query
-    const searchInput = screen.getByPlaceholderText(new RegExp(UI_STRINGS.modals.reassign.searchPlaceholder.slice(0, 15), 'i'));
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.modals.reassign.searchPlaceholder);
     fireEvent.change(searchInput, { target: { value: 'boxwood' } });
 
-    // Select first commodity result
-    const firstResult = screen.getByText(/boxwood/i);
+    // Select the single matching commodity result
+    const firstResult = screen.getByText(target.commodityTitle);
     fireEvent.click(firstResult);
 
     // Apply mapping
@@ -69,9 +75,9 @@ describe('ReassignModal Component', () => {
 
     expect(onSave).toHaveBeenCalledWith(
       sampleItem.mapping_id,
-      expect.any(String),
-      expect.any(String),
-      expect.any(String)
+      target.commodityCode,
+      `${target.coreBucket} (${target.commodityTitle})`,
+      target.coreBucket
     );
     expect(onClose).toHaveBeenCalled();
   });
@@ -81,13 +87,13 @@ describe('ReassignModal Component', () => {
     render(
       <ReassignModal
         item={sampleItem}
-        isOpen={true}
+        isOpen
         onClose={onClose}
         onSave={vi.fn()}
       />
     );
 
-    const cancelBtn = screen.getByRole('button', { name: 'Cancel' });
+    const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.common.cancel });
     fireEvent.click(cancelBtn);
     expect(onClose).toHaveBeenCalled();
   });
@@ -98,7 +104,7 @@ describe('ReassignModal Component', () => {
     render(
       <ReassignModal
         item={sampleItem}
-        isOpen={true}
+        isOpen
         onClose={onClose}
         onSave={onSave}
       />
@@ -117,15 +123,15 @@ describe('ReassignModal Component', () => {
     render(
       <ReassignModal
         item={{ ...sampleItem, mapping_id: '' }}
-        isOpen={true}
+        isOpen
         onClose={onClose}
         onSave={onSave}
       />
     );
 
-    const searchInput = screen.getByPlaceholderText(new RegExp(UI_STRINGS.modals.reassign.searchPlaceholder.slice(0, 15), 'i'));
+    const searchInput = screen.getByPlaceholderText(UI_STRINGS.modals.reassign.searchPlaceholder);
     fireEvent.change(searchInput, { target: { value: 'boxwood' } });
-    const firstResult = screen.getByText(/boxwood/i);
+    const firstResult = screen.getByText(taxonomyRecords[0].commodityTitle);
     fireEvent.click(firstResult);
 
     const applyBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.reassign.saveMapping, 'i') });
@@ -133,4 +139,5 @@ describe('ReassignModal Component', () => {
     expect(onSave).not.toHaveBeenCalled();
   });
 });
+
 

@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { Mail, CheckCircle, X, ShieldCheck } from 'lucide-react';
 import type { CommercialEnquiryModalProps } from '../../types';
 import { UI_STRINGS } from '../../constants';
+import { getApiBaseUrl } from '../../utils/apiBase';
 
 export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
   isOpen,
@@ -36,7 +37,7 @@ export const CommercialEnquiryModal: React.FC<CommercialEnquiryModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/upgrade/request', {
+      const res = await fetch(`${getApiBaseUrl()}/api/upgrade/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

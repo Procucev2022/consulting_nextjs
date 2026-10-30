@@ -1,7 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import type { Request, Response, NextFunction } from 'express';
-
 import type {
   LogLevel,
   LogEntry,
@@ -14,7 +12,7 @@ import {
   DEFAULT_SERVICE_NAME,
   DEFAULT_RETENTION_DAYS,
   DEFAULT_MIN_LEVEL
-} from '../constants';
+} from '../constants/logger';
 import {
   resolveLoggerConfig,
   purgeOldLogFiles,
@@ -188,51 +186,7 @@ export class Logger {
     return computeLogStats(this.logDir, this.retentionDays);
   }
 
-  public createRequestLogger(): (req: Request, res: Response, next: NextFunction) => void {
-    return (req: Request, res: Response, next: NextFunction): void => {
-      const start = Date.now();
-      const rawHeader = req.headers['x-request-id'];
-      const requestId = (typeof rawHeader === 'string' && rawHeader.trim())
-        ? rawHeader
-        : `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-      req.headers['x-request-id'] = requestId;
-      res.setHeader('x-request-id', requestId);
-
-      res.on('finish', () => {
-        const durationMs = Date.now() - start;
-        const statusCode = res.statusCode;
-        const method = req.method;
-        const reqPath = req.originalUrl || req.url;
-        const ip = req.ip || req.socket.remoteAddress || 'unknown';
-        const userAgent = req.get('user-agent') || 'unknown';
-
-        const context = {
-          requestId,
-          method,
-          path: reqPath,
-          statusCode,
-          durationMs,
-          ip,
-          userAgent
-        };
-
-        const message = `HTTP ${method} ${reqPath} [${statusCode}] ${durationMs}ms`;
-
-        if (statusCode >= 500) {
-          this.error(message, context);
-        } else if (statusCode >= 400) {
-          this.warn(message, context);
-        } else {
-          this.info(message, context);
-        }
-      });
-
-      next();
-    };
-  }
 }
 
 export const logger = new Logger();
-export const requestLogger = logger.createRequestLogger();
 export default logger;

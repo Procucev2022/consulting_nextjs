@@ -7,6 +7,17 @@
 import React, { useState } from 'react';
 import { KeyRound, ShieldCheck, X, AlertTriangle } from 'lucide-react';
 import type { ProvisionSubscriptionModalProps } from '../../types';
+import { getApiBaseUrl } from '../../utils/apiBase';
+import { authApiClient } from '../../utils/authApi';
+import { UI_STRINGS } from '../../constants';
+
+const adminRequestHeaders = (): Record<string, string> => {
+  const token = authApiClient.getStoredToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+};
 
 export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProps> = ({
   isOpen,
@@ -40,9 +51,9 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await fetch('/api/subscription/admin/request-otp', {
+      const res = await fetch(`${getApiBaseUrl()}/api/subscription/admin/request-otp`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminRequestHeaders(),
         body: JSON.stringify({
           customer_id: customerId || `usr-${Date.now()}`,
           action: 'PROVISION'
@@ -67,9 +78,9 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
-      const res = await fetch('/api/subscription/admin/provision', {
+      const res = await fetch(`${getApiBaseUrl()}/api/subscription/admin/provision`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminRequestHeaders(),
         body: JSON.stringify({
           tenant_id: tenantId || `TNT-${Date.now()}`,
           customer_id: customerId || `usr-${Date.now()}`,
@@ -113,7 +124,7 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
               {step === 'DETAILS' ? 'Provision Customer Subscription' : 'Admin OTP Verification'}
             </h3>
             <p className="text-xs text-[#64748B]">
-              {step === 'DETAILS' ? 'Controlled offline commercial setup' : 'Enter the 6-digit OTP sent to admin registered mobile'}
+              {step === 'DETAILS' ? 'Controlled offline commercial setup' : UI_STRINGS.subscription.adminOtpDelivery}
             </p>
           </div>
         </div>
@@ -188,7 +199,7 @@ export const ProvisionSubscriptionModal: React.FC<ProvisionSubscriptionModalProp
           <form onSubmit={handleVerifyAndProvision} className="space-y-4">
             <div>
               <label htmlFor="admin-otp-input" className="block text-xs font-bold text-[#475569] mb-1.5">
-                Admin 6-Digit Verification OTP
+                {UI_STRINGS.subscription.adminOtpCodeLabel}
               </label>
               <input
                 id="admin-otp-input"

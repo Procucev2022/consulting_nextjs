@@ -42,15 +42,16 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
 
     if (!matchesSearch) return false;
 
-    if (trendFilter === 'HIGH_CREEP') return item.price_change_pct > 15;
-    if (trendFilter === 'STEADY') return item.price_change_pct <= 5;
+    if (trendFilter === 'HIGH_CREEP') return item.price_change_pct >= 15;
+    if (trendFilter === 'STEADY') return item.price_change_pct < 15;
     return true;
   });
 
   const categorySpendCr = category.total_3yr_spend_inr_cr || 0;
-  const sharePct = ((categorySpendCr / totalEvaluatedSpendInrCr) * 100).toFixed(1);
+  const sharePct = (totalEvaluatedSpendInrCr > 0 ? (categorySpendCr / totalEvaluatedSpendInrCr) * 100 : 0).toFixed(1);
   const highCreepCount = rawItems.filter((i) => i.price_change_pct >= 15).length;
   const totalPotentialLakhs = rawItems.reduce((acc, i) => acc + (i.opportunity_potential_inr_lakhs || 0), 0);
+  const activeCount = category.line_items_count || category.item_count || rawItems.length;
 
   const handleExportCSV = () => {
     const headers = [
@@ -64,8 +65,8 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
       'Unit Price FY24',
       'Unit Price FY25',
       'Unit Price FY26',
-      '3-Year Price Change %',
-      'Total 3-Year Spend (INR Cr)',
+      'Period Price Change %',
+      'Total Period Spend (INR Cr)',
       'Identified Savings Opportunity (INR Lakhs)'
     ];
 
@@ -155,7 +156,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
           <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
             <span className="text-[10px] text-slate-400 uppercase font-semibold">{UI_STRINGS.modals.topItems.activeLineItems}</span>
             <p className="text-base font-black text-cyan-700 dark:text-cyan-400">
-              {UI_STRINGS.modals.topItems.activeItemsCount(category.line_items_count)}
+              {UI_STRINGS.modals.topItems.activeItemsCount(activeCount)}
             </p>
           </div>
           <div className="p-2.5 rounded-xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-0.5 shadow-xs">
@@ -192,7 +193,7 @@ export const CategoryTopItemsModal: React.FC<CategoryTopItemsModalProps> = ({
               onClick={() => setTrendFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 trendFilter === 'ALL'
-                  ? 'bg-white text-white dark:bg-emerald-600 dark:text-white'
+                  ? 'bg-slate-900 text-white dark:bg-emerald-600 dark:text-white'
                   : 'bg-slate-100 dark:bg-[#EEF4FC] text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >

@@ -8,6 +8,7 @@ import {
   getItemSpendCr,
   upsertTopItem
 } from './step2BreakdownShared';
+import { resolveHumanReadableCategory } from './procurementCategoryResolver';
 
 interface VendorAggregate {
   spendFY24: number;
@@ -17,9 +18,11 @@ interface VendorAggregate {
   categories: Map<string, number>;
   items: Map<string, CategoryTopItem>;
   masterId: string;
+  vendorName: string;
+  lineItemsCount: number;
 }
 
-function createVendorEntry(item: LineItemMapping, idx: number): VendorAggregate {
+function createVendorEntry(item: LineItemMapping, idx: number, vName: string): VendorAggregate {
   return {
     spendFY24: 0,
     spendFY25: 0,
@@ -27,7 +30,9 @@ function createVendorEntry(item: LineItemMapping, idx: number): VendorAggregate 
     totalSpend: 0,
     categories: new Map(),
     items: new Map(),
-    masterId: item.master_supplier_id || `VND-M-${1000 + idx}`
+    masterId: item.master_supplier_id || `VND-M-${1000 + idx}`,
+    vendorName: vName,
+    lineItemsCount: 0
   };
 }
 
@@ -36,18 +41,21 @@ function aggregateLineItemVendor(
   idx: number,
   vendorMap: Map<string, VendorAggregate>
 ): void {
-  const vName = item.vendor_identified || 'Unknown Supplier';
-  let entry = vendorMap.get(vName);
+  const vName = item.vendor_identified?.trim() || 'Unknown Supplier';
+  const vKey = item.master_supplier_id ? `ID_${item.master_supplier_id}` : `NAME_${vName.toUpperCase()}`;
+  let entry = vendorMap.get(vKey);
   if (!entry) {
-    entry = createVendorEntry(item, idx);
-    vendorMap.set(vName, entry);
+    entry = createVendorEntry(item, idx, vName);
+    vendorMap.set(vKey, entry);
   }
 
   const spendCr = getItemSpendCr(item);
   entry.totalSpend += spendCr;
+  entry.lineItemsCount += 1;
   addSpendToFiscalYear(entry, spendCr, item.spend_year);
 
-  const cat = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
+  const rawCat = item.core_bucket || item.unspsc_category_name || 'Direct Materials';
+  const cat = resolveHumanReadableCategory(rawCat, item.material_code);
   entry.categories.set(cat, (entry.categories.get(cat) || 0) + spendCr);
 
   const rawDesc = item.raw_desc || item.material_desc || 'Item';
@@ -68,15 +76,18 @@ function getPrimaryCategory(categories: Map<string, number>): string {
 }
 
 function mapVendorToDetail(
-  vName: string,
   data: VendorAggregate,
   idx: number,
   totalCalculated: number
 ): VendorYearDetail {
-  const fy24 = data.spendFY24 > 0 ? data.spendFY24 : data.totalSpend * 0.28;
-  const fy25 = data.spendFY25 > 0 ? data.spendFY25 : data.totalSpend * 0.34;
-  const fy26 = data.spendFY26 > 0 ? data.spendFY26 : data.totalSpend * 0.38;
-  const yoy = fy25 > 0 ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1)) : 7.5;
+  const fy24 = data.spendFY24;
+  const fy25 = data.spendFY25;
+  const fy26 = data.spendFY26;
+  const yoy = (fy25 > 0 && fy26 > 0)
+    ? Number((((fy26 - fy25) / fy25) * 100).toFixed(1))
+    : (fy24 > 0 && fy25 > 0)
+      ? Number((((fy25 - fy24) / fy24) * 100).toFixed(1))
+      : undefined;
   const primaryCat = getPrimaryCategory(data.categories);
 
   const topItems = Array.from(data.items.values())
@@ -93,7 +104,7 @@ function mapVendorToDetail(
   return {
     id: `VND-${idx + 1}`,
     rank: idx + 1,
-    vendor_name: vName,
+    vendor_name: data.vendorName,
     master_vendor_id: data.masterId,
     primary_category: primaryCat,
     spend_fy24_cr: Number(fy24.toFixed(2)),
@@ -102,8 +113,8 @@ function mapVendorToDetail(
     total_3yr_spend_inr_cr: Number(data.totalSpend.toFixed(2)),
     spend_share_pct: Number(((data.totalSpend / totalCalculated) * 100).toFixed(1)),
     yoy_growth_pct: yoy,
-    line_items_count: data.items.size,
-    item_count: data.items.size,
+    line_items_count: data.lineItemsCount || data.items.size,
+    item_count: data.lineItemsCount || data.items.size,
     risk_status: data.totalSpend > 15 ? 'HIGH CREEP' : 'ALIGNED',
     top_items: topItems,
     is_balance_vendor: false
@@ -131,7 +142,7 @@ export function calculateVendorYearDetails(
 
   const sorted = Array.from(vendorMap.entries()).sort((a, b) => b[1].totalSpend - a[1].totalSpend);
 
-  return sorted.slice(0, 50).map(([vName, data], idx) =>
-    mapVendorToDetail(vName, data, idx, totalCalculated)
+  return sorted.slice(0, 50).map(([, data], idx) =>
+    mapVendorToDetail(data, idx, totalCalculated)
   );
 }

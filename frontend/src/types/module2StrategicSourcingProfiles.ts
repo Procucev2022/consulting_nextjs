@@ -307,3 +307,14 @@ export interface Module2ToModule4HandoffPackage {
   timestamp: string;
   auditSignature: string;
 }
+
+export interface EvidenceCalculationTraceModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: CategoryStrategicSourcingProfile;
+}
+
+export interface EvidencePackDownloadLink {
+  href: string;
+  fileName: string;
+}

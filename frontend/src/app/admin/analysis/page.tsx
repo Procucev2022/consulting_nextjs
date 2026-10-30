@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AICEV_LOGO_SRC } from '../../../constants';
 import { apiClient } from '../../../utils/api';
+import frontendLogger from '../../../utils/logger';
 import { AnalysisControlCenter } from '../../../components/admin/orchestration/AnalysisControlCenter';
 import type { UserProfile } from '../../../types';
 
@@ -27,23 +28,34 @@ export default function AdminAnalysisPage(): React.ReactElement {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let session = apiClient.getStoredUser();
-    if (session?.role !== 'ADMIN') {
-      const devAdmin: UserProfile = {
-        id: 'usr-admin-sriman',
-        name: 'Sriman Admin',
-        email: 'sriman@procucev.com',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        subscription_tier: 'GOLD',
-        company_name: 'Procucev Enterprise Solutions Pvt Ltd',
-        created_at: new Date().toISOString()
-      };
-      apiClient.setStoredSession('dev-temp-token-sriman', devAdmin);
-      session = devAdmin;
+    const session = apiClient.getStoredUser();
+    const token = apiClient.getStoredToken();
+    if (!token || session?.role !== 'ADMIN') {
+      apiClient.clearStoredSession();
+      router.push('/admin/login');
+      return;
     }
-    setCurrentUser(session);
-    setLoading(false);
+    let cancelled = false;
+    const authenticate = async (): Promise<void> => {
+      try {
+        const profile = await apiClient.getMe(token);
+        if (cancelled) return;
+        if (!profile.success || profile.user.role !== 'ADMIN' || profile.user.status !== 'ACTIVE') {
+          apiClient.clearStoredSession();
+          router.push('/admin/login');
+          return;
+        }
+        setCurrentUser(profile.user);
+        setLoading(false);
+      } catch (error) {
+        if (cancelled) return;
+        frontendLogger.warn('Administrator session verification failed', { action: 'adminAnalysisAuthentication', error });
+        apiClient.clearStoredSession();
+        router.push('/admin/login');
+      }
+    };
+    void authenticate();
+    return () => { cancelled = true; };
   }, [router]);
 
   const handleLogout = (): void => {

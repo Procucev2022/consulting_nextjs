@@ -132,4 +132,66 @@ describe('ParetoSpendHierarchySection Component', () => {
     fireEvent.click(screen.getByText('CUSTOM SUPPLIER CORP'));
     expect(screen.getByText('CUSTOM RAW MATERIAL')).toBeInTheDocument();
   });
+
+  it('resets search query and expanded items when switching between vendor and item tabs', () => {
+    render(<ParetoSpendHierarchySection />);
+
+    const searchInput = screen.getByPlaceholderText(strings.searchPlaceholder);
+
+    // Search on Vendor tab
+    fireEvent.change(searchInput, { target: { value: 'TRAFIGURA' } });
+    expect(screen.getByText('TRAFIGURA INDIA PRIVATE LIMITED')).toBeInTheDocument();
+
+    // Switch to Item tab
+    const itemTabBtn = screen.getByText(strings.tabItemFirst);
+    fireEvent.click(itemTabBtn);
+
+    // Search query should be cleared, not showing "No records matching search filter"
+    expect(screen.queryByText(strings.noRecords)).not.toBeInTheDocument();
+    expect(screen.getByText('NICKEL')).toBeInTheDocument();
+
+    // Switch back to Vendor tab
+    const vendorTabBtn = screen.getByText(strings.tabVendorFirst);
+    fireEvent.click(vendorTabBtn);
+    expect(screen.getByText('TRAFIGURA INDIA PRIVATE LIMITED')).toBeInTheDocument();
+  });
+
+  it('clears search input via the Clear Search button (X icon)', () => {
+    render(<ParetoSpendHierarchySection />);
+
+    const searchInput = screen.getByPlaceholderText(strings.searchPlaceholder);
+    fireEvent.change(searchInput, { target: { value: 'TRAFIGURA' } });
+    expect(screen.queryByText('JINDAL STAINLESS LIMITED')).not.toBeInTheDocument();
+
+    const clearBtn = screen.getByTitle(strings.clearSearch);
+    fireEvent.click(clearBtn);
+
+    // All entities should be restored
+    expect(screen.getByText('JINDAL STAINLESS LIMITED')).toBeInTheDocument();
+  });
+
+  it('displays Short Text unavailable when a parent genuinely has zero children', () => {
+    const parentWithoutChildren: ParetoHierarchyParent[] = [
+      {
+        id: 'v-empty',
+        name: 'SUPPLIER WITH NO ITEMS',
+        totalSpendCr: 10.0,
+        sharePct: 100,
+        cumulativeSpendCr: 10.0,
+        cumulativePct: 100,
+        children: []
+      }
+    ];
+
+    render(
+      <ParetoSpendHierarchySection
+        vendorHierarchy={parentWithoutChildren}
+        totalSpendCr={10.0}
+      />
+    );
+
+    expect(screen.getByText('SUPPLIER WITH NO ITEMS')).toBeInTheDocument();
+    expect(screen.getByText(strings.unavailableShortText)).toBeInTheDocument();
+    expect(screen.queryByText('0 items')).not.toBeInTheDocument();
+  });
 });

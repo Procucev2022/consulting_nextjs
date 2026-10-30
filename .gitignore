@@ -18,6 +18,7 @@ node_modules/
 
 # Testing
 coverage/
+coverage-*/
 
 # Misc
 .DS_Store
@@ -52,3 +53,61 @@ storage/
 *.db
 *.db-journal
 **/*.db
+
+# Customer Datasets & Generated Deliverables (Gate 10 Protection)
+datasets/
+**/datasets/
+uploads/
+**/uploads/
+data/dev/
+data/
+**/data/dev/
+Procucev_Procurement_Value_Savings_Diagnostic_*
+**/Procucev_Procurement_Value_Savings_Diagnostic_*
+*UltraTech*
+**/*UltraTech*
+*VGT*Testing*Data*
+**/*VGT*Testing*Data*
+*VGT_Procurement*
+**/*VGT_Procurement*
+*MODULE_1_VGT_EVIDENCE*
+**/*MODULE_1_VGT_EVIDENCE*
+temp_test_*
+**/temp_test_*
+scratch/
+**/scratch/
+backend/scratch/
+backend/undefined/
+release/
+
+
+# Environment-specific local files
+.env.development
+.env.production
+**/.env.development
+**/.env.production
+backend/.generated/
+backend/d1-reference-seed.part-*.sql
+
+# Generated audit/report deliverables; source data and QA fixtures live elsewhere.
+/EXECUTIVE_BRIEF*
+/FINAL_*
+/MODULE_1_*
+/MODULE_2_*
+/MODULE_3_*
+/MODULE_4_*
+/PCBI_*
+/ENTERPRISE_*
+/PROCUCEV_*
+/E2E_*
+/backend/EXECUTIVE_BRIEF*
+/backend/FINAL_*
+/backend/MODULE_1_*
+/backend/MODULE_2_*
+/backend/MODULE_3_*
+/backend/MODULE_4_*
+/backend/PCBI_*
+/backend/ENTERPRISE_*
+/backend/PROCUCEV_*
+/backend/E2E_*
+/backend/artifacts/

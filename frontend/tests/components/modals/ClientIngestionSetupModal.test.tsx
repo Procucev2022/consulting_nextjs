@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ClientIngestionSetupModal } from '../../../src/components/modals/ClientIngestionSetupModal';
-import { mockTenant } from '../../../src/data/mockData';
+import { mockTenant } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 describe('ClientIngestionSetupModal Component', () => {

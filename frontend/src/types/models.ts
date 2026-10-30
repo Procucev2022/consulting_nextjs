@@ -55,6 +55,7 @@ export interface ValidationPreCheckRecord {
   amount?: number;         // Total original currency amount (Q * P)
   spend_inr?: number;
   raw_currency?: string;
+  currency_provenance?: 'SOURCE_PROVIDED' | 'ANALYST_CONFIRMED' | 'SYSTEM_INFERRED' | 'UNRESOLVED' | string;
   amount_inr?: number;     // Q * P * Currency in INR
   inr_crores?: number;     // (Q * P * Currency in INR) / 10,000,000
   fx_rate_applied?: number;
@@ -233,6 +234,9 @@ export interface LineItemMapping {
   invoice_date: string;
   spend_year?: number;
   po_number: string;
+  parent_name?: string;
+  unit_price_fy25?: number;
+  unit_price_fy26?: number;
   industry_sector?: string;
   sector_relevance?: 'CORE_DIRECT' | 'CRITICAL_PACKAGING' | 'SECTOR_LOGISTICS' | 'GENERAL_MRO' | 'CROSS_DOMAIN' | string;
   sector_alignment_score?: number;

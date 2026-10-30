@@ -15,74 +15,7 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
   const oStrings = UI_STRINGS.module4.overlapDeduplication;
   const headers = oStrings.tableHeaders;
 
-  // Fallback realistic overlap groups matching Prompt 100 specifications
-  const displayOverlaps = overlaps.length > 0
-    ? overlaps
-    : [
-        // Prompt 100 Reference Overlap: Bearing 6205 (PCBI ₹10L, E-Auction ₹7L, Vendor Consolidation ₹5L)
-        {
-          overlap_id: 'OVL-MAT-BRG-6205',
-          item: 'Deep Groove Ball Bearing 6205 (MAT-BRG-6205)',
-          vendor: 'SKF India Ltd',
-          primary_opportunity_id: 'OPP-PCBI-001',
-          primary_engine: 'PCBI_PRICE' as const,
-          primary_savings_inr: 1000000,
-          total_gross_savings_inr: 2200000,
-          total_net_savings_inr: 1000000,
-          total_deduplicated_inr: 1200000,
-          overlapping_opportunities: [
-            {
-              opportunity_id: 'OPP-PCBI-001',
-              source_engine: 'PCBI_PRICE' as const,
-              gross_savings_inr: 1000000,
-              deduplicated_amount_inr: 0,
-              net_savings_inr: 1000000
-            },
-            {
-              opportunity_id: 'OPP-EAUCTION-002',
-              source_engine: 'E_AUCTION' as const,
-              gross_savings_inr: 700000,
-              deduplicated_amount_inr: 700000,
-              net_savings_inr: 0
-            },
-            {
-              opportunity_id: 'OPP-VEND-CONSOL-003',
-              source_engine: 'VENDOR_CONSOLIDATION' as const,
-              gross_savings_inr: 500000,
-              deduplicated_amount_inr: 500000,
-              net_savings_inr: 0
-            }
-          ]
-        },
-        // Tata Steel Plates (Vendor Consolidation ₹60L, PO Consolidation ₹25L)
-        {
-          overlap_id: 'OVL-MAT-STL-PLT',
-          item: 'Structural Steel Plate 12mm (MAT-STL-PLT)',
-          vendor: 'Tata Steel & JSW Steel',
-          primary_opportunity_id: 'OPP-VEND-004',
-          primary_engine: 'VENDOR_CONSOLIDATION' as const,
-          primary_savings_inr: 6000000,
-          total_gross_savings_inr: 8500000,
-          total_net_savings_inr: 6000000,
-          total_deduplicated_inr: 2500000,
-          overlapping_opportunities: [
-            {
-              opportunity_id: 'OPP-VEND-004',
-              source_engine: 'VENDOR_CONSOLIDATION' as const,
-              gross_savings_inr: 6000000,
-              deduplicated_amount_inr: 0,
-              net_savings_inr: 6000000
-            },
-            {
-              opportunity_id: 'OPP-PO-CONSOL-005',
-              source_engine: 'PO_CONSOLIDATION' as const,
-              gross_savings_inr: 2500000,
-              deduplicated_amount_inr: 2500000,
-              net_savings_inr: 0
-            }
-          ]
-        }
-      ];
+  const displayOverlaps = overlaps;
 
   const statuses: SavingsOpportunityStatus[] = [
     'IDENTIFIED',
@@ -132,6 +65,13 @@ export const OverlapDeduplicationTable: React.FC<OverlapDeduplicationTableProps>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+              {displayOverlaps.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-6 px-4 text-center font-sans text-slate-500">
+                    {oStrings.emptyState}
+                  </td>
+                </tr>
+              )}
               {displayOverlaps.map((group) => {
                 const primaryOpp = opportunities.find((o) => o.opportunity_id === group.primary_opportunity_id);
                 const currentStatus: SavingsOpportunityStatus = primaryOpp?.status || 'IDENTIFIED';

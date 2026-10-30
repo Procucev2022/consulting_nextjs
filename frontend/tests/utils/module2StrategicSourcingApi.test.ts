@@ -224,8 +224,132 @@ describe('Module2StrategicSourcingApi', () => {
     });
   });
 
+  describe('getDirectPriceImprovement', () => {
+    it('returns data on successful response', async () => {
+      const mockData = { items: [] };
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: mockData })
+      });
+
+      const result = await Module2StrategicSourcingApi.getDirectPriceImprovement('ASS-1', {
+        financialYear: 'FY2024-25',
+        materialCode: 'MAT-1',
+        category: 'Packaging'
+      });
+      expect(result).toEqual(mockData);
+    });
+
+    it('returns null when response status is not ok', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Error'
+      });
+
+      const result = await Module2StrategicSourcingApi.getDirectPriceImprovement('ASS-1');
+      expect(result).toBeNull();
+    });
+
+    it('returns null on fetch throw', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Fetch failed'));
+
+      const result = await Module2StrategicSourcingApi.getDirectPriceImprovement('ASS-1');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getEAuctionDynamicBidding', () => {
+    it('returns data on successful response', async () => {
+      const mockData = { candidates: [] };
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: mockData })
+      });
+
+      const result = await Module2StrategicSourcingApi.getEAuctionDynamicBidding('ASS-1', {
+        financialYear: 'FY2024-25',
+        category: 'Metals',
+        suitability: 'Candidate for Review',
+        materialCode: 'MAT-2'
+      });
+      expect(result).toEqual(mockData);
+    });
+
+    it('returns null when response status is not ok', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found'
+      });
+
+      const result = await Module2StrategicSourcingApi.getEAuctionDynamicBidding('ASS-1');
+      expect(result).toBeNull();
+    });
+
+    it('returns null on fetch throw', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+      const result = await Module2StrategicSourcingApi.getEAuctionDynamicBidding('ASS-1');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getVendorConsolidation', () => {
+    it('returns data on successful response', async () => {
+      const mockData = { opportunities: [] };
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: mockData })
+      });
+
+      const result = await Module2StrategicSourcingApi.getVendorConsolidation('ASS-1', {
+        category: 'Packaging',
+        status: 'ACTIVE',
+        materialCode: 'MAT-3'
+      });
+      expect(result).toEqual(mockData);
+    });
+
+    it('returns null when response status is not ok', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Error'
+      });
+
+      const result = await Module2StrategicSourcingApi.getVendorConsolidation('ASS-1');
+      expect(result).toBeNull();
+    });
+
+    it('returns null on fetch throw', async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error('Connection reset'));
+
+      const result = await Module2StrategicSourcingApi.getVendorConsolidation('ASS-1');
+      expect(result).toBeNull();
+    });
+  });
+
   describe('getFullUrl environment fallback', () => {
+    it('uses NEXT_PUBLIC_BACKEND_URL when configured', async () => {
+      const originalEnv = process.env.NEXT_PUBLIC_BACKEND_URL;
+      process.env.NEXT_PUBLIC_BACKEND_URL = 'http://backend.example.com';
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, data: {} })
+      });
+
+      await Module2StrategicSourcingApi.getDashboardSummary();
+      expect(global.fetch).toHaveBeenCalledWith('http://backend.example.com/api/module2/sourcing/dashboard');
+
+      process.env.NEXT_PUBLIC_BACKEND_URL = originalEnv;
+    });
+
     it('uses window.location.origin when in browser environment', async () => {
+      const originalEnv = process.env.NEXT_PUBLIC_BACKEND_URL;
+      delete process.env.NEXT_PUBLIC_BACKEND_URL;
+
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ success: true, data: {} })
@@ -233,9 +357,13 @@ describe('Module2StrategicSourcingApi', () => {
 
       await Module2StrategicSourcingApi.getDashboardSummary();
       expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('http://localhost:3000/api/module2/sourcing/dashboard'));
+
+      process.env.NEXT_PUBLIC_BACKEND_URL = originalEnv;
     });
 
-    it('falls back to localhost URL when window is undefined', async () => {
+    it('falls back to relative URL when window is undefined', async () => {
+      const originalEnv = process.env.NEXT_PUBLIC_BACKEND_URL;
+      delete process.env.NEXT_PUBLIC_BACKEND_URL;
       const originalWindow = global.window;
       delete (global as { window?: unknown }).window;
 
@@ -245,9 +373,63 @@ describe('Module2StrategicSourcingApi', () => {
       });
 
       await Module2StrategicSourcingApi.getDashboardSummary();
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('http://localhost:5000/api/module2/sourcing/dashboard'));
+      expect(global.fetch).toHaveBeenCalledWith('/api/module2/sourcing/dashboard');
 
       global.window = originalWindow;
+      process.env.NEXT_PUBLIC_BACKEND_URL = originalEnv;
+    });
+  });
+
+  describe('Excel Download URLs', () => {
+    it('generates direct price download URL with financial year', () => {
+      const url = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl('ASS-1', 'FY2024-25');
+      expect(url).toContain('/direct-price-improvement/export-excel');
+      expect(url).toContain('assessmentId=ASS-1');
+      expect(url).toContain('financialYear=FY2024-25');
+    });
+
+    it('generates direct price download URL without financial year or with ALL', () => {
+      const urlAll = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl('ASS-1', 'ALL');
+      expect(urlAll).toContain('assessmentId=ASS-1');
+      expect(urlAll).not.toContain('financialYear=');
+
+      const urlDefault = Module2StrategicSourcingApi.getDirectPriceExcelDownloadUrl('ASS-1');
+      expect(urlDefault).toContain('assessmentId=ASS-1');
+      expect(urlDefault).not.toContain('financialYear=');
+    });
+
+    it('generates e-auction download URL with financial year', () => {
+      const url = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl('ASS-1', 'FY2024-25');
+      expect(url).toContain('/e-auction/export-excel');
+      expect(url).toContain('assessmentId=ASS-1');
+      expect(url).toContain('financialYear=FY2024-25');
+    });
+
+    it('generates e-auction download URL without financial year or with ALL', () => {
+      const urlAll = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl('ASS-1', 'ALL');
+      expect(urlAll).toContain('assessmentId=ASS-1');
+      expect(urlAll).not.toContain('financialYear=');
+
+      const urlDefault = Module2StrategicSourcingApi.getEAuctionExcelDownloadUrl('ASS-1');
+      expect(urlDefault).toContain('assessmentId=ASS-1');
+      expect(urlDefault).not.toContain('financialYear=');
+    });
+
+    it('generates vendor consolidation download URL with category', () => {
+      const url = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl('ASS-1', 'Packaging');
+      expect(url).toContain('/vendor-consolidation/export-excel');
+      expect(url).toContain('assessmentId=ASS-1');
+      expect(url).toContain('category=Packaging');
+    });
+
+    it('generates vendor consolidation download URL without category or with ALL', () => {
+      const urlAll = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl('ASS-1', 'ALL');
+      expect(urlAll).toContain('assessmentId=ASS-1');
+      expect(urlAll).not.toContain('category=');
+
+      const urlDefault = Module2StrategicSourcingApi.getVendorConsolidationExcelDownloadUrl('ASS-1');
+      expect(urlDefault).toContain('assessmentId=ASS-1');
+      expect(urlDefault).not.toContain('category=');
     });
   });
 });

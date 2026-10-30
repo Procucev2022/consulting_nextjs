@@ -60,9 +60,10 @@ export class Module2StrategicSourcingEngine {
 
   public static buildCategoryProfile(
     categoryName: string,
-    transactions: StrategicInputTransaction[]
+    transactions: StrategicInputTransaction[],
+    includeAuditDetails = true
   ): CategoryStrategicSourcingProfile {
-    return Module2CategoryProfileBuilder.buildProfile(categoryName, transactions);
+    return Module2CategoryProfileBuilder.buildProfile(categoryName, transactions, includeAuditDetails);
   }
 
   public static createHandoffPackage(
@@ -161,10 +162,10 @@ export class Module2StrategicSourcingEngine {
       // Opportunity Intelligence V2.0 Summary Metrics
       provenOpportunityInr: Math.round(provenOpp),
       provenOpportunityInrCr: toCr(provenOpp),
-      quantifiableRangeMinInr: Math.round(rangeMin),
-      quantifiableRangeMinInrCr: toCr(rangeMin),
-      quantifiableRangeMaxInr: Math.round(rangeMax),
-      quantifiableRangeMaxInrCr: toCr(rangeMax),
+      quantifiableRangeMinInr: Math.round(provenOpp * 0.10),
+      quantifiableRangeMinInrCr: toCr(provenOpp * 0.10),
+      quantifiableRangeMaxInr: Math.round(provenOpp * 0.25),
+      quantifiableRangeMaxInrCr: toCr(provenOpp * 0.25),
       marketDiscoveryCandidatesCount: marketDiscoveryCount,
       identifiedNotQuantifiableCount: totals.notQuantifiableCount,
       lowEvidencedCount,

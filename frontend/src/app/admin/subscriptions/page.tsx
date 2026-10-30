@@ -20,6 +20,15 @@ import {
 } from 'lucide-react';
 import type { SubscriptionRecord, SubscriptionAuditEvent } from '../../../types';
 import { ProvisionSubscriptionModal } from '../../../components/admin/ProvisionSubscriptionModal';
+import { getApiBaseUrl } from '../../../utils/apiBase';
+import { authApiClient } from '../../../utils/authApi';
+
+const adminApiFetch = (path: string, init: RequestInit = {}): Promise<Response> => {
+  const token = authApiClient.getStoredToken();
+  const headers = new Headers(init.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return fetch(`${getApiBaseUrl()}${path}`, { ...init, headers });
+};
 
 const BADGE_CLASSES: Record<string, string> = {
   ACTIVE: 'bg-emerald-950 text-emerald-400 border border-emerald-800',
@@ -44,7 +53,7 @@ export default function AdminSubscriptionsPage() {
   const fetchSubscriptions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/subscription/admin/list');
+      const res = await adminApiFetch('/api/subscription/admin/list');
       const data = await res.json();
       if (data.success) setSubscriptions(data.subscriptions || []);
     } catch {
@@ -57,9 +66,9 @@ export default function AdminSubscriptionsPage() {
   const fetchAuditEvents = useCallback(async (subId?: string) => {
     try {
       const url = subId
-        ? `/api/subscription/admin/audit-trail?subscription_id=${subId}`
+        ? `/api/subscription/admin/audit-trail?subscription_id=${encodeURIComponent(subId)}`
         : '/api/subscription/admin/audit-trail';
-      const res = await fetch(url);
+      const res = await adminApiFetch(url);
       const data = await res.json();
       if (data.success) setAuditEvents(data.audit_events || []);
     } catch {
@@ -74,7 +83,7 @@ export default function AdminSubscriptionsPage() {
 
   const handleStatusChange = async (id: string, newStatus: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED') => {
     try {
-      const res = await fetch(`/api/subscription/admin/${id}/status`, {
+      const res = await adminApiFetch(`/api/subscription/admin/${encodeURIComponent(id)}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })

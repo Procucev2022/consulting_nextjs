@@ -1,6 +1,16 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { vi } from 'vitest';
+import { unspscOfficialDictionary } from '../src/data/unspscTaxonomy';
+import { setProcurementCategoryMappings } from '../src/utils/procurementCategoryResolver';
+import { taxonomyRecords } from './fixtures/taxonomy';
+import { getD1CategoryMappingsFixture } from '../../tests/fixtures/d1CategoryMappings';
+
+setProcurementCategoryMappings(getD1CategoryMappingsFixture());
+
+if (unspscOfficialDictionary.length === 0) {
+  unspscOfficialDictionary.push(...taxonomyRecords);
+}
 
 // Mock canvas-confetti
 vi.mock('canvas-confetti', () => ({

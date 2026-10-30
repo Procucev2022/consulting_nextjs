@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DocumentSummaryView } from '../../src/components/DocumentSummaryView';
-import { mockTenant, initialIngestionQueue } from '../../src/data/mockData';
+import { mockTenant, initialIngestionQueue } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { MonthWiseSummary } from '../../src/types';
 
@@ -173,7 +173,7 @@ describe('DocumentSummaryView Component', () => {
     fireEvent.click(monthTab);
 
     // Verify Month-Wise Trend Chart and table are both rendered in default CHART_AND_TABLE view
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.lineGraphTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.documentSummary.month.actualTrendTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.documentSummary.month.headers.month)).toBeInTheDocument();
     expect(screen.getAllByText('Apr 2023').length).toBeGreaterThan(0);
     expect(screen.getAllByText('FY24').length).toBeGreaterThan(0);
@@ -181,7 +181,7 @@ describe('DocumentSummaryView Component', () => {
     // Switch view mode to CHART_ONLY -> table is hidden
     fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.graph.viewMode.chartOnly));
     expect(screen.queryByText(UI_STRINGS.documentSummary.month.headers.month)).not.toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.documentSummary.month.graph.lineGraphTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.documentSummary.month.actualTrendTitle)).toBeInTheDocument();
 
     // Switch view mode to TABLE_ONLY -> chart KPIs are hidden, table is visible
     fireEvent.click(screen.getByText(UI_STRINGS.documentSummary.month.graph.viewMode.tableOnly));
@@ -195,9 +195,7 @@ describe('DocumentSummaryView Component', () => {
 
     // Click FY filters in month view
     fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
-    fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
-    fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.documentSummary.month.filterAll }));
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.documentSummary.month.allMonthsFilter(mockMonthsFixture.length) }));
   });
 
   it('filters rows based on search input and shows empty state when no match is found', () => {
@@ -318,7 +316,7 @@ describe('DocumentSummaryView Component', () => {
     // Switch to Month tab with negative MoM change and fallback counts
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.documentSummary.dimensionTabs.month }));
     expect(screen.getAllByText('Jan 2024').length).toBeGreaterThan(0);
-    expect(screen.getByText('-5.0%')).toBeInTheDocument();
+    expect(screen.getAllByText('-5.0%').length).toBeGreaterThan(0);
   });
 
   it('renders USD currency with fallback conversion when tenant is not provided', () => {
@@ -550,6 +548,22 @@ describe('DocumentSummaryView Component', () => {
     const reselectedAllMgBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.reconciliation.allScope(15) });
     fireEvent.click(reselectedAllMgBtn);
     expect(reselectedAllMgBtn).toHaveClass('bg-slate-900');
+  });
+
+  it('renders valid FX-normalized spend label and explanatory FX methodology impact elements', () => {
+    render(
+      <DocumentSummaryView
+        tenant={mockTenant}
+        ingestionQueue={[mockIngestionItem]}
+        materialGroupSummaries={mockMaterialGroupsFixture}
+        plantSummaries={mockPlantsFixture}
+        monthWiseSummaries={mockMonthsFixture}
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.documentSummary.validFxNormalizedSpend)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.documentSummary.fxHistoricalNormalizationNote)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.documentSummary.fxMethodologyImpactLabel)).toBeInTheDocument();
   });
 });
 

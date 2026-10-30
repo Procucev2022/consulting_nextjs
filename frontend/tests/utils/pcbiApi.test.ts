@@ -173,11 +173,12 @@ describe('pcbiApiClient Unit Tests', () => {
 
     await pcbiApiClient.getUpgradeRequests('PENDING');
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/api/upgrade/requests?status=PENDING')
+      expect.stringContaining('/api/upgrade/requests?status=PENDING'),
+      { headers: {} }
     );
 
     await pcbiApiClient.getUpgradeRequests();
-    expect(global.fetch).toHaveBeenCalledWith('/api/upgrade/requests');
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/upgrade/requests', { headers: {} });
   });
 
   it('generateUpgradeOTP should perform POST /api/upgrade/generate-otp', async () => {

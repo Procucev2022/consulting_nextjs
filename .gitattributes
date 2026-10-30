@@ -1,0 +1,4 @@
+# Seed hashes are verified before deployment; keep their bytes stable across OSes.
+backend/d1-seed.sql text eol=lf
+backend/d1-*-seed.sql text eol=lf
+backend/d1-seed-manifest.json text eol=lf

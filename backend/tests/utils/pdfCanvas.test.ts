@@ -1,161 +1,121 @@
-import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-import { PdfCanvas } from '../../src/utils/pdfCanvas';
-import {
-  getPreparedLogo,
-  paethPredictor,
-  unfilterByte,
-  unfilterScanlines
-} from '../../src/utils/pdfImageHelper';
+import { describe, expect, it } from 'vitest';
+import { PdfCanvas, toPdfSafeText } from '../../src/utils/pdfCanvas';
+import { assemblePdfBuffer, buildPdfObjects } from '../../src/utils/pdfWriter';
 
-describe('PdfCanvas Utility Unit Tests (Prompt 257)', () => {
-  it('initializes with default and custom 16:9 dimensions', () => {
-    const defaultCanvas = new PdfCanvas();
-    expect(defaultCanvas.getWidth()).toBe(960);
-    expect(defaultCanvas.getHeight()).toBe(540);
-    expect(defaultCanvas.getPageCount()).toBe(0);
+const decode = (bytes: Uint8Array): string => Buffer.from(bytes).toString('latin1');
 
-    const customCanvas = new PdfCanvas(1280, 720);
-    expect(customCanvas.getWidth()).toBe(1280);
-    expect(customCanvas.getHeight()).toBe(720);
+const crossReferenceOffsetsPointAtObjects = (text: string): boolean => {
+  const startXref = Number(/startxref\n(\d+)\n%%EOF\n$/u.exec(text)?.[1]);
+  const lines = text.slice(startXref).split('\n');
+  const objectCount = Number(lines[1].split(' ')[1]);
+  for (let objectNumber = 1; objectNumber < objectCount; objectNumber += 1) {
+    const offset = Number(lines[2 + objectNumber].slice(0, 10));
+    if (!text.startsWith(`${objectNumber} 0 obj`, offset)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+describe('pdfWriter', () => {
+  it('builds catalog, page tree, page and content objects, then three fonts in object-number order', () => {
+    const objects = buildPdfObjects(['BT ET', 'BT ET'], 960, 540).map(decode);
+    expect(objects).toHaveLength(2 + 2 * 2 + 3);
+    expect(objects[0]).toContain('/Type /Catalog');
+    expect(objects[1]).toContain('/Count 2');
+    expect(objects[2]).toContain('/MediaBox [ 0 0 960 540 ]');
+    expect(objects[3]).toContain('/Length 5');
+    expect(objects[objects.length - 1]).toContain('/BaseFont /Helvetica-Oblique');
   });
 
-  it('adds pages and increments page count', () => {
-    const canvas = new PdfCanvas(960, 540);
-    canvas.rect(10, 10, 100, 100, { fill: '#2563EB' });
+  it('assembles a PDF whose cross-reference offsets point at every object', () => {
+    const text = decode(assemblePdfBuffer(buildPdfObjects(['BT ET'], 960, 540)));
+    expect(text.startsWith('%PDF-1.4\n%')).toBe(true);
+    expect(text.endsWith('%%EOF\n')).toBe(true);
+    expect(crossReferenceOffsetsPointAtObjects(text)).toBe(true);
+  });
+});
+
+describe('PdfCanvas', () => {
+  it('defaults to the 16:9 page grid and counts the open page', () => {
+    const canvas = new PdfCanvas();
+    expect(canvas.getWidth()).toBe(960);
+    expect(canvas.getHeight()).toBe(540);
+    expect(canvas.getPageCount()).toBe(0);
+    canvas.text('first page', 10, 10);
     expect(canvas.getPageCount()).toBe(1);
-
     canvas.addPage();
-    canvas.rect(20, 20, 200, 200, { fill: '#10B981' });
-    expect(canvas.getPageCount()).toBe(2);
+    canvas.addPage();
+    expect(canvas.getPageCount()).toBe(1);
   });
 
-  it('renders shapes: rect, roundedRect, and line with strokes and fills', () => {
-    const canvas = new PdfCanvas(960, 540);
-    // 3-digit hex fill
-    canvas.rect(10, 10, 50, 50, { fill: '#FFF', stroke: '#000', lineWidth: 2 });
-    // Fill only
-    canvas.rect(20, 20, 60, 60, { fill: '#2563EB' });
-    // Stroke only
-    canvas.rect(30, 30, 70, 70, { stroke: '#EF4444', lineWidth: 1.5 });
-    // Rounded rect
-    canvas.roundedRect(40, 40, 100, 80, 5, { fill: '#1E293B' });
-    // Line
-    canvas.line(0, 0, 960, 540, '#334155', 2);
-
-    const buf = canvas.toBuffer();
-    expect(buf.length).toBeGreaterThan(500);
+  it('draws rectangles with fill, stroke, both, or neither', () => {
+    const canvas = new PdfCanvas(200, 100);
+    canvas.rect(1, 2, 3, 4);
+    canvas.rect(1, 2, 3, 4, { fill: '#abc' });
+    canvas.rect(1, 2, 3, 4, { stroke: '#112233', lineWidth: 2 });
+    canvas.rect(1, 2, 3, 4, { fill: '#ffffff', stroke: '#000000' });
+    const text = decode(canvas.toBytes());
+    expect(text).toContain('0.667 0.733 0.800 rg');
+    expect(text).toContain('2.00 w');
+    expect(text).toContain(' re S');
+    expect(text).toContain(' re f');
+    expect(text).toContain(' re B');
   });
 
-  it('renders text with different alignments, fonts, and Rupee sanitization', () => {
-    const canvas = new PdfCanvas(960, 540);
-    // Alignments
-    canvas.text('Left Aligned Text with ₹93.60 Cr', 50, 50, { fontSize: 12, font: 'regular', align: 'left' });
-    canvas.text('Center Aligned (with parens & backslash \\)', 480, 100, { fontSize: 14, font: 'bold', align: 'center' });
-    canvas.text('Right Aligned', 900, 150, { fontSize: 10, font: 'italic', align: 'right' });
-
-    const buf = canvas.toBuffer();
-    const pdfStr = buf.toString('latin1');
-    expect(pdfStr).toContain('Rs. 93.60 Cr'); // Rupee converted to ASCII-safe Rs.
-    expect(pdfStr).toContain('\\(with parens');
+  it('draws lines with the default and explicit colour and width', () => {
+    const canvas = new PdfCanvas(200, 100);
+    canvas.line(0, 0, 50, 0);
+    canvas.line(0, 10, 50, 10, '#ff0000', 0.5);
+    const text = decode(canvas.toBytes());
+    expect(text).toContain('1.00 w');
+    expect(text).toContain('0.50 w');
+    expect(text).toContain(' l S');
   });
 
-  it('renders textBlock wrapping words across multiple lines', () => {
-    const canvas = new PdfCanvas(960, 540);
-    const longText = 'This is a long sentence designed to test the automatic word wrapping capabilities of the textBlock method in the PDF canvas utility to ensure clean presentation.';
-    const heightUsed = canvas.textBlock(longText, 50, 50, 200, { fontSize: 10, font: 'regular' });
-    expect(heightUsed).toBeGreaterThan(30);
-
-    // Single line block
-    const shortHeight = canvas.textBlock('Short', 50, 200, 400);
-    expect(shortHeight).toBeGreaterThan(0);
+  it('positions left, centred, and right-aligned text and defaults the style', () => {
+    const canvas = new PdfCanvas(200, 100);
+    canvas.text('plain', 5, 5);
+    canvas.text('centre', 100, 50, { align: 'center', font: 'bold', fontSize: 9, color: '#123456' });
+    canvas.text('right', 100, 60, { align: 'right', font: 'italic' });
+    canvas.text('left', 10, 70, { color: '#abcdef' });
+    const text = decode(canvas.toBytes());
+    expect(text).toContain('/F1 11.00 Tf');
+    expect(text).toContain('/F2 9.00 Tf');
+    expect(text).toContain('/F3 11.00 Tf');
+    expect(text).toContain('(centre) Tj');
+    expect(text).toContain('(right) Tj');
+    expect(text).toContain('(left) Tj');
   });
 
-  it('renders executive components: badge, kpiCard, progressBar, and table', () => {
-    const canvas = new PdfCanvas(960, 540);
-    canvas.badge(50, 50, 'PROCUCEV VERIFIED', { bgColor: '#10B981', textColor: '#FFFFFF' });
-    canvas.kpiCard(50, 90, 200, 80, 'Spend Evaluated', 'Rs. 5,920.35 Cr', '31,671 Records', '#2563EB');
-    canvas.progressBar(50, 190, 200, 10, 65, '#10B981', '#334155');
-
-    const headers = ['Category', 'Spend', 'Share'];
-    const rows = [
-      ['Direct Materials', 'Rs. 1,842.10 Cr', '31.1%'],
-      ['Fuels & Energy', 'Rs. 1,624.50 Cr', '27.4%']
-    ];
-    const tableHeight = canvas.table(50, 220, 500, headers, rows, [250, 150, 100]);
-    expect(tableHeight).toBeGreaterThan(50);
+  it('wraps text to the requested width and breaks words longer than one line', () => {
+    const canvas = new PdfCanvas();
+    expect(canvas.wrapLines('alpha beta gamma', 1000, 10)).toEqual(['alpha beta gamma']);
+    expect(canvas.wrapLines('alpha beta gamma', 60, 10)).toEqual(['alpha beta', 'gamma']);
+    expect(canvas.wrapLines('abcdefghijklmnop', 60, 10)).toEqual(['abcdefghijk', 'lmnop']);
   });
 
-  it('renders standard header and footer', () => {
-    const canvas = new PdfCanvas(960, 540);
-    canvas.renderHeader('Executive Presentation Title', 'Diagnostic', 1);
-    canvas.renderFooter('UltraTech Cement Limited', 'CONFIDENTIAL', 1, 30);
-
-    const buf = canvas.toBuffer();
-    const pdfStr = buf.toString('latin1');
-    expect(pdfStr).toContain('aiCEV by Procucev');
-    expect(pdfStr).toContain('UltraTech Cement Limited');
-    expect(pdfStr).toContain('PAGE 1 OF 30');
+  it('returns one empty line for blank input so an empty value still occupies a row', () => {
+    const canvas = new PdfCanvas();
+    expect(canvas.wrapLines('', 100, 10)).toEqual(['']);
+    expect(canvas.wrapLines('   ', 100, 10)).toEqual(['']);
   });
 
-  it('generates valid PDF binary structure and saves to file', () => {
-    const canvas = new PdfCanvas(960, 540);
-    canvas.renderHeader('Test Slide', 'Test', 1);
-    canvas.text('Hello World', 100, 100);
-
-    const buf = canvas.toBuffer();
-    expect(buf.toString('latin1', 0, 8)).toBe('%PDF-1.4');
-    expect(buf.toString('latin1')).toContain('%%EOF');
-
-    // Save to temp file
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-test-'));
-    const tempFile = path.join(tempDir, 'subfolder', 'test.pdf');
-    canvas.saveToFile(tempFile);
-
-    expect(fs.existsSync(tempFile)).toBe(true);
-    expect(fs.statSync(tempFile).size).toBeGreaterThan(500);
-
-    // Cleanup
-    fs.rmSync(tempDir, { recursive: true, force: true });
+  it('measures text with the shared character width ratio', () => {
+    const canvas = new PdfCanvas();
+    expect(canvas.measureText('abcd', 10)).toBeCloseTo(20.8, 5);
   });
 
-  it('loads and caches prepared logo from filesystem asset', () => {
-    const logo1 = getPreparedLogo();
-    expect(logo1).toBeDefined();
-    expect(logo1.width).toBeGreaterThan(0);
-    expect(logo1.height).toBeGreaterThan(0);
-    expect(logo1.compRgb.length).toBeGreaterThan(100);
-    expect(logo1.compAlpha.length).toBeGreaterThan(100);
-
-    const logo2 = getPreparedLogo();
-    expect(logo2).toBe(logo1);
+  it('escapes parentheses and backslashes inside text operators', () => {
+    const canvas = new PdfCanvas();
+    canvas.text('a(b)c\\d', 0, 0);
+    expect(decode(canvas.toBytes())).toContain('(a\\(b\\)c\\\\d) Tj');
   });
+});
 
-  it('calculates Paeth predictor correctly across all 3 conditions', () => {
-    expect(paethPredictor(10, 10, 10)).toBe(10);
-    expect(paethPredictor(50, 10, 10)).toBe(50);
-    expect(paethPredictor(10, 50, 10)).toBe(50);
-    expect(paethPredictor(10, 20, 15)).toBe(15);
-  });
-
-  it('unfilters byte across all filter types 0, 1, 2, 3, 4 and default', () => {
-    expect(unfilterByte(0, 42, 10, 20, 5)).toBe(42);
-    expect(unfilterByte(1, 42, 10, 20, 5)).toBe((42 + 10) & 0xff);
-    expect(unfilterByte(2, 42, 10, 20, 5)).toBe((42 + 20) & 0xff);
-    expect(unfilterByte(3, 42, 10, 20, 5)).toBe((42 + Math.floor((10 + 20) / 2)) & 0xff);
-    expect(unfilterByte(4, 42, 10, 20, 5)).toBe((42 + paethPredictor(10, 20, 5)) & 0xff);
-    expect(unfilterByte(99, 42, 10, 20, 5)).toBe(42);
-  });
-
-  it('unfilters scanlines for RGBA raw buffers', () => {
-    const raw = Buffer.from([0, 255, 0, 0, 255, 0, 255, 0, 128]);
-    const { rgb, alpha } = unfilterScanlines(raw, 2, 1);
-    expect(rgb.length).toBe(6);
-    expect(alpha.length).toBe(2);
-    expect(rgb[0]).toBe(255);
-    expect(alpha[0]).toBe(255);
-    expect(alpha[1]).toBe(128);
+describe('toPdfSafeText', () => {
+  it('maps rupee signs and replaces characters outside printable ASCII', () => {
+    expect(toPdfSafeText('₹5 é')).toBe('Rs. 5 ?');
+    expect(toPdfSafeText('plain ASCII')).toBe('plain ASCII');
   });
 });

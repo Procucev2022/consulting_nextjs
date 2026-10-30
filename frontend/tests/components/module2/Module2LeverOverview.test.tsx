@@ -1,0 +1,121 @@
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { Module2LeverOverview } from '../../../src/components/module2/Module2LeverOverview';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { TEN_LEVERS_OVERVIEW_CONFIG } from '../../../src/constants/module2LeversOverview';
+
+describe('Module2LeverOverview Component', () => {
+  it('renders header, governance notice, and all 10 numbered levers', () => {
+    const handleSelectLever = vi.fn();
+    render(
+      <Module2LeverOverview
+        assessmentId="AIC-2026-0002"
+        onSelectLever={handleSelectLever}
+        directPriceOppCr={17.1155}
+      />
+    );
+
+    // Title and governance
+    expect(screen.getByText(UI_STRINGS.module2LeversOverview.pageTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2LeversOverview.governanceDisclaimer)).toBeInTheDocument();
+
+    // Verify all 10 levers are listed
+    for (const lever of TEN_LEVERS_OVERVIEW_CONFIG) {
+      expect(screen.getByText(lever.code)).toBeInTheDocument();
+      expect(screen.getByText(lever.name)).toBeInTheDocument();
+    }
+
+    // Levers 1-6: Implemented & Audited
+    const implementedAuditedBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusImplemented);
+    expect(implementedAuditedBadges).toHaveLength(6);
+    expect(screen.getByText('₹17.12 Cr')).toBeInTheDocument();
+
+    // Specific Phase / Sourcing Badges
+    expect(screen.getByText('IMPLEMENTED (PHASE 1)')).toBeInTheDocument();
+    expect(screen.getByText('IMPLEMENTED (CONTROL & AUDIT)')).toBeInTheDocument();
+    const vendorStatusLabel = TEN_LEVERS_OVERVIEW_CONFIG.find((lever) => lever.id === 3)?.statusLabel ?? '';
+    expect(screen.getAllByText(vendorStatusLabel).length).toBeGreaterThan(0);
+
+    const openBtns = screen.getAllByText(UI_STRINGS.module2LeversOverview.btnOpenAnalysis);
+    expect(openBtns).toHaveLength(9);
+
+    // Open Lever 1
+    fireEvent.click(openBtns[0]);
+    expect(handleSelectLever).toHaveBeenCalledWith('directPrice');
+
+    // Open Lever 2
+    fireEvent.click(openBtns[1]);
+    expect(handleSelectLever).toHaveBeenCalledWith('eAuction');
+
+    // Open Lever 3
+    fireEvent.click(openBtns[2]);
+    expect(handleSelectLever).toHaveBeenCalledWith('vendorConsolidation');
+
+    // Open Lever 4
+    fireEvent.click(openBtns[3]);
+    expect(handleSelectLever).toHaveBeenCalledWith('volumeAggregation');
+
+    // Open Lever 5
+    fireEvent.click(openBtns[4]);
+    expect(handleSelectLever).toHaveBeenCalledWith('paymentTerms');
+
+    // Open Lever 6
+    fireEvent.click(openBtns[5]);
+    expect(handleSelectLever).toHaveBeenCalledWith('categorySpecialisation');
+
+    // Open Lever 8
+    fireEvent.click(openBtns[6]);
+    expect(handleSelectLever).toHaveBeenCalledWith('specificationRationalisation');
+
+    // Open Lever 9
+    fireEvent.click(openBtns[7]);
+    expect(handleSelectLever).toHaveBeenCalledWith('procurementCompliance');
+
+    // Open Lever 10
+    fireEvent.click(openBtns[8]);
+    expect(handleSelectLever).toHaveBeenCalledWith('alternateSourcing');
+
+    // Lever 7: Coming Soon
+    expect(screen.getByText('Logistics & Packaging Specifications')).toBeInTheDocument();
+    const comingSoonBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusComingSoon);
+    expect(comingSoonBadges.length).toBeGreaterThanOrEqual(1);
+
+    const comingSoonBtn = screen.getByTestId('lever-coming-soon-btn-7');
+    expect(comingSoonBtn).toBeInTheDocument();
+    expect(comingSoonBtn).toBeDisabled();
+  });
+
+  it('toggles collapsible technical diagnostics and methodology', () => {
+    render(
+      <Module2LeverOverview
+        assessmentId="AIC-2026-0003"
+        onSelectLever={vi.fn()}
+        directPriceOppCr={8.8873}
+      />
+    );
+
+    // By default, detailed methodology is collapsed
+    expect(screen.queryByText(/Annual lowest comparable historical unit price methodology/)).not.toBeInTheDocument();
+
+    // Click toggle on Lever 1
+    const toggles = screen.getAllByText(UI_STRINGS.module2LeversOverview.collapsibleToggle);
+    fireEvent.click(toggles[0]);
+
+    // Now methodology and required fields are visible
+    expect(screen.getByText(/Annual lowest comparable historical unit price methodology/)).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.module2LeversOverview.requiredFieldsTitle).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module2LeversOverview.preconditionsTitle).length).toBeGreaterThan(0);
+
+    // Click again to collapse
+    fireEvent.click(toggles[0]);
+    expect(screen.queryByText(/Annual lowest comparable historical unit price methodology/)).not.toBeInTheDocument();
+  });
+
+  it('does not invent a direct-price opportunity when the D1-backed value is absent', () => {
+    render(<Module2LeverOverview assessmentId="AIC-2026-0002" onSelectLever={vi.fn()} />);
+    expect(screen.getAllByText(UI_STRINGS.module2LeversOverview.unquantifiedNotice)).toHaveLength(
+      TEN_LEVERS_OVERVIEW_CONFIG.length
+    );
+  });
+});

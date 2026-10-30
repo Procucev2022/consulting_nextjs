@@ -12,8 +12,10 @@ import { ExecutiveBriefStructureAccordion } from '@/components/executiveBrief/Ex
 import { ExecutiveBriefTraceabilityModal } from '@/components/executiveBrief/ExecutiveBriefTraceabilityModal';
 import { ExecutiveBriefAuditValidationPanel } from '@/components/executiveBrief/ExecutiveBriefAuditValidationPanel';
 import { ExecutiveBriefRegenerateConfirmModal } from '@/components/executiveBrief/ExecutiveBriefRegenerateConfirmModal';
-import { mockTenant } from '@/data/mockData';
+import { EMPTY_TENANT } from '@/constants/app';
+import { UI_STRINGS } from '@/constants/uiStrings';
 import { frontendLogger } from '@/utils/logger';
+import { apiClient } from '@/utils/api';
 import { EXECUTIVE_BRIEF_EXPORT_STRINGS } from '@/constants/executiveBriefExportStrings';
 import type {
   ExecutiveBriefReportData,
@@ -26,9 +28,58 @@ import { AlertTriangle, ArrowLeft, Loader2 } from 'lucide-react';
 
 const NOOP = (): void => {};
 
+const buildRegenerateHeaders = (): Record<string, string> => {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = apiClient.getStoredToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+};
+
+const readJsonBody = async (response: Response): Promise<Record<string, unknown> | null> => {
+  try {
+    const parsed: unknown = await response.json();
+    return parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+};
+
+const buildRegenerateMessage = (statusCode: number, serverMessage: string, requestId: string | null): string => {
+  const copy = UI_STRINGS.executiveBriefPage.regenerate;
+  switch (statusCode) {
+    case 401:
+      return copy.unauthorized(serverMessage, requestId);
+    case 403:
+      return copy.forbidden(serverMessage, requestId);
+    case 409:
+      return copy.conflict(serverMessage, requestId);
+    case 503:
+      return copy.unavailable(serverMessage, requestId);
+    default:
+      return copy.failed(statusCode, serverMessage, requestId);
+  }
+};
+
+const describeRegenerateFailure = async (response: Response): Promise<string> => {
+  const body = await readJsonBody(response);
+  const serverMessage = typeof body?.message === 'string' && body.message.length > 0
+    ? body.message
+    : UI_STRINGS.executiveBriefPage.regenerate.noServerDetail;
+  const requestId = typeof body?.requestId === 'string'
+    ? body.requestId
+    : response.headers.get('x-request-id');
+  frontendLogger.error('Executive brief regeneration was rejected', {
+    statusCode: response.status,
+    requestId,
+    serverMessage
+  });
+  return buildRegenerateMessage(response.status, serverMessage, requestId);
+};
+
 export default function ExecutiveBriefPage() {
   const router = useRouter();
   const strings = EXECUTIVE_BRIEF_EXPORT_STRINGS;
+  const pageStrings = UI_STRINGS.executiveBriefPage;
 
   const [reportData, setReportData] = useState<ExecutiveBriefReportData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -40,6 +91,7 @@ export default function ExecutiveBriefPage() {
   const [activeTraceItem, setActiveTraceItem] = useState<ExecutiveBriefTraceabilityItem | null>(null);
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState<boolean>(false);
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
+  const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [isGeneratingDownload, setIsGeneratingDownload] = useState<boolean>(false);
 
   const [downloadPayload, setDownloadPayload] = useState<{ url: string; filename: string } | null>(null);
@@ -90,7 +142,10 @@ export default function ExecutiveBriefPage() {
       }
       const blob = await res.blob();
       const disposition = res.headers.get('content-disposition') || '';
-      let filename = `Procucev_Executive_Brief_${reportData?.clientProfile.clientName || 'Client'}.${format}`;
+      let filename = pageStrings.downloadFilename(
+        reportData?.clientProfile.clientName || pageStrings.defaultClientName,
+        format
+      );
       const match = disposition.match(/filename="?([^"]+)"?/);
       if (match?.[1]) filename = match[1];
 
@@ -123,18 +178,26 @@ export default function ExecutiveBriefPage() {
   };
 
   const handleRegenerate = async (): Promise<void> => {
+    setIsRegenerating(true);
+    setRegenerateError(null);
     try {
-      setIsRegenerating(true);
       const res = await fetch('/api/reports/executive-brief/regenerate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: buildRegenerateHeaders(),
         body: JSON.stringify({ client: reportData?.clientProfile.clientName })
       });
-      if (!res.ok) throw new Error(`Regeneration failed (${res.status})`);
+      if (!res.ok) {
+        setRegenerateError(await describeRegenerateFailure(res));
+        setIsRegenerateModalOpen(false);
+        return;
+      }
       setIsRegenerateModalOpen(false);
       await fetchReport();
     } catch (err: unknown) {
-      frontendLogger.error('Regeneration error', { error: String(err) });
+      const reason = err instanceof Error ? err.message : String(err);
+      frontendLogger.error('Executive brief regeneration did not reach the server', { error: reason }, err);
+      setRegenerateError(pageStrings.regenerate.networkFailed(reason));
+      setIsRegenerateModalOpen(false);
     } finally {
       setIsRegenerating(false);
     }
@@ -176,7 +239,7 @@ export default function ExecutiveBriefPage() {
       <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex flex-col items-center justify-center space-y-4">
         <div className="flex flex-col items-center gap-3 p-8 rounded-2xl bg-white border border-[#DCE7F5] shadow-sm">
           <Loader2 className="w-8 h-8 animate-spin text-[#0284c7]" />
-          <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">Preparing Certified Executive Brief...</p>
+          <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">{pageStrings.loadingTitle}</p>
           <div className="flex gap-1 mt-1">
             {[0, 1, 2].map((i) => (
               <span key={i} className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
@@ -206,17 +269,25 @@ export default function ExecutiveBriefPage() {
   return (
     <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex flex-col">
       {downloadPayload && (
-        <a ref={downloadLinkRef} href={downloadPayload.url} download={downloadPayload.filename} className="hidden" aria-hidden="true">
-          Download Target
-        </a>
+        <a ref={downloadLinkRef} href={downloadPayload.url} download={downloadPayload.filename} className="hidden" aria-hidden="true" />
       )}
 
       <Header
-        tenant={mockTenant} onSelectTenant={NOOP} currency={'INR' as HeaderCurrency}
+        tenant={{ ...EMPTY_TENANT, enterprise_name: reportData.clientProfile.clientName }} onSelectTenant={NOOP} currency={'INR' as HeaderCurrency}
         onSelectCurrency={NOOP} onOpenReport={NOOP} theme="light" onSelectTheme={NOOP}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 w-full flex-1">
+        {regenerateError && (
+          <div
+            role="alert"
+            data-testid="executive-brief-regenerate-error"
+            className="p-4 rounded-xl border border-red-200 bg-red-50 text-xs text-red-800 leading-relaxed"
+          >
+            {regenerateError}
+          </div>
+        )}
+
         <ExecutiveBriefHeaderNav
           clientProfile={reportData.clientProfile}
           isReady={reportData.validationChecklist.financialReconciliation}
@@ -268,15 +339,15 @@ export default function ExecutiveBriefPage() {
           <div className="flex items-center gap-2 text-slate-500 font-medium">
             <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-mono font-bold text-[10px] tracking-wide">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
-              AES-256-GCM ENCRYPTED
+              {pageStrings.footer.encryptedBadge}
             </span>
             <span className="hidden sm:inline text-slate-300">|</span>
-            <span className="hidden sm:inline text-slate-500">Management Confidential · For Authorised Recipients Only</span>
+            <span className="hidden sm:inline text-slate-500">{pageStrings.footer.confidentialNotice}</span>
           </div>
           <div className="flex items-center gap-3 text-slate-400 font-mono">
-            <span>Procucev / aiCEV v2.0 · Executive Brief</span>
+            <span>{pageStrings.footer.productLine}</span>
             <span className="text-slate-300">·</span>
-            <span>© {new Date().getFullYear()} Procucev Pvt. Ltd.</span>
+            <span>{pageStrings.footer.copyright(new Date().getFullYear())}</span>
           </div>
         </div>
       </footer>

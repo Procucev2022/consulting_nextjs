@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PCBIDashboardTab } from '../../../src/components/admin/pcbi/PCBIDashboardTab';
 import { PCBIUploadTab } from '../../../src/components/admin/pcbi/PCBIUploadTab';
 import { PCBIValidateTab } from '../../../src/components/admin/pcbi/PCBIValidateTab';
@@ -49,6 +49,7 @@ const mockVersion: PCBIVersionRecord = {
 describe('PCBI Admin UI Components Unit Tests', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
     vi.spyOn(pcbiCommodityDataLabApi, 'detectUploadDomain').mockResolvedValue({
       success: true,
       detection: {
@@ -966,13 +967,14 @@ describe('PCBI Admin UI Components Unit Tests', () => {
     const fileInput = container.querySelector('#pcbi-master-file-input');
     expect(fileInput).toBeInTheDocument();
     if (fileInput) {
-      await fireEvent.change(fileInput, { target: { files: [mockFile] } });
+      await act(async () => { fireEvent.change(fileInput, { target: { files: [mockFile] } }); });
     }
 
     // Wait for parse & worksheet detection
     await waitFor(() => {
       expect(screen.getByText('PCBI_TEST.xlsx')).toBeInTheDocument();
     });
+    await waitFor(() => expect(screen.queryByText('Parsing Datasets...')).not.toBeInTheDocument());
 
     // Test worksheet override within master view
     const wsOverrideSelect = screen.getByLabelText(/Override purpose for PCBI_Master/i);

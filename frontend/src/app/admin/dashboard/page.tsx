@@ -103,29 +103,40 @@ export default function AdminDashboardPage(): React.ReactElement {
     }
   }, [searchTerm, roleFilter, statusFilter, tierFilter]);
 
-  // Auth Protection Check (Auto-seed dev admin session during development)
+  // Verify the stored identity against the database-backed authentication API.
   useEffect(() => {
-    let user = apiClient.getStoredUser();
-    if (!user) {
-      const devAdmin: UserProfile = {
-        id: 'usr-admin-sriman',
-        name: 'Sriman Admin',
-        email: 'sriman@procucev.com',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        subscription_tier: 'GOLD',
-        company_name: 'Procucev Enterprise Solutions Pvt Ltd',
-        created_at: new Date().toISOString()
-      };
-      apiClient.setStoredSession('dev-temp-token-sriman', devAdmin);
-      user = devAdmin;
-    } else if (user.role !== 'ADMIN') {
-      user = { ...user, role: 'ADMIN' };
-      apiClient.setStoredSession(apiClient.getStoredToken() || 'dev-temp-token-sriman', user);
+    const session = apiClient.getStoredUser();
+    const token = apiClient.getStoredToken();
+    if (!token || session?.role !== 'ADMIN') {
+      apiClient.clearStoredSession();
+      router.push('/admin/login');
+      return;
     }
-    setCurrentUser(user);
-    loadDirectory();
-  }, [router, loadDirectory]);
+    let cancelled = false;
+    const authenticate = async (): Promise<void> => {
+      try {
+        const profile = await apiClient.getMe(token);
+        if (cancelled) return;
+        if (!profile.success || profile.user.role !== 'ADMIN' || profile.user.status !== 'ACTIVE') {
+          apiClient.clearStoredSession();
+          router.push('/admin/login');
+          return;
+        }
+        setCurrentUser(profile.user);
+      } catch (error) {
+        if (cancelled) return;
+        frontendLogger.warn('Administrator session verification failed', { action: 'adminDashboardAuthentication', error });
+        apiClient.clearStoredSession();
+        router.push('/admin/login');
+      }
+    };
+    void authenticate();
+    return () => { cancelled = true; };
+  }, [router]);
+
+  useEffect(() => {
+    if (currentUser) void loadDirectory();
+  }, [currentUser, loadDirectory]);
 
   // Handle User Status Toggle
   const handleToggleStatus = async (user: UserProfile) => {
@@ -226,6 +237,10 @@ export default function AdminDashboardPage(): React.ReactElement {
         return 'bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-950/80 dark:text-orange-300 dark:border-orange-800/60';
     }
   };
+
+  if (!currentUser) {
+    return <div role="status">{UI_STRINGS.common.loading}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] bg-grid-pattern pb-16 transition-colors duration-200">

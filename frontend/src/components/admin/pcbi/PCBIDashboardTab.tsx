@@ -25,6 +25,8 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
   onNavigateToVersions
 }) => {
   const metrics = activeVersion?.metrics;
+  const emptyValue = UI_STRINGS.common.notAvailable;
+  const strings = UI_STRINGS.pcbiAdmin;
 
   return (
     <div className="space-y-6">
@@ -35,13 +37,15 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 bg-sky-50 text-[#0284C7] border border-sky-200 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <CheckCircle2 size={13} className="text-[#0284C7]" />
-                Active Published Baseline
+                {activeVersion
+                  ? activeVersion.status === 'PUBLISHED' ? strings.activePublishedBaseline : strings.selectedReferenceVersion
+                  : strings.noPublishedBaseline}
               </span>
               <span className="text-xl font-extrabold text-[#0B1B33] tracking-tight">
-                {activeVersion ? activeVersion.version : 'V1.0'}
+                {activeVersion?.version ?? emptyValue}
               </span>
               <span className="text-xs text-[#475569] font-mono">
-                ({activeVersion ? activeVersion.file_name : 'PCBI_GLOBAL_MASTER_V1_2020_2026.xlsx'})
+                ({activeVersion?.file_name ?? strings.noReferenceDataFile})
               </span>
             </div>
             <p className="text-sm text-[#475569] max-w-2xl leading-relaxed">
@@ -50,11 +54,11 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#64748B] pt-1">
               <span className="flex items-center gap-1">
                 <Clock size={13} className="text-[#0284C7]" />
-                Uploaded: {activeVersion ? new Date(activeVersion.upload_date).toLocaleDateString() : '2026-01-01'}
+                Uploaded: {activeVersion ? new Date(activeVersion.upload_date).toLocaleDateString() : emptyValue}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar size={13} className="text-[#0284C7]" />
-                Coverage: {metrics?.date_start || '2020-04-01'} to {metrics?.date_end || '2026-07-31'}
+                Coverage: {metrics?.date_start ?? emptyValue} to {metrics?.date_end ?? emptyValue}
               </span>
               <span className="flex items-center gap-1">
                 <FileCheck size={13} className="text-[#0284C7]" />
@@ -91,7 +95,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <span>{UI_STRINGS.pcbiAdmin.totalPCBIRecords}</span>
             <Database size={14} className="text-[#0284C7]" />
           </div>
-          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.benchmark_count || 290}</div>
+          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.benchmark_count ?? emptyValue}</div>
           <span className="text-[10px] text-[#0284C7] font-medium">Primary Benchmarks</span>
         </div>
 
@@ -100,7 +104,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <span>{UI_STRINGS.pcbiAdmin.totalWeeklyIndexRecords}</span>
             <TrendingUp size={14} className="text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{(metrics?.weekly_records_count || 95700).toLocaleString()}</div>
+          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.weekly_records_count?.toLocaleString() ?? emptyValue}</div>
           <span className="text-[10px] text-emerald-600 font-medium">Weekly Data Points</span>
         </div>
 
@@ -109,7 +113,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <span>{UI_STRINGS.pcbiAdmin.totalConstituentRecords}</span>
             <Layers size={14} className="text-[#0284C7]" />
           </div>
-          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.constituent_count || 290}</div>
+          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.constituent_count ?? emptyValue}</div>
           <span className="text-[10px] text-[#0284C7] font-medium">Cost Driver Models</span>
         </div>
 
@@ -118,7 +122,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <span>{UI_STRINGS.pcbiAdmin.totalUNSPSCMappingRecords}</span>
             <FileCheck size={14} className="text-[#F97316]" />
           </div>
-          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.unspsc_mappings_count || 73}</div>
+          <div className="text-2xl font-bold text-[#0B1B33] mt-2 tabular-nums">{metrics?.unspsc_mappings_count ?? emptyValue}</div>
           <span className="text-[10px] text-[#F97316] font-medium">Automated Mappings</span>
         </div>
 
@@ -127,7 +131,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
             <span>{UI_STRINGS.pcbiAdmin.totalBenchmarkablePct}</span>
             <Award size={14} className="text-[#0284C7]" />
           </div>
-          <div className="text-2xl font-bold text-[#0284C7] mt-2 tabular-nums">{metrics?.total_benchmarkable_pct?.toFixed(1) || '75.8'}%</div>
+          <div className="text-2xl font-bold text-[#0284C7] mt-2 tabular-nums">{metrics ? `${metrics.total_benchmarkable_pct.toFixed(1)}%` : emptyValue}</div>
           <span className="text-[10px] text-[#0284C7] font-medium">Average Coverage</span>
         </div>
 
@@ -139,21 +143,24 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
           <div className="text-xs font-bold text-[#0B1B33] mt-3 space-y-1">
             <div className="flex justify-between">
               <span className="text-emerald-600">A Quality:</span>
-              <span className="tabular-nums">{metrics?.a_quality_count || 240}</span>
+              <span className="tabular-nums">{metrics?.a_quality_count ?? emptyValue}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-amber-600">B Quality:</span>
-              <span className="tabular-nums">{metrics?.b_quality_count || 45}</span>
+              <span className="tabular-nums">{metrics?.b_quality_count ?? emptyValue}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-rose-600">C Quality:</span>
-              <span className="tabular-nums">{metrics?.c_quality_count || 5}</span>
+              <span className="tabular-nums">{metrics?.c_quality_count ?? emptyValue}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* PCBI V1.3.1 Independent Governance Dimensions */}
+      <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+        {strings.governanceDataUnavailable}
+      </p>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Dimension 1: PCBI Definition Status */}
         <div className="p-5 bg-white border border-[#DCE7F5] rounded-2xl space-y-4 shadow-sm">
@@ -177,7 +184,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.definedLabel}
               </span>
-              <span className="text-xl font-extrabold text-[#0B1B33] mt-1 block tabular-nums">13</span>
+              <span className="text-xl font-extrabold text-[#0B1B33] mt-1 block tabular-nums">{emptyValue}</span>
               <span className="text-[10px] text-[#64748B]">Catalogued</span>
             </div>
 
@@ -185,7 +192,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[11px] font-semibold text-rose-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.missingLabel}
               </span>
-              <span className="text-xl font-extrabold text-rose-800 mt-1 block tabular-nums">1</span>
+              <span className="text-xl font-extrabold text-rose-800 mt-1 block tabular-nums">{emptyValue}</span>
               <span className="text-[10px] text-[#64748B]">Uncatalogued</span>
             </div>
 
@@ -193,7 +200,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.underReviewLabel}
               </span>
-              <span className="text-xl font-extrabold text-amber-800 mt-1 block tabular-nums">1</span>
+              <span className="text-xl font-extrabold text-amber-800 mt-1 block tabular-nums">{emptyValue}</span>
               <span className="text-[10px] text-[#64748B]">Pending Review</span>
             </div>
 
@@ -201,7 +208,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[11px] font-semibold text-[#475569] uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.notBenchmarkableLabel}
               </span>
-              <span className="text-xl font-extrabold text-[#0B1B33] mt-1 block tabular-nums">1</span>
+              <span className="text-xl font-extrabold text-[#0B1B33] mt-1 block tabular-nums">{emptyValue}</span>
               <span className="text-[10px] text-[#64748B]">Services Excluded</span>
             </div>
           </div>
@@ -229,15 +236,15 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.completeDataLabel}
               </span>
-              <span className="text-lg font-bold text-[#0B1B33] mt-0.5 block tabular-nums">2</span>
-              <span className="text-[9px] text-[#64748B]">Full 2020-2026</span>
+              <span className="text-lg font-bold text-[#0B1B33] mt-0.5 block tabular-nums">{emptyValue}</span>
+              <span className="text-[9px] text-[#64748B]">{strings.governanceHistoryScopeUnknown}</span>
             </div>
 
             <div className="p-2.5 bg-amber-50/60 border border-amber-200 rounded-xl">
               <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.partialHistoryLabel}
               </span>
-              <span className="text-lg font-bold text-amber-800 mt-0.5 block tabular-nums">7</span>
+              <span className="text-lg font-bold text-amber-800 mt-0.5 block tabular-nums">{emptyValue}</span>
               <span className="text-[9px] text-[#64748B]">Gap Backfill Req</span>
             </div>
 
@@ -245,7 +252,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[10px] font-semibold text-rose-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.noHistoryLabel}
               </span>
-              <span className="text-lg font-bold text-rose-800 mt-0.5 block tabular-nums">2</span>
+              <span className="text-lg font-bold text-rose-800 mt-0.5 block tabular-nums">{emptyValue}</span>
               <span className="text-[9px] text-[#64748B]">Zero Observations</span>
             </div>
 
@@ -253,7 +260,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[10px] font-semibold text-purple-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.freqMismatchLabel}
               </span>
-              <span className="text-lg font-bold text-[#0B1B33] mt-0.5 block tabular-nums">2</span>
+              <span className="text-lg font-bold text-[#0B1B33] mt-0.5 block tabular-nums">{emptyValue}</span>
               <span className="text-[9px] text-[#64748B]">Monthly vs Weekly</span>
             </div>
 
@@ -261,7 +268,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[10px] font-semibold text-[#0284C7] uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.specMismatchLabel}
               </span>
-              <span className="text-lg font-bold text-[#0284C7] mt-0.5 block tabular-nums">1</span>
+              <span className="text-lg font-bold text-[#0284C7] mt-0.5 block tabular-nums">{emptyValue}</span>
               <span className="text-[9px] text-[#64748B]">Grade / Form Mismatch</span>
             </div>
 
@@ -269,7 +276,7 @@ export const PCBIDashboardTab: React.FC<PCBIDashboardTabProps> = ({
               <span className="text-[10px] font-semibold text-orange-700 uppercase tracking-wider block">
                 {UI_STRINGS.pcbiAdmin.sourceUnverifiedLabel}
               </span>
-              <span className="text-lg font-bold text-orange-800 mt-0.5 block tabular-nums">2</span>
+              <span className="text-lg font-bold text-orange-800 mt-0.5 block tabular-nums">{emptyValue}</span>
               <span className="text-[9px] text-[#64748B]">Candidate Only</span>
             </div>
           </div>

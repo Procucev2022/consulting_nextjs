@@ -23,6 +23,8 @@ import type { HeaderCurrency } from './currency';
 import type { CoreBucket, UNSPSCCommodityRecord } from './taxonomy';
 import type { ParetoSpendData } from './pareto';
 import type { SubscriptionTier, UserProfile } from './auth';
+import type { Module1CanonicalViewModel, VgtPeriodMetadata } from './module1Canonical';
+import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from './assessment';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -44,9 +46,13 @@ export interface HeaderProps {
   onOpenClientSetup?: () => void;
   onContactSupport?: () => void;
   isExecutiveBriefReady?: boolean;
+  operatingMode?: OperatingModeConfig | null;
+  onToggleAssessmentMode?: () => void;
+  activeAssessment?: AssessmentRecord | null;
+  activeCustomer?: CustomerRecord | null;
 }
 
-export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema';
+export type PipelineActiveTab = 'module1' | 'module2' | 'module3' | 'module4' | 'module5' | 'schema' | 'assessment';
 
 export interface PipelineBarProps {
   activeTab: PipelineActiveTab;
@@ -61,6 +67,8 @@ export interface PipelineBarProps {
   isStep4Complete?: boolean;
   unlockedTabs?: PipelineActiveTab[];
   onLockedTabClick?: (tab: PipelineActiveTab) => void;
+  canonicalViewModel?: Module1CanonicalViewModel | null;
+  activeAssessment?: AssessmentRecord | null;
 }
 
 export type DatabaseSchemaViewProps = Record<string, never>;
@@ -90,6 +98,8 @@ export interface Module1IngestionProps {
   rawUploadRecords?: Record<string, unknown>[] | unknown;
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
+  canonicalViewModel?: Module1CanonicalViewModel | null;
+  onConfirmDatasetBaseCurrency?: (confirmedCurrency?: string) => void;
 }
 
 export interface ValidationPreCheckSectionProps {
@@ -102,6 +112,8 @@ export interface ValidationPreCheckSectionProps {
   onRunAICategorization: () => void;
   isDataRefreshed?: boolean;
   onRefreshWithFixes?: () => void;
+  canonicalViewModel?: Module1CanonicalViewModel | null;
+  onConfirmDatasetBaseCurrency?: (confirmedCurrency?: string) => void;
 }
 
 export interface Module2CategorizationProps {
@@ -117,6 +129,7 @@ export interface Module2CategorizationProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   targetSection?: string | null;
+  assessmentId?: string;
 }
 
 export interface Module3TrendAnalyticsProps {
@@ -125,6 +138,7 @@ export interface Module3TrendAnalyticsProps {
   theme?: 'light' | 'dark';
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
+  assessmentId?: string;
 }
 
 export interface Module4SavingsEngineProps {
@@ -135,6 +149,7 @@ export interface Module4SavingsEngineProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   onNavigateToSection?: (targetModule: PipelineActiveTab, targetSectionId: string) => void;
+  assessmentId?: string;
 }
 
 export interface Module5ConversionMatrixProps {
@@ -163,16 +178,19 @@ export interface DocumentSummaryViewProps {
   uniqueVendorsCount?: number;
   isDataRefreshed?: boolean;
   onNavigateToCategorization?: () => void;
+  periodMetadata?: VgtPeriodMetadata;
+  canonicalViewModel?: Module1CanonicalViewModel | null;
 }
 
 export interface MonthWiseTrendChartProps {
   months: MonthWiseSummary[];
   spendCurrency: DocumentSpendCurrency;
-  selectedFy: 'ALL' | 'FY24' | 'FY25' | 'FY26';
-  onSelectFy: (fy: 'ALL' | 'FY24' | 'FY25' | 'FY26') => void;
+  selectedFy: string;
+  onSelectFy: (fy: string) => void;
   viewMode: MonthGraphViewMode;
   onChangeViewMode: (mode: MonthGraphViewMode) => void;
   searchQuery?: string;
+  periodMetadata?: VgtPeriodMetadata;
 }
 
 export interface PlantWiseSpendChartProps {
@@ -183,10 +201,11 @@ export interface PlantWiseSpendChartProps {
 export interface MultiYearLineGraphProps {
   months: MonthWiseSummary[];
   spendCurrency: DocumentSpendCurrency;
-  visibleYears: { FY24: boolean; FY25: boolean; FY26: boolean };
-  onToggleYear: (fy: 'FY24' | 'FY25' | 'FY26') => void;
-  selectedMonthIndex: number;
-  onSelectMonthIndex: (index: number) => void;
+  visibleYears?: Record<string, boolean>;
+  onToggleYear?: (fy: string) => void;
+  selectedMonthIndex?: number;
+  onSelectMonthIndex?: (index: number) => void;
+  periodMetadata?: VgtPeriodMetadata;
 }
 
 export interface MultiYearComparisonCardProps {
@@ -202,11 +221,12 @@ export interface MultiYearComparisonCardProps {
 export interface MonthTimelineBarChartProps {
   months: MonthWiseSummary[];
   spendCurrency: DocumentSpendCurrency;
-  selectedFy: 'ALL' | 'FY24' | 'FY25' | 'FY26';
-  onSelectFy: (fy: 'ALL' | 'FY24' | 'FY25' | 'FY26') => void;
+  selectedFy: string;
+  onSelectFy: (fy: string) => void;
   hoveredMonth: MonthWiseSummary | null;
   onHoverMonth: (month: MonthWiseSummary | null) => void;
   searchQuery?: string;
+  periodMetadata?: VgtPeriodMetadata;
 }
 
 export interface CategoryVendorBreakdownViewProps {
@@ -214,7 +234,10 @@ export interface CategoryVendorBreakdownViewProps {
   categories?: CategoryYearDetail[];
   vendors?: VendorYearDetail[];
   lineItems?: LineItemMapping[];
+  initialMode?: 'CATEGORY' | 'VENDOR';
+  lockMode?: 'CATEGORY' | 'VENDOR';
 }
+
 
 // Modal Props & Types
 export type DatasetType = 'Purchase History' | 'Invoice Data' | 'Trial Balance';

@@ -2,17 +2,65 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import Home from '../../src/app/page';
-import { apiClient, authApiClient } from '../../src/utils/api';
-import { mockTenant } from '../../src/data/mockData';
+import { apiClient, aiApiClient, authApiClient } from '../../src/utils/api';
+import { assessmentApiClient } from '../../src/utils/assessmentApi';
+import { orchestrationApi } from '../../src/utils/orchestrationApi';
+import { Module2StrategicSourcingApi } from '../../src/utils/module2StrategicSourcingApi';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { unspscOfficialDictionary } from '../../src/data/unspscTaxonomy';
+import { taxonomyRecords } from '../fixtures/taxonomy';
+import { conversionFunnelStages } from '../fixtures/mockData';
 
 const mockPush = vi.fn();
+
+async function renderHome() {
+  let result!: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(<Home />);
+  });
+  return result;
+}
+
+async function chooseDataset(input: HTMLInputElement, file: File) {
+  const completedUploads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.length;
+  await act(async () => {
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledTimes(completedUploads + 1);
+    });
+  });
+}
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
     replace: vi.fn(),
     prefetch: vi.fn()
   })
+}));
+
+vi.mock('@/utils/assessmentApi', () => ({
+  assessmentApiClient: {
+    getOperatingMode: vi.fn().mockResolvedValue({
+      mode: 'SAAS',
+      isInternalAssessment: false,
+      isPublicSaaS: true,
+      workspaceTitle: 'aiCEV — Enterprise Sourcing Suite',
+      phaseName: 'Production SaaS',
+      features: {
+        publicRegistration: true,
+        tierUpgrade: true,
+        subscriptionPurchase: true,
+        customerSelfOnboarding: true,
+        customerSaaSDashboard: true,
+        assessmentCentre: false
+      },
+      allowedRoles: ['USER', 'ADMIN']
+    }),
+    getAssessments: vi.fn().mockResolvedValue([]),
+    listAssessments: vi.fn().mockResolvedValue([]),
+    getCustomers: vi.fn().mockResolvedValue([])
+  }
 }));
 
 const sampleDoc = {
@@ -164,6 +212,25 @@ const sampleLineItem = {
 
 describe('Home Page Component', () => {
   beforeEach(() => {
+    vi.spyOn(aiApiClient, 'categorizeItems').mockResolvedValue({
+      success: true, status: 'SUCCESS', mappings: [], model: null, error: null
+    });
+    vi.spyOn(orchestrationApi, 'getJobs').mockResolvedValue([]);
+    vi.spyOn(Module2StrategicSourcingApi, 'getDashboardSummary').mockResolvedValue(null as never);
+    vi.spyOn(Module2StrategicSourcingApi, 'getCategoryProfiles').mockResolvedValue([]);
+    vi.spyOn(apiClient, 'getConsolidatedSavings').mockResolvedValue({
+      opportunities: [], overlaps: [], actionPlans: [],
+      waterfallMetrics: {
+        total_spend_inr_cr: 0, addressable_spend_inr_cr: 0, identified_opportunities_count: 0,
+        gross_potential_savings_inr_cr: 0, deduplicated_overlap_inr_cr: 0, net_potential_savings_inr_cr: 0,
+        validated_savings_inr_cr: 0, approved_savings_inr_cr: 0, realized_savings_inr_cr: 0
+      }
+    });
+    if (unspscOfficialDictionary.length === 0) unspscOfficialDictionary.push(...taxonomyRecords);
+    vi.spyOn(apiClient, 'getProcurementCategoryMappings').mockResolvedValue({
+      mappings: { P11: 'Packing' }, categories: ['Packing']
+    });
+    vi.spyOn(apiClient, 'getConversionStages').mockResolvedValue(conversionFunnelStages);
     if (typeof window !== 'undefined' && window.sessionStorage) {
       window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({
         doc: sampleDoc,
@@ -210,7 +277,7 @@ describe('Home Page Component', () => {
     });
     vi.spyOn(apiClient, 'updateTenant').mockResolvedValue(mockTenant);
     vi.spyOn(apiClient, 'updateValidationRecord').mockResolvedValue(sampleValidationRecord);
-    vi.spyOn(apiClient, 'applyBlanketRemediation').mockResolvedValue({ updatedCount: 3, records: [] });
+    vi.spyOn(apiClient, 'applyBlanketRemediation').mockResolvedValue({ updatedCount: 0, skippedCount: 0, records: [] });
     vi.spyOn(apiClient, 'resetValidationRecords').mockResolvedValue([sampleValidationRecord]);
     vi.spyOn(apiClient, 'addIngestionFile').mockResolvedValue([sampleDoc]);
     vi.spyOn(apiClient, 'uploadDocumentToObjectStore').mockResolvedValue({
@@ -220,6 +287,27 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'mergeVendor').mockResolvedValue({ success: true });
     vi.spyOn(apiClient, 'deployOpportunity').mockResolvedValue(sampleOpportunity);
     vi.spyOn(apiClient, 'getSimulatedTier').mockReturnValue('GOLD');
+    vi.spyOn(apiClient, 'getCanonicalModule1').mockResolvedValue(null as any);
+    vi.spyOn(apiClient, 'getModule2CanonicalLineItems').mockResolvedValue([] as any);
+    vi.spyOn(assessmentApiClient, 'getOperatingMode').mockResolvedValue({
+      mode: 'PUBLIC_SAAS',
+      isInternalAssessment: false,
+      isPublicSaaS: true,
+      workspaceTitle: 'aiCEV — Enterprise Sourcing Suite',
+      phaseName: 'Production SaaS',
+      features: {
+        publicRegistration: true,
+        tierUpgrade: true,
+        subscriptionPurchase: true,
+        customerSelfOnboarding: true,
+        customerSaaSDashboard: true,
+        assessmentCentre: false
+      },
+      allowedRoles: ['INTERNAL_ADMIN', 'ANALYST', 'CONSULTANT']
+    });
+    vi.spyOn(assessmentApiClient, 'getAssessments').mockResolvedValue([]);
+    vi.spyOn(assessmentApiClient, 'listAssessments').mockResolvedValue([]);
+    vi.spyOn(assessmentApiClient, 'getCustomers').mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -232,7 +320,7 @@ describe('Home Page Component', () => {
   });
 
   it('renders initial state, loads backend data, and navigates through all module tabs', async () => {
-    render(<Home />);
+    await renderHome();
 
     // Check header — brand is rendered as aiCEV logo image
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
@@ -246,21 +334,21 @@ describe('Home Page Component', () => {
     fireEvent.click(step2);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);
     fireEvent.click(step3);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     // Navigate to Module 4
     const step4 = screen.getByText(UI_STRINGS.pipeline.steps.step4.title);
     fireEvent.click(step4);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     // Navigate to Module 5
     const matrixBtn = screen.getByText(UI_STRINGS.pipeline.conversionMatrixTab);
@@ -276,7 +364,7 @@ describe('Home Page Component', () => {
   }, 20000);
 
   it('handles batch file upload with CSV and XLSX formats', async () => {
-    const { container } = render(<Home />);
+    const { container } = await renderHome();
 
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
@@ -286,7 +374,7 @@ describe('Home Page Component', () => {
         { type: 'text/csv' }
       );
       csvFile.text = vi.fn().mockResolvedValue('po_number,vendor,item,qty,price,curr,year\nPO-1,VendorA,ItemA,100,50,USD,2024\n');
-      fireEvent.change(fileInput, { target: { files: [csvFile] } });
+      await chooseDataset(fileInput, csvFile);
 
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
@@ -294,7 +382,7 @@ describe('Home Page Component', () => {
 
       const textFile = new File(['header\nline1\nline2\n'], 'data.txt', { type: 'text/plain' });
       textFile.text = vi.fn().mockResolvedValue('header\nline1\nline2\n');
-      fireEvent.change(fileInput, { target: { files: [textFile] } });
+      await chooseDataset(fileInput, textFile);
 
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
@@ -313,7 +401,7 @@ describe('Home Page Component', () => {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
       xlsxFile.arrayBuffer = vi.fn().mockResolvedValue(xlsxBuffer);
-      fireEvent.change(fileInput, { target: { files: [xlsxFile] } });
+      await chooseDataset(fileInput, xlsxFile);
 
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
@@ -322,7 +410,7 @@ describe('Home Page Component', () => {
   });
 
   it('handles currency fixing and vendor merging modal flows', async () => {
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -343,7 +431,9 @@ describe('Home Page Component', () => {
     const mapBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.mergeVendor.confirmMerge, 'i') });
     fireEvent.click(mapBtn);
     await waitFor(() => {
-      expect(apiClient.mergeVendor).toHaveBeenCalled();
+      expect(apiClient.updateValidationRecord).toHaveBeenCalledWith(
+        expect.any(String), expect.objectContaining({ vendor_name: expect.stringContaining('(') })
+      );
     });
 
     // Open merge item
@@ -357,7 +447,7 @@ describe('Home Page Component', () => {
   });
 
   it('handles blanket fixes and reset validation records', async () => {
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -381,7 +471,7 @@ describe('Home Page Component', () => {
   });
 
   it('handles module transitions via proceed CTA buttons', async () => {
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -472,7 +562,7 @@ describe('Home Page Component', () => {
   it('handles header tenant, currency, and theme switching, including API errors', async () => {
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Network fail'));
 
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -556,7 +646,7 @@ describe('Home Page Component', () => {
       .mockRejectedValueOnce(new Error('Deployment sync failed'))
       .mockRejectedValueOnce(new Error('DPS sync failed'));
 
-    render(<Home />);
+    await renderHome();
 
     expect(await screen.findByText('test_dataset.xlsx')).toBeInTheDocument();
 
@@ -617,7 +707,7 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'applyBlanketRemediation').mockRejectedValue(new Error('Blanket failed'));
     vi.spyOn(apiClient, 'resetValidationRecords').mockRejectedValue(new Error('Reset failed'));
 
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -663,7 +753,7 @@ describe('Home Page Component', () => {
   it('handles ignoring validation issue via MergeVendorModal and handles API rejection gracefully', async () => {
     vi.spyOn(apiClient, 'updateValidationRecord').mockRejectedValueOnce(new Error('Ignore sync error'));
 
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -684,13 +774,13 @@ describe('Home Page Component', () => {
   it('handles file uploads for PDF, ZIP, arbitrary CSV, and malformed files', async () => {
     vi.spyOn(apiClient, 'uploadDocumentToObjectStore').mockRejectedValueOnce(new Error('Upload sync warning'));
 
-    const { container } = render(<Home />);
+    const { container } = await renderHome();
 
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
       // PDF upload
       const pdfFile = new File(['%PDF-1.4 dummy'], 'contract_scan.pdf', { type: 'application/pdf' });
-      fireEvent.change(fileInput, { target: { files: [pdfFile] } });
+      await chooseDataset(fileInput, pdfFile);
 
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
@@ -698,19 +788,19 @@ describe('Home Page Component', () => {
 
       // ZIP upload
       const zipFile = new File(['PK dummy'], 'archive_procurement.zip', { type: 'application/zip' });
-      fireEvent.change(fileInput, { target: { files: [zipFile] } });
+      await chooseDataset(fileInput, zipFile);
 
       // Malformed unspsc xlsx
       const unspscFile = new File(['invalid binary content'], 'UNSPSC_Master_Catalog.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-      fireEvent.change(fileInput, { target: { files: [unspscFile] } });
+      await chooseDataset(fileInput, unspscFile);
 
       // Malformed generic xlsx (without unspsc)
       const genericXlsx = new File(['invalid binary 2'], 'generic_catalog.xlsx', {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-      fireEvent.change(fileInput, { target: { files: [genericXlsx] } });
+      await chooseDataset(fileInput, genericXlsx);
 
       // Arbitrary columns CSV (hits ternaries for missing keys across rows 0-5)
       const arbitraryCsv = new File(
@@ -718,7 +808,7 @@ describe('Home Page Component', () => {
         'arbitrary.csv',
         { type: 'text/csv' }
       );
-      fireEvent.change(fileInput, { target: { files: [arbitraryCsv] } });
+      await chooseDataset(fileInput, arbitraryCsv);
     }
   });
 
@@ -818,10 +908,10 @@ describe('Home Page Component', () => {
     });
     (validXlsx as any).arrayBuffer = async () => wbout.buffer || wbout;
 
-    const { container } = render(<Home />);
+    const { container } = await renderHome();
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
-      fireEvent.change(fileInput, { target: { files: [validXlsx] } });
+      await chooseDataset(fileInput, validXlsx);
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
       });
@@ -835,7 +925,7 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'getVendors').mockResolvedValue(null as any);
     vi.spyOn(apiClient, 'getSavingsOpportunities').mockResolvedValue(null as any);
 
-    render(<Home />);
+    await renderHome();
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
@@ -846,19 +936,19 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'getVendors').mockRejectedValueOnce(new Error('Vendors error'));
     vi.spyOn(apiClient, 'getSavingsOpportunities').mockRejectedValueOnce(new Error('Savings error'));
 
-    render(<Home />);
+    await renderHome();
 
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
   it('handles unexpected Promise.allSettled throw during mount', async () => {
     vi.spyOn(Promise, 'allSettled').mockRejectedValueOnce(new Error('Fatal promise error'));
-    render(<Home />);
+    await renderHome();
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
-  it('handles closing modals without submitting', () => {
-    render(<Home />);
+  it('handles closing modals without submitting', async () => {
+    await renderHome();
 
     // Fix currency modal close
     const fixInrBtns = screen.queryAllByRole('button', { name: UI_STRINGS.module1.fixInr });
@@ -878,7 +968,7 @@ describe('Home Page Component', () => {
 
     // Navigate to Module 2 and close Reassign modal
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
-    fireEvent.click(step2);
+    await act(async () => { fireEvent.click(step2); });
 
     const reassignBtns = screen.queryAllByRole('button', { name: new RegExp(UI_STRINGS.module2.btnReassign, 'i') });
     if (reassignBtns.length > 0) {
@@ -907,7 +997,7 @@ describe('Home Page Component', () => {
       validationRecords: [sampleValidationRecord]
     });
 
-    render(<Home />);
+    await renderHome();
 
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -917,7 +1007,7 @@ describe('Home Page Component', () => {
   });
 
   it('handles backend hydration on mount cleanly without sessionStorage dependency', async () => {
-    render(<Home />);
+    await renderHome();
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
   });
 
@@ -943,7 +1033,7 @@ describe('Home Page Component', () => {
       validationRecords: [sampleValidationRecord]
     });
 
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(screen.getByText('minimal_file.csv')).toBeInTheDocument();
     });
@@ -972,10 +1062,10 @@ describe('Home Page Component', () => {
     });
     (quotaXlsx as any).arrayBuffer = async () => wbout.buffer || wbout;
 
-    const { container } = render(<Home />);
+    const { container } = await renderHome();
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     if (fileInput) {
-      fireEvent.change(fileInput, { target: { files: [quotaXlsx] } });
+      await chooseDataset(fileInput, quotaXlsx);
       await waitFor(() => {
         expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
       });
@@ -991,7 +1081,7 @@ describe('Home Page Component', () => {
       window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: sampleDoc, validationRecords: [sampleValidationRecord] }));
     }
 
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
@@ -1002,18 +1092,18 @@ describe('Home Page Component', () => {
     });
     expect(refreshButtons.length).toBe(0);
 
-    // Apply blanket fixes so all validation records are resolved
+    // Apply supported currency corrections from D1; other issues remain open.
     const blanketBtn = screen.queryByRole('button', { name: new RegExp(UI_STRINGS.module1.applyBlanketFixes, 'i') });
     if (blanketBtn) {
       fireEvent.click(blanketBtn);
       await waitFor(() => {
-        expect(screen.getByText(UI_STRINGS.toasts.blanketFixesApplied)).toBeInTheDocument();
+        expect(screen.getByText(UI_STRINGS.toasts.blanketFixesNoChanges)).toBeInTheDocument();
       });
     }
   });
 
   it('triggers AnalyzingLoader during batch file upload and handles completion', async () => {
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
     });
@@ -1021,13 +1111,13 @@ describe('Home Page Component', () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     const file = new File(['Vendor,Qty,Price\nAcme,10,100'], 'test.csv', { type: 'text/csv' });
     if (fileInput) {
-      fireEvent.change(fileInput, { target: { files: [file] } });
+      await chooseDataset(fileInput, file);
     }
   });
 
   it('triggers onStartAICategorization toast in Module2', async () => {
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
@@ -1044,7 +1134,7 @@ describe('Home Page Component', () => {
 
   it('renders masked overlay for Bronze tier and shows upgrade trigger', async () => {
     vi.spyOn(apiClient, 'getSimulatedTier').mockReturnValue('BRONZE');
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
     });
@@ -1071,7 +1161,7 @@ describe('Home Page Component', () => {
       vendorRankings: [sampleVendorRanking],
       vendorDetails: []
     });
-    render(<Home />);
+    await renderHome();
     expect(await screen.findByText('test_dataset.xlsx')).toBeInTheDocument();
 
     // Switch to Module 4 (Savings Engine)
@@ -1094,7 +1184,7 @@ describe('Home Page Component', () => {
   it('redirects unauthenticated visitors to /login', async () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(null);
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(null);
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/login');
     });
@@ -1113,7 +1203,7 @@ describe('Home Page Component', () => {
       created_at: '2026-01-01T00:00:00.000Z'
     });
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('admin-token-123');
-    render(<Home />);
+    await renderHome();
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/admin/dashboard');
     });

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   FileSpreadsheet,
   Download,
@@ -9,39 +9,37 @@ import {
 import type {
   SavingsTypeEvidenceSectionProps,
   CanonicalSavingsType,
-  SavingsTypeEvidenceInventoryItem,
-  DeclarativeDownloadPayload
+  SavingsTypeEvidenceInventoryItem
 } from '../../types';
 import { UI_STRINGS, SAVINGS_TYPES_INVENTORY, SAVINGS_TYPE_FILENAMES } from '../../constants';
+import { EVIDENCE_WORKBOOK_FILENAMES } from '../../constants/evidenceWorkbook';
+import { EVIDENCE_DOWNLOAD_KEYS } from '../../constants/evidenceDownload';
+import { useEvidenceFileDownload } from '../../hooks/useEvidenceFileDownload';
 import { evidenceApi } from '../../utils/evidenceApi';
 import { SavingsTypeDetailModal } from './SavingsTypeDetailModal';
 
 export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProps> = ({
-  jobId = 'job-init-default-001',
+  jobId,
   className = '',
   onViewDetails
 }) => {
   const strings = UI_STRINGS.evidence.savingsTypes;
   const [selectedItem, setSelectedItem] = useState<SavingsTypeEvidenceInventoryItem | null>(null);
-  const [downloadPayload, setDownloadPayload] = useState<DeclarativeDownloadPayload | null>(null);
-  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
-
-  const triggerDownload = (url: string, filename: string) => {
-    setDownloadPayload({ href: url, filename });
-    setTimeout(() => {
-      downloadLinkRef.current?.click();
-    }, 50);
-  };
+  const { downloadPayload, downloadLinkRef, downloadError, pendingKey, requestDownload } = useEvidenceFileDownload();
 
   const handleDownloadComprehensive = () => {
     const url = evidenceApi.getWorkbookDownloadUrl(jobId, 'SAVINGS_ENGINE_EVIDENCE');
-    triggerDownload(url, '04_Savings_Engine_Evidence.xlsx');
+    void requestDownload(
+      EVIDENCE_DOWNLOAD_KEYS.SAVINGS_ENGINE,
+      url,
+      EVIDENCE_WORKBOOK_FILENAMES.SAVINGS_ENGINE_EVIDENCE
+    );
   };
 
   const handleDownloadSavingsType = (savingsType: CanonicalSavingsType) => {
     const url = evidenceApi.getSavingsTypeDownloadUrl(jobId, savingsType);
-    const filename = SAVINGS_TYPE_FILENAMES[savingsType] || `${savingsType}_Evidence.xlsx`;
-    triggerDownload(url, filename);
+    const filename = SAVINGS_TYPE_FILENAMES[savingsType];
+    void requestDownload(savingsType, url, filename);
   };
 
   const handleOpenDetails = (item: SavingsTypeEvidenceInventoryItem) => {
@@ -54,7 +52,7 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
       data-testid="savings-type-evidence-section"
       className={`p-6 rounded-2xl bg-white border border-slate-200 glass-card space-y-6 ${className}`}
     >
-      {/* Declarative virtual download anchor */}
+      {/* Declarative virtual download anchor, bound to the authenticated Blob URL */}
       {downloadPayload && (
         <a
           ref={downloadLinkRef}
@@ -62,9 +60,14 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
           download={downloadPayload.filename}
           className="hidden"
           aria-hidden="true"
-        >
-          Download
-        </a>
+          tabIndex={-1}
+        />
+      )}
+
+      {downloadError && (
+        <div role="alert" data-testid="savings-evidence-download-error" className="p-3 rounded-lg border border-red-200 bg-red-50 text-xs text-red-800">
+          {downloadError}
+        </div>
       )}
 
       {/* Header Banner */}
@@ -72,11 +75,11 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
         <div>
           <div className="flex items-center space-x-2">
             <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-              MODULE 4 EVIDENCE
+              {strings.moduleBadge}
             </span>
             <span className="text-xs text-slate-500 font-semibold flex items-center space-x-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Three-Way Parity Guaranteed</span>
+              <span>{strings.parityBadge}</span>
             </span>
           </div>
           <h3 className="text-base font-bold text-slate-900 mt-1">
@@ -92,6 +95,7 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
           type="button"
           data-testid="btn-download-savings-engine-evidence"
           onClick={handleDownloadComprehensive}
+          disabled={pendingKey !== null}
           className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition-all active:scale-95 shrink-0"
         >
           <Download className="w-3.5 h-3.5 text-emerald-400" />
@@ -106,7 +110,7 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
             {strings.level2Title}
           </h4>
           <span className="text-[11px] text-slate-400 font-mono">
-            7 Canonical Types Available
+            {strings.canonicalTypesCount(SAVINGS_TYPES_INVENTORY.length)}
           </span>
         </div>
 
@@ -120,9 +124,9 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
               <div>
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
                   <span className="font-bold text-cyan-800 bg-cyan-100/70 px-1.5 py-0.2 rounded border border-cyan-200">
-                    {item.initiativeId || item.savingsType}
+                    {item.initiativeId}
                   </span>
-                  <span>{item.sheetCount} sheets</span>
+                  <span>{strings.sheetCount(item.sheetCount)}</span>
                 </div>
 
                 <h5 className="text-xs font-bold text-slate-900 group-hover:text-emerald-700 transition-colors">
@@ -130,7 +134,7 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
                 </h5>
 
                 <div className="mt-2 text-lg font-black font-mono text-emerald-600">
-                  ₹{item.netAmountCr.toFixed(2)} Cr
+                  {UI_STRINGS.common.croreAmount(item.netAmountCr.toFixed(2))}
                 </div>
 
                 {item.classificationNote && (
@@ -154,6 +158,7 @@ export const SavingsTypeEvidenceSection: React.FC<SavingsTypeEvidenceSectionProp
                   type="button"
                   data-testid={`btn-download-evidence-${item.savingsType}`}
                   onClick={() => handleDownloadSavingsType(item.savingsType as CanonicalSavingsType)}
+                  disabled={pendingKey !== null}
                   title={strings.tooltipEvidence}
                   className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200/80 rounded-lg border border-emerald-300/80 transition-all active:scale-95"
                 >

@@ -1,111 +1,98 @@
 /**
- * Orchestration Input Validation Schemas (Prompt 302, Section 10)
+ * Input validation schemas for the Analysis Orchestration API (path, query and JSON body).
  */
-
 import { z } from 'zod';
+import {
+  ANALYSIS_JOB_STATUS_VALUES,
+  ORCHESTRATION_ID_PATTERN,
+  ORCHESTRATION_LIMITS
+} from './orchestration';
 
-export const pcbiGapResolutionSchema = z.object({
-  action: z.enum([
-    'ADD_MAP_PCBI',
-    'MAP_EXISTING',
-    'EXCLUDE',
-    'MARK_NOT_BENCHMARKABLE',
-    'MARK_SERVICE',
-    'REQUEST_RESEARCH'
-  ]),
-  targetPcbiSeries: z.string().optional(),
-  exclusionReason: z.enum([
-    'NOT_BENCHMARKABLE',
-    'CUSTOM_ENGINEERED_ITEM',
-    'SERVICE',
-    'NO_RELIABLE_MARKET_BENCHMARK',
-    'INSUFFICIENT_MARKET_DATA',
-    'CUSTOMER_SPECIFIC_SPECIFICATION',
-    'BELOW_MATERIALITY_THRESHOLD',
-    'OTHER'
-  ]).optional(),
-  exclusionNotes: z.string().optional(),
-  researchNotes: z.string().optional()
-}).refine((data) => {
-  if (data.action === 'EXCLUDE' && !data.exclusionReason) {
-    return false;
-  }
-  if (data.exclusionReason === 'OTHER' && (!data.exclusionNotes || data.exclusionNotes.trim().length === 0)) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Mandatory exclusion reason and notes required when excluding items'
+const CHECKLIST_NOT_BOOLEAN = 'Every quality gate item must be true or false';
+
+const ID_FORMAT_MESSAGE =
+  'Identifier must start with a letter or digit and contain only letters, digits, dots, underscores or hyphens';
+
+export const orchestrationIdSchema = z.string().regex(ORCHESTRATION_ID_PATTERN, ID_FORMAT_MESSAGE);
+
+export const jobsQuerySchema = z.object({
+  status: z.enum([...ANALYSIS_JOB_STATUS_VALUES, 'ALL']).optional(),
+  search: z.string().trim().max(ORCHESTRATION_LIMITS.searchMaxLength, 'Search text is too long').optional()
 });
 
-export const reanalysisUploadSchema = z.object({
-  fileName: z.string().min(1, 'File name is required'),
-  fileBase64: z.string().optional(),
-  fileType: z.string().default('XLSX'),
-  fileSizeMb: z.number().nonnegative().optional(),
-  reason: z.enum([
-    'INCORRECT_CATEGORY_MAPPING',
-    'MISSING_TRANSACTIONS',
-    'DUPLICATE_TRANSACTIONS',
-    'INCORRECT_SUPPLIER_MAPPING',
-    'INCORRECT_PLANT_MAPPING',
-    'INCORRECT_QUANTITY_VALUE',
-    'INCORRECT_MATERIAL_DESCRIPTION',
-    'CUSTOMER_CLARIFICATION',
-    'PCBI_MAPPING_CORRECTION',
-    'OTHER'
-  ]),
-  notes: z.string().optional()
-}).refine((data) => {
-  if (data.reason === 'OTHER' && (!data.notes || data.notes.trim().length === 0)) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Explanatory notes are required when reason is OTHER'
+/** Generate-report takes no fields. Any JSON object is accepted; other JSON shapes are rejected. */
+export const emptyBodySchema = z.looseObject({});
+
+export const reportReferenceSchema = z.object({
+  reportVersionId: z
+    .string()
+    .trim()
+    .min(1, 'Report version ID is required')
+    .max(ORCHESTRATION_LIMITS.reportIdMaxLength, 'Report version ID is too long')
 });
 
-export const qualityGateChecklistSchema = z.object({
-  dataQuality: z.object({
-    sourceDataValidated: z.boolean(),
-    spendReconciles: z.boolean(),
-    duplicateChecksCompleted: z.boolean(),
-    classificationReviewed: z.boolean()
-  }),
-  pcbi: z.object({
-    requiredPcbiCategoriesResolved: z.boolean(),
-    benchmarkSourcesValidated: z.boolean(),
-    exclusionsDocumented: z.boolean(),
-    pcbiCoverageAcceptable: z.boolean()
-  }),
-  financial: z.object({
-    savingsCalculationsValidated: z.boolean(),
-    noDoubleCounting: z.boolean(),
-    overlapsHandled: z.boolean(),
-    exclusionsApplied: z.boolean(),
-    totalsReconcile: z.boolean()
-  }),
-  report: z.object({
-    module1Reviewed: z.boolean(),
-    module2Reviewed: z.boolean(),
-    module3Reviewed: z.boolean(),
-    module4Reviewed: z.boolean(),
-    executiveSummaryReviewed: z.boolean()
-  })
-});
-
-export const customerAcknowledgementSchema = z.object({
-  reportVersionId: z.string().min(1, 'Report version ID is required'),
-  notes: z.string().optional()
-});
-
-export const customerCorrectionRequestSchema = z.object({
-  category: z.string().min(1, 'Correction category is required'),
-  description: z.string().min(5, 'Detailed description is required'),
-  supportingFileName: z.string().optional()
-});
+const reportIdField = reportReferenceSchema.shape.reportVersionId;
 
 export const supersedeReportSchema = z.object({
-  reportVersionId: z.string().min(1, 'Report version ID is required'),
-  reason: z.string().min(5, 'Detailed supersession reason is required')
+  reportVersionId: reportIdField,
+  reason: z
+    .string()
+    .trim()
+    .min(ORCHESTRATION_LIMITS.supersedeReasonMinLength, 'Detailed supersession reason is required')
+    .max(ORCHESTRATION_LIMITS.supersedeReasonMaxLength, 'Supersession reason is too long')
+});
+
+export const acknowledgeReportSchema = z.object({
+  reportVersionId: reportIdField,
+  notes: z.string().trim().max(ORCHESTRATION_LIMITS.notesMaxLength, 'Notes are too long').optional()
+});
+
+export const correctionRequestSchema = z.object({
+  category: z
+    .string()
+    .trim()
+    .min(1, 'Correction category is required')
+    .max(ORCHESTRATION_LIMITS.correctionCategoryMaxLength, 'Correction category is too long'),
+  description: z
+    .string()
+    .trim()
+    .min(ORCHESTRATION_LIMITS.correctionDescriptionMinLength, 'Detailed description is required')
+    .max(ORCHESTRATION_LIMITS.correctionDescriptionMaxLength, 'Description is too long'),
+  supportingFileName: z
+    .string()
+    .trim()
+    .max(ORCHESTRATION_LIMITS.supportingFileNameMaxLength, 'Supporting file name is too long')
+    .optional()
+});
+
+const checklistFlag = z.boolean({ error: CHECKLIST_NOT_BOOLEAN });
+
+/** Quality gate checklist as submitted by the admin. Every boolean is kept as received. */
+export const qualityGateChecklistSchema = z.object({
+  dataQuality: z.object({
+    sourceDataValidated: checklistFlag,
+    spendReconciles: checklistFlag,
+    duplicateChecksCompleted: checklistFlag,
+    classificationReviewed: checklistFlag
+  }),
+  pcbi: z.object({
+    requiredPcbiCategoriesResolved: checklistFlag,
+    benchmarkSourcesValidated: checklistFlag,
+    exclusionsDocumented: checklistFlag,
+    pcbiCoverageAcceptable: checklistFlag
+  }),
+  financial: z.object({
+    savingsCalculationsValidated: checklistFlag,
+    noDoubleCounting: checklistFlag,
+    overlapsHandled: checklistFlag,
+    exclusionsApplied: checklistFlag,
+    totalsReconcile: checklistFlag
+  }),
+  report: z.object({
+    module1Reviewed: checklistFlag,
+    module2Reviewed: checklistFlag,
+    module3Reviewed: checklistFlag,
+    module4Reviewed: checklistFlag,
+    executiveSummaryReviewed: checklistFlag
+  })
 });

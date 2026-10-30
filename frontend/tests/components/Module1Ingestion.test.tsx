@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Module1Ingestion } from '../../src/components/Module1Ingestion';
-import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../../src/data/mockData';
+import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 const sampleIngestionQueue = [
@@ -570,21 +570,36 @@ describe('Module1Ingestion Component', () => {
     expect(screen.getByText('Chemical & Petrochemicals - Specialty Chemicals')).toBeInTheDocument();
   });
 
-  it('handles client setup confirmation with custom major and minor sectors', () => {
-    vi.useFakeTimers();
-    const onUpdateTenant = vi.fn();
-    render(<Module1Ingestion {...defaultProps} onUpdateTenant={onUpdateTenant} />);
+  it('loads and displays live FX rates when fetch succeeds', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        rates: {
+          INR: 83.8,
+          EUR: 0.92,
+          GBP: 0.79,
+          AED: 3.67,
+          JPY: 155,
+          SGD: 1.34
+        }
+      })
+    });
+    vi.stubGlobal('fetch', mockFetch);
 
-    // Open setup modal
-    const configureBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.configureClientDataset, 'i') });
-    fireEvent.click(configureBtn);
+    render(<Module1Ingestion {...defaultProps} />);
 
-    const submitBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
-    fireEvent.click(submitBtn);
+    expect(await screen.findByText(/USD\/INR:/i)).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
 
-    vi.advanceTimersByTime(300);
-    expect(onUpdateTenant).toHaveBeenCalled();
-    vi.useRealTimers();
+  it('renders actual coverage from monthWiseSummaries when canonicalViewModel is absent', () => {
+    render(
+      <Module1Ingestion
+        {...defaultProps}
+        monthWiseSummaries={sampleMonthWiseSummaries}
+      />
+    );
+    expect(screen.getByText(/1 Billing Months \(Apr 2024 – Apr 2024\)/i)).toBeInTheDocument();
   });
 });
 

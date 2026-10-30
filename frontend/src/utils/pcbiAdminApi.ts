@@ -4,6 +4,7 @@
 
 import { BACKEND_API_BASE_URL } from '../constants';
 import frontendLogger from './logger';
+import { authApiClient } from './authApi';
 import type {
   PCBIVersionRecord,
   PCBIImportPayload,
@@ -18,6 +19,13 @@ export class PCBIAdminApiClient {
     this.baseUrl = baseUrl;
   }
 
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const token = authApiClient.getStoredToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  }
+
   public async getVersions(): Promise<{
     success: boolean;
     total: number;
@@ -26,7 +34,7 @@ export class PCBIAdminApiClient {
   }> {
     try {
       frontendLogger.info('Fetching PCBI Master versions list');
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/versions`);
+      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/versions`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch PCBI versions: HTTP ${res.status}`);
       }
@@ -42,7 +50,7 @@ export class PCBIAdminApiClient {
   public async getVersion(version: string): Promise<{ success: boolean; version: PCBIVersionRecord }> {
     try {
       frontendLogger.info('Fetching PCBI Master version details', { version });
-      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/versions/${encodeURIComponent(version)}`);
+      const res = await fetch(`${this.baseUrl}/api/admin/pcbi/versions/${encodeURIComponent(version)}`, { headers: this.getHeaders() });
       if (!res.ok) {
         throw new Error(`Failed to fetch version ${version}: HTTP ${res.status}`);
       }
@@ -66,7 +74,7 @@ export class PCBIAdminApiClient {
 
       const res = await fetch(`${this.baseUrl}/api/admin/pcbi/import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify(payload)
       });
 
@@ -92,7 +100,7 @@ export class PCBIAdminApiClient {
       frontendLogger.info('Publishing PCBI Master version to production', { version, publishedBy });
       const res = await fetch(`${this.baseUrl}/api/admin/pcbi/publish/${encodeURIComponent(version)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.getHeaders(),
         body: JSON.stringify({ published_by: publishedBy })
       });
 

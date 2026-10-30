@@ -44,7 +44,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
           </div>
           <p className="text-lg font-black font-mono text-sky-600 dark:text-sky-400">
             {selectedFy24
-              ? `${currSymbol}${(spendCurrency === 'INR' ? selectedFy24.spend_inr_cr : selectedFy24.spend_usd_m).toFixed(2)} ${currUnit}`
+              ? `${currSymbol}${(spendCurrency === 'INR' ? selectedFy24.spend_inr_cr : (selectedFy24.spend_usd_m ?? 0)).toFixed(2)} ${currUnit}`
               : 'N/A'}
           </p>
           {selectedFy24 && (
@@ -82,7 +82,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
           </div>
           <p className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
             {selectedFy25
-              ? `${currSymbol}${(spendCurrency === 'INR' ? selectedFy25.spend_inr_cr : selectedFy25.spend_usd_m).toFixed(2)} ${currUnit}`
+              ? `${currSymbol}${(spendCurrency === 'INR' ? selectedFy25.spend_inr_cr : (selectedFy25.spend_usd_m ?? 0)).toFixed(2)} ${currUnit}`
               : 'N/A'}
           </p>
           {selectedFy25 && (
@@ -120,7 +120,7 @@ export const MultiYearComparisonCard: React.FC<MultiYearComparisonCardProps> = (
           </div>
           <p className="text-lg font-black font-mono text-purple-600 dark:text-purple-400">
             {selectedFy26
-              ? `${currSymbol}${(spendCurrency === 'INR' ? selectedFy26.spend_inr_cr : selectedFy26.spend_usd_m).toFixed(2)} ${currUnit}`
+              ? `${currSymbol}${(spendCurrency === 'INR' ? selectedFy26.spend_inr_cr : (selectedFy26.spend_usd_m ?? 0)).toFixed(2)} ${currUnit}`
               : 'N/A'}
           </p>
           {selectedFy26 && (

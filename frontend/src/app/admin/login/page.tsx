@@ -9,7 +9,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Eye, EyeOff, ShieldAlert, Lock, ArrowRight, CheckCircle2, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, ShieldAlert, Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { UI_STRINGS, AICEV_LOGO_SRC } from '../../../constants';
 import { apiClient } from '../../../utils/api';
 import frontendLogger from '../../../utils/logger';
@@ -26,14 +26,6 @@ export default function AdminLoginPage(): React.ReactElement {
     email: '',
     password: ''
   });
-
-  const handleQuickFillAdmin = () => {
-    setForm({
-      email: 'admin@procucev.com',
-      password: 'Admin@123456'
-    });
-    setErrorMessage(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
@@ -219,34 +211,6 @@ export default function AdminLoginPage(): React.ReactElement {
             </p>
           </div>
 
-          {/* Quick Fill Admin Button */}
-          <div style={{ marginBottom: '20px' }}>
-            <button
-              type="button"
-              id="admin-quick-fill-btn"
-              onClick={handleQuickFillAdmin}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                padding: '10px 14px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#38bdf8',
-                backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                border: '1px dashed rgba(56, 189, 248, 0.4)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <UserCheck size={14} />
-              Quick-Fill Admin Credentials (admin@procucev.com)
-            </button>
-          </div>
-
           {/* Error Message */}
           {errorMessage && (
             <div style={{
@@ -370,53 +334,6 @@ export default function AdminLoginPage(): React.ReactElement {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-            </div>
-
-            {/* Quick Fill Admin Credentials */}
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              marginTop: '4px'
-            }}>
-              <button
-                type="button"
-                id="quick-fill-sriman"
-                onClick={() => {
-                  setForm({ email: 'sriman@procucev.com', password: 'sriman@123' });
-                  setErrorMessage(null);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 10px',
-                  backgroundColor: 'rgba(56, 189, 248, 0.12)',
-                  border: '1px solid rgba(56, 189, 248, 0.35)',
-                  borderRadius: '6px',
-                  color: '#38bdf8',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                ⚡ Sriman (Admin)
-              </button>
-              <button
-                type="button"
-                id="quick-fill-admin"
-                onClick={handleQuickFillAdmin}
-                style={{
-                  flex: 1,
-                  padding: '8px 10px',
-                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
-                  border: '1px solid rgba(148, 163, 184, 0.25)',
-                  borderRadius: '6px',
-                  color: '#94a3b8',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                ⚡ System Admin
-              </button>
             </div>
 
             <button

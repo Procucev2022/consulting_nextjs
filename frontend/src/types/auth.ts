@@ -72,16 +72,6 @@ export interface AdminUpdateTierPayload {
   tier: SubscriptionTier;
 }
 
-export interface DevTempCredential {
-  email: string;
-  password: string;
-  role: UserRole;
-  label: string;
-  badge: string;
-  name: string;
-  company: string;
-}
-
 export interface CreateAdminDetailsPayload {
   name: string;
   email: string;

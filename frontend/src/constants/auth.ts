@@ -1,5 +1,3 @@
-import type { DevTempCredential } from '../types/auth';
-
 export const AUTH_ROLES = {
   USER: 'USER',
   ADMIN: 'ADMIN'
@@ -38,37 +36,4 @@ export const DEFAULT_ADMIN_DETAILS = {
   role: 'ADMIN',
   subscription_tier: 'GOLD'
 } as const;
-
-export const DEV_TEMP_CREDENTIALS: DevTempCredential[] =
-  process.env.NODE_ENV === 'production'
-    ? []
-    : [
-        {
-          email: 'sriman@procucev.com',
-          password: 'sriman@123',
-          role: 'ADMIN',
-          label: 'Sriman (Admin)',
-          badge: 'Admin',
-          name: 'Sriman Admin',
-          company: 'Procucev Enterprise Solutions Pvt Ltd'
-        },
-        {
-          email: 'admin@procucev.com',
-          password: 'Admin@123456',
-          role: 'ADMIN',
-          label: 'System Administrator',
-          badge: 'Admin',
-          name: 'System Administrator',
-          company: 'aiCEV Procucev Enterprise Inc.'
-        },
-        {
-          email: 'buyer@procucev.com',
-          password: 'User@123456',
-          role: 'USER',
-          label: 'Enterprise Buyer',
-          badge: 'Buyer',
-          name: 'Enterprise Buyer',
-          company: 'Apex Industrial Dynamics Ltd.'
-        }
-      ];
 

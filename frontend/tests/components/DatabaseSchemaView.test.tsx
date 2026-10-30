@@ -1,13 +1,25 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DatabaseSchemaView } from '../../src/components/DatabaseSchemaView';
-import { schemaEntities } from '../../src/data/mockData';
+import { schemaEntities } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { dbApiClient } from '../../src/utils/dbApi';
+
+vi.mock('../../src/utils/dbApi', () => ({
+  dbApiClient: { getDBSchema: vi.fn(async () => schemaEntities.map((entity) => ({ ...entity, ddl: `CREATE TABLE ${entity.entity_name} (id TEXT);` }))) }
+}));
 
 describe('DatabaseSchemaView Component', () => {
-  it('renders correctly with default selected entity and tabs', () => {
+  it('shows actionable feedback if the D1 schema cannot be loaded', async () => {
+    vi.mocked(dbApiClient.getDBSchema).mockRejectedValueOnce(new Error('D1 unavailable'));
     render(<DatabaseSchemaView />);
+    expect(screen.getByRole('status')).toHaveTextContent(UI_STRINGS.databaseData.loadingSchema);
+    expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.databaseData.schemaLoadFailed);
+  });
+  it('renders correctly with default selected entity and tabs', async () => {
+    render(<DatabaseSchemaView />);
+    await screen.findByText(UI_STRINGS.schema.bannerTitle);
 
     expect(screen.getByText(UI_STRINGS.schema.bannerTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.schema.entitiesHeader)).toBeInTheDocument();
@@ -16,8 +28,9 @@ describe('DatabaseSchemaView Component', () => {
     expect(screen.getByText(UI_STRINGS.schema.slaCards.uptimeTitle)).toBeInTheDocument();
   });
 
-  it('cycles through all entities and updates displayed DDL, attributes, and preview', () => {
+  it('cycles through all entities and updates displayed DDL, attributes, and preview', async () => {
     render(<DatabaseSchemaView />);
+    await screen.findByText(UI_STRINGS.schema.bannerTitle);
 
     const ddlTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.schema.tabs.sqlDdl, 'i') });
     const jsonTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.schema.tabs.sampleData, 'i') });

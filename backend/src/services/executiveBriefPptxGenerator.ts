@@ -1,84 +1,28 @@
 /**
- * Executive Brief PPTX Generator Service (Prompt 258 Section 3 & 6)
+ * Builds the Executive Brief PPTX from the certified report data with pptxgenjs. The output is a Uint8Array, so the
+ * same code path runs under Node (Vitest) and on Workers without relying on Node Buffer.
  */
-
-import fs from 'fs';
-import path from 'path';
 import PptxGenJS from 'pptxgenjs';
-import { logger } from '../utils/logger';
-import { DEFAULT_CLIENT_PROFILE } from '../constants/executiveBriefConstants';
-import type { PptxInspectionResult } from '../types/executiveBriefExportTypes';
-import { renderPptxSlides1To10 } from './executiveBriefPptxSlides1To10';
-import { renderPptxSlides11To20 } from './executiveBriefPptxSlides11To20';
-import { renderPptxSlides21To30 } from './executiveBriefPptxSlides21To30';
+import type { ExecutiveBriefReportData } from '../types/executiveBriefExportTypes';
+import {
+  PPTX_AUTHOR,
+  PPTX_COMPANY,
+  PPTX_LAYOUT_NAME,
+  PPTX_OUTPUT_ERROR,
+  PPTX_TITLE_PREFIX
+} from '../constants/executiveBriefPptxConstants';
+import { addExecutiveBriefSlides } from './executiveBriefPptxSlides';
 
-export class ExecutiveBriefPptxGenerator {
-  /**
-   * Builds the complete 30-slide presentation
-   */
-  public static async createPresentation(
-    clientName = DEFAULT_CLIENT_PROFILE.clientName
-  ): Promise<{ pptx: PptxGenJS; slideCount: number }> {
-    const pptx = new PptxGenJS();
-    pptx.layout = 'LAYOUT_16x9';
-    pptx.author = 'Procucev Advisory Services';
-    pptx.company = 'Procucev / aiCEV';
-    pptx.title = `Procurement Value & Savings Diagnostic - ${clientName}`;
-
-    const totalSlides = 30;
-
-    renderPptxSlides1To10(pptx, clientName, totalSlides);
-    renderPptxSlides11To20(pptx, clientName, totalSlides);
-    renderPptxSlides21To30(pptx, clientName, totalSlides);
-
-    return { pptx, slideCount: totalSlides };
+export const generateExecutiveBriefPptx = async (report: ExecutiveBriefReportData): Promise<Uint8Array> => {
+  const presentation = new PptxGenJS();
+  presentation.layout = PPTX_LAYOUT_NAME;
+  presentation.author = PPTX_AUTHOR;
+  presentation.company = PPTX_COMPANY;
+  presentation.title = `${PPTX_TITLE_PREFIX}${report.clientProfile.clientName}`;
+  addExecutiveBriefSlides(presentation, report);
+  const output = await presentation.write({ outputType: 'uint8array' });
+  if (output instanceof Uint8Array) {
+    return output;
   }
-
-  /**
-   * Generates PPTX Buffer
-   */
-  public static async generateBuffer(
-    clientName = DEFAULT_CLIENT_PROFILE.clientName
-  ): Promise<Buffer> {
-    const { pptx } = await ExecutiveBriefPptxGenerator.createPresentation(clientName);
-    const buf = (await pptx.write({ outputType: 'nodebuffer' })) as Buffer;
-    return buf;
-  }
-
-  /**
-   * Saves PPTX to disk
-   */
-  public static async saveToFile(
-    filePath: string,
-    clientName = DEFAULT_CLIENT_PROFILE.clientName
-  ): Promise<string> {
-    const buf = await ExecutiveBriefPptxGenerator.generateBuffer(clientName);
-    fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    fs.writeFileSync(filePath, buf);
-    logger.info('Executive Brief PPTX saved successfully', {
-      filePath,
-      bytes: buf.length,
-      clientName
-    });
-    return filePath;
-  }
-
-  /**
-   * Programmatic inspection of generated PPTX (Prompt 258 Section 6)
-   */
-  public static inspectPresentation(slideCount: number, bufferSize: number): PptxInspectionResult {
-    const hasExpectedSlides = slideCount === 30;
-    const hasValidSize = bufferSize > 25000;
-
-    return {
-      slideCount,
-      hasBlankSlides: !hasExpectedSlides,
-      hasMissingText: !hasValidSize,
-      hasClippedText: false,
-      textObjectsEditable: true,
-      shapesValid: true,
-      tablesValid: true,
-      isValid: hasExpectedSlides && hasValidSize
-    };
-  }
-}
+  throw new Error(PPTX_OUTPUT_ERROR);
+};

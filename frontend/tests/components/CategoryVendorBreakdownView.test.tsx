@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoryVendorBreakdownView } from '../../src/components/CategoryVendorBreakdownView';
-import { mockTenant } from '../../src/data/mockData';
+import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import type { CategoryYearDetail, VendorYearDetail } from '../../src/types';
 
@@ -147,7 +147,7 @@ describe('CategoryVendorBreakdownView Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module2.breakdown.allFy, 'i') }));
   });
 
   it('renders with fallback enterprise name when tenant is undefined', () => {
@@ -190,7 +190,7 @@ describe('CategoryVendorBreakdownView Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module2.breakdown.allFy, 'i') }));
 
     // Collapse balance categories
     const hideBalBtn = screen.getByRole('button', {
@@ -212,7 +212,7 @@ describe('CategoryVendorBreakdownView Component', () => {
     fireEvent.click(screen.getByRole('button', { name: 'FY24' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY25' }));
     fireEvent.click(screen.getByRole('button', { name: 'FY26' }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.allFy, 'i') }));
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(UI_STRINGS.module2.breakdown.allFy, 'i') }));
 
     // Switch back to Categories
     const catTab = screen.getByRole('button', { name: new RegExp(UI_STRINGS.module1.byCategories, 'i') });

@@ -158,7 +158,7 @@ export async function POST(req: Request) {
               Confidentiality Notice, Compliance & Analytical Methodology
             </h2>
             <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-              Multi-tenant cryptographic data segregation, ISO 27001 / SOC 2 Type II strict compliance.
+              Multi-tenant cryptographic data segregation, enterprise data protection architecture.
             </p>
           </td>
         </tr>

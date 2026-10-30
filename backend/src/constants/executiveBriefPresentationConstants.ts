@@ -19,8 +19,7 @@
 import type {
   ExecutiveBriefPresentationContract,
   ExecutiveBriefValueClassification,
-  PresentationKpiCard,
-  ValueClassificationType
+  PresentationKpiCard
 } from '../types/executiveBriefPresentation';
 
 export const PRESENTATION_TOTAL_SPEND_CR = 5920.35;
@@ -209,37 +208,31 @@ export const EXECUTIVE_BRIEF_PRESENTATION_CONTRACT: ExecutiveBriefPresentationCo
   classifications: PRESENTATION_VALUE_CLASSIFICATIONS
 };
 
-export const EXECUTIVE_BRIEF_PRESENTATION_CONSTANTS = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;
-
-/**
- * Validation guard: returns true only if classification represents direct monetized savings.
- * Prevents accidental summation of strategic value, process productivity, or risk avoidance into direct savings.
- */
-export function isAdditiveDirectSaving(type: ValueClassificationType): boolean {
-  return type === 'DIRECT_SAVINGS';
-}
-
 /**
  * Validates that mathematical relationship between Gross, Overlaps, Exclusions, and Net matches exactly.
  */
-export function validateWaterfallMath(): boolean {
+export function validateWaterfallMath(
+  contract: ExecutiveBriefPresentationContract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+): boolean {
   const calculatedNet =
-    PRESENTATION_GROSS_OPPORTUNITY_CR -
-    PRESENTATION_OVERLAP_DEDUCTIONS_CR -
-    PRESENTATION_EXCLUSIONS_CR;
-  return Math.abs(calculatedNet - PRESENTATION_NET_DEFENSIBLE_PIPELINE_CR) < 0.001;
+    contract.grossOpportunityCr -
+    contract.overlapDeductionsCr -
+    contract.exclusionsCr;
+  return Math.abs(calculatedNet - contract.netDefensiblePipelineCr) < 0.001;
 }
 
 /**
  * Validates that Net Defensible Pipeline equals Direct Savings + Strategic Market Value.
  */
-export function validateNetComposition(): boolean {
+export function validateNetComposition(
+  contract: ExecutiveBriefPresentationContract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT
+): boolean {
   const sum =
-    PRESENTATION_NET_DIRECT_SAVINGS_CR +
-    PRESENTATION_STRATEGIC_MARKET_VALUE_CR;
-  return Math.abs(sum - PRESENTATION_NET_DEFENSIBLE_PIPELINE_CR) < 0.001;
+    contract.netDirectSavingsCr +
+    contract.strategicMarketValueCr;
+  return Math.abs(sum - contract.netDefensiblePipelineCr) < 0.001;
 }
 
-export * from './executiveBriefLayoutConstants';
+
 
 

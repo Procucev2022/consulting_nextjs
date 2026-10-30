@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { IngestionUploadSection } from '../../src/components/IngestionUploadSection';
-import { mockTenant, initialIngestionQueue } from '../../src/data/mockData';
+import { mockTenant, initialIngestionQueue } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants';
 
 const mockIngestionItem = {
