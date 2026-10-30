@@ -113840,6 +113840,10 @@ All previous functionality are supposed to be working after this cleaning as wel
 ## Prompt 557
 Please continue adding remaining missing features & functionalities
 
+## Prompt 572
+
+PR checks are failing, can you please check & fix [https://github.com/Procucev2022/consulting_nextjs/pull/25](https://github.com/Procucev2022/consulting_nextjs/pull/25)
+
 ---
 ## Prompt 558
 Please continue adding remaining missing features & functionalities

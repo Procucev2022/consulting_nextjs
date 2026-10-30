@@ -10,11 +10,25 @@ vi.mock('../../src/utils/logger', () => ({
   default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
+const CONFIGURED_ENV: CloudflareEnvironment = {
+  GEMINI_API_KEY: 'primary-key',
+  GEMINI_BACKUP_KEYS: 'backup-key-1, backup-key-2',
+  GEMINI_BASE_URL: 'https://gemini.test/v1beta/models',
+  GEMINI_PRIMARY_MODEL: 'model-primary',
+  GEMINI_FALLBACK_MODELS: 'model-fallback-1, model-fallback-2',
+  GEMINI_REQUEST_TIMEOUT_MS: '5000',
+  GEMINI_TOTAL_BUDGET_MS: '60000',
+  GEMINI_MIN_ATTEMPT_MS: '10',
+  GEMINI_MAX_DOCUMENT_BYTES: '1000',
+  GEMINI_MAX_DOCUMENT_TEXT_CHARS: '50'
+};
+
 describe('GeminiService Unit Tests', () => {
   let service: GeminiService;
 
   beforeEach(() => {
     service = new GeminiService();
+    service.configureForEnvironment(CONFIGURED_ENV);
   });
 
   afterEach(() => {
@@ -252,19 +266,6 @@ describe('GeminiService Unit Tests', () => {
 
 // Services built below use explicit values and a vi.fn fetch stub. No request leaves the process,
 // and results do not depend on backend/.env.
-const CONFIGURED_ENV: CloudflareEnvironment = {
-  GEMINI_API_KEY: 'primary-key',
-  GEMINI_BACKUP_KEYS: 'backup-key-1, backup-key-2',
-  GEMINI_BASE_URL: 'https://gemini.test/v1beta/models',
-  GEMINI_PRIMARY_MODEL: 'model-primary',
-  GEMINI_FALLBACK_MODELS: 'model-fallback-1, model-fallback-2',
-  GEMINI_REQUEST_TIMEOUT_MS: '5000',
-  GEMINI_TOTAL_BUDGET_MS: '60000',
-  GEMINI_MIN_ATTEMPT_MS: '10',
-  GEMINI_MAX_DOCUMENT_BYTES: '1000',
-  GEMINI_MAX_DOCUMENT_TEXT_CHARS: '50'
-};
-
 type PrivateAttemptHooks = {
   attemptModelExtraction: (...args: unknown[]) => Promise<unknown>;
 };

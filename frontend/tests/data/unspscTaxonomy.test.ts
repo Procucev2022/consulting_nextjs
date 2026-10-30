@@ -1,179 +1,198 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest';
-import {
-  unspscOfficialDictionary,
-  lookupUNSPSCByDescription,
-  searchUNSPSCTaxonomy,
-  lookupUNSPSCDetails,
-  UNCLASSIFIED_COMMODITY_RECORD,
-  loadUNSPSCTaxonomy
-} from '../../src/data/unspscTaxonomy';
-import {
-  UNCLASSIFIED_COMMODITY_CODE,
-  UNCLASSIFIED_COMMODITY_TITLE
-} from '../../src/constants/taxonomy';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { taxonomyRecords } from '../fixtures/taxonomy';
+import { TAXONOMY_PAGE_SIZE, TAXONOMY_PREVIEW_LIMIT } from '../../src/constants/taxonomy';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import type { UNSPSCCommodityRecord } from '../../src/types/taxonomy';
 
-beforeAll(async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true, data: taxonomyRecords }))));
-  await loadUNSPSCTaxonomy();
-  vi.unstubAllGlobals();
+vi.mock('../../src/utils/logger', () => ({
+  default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  frontendLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+
+type TaxonomyModule = typeof import('../../src/data/unspscTaxonomy');
+
+const createRecord = (overrides: Partial<UNSPSCCommodityRecord> = {}): UNSPSCCommodityRecord => ({
+  commodityCode: '40151501',
+  commodityTitle: 'Industrial pump assembly',
+  classCode: '40151500',
+  classTitle: 'Industrial pumps',
+  familyCode: '40150000',
+  familyTitle: 'Fluid distribution equipment',
+  segmentCode: '40000000',
+  segmentTitle: 'Distribution and conditioning systems',
+  coreBucket: 'Direct Materials',
+  ...overrides
 });
 
-describe('unspscTaxonomy data module (frontend)', () => {
-  it('should export non-empty official dictionary', () => {
-    expect(unspscOfficialDictionary).toBeDefined();
-    expect(unspscOfficialDictionary.length).toBe(taxonomyRecords.length);
+const responseFor = (
+  records: UNSPSCCommodityRecord[],
+  headers: Record<string, string> = {}
+): Response => new Response(JSON.stringify({ success: true, data: records }), { status: 200, headers });
+
+describe('D1-backed UNSPSC taxonomy data utilities', () => {
+  let taxonomy: TaxonomyModule;
+  let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.stubEnv('NEXT_PUBLIC_BACKEND_URL', 'https://backend.test');
+    fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', fetchMock);
+    taxonomy = await import('../../src/data/unspscTaxonomy');
   });
 
-  it('should ensure index 0 (African boxwood) has Direct Materials coreBucket, not Packaging Materials', () => {
-    const record0 = unspscOfficialDictionary[0];
-    expect(record0.commodityCode).toBe('10502909');
-    expect(record0.commodityTitle).toBe('Fresh cut african boxwood');
-    expect(record0.coreBucket).toBe('Direct Materials');
-    expect(record0.coreBucket).not.toBe('Packaging Materials');
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
-  describe('lookupUNSPSCByDescription - Phase 1 Taxonomy & Classification Correction', () => {
-    // Test A: A known valid official UNSPSC lookup returns the correct code and title
-    it('Test A: should return the correct code and title for a known valid official commodity', () => {
-      const match = lookupUNSPSCByDescription('Fresh cut african boxwood');
-      expect(match).toBeDefined();
-      expect(match?.commodityCode).toBe('10502909');
-      expect(match?.commodityTitle).toBe('Fresh cut african boxwood');
-      expect(match?.classificationStatus).toBe('CLASSIFIED');
-    });
+  it('subscribes to state changes and removes listeners when unsubscribed', async () => {
+    const listener = vi.fn();
+    const unsubscribe = taxonomy.subscribeTaxonomy(listener);
+    fetchMock.mockResolvedValueOnce(responseFor([createRecord()]));
 
-    it('should find match by class title', () => {
-      const match = lookupUNSPSCByDescription('greens');
-      expect(match).toBeDefined();
-      expect(match?.classCode).toBe('10502900');
-      expect(match?.classificationStatus).toBe('CLASSIFIED');
-    });
+    await taxonomy.loadUNSPSCTaxonomy();
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(taxonomy.getTaxonomyLoadState()).toEqual({ isLoading: false, error: null });
 
-    // Test E: Genuine official commodity code 10502909 remains valid
-    it('Test E: genuine official commodity code 10502909 remains valid when looked up directly', () => {
-      const match = lookupUNSPSCByDescription('10502909');
-      expect(match).toBeDefined();
-      expect(match?.commodityCode).toBe('10502909');
-      expect(match?.commodityTitle).toBe('Fresh cut african boxwood');
-      expect(match?.coreBucket).toBe('Direct Materials');
-      expect(match?.classificationStatus).toBe('CLASSIFIED');
-    });
+    unsubscribe();
+    fetchMock.mockResolvedValueOnce(responseFor([createRecord({ commodityCode: '40151502' })]));
+    taxonomy.unspscOfficialDictionary.splice(0);
+    await taxonomy.loadUNSPSCTaxonomy();
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
 
-    // Test B: An unknown description returns UNCLASSIFIED, never African boxwood
-    it('Test B: an unknown description returns UNCLASSIFIED and never African boxwood', () => {
-      const result = lookupUNSPSCByDescription('non_existent_super_random_item_123456');
-      expect(result).toBeDefined();
-      expect(result?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
-      expect(result?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
-      expect(result?.classificationStatus).toBe('UNCLASSIFIED');
-      expect(result?.commodityCode).not.toBe('10502909');
-      expect(result?.commodityTitle).not.toBe('Fresh cut african boxwood');
-    });
+  it('skips loading when records are already present', async () => {
+    taxonomy.unspscOfficialDictionary.push(createRecord());
 
-    // Test C: Textile packaging descriptions do not map to African boxwood
-    it('Test C: textile packaging descriptions return UNCLASSIFIED, never African boxwood', () => {
-      const polybag = lookupUNSPSCByDescription('Textile Polybag LDPE 50 Micron');
-      expect(polybag).toBeDefined();
-      expect(polybag?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
-      expect(polybag?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
-      expect(polybag?.classificationStatus).toBe('UNCLASSIFIED');
-      expect(polybag?.commodityCode).not.toBe('10502909');
+    await taxonomy.loadUNSPSCTaxonomy();
 
-      const carton = lookupUNSPSCByDescription('Corrugated Carton 7-Ply Outer Shipper');
-      expect(carton).toBeDefined();
-      expect(carton?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
-      expect(carton?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
-      expect(carton?.classificationStatus).toBe('UNCLASSIFIED');
-      expect(carton?.commodityCode).not.toBe('10502909');
-    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 
-    // Test D: An ambiguous description does not silently receive an unrelated code
-    it('Test D: an ambiguous description does not silently receive boxwood or unrelated code', () => {
-      // Searching single word "box" must NOT match "Fresh cut african boxwood"
-      const boxResult = lookupUNSPSCByDescription('box');
-      expect(boxResult?.commodityCode).not.toBe('10502909');
-      expect(boxResult?.commodityTitle).not.toBe('Fresh cut african boxwood');
+  it('shares an in-flight load and requests every D1 page', async () => {
+    let resolveFirstPage: ((response: Response) => void) | undefined;
+    const firstPage = new Promise<Response>((resolve) => { resolveFirstPage = resolve; });
+    const fullPage = Array.from({ length: TAXONOMY_PAGE_SIZE }, (_, index) =>
+      createRecord({ commodityCode: `4015${String(index).padStart(4, '0')}` })
+    );
+    fetchMock.mockReturnValueOnce(firstPage).mockResolvedValueOnce(responseFor([createRecord({ commodityCode: 'last' })]));
 
-      // Ambiguous description without match must return UNCLASSIFIED
-      const ambiguous = lookupUNSPSCByDescription('miscellaneous ambiguous supplies xyz');
-      expect(ambiguous?.commodityCode).toBe(UNCLASSIFIED_COMMODITY_CODE);
-      expect(ambiguous?.commodityTitle).toBe(UNCLASSIFIED_COMMODITY_TITLE);
-      expect(ambiguous?.classificationStatus).toBe('UNCLASSIFIED');
-    });
+    const firstLoad = taxonomy.loadUNSPSCTaxonomy();
+    const concurrentLoad = taxonomy.loadUNSPSCTaxonomy();
+    expect(concurrentLoad).toBe(firstLoad);
+    expect(taxonomy.getTaxonomyLoadState()).toEqual({ isLoading: true, error: null });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain(`https://backend.test/api/taxonomy?limit=${TAXONOMY_PAGE_SIZE}&offset=0`);
 
-    it('should return undefined when query is empty or whitespace only', () => {
-      expect(lookupUNSPSCByDescription('')).toBeUndefined();
-      expect(lookupUNSPSCByDescription('   ')).toBeUndefined();
-    });
+    resolveFirstPage?.(responseFor(fullPage, { 'x-request-id': 'taxonomy-request-1' }));
+    await Promise.all([firstLoad, concurrentLoad]);
 
-    it('should export UNCLASSIFIED_COMMODITY_RECORD matching constant specification', () => {
-      expect(UNCLASSIFIED_COMMODITY_RECORD.commodityCode).toBe('00000000');
-      expect(UNCLASSIFIED_COMMODITY_RECORD.commodityTitle).toBe('Unclassified Commodity');
-      expect(UNCLASSIFIED_COMMODITY_RECORD.classificationStatus).toBe('UNCLASSIFIED');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1][0])).toContain(`limit=${TAXONOMY_PAGE_SIZE}&offset=${TAXONOMY_PAGE_SIZE}`);
+    expect(taxonomy.unspscOfficialDictionary).toHaveLength(TAXONOMY_PAGE_SIZE + 1);
+    expect(taxonomy.getTaxonomyLoadState()).toEqual({ isLoading: false, error: null });
+  });
+
+  it('stores a helpful error and rethrows when the taxonomy endpoint fails', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('unavailable', { status: 503 }));
+
+    await expect(taxonomy.loadUNSPSCTaxonomy()).rejects.toThrow(UI_STRINGS.taxonomyData.httpFailure(503));
+    expect(taxonomy.getTaxonomyLoadState()).toEqual({
+      isLoading: false,
+      error: UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.httpFailure(503), 'unavailable')
     });
   });
 
-  describe('lookupUNSPSCDetails', () => {
-    it('should return default commodity and class when query is empty', () => {
-      const res = lookupUNSPSCDetails('', 'Packaging Materials');
-      expect(res.commodityTitle).toBe('Industrial Material Commodity');
-      expect(res.classTitle).toBe('Packaging Materials');
-    });
+  it('rejects invalid response shapes and empty seeded results', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, data: [{ commodityCode: 'bad' }] })));
+    await expect(taxonomy.loadUNSPSCTaxonomy()).rejects.toThrow(UI_STRINGS.taxonomyData.invalidResponse);
+    expect(taxonomy.getTaxonomyLoadState().error).toContain(UI_STRINGS.taxonomyData.invalidResponse);
 
-    it('should return default class when query is empty and fallback is undefined', () => {
-      const res = lookupUNSPSCDetails('');
-      expect(res.classTitle).toBe('Direct Materials');
-    });
+    taxonomy = await import('../../src/data/unspscTaxonomy');
+    fetchMock.mockResolvedValueOnce(responseFor([]));
+    await expect(taxonomy.loadUNSPSCTaxonomy()).rejects.toThrow(UI_STRINGS.taxonomyData.emptyResponse);
+    expect(taxonomy.getTaxonomyLoadState().error).toContain(UI_STRINGS.taxonomyData.emptyResponse);
+  });
 
-    it('should resolve details by commodity code', () => {
-      const first = unspscOfficialDictionary[0];
-      const res = lookupUNSPSCDetails(first.commodityCode);
-      expect(res.commodityTitle).toBe(first.commodityTitle);
-      expect(res.classTitle).toBe(first.classTitle);
-    });
+  it('handles non-Error failures and uses the fallback request identifier', async () => {
+    fetchMock.mockRejectedValueOnce('raw transport failure');
 
-    it('should resolve details by commodity title keyword', () => {
-      const res = lookupUNSPSCDetails('boxwood');
-      expect(res.commodityTitle.toLowerCase()).toContain('boxwood');
-    });
+    await expect(taxonomy.loadUNSPSCTaxonomy()).rejects.toBe('raw transport failure');
+    expect(taxonomy.getTaxonomyLoadState().error).toBe(
+      UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable)
+    );
+  });
 
-    it('should fallback to query and fallback category if no match is found', () => {
-      const res = lookupUNSPSCDetails('non_existent_random_token_9999', 'Indirect & MRO');
-      expect(res.commodityTitle).toBe('non_existent_random_token_9999');
-      expect(res.classTitle).toBe('Indirect & MRO');
+  it('returns a preview for empty searches and filters by category and searchable fields', () => {
+    const records = Array.from({ length: TAXONOMY_PREVIEW_LIMIT + 2 }, (_, index) => createRecord({
+      commodityCode: `code-${index}`,
+      commodityTitle: index === 0 ? 'Special bearing grease' : `Commodity ${index}`,
+      classTitle: index === 1 ? 'Rotating equipment' : 'General class',
+      segmentTitle: index === 2 ? 'Industrial machinery' : 'Other segment',
+      coreBucket: index === 3 ? 'Logistics & Freight' : 'Direct Materials'
+    }));
+    taxonomy.unspscOfficialDictionary.push(...records);
+
+    expect(taxonomy.searchUNSPSCTaxonomy('')).toHaveLength(TAXONOMY_PREVIEW_LIMIT);
+    expect(taxonomy.searchUNSPSCTaxonomy('', 'Direct Materials')).toHaveLength(TAXONOMY_PREVIEW_LIMIT + 1);
+    expect(taxonomy.searchUNSPSCTaxonomy('', 'ALL')).toHaveLength(TAXONOMY_PREVIEW_LIMIT + 2);
+    expect(taxonomy.searchUNSPSCTaxonomy('code-51')).toHaveLength(1);
+    expect(taxonomy.searchUNSPSCTaxonomy('special bearing')).toHaveLength(1);
+    expect(taxonomy.searchUNSPSCTaxonomy('rotating equipment')).toHaveLength(1);
+    expect(taxonomy.searchUNSPSCTaxonomy('industrial machinery')).toHaveLength(1);
+    expect(taxonomy.searchUNSPSCTaxonomy('missing', 'Direct Materials')).toEqual([]);
+  });
+
+  it('looks up exact codes, titles, classes, and bounded phrases without substring false positives', () => {
+    const pump = createRecord({ commodityTitle: 'Fresh cut african boxwood', classTitle: 'Fresh cut greens' });
+    const valve = createRecord({ commodityCode: 'valve-2', commodityTitle: 'Valve insert', classTitle: 'Industrial valves' });
+    taxonomy.unspscOfficialDictionary.push(pump, valve);
+
+    expect(taxonomy.lookupUNSPSCByDescription('')).toBeUndefined();
+    expect(taxonomy.lookupUNSPSCByDescription(' VALVE-2 ')).toMatchObject({ commodityCode: 'valve-2', classificationStatus: 'CLASSIFIED' });
+    expect(taxonomy.lookupUNSPSCByDescription('Valve insert')).toMatchObject({ commodityCode: 'valve-2', classificationStatus: 'CLASSIFIED' });
+    expect(taxonomy.lookupUNSPSCByDescription('Industrial valves')).toMatchObject({ commodityCode: 'valve-2' });
+    expect(taxonomy.lookupUNSPSCByDescription('fresh cut')).toMatchObject({ commodityCode: pump.commodityCode });
+    expect(taxonomy.lookupUNSPSCByDescription('box')).toMatchObject({ classificationStatus: 'UNCLASSIFIED' });
+    expect(taxonomy.lookupUNSPSCByDescription('fresh*')).toMatchObject({ classificationStatus: 'UNCLASSIFIED' });
+    expect(taxonomy.lookupUNSPSCByDescription('please order industrial valves soon')).toMatchObject({ commodityCode: 'valve-2' });
+  });
+
+  it('returns detailed matches and category-aware fallback values', () => {
+    taxonomy.unspscOfficialDictionary.push(createRecord({ commodityTitle: 'Industrial pump assembly' }));
+
+    expect(taxonomy.lookupUNSPSCDetails('', 'Custom category')).toEqual({
+      commodityCode: '10000000',
+      commodityTitle: 'Industrial Material Commodity',
+      classTitle: 'Custom category',
+      coreBucket: 'Custom category'
+    });
+    expect(taxonomy.lookupUNSPSCDetails('40151501')).toMatchObject({ commodityTitle: 'Industrial pump assembly' });
+    expect(taxonomy.lookupUNSPSCDetails('pump assembly')).toMatchObject({ commodityCode: '40151501' });
+    expect(taxonomy.lookupUNSPSCDetails('industrial pump assembly expanded')).toMatchObject({ commodityCode: '40151501' });
+    expect(taxonomy.lookupUNSPSCDetails('industrial pumps')).toMatchObject({ commodityCode: '40151501' });
+    expect(taxonomy.lookupUNSPSCDetails('unknown product', 'Fallback category')).toEqual({
+      commodityCode: '10000000',
+      commodityTitle: 'unknown product',
+      classTitle: 'Fallback category',
+      coreBucket: 'Fallback category'
+    });
+    expect(taxonomy.lookupUNSPSCDetails('unknown product')).toEqual({
+      commodityCode: '10000000',
+      commodityTitle: 'unknown product',
+      classTitle: 'General Sourcing Class',
+      coreBucket: 'Direct Materials'
     });
   });
 
-  describe('searchUNSPSCTaxonomy', () => {
-    it('should return top 50 when query and category are empty', () => {
-      const res = searchUNSPSCTaxonomy('', '');
-      expect(res.length).toBe(50);
+  it('returns lookup fallbacks when the D1 catalog is empty', () => {
+    expect(taxonomy.lookupUNSPSCByDescription('unknown')).toMatchObject({ classificationStatus: 'UNCLASSIFIED' });
+    expect(taxonomy.lookupUNSPSCDetails('unknown')).toMatchObject({
+      commodityCode: '10000000',
+      commodityTitle: 'unknown'
     });
-
-    it('should filter by specific category', () => {
-      const res = searchUNSPSCTaxonomy('', 'Direct Materials');
-      expect(res.every((item) => item.coreBucket === 'Direct Materials')).toBe(true);
-    });
-
-    it('should search by commodity title keyword', () => {
-      const res = searchUNSPSCTaxonomy('boxwood');
-      expect(res.length).toBeGreaterThan(0);
-    });
-
-    it('should search by class title keyword', () => {
-      const res = searchUNSPSCTaxonomy('species');
-      expect(res.length).toBeGreaterThan(0);
-    });
-
-    it('should search by segment title keyword', () => {
-      const res = searchUNSPSCTaxonomy('Material');
-      expect(res.length).toBeGreaterThan(0);
-    });
-
-    it('should search with category = ALL', () => {
-      const res = searchUNSPSCTaxonomy('boxwood', 'ALL');
-      expect(res.length).toBeGreaterThan(0);
-    });
+    expect(taxonomy.searchUNSPSCTaxonomy('valve')).toEqual([]);
   });
 });
