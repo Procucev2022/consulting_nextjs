@@ -41,6 +41,9 @@ jobs:
       - name: Build Frontend (OpenNext / Vinext)
         run: npm run build:vinext || npm run cloudflare:build
         working-directory: frontend
+        env:
+          NEXT_PUBLIC_BACKEND_URL: "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
+          BACKEND_INTERNAL_URL: "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
 
       - name: Deploy Frontend to Cloudflare (Dev Environment)
         run: npx wrangler deploy --env dev
@@ -50,7 +53,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Apply Backend D1 Schema (Development)
-        run: npm --prefix backend run db:push -- --remote
+        run: npm --prefix backend run db:push -- --remote --seed
         env:
           D1_ENV: dev
           D1_DATABASE_NAME: consulting-db

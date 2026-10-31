@@ -114006,3 +114006,11 @@ I have add shall I re run the job ??
 ## Prompt 587
 
 9286122b-f5e3-413a-9061-a36a84a8787a
+
+## Prompt 588
+
+all thing are done getting 404 for this   https://consulting-nextjs-backend.srinivas-mukku.workers.dev where should I add this
+
+## Prompt 589
+
+[Pasted GitHub Actions build & deployment logs showing successful frontend build, D1 remote execution (110 queries + 34 queries), and backend worker deployment to https://consulting-nextjs-backend.srinivas-mukku.workers.dev]
