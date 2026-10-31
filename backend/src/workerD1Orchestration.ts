@@ -120,6 +120,7 @@ const executeRoute = async (
     request,
     url,
     database,
+    environment,
     objects: environment.OBJECTS,
     bucketName: environment.R2_BUCKET,
     actor,

@@ -37,6 +37,9 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
     priorityScore: 100,
     priorityReason: 'RANKED_BY_CUSTOMER_SPEND',
     researchStatus: 'IN_PROGRESS',
+    workflowStatus: 'RESEARCHING',
+    workflowDueDate: null,
+    workflowNotes: '',
     lastUpdated: '2026-09-28',
     action: 'OPEN WORKSPACE'
   };

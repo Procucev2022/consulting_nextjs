@@ -14,6 +14,7 @@ import type {
   PCBIResearchDashboardMetrics,
   PCBICommodityPromotionHistory
 } from '../types/pcbiCommodityDataLab';
+import type { PCBIResearchWorkflowUpdate } from '../types/pcbiCommodityDataLab';
 
 export class PCBICommodityDataLabApiClient {
   private baseUrl: string;
@@ -61,11 +62,11 @@ export class PCBICommodityDataLabApiClient {
     }
   }
 
-  public async assignResearcher(pcbiId: string, assignee: string | null): Promise<{ success: boolean }> {
+  public async assignResearcher(pcbiId: string, update: PCBIResearchWorkflowUpdate): Promise<{ success: boolean }> {
     const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/assignment`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ pcbiId, assignee })
+      body: JSON.stringify({ pcbiId, ...update })
     });
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));

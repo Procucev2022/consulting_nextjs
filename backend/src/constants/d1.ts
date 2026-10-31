@@ -1,4 +1,4 @@
-export const D1_SCHEMA_VERSION = '2026-10-31-001';
+export const D1_SCHEMA_VERSION = '2026-10-31-004';
 export const PCBI_DATA_LAB_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 export const PCBI_DATA_LAB_UPLOAD_MAX_BASE64_LENGTH = Math.ceil(PCBI_DATA_LAB_UPLOAD_MAX_BYTES / 3) * 4;
 export const PCBI_DATA_LAB_DATE_HEADER_PATTERNS = [/date/i, /week(?:_start)?/i, /period/i, /month/i] as const;
@@ -10,6 +10,7 @@ export const PCBI_DATA_LAB_STRUCTURED_FILE_TYPES = new Set(['CSV', 'TXT', 'XLS',
 
 export const D1_TABLES = {
   tenant: 'TenantMaster',
+  tenantDataProvenance: 'TenantDataProvenance',
   ingestion: 'RawDocumentIngestion',
   validation: 'ValidationPreCheckRecord',
   categories: 'SpendCategorySummary',
@@ -20,6 +21,7 @@ export const D1_TABLES = {
   opportunities: 'SavingsOpportunity',
   funnel: 'ConversionFunnelPhase',
   assessments: 'AssessmentRecord',
+  assessmentReviewGates: 'AssessmentReviewGate',
   customers: 'CustomerRecord',
   dataVersions: 'AssessmentDataVersion',
   datasetCorrections: 'OrchestrationDatasetCorrection',
@@ -61,7 +63,12 @@ export const D1_TABLES = {
   upgradeRequests: 'UpgradeRequest',
   adminOtpSessions: 'AdminOtpSession',
   subscriptionRecords: 'SubscriptionRecord',
-  subscriptionAuditEvents: 'SubscriptionAuditEvent'
+  subscriptionAuditEvents: 'SubscriptionAuditEvent',
+  industryProfiles: 'IndustryMaterialProfile',
+  industrySectorPresets: 'IndustrySectorPreset',
+  pcbiResearchWorkflows: 'PCBICommodityResearchWorkflow',
+  module2LogisticsCandidates: 'Module2LogisticsPackagingCandidate',
+  opportunityTenantScope: 'SavingsOpportunityTenantScope'
 } as const;
 
 export const D1_TABLE_COUNT = Object.keys(D1_TABLES).length;
@@ -110,6 +117,11 @@ export const D1_LEVERS = {
 
 export const D1_ROUTE_MESSAGES = {
   missingBinding: 'Cloudflare D1 binding DB is not configured',
+  module2LogisticsMethod: 'Module 2 logistics and packaging data supports GET requests only.',
+  module2LogisticsInvalid: 'Module 2 logistics query is invalid. Select an assessment ID and retry.',
+  industryProfileMethod: 'Industry profiles support GET requests only.',
+  industryProfileInvalid: 'Industry profile query is invalid. Correct the listed fields and retry.',
+  industryProfileCorrupt: 'Industry profiles could not be read because a D1 catalog record is invalid. Ask an administrator to repair the catalog.',
   invalidQuery: 'PCBI data could not be loaded because the query parameters are invalid. Correct the listed fields and retry.',
   invalidDatasetScope: 'Validation failed',
   missingCanonical: (assessmentId: string): string =>

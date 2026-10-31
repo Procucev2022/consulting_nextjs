@@ -21,6 +21,8 @@ import type {
 import type { PCBIGapResolutionRequest } from '../types/validation';
 import { pcbiGapResolutionRequestSchema } from '../constants/orchestrationValidation';
 import { apiClient } from './api';
+import { frontendLogger } from './logger';
+import { UI_STRINGS } from '../constants/uiStrings';
 
 const API_BASE = '/api/orchestration';
 
@@ -88,7 +90,42 @@ export class OrchestrationApiClient {
   }
 
   public getDownloadDatasetUrl(jobId: string, versionId: string): string {
-    return `${API_BASE}/jobs/${jobId}/download-dataset/${versionId}`;
+    return `${API_BASE}/jobs/${encodeURIComponent(jobId)}/download-dataset/${encodeURIComponent(versionId)}`;
+  }
+
+  public async downloadDataset(jobId: string, versionId: string, fileName: string): Promise<Blob> {
+    const url = this.getDownloadDatasetUrl(jobId, versionId);
+    let response: Response;
+    try {
+      response = await fetch(url, { headers: this.getHeaders() });
+    } catch (error: unknown) {
+      frontendLogger.error('Source dataset download request failed', { jobId, versionId, fileName }, error);
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(UI_STRINGS.orchestration.datasetDownloadNetworkFailure(fileName, reason));
+    }
+
+    if (!response.ok) {
+      let detail = UI_STRINGS.orchestration.datasetDownloadResponseFailure(fileName);
+      try {
+        const body = await response.json() as { message?: unknown };
+        if (typeof body.message === 'string' && body.message.trim()) detail = body.message;
+      } catch {
+        detail = UI_STRINGS.orchestration.datasetDownloadResponseFailure(fileName);
+      }
+      const requestId = response.headers.get('x-request-id') || UI_STRINGS.common.notAvailable;
+      const message = UI_STRINGS.orchestration.datasetDownloadHttpFailure(fileName, response.status, detail, requestId);
+      frontendLogger.error('Source dataset download was rejected', {
+        jobId, versionId, fileName, statusCode: response.status, requestId, detail
+      });
+      throw new Error(message);
+    }
+
+    try {
+      return await response.blob();
+    } catch (error: unknown) {
+      frontendLogger.error('Source dataset response body could not be read', { jobId, versionId, fileName }, error);
+      throw new Error(UI_STRINGS.orchestration.datasetDownloadResponseFailure(fileName));
+    }
   }
 
   public async uploadCorrectedDataset(

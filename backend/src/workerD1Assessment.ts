@@ -3,8 +3,9 @@ import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
 import {
   ASSESSMENT_D1_ACTION_METHODS, ASSESSMENT_D1_DEFAULT_ACTORS, ASSESSMENT_D1_LIFECYCLE_ACTIONS,
-  ASSESSMENT_D1_MESSAGES
+  ASSESSMENT_D1_MESSAGES, ASSESSMENT_REVIEW_GATE_KEYS, ASSESSMENT_REVIEW_GATE_STATUSES
 } from './constants/assessmentD1';
+import { assessmentReviewGateUpdateSchema } from './constants/assessmentValidation';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { uploadAssessmentDataVersion, validateAssessmentDataVersion } from './services/assessmentDataVersionD1';
 import { handleAssessmentLifecycleAction } from './services/assessmentLifecycleD1';
@@ -14,7 +15,9 @@ import {
   loadAssessmentSnapshots, mapD1SnapshotCollection
 } from './services/assessmentD1Mappers';
 import { runAssessmentAnalysisFromD1 } from './services/assessmentAnalysisD1';
+import { runStatements } from './services/assessmentDataVersionD1Helpers';
 import { readJson } from './workerHttp';
+import logger from './utils/logger';
 
 const queryAll = async <T = D1Record>(db: CloudflareD1Database, sql: string, values: unknown[] = []): Promise<T[]> => {
   const statement = db.prepare(sql);
@@ -27,6 +30,74 @@ const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, v
   const statement = db.prepare(sql);
   const bound = values.length > 0 ? statement.bind(...values) : statement;
   return bound.first<T>();
+};
+
+const loadReviewGates = async (db: CloudflareD1Database, assessmentId: string): Promise<D1Record[]> => {
+  const rows = await queryAll<D1Record>(db,
+    `SELECT gate_key, status, evidence_reference, review_note, reviewed_by, reviewed_at
+      FROM ${D1_TABLES.assessmentReviewGates} WHERE assessment_id = ?`, [assessmentId]);
+  const byKey = new Map(rows.map((row) => [String(row.gate_key), row]));
+  return ASSESSMENT_REVIEW_GATE_KEYS.map((gateKey) => {
+    const row = byKey.get(gateKey);
+    return {
+      assessmentId,
+      gateKey,
+      status: row && ASSESSMENT_REVIEW_GATE_STATUSES.includes(row.status as (typeof ASSESSMENT_REVIEW_GATE_STATUSES)[number])
+        ? row.status : 'PENDING',
+      evidenceReference: row?.evidence_reference ?? null,
+      reviewNote: row?.review_note ?? null,
+      reviewedBy: row?.reviewed_by ?? null,
+      reviewedAt: row?.reviewed_at ?? null
+    };
+  });
+};
+
+const handleReviewGates = async (
+  db: CloudflareD1Database,
+  assessmentId: string,
+  request: Request
+): Promise<WorkerD1Result> => {
+  const assessment = await queryFirst<D1Record>(db,
+    `SELECT assessment_id FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]);
+  if (!assessment) return { status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGateNotFound(assessmentId) } };
+  if (request.method === 'GET') return { data: await loadReviewGates(db, assessmentId) };
+
+  const actorRole = request.headers.get('x-user-role') || ASSESSMENT_D1_DEFAULT_ACTORS.analystRole;
+  if (!['ANALYST', 'INTERNAL_ADMIN'].includes(actorRole)) {
+    return { status: 403, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGatePermissionDenied } };
+  }
+  const body: unknown = await readJson(request);
+  const parsed = assessmentReviewGateUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    return { status: 400, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGateValidation, errors: parsed.error.issues } };
+  }
+  const actorEmail = request.headers.get('x-user-email') || ASSESSMENT_D1_DEFAULT_ACTORS.analystEmail;
+  const now = new Date().toISOString();
+  const { gateKey, status, evidenceReference, reviewNote } = parsed.data;
+  const reviewedAt = status === 'PENDING' ? null : now;
+  const reviewedBy = status === 'PENDING' ? null : actorEmail;
+  const evidence = status === 'PENDING' ? null : evidenceReference || null;
+  const note = status === 'PENDING' ? null : reviewNote || null;
+  const update = db.prepare(`
+    INSERT INTO ${D1_TABLES.assessmentReviewGates} (
+      assessment_id, gate_key, status, evidence_reference, review_note, reviewed_by, reviewed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(assessment_id, gate_key) DO UPDATE SET
+      status = excluded.status, evidence_reference = excluded.evidence_reference,
+      review_note = excluded.review_note, reviewed_by = excluded.reviewed_by, reviewed_at = excluded.reviewed_at
+  `).bind(assessmentId, gateKey, status, evidence, note, reviewedBy, reviewedAt);
+  const audit = db.prepare(`
+    INSERT INTO ${D1_TABLES.auditLogs} (id, assessment_id, actor_email, actor_role, action, details_json)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).bind(
+    `AUD-${globalThis.crypto.randomUUID()}`, assessmentId, actorEmail, actorRole, 'REVIEW_GATE_UPDATED',
+    JSON.stringify({ gateKey, status, evidenceReference: evidence, reviewNote: note })
+  );
+  await runStatements(db, [update, audit]);
+  logger.info('Assessment review gate updated', {
+    assessmentId, gateKey, status, actorEmail, requestId: request.headers.get('x-request-id') || undefined
+  });
+  return { data: await loadReviewGates(db, assessmentId) };
 };
 
 const getOperatingModeData = (): Record<string, unknown> => ({
@@ -117,7 +188,8 @@ const handleAssessmentAction = async (
   assessmentId: string,
   action: string,
   request: Request,
-  environment: CloudflareEnvironment
+  environment: CloudflareEnvironment,
+  artifactId?: string
 ): Promise<WorkerD1Result> => {
   const allowedMethods = ASSESSMENT_D1_ACTION_METHODS[action];
   if (!allowedMethods) return { status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.unknownAction } };
@@ -130,6 +202,7 @@ const handleAssessmentAction = async (
       requestId: request.headers.get('x-request-id') || undefined
     }, action === 'run-module1' ? 'module1' : 'full');
   }
+  if (action === 'review-gates') return handleReviewGates(db, assessmentId, request);
   if (action === 'upload' || action === 'validate') {
     const body: unknown = await request.json();
     const context = {
@@ -144,6 +217,18 @@ const handleAssessmentAction = async (
       : validateAssessmentDataVersion(context);
   }
   if (ASSESSMENT_D1_LIFECYCLE_ACTIONS.has(action)) {
+    if (action === 'delivery-package' && artifactId) {
+      if (request.method !== 'GET') return {
+        status: 405, data: { success: false, message: ASSESSMENT_D1_MESSAGES.unsupportedMethod }
+      };
+      const artifactContext: AssessmentLifecycleActionContext = {
+        db, environment, assessmentId, action, body: {},
+        actorEmail: request.headers.get('x-user-email') || ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminEmail,
+        actorRole: request.headers.get('x-user-role') || ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminRole,
+        requestId: request.headers.get('x-request-id') || undefined
+      };
+      return handleAssessmentLifecycleAction(artifactContext, decodeURIComponent(artifactId));
+    }
     const body: unknown = request.method === 'GET' ? {} : await request.json();
     const defaultActor = action === 'accept'
       ? { email: ASSESSMENT_D1_DEFAULT_ACTORS.customerEmail, role: ASSESSMENT_D1_DEFAULT_ACTORS.customerRole }
@@ -152,6 +237,7 @@ const handleAssessmentAction = async (
         : { email: ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminEmail, role: ASSESSMENT_D1_DEFAULT_ACTORS.internalAdminRole };
     const context: AssessmentLifecycleActionContext = {
       db,
+      environment,
       assessmentId,
       action: action as AssessmentLifecycleActionContext['action'],
       body,
@@ -247,5 +333,5 @@ export const handleAssessmentRoute = async (
   }
 
   const parts = subPath.replace(/^\//, '').split('/');
-  return handleAssessmentAction(db, parts[0] || '', parts[1] || '', request, environment);
+  return handleAssessmentAction(db, parts[0] || '', parts[1] || '', request, environment, parts[2]);
 };

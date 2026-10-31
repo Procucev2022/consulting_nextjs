@@ -8,6 +8,7 @@ import type { ExecutiveOpportunityBriefReportData } from '@/types';
 
 const report: ExecutiveOpportunityBriefReportData = {
   tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+  dataClassification: 'DEMO_ONLY',
   generatedAt: '2026-10-30T00:00:00.000Z',
   scopeDescription: 'Baseline D1 transaction rows, excluding assessment-specific copies.',
   metrics: {

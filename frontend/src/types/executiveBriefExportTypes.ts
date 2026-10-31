@@ -238,39 +238,7 @@ export interface ExecutiveBriefRegenerateConfirmModalProps {
   isRegenerating: boolean;
 }
 
-export interface ExecutiveBriefOpportunityTableRow {
-  analysis: string;
-  addressableSpend: string;
-  assumptionMethod: string;
-  indicativeOpportunity: string;
-  benefitType: string;
-  confidence: string;
-  primaryAction: string;
-}
-
 export interface ExecutiveBriefOpportunityTableProps {
-  onDrillOpportunity?: (analysisKey: string) => void;
-}
-
-export interface AssumptionTaxonomyItem {
-  key: string;
-  badge: string;
-  title: string;
-  definition: string;
-  colorClass: string;
-}
-
-export interface ExecutiveBriefAssumptionsPanelProps {
-  onSelectAssumption?: (key: string) => void;
-}
-
-export interface RealizationRoadmapStage {
-  period: string;
-  title: string;
-  description: string;
-}
-
-export interface ExecutiveBriefSpecialDisplaysProps {
-  onSelectLever?: (leverKey: string) => void;
+  onDrillOpportunity?: (opportunityId: string) => void;
 }
 

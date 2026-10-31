@@ -1,5 +1,13 @@
 import type { UNSPSCCommodityRecord, TaxonomyLoadState, UNSPSCLookupDetails } from '../types';
-import { TAXONOMY_API_PATH, TAXONOMY_PAGE_SIZE, TAXONOMY_PREVIEW_LIMIT, UNCLASSIFIED_COMMODITY_RECORD } from '../constants/taxonomy';
+import {
+  TAXONOMY_API_PATH,
+  TAXONOMY_PAGE_SIZE,
+  TAXONOMY_PREVIEW_LIMIT,
+  UNCLASSIFIED_COMMODITY_CODE,
+  UNCLASSIFIED_COMMODITY_TITLE,
+  UNCLASSIFIED_CLASS_TITLE,
+  UNCLASSIFIED_COMMODITY_RECORD
+} from '../constants/taxonomy';
 import { taxonomyPageRequestSchema, taxonomyPageResponseSchema } from '../constants/validation';
 import { UI_STRINGS } from '../constants/uiStrings';
 import frontendLogger from '../utils/logger';
@@ -115,10 +123,10 @@ export function searchUNSPSCTaxonomy(query: string, category?: string): UNSPSCCo
 export function lookupUNSPSCDetails(queryOrCode: string, fallbackCategory?: string): UNSPSCLookupDetails {
   if (!queryOrCode) {
     return {
-      commodityCode: '10000000',
-      commodityTitle: 'Industrial Material Commodity',
-      classTitle: fallbackCategory || 'Direct Materials',
-      coreBucket: fallbackCategory || 'Direct Materials'
+      commodityCode: UNCLASSIFIED_COMMODITY_CODE,
+      commodityTitle: UNCLASSIFIED_COMMODITY_TITLE,
+      classTitle: fallbackCategory || UNCLASSIFIED_CLASS_TITLE,
+      coreBucket: fallbackCategory || UNCLASSIFIED_CLASS_TITLE
     };
   }
   const q = queryOrCode.toLowerCase();
@@ -131,10 +139,10 @@ export function lookupUNSPSCDetails(queryOrCode: string, fallbackCategory?: stri
   );
 
   return {
-    commodityCode: match?.commodityCode || '10000000',
-    commodityTitle: match?.commodityTitle || queryOrCode,
-    classTitle: match?.classTitle || fallbackCategory || 'General Sourcing Class',
-    coreBucket: match?.coreBucket || fallbackCategory || 'Direct Materials'
+    commodityCode: match?.commodityCode || UNCLASSIFIED_COMMODITY_CODE,
+    commodityTitle: match?.commodityTitle || UNCLASSIFIED_COMMODITY_TITLE,
+    classTitle: match?.classTitle || fallbackCategory || UNCLASSIFIED_CLASS_TITLE,
+    coreBucket: match?.coreBucket || fallbackCategory || UNCLASSIFIED_CLASS_TITLE
   };
 }
 

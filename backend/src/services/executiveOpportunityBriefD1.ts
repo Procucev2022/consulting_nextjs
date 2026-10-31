@@ -1,4 +1,7 @@
-import { EXECUTIVE_OPPORTUNITY_BRIEF_SQL } from '../constants/executiveOpportunityBriefConstants';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
+} from '../constants/executiveOpportunityBriefConstants';
 import type {
   CloudflareD1Database,
   ExecutiveOpportunityBriefGroupRow,
@@ -7,6 +10,8 @@ import type {
   ExecutiveOpportunityBriefOpportunityRow,
   ExecutiveOpportunityBriefReport,
   ExecutiveOpportunityBriefTenantRow,
+  ExecutiveOpportunityBriefTenantProvenanceRow,
+  ExecutiveOpportunityBriefDataClassification,
   ExecutiveOpportunityBriefTransactionMetricsRow,
   ExecutiveOpportunityBriefMetricGroup,
   ExecutiveOpportunityBriefOpportunity
@@ -18,6 +23,11 @@ const toNumber = (value: number | string | null | undefined): number => {
 };
 
 const toLabel = (value: string | null | undefined, fallback: string): string => value?.trim() || fallback;
+
+const toDataClassification = (value: string | null | undefined): ExecutiveOpportunityBriefDataClassification => {
+  if (value === 'DEMO_ONLY' || value === 'MIXED') return value;
+  return 'CUSTOMER_DATA';
+};
 
 const toGroup = (row: ExecutiveOpportunityBriefGroupRow): ExecutiveOpportunityBriefMetricGroup => ({
   label: toLabel(row.label, 'Unspecified'),
@@ -40,9 +50,10 @@ const toOpportunity = (row: ExecutiveOpportunityBriefOpportunityRow): ExecutiveO
 
 const queryGroups = async (
   db: CloudflareD1Database,
-  query: string
+  query: string,
+  tenantId: string
 ): Promise<ExecutiveOpportunityBriefMetricGroup[]> => {
-  const result = await db.prepare(query).all<ExecutiveOpportunityBriefGroupRow>();
+  const result = await db.prepare(query).bind(tenantId).all<ExecutiveOpportunityBriefGroupRow>();
   return (result.results ?? []).map(toGroup);
 };
 
@@ -54,9 +65,10 @@ const transactionMetrics = async (
     .first<ExecutiveOpportunityBriefTransactionMetricsRow>();
 
 const opportunityMetrics = async (
-  db: CloudflareD1Database
+  db: CloudflareD1Database,
+  tenantId: string
 ): Promise<ExecutiveOpportunityBriefOpportunityMetricsRow | null> =>
-  db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunityMetrics)
+  db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunityMetrics).bind(tenantId)
     .first<ExecutiveOpportunityBriefOpportunityMetricsRow>();
 
 export const loadExecutiveOpportunityBriefFromD1 = async (
@@ -73,13 +85,25 @@ export const loadExecutiveOpportunityBriefFromD1 = async (
   }
 
   const tenant = tenantRows[0];
-  const [transactionRow, opportunityRow, opportunityResult, levers, statuses, risks] = await Promise.all([
+  const [
+    transactionRow,
+    opportunityRow,
+    opportunityResult,
+    levers,
+    statuses,
+    risks,
+    provenanceRow
+  ] = await Promise.all([
     transactionMetrics(db, tenant.tenant_id),
-    opportunityMetrics(db),
-    db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities).all<ExecutiveOpportunityBriefOpportunityRow>(),
-    queryGroups(db, EXECUTIVE_OPPORTUNITY_BRIEF_SQL.leverBreakdown),
-    queryGroups(db, EXECUTIVE_OPPORTUNITY_BRIEF_SQL.statusBreakdown),
-    queryGroups(db, EXECUTIVE_OPPORTUNITY_BRIEF_SQL.riskBreakdown)
+    opportunityMetrics(db, tenant.tenant_id),
+    db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities)
+      .bind(tenant.tenant_id)
+      .all<ExecutiveOpportunityBriefOpportunityRow>(),
+    queryGroups(db, EXECUTIVE_OPPORTUNITY_BRIEF_SQL.leverBreakdown, tenant.tenant_id),
+    queryGroups(db, EXECUTIVE_OPPORTUNITY_BRIEF_SQL.statusBreakdown, tenant.tenant_id),
+    queryGroups(db, EXECUTIVE_OPPORTUNITY_BRIEF_SQL.riskBreakdown, tenant.tenant_id),
+    db.prepare(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenantProvenance).bind(tenant.tenant_id)
+      .first<ExecutiveOpportunityBriefTenantProvenanceRow>()
   ]);
   if (toNumber(transactionRow?.transaction_count) === 0) {
     return { ok: false, reason: 'no-transactions' };
@@ -103,10 +127,17 @@ export const loadExecutiveOpportunityBriefFromD1 = async (
     estimatedSavingsCr: toNumber(summary.estimated_savings_cr),
     averageConfidence: toNumber(summary.average_confidence)
   };
+  const dataClassification = toDataClassification(provenanceRow?.classification);
+  const scopeDescription = dataClassification === 'DEMO_ONLY'
+    ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.demoScope
+    : dataClassification === 'MIXED'
+      ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.mixedScope
+      : EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.customerScope;
   const report: ExecutiveOpportunityBriefReport = {
     tenant: { tenantId: tenant.tenant_id, enterpriseName: tenant.enterprise_name },
+    dataClassification,
     generatedAt: generatedAt.toISOString(),
-    scopeDescription: 'Baseline transaction rows exclude assessment-specific copies. Savings opportunity rows are read from the D1 opportunity register.',
+    scopeDescription,
     metrics,
     opportunities: (opportunityResult.results ?? []).map(toOpportunity),
     levers,

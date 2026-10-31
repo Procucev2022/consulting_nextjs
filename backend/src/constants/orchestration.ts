@@ -188,7 +188,9 @@ export const ORCHESTRATION_ENTITY_TYPES = {
 } as const;
 
 export const ORCHESTRATION_EMAIL_STATUS = {
-  NOT_SENT: 'NOT_SENT'
+  NOT_SENT: 'NOT_SENT',
+  SENT: 'SENT',
+  FAILED: 'FAILED'
 } as const;
 
 export const ORCHESTRATION_NOTIFICATION_SEVERITY = {

@@ -6,7 +6,12 @@
  */
 
 import { z } from 'zod';
+import { VENDOR_CONSOLIDATION_UI_CONFIG } from './module2VendorConsolidation';
 import { TAXONOMY_PAGE_SIZE } from './taxonomy';
+export const module2LogisticsPackagingQuerySchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120)
+});
+
 export const taxonomyPageRequestSchema = z.object({
   limit: z.number().int().min(1).max(TAXONOMY_PAGE_SIZE),
   offset: z.number().int().nonnegative()
@@ -62,6 +67,7 @@ export const executiveOpportunityBriefResponseSchema = z.object({
   success: z.literal(true),
   data: z.object({
     tenant: z.object({ tenantId: briefText, enterpriseName: z.string() }),
+    dataClassification: z.enum(['CUSTOMER_DATA', 'DEMO_ONLY', 'MIXED']),
     generatedAt: z.string().datetime(), scopeDescription: briefText, metrics: briefMetricsSchema,
     opportunities: z.array(briefOpportunitySchema), levers: z.array(briefSummarySchema),
     statuses: z.array(briefSummarySchema), risks: z.array(briefSummarySchema)
@@ -111,6 +117,31 @@ export const headerCurrencySchema = z.object({
   currency: z.enum(['INR', 'USD', 'EUR', 'GBP'])
 });
 
+export const d1CurrencyRatesResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.record(z.string().regex(/^[A-Z]{3}$/u), z.object({
+    ticker: z.string().optional(),
+    currencyPair: z.string().optional(),
+    currencyCode: z.string().regex(/^[A-Z]{3}$/u),
+    name: z.string().min(1),
+    currentRate: z.number().finite().nonnegative(),
+    lastUpdated: z.string().nullable().optional(),
+    coverageStatus: z.string().optional(),
+    source: z.string().nullable().optional()
+  }))
+});
+
+export const d1CurrencyConversionResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.object({
+    amount: z.number().finite(),
+    fromCurrency: z.string().regex(/^[A-Z]{3}$/u),
+    amountINR: z.number().finite(),
+    exchangeRate: z.number().finite().positive(),
+    rateDate: z.string().nullable()
+  })
+});
+
 // Client Ingestion Setup Form Schema
 export const clientIngestionSetupFormSchema = z.object({
   clientName: z.string().min(1, 'Client name is required'),
@@ -127,7 +158,7 @@ export const clientIngestionSetupFormSchema = z.object({
 // Fix Currency Form Schema
 export const fixCurrencyFormSchema = z.object({
   recordId: z.string().min(1, 'Record ID is required'),
-  selectedCurrency: z.enum(['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD']),
+  selectedCurrency: z.string().regex(/^[A-Z]{3}$/u),
   convertedAmountINR: z.number().positive('Converted amount must be positive')
 });
 
@@ -186,6 +217,10 @@ export const conversionInputsSchema = z.object({
   savingsRate: z.number().min(0, 'Savings rate cannot be negative').max(100, 'Savings rate cannot exceed 100%'),
   saasFeeRate: z.number().min(0, 'SaaS fee rate cannot be negative').max(100, 'SaaS fee rate cannot exceed 100%')
 });
+
+export const executiveBriefEmailRequestSchema = z.object({
+  buyerEmail: z.string().trim().email().max(254)
+}).strict();
 
 // Outgoing API Request Validation Schemas (Frontend API Boundary)
 export const apiUpdateTenantPayloadSchema = z.object({
@@ -259,105 +294,15 @@ export const apiUpdateModule2MaterialMappingPayloadSchema = z.object({
 export const apiBulkUpdateModule2MaterialMappingsPayloadSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
   mappings: z.array(apiUpdateModule2MaterialMappingPayloadSchema.omit({ assessmentId: true }))
-    .min(1).max(100)
+    .min(1).max(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BATCH_LIMIT)
     .refine((mappings) => new Set(mappings.map((mapping) => mapping.sourceMaterialId)).size === mappings.length)
 });
 
 export const apiCalculateConversionPayloadSchema = z.object({
-  annualSpendCr: z.number().positive(), savingsRate: z.number().nonnegative(), saasFeeRate: z.number().nonnegative()
+  annualSpendCr: z.number().positive(),
+  savingsRate: z.number().nonnegative().max(100),
+  saasFeeRate: z.number().nonnegative().max(100)
 });
 
-// User Registration Form Schema
-export const registerFormSchema = z.object({
-  name: z.string().min(2, 'Full name must be at least 2 characters').max(100),
-  mobile_number: z.string().min(8, 'Mobile number must be at least 8 digits').max(20),
-  email: z.string().email('Valid organization email is required').toLowerCase(),
-  company_name: z.string().min(2, 'Company name is required').max(150),
-  company_address: z.string().min(5, 'Company address is required').max(300),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(100)
-});
-
-// User Login Form Schema
-export const loginFormSchema = z.object({
-  email: z.string().email('Valid organization email is required').toLowerCase(),
-  password: z.string().min(1, 'Password is required')
-});
-
-// Change Password Form Schema
-export const changePasswordFormSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(6, 'New password must be at least 6 characters').max(100),
-  confirmPassword: z.string().min(6, 'Confirm password is required').max(100)
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'New passwords do not match',
-  path: ['confirmPassword']
-});
-
-// Admin User Query Schema
-export const adminUserQuerySchema = z.object({
-  search: z.string().optional(),
-  role: z.enum(['ALL', 'USER', 'ADMIN']).optional(),
-  status: z.enum(['ALL', 'ACTIVE', 'SUSPENDED', 'PENDING']).optional(),
-  tier: z.enum(['ALL', 'BRONZE', 'SILVER', 'GOLD']).optional()
-});
-
-// Admin Update User Tier Schema
-export const adminUpdateUserTierSchema = z.object({
-  tier: z.enum(['BRONZE', 'SILVER', 'GOLD'])
-});
-
-export const updateActionPlanSchema = z.object({
-  actionId: z.string().min(1, 'actionId is required'),
-  status: z.enum(['Open', 'In Progress', 'Completed', 'Deferred']).optional(),
-  owner: z.enum(['Procurement', 'SCM', 'Plant', 'Finance', 'Technical', 'Management', 'Other']).optional(),
-  priority: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
-  comments: z.string().optional()
-});
-
-export const updateOpportunityStatusSchema = z.object({
-  opp_id: z.string().min(1, 'opp_id is required'),
-  status: z.enum([
-    'IDENTIFIED',
-    'UNDER_VALIDATION',
-    'VALIDATED',
-    'APPROVED',
-    'IMPLEMENTING',
-    'REALIZED',
-    'REJECTED',
-    'DEFERRED'
-  ])
-});
-
-// Customer Management Form Schemas (Internal Command Centre)
-export const createCustomerFormSchema = z.object({
-  customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
-  industry: z.string().min(2, 'Industry is required'),
-  businessUnit: z.string().optional(),
-  region: z.string().optional(),
-  baseCurrency: z.string().optional(),
-  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
-  contactPerson: z.string().optional(),
-  notes: z.string().optional()
-});
-
-export const updateCustomerFormSchema = z.object({
-  customerName: z.string().min(2, 'Customer name must be at least 2 characters').optional(),
-  industry: z.string().min(2, 'Industry is required').optional(),
-  businessUnit: z.string().optional(),
-  region: z.string().optional(),
-  baseCurrency: z.string().optional(),
-  contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
-  contactPerson: z.string().optional(),
-  status: z.enum(['ACTIVE', 'ARCHIVED', 'ONBOARDING']).optional(),
-  notes: z.string().optional()
-});
-
-export const newAssessmentFormSchema = z.object({
-  customerId: z.string().optional(), customerName: z.string().min(2, 'Customer name is required'),
-  businessUnit: z.string().optional(), industry: z.string().min(2, 'Industry is required'),
-  assessmentPeriodStart: z.string().min(3, 'Period start is required'), assessmentPeriodEnd: z.string().min(3, 'Period end is required'),
-  assignedAnalyst: z.string().email('Valid analyst email is required'), assessmentOwner: z.string().optional(),
-  currency: z.string().optional(), ndaStatus: z.enum(['NOT_REQUESTED', 'SENT', 'SIGNED', 'EXPIRED']).optional(),
-  dataReceivedDate: z.string().optional(), notes: z.string().optional()
-});
+export * from './validationIdentity';
 

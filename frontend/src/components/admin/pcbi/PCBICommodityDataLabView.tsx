@@ -42,7 +42,8 @@ import type {
   PCBIResearchDashboardMetrics,
   CommoditySourceEvidenceObject,
   PCBIDataLibrarySubTab,
-  PCBICommodityPromotionHistory
+  PCBICommodityPromotionHistory,
+  PCBIResearchWorkflowUpdate
 } from '../../../types/pcbiCommodityDataLab';
 
 export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> = ({
@@ -97,9 +98,9 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
     setIsWorkspaceModalOpen(true);
   };
 
-  const handleAssignResearcher = async (pcbiId: string, assignee: string | null): Promise<void> => {
+  const handleAssignResearcher = async (pcbiId: string, update: PCBIResearchWorkflowUpdate): Promise<void> => {
     try {
-      await pcbiCommodityDataLabApi.assignResearcher(pcbiId, assignee);
+      await pcbiCommodityDataLabApi.assignResearcher(pcbiId, update);
       const queueResponse = await pcbiCommodityDataLabApi.getQueue();
       if (queueResponse.success && Array.isArray(queueResponse.queue)) setQueue(queueResponse.queue);
     } catch (error: unknown) {

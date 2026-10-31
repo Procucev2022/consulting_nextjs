@@ -23,7 +23,6 @@ import { isAssessmentFinancialDisplayEligible } from '../utils/assessmentFinanci
 import {
   UI_STRINGS,
   SUPPORTED_HEADER_CURRENCIES,
-  DEFAULT_SPEND_BASELINE_INR_CR,
   headerCurrencySchema,
   AICEV_LOGO_SRC
 } from '../constants';
@@ -171,7 +170,9 @@ export const Header: React.FC<HeaderProps> = ({
     customerDisplayName = tenant.enterprise_name;
     spendBadge = (
       <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-300 shrink-0">
-        ₹{tenant.total_spend_evaluated_inr ?? DEFAULT_SPEND_BASELINE_INR_CR} Cr
+        {tenant.total_spend_evaluated_inr == null
+          ? UI_STRINGS.header.spendUnavailable
+          : `₹${tenant.total_spend_evaluated_inr} Cr`}
       </span>
     );
   }

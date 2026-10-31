@@ -1,12 +1,21 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { PipelineBar } from '../../src/components/PipelineBar';
 import { Module1Ingestion } from '../../src/components/Module1Ingestion';
 import { Header } from '../../src/components/Header';
 import type { Module1CanonicalViewModel } from '../../src/types';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('Module 1 Customer Screen & VGT Canonical Acceptance Test (Prompt 329)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   const vgtCanonicalResponse: Module1CanonicalViewModel = {
     datasetId: 'vgt-testing-dataset',
     dataVersionId: 'vgt-data-version-v2',
@@ -195,7 +204,7 @@ describe('Module 1 Customer Screen & VGT Canonical Acceptance Test (Prompt 329)'
     expect(screen.getByText('CNY')).toBeInTheDocument();
 
     // Assert: Live FX bar labeled as informational reference only
-    expect(screen.getAllByText(/Reference Market Rates — Informational Only/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.module1.liveFxRatesLabel).length).toBeGreaterThan(0);
 
     // Assert: NO demo/sample leakage
     expect(screen.queryByText(/30 Sample Records/i)).not.toBeInTheDocument();

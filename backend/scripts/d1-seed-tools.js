@@ -169,4 +169,6 @@ const verifySeedManifest = (backendRoot) => {
   return manifest;
 };
 
-module.exports = { splitSqlStatements, splitSeedParts, verifySeedManifest };
+const shouldSeedDatabase = (args) => args.includes('--seed') || args.includes('--seed-all');
+
+module.exports = { splitSqlStatements, splitSeedParts, verifySeedManifest, shouldSeedDatabase };

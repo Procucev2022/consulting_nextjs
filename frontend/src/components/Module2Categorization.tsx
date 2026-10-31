@@ -20,7 +20,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
-import type { VendorSupplyRecord } from '../types/vendorSupply';
+import type { IndustryMaterialProfile } from '../types/industry';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
 import { useUNSPSCTaxonomy } from '../hooks/useUNSPSCTaxonomy';
 import { formatINRAmount } from '../utils/currencyConverter';
@@ -33,18 +33,16 @@ import {
   UI_STRINGS,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
   DEFAULT_INDUSTRY_MINOR_SECTOR,
-  getIndustryMaterialProfile,
   categorizeMaterialWithIndustryContext
 } from '../constants';
 import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
 import { Module2StrategicSourcingWorkspace } from './module2';
 import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
-import { buildVendorSupplyRecords } from '../utils/vendorSupplyData';
-import { VendorCategorySupplyMatrix } from './VendorCategorySupplyMatrix';
 import dynamic from 'next/dynamic';
 import { AnalyzingLoader } from './AnalyzingLoader';
 import { TierMaskOverlay } from './TierMaskOverlay';
+import { loadIndustryCatalog } from '../utils/industryApi';
 const UNSPSCDetailModal = dynamic(
   () => import('./modals/UNSPSCDetailModal').then((mod) => mod.UNSPSCDetailModal),
   { ssr: false }
@@ -97,8 +95,21 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   const [activeMinorSector] = useState<string>(
     tenant?.minor_sector || DEFAULT_INDUSTRY_MINOR_SECTOR
   );
+  const [industryProfiles, setIndustryProfiles] = useState<IndustryMaterialProfile[]>([]);
 
-  const activeMaterialProfile = getIndustryMaterialProfile(activeMajorSector, activeMinorSector);
+  useEffect(() => {
+    let isCurrent = true;
+    loadIndustryCatalog().then((catalog) => {
+      if (isCurrent) setIndustryProfiles(catalog.profiles);
+    }).catch(() => {
+      if (isCurrent) setIndustryProfiles([]);
+    });
+    return () => { isCurrent = false; };
+  }, []);
+
+  const activeMaterialProfile = industryProfiles.find((profile) =>
+    profile.majorSector === activeMajorSector && profile.minorSector === activeMinorSector
+  );
 
   const handleStartAICategorization = () => {
     setIsCategorizing(true);
@@ -117,14 +128,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   // Consolidated Vendor Intelligence Tab: Vendor Rankings, Single-Source Risk, UNSPSC Catalog
   const [columnLTab, setColumnLTab] = useState<'vendorRankings' | 'strategicRisk' | 'catalog'>('vendorRankings');
-  const [matrixTab, setMatrixTab] = useState<'VENDOR_SUPPLY' | 'CATEGORY_MATRIX'>('CATEGORY_MATRIX');
 
   useEffect(() => {
     if (!targetSection) return;
 
     if (targetSection === 'vendor-consolidation-section' || targetSection === 'vendor-category-supply-section') {
       setColumnLTab('vendorRankings');
-      if (targetSection === 'vendor-category-supply-section') setMatrixTab('VENDOR_SUPPLY');
       vendorSupplyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (targetSection === 'po-consolidation-section') {
       setActiveArea('STRATEGIC_SOURCING');
@@ -179,8 +188,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
       const relevanceResult = categorizeMaterialWithIndustryContext(
         item.raw_desc,
         item.unspsc_code,
-        activeMajorSector,
-        activeMinorSector
+        activeMaterialProfile
       );
       if (relevanceResult.sectorRelevance !== selectedSectorRelevanceFilter) return false;
     }
@@ -192,6 +200,9 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
   });
 
   const explorerResults = searchUNSPSCTaxonomy(explorerSearch, explorerBucketFilter).slice(0, 8);
+  const averageClassificationConfidence = lineItems.length > 0
+    ? Number((lineItems.reduce((total, item) => total + item.ai_confidence, 0) / lineItems.length).toFixed(1))
+    : undefined;
 
   const categoriesList = useMemo(() => categories || [], [categories]);
 
@@ -260,11 +271,6 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     return calculateVendorYearDetails(lineItems, totalEvaluatedSpendInrCr);
   }, [lineItems, totalEvaluatedSpendInrCr, taxonomyState]);
 
-  const dynamicVendorSupply = useMemo<VendorSupplyRecord[]>(
-    () => buildVendorSupplyRecords(lineItems, totalEvaluatedSpendInrCr),
-    [lineItems, totalEvaluatedSpendInrCr]
-  );
-
   const dynamicStrategicRiskItems = useMemo(() => {
     if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateStrategicVendorRisk(lineItems);
@@ -305,7 +311,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             spendCrores: Number(totalEvaluatedSpendInrCr.toFixed(2)),
             uniqueVendors: new Set(lineItems.map((i) => i.vendor_identified).filter(Boolean)).size,
             categoriesIdentified: categories.length,
-            confidenceScore: 99.4
+            confidenceScore: averageClassificationConfidence
           }}
           onComplete={handleCategorizationComplete}
           onCancel={() => setIsCategorizing(false)}
@@ -452,14 +458,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   </span>
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
-                  {activeMaterialProfile.tagline}
+                  {activeMaterialProfile?.tagline || UI_STRINGS.module2.industryContext.profileUnavailable}
                 </h3>
               </div>
             </div>
 
             <div className="flex items-center space-x-2">
               <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-300">
-                Total Evaluated: ₹{actualBucketSpend.totalSpendCr > 0 ? actualBucketSpend.totalSpendCr.toFixed(2) : totalEvaluatedSpendInrCr.toFixed(2)} Cr
+                {UI_STRINGS.module2.totalEvaluated(actualBucketSpend.totalSpendCr > 0 ? actualBucketSpend.totalSpendCr : totalEvaluatedSpendInrCr)}
               </span>
             </div>
           </div>
@@ -478,7 +484,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {activeMaterialProfile.typicalDirectMaterials.map((mat) => (
+                {(activeMaterialProfile?.typicalDirectMaterials || []).map((mat) => (
                   <span
                     key={mat}
                     className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
@@ -501,7 +507,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {activeMaterialProfile.typicalPackagingMaterials.map((pkg) => (
+                {(activeMaterialProfile?.typicalPackagingMaterials || []).map((pkg) => (
                   <span
                     key={pkg}
                     className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
@@ -524,7 +530,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {activeMaterialProfile.typicalLogisticsCategories.map((log) => (
+                {(activeMaterialProfile?.typicalLogisticsCategories || []).map((log) => (
                   <span
                     key={log}
                     className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
@@ -547,7 +553,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {activeMaterialProfile.typicalMroCategories.map((mro) => (
+                {(activeMaterialProfile?.typicalMroCategories || []).map((mro) => (
                   <span
                     key={mro}
                     className="text-[10px] bg-white text-slate-700 px-2 py-0.5 rounded border border-slate-200 leading-tight"
@@ -583,39 +589,22 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                {matrixTab === 'VENDOR_SUPPLY' ? UI_STRINGS.module2.vendorSupply.sectionTitle : UI_STRINGS.module2.matrixTitle}
+                {UI_STRINGS.module2.matrixTitle}
               </h3>
               <p className="text-xs text-slate-500">
-                {matrixTab === 'VENDOR_SUPPLY' ? UI_STRINGS.module2.vendorSupply.sectionDesc : UI_STRINGS.module2.matrixDesc}
+                {UI_STRINGS.module2.matrixDesc}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setMatrixTab('VENDOR_SUPPLY')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${matrixTab === 'VENDOR_SUPPLY' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                {UI_STRINGS.module2.tabVendorSupply}
-              </button>
-              <button
-                type="button"
-                onClick={() => setMatrixTab('CATEGORY_MATRIX')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${matrixTab === 'CATEGORY_MATRIX' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-                {UI_STRINGS.module2.tabCategoryMatrix}
-              </button>
-            </div>
             <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg border border-emerald-300">
               {UI_STRINGS.module2.totalEvaluated(totalEvaluatedSpendInrCr)}
             </span>
           </div>
         </div>
 
-        {matrixTab === 'VENDOR_SUPPLY' ? <VendorCategorySupplyMatrix vendors={dynamicVendorSupply} /> : (
-        /* Year-Wise Table */
+        {/* Year-Wise Table */}
         <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           {(() => {
             const totalFY24 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy24_cr || 0), 0);
@@ -711,7 +700,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   <tfoot className="bg-slate-100 font-mono font-bold text-slate-900 border-t-2 border-slate-300">
                     <tr>
                       <td className="py-3.5 px-4 font-sans uppercase text-xs" colSpan={2}>
-                        Total Evaluated Spend (Reconciled)
+                        {UI_STRINGS.module2.categoryTotalsLabel}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         ₹{totalFY24.toFixed(2)} Cr
@@ -726,10 +715,12 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                         ₹{dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.total_3yr_spend_inr_cr || c.spend_inr_crores || 0), 0).toFixed(2)} Cr
                       </td>
                       <td className="py-3.5 px-4 text-center text-xs font-sans text-emerald-700">
-                        100% Validated
+                        {UI_STRINGS.module2.validationEvidenceMissing}
                       </td>
                       <td className="py-3.5 px-4 text-right font-black text-slate-900">
-                        100.0%
+                        {UI_STRINGS.module2.categoryShareTotal(
+                          dynamicCategoryDetails.reduce((sum: number, category: any) => sum + Number(category.spend_share_pct || 0), 0)
+                        )}
                       </td>
                     </tr>
                   </tfoot>
@@ -738,7 +729,6 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             );
           })()}
         </div>
-        )}
       </div>
     </div>
 
@@ -1088,8 +1078,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
                   const sectorResult = categorizeMaterialWithIndustryContext(
                     item.raw_desc,
                     item.unspsc_code,
-                    activeMajorSector,
-                    activeMinorSector
+                    activeMaterialProfile
                   );
                   const commodityDetails = (item.unspsc_commodity_title && item.unspsc_class_title)
                     ? { commodityTitle: item.unspsc_commodity_title, classTitle: item.unspsc_class_title }

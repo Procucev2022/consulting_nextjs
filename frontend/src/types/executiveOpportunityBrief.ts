@@ -1,5 +1,10 @@
 import type { ExecutiveOpportunityBriefReportData } from './validation';
 
+export interface ExecutiveOpportunityBriefDownloadPayload {
+  readonly url: string;
+  readonly filename: string;
+}
+
 export type ExecutiveOpportunityBriefFetchResult =
   | { ok: true; data: ExecutiveOpportunityBriefReportData }
   | { ok: false; statusCode: number; requestId: string | null };

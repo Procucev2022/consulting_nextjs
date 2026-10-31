@@ -59,3 +59,9 @@ export interface IndustrySectorPreset {
   majorSector: IndustryMajorSector;
   minorSector: string;
 }
+
+export interface IndustryCatalogResponse {
+  success: boolean;
+  profiles: IndustryMaterialProfile[];
+  presets: IndustrySectorPreset[];
+}

@@ -34,6 +34,7 @@ import type {
   PCBICommodityObservationRow,
   PCBICommodityPromotionRow,
   PCBICommodityResearchAssignmentRow,
+  PCBICommodityResearchWorkflowRow,
   PCBICommoditySourceRow,
   PCBICommoditySpendByUnspscRow,
   PCBICommoditySpendSummary,
@@ -480,6 +481,10 @@ const researchAssignments = async (db: NonNullable<CloudflareEnvironment['DB']>)
   queryD1Rows<PCBICommodityResearchAssignmentRow>(db,
     `SELECT * FROM ${D1_TABLES.pcbiResearchAssignments} ORDER BY updated_at DESC`);
 
+const researchWorkflows = async (db: NonNullable<CloudflareEnvironment['DB']>): Promise<PCBICommodityResearchWorkflowRow[]> =>
+  queryD1Rows<PCBICommodityResearchWorkflowRow>(db,
+    `SELECT * FROM ${D1_TABLES.pcbiResearchWorkflows} ORDER BY updated_at DESC`);
+
 const dateRange = (dates: string[]): string => {
   if (dates.length === 0) return 'No published observations';
   const sorted = [...dates].sort();
@@ -494,18 +499,20 @@ const buildQueue = async (
   const publishedPayload = publishedPayloadOverride === undefined
     ? await getPublishedPcbiPayload(db)
     : publishedPayloadOverride;
-  const [benchmarks, sources, observations, promoted, assignments, spendByBenchmark] = await Promise.all([
+  const [benchmarks, sources, observations, promoted, assignments, workflows, spendByBenchmark] = await Promise.all([
     getBenchmarks(db, publishedPayload), sourceRows(db), observationRows(db), promotions(db),
-    researchAssignments(db),
+    researchAssignments(db), researchWorkflows(db),
     pcbiSpendByBenchmark(db, publishedPayload, requestId)
   ]);
   const assignmentsByPcbi = new Map(assignments.map((assignment) => [assignment.pcbi_id, assignment]));
+  const workflowsByPcbi = new Map(workflows.map((workflow) => [workflow.pcbi_id, workflow]));
   const queue = benchmarks.map((benchmark): CommodityResearchQueueRow => {
     const relatedSources = sources.filter((source) => source.pcbi_id === benchmark.pcbi_id);
     const relatedObservations = observations.filter((observation) => observation.pcbi_id === benchmark.pcbi_id);
     const seriesPromoted = promoted.some((entry) => entry.pcbi_id === benchmark.pcbi_id);
     const latestSource = relatedSources[0];
     const assignment = assignmentsByPcbi.get(benchmark.pcbi_id);
+    const workflow = workflowsByPcbi.get(benchmark.pcbi_id);
     const status: CommodityResearchQueueRow['currentStatus'] = seriesPromoted
       ? 'PRODUCTION_READY'
       : relatedObservations.length > 0 ? 'PARTIAL_HISTORY'
@@ -545,6 +552,9 @@ const buildQueue = async (
       researchStatus,
       assignedTo: assignment?.assigned_to || null,
       assignedAt: assignment?.assigned_at || null,
+      workflowStatus: workflow?.status || (seriesPromoted ? 'COMPLETED' : 'QUEUED'),
+      workflowDueDate: workflow?.due_date || null,
+      workflowNotes: workflow?.notes || '',
       lastUpdated: latestSource?.uploaded_at || '',
       action: status === 'PRODUCTION_READY' ? 'OPEN WORKSPACE' : 'UPLOAD SOURCE'
     };
@@ -570,11 +580,26 @@ const assignResearcher = async (
   }
   const startedAt = performance.now();
   const updatedAt = new Date().toISOString();
+  let savedWorkflow: PCBICommodityResearchWorkflowRow | null = null;
   try {
     if (input.assignee === null) {
-      await db.prepare(`DELETE FROM ${D1_TABLES.pcbiResearchAssignments} WHERE pcbi_id = ?`).bind(input.pcbiId).run();
+      const statements = [
+        db.prepare(`DELETE FROM ${D1_TABLES.pcbiResearchWorkflows} WHERE pcbi_id = ?`).bind(input.pcbiId),
+        db.prepare(`DELETE FROM ${D1_TABLES.pcbiResearchAssignments} WHERE pcbi_id = ?`).bind(input.pcbiId)
+      ];
+      if (db.batch) await db.batch(statements);
+      else await Promise.all(statements.map((statement) => statement.run()));
     } else {
-      await db.prepare(`
+      const existingWorkflow = await db.prepare(`SELECT * FROM ${D1_TABLES.pcbiResearchWorkflows} WHERE pcbi_id = ?`)
+        .bind(input.pcbiId).first<PCBICommodityResearchWorkflowRow>();
+      const workflowStatus = input.status ?? existingWorkflow?.status ?? 'QUEUED';
+      const dueDate = input.dueDate === undefined ? existingWorkflow?.due_date ?? null : input.dueDate;
+      const notes = input.notes === undefined ? existingWorkflow?.notes ?? '' : input.notes;
+      savedWorkflow = {
+        pcbi_id: input.pcbiId, status: workflowStatus, due_date: dueDate, notes,
+        updated_by: actorName, updated_at: updatedAt
+      };
+      const statements = [db.prepare(`
         INSERT INTO ${D1_TABLES.pcbiResearchAssignments}
           (pcbi_id, assigned_to, assigned_by, assigned_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
@@ -582,7 +607,19 @@ const assignResearcher = async (
           assigned_to = excluded.assigned_to,
           assigned_by = excluded.assigned_by,
           updated_at = excluded.updated_at
-      `).bind(input.pcbiId, input.assignee, actorName, updatedAt, updatedAt).run();
+      `).bind(input.pcbiId, input.assignee, actorName, updatedAt, updatedAt), db.prepare(`
+        INSERT INTO ${D1_TABLES.pcbiResearchWorkflows}
+          (pcbi_id, status, due_date, notes, updated_by, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(pcbi_id) DO UPDATE SET
+          status = excluded.status,
+          due_date = excluded.due_date,
+          notes = excluded.notes,
+          updated_by = excluded.updated_by,
+          updated_at = excluded.updated_at
+      `).bind(input.pcbiId, workflowStatus, dueDate, notes, actorName, updatedAt)];
+      if (db.batch) await db.batch(statements);
+      else await Promise.all(statements.map((statement) => statement.run()));
     }
   } catch (error) {
     logger.error('Failed to persist PCBI research assignment in D1', { requestId, pcbiId: input.pcbiId }, error);
@@ -598,7 +635,12 @@ const assignResearcher = async (
       success: true,
       assignment: input.assignee === null
         ? null
-        : { pcbiId: input.pcbiId, assignedTo: input.assignee, assignedBy: actorName, updatedAt }
+        : {
+          pcbiId: input.pcbiId, assignedTo: input.assignee, assignedBy: actorName, updatedAt,
+          workflowStatus: savedWorkflow?.status || 'QUEUED',
+          dueDate: savedWorkflow?.due_date ?? null,
+          notes: savedWorkflow?.notes || ''
+        }
     }
   };
 };

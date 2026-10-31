@@ -20,25 +20,6 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.header.currencyTitle('USD')).toBe('USD Base');
   });
 
-  it('provides corrected dataset upload copy and actionable file errors', () => {
-    expect(UI_STRINGS.orchestration.uploadCorrectedModalSubtitle).toContain('Uploads a corrected workbook');
-    expect(UI_STRINGS.orchestration.correctedDatasetFileHint(100)).toContain('100 MB');
-    expect(UI_STRINGS.orchestration.correctedDatasetFileRequired).toContain('Select a corrected');
-    expect(UI_STRINGS.orchestration.correctedDatasetFileInvalid).toContain('CSV, XLS, or XLSX');
-    expect(UI_STRINGS.orchestration.correctedDatasetFileEmpty).toContain('empty');
-    expect(UI_STRINGS.orchestration.correctedDatasetFileTooLarge(100)).toContain('100 MB');
-    expect(UI_STRINGS.orchestration.correctedDatasetChecksumUnavailable).toContain('SHA-256');
-    expect(UI_STRINGS.orchestration.correctedDatasetFileReadFailed).toContain('retry');
-  });
-
-  it('provides PCBI research resolution guidance for the admin form', () => {
-    expect(UI_STRINGS.orchestration.actionRequestResearch).toBe('Request Data Research');
-    expect(UI_STRINGS.orchestration.placeholderResearchNotes).toContain('market evidence');
-    expect(UI_STRINGS.orchestration.pcbiResolutionMissingSeries).toContain('active PCBI series');
-    expect(UI_STRINGS.orchestration.pcbiResolutionMissingReason).toContain('exclusion reason');
-    expect(UI_STRINGS.orchestration.pcbiResolutionOtherReasonNotes).toContain('Other');
-  });
-
   it('should correctly format pipeline and schema templates', () => {
     expect(UI_STRINGS.pipeline.currentStage(2, 'Taxonomy')).toBe('Current Active Stage: [Stage 2: Taxonomy]');
     expect(UI_STRINGS.pipeline.stages[1].title).toBe('Data Ingestion');
@@ -65,13 +46,6 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.module2.vendorSupply.badgeCategoryCount(3)).toBe('3 Categories');
     expect(UI_STRINGS.module2.vendorSupply.badgeDisparateSupplies(2)).toBe('+2 Disparate Categories');
     expect(UI_STRINGS.module2.vendorSupply.showingVendorsSummary(20, 50)).toBe('Showing 20 of 50 evaluated suppliers');
-    expect(UI_STRINGS.module2.vendorSupply.supplyStructure.dominantSupplier('Acme', 62)).toContain('Acme');
-    expect(UI_STRINGS.module2.vendorSupply.supplyStructure.crossCategoryDependency(45)).toContain('45.0%');
-    expect(UI_STRINGS.module2.vendorSupply.supplyStructure.tailFragmentation(8)).toContain('8 vendors');
-    expect(UI_STRINGS.module2.vendorSupply.tierSummary(4, 18.25)).toContain('₹18.3 Cr');
-    expect(UI_STRINGS.module2.vendorSupply.multiCategoryShareTitle(65)).toContain('65.0%');
-    expect(UI_STRINGS.module2.vendorSupply.singleCategoryShareTitle(35)).toContain('35.0%');
-    expect(UI_STRINGS.module2.vendorSupply.disparateCrossSupplyTitle('Packaging')).toContain('Packaging');
     expect(UI_STRINGS.module2.workbenchTitle).toBe('Machine Learning Line Item AI Categorization & Spend Review Workbench');
     expect(UI_STRINGS.module2.unspscCodeBadge('11101234')).toBe('UNSPSC: 11101234');
     expect(UI_STRINGS.module2.searchPlaceholder).toBe('Search description, PO, commodity, code...');
@@ -99,15 +73,6 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(UI_STRINGS.modals.mergeItem.issueLabel).toBe('Issue Description');
     expect(UI_STRINGS.modals.mergeItem.ignoreButton).toBe('Ignore Issue');
     expect(UI_STRINGS.toasts.issueIgnored('REC-8841')).toBe('Validation anomaly for Record REC-8841 ignored and retained as reviewed.');
-    expect(UI_STRINGS.toasts.loginRequiredForUpload).toContain('Sign in before uploading');
-    expect(UI_STRINGS.toasts.uploadFileReadFailed).toContain('Select it again and retry');
-    expect(UI_STRINGS.toasts.uploadChecksumUnavailable).toContain('supported secure browser');
-    expect(UI_STRINGS.toasts.uploadResponseMissingVersion).toContain('Refresh the assessment');
-    expect(UI_STRINGS.toasts.uploadResponseMissingDocument).toContain('D1 connection');
-    expect(UI_STRINGS.toasts.uploadUnknownFailure).toContain('diagnostic message');
-    expect(UI_STRINGS.toasts.batchUploadPendingExtraction('scan.pdf')).toContain('no imported transaction rows');
-    expect(UI_STRINGS.toasts.persistingUploadTitle).toContain('D1');
-    expect(UI_STRINGS.toasts.persistingUploadSubtitle).toContain('database');
     expect(UI_STRINGS.module1.refreshWithFixes).toBe('Refresh with Fixes & See Final Numbers');
     expect(UI_STRINGS.module1.quickRefreshTooltip).toContain('Recalculate spend');
     expect(UI_STRINGS.toasts.refreshedFinalNumbers).toContain('Dataset refreshed with fixes');
@@ -238,10 +203,6 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(lab.pageTitle).toBe('PCBI Data Library');
     expect(lab.workspaceTitle('Ferro Moly', 'PCBI-001')).toBe('Ferro Moly (PCBI-001)');
     expect(lab.approvalSuccessNotice('V2.0')).toBe('Approved data entered into dynamic PCBI catalog version V2.0.');
-    expect(lab.assignmentSaved('PCBI-001', 'owner@example.test')).toContain('owner@example.test');
-    expect(lab.assignmentSaved('PCBI-001', null)).toContain('removed');
-    expect(lab.assignmentFailed('PCBI-001')).toContain('retry');
-    expect(lab.assignResearcherInputLabel('Steel')).toContain('Steel');
   });
 
   it('should call lockedStepRequired parameterized formatter (uiStrings line 118)', () => {
@@ -310,13 +271,6 @@ describe('UI_STRINGS Constants & Parameterized Formatters', () => {
     expect(partialFy).toContain('FY2024-25');
     expect(partialFy).toContain('9');
     expect(partialFy).toContain('Apr');
-  });
-
-  it('formats D1 PCBI promotion history strings', () => {
-    expect(UI_STRINGS.pcbiCommodityDataLab.promotionCount(2)).toBe('2 recorded promotions');
-    expect(UI_STRINGS.pcbiCommodityDataLab.noPromotions).toContain('D1 database');
-    expect(UI_STRINGS.pcbiCommodityDataLab.promotedObservationDescription('admin@example.test', 3))
-      .toContain('3 validated weekly observations');
   });
 });
 

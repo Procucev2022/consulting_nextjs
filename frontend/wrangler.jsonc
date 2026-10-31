@@ -9,7 +9,7 @@
     "binding": "ASSETS"
   },
   "vars": {
-    "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+    "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
   },
   "observability": {
     "logs": {
@@ -23,19 +23,19 @@
     "dev": {
       "name": "consulting-frontend",
       "vars": {
-        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
       }
     },
     "prod": {
       "name": "consulting-frontend",
       "vars": {
-        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
       }
     },
     "production": {
       "name": "consulting-frontend",
       "vars": {
-        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.mukul93028.workers.dev"
+        "NEXT_PUBLIC_BACKEND_URL": "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
       }
     }
   }

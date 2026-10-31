@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   headerTenantSchema,
   headerCurrencySchema,
+  d1CurrencyRatesResponseSchema,
+  d1CurrencyConversionResponseSchema,
   clientIngestionSetupFormSchema,
   fixCurrencyFormSchema,
   mergeVendorFormSchema,
@@ -15,8 +17,6 @@ import {
   apiUpdateValidationRecordPayloadSchema,
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
-  apiUpdateModule2MaterialMappingPayloadSchema,
-  apiBulkUpdateModule2MaterialMappingsPayloadSchema,
   apiCalculateConversionPayloadSchema,
   registerFormSchema,
   loginFormSchema,
@@ -26,16 +26,32 @@ import {
   pcbiBenchmarkResponseSchema,
   pcbiWeeklyIndexResponseSchema,
   procurementCategoryMappingsResponseSchema,
-  executiveOpportunityBriefResponseSchema
+  executiveOpportunityBriefResponseSchema,
+  executiveBriefEmailRequestSchema
 } from '../../src/constants/validation';
 import { pcbiGapResolutionRequestSchema } from '../../src/constants/orchestrationValidation';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
+  it('validates D1 FX catalogs and historical conversion responses', () => {
+    const rates = {
+      success: true,
+      data: { JPY: { currencyCode: 'JPY', name: 'Japanese Yen', currentRate: 0.58, lastUpdated: '2026-10-30' } }
+    };
+    const conversion = {
+      success: true,
+      data: { amount: 500, fromCurrency: 'JPY', amountINR: 290, exchangeRate: 0.58, rateDate: '2026-10-30' }
+    };
+    expect(d1CurrencyRatesResponseSchema.safeParse(rates).success).toBe(true);
+    expect(d1CurrencyRatesResponseSchema.safeParse({ ...rates, data: { JPY: { ...rates.data.JPY, currentRate: '0.58' } } }).success).toBe(false);
+    expect(d1CurrencyConversionResponseSchema.safeParse(conversion).success).toBe(true);
+    expect(d1CurrencyConversionResponseSchema.safeParse({ ...conversion, data: { ...conversion.data, exchangeRate: 0 } }).success).toBe(false);
+  });
   it('validates D1-backed executive opportunity brief report payloads', () => {
     const valid = {
       success: true,
       data: {
         tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+        dataClassification: 'CUSTOMER_DATA',
         generatedAt: '2026-10-30T00:00:00.000Z',
         scopeDescription: 'D1 report scope',
         metrics: {
@@ -48,6 +64,10 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
     };
     expect(executiveOpportunityBriefResponseSchema.safeParse(valid).success).toBe(true);
     expect(executiveOpportunityBriefResponseSchema.safeParse({ ...valid, success: false }).success).toBe(false);
+    expect(executiveOpportunityBriefResponseSchema.safeParse({
+      ...valid,
+      data: { ...valid.data, dataClassification: 'UNREVIEWED' }
+    }).success).toBe(false);
     expect(executiveOpportunityBriefResponseSchema.safeParse({
       ...valid,
       data: { ...valid.data, metrics: { ...valid.data.metrics, totalSpendCr: '2' } }
@@ -103,20 +123,6 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
       success: true,
       data: { mappings: {}, categories: [''] }
     }).success).toBe(false);
-  });
-
-  it('validates authenticated D1 material mapping updates and bounded bulk suggestions', () => {
-    const mapping = {
-      sourceMaterialId: 'MAT-1', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' as const,
-      confidenceScore: 0.87, mappingMethod: 'CONTEXTUAL_HEURISTIC' as const
-    };
-    expect(apiUpdateModule2MaterialMappingPayloadSchema.safeParse({ assessmentId: 'ASM-1', ...mapping }).success).toBe(true);
-    expect(apiUpdateModule2MaterialMappingPayloadSchema.safeParse({ assessmentId: 'ASM-1', ...mapping, unspscCode: 'bad' }).success).toBe(false);
-    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: [mapping] }).success).toBe(true);
-    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: [] }).success).toBe(false);
-    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: [mapping, mapping] }).success).toBe(false);
-    const oversized = Array.from({ length: 101 }, (_, index) => ({ ...mapping, sourceMaterialId: `MAT-${index}` }));
-    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: oversized }).success).toBe(false);
   });
 
   describe('headerTenantSchema', () => {
@@ -200,11 +206,13 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
         convertedAmountINR: 838000
       };
       expect(fixCurrencyFormSchema.safeParse(valid).success).toBe(true);
+      expect(fixCurrencyFormSchema.safeParse({ ...valid, selectedCurrency: 'JPY' }).success).toBe(true);
     });
 
     it('should reject empty recordId or non-positive amount', () => {
       expect(fixCurrencyFormSchema.safeParse({ recordId: '', selectedCurrency: 'USD', convertedAmountINR: 100 }).success).toBe(false);
       expect(fixCurrencyFormSchema.safeParse({ recordId: 'REC-1', selectedCurrency: 'USD', convertedAmountINR: 0 }).success).toBe(false);
+      expect(fixCurrencyFormSchema.safeParse({ recordId: 'REC-1', selectedCurrency: 'EURO', convertedAmountINR: 100 }).success).toBe(false);
     });
   });
 
@@ -325,6 +333,15 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
         saasFeeRate: 0.85
       }).success).toBe(false);
     });
+  });
+
+  it('validates the email-only request contract so business figures stay on the D1 Worker', () => {
+    expect(executiveBriefEmailRequestSchema.safeParse({ buyerEmail: 'buyer@example.test' }).success).toBe(true);
+    expect(executiveBriefEmailRequestSchema.safeParse({ buyerEmail: 'invalid' }).success).toBe(false);
+    expect(executiveBriefEmailRequestSchema.safeParse({
+      buyerEmail: 'buyer@example.test',
+      totalSpendInrCr: 123
+    }).success).toBe(false);
   });
 
   describe('API Outgoing Schemas', () => {

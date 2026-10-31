@@ -94,11 +94,3 @@ export const DEFAULT_QUALITY_GATE_CHECKLIST: AdminQualityGateChecklist = {
   }
 };
 
-export const INITIAL_PCBI_BENCHMARK_SERIES = [
-  { seriesId: 'PCBI-SERIES-FE-MOLY-65', name: 'Ferro Molybdenum 65%', quality: 'A', source: 'SteelMint' },
-  { seriesId: 'PCBI-SERIES-CAUSTIC-SODA-48', name: 'Caustic Soda Lye 48%', quality: 'A', source: 'ICIS Chemical' },
-  { seriesId: 'PCBI-SERIES-DIESEL-HSD', name: 'High Speed Diesel (HSD)', quality: 'A', source: 'IOCL / Platts' },
-  { seriesId: 'PCBI-SERIES-CORRUGATED-KRAFT', name: 'Kraft Liner Board 180 GSM', quality: 'B', source: 'PaperIndex' },
-  { seriesId: 'PCBI-SERIES-HDPE-FILM', name: 'HDPE Film Grade', quality: 'A', source: 'Platts Polymers' }
-] as const;
-

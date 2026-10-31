@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { FileCheck, CheckCircle2, X, Lock, Sliders, Zap } from 'lucide-react';
 import type { DPSNXTModalProps } from '../../types';
-import confetti from 'canvas-confetti';
 import {
   UI_STRINGS,
   DEFAULT_MAX_PRICE_CREEP_CAP,
@@ -23,10 +22,14 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
   const [autoRebateTier, setAutoRebateTier] = useState<boolean>(true);
   const [isExecuting, setIsExecuting] = useState(false);
   const [executedSuccess, setExecutedSuccess] = useState(false);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
 
   if (!isOpen || !opportunity) return null;
 
-  const handleExecute = (): void => {
+  const savingsCr = opportunity.est_savings_inr_cr ?? opportunity.estimated_savings_inr_cr ?? 0;
+  const savingsLabel = UI_STRINGS.common.croreAmount(savingsCr.toFixed(2));
+
+  const handleExecute = async (): Promise<void> => {
     const validation = validateInput(dpsnxtFormSchema, {
       oppId: opportunity.opp_id,
       indexPegging,
@@ -37,20 +40,17 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
     if (!validation.success) return;
 
     setIsExecuting(true);
-    setTimeout(() => {
-      setIsExecuting(false);
+    setHandoffError(null);
+    try {
+      await onSuccess(opportunity.opp_id);
       setExecutedSuccess(true);
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-      setTimeout(() => {
-        onSuccess(opportunity.opp_id);
-        setExecutedSuccess(false);
-        onClose();
-      }, 1800);
-    }, 1200);
+    } catch (error: unknown) {
+      setHandoffError(error instanceof Error && error.message.trim()
+        ? error.message
+        : UI_STRINGS.modals.dpsNXT.handoffFailed);
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   return (
@@ -91,7 +91,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.dpsNXT.deployedSuccess}</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                {UI_STRINGS.modals.dpsNXT.deployedDesc(opportunity.title, `$${opportunity.est_savings.toLocaleString()}`)}
+                {UI_STRINGS.modals.dpsNXT.deployedDesc}
               </p>
             </div>
           ) : (
@@ -110,7 +110,7 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                   <div className="text-right">
                     <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.dpsNXT.targetSavings}</span>
                     <p className="text-lg font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                      ${(opportunity.est_savings ?? ((opportunity.est_savings_inr_cr || 0) * 10000000 / 83.8)).toLocaleString()}
+                      {savingsLabel}
                     </p>
                   </div>
                 </div>
@@ -181,6 +181,8 @@ export const DPSNXTModal: React.FC<DPSNXTModalProps> = ({
                   </div>
                 </div>
               </div>
+
+              {handoffError && <p role="alert" className="text-xs text-rose-700">{handoffError}</p>}
 
               {/* Security Lock Note */}
               <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-[#F8FBFE] p-3 rounded-lg border border-slate-200 dark:border-slate-800">

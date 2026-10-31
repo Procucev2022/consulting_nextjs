@@ -15,6 +15,29 @@ CREATE TABLE IF NOT EXISTS TenantMaster (
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS TenantDataProvenance (
+  tenant_id TEXT PRIMARY KEY NOT NULL,
+  classification TEXT NOT NULL CHECK (classification IN ('CUSTOMER_DATA', 'DEMO_ONLY', 'MIXED')),
+  source_label TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (tenant_id) REFERENCES TenantMaster(tenant_id)
+);
+
+CREATE TABLE IF NOT EXISTS IndustryMaterialProfile (
+  profile_id TEXT PRIMARY KEY NOT NULL,
+  major_sector TEXT NOT NULL,
+  minor_sector TEXT NOT NULL,
+  profile_json TEXT NOT NULL,
+  UNIQUE (major_sector, minor_sector)
+);
+CREATE INDEX IF NOT EXISTS idx_industry_profile_sector ON IndustryMaterialProfile(major_sector, minor_sector);
+
+CREATE TABLE IF NOT EXISTS IndustrySectorPreset (
+  client_name TEXT PRIMARY KEY NOT NULL,
+  major_sector TEXT NOT NULL,
+  minor_sector TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS User (
   id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
@@ -224,6 +247,15 @@ CREATE TABLE IF NOT EXISTS SavingsOpportunity (
 CREATE INDEX IF NOT EXISTS idx_savings_cat ON SavingsOpportunity(category);
 CREATE INDEX IF NOT EXISTS idx_savings_status ON SavingsOpportunity(status);
 
+-- Explicit ownership mapping prevents global opportunity rows from appearing in every tenant report.
+CREATE TABLE IF NOT EXISTS SavingsOpportunityTenantScope (
+  opp_id TEXT PRIMARY KEY NOT NULL,
+  tenant_id TEXT NOT NULL,
+  FOREIGN KEY (opp_id) REFERENCES SavingsOpportunity(opp_id),
+  FOREIGN KEY (tenant_id) REFERENCES TenantMaster(tenant_id)
+);
+CREATE INDEX IF NOT EXISTS idx_savings_opportunity_tenant ON SavingsOpportunityTenantScope(tenant_id, opp_id);
+
 CREATE TABLE IF NOT EXISTS ConversionFunnelPhase (
   phase_num INTEGER PRIMARY KEY NOT NULL,
   phase_name TEXT NOT NULL,
@@ -369,6 +401,20 @@ CREATE TABLE IF NOT EXISTS AssessmentAnalysisRun (
 );
 
 CREATE INDEX IF NOT EXISTS idx_analysis_run_assessment ON AssessmentAnalysisRun(assessment_id);
+
+CREATE TABLE IF NOT EXISTS AssessmentReviewGate (
+  assessment_id TEXT NOT NULL,
+  gate_key TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('PENDING', 'PASSED', 'BLOCKED')),
+  evidence_reference TEXT,
+  review_note TEXT,
+  reviewed_by TEXT,
+  reviewed_at TEXT,
+  PRIMARY KEY (assessment_id, gate_key),
+  FOREIGN KEY (assessment_id) REFERENCES AssessmentRecord(assessment_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_assessment_review_gate_status
+  ON AssessmentReviewGate(assessment_id, status, gate_key);
 
 CREATE TABLE IF NOT EXISTS AssessmentAuditLog (
   id TEXT PRIMARY KEY NOT NULL,
@@ -694,6 +740,24 @@ CREATE TABLE IF NOT EXISTS Module2EAuctionPlanningAssumption (
   CHECK (approval_status <> 'APPROVED' OR (approved_by IS NOT NULL AND approved_date IS NOT NULL))
 );
 
+CREATE TABLE IF NOT EXISTS Module2LogisticsPackagingCandidate (
+  candidate_id TEXT PRIMARY KEY NOT NULL,
+  assessment_id TEXT NOT NULL,
+  lane TEXT NOT NULL,
+  material_category TEXT NOT NULL,
+  shipping_mode TEXT NOT NULL,
+  incoterms TEXT NOT NULL,
+  shipment_count INTEGER NOT NULL CHECK (shipment_count >= 0),
+  current_freight_inr REAL NOT NULL CHECK (current_freight_inr >= 0),
+  benchmark_freight_inr REAL CHECK (benchmark_freight_inr >= 0),
+  packaging_spec TEXT NOT NULL,
+  container_fill_pct REAL CHECK (container_fill_pct >= 0 AND container_fill_pct <= 100),
+  evidence_status TEXT NOT NULL CHECK (evidence_status IN ('DEMO_ONLY', 'SOURCE_PENDING', 'SOURCE_VERIFIED')),
+  is_demo INTEGER NOT NULL DEFAULT 0 CHECK (is_demo IN (0, 1)),
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_module2_logistics_assessment ON Module2LogisticsPackagingCandidate(assessment_id, evidence_status);
+
 CREATE INDEX IF NOT EXISTS idx_module2_eauction_assumption_category
   ON Module2EAuctionPlanningAssumption(category_or_material, assumption_id);
 
@@ -877,6 +941,17 @@ CREATE TABLE IF NOT EXISTS PCBICommodityResearchAssignment (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pcbi_research_assignment_owner ON PCBICommodityResearchAssignment(assigned_to, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityResearchWorkflow (
+  pcbi_id TEXT PRIMARY KEY NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('QUEUED', 'RESEARCHING', 'BLOCKED', 'READY_FOR_REVIEW', 'COMPLETED')),
+  due_date TEXT,
+  notes TEXT NOT NULL DEFAULT '',
+  updated_by TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (pcbi_id) REFERENCES PCBICommodityResearchAssignment(pcbi_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_research_workflow_status ON PCBICommodityResearchWorkflow(status, due_date, updated_at DESC);
 
 -- Lossless migration of persisted assessment metadata, canonical calculations,
 -- review gates, and audit history. Run/version IDs are scoped to an assessment.

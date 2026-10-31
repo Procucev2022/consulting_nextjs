@@ -12,6 +12,7 @@ vi.mock('../../../src/utils/assessmentApi', () => ({
     listAssessments: vi.fn(),
     createAssessment: vi.fn(),
     getAssessmentById: vi.fn(),
+    getReviewGates: vi.fn(),
     getAuditLogs: vi.fn()
   },
   assessmentApi: {
@@ -20,6 +21,7 @@ vi.mock('../../../src/utils/assessmentApi', () => ({
     listAssessments: vi.fn(),
     createAssessment: vi.fn(),
     getAssessmentById: vi.fn(),
+    getReviewGates: vi.fn(),
     getAuditLogs: vi.fn()
   }
 }));
@@ -66,6 +68,7 @@ describe('AssessmentWorkspace', () => {
     (assessmentApiClient.getAssessments as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssessments);
     (assessmentApiClient.listAssessments as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssessments);
     (assessmentApiClient.getAssessmentById as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssessments[0]);
+    (assessmentApiClient.getReviewGates as ReturnType<typeof vi.fn>).mockResolvedValue([]);
     (assessmentApiClient.getAuditLogs as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 

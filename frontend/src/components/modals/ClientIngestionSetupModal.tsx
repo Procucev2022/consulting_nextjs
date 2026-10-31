@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Building2,
   FileSpreadsheet,
@@ -19,14 +19,13 @@ import {
   Package
 } from 'lucide-react';
 import type { DatasetType, ClientIngestionSetupModalProps } from '../../types';
+import type { IndustryMaterialProfile, IndustrySectorPreset } from '../../types/industry';
+import { loadIndustryCatalog } from '../../utils/industryApi';
 import {
   UI_STRINGS,
   clientIngestionSetupFormSchema,
   DEFAULT_INDUSTRY_MAJOR_SECTOR,
-  DEFAULT_INDUSTRY_MINOR_SECTOR,
-  getDistinctMajorSectors,
-  getMinorSectorsForMajor,
-  getIndustryMaterialProfile
+  DEFAULT_INDUSTRY_MINOR_SECTOR
 } from '../../constants';
 import { validateInput } from '../../utils/validation';
 
@@ -54,16 +53,54 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
   const [minorSector, setMinorSector] = useState<string>(
     currentTenant.minor_sector || DEFAULT_INDUSTRY_MINOR_SECTOR
   );
+  const [industryProfiles, setIndustryProfiles] = useState<IndustryMaterialProfile[]>([]);
+  const [industryPresets, setIndustryPresets] = useState<IndustrySectorPreset[]>([]);
+  const [industryCatalogLoaded, setIndustryCatalogLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let isCurrent = true;
+    loadIndustryCatalog().then((catalog) => {
+      if (!isCurrent) return;
+      setIndustryProfiles(catalog.profiles);
+      setIndustryPresets(catalog.presets);
+      setIndustryCatalogLoaded(true);
+      const hasTenantProfile = catalog.profiles.some((profile) =>
+        profile.majorSector === (currentTenant.major_sector || DEFAULT_INDUSTRY_MAJOR_SECTOR) &&
+        profile.minorSector === (currentTenant.minor_sector || DEFAULT_INDUSTRY_MINOR_SECTOR)
+      );
+      if (!hasTenantProfile) {
+        const defaultProfile = catalog.profiles.find((profile) =>
+          profile.majorSector === DEFAULT_INDUSTRY_MAJOR_SECTOR && profile.minorSector === DEFAULT_INDUSTRY_MINOR_SECTOR
+        );
+        if (defaultProfile) {
+          setMajorSector(defaultProfile.majorSector);
+          setMinorSector(defaultProfile.minorSector);
+        }
+      }
+    }).catch(() => {
+      if (isCurrent) {
+        setIndustryProfiles([]);
+        setIndustryPresets([]);
+        setIndustryCatalogLoaded(false);
+      }
+    });
+    return () => { isCurrent = false; };
+  }, [isOpen, currentTenant.major_sector, currentTenant.minor_sector]);
 
   if (!isOpen) return null;
 
-  const distinctMajorSectors = getDistinctMajorSectors();
-  const availableMinorSectors = getMinorSectorsForMajor(majorSector);
-  const activeMaterialProfile = getIndustryMaterialProfile(majorSector, minorSector);
+  const distinctMajorSectors = Array.from(new Set(industryProfiles.map((profile) => profile.majorSector)));
+  const availableMinorSectors = industryProfiles
+    .filter((profile) => profile.majorSector === majorSector)
+    .map((profile) => profile.minorSector);
+  const activeMaterialProfile = industryProfiles.find((profile) =>
+    profile.majorSector === majorSector && profile.minorSector === minorSector
+  );
 
   const handleMajorSectorChange = (newMajor: string) => {
     setMajorSector(newMajor);
-    const minors = getMinorSectorsForMajor(newMajor);
+    const minors = industryProfiles.filter((profile) => profile.majorSector === newMajor).map((profile) => profile.minorSector);
     if (minors.length > 0) {
       setMinorSector(minors[0]);
     }
@@ -98,13 +135,14 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!industryCatalogLoaded || !activeMaterialProfile) return;
     const validation = validateInput(clientIngestionSetupFormSchema, {
       clientName: clientName.trim(),
       datasetType,
       spendPeriod,
       currency,
       region,
-      estimatedSpend: (estimatedSpendCr * 10000000) / 83.8,
+      estimatedSpend: estimatedSpendCr * 10000000,
       majorSector,
       minorSector
     });
@@ -164,6 +202,13 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
               placeholder={UI_STRINGS.modals.clientSetup.clientPlaceholder}
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
+              onBlur={() => {
+                const preset = industryPresets.find((item) => item.clientName.toLowerCase() === clientName.trim().toLowerCase());
+                if (preset) {
+                  setMajorSector(preset.majorSector);
+                  setMinorSector(preset.minorSector);
+                }
+              }}
               className="w-full bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500 transition-colors"
             />
           </div>
@@ -307,7 +352,9 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                     {UI_STRINGS.modals.clientSetup.industrySector.title}
                   </h4>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {activeMaterialProfile.tagline}
+                    {activeMaterialProfile?.tagline || (industryCatalogLoaded
+                      ? UI_STRINGS.module2.industryContext.profileUnavailable
+                      : UI_STRINGS.module2.industryContext.profileLoading)}
                   </span>
                 </div>
               </div>
@@ -327,6 +374,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                   aria-label={UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel}
                   value={majorSector}
                   onChange={(e) => handleMajorSectorChange(e.target.value)}
+                  disabled={!industryCatalogLoaded}
                   className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500"
                 >
                   {distinctMajorSectors.map((sec) => (
@@ -346,6 +394,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                   aria-label={UI_STRINGS.modals.clientSetup.industrySector.minorSectorLabel}
                   value={minorSector}
                   onChange={(e) => setMinorSector(e.target.value)}
+                  disabled={!industryCatalogLoaded}
                   className="w-full bg-white dark:bg-white border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:border-cyan-500"
                 >
                   {availableMinorSectors.map((sub) => (
@@ -358,7 +407,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             </div>
 
             {/* Pictorial Sector Material Profile & Guidance Card */}
-            <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-2.5">
+              {activeMaterialProfile ? <div className="p-3 rounded-lg bg-white dark:bg-white border border-slate-200 dark:border-slate-800 space-y-2.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
                 <span className="font-bold text-slate-800 dark:text-slate-200">
                   {UI_STRINGS.modals.clientSetup.industrySector.materialsProfileTitle}
@@ -422,7 +471,13 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
                 <Sparkles className="w-3 h-3 text-cyan-500 mt-0.5 shrink-0" />
                 <span>{activeMaterialProfile.categorizationGuidance}</span>
               </div>
-            </div>
+              </div> : (
+                <p role="status" className="text-xs text-amber-800" aria-live="polite">
+                  {industryCatalogLoaded
+                    ? UI_STRINGS.module2.industryContext.profileUnavailable
+                    : UI_STRINGS.module2.industryContext.profileLoading}
+                </p>
+              )}
           </div>
 
           {/* Time-Series FX Normalization Live Guarantee Note */}
@@ -449,6 +504,7 @@ export const ClientIngestionSetupModal: React.FC<ClientIngestionSetupModalProps>
             </button>
             <button
               type="submit"
+              disabled={!industryCatalogLoaded || !activeMaterialProfile}
               className="flex items-center space-x-2 px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 rounded-xl shadow-md shadow-emerald-600/20 transition-all transform active:scale-95"
             >
               <UploadCloud className="w-4 h-4" />

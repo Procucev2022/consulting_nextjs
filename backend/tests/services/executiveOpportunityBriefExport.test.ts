@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   executiveOpportunityBriefContentType,
   executiveOpportunityBriefFilename,
+  formatExecutiveOpportunityBriefAuditMarkdown,
   generateExecutiveOpportunityBriefPdf,
   generateExecutiveOpportunityBriefPptx,
   getExecutiveOpportunityBriefSlideRows
@@ -11,7 +12,8 @@ import type { ExecutiveOpportunityBriefReport } from '../../src/types';
 const mockedPptx = vi.hoisted(() => ({
   output: new Uint8Array([80, 75, 3, 4]),
   slides: 0,
-  writes: 0
+  writes: 0,
+  text: [] as string[]
 }));
 
 vi.mock('pptxgenjs', () => ({
@@ -20,9 +22,11 @@ vi.mock('pptxgenjs', () => ({
     public author = '';
     public company = '';
     public title = '';
-    public addSlide(): { background: { color: string }; addText: () => void } {
+    public addSlide(): { background: { color: string }; addText: (text?: unknown) => void } {
       mockedPptx.slides += 1;
-      return { background: { color: '' }, addText: () => undefined };
+      return { background: { color: '' }, addText: (text?: unknown) => {
+        if (typeof text === 'string') mockedPptx.text.push(text);
+      } };
     }
     public async write(): Promise<Uint8Array | ArrayBuffer> {
       mockedPptx.writes += 1;
@@ -33,6 +37,7 @@ vi.mock('pptxgenjs', () => ({
 
 const briefReport = (): ExecutiveOpportunityBriefReport => ({
   tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+  dataClassification: 'CUSTOMER_DATA',
   generatedAt: '2026-10-30T00:00:00.000Z',
   scopeDescription: 'Baseline D1 scope.',
   metrics: {
@@ -63,10 +68,12 @@ describe('executive opportunity brief exports', () => {
     mockedPptx.output = new Uint8Array([80, 75, 3, 4]);
     mockedPptx.slides = 0;
     mockedPptx.writes = 0;
+    mockedPptx.text = [];
   });
 
   it('builds slide rows from D1 values for every slide and handles empty groups and opportunities', () => {
     const report = briefReport();
+    report.dataClassification = 'DEMO_ONLY';
     expect(Array.from({ length: 10 }, (_item, index) => getExecutiveOpportunityBriefSlideRows(report, index).length))
       .toEqual([5, 6, 3, 1, 1, 2, 1, 4, 3, 1]);
     expect(getExecutiveOpportunityBriefSlideRows(report, 0)[1]).toContain('125.50 Cr');
@@ -87,10 +94,17 @@ describe('executive opportunity brief exports', () => {
     const report = briefReport();
     const pdf = generateExecutiveOpportunityBriefPdf(report);
     expect(Buffer.from(pdf.slice(0, 8)).toString('latin1')).toBe('%PDF-1.4');
+    expect(Buffer.from(pdf).toString('latin1')).toContain('CUSTOMER DATA');
     const pptx = await generateExecutiveOpportunityBriefPptx(report);
     expect(Buffer.from(pptx.slice(0, 2)).toString('latin1')).toBe('PK');
     expect(mockedPptx.slides).toBe(10);
     expect(mockedPptx.writes).toBe(1);
+    expect(mockedPptx.text).toContain('CUSTOMER DATA');
+    const demoReport = { ...report, dataClassification: 'DEMO_ONLY' as const };
+    const demoPdf = generateExecutiveOpportunityBriefPdf(demoReport);
+    expect(Buffer.from(demoPdf).toString('latin1')).toContain('DEMO ONLY - NOT VALIDATED SAVINGS');
+    await generateExecutiveOpportunityBriefPptx(demoReport);
+    expect(mockedPptx.text).toContain('DEMO ONLY - NOT VALIDATED SAVINGS');
   });
 
   it('rejects a PPTX writer result that is not bytes', async () => {
@@ -107,5 +121,20 @@ describe('executive opportunity brief exports', () => {
       .toBe('Executive_Opportunity_Brief_D1_Enterprise_2026-10-30.pdf');
     expect(executiveOpportunityBriefFilename('../', 'pptx', 'bad-date'))
       .toBe('Executive_Opportunity_Brief_Tenant_undated.pptx');
+  });
+
+  it('formats a D1 audit with source scope and escapes markdown table cells', () => {
+    const report = briefReport();
+    report.dataClassification = 'DEMO_ONLY';
+    report.tenant.enterpriseName = 'Enterprise | West';
+    report.opportunities[0].title = 'Packaging\nreview';
+    const markdown = formatExecutiveOpportunityBriefAuditMarkdown(report);
+    expect(markdown).toContain('Enterprise \\| West');
+    expect(markdown).toContain('Packaging review');
+    expect(markdown).toContain('DEMO ONLY - NOT VALIDATED SAVINGS');
+    expect(markdown).toContain('| --- | --- | --- | --- | --- |');
+
+    const noOpportunities = { ...report, opportunities: [] };
+    expect(formatExecutiveOpportunityBriefAuditMarkdown(noOpportunities)).toContain('No tenant-linked opportunities are recorded in D1.');
   });
 });

@@ -49,6 +49,7 @@ export interface AssessmentUploadPayload {
 
 export interface AssessmentLifecycleActionContext {
   db: CloudflareD1Database;
+  environment: CloudflareEnvironment;
   assessmentId: string;
   action: 'approve' | 'delivery-package' | 'deliver' | 'accept' | 'close';
   body: unknown;

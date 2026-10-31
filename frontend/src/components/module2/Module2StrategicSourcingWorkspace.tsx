@@ -17,6 +17,7 @@ import { EAuctionDynamicBiddingView } from './EAuctionDynamicBiddingView';
 import { VendorConsolidationView } from './VendorConsolidationView';
 import { VolumeAggregationView } from './VolumeAggregationView';
 import { PaymentTermsView } from './PaymentTermsView';
+import { Module2LogisticsPackagingView } from './Module2LogisticsPackagingView';
 import { CategorySpecialisationView } from './CategorySpecialisationView';
 import { SpecificationRationalisationView } from './SpecificationRationalisationView';
 import { ProcurementComplianceView } from './ProcurementComplianceView';
@@ -38,6 +39,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
     | 'vendorConsolidation'
     | 'volumeAggregation'
     | 'paymentTerms'
+    | 'logisticsPackaging'
     | 'categorySpecialisation'
     | 'specificationRationalisation'
     | 'procurementCompliance'
@@ -377,14 +379,17 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
         </button>
         <button
           type="button"
-          data-testid="subtab-btn-lever7-coming-soon"
-          disabled
-          className="pb-2.5 px-3 font-semibold text-xs border-b-2 border-transparent text-slate-400 dark:text-slate-500 flex items-center gap-1.5 cursor-not-allowed opacity-75 shrink-0 whitespace-nowrap"
-          title="Lever 7: Logistics & Packaging Specifications is coming soon"
+          data-testid="subtab-btn-logisticsPackaging"
+          onClick={() => setActiveTab('logisticsPackaging')}
+          className={`pb-2.5 px-3 font-semibold text-xs border-b-2 flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap ${
+            activeTab === 'logisticsPackaging'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
         >
-          <span>Lever 7: Logistics & Packaging Specifications</span>
+          <span>{UI_STRINGS.module2Logistics.title}</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 font-bold">
-            COMING SOON
+            {UI_STRINGS.module2Logistics.demoOnly}
           </span>
         </button>
         <button
@@ -458,6 +463,7 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
                 | 'vendorConsolidation'
                 | 'volumeAggregation'
                 | 'paymentTerms'
+                | 'logisticsPackaging'
                 | 'categorySpecialisation'
                 | 'specificationRationalisation'
                 | 'procurementCompliance'
@@ -501,6 +507,10 @@ export const Module2StrategicSourcingWorkspace: React.FC<Module2StrategicSourcin
           assessmentId={effectiveAssessmentId || ''}
           onBackToOverview={() => setActiveTab('overview')}
         />
+      )}
+
+      {activeTab === 'logisticsPackaging' && (
+        <Module2LogisticsPackagingView assessmentId={effectiveAssessmentId || ''} />
       )}
 
       {activeTab === 'categorySpecialisation' && (

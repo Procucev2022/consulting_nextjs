@@ -93,6 +93,32 @@ describe('Cloudflare backend worker', () => {
     });
   });
 
+  it('returns raw assessment deliverable responses with Worker CORS headers', async () => {
+    vi.mocked(handleAssessmentRoute).mockResolvedValueOnce({
+      data: null,
+      response: new Response('encrypted-source-derived-document', {
+        status: 200, headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="report.pdf"' }
+      })
+    });
+    const response = await workerFetch(request('/api/assessment/A-1/delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+      headers: { Origin: 'https://app.example.com' }
+    }), {}, executionContext);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example.com');
+    expect(response.headers.get('Content-Disposition')).toContain('report.pdf');
+    await expect(response.text()).resolves.toBe('encrypted-source-derived-document');
+  });
+
+  it('preserves raw assessment responses routed through the customer alias', async () => {
+    vi.mocked(handleAssessmentRoute).mockResolvedValueOnce({
+      data: null,
+      response: new Response('customer artifact', { status: 200 })
+    });
+    const response = await workerFetch(request('/api/customers/C-1/delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF'), {}, executionContext);
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('customer artifact');
+  });
+
   it('rejects database-backed API routes when D1 is unavailable', async () => {
     const response = await workerFetch(request('/api/tenant'), {}, executionContext);
 
@@ -948,12 +974,14 @@ describe('Cloudflare worker core routes', () => {
       });
     });
 
-    it('reports zero ROI without a platform fee and treats an unreadable body as zero economics', async () => {
-      const noFee = await dataOf(await send('/api/conversion', jsonBody('POST', { annualSpendCr: 50, savingsRate: 4 })));
-      const unreadable = await dataOf(await send('/api/conversion', jsonRequest('POST', '{"annualSpendCr":')));
+    it('reports zero ROI without a platform fee and rejects missing or unreadable economics', async () => {
+      const noFee = await dataOf(await send('/api/conversion', jsonBody('POST', { annualSpendCr: 50, savingsRate: 4, saasFeeRate: 0 })));
+      const missingFee = await send('/api/conversion', jsonBody('POST', { annualSpendCr: 50, savingsRate: 4 }));
+      const unreadable = await send('/api/conversion', jsonRequest('POST', '{"annualSpendCr":'));
 
       expect(noFee).toMatchObject({ grossSavingsCr: 2, platformFeeCr: 0, roiMultiple: 0 });
-      expect(unreadable).toMatchObject({ annualSpendCr: 0, grossSavingsCr: 0, netClientBenefitCr: 0, roiMultiple: 0 });
+      expect(missingFee.status).toBe(400);
+      expect(unreadable.status).toBe(400);
     });
 
     it('returns 503 for conversion stages without a D1 binding', async () => {

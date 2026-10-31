@@ -6,6 +6,7 @@ const validPayload = {
   success: true,
   data: {
     tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+    dataClassification: 'DEMO_ONLY',
     generatedAt: '2026-10-30T00:00:00.000Z',
     scopeDescription: 'D1 report scope',
     metrics: {

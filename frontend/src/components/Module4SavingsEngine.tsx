@@ -146,11 +146,11 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
         opp_id: o.opportunity_id,
         title: `${o.category} - ${o.source_engine.replace(/_/g, ' ')}`,
         category: o.category,
-        current_spend: (o.spend_inr_cr || 0) * 10000000 / 83.8,
+        current_spend: o.spend_inr,
         current_spend_inr_cr: o.spend_inr_cr,
         baseline_spend_inr_cr: o.spend_inr_cr,
-        target_savings_pct: o.spend_inr > 0 ? Number(((o.potential_savings_inr / o.spend_inr) * 100).toFixed(1)) : 16.4,
-        est_savings: (o.potential_savings_inr_cr || 0) * 10000000 / 83.8,
+        target_savings_pct: o.spend_inr > 0 ? Number(((o.potential_savings_inr / o.spend_inr) * 100).toFixed(1)) : 0,
+        est_savings: o.potential_savings_inr,
         est_savings_inr_cr: o.net_savings_inr_cr || o.potential_savings_inr_cr,
         contract_leak_type: o.validation_notes || UI_STRINGS.module4.defaultLeverLabel,
         push_to_module: o.source_engine === 'E_AUCTION' ? 'DPS NXT' : 'proCPX',
@@ -162,21 +162,26 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
     return [];
   }, [opportunities, consolidatedData]);
 
+  const hasSavingsData = consolidatedData?.waterfallMetrics?.net_potential_savings_inr_cr != null
+    || effectiveOpportunities.some((opp) => opp.est_savings_inr_cr != null || opp.estimated_savings_inr_cr != null);
+  const hasSpendData = consolidatedData?.waterfallMetrics?.total_spend_inr_cr != null
+    || effectiveOpportunities.some((opp) => opp.baseline_spend_inr_cr != null || opp.current_spend_inr_cr != null);
   const totalSavingsInrCr = consolidatedData?.waterfallMetrics?.net_potential_savings_inr_cr
     ?? effectiveOpportunities.reduce(
-      (acc, opp) => acc + (opp.est_savings_inr_cr || (opp.estimated_savings_usd ? opp.estimated_savings_usd * 83.8 / 10000000 : 0) || 0),
+      (acc, opp) => acc + (opp.est_savings_inr_cr ?? opp.estimated_savings_inr_cr ?? 0),
       0
     );
   const totalEvaluatedSpendInrCr = consolidatedData?.waterfallMetrics?.total_spend_inr_cr
     ?? effectiveOpportunities.reduce(
-      (acc, opp) => acc + (opp.baseline_spend_inr_cr || (opp.current_spend_usd ? opp.current_spend_usd * 83.8 / 10000000 : 0) || 0),
+      (acc, opp) => acc + (opp.baseline_spend_inr_cr ?? opp.current_spend_inr_cr ?? 0),
       0
     );
-  const formattedBaselineSpend = totalEvaluatedSpendInrCr > 0
+  const realizationTargetPct = hasSpendData && hasSavingsData && totalEvaluatedSpendInrCr > 0
+    ? ((totalSavingsInrCr / totalEvaluatedSpendInrCr) * 100).toFixed(1)
+    : UI_STRINGS.common.notAvailable;
+  const formattedBaselineSpend = hasSpendData && totalEvaluatedSpendInrCr > 0
     ? (totalEvaluatedSpendInrCr.toString().split('.')[1]?.length > 2 ? totalEvaluatedSpendInrCr.toFixed(4) : totalEvaluatedSpendInrCr.toFixed(2))
-    : '0.00';
-
-  const realizationTargetPct = '16.4';
+    : UI_STRINGS.common.notAvailable;
 
   const directSourcingSavingsCr = effectiveOpportunities
     .filter((o) => (o.push_to_module || o.recommended_module) === 'proCPX')
@@ -189,10 +194,11 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
   const getCategoryMetrics = (catName: string) => {
     const catOpps = effectiveOpportunities.filter((o) => o.category === catName || o.category?.includes(catName.split(' ')[0]));
     const catSavings = catOpps.reduce((s, o) => s + (o.est_savings_inr_cr || o.estimated_savings_inr_cr || 0), 0);
-    const catSpend = catOpps.reduce((s, o) => s + (o.baseline_spend_inr_cr || o.current_spend_inr_cr || (o.current_spend_usd ? o.current_spend_usd * 83.8 / 10000000 : 0) || 0), 0);
-    const targetPct = catSpend > 0 ? `${((catSavings / catSpend) * 100).toFixed(1)}%` : (catSavings > 0 ? `${realizationTargetPct}%` : '0.0%');
+    const catSpend = catOpps.reduce((s, o) => s + (o.baseline_spend_inr_cr ?? o.current_spend_inr_cr ?? 0), 0);
+    const savingsKnown = catOpps.some((opp) => opp.est_savings_inr_cr != null || opp.estimated_savings_inr_cr != null);
+    const targetPct = catSpend > 0 && savingsKnown ? `${((catSavings / catSpend) * 100).toFixed(1)}%` : UI_STRINGS.common.notAvailable;
     return {
-      savingsFound: UI_STRINGS.common.croreAmount(catSavings.toFixed(2)),
+      savingsFound: savingsKnown ? UI_STRINGS.common.croreAmount(catSavings.toFixed(2)) : UI_STRINGS.common.notAvailable,
       targetPct,
       progressPct: catSpend > 0 ? Math.min(100, Math.round((catSavings / catSpend) * 100)) : (catSavings > 0 ? 100 : 0)
     };
@@ -286,7 +292,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
       </div>
 
       {/* 1. Consolidated Savings Waterfall (Prompt 100: Total Spend -> Addressable -> Identified -> Potential -> Validated -> Approved -> Realized) */}
-      <SavingsWaterfallSection waterfallMetrics={consolidatedData?.waterfallMetrics as any} />
+      <SavingsWaterfallSection waterfallMetrics={consolidatedData?.waterfallMetrics} />
 
       {/* 2. Overlap De-Duplication & Multi-Engine Resolution Table */}
       <OverlapDeduplicationTable
@@ -331,7 +337,7 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
             <div className="mt-4">
               <span className="text-xs text-slate-500 font-medium">{UI_STRINGS.module4.netModelledOpportunityLabel}</span>
               <div className="text-4xl sm:text-5xl font-black font-mono text-emerald-600 tracking-tight mt-1">
-                {UI_STRINGS.common.croreAmount(totalSavingsInrCr > 0 ? totalSavingsInrCr.toFixed(3) : '0.00')}
+                {hasSavingsData ? UI_STRINGS.common.croreAmount(totalSavingsInrCr.toFixed(3)) : UI_STRINGS.common.notAvailable}
               </div>
               <p className="text-xs text-slate-600 mt-2 leading-relaxed">
                 {UI_STRINGS.module4.evaluatedBaselineSpendNote(formattedBaselineSpend)}
@@ -482,13 +488,17 @@ export const Module4SavingsEngine: React.FC<Module4SavingsEngineProps> = ({
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-slate-800">
-                        {UI_STRINGS.common.croreAmount(opp.current_spend_inr_cr?.toFixed(2) || (opp.current_spend * 83.8 / 10000000).toFixed(2))}
+                        {opp.current_spend_inr_cr != null || opp.baseline_spend_inr_cr != null
+                          ? UI_STRINGS.common.croreAmount((opp.current_spend_inr_cr ?? opp.baseline_spend_inr_cr ?? 0).toFixed(2))
+                          : UI_STRINGS.common.notAvailable}
                       </td>
                       <td className="py-3.5 px-4 text-cyan-700 font-bold">
                         {opp.target_savings_pct}%
                       </td>
                       <td className="py-3.5 px-4 font-black text-emerald-600 text-sm">
-                        {UI_STRINGS.common.croreAmount(opp.est_savings_inr_cr?.toFixed(2) || (opp.est_savings * 83.8 / 10000000).toFixed(2))}
+                        {opp.est_savings_inr_cr != null || opp.estimated_savings_inr_cr != null
+                          ? UI_STRINGS.common.croreAmount((opp.est_savings_inr_cr ?? opp.estimated_savings_inr_cr ?? 0).toFixed(2))
+                          : UI_STRINGS.common.notAvailable}
                       </td>
                       <td className="py-3.5 px-4 text-center font-sans">
                         <span

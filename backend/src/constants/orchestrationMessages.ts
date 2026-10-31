@@ -126,6 +126,16 @@ export const ORCHESTRATION_MESSAGES = {
   reportSubmitted:
     'Report approved and submitted to the customer workspace. No email was sent because no email provider ' +
     'is configured for this Worker.',
+  reportSubmittedEmailSent: 'Report approved and submitted to the customer workspace. The customer email was sent.',
+  reportSubmittedEmailPending: (reason: string): string =>
+    `Report approved and submitted to the customer workspace, but the customer email was not sent: ${reason} ` +
+    'The report remains available in the customer workspace. Correct the issue and resend the notification.',
+  notificationEmailSent: 'The customer report notification email was sent.',
+  notificationRecipientMissing:
+    'The customer notification email was not sent because no contact email is saved for this customer. Add a valid ' +
+    'contact email to the customer record, then resend the notification.',
+  notificationProviderFailed: (reason: string): string =>
+    `The customer notification email could not be delivered: ${reason} Check the email provider configuration and retry.`,
   reportSuperseded: (reportId: string): string =>
     `Report ${reportId} was superseded. The job is ready for generation until a new report is created.`,
   viewRecorded: 'Customer view recorded.',

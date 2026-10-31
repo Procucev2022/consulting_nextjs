@@ -15,7 +15,11 @@ import {
 } from 'lucide-react';
 import { PCBIStatusBadge } from './PCBIStatusBadge';
 import { UI_STRINGS } from '../../../constants';
-import type { CommodityResearchQueueRow, PCBICommodityResearchQueueTableProps } from '../../../types/pcbiCommodityDataLab';
+import type {
+  CommodityResearchQueueRow,
+  PCBICommodityResearchQueueTableProps,
+  PCBIResearchWorkflowUpdate
+} from '../../../types/pcbiCommodityDataLab';
 
 export function getQueueContextualAction(currentStatus: string): {
   label: string;
@@ -47,14 +51,25 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, string>>({});
+  const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, PCBIResearchWorkflowUpdate>>({});
   const [assignmentFeedback, setAssignmentFeedback] = useState<string | null>(null);
 
   const saveAssignment = async (row: CommodityResearchQueueRow): Promise<void> => {
     if (!onAssignResearcher) return;
-    const assignee = (assignmentDrafts[row.pcbiId] ?? row.assignedTo ?? '').trim() || null;
+    const draft = assignmentDrafts[row.pcbiId] || {
+      assignee: row.assignedTo || null,
+      status: row.workflowStatus || 'QUEUED',
+      dueDate: row.workflowDueDate || null,
+      notes: row.workflowNotes || ''
+    };
+    const assignee = draft.assignee?.trim() || null;
     try {
-      await onAssignResearcher(row.pcbiId, assignee);
+      await onAssignResearcher(row.pcbiId, {
+        ...draft,
+        assignee,
+        dueDate: draft.dueDate || null,
+        notes: draft.notes.trim()
+      });
       setAssignmentFeedback(UI_STRINGS.pcbiCommodityDataLab.assignmentSaved(row.pcbiId, assignee));
     } catch {
       setAssignmentFeedback(UI_STRINGS.pcbiCommodityDataLab.assignmentFailed(row.pcbiId));
@@ -161,6 +176,9 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
               ) : (
                 filteredQueue.map((row, idx) => {
                   const contextualAction = getQueueContextualAction(row.currentStatus);
+                  const workflowStatus = row.workflowStatus || 'QUEUED';
+                  const workflowDueDate = row.workflowDueDate || null;
+                  const workflowNotes = row.workflowNotes || '';
                   return (
                     <tr
                       key={row.commodityId}
@@ -210,20 +228,87 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                       </td>
                       {onAssignResearcher && (
                         <td className="py-3 px-3 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex min-w-56 flex-col gap-1.5">
                             <input
                               aria-label={UI_STRINGS.pcbiCommodityDataLab.assignResearcherInputLabel(row.commodity)}
-                              value={assignmentDrafts[row.pcbiId] ?? row.assignedTo ?? ''}
+                              value={assignmentDrafts[row.pcbiId]?.assignee || row.assignedTo || ''}
                               placeholder={UI_STRINGS.pcbiCommodityDataLab.assignResearcherPlaceholder}
-                              onChange={(event) => setAssignmentDrafts((drafts) => ({ ...drafts, [row.pcbiId]: event.target.value }))}
-                              className="w-32 rounded border border-slate-300 px-2 py-1 text-[10px]"
+                              onChange={(event) => setAssignmentDrafts((drafts) => ({
+                                ...drafts,
+                                [row.pcbiId]: {
+                                  ...(drafts[row.pcbiId] || {
+                                    assignee: row.assignedTo || null,
+                                    status: workflowStatus,
+                                    dueDate: workflowDueDate,
+                                    notes: workflowNotes
+                                  }),
+                                  assignee: event.target.value
+                                }
+                              }))}
+                              className="w-full rounded border border-slate-300 px-2 py-1 text-[10px]"
+                            />
+                            <select
+                              aria-label={UI_STRINGS.pcbiCommodityDataLab.researchWorkflowStatusInputLabel(row.commodity)}
+                              value={assignmentDrafts[row.pcbiId]?.status || workflowStatus}
+                              onChange={(event) => setAssignmentDrafts((drafts) => ({
+                                ...drafts,
+                                [row.pcbiId]: {
+                                  ...(drafts[row.pcbiId] || {
+                                    assignee: row.assignedTo || null,
+                                    status: workflowStatus,
+                                    dueDate: workflowDueDate,
+                                    notes: workflowNotes
+                                  }),
+                                  status: event.target.value as PCBIResearchWorkflowUpdate['status']
+                                }
+                              }))}
+                              className="w-full rounded border border-slate-300 px-2 py-1 text-[10px]"
+                            >
+                              {UI_STRINGS.pcbiCommodityDataLab.researchWorkflowStatusOptions.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="date"
+                              aria-label={UI_STRINGS.pcbiCommodityDataLab.researchWorkflowDueDateInputLabel(row.commodity)}
+                              value={assignmentDrafts[row.pcbiId]?.dueDate || workflowDueDate || ''}
+                              onChange={(event) => setAssignmentDrafts((drafts) => ({
+                                ...drafts,
+                                [row.pcbiId]: {
+                                  ...(drafts[row.pcbiId] || {
+                                    assignee: row.assignedTo || null,
+                                    status: workflowStatus,
+                                    dueDate: workflowDueDate,
+                                    notes: workflowNotes
+                                  }),
+                                  dueDate: event.target.value || null
+                                }
+                              }))}
+                              className="w-full rounded border border-slate-300 px-2 py-1 text-[10px]"
+                            />
+                            <input
+                              aria-label={UI_STRINGS.pcbiCommodityDataLab.researchWorkflowNotesInputLabel(row.commodity)}
+                              value={assignmentDrafts[row.pcbiId]?.notes ?? workflowNotes}
+                              onChange={(event) => setAssignmentDrafts((drafts) => ({
+                                ...drafts,
+                                [row.pcbiId]: {
+                                  ...(drafts[row.pcbiId] || {
+                                    assignee: row.assignedTo || null,
+                                    status: workflowStatus,
+                                    dueDate: workflowDueDate,
+                                    notes: workflowNotes
+                                  }),
+                                  notes: event.target.value
+                                }
+                              }))}
+                              className="w-full rounded border border-slate-300 px-2 py-1 text-[10px]"
                             />
                             <button
                               type="button"
                               onClick={() => { void saveAssignment(row); }}
                               className="rounded bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-200"
                             >
-                              {(assignmentDrafts[row.pcbiId] ?? row.assignedTo ?? '').trim()
+                              {(assignmentDrafts[row.pcbiId]?.assignee || row.assignedTo || '').trim()
                                 ? UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton
                                 : UI_STRINGS.pcbiCommodityDataLab.unassignResearcherButton}
                             </button>

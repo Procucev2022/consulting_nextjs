@@ -19,6 +19,7 @@ export const EXECUTIVE_BRIEF_EXPORT_STRINGS = {
   },
   summaryCards: {
     title: 'CERTIFIED PROCUREMENT METRICS',
+    evidenceNote: 'Metric source references are shown below',
     viewEvidence: 'View Evidence ▾',
     viewCalculation: 'View Calculation ▾'
   },

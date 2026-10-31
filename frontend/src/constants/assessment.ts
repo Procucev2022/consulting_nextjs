@@ -8,7 +8,9 @@ import type {
   DataStatus,
   AssessmentStatus,
   AssessmentRole,
-  OperatingModeConfig
+  OperatingModeConfig,
+  AssessmentModuleGate,
+  AssessmentModule
 } from '../types/assessment';
 
 export const APP_OPERATING_MODES = {
@@ -85,48 +87,42 @@ export const MANDATORY_MODULE_GATES = {
   M4_EVIDENCE_COMPLETENESS: 'M4_EVIDENCE_COMPLETENESS'
 } as const;
 
-export interface GateSpec {
-  key: string;
-  module: 'Module 1' | 'Module 2' | 'Module 3' | 'Module 4';
-  name: string;
-  standard: string;
-  verifiedValue: string;
-}
+export const ASSESSMENT_MODULES: readonly AssessmentModule[] = ['Module 1', 'Module 2', 'Module 3', 'Module 4'];
 
-export const MODULE_GATES_LIST: GateSpec[] = [
+export const MODULE_GATES_LIST: AssessmentModuleGate[] = [
   // Module 1 (7 gates)
-  { key: 'M1_INPUT_ROW_RECONCILIATION', module: 'Module 1', name: 'Input row reconciliation', standard: '20,241 valid rows confirmed', verifiedValue: '20,241 rows' },
-  { key: 'M1_CURRENCY_NORMALIZATION', module: 'Module 1', name: 'Currency normalization', standard: '100% FX coverage verified', verifiedValue: '100.00% coverage' },
-  { key: 'M1_TAXONOMY_VALIDATION', module: 'Module 1', name: 'Material group taxonomy', standard: '57 groups validated', verifiedValue: '57 groups' },
-  { key: 'M1_SUPPLIER_DEDUPLICATION', module: 'Module 1', name: 'Supplier deduplication', standard: '529 unique entities confirmed', verifiedValue: '529 entities' },
-  { key: 'M1_PLANT_MAPPING', module: 'Module 1', name: 'Plant / location mapping', standard: '19 operating units verified', verifiedValue: '19 plants' },
-  { key: 'M1_ANOMALY_EXCLUSION_SIGNOFF', module: 'Module 1', name: 'Anomaly / exclusion sign-off', standard: '252 exclusions, 12 anomalies reviewed', verifiedValue: '252 / 12 verified' },
-  { key: 'M1_BASELINE_SPEND_SIGNOFF', module: 'Module 1', name: 'Baseline spend sign-off', standard: '₹4,073.8307 Cr verified', verifiedValue: '₹4,073.8307 Cr' },
+  { key: 'M1_INPUT_ROW_RECONCILIATION', module: 'Module 1', name: 'Input row reconciliation', standard: 'Reconcile imported and source row counts.' },
+  { key: 'M1_CURRENCY_NORMALIZATION', module: 'Module 1', name: 'Currency normalization', standard: 'Review FX coverage and normalization evidence.' },
+  { key: 'M1_TAXONOMY_VALIDATION', module: 'Module 1', name: 'Material group taxonomy', standard: 'Review material group mappings.' },
+  { key: 'M1_SUPPLIER_DEDUPLICATION', module: 'Module 1', name: 'Supplier deduplication', standard: 'Review supplier identity matches and merges.' },
+  { key: 'M1_PLANT_MAPPING', module: 'Module 1', name: 'Plant / location mapping', standard: 'Review operating unit and location mappings.' },
+  { key: 'M1_ANOMALY_EXCLUSION_SIGNOFF', module: 'Module 1', name: 'Anomaly / exclusion sign-off', standard: 'Review quarantined rows, exclusions and anomalies.' },
+  { key: 'M1_BASELINE_SPEND_SIGNOFF', module: 'Module 1', name: 'Baseline spend sign-off', standard: 'Reconcile evaluated spend to source transactions.' },
 
   // Module 2 (6 gates)
-  { key: 'M2_ADDRESSABLE_SPEND', module: 'Module 2', name: 'Addressable spend baseline', standard: '₹443.621 Cr verified', verifiedValue: '₹443.621 Cr' },
-  { key: 'M2_GROSS_OPPORTUNITY_POOL', module: 'Module 2', name: 'Gross opportunity pool', standard: '₹441.833 Cr verified', verifiedValue: '₹441.833 Cr' },
-  { key: 'M2_OVERLAP_DEDUCTION', module: 'Module 2', name: 'Overlap deduction', standard: '₹104.067 Cr verified', verifiedValue: '₹104.067 Cr' },
-  { key: 'M2_NET_DEFENSIBLE_OPPORTUNITY', module: 'Module 2', name: 'Net defensible opportunity', standard: '₹337.766 Cr verified', verifiedValue: '₹337.766 Cr' },
-  { key: 'M2_PROVEN_OPPORTUNITY', module: 'Module 2', name: 'Proven opportunity', standard: '₹319.439 Cr verified', verifiedValue: '₹319.439 Cr' },
-  { key: 'M2_DELIVERY_RANGE', module: 'Module 2', name: 'Delivery range', standard: '₹31.944–₹79.860 Cr verified', verifiedValue: '₹31.944–₹79.860 Cr' },
+  { key: 'M2_ADDRESSABLE_SPEND', module: 'Module 2', name: 'Addressable spend baseline', standard: 'Review addressable spend rules and evidence.' },
+  { key: 'M2_GROSS_OPPORTUNITY_POOL', module: 'Module 2', name: 'Gross opportunity pool', standard: 'Review source opportunities and calculations.' },
+  { key: 'M2_OVERLAP_DEDUCTION', module: 'Module 2', name: 'Overlap deduction', standard: 'Review overlap identification and deductions.' },
+  { key: 'M2_NET_DEFENSIBLE_OPPORTUNITY', module: 'Module 2', name: 'Net defensible opportunity', standard: 'Reconcile net opportunity to its components.' },
+  { key: 'M2_PROVEN_OPPORTUNITY', module: 'Module 2', name: 'Proven opportunity', standard: 'Review evidence supporting validated opportunities.' },
+  { key: 'M2_DELIVERY_RANGE', module: 'Module 2', name: 'Delivery range', standard: 'Review delivery assumptions and range calculations.' },
 
   // Module 3 (7 gates)
-  { key: 'M3_BENCHMARK_COVERAGE', module: 'Module 3', name: 'Benchmark coverage', standard: '16.01% confirmed', verifiedValue: '16.01%' },
-  { key: 'M3_BENCHMARKABLE_SPEND', module: 'Module 3', name: 'Benchmarkable spend', standard: '₹652.1402 Cr verified', verifiedValue: '₹652.1402 Cr' },
-  { key: 'M3_PRICE_GAP_ANALYTICAL_SIGNAL', module: 'Module 3', name: 'Price-gap analytical signal', standard: '₹31.6921 Cr confirmed as separate signal', verifiedValue: '₹31.6921 Cr' },
-  { key: 'M3_ANALYTICAL_ISOLATION', module: 'Module 3', name: 'Analytical isolation', standard: 'Signal NOT merged into savings confirmed', verifiedValue: 'Zero savings leakage' },
-  { key: 'M3_COMMODITY_INDEX_MAPPING', module: 'Module 3', name: 'Commodity index mapping verified', standard: 'PCBI Master v2.0 mapping confirmed', verifiedValue: '100% matched' },
-  { key: 'M3_INDEXATION_METHODOLOGY_SIGNOFF', module: 'Module 3', name: 'Indexation methodology sign-off', standard: 'Commodity index models certified', verifiedValue: 'Certified' },
-  { key: 'M3_BENCHMARK_DATA_QUALITY_REVIEW', module: 'Module 3', name: 'Benchmark data quality review', standard: 'No outliers, zero unhandled categories', verifiedValue: 'Clean' },
+  { key: 'M3_BENCHMARK_COVERAGE', module: 'Module 3', name: 'Benchmark coverage', standard: 'Review benchmark coverage and exclusions.' },
+  { key: 'M3_BENCHMARKABLE_SPEND', module: 'Module 3', name: 'Benchmarkable spend', standard: 'Reconcile benchmarkable spend to source records.' },
+  { key: 'M3_PRICE_GAP_ANALYTICAL_SIGNAL', module: 'Module 3', name: 'Price-gap analytical signal', standard: 'Review price-gap calculations and evidence.' },
+  { key: 'M3_ANALYTICAL_ISOLATION', module: 'Module 3', name: 'Analytical isolation', standard: 'Confirm analytical signals are isolated from savings.' },
+  { key: 'M3_COMMODITY_INDEX_MAPPING', module: 'Module 3', name: 'Commodity index mapping verified', standard: 'Review commodity and index mappings.' },
+  { key: 'M3_INDEXATION_METHODOLOGY_SIGNOFF', module: 'Module 3', name: 'Indexation methodology sign-off', standard: 'Review indexation model methodology.' },
+  { key: 'M3_BENCHMARK_DATA_QUALITY_REVIEW', module: 'Module 3', name: 'Benchmark data quality review', standard: 'Review outliers, missing data and category coverage.' },
 
   // Module 4 (6 gates)
-  { key: 'M4_GROSS_OPPORTUNITY', module: 'Module 4', name: 'Gross opportunity pool', standard: '₹441.833 Cr confirmed', verifiedValue: '₹441.833 Cr' },
-  { key: 'M4_OVERLAP', module: 'Module 4', name: 'Overlap allocation', standard: '₹104.067 Cr confirmed', verifiedValue: '₹104.067 Cr' },
-  { key: 'M4_NET_OPPORTUNITY', module: 'Module 4', name: 'Net defensible opportunity', standard: '₹337.766 Cr confirmed', verifiedValue: '₹337.766 Cr' },
-  { key: 'M4_PROVEN_OPPORTUNITY', module: 'Module 4', name: 'Proven opportunity', standard: '₹319.439 Cr confirmed', verifiedValue: '₹319.439 Cr' },
-  { key: 'M4_DELIVERY_RANGE', module: 'Module 4', name: 'Delivery range', standard: '₹31.944–₹79.860 Cr confirmed', verifiedValue: '₹31.944–₹79.860 Cr' },
-  { key: 'M4_EVIDENCE_COMPLETENESS', module: 'Module 4', name: 'Evidence completeness', standard: '28 sheets, 20,241 lineage rows confirmed', verifiedValue: '20,241 / 20,241 (100%)' }
+  { key: 'M4_GROSS_OPPORTUNITY', module: 'Module 4', name: 'Gross opportunity pool', standard: 'Reconcile gross opportunity to source records.' },
+  { key: 'M4_OVERLAP', module: 'Module 4', name: 'Overlap allocation', standard: 'Review overlap allocation and exclusions.' },
+  { key: 'M4_NET_OPPORTUNITY', module: 'Module 4', name: 'Net defensible opportunity', standard: 'Reconcile net opportunity calculations.' },
+  { key: 'M4_PROVEN_OPPORTUNITY', module: 'Module 4', name: 'Proven opportunity', standard: 'Review evidence supporting proven opportunities.' },
+  { key: 'M4_DELIVERY_RANGE', module: 'Module 4', name: 'Delivery range', standard: 'Review delivery assumptions and calculations.' },
+  { key: 'M4_EVIDENCE_COMPLETENESS', module: 'Module 4', name: 'Evidence completeness', standard: 'Verify required source and lineage evidence is available.' }
 ];
 
 export const REVIEW_GATES = {
@@ -142,7 +138,7 @@ export const REVIEW_GATES = {
 } as const;
 
 export const REVIEW_GATE_LABELS: Record<string, { title: string; description: string }> = {
-  ...Object.fromEntries(MODULE_GATES_LIST.map((g) => [g.key, { title: g.name, description: `${g.standard} | Verified: ${g.verifiedValue}` }])),
+  ...Object.fromEntries(MODULE_GATES_LIST.map((g) => [g.key, { title: g.name, description: g.standard }])),
   INPUT_VALIDATION_CLEAN: {
     title: 'Gate 1: Input Validation Clean',
     description: 'Source dataset parsed with schema adherence, header reconciliation, and zero unhandled exceptions.'

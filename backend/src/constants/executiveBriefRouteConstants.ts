@@ -20,6 +20,7 @@ export const EXECUTIVE_BRIEF_ENDPOINTS = {
   opportunityBriefPdf: `${EXECUTIVE_BRIEF_ROUTE_BASE}/download/opportunity-brief/pdf`,
   opportunityBriefPptx: `${EXECUTIVE_BRIEF_ROUTE_BASE}/download/opportunity-brief/pptx`,
   opportunityBriefReport: `${EXECUTIVE_BRIEF_ROUTE_BASE}/opportunity-brief/report`,
+  email: `${EXECUTIVE_BRIEF_ROUTE_BASE}/email`,
   regenerate: `${EXECUTIVE_BRIEF_ROUTE_BASE}/regenerate`
 } as const;
 
@@ -31,6 +32,7 @@ export const EXECUTIVE_BRIEF_ROUTES: readonly ExecutiveBriefRouteDefinition[] = 
   { key: 'opportunityBriefPdf', method: 'GET', path: '/download/opportunity-brief/pdf' },
   { key: 'opportunityBriefPptx', method: 'GET', path: '/download/opportunity-brief/pptx' },
   { key: 'opportunityBriefReport', method: 'GET', path: '/opportunity-brief/report' },
+  { key: 'email', method: 'POST', path: '/email' },
   { key: 'regenerate', method: 'POST', path: '/regenerate' }
 ];
 
@@ -49,21 +51,14 @@ export const EXECUTIVE_BRIEF_HTTP_STATUS = {
 
 export const EXECUTIVE_BRIEF_MESSAGES = {
   validationFailed: 'Validation failed',
-  invalidJsonBody: 'Request body must be valid JSON such as {"client": "UltraTech Cement Limited"}, or empty.',
+  invalidJsonBody: 'Request body must be valid JSON or empty.',
   methodNotAllowed: 'This HTTP method is not supported for the executive brief endpoint. Use the method listed in the Allow header.',
   authRequired: 'Administrator sign-in required. Send Authorization: Bearer <admin token> from an ADMIN account, then retry.',
   tokenInvalid: 'The bearer token is invalid or has expired. Sign in again to get a new administrator token, then retry.',
   adminRequired: 'This account does not have the ADMIN role. Ask an administrator to regenerate the executive brief.',
   authSecretMissing: 'AUTH_SECRET is not set on the Worker, so administrator tokens cannot be verified. Set it with wrangler secret put AUTH_SECRET and redeploy.',
   r2Missing: 'The R2 binding OBJECTS is not configured on the Worker. Add the bucket binding in wrangler.jsonc and redeploy before regenerating.',
-  blocked: 'Export blocked: the financial reconciliation does not match the certified figures. Review the certified constants before exporting.',
-  regenerated: 'Executive Brief regenerated successfully from certified Module 1-4 outputs',
-  clientNotCertified: (client: string, certifiedName: string): string =>
-    `No certified executive brief exists for "${client}". Only "${certifiedName}" is served. Check the client name and retry.`,
-  renderFailed: (label: string, requestId: string): string =>
-    `The executive brief ${label} could not be rendered. Retry the request; if it fails again, quote request ID ${requestId} to support.`,
-  publishFailed: (requestId: string): string =>
-    `The regenerated artifacts could not be stored in R2. Check the OBJECTS binding and retry; quote request ID ${requestId} if it repeats.`
+  regenerated: 'Executive Brief regenerated successfully from the latest D1 tenant, transaction, and opportunity records.'
 } as const;
 
 export const EXECUTIVE_BRIEF_HEADER_NAMES = {

@@ -531,6 +531,35 @@ describe('assessmentApi', () => {
     expect(res.assessment.validatedSpendCr).toBe(100.5);
   });
 
+  it('fetches D1 review gates and returns an empty list for malformed collection data', async () => {
+    const gates = [{ assessmentId: 'AIC-2026-0001', gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PENDING' }];
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: gates }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: null }) });
+
+    await expect(assessmentApi.getReviewGates('AIC-2026-0001')).resolves.toEqual(gates);
+    await expect(assessmentApi.getReviewGates('AIC-2026-0001')).resolves.toEqual([]);
+  });
+
+  it('saves an assessment review gate with a PUT request', async () => {
+    const gates = [{ assessmentId: 'AIC-2026-0001', gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED' }];
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: gates })
+    });
+    const payload = {
+      gateKey: 'M1_INPUT_ROW_RECONCILIATION',
+      status: 'PASSED' as const,
+      evidenceReference: 'D1:DV-1'
+    };
+
+    await expect(assessmentApi.saveReviewGate('AIC-2026-0001', payload)).resolves.toEqual(gates);
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/AIC-2026-0001/review-gates'), expect.objectContaining({
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    }));
+  });
+
   it('verifies default export matches named export', () => {
     expect(assessmentApiClient).toBe(assessmentApi);
   });

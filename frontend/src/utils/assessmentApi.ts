@@ -12,6 +12,8 @@ import type {
   AssessmentDataVersion,
   AssessmentAnalysisRun,
   AssessmentAuditLog,
+  AssessmentReviewGateRecord,
+  AssessmentReviewGateUpdate,
   DeliveryPackageResult,
   NdaStatus,
   DataStatus,
@@ -153,6 +155,25 @@ export const assessmentApiClient = {
   async generateDeliveryPackage(id: string): Promise<DeliveryPackageResult> {
     frontendLogger.info('Generating delivery package', { id });
     return postJson(`${API_BASE}/api/assessment/${id}/delivery-package`, {}, 'Failed to generate delivery package');
+  },
+
+  async getReviewGates(id: string): Promise<AssessmentReviewGateRecord[]> {
+    frontendLogger.debug('Fetching assessment review gates', { id });
+    const records = await getJson<AssessmentReviewGateRecord[]>(
+      `${API_BASE}/api/assessment/${encodeURIComponent(id)}/review-gates`,
+      'Failed to fetch assessment review gates'
+    );
+    return Array.isArray(records) ? records : [];
+  },
+
+  async saveReviewGate(id: string, payload: AssessmentReviewGateUpdate): Promise<AssessmentReviewGateRecord[]> {
+    frontendLogger.info('Saving assessment review gate', { id, gateKey: payload.gateKey, status: payload.status });
+    return postJson(
+      `${API_BASE}/api/assessment/${encodeURIComponent(id)}/review-gates`,
+      payload,
+      'Failed to save assessment review gate',
+      'PUT'
+    );
   },
 
   async deliverAssessment(

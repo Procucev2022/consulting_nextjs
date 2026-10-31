@@ -12,6 +12,7 @@ import type {
 } from './pcbiCommodityCoverage';
 
 export type PCBIResearchPriorityReason = 'RANKED_BY_CUSTOMER_SPEND' | 'SPEND_LINK_REQUIRED' | 'GAP_RESOLVED';
+export type PCBICommodityResearchWorkflowStatus = 'QUEUED' | 'RESEARCHING' | 'BLOCKED' | 'READY_FOR_REVIEW' | 'COMPLETED';
 
 export type PCBIDomainType =
   | 'CUSTOMER_PURCHASE_HISTORY'
@@ -78,6 +79,9 @@ export interface CommodityResearchQueueRow {
   researchStatus: PCBIResearchStatus;
   assignedTo: string | null;
   assignedAt: string | null;
+  workflowStatus: PCBICommodityResearchWorkflowStatus;
+  workflowDueDate: string | null;
+  workflowNotes: string;
   lastUpdated: string;
   action: string;
 }

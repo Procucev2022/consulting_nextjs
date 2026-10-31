@@ -1,6 +1,6 @@
 import PptxGenJS from 'pptxgenjs';
 import { EXECUTIVE_BRIEF_CONTENT_TYPES } from '../constants/executiveBriefExportConstants';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT } from '../constants/executiveOpportunityBriefConstants';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT, EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT } from '../constants/executiveOpportunityBriefConstants';
 import type { ExecutiveOpportunityBriefReport } from '../types';
 import { PdfCanvas } from '../utils/pdfCanvas';
 
@@ -83,6 +83,12 @@ const addPdfPage = (canvas: PdfCanvas, report: ExecutiveOpportunityBriefReport, 
   canvas.rect(0, 0, PAGE_WIDTH, 8, { fill: '#1769E0' });
   canvas.text(SLIDE_TITLES[slideIndex], MARGIN, 58, { font: 'bold', fontSize: 25, color: '#172033' });
   canvas.text(report.tenant.enterpriseName, MARGIN, 88, { fontSize: 12, color: '#5B6472' });
+  canvas.text(EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_LABELS[report.dataClassification], MARGIN, 108, {
+    font: 'bold', fontSize: 9,
+    color: report.dataClassification === 'DEMO_ONLY'
+      ? EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_COLORS.demo
+      : EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_COLORS.standard
+  });
   const rows = getExecutiveOpportunityBriefSlideRows(report, slideIndex).slice(0, MAX_ROWS);
   rows.forEach((row, index) => {
     const y = 142 + (index * ROW_GAP);
@@ -90,7 +96,7 @@ const addPdfPage = (canvas: PdfCanvas, report: ExecutiveOpportunityBriefReport, 
     canvas.text(row, MARGIN + 12, y - 2, { fontSize: 12, color: '#172033' });
   });
   canvas.line(MARGIN, PAGE_HEIGHT - 48, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 48, '#DCE3EC');
-  canvas.text(FOOTER, MARGIN, PAGE_HEIGHT - 28, { fontSize: 8, color: '#5B6472' });
+  canvas.text(`${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_LABELS[report.dataClassification]} | ${FOOTER}`, MARGIN, PAGE_HEIGHT - 28, { fontSize: 8, color: '#5B6472' });
   canvas.text(`${slideIndex + 1} / ${SLIDE_TITLES.length}`, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 28, {
     fontSize: 8,
     color: '#5B6472',
@@ -125,6 +131,12 @@ export const generateExecutiveOpportunityBriefPptx = async (
     slide.background = { color: 'F7F9FC' };
     slide.addText(title, { x: 0.6, y: 0.35, w: 8.8, h: 0.55, fontFace: 'Arial', fontSize: 24, bold: true, color: '172033' });
     slide.addText(report.tenant.enterpriseName, { x: 0.6, y: 0.95, w: 8.8, h: 0.3, fontFace: 'Arial', fontSize: 11, color: '5B6472' });
+    slide.addText(EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_LABELS[report.dataClassification], {
+      x: 0.6, y: 1.25, w: 8.8, h: 0.2, fontFace: 'Arial', fontSize: 9,
+      bold: true, color: report.dataClassification === 'DEMO_ONLY'
+        ? EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_COLORS.demo.slice(1)
+        : EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_COLORS.standard.slice(1)
+    });
     const rows = getExecutiveOpportunityBriefSlideRows(report, index)
       .slice(0, EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.MAX_ROWS);
     slide.addText(rows.map((text) => ({ text, options: { bullet: { indent: 14 }, breakLine: true } })), {
@@ -138,7 +150,7 @@ export const generateExecutiveOpportunityBriefPptx = async (
       paraSpaceAfter: 12,
       valign: 'top'
     });
-    slide.addText(`${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.FOOTER} | ${index + 1} / ${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.SLIDE_TITLES.length}`, {
+    slide.addText(`${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_LABELS[report.dataClassification]} | ${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.FOOTER} | ${index + 1} / ${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.SLIDE_TITLES.length}`, {
       x: 0.6,
       y: 5.2,
       w: 8.8,
@@ -169,4 +181,44 @@ export const executiveOpportunityBriefFilename = (
     EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.TENANT_FALLBACK;
   const safeDate = EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.DATE_PATTERN.test(reportDate) ? reportDate : 'undated';
   return `${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.PDF_NAME_PREFIX}${safeTenant}_${safeDate}.${format}`;
+};
+
+const escapeMarkdownCell = (value: string): string => value
+  .replace(EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.NEWLINE_PATTERN, ' ')
+  .replace(EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.PIPE_PATTERN, EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.PIPE_ESCAPE);
+
+const moneyCell = (value: number): string => value.toFixed(EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.DECIMAL_PLACES);
+
+export const formatExecutiveOpportunityBriefAuditMarkdown = (report: ExecutiveOpportunityBriefReport): string => {
+  const { metrics } = report;
+  const opportunities = report.opportunities.length > 0
+    ? report.opportunities.map((item) => `| ${escapeMarkdownCell(item.category)} | ${escapeMarkdownCell(item.title)} | ${moneyCell(item.estimatedSavingsCr)} | ${escapeMarkdownCell(item.status)} | ${escapeMarkdownCell(item.riskLevel)} |`)
+    : [`| ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.NO_OPPORTUNITIES} |  |  |  |  |`];
+  const rows = [
+    EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.TITLE,
+    '',
+    `- **${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.GENERATED_LABEL}:** ${escapeMarkdownCell(report.generatedAt)}`,
+    `- **${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.TENANT_LABEL}:** ${escapeMarkdownCell(report.tenant.enterpriseName)} (${escapeMarkdownCell(report.tenant.tenantId)})`,
+    `- **${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.DATA_CLASSIFICATION_LABEL}:** ${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.CLASSIFICATION_LABELS[report.dataClassification]}`,
+    `- **${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.SCOPE_LABEL}:** ${escapeMarkdownCell(report.scopeDescription)}`,
+    '',
+    EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.SUMMARY_HEADING,
+    '',
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.TRANSACTIONS_LABEL}: ${metrics.transactionCount}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.SPEND_LABEL}: ${moneyCell(metrics.totalSpendCr)}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.SUPPLIERS_LABEL}: ${metrics.supplierCount}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.MATERIALS_LABEL}: ${metrics.materialCount}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.PLANTS_LABEL}: ${metrics.plantCount}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.PURCHASE_ORDERS_LABEL}: ${metrics.purchaseOrderCount}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.OPPORTUNITIES_LABEL}: ${metrics.opportunityCount}`,
+    `- ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.SAVINGS_LABEL}: ${moneyCell(metrics.estimatedSavingsCr)}`,
+    '',
+    EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.OPPORTUNITY_HEADING,
+    '',
+    `| ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.CATEGORY_HEADER} | ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.OPPORTUNITY_HEADER} | ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.ESTIMATED_SAVINGS_HEADER} | ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.STATUS_HEADER} | ${EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.RISK_HEADER} |`,
+    EXECUTIVE_OPPORTUNITY_BRIEF_AUDIT.MARKDOWN_HEADER_SEPARATOR,
+    ...opportunities,
+    ''
+  ];
+  return `${rows.join('\n')}\n`;
 };

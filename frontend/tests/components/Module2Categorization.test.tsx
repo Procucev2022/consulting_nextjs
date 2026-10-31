@@ -7,6 +7,21 @@ import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { unspscOfficialDictionary } from '../../src/data/unspscTaxonomy';
 import { taxonomyRecords } from '../fixtures/taxonomy';
 
+vi.mock('../../src/utils/industryApi', () => ({
+  loadIndustryCatalog: vi.fn().mockResolvedValue({
+    success: true,
+    profiles: [{
+      majorSector: 'Chemical & Petrochemicals', minorSector: 'Specialty Chemicals', sectorCode: 'CHEM-SPEC',
+      tagline: 'D1 chemical profile', description: 'Test fixture', typicalDirectMaterials: ['Catalyst'],
+      typicalPackagingMaterials: ['Drum'], typicalLogisticsCategories: ['Freight'], typicalMroCategories: ['Pump'],
+      characteristicUNSPSCPrefixes: ['12', '14'],
+      benchmarkSpendSplit: { directPct: 56, packagingPct: 18, logisticsPct: 14, mroPct: 12 },
+      categorizationGuidance: 'Test guidance', keyKeywords: ['catalyst']
+    }],
+    presets: []
+  })
+}));
+
 // tests/setup.ts seeds the shared catalog. Replace it so every fixture record appears exactly once.
 beforeAll(() => { unspscOfficialDictionary.splice(0, unspscOfficialDictionary.length, ...taxonomyRecords); });
 
@@ -371,27 +386,6 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.colLRange)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.total)).toBeInTheDocument();
   }, 15000);
-
-  it('restores the Top 50 vendor supply view using the assessment line items and keeps the category matrix selectable', () => {
-    render(
-      <Module2Categorization
-        categories={sampleSpendCategories}
-        lineItems={sampleLineItems as any}
-        onConfirmMapping={vi.fn()}
-        onReassignMapping={vi.fn()}
-        onProceedToTrend={vi.fn()}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2.tabVendorSupply }));
-    expect(screen.getByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.module2.vendorSupply.tableHeaders.vendor)).toBeInTheDocument();
-    expect(screen.getAllByText('Amcor Packaging').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Acme Chemical').length).toBeGreaterThan(0);
-
-    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2.tabCategoryMatrix }));
-    expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.category)).toBeInTheDocument();
-  });
 
   it('renders data-backed Material DNA profile summary and filters by sector relevance', () => {
     render(

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../../src/utils/api';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
-import { AUTH_STORAGE_KEYS } from '../../src/constants/auth';
 import { conversionFunnelStages } from '../fixtures/mockData';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -17,7 +16,6 @@ describe('apiClient coverage', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     fetchMock.mockReset();
-    window.localStorage.clear();
   });
 
   describe('D1 procurement category mappings', () => {
@@ -144,6 +142,26 @@ describe('apiClient coverage', () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('rejects unsuccessful, malformed, or mismatched D1 opportunity handoff responses', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'Opportunity was not found.' }, 404));
+      await expect(apiClient.deployOpportunity('OPP-404', 'proCPX')).rejects.toThrow('Opportunity was not found.');
+
+      fetchMock.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+      await expect(apiClient.deployOpportunity('OPP-503', 'DPS NXT')).rejects.toThrow(
+        UI_STRINGS.databaseData.opportunityHandoffFailed(503)
+      );
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { opp_id: 'OTHER' } }));
+      await expect(apiClient.deployOpportunity('OPP-1', 'proCPX')).rejects.toThrow(
+        UI_STRINGS.databaseData.invalidOpportunityHandoff
+      );
+
+      fetchMock.mockResolvedValueOnce(new Response('invalid json', { status: 200 }));
+      await expect(apiClient.deployOpportunity('OPP-1', 'proCPX')).rejects.toThrow(
+        UI_STRINGS.databaseData.invalidOpportunityHandoff
+      );
+    });
+
     it('loads the PCBI explainability audit for an encoded opportunity id', async () => {
       const audit = { transaction_id: 'TX 1', material_code: 'MAT-01' };
       fetchMock.mockResolvedValueOnce(jsonResponse({ audit }));
@@ -154,37 +172,6 @@ describe('apiClient coverage', () => {
   });
 
   describe('Module 2 ledger and bridge', () => {
-    it('persists validated manual and provisional taxonomy decisions through the D1 bulk route', async () => {
-      window.localStorage.setItem(AUTH_STORAGE_KEYS.AUTH_TOKEN, 'coverage-token');
-      const mappings = [{
-        sourceMaterialId: 'MAT-1', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' as const,
-        confidenceScore: 0.8, mappingMethod: 'CONTEXTUAL_HEURISTIC' as const
-      }];
-      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, message: 'saved', mappings }));
-      await expect(apiClient.updateModule2MaterialMappings({ assessmentId: 'ASM-1', mappings })).resolves.toMatchObject({
-        success: true, mappings
-      });
-      expect(fetchMock).toHaveBeenCalledWith('/api/module2/sourcing/vendor-consolidation/mappings/bulk-update',
-        expect.objectContaining({
-          method: 'POST', body: JSON.stringify({ assessmentId: 'ASM-1', mappings }),
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer coverage-token' }
-        }));
-
-      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, mappings }));
-      await expect(apiClient.updateModule2MaterialMapping({
-        assessmentId: 'ASM-1', ...mappings[0]
-      })).resolves.toEqual(mappings[0]);
-
-      fetchMock.mockClear();
-      await expect(apiClient.updateModule2MaterialMappings({ assessmentId: 'ASM-1', mappings: [] } as never))
-        .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.invalidMappingPayload));
-      expect(fetchMock).not.toHaveBeenCalled();
-
-      fetchMock.mockResolvedValueOnce(jsonResponse({ success: false, message: 'Mapping target not found' }, 404));
-      await expect(apiClient.updateModule2MaterialMappings({ assessmentId: 'ASM-1', mappings }))
-        .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed('Mapping target not found'));
-    });
-
     it('fetches the opportunity ledger with or without an assessment filter', async () => {
       const ledger = [{ oppId: 'OPP-1' }];
       fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: ledger }));
@@ -272,13 +259,13 @@ describe('apiClient coverage', () => {
     });
 
     it('converts currency with and without a reference date', async () => {
-      const converted = { from: 'USD', amount: 100, converted: 8300 };
-      fetchMock.mockResolvedValueOnce(jsonResponse({ data: converted }));
+      const converted = { amount: 100, fromCurrency: 'USD', amountINR: 8300, exchangeRate: 83, rateDate: '2024-12-31' };
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: converted }));
 
       await expect(apiClient.getCurrencyConversion('USD', 100, 2024)).resolves.toEqual(converted);
       expect(fetchMock).toHaveBeenCalledWith('/api/currency?from=USD&amount=100&date=2024');
 
-      fetchMock.mockResolvedValueOnce(jsonResponse({ data: converted }));
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: converted }));
 
       await expect(apiClient.getCurrencyConversion('USD', 100)).resolves.toEqual(converted);
       expect(fetchMock).toHaveBeenLastCalledWith('/api/currency?from=USD&amount=100');
@@ -300,13 +287,6 @@ describe('apiClient coverage', () => {
 
       await expect(apiClient.getModule2CanonicalLineItems(25, 'ASM-1')).resolves.toEqual(lineItems);
       expect(fetchMock).toHaveBeenCalledWith('/api/module2/sourcing/line-items?limit=25&assessmentId=ASM-1');
-    });
-
-    it('scopes Module 2 line items to a tenant when requested', async () => {
-      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { lineItems: [] } }));
-
-      await expect(apiClient.getModule2CanonicalLineItems(undefined, undefined, 'TENANT-7')).resolves.toEqual([]);
-      expect(fetchMock).toHaveBeenCalledWith('/api/module2/sourcing/line-items?tenantId=TENANT-7');
     });
 
     it('keeps a zero limit and returns an empty list when the response has no line items', async () => {

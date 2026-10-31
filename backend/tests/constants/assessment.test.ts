@@ -10,8 +10,10 @@ import {
   MANDATORY_MODULE_GATES,
   REVIEW_GATES,
   DELIVERY_PACKAGE_ITEMS_SPEC,
-  VGT_INVARIANT_FIGURES,
-  VGT_CERTIFIED_OPPORTUNITY_FIGURES,
+  ASSESSMENT_DELIVERY_CONTENT_TYPES,
+  ASSESSMENT_DELIVERY_ARTIFACT_LAYOUT,
+  ASSESSMENT_DELIVERY_ARTIFACT_LABELS,
+  ASSESSMENT_DELIVERY_MODULE_METRIC_KEYS,
   SYSTEM_BUILD_IDENTITY,
   PERSISTENCE_ENVIRONMENTS,
   PERSISTENCE_CONFIG
@@ -125,54 +127,28 @@ describe('Assessment Constants (constants/assessment.ts)', () => {
         fileSuffix: '_Consolidated_Evidence_Workbook.xlsx'
       });
     });
-  });
 
-  describe('certified VGT figures', () => {
-    it('should keep the invariant figures as certified', () => {
-      expect(VGT_INVARIANT_FIGURES.SOURCE_ROWS).toBe(20505);
-      expect(VGT_INVARIANT_FIGURES.VALID_ROWS).toBe(20241);
-      expect(VGT_INVARIANT_FIGURES.SUPPLIER_COUNT).toBe(529);
-      expect(VGT_INVARIANT_FIGURES.OPERATING_PLANT_COUNT).toBe(19);
-      expect(VGT_INVARIANT_FIGURES.BILLING_MONTHS_COUNT).toBe(10);
-    });
-
-    it('should freeze the opportunity figures and keep them arithmetically consistent', () => {
-      expect(Object.isFrozen(VGT_CERTIFIED_OPPORTUNITY_FIGURES)).toBe(true);
-
-      const figures = VGT_CERTIFIED_OPPORTUNITY_FIGURES;
-      expect(figures.VALIDATED_SPEND_CR).toBe(VGT_INVARIANT_FIGURES.VALID_FX_NORMALIZED_SPEND_CR);
-      expect(figures.BASELINE_SPEND_CR).toBe(VGT_INVARIANT_FIGURES.BASELINE_PROFILE_SPEND_CR);
-      expect(figures.FX_IMPACT_CR).toBe(VGT_INVARIANT_FIGURES.FX_METHODOLOGY_IMPACT_CR);
-      expect(figures.VALIDATED_SPEND_CR - figures.BASELINE_SPEND_CR).toBeCloseTo(figures.FX_IMPACT_CR, 3);
-      expect(figures.GROSS_OPPORTUNITY_CR - figures.OVERLAP_DEDUCTIONS_CR).toBeCloseTo(
-        figures.NET_DEFENSIBLE_OPPORTUNITY_CR,
-        6
-      );
-      expect(figures.NET_DEFENSIBLE_OPPORTUNITY_CR).toBeGreaterThanOrEqual(figures.PROVEN_OPPORTUNITY_CR);
-      expect(figures.DELIVERY_RANGE_MIN_CR).toBeLessThanOrEqual(figures.DELIVERY_RANGE_MAX_CR);
-      expect((figures.POTENTIAL_SAVINGS_CR / figures.VALIDATED_SPEND_CR) * 100).toBeCloseTo(figures.SAVINGS_PCT, 1);
+    it('defines content types, layout bounds, and no-fabrication report copy', () => {
+      expect(ASSESSMENT_DELIVERY_CONTENT_TYPES.PDF).toBe('application/pdf');
+      expect(ASSESSMENT_DELIVERY_CONTENT_TYPES.PPTX).toContain('presentationml');
+      expect(ASSESSMENT_DELIVERY_CONTENT_TYPES.XLSX).toContain('spreadsheetml');
+      expect(ASSESSMENT_DELIVERY_ARTIFACT_LAYOUT.PAGE_WIDTH).toBeGreaterThan(ASSESSMENT_DELIVERY_ARTIFACT_LAYOUT.LEFT);
+      expect(ASSESSMENT_DELIVERY_ARTIFACT_LAYOUT.PAGE_HEIGHT).toBeGreaterThan(ASSESSMENT_DELIVERY_ARTIFACT_LAYOUT.BOTTOM);
+      expect(ASSESSMENT_DELIVERY_ARTIFACT_LABELS.noMetrics).toContain('No persisted analytical metrics');
+      expect(ASSESSMENT_DELIVERY_ARTIFACT_LABELS.noRecommendations).toContain('No D1-backed');
+      expect(ASSESSMENT_DELIVERY_MODULE_METRIC_KEYS).toEqual({
+        MODULE_1_REPORT: 'module1Metrics',
+        MODULE_2_REPORT: 'module2Metrics',
+        PCBI_REPORT: 'pcbiMetrics',
+        MODULE_4_REPORT: 'module4Metrics'
+      });
     });
   });
 
   describe('SYSTEM_BUILD_IDENTITY', () => {
-    it('should be frozen and carry well-formed identifiers and checksums', () => {
+    it('should be frozen and expose the application version', () => {
       expect(Object.isFrozen(SYSTEM_BUILD_IDENTITY)).toBe(true);
-      expect(SYSTEM_BUILD_IDENTITY.GIT_COMMIT).toMatch(/^[0-9a-f]{40}$/);
-
-      for (const checksum of [
-        SYSTEM_BUILD_IDENTITY.FX_MASTER_CHECKSUM,
-        SYSTEM_BUILD_IDENTITY.PCBI_MASTER_CHECKSUM,
-        SYSTEM_BUILD_IDENTITY.VGT_DATASET_CHECKSUM,
-        SYSTEM_BUILD_IDENTITY.EVIDENCE_WORKBOOK_CHECKSUM
-      ]) {
-        expect(checksum).toMatch(/^[0-9a-f]{64}$/);
-      }
-    });
-
-    it('should record a parseable ISO build timestamp and certified status', () => {
-      expect(new Date(SYSTEM_BUILD_IDENTITY.BUILD_TIMESTAMP).toISOString()).toBe(SYSTEM_BUILD_IDENTITY.BUILD_TIMESTAMP);
-      expect(SYSTEM_BUILD_IDENTITY.CERTIFICATION_STATUS).toBe('CERTIFIED');
-      expect(SYSTEM_BUILD_IDENTITY.OPERATING_MODE).toBe(APP_OPERATING_MODES.INTERNAL_ASSESSMENT);
+      expect(SYSTEM_BUILD_IDENTITY.APP_VERSION).toMatch(/^\d+\.\d+\.\d+$/u);
     });
   });
 

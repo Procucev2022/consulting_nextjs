@@ -35,6 +35,7 @@ import {
   SQL_INSERT_CHECKLIST,
   SQL_INSERT_CORRECTION,
   SQL_INSERT_NOTIFICATION,
+  SQL_UPDATE_NOTIFICATION_EMAIL,
   SQL_INSERT_REPORT,
   SQL_JOB_BY_ID,
   SQL_JOBS_ALL,
@@ -278,6 +279,19 @@ export const insertNotificationStatement = (
     row.email_last_error,
     row.created_at
   );
+
+export const updateNotificationEmailStatement = (
+  db: OrchestrationDatabase,
+  notificationId: string,
+  status: string,
+  lastError: string | null,
+  incrementRetry: boolean
+): CloudflareD1PreparedStatement => db.prepare(SQL_UPDATE_NOTIFICATION_EMAIL).bind(
+  status,
+  lastError,
+  incrementRetry ? 1 : 0,
+  notificationId
+);
 
 /** Adds the event id and timestamp to an audit draft. */
 export const buildAuditEvent = (

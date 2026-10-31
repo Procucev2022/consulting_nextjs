@@ -33,7 +33,7 @@ import { EXTRACTION_STATUS, CLASSIFICATION_STATUS } from './constants/ai';
 import type { AiCategorizationItem } from './types/ai';
 import {
   currencyQuerySchema, d1DatasetScopeSchema, deployOpportunitySchema, mergeVendorSchema,
-  taxonomyQuerySchema, updateValidationRecordSchema
+  taxonomyQuerySchema, updateValidationRecordSchema, calculateConversionMetricsSchema
 } from './constants/validation';
 import logger from './utils/logger';
 import { D1_REPORTING, D1_ROUTE_MESSAGES, D1_SCHEMA_TABLES_QUERY, D1_SCHEMA_COLUMNS_QUERY } from './constants/d1';
@@ -43,6 +43,8 @@ import { handleOrchestrationRoute } from './workerD1Orchestration';
 import { handleEvidenceRoute } from './workerD1Evidence';
 import { handleExecutiveBriefRoute } from './workerD1ExecutiveBrief';
 import { importIngestionWorkbook } from './services/ingestionWorkbookImporter';
+import { handleIndustryProfilesRoute } from './workerD1IndustryProfiles';
+import { handleModule2LogisticsPackagingRoute } from './workerD1Module2Logistics';
 
 let cachedGraphqlSchema: GraphQLSchema | undefined;
 
@@ -362,7 +364,7 @@ const handleIngestion = async (request: Request, environment: CloudflareEnvironm
   return { data: { success: false, message: 'Unsupported ingestion operation.' }, status: 405 };
 };
 
-const handleConversion = async (request: Request, environment: CloudflareEnvironment): Promise<Record<string, unknown>> => {
+const handleConversion = async (request: Request, environment: CloudflareEnvironment): Promise<{ data: Record<string, unknown> | unknown[]; status?: number }> => {
   if (request.method === 'GET') {
     const database = environment.DB;
     await ensureD1Tables(database);
@@ -370,10 +372,14 @@ const handleConversion = async (request: Request, environment: CloudflareEnviron
     const stages = await database.prepare('SELECT * FROM ConversionFunnelPhase ORDER BY phase_num ASC').all();
     return { data: stages.results || [] };
   }
-  const body = await readJson(request);
-  const annualSpendCr = Number(body.annualSpendCr || 0);
-  const savingsRate = Number(body.savingsRate || 0);
-  const saasFeeRate = Number(body.saasFeeRate || 0);
+  const parsed = calculateConversionMetricsSchema.safeParse(await readJson(request));
+  if (!parsed.success) {
+    return {
+      data: { success: false, message: 'Conversion inputs are invalid.', errors: parsed.error.issues },
+      status: 400
+    };
+  }
+  const { annualSpendCr, savingsRate, saasFeeRate } = parsed.data;
   const grossSavingsCr = annualSpendCr * savingsRate / 100;
   const platformFeeCr = annualSpendCr * saasFeeRate / 100;
   return { data: { annualSpendCr, savingsRate, saasFeeRate, grossSavingsCr, platformFeeCr, netClientBenefitCr: grossSavingsCr - platformFeeCr, roiMultiple: platformFeeCr > 0 ? grossSavingsCr / platformFeeCr : 0 } };
@@ -518,7 +524,7 @@ const handleStaticDataRoute = async (request: Request, environment: CloudflareEn
 const handleFinancialRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response | null> => {
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/conversion`) {
     const result = await handleConversion(request, environment);
-    return apiData(result.data, request);
+    return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/currency`) {
     const database = environment.DB;
@@ -755,6 +761,13 @@ const handleGraphQLRoute = async (request: Request, environment: CloudflareEnvir
 };
 
 const handleDataRoute = async (request: Request, environment: CloudflareEnvironment, url: URL): Promise<Response> => {
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/industry-profiles`) {
+    await ensureD1Tables(environment.DB);
+    const result = await handleIndustryProfilesRoute(environment.DB, request, url);
+    return result.status
+      ? jsonResponse(result.data as Record<string, unknown>, result.status, request)
+      : apiData(result.data, request);
+  }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/procurement/category-mappings` && request.method === 'GET') {
     await ensureD1Tables(environment.DB);
     if (!environment.DB) throw new Error('Cloudflare D1 binding DB is not configured');
@@ -772,6 +785,12 @@ const handleDataRoute = async (request: Request, environment: CloudflareEnvironm
     }, 400, request);
     const canonicalData = await getCanonicalModule1Data(environment.DB, scope.data.assessmentId);
     return apiData(canonicalData, request);
+  }
+  if (url.pathname === `${CLOUDFLARE_API_PREFIX}/module2/logistics-packaging`) {
+    const result = await handleModule2LogisticsPackagingRoute(environment.DB, request, url);
+    return result.status
+      ? jsonResponse(result.data as Record<string, unknown>, result.status, request)
+      : apiData(result.data, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/ingestion`)) return handleIngestionRoute(request, environment, url);
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/module2`)) {
@@ -793,11 +812,13 @@ const handleDataRoute = async (request: Request, environment: CloudflareEnvironm
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/assessment`)) {
     const subPath = url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/assessment`.length) || '/';
     const result = await handleAssessmentRoute(environment.DB, subPath, request, url, environment);
+    if (result.response) return withCors(result.response, request);
     return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/customers`)) {
     const subPath = '/customers' + (url.pathname.slice(`${CLOUDFLARE_API_PREFIX}/customers`.length) || '');
     const result = await handleAssessmentRoute(environment.DB, subPath, request, url, environment);
+    if (result.response) return withCors(result.response, request);
     return result.status ? jsonResponse(result.data as Record<string, unknown>, result.status, request) : apiData(result.data, request);
   }
   if (url.pathname.startsWith(`${CLOUDFLARE_API_PREFIX}/crypto`)) {

@@ -653,6 +653,30 @@ describe('approval and submission', () => {
     expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.reportSubmitted);
   });
 
+  it('reports email delivery after approval when the provider accepts the notification', async () => {
+    const generated = await generateReport();
+    await confirmChecklist();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'email-123' }), { status: 200 }));
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/approve-and-submit',
+      body: { reportVersionId: generated.body.report.reportVersionId }
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({
+      success: true,
+      emailStatus: 'SENT',
+      message: ORCHESTRATION_MESSAGES.reportSubmittedEmailSent
+    });
+  });
+
   it('refuses to approve a report that is no longer awaiting review', async () => {
     const reportId = await submitReport();
     const again = await adminCall({ method: 'POST', path: '/jobs/AIC-A1/approve-and-submit', body: { reportVersionId: reportId } });
@@ -994,6 +1018,123 @@ describe('resending notifications', () => {
     const audit = await adminCall({ path: '/audit-trail' });
     expect(audit.body.data.map((event: { eventType: string }) => event.eventType))
       .toContain('NOTIFICATION_RESEND_ATTEMPTED');
+  });
+
+  it('sends the report email and persists the SENT status when provider credentials and customer email exist', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: 'email-123' }), { status: 200 })
+    );
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ success: true, message: ORCHESTRATION_MESSAGES.notificationEmailSent });
+    expect(result.body.notification.emailDelivery).toMatchObject({ status: 'SENT', retryCount: 1 });
+    expect(harness.sqlite.prepare(
+      'SELECT email_status, email_retry_count FROM OrchestrationNotification ORDER BY created_at DESC LIMIT 1'
+    ).get()).toEqual({ email_status: 'SENT', email_retry_count: 1 });
+    expect(fetch).toHaveBeenCalledWith('https://api.resend.com/emails', expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer resend-test-token' })
+    }));
+    const requestBody = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body)) as { to: string[] };
+    expect(requestBody.to).toEqual(['finance@example.test']);
+  });
+
+  it('records a failed provider response and returns actionable resend guidance', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Provider rate limit' }), { status: 429 })
+    );
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.notificationProviderFailed('Provider rate limit'));
+    expect(result.body.notification.emailDelivery).toMatchObject({
+      status: 'FAILED',
+      retryCount: 1,
+      lastError: 'Provider rate limit'
+    });
+  });
+
+  it('records a provider network exception as FAILED and allows a later retry', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network unavailable'));
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.notificationProviderFailed('Network unavailable'));
+    expect(result.body.notification.emailDelivery).toMatchObject({ status: 'FAILED', lastError: 'Network unavailable' });
+  });
+
+  it('returns a server error if the email delivery result cannot be persisted', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'email-123' }), { status: 200 }));
+    raceHook = (sql, sqlite) => {
+      if (sql.includes('UPDATE OrchestrationNotification')) {
+        sqlite.prepare('DELETE FROM OrchestrationNotification').run();
+      }
+    };
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(500);
+  });
+
+  it('does not call the provider when the customer record has no contact email', async () => {
+    const reportId = await submitReport();
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    const fetch = vi.spyOn(globalThis, 'fetch');
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.notificationRecipientMissing);
+    expect(result.body.notification.emailDelivery.status).toBe('NOT_SENT');
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('refuses to resend for a report that has not been submitted', async () => {

@@ -487,10 +487,10 @@ describe('Module 2 Strategic Sourcing Frontend Component Suite', () => {
       expect(screen.getAllByText(UI_STRINGS.module2Sourcing.title).length).toBeGreaterThan(0);
     });
 
-    const lever7Btn = screen.getByTestId('subtab-btn-lever7-coming-soon');
+    const lever7Btn = screen.getByTestId('subtab-btn-logisticsPackaging');
     expect(lever7Btn).toBeInTheDocument();
-    expect(lever7Btn).toBeDisabled();
-    expect(screen.getByText('Lever 7: Logistics & Packaging Specifications')).toBeInTheDocument();
+    expect(lever7Btn).toBeEnabled();
+    expect(lever7Btn).toHaveTextContent(UI_STRINGS.module2Logistics.title);
 
     const strategyTabBtn = screen.getByTestId('subtab-btn-strategy');
     fireEvent.click(strategyTabBtn);

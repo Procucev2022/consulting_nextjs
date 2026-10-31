@@ -67,8 +67,20 @@ export interface CommodityResearchQueueRow {
   researchStatus: string;
   assignedTo?: string | null;
   assignedAt?: string | null;
+  workflowStatus: PCBIResearchWorkflowStatus;
+  workflowDueDate: string | null;
+  workflowNotes: string;
   lastUpdated: string;
   action: string;
+}
+
+export type PCBIResearchWorkflowStatus = 'QUEUED' | 'RESEARCHING' | 'BLOCKED' | 'READY_FOR_REVIEW' | 'COMPLETED';
+
+export interface PCBIResearchWorkflowUpdate {
+  assignee: string | null;
+  status: PCBIResearchWorkflowStatus;
+  dueDate: string | null;
+  notes: string;
 }
 
 export interface CommodityWorkspaceOverview {
@@ -173,7 +185,7 @@ export interface PCBICommodityResearchQueueTableProps {
   queue: CommodityResearchQueueRow[];
   onOpenWorkspace: (pcbiId: string) => void;
   onUploadSource?: (commodity: CommodityResearchQueueRow) => void;
-  onAssignResearcher?: (pcbiId: string, assignee: string | null) => Promise<void>;
+  onAssignResearcher?: (pcbiId: string, update: PCBIResearchWorkflowUpdate) => Promise<void>;
 }
 
 export interface PCBICommodityPromotionHistory {

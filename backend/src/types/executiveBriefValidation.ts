@@ -3,9 +3,9 @@
  */
 import type { z } from 'zod';
 import type {
-  executiveBriefClientQuerySchema,
+  executiveBriefEmailBodySchema,
   executiveBriefRegenerateBodySchema
 } from '../constants/executiveBriefValidation';
 
-export type ExecutiveBriefClientQuery = z.infer<typeof executiveBriefClientQuerySchema>;
 export type ExecutiveBriefRegenerateBody = z.infer<typeof executiveBriefRegenerateBodySchema>;
+export type ExecutiveBriefEmailBody = z.infer<typeof executiveBriefEmailBodySchema>;

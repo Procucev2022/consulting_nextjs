@@ -150,7 +150,10 @@ describe('StrategicSavingsSummaryBanner', () => {
   it('renders spend eligibility architecture callout text', () => {
     render(<StrategicSavingsSummaryBanner summaryMetrics={mockMetrics} />);
     expect(screen.getByText('Spend Eligibility Architecture:')).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.savingsInitiativesSummary.spendEligibilityExplanation)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.savingsInitiativesSummary.spendEligibilityExplanation(
+      mockMetrics.addressableSpendInrCr,
+      mockMetrics.overlapDeductionsInrCr
+    ))).toBeInTheDocument();
   });
 
   it('renders governance notice', () => {

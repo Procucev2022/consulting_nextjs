@@ -24,10 +24,8 @@ describe('AssessmentDeliveryTab', () => {
       approvedBy: 'lead.analyst@procucev.com',
       approvedAt: '2026-10-09T12:00:00.000Z',
       checksums: {
-        vgtDataset: '59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def',
-        fxMaster: '7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f',
-        pcbiMaster: 'df4299ffa183cb21c59d80f66e258604f5c376615d83a7a7d075dd53787e1411',
-        evidenceWorkbook: '0984faff14fa89db97a228da9a36b41d7990f9b3017c2ac263c872e163948be3'
+        sourceDataset: '59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def',
+        fxMaster: '7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f'
       },
       items: [
         { id: 'EXECUTIVE_OPPORTUNITY_BRIEF', title: 'Executive Opportunity Brief', format: 'PDF', analysisRunId: 'RUN-001', dataVersionId: 'DV-001', generatedAt: '2026-10-09T12:00:00.000Z', fileName: 'AIC-2026-0001_Executive_Opportunity_Brief.pdf' },
@@ -46,10 +44,30 @@ describe('AssessmentDeliveryTab', () => {
     render(<AssessmentDeliveryTab deliveryPackage={mockPackage} />);
 
     expect(screen.getByText('FY2023-24 (10 Months: Jun 2023 – Mar 2024)')).toBeInTheDocument();
-    expect(screen.getByText('10 of 10 Approved Items')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.delivery.manifestEntryCount(0, 10))).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.ASSESSMENT.delivery.notGenerated)).toHaveLength(10);
+    expect(screen.getByText(UI_STRINGS.ASSESSMENT.delivery.filesPending)).toBeInTheDocument();
     expect(screen.getByText('lead.analyst@procucev.com')).toBeInTheDocument();
     expect(screen.getByText('Executive Opportunity Brief')).toBeInTheDocument();
     expect(screen.getByText('Boardroom & Evidence Edition')).toBeInTheDocument();
     expect(screen.getByText('Recommended Wave 1 actions')).toBeInTheDocument();
+  });
+
+  it('shows a download link only for generated deliverables', () => {
+    const generatedItem = {
+      id: 'EXECUTIVE_OPPORTUNITY_BRIEF', title: 'Executive Opportunity Brief', format: 'PDF' as const,
+      artifactStatus: 'GENERATED' as const, analysisRunId: 'RUN-001', dataVersionId: 'DV-001',
+      generatedAt: '2026-10-09T12:00:00.000Z', fileName: 'report.pdf'
+    };
+    const deliveryPackage: DeliveryPackageResult = {
+      assessmentId: 'A-1', analysisRunId: 'RUN-001', dataVersionId: 'DV-001', customerName: 'Demo Client',
+      assessmentPeriod: '', packageTitle: 'Delivery Package', generatedAt: '2026-10-09T12:00:00.000Z',
+      approvedBy: 'analyst@example.test', approvedAt: '2026-10-09T12:00:00.000Z', releaseVersion: '1.0.0',
+      checksums: {}, items: [generatedItem]
+    };
+    render(<AssessmentDeliveryTab deliveryPackage={deliveryPackage} />);
+    expect(screen.getByTestId('download-assessment-artifact-EXECUTIVE_OPPORTUNITY_BRIEF'))
+      .toHaveAttribute('href', '/api/assessment/A-1/delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF');
+    expect(screen.queryByTestId('download-assessment-artifact-MODULE_1_REPORT')).not.toBeInTheDocument();
   });
 });

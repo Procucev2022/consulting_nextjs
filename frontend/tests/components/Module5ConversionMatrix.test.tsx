@@ -1,13 +1,19 @@
 import React from 'react';
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import confetti from 'canvas-confetti';
 import { Module5ConversionMatrix } from '../../src/components/Module5ConversionMatrix';
 import { mockTenant, mockConversionFunnel } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { authApiClient } from '../../src/utils/authApi';
+
+vi.mock('../../src/utils/apiBase', () => ({ getApiBaseUrl: () => 'https://backend.example.test' }));
 
 describe('Module5ConversionMatrix Component', () => {
-  afterEach(() => { vi.restoreAllMocks(); });
+  beforeEach(() => {
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('test-user-token');
+  });
+  afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
   it('renders all funnel stages and conversion matrix cards', () => {
     const onOpenReport = vi.fn();
     render(

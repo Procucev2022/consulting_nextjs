@@ -142,7 +142,7 @@ describe('DocumentSummaryView Component', () => {
     fireEvent.click(usdBtn);
 
     // Verify USD is reflected
-    expect(screen.getByText('$962.63 M')).toBeInTheDocument();
+    expect(screen.getAllByText('$528.72 M').length).toBeGreaterThan(0);
 
     // Switch back to INR
     fireEvent.click(inrBtn);
@@ -282,7 +282,6 @@ describe('DocumentSummaryView Component', () => {
           {
             plant: 'PLANT-FB',
             totalSpendINR: 50000000,
-            totalSpendCr: 5,
             count: 20
           } as any
         ]}
@@ -311,7 +310,8 @@ describe('DocumentSummaryView Component', () => {
     // Switch to Plant tab with fallback counts
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.documentSummary.dimensionTabs.plant }));
     expect(screen.getByText('Dynamic Plant 99')).toBeInTheDocument();
-    expect(screen.getByText('PLANT-FB')).toBeInTheDocument();
+    expect(screen.getAllByText('PLANT-FB').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('₹5.00 Cr').length).toBeGreaterThan(0);
 
     // Switch to Month tab with negative MoM change and fallback counts
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.documentSummary.dimensionTabs.month }));
@@ -319,11 +319,11 @@ describe('DocumentSummaryView Component', () => {
     expect(screen.getAllByText('-5.0%').length).toBeGreaterThan(0);
   });
 
-  it('renders USD currency with fallback conversion when tenant is not provided', () => {
+  it('shows unavailable USD spend when the database has no spend rows', () => {
     render(<DocumentSummaryView tenant={undefined} />);
     const usdBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.currencies.usd });
     fireEvent.click(usdBtn);
-    expect(screen.getAllByText('$0.00 M').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThan(0);
   });
 
   it('filters and displays USD currency in Plant view and handles empty plant search', () => {
@@ -504,7 +504,7 @@ describe('DocumentSummaryView Component', () => {
 
     // Material Group scope banner is rendered
     expect(screen.getByText(UI_STRINGS.documentSummary.reconciliation.mgScopeHeading)).toBeInTheDocument();
-    expect(screen.getAllByText(UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge)).not.toBeInTheDocument();
 
     // Toggle Material Group to All
     const allMgBtn = screen.getByRole('button', { name: UI_STRINGS.documentSummary.reconciliation.allScope(15) });

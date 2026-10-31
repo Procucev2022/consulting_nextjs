@@ -40,18 +40,25 @@ const buildProps = (
 });
 
 describe('IngestionUploadSection coverage', () => {
-  it('shows fallback metadata when a queued document omits its format, size, and upload time', () => {
+  it('shows unavailable metadata when D1 omits its format, size, and upload time', () => {
     render(
       <IngestionUploadSection
         {...buildProps({
-          ingestionQueue: [buildDocument({ file_type: '', file_size_mb: 0, uploaded_at: '' })]
+          ingestionQueue: [buildDocument({
+            file_type: '', file_size_mb: 0, uploaded_at: '', doc_id: '', records_count: undefined,
+            converted_inr_crores: undefined, detected_currencies: undefined
+          })]
         })}
       />
     );
 
-    expect(screen.getByText(/XLSX/)).toBeInTheDocument();
-    expect(screen.getByText(/Size: 1 MB/)).toBeInTheDocument();
-    expect(screen.getByText(/Just now/)).toBeInTheDocument();
+    expect(screen.getByText(module1.uploadMetadata(
+      module1.fileTypeUnavailable, module1.fileSizeUnavailable, module1.uploadTimeUnavailable
+    ))).toBeInTheDocument();
+    expect(screen.getByText(module1.recordCountUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(module1.evaluatedSpendUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(module1.detectedCurrenciesUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(/ID:\s*Unavailable/)).toBeInTheDocument();
   });
 
   it('shows the processing percentage for a document that is still being parsed', () => {
@@ -63,10 +70,10 @@ describe('IngestionUploadSection coverage', () => {
       />
     );
 
-    expect(screen.getByText(module1.processingStatus(45))).toBeInTheDocument();
+    expect(screen.getByText(module1.uploadProgress(45, 'Parsing OCR'))).toBeInTheDocument();
   });
 
-  it('defaults the progress to complete when a document reports no progress value', () => {
+  it('does not invent a completed progress value when D1 omits progress', () => {
     const { unmount } = render(
       <IngestionUploadSection
         {...buildProps({
@@ -74,7 +81,8 @@ describe('IngestionUploadSection coverage', () => {
         })}
       />
     );
-    expect(screen.getByText(/100%/)).toBeInTheDocument();
+    expect(screen.getByText('Completed')).toBeInTheDocument();
+    expect(screen.queryByText(/100%/)).not.toBeInTheDocument();
     unmount();
 
     render(
@@ -84,7 +92,8 @@ describe('IngestionUploadSection coverage', () => {
         })}
       />
     );
-    expect(screen.getByText(module1.processingStatus(100))).toBeInTheDocument();
+    expect(screen.getByText('Parsing OCR')).toBeInTheDocument();
+    expect(screen.queryByText(/100%/)).not.toBeInTheDocument();
   });
 
   it('deletes the queued document through the delete control when a handler is supplied', () => {
@@ -103,20 +112,21 @@ describe('IngestionUploadSection coverage', () => {
     expect(screen.queryByTestId('delete-uploaded-dataset-btn')).not.toBeInTheDocument();
   });
 
-  it('generates a document identifier and file name key when the record has no identifier', () => {
+  it('shows the identifier as unavailable when D1 has no document identifier', () => {
     render(<IngestionUploadSection {...buildProps({ ingestionQueue: [buildDocument({ doc_id: '' })] })} />);
 
-    expect(screen.getByText(/DOC-INGEST-1/)).toBeInTheDocument();
+    expect(screen.getByText(/ID:\s*Unavailable/)).toBeInTheDocument();
   });
 
-  it('lists the default detected currencies when the record reports none', () => {
+  it('shows detected currencies as unavailable when D1 reports none', () => {
     render(
       <IngestionUploadSection
         {...buildProps({ ingestionQueue: [buildDocument({ detected_currencies: undefined })] })}
       />
     );
 
-    expect(screen.getByText('EUR')).toBeInTheDocument();
-    expect(screen.getByText('USD')).toBeInTheDocument();
+    expect(screen.getByText(module1.detectedCurrenciesUnavailable)).toBeInTheDocument();
+    expect(screen.queryByText('EUR')).not.toBeInTheDocument();
+    expect(screen.queryByText('USD')).not.toBeInTheDocument();
   });
 });

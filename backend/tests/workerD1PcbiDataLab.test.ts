@@ -42,6 +42,9 @@ class LabStatement implements CloudflareD1PreparedStatement {
         : null;
     }
     if (this.sql.includes('PCBIBenchmarkMaster')) return (this.database.benchmark.pcbi_id === this.values[0] || !this.sql.includes('WHERE pcbi_id = ?') ? this.database.benchmark : null) as T | null;
+    if (this.sql.includes('PCBICommodityResearchWorkflow')) {
+      return (this.database.workflows.find((row) => row.pcbi_id === this.values[0]) || null) as T | null;
+    }
     return null;
   }
   async all<T>(): Promise<{ results: T[] }> {
@@ -71,6 +74,7 @@ class LabStatement implements CloudflareD1PreparedStatement {
       return { results: [...rows] as T[] };
     }
     if (this.sql.includes('PCBICommodityResearchAssignment')) return { results: [...this.database.assignments] as T[] };
+    if (this.sql.includes('PCBICommodityResearchWorkflow')) return { results: [...this.database.workflows] as T[] };
     return { results: [] };
   }
   async run(): Promise<unknown> {
@@ -101,6 +105,14 @@ class LabStatement implements CloudflareD1PreparedStatement {
       const existing = this.database.assignments.find((row) => row.pcbi_id === pcbi_id);
       if (existing) Object.assign(existing, { assigned_to, assigned_by, updated_at });
       else this.database.assignments.push({ pcbi_id, assigned_to, assigned_by, assigned_at, updated_at });
+    } else if (this.sql.includes('INSERT INTO PCBICommodityResearchWorkflow')) {
+      const [pcbi_id, status, due_date, notes, updated_by, updated_at] = this.values;
+      const existing = this.database.workflows.find((row) => row.pcbi_id === pcbi_id);
+      if (existing) Object.assign(existing, { status, due_date, notes, updated_by, updated_at });
+      else this.database.workflows.push({ pcbi_id, status, due_date, notes, updated_by, updated_at });
+    } else if (this.sql.includes('DELETE FROM PCBICommodityResearchWorkflow')) {
+      const workflowIndex = this.database.workflows.findIndex((row) => row.pcbi_id === this.values[0]);
+      if (workflowIndex >= 0) this.database.workflows.splice(workflowIndex, 1);
     } else if (this.sql.includes('DELETE FROM PCBICommodityResearchAssignment')) {
       const assignmentIndex = this.database.assignments.findIndex((row) => row.pcbi_id === this.values[0]);
       if (assignmentIndex >= 0) this.database.assignments.splice(assignmentIndex, 1);
@@ -118,6 +130,7 @@ class LabDatabase implements CloudflareD1Database {
   readonly observations: PCBICommodityObservationRow[] = [];
   readonly promotions: PCBICommodityPromotionRow[] = [];
   readonly assignments: Array<{ pcbi_id: string; assigned_to: string; assigned_by: string; assigned_at: string; updated_at: string }> = [];
+  readonly workflows: Array<{ pcbi_id: string; status: string; due_date: string | null; notes: string; updated_by: string; updated_at: string }> = [];
   readonly spendRows: PCBICommoditySpendByUnspscRow[] = [];
   readonly unspscMappings: Record<string, unknown>[] = [];
   publishedPayload: Record<string, unknown> | null = null;
@@ -177,21 +190,29 @@ describe('D1 Commodity Data Lab', () => {
     const db = new LabDatabase();
     const env = environment(db);
     const assigned = await route(env, '/assignment', 'POST', {
-      pcbiId: BENCHMARK.pcbi_id, assignee: 'researcher@example.test'
+      pcbiId: BENCHMARK.pcbi_id, assignee: 'researcher@example.test', status: 'RESEARCHING',
+      dueDate: '2026-11-07', notes: 'Confirm source coverage.'
     });
     expect(assigned.data).toMatchObject({
       success: true,
-      assignment: { pcbiId: BENCHMARK.pcbi_id, assignedTo: 'researcher@example.test', assignedBy: 'admin@example.test' }
+      assignment: {
+        pcbiId: BENCHMARK.pcbi_id, assignedTo: 'researcher@example.test', assignedBy: 'admin@example.test',
+        workflowStatus: 'RESEARCHING', dueDate: '2026-11-07', notes: 'Confirm source coverage.'
+      }
     });
     expect(db.assignments).toHaveLength(1);
     expect((await route(env, '/queue')).data).toMatchObject({
-      queue: [{ pcbiId: BENCHMARK.pcbi_id, assignedTo: 'researcher@example.test', assignedAt: expect.any(String) }]
+      queue: [{
+        pcbiId: BENCHMARK.pcbi_id, assignedTo: 'researcher@example.test', assignedAt: expect.any(String),
+        workflowStatus: 'RESEARCHING', workflowDueDate: '2026-11-07', workflowNotes: 'Confirm source coverage.'
+      }]
     });
 
     const unassigned = await route(env, '/assignment', 'POST', { pcbiId: BENCHMARK.pcbi_id, assignee: null });
     expect(unassigned.data).toMatchObject({ success: true, assignment: null });
     expect((await route(env, '/queue')).data).toMatchObject({ queue: [{ assignedTo: null, assignedAt: null }] });
     expect(db.assignments).toHaveLength(0);
+    expect(db.workflows).toHaveLength(0);
   });
 
   it('rejects invalid assignments, unknown benchmark IDs, malformed JSON, and unsupported methods', async () => {

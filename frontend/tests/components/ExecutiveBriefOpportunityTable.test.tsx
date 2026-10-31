@@ -1,72 +1,88 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { ExecutiveBriefOpportunityTable } from '../../src/components/executiveBrief/ExecutiveBriefOpportunityTable';
-import {
-  EXECUTIVE_BRIEF_EXPORT_STRINGS,
-  EXECUTIVE_BRIEF_OPPORTUNITY_ROWS,
-  EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN
-} from '../../src/constants';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { fetchExecutiveOpportunityBriefReport } from '../../src/utils/executiveOpportunityBriefApi';
+import type { ExecutiveOpportunityBriefReportData } from '../../src/types';
+
+vi.mock('../../src/utils/executiveOpportunityBriefApi', () => ({
+  fetchExecutiveOpportunityBriefReport: vi.fn()
+}));
+
+const report: ExecutiveOpportunityBriefReportData = {
+  tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+  dataClassification: 'DEMO_ONLY',
+  generatedAt: '2026-10-30T00:00:00.000Z',
+  scopeDescription: 'Demo seed data is illustrative and not validated customer results.',
+  metrics: {
+    transactionCount: 12, totalSpendCr: 125.5, supplierCount: 4, materialCount: 6,
+    plantCount: 2, purchaseOrderCount: 9, firstTransactionDate: '2024-01-01', lastTransactionDate: '2025-12-31',
+    opportunityCount: 1, estimatedSavingsCr: 10.25, averageConfidence: 0.87
+  },
+  opportunities: [{
+    id: 'O1', category: 'Packaging', title: 'Packaging sourcing', currentSpendCr: 50,
+    estimatedSavingsCr: 10.25, lever: 'Strategic sourcing', recommendedAction: 'Launch a tender',
+    status: 'Identified', riskLevel: 'Medium', confidence: 0.9
+  }],
+  levers: [{ label: 'Strategic sourcing', count: 1, estimatedSavingsCr: 10.25 }],
+  statuses: [{ label: 'Identified', count: 1, estimatedSavingsCr: 10.25 }],
+  risks: [{ label: 'Medium', count: 1, estimatedSavingsCr: 10.25 }]
+};
+
+const successfulResult = { ok: true as const, data: report };
 
 describe('ExecutiveBriefOpportunityTable', () => {
-  const strings = EXECUTIVE_BRIEF_EXPORT_STRINGS;
-  const oppStrings = strings.opportunityTable;
-  const dblStrings = strings.doubleCountingControl;
+  beforeEach(() => vi.mocked(fetchExecutiveOpportunityBriefReport).mockResolvedValue(successfulResult));
+  afterEach(() => vi.clearAllMocks());
 
-  it('renders Section 13 double-counting prevention metrics correctly', () => {
+  it('loads the D1 tenant report and renders metrics, provenance, group summaries, and opportunities', async () => {
     render(<ExecutiveBriefOpportunityTable />);
-
-    expect(screen.getByText(dblStrings.sectionTitle)).toBeInTheDocument();
-    expect(screen.getByText(dblStrings.subtitle)).toBeInTheDocument();
-    expect(screen.getByText(dblStrings.grossTitle)).toBeInTheDocument();
-    expect(screen.getAllByText(EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.grossIdentifiedCr).length).toBeGreaterThan(0);
-    expect(screen.getByText(dblStrings.overlapTitle)).toBeInTheDocument();
-    expect(screen.getAllByText(EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.overlapAdjustmentCr).length).toBeGreaterThan(0);
-    expect(screen.getByText(dblStrings.exclusionTitle)).toBeInTheDocument();
-    expect(screen.getAllByText(EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.exclusionsCr).length).toBeGreaterThan(0);
-    expect(screen.getByText(dblStrings.netTitle)).toBeInTheDocument();
-    expect(screen.getAllByText(EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.netDefensibleCr).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(dblStrings.productivityTitle).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(dblStrings.strategicRiskTitle).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('status')).toHaveTextContent(UI_STRINGS.opportunityBrief.reportLoading);
+    expect(await screen.findByTestId('executive-brief-opportunity-panel')).toBeInTheDocument();
+    expect(screen.getByText(report.tenant.enterpriseName)).toBeInTheDocument();
+    expect(screen.getByTestId('executive-brief-data-classification')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.classificationValues.DEMO_ONLY
+    );
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.currencyCr(125.5))).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.opportunityBrief.currencyCr(10.25))).toHaveLength(2);
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.countValue(12))).toBeInTheDocument();
+    expect(screen.getAllByText(report.opportunities[0].lever)).toHaveLength(2);
+    expect(screen.getByText(report.opportunities[0].recommendedAction)).toBeInTheDocument();
   });
 
-  it('renders Section 14 analysis-wise table headers and all analytical rows', () => {
-    render(<ExecutiveBriefOpportunityTable />);
-
-    expect(screen.getByText(oppStrings.sectionTitle)).toBeInTheDocument();
-    expect(screen.getByText(oppStrings.subtitle)).toBeInTheDocument();
-    expect(screen.getByText(oppStrings.colAnalysis)).toBeInTheDocument();
-    expect(screen.getAllByText(oppStrings.colAddressableSpend).length).toBeGreaterThan(0);
-    expect(screen.getByText(oppStrings.colAssumptionMethod)).toBeInTheDocument();
-    expect(screen.getByText(oppStrings.colIndicativeOpportunity)).toBeInTheDocument();
-    expect(screen.getByText(oppStrings.colBenefitType)).toBeInTheDocument();
-    expect(screen.getByText(oppStrings.colConfidence)).toBeInTheDocument();
-    expect(screen.getByText(oppStrings.colPrimaryAction)).toBeInTheDocument();
-
-    for (const row of EXECUTIVE_BRIEF_OPPORTUNITY_ROWS) {
-      expect(screen.getAllByText(row.analysis).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(row.indicativeOpportunity).length).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it('renders Section 16 CFO governance note disclaimer', () => {
-    render(<ExecutiveBriefOpportunityTable />);
-    expect(screen.getByText(oppStrings.cfoNote)).toBeInTheDocument();
-  });
-
-  it('invokes onDrillOpportunity when a row is clicked', () => {
+  it('drills into an opportunity by its D1 identifier when a callback is provided', async () => {
     const onDrill = vi.fn();
     render(<ExecutiveBriefOpportunityTable onDrillOpportunity={onDrill} />);
-
-    const firstRowText = screen.getAllByText(EXECUTIVE_BRIEF_OPPORTUNITY_ROWS[0].analysis)[0];
-    fireEvent.click(firstRowText);
-
-    expect(onDrill).toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: 'O1' }));
+    expect(onDrill).toHaveBeenCalledWith('O1');
   });
 
-  it('handles row click safely when onDrillOpportunity is undefined', () => {
+  it('shows explicit empty states for tenants without D1 opportunities or breakdown rows', async () => {
+    vi.mocked(fetchExecutiveOpportunityBriefReport).mockResolvedValueOnce({
+      ok: true,
+      data: { ...report, opportunities: [], levers: [], statuses: [], risks: [], metrics: { ...report.metrics, opportunityCount: 0 } }
+    });
     render(<ExecutiveBriefOpportunityTable />);
-    const rowText = screen.getAllByText(EXECUTIVE_BRIEF_OPPORTUNITY_ROWS[1].analysis)[0];
-    expect(() => fireEvent.click(rowText)).not.toThrow();
+    expect(await screen.findByText(UI_STRINGS.opportunityBrief.noOpportunities)).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.opportunityBrief.noGroups)).toHaveLength(3);
+  });
+
+  it('reports D1 failures and allows retrying the opportunity panel', async () => {
+    vi.mocked(fetchExecutiveOpportunityBriefReport)
+      .mockResolvedValueOnce({ ok: false, statusCode: 503, requestId: 'req-d1' })
+      .mockResolvedValueOnce(successfulResult);
+    render(<ExecutiveBriefOpportunityTable />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportUnavailable(503, 'req-d1')
+    );
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.opportunityBrief.retryPanel }));
+    expect(await screen.findByTestId('executive-brief-opportunity-panel')).toBeInTheDocument();
+  });
+
+  it('shows the network-specific failure message when the API helper unexpectedly rejects', async () => {
+    vi.mocked(fetchExecutiveOpportunityBriefReport).mockRejectedValueOnce(new Error('offline'));
+    render(<ExecutiveBriefOpportunityTable />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.opportunityBrief.reportUnavailableNetwork);
   });
 });

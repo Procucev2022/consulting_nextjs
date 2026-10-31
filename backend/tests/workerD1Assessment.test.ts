@@ -387,4 +387,67 @@ describe('workerD1Assessment handler', () => {
     const notFound = await handleAssessmentRoute(emptyDb, '/AIC-2026-9999', req('/AIC-2026-9999'), new URL('https://consulting.edge/api/assessment/AIC-2026-9999'));
     expect(notFound.status).toBe(404);
   });
+
+  it('reads and persists evidence-backed review gates in D1 with role and schema validation', async () => {
+    const fixture = createWorkerDatabase();
+    fixture.db.prepare(`INSERT INTO AssessmentRecord (
+      assessment_id, customer_id, customer_name, industry, assessment_owner, status
+    ) VALUES (?, ?, ?, ?, ?, ?)`).run('A-GATES', 'C-GATES', 'Gate Demo', 'Manufacturing', 'analyst@example.test', 'ANALYST_REVIEW');
+    const url = new URL('https://consulting.edge/api/assessment/A-GATES/review-gates');
+    try {
+      const getRequest = new Request(url, { method: 'GET' });
+      const initial = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', getRequest, url);
+      expect(initial.data).toHaveLength(26);
+      expect((initial.data as Array<{ status: string }>).every((gate) => gate.status === 'PENDING')).toBe(true);
+
+      const updateRequest = new Request(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-user-role': 'ANALYST', 'x-user-email': 'reviewer@example.test' },
+        body: JSON.stringify({
+          gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED',
+          evidenceReference: 'D1:AssessmentDataVersion/DV-1', reviewNote: 'Rows reconciled'
+        })
+      });
+      const updated = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', updateRequest, url);
+      expect((updated.data as Array<{ gateKey: string; status: string; reviewedBy: string | null }>)
+        .find((gate) => gate.gateKey === 'M1_INPUT_ROW_RECONCILIATION'))
+        .toMatchObject({ status: 'PASSED', reviewedBy: 'reviewer@example.test' });
+
+      const blockedRequest = new Request(url, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gateKey: 'M1_CURRENCY_NORMALIZATION', status: 'BLOCKED', reviewNote: 'FX evidence is incomplete' })
+      });
+      const blocked = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', blockedRequest, url);
+      expect((blocked.data as Array<{ gateKey: string; status: string; reviewedBy: string | null }>)
+        .find((gate) => gate.gateKey === 'M1_CURRENCY_NORMALIZATION'))
+        .toMatchObject({ status: 'BLOCKED', reviewedBy: 'analyst@procucev.com' });
+
+      const resetRequest = new Request(url, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gateKey: 'M1_CURRENCY_NORMALIZATION', status: 'PENDING' })
+      });
+      const reset = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', resetRequest, url);
+      expect((reset.data as Array<{ gateKey: string; status: string; reviewedBy: string | null }>)
+        .find((gate) => gate.gateKey === 'M1_CURRENCY_NORMALIZATION'))
+        .toMatchObject({ status: 'PENDING', reviewedBy: null });
+      expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentAuditLog').get().count).toBe(3);
+
+      const invalidRequest = new Request(url, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED' })
+      });
+      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', invalidRequest, url)).status).toBe(400);
+
+      const forbiddenRequest = new Request(url, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-user-role': 'CUSTOMER' },
+        body: JSON.stringify({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PENDING' })
+      });
+      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', forbiddenRequest, url)).status).toBe(403);
+
+      const missingRequest = new Request('https://consulting.edge/api/assessment/UNKNOWN/review-gates', { method: 'GET' });
+      expect((await handleAssessmentRoute(fixture.d1, '/UNKNOWN/review-gates', missingRequest, new URL(missingRequest.url))).status).toBe(404);
+    } finally {
+      fixture.close();
+    }
+  });
 });

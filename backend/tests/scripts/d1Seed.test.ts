@@ -9,10 +9,16 @@ import { loadCanonicalAssessmentFromD1 } from '../../src/services/workerD1Canoni
 
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require('node:sqlite');
-const { splitSqlStatements, splitSeedParts, verifySeedManifest } = require('../../scripts/d1-seed-tools');
+const { splitSqlStatements, splitSeedParts, verifySeedManifest, shouldSeedDatabase } = require('../../scripts/d1-seed-tools');
 const backendRoot = path.resolve(__dirname, '../..');
 
 describe('durable D1 migration', () => {
+  it('seeds base rows for either the seed or seed-all CLI flag', () => {
+    expect(shouldSeedDatabase(['node', 'db-push.js'])).toBe(false);
+    expect(shouldSeedDatabase(['node', 'db-push.js', '--seed'])).toBe(true);
+    expect(shouldSeedDatabase(['node', 'db-push.js', '--seed-all'])).toBe(true);
+  });
+
   it('splits SQL without changing quoted customer text or comments', () => {
     const sql = "BEGIN TRANSACTION;\nINSERT INTO x VALUES ('customer;\n\nvalue ''quoted''', \"a;b\", `a;b`); -- comment;\n/* block; */ SELECT 2; COMMIT;";
     expect(splitSqlStatements(sql)).toEqual([
@@ -132,6 +138,57 @@ describe('durable D1 migration', () => {
       }
       expect(database.prepare('SELECT COUNT(*) AS count FROM PCBIWeeklyReference').get().count).toBe(0);
     } finally { database.close(); }
+  });
+
+  it('seeds clearly labeled PCBI demo assignments idempotently without overwriting later assignments', () => {
+    const manifest = verifySeedManifest(backendRoot) as D1SeedManifest;
+    const seedFile = 'd1-pcbi-research-assignment-demo-seed.sql';
+    expect(manifest.seedFiles).toContain(seedFile);
+    const database = new DatabaseSync(':memory:');
+    try {
+      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-schema.sql'), 'utf8'));
+      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-reference-schema.sql'), 'utf8'));
+      const source = fs.readFileSync(path.join(backendRoot, seedFile), 'utf8');
+      database.exec(source);
+      database.prepare('UPDATE PCBICommodityResearchAssignment SET assigned_to = ? WHERE pcbi_id = ?')
+        .run('analyst@example.test', 'PCBI-BRG-COMP-001');
+      database.exec(source);
+
+      const rows = database.prepare(
+        'SELECT pcbi_id, assigned_to, assigned_by FROM PCBICommodityResearchAssignment ORDER BY pcbi_id'
+      ).all() as Array<{ pcbi_id: string; assigned_to: string; assigned_by: string }>;
+      expect(rows).toHaveLength(3);
+      expect(rows.find((row) => row.pcbi_id === 'PCBI-BRG-COMP-001')).toMatchObject({
+        assigned_to: 'analyst@example.test', assigned_by: 'DEMO SEED'
+      });
+      expect(rows.filter((row) => row.assigned_to.startsWith('DEMO ONLY -'))).toHaveLength(2);
+    } finally { database.close(); }
+  });
+
+  it('seeds all assessment demo review gates as pending without inventing evidence', () => {
+    const manifest = verifySeedManifest(backendRoot) as D1SeedManifest;
+    const seedFile = 'd1-assessment-review-gates-demo-seed.sql';
+    expect(manifest.seedFiles).toContain(seedFile);
+    const database = new DatabaseSync(':memory:');
+    try {
+      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-schema.sql'), 'utf8'));
+      for (const assessmentId of ['AIC-2026-0001', 'AIC-2026-0002', 'AIC-2026-0003']) {
+        database.prepare(`INSERT INTO AssessmentRecord (
+          assessment_id, customer_id, customer_name, industry, assessment_owner
+        ) VALUES (?, ?, ?, ?, ?)`).run(assessmentId, 'C-DEMO', 'Demo Assessment', 'Manufacturing', 'analyst@example.test');
+      }
+      const source = fs.readFileSync(path.join(backendRoot, seedFile), 'utf8');
+      database.exec(source);
+      database.exec(source);
+
+      expect(database.prepare('SELECT COUNT(*) AS count FROM AssessmentReviewGate').get().count).toBe(78);
+      expect(database.prepare(`SELECT COUNT(*) AS count FROM AssessmentReviewGate
+        WHERE status <> 'PENDING' OR evidence_reference IS NOT NULL OR review_note IS NOT NULL`).get().count).toBe(0);
+      expect(database.prepare(`SELECT COUNT(*) AS count FROM AssessmentReviewGate
+        WHERE assessment_id = ?`).get('AIC-2026-0001').count).toBe(26);
+    } finally {
+      database.close();
+    }
   });
 
   it('restores the complete manifest on a clean database with valid assessment snapshots', async () => {

@@ -7,8 +7,7 @@ import {
   PCBI_EXCLUSION_REASON_CODES,
   PCBI_RESOLUTION_ACTIONS,
   REANALYSIS_REASONS,
-  DEFAULT_QUALITY_GATE_CHECKLIST,
-  INITIAL_PCBI_BENCHMARK_SERIES
+  DEFAULT_QUALITY_GATE_CHECKLIST
 } from '../../src/constants/analysisOrchestration';
 
 describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
@@ -51,11 +50,5 @@ describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
     expect(DEFAULT_QUALITY_GATE_CHECKLIST.pcbi.requiredPcbiCategoriesResolved).toBe(false);
     expect(DEFAULT_QUALITY_GATE_CHECKLIST.financial.savingsCalculationsValidated).toBe(false);
     expect(DEFAULT_QUALITY_GATE_CHECKLIST.report.module1Reviewed).toBe(false);
-  });
-
-  it('should export initial PCBI benchmark series', () => {
-    expect(INITIAL_PCBI_BENCHMARK_SERIES.length).toBeGreaterThanOrEqual(5);
-    expect(INITIAL_PCBI_BENCHMARK_SERIES[0].seriesId).toBeDefined();
-    expect(INITIAL_PCBI_BENCHMARK_SERIES[0].quality).toBeDefined();
   });
 });

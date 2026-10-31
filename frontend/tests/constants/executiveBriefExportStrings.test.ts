@@ -26,6 +26,10 @@ describe('EXECUTIVE_BRIEF_EXPORT_STRINGS', () => {
     expect(EXECUTIVE_BRIEF_EXPORT_STRINGS.checklists.module4).toBe('Module 4 ✓');
   });
 
+  it('should describe metric references without claiming unverified lineage certification', () => {
+    expect(EXECUTIVE_BRIEF_EXPORT_STRINGS.summaryCards.evidenceNote).toBe('Metric source references are shown below');
+  });
+
   it('should format dynamic metadata strings', () => {
     expect(EXECUTIVE_BRIEF_EXPORT_STRINGS.metadata.lastGenerated('01-Oct-2026')).toBe(
       'Last generated: 01-Oct-2026'

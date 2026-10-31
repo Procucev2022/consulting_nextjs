@@ -39,4 +39,20 @@ describe('ExecutiveBriefRegenerateConfirmModal', () => {
     fireEvent.click(screen.getByTestId('cancel-regenerate-btn'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('shows the regenerating state and prevents duplicate actions', () => {
+    render(
+      <ExecutiveBriefRegenerateConfirmModal
+        isOpen
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        isRegenerating
+      />
+    );
+
+    expect(screen.getByTestId('confirm-regenerate-btn')).toBeDisabled();
+    expect(screen.getByTestId('cancel-regenerate-btn')).toBeDisabled();
+    expect(screen.getByTestId('close-regenerate-modal-btn')).toBeDisabled();
+    expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.formats.regenerating)).toBeInTheDocument();
+  });
 });

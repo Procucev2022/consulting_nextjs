@@ -5,7 +5,7 @@
 
 const JOB_SELECT = `
 SELECT
-  a.assessment_id, a.customer_id, a.customer_name, a.assessment_owner,
+  a.assessment_id, a.customer_id, a.customer_name, c.contact_email AS customer_contact_email, a.assessment_owner,
   a.assessment_period_start, a.assessment_period_end, a.total_spend_cr AS record_spend_cr,
   a.created_at, a.updated_at,
   cur.data_version_id AS current_version_id, cur.uploaded_by AS current_uploaded_by,
@@ -21,6 +21,7 @@ SELECT
     WHERE qc.report_version_id = rpt.report_version_id
     ORDER BY qc.created_at DESC, qc.checklist_id DESC LIMIT 1) AS checklist_complete
 FROM AssessmentRecord a
+LEFT JOIN CustomerRecord c ON c.customer_id = a.customer_id
 LEFT JOIN AssessmentDataVersion cur ON cur.data_version_id = (
   SELECT d.data_version_id FROM AssessmentDataVersion d WHERE d.assessment_id = a.assessment_id
   ORDER BY d.version_number DESC, d.uploaded_at DESC, d.data_version_id DESC LIMIT 1)
@@ -213,6 +214,11 @@ INSERT INTO OrchestrationNotification (
   notification_id, recipient_type, tenant_id, assessment_id, report_version_id, title, message, severity,
   read_flag, email_status, email_last_error, email_retry_count, created_at
 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, ?10, 0, ?11)`;
+
+export const SQL_UPDATE_NOTIFICATION_EMAIL = `
+UPDATE OrchestrationNotification
+SET email_status = ?1, email_last_error = ?2, email_retry_count = email_retry_count + ?3
+WHERE notification_id = ?4`;
 
 export const SQL_INSERT_AUDIT_EVENT = `
 INSERT INTO OrchestrationAuditEvent (

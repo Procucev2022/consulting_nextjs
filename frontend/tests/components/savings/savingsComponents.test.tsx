@@ -140,10 +140,10 @@ describe('Savings Components Suite', () => {
       expect(screen.getByText('₹3.20 Cr')).toBeInTheDocument();
     });
 
-    it('renders default metrics when waterfallMetrics prop is omitted', () => {
-      render(<SavingsWaterfallSection waterfallMetrics={undefined as unknown as SavingsWaterfallMetrics} />);
+    it('reports unavailable metrics when D1 has no waterfall for the assessment', () => {
+      render(<SavingsWaterfallSection />);
       expect(screen.getByText(UI_STRINGS.module4.savingsWaterfall.title)).toBeInTheDocument();
-      expect(screen.getByText(UI_STRINGS.module4.savingsWaterfall.steps.totalSpend)).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(UI_STRINGS.module4.savingsWaterfall.dataUnavailable);
     });
 
     it('handles zero spend waterfall metrics gracefully', () => {
@@ -163,6 +163,25 @@ describe('Savings Components Suite', () => {
         />
       );
       expect(screen.getByText(UI_STRINGS.module4.savingsWaterfall.title)).toBeInTheDocument();
+    });
+
+    it('defaults missing D1 metric values to zero without fabricating totals', () => {
+      const sparseMetrics = {
+        ...mockWaterfall,
+        total_spend_inr_cr: undefined,
+        addressable_spend_inr_cr: undefined,
+        gross_potential_savings_inr_cr: undefined,
+        deduplicated_overlap_inr_cr: undefined,
+        net_potential_savings_inr_cr: undefined,
+        validated_savings_inr_cr: undefined,
+        approved_savings_inr_cr: undefined,
+        realized_savings_inr_cr: undefined
+      } as unknown as SavingsWaterfallMetrics;
+
+      render(<SavingsWaterfallSection waterfallMetrics={sparseMetrics} />);
+
+      expect(screen.getByText(UI_STRINGS.module4.savingsWaterfall.title)).toBeInTheDocument();
+      expect(screen.getAllByText(UI_STRINGS.common.croreAmount('0.00')).length).toBeGreaterThanOrEqual(7);
     });
   });
 

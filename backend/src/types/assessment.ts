@@ -242,10 +242,14 @@ export interface DeliveryPackageItem {
   id: string;
   title: string;
   format: 'PDF' | 'PPTX' | 'XLSX';
+  artifactStatus: 'NOT_GENERATED' | 'GENERATED';
   analysisRunId: string;
   dataVersionId: string;
   generatedAt: string;
   fileName: string;
+  storageKey?: string;
+  contentType?: string;
+  encryptionIv?: string;
 }
 
 export interface DeliveryPackageResult {
@@ -263,52 +267,23 @@ export interface DeliveryPackageResult {
   items: DeliveryPackageItem[];
 }
 
-export interface SystemBuildInfo {
-  applicationVersion: string;
-  buildNumber: string;
-  gitCommit: string;
-  buildTimestamp: string;
-  operatingMode: string;
-  certificationStatus: string;
-  e2eCertificationId: string;
-  fxMaster: {
-    version: string;
-    checksum: string;
-  };
-  pcbiMaster: {
-    version: string;
-    checksum: string;
-  };
-  vgtDatasetChecksum?: string;
-  evidenceWorkbookChecksum?: string;
-  moduleVersions?: {
-    module1: string;
-    module2: string;
-    module3: string;
-    module4: string;
-  };
-  persistence?: PersistenceInfo;
+export type AssessmentReviewGateStatus = 'PENDING' | 'PASSED' | 'BLOCKED';
+
+export interface AssessmentReviewGateRecord {
+  assessmentId: string;
+  gateKey: string;
+  status: AssessmentReviewGateStatus;
+  evidenceReference: string | null;
+  reviewNote: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
 }
 
-export interface PersistenceInfo {
-  environment: PersistenceEnvironment;
-  activeDataDir: string;
-  sanitizedPath: string;
-  isTestIsolated: boolean;
-  storeExists: boolean;
-  assessmentCount: number;
+export interface AssessmentReviewGateUpdate {
+  gateKey: string;
+  status: AssessmentReviewGateStatus;
+  evidenceReference?: string;
+  reviewNote?: string;
 }
 
-export interface PersistedStoreData {
-  version: number;
-  updatedAt: string;
-  nextSequence: number;
-  nextCustomerSequence?: number;
-  customers?: CustomerRecord[];
-  assessments: AssessmentRecord[];
-  dataVersions: Record<string, AssessmentDataVersion[]>;
-  analysisRuns: Record<string, AssessmentAnalysisRun[]>;
-  auditLogs: Record<string, AssessmentAuditLog[]>;
-}
-
-
+export type { SystemBuildInfo, PersistenceInfo, PersistedStoreData } from './assessmentPersistence';

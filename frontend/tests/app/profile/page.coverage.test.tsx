@@ -26,7 +26,6 @@ const USE_DOCUMENT_BUTTON_LABEL = 'Use this Document';
 const DARK_THEME_TITLE = 'Switch to Dark Theme';
 const LIGHT_THEME_TITLE = 'Switch to Light Theme';
 const THEME_STORAGE_KEY = 'procucev_theme';
-const UPLOADED_DATASET_KEY = 'procucev_uploaded_dataset';
 const SESSION_TOKEN = 'session-token-123';
 
 const PROFILE_USER: UserProfile = {
@@ -523,14 +522,12 @@ describe('ProfilePage coverage', () => {
     await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_SHARED.doc_id, undefined));
   });
 
-  it('stores a document for the workspace and navigates to the home page', async () => {
+  it('passes the selected D1 document id to the workspace route', async () => {
     await renderProfile();
 
     fireEvent.click(screen.getAllByRole('button', { name: USE_DOCUMENT_BUTTON_LABEL })[0]);
 
-    const stored = JSON.parse(window.sessionStorage.getItem(UPLOADED_DATASET_KEY) as string) as { doc: RawDocumentIngestion };
-    expect(stored.doc.doc_id).toBe(DOC_OWN.doc_id);
-    expect(mockPush).toHaveBeenCalledWith('/');
+    expect(mockPush).toHaveBeenCalledWith(`/?documentId=${encodeURIComponent(DOC_OWN.doc_id)}`);
   });
 
   it('signs out, clears the stored session, and returns to the sign-in page', async () => {

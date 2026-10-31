@@ -9,6 +9,7 @@ interface TestDbOptions {
   opportunityMetrics?: Record<string, unknown> | null;
   opportunities?: Array<Record<string, unknown>>;
   groups?: Array<Record<string, unknown>>;
+  provenance?: Record<string, unknown> | null;
   undefinedResults?: boolean;
 }
 
@@ -19,6 +20,9 @@ const makeDatabase = (options: TestDbOptions = {}): CloudflareD1Database => ({
       async first<T>(): Promise<T | null> {
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
           return (options.transaction ?? null) as T | null;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenantProvenance) {
+          return (options.provenance ?? null) as T | null;
         }
         return (options.opportunityMetrics ?? null) as T | null;
       },
@@ -59,6 +63,7 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
   it('normalizes D1 numeric values and nullable opportunity fields into a report', async () => {
     const result = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
       tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
+      provenance: { classification: 'DEMO_ONLY' },
       transaction: {
         ...defaultTransaction(), total_spend_cr: 'not-a-number', first_transaction_date: null, last_transaction_date: null
       },
@@ -73,6 +78,8 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.report.generatedAt).toBe('2026-10-30T00:00:00.000Z');
+    expect(result.report.dataClassification).toBe('DEMO_ONLY');
+    expect(result.report.scopeDescription).toContain('not validated customer results');
     expect(result.report.metrics.totalSpendCr).toBe(0);
     expect(result.report.metrics.firstTransactionDate).toBeNull();
     expect(result.report.metrics.lastTransactionDate).toBeNull();
@@ -99,5 +106,20 @@ describe('loadExecutiveOpportunityBriefFromD1', () => {
     expect(result.report.levers).toEqual([]);
     expect(result.report.statuses).toEqual([]);
     expect(result.report.risks).toEqual([]);
+  });
+
+  it('labels mixed and unrecognized provenance without treating unknown values as demo data', async () => {
+    const mixed = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
+      transaction: defaultTransaction(),
+      provenance: { classification: 'MIXED' }
+    }));
+    const unknown = await loadExecutiveOpportunityBriefFromD1(makeDatabase({
+      tenants: [{ tenant_id: 'T1', enterprise_name: 'Enterprise' }],
+      transaction: defaultTransaction(),
+      provenance: { classification: 'INVALID' }
+    }));
+    expect(mixed.ok && mixed.report.scopeDescription).toContain('both demo seed data');
+    expect(unknown.ok && unknown.report).toMatchObject({ dataClassification: 'CUSTOMER_DATA' });
   });
 });

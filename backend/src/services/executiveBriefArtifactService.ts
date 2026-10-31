@@ -1,81 +1,93 @@
-/**
- * Renders Executive Brief artifacts from the certified report and publishes the set to R2. Downloads render on
- * request. Regenerate stores the four stable-named artifacts under executive-brief/<client>/<filename>.
- */
+/** Renders and publishes Executive Brief artifacts from the current D1 report. */
 import type { CloudflareR2Bucket } from '../types/cloudflare';
-import type { ExecutiveBriefReportData } from '../types/executiveBriefExportTypes';
+import type { ExecutiveOpportunityBriefReport } from '../types/executiveOpportunityBrief';
 import type {
   ExecutiveBriefFormat,
   ExecutiveBriefRenderedArtifact,
   ExecutiveBriefStoredArtifact
 } from '../types/executiveBriefServices';
 import {
-  EXECUTIVE_BRIEF_ARTIFACT_FILENAMES,
   EXECUTIVE_BRIEF_CONTENT_TYPES,
   EXECUTIVE_BRIEF_PUBLISHED_FORMATS,
   JSON_INDENT_SPACES
 } from '../constants/executiveBriefExportConstants';
-import { renderExecutiveBriefPdf } from './executiveBriefPdfRenderer';
-import { generateExecutiveBriefPptx } from './executiveBriefPptxGenerator';
-import { formatExecutiveBriefAuditMarkdown } from './executiveBriefMarkdown';
-import { buildExecutiveBriefStorageKey, buildOfficialExecutiveBriefFilename } from './executiveBriefFilenames';
+import {
+  executiveOpportunityBriefContentType,
+  executiveOpportunityBriefFilename,
+  formatExecutiveOpportunityBriefAuditMarkdown,
+  generateExecutiveOpportunityBriefPdf,
+  generateExecutiveOpportunityBriefPptx
+} from './executiveOpportunityBriefExport';
+import { buildExecutiveBriefStorageKey } from './executiveBriefFilenames';
 
 const encoder = new TextEncoder();
 
+const reportDateFor = (report: ExecutiveOpportunityBriefReport): string => report.generatedAt.slice(0, 10);
+
+const datedArtifactFilename = (
+  report: ExecutiveOpportunityBriefReport,
+  extension: 'json' | 'md'
+): string => {
+  const pdfFilename = executiveOpportunityBriefFilename(report.tenant.enterpriseName, 'pdf', reportDateFor(report));
+  const extensionIndex = pdfFilename.lastIndexOf('.');
+  return `${pdfFilename.slice(0, extensionIndex)}.${extension}`;
+};
+
 export const renderExecutiveBriefArtifact = async (
   format: ExecutiveBriefFormat,
-  report: ExecutiveBriefReportData
+  report: ExecutiveOpportunityBriefReport
 ): Promise<ExecutiveBriefRenderedArtifact> => {
-  const clientName = report.clientProfile.clientName;
-  const reportDate = report.metadata.reportDate;
+  const date = reportDateFor(report);
+  const pdfFilename = executiveOpportunityBriefFilename(report.tenant.enterpriseName, 'pdf', date);
+  const pptxFilename = executiveOpportunityBriefFilename(report.tenant.enterpriseName, 'pptx', date);
   switch (format) {
     case 'pdf':
       return {
         format,
-        filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.PDF,
-        downloadFilename: buildOfficialExecutiveBriefFilename(clientName, 'pdf', reportDate),
-        contentType: EXECUTIVE_BRIEF_CONTENT_TYPES.PDF,
-        body: renderExecutiveBriefPdf(report)
+        filename: pdfFilename,
+        downloadFilename: pdfFilename,
+        contentType: executiveOpportunityBriefContentType('pdf'),
+        body: generateExecutiveOpportunityBriefPdf(report)
       };
     case 'pptx':
       return {
         format,
-        filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.PPTX,
-        downloadFilename: buildOfficialExecutiveBriefFilename(clientName, 'pptx', reportDate),
-        contentType: EXECUTIVE_BRIEF_CONTENT_TYPES.PPTX,
-        body: await generateExecutiveBriefPptx(report)
+        filename: pptxFilename,
+        downloadFilename: pptxFilename,
+        contentType: executiveOpportunityBriefContentType('pptx'),
+        body: await generateExecutiveOpportunityBriefPptx(report)
       };
-    case 'json':
+    case 'json': {
+      const filename = datedArtifactFilename(report, 'json');
       return {
         format,
-        filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.JSON,
-        downloadFilename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.JSON,
+        filename,
+        downloadFilename: filename,
         contentType: EXECUTIVE_BRIEF_CONTENT_TYPES.JSON,
         body: encoder.encode(`${JSON.stringify(report, null, JSON_INDENT_SPACES)}\n`)
       };
-    case 'markdown':
+    }
+    case 'markdown': {
+      const filename = datedArtifactFilename(report, 'md');
       return {
         format,
-        filename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.AUDIT,
-        downloadFilename: EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.AUDIT,
+        filename,
+        downloadFilename: filename,
         contentType: EXECUTIVE_BRIEF_CONTENT_TYPES.MARKDOWN,
-        body: encoder.encode(formatExecutiveBriefAuditMarkdown(report))
+        body: encoder.encode(formatExecutiveOpportunityBriefAuditMarkdown(report))
       };
+    }
   }
 };
 
-/**
- * Renders every published format in order and writes each one to R2. Returns the stored keys and sizes. A failed write
- * stops the sequence, so earlier objects may already be replaced.
- */
 export const publishExecutiveBriefArtifacts = async (
   bucket: CloudflareR2Bucket,
-  report: ExecutiveBriefReportData
+  report: ExecutiveOpportunityBriefReport
 ): Promise<ExecutiveBriefStoredArtifact[]> => {
   const stored: ExecutiveBriefStoredArtifact[] = [];
   for (const format of EXECUTIVE_BRIEF_PUBLISHED_FORMATS) {
     const artifact = await renderExecutiveBriefArtifact(format, report);
-    const key = buildExecutiveBriefStorageKey(report.clientProfile.clientName, artifact.filename);
+    const key = buildExecutiveBriefStorageKey(report.tenant.enterpriseName, artifact.filename);
     await bucket.put(key, artifact.body, { httpMetadata: { contentType: artifact.contentType } });
     stored.push({
       key,

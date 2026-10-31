@@ -1,88 +1,165 @@
-import React from 'react';
-import { MODULE_GATES_LIST } from '../../constants';
-import type { AssessmentChecklistTabProps } from '../../types';
+import React, { useState } from 'react';
+import { ASSESSMENT_MODULES, MODULE_GATES_LIST } from '../../constants';
+import { UI_STRINGS } from '../../constants/uiStrings';
+import type { AssessmentChecklistTabProps, AssessmentReviewGateStatus } from '../../types';
 
-export const AssessmentChecklistTab: React.FC<AssessmentChecklistTabProps> = ({ assessment }) => {
+export const AssessmentChecklistTab: React.FC<AssessmentChecklistTabProps> = ({
+  assessment, gates, savingGateKey, onSaveGate
+}) => {
+  const [drafts, setDrafts] = useState<Record<string, { evidenceReference: string; reviewNote: string }>>({});
+  const [saveFailedGateKey, setSaveFailedGateKey] = useState<string | null>(null);
   const isApproved = assessment.status === 'APPROVED' || assessment.status === 'DELIVERED';
-  const hasAnalysis = Boolean(assessment.activeAnalysisRunId);
+  const labels = UI_STRINGS.assessmentChecklist;
+  const gateByKey = new Map(gates.map((gate) => [gate.gateKey, gate]));
+  const pendingCount = MODULE_GATES_LIST.filter((gate) => gateByKey.get(gate.key)?.status !== 'PASSED').length;
 
-  const modules = ['Module 1', 'Module 2', 'Module 3', 'Module 4'] as const;
-
-  const moduleSubtitles: Record<string, string> = {
-    'Module 1': 'Data Ingestion, FX Normalization & Population Reconciliation (7 Gates)',
-    'Module 2': 'Strategic Sourcing Levers & Overlap Methodology (6 Gates)',
-    'Module 3': 'PCBI Price Indexation & Analytical Signal Isolation (7 Gates)',
-    'Module 4': 'Savings Engine Lineage & Forensic Evidence Completeness (6 Gates)'
+  const saveGate = async (gateKey: string, status: AssessmentReviewGateStatus): Promise<void> => {
+    const persisted = gateByKey.get(gateKey);
+    const draft = drafts[gateKey];
+    const evidenceReference = draft?.evidenceReference ?? persisted?.evidenceReference ?? '';
+    const reviewNote = draft?.reviewNote ?? persisted?.reviewNote ?? '';
+    const saved = await onSaveGate({ gateKey, status, evidenceReference, reviewNote });
+    setSaveFailedGateKey(saved ? null : gateKey);
+    if (saved) {
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[gateKey];
+        return next;
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-2">
         <div>
-          <h3 className="text-sm font-bold text-white tracking-wide">
-            Analyst Review Checklist — 26 Mandatory Gates
-          </h3>
-          <p className="text-xs text-slate-400">
-            Rigorous multi-module sign-off gates required prior to executive packaging and customer delivery.
-          </p>
+          <h3 className="text-sm font-bold text-white tracking-wide">{labels.heading}</h3>
+          <p className="text-xs text-slate-400">{labels.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-1 rounded bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono">
-            {hasAnalysis ? (isApproved ? '26 / 26 PASS' : '26 / 26 READY') : '0 / 26 PENDING'}
+            {labels.evidencePendingCount(pendingCount)}
           </span>
           <span className={`px-2.5 py-1 rounded text-xs font-bold border ${
             isApproved
               ? 'bg-emerald-950 border-emerald-800 text-emerald-400'
               : 'bg-amber-950 border-amber-800 text-amber-400'
           }`}>
-            {isApproved ? 'CERTIFIED & APPROVED' : 'ANALYST REVIEW'}
+            {isApproved ? labels.approvedStatus : labels.analystReviewStatus}
           </span>
         </div>
       </div>
 
-      {modules.map((mod) => {
-        const gates = MODULE_GATES_LIST.filter((g) => g.module === mod);
+      {ASSESSMENT_MODULES.map((moduleName, moduleIndex) => {
+        const gates = MODULE_GATES_LIST.filter((gate) => gate.module === moduleName);
+        const moduleSubtitle = [
+          labels.moduleSubtitles.module1,
+          labels.moduleSubtitles.module2,
+          labels.moduleSubtitles.module3,
+          labels.moduleSubtitles.module4
+        ][moduleIndex];
+
         return (
-          <div key={mod} className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-sm">
+          <div key={moduleName} className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-sm">
             <div className="px-4 py-3 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">{mod}</span>
-                <h4 className="text-xs font-bold text-white">{moduleSubtitles[mod]}</h4>
+                <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">{moduleName}</span>
+                <h4 className="text-xs font-bold text-white">{moduleSubtitle}</h4>
               </div>
               <span className="text-[10px] font-mono text-slate-400">
-                {gates.length} Gates
+                {gates.length} {labels.gateCount}
               </span>
             </div>
 
             <div className="divide-y divide-slate-800/60">
-              {gates.map((g) => (
-                <div key={g.key} className="p-3.5 hover:bg-slate-800/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {gates.map((gate) => (
+                <div key={gate.key} className="p-3.5 hover:bg-slate-800/30 transition-colors flex flex-col gap-3">
+                  {(() => {
+                    const saved = gateByKey.get(gate.key);
+                    const status = saved?.status ?? 'PENDING';
+                    const evidenceReference = drafts[gate.key]?.evidenceReference ?? saved?.evidenceReference ?? '';
+                    const reviewNote = drafts[gate.key]?.reviewNote ?? saved?.reviewNote ?? '';
+                    const statusLabel = status === 'PASSED' ? labels.passedStatus
+                      : status === 'BLOCKED' ? labels.blockedStatus : labels.evidenceRequired;
+                    const statusColor = status === 'PASSED' ? 'text-emerald-300'
+                      : status === 'BLOCKED' ? 'text-rose-300' : 'text-amber-300';
+                    const isSaving = savingGateKey === gate.key;
+                    return (
+                      <>
                   <div className="space-y-1 max-w-xl">
                     <div className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full ${hasAnalysis ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-                      <span className="text-xs font-semibold text-white">{g.name}</span>
+                      <span className={`h-2 w-2 rounded-full ${status === 'PASSED' ? 'bg-emerald-400' : status === 'BLOCKED' ? 'bg-rose-400' : 'bg-amber-400'}`} />
+                      <span className="text-xs font-semibold text-white">{gate.name}</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      Standard: <span className="text-slate-300">{g.standard}</span>
+                      {labels.criteriaLabel}: <span className="text-slate-300">{gate.standard}</span>
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3 justify-between sm:justify-end">
                     <div className="text-right">
-                      <span className="text-[10px] text-slate-500 block uppercase">Verified Value</span>
-                      <span className="text-xs font-mono font-semibold text-cyan-300">
-                        {hasAnalysis ? g.verifiedValue : 'Pending Run'}
+                      <span className="text-[10px] text-slate-500 block uppercase">{labels.evidenceLabel}</span>
+                      <span className={`text-xs font-mono font-semibold ${statusColor}`}>
+                        {status === 'PASSED' ? evidenceReference : status === 'BLOCKED' ? labels.blockedStatus : labels.evidenceUnavailable}
                       </span>
                     </div>
 
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap ${
-                      hasAnalysis
-                        ? 'bg-emerald-950/80 border-emerald-800 text-emerald-400'
-                        : 'bg-amber-950/80 border-amber-800 text-amber-400'
-                    }`}>
-                      {hasAnalysis ? 'PASS' : 'PENDING'}
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold border whitespace-nowrap ${status === 'PASSED' ? 'bg-emerald-950/80 border-emerald-800 text-emerald-400' : status === 'BLOCKED' ? 'bg-rose-950/80 border-rose-800 text-rose-400' : 'bg-amber-950/80 border-amber-800 text-amber-400'}`}>
+                      {statusLabel}
                     </span>
                   </div>
+
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <label className="space-y-1 text-[10px] text-slate-400">
+                      <span>{labels.evidenceReferenceLabel}</span>
+                      <input
+                        aria-label={`${gate.name}: ${labels.evidenceReferenceLabel}`}
+                        value={evidenceReference}
+                        onChange={(event) => setDrafts((current) => ({ ...current, [gate.key]: {
+                          evidenceReference: event.target.value,
+                          reviewNote: current[gate.key]?.reviewNote ?? saved?.reviewNote ?? ''
+                        } }))}
+                        placeholder={labels.evidenceReferencePlaceholder}
+                        className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white"
+                      />
+                    </label>
+                    <label className="space-y-1 text-[10px] text-slate-400">
+                      <span>{labels.reviewNoteLabel}</span>
+                      <input
+                        aria-label={`${gate.name}: ${labels.reviewNoteLabel}`}
+                        value={reviewNote}
+                        onChange={(event) => setDrafts((current) => ({ ...current, [gate.key]: {
+                          evidenceReference: current[gate.key]?.evidenceReference ?? saved?.evidenceReference ?? '',
+                          reviewNote: event.target.value
+                        } }))}
+                        placeholder={labels.reviewNotePlaceholder}
+                        className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-white"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" disabled={isSaving || evidenceReference.trim().length === 0}
+                      onClick={() => void saveGate(gate.key, 'PASSED')}
+                      className="rounded border border-emerald-800 bg-emerald-950 px-2.5 py-1 text-[10px] font-semibold text-emerald-300 disabled:opacity-50">
+                      {isSaving ? labels.saving : labels.markPassed}
+                    </button>
+                    <button type="button" disabled={isSaving || reviewNote.trim().length === 0}
+                      onClick={() => void saveGate(gate.key, 'BLOCKED')}
+                      className="rounded border border-rose-800 bg-rose-950 px-2.5 py-1 text-[10px] font-semibold text-rose-300 disabled:opacity-50">
+                      {labels.markBlocked}
+                    </button>
+                    {status !== 'PENDING' && (
+                      <button type="button" disabled={isSaving}
+                        onClick={() => void saveGate(gate.key, 'PENDING')}
+                        className="rounded border border-slate-700 bg-slate-800 px-2.5 py-1 text-[10px] font-semibold text-slate-300 disabled:opacity-50">
+                        {labels.resetPending}
+                      </button>
+                    )}
+                    {saveFailedGateKey === gate.key && <span role="alert" className="text-[10px] text-rose-300">{labels.saveFailed}</span>}
+                  </div>
+                      </>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

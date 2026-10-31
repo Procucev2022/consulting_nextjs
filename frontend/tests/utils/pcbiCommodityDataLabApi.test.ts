@@ -96,13 +96,14 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) } as Response)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) } as Response);
-    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', 'owner@example.test')).resolves.toEqual({ success: true });
-    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', null)).resolves.toEqual({ success: true });
+    const assignment = { assignee: 'owner@example.test', status: 'RESEARCHING' as const, dueDate: '2026-11-07', notes: 'Source review' };
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', assignment)).resolves.toEqual({ success: true });
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', { ...assignment, assignee: null })).resolves.toEqual({ success: true });
     expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/data-lab/assignment'), expect.objectContaining({
-      method: 'POST', body: JSON.stringify({ pcbiId: 'PCBI-001', assignee: 'owner@example.test' })
+      method: 'POST', body: JSON.stringify({ pcbiId: 'PCBI-001', ...assignment })
     }));
     expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/data-lab/assignment'), expect.objectContaining({
-      method: 'POST', body: JSON.stringify({ pcbiId: 'PCBI-001', assignee: null })
+      method: 'POST', body: JSON.stringify({ pcbiId: 'PCBI-001', ...assignment, assignee: null })
     }));
   });
 
@@ -110,8 +111,9 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
     vi.mocked(global.fetch)
       .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ message: 'Invalid assignment' }) } as Response)
       .mockResolvedValueOnce({ ok: false, status: 503, json: async () => { throw new Error('invalid response'); } } as unknown as Response);
-    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', 'owner')).rejects.toThrow('Invalid assignment');
-    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', null)).rejects.toThrow('Failed to save the research owner: HTTP 503');
+    const update = { assignee: 'owner', status: 'QUEUED' as const, dueDate: null, notes: '' };
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', update)).rejects.toThrow('Invalid assignment');
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', { ...update, assignee: null })).rejects.toThrow('Failed to save the research owner: HTTP 503');
   });
 
   it('loads persisted sources and promotion history from D1 routes', async () => {

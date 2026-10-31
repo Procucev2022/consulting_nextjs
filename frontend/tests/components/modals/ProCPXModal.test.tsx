@@ -2,13 +2,15 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ProCPXModal } from '../../../src/components/modals/ProCPXModal';
-import { mockSavingsOpportunities } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { apiClient } from '../../../src/utils/api';
 
 const sampleOpp: any = {
   opp_id: 'OPP-CPX-TEST-001',
   title: 'Global Freight Sourcing & Reverse Auction',
   category: 'Logistics & Freight',
+  current_spend_inr_cr: 5,
+  baseline_spend_inr_cr: 5,
   est_savings: 180000,
   est_savings_inr_cr: 1.8,
   confidence_score: 91,
@@ -20,11 +22,14 @@ const sampleOpp: any = {
 
 describe('ProCPXModal Component', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.spyOn(apiClient, 'getVendors').mockResolvedValue({
+      vendorRankings: [{ vendor_id: 'VENDOR-TEST', vendor_name: 'Test Supplier', category: 'Logistics & Freight' }],
+      vendorDetails: []
+    });
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+  vi.restoreAllMocks();
   });
 
   it('renders null when not open or opportunity is null', () => {
@@ -39,7 +44,7 @@ describe('ProCPXModal Component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders modal controls and handles launch flow', () => {
+  it('renders modal controls and handles launch flow', async () => {
     const onClose = vi.fn();
     const onSuccess = vi.fn();
 
@@ -51,6 +56,11 @@ describe('ProCPXModal Component', () => {
         onSuccess={onSuccess}
       />
     );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
 
     expect(screen.getByText(UI_STRINGS.modals.proCPX.heading)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.modals.proCPX.title)).toBeInTheDocument();
@@ -65,22 +75,12 @@ describe('ProCPXModal Component', () => {
 
     // Click launch
     const launchBtn = screen.getByRole('button', { name: UI_STRINGS.modals.proCPX.pushButton });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Test Supplier' }));
     fireEvent.click(launchBtn);
 
-    // Fast-forward first timer
-    act(() => {
-      vi.advanceTimersByTime(1200);
-    });
-
-    expect(screen.getByText(UI_STRINGS.modals.proCPX.deployedSuccess)).toBeInTheDocument();
-
-    // Fast-forward second timer
-    act(() => {
-      vi.advanceTimersByTime(1800);
-    });
-
+    expect(await screen.findByText(UI_STRINGS.modals.proCPX.deployedSuccess)).toBeInTheDocument();
     expect(onSuccess).toHaveBeenCalledWith(sampleOpp.opp_id);
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('handles close button', () => {

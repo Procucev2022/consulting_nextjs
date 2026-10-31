@@ -2,13 +2,17 @@
   "version": 1,
   "sourceLedgerSha256": "764b1d4141f71ed15ef80d8ce2e6701780bbea7b3d60fc5d79a68a5e708c17bc",
   "files": {
-    "d1-seed.sql": "7edb9550994e273fefeb53f6c0778e013bb3595a215d510e02d321384321c8f1",
+    "d1-seed.sql": "9bb8f0e0f2fcbcf4fe64d2d58d8a94007bdfec9fd63741b5ed4545ff93a256fa",
     "d1-reference-seed.sql": "4d80a910b902e7b654c0f1ead7cfd1d5c1c03a6c7c42b87e143c8be93587404e",
     "d1-transactions-aic-2026-0002-seed.sql": "b0d10cbd372615794871cbd5dd75d2c86b1df706146a2496c15bfaeccdc4da24",
     "d1-transactions-aic-2026-0003-seed.sql": "77996dadffba370c4e83d52346f9d6b7f5e964615eaebc5690cf2d5da9a00f3b",
     "d1-category-mapping-seed.sql": "6272bee31b3d56f903921c1421442a9040c19df9ef83436ea68210ff419d718f",
     "d1-transactions-aic-2026-0001-seed.sql": "9f053108b0167e7f4d2b46ad32c22be70eb9f23a9150a8ac69f62e614ad72993",
-    "d1-pcbi-historical-seed.sql": "fec7b2a7e26e2c495031159352c7da4f26d1e23a62a751b747a487469fbd41a3"
+    "d1-pcbi-historical-seed.sql": "fec7b2a7e26e2c495031159352c7da4f26d1e23a62a751b747a487469fbd41a3",
+    "d1-pcbi-research-assignment-demo-seed.sql": "7a9103f1005a77ee644f9cd527c1f16badb343f2887d8056b3b112f9398dd118",
+    "d1-industry-profile-seed.sql": "6801a89d4ecc5041f8d41b5ae6ff9c4ebc1c589e41fb2e6e04ff84d49521ce06",
+    "d1-module2-logistics-demo-seed.sql": "442bcf621f001dbac2f262615b8c9faaa880196a0fdab61c506e1d16a2ca1ba7",
+    "d1-assessment-review-gates-demo-seed.sql": "1cca30a5bad9668cfe3839d5b2d0b1806fe81e13fb833cb49c4d2e661f802fc5"
   },
   "tables": {
     "AdminOtpSession": 0,
@@ -22,6 +26,7 @@
     "AssessmentDataVersion": 3,
     "AssessmentMaterialMapping": 0,
     "AssessmentRecord": 3,
+    "AssessmentReviewGate": 78,
     "AssessmentStoreEntry": 39,
     "CategoryYearDetail": 10,
     "ConversionFunnelPhase": 5,
@@ -51,7 +56,7 @@
     "PCBIBenchmarkMaster": 23,
     "PCBICommodityObservation": 0,
     "PCBICommodityPromotion": 0,
-    "PCBICommodityResearchAssignment": 0,
+    "PCBICommodityResearchAssignment": 3,
     "PCBICommoditySource": 0,
     "PCBICommoditySnapshot": 2,
     "PCBIMasterVersion": 0,
@@ -67,13 +72,19 @@
     "TenantMaster": 1,
     "UNSPSCCommodity": 1033,
     "UpgradeRequest": 0,
-    "User": 4,
+    "User": 5,
     "ValidationPreCheckRecord": 0,
     "VendorPriceRank": 5,
     "VendorYearDetail": 10,
     "ProcurementCategoryMapping": 262,
     "D1SeedPayloadChunk": 0,
-    "PCBIHistoricalObservation": 40
+    "PCBIHistoricalObservation": 40,
+    "IndustryMaterialProfile": 25,
+    "IndustrySectorPreset": 8,
+    "Module2LogisticsPackagingCandidate": 3,
+    "PCBICommodityResearchWorkflow": 3,
+    "SavingsOpportunityTenantScope": 10,
+    "TenantDataProvenance": 1
   },
   "sourceAssessmentStoreSha256": "4113b48b905cebc924c0d4e27ae63ed1e5f42ef80ce82ac9600c20a5a7e6ffb0",
   "seedFiles": [
@@ -83,7 +94,11 @@
     "d1-transactions-aic-2026-0003-seed.sql",
     "d1-category-mapping-seed.sql",
     "d1-transactions-aic-2026-0001-seed.sql",
-    "d1-pcbi-historical-seed.sql"
+    "d1-pcbi-historical-seed.sql",
+    "d1-pcbi-research-assignment-demo-seed.sql",
+    "d1-industry-profile-seed.sql",
+    "d1-module2-logistics-demo-seed.sql",
+    "d1-assessment-review-gates-demo-seed.sql"
   ],
   "uploads": [
     {

@@ -17,7 +17,7 @@ export async function postJson<T>(
   url: string,
   body: unknown,
   errorPrefix: string,
-  method: 'POST' | 'PATCH' = 'POST'
+  method: 'POST' | 'PATCH' | 'PUT' = 'POST'
 ): Promise<T> {
   const res = await fetch(url, {
     method,

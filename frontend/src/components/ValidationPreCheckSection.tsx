@@ -14,7 +14,7 @@ import type {
   ValidationPreCheckSectionProps,
   ValidationIssueCategoryFilter
 } from '../types';
-import { UI_STRINGS } from '../constants';
+import { INR_CRORES_DIVISOR, UI_STRINGS } from '../constants';
 
 export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps> = ({
   validationRecords,
@@ -53,7 +53,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
   const totalEvaluatedSpendInrCr = canonicalViewModel
     ? canonicalViewModel.validFxNormalizedSpendCr
     : validationRecords.reduce(
-        (acc, r) => acc + (r.inr_crores || ((r.order_quantity || 100) * (r.net_price || 100) * (r.fx_rate_applied || 83.8)) / 10000000),
+        (acc, r) => acc + (r.inr_crores ?? (r.amount_inr != null ? r.amount_inr / INR_CRORES_DIVISOR : 0)),
         0
       );
 
@@ -62,7 +62,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
     : validationRecords
         .filter((r) => !r.resolved && r.issue_flag !== 'Passed Clean')
         .reduce(
-          (acc, r) => acc + (r.inr_crores || ((r.order_quantity || 100) * (r.net_price || 100) * (r.fx_rate_applied || 83.8)) / 10000000),
+          (acc, r) => acc + (r.inr_crores ?? (r.amount_inr != null ? r.amount_inr / INR_CRORES_DIVISOR : 0)),
           0
         );
 
@@ -336,11 +336,11 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
             </thead>
             <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
               {filteredRecords.map((record, idx) => {
-                const qty = record.order_quantity || 1000;
-                const price = record.net_price || 100;
-                const curr = record.raw_currency || 'USD';
-                const fx = record.fx_rate_applied || 83.8;
-                const totalCr = record.inr_crores || ((qty * price * fx) / 10000000);
+                const qty = record.order_quantity;
+                const price = record.net_price;
+                const curr = record.raw_currency || UI_STRINGS.common.notAvailable;
+                const fx = record.fx_rate_applied;
+                const totalCr = record.inr_crores ?? (record.amount_inr != null ? record.amount_inr / INR_CRORES_DIVISOR : null);
                 const isClean = record.issue_flag === 'Passed Clean' || record.resolved;
 
                 return (
@@ -356,7 +356,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
                       <span className="font-bold text-cyan-700 block">{record.record_id}</span>
                       <div className="flex flex-wrap items-center gap-1 mt-0.5">
                         <span className="inline-block px-1.5 py-0.2 rounded bg-slate-100 text-[10px] font-bold text-slate-700 border border-slate-200">
-                          {record.spend_year || 2024}
+                          {record.spend_year ?? UI_STRINGS.common.notAvailable}
                         </span>
                         {record.transaction_date && (
                           <span className="inline-block px-1.5 py-0.2 rounded bg-emerald-50 text-[9px] font-mono font-medium text-emerald-700 border border-emerald-200">
@@ -373,7 +373,7 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
 
                     <td className="py-3 px-3 font-sans">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800">
-                        {record.core_category || 'Direct Materials'}
+                        {record.core_category || UI_STRINGS.common.notAvailable}
                       </span>
                       {record.column_l_code && (
                         <span className="font-mono text-[10px] font-bold text-cyan-700 mt-1 block">
@@ -389,14 +389,14 @@ export const ValidationPreCheckSection: React.FC<ValidationPreCheckSectionProps>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 text-right font-bold text-slate-900">{qty.toLocaleString()}</td>
-                    <td className="py-3 px-3 text-right font-bold text-slate-900">{curr} {price.toFixed(2)}</td>
+                    <td className="py-3 px-3 text-right font-bold text-slate-900">{qty?.toLocaleString() ?? UI_STRINGS.common.notAvailable}</td>
+                    <td className="py-3 px-3 text-right font-bold text-slate-900">{price != null ? `${curr} ${price.toFixed(2)}` : UI_STRINGS.common.notAvailable}</td>
                     <td className="py-3 px-3 text-right">
-                      <span className="font-bold text-cyan-700 block">₹{fx.toFixed(2)}</span>
-                      <span className="text-[10px] text-slate-400">1 {curr}</span>
+                      <span className="font-bold text-cyan-700 block">{fx != null ? `₹${fx.toFixed(2)}` : UI_STRINGS.common.notAvailable}</span>
+                      {fx != null && <span className="text-[10px] text-slate-400">1 {curr}</span>}
                     </td>
                     <td className="py-3 px-3 text-right">
-                      <div className="font-black text-emerald-700 text-sm">₹{totalCr.toFixed(2)} Cr</div>
+                      <div className="font-black text-emerald-700 text-sm">{totalCr != null ? `₹${totalCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable}</div>
                     </td>
 
                     <td className="py-3 px-3 font-sans">

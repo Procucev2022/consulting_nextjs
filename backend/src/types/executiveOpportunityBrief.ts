@@ -3,6 +3,8 @@ export interface ExecutiveOpportunityBriefTenant {
   enterpriseName: string;
 }
 
+export type ExecutiveOpportunityBriefDataClassification = 'CUSTOMER_DATA' | 'DEMO_ONLY' | 'MIXED';
+
 export interface ExecutiveOpportunityBriefMetricGroup {
   label: string;
   count: number;
@@ -24,6 +26,7 @@ export interface ExecutiveOpportunityBriefOpportunity {
 
 export interface ExecutiveOpportunityBriefReport {
   tenant: ExecutiveOpportunityBriefTenant;
+  dataClassification: ExecutiveOpportunityBriefDataClassification;
   generatedAt: string;
   scopeDescription: string;
   metrics: {
@@ -49,9 +52,17 @@ export type ExecutiveOpportunityBriefLoadResult =
   | { ok: true; report: ExecutiveOpportunityBriefReport }
   | { ok: false; reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions' };
 
+export type ExecutiveOpportunityBriefRequestLoad =
+  | { ok: true; report: ExecutiveOpportunityBriefReport; requestId: string; startedAt: number }
+  | { ok: false; response: Response };
+
 export interface ExecutiveOpportunityBriefTenantRow {
   tenant_id: string;
   enterprise_name: string;
+}
+
+export interface ExecutiveOpportunityBriefTenantProvenanceRow {
+  classification: string;
 }
 
 export interface ExecutiveOpportunityBriefTransactionMetricsRow {

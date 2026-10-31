@@ -1,4 +1,8 @@
-import type { CommoditySourceEvidenceObject, ExtractedObservationDetail } from './pcbiCommodityDataLab';
+import type {
+  CommoditySourceEvidenceObject,
+  ExtractedObservationDetail,
+  PCBICommodityResearchWorkflowStatus
+} from './pcbiCommodityDataLab';
 
 export interface PCBICommoditySourceRow {
   source_id: string;
@@ -76,6 +80,15 @@ export interface PCBICommodityResearchAssignmentRow {
   assigned_to: string;
   assigned_by: string;
   assigned_at: string;
+  updated_at: string;
+}
+
+export interface PCBICommodityResearchWorkflowRow {
+  pcbi_id: string;
+  status: PCBICommodityResearchWorkflowStatus;
+  due_date: string | null;
+  notes: string;
+  updated_by: string;
   updated_at: string;
 }
 

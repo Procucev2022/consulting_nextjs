@@ -194,20 +194,15 @@ describe('Backend Validation Schemas (constants/validation.ts)', () => {
   });
 
   describe('calculateConversionMetricsSchema', () => {
-    it('should validate with defaults and custom numbers', () => {
-      const defaultResult = calculateConversionMetricsSchema.safeParse({});
-      expect(defaultResult.success).toBe(true);
-      if (defaultResult.success) {
-        expect(defaultResult.data.annualSpendCr).toBe(428.5);
-        expect(defaultResult.data.savingsRate).toBe(9.4);
-      }
-
+    it('requires explicit spend and rates and validates custom numbers', () => {
+      expect(calculateConversionMetricsSchema.safeParse({}).success).toBe(false);
       const custom = {
         annualSpendCr: 500,
         savingsRate: 12.0,
         saasFeeRate: 1.0
       };
       expect(calculateConversionMetricsSchema.safeParse(custom).success).toBe(true);
+      expect(calculateConversionMetricsSchema.safeParse({ ...custom, savingsRate: 101 }).success).toBe(false);
     });
 
     it('should reject non-positive annual spend or negative rates', () => {

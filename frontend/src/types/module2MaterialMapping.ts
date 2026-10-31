@@ -96,8 +96,6 @@ export interface UpdateMaterialMappingPayload {
   sourceMaterialId: string;
   unspscCode: string;
   reviewStatus: MappingReviewStatus;
-  confidenceScore?: number;
-  mappingMethod?: MappingMethod;
   reviewedBy?: string;
   auditNotes?: string;
 }

@@ -673,6 +673,7 @@ describe('AdminDashboardPage coverage', () => {
     it('uses the default confirmation and no token when none is stored', async () => {
       vi.mocked(authApiClient.getStoredToken).mockReturnValue(null);
       vi.mocked(authApiClient.changePassword).mockResolvedValueOnce({ success: true } as never);
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       const container = await openPasswordModal();
       fillPasswordForm(container, ['current-pass', 'fresh-admin-pass', 'fresh-admin-pass']);
 
@@ -680,6 +681,10 @@ describe('AdminDashboardPage coverage', () => {
 
       expect(await screen.findByText('Password changed successfully!')).toBeInTheDocument();
       expect(authApiClient.changePassword).toHaveBeenCalledWith(expect.any(Object), undefined);
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+      expect(screen.queryByRole('button', { name: UPDATE_PASSWORD_LABEL })).not.toBeInTheDocument();
     });
 
     it('keeps the modal open when the password service does not acknowledge the change', async () => {

@@ -2,7 +2,12 @@
  * Worker-side types for the Analysis Orchestration API (D1 rows, routing, request context).
  * Shared API payload types live in ./analysisOrchestration.ts.
  */
-import type { CloudflareD1Database, CloudflareD1PreparedStatement, CloudflareR2Bucket } from './cloudflare';
+import type {
+  CloudflareD1Database,
+  CloudflareD1PreparedStatement,
+  CloudflareEnvironment,
+  CloudflareR2Bucket
+} from './cloudflare';
 import type {
   AnalysisJobStatus,
   ReportWorkflowState
@@ -78,6 +83,7 @@ export interface OrchestrationRequestContext {
   request: Request;
   url: URL;
   database: OrchestrationDatabase;
+  environment: CloudflareEnvironment;
   objects?: CloudflareR2Bucket;
   bucketName?: string;
   actor: OrchestrationActor;
@@ -104,6 +110,7 @@ export interface AssessmentJobRow {
   assessment_id: string;
   customer_id: string;
   customer_name: string;
+  customer_contact_email?: string | null;
   assessment_owner: string;
   assessment_period_start: string | null;
   assessment_period_end: string | null;

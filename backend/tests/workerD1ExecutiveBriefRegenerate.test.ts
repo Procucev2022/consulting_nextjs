@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { extractBearerToken, authorizeExecutiveBriefAdmin } from '../src/workerD1ExecutiveBriefAuth';
 import { EXECUTIVE_BRIEF_HTTP_STATUS, EXECUTIVE_BRIEF_MESSAGES } from '../src/constants/executiveBriefRouteConstants';
-import { DEFAULT_CLIENT_PROFILE } from '../src/constants/executiveBriefConstants';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
+} from '../src/constants/executiveOpportunityBriefConstants';
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
 import {
   TEST_AUTH_SECRET,
@@ -32,13 +35,37 @@ const regenerate = async (
   } else if (init.token) {
     headers.Authorization = `Bearer ${init.token}`;
   }
-  const request = briefRequest('POST', REGENERATE_PATH, { headers, body: init.body ?? '{"client":"UltraTech Cement Limited"}' });
+  const request = briefRequest('POST', REGENERATE_PATH, { headers, body: init.body ?? '{}' });
   const response = await handleExecutiveBriefRoute(request, init.env ?? testEnvironment(), REGENERATE_URL);
   if (response === null) {
     throw new Error('Expected the regenerate route to answer');
   }
   return response;
 };
+
+const regenerationDatabase = (
+  tenants: Array<{ tenant_id: string; enterprise_name: string }>,
+  failBriefQuery = false
+): NonNullable<CloudflareEnvironment['DB']> => ({
+  prepare: (query: string) => {
+    const statement = {
+      bind: () => statement,
+      first: async <T>() => {
+        if (query.includes('FROM User')) {
+          return { id: 'usr-admin-test', name: 'D1 Admin', email: 'admin@example.test', role: 'ADMIN', status: 'ACTIVE' } as T;
+        }
+        if (failBriefQuery) throw new Error('D1 report query failed');
+        return null;
+      },
+      all: async <T>() => {
+        if (failBriefQuery) throw new Error('D1 report query failed');
+        return { results: (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants ? tenants : []) as T[] };
+      },
+      run: async () => ({ success: true })
+    };
+    return statement;
+  }
+});
 
 describe('executive brief regeneration authorization', () => {
   beforeEach(() => {
@@ -122,27 +149,28 @@ describe('executive brief regeneration', () => {
     vi.clearAllMocks();
   });
 
-  it('publishes the four artifacts to R2 under executive-brief/<client>/ and returns their keys', async () => {
+  it('publishes the four D1 artifacts to R2 under executive-brief/<tenant>/ and returns their keys', async () => {
     const bucket = bucketDouble();
     const response = await regenerate({ token: await adminToken(), env: testEnvironment({ OBJECTS: bucket }) });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
     const body = (await response.json()) as {
       success: boolean;
       message: string;
-      data: { client: string; reportDate: string; artifacts: Array<{ key: string }> };
+      data: { tenantId: string; enterpriseName: string; reportDate: string; artifacts: Array<{ key: string }> };
     };
     expect(body.success).toBe(true);
     expect(body.message).toBe(EXECUTIVE_BRIEF_MESSAGES.regenerated);
-    expect(body.data.client).toBe(DEFAULT_CLIENT_PROFILE.clientName);
+    expect(body.data.tenantId).toBe('TEN-1');
+    expect(body.data.enterpriseName).toBe('D1 Enterprise');
     expect(body.data.reportDate).toBe('2026-10-24');
     expect(body.data.artifacts.map((artifact) => artifact.key)).toEqual(
       bucket.put.mock.calls.map((call) => call[0])
     );
     expect(bucket.put).toHaveBeenCalledTimes(4);
-    expect(String(bucket.put.mock.calls[0][0]).startsWith('executive-brief/UltraTech_Cement_Limited/')).toBe(true);
+    expect(String(bucket.put.mock.calls[0][0]).startsWith('executive-brief/D1_Enterprise/')).toBe(true);
   });
 
-  it('uses the certified client when the body is empty', async () => {
+  it('uses the current D1 tenant when the body is empty', async () => {
     const response = await regenerate({ token: await adminToken(), body: '   ' });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
   });
@@ -160,14 +188,15 @@ describe('executive brief regeneration', () => {
     expect(numericBody.errors[0].path).toBe('client');
   });
 
-  it('returns 404 for a client that has no certified executive brief', async () => {
+  it('returns 404 for a client that does not match the active D1 tenant', async () => {
     const response = await regenerate({ token: await adminToken(), body: '{"client":"ABC Textile Ltd"}' });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
-    expect(((await response.json()) as { message: string }).message).toContain('ABC Textile Ltd');
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.tenantMismatch('ABC Textile Ltd', 'D1 Enterprise'));
   });
 
   it('returns 503 when the OBJECTS binding is not configured', async () => {
-    const response = await regenerate({ token: await adminToken(), env: { AUTH_SECRET: TEST_AUTH_SECRET } });
+    const response = await regenerate({ token: await adminToken(), env: testEnvironment({ OBJECTS: undefined }) });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
     expect(((await response.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.r2Missing);
   });
@@ -182,6 +211,46 @@ describe('executive brief regeneration', () => {
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
     const requestId = response.headers.get('X-Request-Id') ?? '';
     expect(requestId.length).toBeGreaterThan(0);
-    expect(((await response.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.publishFailed(requestId));
+    expect(((await response.json()) as { message: string }).message).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.publishFailed(requestId));
+  });
+
+  it('requires D1 before it can regenerate the R2 report', async () => {
+    const response = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: undefined })
+    });
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable);
+  });
+
+  it('reports missing and ambiguous tenant scopes from D1 without publishing artifacts', async () => {
+    const missing = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: regenerationDatabase([]) })
+    });
+    expect(missing.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
+    expect(((await missing.json()) as { reason: string }).reason).toBe('no-tenant');
+
+    const ambiguous = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: regenerationDatabase([
+        { tenant_id: 'TEN-1', enterprise_name: 'One' },
+        { tenant_id: 'TEN-2', enterprise_name: 'Two' }
+      ]) })
+    });
+    expect(ambiguous.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
+    expect(((await ambiguous.json()) as { reason: string }).reason).toBe('ambiguous-tenant');
+  });
+
+  it('returns a request-correlated failure when D1 throws while loading the report', async () => {
+    const response = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: regenerationDatabase([], true) })
+    });
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
+    const requestId = response.headers.get('X-Request-Id') ?? '';
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.reportFailed(requestId));
   });
 });

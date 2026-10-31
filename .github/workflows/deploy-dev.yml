@@ -5,6 +5,12 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      seed_dev_database:
+        description: Seed mock rows in the development D1 database (one-time for a fresh database)
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-dev-${{ github.ref }}
@@ -41,6 +47,9 @@ jobs:
       - name: Build Frontend (OpenNext / Vinext)
         run: npm run build:vinext || npm run cloudflare:build
         working-directory: frontend
+        env:
+          NEXT_PUBLIC_BACKEND_URL: "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
+          BACKEND_INTERNAL_URL: "https://consulting-nextjs-backend.srinivas-mukku.workers.dev"
 
       - name: Deploy Frontend to Cloudflare (Dev Environment)
         run: npx wrangler deploy --env dev
@@ -51,6 +60,15 @@ jobs:
 
       - name: Apply Backend D1 Schema (Development)
         run: npm --prefix backend run db:push -- --remote
+        env:
+          D1_ENV: dev
+          D1_DATABASE_NAME: consulting_dev
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Seed Backend D1 Mock Data (Development)
+        if: github.event_name == 'workflow_dispatch' && inputs.seed_dev_database
+        run: npm --prefix backend run db:push -- --remote --seed-all
         env:
           D1_ENV: dev
           D1_DATABASE_NAME: consulting_dev

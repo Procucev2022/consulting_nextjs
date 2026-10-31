@@ -27,20 +27,123 @@ import {
 import { loadAccessibleJob } from './workerD1OrchestrationAuth';
 import { loadReportForJob } from './workerD1OrchestrationJobs';
 import { mapNotification } from './workerD1OrchestrationMapper';
+import { sendCommercialEmail } from './services/workerCommercialShared';
 import { formatAnalysisPeriod, isCustomerVisibleState } from './workerD1OrchestrationDerive';
 import {
   buildAuditEvent,
   buildNotificationInput,
   buildNotificationRow,
+  changedRowCount,
   compareAndSet,
   findLatestChecklistRow,
   insertAuditStatement,
   insertNotificationStatement,
   runAtomically,
-  submitReportStatement
+  submitReportStatement,
+  updateNotificationEmailStatement
 } from './workerD1OrchestrationStore';
 
-/** Customer notification that announces a submitted report. Email is not sent: the Worker has no provider. */
+interface NotificationEmailDelivery {
+  status: 'NOT_SENT' | 'SENT' | 'FAILED';
+  lastError: string | null;
+  message: string;
+}
+
+const getNotificationEmailDelivery = async (
+  context: OrchestrationRequestContext,
+  job: AssessmentJobRow,
+  notification: NotificationRow
+): Promise<NotificationEmailDelivery> => {
+  const environment = context.environment;
+  if (!environment.RESEND_API_KEY || !environment.RESEND_FROM) {
+    return {
+      status: ORCHESTRATION_EMAIL_STATUS.NOT_SENT,
+      lastError: ORCHESTRATION_MESSAGES.emailNotConfiguredLastError,
+      message: ORCHESTRATION_MESSAGES.emailNotConfigured
+    };
+  }
+  if (!job.customer_contact_email) {
+    return {
+      status: ORCHESTRATION_EMAIL_STATUS.NOT_SENT,
+      lastError: ORCHESTRATION_MESSAGES.notificationRecipientMissing,
+      message: ORCHESTRATION_MESSAGES.notificationRecipientMissing
+    };
+  }
+  try {
+    const result = await sendCommercialEmail(
+      environment,
+      job.customer_contact_email,
+      notification.title,
+      notification.message
+    );
+    if (result.sent) {
+      return {
+        status: ORCHESTRATION_EMAIL_STATUS.SENT,
+        lastError: null,
+        message: ORCHESTRATION_MESSAGES.notificationEmailSent
+      };
+    }
+    const error = result.message || ORCHESTRATION_MESSAGES.emailNotConfiguredLastError;
+    return {
+      status: ORCHESTRATION_EMAIL_STATUS.FAILED,
+      lastError: error,
+      message: ORCHESTRATION_MESSAGES.notificationProviderFailed(error)
+    };
+  } catch (error: unknown) {
+    const reason = error instanceof Error ? error.message : ORCHESTRATION_MESSAGES.emailNotConfiguredLastError;
+    logger.error('Customer report notification email request failed', {
+      requestId: context.requestId,
+      assessmentId: job.assessment_id,
+      reportVersionId: notification.report_version_id
+    }, error);
+    return {
+      status: ORCHESTRATION_EMAIL_STATUS.FAILED,
+      lastError: reason,
+      message: ORCHESTRATION_MESSAGES.notificationProviderFailed(reason)
+    };
+  }
+};
+
+const deliverNotificationEmail = async (
+  context: OrchestrationRequestContext,
+  job: AssessmentJobRow,
+  notification: NotificationRow,
+  isRetry: boolean
+): Promise<NotificationEmailDelivery> => {
+  const delivery = await getNotificationEmailDelivery(context, job, notification);
+  const update = await updateNotificationEmailStatement(
+    context.database,
+    notification.notification_id,
+    delivery.status,
+    delivery.lastError,
+    isRetry
+  ).run();
+  if (changedRowCount(update) !== 1) {
+    throw new Error(`Notification ${notification.notification_id} email status could not be persisted.`);
+  }
+  notification.email_status = delivery.status;
+  notification.email_last_error = delivery.lastError;
+  if (isRetry) notification.email_retry_count += 1;
+  if (delivery.status === ORCHESTRATION_EMAIL_STATUS.SENT) {
+    logger.info('Customer report notification email sent', {
+      requestId: context.requestId,
+      assessmentId: job.assessment_id,
+      reportVersionId: notification.report_version_id,
+      notificationId: notification.notification_id
+    });
+  } else {
+    logger.warn('Customer report notification email was not sent', {
+      requestId: context.requestId,
+      assessmentId: job.assessment_id,
+      reportVersionId: notification.report_version_id,
+      notificationId: notification.notification_id,
+      emailStatus: delivery.status
+    });
+  }
+  return delivery;
+};
+
+/** Customer notification that announces a submitted report. */
 const buildCustomerNotificationDraft = (
   context: OrchestrationRequestContext,
   job: Pick<AssessmentJobRow, 'customer_id' | 'assessment_id' | 'assessment_period_start' | 'assessment_period_end'>,
@@ -81,10 +184,11 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
     context.runtime.now()
   ));
   if (!submitted) throw conflictError(ORCHESTRATION_MESSAGES.stateChanged);
+  const notification = buildCustomerNotificationDraft(context, job, report.report_version_id);
   await runAtomically(context.database, [
     insertNotificationStatement(
       context.database,
-      buildCustomerNotificationDraft(context, job, report.report_version_id)
+      notification
     ),
     insertAuditStatement(context.database, buildAuditEvent(context.runtime, {
       tenantId: job.customer_id,
@@ -96,9 +200,15 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
       entityId: report.report_version_id,
       previousState: 'ADMIN_REVIEW',
       newState: 'SUBMITTED_TO_CUSTOMER',
-      metadata: { emailStatus: ORCHESTRATION_EMAIL_STATUS.NOT_SENT }
+      metadata: { notificationId: notification.notification_id }
     }))
   ]);
+  const delivery = await deliverNotificationEmail(context, job, notification, false);
+  const message = delivery.status === ORCHESTRATION_EMAIL_STATUS.SENT
+    ? ORCHESTRATION_MESSAGES.reportSubmittedEmailSent
+    : delivery.message === ORCHESTRATION_MESSAGES.emailNotConfigured
+      ? ORCHESTRATION_MESSAGES.reportSubmitted
+      : ORCHESTRATION_MESSAGES.reportSubmittedEmailPending(delivery.message);
   logger.info('Report approved and submitted to customer', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
@@ -107,13 +217,10 @@ export const approveAndSubmitReport: OrchestrationHandler = async (context) => {
     previousState: 'ADMIN_REVIEW',
     newState: 'SUBMITTED_TO_CUSTOMER'
   });
-  return jsonOk({ success: true, message: ORCHESTRATION_MESSAGES.reportSubmitted }, context.request);
+  return jsonOk({ success: true, message, emailStatus: delivery.status }, context.request);
 };
 
-/**
- * The Worker has no email provider. The resend is recorded as a NOT_SENT notification and the request fails
- * with 503, so the admin never sees a false "sent" result.
- */
+/** Resends the report notification using the configured transactional email provider. */
 export const resendNotification: OrchestrationHandler = async (context) => {
   const body = parseWithSchema(reportReferenceSchema, await readJsonBody(context.request));
   const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
@@ -134,16 +241,23 @@ export const resendNotification: OrchestrationHandler = async (context) => {
       entityId: notification.notification_id,
       previousState: null,
       newState: null,
-      metadata: { reportVersionId: report.report_version_id, emailStatus: ORCHESTRATION_EMAIL_STATUS.NOT_SENT }
+      metadata: { reportVersionId: report.report_version_id, notificationId: notification.notification_id }
     }))
   ]);
-  logger.warn('Notification resend recorded as NOT_SENT: no email provider configured', {
+  const delivery = await deliverNotificationEmail(context, job, notification, true);
+  if (delivery.status !== ORCHESTRATION_EMAIL_STATUS.SENT) {
+    throw serviceUnavailableError(delivery.message, { notification: mapNotification(notification) });
+  }
+  logger.info('Customer report notification resend completed', {
     requestId: context.requestId,
     assessmentId: job.assessment_id,
     reportVersionId: report.report_version_id,
-    actorId: context.actor.userId
+    actorId: context.actor.userId,
+    notificationId: notification.notification_id
   });
-  throw serviceUnavailableError(ORCHESTRATION_MESSAGES.emailNotConfigured, {
+  return jsonOk({
+    success: true,
+    message: delivery.message,
     notification: mapNotification(notification)
-  });
+  }, context.request);
 };

@@ -2,13 +2,14 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UI_STRINGS } from '../../../src/constants';
+import type { CommodityResearchQueueRow } from '../../../src/types/pcbiCommodityDataLab';
 import {
   PCBICommodityResearchQueueTable,
   getQueueContextualAction
 } from '../../../src/components/admin/pcbi/PCBICommodityResearchQueueTable';
 
 describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
-  const mockQueue = [
+  const mockQueue: CommodityResearchQueueRow[] = [
     {
       commodity: 'Ferro Molybdenum 65%',
       commodityId: 'CMD-FEA-FEMO-65',
@@ -30,6 +31,9 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       priorityScore: 100,
       priorityReason: 'RANKED_BY_CUSTOMER_SPEND' as const,
       researchStatus: 'NOT_STARTED',
+      workflowStatus: 'QUEUED',
+      workflowDueDate: null,
+      workflowNotes: '',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     },
@@ -54,6 +58,9 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       priorityScore: 75,
       priorityReason: 'RANKED_BY_CUSTOMER_SPEND' as const,
       researchStatus: 'IN_PROGRESS',
+      workflowStatus: 'RESEARCHING',
+      workflowDueDate: null,
+      workflowNotes: '',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     },
@@ -78,6 +85,9 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       priorityScore: 0,
       priorityReason: 'SPEND_LINK_REQUIRED' as const,
       researchStatus: 'IN_PROGRESS',
+      workflowStatus: 'RESEARCHING',
+      workflowDueDate: null,
+      workflowNotes: '',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     },
@@ -102,6 +112,9 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       priorityScore: 40,
       priorityReason: 'RANKED_BY_CUSTOMER_SPEND' as const,
       researchStatus: 'NOT_STARTED',
+      workflowStatus: 'QUEUED',
+      workflowDueDate: null,
+      workflowNotes: '',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     },
@@ -126,6 +139,9 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       priorityScore: 0,
       priorityReason: 'GAP_RESOLVED' as const,
       researchStatus: 'RESOLVED',
+      workflowStatus: 'COMPLETED',
+      workflowDueDate: null,
+      workflowNotes: '',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     }
@@ -222,15 +238,22 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
 
     const input = screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.assignResearcherInputLabel(mockQueue[0].commodity));
     fireEvent.change(input, { target: { value: 'owner@example.test' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowStatusInputLabel(mockQueue[0].commodity)), { target: { value: 'BLOCKED' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowDueDateInputLabel(mockQueue[0].commodity)), { target: { value: '2026-11-08' } });
+    fireEvent.change(screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.researchWorkflowNotesInputLabel(mockQueue[0].commodity)), { target: { value: 'Awaiting source documentation.' } });
     fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton })[0]);
-    await waitFor(() => expect(onAssignResearcher).toHaveBeenCalledWith(mockQueue[0].pcbiId, 'owner@example.test'));
+    await waitFor(() => expect(onAssignResearcher).toHaveBeenCalledWith(mockQueue[0].pcbiId, {
+      assignee: 'owner@example.test', status: 'BLOCKED', dueDate: '2026-11-08', notes: 'Awaiting source documentation.'
+    }));
     expect(screen.getByRole('status')).toHaveTextContent(
       UI_STRINGS.pcbiCommodityDataLab.assignmentSaved(mockQueue[0].pcbiId, 'owner@example.test')
     );
 
     fireEvent.change(input, { target: { value: '' } });
     fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.unassignResearcherButton })[0]);
-    await waitFor(() => expect(onAssignResearcher).toHaveBeenLastCalledWith(mockQueue[0].pcbiId, null));
+    await waitFor(() => expect(onAssignResearcher).toHaveBeenLastCalledWith(mockQueue[0].pcbiId, {
+      assignee: null, status: 'BLOCKED', dueDate: '2026-11-08', notes: 'Awaiting source documentation.'
+    }));
 
     onAssignResearcher.mockRejectedValueOnce(new Error('D1 unavailable'));
     fireEvent.change(input, { target: { value: 'owner@example.test' } });

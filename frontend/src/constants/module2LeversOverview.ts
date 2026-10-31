@@ -89,14 +89,14 @@ export const TEN_LEVERS_OVERVIEW_CONFIG: LeverOverviewItem[] = [
     id: 7,
     code: 'LEV-07',
     name: 'Logistics & Packaging Specifications',
-    purpose: 'Optimizes consignment shipping routes, freight consolidation, palletization standards, and container utilization to reduce inbound landed logistics costs. Deferred pending benchmark prices and supporting data.',
-    implementationStatus: 'COMING_SOON',
-    statusLabel: 'COMING SOON',
+    purpose: 'Reviews assessment-scoped shipment lanes, freight cost references, incoterms, packaging specifications, and container utilization from D1.',
+    implementationStatus: 'IMPLEMENTED',
+    statusLabel: 'D1 DATA VIEW',
     historicalOpportunityCr: null,
     validatedSavingsCr: 0.00,
-    methodologySummary: 'Analyzes freight-to-value ratios, secondary packaging unitization, and multi-drop transport logistics optimization. Benchmark prices and supporting data are not currently available.',
+    methodologySummary: 'Displays stored freight and packaging inputs for analyst review. The data view does not calculate or certify savings; demo-only records are labeled and must not be used as carrier quotes or approved baselines.',
     requiredFields: ['freight_cost', 'shipping_mode', 'incoterms', 'packaging_spec', 'container_fill_pct'],
-    preconditions: ['Logistics carrier contract rate sheets', 'Standardized packaging dimension approvals']
+    preconditions: ['Verified carrier rate sheet or quote', 'Approved packaging dimensions', 'Assessment owner review before any commercial action']
   },
   {
     id: 8,

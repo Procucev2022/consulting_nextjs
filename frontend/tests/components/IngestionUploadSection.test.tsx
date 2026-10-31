@@ -105,7 +105,7 @@ describe('IngestionUploadSection Component', () => {
     ];
 
     render(<IngestionUploadSection {...defaultProps} ingestionQueue={processingDoc} />);
-    expect(screen.getByText(new RegExp(UI_STRINGS.module1.processingStatus(45), 'i'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.uploadProgress(45, 'Parsing OCR'))).toBeInTheDocument();
   });
 
   it('renders document with fallback values when optional fields are omitted or null', () => {
@@ -125,10 +125,11 @@ describe('IngestionUploadSection Component', () => {
 
     render(<IngestionUploadSection {...defaultProps} ingestionQueue={fallbackDoc as any} />);
     expect(screen.getByText('raw_procurement_data.csv')).toBeInTheDocument();
-    expect(screen.getByText(/DOC-INGEST-1/i)).toBeInTheDocument();
-    expect(screen.getByText('USD')).toBeInTheDocument();
-    expect(screen.getByText('EUR')).toBeInTheDocument();
-    expect(screen.getByText('INR')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.documentIdUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.detectedCurrenciesUnavailable)).toBeInTheDocument();
+    expect(screen.queryByText('USD')).not.toBeInTheDocument();
+    expect(screen.queryByText('EUR')).not.toBeInTheDocument();
+    expect(screen.queryByText('INR')).not.toBeInTheDocument();
   });
 
   it('renders styled dropzone when dragActive is true', () => {

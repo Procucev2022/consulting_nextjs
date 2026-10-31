@@ -10,12 +10,15 @@ import type {
   taxonomyPageResponseSchema,
   conversionStagesResponseSchema,
   executiveOpportunityBriefResponseSchema,
+  executiveBriefEmailRequestSchema,
   databaseSchemaResponseSchema,
   procurementCategoryMappingsResponseSchema,
   pcbiBenchmarkResponseSchema,
   pcbiWeeklyIndexResponseSchema,
   headerTenantSchema,
   headerCurrencySchema,
+  d1CurrencyRatesResponseSchema,
+  d1CurrencyConversionResponseSchema,
   clientIngestionSetupFormSchema,
   fixCurrencyFormSchema,
   mergeVendorFormSchema,
@@ -40,6 +43,7 @@ export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;
 export type ConversionStagesResponse = z.infer<typeof conversionStagesResponseSchema>;
 export type ExecutiveOpportunityBriefResponse = z.infer<typeof executiveOpportunityBriefResponseSchema>;
 export type ExecutiveOpportunityBriefReportData = ExecutiveOpportunityBriefResponse['data'];
+export type ExecutiveBriefEmailRequest = z.infer<typeof executiveBriefEmailRequestSchema>;
 export type DatabaseSchemaResponse = z.infer<typeof databaseSchemaResponseSchema>;
 export type ProcurementCategoryMappingsResponse = z.infer<typeof procurementCategoryMappingsResponseSchema>;
 export type PcbiBenchmarkResponse = z.infer<typeof pcbiBenchmarkResponseSchema>;
@@ -48,6 +52,9 @@ export type PCBIGapResolutionRequest = z.infer<typeof pcbiGapResolutionRequestSc
 
 export type HeaderTenantInput = z.infer<typeof headerTenantSchema>;
 export type HeaderCurrencyInput = z.infer<typeof headerCurrencySchema>;
+export type D1CurrencyRatesResponse = z.infer<typeof d1CurrencyRatesResponseSchema>;
+export type D1CurrencyRate = D1CurrencyRatesResponse['data'][string];
+export type D1CurrencyConversionResponse = z.infer<typeof d1CurrencyConversionResponseSchema>;
 export type ClientIngestionSetupFormInput = z.infer<typeof clientIngestionSetupFormSchema>;
 export type FixCurrencyFormInput = z.infer<typeof fixCurrencyFormSchema>;
 export type MergeVendorFormInput = z.infer<typeof mergeVendorFormSchema>;

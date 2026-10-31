@@ -4,30 +4,13 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { Module1Ingestion } from '../../src/components/Module1Ingestion';
 import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { apiClient } from '../../src/utils/api';
 import type {
   Module1CanonicalViewModel,
   Module1IngestionProps,
   MonthWiseSummary,
   RawDocumentIngestion
 } from '../../src/types';
-
-const PRIMARY_FX_ROUTE = '/api/currency';
-const PUBLIC_FX_ROUTE = 'https://open.er-api.com/v6/latest/USD';
-
-type FetchResult = { ok: boolean; json: () => Promise<unknown> };
-
-const fxResponse = (body: unknown, ok = true): Promise<FetchResult> =>
-  Promise.resolve({ ok, json: () => Promise.resolve(body) });
-
-// Serves each FX request from a fixed route table. Unlisted URLs fail, so no request reaches the network.
-const routeFetch = (routes: Record<string, () => Promise<FetchResult>>) =>
-  vi.fn((input: string) => {
-    const handler = routes[input];
-    if (!handler) {
-      return Promise.reject(new Error(`Unexpected request in test: ${input}`));
-    }
-    return handler();
-  });
 
 const buildDocument = (overrides: Partial<RawDocumentIngestion> = {}): RawDocumentIngestion => ({
   doc_id: 'DOC-M1-COVERAGE',
@@ -93,14 +76,10 @@ const buildCanonical = (overrides: Partial<Module1CanonicalViewModel> = {}): Mod
 });
 
 // Waits until the expected FX requests have been made, then lets their promise chains finish inside act().
-const settleFxRequests = async (feed: ReturnType<typeof routeFetch>, expectedCalls: number): Promise<void> => {
-  await waitFor(() => {
-    expect(feed).toHaveBeenCalledTimes(expectedCalls);
-  });
+const settleFxRequests = async (): Promise<void> => {
   await act(async () => {
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0);
-    });
+    await Promise.resolve();
+    await Promise.resolve();
   });
 };
 
@@ -122,30 +101,19 @@ const buildProps = (overrides: Partial<Module1IngestionProps> = {}): Module1Inge
 });
 
 describe('Module1Ingestion coverage', () => {
-  // The component fetches FX rates on mount. Each test waits for those requests to settle so that
-  // state updates happen inside the test rather than after it finishes.
-  let defaultFeed: ReturnType<typeof routeFetch>;
-
   beforeEach(() => {
-    defaultFeed = routeFetch({});
-    vi.stubGlobal('fetch', defaultFeed);
+    vi.spyOn(apiClient, 'getCurrencyRates').mockResolvedValue({});
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('shows live FX rates from the primary currency feed and uses the rate name in the tooltip', async () => {
-    const primaryFeed = routeFetch({
-      [PRIMARY_FX_ROUTE]: () =>
-        fxResponse({
-          data: {
-            USD: { currentRate: 83.8, name: 'US Dollar' },
-            EUR: { currentRate: 91.25 }
-          }
-        })
+    const primaryFeed = vi.mocked(apiClient.getCurrencyRates).mockResolvedValue({
+      USD: { currencyCode: 'USD', currentRate: 83.8, name: 'US Dollar' },
+      EUR: { currencyCode: 'EUR', currentRate: 91.25, name: 'Euro' }
     });
-    vi.stubGlobal('fetch', primaryFeed);
 
     render(<Module1Ingestion {...buildProps()} />);
 
@@ -154,72 +122,60 @@ describe('Module1Ingestion coverage', () => {
     expect(primaryFeed).toHaveBeenCalledTimes(1);
   });
 
-  it('uses the public exchange feed when the primary response has no data and derives cross rates from it', async () => {
-    vi.stubGlobal(
-      'fetch',
-      routeFetch({
-        [PRIMARY_FX_ROUTE]: () => fxResponse({}),
-        [PUBLIC_FX_ROUTE]: () =>
-          fxResponse({ rates: { INR: 84, EUR: 0.9, GBP: 0.8, AED: 3.6, JPY: 120, SGD: 1.2 } })
-      })
-    );
+  it('keeps rates unavailable when D1 has no data and does not query another source', async () => {
+    const primaryFeed = vi.mocked(apiClient.getCurrencyRates).mockResolvedValue({});
 
     render(<Module1Ingestion {...buildProps()} />);
 
-    expect(await screen.findByText(/₹93\.33/)).toBeInTheDocument();
-    expect(screen.getByText(/₹70\.00/)).toBeInTheDocument();
-    expect(screen.getByText(/₹23\.33/)).toBeInTheDocument();
+    expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
+    expect(primaryFeed).toHaveBeenCalledTimes(1);
   });
 
-  it('falls back to the default base rate and currency multipliers when the public feed omits them', async () => {
-    const feed = routeFetch({
-      [PRIMARY_FX_ROUTE]: () => fxResponse({}, false),
-      [PUBLIC_FX_ROUTE]: () => fxResponse({ rates: {} })
+  it('does not render an empty INR-only FX response as a populated feed', async () => {
+    vi.mocked(apiClient.getCurrencyRates).mockResolvedValue({
+      INR: { currencyCode: 'INR', currentRate: 1, name: 'Indian Rupee' }
     });
-    vi.stubGlobal('fetch', feed);
 
     render(<Module1Ingestion {...buildProps()} />);
 
-    // AED: 83.8 / 3.6725 (default multiplier) = 22.82.
-    expect(await screen.findByText(/₹22\.82/)).toBeInTheDocument();
-    expect(screen.getAllByText(/₹83\.80/).length).toBeGreaterThan(0);
+    expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
   });
 
-  it('keeps the rate panel empty when both FX feeds fail', async () => {
-    const failingFeed = routeFetch({
-      [PRIMARY_FX_ROUTE]: () => Promise.reject(new Error('primary feed unavailable')),
-      [PUBLIC_FX_ROUTE]: () => Promise.reject(new Error('public feed unavailable'))
-    });
-    vi.stubGlobal('fetch', failingFeed);
+  it('does not invent default currency rates when the D1 request fails', async () => {
+    const feed = vi.mocked(apiClient.getCurrencyRates).mockRejectedValue(new Error(UI_STRINGS.module1.fxReferenceRequestFailed(503)));
 
     render(<Module1Ingestion {...buildProps()} />);
 
-    await settleFxRequests(failingFeed, 2);
+    expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
+    expect(feed).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the unavailable state when the D1 currency feed fails', async () => {
+    const failingFeed = vi.mocked(apiClient.getCurrencyRates).mockRejectedValue(new Error('D1 currency endpoint unavailable'));
+
+    render(<Module1Ingestion {...buildProps()} />);
+
+    await settleFxRequests();
+    expect(screen.getByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
     expect(screen.queryByTitle(/live rate to INR/)).not.toBeInTheDocument();
   });
 
   it('ignores a primary response that arrives after the component has unmounted', async () => {
-    let resolvePrimary: (value: FetchResult) => void = () => undefined;
-    const pendingPrimary = new Promise<FetchResult>((resolve) => {
+    let resolvePrimary: (value: Record<string, { currencyCode: string; currentRate: number; name: string }>) => void = () => undefined;
+    const pendingPrimary = new Promise<Record<string, { currencyCode: string; currentRate: number; name: string }>>((resolve) => {
       resolvePrimary = resolve;
     });
-    const lateFeed = routeFetch({
-      [PRIMARY_FX_ROUTE]: () => pendingPrimary,
-      [PUBLIC_FX_ROUTE]: () => fxResponse({ rates: {} })
-    });
-    vi.stubGlobal('fetch', lateFeed);
+    const lateFeed = vi.mocked(apiClient.getCurrencyRates).mockReturnValue(pendingPrimary);
 
     const { unmount } = render(<Module1Ingestion {...buildProps()} />);
     unmount();
 
     await act(async () => {
-      resolvePrimary({
-        ok: true,
-        json: () => Promise.resolve({ data: { USD: { currentRate: 83.8, name: 'US Dollar' } } })
-      });
+      resolvePrimary({ USD: { currencyCode: 'USD', currentRate: 83.8, name: 'US Dollar' } });
     });
 
-    await settleFxRequests(lateFeed, 2);
+    await settleFxRequests();
+    expect(lateFeed).toHaveBeenCalledTimes(1);
   });
 
   it('shows the canonical fiscal coverage and actual billing range when a canonical view is supplied', async () => {
@@ -243,7 +199,7 @@ describe('Module1Ingestion coverage', () => {
         })}
       />
     );
-    await settleFxRequests(defaultFeed, 2);
+    await settleFxRequests();
 
     expect(screen.getAllByText(/FY24 coverage: 12 of 12 months/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Apr 2023 – Mar 2024/).length).toBeGreaterThan(0);
@@ -251,7 +207,7 @@ describe('Module1Ingestion coverage', () => {
 
   it('falls back to the configured evaluation window when the canonical view has no period metadata', async () => {
     render(<Module1Ingestion {...buildProps({ canonicalViewModel: buildCanonical() })} />);
-    await settleFxRequests(defaultFeed, 2);
+    await settleFxRequests();
 
     expect(screen.getAllByText(/Configured window: 12 billing months/).length).toBeGreaterThan(0);
   });
@@ -267,7 +223,7 @@ describe('Module1Ingestion coverage', () => {
         })}
       />
     );
-    await settleFxRequests(defaultFeed, 2);
+    await settleFxRequests();
 
     expect(screen.getAllByText(/2 Billing Months \(Apr 2023 – Mar 2024\)/).length).toBeGreaterThan(0);
   });
@@ -282,7 +238,19 @@ describe('Module1Ingestion coverage', () => {
         })}
       />
     );
-    await settleFxRequests(defaultFeed, 2);
+    await settleFxRequests();
+
+    expect(screen.getByText(UI_STRINGS.documentSummary.heading)).toBeInTheDocument();
+  });
+
+  it('renders the active dataset summary for D1-provided raw upload rows', async () => {
+    render(
+      <Module1Ingestion
+        {...buildProps({ ingestionQueue: [], validationRecords: [], isDataRefreshed: false })}
+        rawUploadRecords={[{ record_id: 'RAW-D1-1' }]}
+      />
+    );
+    await settleFxRequests();
 
     expect(screen.getByText(UI_STRINGS.documentSummary.heading)).toBeInTheDocument();
   });
@@ -296,7 +264,7 @@ describe('Module1Ingestion coverage', () => {
         })}
       />
     );
-    await settleFxRequests(defaultFeed, 2);
+    await settleFxRequests();
 
     expect(screen.getByText(UI_STRINGS.module1.noFileUploaded, { exact: false })).toBeInTheDocument();
     expect(screen.queryByText(UI_STRINGS.documentSummary.heading)).not.toBeInTheDocument();

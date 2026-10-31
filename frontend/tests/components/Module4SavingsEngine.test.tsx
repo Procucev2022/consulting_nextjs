@@ -180,7 +180,7 @@ describe('Module4SavingsEngine Component', () => {
     expect(screen.getAllByText(UI_STRINGS.module4.categories.packagingMaterials).length).toBeGreaterThan(0);
     expect(screen.getByText(UI_STRINGS.module4.pipelineTitle)).toBeInTheDocument();
     expect(screen.getAllByText(UI_STRINGS.module4.netModelledOpportunityLabel).length).toBeGreaterThan(0);
-    expect(screen.getByText(UI_STRINGS.module4.realizationTargetBenchmarkBadge('16.4'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module4.realizationTargetBenchmarkBadge('10.6'))).toBeInTheDocument();
   });
 
   it('filters opportunities by category and by module', () => {
@@ -252,9 +252,8 @@ describe('Module4SavingsEngine Component', () => {
 
     const pushedBadges = screen.getAllByText(UI_STRINGS.module4.pushedBadge);
     expect(pushedBadges).toHaveLength(2);
-    // Spend and savings fall back to the raw INR values converted to crore
-    expect(screen.getByText(UI_STRINGS.common.croreAmount('3771.00'))).toBeInTheDocument();
-    expect(screen.getByText(UI_STRINGS.common.croreAmount('377.10'))).toBeInTheDocument();
+    // Missing INR-crore values remain unavailable instead of converting unrelated raw amounts.
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThanOrEqual(2);
     expect(screen.queryByRole('button', { name: UI_STRINGS.module4.pushToProCPX })).toBeNull();
   });
 
@@ -506,7 +505,7 @@ describe('Module4SavingsEngine Component', () => {
       });
     });
 
-    it('derives the headline and baseline from USD fields when the waterfall is missing', () => {
+    it('does not convert USD-only opportunity values with a fabricated exchange rate', () => {
       const usdOnly = [{
         opp_id: 'USD-1',
         category: 'Packaging Materials',
@@ -524,8 +523,8 @@ describe('Module4SavingsEngine Component', () => {
       }];
       renderEngine({ opportunities: usdOnly as never });
 
-      expect(screen.getByText(UI_STRINGS.common.croreAmount('8.380'))).toBeInTheDocument();
-      expect(screen.getByText(UI_STRINGS.module4.evaluatedBaselineSpendNote('41.90'))).toBeInTheDocument();
+      expect(screen.queryByText(UI_STRINGS.common.croreAmount('8.380'))).not.toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module4.evaluatedBaselineSpendNote(UI_STRINGS.common.notAvailable))).toBeInTheDocument();
     });
 
     it('shows the baseline spend with four decimals when it has more than two decimal places', () => {
@@ -535,7 +534,7 @@ describe('Module4SavingsEngine Component', () => {
       expect(screen.getByText(UI_STRINGS.module4.evaluatedBaselineSpendNote('45.1250'))).toBeInTheDocument();
     });
 
-    it('shows the category target from the savings ratio, the fixed realization target, or zero', () => {
+    it('shows category targets only when D1 contains the required spend and savings values', () => {
       const categoryOpps = [
         { ...sampleSavingsOpportunities[0], category: 'Direct Materials', est_savings_inr_cr: 4.5, baseline_spend_inr_cr: 45 },
         { opp_id: 'LOG-1', category: 'Logistics & Freight', est_savings_inr_cr: 1.5, baseline_spend_inr_cr: 0, current_spend_inr_cr: 0, target_savings_pct: 1, status: 'Pending', recommended_module: 'proCPX' }
@@ -543,8 +542,7 @@ describe('Module4SavingsEngine Component', () => {
       renderEngine({ opportunities: categoryOpps as never });
 
       expect(screen.getByText(UI_STRINGS.module4.targetPrefix('10.0%'))).toBeInTheDocument();
-      expect(screen.getByText(UI_STRINGS.module4.targetPrefix('16.4%'))).toBeInTheDocument();
-      expect(screen.getAllByText(UI_STRINGS.module4.targetPrefix('0.0%')).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(UI_STRINGS.module4.targetPrefix(UI_STRINGS.common.notAvailable)).length).toBeGreaterThan(0);
     });
 
     it('applies action plan and status updates from the trackers and logs rejected saves', async () => {

@@ -210,6 +210,7 @@ describe('apiClient', () => {
   it('deployOpportunity should perform POST /api/savings', async () => {
     const mockOpp = { opp_id: 'OPP-1', status: 'Deployed' };
     (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
       json: async () => ({ success: true, data: mockOpp })
     });
 
@@ -397,22 +398,40 @@ describe('apiClient', () => {
     expect(res).toEqual(mockDetails);
   });
 
-  it('getCurrencyConversion should perform GET /api/currency with and without date', async () => {
-    const mockData = { from: 'USD', amount: 100, converted: 8300 };
+  it('loads the D1 currency catalog and validates the response', async () => {
+    const catalog = { USD: { currencyCode: 'USD', name: 'US Dollar', currentRate: 83, lastUpdated: '2026-10-30', coverageStatus: 'COVERED', source: 'D1' } };
     (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: mockData })
+      ok: true,
+      json: async () => ({ success: true, data: catalog })
     });
+    await expect(apiClient.getCurrencyRates()).resolves.toEqual(catalog);
+    expect(global.fetch).toHaveBeenCalledWith('/api/currency');
+  });
+
+  it('rejects failed and malformed D1 currency catalog responses', async () => {
+    (global.fetch as any).mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({ message: 'D1 unavailable' }) });
+    await expect(apiClient.getCurrencyRates()).rejects.toThrow('D1 unavailable');
+    (global.fetch as any).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: {} }) });
+    await expect(apiClient.getCurrencyRates()).rejects.toThrow();
+  });
+
+  it('gets historical D1 conversion results and rejects missing or malformed rate results', async () => {
+    const mockData = { amount: 100, fromCurrency: 'USD', amountINR: 8300, exchangeRate: 83, rateDate: '2024-12-31' };
+    (global.fetch as any).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: mockData }) });
 
     const res1 = await apiClient.getCurrencyConversion('USD', 100, 2024);
     expect(global.fetch).toHaveBeenCalledWith('/api/currency?from=USD&amount=100&date=2024');
     expect(res1).toEqual(mockData);
 
-    (global.fetch as any).mockResolvedValueOnce({
-      json: async () => ({ data: mockData })
-    });
+    (global.fetch as any).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: mockData }) });
     const res2 = await apiClient.getCurrencyConversion('USD', 100);
     expect(global.fetch).toHaveBeenCalledWith('/api/currency?from=USD&amount=100');
     expect(res2).toEqual(mockData);
+
+    (global.fetch as any).mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ message: 'No rate for date' }) });
+    await expect(apiClient.getCurrencyConversion('USD', 100, '1900-01-01')).rejects.toThrow('No rate for date');
+    (global.fetch as any).mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: { exchangeRate: 83 } }) });
+    await expect(apiClient.getCurrencyConversion('USD', 100)).rejects.toThrow();
   });
 
   it('getDBStatus should perform GET /api/db/status', async () => {

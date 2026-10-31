@@ -1,71 +1,95 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from '@/app/api/email/executive-brief/route';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT, UI_STRINGS } from '@/constants';
+import { getApiBaseUrl } from '@/utils/apiBase';
 
-describe('Executive Brief Email Route (/api/email/executive-brief)', () => {
+vi.mock('@/utils/apiBase', () => ({ getApiBaseUrl: vi.fn(() => 'https://backend.example.test') }));
+
+const routeRequest = (body: string, authorization?: string): Request => new Request(
+  'https://app.example.test/api/email/executive-brief',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authorization ? { Authorization: authorization } : {})
+    },
+    body
+  }
+);
+
+describe('D1 Executive Brief email proxy', () => {
   beforeEach(() => {
-    vi.restoreAllMocks();
+    vi.mocked(getApiBaseUrl).mockReturnValue('https://backend.example.test');
   });
 
-  it('should return 400 if recipient email is invalid or missing', async () => {
-    const req = new Request('http://localhost:3000/api/email/executive-brief', {
-      method: 'POST',
-      body: JSON.stringify({ buyerEmail: 'invalid-email' })
-    });
-
-    const res = await POST(req);
-    const json = await res.json();
-
-    expect(res.status).toBe(400);
-    expect(json.success).toBe(false);
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
-  it('should send email via Resend API when RESEND_API_KEY is configured', async () => {
-    process.env.RESEND_API_KEY = 're_test_12345';
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ id: 'email_msg_123' })
-    });
-    global.fetch = mockFetch;
+  it('forwards the validated recipient and signed-in authorization to the D1 Worker', async () => {
+    vi.stubEnv('BACKEND_API_URL', 'https://backend.example.test/');
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ success: true, message: 'Sent from D1' }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
 
-    const req = new Request('http://localhost:3000/api/email/executive-brief', {
-      method: 'POST',
-      body: JSON.stringify({
-        buyerEmail: 'cfo@enterprise.com',
-        tenantName: 'Acme Global',
-        totalSpendInrCr: 100,
-        totalSavingsInrCr: 15,
-        cleanLineItemsCount: 500,
-        categories: [{ name: 'Direct Steel', spend_inr_crores: 50, lineItemsCount: 200 }],
-        opportunities: [{ category: 'Direct Steel', est_savings_inr_cr: 8, target_savings_pct: 16 }]
+    const response = await POST(routeRequest('{"buyerEmail":"buyer@example.test"}', 'Bearer user-token'));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ success: true, message: 'Sent from D1' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://backend.example.test${EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT}`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer user-token' },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
       })
-    });
-
-    const res = await POST(req);
-    const json = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.messageId).toBe('email_msg_123');
-
-    delete process.env.RESEND_API_KEY;
+    );
   });
 
-  it('should handle SMTP failure error gracefully', async () => {
-    delete process.env.RESEND_API_KEY;
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASSWORD;
+  it('rejects malformed JSON and invalid recipients before calling the backend', async () => {
+    vi.stubEnv('BACKEND_API_URL', 'https://backend.example.test');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const malformed = await POST(routeRequest('{', 'Bearer token'));
+    expect(malformed.status).toBe(400);
+    expect((await malformed.json()).message).toBe(UI_STRINGS.module5.emailInvalidRequest);
+    const invalid = await POST(routeRequest('{"buyerEmail":"invalid"}', 'Bearer token'));
+    expect(invalid.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 
-    const req = new Request('http://localhost:3000/api/email/executive-brief', {
-      method: 'POST',
-      body: JSON.stringify({
-        buyerEmail: 'cfo@enterprise.com'
-      })
-    });
+  it('returns an actionable configuration error when no backend URL is set', async () => {
+    vi.stubEnv('BACKEND_API_URL', '');
+    vi.mocked(getApiBaseUrl).mockReturnValue('');
+    const response = await POST(routeRequest('{"buyerEmail":"buyer@example.test"}', 'Bearer token'));
+    expect(response.status).toBe(503);
+    expect((await response.json()).message).toBe(UI_STRINGS.module5.emailBackendUnavailable);
+  });
 
-    const res = await POST(req);
-    const json = await res.json();
+  it('requires an Authorization header', async () => {
+    vi.stubEnv('BACKEND_API_URL', 'https://backend.example.test');
+    const response = await POST(routeRequest('{"buyerEmail":"buyer@example.test"}'));
+    expect(response.status).toBe(401);
+    expect((await response.json()).message).toBe(UI_STRINGS.errors.auth.sessionExpired);
+  });
 
-    expect(res.status).toBe(500);
-    expect(json.success).toBe(false);
+  it('preserves Worker error statuses and bodies', async () => {
+    vi.stubEnv('BACKEND_API_URL', 'https://backend.example.test');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ success: false, message: 'D1 unavailable' }), { status: 503 })));
+    const response = await POST(routeRequest('{"buyerEmail":"buyer@example.test"}', 'Bearer token'));
+    expect(response.status).toBe(503);
+    expect((await response.json()).message).toBe('D1 unavailable');
+  });
+
+  it('returns gateway errors for malformed Worker responses and network failures', async () => {
+    vi.stubEnv('BACKEND_API_URL', 'https://backend.example.test');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('null', { status: 200 })));
+    const malformed = await POST(routeRequest('{"buyerEmail":"buyer@example.test"}', 'Bearer token'));
+    expect(malformed.status).toBe(502);
+    expect((await malformed.json()).message).toBe(UI_STRINGS.module5.emailError);
+
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('network failure'); }));
+    const failed = await POST(routeRequest('{"buyerEmail":"buyer@example.test"}', 'Bearer token'));
+    expect(failed.status).toBe(502);
+    expect((await failed.json()).message).toBe(UI_STRINGS.module5.emailNetworkError);
   });
 });

@@ -231,10 +231,7 @@ export default function ProfilePage(): React.ReactElement {
   };
 
   const handleUseDocument = (item: RawDocumentIngestion) => {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: item }));
-    }
-    router.push('/');
+    router.push(`/?documentId=${encodeURIComponent(item.doc_id)}`);
   };
 
   if (loading || user?.role === 'ADMIN') {

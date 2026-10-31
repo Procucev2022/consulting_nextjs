@@ -45,7 +45,7 @@ export const ExecutiveBriefSummaryCards: React.FC<ExecutiveBriefSummaryCardsProp
         <h2 id="summary-cards-heading" className="text-xs font-black uppercase tracking-wider text-slate-500">
           {strings.summaryCards.title}
         </h2>
-        <span className="text-[11px] text-slate-500 font-mono">100% Certified Data Lineage</span>
+        <span className="text-[11px] text-slate-500 font-mono">{strings.summaryCards.evidenceNote}</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
