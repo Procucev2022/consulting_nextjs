@@ -9,6 +9,7 @@ const environmentName = process.env.D1_ENV || 'dev';
 const databaseName = process.env.D1_DATABASE_NAME || (environmentName === 'dev' ? 'consulting_dev' : 'consulting-db');
 const isRemote = process.argv.includes('--remote');
 const shouldSeed = process.argv.includes('--seed');
+const shouldSeedAll = process.argv.includes('--seed-all');
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const seedPartLimitBytes = 900000;
 const spawnOptions = { cwd: backendRoot, stdio: 'inherit', shell: false, env: { ...process.env, CI: process.env.CI || '1' } };
@@ -54,8 +55,10 @@ const seedManifest = shouldSeed ? verifySeedManifest(backendRoot) : null;
 executeSqlFile('d1-schema.sql');
 executeSqlFile('d1-reference-schema.sql');
 if (shouldSeed) {
-  for (const fileName of seedManifest.seedFiles) {
-    if (fileName === 'd1-seed.sql') executeSqlFile(fileName);
-    else executeGeneratedSeedInParts(fileName);
+  executeSqlFile('d1-seed.sql');
+  if (shouldSeedAll) {
+    for (const fileName of seedManifest.seedFiles) {
+      if (fileName !== 'd1-seed.sql') executeGeneratedSeedInParts(fileName);
+    }
   }
 }

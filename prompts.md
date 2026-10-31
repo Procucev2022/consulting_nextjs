@@ -114023,3 +114023,7 @@ consulting-backend@1.0.0 db:push
     if (actual !== expected) throw new Error("D1 seed checksum mismatch: ");
                              ^
 Error: D1 seed checksum mismatch: d1-seed.sql
+
+## Prompt 591
+
+check what to do wih them
