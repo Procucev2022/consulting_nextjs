@@ -121,6 +121,7 @@ const executeRoute = async (
     url,
     database,
     objects: environment.OBJECTS,
+    bucketName: environment.R2_BUCKET,
     actor,
     params,
     runtime,

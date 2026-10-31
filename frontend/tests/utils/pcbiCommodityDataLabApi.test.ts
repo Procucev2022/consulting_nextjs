@@ -92,6 +92,48 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
     await expect(pcbiCommodityDataLabApi.getQueue()).rejects.toThrow('Failed to fetch Commodity Research Queue: HTTP 404');
   });
 
+  it('assignResearcher persists an owner or clears it through the admin D1 route', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) } as Response);
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', 'owner@example.test')).resolves.toEqual({ success: true });
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', null)).resolves.toEqual({ success: true });
+    expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/data-lab/assignment'), expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ pcbiId: 'PCBI-001', assignee: 'owner@example.test' })
+    }));
+    expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/data-lab/assignment'), expect.objectContaining({
+      method: 'POST', body: JSON.stringify({ pcbiId: 'PCBI-001', assignee: null })
+    }));
+  });
+
+  it('reports assignment validation and D1 request errors', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ message: 'Invalid assignment' }) } as Response)
+      .mockResolvedValueOnce({ ok: false, status: 503, json: async () => { throw new Error('invalid response'); } } as unknown as Response);
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', 'owner')).rejects.toThrow('Invalid assignment');
+    await expect(pcbiCommodityDataLabApi.assignResearcher('PCBI-001', null)).rejects.toThrow('Failed to save the research owner: HTTP 503');
+  });
+
+  it('loads persisted sources and promotion history from D1 routes', async () => {
+    const sources = { success: true, total: 0, sources: [] };
+    const history = { success: true, total: 0, versions: [] };
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: true, json: async () => sources } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => history } as Response);
+    await expect(pcbiCommodityDataLabApi.getSources()).resolves.toEqual(sources);
+    await expect(pcbiCommodityDataLabApi.getVersionHistory()).resolves.toEqual(history);
+    expect(global.fetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/data-lab/sources'), { headers: { 'Content-Type': 'application/json' } });
+    expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/data-lab/version-history'), { headers: { 'Content-Type': 'application/json' } });
+  });
+
+  it('reports HTTP failures when loading the source register or promotion history', async () => {
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce({ ok: false, status: 503 } as Response)
+      .mockResolvedValueOnce({ ok: false, status: 503 } as Response);
+    await expect(pcbiCommodityDataLabApi.getSources()).rejects.toThrow('Failed to fetch PCBI evidence sources: HTTP 503');
+    await expect(pcbiCommodityDataLabApi.getVersionHistory()).rejects.toThrow('Failed to fetch PCBI catalog promotion history: HTTP 503');
+  });
+
   it('getCommodityWorkspace should fetch workspace with query parameter', async () => {
     const mockData = {
       success: true,
@@ -177,7 +219,8 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
       sourceName: 'MMR',
       publisher: 'MMR Pub',
       documentName: 'MMR.csv',
-      fileType: 'CSV' as const
+      fileType: 'CSV' as const,
+      fileBase64: 'ZGF0ZQ=='
     };
 
     const res = await pcbiCommodityDataLabApi.uploadCommoditySource(payload);
@@ -205,7 +248,8 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
         sourceName: 'Test',
         publisher: 'Test Pub',
         documentName: 'Customer_PO.csv',
-        fileType: 'CSV'
+        fileType: 'CSV',
+        fileBase64: 'ZGF0ZQ=='
       })
     ).rejects.toThrow('CUSTOMER DATA DETECTED');
   });
@@ -277,7 +321,8 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
         sourceName: 'Test',
         publisher: 'Test',
         documentName: 'test.csv',
-        fileType: 'CSV'
+        fileType: 'CSV',
+        fileBase64: 'ZGF0ZQ=='
       })
     ).rejects.toThrow('Upload failed with HTTP 500');
 
@@ -289,7 +334,8 @@ describe('PCBICommodityDataLabApiClient Unit Tests', () => {
         sourceName: 'Test',
         publisher: 'Test',
         documentName: 'test.csv',
-        fileType: 'CSV'
+        fileType: 'CSV',
+        fileBase64: 'ZGF0ZQ=='
       })
     ).rejects.toBe('Network connection failed');
   });

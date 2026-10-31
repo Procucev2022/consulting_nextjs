@@ -6,25 +6,24 @@
  */
 
 import { z } from 'zod';
+import { PCBI_DATA_LAB_UPLOAD_MAX_BASE64_LENGTH } from './d1';
 import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from './d1';
 import { MODULE2_D1_EAUCTION } from './module2D1Scoped';
 import { MODULE2_D1_VENDOR_CONSOLIDATION } from './module2VendorConsolidationD1';
 export { alternateSourcingQuerySchema } from './module2AlternateSourcingD1';
 export {
   eAuctionPlanningAssumptionSchema,
+  materialMappingBulkUpdateSchema,
   materialMappingRecordSchema,
   materialMappingUpdateSchema,
   procurementComplianceReviewSchema,
   specificationReviewSchema
 } from './module2ReviewValidation';
+export { pcbiResearchPdfExtractionSchema } from './pcbiResearchPdfValidation';
+export { assignPcbiResearchSchema } from './pcbiDataLabValidation';
 export { directPriceQuerySchema } from './module2D1Validation';
 export * from './commercialValidation';
-
-export const pcbiReferenceQuerySchema = z.object({
-  sector: z.string().trim().min(1).max(120).optional(),
-  pcbiId: z.string().trim().min(1).max(120).optional(),
-  limit: z.coerce.number().int().min(1).max(D1_REPORTING.maxIndexLimit).default(D1_REPORTING.weeklyIndexLimit)
-});
+export { pcbiAdminImportSchema, pcbiAdminPublishSchema, pcbiReferenceQuerySchema } from './pcbiAdminValidation';
 
 export const d1DatasetScopeSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120).optional(),
@@ -336,6 +335,7 @@ export const uploadCommoditySourceSchema = z.object({
   publisher: z.string().min(1, 'publisher is required'),
   url: z.string().optional(),
   documentName: z.string().min(1, 'documentName is required'),
+  fileBase64: z.string().max(PCBI_DATA_LAB_UPLOAD_MAX_BASE64_LENGTH).optional(),
   publicationDate: z.string().optional(),
   fileType: z.enum(['XLSX', 'XLS', 'CSV', 'PDF', 'JSON', 'TXT']),
   checksum: z.string().optional(),
@@ -354,6 +354,4 @@ export const approveCommodityDataSchema = z.object({
   approverName: z.string().min(1, 'approverName is required'),
   comments: z.string().optional()
 });
-
-
 

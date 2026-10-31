@@ -5,6 +5,8 @@ import {
 } from './constants/auth';
 import type { AuthRouteResult, CloudflareEnvironment } from './types/cloudflare';
 import type { WorkerAuthCheckResult } from './types/auth';
+import { handlePcbiAdminRoute } from './workerD1PcbiAdmin';
+import { handlePcbiDataLabRoute } from './workerD1PcbiDataLab';
 
 const encodeBase64Url = (bytes: Uint8Array): string => {
   let binary = '';
@@ -311,6 +313,23 @@ export const handleAdminRoute = async (
       success: false,
       message: 'Access denied: Administrator privileges required'
     }, 403);
+  }
+
+  if (url.pathname.startsWith('/api/admin/pcbi/data-lab')) {
+    const actorName = typeof payload.email === 'string' ? payload.email : typeof payload.userId === 'string' ? payload.userId : 'Administrator';
+    const dataLabResult = await handlePcbiDataLabRoute(environment, request, url, actorName);
+    return {
+      body: dataLabResult.data as Record<string, unknown>,
+      status: dataLabResult.status || 200
+    };
+  }
+
+  if (url.pathname === '/api/admin/pcbi' || url.pathname.startsWith('/api/admin/pcbi/')) {
+    const adminResult = await handlePcbiAdminRoute(environment.DB, request, url);
+    return {
+      body: adminResult.data as Record<string, unknown>,
+      status: adminResult.status || 200
+    };
   }
 
   // GET /api/admin/users

@@ -108,6 +108,7 @@ export const validateAssessmentDatasetSchema = z.object({
 });
 
 export const ASSESSMENT_DATA_VERSION_MAX_BYTES = 100 * 1024 * 1024;
+export const ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH = Math.ceil(ASSESSMENT_DATA_VERSION_MAX_BYTES / 3) * 4;
 export const ASSESSMENT_DATA_VERSION_ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'] as const;
 
 export const analystApprovalSchema = z.object({

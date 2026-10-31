@@ -46,13 +46,15 @@ const AssessmentWorkspace = dynamic(
   { ssr: false }
 );
 
-import { getYahooFinanceRateToINR, parseDateOrYear } from '@/utils/currencyConverter';
+import { getYahooFinanceRateToINR } from '@/utils/currencyConverter';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { assessmentApiClient } from '@/utils/assessmentApi';
 import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from '@/types/assessment';
 import { frontendLogger } from '@/utils/logger';
-import { buildVendorParetoHierarchy, buildItemParetoHierarchy } from '@/utils/paretoCalculator';
-import { lookupUNSPSCDetails, lookupUNSPSCByDescription, loadUNSPSCTaxonomy, getTaxonomyLoadState } from '@/data/unspscTaxonomy';
+import {
+  lookupUNSPSCDetails, lookupUNSPSCByDescription, loadUNSPSCTaxonomy,
+  getTaxonomyLoadState, unspscOfficialDictionary
+} from '@/data/unspscTaxonomy';
 import { useUNSPSCTaxonomy } from '@/hooks/useUNSPSCTaxonomy';
 import { orchestrationApi } from '@/utils/orchestrationApi';
 import { UI_STRINGS } from '@/constants/uiStrings';
@@ -60,7 +62,8 @@ import { INR_CRORES_DIVISOR } from '@/constants/currency';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
-import { EMPTY_TENANT } from '@/constants/app';
+import { EMPTY_TENANT, EXECUTIVE_BRIEF_ATTACHMENT_FILENAME_PATTERN } from '@/constants/app';
+import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -114,7 +117,6 @@ import type {
   PlantSummary,
   MonthWiseSummary,
   ParetoSpendData,
-  ParetoRawRecord,
   SpendCategorySummary,
   UserProfile,
   SubscriptionTier,
@@ -122,7 +124,8 @@ import type {
   Module1CanonicalViewModel,
   ParetoHierarchyParent,
   ConversionFunnelPhase,
-  ReportVersion
+  ReportVersion,
+  ApiBulkUpdateModule2MaterialMappingsPayload
 } from '@/types';
 import { getEffectiveUserTier } from '@/utils/tierAccess';
 
@@ -198,9 +201,7 @@ export default function Home() {
     };
   }, [briefDownloadPayload]);
 
-  // The brief endpoint answers with JSON errors until it is implemented. Only a successful response is saved as a file.
   const handleBriefDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
-    const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
     const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
     const formatLabel = format.toUpperCase();
     try {
@@ -217,6 +218,9 @@ export default function Home() {
         return;
       }
       const blob = await response.blob();
+      const disposition = response.headers.get('content-disposition') ?? '';
+      const filename = EXECUTIVE_BRIEF_ATTACHMENT_FILENAME_PATTERN.exec(disposition)?.[1] ??
+        UI_STRINGS.opportunityBrief.downloadFilename(format);
       setBriefDownloadPayload({ url: URL.createObjectURL(blob), filename });
     } catch (error: unknown) {
       frontendLogger.error('Opportunity brief download request failed', { format, url }, error);
@@ -436,7 +440,7 @@ export default function Home() {
   }, [activeCustomer]);
 
   const [validationRecords, setValidationRecords] = useState<ValidationPreCheckRecord[]>([]);
-  const [analystConfirmedBaseCurrency, setAnalystConfirmedBaseCurrency] = useState<string | null>(null);
+  const [, setAnalystConfirmedBaseCurrency] = useState<string | null>(null);
   const [categories, setCategories] = useState<SpendCategorySummary[]>([]);
   const [lineItems, setLineItems] = useState<LineItemMapping[]>([]);
   const [vendorRankings, setVendorRankings] = useState<VendorPriceRank[]>([]);
@@ -1300,722 +1304,222 @@ export default function Home() {
   const handleAddBatchUpload = async (file: File, _datasetType: DatasetType = 'Purchase History') => {
     const loggedUser = currentUser || authApiClient.getStoredUser();
     if (!loggedUser) {
-      showToast('Please sign in to upload datasets');
+      showToast(UI_STRINGS.toasts.loginRequiredForUpload);
       router.push('/login');
       return;
     }
 
-    try {
-      await loadUNSPSCTaxonomy();
-    } catch {
-      showToast(getTaxonomyLoadState().error || UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable));
+    const extension = file.name.toLowerCase().split('.').pop() || '';
+    const fileType = extension === 'xlsx' ? 'XLSX' : extension === 'xls' ? 'XLS' : extension === 'csv' ? 'CSV' : extension === 'pdf' ? 'PDF' : 'OTHER';
+    const isWorkbook = fileType === 'XLSX' || fileType === 'XLS' || fileType === 'CSV';
+    if (activeAssessment && !isWorkbook) {
+      showToast(UI_STRINGS.toasts.batchUploadAssessmentUnsupported(file.name));
       return;
     }
 
-    setAnalyzingLoaderState({
-      isOpen: true,
-      title: `Analyzing Uploaded File "${file.name}"`,
-      subtitle: 'Running multi-currency normalizations, ERP document deduplication and UNSPSC matching...',
-      metrics: {
-        totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
-        spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
-        uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
-      },
-      onComplete: () => {
-        setAnalyzingLoaderState(null);
-      }
-    });
-
-    // 1. Completely erase prior session dataset and old cached state
-    try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        window.sessionStorage.removeItem('procucev_uploaded_dataset');
-      }
-    } catch {
-      // Safe fallback if sessionStorage is inaccessible
-    }
     setIsDataRefreshed(false);
+    setIngestionQueue([]);
+    setValidationRecords([]);
     setUploadedMaterialGroups(undefined);
     setUploadedPlants(undefined);
     setUploadedMonths(undefined);
     setUploadedUniqueItems(undefined);
     setUploadedUniqueVendors(undefined);
     setUploadedParetoData(undefined);
-
-    let recordsCount = 0;
-    let totalSpendInrCr = 0;
-    let dynamicUniqueItems = 0;
-    let dynamicUniqueVendors = 0;
-    let dynamicMgs: MaterialGroupSummary[] | null = null;
-    let dynamicPlants: PlantSummary[] | null = null;
-    let dynamicMonths: MonthWiseSummary[] | null = null;
-    const dynamicParetoRecords: ParetoRawRecord[] = [];
-    const parsedValidationItems: ValidationPreCheckRecord[] = [];
-    let paretoDataToStore: ParetoSpendData | undefined = undefined;
-    let dynamicCategories: SpendCategorySummary[] | undefined = undefined;
-    let dynamicLineItems: LineItemMapping[] | undefined = undefined;
-    let dynamicVendorRankings: VendorPriceRank[] | undefined = undefined;
-    let dynamicOpportunities: SavingsOpportunity[] | undefined = undefined;
-    const detectedCurrenciesSet = new Set<string>();
-
-    if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-      try {
-        const buffer = await file.arrayBuffer();
-        const XLSX = await import('xlsx');
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[firstSheetName];
-        const rows: any[] = XLSX.utils.sheet_to_json(sheet);
-
-        if (rows && rows.length > 0) {
-          recordsCount = rows.length; // Header row is automatically excluded by sheet_to_json!
-          const keys = Array.from(new Set(rows.slice(0, 5).flatMap((r) => Object.keys(r || {}))));
-          const qtyKey = keys.find((k) => /qty|quantity|order_qty|ordered|units/i.test(k));
-          const priceKey = keys.find((k) =>
-            /^(?:net[_\s-]*price|unit[_\s-]*price|netpr)$/i.test(k) ||
-            (/price|rate|cost/i.test(k) && !/unit|curr|type|code|grp/i.test(k))
-          );
-          const currKey = keys.find((k) => /crcy|curr|currency|waers/i.test(k));
-
-          const matPatterns = [
-            /^(?:material[_\s-]*code|material[_\s-]*no|material[_\s-]*num(?:ber)?|matnr|item[_\s-]*code)$/i,
-            /^material$/i,
-            /matnr/i,
-            /material/i
-          ];
-          const matKey = keys.find((k) =>
-            matPatterns.some((p) => p.test(k) && !/(?:desc|text|group|grp|plant|type)/i.test(k))
-          );
-
-          const descPatterns = [
-            /^short[_\s-]*text$/i,
-            /^txz01$/i,
-            /short[_\s-]*text/i,
-            /(?:item|product|part|goods)[_\s-]*(?:desc(?:ription)?|text|name)/i,
-            /^item[_\s-]*(?:desc(?:ription)?|text|name)$/i,
-            /item[_\s-]*(?:desc(?:ription)?|text|name)/i,
-            /^desc(?:ription)?$/i,
-            /description/i
-          ];
-          const descKey = keys.find((k) =>
-            descPatterns.some((p) => p.test(k) && !/(?:code|id|no|num|group|grp|type|plant|cat)/i.test(k))
-          );
-
-          const vendorPatterns = [
-            /^(?:supplier|vendor|party)[_\s-]*name$/i,
-            /^(?=.*(?:supplier|vendor|party))(?=.*name).*$/i,
-            /^name(?:[_\s-]*1)?$/i,
-            /^(?:supplier|vendor|party)[_\s-]*desc(?:ription)?$/i,
-            /^(?:vendor|supplier|party)$/i,
-            /(?:supplier|vendor|party)/i
-          ];
-          const vendorKey = keys.find((k) =>
-            vendorPatterns.some((p) => p.test(k) && !/(?:code|id|num|no|acc|grp|group|type|plant)/i.test(k))
-          );
-
-          const poPatterns = [
-            /^(?:po[_\s-]*number|po[_\s-]*no|purchase[_\s-]*order(?:[_\s-]*no)?|purchasing[_\s-]*document|ebeln)$/i,
-            /purchasing.*doc/i,
-            /^(?:po|order)$/i,
-            /(?:po|order|doc_no)/i
-          ];
-          const poKey = keys.find((k) =>
-            poPatterns.some((p) => p.test(k) && !/(?:type|date|status)/i.test(k))
-          );
-          const yearKey = keys.find((k) => /year|date/i.test(k));
-          const totalCrKey = keys.find((k) => /net[_\s-]*value[_\s-]*in[_\s-]*crs?|total.*in.*cr|total.*cr/i.test(k));
-          const totalInrKey = keys.find((k) => /net[_\s-]*value[_\s-]*in[_\s-]*inr|total.*inr|inr.*total/i.test(k));
-          const mgPatterns = [
-            /^(?:material[_\s-]*group|matl[_\s-]*group|mat[_\s-]*grp|matl[_\s-]*grp|matkl)$/i,
-            /mat(?:erial|l).*group/i,
-            /matl[_\s-]*grp/i,
-            /matkl/i
-          ];
-          const mgKey = keys.find((k) =>
-            mgPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
-          );
-          const deptPatterns = [
-            /^(?:department|dept|procurement[_\s-]*category|spend[_\s-]*category)$/i,
-            /department/i
-          ];
-          const deptKey = keys.find((k) =>
-            deptPatterns.some((p) => p.test(k) && !/(?:purchas|buy|account|acct|vendor)/i.test(k))
-          );
-          const plantKey = keys.find((k) => /plnt|plant|werks|facility|site/i.test(k));
-          const dateKey = keys.find((k) => /doc.*date|document.*date|posting.*date|date/i.test(k));
-
-          let cumulativeFileTotalINR = 0;
-          parsedValidationItems.length = 0;
-
-          const uniqueItemsSet = new Set<string>();
-          const uniqueVendorsSet = new Set<string>();
-          detectedCurrenciesSet.clear();
-          dynamicParetoRecords.length = 0;
-          const mgMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string>; sampleItem: string }>();
-          const plantMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
-          const monthMap = new Map<string, { count: number; spendCr: number; items: Set<string>; vendors: Set<string> }>();
-
-          rows.forEach((r, idx) => {
-            const hasExplicitQty = qtyKey && r[qtyKey] != null && !isNaN(Number(r[qtyKey]));
-            const rawQty = hasExplicitQty ? Math.max(0, Number(r[qtyKey])) : 1;
-            const hasExplicitPrice = priceKey && r[priceKey] != null && !isNaN(Number(r[priceKey]));
-            const rawPrice = hasExplicitPrice ? Math.max(0, Number(r[priceKey])) : 0;
-            const rawCurr = currKey && r[currKey] != null ? String(r[currKey]).trim().toUpperCase() : '';
-            if (rawCurr) detectedCurrenciesSet.add(rawCurr);
-            const rawDateVal = dateKey ? r[dateKey] : null;
-            const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || new Date().getFullYear());
-            const rawYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
-            const fxRate = getYahooFinanceRateToINR(rawCurr || 'INR', rawDateVal || rawYear);
-
-            // Ground truth check: Use Total In Crs or Total INR if present, otherwise Qty * Price * FX
-            const rawCr = totalCrKey && r[totalCrKey] != null ? Number(r[totalCrKey]) : NaN;
-            const rawInr = totalInrKey && r[totalInrKey] != null ? Number(r[totalInrKey]) : NaN;
-            const lineTotalCr =
-              !isNaN(rawCr)
-                ? Math.max(0, rawCr)
-                : !isNaN(rawInr)
-                ? Math.max(0, rawInr / 10000000)
-                : Math.max(0, (rawQty * rawPrice * fxRate) / 10000000);
-
-            const lineTotalINR = lineTotalCr * 10000000;
-            cumulativeFileTotalINR += lineTotalINR;
-
-            // Tracking unique items & unique vendors (prioritizing descriptive item names and vendor names)
-            const rawDesc = descKey && r[descKey] != null ? String(r[descKey]).trim() : '';
-            const rawMat = matKey && r[matKey] != null ? String(r[matKey]).trim() : '';
-            const rowItem = rawDesc && !/^\d{1,3}$/.test(rawDesc)
-              ? rawDesc
-              : rawMat && !/^\d{1,3}$/.test(rawMat)
-                ? rawMat
-                : `Item-${idx + 1}`;
-            const rowVendor = (vendorKey && r[vendorKey] != null ? String(r[vendorKey]).trim() : '') || '';
-
-            const isValidVendor = Boolean(rowVendor && rowVendor.trim().length > 1);
-            const isValidItem = Boolean(rowItem && rowItem.trim().length > 0 && rowItem !== '0');
-
-            if (isValidItem) uniqueItemsSet.add(rowItem);
-            if (isValidVendor) uniqueVendorsSet.add(rowVendor);
-
-            // Grouping by Material Group or Department
-            const rawRowMg = (mgKey && r[mgKey] != null && String(r[mgKey]).trim()) ||
-                             (deptKey && r[deptKey] != null && String(r[deptKey]).trim()) ||
-                             '';
-            const rowMg = (rawRowMg ? rawRowMg.toUpperCase() : 'UNKNOWN_CATEGORY').trim();
-            const existingMg = mgMap.get(rowMg) || {
-              count: 0,
-              spendCr: 0,
-              items: new Set<string>(),
-              vendors: new Set<string>(),
-              sampleItem: isValidItem ? rowItem : ''
-            };
-            existingMg.count++;
-            existingMg.spendCr += lineTotalCr;
-            if (isValidItem) {
-              existingMg.items.add(rowItem);
-              if (!existingMg.sampleItem) existingMg.sampleItem = rowItem;
-            }
-            if (isValidVendor) existingMg.vendors.add(rowVendor);
-            mgMap.set(rowMg, existingMg);
-
-            // Grouping by Plant
-            const rowPlant = (plantKey && r[plantKey] != null ? String(r[plantKey]).trim() : '') || '1000';
-            const existingPlant = plantMap.get(rowPlant) || { count: 0, spendCr: 0, items: new Set<string>(), vendors: new Set<string>() };
-            existingPlant.count++;
-            existingPlant.spendCr += lineTotalCr;
-            if (isValidItem) existingPlant.items.add(rowItem);
-            if (isValidVendor) existingPlant.vendors.add(rowVendor);
-            plantMap.set(rowPlant, existingPlant);
-
-            // Grouping by Month
-            let rowMonthKey = `${rawYear || 2024}-01`;
-            if (typeof rawDateVal === 'number') {
-              const utcDays = Math.floor(rawDateVal - 25569);
-              const dateObj = new Date(utcDays * 86400 * 1000);
-              rowMonthKey = `${dateObj.getUTCFullYear()}-${String(dateObj.getUTCMonth() + 1).padStart(2, '0')}`;
-            } else if (rawDateVal) {
-              const match = String(rawDateVal).match(/\d{4}[-/]\d{1,2}/);
-              if (match) rowMonthKey = match[0].replace('/', '-');
-            }
-            const existingMonth = monthMap.get(rowMonthKey) || { count: 0, spendCr: 0, items: new Set<string>(), vendors: new Set<string>() };
-            existingMonth.count++;
-            existingMonth.spendCr += lineTotalCr;
-            if (isValidItem) existingMonth.items.add(rowItem);
-            if (isValidVendor) existingMonth.vendors.add(rowVendor);
-            monthMap.set(rowMonthKey, existingMonth);
-
-            // In Pareto hierarchy, only positive-spend items with valid vendor names are included
-            if (lineTotalCr > 0 && isValidVendor) {
-              dynamicParetoRecords.push({
-                vendorName: rowVendor,
-                shortText: isValidItem ? rowItem : 'Direct Consumables',
-                spendCr: lineTotalCr
-              });
-            }
-
-            // Real anomaly pre-check classification with explicit currency provenance
-            const unspscMatch = lookupUNSPSCByDescription(rowItem);
-            const columnLCode = unspscMatch?.commodityCode || '13101502';
-            const coreCategory = (unspscMatch?.coreBucket as ValidationPreCheckRecord['core_category']) || 'Direct Materials';
-
-            let finalCurrency = rawCurr;
-            let currencyProvenance: 'SOURCE_PROVIDED' | 'ANALYST_CONFIRMED' | 'SYSTEM_INFERRED' | 'UNRESOLVED' = 'UNRESOLVED';
-
-            const effectiveConfirmedCurrency =
-              analystConfirmedBaseCurrency ||
-              activeCustomer?.baseCurrency ||
-              (activeAssessment?.currency?.includes('INR') ? 'INR' : null);
-
-            if (rawCurr) {
-              currencyProvenance = 'SOURCE_PROVIDED';
-              finalCurrency = rawCurr;
-            } else if (effectiveConfirmedCurrency) {
-              currencyProvenance = 'ANALYST_CONFIRMED';
-              finalCurrency = effectiveConfirmedCurrency;
-            } else {
-              currencyProvenance = 'UNRESOLVED';
-              finalCurrency = '';
-            }
-
-            let issueFlag: ValidationPreCheckRecord['issue_flag'] = 'Passed Clean';
-            let actionStatus: ValidationPreCheckRecord['action_status'] = 'Ready';
-            let isResolved = true;
-
-            if (currencyProvenance === 'UNRESOLVED') {
-              issueFlag = 'Missing Currency Code';
-              actionStatus = 'Fix (INR)';
-              isResolved = false;
-            } else if (!isValidVendor) {
-              issueFlag = 'Unmapped Supplier Name';
-              actionStatus = 'Merge Vendor';
-              isResolved = false;
-            } else if (rawPrice <= 0 || lineTotalCr <= 0) {
-              issueFlag = 'Tax Discrepancy';
-              actionStatus = 'Ready';
-              isResolved = false;
-            }
-
-            // Collect rows for validation pre-check inspection (up to 30 sample rows from genuine dataset)
-            if (parsedValidationItems.length < 30) {
-              parsedValidationItems.push({
-                record_id: `REC-${8800 + idx}`,
-                po_number: poKey && r[poKey] ? String(r[poKey]).trim() : `PO-${rawYear}-${1000 + idx}`,
-                vendor_name: rowVendor || 'Unmapped Supplier',
-                raw_desc: rowItem,
-                order_quantity: rawQty,
-                net_price: rawPrice,
-                subtotal_raw: rawQty * rawPrice,
-                amount: rawQty * rawPrice,
-                raw_currency: finalCurrency || 'INR',
-                currency_provenance: currencyProvenance,
-                amount_inr: lineTotalINR,
-                inr_crores: Number((lineTotalINR / 10000000).toFixed(2)),
-                fx_rate_applied: fxRate,
-                spend_year: rawYear,
-                transaction_date: parsedDateInfo.formattedDate || `${rawYear}-01-01`,
-                column_l_code: columnLCode,
-                core_category: coreCategory,
-                issue_flag: issueFlag,
-                action_status: actionStatus,
-                resolved: isResolved
-              });
-            }
-          });
-
-          if (parsedValidationItems.length > 0) {
-            setValidationRecords(parsedValidationItems);
-          }
-
-          if (cumulativeFileTotalINR > 0) {
-            totalSpendInrCr = Number((cumulativeFileTotalINR / 10000000).toFixed(2));
-          }
-
-          dynamicUniqueItems = uniqueItemsSet.size;
-          dynamicUniqueVendors = uniqueVendorsSet.size;
-
-          dynamicMgs = Array.from(mgMap.entries())
-            .sort((a, b) => b[1].spendCr - a[1].spendCr)
-            .map(([code, data], mIdx) => {
-              const humanName = resolveHumanReadableCategory(code);
-              return {
-                group_code: code,
-                group_name: humanName,
-                records_count: data.count,
-                unique_items_count: data.items.size,
-                unique_vendors_count: data.vendors.size,
-                po_count: Math.max(1, Math.round(data.count * 0.18)),
-                spend_inr_cr: Number(data.spendCr.toFixed(2)),
-                spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
-                share_pct: Number(((data.spendCr / Math.max(1, totalSpendInrCr)) * 100).toFixed(1)),
-                sample_item: data.sampleItem,
-                primary_segment: `${humanName} - Enterprise Spend Segment`,
-                fy24_spend_inr_cr: Number((data.spendCr * 0.3).toFixed(2)),
-                fy25_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
-                fy26_spend_inr_cr: Number((data.spendCr * 0.35).toFixed(2)),
-                color: ['#0284c7', '#059669', '#d97706', '#7c3aed', '#ea580c', '#0891b2'][mIdx % 6]
-              };
-            });
-
-          dynamicPlants = Array.from(plantMap.entries())
-            .sort((a, b) => b[1].spendCr - a[1].spendCr)
-            .map(([code, data]) => ({
-              plant_code: code,
-              plant_name: `Plant ${code} Production Facility`,
-              region: 'West',
-              location: `Industrial Hub ${code}`,
-              po_count: Math.max(1, Math.round(data.count * 0.18)),
-              records_count: data.count,
-              unique_items_count: data.items.size,
-              unique_vendors_count: data.vendors.size,
-              spend_inr_cr: Number(data.spendCr.toFixed(2)),
-              spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
-              share_pct: Number(((data.spendCr / Math.max(1, totalSpendInrCr)) * 100).toFixed(1)),
-              active_vendors_count: data.vendors.size,
-              primary_material_group: 'DIRECT'
-            }));
-
-          dynamicMonths = Array.from(monthMap.entries())
-            .sort((a, b) => a[0].localeCompare(b[0]))
-            .map(([key, data]) => {
-              const moNum = parseInt(key.replace(/[-/]/g, ''), 10);
-              const fy: 'FY24' | 'FY25' | 'FY26' = moNum <= 202403 ? 'FY24' : moNum <= 202503 ? 'FY25' : 'FY26';
-              return {
-                month_key: key,
-                month_label: key,
-                fiscal_year: fy,
-                spend_inr_cr: Number(data.spendCr.toFixed(2)),
-                spend_usd_m: Number((data.spendCr / 0.838).toFixed(2)),
-                records_count: data.count,
-                po_count: Math.round(data.count * 0.18) || 1,
-                unique_items_count: data.items.size,
-                unique_vendors_count: data.vendors.size,
-                top_material_group: 'DIRECT',
-                top_plant: 'Plant 1000',
-                mom_change_pct: 0
-              };
-            });
-
-          setUploadedMaterialGroups(dynamicMgs);
-          setUploadedPlants(dynamicPlants);
-          setUploadedMonths(dynamicMonths);
-          setUploadedUniqueItems(dynamicUniqueItems);
-          setUploadedUniqueVendors(dynamicUniqueVendors);
-
-          const vendorPareto = buildVendorParetoHierarchy(dynamicParetoRecords);
-          const itemPareto = buildItemParetoHierarchy(dynamicParetoRecords);
-          paretoDataToStore = {
-            vendorHierarchy: vendorPareto.parents,
-            itemHierarchy: itemPareto.parents,
-            totalSpendCr: vendorPareto.totalSpendCr,
-            paretoSpendCr: vendorPareto.paretoSpendCr,
-            paretoPct: vendorPareto.paretoPct
-          };
-          setUploadedParetoData(paretoDataToStore);
-
-          dynamicCategories = dynamicMgs.map((mg, mIdx) => ({
-            id: `CAT-${mg.group_code}`,
-            name: resolveHumanReadableCategory(mg.group_name, mg.group_code),
-            spend: Math.round((mg.spend_inr_cr * 10000000) / 83.8),
-            spend_inr: Math.round(mg.spend_inr_cr * 10000000),
-            spend_inr_crores: mg.spend_inr_cr,
-            targetReductionPct: Number((6.5 + (mIdx % 5) * 0.8).toFixed(1)),
-            lineItemsCount: mg.records_count,
-            color: mg.color || '#0284c7',
-            column_l_code: `${10000000 + (mIdx + 1) * 110000}`,
-            spend_inr_2023: Math.round(mg.fy24_spend_inr_cr * 10000000),
-            spend_inr_2024: Math.round(mg.fy25_spend_inr_cr * 10000000),
-            spend_inr_2025_26: Math.round(mg.fy26_spend_inr_cr * 10000000)
-          }));
-          setCategories(dynamicCategories);
-
-          const getCoreBucket = (rawMg: string): LineItemMapping['core_bucket'] => {
-            if (rawMg.includes('PACK')) return 'Packaging Materials';
-            if (rawMg.includes('FREIGHT')) return 'Logistics & Freight';
-            if (rawMg.includes('CONSUM')) return 'Indirect & MRO';
-            return 'Direct Materials';
-          };
-
-          dynamicLineItems = rows.slice(0, 500).map((r, idx) => {
-            let rowItem = (descKey && r[descKey] != null ? String(r[descKey]).trim() : '');
-            let rowMatCode = (matKey && r[matKey] != null ? String(r[matKey]).trim() : '');
-            if (!rowMatCode) {
-              rowMatCode = `MAT-${10000 + idx * 11}`;
-            }
-            if (!rowItem || /^\d{1,3}$/.test(rowItem)) {
-              rowItem = rowMatCode.startsWith('MAT-') ? `Item-${idx + 1}` : rowMatCode;
-            }
-
-            const rowVendor = (vendorKey ? String(r[vendorKey] ?? '') : '').trim() || `Vendor-${idx + 1}`;
-            const rawQty = qtyKey && !isNaN(Number(r[qtyKey])) ? Number(r[qtyKey]) : 100;
-            const rawPrice = priceKey && !isNaN(Number(r[priceKey])) ? Number(r[priceKey]) : 50;
-            const rawCurr = currKey ? String(r[currKey] ?? 'INR').trim().toUpperCase() : 'INR';
-            const rawDateVal = dateKey ? r[dateKey] : null;
-            const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || 2024);
-            const rowYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
-            const fxRate = getYahooFinanceRateToINR(rawCurr, rowYear);
-            const rawCr = totalCrKey && !isNaN(Number(r[totalCrKey])) ? Number(r[totalCrKey]) : NaN;
-            const lineCr = !isNaN(rawCr) ? rawCr : (rawQty * rawPrice * fxRate) / 10000000;
-
-            let poNum = poKey && r[poKey] ? String(r[poKey]).trim() : '';
-            if (!poNum || /^[a-zA-Z]\d{3}$/.test(poNum)) {
-              poNum = poNum ? `PO-${poNum}-${450000 + idx}` : `PO-${rowYear}-${8800 + idx}`;
-            }
-            const rawMg = (mgKey ? String(r[mgKey] ?? '') : '').trim().toUpperCase() || 'DIRECT';
-            const unspscMatch = lookupUNSPSCByDescription(rowItem);
-            const unspscDetails = unspscMatch
-              ? { commodityCode: unspscMatch.commodityCode, commodityTitle: unspscMatch.commodityTitle, classTitle: unspscMatch.classTitle, coreBucket: unspscMatch.coreBucket }
-              : lookupUNSPSCDetails(rowItem);
-
-            const assignedBucket = unspscMatch?.coreBucket || getCoreBucket(rawMg);
-
-            return {
-              mapping_id: `MAP-${8000 + idx}`,
-              line_item_id: `LI-${9000 + idx}`,
-              material_code: rowMatCode,
-              material_desc: rowItem,
-              raw_desc: rowItem,
-              vendor_identified: rowVendor,
-              unspsc_code: unspscMatch?.commodityCode || `${11100000 + (idx + 1) * 1234}`,
-              unspsc_category_name: unspscDetails.commodityTitle || `${rawMg} - ${rowItem.slice(0, 24)}`,
-              unspsc_commodity_title: unspscDetails.commodityTitle,
-              unspsc_class_title: unspscDetails.classTitle,
-              core_bucket: assignedBucket,
-              ai_confidence: Number((95.5 + (idx % 4) * 1.1).toFixed(1)),
-              status: idx % 3 === 0 ? 'Confirmed' : 'Pending Review',
-              unit_price: rawPrice,
-              qty: rawQty,
-              total_spend: Math.round((lineCr * 10000000) / 83.8),
-              raw_currency: rawCurr,
-              amount_inr: lineCr * 10000000,
-              inr_crores: Number(lineCr.toFixed(2)),
-              fx_rate_applied: fxRate,
-              invoice_date: parsedDateInfo.formattedDate || `${rowYear}-06-15`,
-              spend_year: rowYear,
-              po_number: poNum
-            };
-          });
-          setLineItems(dynamicLineItems);
-
-          const vendorYearSpendMap = new Map<string, { fy24: number; fy25: number; fy26: number }>();
-          dynamicLineItems.forEach((it) => {
-            const vName = it.parent_name || it.vendor_identified || 'Unknown';
-            let vYears = vendorYearSpendMap.get(vName);
-            if (!vYears) {
-              vYears = { fy24: 0, fy25: 0, fy26: 0 };
-              vendorYearSpendMap.set(vName, vYears);
-            }
-            const yr = it.spend_year || (it.invoice_date ? new Date(it.invoice_date).getFullYear() : undefined);
-            const cr = it.inr_crores || 0;
-            if (yr && yr <= 2023) vYears.fy24 += cr;
-            else if (yr === 2024) vYears.fy25 += cr;
-            else if (yr) vYears.fy26 += cr;
-          });
-
-          const riskStatuses: VendorPriceRank['risk_status'][] = ['HIGH CREEP', 'REVIEW', 'ALIGNED', 'FAVORABLE'];
-          dynamicVendorRankings = vendorPareto.parents.slice(0, 10).map((v, idx) => {
-            const yData = vendorYearSpendMap.get(v.name);
-            const trend = yData && (yData.fy24 > 0 || yData.fy25 > 0 || yData.fy26 > 0)
-              ? [Number(yData.fy24.toFixed(2)), Number(yData.fy25.toFixed(2)), Number(yData.fy26.toFixed(2))]
-              : [0, 0, v.totalSpendCr];
-            return {
-              vendor_name: v.name,
-              master_id: `VEN-M-${5000 + idx}`,
-              category: idx % 2 === 0 ? 'Direct Mat.' : 'Packaging',
-              price_creep_pct: Number(((idx * 1.8) - 1.2).toFixed(1)),
-              total_spend: Math.round((v.totalSpendCr * 10000000) / 83.8),
-              total_spend_inr_cr: v.totalSpendCr,
-              risk_status: riskStatuses[idx % riskStatuses.length],
-              variance_leakage_usd: Math.round((v.totalSpendCr * 0.04 * 10000000) / 83.8),
-              variance_leakage_inr_cr: Number((v.totalSpendCr * 0.04).toFixed(2)),
-              benchmark_index: 'ICIS / S&P Global',
-              last_36mo_trend: trend
-            };
-          });
-          setVendorRankings(dynamicVendorRankings);
-
-          const oppCategories: SavingsOpportunity['category'][] = [
-            'Direct Materials',
-            'Packaging Materials',
-            'Logistics & Freight',
-            'Indirect & MRO'
-          ];
-          dynamicOpportunities = dynamicCategories.slice(0, 4).map((cat, idx) => {
-            const catSpendCr = cat.spend_inr_crores ?? 100;
-            const targetPct = 5.0 + idx * 1.5;
-            const estSavingsCr = Number(((catSpendCr * targetPct) / 100).toFixed(2));
-            return {
-              opp_id: `OPP-${700 + idx}`,
-              category: oppCategories[idx % oppCategories.length],
-              title: `${cat.name} Optimization Initiative`,
-              current_spend: Math.round((catSpendCr * 10000000) / 83.8),
-              current_spend_inr_cr: catSpendCr,
-              target_savings_pct: targetPct,
-              est_savings: Math.round((estSavingsCr * 10000000) / 83.8),
-              est_savings_inr_cr: estSavingsCr,
-              recommended_action: `Consolidate supplier allocation and benchmark indexed pricing for ${cat.name}.`,
-              push_to_module: idx % 2 === 0 ? 'proCPX' : 'DPS NXT',
-              status: 'Identified',
-              risk_level: idx % 2 === 0 ? 'Low' : 'Medium',
-              contract_leak_type: 'Indexed Price Variance'
-            };
-          });
-          setOpportunities(dynamicOpportunities);
-        }
-      } catch (err) {
-        frontendLogger.warn('Could not parse xlsx rows', { error: err });
-        if (file.name.toLowerCase().includes('unspsc')) {
-          recordsCount = 158467;
-        } else {
-          recordsCount = Math.max(1, Math.floor(file.size / 150));
-        }
-      }
-    } else if (file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
-      try {
-        const text = await file.text();
-        const lines = text.split(/\r\n|\n/).filter((l) => l.trim().length > 0);
-        recordsCount = Math.max(1, lines.length - 1);
-      } catch {
-        recordsCount = 14200;
-      }
-    }
-
-    setTenant((prev) => ({
-      ...prev,
-      total_spend_evaluated_inr: totalSpendInrCr,
-      total_spend_evaluated: Math.round((totalSpendInrCr * 10000000) / 83.8)
+    setCanonicalModule1(null);
+    setCategories([]);
+    setLineItems([]);
+    setVendorRankings([]);
+    setOpportunities([]);
+    setTenant((previous) => ({
+      ...previous,
+      total_spend_evaluated_inr: 0,
+      total_spend_evaluated: 0
     }));
 
-    const dynamicDetectedCurrencies = (detectedCurrenciesSet && detectedCurrenciesSet.size > 0)
-      ? Array.from(detectedCurrenciesSet)
-      : ['INR'];
+    setAnalyzingLoaderState({
+      isOpen: true,
+      title: UI_STRINGS.toasts.persistingUploadTitle,
+      subtitle: UI_STRINGS.toasts.persistingUploadSubtitle,
+      metrics: { totalRecords: 0, spendCrores: 0, uniqueVendors: 0, categoriesIdentified: 0, confidenceScore: 0 },
+      onComplete: () => setAnalyzingLoaderState(null)
+    });
 
-    const newDoc: RawDocumentIngestion = {
-      doc_id: `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
-      tenant_id: loggedUser.id || tenant.tenant_id,
-      file_name: file.name,
-      file_type: file.name.endsWith('.pdf')
-        ? 'PDF'
-        : file.name.endsWith('.xlsx')
-          ? 'XLSX'
-          : file.name.endsWith('.xls')
-            ? 'XLS'
-            : file.name.endsWith('.csv') ? 'CSV' : 'ZIP',
-      file_size_mb: Number((file.size / (1024 * 1024)).toFixed(2)),
-      ocr_status: 'Completed',
-      progress: 100,
-      uploaded_at: new Date().toISOString().replace('T', ' ').slice(0, 19),
-      records_count: recordsCount, // Header row strictly excluded
-      detected_currencies: dynamicDetectedCurrencies,
-      converted_inr_crores: totalSpendInrCr, // Sum of Order Qty * Net Price * FX Rate
-      unique_items_count: dynamicUniqueItems,
-      unique_vendors_count: dynamicUniqueVendors,
-      material_groups_count: dynamicMgs ? dynamicMgs.length : 0,
-      plants_count: dynamicPlants ? dynamicPlants.length : 0
-    };
-
-    setIngestionQueue([newDoc]);
-
-    let uploadRes: any = null;
     try {
-      let fileBase64 = '';
-      try {
-        if (typeof window !== 'undefined' && window.FileReader) {
-          fileBase64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const res = reader.result as string;
-              resolve(res.replace(/^data:[^;]+;base64,/, ''));
-            };
-            reader.onerror = () => resolve('');
-            reader.readAsDataURL(file);
-          });
+      const fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = typeof reader.result === 'string' ? reader.result : '';
+          const encoded = result.split(',')[1];
+          if (!encoded) {
+            reject(new Error(UI_STRINGS.toasts.uploadFileReadFailed));
+            return;
+          }
+          resolve(encoded);
+        };
+        reader.onerror = () => reject(new Error(UI_STRINGS.toasts.uploadFileReadFailed));
+        reader.readAsDataURL(file);
+      });
+
+      if (activeAssessment) {
+        if (!globalThis.crypto?.subtle) {
+          throw new Error(UI_STRINGS.toasts.uploadChecksumUnavailable);
         }
-      } catch {
-        // Base64 conversion fallback
+        const digest = await globalThis.crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+        const checksum = Array.from(new Uint8Array(digest), (value) => value.toString(16).padStart(2, '0')).join('');
+        const uploaded = await assessmentApiClient.uploadDataVersion(activeAssessment.assessmentId, {
+          fileName: file.name,
+          fileSize: file.size,
+          checksum,
+          fileBase64,
+          runAnalysisImmediately: false
+        });
+        const versionId = uploaded.dataVersion?.dataVersionId || uploaded.assessment?.activeDataVersionId || '';
+        if (!versionId || !uploaded.assessment) {
+          throw new Error(UI_STRINGS.toasts.uploadResponseMissingVersion);
+        }
+        handleActiveAssessmentChange(uploaded.assessment);
+        setIsDetailedAnalysisModalOpen(true);
+        showToast(UI_STRINGS.toasts.batchUploadAssessmentSaved(file.name, versionId));
+        return;
       }
 
-      uploadRes = await apiClient.uploadDocumentToObjectStore({
+      const uploaded = await apiClient.uploadDocumentToObjectStore({
         fileName: file.name,
-        fileType: file.name.endsWith('.xlsx') ? 'XLSX' : file.name.endsWith('.xls') ? 'XLS' : file.name.endsWith('.pdf') ? 'PDF' : 'CSV',
-        fileBase64: fileBase64 || undefined,
-        parseTransactions: true,
-        fileSizeMb: Number((file.size / (1024 * 1024)).toFixed(2)) || 1.0,
-        recordsCount,
-        convertedInrCrores: totalSpendInrCr,
-        detectedCurrencies: dynamicDetectedCurrencies,
+        fileType,
+        fileBase64,
+        parseTransactions: isWorkbook,
+        fileSizeMb: file.size / (1024 * 1024),
+        recordsCount: 0,
+        convertedInrCrores: 0,
+        detectedCurrencies: [],
         datasetType: _datasetType,
         buyer_id: loggedUser.id,
-        tenant_id: loggedUser.id || tenant.tenant_id,
-        assessment_id: activeAssessment?.assessmentId
+        tenant_id: loggedUser.id || tenant.tenant_id
       });
-      if (typeof uploadRes?.data?.docId === 'string') {
-        const persistedIngestion = await apiClient.getIngestionData(loggedUser.id || tenant.tenant_id);
-        setIngestionQueue(persistedIngestion.queue);
-        setValidationRecords(persistedIngestion.validationRecords);
+      if (!uploaded.success || !uploaded.data?.docId) {
+        throw new Error(uploaded.message || UI_STRINGS.toasts.uploadResponseMissingDocument);
       }
-      if (Number.isFinite(Number(uploadRes?.data?.totalInrCrores)) && uploadRes?.data?.importedCount > 0) {
-        const d1SpendCrores = Number(uploadRes.data.totalInrCrores);
-        setTenant((prev) => ({
-          ...prev,
-          total_spend_evaluated_inr: d1SpendCrores,
-          total_spend_evaluated: Math.round((d1SpendCrores * 10000000) / 83.8)
-        }));
-        totalSpendInrCr = d1SpendCrores;
+
+      const importedCount = Number(uploaded.data.importedCount || 0);
+      const spendInrCrores = Number(uploaded.data.totalInrCrores || 0);
+      const [ingestionResult, categoryResult, vendorResult, savingsResult, lineItemsResult] = await Promise.allSettled([
+        apiClient.getIngestionData(loggedUser.id),
+        apiClient.getCategories(),
+        apiClient.getVendors(),
+        apiClient.getSavingsOpportunities(),
+        apiClient.getModule2CanonicalLineItems(undefined, undefined, loggedUser.id)
+      ]);
+
+      let extractionPending = false;
+      if (ingestionResult.status === 'fulfilled') {
+        const persistedQueue = ingestionResult.value.queue.filter((document) =>
+          !document.tenant_id || document.tenant_id === loggedUser.id || document.tenant_id === loggedUser.email
+        );
+        setIngestionQueue(persistedQueue.slice(0, 1));
+        setValidationRecords(ingestionResult.value.validationRecords || []);
+        extractionPending = persistedQueue.some((document) =>
+          document.doc_id === uploaded.data?.docId && document.ocr_status === 'Pending'
+        );
       }
-      if (
-        uploadRes?.data?.canonical &&
-        activeAssessment?.activeDataVersionId &&
-        uploadRes.data.canonical.dataVersionId === activeAssessment.activeDataVersionId
-      ) {
-        applyCanonicalViewModel(uploadRes.data.canonical);
+      setTenant((previous) => ({ ...previous, total_spend_evaluated_inr: spendInrCrores, total_spend_evaluated: 0 }));
+      if (categoryResult.status === 'fulfilled') setCategories(categoryResult.value.categories || []);
+      if (vendorResult.status === 'fulfilled') setVendorRankings(vendorResult.value.vendorRankings || []);
+      if (savingsResult.status === 'fulfilled') setOpportunities(savingsResult.value.opportunities || []);
+      if (lineItemsResult.status === 'fulfilled') setLineItems(lineItemsResult.value);
+
+      try {
+        const jobs = await orchestrationApi.getJobs();
+        setActiveAnalysisJob(jobs[0] || null);
+      } catch (error: unknown) {
+        frontendLogger.warn('Could not refresh D1 analysis jobs after ingestion', { fileName: file.name, error });
       }
-      if (uploadRes?.data?.analysisJob) {
-        setActiveAnalysisJob(uploadRes.data.analysisJob);
-      } else {
-        try {
-          const jobs = await orchestrationApi.getJobs();
-          if (jobs.length > 0) setActiveAnalysisJob(jobs[0]);
-        } catch {
-          // safe fallback
-        }
-      }
+
+      setIsDataRefreshed(true);
       setIsDetailedAnalysisModalOpen(true);
-    } catch (e) {
-      frontendLogger.warn('Backend sync warning for document upload', { error: e });
+      setAnalyzingLoaderState((current) => current ? {
+        ...current,
+        metrics: {
+          totalRecords: importedCount,
+          spendCrores: spendInrCrores,
+          uniqueVendors: 0,
+          categoriesIdentified: 0,
+          confidenceScore: 0
+        }
+      } : null);
+      showToast(extractionPending
+        ? UI_STRINGS.toasts.batchUploadPendingExtraction(file.name)
+        : UI_STRINGS.toasts.batchUploadSpend(file.name, spendInrCrores, importedCount));
+    } catch (error: unknown) {
+      const reason = error instanceof Error ? error.message : UI_STRINGS.toasts.uploadUnknownFailure;
+      frontendLogger.error('D1-backed document upload failed', { fileName: file.name, fileType }, error);
+      showToast(UI_STRINGS.toasts.batchUploadFailed(file.name, reason));
+    } finally {
+      setAnalyzingLoaderState(null);
     }
-
-    const finalSpendCr = uploadRes?.data?.canonical?.validFxNormalizedSpendCr || totalSpendInrCr;
-    const finalRecordsCount = uploadRes?.data?.canonical?.sourceRowCount || recordsCount;
-    showToast(UI_STRINGS.toasts.batchUploadSpend(file.name, finalSpendCr, finalRecordsCount));
   };
-
   // Handlers for Module 2
-  const handleConfirmMapping = (mappingId: string) => {
-    setLineItems((prev) =>
-      prev.map((item) =>
-        item.mapping_id === mappingId ? { ...item, status: 'Confirmed' } : item
-      )
-    );
-    showToast(UI_STRINGS.toasts.unspscConfirmed(mappingId));
+  const persistModule2Mappings = async (
+    mappings: ApiBulkUpdateModule2MaterialMappingsPayload['mappings']
+  ): Promise<void> => {
+    const assessmentId = activeAssessment?.assessmentId;
+    if (!assessmentId) throw new Error(UI_STRINGS.toasts.module2AssessmentRequired);
+    for (let offset = 0; offset < mappings.length; offset += VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BULK_LIMIT) {
+      await apiClient.updateModule2MaterialMappings({
+        assessmentId,
+        mappings: mappings.slice(offset, offset + VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BULK_LIMIT)
+      });
+    }
   };
 
-  const handleSaveReassign = (mappingId: string, newCode: string, newName: string, bucket: any) => {
-    setLineItems((prev) =>
-      prev.map((item) =>
-        item.mapping_id === mappingId
-          ? {
-              ...item,
-              unspsc_code: newCode,
-              unspsc_category_name: newName,
-              core_bucket: bucket,
-              status: 'Confirmed',
-              ai_confidence: 99.1
-            }
-          : item
-      )
-    );
-    showToast(UI_STRINGS.toasts.taxonomyReassigned(newCode, bucket));
+  const handleConfirmMapping = async (mappingId: string): Promise<void> => {
+    const item = lineItems.find((candidate) => candidate.mapping_id === mappingId);
+    const sourceMaterialId = item?.material_code?.trim().toLocaleUpperCase('en-US');
+    if (!sourceMaterialId) {
+      showToast(UI_STRINGS.toasts.module2MaterialCodeRequired);
+      return;
+    }
+    try {
+      await persistModule2Mappings([{
+        sourceMaterialId,
+        unspscCode: item.unspsc_code,
+        reviewStatus: 'CLIENT_APPROVED',
+        auditNotes: VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_AUDIT_NOTE
+      }]);
+      setLineItems((previous) => previous.map((candidate) => candidate.mapping_id === mappingId
+        ? { ...candidate, status: 'Confirmed' } : candidate));
+      showToast(UI_STRINGS.toasts.unspscConfirmed(mappingId));
+    } catch (error: unknown) {
+      frontendLogger.error('Failed to persist Module 2 mapping confirmation', { mappingId }, error);
+      showToast(error instanceof Error ? error.message : UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(500)));
+    }
+  };
+
+  const handleSaveReassign = async (mappingId: string, newCode: string, _newName: string, bucket: string): Promise<void> => {
+    const item = lineItems.find((candidate) => candidate.mapping_id === mappingId);
+    const sourceMaterialId = item?.material_code?.trim().toLocaleUpperCase('en-US');
+    if (!sourceMaterialId) {
+      showToast(UI_STRINGS.toasts.module2MaterialCodeRequired);
+      return;
+    }
+    try {
+      await persistModule2Mappings([{
+        sourceMaterialId,
+        unspscCode: newCode,
+        reviewStatus: 'TAXONOMY_VERIFIED',
+        auditNotes: VENDOR_CONSOLIDATION_UI_CONFIG.MANUAL_REASSIGN_AUDIT_NOTE
+      }]);
+      setLineItems((previous) => previous.map((candidate) => candidate.mapping_id === mappingId
+        ? {
+            ...candidate, unspsc_code: newCode, unspsc_category_name: _newName,
+            core_bucket: bucket, status: 'Confirmed', ai_confidence: 100
+          }
+        : candidate));
+      showToast(UI_STRINGS.toasts.taxonomyReassigned(newCode, bucket));
+    } catch (error: unknown) {
+      frontendLogger.error('Failed to persist Module 2 taxonomy reassignment', { mappingId, newCode }, error);
+      showToast(error instanceof Error ? error.message : UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(500)));
+    }
   };
 
   // Handlers for Module 4 Suite Integration
@@ -2040,6 +1544,12 @@ export default function Home() {
   };
 
   const handleStartAICategorization = async () => {
+    if (!activeAssessment) {
+      frontendLogger.warn('Module 2 taxonomy categorization requires an active assessment', {});
+      showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+      return;
+    }
+
     try {
       await loadUNSPSCTaxonomy();
     } catch {
@@ -2047,23 +1557,23 @@ export default function Home() {
       return;
     }
     showToast(UI_STRINGS.toasts.runningAiCat);
-    await new Promise((resolve) => setTimeout(resolve, 50));
     setAnalyzingLoaderState({
       isOpen: true,
-      title: 'Running Google Gemini UNSPSC AI Categorization',
-      subtitle: 'Analyzing item descriptions, vendor transaction patterns, and assigning 8-digit UNSPSC codes...',
+      title: UI_STRINGS.analyzingLoader.title,
+      subtitle: UI_STRINGS.analyzingLoader.subtitle,
       metrics: {
         totalRecords: uploadedUniqueItems ?? (ingestionQueue[0]?.records_count || lineItems.length || 0),
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
         uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
-        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
+        categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0)
       },
       onComplete: () => {
         setAnalyzingLoaderState(null);
       }
     });
 
+    let suggestionByDescription = new Map<string, NonNullable<Awaited<ReturnType<typeof aiApiClient.categorizeItems>>['mappings']>[number]>();
+    let suggestionModel: string = UI_STRINGS.toasts.d1TaxonomyModel;
     try {
       const itemsToCategorize = lineItems.map((item) => ({
         rawLineText: item.raw_desc,
@@ -2073,87 +1583,87 @@ export default function Home() {
 
       const res = await aiApiClient.categorizeItems(itemsToCategorize);
       if (res?.success && Array.isArray(res.mappings) && res.mappings.length > 0) {
-        const mappingMap = new Map(
-          res.mappings.map((m) => [String(m.rawLineText || '').toLowerCase().trim(), m])
-        );
+        suggestionByDescription = new Map(res.mappings.map((mapping) => [
+          String(mapping.rawLineText || '').toLowerCase().trim(), mapping
+        ]));
+        suggestionModel = res.model || UI_STRINGS.toasts.externalAiModel;
+      }
+    } catch (error: unknown) {
+      frontendLogger.warn('External AI classification was unavailable; using D1 taxonomy suggestions', {}, error);
+    }
 
-        setLineItems((prev) =>
-          prev.map((item) => {
-            const match = mappingMap.get(item.raw_desc.toLowerCase().trim());
-            if (match) {
-              const details = lookupUNSPSCDetails(match.unspscTitle || item.raw_desc, (match.suggestedBucket as any) || item.core_bucket);
-              return {
-                ...item,
-                unspsc_code: match.mappedUnspscCode || item.unspsc_code,
-                unspsc_commodity_title: match.unspscTitle || details.commodityTitle || item.unspsc_commodity_title,
-                unspsc_class_title: details.classTitle || item.unspsc_class_title,
-                unspsc_category_name: match.unspscTitle || details.commodityTitle || item.unspsc_category_name,
-                core_bucket: (match.suggestedBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-                ai_confidence: typeof match.confidenceScore === 'number' ? match.confidenceScore : 99.2,
-                status: 'Confirmed'
-              };
-            }
-            const fallbackMatch = lookupUNSPSCByDescription(item.raw_desc);
-            const fallbackDetails = fallbackMatch || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-            return {
-              ...item,
-              unspsc_code: fallbackDetails.commodityCode || item.unspsc_code,
-              unspsc_commodity_title: fallbackDetails.commodityTitle || item.unspsc_commodity_title,
-              unspsc_class_title: fallbackDetails.classTitle || item.unspsc_class_title,
-              unspsc_category_name: fallbackDetails.commodityTitle || item.unspsc_category_name,
-              core_bucket: (fallbackDetails.coreBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-              ai_confidence: 99.4,
-              status: 'Confirmed'
-            };
-          })
-        );
-        setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
-        showToast(`AI Categorization completed via ${res.model || 'Google Gemini'}`);
-      } else {
-        // High-precision taxonomy matching via official UNSPSC dictionary
-        setLineItems((prev) =>
-          prev.map((item) => {
-            const match = lookupUNSPSCByDescription(item.raw_desc);
-            const details = match || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-            return {
-              ...item,
-              unspsc_code: details.commodityCode || item.unspsc_code,
-              unspsc_commodity_title: details.commodityTitle || item.unspsc_commodity_title,
-              unspsc_class_title: details.classTitle || item.unspsc_class_title,
-              unspsc_category_name: details.commodityTitle || item.unspsc_category_name,
-              core_bucket: (details.coreBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-              ai_confidence: 99.4,
-              status: 'Confirmed'
-            };
-          })
-        );
-        setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
-        showToast('UNSPSC AI Categorization applied across all line items');
+    try {
+      const catalogByCode = new Map(unspscOfficialDictionary.map((record) => [record.commodityCode, record]));
+      const catalogCodes = new Set(catalogByCode.keys());
+      const stagedItems = lineItems.map((item) => {
+        const suggestion = suggestionByDescription.get(item.raw_desc.toLowerCase().trim());
+        const dictionaryMatch = lookupUNSPSCByDescription(item.raw_desc);
+        const taxonomyMatch = suggestion
+          ? lookupUNSPSCDetails(suggestion.unspscTitle || item.raw_desc, suggestion.suggestedBucket || item.core_bucket)
+          : dictionaryMatch || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
+        const aiCode = suggestion?.mappedUnspscCode;
+        const validAiCode = Boolean(aiCode && catalogCodes.has(aiCode));
+        const suggestedCode = validAiCode ? aiCode as string : dictionaryMatch?.commodityCode || taxonomyMatch.commodityCode;
+        const validSuggestion = catalogCodes.has(suggestedCode) && (validAiCode || dictionaryMatch?.classificationStatus === 'CLASSIFIED');
+        const catalogRecord = catalogByCode.get(suggestedCode);
+        const modelConfidence = Number(suggestion?.confidenceScore);
+        return {
+          ...item,
+          unspsc_code: validSuggestion ? suggestedCode : item.unspsc_code,
+          unspsc_commodity_title: validSuggestion
+            ? catalogRecord?.commodityTitle || item.unspsc_commodity_title : item.unspsc_commodity_title,
+          unspsc_class_title: validSuggestion ? catalogRecord?.classTitle || taxonomyMatch.classTitle : item.unspsc_class_title,
+          unspsc_category_name: validSuggestion
+            ? catalogRecord?.commodityTitle || item.unspsc_category_name : item.unspsc_category_name,
+          core_bucket: validSuggestion
+            ? (catalogRecord?.coreBucket || item.core_bucket) : item.core_bucket,
+          ai_confidence: validSuggestion
+            ? (validAiCode && Number.isFinite(modelConfidence) ? modelConfidence : 95)
+            : item.ai_confidence,
+          status: validSuggestion ? 'Pending Review' : item.status,
+          hasValidSuggestion: validSuggestion
+        };
+      });
+      const uniqueMappings = new Map<string, ApiBulkUpdateModule2MaterialMappingsPayload['mappings'][number]>();
+      const conflictingMaterialIds = new Set<string>();
+      for (const item of stagedItems) {
+        const sourceMaterialId = item.material_code?.trim().toLocaleUpperCase('en-US');
+        if (!sourceMaterialId || !item.hasValidSuggestion || !catalogCodes.has(item.unspsc_code)) continue;
+        const score = item.ai_confidence > 1 ? item.ai_confidence / 100 : item.ai_confidence;
+        const previous = uniqueMappings.get(sourceMaterialId);
+        if (previous && previous.unspscCode !== item.unspsc_code) {
+          uniqueMappings.delete(sourceMaterialId);
+          conflictingMaterialIds.add(sourceMaterialId);
+          continue;
+        }
+        if (conflictingMaterialIds.has(sourceMaterialId) || uniqueMappings.has(sourceMaterialId)) continue;
+        uniqueMappings.set(sourceMaterialId, {
+          sourceMaterialId,
+          unspscCode: item.unspsc_code,
+          reviewStatus: 'PROVISIONAL',
+          confidenceScore: Math.max(0, Math.min(1, score)),
+          mappingMethod: 'CONTEXTUAL_HEURISTIC',
+          auditNotes: VENDOR_CONSOLIDATION_UI_CONFIG.PROVISIONAL_AI_AUDIT_NOTE
+        });
       }
-    } catch (err) {
-      frontendLogger.error('Error in AI categorization, applying official UNSPSC dictionary matching', {}, err as Error);
-      setLineItems((prev) =>
-        prev.map((item) => {
-          const match = lookupUNSPSCByDescription(item.raw_desc);
-          const details = match || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-          return {
-            ...item,
-            unspsc_code: details.commodityCode || item.unspsc_code,
-            unspsc_commodity_title: details.commodityTitle || item.unspsc_commodity_title,
-            unspsc_class_title: details.classTitle || item.unspsc_class_title,
-            unspsc_category_name: details.commodityTitle || item.unspsc_category_name,
-            core_bucket: (details.coreBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-            ai_confidence: 99.4,
-            status: 'Confirmed'
-          };
-        })
-      );
-      setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
-      showToast('UNSPSC AI Categorization completed');
+      if (uniqueMappings.size === 0) throw new Error(UI_STRINGS.toasts.noTaxonomySuggestionsSaved);
+      await persistModule2Mappings([...uniqueMappings.values()]);
+      setLineItems(stagedItems);
+      setCompletedSteps((previous) => ({ ...previous, step1: true, step2: true }));
+      showToast(UI_STRINGS.toasts.taxonomySuggestionsSaved(uniqueMappings.size));
+      frontendLogger.info('Saved provisional Module 2 taxonomy suggestions', {
+        assessmentId: activeAssessment?.assessmentId,
+        source: suggestionModel,
+        mappingCount: uniqueMappings.size,
+        excludedLineCount: stagedItems.length - uniqueMappings.size
+      });
+    } catch (error: unknown) {
+      frontendLogger.error('Module 2 taxonomy suggestions could not be saved to D1', {
+        assessmentId: activeAssessment?.assessmentId
+      }, error);
+      showToast(error instanceof Error ? error.message : UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(500)));
     } finally {
-      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
-        setAnalyzingLoaderState(null);
-      }
+      setAnalyzingLoaderState(null);
     }
   };
 
@@ -2561,9 +2071,18 @@ export default function Home() {
           data-testid="management-quick-summary-modal"
         >
           <div className="w-full max-w-6xl my-auto">
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsManagementSummaryOpen(false)}
+                className="rounded-lg border border-[#DCE7F5] bg-white px-4 py-2 text-sm font-semibold text-[#0B1B33]"
+                data-testid="back-to-workspace-btn"
+              >
+                {UI_STRINGS.opportunityBrief.backToWorkspace}
+              </button>
+            </div>
             <ExecutiveOpportunityBriefView
-              clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
-              onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
+              clientName={tenant.enterprise_name}
               onDownloadPdf={() => {
                 void handleBriefDownload('pdf');
               }}

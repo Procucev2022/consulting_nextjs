@@ -281,6 +281,8 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'resetValidationRecords').mockResolvedValue([sampleValidationRecord]);
     vi.spyOn(apiClient, 'addIngestionFile').mockResolvedValue([sampleDoc]);
     vi.spyOn(apiClient, 'uploadDocumentToObjectStore').mockResolvedValue({
+      success: true,
+      data: { docId: 'DOC-UPLOAD-TEST', importedCount: 1, totalInrCrores: 0.1 },
       objectMeta: { key: 'test-key' },
       ingestionQueue: [sampleDoc]
     });
@@ -617,7 +619,7 @@ describe('Home Page Component', () => {
     expect(summaryModal).toBeInTheDocument();
     const backBtn = await screen.findByTestId('back-to-workspace-btn');
     fireEvent.click(backBtn);
-    expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument());
     // Trigger onSelectTenant via tenant badge (rejection path)
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));
     const tenantBadge = screen.getByTestId('tenant-badge');
@@ -1115,7 +1117,7 @@ describe('Home Page Component', () => {
     }
   });
 
-  it('triggers onStartAICategorization toast in Module2', async () => {
+  it('requires an active assessment before starting persistent Module 2 categorization', async () => {
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
     await renderHome();
     await waitFor(() => {
@@ -1126,10 +1128,11 @@ describe('Home Page Component', () => {
     const runAiBtn = await screen.findByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
     fireEvent.click(runAiBtn);
 
-    // Verify toast is triggered
+    // Categorization decisions are keyed to a D1 assessment and must not run as local-only state.
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.toasts.runningAiCat)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.toasts.module2AssessmentRequired)).toBeInTheDocument();
     });
+    expect(aiApiClient.categorizeItems).not.toHaveBeenCalled();
   });
 
   it('renders masked overlay for Bronze tier and shows upgrade trigger', async () => {

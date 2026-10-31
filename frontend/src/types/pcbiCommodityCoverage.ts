@@ -48,7 +48,8 @@ export type PCBIResearchPriority =
   | 'P1 — Critical Coverage Gap'
   | 'P2 — High Coverage Gap'
   | 'P3 — Medium Coverage Gap'
-  | 'P4 — Low Coverage Gap';
+  | 'P4 — Low Coverage Gap'
+  | 'PENDING — Spend Link Required';
 
 export type PCBIResearchStatus =
   | 'QUEUED'

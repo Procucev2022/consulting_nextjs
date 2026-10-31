@@ -47,6 +47,16 @@ export const ORCHESTRATION_MESSAGES = {
   readinessBelowThreshold: (coveragePct: number, minimumPct: number): string =>
     `Spend coverage of ${coveragePct}% is below the required ${minimumPct}%. ` +
     'Resolve the uncovered spend before generating the report.',
+  readinessPcbiEvidenceUnavailable:
+    'PCBI review could not find eligible transaction categories for the current data version. ' +
+    'Check that the latest dataset contains active procurement transactions, then rerun the analysis.',
+  readinessPcbiReviewPending: (count: number): string =>
+    `${count} procurement category group(s) still need PCBI review. Map each group to an active PCBI series, ` +
+    'document a valid exclusion, or request research before generating the report.',
+  pcbiNeedsReview: 'No PCBI resolution is recorded for this category in the current data version.',
+  pcbiMapped: (series: string): string => `Category is mapped to active PCBI series ${series}.`,
+  pcbiExcluded: (reason: string): string => `Category is excluded from PCBI benchmarking: ${reason}.`,
+  pcbiResearchRequested: 'PCBI research has been requested for this category.',
   reportNotReady: (reasons: readonly string[]): string =>
     `Report cannot be generated until these blocking items are resolved: ${reasons.join(' ')}`,
   reportAlreadyActive: (reportId: string, state: string): string =>
@@ -81,13 +91,21 @@ export const ORCHESTRATION_MESSAGES = {
   unexpectedError: (requestId: string): string =>
     'The analysis service hit an unexpected error and the change was not saved. ' +
     `Quote request ID ${requestId} when contacting support, then retry the action.`,
-  pcbiGapNotImplemented:
-    'PCBI gap resolution is not available on the Worker yet because PCBI gap records are not stored in D1. ' +
-    'Keep this gap open and contact the administrator; the D1 gap-resolution workflow must be implemented before approval.',
-  uploadCorrectedNotImplemented:
-    'Corrected dataset upload is not available on the Worker yet. It needs R2 file storage and the Module 1 ' +
-    'reanalysis pipeline, which are not connected. Retain the corrected file and contact the administrator; ' +
-    'this web deployment cannot upload it for reanalysis yet.',
+  pcbiGapNotFound: (category: string): string =>
+    `PCBI gap ${category} was not found in the latest data version. Reload the analysis and choose a current category.`,
+  pcbiSeriesNotFound: (series: string): string =>
+    `PCBI series ${series} is not active in the D1 benchmark catalog. Select an active series or ask an administrator to publish it.`,
+  pcbiSeriesBecameUnavailable: (series: string): string =>
+    `PCBI series ${series} is no longer active in D1. Select another active series before generating the report.`,
+  pcbiGapResolved: 'PCBI category resolution was saved to D1 and added to the analysis audit trail.',
+  correctedDatasetSaved: (versionId: string): string =>
+    `Corrected dataset ${versionId} was stored in D1 and R2, then Module 1 was rerun. Review the new data version and its validation gates before continuing.`,
+  correctedDatasetSavedAnalysisPending: (versionId: string, reason: string): string =>
+    `Corrected dataset ${versionId} was stored in D1 and R2, but Module 1 could not finish: ${reason}. Open the assessment upload workflow, validate this data version, then rerun Module 1.`,
+  correctedDatasetVersionMissing:
+    'The corrected workbook upload returned without a data version ID. Check the assessment data version list before retrying to avoid a duplicate upload.',
+  analysisCouldNotRun:
+    'The workbook was imported, but the analysis service did not return a detailed reason. Open the assessment upload workflow, validate this data version, then rerun Module 1.',
   datasetVersionNotFound: (versionId: string): string =>
     `Data version ${versionId} was not found for this analysis job. Refresh the job and select one of its uploaded versions.`,
   datasetFileUnavailable: (versionId: string): string =>

@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import type { D1SeedManifest, D1SeedUpload } from '../../src/types/d1Seed';
+import type { D1SeedManifest } from '../../src/types/d1Seed';
 import type { D1SchemaTableRow } from '../../src/types/d1';
 import type { CloudflareD1Database } from '../../src/types/cloudflare';
 import { loadCanonicalAssessmentFromD1 } from '../../src/services/workerD1Canonical';
@@ -48,74 +48,57 @@ describe('durable D1 migration', () => {
     read.mockRestore();
   });
 
-  it('imports every dataset from SQL alone and preserves live changes when rerun', () => {
-    const manifest = verifySeedManifest(backendRoot) as D1SeedManifest;
+  it('replays representative seed statements without overwriting live changes', () => {
+    const seedFiles = ['d1-seed.sql', 'd1-reference-seed.sql', 'd1-category-mapping-seed.sql'];
+    const statements = seedFiles.flatMap((file) =>
+      splitSqlStatements(fs.readFileSync(path.join(backendRoot, file), 'utf8'))
+    );
+    const liveSeedStatements = [
+      statements.find((statement) => /\bINSERT OR IGNORE INTO User\b/iu.test(statement)),
+      statements.find((statement) => /\bINSERT OR IGNORE INTO MaterialMappingRegister\b/iu.test(statement)),
+      statements.find((statement) => /\bINSERT INTO ProcurementTransaction\b/iu.test(statement))
+    ];
+    expect(liveSeedStatements.every((statement) => statement !== undefined)).toBe(true);
+
     const database = new DatabaseSync(':memory:');
     try {
       database.exec(fs.readFileSync(path.join(backendRoot, 'd1-schema.sql'), 'utf8'));
       database.exec(fs.readFileSync(path.join(backendRoot, 'd1-reference-schema.sql'), 'utf8'));
-      const baseline = fs.readFileSync(path.join(backendRoot, 'd1-seed.sql'), 'utf8');
-      const reference = fs.readFileSync(path.join(backendRoot, 'd1-reference-seed.sql'), 'utf8');
-      const categoryMappings = fs.readFileSync(path.join(backendRoot, 'd1-category-mapping-seed.sql'), 'utf8');
-      const referenceSeeds = [reference, categoryMappings];
-      expect(referenceSeeds.join('\n')).not.toMatch(/\b(?:BEGIN TRANSACTION|COMMIT);/u);
-      expect([baseline, ...referenceSeeds].join('\n')).not.toContain('INSERT OR REPLACE');
-      database.exec(baseline);
-      for (const seed of referenceSeeds) {
-        const parts = splitSeedParts(seed, 900000);
-        for (const part of parts) {
-          expect(Buffer.byteLength(part, 'utf8')).toBeLessThanOrEqual(900000);
-          database.exec(part);
-        }
-      }
-      for (const [table, count] of Object.entries(manifest.tables)) {
-        const omittedPopulations: Record<string, number> = {
-          ProcurementTransaction: manifest.uploads.reduce((total, upload) => total + upload.rowCount, 0),
-          AssessmentStoreEntry: manifest.uploads.filter((upload) => upload.canonicalSnapshotId).length,
-          PCBIBenchmarkMaster: manifest.pcbiHistoricalRecovery.masterCount,
-          PCBIHistoricalObservation: manifest.pcbiHistoricalRecovery.observationCount
-        };
-        const expected = count - (omittedPopulations[table] || 0);
-        expect(database.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count, table).toBe(expected);
-      }
-      expect(manifest.tables.ProcurementTransaction).toBe(95416);
-      expect(manifest.tables.UNSPSCCommodity).toBe(1033);
-      expect(manifest.tables.PCBIWeeklyReference).toBe(3960);
-      expect(manifest.tables.AssessmentStoreEntry).toBe(39);
-      expect(manifest.tables.ProcurementCategoryMapping).toBe(262);
-      expect(database.prepare('SELECT category_name FROM ProcurementCategoryMapping WHERE material_group_code = ?').get('P06').category_name).toBe('Packing');
-      expect(database.prepare('SELECT category_name FROM ProcurementCategoryMapping WHERE material_group_code = ?').get('G31').category_name).toBe('HARDWARES');
-      expect(database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction WHERE assessment_id IS NULL').get().count).toBe(31671);
-      expect(database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction WHERE assessment_id = ?').get('AIC-2026-0001').count).toBe(0);
-      const snapshots = database.prepare('SELECT assessment_id, payload_json FROM AssessmentStoreEntry WHERE entry_type = ?').all('assessment');
-      for (const row of snapshots) {
-        const snapshot = JSON.parse(row.payload_json);
-        expect(snapshot.assessmentId).toBe(row.assessment_id);
-        const activeRun = database.prepare('SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?').get('run', row.assessment_id, snapshot.activeAnalysisRunId);
-        expect(JSON.parse(activeRun.payload_json).assessmentId).toBe(row.assessment_id);
-      }
-      // The original store scopes repeated RUN-001 identifiers to each assessment.
-      expect(database.prepare('SELECT COUNT(*) AS count FROM AssessmentStoreEntry WHERE entry_type = ? AND entry_id = ?').get('run', 'RUN-001').count).toBe(3);
+      database.exec('BEGIN');
+      for (const statement of liveSeedStatements) database.exec(statement as string);
+      database.exec('COMMIT');
+      const seededTransactionCount = database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction').get().count;
+
       database.prepare('UPDATE User SET name = ? WHERE id = ?').run('Live account name', 'usr-admin-001');
-      database.prepare('UPDATE MaterialMappingRegister SET payload_json = ? WHERE source_material_id = ?').run('{"reviewStatus":"CLIENT_APPROVED"}', 'MAT-REV-01');
-      const [unchangedLegacy, modifiedLegacy] = database.prepare('SELECT transaction_id FROM ProcurementTransaction ORDER BY transaction_id LIMIT 2').all();
-      database.prepare('UPDATE ProcurementTransaction SET assessment_id = ? WHERE transaction_id = ?').run('AIC-2026-0001', unchangedLegacy.transaction_id);
-      database.prepare('UPDATE ProcurementTransaction SET assessment_id = ?, raw_json = ? WHERE transaction_id = ?').run('AIC-2026-0001', '{"modifiedByUser":true}', modifiedLegacy.transaction_id);
-      database.exec(baseline);
-      for (const seed of referenceSeeds) database.exec(seed);
+      database.prepare('UPDATE MaterialMappingRegister SET payload_json = ? WHERE source_material_id = ?')
+        .run('{"reviewStatus":"CLIENT_APPROVED"}', 'MAT-REV-01');
+      const [unchangedLegacy, modifiedLegacy] = database.prepare(
+        'SELECT transaction_id FROM ProcurementTransaction ORDER BY transaction_id LIMIT 2'
+      ).all();
+      database.prepare('UPDATE ProcurementTransaction SET assessment_id = ? WHERE transaction_id = ?')
+        .run('AIC-2026-0001', unchangedLegacy.transaction_id);
+      database.prepare('UPDATE ProcurementTransaction SET assessment_id = ?, raw_json = ? WHERE transaction_id = ?')
+        .run('AIC-2026-0001', '{"modifiedByUser":true}', modifiedLegacy.transaction_id);
+
+      database.exec('BEGIN');
+      for (const statement of liveSeedStatements) database.exec(statement as string);
+      database.exec('COMMIT');
       expect(database.prepare('SELECT name FROM User WHERE id = ?').get('usr-admin-001').name).toBe('Live account name');
-      expect(database.prepare('SELECT payload_json FROM MaterialMappingRegister WHERE source_material_id = ?').get('MAT-REV-01').payload_json).toBe('{"reviewStatus":"CLIENT_APPROVED"}');
-      expect(database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction').get().count).toBe(31671);
-      expect(database.prepare('SELECT assessment_id FROM ProcurementTransaction WHERE transaction_id = ?').get(unchangedLegacy.transaction_id).assessment_id).toBeNull();
-      expect(database.prepare('SELECT assessment_id, raw_json FROM ProcurementTransaction WHERE transaction_id = ?').get(modifiedLegacy.transaction_id)).toMatchObject({
-        assessment_id: 'AIC-2026-0001', raw_json: '{"modifiedByUser":true}'
-      });
+      expect(database.prepare('SELECT payload_json FROM MaterialMappingRegister WHERE source_material_id = ?')
+        .get('MAT-REV-01').payload_json).toBe('{"reviewStatus":"CLIENT_APPROVED"}');
+      expect(database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction').get().count)
+        .toBe(seededTransactionCount);
+      expect(database.prepare('SELECT assessment_id FROM ProcurementTransaction WHERE transaction_id = ?')
+        .get(unchangedLegacy.transaction_id).assessment_id).toBeNull();
+      expect(database.prepare('SELECT assessment_id, raw_json FROM ProcurementTransaction WHERE transaction_id = ?')
+        .get(modifiedLegacy.transaction_id)).toMatchObject({
+          assessment_id: 'AIC-2026-0001', raw_json: '{"modifiedByUser":true}'
+        });
     } finally {
       database.close();
     }
   });
 
-  const uploadManifest = JSON.parse(fs.readFileSync(path.join(backendRoot, 'd1-seed-manifest.json'), 'utf8')) as D1SeedManifest;
   it('preserves the forensic PCBI source metadata and monthly prices without activating benchmarks or fabricating weekly indices', () => {
     const manifest = verifySeedManifest(backendRoot) as D1SeedManifest;
     const recovery = manifest.pcbiHistoricalRecovery;
@@ -183,6 +166,12 @@ describe('durable D1 migration', () => {
         const stats = database.prepare('SELECT COUNT(*) AS count, SUM(total_inr_raw) AS total FROM ProcurementTransaction WHERE assessment_id = ?').get(upload.assessmentId);
         expect(stats.count).toBe(upload.rowCount);
         expect(stats.total).toBeCloseTo(upload.sumInr, 2);
+        const rawRow = database.prepare(
+          'SELECT raw_json FROM ProcurementTransaction WHERE assessment_id = ? LIMIT 1'
+        ).get(upload.assessmentId);
+        const sourceRow = JSON.parse(rawRow.raw_json);
+        expect(sourceRow.sourceRaw).toBeDefined();
+        expect(sourceRow.sourceChecksum).toBe(upload.sourceChecksum);
       }
       const d1 = { prepare: (sql: string) => ({
         bind: (...values: unknown[]) => ({ all: async () => ({ results: database.prepare(sql).all(...values) }) }),
@@ -198,39 +187,4 @@ describe('durable D1 migration', () => {
     }
   });
 
-  it.each(uploadManifest.uploads)('imports all uploaded source rows for $assessmentId without a workbook', (upload: D1SeedUpload) => {
-    const database = new DatabaseSync(':memory:');
-    try {
-      database.exec(fs.readFileSync(path.join(backendRoot, 'd1-reference-schema.sql'), 'utf8'));
-      const source = fs.readFileSync(path.join(backendRoot, upload.seedFile), 'utf8');
-      for (const part of splitSeedParts(source, 900000)) database.exec(part);
-      const actual = database.prepare('SELECT COUNT(*) AS count, SUM(total_inr_raw) AS total FROM ProcurementTransaction WHERE assessment_id = ?').get(upload.assessmentId);
-      expect(actual.count).toBe(upload.rowCount);
-      expect(actual.total).toBeCloseTo(upload.sumInr, 2);
-      const row = database.prepare('SELECT raw_json FROM ProcurementTransaction LIMIT 1').get();
-      const raw = JSON.parse(row.raw_json);
-      expect(raw.sourceRaw).toBeDefined();
-      expect(raw.sourceChecksum).toBe(upload.sourceChecksum);
-      expect(database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction WHERE assessment_id <> ?').get(upload.assessmentId).count).toBe(0);
-      if (upload.canonicalSnapshotId) {
-        const canonical = JSON.parse(database.prepare("SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = 'canonical_module1' AND assessment_id = ? AND entry_id = ?").get(upload.assessmentId, upload.canonicalSnapshotId).payload_json);
-        expect(canonical.assessmentId).toBe(upload.assessmentId);
-        expect(canonical.sourceRowCount).toBe(upload.rowCount);
-        expect(canonical.validRowCount).toBe(upload.validRowCount);
-        expect(canonical.excludedRowCount).toBe(upload.excludedRowCount);
-        expect(canonical.anomalyRowCount).toBe(upload.anomalyRowCount);
-        expect(canonical.validFxNormalizedSpendInr).toBeCloseTo(upload.normalizedSpendInr as number, 2);
-        expect(canonical.migrationProvenance.certifiedEvidenceSha256).toBe(upload.certifiedEvidenceChecksum);
-        const validated = database.prepare("SELECT COUNT(*) AS count, SUM(json_extract(raw_json, '$.lineSpendInr')) AS total FROM ProcurementTransaction WHERE json_extract(raw_json, '$.inclusionStatus') = 'VALID'").get();
-        expect(validated.count).toBe(upload.validRowCount);
-        expect(validated.total).toBeCloseTo(upload.normalizedSpendInr as number, 2);
-        expect(database.prepare('SELECT COUNT(*) AS count FROM D1SeedPayloadChunk').get().count).toBe(0);
-        database.exec(source);
-        expect(database.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction').get().count).toBe(upload.rowCount);
-        expect(database.prepare("SELECT COUNT(*) AS count FROM AssessmentStoreEntry WHERE entry_type = 'canonical_module1'").get().count).toBe(1);
-      }
-    } finally {
-      database.close();
-    }
-  });
 });

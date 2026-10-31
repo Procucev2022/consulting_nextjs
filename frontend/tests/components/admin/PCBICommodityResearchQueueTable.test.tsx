@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { UI_STRINGS } from '../../../src/constants';
 import {
   PCBICommodityResearchQueueTable,
   getQueueContextualAction
@@ -26,6 +27,8 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       sourceStatus: 'SOURCE_UNVERIFIED',
       methodologyStatus: 'METHODOLOGY_PENDING',
       priority: 'P1 - High Impact',
+      priorityScore: 100,
+      priorityReason: 'RANKED_BY_CUSTOMER_SPEND' as const,
       researchStatus: 'NOT_STARTED',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
@@ -48,6 +51,8 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       sourceStatus: 'SOURCE_UNVERIFIED',
       methodologyStatus: 'APPROVED',
       priority: 'P2',
+      priorityScore: 75,
+      priorityReason: 'RANKED_BY_CUSTOMER_SPEND' as const,
       researchStatus: 'IN_PROGRESS',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
@@ -70,6 +75,8 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       sourceStatus: 'SOURCE_UNVERIFIED',
       methodologyStatus: 'METHODOLOGY_PENDING',
       priority: 'P4',
+      priorityScore: 0,
+      priorityReason: 'SPEND_LINK_REQUIRED' as const,
       researchStatus: 'IN_PROGRESS',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
@@ -92,7 +99,33 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
       sourceStatus: 'NONE',
       methodologyStatus: 'NONE',
       priority: 'P3',
+      priorityScore: 40,
+      priorityReason: 'RANKED_BY_CUSTOMER_SPEND' as const,
       researchStatus: 'NOT_STARTED',
+      lastUpdated: '2026-09-28',
+      action: 'OPEN WORKSPACE'
+    },
+    {
+      commodity: 'Covered rail steel',
+      commodityId: 'CMD-RAIL-STEEL',
+      module2Classification: 'Metals',
+      unspsc: '30100000',
+      customerSpend: 12000000,
+      customerSpendCr: '₹1.20 Cr',
+      transactionCount: 20,
+      pcbiId: 'PCBI-RAIL-STEEL',
+      seriesId: 'SER-RAIL-STEEL',
+      currentStatus: 'PRODUCTION_READY',
+      requiredHistory: '2020-04 to 2026-03',
+      availableHistory: '2020-04 to 2026-03',
+      requiredFrequency: 'WEEKLY' as const,
+      availableFrequency: 'WEEKLY' as const,
+      sourceStatus: 'SOURCE_VERIFIED',
+      methodologyStatus: 'APPROVED',
+      priority: 'P4',
+      priorityScore: 0,
+      priorityReason: 'GAP_RESOLVED' as const,
+      researchStatus: 'RESOLVED',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     }
@@ -125,6 +158,11 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
     expect(screen.getByText('Tungsten Carbide Inserts')).toBeInTheDocument();
     expect(screen.getByText('Hydraulic Oil ISO 68')).toBeInTheDocument();
     expect(screen.getByText('Custom Pump Impeller')).toBeInTheDocument();
+    expect(screen.getByText('Covered rail steel')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreLabel(100))).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreNotScored)).toHaveLength(2);
+    expect(screen.getByTitle(UI_STRINGS.pcbiCommodityDataLab.priorityScoreResolved)).toBeInTheDocument();
+    expect(screen.getByTitle(UI_STRINGS.pcbiCommodityDataLab.priorityScoreNeedsSpend)).toBeInTheDocument();
 
     // Check action buttons
     expect(screen.getByRole('button', { name: /Research/i })).toBeInTheDocument();
@@ -176,5 +214,29 @@ describe('PCBICommodityResearchQueueTable Component (Part F & M)', () => {
     fireEvent.change(searchInput, { target: { value: 'UNMATCHED_SEARCH_TERM' } });
 
     expect(screen.getByText('No commodities match your current search and filter criteria.')).toBeInTheDocument();
+  });
+
+  it('saves and removes queue assignments and reports failures accessibly', async () => {
+    const onAssignResearcher = vi.fn().mockResolvedValue(undefined);
+    render(<PCBICommodityResearchQueueTable queue={mockQueue} onOpenWorkspace={vi.fn()} onAssignResearcher={onAssignResearcher} />);
+
+    const input = screen.getByLabelText(UI_STRINGS.pcbiCommodityDataLab.assignResearcherInputLabel(mockQueue[0].commodity));
+    fireEvent.change(input, { target: { value: 'owner@example.test' } });
+    fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton })[0]);
+    await waitFor(() => expect(onAssignResearcher).toHaveBeenCalledWith(mockQueue[0].pcbiId, 'owner@example.test'));
+    expect(screen.getByRole('status')).toHaveTextContent(
+      UI_STRINGS.pcbiCommodityDataLab.assignmentSaved(mockQueue[0].pcbiId, 'owner@example.test')
+    );
+
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.unassignResearcherButton })[0]);
+    await waitFor(() => expect(onAssignResearcher).toHaveBeenLastCalledWith(mockQueue[0].pcbiId, null));
+
+    onAssignResearcher.mockRejectedValueOnce(new Error('D1 unavailable'));
+    fireEvent.change(input, { target: { value: 'owner@example.test' } });
+    fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton })[0]);
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(
+      UI_STRINGS.pcbiCommodityDataLab.assignmentFailed(mockQueue[0].pcbiId)
+    ));
   });
 });

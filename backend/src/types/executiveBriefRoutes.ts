@@ -8,6 +8,7 @@ export type ExecutiveBriefRouteKey =
   | 'downloadPptx'
   | 'opportunityBriefPdf'
   | 'opportunityBriefPptx'
+  | 'opportunityBriefReport'
   | 'regenerate';
 
 export type ExecutiveBriefHttpMethod = 'GET' | 'POST';

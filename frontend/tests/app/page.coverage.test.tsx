@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, act, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, act, cleanup, fireEvent } from '@testing-library/react';
 import * as XLSX from 'xlsx';
 import Home from '../../src/app/page';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { assessmentApiClient } from '@/utils/assessmentApi';
 import { orchestrationApi } from '@/utils/orchestrationApi';
-import { getTaxonomyLoadState, loadUNSPSCTaxonomy } from '@/data/unspscTaxonomy';
+import { getTaxonomyLoadState, loadUNSPSCTaxonomy, unspscOfficialDictionary } from '@/data/unspscTaxonomy';
 import { frontendLogger } from '@/utils/logger';
 import { UI_STRINGS } from '@/constants/uiStrings';
 import { mockTenant, conversionFunnelStages } from '../fixtures/mockData';
@@ -75,6 +75,8 @@ vi.mock('@/utils/api', () => ({
     setSimulatedTier: vi.fn(),
     getCanonicalModule1: vi.fn(),
     getModule2CanonicalLineItems: vi.fn(),
+    updateModule2MaterialMapping: vi.fn(),
+    updateModule2MaterialMappings: vi.fn(),
     getIngestionData: vi.fn(),
     uploadDocumentToObjectStore: vi.fn(),
     updateValidationRecord: vi.fn(),
@@ -95,7 +97,8 @@ vi.mock('@/utils/assessmentApi', () => ({
   assessmentApiClient: {
     getOperatingMode: vi.fn(),
     getAssessments: vi.fn(),
-    getAssessmentById: vi.fn()
+    getAssessmentById: vi.fn(),
+    uploadDataVersion: vi.fn()
   }
 }));
 
@@ -362,6 +365,7 @@ const buildOpportunity = (oppId: string, overrides: Partial<SavingsOpportunity> 
 const buildLineItem = (mappingId: string, rawDesc: string, overrides: Partial<LineItemMapping> = {}): LineItemMapping => ({
   mapping_id: mappingId,
   line_item_id: `LINE-${mappingId}`,
+  material_code: `MATERIAL-${mappingId}`,
   raw_desc: rawDesc,
   vendor_identified: 'Fastener Co',
   unspsc_code: '14111500',
@@ -696,6 +700,7 @@ function stubLocation(origin = 'http://localhost:3000') {
 function makeTextFile(name: string, text: string, type = 'text/plain'): File {
   const file = new File([text], name, { type });
   Object.defineProperty(file, 'text', { value: (): Promise<string> => Promise.resolve(text) });
+  Object.defineProperty(file, 'arrayBuffer', { value: (): Promise<ArrayBuffer> => Promise.resolve(new TextEncoder().encode(text).buffer) });
   return file;
 }
 
@@ -739,6 +744,12 @@ async function uploadFile(file: File): Promise<void> {
 
 function applyDefaultMocks(): void {
   vi.mocked(loadUNSPSCTaxonomy).mockResolvedValue(undefined);
+  unspscOfficialDictionary.splice(0, unspscOfficialDictionary.length, {
+    commodityCode: '31161500', commodityTitle: 'Steel Bolt M8', classCode: '31160000',
+    classTitle: 'Fasteners', familyCode: '31160000', familyTitle: 'Hardware',
+    segmentCode: '31', segmentTitle: 'Manufacturing Components', coreBucket: 'Indirect & MRO',
+    classificationStatus: 'CLASSIFIED'
+  });
   vi.mocked(getTaxonomyLoadState).mockReturnValue({ isLoading: false, error: null });
   vi.mocked(authApiClient.getStoredUser).mockReturnValue(BUYER_USER);
   vi.mocked(authApiClient.getStoredToken).mockReturnValue('token-123');
@@ -766,12 +777,14 @@ function applyDefaultMocks(): void {
   });
   vi.mocked(apiClient.getCanonicalModule1).mockResolvedValue(null);
   vi.mocked(apiClient.getModule2CanonicalLineItems).mockResolvedValue([]);
+  vi.mocked(apiClient.updateModule2MaterialMapping).mockResolvedValue({});
+  vi.mocked(apiClient.updateModule2MaterialMappings).mockResolvedValue({ success: true, message: 'saved', mappings: [] });
   vi.mocked(apiClient.updateValidationRecord).mockResolvedValue(buildRecord('VAL-PAGE-001'));
   vi.mocked(apiClient.applyBlanketRemediation).mockResolvedValue({ updatedCount: 0, skippedCount: 0, records: [] });
   vi.mocked(apiClient.resetValidationRecords).mockResolvedValue([]);
   vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValue([]);
   vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValue(
-    asUploadResponse({ success: true, ingestion: buildDocument(), validationCount: 3 })
+    asUploadResponse({ success: true, data: { docId: 'DOC-UPLOAD-NEW', importedCount: 1, totalInrCrores: 0.1 } })
   );
   vi.mocked(apiClient.mergeVendor).mockResolvedValue({ success: true });
   vi.mocked(apiClient.deployOpportunity).mockResolvedValue(buildOpportunity('OPP-PAGE-001'));
@@ -779,6 +792,10 @@ function applyDefaultMocks(): void {
   vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(SAAS_MODE);
   vi.mocked(assessmentApiClient.getAssessments).mockResolvedValue([]);
   vi.mocked(assessmentApiClient.getAssessmentById).mockResolvedValue(buildAssessment());
+  vi.mocked(assessmentApiClient.uploadDataVersion).mockResolvedValue({
+    assessment: buildAssessment({ assessmentId: 'ASM-UPLOAD', activeDataVersionId: 'DV-UPLOAD' }),
+    dataVersion: { dataVersionId: 'DV-UPLOAD' } as any
+  });
   vi.mocked(orchestrationApi.getJobs).mockResolvedValue([]);
   vi.mocked(orchestrationApi.getJobDetails).mockResolvedValue(null);
 }
@@ -1303,8 +1320,8 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
   });
 });
 
-describe('Home page: batch upload pipeline', () => {
-  it('requires a signed-in user before parsing an upload', async () => {
+describe('Home page: D1-backed upload pipeline', () => {
+  it('requires a signed-in user before sending a file to the backend', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
     vi.mocked(apiClient.getStoredUser).mockReturnValue(null);
     await renderPage();
@@ -1313,167 +1330,91 @@ describe('Home page: batch upload pipeline', () => {
 
     expect(mocks.routerPush).toHaveBeenCalledWith('/login');
     expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.loginRequiredForUpload)).toBeInTheDocument();
   });
 
-  it('reports a taxonomy load failure with the default reason when no stored error exists', async () => {
-    vi.mocked(loadUNSPSCTaxonomy).mockRejectedValueOnce(new Error('catalog offline'));
-    await renderPage();
-
-    await uploadFile(makeTextFile('catalog.csv', 'PO\n1\n', 'text/csv'));
-
-    expect(
-      screen.getByText(
-        UI_STRINGS.taxonomyData.loadFailed(UI_STRINGS.taxonomyData.unknownFailure, UI_STRINGS.taxonomyData.requestUnavailable)
-      )
-    ).toBeInTheDocument();
-    expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
-  });
-
-  it('reports the stored taxonomy error when the catalog load state has one', async () => {
-    vi.mocked(loadUNSPSCTaxonomy).mockRejectedValueOnce(new Error('catalog offline'));
-    vi.mocked(getTaxonomyLoadState).mockReturnValueOnce({ isLoading: false, error: CATALOG_ERROR });
-    await renderPage();
-
-    await uploadFile(makeTextFile('catalog.csv', 'PO\n1\n', 'text/csv'));
-
-    expect(screen.getByText(CATALOG_ERROR)).toBeInTheDocument();
-  });
-
-  it('parses a multi-column workbook into ingestion, line items, and the analysis popup', async () => {
-    await renderPage();
-
-    await uploadFile(makeBinaryFile('spend_detail.xlsx', buildWorkbookBytes(RICH_ROWS), XLSX_MIME));
-
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fileName: 'spend_detail.xlsx',
-        fileType: 'XLSX',
-        recordsCount: RICH_ROWS.length,
-        buyer_id: 'USR-TEST-1'
-      })
-    );
-    const [queueDoc] = readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue');
-    expect(queueDoc.records_count).toBe(RICH_ROWS.length);
-    expect(queueDoc.detected_currencies).toEqual(expect.arrayContaining(['USD', 'INR', 'EUR']));
-    expect(readProp<{ isOpen: boolean }>('detailedAnalysis', 'isOpen')).toBe(true);
-    expect(readProp<number>('module1', 'uniqueVendorsCount')).toBeGreaterThan(0);
-
-    await switchTab('module2', 'module2');
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems')).toHaveLength(RICH_ROWS.length);
-  });
-
-  it('refreshes the uploaded queue, validation records, and spend from D1 after a persisted import', async () => {
-    const d1Document = buildDocument({ doc_id: 'DOC-D1-UPLOAD', records_count: 2, converted_inr_crores: 3.25 });
+  it('uploads source bytes without sending browser-generated counts and hydrates the saved D1 records', async () => {
+    const persistedDocument = buildDocument({ doc_id: 'DOC-D1-UPLOAD', records_count: 2, converted_inr_crores: 3.25 });
+    const persistedRecord = buildRecord('REC-D1-UPLOAD');
+    const persistedLines = [buildLineItem('LI-D1-1', 'Resin'), buildLineItem('LI-D1-2', 'Solvent')];
     vi.mocked(apiClient.getIngestionData)
       .mockResolvedValueOnce(defaultIngestion())
-      .mockResolvedValueOnce(asIngestion({
-        queue: [d1Document],
-        validationRecords: [buildRecord('REC-D1-ROW-2')]
-      }));
+      .mockResolvedValueOnce(asIngestion({ queue: [persistedDocument], validationRecords: [persistedRecord] }));
+    vi.mocked(apiClient.getTenant).mockResolvedValueOnce({ ...mockTenant, total_spend_evaluated_inr: 0 });
+    vi.mocked(apiClient.getModule2CanonicalLineItems).mockResolvedValueOnce(persistedLines);
     vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
       success: true,
       data: { docId: 'DOC-D1-UPLOAD', importedCount: 2, totalInrCrores: 3.25 }
     }));
-
     await renderPage();
+
     await uploadFile(makeTextFile('spend.csv', 'PO,Vendor\n1,Acme\n2,Beta\n', 'text/csv'));
 
-    expect(apiClient.getIngestionData).toHaveBeenCalledTimes(2);
-    expect(apiClient.getIngestionData).toHaveBeenLastCalledWith('USR-TEST-1');
-    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([d1Document]);
-    expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toHaveLength(1);
+    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(expect.objectContaining({
+      fileName: 'spend.csv',
+      parseTransactions: true,
+      recordsCount: 0,
+      convertedInrCrores: 0,
+      detectedCurrencies: [],
+      tenant_id: 'USR-TEST-1',
+      fileBase64: expect.any(String)
+    }));
+    expect(apiClient.getModule2CanonicalLineItems).toHaveBeenCalledWith(undefined, undefined, 'USR-TEST-1');
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([persistedDocument]);
+    expect(readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords')).toEqual([persistedRecord]);
     expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(3.25);
-  });
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadSpend('spend.csv', 3.25, 2))).toBeInTheDocument();
 
-  it('derives the spend total from a Total INR column and a numeric year column', async () => {
-    await renderPage();
-    const rows = [
-      {
-        'Vendor Name': 'Alpha Supplies',
-        Material: 'M-1',
-        'Short Text': 'Glass Bottle',
-        'Total INR': 2500000,
-        'Order Qty': 2,
-        'Net Price': 10,
-        'Plant Code': 'P-9',
-        Year: 2023,
-        'Material Group': 'DIRECT'
-      }
-    ];
-
-    await uploadFile(makeBinaryFile('inr_totals.xls', buildWorkbookBytes(rows), XLSX_MIME));
-
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(
-      expect.objectContaining({ recordsCount: 1, convertedInrCrores: 0.25 })
-    );
-  });
-
-  it('falls back to generated defaults for a minimal workbook without recognised columns', async () => {
-    await renderPage();
-
-    await uploadFile(makeBinaryFile('minimal.xlsx', buildWorkbookBytes([{ Item: 'Gasket', Count: 4 }, { Item: 'Seal', Count: 2 }]), XLSX_MIME));
-
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(expect.objectContaining({ recordsCount: 2 }));
     await switchTab('module2', 'module2');
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems').map((item) => item.raw_desc)).toEqual(['Item-1', 'Item-2']);
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems')).toEqual(persistedLines);
   });
 
-  it('records zero rows for a workbook that has a header but no data rows', async () => {
+  it('does not require a browser taxonomy file before uploading D1-backed source data', async () => {
+    vi.mocked(loadUNSPSCTaxonomy).mockRejectedValueOnce(new Error('catalog offline'));
     await renderPage();
 
-    await uploadFile(makeBinaryFile('header_only.xlsx', buildWorkbookBytes([]), XLSX_MIME));
+    await uploadFile(makeTextFile('catalog.csv', 'PO\n1\n', 'text/csv'));
 
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(expect.objectContaining({ recordsCount: 0 }));
+    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalled();
+    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(expect.objectContaining({
+      recordsCount: 0,
+      convertedInrCrores: 0,
+      detectedCurrencies: []
+    }));
   });
 
-  it('estimates the record count from file size when a spreadsheet cannot be parsed', async () => {
+  it('reports a D1 upload rejection with its actionable server detail', async () => {
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: false,
+      message: 'D1 rejected the workbook header.'
+    }));
     await renderPage();
 
-    await uploadFile(makeBinaryFile('broken_export.xlsx', new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01]), XLSX_MIME));
+    await uploadFile(makeTextFile('rejected.csv', 'PO\n1\n', 'text/csv'));
 
-    expect(mocks.logger.warn).toHaveBeenCalled();
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(expect.objectContaining({ recordsCount: 1 }));
+    expect(mocks.logger.error).toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadFailed('rejected.csv', 'D1 rejected the workbook header.'))).toBeInTheDocument();
+    expect(readProp<{ isOpen: boolean }>('detailedAnalysis', 'isOpen')).toBe(false);
   });
 
-  it('uses the catalog size estimate for an unreadable UNSPSC workbook', async () => {
+  it('reports that saved PDFs remain pending when no extractor has processed them', async () => {
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce(defaultIngestion())
+      .mockResolvedValueOnce(asIngestion({ queue: [buildDocument({
+        doc_id: 'DOC-PDF', file_name: 'contract.pdf', file_type: 'PDF', ocr_status: 'Pending', records_count: 0
+      })], validationRecords: [] }));
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-PDF', importedCount: 0, totalInrCrores: 0 }
+    }));
     await renderPage();
 
-    await uploadFile(
-      makeBinaryFile('UNSPSC_Master_Catalog.xlsx', new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01]), XLSX_MIME)
-    );
-
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(expect.objectContaining({ recordsCount: 158467 }));
-  });
-});
-
-describe('Home page: batch upload outcomes', () => {
-  it('counts CSV lines and falls back to a default count when the file cannot be read', async () => {
-    await renderPage();
-
-    await uploadFile(makeTextFile('spend.csv', 'PO,Vendor\n1,A\n2,B\n', 'text/csv'));
-    await uploadFile(makeUnreadableFile('locked.csv'));
-
-    const payloads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.map(([payload]) => payload);
-    expect(payloads[0]).toMatchObject({ fileType: 'CSV', recordsCount: 2 });
-    expect(payloads[1]).toMatchObject({ recordsCount: 14200 });
-  });
-
-  it('counts TXT lines and uploads PDF and ZIP documents without parsing their contents', async () => {
-    await renderPage();
-
-    await uploadFile(makeTextFile('notes.txt', 'line one\nline two\n'));
     await uploadFile(makeTextFile('contract.pdf', '%PDF-1.4', 'application/pdf'));
-    await uploadFile(makeTextFile('bundle.zip', 'PK', 'application/zip'));
 
-    const payloads = vi.mocked(apiClient.uploadDocumentToObjectStore).mock.calls.map(([payload]) => payload);
-    expect(payloads[0]).toMatchObject({ recordsCount: 1 });
-    expect(payloads[1]).toMatchObject({ fileType: 'PDF', recordsCount: 0 });
-    expect(payloads[2]).toMatchObject({ recordsCount: 0 });
-    const queueDoc = readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')[0];
-    expect(queueDoc.file_type).toBe('ZIP');
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadPendingExtraction('contract.pdf'))).toBeInTheDocument();
   });
 
-  it('sends no base64 payload when the file reader fails', async () => {
+  it('stops when browser file reading fails before the backend can persist it', async () => {
     vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementationOnce(function (this: FileReader) {
       this.dispatchEvent(new ProgressEvent('error'));
     });
@@ -1481,63 +1422,61 @@ describe('Home page: batch upload outcomes', () => {
 
     await uploadFile(makeTextFile('reader.csv', 'PO\n1\n', 'text/csv'));
 
-    expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(
-      expect.objectContaining({ fileBase64: undefined })
-    );
+    expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadFailed('reader.csv', UI_STRINGS.toasts.uploadFileReadFailed))).toBeInTheDocument();
   });
 
-  it('applies the canonical view returned by an upload for the active data version', async () => {
+  it('routes assessment workbooks through the versioned D1 assessment workflow', async () => {
     await renderPage();
-    await attachAssessment(buildAssessment({ assessmentId: 'ASM-U', activeDataVersionId: 'DV-U', status: 'DRAFT' }));
-    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(
-      asUploadResponse({
-        success: true,
-        data: {
-          canonical: buildCanonical({
-            assessmentId: 'ASM-U',
-            dataVersionId: 'DV-U',
-            validFxNormalizedSpendCr: 77.7,
-            sourceRowCount: 500,
-            uniqueItems: 210
-          }),
-          analysisJob: buildJob({ analysisJobId: 'JOB-U' })
-        }
-      })
-    );
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-U', status: 'DRAFT' }));
+    vi.mocked(assessmentApiClient.uploadDataVersion).mockResolvedValueOnce({
+      assessment: buildAssessment({ assessmentId: 'ASM-U', activeDataVersionId: 'DV-U', status: 'DRAFT' }),
+      dataVersion: { dataVersionId: 'DV-U' } as any
+    });
     await switchTab('module1', 'module1');
 
-    await uploadFile(makeTextFile('canonical.csv', 'PO\n1\n', 'text/csv'));
+    await uploadFile(makeTextFile('assessment.csv', 'PO\n1\n', 'text/csv'));
 
-    expect(readProp<number | undefined>('module1', 'uniqueItemsCount')).toBe(210);
-    expect(readProp<AnalysisJob | null>('customerAnalysis', 'activeJob')).toMatchObject({ analysisJobId: 'JOB-U' });
-    expect(screen.getByText(UI_STRINGS.toasts.batchUploadSpend('canonical.csv', 77.7, 500))).toBeInTheDocument();
+    expect(assessmentApiClient.uploadDataVersion).toHaveBeenCalledWith('ASM-U', expect.objectContaining({
+      fileName: 'assessment.csv',
+      fileSize: expect.any(Number),
+      checksum: expect.stringMatching(/^[0-9a-f]{64}$/u),
+      fileBase64: expect.any(String),
+      runAnalysisImmediately: false
+    }));
+    expect(apiClient.uploadDocumentToObjectStore).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadAssessmentSaved('assessment.csv', 'DV-U'))).toBeInTheDocument();
   });
 
-  it('loads the analysis job separately when the upload response has none', async () => {
-    vi.mocked(orchestrationApi.getJobs)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([buildJob({ analysisJobId: 'JOB-L' })]);
+  it('explains unsupported assessment files and checksum failures before uploading', async () => {
     await renderPage();
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-U', status: 'DRAFT' }));
+    await switchTab('module1', 'module1');
 
-    await uploadFile(makeTextFile('no-job.csv', 'PO\n1\n', 'text/csv'));
-    expect(readProp<AnalysisJob | null>('customerAnalysis', 'activeJob')).toMatchObject({ analysisJobId: 'JOB-L' });
+    await uploadFile(makeTextFile('contract.pdf', '%PDF-1.4', 'application/pdf'));
+    expect(assessmentApiClient.uploadDataVersion).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadAssessmentUnsupported('contract.pdf'))).toBeInTheDocument();
 
-    vi.mocked(orchestrationApi.getJobs).mockRejectedValueOnce(new Error('jobs offline'));
-    await uploadFile(makeTextFile('no-job-2.csv', 'PO\n1\n', 'text/csv'));
-    expect(readProp<AnalysisJob | null>('customerAnalysis', 'activeJob')).toMatchObject({ analysisJobId: 'JOB-L' });
+    vi.stubGlobal('crypto', {});
+    await uploadFile(makeTextFile('workbook.csv', 'PO\n1\n', 'text/csv'));
+    expect(assessmentApiClient.uploadDataVersion).not.toHaveBeenCalled();
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadFailed('workbook.csv', UI_STRINGS.toasts.uploadChecksumUnavailable))).toBeInTheDocument();
   });
 
-  it('logs a warning and keeps the popup closed when the upload request fails', async () => {
-    vi.mocked(apiClient.uploadDocumentToObjectStore).mockRejectedValueOnce(new Error('Object store unavailable'));
+  it('rejects an assessment response that has no version id and keeps the user informed', async () => {
     await renderPage();
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-U', status: 'DRAFT' }));
+    vi.mocked(assessmentApiClient.uploadDataVersion).mockResolvedValueOnce({
+      assessment: buildAssessment({ assessmentId: 'ASM-U', status: 'DRAFT' }),
+      dataVersion: {} as any
+    });
+    await switchTab('module1', 'module1');
 
-    await uploadFile(makeTextFile('rejected.csv', 'PO\n1\n', 'text/csv'));
+    await uploadFile(makeTextFile('assessment.csv', 'PO\n1\n', 'text/csv'));
 
-    expect(mocks.logger.warn).toHaveBeenCalled();
-    expect(readProp<{ isOpen: boolean }>('detailedAnalysis', 'isOpen')).toBe(false);
+    expect(screen.getByText(UI_STRINGS.toasts.batchUploadFailed('assessment.csv', UI_STRINGS.toasts.uploadResponseMissingVersion))).toBeInTheDocument();
   });
 });
-
 describe('Home page: Module 2 categorization', () => {
   it('confirms a line item mapping and reassigns another through the reassign modal', async () => {
     await seedModule2();
@@ -1545,6 +1484,11 @@ describe('Home page: Module 2 categorization', () => {
 
     await runProp('module2', 'onConfirmMapping', first.mapping_id);
     expect(readProp<LineItemMapping[]>('module2', 'lineItems')[0].status).toBe('Confirmed');
+    expect(apiClient.updateModule2MaterialMappings).toHaveBeenCalledWith(expect.objectContaining({
+      assessmentId: 'ASM-M2', mappings: [expect.objectContaining({
+        sourceMaterialId: first.material_code, reviewStatus: 'CLIENT_APPROVED'
+      })]
+    }));
     expect(screen.getByText(UI_STRINGS.toasts.unspscConfirmed(first.mapping_id))).toBeInTheDocument();
 
     await runProp('module2', 'onReassignMapping', second);
@@ -1556,6 +1500,11 @@ describe('Home page: Module 2 categorization', () => {
       core_bucket: 'Indirect & MRO',
       status: 'Confirmed'
     });
+    expect(apiClient.updateModule2MaterialMappings).toHaveBeenCalledWith(expect.objectContaining({
+      assessmentId: 'ASM-M2', mappings: [expect.objectContaining({
+        sourceMaterialId: second.material_code, unspscCode: '31161500', reviewStatus: 'TAXONOMY_VERIFIED'
+      })]
+    }));
     expect(screen.getByText(UI_STRINGS.toasts.taxonomyReassigned('31161500', 'Indirect & MRO'))).toBeInTheDocument();
 
     await runProp('reassign', 'onClose');
@@ -1584,9 +1533,14 @@ describe('Home page: Module 2 categorization', () => {
     await runProp('module2', 'onStartAICategorization');
 
     const items = readProp<LineItemMapping[]>('module2', 'lineItems');
-    expect(items[0]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 97, status: 'Confirmed', core_bucket: 'Indirect & MRO' });
-    expect(items[1]).toMatchObject({ ai_confidence: 99.2, status: 'Confirmed' });
-    expect(items[2].status).toBe('Confirmed');
+    expect(items[0]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 97, status: 'Pending Review', core_bucket: 'Indirect & MRO' });
+    expect(items[1]).toMatchObject({ status: 'Pending' });
+    expect(items[2].status).toBe('Pending');
+    expect(apiClient.updateModule2MaterialMappings).toHaveBeenCalledWith(expect.objectContaining({
+      assessmentId: 'ASM-M2', mappings: [expect.objectContaining({
+        sourceMaterialId: 'MATERIAL-MAP-1', unspscCode: '31161500', reviewStatus: 'PROVISIONAL', confidenceScore: 0.97
+      })]
+    }));
 
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(
       asCategorizeResult({
@@ -1597,7 +1551,7 @@ describe('Home page: Module 2 categorization', () => {
       })
     );
     await runProp('module2', 'onStartAICategorization');
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems')[2].ai_confidence).toBe(91);
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems')[2]).toMatchObject({ ai_confidence: 91, status: 'Pending Review' });
   });
 
   it('falls back to catalog matching when the AI response has no mappings or the call fails', async () => {
@@ -1605,12 +1559,12 @@ describe('Home page: Module 2 categorization', () => {
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(asCategorizeResult({ success: false, mappings: [] }));
 
     await runProp('module2', 'onStartAICategorization');
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems').every((item) => item.status === 'Confirmed')).toBe(true);
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems')[0].status).toBe('Pending Review');
 
     vi.mocked(aiApiClient.categorizeItems).mockRejectedValueOnce(new Error('AI gateway timeout'));
     await runProp('module2', 'onStartAICategorization');
-    expect(frontendLogger.error).toHaveBeenCalled();
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems').every((item) => item.status === 'Confirmed')).toBe(true);
+    expect(frontendLogger.warn).toHaveBeenCalled();
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems')[0].status).toBe('Pending Review');
   });
 
   it('stops AI categorization and shows the catalog error when the taxonomy cannot load', async () => {
@@ -1625,7 +1579,8 @@ describe('Home page: Module 2 categorization', () => {
   });
 
   it('starts AI categorization from Module 1 and opens Module 2', async () => {
-    await renderPage();
+    await seedModule2();
+    await switchTab('module1', 'module1');
 
     await runProp('module1', 'onRunAICategorization');
 
@@ -1633,6 +1588,10 @@ describe('Home page: Module 2 categorization', () => {
       expect(mocks.props.module2).toBeDefined();
     });
     expect(aiApiClient.categorizeItems).toHaveBeenCalled();
+    expect(apiClient.updateModule2MaterialMappings).toHaveBeenCalledWith(expect.objectContaining({
+      assessmentId: 'ASM-M2',
+      mappings: expect.arrayContaining([expect.objectContaining({ reviewStatus: 'PROVISIONAL' })])
+    }));
   });
 
   it('moves Module 2 to Module 3 and Module 3 to Module 4 with their transition toasts', async () => {
@@ -1817,8 +1776,8 @@ describe('Home page: header and shell actions', () => {
     expect(screen.getByText(UI_STRINGS.orchestration.noActiveReportTitle)).toBeInTheDocument();
     expect(screen.getByText(UI_STRINGS.orchestration.noActiveReportMessage)).toBeInTheDocument();
 
-    await runProp('briefView', 'onBackToWorkspace');
-    expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('back-to-workspace-btn'));
+    await waitFor(() => expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument());
   });
 
   it('starts analysis from the header and completes it into the AI categorization toast', async () => {
@@ -1897,7 +1856,7 @@ describe('Home page: executive brief downloads', () => {
     fetchMock
       .mockResolvedValueOnce(new Response('{"error":"not ready"}', { status: 503, headers: { 'x-request-id': 'REQ-BRIEF-9' } }))
       .mockResolvedValueOnce(new Response('{"error":"not ready"}', { status: 500 }))
-      .mockResolvedValueOnce(new Response('pptx-bytes', { status: 200 }))
+      .mockResolvedValueOnce(new Response('pptx-bytes', { status: 200, headers: { 'content-disposition': 'attachment; filename="Brief-D1.pptx"' } }))
       .mockResolvedValueOnce(new Response('pdf-bytes', { status: 200 }))
       .mockRejectedValueOnce(new TypeError('Failed to fetch'));
     vi.stubGlobal('fetch', fetchMock);
@@ -1993,9 +1952,11 @@ describe('Home page: analysis jobs, reports, and the detailed analysis popup', (
     vi.mocked(orchestrationApi.getJobs).mockResolvedValue([buildJob({ analysisJobId: 'JOB-1' })]);
     vi.mocked(orchestrationApi.getJobDetails).mockReturnValueOnce(stale.promise);
     await renderPage();
-    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(
-      asUploadResponse({ success: true, data: { analysisJob: buildJob({ analysisJobId: 'JOB-2' }) } })
-    );
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-NEXT', importedCount: 1, totalInrCrores: 1 }
+    }));
+    vi.mocked(orchestrationApi.getJobs).mockResolvedValueOnce([buildJob({ analysisJobId: 'JOB-2' })]);
     await uploadFile(makeTextFile('next.csv', 'PO\n1\n', 'text/csv'));
 
     stale.resolve(asJobDetails({ reports: [buildReport({ reportVersionId: 'RPT-STALE', status: 'APPROVED' })] }));
@@ -2018,9 +1979,11 @@ describe('Home page: analysis jobs, reports, and the detailed analysis popup', (
 
   it('records the popup acknowledgement for the active job when the popup closes', async () => {
     await renderPage();
-    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(
-      asUploadResponse({ success: true, data: { analysisJob: buildJob({ analysisJobId: 'JOB-5' }) } })
-    );
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-POPUP-5', importedCount: 1, totalInrCrores: 1 }
+    }));
+    vi.mocked(orchestrationApi.getJobs).mockResolvedValueOnce([buildJob({ analysisJobId: 'JOB-5' })]);
     await uploadFile(makeTextFile('popup.csv', 'PO\n1\n', 'text/csv'));
     expect(readProp<{ isOpen: boolean }>('detailedAnalysis', 'isOpen')).toBe(true);
 
@@ -2032,9 +1995,11 @@ describe('Home page: analysis jobs, reports, and the detailed analysis popup', (
 
   it('continues to Module 1 from the popup and records the acknowledgement', async () => {
     await renderPage();
-    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(
-      asUploadResponse({ success: true, data: { analysisJob: buildJob({ analysisJobId: 'JOB-6' }) } })
-    );
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-POPUP-6', importedCount: 1, totalInrCrores: 1 }
+    }));
+    vi.mocked(orchestrationApi.getJobs).mockResolvedValueOnce([buildJob({ analysisJobId: 'JOB-6' })]);
     await uploadFile(makeTextFile('popup-two.csv', 'PO\n1\n', 'text/csv'));
     await switchTab('module2', 'module2');
     delete mocks.props.module1;
@@ -2283,9 +2248,11 @@ describe('Home page: modal closers, sync failures, and storage fallbacks', () =>
 
   it('tolerates storage failures while deleting, uploading, and acknowledging the popup', async () => {
     await renderPage();
-    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(
-      asUploadResponse({ success: true, data: { analysisJob: buildJob({ analysisJobId: 'JOB-S' }) } })
-    );
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-STORAGE', importedCount: 1, totalInrCrores: 0 }
+    }));
+    vi.mocked(orchestrationApi.getJobs).mockResolvedValueOnce([buildJob({ analysisJobId: 'JOB-S' })]);
     const removeSpy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
       throw new Error('storage blocked');
     });
@@ -2408,9 +2375,14 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
   it('derives analysis metrics from empty, hydrated, and uploaded dataset states', async () => {
     vi.mocked(apiClient.getVendors).mockResolvedValue({ vendorRankings: [], vendorDetails: [] });
     vi.mocked(apiClient.getCategories).mockResolvedValue({ categories: [], categoryDetails: [] });
-    vi.mocked(apiClient.getIngestionData).mockResolvedValue(
-      asIngestion({ queue: [buildDocument({ records_count: 0 })], validationRecords: [] })
-    );
+    const persistedDocument = buildDocument({ doc_id: 'DOC-METRICS', records_count: 6, converted_inr_crores: 8.5 });
+    vi.mocked(apiClient.getIngestionData)
+      .mockResolvedValueOnce(asIngestion({ queue: [buildDocument({ records_count: 0 })], validationRecords: [] }))
+      .mockResolvedValueOnce(asIngestion({ queue: [persistedDocument], validationRecords: [] }));
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-METRICS', importedCount: 6, totalInrCrores: 8.5 }
+    }));
     await renderPage();
 
     await runProp('header', 'onStartAnalysis');
@@ -2432,17 +2404,14 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
     await runProp('analyzingLoader', 'onComplete');
     await switchTab('module1', 'module1');
 
-    await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
+    await runProp('module1', 'onDeleteDocument', 'DOC-METRICS');
     await runProp('header', 'onStartAnalysis');
-    expect(readProp<{ totalRecords: number }>('analyzingLoader', 'metrics').totalRecords).toBe(RICH_ROWS.length);
+    expect(readProp<{ totalRecords: number }>('analyzingLoader', 'metrics').totalRecords).toBe(0);
     await runProp('analyzingLoader', 'onComplete');
   });
 
-  it('classifies rows with partial spreadsheet columns, numeric descriptions, and analyst-confirmed currency', async () => {
+  it('loads workbook transactions from D1 instead of classifying rows in the browser', async () => {
     await renderPage();
-    await switchTab('assessment', 'assessmentWorkspace');
-    await runProp('assessmentWorkspace', 'onSelectCustomer', buildCustomer('Northwind Metals'));
-    await switchTab('module1', 'module1');
     const rows = [
       { Description: 'Cardboard', Qty: 10, Cost: 5, Department: 'Packaging', Year: 2024, Supplier: 'Box Co', Material: 'MAT-1', Currency: 'USD' },
       { Description: '123', Qty: 4, Cost: 25, Department: 'Freight', Year: 'n/a', Supplier: '', Material: 'M-777', Currency: 'EUR' },
@@ -2451,16 +2420,24 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
       { Description: 'Mystery carton', Qty: 3, Cost: 12, Department: 'Packaging', Year: 2024, Supplier: 'Box Co', Material: '', Currency: 'usd' },
       { Description: '', Qty: 1, Cost: 9, Department: 'Freight', Year: 2024, Supplier: 'Logi Ltd', Material: 'M-778', Currency: 'USD' }
     ];
+    const persistedLines = rows.map((row, index) => buildLineItem(`D1-LI-${index}`, String(row.Material || row.Description), {
+      vendor_identified: String(row.Supplier || ''),
+      raw_currency: String(row.Currency || '')
+    }));
+    vi.mocked(apiClient.getModule2CanonicalLineItems).mockResolvedValueOnce(persistedLines);
+    vi.mocked(apiClient.uploadDocumentToObjectStore).mockResolvedValueOnce(asUploadResponse({
+      success: true,
+      data: { docId: 'DOC-PARTIAL', importedCount: rows.length, totalInrCrores: 1.25 }
+    }));
 
     await uploadFile(makeBinaryFile('partial_columns.xlsx', buildWorkbookBytes(rows), XLSX_MIME));
 
     expect(apiClient.uploadDocumentToObjectStore).toHaveBeenCalledWith(
-      expect.objectContaining({ recordsCount: rows.length })
+      expect.objectContaining({ recordsCount: 0, convertedInrCrores: 0, detectedCurrencies: [] })
     );
     await switchTab('module2', 'module2');
     const items = readProp<LineItemMapping[]>('module2', 'lineItems');
-    expect(items.map((item) => item.raw_desc)).toContain('M-777');
-    expect(items).toHaveLength(rows.length);
+    expect(items).toEqual(persistedLines);
   });
 
   it('applies AI fallbacks for missing mapping text, zero spend lines, and catalog-matched items', async () => {
@@ -2492,8 +2469,8 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
     );
     await runProp('module2', 'onStartAICategorization');
     const afterSuccess = readProp<LineItemMapping[]>('module2', 'lineItems');
-    expect(afterSuccess[1]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 99.2, status: 'Confirmed' });
-    expect(afterSuccess[0].status).toBe('Confirmed');
+    expect(afterSuccess[1]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 95, status: 'Pending Review' });
+    expect(afterSuccess[0].status).toBe('Pending');
 
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(asCategorizeResult({ success: false, mappings: [] }));
     await runProp('module2', 'onStartAICategorization');
@@ -2572,14 +2549,13 @@ describe('Home page: remaining fallbacks', () => {
     });
   });
 
-  it('shows the default client name in the executive brief when the tenant name is blank', async () => {
+  it('does not invent a client name when the tenant name is blank', async () => {
     await renderPage();
     await runProp('header', 'onSelectTenant', { ...mockTenant, enterprise_name: '' });
 
     await runProp('header', 'onOpenManagementBrief');
 
-    expect(readProp<string>('briefView', 'clientName')).toBeTruthy();
-    expect(readProp<string>('briefView', 'clientName')).not.toBe('');
+    expect(readProp<string>('briefView', 'clientName')).toBe('');
   });
 
   it('marks the executive brief as not ready when no opportunities or spend exist', async () => {

@@ -11,7 +11,8 @@ import type {
   CommodityWorkspaceDetail,
   CommodityWorkspaceTabKey,
   PCBIDomainValidationResult,
-  PCBIResearchDashboardMetrics
+  PCBIResearchDashboardMetrics,
+  PCBICommodityPromotionHistory
 } from '../types/pcbiCommodityDataLab';
 
 export class PCBICommodityDataLabApiClient {
@@ -58,6 +59,37 @@ export class PCBICommodityDataLabApiClient {
       });
       throw err;
     }
+  }
+
+  public async assignResearcher(pcbiId: string, assignee: string | null): Promise<{ success: boolean }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/assignment`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ pcbiId, assignee })
+    });
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      throw new Error(errorJson.message || `Failed to save the research owner: HTTP ${res.status}`);
+    }
+    return await res.json();
+  }
+
+  public async getSources(): Promise<{ success: boolean; total: number; sources: CommoditySourceEvidenceObject[] }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/sources`, { headers: this.getHeaders() });
+    if (!res.ok) throw new Error(`Failed to fetch PCBI evidence sources: HTTP ${res.status}`);
+    return await res.json();
+  }
+
+  public async getVersionHistory(): Promise<{
+    success: boolean;
+    total: number;
+    versions: PCBICommodityPromotionHistory[];
+  }> {
+    const res = await fetch(`${this.baseUrl}/api/admin/pcbi/data-lab/version-history`, { headers: this.getHeaders() });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch PCBI catalog promotion history: HTTP ${res.status}`);
+    }
+    return await res.json();
   }
 
   public async getCommodityWorkspace(
@@ -115,6 +147,7 @@ export class PCBICommodityDataLabApiClient {
     publisher: string;
     url?: string;
     documentName: string;
+    fileBase64: string;
     publicationDate?: string;
     fileType: 'XLSX' | 'XLS' | 'CSV' | 'PDF' | 'JSON' | 'TXT';
     checksum?: string;

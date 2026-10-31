@@ -41,7 +41,8 @@ import type {
   CommodityResearchQueueRow,
   PCBIResearchDashboardMetrics,
   CommoditySourceEvidenceObject,
-  PCBIDataLibrarySubTab
+  PCBIDataLibrarySubTab,
+  PCBICommodityPromotionHistory
 } from '../../../types/pcbiCommodityDataLab';
 
 export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> = ({
@@ -51,6 +52,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
   const [metrics, setMetrics] = useState<PCBIResearchDashboardMetrics | null>(null);
   const [queue, setQueue] = useState<CommodityResearchQueueRow[]>([]);
   const [allSources, setAllSources] = useState<CommoditySourceEvidenceObject[]>([]);
+  const [promotionHistory, setPromotionHistory] = useState<PCBICommodityPromotionHistory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Modals State
@@ -62,9 +64,11 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, queueRes] = await Promise.all([
+      const [dashRes, queueRes, sourcesRes, historyRes] = await Promise.all([
         pcbiCommodityDataLabApi.getDashboard(),
-        pcbiCommodityDataLabApi.getQueue()
+        pcbiCommodityDataLabApi.getQueue(),
+        pcbiCommodityDataLabApi.getSources(),
+        pcbiCommodityDataLabApi.getVersionHistory()
       ]);
 
       if (dashRes.success && dashRes.metrics) {
@@ -73,12 +77,8 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
       if (queueRes.success && Array.isArray(queueRes.queue)) {
         setQueue(queueRes.queue);
       }
-
-      // Collect sample sources from primary queue commodities
-      const fmoWorkspace = await pcbiCommodityDataLabApi.getCommodityWorkspace('PCBI-FEMO-65-001').catch(() => null);
-      if (fmoWorkspace?.workspace?.sources) {
-        setAllSources(fmoWorkspace.workspace.sources);
-      }
+      if (sourcesRes.success && Array.isArray(sourcesRes.sources)) setAllSources(sourcesRes.sources);
+      if (historyRes.success && Array.isArray(historyRes.versions)) setPromotionHistory(historyRes.versions);
     } catch (err: unknown) {
       frontendLogger.error('Failed to load Commodity Data Lab dashboard and queue', {
         error: err instanceof Error ? err.message : String(err)
@@ -95,6 +95,20 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
   const handleOpenWorkspace = (pcbiId: string): void => {
     setSelectedCommodityPcbiId(pcbiId);
     setIsWorkspaceModalOpen(true);
+  };
+
+  const handleAssignResearcher = async (pcbiId: string, assignee: string | null): Promise<void> => {
+    try {
+      await pcbiCommodityDataLabApi.assignResearcher(pcbiId, assignee);
+      const queueResponse = await pcbiCommodityDataLabApi.getQueue();
+      if (queueResponse.success && Array.isArray(queueResponse.queue)) setQueue(queueResponse.queue);
+    } catch (error: unknown) {
+      frontendLogger.error('Failed to save PCBI research owner', {
+        pcbiId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   };
 
   const handleOpenUploadWorkflow = (commodity?: CommodityResearchQueueRow): void => {
@@ -286,6 +300,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
             queue={queue}
             onOpenWorkspace={handleOpenWorkspace}
             onUploadSource={handleOpenUploadWorkflow}
+            onAssignResearcher={handleAssignResearcher}
           />
         </div>
       )}
@@ -318,6 +333,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
             queue={queue}
             onOpenWorkspace={handleOpenWorkspace}
             onUploadSource={handleOpenUploadWorkflow}
+            onAssignResearcher={handleAssignResearcher}
           />
         </div>
       )}
@@ -332,6 +348,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
             queue={queue.filter((q) => q.currentStatus !== 'PRODUCTION_READY')}
             onOpenWorkspace={handleOpenWorkspace}
             onUploadSource={handleOpenUploadWorkflow}
+            onAssignResearcher={handleAssignResearcher}
           />
         </div>
       )}
@@ -346,6 +363,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
             queue={queue.filter((q) => q.researchStatus === 'IN_PROGRESS' || q.sourceStatus === 'SOURCE_VERIFIED')}
             onOpenWorkspace={handleOpenWorkspace}
             onUploadSource={handleOpenUploadWorkflow}
+            onAssignResearcher={handleAssignResearcher}
           />
         </div>
       )}
@@ -360,6 +378,7 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
             queue={queue.filter((q) => q.currentStatus === 'PRODUCTION_READY')}
             onOpenWorkspace={handleOpenWorkspace}
             onUploadSource={handleOpenUploadWorkflow}
+            onAssignResearcher={handleAssignResearcher}
           />
         </div>
       )}
@@ -372,27 +391,22 @@ export const PCBICommodityDataLabView: React.FC<PCBICommodityDataLabViewProps> =
               <ShieldCheck size={16} className="text-[#0284C7]" />
               <span className="font-extrabold text-[#0B1B33] text-sm">PCBI Data Library — Promotion Audit Trail</span>
             </div>
-            <span className="text-[#475569]">Master Authority V1.0 Intact</span>
+            <span className="text-[#475569]">{UI_STRINGS.pcbiCommodityDataLab.promotionCount(promotionHistory.length)}</span>
           </div>
 
           <div className="space-y-3">
-            <div className="p-4 rounded-xl bg-[#EEF7FF] border border-[#DCE7F5] space-y-1">
-              <div className="flex justify-between text-[#0B1B33] font-bold">
-                <span>Dynamic Catalog Promotion: COM-CHM-CSL</span>
-                <span className="text-emerald-700">V1.7-APPROVED</span>
-              </div>
-              <p className="text-[#475569] text-[11px]">Caustic Soda Lye 48% promoted by Sriman Admin with 75 verified monthly observations.</p>
-              <div className="text-[10px] text-[#64748B] pt-1 tabular-nums">Timestamp: 2026-09-28T12:00:00.000Z</div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-[#EEF7FF] border border-[#DCE7F5] space-y-1">
-              <div className="flex justify-between text-[#0B1B33] font-bold">
-                <span>Dynamic Catalog Promotion: COM-STEEL-HRC</span>
-                <span className="text-emerald-700">V1.7-APPROVED</span>
-              </div>
-              <p className="text-[#475569] text-[11px]">Hot Rolled Steel Coils IS 2062 promoted by Sriman Admin with 75 verified weekly observations.</p>
-              <div className="text-[10px] text-[#64748B] pt-1 tabular-nums">Timestamp: 2026-09-28T12:00:00.000Z</div>
-            </div>
+            {promotionHistory.length === 0
+              ? <p className="text-[#64748B]">{UI_STRINGS.pcbiCommodityDataLab.noPromotions}</p>
+              : promotionHistory.map((version) => (
+                <div key={version.promotion_id} className="p-4 rounded-xl bg-[#EEF7FF] border border-[#DCE7F5] space-y-1">
+                  <div className="flex justify-between text-[#0B1B33] font-bold">
+                    <span>{version.pcbi_id}</span>
+                    <span className="text-emerald-700">{version.catalog_version_id}</span>
+                  </div>
+                  <p className="text-[#475569] text-[11px]">{UI_STRINGS.pcbiCommodityDataLab.promotedObservationDescription(version.approver_name, version.observation_count)}</p>
+                  <div className="text-[10px] text-[#64748B] pt-1 tabular-nums">Timestamp: {version.promoted_at}</div>
+                </div>
+              ))}
           </div>
         </div>
       )}

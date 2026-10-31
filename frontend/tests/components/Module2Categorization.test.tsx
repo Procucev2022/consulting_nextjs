@@ -372,6 +372,27 @@ describe('Module2Categorization Component', () => {
     expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.total)).toBeInTheDocument();
   }, 15000);
 
+  it('restores the Top 50 vendor supply view using the assessment line items and keeps the category matrix selectable', () => {
+    render(
+      <Module2Categorization
+        categories={sampleSpendCategories}
+        lineItems={sampleLineItems as any}
+        onConfirmMapping={vi.fn()}
+        onReassignMapping={vi.fn()}
+        onProceedToTrend={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2.tabVendorSupply }));
+    expect(screen.getByText(UI_STRINGS.module2.vendorSupply.sectionTitle)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module2.vendorSupply.tableHeaders.vendor)).toBeInTheDocument();
+    expect(screen.getAllByText('Amcor Packaging').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Acme Chemical').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.module2.tabCategoryMatrix }));
+    expect(screen.getByText(UI_STRINGS.module2.matrixHeaders.category)).toBeInTheDocument();
+  });
+
   it('renders data-backed Material DNA profile summary and filters by sector relevance', () => {
     render(
       <Module2Categorization

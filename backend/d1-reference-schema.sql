@@ -246,6 +246,97 @@ CREATE TABLE IF NOT EXISTS PCBIHistoricalObservation (
   PRIMARY KEY (pcbi_id, observation_date)
 );
 
+CREATE TABLE IF NOT EXISTS PCBICommoditySource (
+  source_id TEXT PRIMARY KEY NOT NULL,
+  commodity_id TEXT NOT NULL,
+  pcbi_id TEXT NOT NULL,
+  series_id TEXT,
+  source_name TEXT NOT NULL,
+  publisher TEXT NOT NULL,
+  url TEXT,
+  document_name TEXT NOT NULL,
+  publication_date TEXT,
+  uploaded_at TEXT NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  checksum TEXT NOT NULL,
+  object_key TEXT NOT NULL,
+  geography TEXT NOT NULL,
+  grade_specification TEXT NOT NULL,
+  unit TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  delivery_basis TEXT NOT NULL,
+  historical_coverage TEXT NOT NULL,
+  extraction_status TEXT NOT NULL,
+  validation_status TEXT NOT NULL,
+  methodology_status TEXT NOT NULL,
+  approval_status TEXT NOT NULL,
+  extracted_observations_count INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_source_series ON PCBICommoditySource(pcbi_id, uploaded_at DESC);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityObservation (
+  observation_id TEXT PRIMARY KEY NOT NULL,
+  source_id TEXT NOT NULL,
+  pcbi_id TEXT NOT NULL,
+  observation_date TEXT NOT NULL,
+  raw_value REAL NOT NULL,
+  raw_unit TEXT NOT NULL,
+  raw_currency TEXT NOT NULL,
+  normalized_value REAL NOT NULL,
+  normalized_unit TEXT NOT NULL,
+  normalized_currency TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  status TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  UNIQUE(source_id, observation_date),
+  FOREIGN KEY(source_id) REFERENCES PCBICommoditySource(source_id)
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_observation_series ON PCBICommodityObservation(pcbi_id, observation_date);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityPromotion (
+  promotion_id TEXT PRIMARY KEY NOT NULL,
+  catalog_version_id TEXT NOT NULL UNIQUE,
+  source_id TEXT NOT NULL,
+  commodity_id TEXT NOT NULL,
+  pcbi_id TEXT NOT NULL,
+  approver_name TEXT NOT NULL,
+  comments TEXT,
+  promoted_at TEXT NOT NULL,
+  observation_count INTEGER NOT NULL,
+  FOREIGN KEY(source_id) REFERENCES PCBICommoditySource(source_id)
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_promotion_series ON PCBICommodityPromotion(pcbi_id, promoted_at DESC);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityResearchAssignment (
+  pcbi_id TEXT PRIMARY KEY NOT NULL,
+  assigned_to TEXT NOT NULL,
+  assigned_by TEXT NOT NULL,
+  assigned_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_research_assignment_owner ON PCBICommodityResearchAssignment(assigned_to, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS PCBIMasterVersion (
+  id TEXT PRIMARY KEY NOT NULL,
+  version TEXT NOT NULL UNIQUE,
+  upload_id TEXT NOT NULL UNIQUE,
+  file_name TEXT NOT NULL,
+  file_size_mb REAL NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  uploaded_at TEXT NOT NULL,
+  effective_date TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('DRAFT', 'VALIDATED', 'PUBLISHED', 'ARCHIVED')),
+  metrics_json TEXT NOT NULL,
+  validation_report_json TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  published_at TEXT,
+  published_by TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_pcbi_master_version_status ON PCBIMasterVersion(status, uploaded_at DESC);
+
 -- Lossless migration of persisted assessment metadata, canonical calculations,
 -- review gates, and audit history. Run/version IDs are scoped to an assessment.
 CREATE TABLE IF NOT EXISTS AssessmentStoreEntry (

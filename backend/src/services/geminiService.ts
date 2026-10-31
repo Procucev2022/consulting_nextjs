@@ -1,7 +1,17 @@
 import { GEMINI_CONFIG, resolveGeminiConfig, GEMINI_INLINE_MIME_TYPES, EXTRACTION_STATUS, EXTRACTION_SYSTEM_PROMPT } from '../constants/ai';
 import type { CloudflareEnvironment } from '../types/cloudflare';
-import type { ExtractionResult, ExtractionStatus, ExtractedProcurementItem, GeminiConfig } from '../types/ai';
+import type {
+  ExtractionResult,
+  ExtractedProcurementItem,
+  GeminiConfig,
+  GeminiInputValidationResult,
+  GeminiJsonGenerationInput,
+  GeminiJsonGenerationResult,
+  GeminiRequestDocumentInput,
+  GeminiStructuredRequestInput
+} from '../types/ai';
 import logger from '../utils/logger';
+import { generateGeminiJson } from './geminiJsonGeneration';
 
 interface GeminiContentPart {
   text?: string;
@@ -75,13 +85,7 @@ export class GeminiService {
     }
   }
 
-  private buildRequestBody(params: {
-    promptText: string;
-    documentText?: string;
-    inlineData?: string;
-    mimeType?: string;
-    fileName?: string;
-  }): {
+  private buildRequestBody(params: GeminiStructuredRequestInput): {
     contents: Array<{ role: string; parts: GeminiContentPart[] }>;
     generationConfig: { temperature: number; response_mime_type: string };
   } {
@@ -131,60 +135,22 @@ export class GeminiService {
     }
   }
 
-  public async generateJson<T = unknown>(input: {
-    prompt: string;
-    label?: string;
-  }): Promise<{ status: ExtractionStatus; data: T | null; model: string | null; error: string | null }> {
-    const { prompt, label = 'generation' } = input;
-    if (!this.isConfigured()) {
-      logger.warn(`Gemini ${label} skipped: GEMINI_API_KEY is not set`, { label }, new Error('Gemini key missing'));
-      return { status: EXTRACTION_STATUS.NOT_CONFIGURED, data: null, model: null, error: 'GEMINI_API_KEY not set' };
-    }
-    if (typeof prompt !== 'string' || prompt.trim() === '') {
-      return { status: EXTRACTION_STATUS.NO_CONTENT, data: null, model: null, error: 'Prompt is empty' };
-    }
-
-    const requestBody = {
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: this.config.TEMPERATURE, response_mime_type: 'application/json' }
+  public async generateJson<T = unknown>(input: GeminiJsonGenerationInput): Promise<GeminiJsonGenerationResult<T>> {
+    const dependencies = {
+      config: this.config,
+      isConfigured: () => this.isConfigured(),
+      resolveModelChain: () => this.resolveModelChain(),
+      resolveKeyChain: () => this.resolveKeyChain(),
+      buildRequestBody: (params: GeminiStructuredRequestInput) => this.buildRequestBody(params),
+      validateExtractionInput: (params: GeminiRequestDocumentInput): GeminiInputValidationResult =>
+        this.validateExtractionInput(params),
+      callModel: <TResult>(model: string, body: unknown, timeout: number, apiKey: string) =>
+        this.callModel<TResult>(model, body, timeout, apiKey)
     };
-    const failures: string[] = [];
-    const deadline = Date.now() + this.config.TOTAL_BUDGET_MS;
-    const keys = this.resolveKeyChain();
-
-    for (const model of this.resolveModelChain()) {
-      for (const apiKey of keys) {
-        const remainingMs = deadline - Date.now();
-        if (remainingMs < this.config.MIN_ATTEMPT_MS) break;
-
-        try {
-          const parsed = await this.callModel<T>(
-            model,
-            requestBody,
-            Math.min(this.config.REQUEST_TIMEOUT_MS, remainingMs),
-            apiKey
-          );
-          logger.info(`Gemini ${model} completed ${label} successfully`, { model, label });
-          return { status: EXTRACTION_STATUS.SUCCESS, data: parsed, model, error: null };
-        } catch (err: unknown) {
-          const errorObj = err as Error;
-          failures.push(`${model}: ${errorObj.message}`);
-          logger.warn(`Gemini ${label} attempt failed on ${model}`, { error: errorObj.message });
-          if (errorObj.message.includes('404')) {
-            break;
-          }
-        }
-      }
-    }
-
-    return { status: EXTRACTION_STATUS.AI_FAILED, data: null, model: null, error: failures.join(' | ') };
+    return generateGeminiJson<T>(input, dependencies);
   }
 
-  private validateExtractionInput(input: {
-    documentText?: string;
-    inlineData?: string;
-    mimeType?: string;
-  }): { isValid: boolean; errorStatus?: ExtractionStatus; errorMessage?: string } {
+  private validateExtractionInput(input: GeminiRequestDocumentInput): GeminiInputValidationResult {
     const hasText = typeof input.documentText === 'string' && input.documentText.trim().length > 0;
     const hasInline = typeof input.inlineData === 'string' && input.inlineData.trim().length > 0;
 

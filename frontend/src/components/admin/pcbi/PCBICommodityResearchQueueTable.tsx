@@ -15,13 +15,7 @@ import {
 } from 'lucide-react';
 import { PCBIStatusBadge } from './PCBIStatusBadge';
 import { UI_STRINGS } from '../../../constants';
-import type { CommodityResearchQueueRow } from '../../../types/pcbiCommodityDataLab';
-
-export interface PCBICommodityResearchQueueTableProps {
-  queue: CommodityResearchQueueRow[];
-  onOpenWorkspace: (pcbiId: string) => void;
-  onUploadSource?: (commodity: CommodityResearchQueueRow) => void;
-}
+import type { CommodityResearchQueueRow, PCBICommodityResearchQueueTableProps } from '../../../types/pcbiCommodityDataLab';
 
 export function getQueueContextualAction(currentStatus: string): {
   label: string;
@@ -48,10 +42,24 @@ export function getQueueContextualAction(currentStatus: string): {
 export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueueTableProps> = ({
   queue,
   onOpenWorkspace,
-  onUploadSource
+  onUploadSource,
+  onAssignResearcher
 }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [assignmentDrafts, setAssignmentDrafts] = useState<Record<string, string>>({});
+  const [assignmentFeedback, setAssignmentFeedback] = useState<string | null>(null);
+
+  const saveAssignment = async (row: CommodityResearchQueueRow): Promise<void> => {
+    if (!onAssignResearcher) return;
+    const assignee = (assignmentDrafts[row.pcbiId] ?? row.assignedTo ?? '').trim() || null;
+    try {
+      await onAssignResearcher(row.pcbiId, assignee);
+      setAssignmentFeedback(UI_STRINGS.pcbiCommodityDataLab.assignmentSaved(row.pcbiId, assignee));
+    } catch {
+      setAssignmentFeedback(UI_STRINGS.pcbiCommodityDataLab.assignmentFailed(row.pcbiId));
+    }
+  };
 
   const filteredQueue = queue.filter((item) => {
     const matchesSearch =
@@ -101,6 +109,11 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
 
       {/* 17-Column Table */}
       <div className="bg-white border border-[#DCE7F5] rounded-2xl overflow-hidden shadow-sm">
+        {assignmentFeedback && (
+          <p role="status" className="px-4 py-2 text-xs text-[#475569]" aria-live="polite">
+            {assignmentFeedback}
+          </p>
+        )}
         <div className="p-4 border-b border-[#DCE7F5] flex items-center justify-between bg-[#F8FBFE]">
           <div className="flex items-center gap-2">
             <FileSpreadsheet size={15} className="text-[#0284C7]" />
@@ -134,13 +147,14 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                 <th className="py-3 px-3 font-bold whitespace-nowrap">{UI_STRINGS.pcbiCommodityDataLab.thSourceStatus}</th>
                 <th className="py-3 px-3 font-bold whitespace-nowrap">{UI_STRINGS.pcbiCommodityDataLab.thMethodologyStatus}</th>
                 <th className="py-3 px-3 font-bold whitespace-nowrap">{UI_STRINGS.pcbiCommodityDataLab.thPriority}</th>
+                {onAssignResearcher && <th className="py-3 px-3 font-bold whitespace-nowrap">{UI_STRINGS.pcbiCommodityDataLab.thResearchOwner}</th>}
                 <th className="py-3 px-3 font-bold whitespace-nowrap text-right">{UI_STRINGS.pcbiCommodityDataLab.thAction}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE7F5]">
               {filteredQueue.length === 0 ? (
                 <tr>
-                  <td colSpan={18} className="py-12 text-center text-[#64748B] text-xs">
+                  <td colSpan={onAssignResearcher ? 19 : 18} className="py-12 text-center text-[#64748B] text-xs">
                     No commodities match your current search and filter criteria.
                   </td>
                 </tr>
@@ -181,7 +195,41 @@ export const PCBICommodityResearchQueueTable: React.FC<PCBICommodityResearchQueu
                         >
                           {row.priority}
                         </span>
+                        <span
+                          className="block mt-1 text-[9px] text-[#64748B]"
+                          title={row.priorityReason === 'SPEND_LINK_REQUIRED'
+                            ? UI_STRINGS.pcbiCommodityDataLab.priorityScoreNeedsSpend
+                            : row.priorityReason === 'GAP_RESOLVED'
+                              ? UI_STRINGS.pcbiCommodityDataLab.priorityScoreResolved
+                              : UI_STRINGS.pcbiCommodityDataLab.priorityScoreMethod}
+                        >
+                          {row.priorityReason === 'RANKED_BY_CUSTOMER_SPEND'
+                            ? UI_STRINGS.pcbiCommodityDataLab.priorityScoreLabel(row.priorityScore)
+                            : UI_STRINGS.pcbiCommodityDataLab.priorityScoreNotScored}
+                        </span>
                       </td>
+                      {onAssignResearcher && (
+                        <td className="py-3 px-3 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              aria-label={UI_STRINGS.pcbiCommodityDataLab.assignResearcherInputLabel(row.commodity)}
+                              value={assignmentDrafts[row.pcbiId] ?? row.assignedTo ?? ''}
+                              placeholder={UI_STRINGS.pcbiCommodityDataLab.assignResearcherPlaceholder}
+                              onChange={(event) => setAssignmentDrafts((drafts) => ({ ...drafts, [row.pcbiId]: event.target.value }))}
+                              className="w-32 rounded border border-slate-300 px-2 py-1 text-[10px]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => { void saveAssignment(row); }}
+                              className="rounded bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-200"
+                            >
+                              {(assignmentDrafts[row.pcbiId] ?? row.assignedTo ?? '').trim()
+                                ? UI_STRINGS.pcbiCommodityDataLab.assignResearcherButton
+                                : UI_STRINGS.pcbiCommodityDataLab.unassignResearcherButton}
+                            </button>
+                          </div>
+                        </td>
+                      )}
                       <td className="py-3 px-3 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {contextualAction.actionType === 'UPLOAD' && onUploadSource && (

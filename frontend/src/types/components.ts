@@ -25,6 +25,7 @@ import type { ParetoSpendData } from './pareto';
 import type { SubscriptionTier, UserProfile } from './auth';
 import type { Module1CanonicalViewModel, VgtPeriodMetadata } from './module1Canonical';
 import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from './assessment';
+import type { ExecutiveOpportunityBriefReportData } from './validation';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -573,6 +574,11 @@ export interface ExecutiveOpportunityBriefViewProps {
   readonly onToggleFullScreen?: () => void;
   readonly currentTier?: SubscriptionTier;
   readonly onExploreSilver?: () => void;
+}
+
+export interface ExecutiveOpportunityBriefSlideContentProps {
+  readonly currentSlide: number;
+  readonly report: ExecutiveOpportunityBriefReportData;
 }
 
 export interface AuthCardProps {

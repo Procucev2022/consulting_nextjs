@@ -16,9 +16,11 @@ import type {
   ReadinessInput,
   RunReadinessInput
 } from './types/orchestrationD1';
+import type { PCBIGapCoverageInput, PCBIGapSourceRow } from './types/orchestrationPcbi';
 import {
   ACTIVE_REPORT_STATES,
   CUSTOMER_VISIBLE_REPORT_STATES,
+  EMPTY_PCBI_GAP_COVERAGE,
   KPI_JOB_STATUS_GROUPS,
   ORCHESTRATION_DEFAULTS,
   ORCHESTRATION_NUMERIC,
@@ -85,10 +87,35 @@ const runBlockingReasons = (
   return reasons;
 };
 
+const isGapResolved = (action: PCBIGapSourceRow['action']): boolean =>
+  action === 'EXCLUDE' ||
+  action === 'MARK_NOT_BENCHMARKABLE' || action === 'MARK_SERVICE';
+
+const isGapMapped = (row: PCBIGapSourceRow): boolean =>
+  (row.action === 'MAP_EXISTING' || row.action === 'ADD_MAP_PCBI') && Boolean(row.benchmark_source?.trim());
+
+const isGapExcluded = (action: PCBIGapSourceRow['action']): boolean =>
+  action === 'EXCLUDE' || action === 'MARK_NOT_BENCHMARKABLE' || action === 'MARK_SERVICE';
+
+export const pcbiCoverageFromRows = (rows: readonly PCBIGapSourceRow[]): PCBIGapCoverageInput => {
+  const resolvedRows = rows.filter((row) => isGapResolved(row.action) || isGapMapped(row));
+  return {
+    hasEvidence: rows.some((row) => row.transaction_count > 0),
+    totalCategories: rows.length,
+    resolvedCategories: resolvedRows.length,
+    totalItems: rows.reduce((total, row) => total + row.transaction_count, 0),
+    resolvedItems: resolvedRows.reduce((total, row) => total + row.transaction_count, 0),
+    excludedItems: rows.filter((row) => isGapExcluded(row.action))
+      .reduce((total, row) => total + row.transaction_count, 0)
+  };
+};
+
+const coveragePercentage = (covered: number, total: number): number =>
+  total > 0 ? roundTo((covered / total) * ORCHESTRATION_NUMERIC.percentScale, ORCHESTRATION_NUMERIC.percentDecimals) : 0;
+
 /**
- * Readiness gate for report generation. Spend coverage is the analysis run's addressable spend share.
- * PCBI gap rows are not stored in D1 yet, so category and item coverage read 100 once a run exists
- * (no gaps are recorded) and 0 without a run.
+ * Readiness gate for report generation. The current run and D1-backed PCBI classification review
+ * both need to be complete before a report can be generated.
  */
 export const buildReadiness = (input: ReadinessInput): AnalysisReadinessSummary => {
   const run = input.run;
@@ -96,23 +123,36 @@ export const buildReadiness = (input: ReadinessInput): AnalysisReadinessSummary 
   const blockingReasons = run === null
     ? [ORCHESTRATION_MESSAGES.readinessNoRun]
     : runBlockingReasons(run, input.latestVersionId, coveragePct);
-  const gapCoveragePct = run === null ? 0 : ORCHESTRATION_NUMERIC.coveragePctWithoutRecordedGaps;
+  if (run !== null && blockingReasons.length === 0) {
+    if (!input.pcbi.hasEvidence) blockingReasons.push(ORCHESTRATION_MESSAGES.readinessPcbiEvidenceUnavailable);
+    else {
+      const categoriesPending = input.pcbi.totalCategories - input.pcbi.resolvedCategories;
+      if (categoriesPending > 0) {
+        blockingReasons.push(ORCHESTRATION_MESSAGES.readinessPcbiReviewPending(categoriesPending));
+      }
+    }
+  }
   return {
-    categoryCoveragePct: gapCoveragePct,
+    categoryCoveragePct: run === null ? 0 : coveragePercentage(input.pcbi.resolvedCategories, input.pcbi.totalCategories),
     spendCoveragePct: coveragePct ?? 0,
-    itemCoveragePct: gapCoveragePct,
-    categoriesRequiringReview: 0,
-    itemsExcluded: 0,
+    itemCoveragePct: run === null ? 0 : coveragePercentage(input.pcbi.resolvedItems, input.pcbi.totalItems),
+    categoriesRequiringReview: Math.max(0, input.pcbi.totalCategories - input.pcbi.resolvedCategories),
+    itemsExcluded: input.pcbi.excludedItems,
     dataCorrectionsPending: input.openCorrectionCount,
     overallReadiness: blockingReasons.length === 0 ? 'READY_TO_GENERATE' : 'ACTION_REQUIRED',
     blockingReasons
   };
 };
 
-export const readinessInputFromRow = (row: AssessmentJobRow, openCorrectionCount: number): ReadinessInput => ({
+export const readinessInputFromRow = (
+  row: AssessmentJobRow,
+  openCorrectionCount: number,
+  pcbi: PCBIGapCoverageInput = EMPTY_PCBI_GAP_COVERAGE
+): ReadinessInput => ({
   run: toRunReadiness(row),
   latestVersionId: row.current_version_id,
-  openCorrectionCount
+  openCorrectionCount,
+  pcbi
 });
 
 const toRunReadiness = (row: AssessmentJobRow): RunReadinessInput | null => {

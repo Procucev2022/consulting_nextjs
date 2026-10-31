@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../../src/utils/api';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { AUTH_STORAGE_KEYS } from '../../src/constants/auth';
 import { conversionFunnelStages } from '../fixtures/mockData';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
@@ -16,6 +17,7 @@ describe('apiClient coverage', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     fetchMock.mockReset();
+    window.localStorage.clear();
   });
 
   describe('D1 procurement category mappings', () => {
@@ -152,6 +154,37 @@ describe('apiClient coverage', () => {
   });
 
   describe('Module 2 ledger and bridge', () => {
+    it('persists validated manual and provisional taxonomy decisions through the D1 bulk route', async () => {
+      window.localStorage.setItem(AUTH_STORAGE_KEYS.AUTH_TOKEN, 'coverage-token');
+      const mappings = [{
+        sourceMaterialId: 'MAT-1', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' as const,
+        confidenceScore: 0.8, mappingMethod: 'CONTEXTUAL_HEURISTIC' as const
+      }];
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, message: 'saved', mappings }));
+      await expect(apiClient.updateModule2MaterialMappings({ assessmentId: 'ASM-1', mappings })).resolves.toMatchObject({
+        success: true, mappings
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/api/module2/sourcing/vendor-consolidation/mappings/bulk-update',
+        expect.objectContaining({
+          method: 'POST', body: JSON.stringify({ assessmentId: 'ASM-1', mappings }),
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer coverage-token' }
+        }));
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, mappings }));
+      await expect(apiClient.updateModule2MaterialMapping({
+        assessmentId: 'ASM-1', ...mappings[0]
+      })).resolves.toEqual(mappings[0]);
+
+      fetchMock.mockClear();
+      await expect(apiClient.updateModule2MaterialMappings({ assessmentId: 'ASM-1', mappings: [] } as never))
+        .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.invalidMappingPayload));
+      expect(fetchMock).not.toHaveBeenCalled();
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: false, message: 'Mapping target not found' }, 404));
+      await expect(apiClient.updateModule2MaterialMappings({ assessmentId: 'ASM-1', mappings }))
+        .rejects.toThrow(UI_STRINGS.toasts.module2MappingFailed('Mapping target not found'));
+    });
+
     it('fetches the opportunity ledger with or without an assessment filter', async () => {
       const ledger = [{ oppId: 'OPP-1' }];
       fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: ledger }));
@@ -267,6 +300,13 @@ describe('apiClient coverage', () => {
 
       await expect(apiClient.getModule2CanonicalLineItems(25, 'ASM-1')).resolves.toEqual(lineItems);
       expect(fetchMock).toHaveBeenCalledWith('/api/module2/sourcing/line-items?limit=25&assessmentId=ASM-1');
+    });
+
+    it('scopes Module 2 line items to a tenant when requested', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { lineItems: [] } }));
+
+      await expect(apiClient.getModule2CanonicalLineItems(undefined, undefined, 'TENANT-7')).resolves.toEqual([]);
+      expect(fetchMock).toHaveBeenCalledWith('/api/module2/sourcing/line-items?tenantId=TENANT-7');
     });
 
     it('keeps a zero limit and returns an empty list when the response has no line items', async () => {

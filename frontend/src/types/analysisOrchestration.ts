@@ -60,6 +60,15 @@ export type ReanalysisReason =
   | 'PCBI_MAPPING_CORRECTION'
   | 'OTHER';
 
+export interface CorrectedDatasetUploadPayload {
+  fileName: string;
+  fileSize: number;
+  checksum: string;
+  fileBase64: string;
+  reason: ReanalysisReason;
+  notes?: string;
+}
+
 export interface PCBIGapCategory {
   gapId: string;
   tenantId: string;

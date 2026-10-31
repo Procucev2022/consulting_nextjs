@@ -313,6 +313,35 @@ CREATE TABLE IF NOT EXISTS AssessmentDataVersion (
 
 CREATE INDEX IF NOT EXISTS idx_data_version_assessment ON AssessmentDataVersion(assessment_id);
 
+CREATE TABLE IF NOT EXISTS OrchestrationDatasetCorrection (
+  data_version_id TEXT PRIMARY KEY NOT NULL,
+  assessment_id TEXT NOT NULL,
+  parent_version_id TEXT,
+  correction_reason TEXT NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_orch_dataset_correction_assessment
+  ON OrchestrationDatasetCorrection(assessment_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS OrchestrationPCBIGapResolution (
+  assessment_id TEXT NOT NULL,
+  data_version_id TEXT NOT NULL,
+  category_key TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target_pcbi_series TEXT,
+  exclusion_reason TEXT,
+  exclusion_notes TEXT,
+  research_notes TEXT,
+  resolved_by TEXT NOT NULL,
+  resolved_at TEXT NOT NULL,
+  PRIMARY KEY (assessment_id, data_version_id, category_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_orch_pcbi_gap_assessment_version
+  ON OrchestrationPCBIGapResolution(assessment_id, data_version_id);
+
 CREATE TABLE IF NOT EXISTS AssessmentAnalysisRun (
   analysis_run_id TEXT PRIMARY KEY NOT NULL,
   assessment_id TEXT NOT NULL,
@@ -398,6 +427,25 @@ CREATE TABLE IF NOT EXISTS PCBIWeeklyIndex (
 );
 
 CREATE INDEX IF NOT EXISTS idx_pcbi_index_series ON PCBIWeeklyIndex(pcbi_id, week_date);
+
+CREATE TABLE IF NOT EXISTS PCBIMasterVersion (
+  id TEXT PRIMARY KEY NOT NULL,
+  version TEXT NOT NULL UNIQUE,
+  upload_id TEXT NOT NULL UNIQUE,
+  file_name TEXT NOT NULL,
+  file_size_mb REAL NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  uploaded_at TEXT NOT NULL,
+  effective_date TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('DRAFT', 'VALIDATED', 'PUBLISHED', 'ARCHIVED')),
+  metrics_json TEXT NOT NULL,
+  validation_report_json TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  published_at TEXT,
+  published_by TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_pcbi_master_version_status ON PCBIMasterVersion(status, uploaded_at DESC);
 
 CREATE TABLE IF NOT EXISTS AnalysisJob (
   id TEXT PRIMARY KEY NOT NULL,
@@ -561,6 +609,8 @@ CREATE INDEX IF NOT EXISTS idx_procurement_tx_tenant ON ProcurementTransaction(t
 CREATE INDEX IF NOT EXISTS idx_procurement_tx_vendor ON ProcurementTransaction(tenant_id, supplier_name);
 CREATE INDEX IF NOT EXISTS idx_procurement_tx_material ON ProcurementTransaction(tenant_id, material_code);
 CREATE INDEX IF NOT EXISTS idx_procurement_tx_po ON ProcurementTransaction(tenant_id, po_number);
+CREATE INDEX IF NOT EXISTS idx_procurement_tx_assessment_version_category
+  ON ProcurementTransaction(assessment_id, source_document_id, material_group);
 
 CREATE TABLE IF NOT EXISTS AlternateVendorIndex (
   category_key TEXT PRIMARY KEY NOT NULL,
@@ -755,6 +805,78 @@ CREATE TABLE IF NOT EXISTS PCBIHistoricalObservation (
   payload_json TEXT NOT NULL,
   PRIMARY KEY (pcbi_id, observation_date)
 );
+
+CREATE TABLE IF NOT EXISTS PCBICommoditySource (
+  source_id TEXT PRIMARY KEY NOT NULL,
+  commodity_id TEXT NOT NULL,
+  pcbi_id TEXT NOT NULL,
+  series_id TEXT,
+  source_name TEXT NOT NULL,
+  publisher TEXT NOT NULL,
+  url TEXT,
+  document_name TEXT NOT NULL,
+  publication_date TEXT,
+  uploaded_at TEXT NOT NULL,
+  uploaded_by TEXT NOT NULL,
+  file_type TEXT NOT NULL,
+  checksum TEXT NOT NULL,
+  object_key TEXT NOT NULL,
+  geography TEXT NOT NULL,
+  grade_specification TEXT NOT NULL,
+  unit TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  delivery_basis TEXT NOT NULL,
+  historical_coverage TEXT NOT NULL,
+  extraction_status TEXT NOT NULL,
+  validation_status TEXT NOT NULL,
+  methodology_status TEXT NOT NULL,
+  approval_status TEXT NOT NULL,
+  extracted_observations_count INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_source_series ON PCBICommoditySource(pcbi_id, uploaded_at DESC);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityObservation (
+  observation_id TEXT PRIMARY KEY NOT NULL,
+  source_id TEXT NOT NULL,
+  pcbi_id TEXT NOT NULL,
+  observation_date TEXT NOT NULL,
+  raw_value REAL NOT NULL,
+  raw_unit TEXT NOT NULL,
+  raw_currency TEXT NOT NULL,
+  normalized_value REAL NOT NULL,
+  normalized_unit TEXT NOT NULL,
+  normalized_currency TEXT NOT NULL,
+  frequency TEXT NOT NULL,
+  status TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  UNIQUE(source_id, observation_date),
+  FOREIGN KEY(source_id) REFERENCES PCBICommoditySource(source_id)
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_observation_series ON PCBICommodityObservation(pcbi_id, observation_date);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityPromotion (
+  promotion_id TEXT PRIMARY KEY NOT NULL,
+  catalog_version_id TEXT NOT NULL UNIQUE,
+  source_id TEXT NOT NULL,
+  commodity_id TEXT NOT NULL,
+  pcbi_id TEXT NOT NULL,
+  approver_name TEXT NOT NULL,
+  comments TEXT,
+  promoted_at TEXT NOT NULL,
+  observation_count INTEGER NOT NULL,
+  FOREIGN KEY(source_id) REFERENCES PCBICommoditySource(source_id)
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_promotion_series ON PCBICommodityPromotion(pcbi_id, promoted_at DESC);
+
+CREATE TABLE IF NOT EXISTS PCBICommodityResearchAssignment (
+  pcbi_id TEXT PRIMARY KEY NOT NULL,
+  assigned_to TEXT NOT NULL,
+  assigned_by TEXT NOT NULL,
+  assigned_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_pcbi_research_assignment_owner ON PCBICommodityResearchAssignment(assigned_to, updated_at DESC);
 
 -- Lossless migration of persisted assessment metadata, canonical calculations,
 -- review gates, and audit history. Run/version IDs are scoped to an assessment.

@@ -221,11 +221,14 @@ const uploadIngestion = async (request: Request, environment: CloudflareEnvironm
     const currencies = imported.importedCount
       ? imported.detectedCurrencies
       : Array.isArray(body.detectedCurrencies) ? body.detectedCurrencies : [];
+    const isSupportedExtraction = Boolean(bytes) && parseTransactions && ['XLSX', 'XLS', 'CSV'].includes(fileType);
+    const extractionStatus = isSupportedExtraction ? 'Completed' : 'Pending';
+    const extractionProgress = isSupportedExtraction ? 100 : 0;
     await database.prepare(`
       INSERT INTO RawDocumentIngestion (
         doc_id, tenant_id, file_name, file_type, file_size_mb, ocr_status, progress, records_count, converted_inr_crores, detected_currencies
-      ) VALUES (?, ?, ?, ?, ?, 'Completed', 100, ?, ?, ?)
-    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, recordsCount, convertedInrCrores, JSON.stringify(currencies)).run();
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(docId, tenantId, fileName, fileType, fileSizeMb, extractionStatus, extractionProgress, recordsCount, convertedInrCrores, JSON.stringify(currencies)).run();
 
     if (bytes) {
       await database.prepare(`INSERT OR REPLACE INTO ObjectMetadata (object_key, tenant_id, filename, content_type, size_bytes, sha256, bucket) VALUES (?, ?, ?, ?, ?, ?, ?)`)

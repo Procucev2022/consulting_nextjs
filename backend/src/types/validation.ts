@@ -7,6 +7,9 @@
 import type { z } from 'zod';
 import type {
   pcbiReferenceQuerySchema,
+  pcbiAdminImportSchema,
+  pcbiAdminPublishSchema,
+  assignPcbiResearchSchema,
   d1DatasetScopeSchema,
   alternateSourcingQuerySchema,
   vendorConsolidationQuerySchema,
@@ -28,7 +31,9 @@ import type {
   detectUploadDomainSchema,
   uploadCommoditySourceSchema,
   approveCommodityDataSchema,
+  pcbiResearchPdfExtractionSchema,
   specificationReviewSchema,
+  materialMappingBulkUpdateSchema,
   materialMappingUpdateSchema,
   materialMappingRecordSchema,
   procurementComplianceReviewSchema,
@@ -45,6 +50,9 @@ import type {
 
 export type RequestHeadersInput = z.infer<typeof requestHeadersSchema>;
 export type PcbiReferenceQueryInput = z.infer<typeof pcbiReferenceQuerySchema>;
+export type PcbiAdminImportInput = z.infer<typeof pcbiAdminImportSchema>;
+export type PcbiAdminPublishInput = z.infer<typeof pcbiAdminPublishSchema>;
+export type AssignPcbiResearchInput = z.infer<typeof assignPcbiResearchSchema>;
 export type D1DatasetScopeInput = z.infer<typeof d1DatasetScopeSchema>;
 export type AlternateSourcingQueryInput = z.infer<typeof alternateSourcingQuerySchema>;
 export type VendorConsolidationQueryInput = z.infer<typeof vendorConsolidationQuerySchema>;
@@ -65,8 +73,10 @@ export type DecryptRequestInput = z.infer<typeof decryptRequestSchema>;
 export type DetectUploadDomainInput = z.infer<typeof detectUploadDomainSchema>;
 export type UploadCommoditySourceInput = z.infer<typeof uploadCommoditySourceSchema>;
 export type ApproveCommodityDataInput = z.infer<typeof approveCommodityDataSchema>;
+export type PCBIResearchPdfExtractionOutput = z.infer<typeof pcbiResearchPdfExtractionSchema>;
 export type SpecificationReviewInput = z.infer<typeof specificationReviewSchema>;
 export type MaterialMappingUpdateInput = z.infer<typeof materialMappingUpdateSchema>;
+export type MaterialMappingBulkUpdateInput = z.infer<typeof materialMappingBulkUpdateSchema>;
 export type MaterialMappingRecordInput = z.infer<typeof materialMappingRecordSchema>;
 export type ProcurementComplianceReviewInput = z.infer<typeof procurementComplianceReviewSchema>;
 export type EAuctionPlanningAssumptionInput = z.infer<typeof eAuctionPlanningAssumptionSchema>;

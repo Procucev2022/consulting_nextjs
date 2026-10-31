@@ -7,7 +7,6 @@
 
 import { z } from 'zod';
 import { TAXONOMY_PAGE_SIZE } from './taxonomy';
-
 export const taxonomyPageRequestSchema = z.object({
   limit: z.number().int().min(1).max(TAXONOMY_PAGE_SIZE),
   offset: z.number().int().nonnegative()
@@ -42,6 +41,31 @@ export const conversionStagesResponseSchema = z.object({
     count_elements: z.number().optional(),
     percentage_leakage_identified: z.number().optional()
   }))
+});
+
+const briefText = z.string().min(1);
+const briefNumber = z.number().finite();
+const briefCount = briefNumber.nonnegative();
+const briefSummarySchema = z.object({ label: briefText, count: briefNumber, estimatedSavingsCr: briefNumber });
+const briefMetricsSchema = z.object({
+  transactionCount: briefCount, supplierCount: briefCount, materialCount: briefCount, plantCount: briefCount,
+  purchaseOrderCount: briefCount, opportunityCount: briefCount, totalSpendCr: briefNumber,
+  estimatedSavingsCr: briefNumber, averageConfidence: briefNumber,
+  firstTransactionDate: z.string().nullable(), lastTransactionDate: z.string().nullable()
+});
+const briefOpportunitySchema = z.object({
+  id: briefText, category: briefText, title: briefText, lever: briefText, recommendedAction: briefText,
+  status: briefText, riskLevel: briefText, currentSpendCr: briefNumber, estimatedSavingsCr: briefNumber,
+  confidence: briefNumber
+});
+export const executiveOpportunityBriefResponseSchema = z.object({
+  success: z.literal(true),
+  data: z.object({
+    tenant: z.object({ tenantId: briefText, enterpriseName: z.string() }),
+    generatedAt: z.string().datetime(), scopeDescription: briefText, metrics: briefMetricsSchema,
+    opportunities: z.array(briefOpportunitySchema), levers: z.array(briefSummarySchema),
+    statuses: z.array(briefSummarySchema), risks: z.array(briefSummarySchema)
+  })
 });
 
 export const databaseSchemaResponseSchema = z.object({
@@ -216,14 +240,31 @@ export const apiMergeVendorPayloadSchema = z.object({
 });
 
 export const apiDeployOpportunityPayloadSchema = z.object({
-  opp_id: z.string().min(1, 'Opportunity ID is required'),
-  targetModule: z.enum(['proCPX', 'DPS NXT'])
+  opp_id: z.string().min(1, 'Opportunity ID is required'), targetModule: z.enum(['proCPX', 'DPS NXT'])
+});
+
+export const apiUpdateModule2MaterialMappingPayloadSchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120),
+  sourceMaterialId: z.string().trim().min(1).max(120),
+  unspscCode: z.string().trim().regex(/^\d{8}$/),
+  reviewStatus: z.enum(['PROVISIONAL', 'CLIENT_APPROVED', 'TAXONOMY_VERIFIED']),
+  confidenceScore: z.number().finite().min(0).max(1).optional(),
+  mappingMethod: z.enum([
+    'EXACT_IDENTIFIER', 'MATERIAL_DESCRIPTION_MATCH', 'SPECIFICATION_OR_SYNONYM',
+    'CONTEXTUAL_HEURISTIC', 'MANUAL_REVIEW_REQUIRED'
+  ]).optional(),
+  auditNotes: z.string().trim().max(1000).optional()
+});
+
+export const apiBulkUpdateModule2MaterialMappingsPayloadSchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120),
+  mappings: z.array(apiUpdateModule2MaterialMappingPayloadSchema.omit({ assessmentId: true }))
+    .min(1).max(100)
+    .refine((mappings) => new Set(mappings.map((mapping) => mapping.sourceMaterialId)).size === mappings.length)
 });
 
 export const apiCalculateConversionPayloadSchema = z.object({
-  annualSpendCr: z.number().positive(),
-  savingsRate: z.number().nonnegative(),
-  saasFeeRate: z.number().nonnegative()
+  annualSpendCr: z.number().positive(), savingsRate: z.number().nonnegative(), saasFeeRate: z.number().nonnegative()
 });
 
 // User Registration Form Schema
@@ -312,17 +353,11 @@ export const updateCustomerFormSchema = z.object({
 });
 
 export const newAssessmentFormSchema = z.object({
-  customerId: z.string().optional(),
-  customerName: z.string().min(2, 'Customer name is required'),
-  businessUnit: z.string().optional(),
-  industry: z.string().min(2, 'Industry is required'),
-  assessmentPeriodStart: z.string().min(3, 'Period start is required'),
-  assessmentPeriodEnd: z.string().min(3, 'Period end is required'),
-  assignedAnalyst: z.string().email('Valid analyst email is required'),
-  assessmentOwner: z.string().optional(),
-  currency: z.string().optional(),
-  ndaStatus: z.enum(['NOT_REQUESTED', 'SENT', 'SIGNED', 'EXPIRED']).optional(),
-  dataReceivedDate: z.string().optional(),
-  notes: z.string().optional()
+  customerId: z.string().optional(), customerName: z.string().min(2, 'Customer name is required'),
+  businessUnit: z.string().optional(), industry: z.string().min(2, 'Industry is required'),
+  assessmentPeriodStart: z.string().min(3, 'Period start is required'), assessmentPeriodEnd: z.string().min(3, 'Period end is required'),
+  assignedAnalyst: z.string().email('Valid analyst email is required'), assessmentOwner: z.string().optional(),
+  currency: z.string().optional(), ndaStatus: z.enum(['NOT_REQUESTED', 'SENT', 'SIGNED', 'EXPIRED']).optional(),
+  dataReceivedDate: z.string().optional(), notes: z.string().optional()
 });
 

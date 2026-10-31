@@ -4,6 +4,8 @@ import {
   MIN_SPEND_COVERAGE_FOR_REPORT_PCT,
   ANALYSIS_JOB_STATUSES,
   EXCLUSION_REASONS,
+  PCBI_EXCLUSION_REASON_CODES,
+  PCBI_RESOLUTION_ACTIONS,
   REANALYSIS_REASONS,
   DEFAULT_QUALITY_GATE_CHECKLIST,
   INITIAL_PCBI_BENCHMARK_SERIES
@@ -29,6 +31,13 @@ describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
     expect(other?.requiresExplanation).toBe(true);
     const service = EXCLUSION_REASONS.find(r => r.code === 'SERVICE');
     expect(service?.requiresExplanation).toBe(false);
+  });
+
+  it('exports every PCBI resolution action and exclusion reason for request validation', () => {
+    expect(PCBI_RESOLUTION_ACTIONS).toContain('REQUEST_RESEARCH');
+    expect(PCBI_RESOLUTION_ACTIONS).toHaveLength(6);
+    expect(PCBI_EXCLUSION_REASON_CODES).toContain('OTHER');
+    expect(PCBI_EXCLUSION_REASON_CODES).toHaveLength(EXCLUSION_REASONS.length);
   });
 
   it('should export reanalysis reasons with explanation requirements', () => {

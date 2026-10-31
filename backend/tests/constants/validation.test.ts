@@ -32,17 +32,29 @@ import {
   detectUploadDomainSchema,
   uploadCommoditySourceSchema,
   approveCommodityDataSchema,
+  pcbiResearchPdfExtractionSchema,
   vendorConsolidationQuerySchema,
   directPriceQuerySchema,
   alternateSourcingQuerySchema,
   specificationReviewSchema,
   procurementComplianceReviewSchema,
-  eAuctionPlanningAssumptionSchema
+  eAuctionPlanningAssumptionSchema,
+  materialMappingBulkUpdateSchema,
+  pcbiAdminImportSchema,
+  pcbiAdminPublishSchema
 } from '../../src/constants/validation';
 import { D1_REPORTING, D1_TAXONOMY_DEFAULT_LIMIT, D1_TAXONOMY_MAX_LIMIT } from '../../src/constants/d1';
 import { MODULE2_D1_VENDOR_CONSOLIDATION } from '../../src/constants/module2VendorConsolidationD1';
 
 describe('Backend Validation Schemas (constants/validation.ts)', () => {
+  it('validates provisional mapping decisions and rejects duplicate or oversized bulk updates', () => {
+    const mapping = { sourceMaterialId: 'MAT-1', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' };
+    expect(materialMappingBulkUpdateSchema.safeParse({ assessmentId: 'ASM-1', mappings: [mapping] }).success).toBe(true);
+    expect(materialMappingBulkUpdateSchema.safeParse({ assessmentId: 'ASM-1', mappings: [mapping, mapping] }).success).toBe(false);
+    expect(materialMappingBulkUpdateSchema.safeParse({ assessmentId: 'ASM-1', mappings: [] }).success).toBe(false);
+    expect(materialMappingBulkUpdateSchema.safeParse({ assessmentId: 'ASM-1', mappings: Array(101).fill(mapping) }).success).toBe(false);
+  });
+
   describe('requestHeadersSchema', () => {
     it('should validate valid request headers', () => {
       const valid = {
@@ -626,6 +638,24 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
     });
   });
 
+  describe('pcbiResearchPdfExtractionSchema', () => {
+    it('accepts explicit dated positive observations and optional source specifications', () => {
+      expect(pcbiResearchPdfExtractionSchema.safeParse({
+        observations: [{ observationDate: '2026-10-01', value: 125.5, unit: 'INR/MT', currency: 'INR', geography: 'India' }]
+      }).success).toBe(true);
+      expect(pcbiResearchPdfExtractionSchema.safeParse({
+        observations: [{ observationDate: 'Oct 2026', value: 125.5 }]
+      }).success).toBe(true);
+    });
+
+    it('rejects missing observations, blank dates, and non-positive or non-numeric values', () => {
+      expect(pcbiResearchPdfExtractionSchema.safeParse({ observations: [] }).success).toBe(false);
+      expect(pcbiResearchPdfExtractionSchema.safeParse({ observations: [{ observationDate: ' ', value: 2 }] }).success).toBe(false);
+      expect(pcbiResearchPdfExtractionSchema.safeParse({ observations: [{ observationDate: '2026-10-01', value: 0 }] }).success).toBe(false);
+      expect(pcbiResearchPdfExtractionSchema.safeParse({ observations: [{ observationDate: '2026-10-01', value: '2' }] }).success).toBe(false);
+    });
+  });
+
   describe('vendorConsolidationQuerySchema', () => {
     it('accepts supported assessment filters and trims their values', () => {
       expect(vendorConsolidationQuerySchema.safeParse({
@@ -758,6 +788,39 @@ describe('Backend Validation Schemas: remaining schemas (constants/validation.ts
         .toBe(false);
       expect(eAuctionPlanningAssumptionSchema.safeParse({ ...validAssumption, confidence: 'CERTAIN' }).success)
         .toBe(false);
+    });
+  });
+
+  describe('PCBI administration payload schemas', () => {
+    const validImport = {
+      version: 'V3.0', file_name: 'pcbi.csv', file_size_mb: 0.2, uploaded_by: 'Admin',
+      worksheets: [], mappings: {}, benchmarks: [], weeklyIndices: [], constituents: [], sources: [], unspscMappings: [],
+      validationSummary: {
+        totalRecords: 0, validRecords: 0, warningRecords: 0, errorRecords: 0,
+        blockingErrorCount: 0, warningCount: 0, aQualityCount: 0, bQualityCount: 0,
+        cQualityCount: 0, avgBenchmarkability: 0, dateStart: null, dateEnd: null, issues: []
+      }
+    };
+
+    it('accepts a bounded versioned import and publisher identity', () => {
+      expect(pcbiAdminImportSchema.safeParse(validImport).success).toBe(true);
+      expect(pcbiAdminPublishSchema.safeParse({ published_by: ' Admin ' })).toMatchObject({
+        success: true, data: { published_by: 'Admin' }
+      });
+    });
+
+    it('rejects malformed version names, unsafe sizes, too many mappings and invalid metrics', () => {
+      expect(pcbiAdminImportSchema.safeParse({ ...validImport, version: 'release-3' }).success).toBe(false);
+      expect(pcbiAdminImportSchema.safeParse({ ...validImport, file_size_mb: Infinity }).success).toBe(false);
+      expect(pcbiAdminImportSchema.safeParse({
+        ...validImport,
+        mappings: Object.fromEntries(Array.from({ length: 21 }, (_, index) => [`sheet-${index}`, []]))
+      }).success).toBe(false);
+      expect(pcbiAdminImportSchema.safeParse({
+        ...validImport,
+        validationSummary: { ...validImport.validationSummary, avgBenchmarkability: 101 }
+      }).success).toBe(false);
+      expect(pcbiAdminPublishSchema.safeParse({ published_by: '' }).success).toBe(false);
     });
   });
 });

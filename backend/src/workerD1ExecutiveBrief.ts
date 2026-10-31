@@ -13,7 +13,8 @@ import {
   handleExecutiveBriefAudit,
   handleExecutiveBriefDownload,
   handleExecutiveBriefReport,
-  handleOpportunityBriefGap
+  handleOpportunityBriefDownload,
+  handleOpportunityBriefReport
 } from './workerD1ExecutiveBriefHandlers';
 import { handleExecutiveBriefRegenerate } from './workerD1ExecutiveBriefRegenerate';
 import { methodNotAllowedResponse, resolveExecutiveBriefRequestId } from './workerD1ExecutiveBriefResponses';
@@ -49,9 +50,11 @@ const dispatchRoute = (
     case 'downloadPptx':
       return handleExecutiveBriefDownload(request, url, 'pptx');
     case 'opportunityBriefPdf':
-      return Promise.resolve(handleOpportunityBriefGap(request, 'pdf'));
+      return handleOpportunityBriefDownload(request, environment, 'pdf');
     case 'opportunityBriefPptx':
-      return Promise.resolve(handleOpportunityBriefGap(request, 'pptx'));
+      return handleOpportunityBriefDownload(request, environment, 'pptx');
+    case 'opportunityBriefReport':
+      return handleOpportunityBriefReport(request, environment);
     case 'regenerate':
       return handleExecutiveBriefRegenerate(request, environment);
   }

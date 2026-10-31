@@ -160,7 +160,10 @@ const persistUpload = async (
       uploaded_by, record_count, notes, is_superseded
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`).bind(
       dataVersionId, assessmentId, versionNumber, payload.fileName, file.bytes.byteLength, file.checksum,
-      objectKey, String(assessment.assessment_owner), imported.importedCount, payload.notes ?? null
+      objectKey,
+      context.uploadedBy || String(assessment.assessment_owner),
+      imported.importedCount,
+      payload.notes ?? null
     ),
     db.prepare(`INSERT OR REPLACE INTO ObjectMetadata (
       object_key, tenant_id, assessment_id, filename, content_type, size_bytes, sha256, bucket, status
@@ -174,7 +177,8 @@ const persistUpload = async (
     assessmentSnapshotWrite(db, ASSESSMENT_SNAPSHOT_TYPE, assessmentId, nextSnapshot, file.checksum),
     assessmentSnapshotWrite(db, ASSESSMENT_VERSION_SNAPSHOT_TYPE, assessmentId, {
       dataVersionId, assessmentId, versionNumber, fileName: payload.fileName, fileSize: file.bytes.byteLength,
-      checksum: file.checksum, filePath: objectKey, uploadedBy: String(assessment.assessment_owner),
+      checksum: file.checksum, filePath: objectKey,
+      uploadedBy: context.uploadedBy || String(assessment.assessment_owner),
       recordCount: imported.importedCount, isSuperseded: false
     }, file.checksum, dataVersionId),
     db.prepare(`UPDATE ${D1_TABLES.dataVersions} SET is_superseded = 1

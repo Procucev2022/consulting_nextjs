@@ -20,6 +20,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import type { Module2CategorizationProps, LineItemMapping, UNSPSCCommodityRecord } from '../types';
+import type { VendorSupplyRecord } from '../types/vendorSupply';
 import { searchUNSPSCTaxonomy, lookupUNSPSCDetails } from '../data/unspscTaxonomy';
 import { useUNSPSCTaxonomy } from '../hooks/useUNSPSCTaxonomy';
 import { formatINRAmount } from '../utils/currencyConverter';
@@ -39,6 +40,8 @@ import { CategoryVendorBreakdownView } from './CategoryVendorBreakdownView';
 import { StrategicSingleVendorRiskSection } from './strategicRisk';
 import { Module2StrategicSourcingWorkspace } from './module2';
 import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
+import { buildVendorSupplyRecords } from '../utils/vendorSupplyData';
+import { VendorCategorySupplyMatrix } from './VendorCategorySupplyMatrix';
 import dynamic from 'next/dynamic';
 import { AnalyzingLoader } from './AnalyzingLoader';
 import { TierMaskOverlay } from './TierMaskOverlay';
@@ -114,12 +117,14 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
 
   // Consolidated Vendor Intelligence Tab: Vendor Rankings, Single-Source Risk, UNSPSC Catalog
   const [columnLTab, setColumnLTab] = useState<'vendorRankings' | 'strategicRisk' | 'catalog'>('vendorRankings');
+  const [matrixTab, setMatrixTab] = useState<'VENDOR_SUPPLY' | 'CATEGORY_MATRIX'>('CATEGORY_MATRIX');
 
   useEffect(() => {
     if (!targetSection) return;
 
     if (targetSection === 'vendor-consolidation-section' || targetSection === 'vendor-category-supply-section') {
       setColumnLTab('vendorRankings');
+      if (targetSection === 'vendor-category-supply-section') setMatrixTab('VENDOR_SUPPLY');
       vendorSupplyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (targetSection === 'po-consolidation-section') {
       setActiveArea('STRATEGIC_SOURCING');
@@ -254,6 +259,11 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
     if (taxonomyState.isLoading || taxonomyState.error) return [];
     return calculateVendorYearDetails(lineItems, totalEvaluatedSpendInrCr);
   }, [lineItems, totalEvaluatedSpendInrCr, taxonomyState]);
+
+  const dynamicVendorSupply = useMemo<VendorSupplyRecord[]>(
+    () => buildVendorSupplyRecords(lineItems, totalEvaluatedSpendInrCr),
+    [lineItems, totalEvaluatedSpendInrCr]
+  );
 
   const dynamicStrategicRiskItems = useMemo(() => {
     if (taxonomyState.isLoading || taxonomyState.error) return [];
@@ -573,22 +583,39 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                {UI_STRINGS.module2.matrixTitle}
+                {matrixTab === 'VENDOR_SUPPLY' ? UI_STRINGS.module2.vendorSupply.sectionTitle : UI_STRINGS.module2.matrixTitle}
               </h3>
               <p className="text-xs text-slate-500">
-                {UI_STRINGS.module2.matrixDesc}
+                {matrixTab === 'VENDOR_SUPPLY' ? UI_STRINGS.module2.vendorSupply.sectionDesc : UI_STRINGS.module2.matrixDesc}
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setMatrixTab('VENDOR_SUPPLY')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${matrixTab === 'VENDOR_SUPPLY' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                {UI_STRINGS.module2.tabVendorSupply}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMatrixTab('CATEGORY_MATRIX')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${matrixTab === 'CATEGORY_MATRIX' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                {UI_STRINGS.module2.tabCategoryMatrix}
+              </button>
+            </div>
             <span className="text-xs font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg border border-emerald-300">
               {UI_STRINGS.module2.totalEvaluated(totalEvaluatedSpendInrCr)}
             </span>
           </div>
         </div>
 
-        {/* Year-Wise Table */}
+        {matrixTab === 'VENDOR_SUPPLY' ? <VendorCategorySupplyMatrix vendors={dynamicVendorSupply} /> : (
+        /* Year-Wise Table */
         <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           {(() => {
             const totalFY24 = dynamicCategoryDetails.reduce((sum: number, c: any) => sum + (c.spend_fy24_cr || 0), 0);
@@ -711,6 +738,7 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             );
           })()}
         </div>
+        )}
       </div>
     </div>
 

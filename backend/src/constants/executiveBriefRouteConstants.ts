@@ -19,6 +19,7 @@ export const EXECUTIVE_BRIEF_ENDPOINTS = {
   downloadPptx: `${EXECUTIVE_BRIEF_ROUTE_BASE}/download/pptx`,
   opportunityBriefPdf: `${EXECUTIVE_BRIEF_ROUTE_BASE}/download/opportunity-brief/pdf`,
   opportunityBriefPptx: `${EXECUTIVE_BRIEF_ROUTE_BASE}/download/opportunity-brief/pptx`,
+  opportunityBriefReport: `${EXECUTIVE_BRIEF_ROUTE_BASE}/opportunity-brief/report`,
   regenerate: `${EXECUTIVE_BRIEF_ROUTE_BASE}/regenerate`
 } as const;
 
@@ -29,6 +30,7 @@ export const EXECUTIVE_BRIEF_ROUTES: readonly ExecutiveBriefRouteDefinition[] = 
   { key: 'downloadPptx', method: 'GET', path: '/download/pptx' },
   { key: 'opportunityBriefPdf', method: 'GET', path: '/download/opportunity-brief/pdf' },
   { key: 'opportunityBriefPptx', method: 'GET', path: '/download/opportunity-brief/pptx' },
+  { key: 'opportunityBriefReport', method: 'GET', path: '/opportunity-brief/report' },
   { key: 'regenerate', method: 'POST', path: '/regenerate' }
 ];
 

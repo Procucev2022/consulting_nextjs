@@ -7,7 +7,9 @@ import type {
   SavingsOpportunity,
   DashboardOverviewData,
   LineItemMapping,
-  ConversionFunnelPhase
+  ConversionFunnelPhase,
+  ApiBulkUpdateModule2MaterialMappingsPayload,
+  ApiUpdateModule2MaterialMappingPayload
 } from '../types';
 import type { PCBIExplainabilityAudit } from '../types/pcbi';
 import frontendLogger from './logger';
@@ -24,42 +26,21 @@ import {
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
   apiCalculateConversionPayloadSchema,
-  conversionStagesResponseSchema,
-  procurementCategoryMappingsResponseSchema
+  conversionStagesResponseSchema
 } from '../constants/validation';
-import { PROCUREMENT_CATEGORY_MAPPINGS_API_PATH } from '../constants/procurementCategoryMapping';
-import { setProcurementCategoryMappings } from './procurementCategoryResolver';
+import { getProcurementCategoryMappings } from './procurementCategoryMappingsApi';
 import { fetchDashboardOverview } from './graphqlClient';
 import { UI_STRINGS } from '../constants/uiStrings';
+import {
+  apiBulkUpdateModule2MaterialMappingsPayloadSchema,
+  apiUpdateModule2MaterialMappingPayloadSchema
+} from '../constants/validation';
+import { VENDOR_CONSOLIDATION_UI_CONFIG } from '../constants/module2VendorConsolidation';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 export const apiClient = {
-  async getProcurementCategoryMappings() {
-    frontendLogger.debug('Fetching procurement category mappings from D1');
-    const res = await fetch(`${API_BASE}${PROCUREMENT_CATEGORY_MAPPINGS_API_PATH}`);
-    const requestId = res.headers.get('x-request-id');
-    if (!res.ok) {
-      const message = UI_STRINGS.databaseData.procurementMappingsLoadFailed;
-      frontendLogger.error('D1 procurement category mapping request failed', { status: res.status, requestId, message });
-      throw new Error(message);
-    }
-    const parsed = procurementCategoryMappingsResponseSchema.safeParse(await res.json());
-    if (!parsed.success) {
-      const message = UI_STRINGS.databaseData.procurementMappingsLoadFailed;
-      frontendLogger.error('D1 procurement category mapping response was invalid', {
-        requestId, issues: parsed.error.issues, message
-      });
-      throw new Error(message);
-    }
-    setProcurementCategoryMappings(parsed.data.data.mappings);
-    frontendLogger.info('Loaded procurement category mappings from D1', {
-      mappingCount: Object.keys(parsed.data.data.mappings).length,
-      categoryCount: parsed.data.data.categories.length,
-      requestId
-    });
-    return parsed.data.data;
-  },
+  getProcurementCategoryMappings,
 
   // Tenant
   async getTenant(buyerId?: string): Promise<TenantMaster> {
@@ -124,11 +105,14 @@ export const apiClient = {
   },
 
   // Module 2 Canonical Data
-  async getModule2CanonicalLineItems(limit?: number, assessmentId?: string): Promise<LineItemMapping[]> {
-    frontendLogger.debug('Fetching canonical Module 2 line items', { limit, assessmentId });
+  async getModule2CanonicalLineItems(
+    limit?: number, assessmentId?: string, tenantId?: string
+  ): Promise<LineItemMapping[]> {
+    frontendLogger.debug('Fetching canonical Module 2 line items', { limit, assessmentId, tenantId });
     const query = new URLSearchParams();
     if (limit != null) query.set('limit', String(limit));
     if (assessmentId) query.set('assessmentId', assessmentId);
+    if (tenantId) query.set('tenantId', tenantId);
     const res = await fetch(`${API_BASE}/api/module2/sourcing/line-items?${query.toString()}`);
     const json = await res.json();
     return json.data?.lineItems || [];
@@ -140,6 +124,57 @@ export const apiClient = {
     const res = await fetch(`${API_BASE}/api/module2/sourcing/canonical-input${query}`);
     const json = await res.json();
     return json.data;
+  },
+
+  async updateModule2MaterialMapping(
+    payload: ApiUpdateModule2MaterialMappingPayload
+  ): Promise<Record<string, unknown>> {
+    const validation = validateInput(apiUpdateModule2MaterialMappingPayloadSchema, payload);
+    if (!validation.success) {
+      throw new Error(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.invalidMappingPayload));
+    }
+    const result = await apiClient.updateModule2MaterialMappings({
+      assessmentId: validation.data.assessmentId,
+      mappings: [{
+        sourceMaterialId: validation.data.sourceMaterialId,
+        unspscCode: validation.data.unspscCode,
+        reviewStatus: validation.data.reviewStatus,
+        confidenceScore: validation.data.confidenceScore,
+        mappingMethod: validation.data.mappingMethod,
+        auditNotes: validation.data.auditNotes
+      }]
+    });
+    return (result.mappings[0] || {}) as Record<string, unknown>;
+  },
+
+  async updateModule2MaterialMappings(payload: ApiBulkUpdateModule2MaterialMappingsPayload): Promise<{
+    success: boolean; message: string; mappings: Array<Record<string, unknown>>
+  }> {
+    const validation = validateInput(apiBulkUpdateModule2MaterialMappingsPayloadSchema, payload);
+    if (!validation.success) {
+      throw new Error(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.invalidMappingPayload));
+    }
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const token = authApiClient.getStoredToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const response = await fetch(`${API_BASE}${VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BULK_UPDATE_ENDPOINT}`, {
+      method: 'POST', headers, body: JSON.stringify(validation.data)
+    });
+    const requestId = response.headers.get('x-request-id');
+    const json = await response.json() as {
+      success?: boolean; message?: string; mappings?: Array<Record<string, unknown>>
+    };
+    if (!response.ok || json.success !== true || !Array.isArray(json.mappings)) {
+      const reason = json.message || UI_STRINGS.toasts.mappingServerRejected(response.status);
+      frontendLogger.error('D1 material classification update failed', {
+        assessmentId: validation.data.assessmentId, status: response.status, requestId, reason
+      });
+      throw new Error(UI_STRINGS.toasts.module2MappingFailed(reason));
+    }
+    frontendLogger.info('Saved assessment material classifications to D1', {
+      assessmentId: validation.data.assessmentId, mappingCount: json.mappings.length, requestId
+    });
+    return { success: true, message: json.message || '', mappings: json.mappings };
   },
 
   async getModule2OpportunityLedger(assessmentId?: string): Promise<unknown> {
@@ -226,7 +261,9 @@ export const apiClient = {
     const res = await fetch(`${API_BASE}/api/conversion`);
     if (!res.ok) {
       const message = UI_STRINGS.databaseData.conversionLoadFailed(res.status);
-      frontendLogger.error('Conversion funnel load failed', { status: res.status, requestId: res.headers.get('x-request-id'), message });
+      frontendLogger.error('Conversion funnel load failed', {
+        status: res.status, requestId: res.headers.get('x-request-id'), message
+      });
       throw new Error(message);
     }
     const json = await res.json();

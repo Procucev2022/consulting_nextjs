@@ -4,7 +4,10 @@ import {
   EXECUTIVE_BRIEF_HTTP_STATUS,
   EXECUTIVE_BRIEF_MESSAGES
 } from '../src/constants/executiveBriefRouteConstants';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_GAP } from '../src/constants/executiveOpportunityBriefConstants';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
+} from '../src/constants/executiveOpportunityBriefConstants';
 import {
   EXECUTIVE_BRIEF_ARTIFACT_FILENAMES,
   EXECUTIVE_BRIEF_CONTENT_TYPES
@@ -34,6 +37,62 @@ const expectResponse = (response: Response | null): Response => {
   expect(response).not.toBeNull();
   return response as Response;
 };
+
+const d1OpportunityDb = (options: {
+  tenants?: Array<{ tenant_id: string; enterprise_name: string }>;
+  transactionCount?: number;
+  fail?: boolean;
+} = {}): CloudflareEnvironment['DB'] => ({
+  prepare: (query: string) => {
+    const statement = {
+      bind: (..._values: unknown[]) => statement,
+      first: async <T>() => {
+        if (options.fail) throw new Error('D1 query failed');
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
+          return {
+            transaction_count: options.transactionCount ?? 12,
+            total_spend_cr: 125.5,
+            supplier_count: 4,
+            material_count: 6,
+            plant_count: 2,
+            purchase_order_count: 9,
+            first_transaction_date: '2024-01-01',
+            last_transaction_date: '2025-12-31'
+          } as T;
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunityMetrics) {
+          return { opportunity_count: 2, estimated_savings_cr: 10.25, average_confidence: 0.87 } as T;
+        }
+        return null;
+      },
+      all: async <T>() => {
+        if (options.fail) throw new Error('D1 query failed');
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants) {
+          return { results: options.tenants ?? [{ tenant_id: 'TEN-1', enterprise_name: 'D1 Enterprise' }] as T[] };
+        }
+        if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities) {
+          return { results: [{
+            opp_id: 'OPP-1', category: 'Packaging', title: 'Packaging sourcing', current_spend_cr: 50,
+            estimated_savings_cr: 8, lever: 'Strategic sourcing', recommended_action: 'Launch a tender',
+            status: 'Identified', risk_level: 'Medium', confidence_score: 0.9
+          }, {
+            opp_id: 'OPP-2', category: 'Logistics', title: null, current_spend_cr: null,
+            estimated_savings_cr: 2.25, lever: null, recommended_action: null,
+            status: null, risk_level: null, confidence_score: null
+          }] as T[] };
+        }
+        const label = query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.leverBreakdown
+          ? 'Strategic sourcing'
+          : query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.statusBreakdown
+            ? 'Identified'
+            : 'Medium';
+        return { results: [{ label, record_count: 2, estimated_savings_cr: 10.25 }] as T[] };
+      },
+      run: async () => ({ success: true })
+    };
+    return statement;
+  }
+});
 
 describe('executive brief routing', () => {
   beforeEach(() => {
@@ -127,17 +186,80 @@ describe('executive brief routing', () => {
     expect(Buffer.from(bytes.slice(0, 2)).toString('latin1')).toBe('PK');
   });
 
-  it('answers 501 with the named gap for both Opportunity Brief downloads, not a file', async () => {
-    for (const path of ['/download/opportunity-brief/pdf', '/download/opportunity-brief/pptx']) {
-      const response = expectResponse(await callRoute('GET', path));
-      expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_IMPLEMENTED);
-      expect(response.headers.get('Content-Type')).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.JSON);
-      expect(response.headers.get('Content-Disposition')).toBeNull();
-      const body = (await response.json()) as { success: boolean; message: string; gap: { code: string } };
-      expect(body.success).toBe(false);
-      expect(body.message).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_GAP.message);
-      expect(body.gap.code).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_GAP.code);
-    }
+  it('serves the Opportunity Brief from D1 tenant, transaction, and savings records', async () => {
+    const response = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+      env: testEnvironment({ DB: d1OpportunityDb() })
+    }));
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+    expect(response.headers.get('Content-Type')).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.JSON);
+    const body = (await response.json()) as {
+      success: boolean;
+      data: { tenant: { enterpriseName: string }; metrics: { totalSpendCr: number; estimatedSavingsCr: number }; opportunities: unknown[] };
+    };
+    expect(body.success).toBe(true);
+    expect(body.data.tenant.enterpriseName).toBe('D1 Enterprise');
+    expect(body.data.metrics.totalSpendCr).toBe(125.5);
+    expect(body.data.metrics.estimatedSavingsCr).toBe(10.25);
+    expect(body.data.opportunities).toHaveLength(2);
+  });
+
+  it('creates D1-backed Opportunity Brief PDF and PPTX attachments', async () => {
+    const environment = testEnvironment({ DB: d1OpportunityDb() });
+    const pdf = expectResponse(await callRoute('GET', '/download/opportunity-brief/pdf', { env: environment }));
+    expect(pdf.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+    expect(pdf.headers.get('Content-Type')).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.PDF);
+    expect(pdf.headers.get('Content-Disposition')).toContain('D1_Enterprise_2026-10-24.pdf');
+    expect(Buffer.from(new Uint8Array(await pdf.arrayBuffer()).slice(0, 8)).toString('latin1')).toBe('%PDF-1.4');
+
+    const pptx = expectResponse(await callRoute('GET', '/download/opportunity-brief/pptx', { env: environment }));
+    expect(pptx.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+    expect(pptx.headers.get('Content-Type')).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.PPTX);
+    expect(pptx.headers.get('Content-Disposition')).toContain('D1_Enterprise_2026-10-24.pptx');
+    expect(Buffer.from(new Uint8Array(await pptx.arrayBuffer()).slice(0, 2)).toString('latin1')).toBe('PK');
+  });
+
+  it('returns actionable status codes when the D1 binding or required report data is unavailable', async () => {
+    const noBinding = expectResponse(await callRoute('GET', '/opportunity-brief/report'));
+    expect(noBinding.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    expect(((await noBinding.json()) as { message: string }).message).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable);
+
+    const noTenant = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+      env: testEnvironment({ DB: d1OpportunityDb({ tenants: [] }) })
+    }));
+    expect(noTenant.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
+    expect(((await noTenant.json()) as { reason: string }).reason).toBe('no-tenant');
+
+    const noTenantDownload = expectResponse(await callRoute('GET', '/download/opportunity-brief/pdf', {
+      env: testEnvironment({ DB: d1OpportunityDb({ tenants: [] }) })
+    }));
+    expect(noTenantDownload.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
+
+    const noBindingDownload = expectResponse(await callRoute('GET', '/download/opportunity-brief/pptx'));
+    expect(noBindingDownload.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+
+    const ambiguous = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+      env: testEnvironment({ DB: d1OpportunityDb({ tenants: [
+        { tenant_id: 'A', enterprise_name: 'A' }, { tenant_id: 'B', enterprise_name: 'B' }
+      ] }) })
+    }));
+    expect(ambiguous.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
+
+    const empty = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+      env: testEnvironment({ DB: d1OpportunityDb({ transactionCount: 0 }) })
+    }));
+    expect(empty.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
+
+    const failed = expectResponse(await callRoute('GET', '/opportunity-brief/report', {
+      env: testEnvironment({ DB: d1OpportunityDb({ fail: true }) })
+    }));
+    expect(failed.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
+    expect(((await failed.json()) as { message: string }).message).toContain('request ID');
+
+    const failedExport = expectResponse(await callRoute('GET', '/download/opportunity-brief/pdf', {
+      env: testEnvironment({ DB: d1OpportunityDb({ fail: true }) })
+    }));
+    expect(failedExport.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
+    expect(((await failedExport.json()) as { message: string }).message).toContain('PDF');
   });
 
   it('answers 405 with the allowed method when the method does not match the route', async () => {

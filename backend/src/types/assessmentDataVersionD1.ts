@@ -27,6 +27,7 @@ export interface AssessmentDatasetActionContext {
   assessmentId: string;
   body: unknown;
   requestId?: string;
+  uploadedBy?: string;
 }
 
 export interface AssessmentValidationSummary {

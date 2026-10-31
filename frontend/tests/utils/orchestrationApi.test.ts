@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { OrchestrationApiClient } from '../../src/utils/orchestrationApi';
 import { apiClient } from '../../src/utils/api';
 import { DEFAULT_QUALITY_GATE_CHECKLIST } from '../../src/constants/analysisOrchestration';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
 
 describe('OrchestrationApiClient Unit Tests', () => {
   let client: OrchestrationApiClient;
@@ -9,6 +10,7 @@ describe('OrchestrationApiClient Unit Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = vi.fn();
     client = new OrchestrationApiClient();
     vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('mock-jwt-token');
     vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
@@ -70,10 +72,19 @@ describe('OrchestrationApiClient Unit Tests', () => {
     expect(downloadUrl).toBe('/api/orchestration/jobs/job-1/download-dataset/v1');
   });
 
+  it('validates PCBI resolutions before making a network request', async () => {
+    await expect(client.resolvePCBIGap('job-1', 'gap-1', { action: 'MAP_EXISTING' }))
+      .rejects.toThrow(UI_STRINGS.orchestration.pcbiResolutionMissingSeries);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('should upload corrected dataset', async () => {
     mockFetchResponse({ success: true, message: 'Version v2 created' });
     const result = await client.uploadCorrectedDataset('job-1', {
       fileName: 'corrected.xlsx',
+      fileSize: 5,
+      checksum: 'a'.repeat(64),
+      fileBase64: 'd29ya2I=',
       reason: 'INCORRECT_CATEGORY_MAPPING'
     });
     expect(result.success).toBe(true);

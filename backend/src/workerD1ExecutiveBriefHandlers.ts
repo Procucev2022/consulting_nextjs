@@ -10,7 +10,16 @@ import {
   EXECUTIVE_BRIEF_MESSAGES
 } from './constants/executiveBriefRouteConstants';
 import { executiveBriefClientQuerySchema } from './constants/executiveBriefValidation';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_GAP } from './constants/executiveOpportunityBriefConstants';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES
+} from './constants/executiveOpportunityBriefConstants';
+import { loadExecutiveOpportunityBriefFromD1 } from './services/executiveOpportunityBriefD1';
+import {
+  executiveOpportunityBriefContentType,
+  executiveOpportunityBriefFilename,
+  generateExecutiveOpportunityBriefPdf,
+  generateExecutiveOpportunityBriefPptx
+} from './services/executiveOpportunityBriefExport';
 import { renderExecutiveBriefArtifact } from './services/executiveBriefArtifactService';
 import { formatExecutiveBriefAuditMarkdown } from './services/executiveBriefMarkdown';
 import { resolveCertifiedClientName, toReportDate } from './services/executiveBriefMetadataService';
@@ -24,6 +33,7 @@ import {
   toValidationIssues
 } from './workerD1ExecutiveBriefResponses';
 import type { ExecutiveBriefDownloadFormat, ExecutiveBriefScopeResult } from './types/executiveBriefRoutes';
+import type { CloudflareEnvironment } from './types/cloudflare';
 
 const encoder = new TextEncoder();
 
@@ -194,22 +204,132 @@ export const handleExecutiveBriefDownload = async (
   }
 };
 
-/**
- * The Opportunity Brief generator is not ported. The route answers 501 with the gap instead of a placeholder file.
- */
-export const handleOpportunityBriefGap = (request: Request, format: ExecutiveBriefDownloadFormat): Response => {
+const opportunityBriefLoadFailure = (
+  request: Request,
+  requestId: string,
+  reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions'
+): Response => {
+  const status = reason === 'ambiguous-tenant'
+    ? EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT
+    : EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND;
+  const message = reason === 'no-tenant'
+    ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTenant
+    : reason === 'ambiguous-tenant'
+      ? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.ambiguousTenant
+      : EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTransactions;
+  return executiveBriefErrorResponse(request, requestId, status, message, { reason });
+};
+
+export const handleOpportunityBriefReport = async (
+  request: Request,
+  environment: CloudflareEnvironment
+): Promise<Response> => {
   const requestId = resolveExecutiveBriefRequestId(request);
-  logger.warn('Executive Opportunity Brief requested but not ported to the Worker', {
-    requestId,
-    action: `opportunityBrief.${format}`,
-    statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.NOT_IMPLEMENTED,
-    format
-  });
-  return executiveBriefErrorResponse(
-    request,
-    requestId,
-    EXECUTIVE_BRIEF_HTTP_STATUS.NOT_IMPLEMENTED,
-    EXECUTIVE_OPPORTUNITY_BRIEF_GAP.message,
-    { format, gap: EXECUTIVE_OPPORTUNITY_BRIEF_GAP }
-  );
+  const startedAt = Date.now();
+  if (!environment.DB) {
+    logger.warn(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable, {
+      requestId,
+      action: 'opportunityBrief.report',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE
+    });
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
+    );
+  }
+  try {
+    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB);
+    if (!loaded.ok) {
+      return opportunityBriefLoadFailure(request, requestId, loaded.reason);
+    }
+    logger.info(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.servedReport, {
+      requestId,
+      action: 'opportunityBrief.report',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
+      tenantId: loaded.report.tenant.tenantId,
+      transactionCount: loaded.report.metrics.transactionCount,
+      opportunityCount: loaded.report.metrics.opportunityCount,
+      durationMs: Date.now() - startedAt
+    });
+    return executiveBriefJsonResponse(request, requestId, EXECUTIVE_BRIEF_HTTP_STATUS.OK, {
+      success: true,
+      data: loaded.report
+    });
+  } catch (error: unknown) {
+    logger.error(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.queryFailed, {
+      requestId,
+      action: 'opportunityBrief.report',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      durationMs: Date.now() - startedAt
+    }, error);
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.reportFailed(requestId)
+    );
+  }
+};
+
+export const handleOpportunityBriefDownload = async (
+  request: Request,
+  environment: CloudflareEnvironment,
+  format: ExecutiveBriefDownloadFormat
+): Promise<Response> => {
+  const requestId = resolveExecutiveBriefRequestId(request);
+  const startedAt = Date.now();
+  const action = `opportunityBrief.${format}`;
+  if (!environment.DB) {
+    logger.warn(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable, {
+      requestId,
+      action,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      format
+    });
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable,
+      { format }
+    );
+  }
+  try {
+    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB);
+    if (!loaded.ok) {
+      return opportunityBriefLoadFailure(request, requestId, loaded.reason);
+    }
+    const artifact = format === 'pdf'
+      ? generateExecutiveOpportunityBriefPdf(loaded.report)
+      : await generateExecutiveOpportunityBriefPptx(loaded.report);
+    const reportDate = loaded.report.generatedAt.slice(0, 10);
+    const filename = executiveOpportunityBriefFilename(loaded.report.tenant.enterpriseName, format, reportDate);
+    logger.info(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.servedDownload, {
+      requestId,
+      action,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
+      tenantId: loaded.report.tenant.tenantId,
+      format,
+      bytes: artifact.byteLength,
+      durationMs: Date.now() - startedAt
+    });
+    return executiveBriefFileResponse(request, requestId, artifact, executiveOpportunityBriefContentType(format), filename);
+  } catch (error: unknown) {
+    logger.error(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.queryFailed, {
+      requestId,
+      action,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      format,
+      durationMs: Date.now() - startedAt
+    }, error);
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed(format, requestId),
+      { format }
+    );
+  }
 };

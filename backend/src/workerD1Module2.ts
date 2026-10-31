@@ -3,7 +3,7 @@ import type { CloudflareD1Database } from './types/cloudflare';
 import type { D1Record, WorkerD1Result } from './types/d1';
 import { queryD1Rows as queryAll } from './services/workerD1Query';
 import {
-  d1DatasetScopeSchema, materialMappingUpdateSchema, specificationReviewSchema,
+  d1DatasetScopeSchema, materialMappingBulkUpdateSchema, materialMappingUpdateSchema, specificationReviewSchema,
   procurementComplianceReviewSchema, eAuctionPlanningAssumptionSchema
 } from './constants/validation';
 import logger from './utils/logger';
@@ -39,6 +39,7 @@ import type { ProcurementComplianceResult } from './types/module2ProcurementComp
 import {
   loadEAuctionPlanningAssumptions, saveEAuctionPlanningAssumption
 } from './services/workerD1EAuctionPlanningAssumptions';
+import { loadAssessmentMaterialMappings } from './services/workerD1MaterialMappings';
 
 const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, values: unknown[] = []): Promise<T | null> => {
   const statement = db.prepare(sql);
@@ -48,11 +49,19 @@ const queryFirst = async <T = D1Record>(db: CloudflareD1Database, sql: string, v
 
 const numberValue = (value: unknown): number => (typeof value === 'number' && Number.isFinite(value) ? value : Number(value) || 0);
 
-const toLineItem = (row: D1Record): D1Record => ({
+const toLineItem = (row: D1Record, mapping?: MaterialMappingEntry): D1Record => ({
   ...D1_UNCLASSIFIED_LINE_ITEM,
   mapping_id: row.transaction_id, line_item_id: row.transaction_id,
   material_code: row.material_code, material_desc: row.short_text, raw_desc: row.short_text,
   vendor_identified: row.supplier_name, master_supplier_id: row.supplier_code,
+  ...(mapping ? {
+    unspsc_code: mapping.assignedUnspscCode,
+    unspsc_category_name: mapping.assignedUnspscTitle,
+    unspsc_commodity_title: mapping.assignedUnspscTitle,
+    core_bucket: mapping.coreBucket || '',
+    status: mapping.reviewStatus === 'CLIENT_APPROVED' || mapping.reviewStatus === 'TAXONOMY_VERIFIED'
+      ? 'Confirmed' : 'Pending Review'
+  } : {}),
   unit_price: numberValue(row.net_price), qty: numberValue(row.order_quantity),
   total_spend: numberValue(row.total_inr_raw), amount_inr: numberValue(row.total_inr_raw),
   inr_crores: numberValue(row.total_inr_raw) / D1_REPORTING.inrPerCrore,
@@ -195,40 +204,89 @@ const handleMaterialMappingUpdate = async (
   } };
   const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
   if (!('user' in auth)) return auth;
-  const payload = parsed.data;
-  const scopedUrl = withAssessmentScope(url, payload.assessmentId);
+  const { assessmentId, ...payload } = parsed.data;
+  const persisted = await persistMaterialMappingUpdates(db, request, url, assessmentId, [payload], auth.user);
+  if (persisted.status) return persisted;
+  const saved = (persisted.data as { mappings: MaterialMappingEntry[] }).mappings[0];
+  return { data: { success: true, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingSaved, mapping: saved } };
+};
+
+const handleBulkMaterialMappingUpdate = async (
+  db: CloudflareD1Database, request: Request, url: URL, authSecret?: string
+): Promise<WorkerD1Result> => {
+  const parsed = materialMappingBulkUpdateSchema.safeParse(await readRequestBody(request));
+  if (!parsed.success) return { status: 400, data: {
+    success: false, message: MODULE2_D1_ROUTE_MESSAGES.invalidMaterialMapping,
+    errors: parsed.error.issues
+  } };
+  const auth = await rejectUnauthenticatedMutation(request, db, authSecret);
+  if (!('user' in auth)) return auth;
+  const { assessmentId, mappings } = parsed.data;
+  const persisted = await persistMaterialMappingUpdates(db, request, url, assessmentId, mappings, auth.user);
+  if (persisted.status) return persisted;
+  return { data: {
+    success: true, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingSaved,
+    mappings: (persisted.data as { mappings: MaterialMappingEntry[] }).mappings
+  } };
+};
+
+const persistMaterialMappingUpdates = async (
+  db: CloudflareD1Database,
+  request: Request,
+  url: URL,
+  assessmentId: string,
+  payloads: Array<{
+    sourceMaterialId: string;
+    unspscCode: string;
+    reviewStatus: 'PROVISIONAL' | 'CLIENT_APPROVED' | 'TAXONOMY_VERIFIED';
+    confidenceScore?: number;
+    mappingMethod?: MaterialMappingEntry['mappingMethod'];
+    auditNotes?: string;
+  }>,
+  reviewer: { id: string; name: string; email: string }
+): Promise<WorkerD1Result> => {
+  const scopedUrl = withAssessmentScope(url, assessmentId);
   const current = await handleScopedModule2Route(db, '/vendor-consolidation', request, scopedUrl);
   const report = current?.data as VendorConsolidationResult | undefined;
-  const mapping = report?.mappingRegister?.find((item) => item.sourceMaterialId === payload.sourceMaterialId);
-  if (!mapping) return { status: 404, data: {
+  const mappingById = new Map((report?.mappingRegister || []).map((item) => [item.sourceMaterialId, item]));
+  if (payloads.some((payload) => !mappingById.has(payload.sourceMaterialId))) return { status: 404, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingTargetNotFound
   } };
-  const taxonomy = await db.prepare(`
-    SELECT commodity_code, commodity_title, class_code, family_code, segment_code, taxonomy_version
-    FROM UNSPSCCommodity WHERE commodity_code = ? LIMIT 1
-  `).bind(payload.unspscCode).first<Record<string, unknown>>();
-  if (!taxonomy) return { status: 400, data: {
+  const taxonomyCodes = [...new Set(payloads.map((payload) => payload.unspscCode))];
+  const taxonomyRows = await db.prepare(`
+    SELECT commodity_code, commodity_title, class_code, family_code, segment_code, taxonomy_version, core_bucket
+    FROM UNSPSCCommodity WHERE commodity_code IN (${taxonomyCodes.map(() => '?').join(', ')})
+  `).bind(...taxonomyCodes).all<Record<string, unknown>>();
+  const taxonomyByCode = new Map((taxonomyRows.results || []).map((row) => [String(row.commodity_code), row]));
+  if (payloads.some((payload) => !taxonomyByCode.has(payload.unspscCode))) return { status: 400, data: {
     success: false, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingTaxonomyNotFound
   } };
   const now = new Date().toISOString();
-  const updatedMapping: MaterialMappingEntry = {
-    ...mapping,
-    assignedUnspscCode: String(taxonomy.commodity_code),
-    assignedUnspscTitle: String(taxonomy.commodity_title),
-    unspscSegment: String(taxonomy.segment_code),
-    unspscFamily: String(taxonomy.family_code),
-    unspscClass: String(taxonomy.class_code),
-    unspscCommodity: String(taxonomy.commodity_code),
-    taxonomyVersion: String(taxonomy.taxonomy_version),
-    mappingMethod: 'MANUAL_REVIEW_REQUIRED',
-    confidenceScore: 1,
-    evidence: 'UNSPSC commodity selected from the D1 taxonomy and approved by an authenticated reviewer.',
-    reviewStatus: payload.reviewStatus,
-    mappingDate: now,
-    reviewedBy: auth.user.name,
-    auditNotes: payload.auditNotes
-  };
-  await db.prepare(`
+  const updatedMappings = payloads.map((payload) => {
+    const currentMapping = mappingById.get(payload.sourceMaterialId) as MaterialMappingEntry;
+    const taxonomy = taxonomyByCode.get(payload.unspscCode) as Record<string, unknown>;
+    return {
+      ...currentMapping,
+      assignedUnspscCode: String(taxonomy.commodity_code),
+      assignedUnspscTitle: String(taxonomy.commodity_title),
+      unspscSegment: String(taxonomy.segment_code),
+      unspscFamily: String(taxonomy.family_code),
+      unspscClass: String(taxonomy.class_code),
+      unspscCommodity: String(taxonomy.commodity_code),
+      taxonomyVersion: String(taxonomy.taxonomy_version),
+      coreBucket: typeof taxonomy.core_bucket === 'string' ? taxonomy.core_bucket : undefined,
+      mappingMethod: payload.mappingMethod || 'MANUAL_REVIEW_REQUIRED',
+      confidenceScore: payload.confidenceScore ?? 1,
+      evidence: payload.reviewStatus === 'PROVISIONAL'
+        ? payload.auditNotes || 'Unreviewed classification suggestion generated from assessment data.'
+        : 'UNSPSC commodity selected from the D1 taxonomy and approved by an authenticated reviewer.',
+      reviewStatus: payload.reviewStatus,
+      mappingDate: now,
+      reviewedBy: reviewer.name,
+      auditNotes: payload.auditNotes
+    } satisfies MaterialMappingEntry;
+  });
+  const statements = updatedMappings.map((mapping) => db.prepare(`
     INSERT INTO AssessmentMaterialMapping (
       assessment_id, source_material_id, payload_json, reviewed_by, updated_at
     ) VALUES (?, ?, ?, ?, ?)
@@ -236,14 +294,16 @@ const handleMaterialMappingUpdate = async (
       payload_json = excluded.payload_json, reviewed_by = excluded.reviewed_by,
       updated_at = excluded.updated_at
   `).bind(
-    payload.assessmentId, payload.sourceMaterialId, JSON.stringify(updatedMapping), auth.user.email, now
-  ).run();
+    assessmentId, mapping.sourceMaterialId, JSON.stringify(mapping), reviewer.email, now
+  ));
+  if (db.batch) await db.batch(statements);
+  else await Promise.all(statements.map((statement) => statement.run()));
   clearScopedModule2Cache();
-  logger.info('Persisted D1 assessment material classification', {
-    assessmentId: payload.assessmentId, sourceMaterialId: payload.sourceMaterialId,
-    reviewerId: auth.user.id, unspscCode: payload.unspscCode
+  logger.info('Persisted D1 assessment material classifications', {
+    assessmentId, mappingCount: updatedMappings.length,
+    reviewerId: reviewer.id, reviewStatus: payloads[0]?.reviewStatus
   });
-  return { data: { success: true, message: MODULE2_D1_ROUTE_MESSAGES.materialMappingSaved, mapping: updatedMapping } };
+  return { data: { mappings: updatedMappings } };
 };
 
 const procurementComplianceReport = async (
@@ -345,6 +405,12 @@ export const handleModule2Route = async (
       status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
     };
     return handleMaterialMappingUpdate(db, request, url, authSecret);
+  }
+  if (normalized === '/vendor-consolidation/mappings/bulk-update') {
+    if (request.method !== 'POST') return {
+      status: 405, data: { success: false, message: MODULE2_D1_ROUTE_MESSAGES.postRequired }
+    };
+    return handleBulkMaterialMappingUpdate(db, request, url, authSecret);
   }
   if (normalized.startsWith('/procurement-compliance')) {
     if (normalized === '/procurement-compliance/review') {
@@ -622,7 +688,13 @@ export const handleModule2Route = async (
       `SELECT transaction_id, po_number, supplier_code, supplier_name, material_code, short_text, total_inr_raw, ` +
       'net_price, currency, order_quantity, document_date_raw ' +
       `FROM ${D1_TABLES.transactions} WHERE ${filters.join(' AND ')} ORDER BY source_row_number ASC LIMIT ?`, values);
-    return { data: normalized.startsWith('/line-items') ? { lineItems: items.map(toLineItem) } : items };
+    if (!normalized.startsWith('/line-items')) return { data: items };
+    const savedMappings = assessmentId ? await loadAssessmentMaterialMappings(db, assessmentId) : [];
+    const mappingByMaterial = new Map(savedMappings.map((mapping) => [mapping.sourceMaterialId, mapping]));
+    return { data: { lineItems: items.map((item) => {
+      const key = String(item.material_code || '').trim().toLocaleUpperCase('en-US');
+      return toLineItem(item, mappingByMaterial.get(key));
+    }) } };
   }
 
   if (normalized.startsWith('/handoff')) {

@@ -679,6 +679,27 @@ describe('Cloudflare worker core routes', () => {
       });
     });
 
+    it('keeps document types without an extraction path pending in D1', async () => {
+      const bucket: CloudflareR2Bucket = {
+        put: vi.fn(async () => undefined),
+        get: vi.fn(async () => null),
+        delete: vi.fn(async () => undefined)
+      };
+      const response = await send('/api/ingestion/upload-object', jsonBody('POST', {
+        tenant_id: 'TNT-1',
+        fileName: 'purchase-records.pdf',
+        fileType: 'PDF',
+        fileBase64: Buffer.from('pdf-placeholder').toString('base64'),
+        parseTransactions: true
+      }), environmentWithDb({ OBJECTS: bucket }));
+      const upload = (await dataOf(response)) as { docId: string };
+
+      expect(response.status).toBe(200);
+      expect(fixture.db.prepare('SELECT ocr_status, progress, records_count FROM RawDocumentIngestion WHERE doc_id = ?').get(upload.docId)).toEqual({
+        ocr_status: 'Pending', progress: 0, records_count: 0
+      });
+    });
+
     it('imports uploaded workbook rows to D1 and deletes their linked data with the source document', async () => {
       insertRows(fixture.db, 'INSERT INTO FxReferenceRate (currency, rate_date, inr_per_unit, fx_master_version) VALUES (?, ?, ?, ?)', [
         ['USD', '2025-01-01', 84, 'FX-2025']

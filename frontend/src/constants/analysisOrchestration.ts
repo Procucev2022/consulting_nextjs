@@ -5,6 +5,7 @@
 import type {
   AnalysisJobStatus,
   PCBIExclusionReason,
+  PCBIResolutionAction,
   ReanalysisReason,
   AdminQualityGateChecklist
 } from '../types/analysisOrchestration';
@@ -26,6 +27,15 @@ export const ANALYSIS_JOB_STATUSES: readonly AnalysisJobStatus[] = [
   'CUSTOMER_VIEWED',
   'CUSTOMER_ACKNOWLEDGED',
   'ANALYSIS_BLOCKED'
+] as const;
+
+export const PCBI_RESOLUTION_ACTIONS: readonly PCBIResolutionAction[] = [
+  'ADD_MAP_PCBI', 'MAP_EXISTING', 'EXCLUDE', 'MARK_NOT_BENCHMARKABLE', 'MARK_SERVICE', 'REQUEST_RESEARCH'
+] as const;
+
+export const PCBI_EXCLUSION_REASON_CODES: readonly PCBIExclusionReason[] = [
+  'NOT_BENCHMARKABLE', 'CUSTOM_ENGINEERED_ITEM', 'SERVICE', 'NO_RELIABLE_MARKET_BENCHMARK',
+  'INSUFFICIENT_MARKET_DATA', 'CUSTOMER_SPECIFIC_SPECIFICATION', 'BELOW_MATERIALITY_THRESHOLD', 'OTHER'
 ] as const;
 export const EXCLUSION_REASONS: readonly {
   code: PCBIExclusionReason;

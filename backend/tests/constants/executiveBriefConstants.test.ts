@@ -31,7 +31,11 @@ import {
   EXECUTIVE_BRIEF_CHECKLIST_LABELS
 } from '../../src/constants/executiveBriefLabelConstants';
 import { EXECUTIVE_BRIEF_SUMMARY_CARD_DEFINITIONS } from '../../src/constants/executiveBriefSummaryCardConstants';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_GAP } from '../../src/constants/executiveOpportunityBriefConstants';
+import {
+  EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT,
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
+} from '../../src/constants/executiveOpportunityBriefConstants';
 import {
   BRIEF_REPORT_ARTIFACTS,
   BRIEF_SLIDE_GROUPS,
@@ -77,6 +81,7 @@ describe('executive brief route constants', () => {
       'GET /download/pptx',
       'GET /download/opportunity-brief/pdf',
       'GET /download/opportunity-brief/pptx',
+      'GET /opportunity-brief/report',
       'POST /regenerate'
     ]);
     expect(EXECUTIVE_BRIEF_ENDPOINTS.regenerate).toBe(`${EXECUTIVE_BRIEF_ROUTE_BASE}/regenerate`);
@@ -150,9 +155,16 @@ describe('label and summary constants', () => {
     expect(ids).toHaveLength(9);
   });
 
-  it('describes the opportunity brief gap and content types', () => {
-    expect(EXECUTIVE_OPPORTUNITY_BRIEF_GAP.code).toBe('OPPORTUNITY_BRIEF_NOT_PORTED');
-    expect(EXECUTIVE_OPPORTUNITY_BRIEF_GAP.reason).toContain('fs');
+  it('defines D1-backed opportunity brief queries, export settings, and actionable messages', () => {
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants).toContain('TenantMaster');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics).toContain('ProcurementTransaction');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunityMetrics).toContain('SavingsOpportunity');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.opportunities).toContain('LIMIT 10');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.leverBreakdown).toContain('GROUP BY');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.statusBreakdown).toContain('GROUP BY');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_SQL.riskBreakdown).toContain('GROUP BY');
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.SLIDE_TITLES).toHaveLength(10);
+    expect(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable).toContain('D1');
     expect(EXECUTIVE_BRIEF_CONTENT_TYPES.PDF).toBe('application/pdf');
     expect(EXECUTIVE_BRIEF_CONTENT_TYPES.PPTX).toContain('presentationml.presentation');
   });

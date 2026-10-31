@@ -9,6 +9,7 @@ import type {
   taxonomyPageRequestSchema,
   taxonomyPageResponseSchema,
   conversionStagesResponseSchema,
+  executiveOpportunityBriefResponseSchema,
   databaseSchemaResponseSchema,
   procurementCategoryMappingsResponseSchema,
   pcbiBenchmarkResponseSchema,
@@ -28,16 +29,22 @@ import type {
   apiUpdateValidationRecordPayloadSchema,
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
+  apiUpdateModule2MaterialMappingPayloadSchema,
+  apiBulkUpdateModule2MaterialMappingsPayloadSchema,
   apiCalculateConversionPayloadSchema
 } from '../constants/validation';
+import type { pcbiGapResolutionRequestSchema } from '../constants/orchestrationValidation';
 
 export type TaxonomyPageRequest = z.infer<typeof taxonomyPageRequestSchema>;
 export type TaxonomyPageResponse = z.infer<typeof taxonomyPageResponseSchema>;
 export type ConversionStagesResponse = z.infer<typeof conversionStagesResponseSchema>;
+export type ExecutiveOpportunityBriefResponse = z.infer<typeof executiveOpportunityBriefResponseSchema>;
+export type ExecutiveOpportunityBriefReportData = ExecutiveOpportunityBriefResponse['data'];
 export type DatabaseSchemaResponse = z.infer<typeof databaseSchemaResponseSchema>;
 export type ProcurementCategoryMappingsResponse = z.infer<typeof procurementCategoryMappingsResponseSchema>;
 export type PcbiBenchmarkResponse = z.infer<typeof pcbiBenchmarkResponseSchema>;
 export type PcbiWeeklyIndexResponse = z.infer<typeof pcbiWeeklyIndexResponseSchema>;
+export type PCBIGapResolutionRequest = z.infer<typeof pcbiGapResolutionRequestSchema>;
 
 export type HeaderTenantInput = z.infer<typeof headerTenantSchema>;
 export type HeaderCurrencyInput = z.infer<typeof headerCurrencySchema>;
@@ -55,6 +62,8 @@ export type ApiAddIngestionFilePayload = z.infer<typeof apiAddIngestionFilePaylo
 export type ApiUpdateValidationRecordPayload = z.infer<typeof apiUpdateValidationRecordPayloadSchema>;
 export type ApiMergeVendorPayload = z.infer<typeof apiMergeVendorPayloadSchema>;
 export type ApiDeployOpportunityPayload = z.infer<typeof apiDeployOpportunityPayloadSchema>;
+export type ApiUpdateModule2MaterialMappingPayload = z.infer<typeof apiUpdateModule2MaterialMappingPayloadSchema>;
+export type ApiBulkUpdateModule2MaterialMappingsPayload = z.infer<typeof apiBulkUpdateModule2MaterialMappingsPayloadSchema>;
 export type ApiCalculateConversionPayload = z.infer<typeof apiCalculateConversionPayloadSchema>;
 
 export type ValidationErrorsMap = Record<string, string>;

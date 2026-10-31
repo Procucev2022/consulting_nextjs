@@ -6,13 +6,53 @@ import type { D1Record } from '../src/types/d1';
 
 vi.mock('../src/utils/logger', () => ({ default: { debug: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
 
-const database = (rows: D1Record[] = []): CloudflareD1Database => {
+const database = (rows: D1Record[] = [], publishedPayload?: Record<string, unknown>): CloudflareD1Database => {
   const statement = {
     bind: vi.fn().mockReturnThis(), all: vi.fn().mockResolvedValue({ results: rows }),
-    first: vi.fn(), run: vi.fn()
+    first: vi.fn().mockResolvedValue(publishedPayload ? { payload_json: JSON.stringify(publishedPayload) } : null), run: vi.fn()
   };
   return { prepare: vi.fn().mockReturnValue(statement) };
 };
+
+const activeMasterPayload = (): Record<string, unknown> => ({
+  version: 'V3.0', file_name: 'pcbi.csv', file_size_mb: 0.2, uploaded_by: 'Admin',
+  worksheets: [],
+  mappings: {
+    PCBI_MASTER: [
+      { excelColumn: 'ID', mappedField: 'pcbi_id' },
+      { excelColumn: 'Name', mappedField: 'benchmark_name' },
+      { excelColumn: 'Unit', mappedField: 'benchmark_unit' },
+      { excelColumn: 'Currency', mappedField: 'currency' },
+      { excelColumn: 'Sector', mappedField: 'sector' },
+      { excelColumn: 'Quality', mappedField: 'quality_rating' },
+      { excelColumn: 'Source', mappedField: 'benchmark_source' }
+    ],
+    WEEKLY_INDEX: [
+      { excelColumn: 'ID', mappedField: 'pcbi_id' },
+      { excelColumn: 'Date', mappedField: 'week_start' },
+      { excelColumn: 'Value', mappedField: 'index_value' }
+    ],
+    CONSTITUENTS: [
+      { excelColumn: 'ID', mappedField: 'pcbi_id' },
+      { excelColumn: 'Name', mappedField: 'constituent_name' },
+      { excelColumn: 'Weight', mappedField: 'weight_percent' }
+    ],
+    UNSPSC_MAPPING: [
+      { excelColumn: 'Code', mappedField: 'unspsc_code' },
+      { excelColumn: 'ID', mappedField: 'pcbi_id' }
+    ]
+  },
+  benchmarks: [{ ID: 'PCBI-STEEL', Name: 'Steel flat', Unit: 'INR/MT', Currency: 'INR', Sector: 'Steel', Quality: 'A', Source: 'D1 Source' }],
+  weeklyIndices: [{ ID: 'PCBI-STEEL', Date: '2026-10-01', Value: '105' }],
+  constituents: [{ ID: 'PCBI-STEEL', Name: 'Iron ore', Weight: 60 }],
+  sources: [],
+  unspscMappings: [{ Code: '30100000', ID: 'PCBI-STEEL' }],
+  validationSummary: {
+    totalRecords: 3, validRecords: 3, warningRecords: 0, errorRecords: 0, blockingErrorCount: 0,
+    warningCount: 0, aQualityCount: 1, bQualityCount: 0, cQualityCount: 0,
+    avgBenchmarkability: 100, dateStart: '2026-10-01', dateEnd: '2026-10-01', issues: []
+  }
+});
 
 const call = (db: CloudflareD1Database | undefined, path: string, query = '', headers = {}):
 ReturnType<typeof handlePcbiRoute> => {
@@ -85,6 +125,30 @@ describe('D1 PCBI reference data', () => {
     expect((await call(database(rows), '/dashboard')).data).toEqual({
       totalCommoditiesTracked: 2, activeAlertsCount: 1, commodities: rows
     });
+  });
+
+  it('serves normalized published D1 master and weekly index rows after version activation', async () => {
+    const payload = activeMasterPayload();
+    const db = database([], payload);
+    const benchmarks = await call(db, '/master/benchmarks', '?sector=Steel');
+    expect(benchmarks.data).toMatchObject([{
+      pcbi_id: 'PCBI-STEEL', benchmark_name: 'Steel flat', benchmark_unit: 'INR/MT',
+      currency: 'INR', sector: 'Steel', active: true, applicable_sectors: ['Steel']
+    }]);
+    expect((await call(db, '/indices/PCBI-STEEL')).data).toMatchObject([{
+      pcbi_id: 'PCBI-STEEL', week_start: '2026-10-01', index_value: 105, unit: 'INR/MT', currency: 'INR'
+    }]);
+    expect((await call(db, '/components', '?pcbi_id=PCBI-STEEL')).data).toMatchObject([{
+      component_name: 'Iron ore', weight_percent: 60, benchmark_unit: 'INR/MT', active: true
+    }]);
+    expect((await call(db, '/unspsc-mapping')).data).toMatchObject([{
+      unspsc_code: '30100000', pcbi_id: 'PCBI-STEEL', active: true
+    }]);
+  });
+
+  it('falls back to seeded reference tables if the stored published payload is corrupt', async () => {
+    const db = database([{ pcbi_id: 'SEEDED', active: 1 }], { version: 'invalid' });
+    expect((await call(db, '/benchmarks')).data).toMatchObject([{ pcbi_id: 'SEEDED', active: true }]);
   });
 
   it('returns a missing endpoint error for unsupported routes', async () => {

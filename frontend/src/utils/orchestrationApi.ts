@@ -16,10 +16,10 @@ import type {
   AdminOrchestrationKPIs,
   OrchestrationNotification,
   AnalysisAuditEvent,
-  PCBIResolutionAction,
-  PCBIExclusionReason,
-  ReanalysisReason
+  CorrectedDatasetUploadPayload
 } from '../types/analysisOrchestration';
+import type { PCBIGapResolutionRequest } from '../types/validation';
+import { pcbiGapResolutionRequestSchema } from '../constants/orchestrationValidation';
 import { apiClient } from './api';
 
 const API_BASE = '/api/orchestration';
@@ -76,18 +76,13 @@ export class OrchestrationApiClient {
   public async resolvePCBIGap(
     jobId: string,
     gapId: string,
-    payload: {
-      action: PCBIResolutionAction;
-      targetPcbiSeries?: string;
-      exclusionReason?: PCBIExclusionReason;
-      exclusionNotes?: string;
-      researchNotes?: string;
-    }
+    payload: PCBIGapResolutionRequest
   ): Promise<{ success: boolean; gap?: PCBIGapCategory; message: string }> {
+    const validatedPayload = pcbiGapResolutionRequestSchema.parse(payload);
     const res = await fetch(`${API_BASE}/jobs/${jobId}/pcbi-gap/${gapId}/resolve`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify(payload)
+      body: JSON.stringify(validatedPayload)
     });
     return res.json();
   }
@@ -98,14 +93,14 @@ export class OrchestrationApiClient {
 
   public async uploadCorrectedDataset(
     jobId: string,
-    payload: {
-      fileName: string;
-      fileBase64?: string;
-      fileSizeMb?: number;
-      reason: ReanalysisReason;
-      notes?: string;
-    }
-  ): Promise<{ success: boolean; newVersion?: DatasetVersion; diff?: DataVersionDiffSummary; message: string }> {
+    payload: CorrectedDatasetUploadPayload
+  ): Promise<{
+    success: boolean;
+    newVersion?: DatasetVersion;
+    diff?: DataVersionDiffSummary;
+    analysisStatus?: 'COMPLETED' | 'PENDING' | 'FAILED';
+    message: string;
+  }> {
     const res = await fetch(`${API_BASE}/jobs/${jobId}/upload-corrected-dataset`, {
       method: 'POST',
       headers: this.getHeaders(),

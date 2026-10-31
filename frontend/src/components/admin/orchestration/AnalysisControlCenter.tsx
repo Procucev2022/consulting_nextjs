@@ -26,8 +26,9 @@ import {
   X,
   Ban
 } from 'lucide-react';
-import { UI_STRINGS } from '../../../constants';
+import { ASSESSMENT_UPLOAD_ACCEPT, ASSESSMENT_UPLOAD_MAX_MB, UI_STRINGS } from '../../../constants';
 import { orchestrationApi } from '../../../utils/orchestrationApi';
+import { prepareCorrectedDatasetFile } from '../../../utils/correctedDatasetFile';
 import { frontendLogger } from '../../../utils/logger';
 import { EvidenceWorkbooksPanel } from './EvidenceWorkbooksPanel';
 import type {
@@ -115,11 +116,12 @@ export function AnalysisControlCenter(): React.ReactElement {
   const [targetSeries, setTargetSeries] = useState('');
   const [exclusionReason, setExclusionReason] = useState<PCBIExclusionReason>('NOT_BENCHMARKABLE');
   const [exclusionNotes, setExclusionNotes] = useState('');
+  const [researchNotes, setResearchNotes] = useState('');
   const [submittingGap, setSubmittingGap] = useState(false);
 
   // Data Correction Modal
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
-  const [correctedFileName, setCorrectedFileName] = useState('');
+  const [correctedDatasetFile, setCorrectedDatasetFile] = useState<File | null>(null);
   const [reanalysisReason, setReanalysisReason] = useState<ReanalysisReason>('INCORRECT_CATEGORY_MAPPING');
   const [reanalysisNotes, setReanalysisNotes] = useState('');
   const [lastDiff, setLastDiff] = useState<DataVersionDiffSummary | null>(null);
@@ -196,7 +198,8 @@ export function AnalysisControlCenter(): React.ReactElement {
         action: resolutionAction,
         targetPcbiSeries: targetSeries || undefined,
         exclusionReason: resolutionAction === 'EXCLUDE' ? exclusionReason : undefined,
-        exclusionNotes: resolutionAction === 'EXCLUDE' ? exclusionNotes : undefined
+        exclusionNotes: resolutionAction === 'EXCLUDE' ? exclusionNotes : undefined,
+        ...(resolutionAction === 'REQUEST_RESEARCH' ? { researchNotes: researchNotes || undefined } : {})
       });
 
       if (res.success) {
@@ -218,12 +221,17 @@ export function AnalysisControlCenter(): React.ReactElement {
   const handleUploadCorrectedData = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!selectedJobId) return;
+    if (!correctedDatasetFile) {
+      setActionError(UI_STRINGS.orchestration.correctedDatasetFileRequired);
+      return;
+    }
 
     try {
       setSubmittingUpload(true);
       setActionError(null);
+      const filePayload = await prepareCorrectedDatasetFile(correctedDatasetFile);
       const res = await orchestrationApi.uploadCorrectedDataset(selectedJobId, {
-        fileName: correctedFileName || UI_STRINGS.orchestration.defaultCorrectedFileName,
+        ...filePayload,
         reason: reanalysisReason,
         notes: reanalysisNotes || undefined
       });
@@ -232,7 +240,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionSuccess(res.message);
         if (res.diff) setLastDiff(res.diff);
         setIsCorrectionModalOpen(false);
-        setCorrectedFileName('');
+        setCorrectedDatasetFile(null);
         setReanalysisNotes('');
         await loadJobWorkspace(selectedJobId);
         await loadData();
@@ -1150,6 +1158,19 @@ export function AnalysisControlCenter(): React.ReactElement {
                 </>
               )}
 
+              {resolutionAction === 'REQUEST_RESEARCH' && (
+                <div>
+                  <label className="block font-bold mb-1">{orchestrationStrings.fieldExplanatoryNotes}</label>
+                  <textarea
+                    value={researchNotes}
+                    onChange={(e) => setResearchNotes(e.target.value)}
+                    rows={3}
+                    placeholder={orchestrationStrings.placeholderResearchNotes}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                </div>
+              )}
+
               {(resolutionAction === 'MAP_EXISTING' || resolutionAction === 'ADD_MAP_PCBI') && (
                 <div>
                   <label className="block font-bold mb-1">{orchestrationStrings.fieldTargetSeriesId}</label>
@@ -1198,14 +1219,15 @@ export function AnalysisControlCenter(): React.ReactElement {
 
             <form onSubmit={handleUploadCorrectedData} className="p-5 space-y-4">
               <div>
-                <label className="block font-bold mb-1">{orchestrationStrings.fieldFileName}</label>
+                <label htmlFor="corrected-dataset-file" className="block font-bold mb-1">{orchestrationStrings.fieldFileName}</label>
                 <input
-                  type="text"
-                  value={correctedFileName}
-                  onChange={(e) => setCorrectedFileName(e.target.value)}
-                  placeholder={orchestrationStrings.placeholderFileName}
-                  className="w-full px-3 py-2 border rounded-lg font-mono"
+                  id="corrected-dataset-file"
+                  type="file"
+                  accept={ASSESSMENT_UPLOAD_ACCEPT}
+                  onChange={(event) => setCorrectedDatasetFile(event.target.files?.[0] ?? null)}
+                  className="w-full px-3 py-2 border rounded-lg"
                 />
+                <p className="mt-1 text-slate-500">{orchestrationStrings.correctedDatasetFileHint(ASSESSMENT_UPLOAD_MAX_MB)}</p>
               </div>
 
               <div>
@@ -1242,7 +1264,7 @@ export function AnalysisControlCenter(): React.ReactElement {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingUpload}
+                  disabled={submittingUpload || !correctedDatasetFile}
                   className="px-4 py-1.5 bg-[#0284C7] text-white font-bold rounded-lg"
                 >
                   {submittingUpload ? orchestrationStrings.uploadingDataset : orchestrationStrings.btnGenerateNewVersion}

@@ -3,7 +3,11 @@
  * Shared API payload types live in ./analysisOrchestration.ts.
  */
 import type { CloudflareD1Database, CloudflareD1PreparedStatement, CloudflareR2Bucket } from './cloudflare';
-import type { AnalysisJobStatus, ReportWorkflowState } from './analysisOrchestration';
+import type {
+  AnalysisJobStatus,
+  ReportWorkflowState
+} from './analysisOrchestration';
+import type { PCBIGapCoverageInput } from './orchestrationPcbi';
 
 export type ActiveReportState = Exclude<ReportWorkflowState, 'SUPERSEDED'>;
 
@@ -75,6 +79,7 @@ export interface OrchestrationRequestContext {
   url: URL;
   database: OrchestrationDatabase;
   objects?: CloudflareR2Bucket;
+  bucketName?: string;
   actor: OrchestrationActor;
   params: Readonly<Record<string, string>>;
   runtime: OrchestrationRuntime;
@@ -136,6 +141,8 @@ export interface DataVersionRow {
   uploaded_at: string;
   record_count: number;
   notes: string | null;
+  parent_data_version_id?: string | null;
+  correction_reason?: string | null;
 }
 
 export interface ProcurementStatsRow {
@@ -291,6 +298,7 @@ export interface ReadinessInput {
   run: RunReadinessInput | null;
   latestVersionId: string | null;
   openCorrectionCount: number;
+  pcbi: PCBIGapCoverageInput;
 }
 
 export interface KpiJobInput {

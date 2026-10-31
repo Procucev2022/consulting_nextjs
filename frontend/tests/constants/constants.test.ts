@@ -14,6 +14,9 @@ describe('Frontend Constants Modules', () => {
       expect(AppConstants.DEFAULT_SAVINGS_TARGET_PCT).toBe(16.4);
       expect(AppConstants.DEFAULT_SAAS_FEE_RATE).toBe(0.85);
       expect(AppConstants.DEFAULT_TENANT_ENTERPRISE_NAME).toBe('Enterprise Client');
+      expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT).toBe('/api/reports/executive-brief/opportunity-brief/report');
+      expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_REQUEST_ID_HEADER).toBe('x-request-id');
+      expect(AppConstants.EXECUTIVE_BRIEF_ATTACHMENT_FILENAME_PATTERN.exec('attachment; filename="brief.pdf"')?.[1]).toBe('brief.pdf');
       expect(AppConstants.AICEV_LOGO_SRC).toBe('/images/aicev-logo.png');
       expect(AppConstants.AICEV_LOGO_WHITE_SRC).toBe('/images/aicev-logo-white.png');
     });

@@ -81,6 +81,10 @@ export const VENDOR_CONSOLIDATION_UI_CONFIG = {
   DEFAULT_PO_LINE: '1',
   MAPPING_QUEUE_ROW_LIMIT: 50,
   MAPPING_UPDATE_ENDPOINT: '/api/module2/sourcing/vendor-consolidation/mappings/update',
+  MAPPING_BULK_UPDATE_ENDPOINT: '/api/module2/sourcing/vendor-consolidation/mappings/bulk-update',
+  MAPPING_BULK_LIMIT: 100,
   MAPPING_APPROVAL_STATUS: 'CLIENT_APPROVED',
-  MAPPING_APPROVAL_AUDIT_NOTE: 'Client approved during manual engineering review session'
+  MAPPING_APPROVAL_AUDIT_NOTE: 'Client approved during manual engineering review session',
+  MANUAL_REASSIGN_AUDIT_NOTE: 'Taxonomy selected by an authenticated analyst in the Module 2 mapping review.',
+  PROVISIONAL_AI_AUDIT_NOTE: 'Automated taxonomy suggestion; analyst review and approval are required.'
 } as const;

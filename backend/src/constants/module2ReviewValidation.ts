@@ -20,9 +20,23 @@ export const materialMappingUpdateSchema = z.object({
   assessmentId: z.string().trim().min(1).max(120),
   sourceMaterialId: z.string().trim().min(1).max(120),
   unspscCode: z.string().trim().regex(/^\d{8}$/),
-  reviewStatus: z.enum(['CLIENT_APPROVED', 'TAXONOMY_VERIFIED']),
+  reviewStatus: z.enum(['PROVISIONAL', 'CLIENT_APPROVED', 'TAXONOMY_VERIFIED']),
+  confidenceScore: z.number().finite().min(0).max(1).optional(),
+  mappingMethod: z.enum([
+    'EXACT_IDENTIFIER', 'MATERIAL_DESCRIPTION_MATCH', 'SPECIFICATION_OR_SYNONYM',
+    'CONTEXTUAL_HEURISTIC', 'MANUAL_REVIEW_REQUIRED'
+  ]).optional(),
   reviewedBy: z.string().trim().min(1).max(120).optional(),
   auditNotes: z.string().trim().max(1000).optional()
+});
+
+export const materialMappingBulkUpdateSchema = z.object({
+  assessmentId: z.string().trim().min(1).max(120),
+  mappings: z.array(materialMappingUpdateSchema.omit({ assessmentId: true, reviewedBy: true }))
+    .min(1).max(100)
+    .refine((mappings) => new Set(mappings.map((mapping) => mapping.sourceMaterialId)).size === mappings.length, {
+      message: 'Each source material can appear only once in a bulk mapping update.'
+    })
 });
 
 export const materialMappingRecordSchema = z.object({
@@ -43,6 +57,7 @@ export const materialMappingRecordSchema = z.object({
   confidenceScore: z.number().min(0).max(1),
   evidence: z.string(),
   reviewStatus: z.enum(['TAXONOMY_VERIFIED', 'PROVISIONAL', 'AWAITING_REVIEW', 'CLIENT_APPROVED', 'APPROVED']),
+  coreBucket: z.string().trim().max(80).optional(),
   mappingDate: z.string(),
   totalSpendInr: z.number().nonnegative(),
   totalSpendCr: z.number().nonnegative(),

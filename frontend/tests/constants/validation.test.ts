@@ -15,6 +15,8 @@ import {
   apiUpdateValidationRecordPayloadSchema,
   apiMergeVendorPayloadSchema,
   apiDeployOpportunityPayloadSchema,
+  apiUpdateModule2MaterialMappingPayloadSchema,
+  apiBulkUpdateModule2MaterialMappingsPayloadSchema,
   apiCalculateConversionPayloadSchema,
   registerFormSchema,
   loginFormSchema,
@@ -23,10 +25,58 @@ import {
   changePasswordFormSchema,
   pcbiBenchmarkResponseSchema,
   pcbiWeeklyIndexResponseSchema,
-  procurementCategoryMappingsResponseSchema
+  procurementCategoryMappingsResponseSchema,
+  executiveOpportunityBriefResponseSchema
 } from '../../src/constants/validation';
+import { pcbiGapResolutionRequestSchema } from '../../src/constants/orchestrationValidation';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
+  it('validates D1-backed executive opportunity brief report payloads', () => {
+    const valid = {
+      success: true,
+      data: {
+        tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+        generatedAt: '2026-10-30T00:00:00.000Z',
+        scopeDescription: 'D1 report scope',
+        metrics: {
+          transactionCount: 1, totalSpendCr: 2, supplierCount: 1, materialCount: 1, plantCount: 1,
+          purchaseOrderCount: 1, firstTransactionDate: null, lastTransactionDate: null,
+          opportunityCount: 0, estimatedSavingsCr: 0, averageConfidence: 0
+        },
+        opportunities: [], levers: [], statuses: [], risks: []
+      }
+    };
+    expect(executiveOpportunityBriefResponseSchema.safeParse(valid).success).toBe(true);
+    expect(executiveOpportunityBriefResponseSchema.safeParse({ ...valid, success: false }).success).toBe(false);
+    expect(executiveOpportunityBriefResponseSchema.safeParse({
+      ...valid,
+      data: { ...valid.data, metrics: { ...valid.data.metrics, totalSpendCr: '2' } }
+    }).success).toBe(false);
+  });
+
+  it('validates mapped, excluded, research, and classification-only PCBI resolutions', () => {
+    const validRequests = [
+      { action: 'MAP_EXISTING', targetPcbiSeries: 'PCBI-1' },
+      { action: 'ADD_MAP_PCBI', targetPcbiSeries: 'PCBI-1' },
+      { action: 'EXCLUDE', exclusionReason: 'OTHER', exclusionNotes: 'No reliable benchmark data' },
+      { action: 'MARK_NOT_BENCHMARKABLE' },
+      { action: 'MARK_SERVICE' },
+      { action: 'REQUEST_RESEARCH', researchNotes: 'Confirm local benchmark series' }
+    ];
+    for (const request of validRequests) expect(pcbiGapResolutionRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it('rejects incomplete PCBI mapping or exclusions, unsupported actions, and oversized notes', () => {
+    const invalidRequests = [
+      { action: 'MAP_EXISTING' },
+      { action: 'EXCLUDE' },
+      { action: 'EXCLUDE', exclusionReason: 'OTHER' },
+      { action: 'REQUEST_RESEARCH', researchNotes: 'x'.repeat(2001) },
+      { action: 'UNKNOWN' }
+    ];
+    for (const request of invalidRequests) expect(pcbiGapResolutionRequestSchema.safeParse(request).success).toBe(false);
+  });
+
   it('validates persisted PCBI benchmark and weekly index API records', () => {
     expect(pcbiBenchmarkResponseSchema.safeParse([{
       pcbi_id: 'PCBI-TEST', benchmark_name: 'Benchmark', benchmark_unit: 'MT', currency: 'INR'
@@ -53,6 +103,20 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
       success: true,
       data: { mappings: {}, categories: [''] }
     }).success).toBe(false);
+  });
+
+  it('validates authenticated D1 material mapping updates and bounded bulk suggestions', () => {
+    const mapping = {
+      sourceMaterialId: 'MAT-1', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' as const,
+      confidenceScore: 0.87, mappingMethod: 'CONTEXTUAL_HEURISTIC' as const
+    };
+    expect(apiUpdateModule2MaterialMappingPayloadSchema.safeParse({ assessmentId: 'ASM-1', ...mapping }).success).toBe(true);
+    expect(apiUpdateModule2MaterialMappingPayloadSchema.safeParse({ assessmentId: 'ASM-1', ...mapping, unspscCode: 'bad' }).success).toBe(false);
+    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: [mapping] }).success).toBe(true);
+    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: [] }).success).toBe(false);
+    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: [mapping, mapping] }).success).toBe(false);
+    const oversized = Array.from({ length: 101 }, (_, index) => ({ ...mapping, sourceMaterialId: `MAT-${index}` }));
+    expect(apiBulkUpdateModule2MaterialMappingsPayloadSchema.safeParse({ assessmentId: 'ASM-1', mappings: oversized }).success).toBe(false);
   });
 
   describe('headerTenantSchema', () => {

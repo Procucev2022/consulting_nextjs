@@ -10,6 +10,12 @@ const expectTextWithFragments = (text: string, fragments: string[]): void => {
 
 const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module4.actionPlan.activeCount', () => UI_STRINGS.module4.actionPlan.activeCount(3), ['3', 'action plans']],
+  ['module2.taxonomySuggestionsSaved', () => UI_STRINGS.toasts.taxonomySuggestionsSaved(4), ['4', 'D1', 'provisional']],
+  ['module2.mappingFailed', () => UI_STRINGS.toasts.module2MappingFailed('HTTP 403'), ['HTTP 403', 'retry']],
+  ['pcbiCommodityDataLab.evidenceFileReadFailed', () => UI_STRINGS.pcbiCommodityDataLab.evidenceFileReadFailed, ['file', 'retry', 'upload']],
+  ['pcbiCommodityDataLab.uploadWorkflow.savedObservationCount', () => UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.savedObservationCount(3), ['3', 'D1']],
+  ['pcbiCommodityDataLab.uploadWorkflow.verifiedObservationCount', () => UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.verifiedObservationCount(4), ['4']],
+  ['pcbiCommodityDataLab.uploadWorkflow.observationReviewCount', () => UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.observationReviewCount(2), ['2']],
   ['taxonomyData.loadFailed', () => UI_STRINGS.taxonomyData.loadFailed('catalog offline', 'req-7'), ['catalog offline', 'req-7']],
   ['taxonomyData.httpFailure', () => UI_STRINGS.taxonomyData.httpFailure(503), ['503']],
   ['common.croreAmount', () => UI_STRINGS.common.croreAmount('1,234.50'), ['1,234.50']],
@@ -173,6 +179,10 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['toasts.blanketFixesApplied (singular)', () => UI_STRINGS.toasts.blanketFixesApplied(1), ['1 validation record']],
   ['toasts.blanketFixesApplied (plural)', () => UI_STRINGS.toasts.blanketFixesApplied(2), ['2 validation records']],
   ['toasts.batchUploadSpend', () => UI_STRINGS.toasts.batchUploadSpend('data.xlsx', 12.5, 850), ['data.xlsx', '12.50', '850']],
+  ['toasts.batchUploadAssessmentSaved', () => UI_STRINGS.toasts.batchUploadAssessmentSaved('data.xlsx', 'DV-8'), ['data.xlsx', 'DV-8']],
+  ['toasts.batchUploadAssessmentUnsupported', () => UI_STRINGS.toasts.batchUploadAssessmentUnsupported('data.pdf'), ['data.pdf']],
+  ['toasts.batchUploadPendingExtraction', () => UI_STRINGS.toasts.batchUploadPendingExtraction('data.pdf'), ['data.pdf', 'pending extraction']],
+  ['toasts.batchUploadFailed', () => UI_STRINGS.toasts.batchUploadFailed('data.xlsx', 'D1 unavailable'), ['data.xlsx', 'D1 unavailable']],
   ['toasts.unspscConfirmed', () => UI_STRINGS.toasts.unspscConfirmed('MAP-3'), ['MAP-3']],
   ['toasts.taxonomyReassigned', () => UI_STRINGS.toasts.taxonomyReassigned('24101500', 'Direct'), ['24101500', 'Direct']],
   ['toasts.clientConfigUpdated', () => UI_STRINGS.toasts.clientConfigUpdated('Acme'), ['Acme']],
@@ -233,6 +243,16 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['opportunityBrief.slidePage', () => UI_STRINGS.opportunityBrief.slidePage(2, 5), ['2', '5']],
   ['opportunityBrief.downloadFailed', () => UI_STRINGS.opportunityBrief.downloadFailed('PDF', 500, 'req-9'), ['PDF', '500', 'req-9']],
   ['opportunityBrief.downloadNetworkFailed', () => UI_STRINGS.opportunityBrief.downloadNetworkFailed('PDF'), ['PDF']],
+  ['opportunityBrief.downloadFilename', () => UI_STRINGS.opportunityBrief.downloadFilename('pdf'), ['pdf']],
+  ['opportunityBrief.reportUnavailable', () => UI_STRINGS.opportunityBrief.reportUnavailable(503, 'req-10'), ['503', 'req-10']],
+  ['opportunityBrief.currencyCr', () => UI_STRINGS.opportunityBrief.currencyCr(12.5), ['12.5']],
+  ['opportunityBrief.countValue', () => UI_STRINGS.opportunityBrief.countValue(1200), ['1,200']],
+  ['opportunityBrief.confidenceValue', () => UI_STRINGS.opportunityBrief.confidenceValue(0.8), ['80']],
+  ['opportunityBrief.opportunityTitle', () => UI_STRINGS.opportunityBrief.opportunityTitle('Packaging', 'Sourcing'), ['Packaging', 'Sourcing']],
+  ['opportunityBrief.opportunityDetails', () => UI_STRINGS.opportunityBrief.opportunityDetails(1.2, 'Identified', 'Medium'), ['1.2', 'Identified', 'Medium']],
+  ['opportunityBrief.leverSummary', () => UI_STRINGS.opportunityBrief.leverSummary(2, 1.2), ['2', '1.2']],
+  ['opportunityBrief.riskSummary', () => UI_STRINGS.opportunityBrief.riskSummary(3, 4.5), ['3', '4.5']],
+  ['opportunityBrief.unknownSlide', () => UI_STRINGS.opportunityBrief.unknownSlide(99), ['99']],
 
   ['orchestration.elapsedHoursOfSla', () => UI_STRINGS.orchestration.elapsedHoursOfSla(30, 48), ['30', '48']],
   ['orchestration.excludedReason', () => UI_STRINGS.orchestration.excludedReason('Duplicate'), ['Duplicate']],
@@ -375,6 +395,18 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
 describe('UI_STRINGS template formatters', () => {
   it.each(FORMATTER_CASES)('%s renders its runtime parameters', (_path, render, fragments) => {
     expectTextWithFragments(render(), fragments);
+  });
+});
+
+describe('PCBI upload workflow UI_STRINGS', () => {
+  it('centralizes source staging and D1 review fallback text', () => {
+    const strings = UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow;
+    expect(strings.sourceMetadataRequired).toContain('publisher');
+    expect(strings.sourceApprovalRequiresStagedEvidence).toContain('validate');
+    expect(strings.sourceRowsNeedReview).toContain('review');
+    expect(strings.dateCoverageUnavailable).toContain('D1');
+    expect(strings.noObservationsAvailable).toContain('observations');
+    expect(strings.checksumUnavailable).toContain('available');
   });
 });
 

@@ -4,12 +4,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CommodityPCBIUploadWorkflowModal } from '../../../src/components/admin/pcbi/CommodityPCBIUploadWorkflowModal';
 import { pcbiCommodityDataLabApi } from '../../../src/utils/pcbiCommodityDataLabApi';
 import type { CommodityResearchQueueRow } from '../../../src/types/pcbiCommodityDataLab';
+import { UI_STRINGS } from '../../../src/constants/uiStrings';
 
 vi.mock('../../../src/utils/pcbiCommodityDataLabApi', () => ({
   pcbiCommodityDataLabApi: {
-    approveCommodityData: vi.fn()
+    approveCommodityData: vi.fn(),
+    uploadCommoditySource: vi.fn(),
+    getCommodityWorkspace: vi.fn()
   }
 }));
+vi.mock('../../../src/utils/pcbiSourceFile', () => ({ encodePCBIFileBase64: vi.fn().mockResolvedValue('c291cmNl') }));
 
 describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
   const mockCommodity: CommodityResearchQueueRow = {
@@ -30,6 +34,8 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
     sourceStatus: 'SOURCE_UNVERIFIED',
     methodologyStatus: 'METHODOLOGY_PENDING',
     priority: 'P1',
+    priorityScore: 100,
+    priorityReason: 'RANKED_BY_CUSTOMER_SPEND',
     researchStatus: 'IN_PROGRESS',
     lastUpdated: '2026-09-28',
     action: 'OPEN WORKSPACE'
@@ -101,7 +107,7 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
     expect(screen.getByText(/Step 3 — Upload Source File/i)).toBeInTheDocument();
   });
 
-  it('navigates to Step 7 and confirms zero production writes notice', () => {
+  it('requires an actual evidence file and provenance before extraction can continue', async () => {
     render(
       <CommodityPCBIUploadWorkflowModal
         isOpen={true}
@@ -110,13 +116,13 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
       />
     );
 
-    // Step from 1 to 7
-    for (let targetStep = 2; targetStep <= 7; targetStep++) {
+    // Reach the source staging step without supplying a mock file.
+    for (let targetStep = 2; targetStep <= 4; targetStep++) {
       fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
     }
-
-    expect(screen.getByText('Step 7 of 10')).toBeInTheDocument();
-    expect(screen.getByText(/Step 7 — PCBI Standardization Preview/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    expect(await screen.findByText(UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.evidenceFileRequired)).toBeInTheDocument();
+    expect(screen.getByText('Step 4 of 10')).toBeInTheDocument();
   });
 
   it('reaches Step 9 and allows selecting approval actions, then executes activation on Step 10', async () => {
@@ -145,8 +151,30 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
       />
     );
 
-    // Step from 1 to 9
-    for (let targetStep = 2; targetStep <= 9; targetStep++) {
+    vi.mocked(pcbiCommodityDataLabApi.uploadCommoditySource).mockResolvedValueOnce({
+      success: true,
+      source: { sourceId: 'SRC-1', documentName: 'source.csv', extractionStatus: 'EXTRACTED', validationStatus: 'VALIDATED', checksum: 'abc', extractedObservationsCount: 1 } as any,
+      banner: 'SOURCE_STAGED', message: 'Staged'
+    });
+    vi.mocked(pcbiCommodityDataLabApi.getCommodityWorkspace).mockResolvedValueOnce({
+      success: true,
+      workspace: { validationSummary: { validObservations: 1, criticalErrorsCount: 0 }, overview: { availableHistory: '2026-10-01' }, extractedObservations: [], methodologyDetails: { status: 'PENDING' } } as any
+    });
+
+    // Navigate through a staged source.
+    for (let targetStep = 2; targetStep <= 3; targetStep++) {
+      fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    }
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['week_start,index_value\n2026-10-01,105'], 'source.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    const sourceInputs = screen.getAllByRole('textbox');
+    fireEvent.change(sourceInputs[0], { target: { value: 'Steel index' } });
+    fireEvent.change(sourceInputs[1], { target: { value: 'Market publisher' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    await screen.findByText('Step 5 of 10');
+    for (let targetStep = 6; targetStep <= 9; targetStep++) {
       fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
     }
 
@@ -201,10 +229,26 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
       />
     );
 
-    // Advance to step 10
-    for (let targetStep = 2; targetStep <= 10; targetStep++) {
-      fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
-    }
+    vi.mocked(pcbiCommodityDataLabApi.uploadCommoditySource).mockResolvedValueOnce({
+      success: true,
+      source: { sourceId: 'SRC-2', documentName: 'source.csv', extractionStatus: 'EXTRACTED', validationStatus: 'VALIDATED', checksum: 'abc', extractedObservationsCount: 1 } as any,
+      banner: 'SOURCE_STAGED', message: 'Staged'
+    });
+    vi.mocked(pcbiCommodityDataLabApi.getCommodityWorkspace).mockResolvedValueOnce({
+      success: true,
+      workspace: { validationSummary: { validObservations: 1, criticalErrorsCount: 0 }, overview: { availableHistory: '2026-10-01' }, extractedObservations: [], methodologyDetails: { status: 'PENDING' } } as any
+    });
+    for (let targetStep = 2; targetStep <= 3; targetStep++) fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['source'], 'source.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    const sourceInputs = screen.getAllByRole('textbox');
+    fireEvent.change(sourceInputs[0], { target: { value: 'Source name' } });
+    fireEvent.change(sourceInputs[1], { target: { value: 'Publisher' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    await screen.findByText('Step 5 of 10');
+    for (let targetStep = 6; targetStep <= 10; targetStep++) fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
 
     expect(screen.getByText('Step 10 of 10')).toBeInTheDocument();
 
@@ -231,11 +275,11 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it('handles file selection on Step 3 and editing source metadata on Step 4 and 9', () => {
+  it('handles file selection and source provenance before allowing later review steps', async () => {
     render(
       <CommodityPCBIUploadWorkflowModal
         isOpen={true}
-        initialCommodity={null}
+        initialCommodity={mockCommodity}
         onClose={vi.fn()}
       />
     );
@@ -264,8 +308,19 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
     const comboboxes = screen.getAllByRole('combobox');
     fireEvent.change(comboboxes[0], { target: { value: 'CSV' } });
 
+    vi.mocked(pcbiCommodityDataLabApi.uploadCommoditySource).mockResolvedValueOnce({
+      success: true,
+      source: { sourceId: 'SRC-3', documentName: 'source_data.csv', extractionStatus: 'EXTRACTED', validationStatus: 'VALIDATED', checksum: 'abc', extractedObservationsCount: 1 } as any,
+      banner: 'SOURCE_STAGED', message: 'Staged'
+    });
+    vi.mocked(pcbiCommodityDataLabApi.getCommodityWorkspace).mockResolvedValueOnce({
+      success: true,
+      workspace: { validationSummary: { validObservations: 1, criticalErrorsCount: 0 }, overview: { availableHistory: '2026-10-01' }, extractedObservations: [], methodologyDetails: { status: 'PENDING' } } as any
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    await screen.findByText('Step 5 of 10');
     // Step to Step 9
-    for (let s = 5; s <= 9; s++) {
+    for (let s = 6; s <= 9; s++) {
       fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
     }
     expect(screen.getByText('Step 9 of 10')).toBeInTheDocument();
@@ -274,6 +329,175 @@ describe('CommodityPCBIUploadWorkflowModal (Part E)', () => {
     const commentInput = screen.getByPlaceholderText(/Provide formal administrative audit reasoning/i);
     fireEvent.change(commentInput, { target: { value: 'Verified against secondary metallurgical gazette.' } });
     expect(commentInput).toHaveValue('Verified against secondary metallurgical gazette.');
+  });
+
+  it('shows D1 field fallbacks throughout review and allows activation without a returned version id', async () => {
+    const handleClose = vi.fn();
+    const handleComplete = vi.fn();
+    vi.mocked(pcbiCommodityDataLabApi.uploadCommoditySource).mockResolvedValueOnce({
+      success: true,
+      source: {} as any,
+      banner: 'SOURCE_STAGED',
+      message: 'Staged'
+    } as any);
+    vi.mocked(pcbiCommodityDataLabApi.getCommodityWorkspace).mockResolvedValueOnce({
+      success: true,
+      workspace: undefined
+    } as any);
+    vi.mocked(pcbiCommodityDataLabApi.approveCommodityData).mockResolvedValueOnce({
+      success: true,
+      result: {}
+    } as any);
+
+    render(
+      <CommodityPCBIUploadWorkflowModal
+        isOpen={true}
+        initialCommodity={mockCommodity}
+        onClose={handleClose}
+        onComplete={handleComplete}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['source'], 'fallback.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    const sourceInputs = screen.getAllByRole('textbox');
+    fireEvent.change(sourceInputs[0], { target: { value: 'Source name' } });
+    fireEvent.change(sourceInputs[1], { target: { value: 'Publisher' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+    expect(await screen.findByText('Step 5 of 10')).toBeInTheDocument();
+    const workflowStrings = UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow;
+    expect(screen.getByText(workflowStrings.noStagedSource)).toBeInTheDocument();
+    expect(screen.getByText(`${workflowStrings.extractionStatusLabel} ${workflowStrings.pendingExtractionStatus}`)).toBeInTheDocument();
+    expect(screen.getByText(workflowStrings.savedObservationCount(0))).toBeInTheDocument();
+    expect(screen.getByText(workflowStrings.sourceRowsNeedReview)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    expect(screen.getByText(workflowStrings.sourceValidationLabel)).toBeInTheDocument();
+    expect(screen.getByText(workflowStrings.pendingSourceValidationStatus)).toBeInTheDocument();
+    expect(screen.getByText(workflowStrings.verifiedObservationsLabel)).toBeInTheDocument();
+    expect(screen.getAllByText(workflowStrings.verifiedObservationCount(0))).toHaveLength(2);
+    expect(screen.getByText(workflowStrings.observationsNeedingReviewLabel)).toBeInTheDocument();
+    expect(screen.getAllByText(workflowStrings.observationReviewCount(0))).toHaveLength(2);
+    expect(screen.getByText(workflowStrings.dateCoverageLabel)).toBeInTheDocument();
+    expect(screen.getByText(workflowStrings.dateCoverageUnavailable)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    expect(screen.getByText(workflowStrings.noObservationsAvailable)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    expect(screen.getByText((_, element) =>
+      element?.tagName === 'P' && element.textContent === `${workflowStrings.sourceIdentityCheckLabel} ${workflowStrings.sourceIdentityCheckNotRun}`
+    )).toBeInTheDocument();
+    expect(screen.getByText((_, element) =>
+      element?.tagName === 'P' && element.textContent === `${workflowStrings.methodologyReviewLabel} ${workflowStrings.pendingMethodologyReview}`
+    )).toBeInTheDocument();
+    expect(screen.getByText((_, element) =>
+      element?.tagName === 'P' && element.textContent === `${workflowStrings.checksumLabel} ${workflowStrings.checksumUnavailable}`
+    )).toBeInTheDocument();
+
+    for (let step = 9; step <= 10; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Execute Activation' }));
+
+    await waitFor(() => {
+      expect(handleComplete).toHaveBeenCalledWith({
+        commodityId: 'COM-MET-FMO',
+        pcbiId: 'PCBI-FEMO-65-001',
+        versionId: ''
+      });
+      expect(handleClose).toHaveBeenCalled();
+    });
+  });
+
+  it('does not stage a file until both source name and publisher are provided', async () => {
+    render(
+      <CommodityPCBIUploadWorkflowModal
+        isOpen={true}
+        initialCommodity={mockCommodity}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['source'], 'metadata.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Source name' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+    expect(await screen.findByText(UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceMetadataRequired)).toBeInTheDocument();
+    expect(pcbiCommodityDataLabApi.uploadCommoditySource).not.toHaveBeenCalled();
+  });
+
+  it('shows a non-Error staging rejection and keeps the workflow at source identification', async () => {
+    vi.mocked(pcbiCommodityDataLabApi.uploadCommoditySource).mockRejectedValueOnce('D1 rejected the source upload');
+    render(
+      <CommodityPCBIUploadWorkflowModal
+        isOpen={true}
+        initialCommodity={mockCommodity}
+        onClose={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['source'], 'failed.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    const sourceInputs = screen.getAllByRole('textbox');
+    fireEvent.change(sourceInputs[0], { target: { value: 'Source name' } });
+    fireEvent.change(sourceInputs[1], { target: { value: 'Publisher' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+    expect(await screen.findByText('D1 rejected the source upload')).toBeInTheDocument();
+    expect(screen.getByText('Step 4 of 10')).toBeInTheDocument();
+  });
+
+  it('blocks activation when a successful D1 upload response omits its staged source', async () => {
+    vi.mocked(pcbiCommodityDataLabApi.uploadCommoditySource).mockResolvedValueOnce({
+      success: true,
+      source: undefined
+    } as any);
+    vi.mocked(pcbiCommodityDataLabApi.getCommodityWorkspace).mockResolvedValueOnce({
+      success: true,
+      workspace: undefined
+    } as any);
+    const handleClose = vi.fn();
+    render(
+      <CommodityPCBIUploadWorkflowModal
+        isOpen={true}
+        initialCommodity={mockCommodity}
+        onClose={handleClose}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['source'], 'missing-source.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    const sourceInputs = screen.getAllByRole('textbox');
+    fireEvent.change(sourceInputs[0], { target: { value: 'Source name' } });
+    fireEvent.change(sourceInputs[1], { target: { value: 'Publisher' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    expect(await screen.findByText('Step 5 of 10')).toBeInTheDocument();
+    for (let step = 6; step <= 10; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Execute Activation' }));
+
+    expect(await screen.findByText(UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceApprovalRequiresStagedEvidence)).toBeInTheDocument();
+    expect(pcbiCommodityDataLabApi.approveCommodityData).not.toHaveBeenCalled();
+    expect(handleClose).not.toHaveBeenCalled();
   });
 });
 

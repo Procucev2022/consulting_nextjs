@@ -1,211 +1,147 @@
 'use client';
 
 import React from 'react';
-import { EXECUTIVE_BRIEF_PRESENTATION_CONTRACT } from '@/constants/executiveBriefPresentationConstants';
 import { UI_STRINGS } from '@/constants/uiStrings';
+import type { ExecutiveOpportunityBriefSlideContentProps } from '@/types';
 
-export const ExecutiveOpportunityBriefSlideContent: React.FC<{ currentSlide: number }> = ({
-  currentSlide
+export const ExecutiveOpportunityBriefSlideContent: React.FC<ExecutiveOpportunityBriefSlideContentProps> = ({
+  currentSlide,
+  report
 }): React.ReactElement => {
-  const contract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;
   const strings = UI_STRINGS.opportunityBrief;
+  const labels = strings.metricLabels;
+  const metricItems = [
+    [labels.baselineSpend, strings.currencyCr(report.metrics.totalSpendCr)],
+    [labels.estimatedSavings, strings.currencyCr(report.metrics.estimatedSavingsCr)],
+    [labels.opportunityCount, strings.countValue(report.metrics.opportunityCount)],
+    [labels.transactionCount, strings.countValue(report.metrics.transactionCount)],
+    [labels.supplierCount, strings.countValue(report.metrics.supplierCount)],
+    [labels.materialCount, strings.countValue(report.metrics.materialCount)],
+    [labels.plantCount, strings.countValue(report.metrics.plantCount)],
+    [labels.purchaseOrderCount, strings.countValue(report.metrics.purchaseOrderCount)]
+  ];
 
   switch (currentSlide) {
     case 1:
       return (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div className="p-6 bg-emerald-50/50 border border-emerald-300 rounded-xl">
-              <span className="text-xs font-semibold text-emerald-800 uppercase">{strings.primaryValueThesis}</span>
-              <div className="text-4xl font-extrabold text-emerald-800 mt-2">
-                Rs. {contract.netDirectSavingsCr.toFixed(2)} Cr
-              </div>
-              <div className="text-lg font-bold text-[#0B1B33] mt-1">{strings.directSavingsOpportunity}</div>
-              <p className="text-xs text-[#475569] mt-3 leading-relaxed">
-                Defensible P&L cost reduction across rate harmonization, volume pooling, and strategic tenders.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-testid="brief-slide-summary">
+          {metricItems.slice(0, 4).map(([label, value]) => (
+            <div key={label} className="rounded-xl border border-[#DCE7F5] bg-[#F8FBFE] p-5">
+              <div className="text-xs font-bold uppercase tracking-wide text-[#64748B]">{label}</div>
+              <div className="mt-2 text-2xl font-extrabold text-[#0B1B33]">{value}</div>
             </div>
-            <div className="space-y-2">
-              <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">
-                <div className="text-xs text-[#64748B] font-bold">{strings.netDefensiblePipeline}</div>
-                <div className="text-lg font-bold text-[#0284C7]">Rs. {contract.netDefensiblePipelineCr.toFixed(2)} Cr</div>
-              </div>
-              <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">
-                <div className="text-xs text-[#64748B] font-bold">{strings.strategicMarketValue}</div>
-                <div className="text-lg font-bold text-[#0284C7]">Rs. {contract.strategicMarketValueCr.toFixed(2)} Cr</div>
-              </div>
-              <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">
-                <div className="text-xs text-[#64748B] font-bold">{strings.spendEvaluated}</div>
-                <div className="text-lg font-bold text-[#0B1B33]">
-                  Rs. {contract.totalCustomerSpendCr.toLocaleString('en-IN', { minimumFractionDigits: 2 })} Cr
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       );
     case 2:
       return (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[
-              { l: 'Concentration', v: '81.4%', s: 'Top 10% vendors' },
-              { l: 'Price Spread', v: '18.5%', s: 'Inter-plant variance' },
-              { l: 'Spot Purchases', v: '42.6%', s: 'Non-contracted' },
-              { l: 'Tail Vendors', v: '912', s: '4.8% spend drag' },
-              { l: 'Pipeline', v: `Rs. ${contract.netDefensiblePipelineCr.toFixed(2)} Cr`, s: 'Net value' }
-            ].map((c) => (
-              <div key={c.l} className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-center">
-                <div className="text-xs text-[#64748B]">{c.l}</div>
-                <div className="text-xl font-bold text-[#0B1B33] my-1">{c.v}</div>
-                <div className="text-[10px] text-[#64748B]">{c.s}</div>
-              </div>
-            ))}
-          </div>
-          <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-[#0B1B33]">
-            Value is concentrated in price harmonization, supplier consolidation, strategic sourcing and benchmark-led market alignment.
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3" data-testid="brief-slide-baseline">
+          {metricItems.slice(0, 1).concat(metricItems.slice(3)).map(([label, value]) => (
+            <div key={label} className="rounded-xl border border-[#DCE7F5] bg-[#F8FBFE] p-4 text-center">
+              <div className="text-xs text-[#64748B]">{label}</div>
+              <div className="mt-1 text-lg font-bold text-[#0B1B33]">{value}</div>
+            </div>
+          ))}
         </div>
       );
     case 3:
+    case 7:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="flex justify-between font-bold text-[#0B1B33] pb-1 border-b border-[#DCE7F5]">
-            <span className="uppercase">{strings.whereConcentrated}</span>
-            <span className="text-[#0284C7] font-bold">
-              Rs. {contract.grossOpportunityCr.toFixed(2)} Cr {strings.grossIdentifiedOpp.toUpperCase()}
-            </span>
-          </div>
-          <p className="text-[#475569] leading-relaxed">{strings.grossCalloutSubtitle}</p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 pt-2">
-            {[
-              { n: 'Direct Price', v: '42.80' },
-              { n: 'E-Auction', v: '31.50' },
-              { n: 'Consolidation', v: '26.40' },
-              { n: 'Aggregation', v: '22.10' },
-              { n: 'Payment Terms', v: '14.20' }
-            ].map((lev) => (
-              <div key={lev.n} className="p-2 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-center">
-                <div className="text-[#64748B] text-[11px]">{lev.n}</div>
-                <div className="text-sm font-bold text-[#0284C7]">Rs. {lev.v} Cr</div>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-3" data-testid={currentSlide === 3 ? 'brief-slide-opportunities' : 'brief-slide-actions'}>
+          {report.opportunities.length === 0 ? (
+            <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">{strings.noRecords}</p>
+          ) : report.opportunities.map((opportunity) => (
+            <article key={opportunity.id} className="rounded-xl border border-[#DCE7F5] bg-white p-4">
+              <h3 className="font-bold text-[#0B1B33]">
+                {strings.opportunityTitle(opportunity.category, opportunity.title)}
+              </h3>
+              <p className="mt-1 text-xs text-[#475569]">
+                {strings.opportunityDetails(opportunity.estimatedSavingsCr, opportunity.status, opportunity.riskLevel)}
+              </p>
+              {currentSlide === 7 && (
+                <p className="mt-3 text-sm text-[#334155]">
+                  <strong>{strings.recommendedAction}: </strong>{opportunity.recommendedAction}
+                </p>
+              )}
+            </article>
+          ))}
         </div>
       );
     case 4:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="font-bold text-sm text-[#0B1B33] uppercase tracking-wide">{strings.valueBridgeTitle}</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-emerald-50/50 border border-emerald-300 rounded-xl">
-              <div className="text-emerald-800 font-bold text-sm">DIRECT SAVINGS OPPORTUNITY (P&L EBITDA EXPANSION)</div>
-              <div className="text-2xl font-extrabold text-emerald-800 mt-1">Rs. {contract.netDirectSavingsCr.toFixed(2)} Cr</div>
-              <div className="text-[#475569] mt-2">6 Defensible Core Levers (Wave 1 Validated)</div>
+        <div className="space-y-3" data-testid="brief-slide-levers">
+          {report.levers.length === 0 ? <p>{strings.noRecords}</p> : report.levers.map((item) => (
+            <div key={item.label} className="flex items-center justify-between rounded-lg border border-[#DCE7F5] p-3">
+              <span className="font-semibold text-[#0B1B33]">{item.label}</span>
+              <span className="text-sm text-[#475569]">{strings.leverSummary(item.count, item.estimatedSavingsCr)}</span>
             </div>
-            <div className="p-4 bg-sky-50/50 border border-sky-200 rounded-xl">
-              <div className="text-[#0284C7] font-bold text-sm">{strings.strategicMarketValue}</div>
-              <div className="text-2xl font-extrabold text-[#0B1B33] mt-1">Rs. {contract.strategicMarketValueCr.toFixed(2)} Cr</div>
-              <div className="text-[#475569] mt-2">4 Market Intelligence & Timing Levers</div>
-            </div>
-          </div>
+          ))}
         </div>
       );
     case 5:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">80% Defensibility Floor</div>
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">1.37x Overlap Deduplication</div>
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">Conservative Realization Discount</div>
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">Multi-Source Verification</div>
-          </div>
+        <div className="space-y-3" data-testid="brief-slide-status">
+          {report.statuses.length === 0 ? <p>{strings.noRecords}</p> : report.statuses.map((item) => (
+            <div key={item.label} className="flex items-center justify-between rounded-lg border border-[#DCE7F5] p-3">
+              <span className="font-semibold text-[#0B1B33]">{item.label}</span>
+              <span className="text-sm text-[#475569]">{strings.leverSummary(item.count, item.estimatedSavingsCr)}</span>
+            </div>
+          ))}
         </div>
       );
     case 6:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-3 bg-[#F8FBFE] rounded-xl border border-[#DCE7F5]">
-              <div className="font-bold text-emerald-700">Module 1 — AI Diagnostics</div>
-              <div className="text-[#475569] mt-1">Diagnostic spend extraction & baseline classification</div>
-            </div>
-            <div className="p-3 bg-[#F8FBFE] rounded-xl border border-[#DCE7F5]">
-              <div className="font-bold text-[#0284C7]">Module 2 — Strategic Sourcing</div>
-              <div className="text-[#475569] mt-1">Rate benchmarking & supplier negotiation strategy</div>
-            </div>
-            <div className="p-3 bg-[#F8FBFE] rounded-xl border border-[#DCE7F5]">
-              <div className="font-bold text-[#0284C7]">Module 4 — Savings Engine</div>
-              <div className="text-[#475569] mt-1">Cross-plant PO pooling & volume consolidation</div>
+        <div className="space-y-4" data-testid="brief-slide-risk">
+          <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+            <div className="text-xs font-bold uppercase text-sky-800">{labels.averageConfidence}</div>
+            <div className="mt-1 text-2xl font-extrabold text-[#0B1B33]">
+              {strings.confidenceValue(report.metrics.averageConfidence)}
             </div>
           </div>
-        </div>
-      );
-    case 7:
-      return (
-        <div className="space-y-3 text-xs">
-          <div className="text-emerald-800 font-bold text-base">Hero: Rs. {contract.validatedSavingsCr.toFixed(2)} Cr Validated Wave 1</div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-[11px]">
-            <div className="p-2 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-[#0B1B33] font-medium">Packaging Bags: Rs. 14.50 Cr</div>
-            <div className="p-2 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-[#0B1B33] font-medium">Grinding Media: Rs. 11.20 Cr</div>
-            <div className="p-2 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-[#0B1B33] font-medium">Imported Fuel: Rs. 9.80 Cr</div>
-            <div className="p-2 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-[#0B1B33] font-medium">Lubricants: Rs. 6.40 Cr</div>
-            <div className="p-2 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl text-[#0B1B33] font-medium">Refractory: Rs. 6.00 Cr</div>
-          </div>
+          {report.risks.length === 0 ? <p>{strings.noRecords}</p> : report.risks.map((item) => (
+            <div key={item.label} className="flex items-center justify-between rounded-lg border border-[#DCE7F5] p-3">
+              <span className="font-semibold text-[#0B1B33]">{item.label}</span>
+              <span className="text-sm text-[#475569]">{strings.riskSummary(item.count, item.estimatedSavingsCr)}</span>
+            </div>
+          ))}
         </div>
       );
     case 8:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-center">
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">Days 1–30: Mobilize & Quick Wins</div>
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">Days 31–60: Market Tenders & Negotiation</div>
-            <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl font-semibold text-[#0B1B33]">Days 61–90: Award & Savings Realization</div>
-          </div>
+        <div className="grid grid-cols-2 gap-3" data-testid="brief-slide-footprint">
+          {metricItems.slice(4).map(([label, value]) => (
+            <div key={label} className="rounded-xl border border-[#DCE7F5] bg-[#F8FBFE] p-4 text-center">
+              <div className="text-xs text-[#64748B]">{label}</div>
+              <div className="mt-1 text-xl font-bold text-[#0B1B33]">{value}</div>
+            </div>
+          ))}
         </div>
       );
     case 9:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center font-semibold text-[#0B1B33]">
-            <div className="p-2.5 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">Procurement Expertise</div>
-            <div className="p-2.5 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">Forensic Spend Intelligence</div>
-            <div className="p-2.5 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">Market Benchmark Intelligence</div>
-            <div className="p-2.5 bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl">Execution & Savings Realization</div>
+        <div className="space-y-4" data-testid="brief-slide-scope">
+          <div className="rounded-xl border border-[#DCE7F5] bg-[#F8FBFE] p-4">
+            <div className="text-xs font-bold uppercase tracking-wide text-[#64748B]">{strings.scopeLabel}</div>
+            <p className="mt-2 text-sm leading-relaxed text-[#334155]">{report.scopeDescription}</p>
           </div>
-          <div className="text-[#64748B] text-center pt-2">From transaction data to procurement decision to measurable execution.</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-[#334155]">
+            <p><strong>{labels.transactionPeriod}: </strong>{report.metrics.firstTransactionDate ?? strings.periodMissing} – {report.metrics.lastTransactionDate ?? strings.periodMissing}</p>
+            <p><strong>{labels.reportGenerated}: </strong>{report.generatedAt}</p>
+          </div>
         </div>
       );
     case 10:
       return (
-        <div className="space-y-3 text-xs">
-          <div className="font-bold text-sm text-[#0B1B33] uppercase tracking-wide">{strings.proposedNextSteps}</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-3 bg-[#F8FBFE] rounded-xl border border-emerald-300">
-              <div className="text-emerald-800 font-bold">{strings.alignStep}</div>
-              <div className="text-[#475569] mt-1">{strings.alignSub}</div>
+        <div className="space-y-3" data-testid="brief-slide-next-actions">
+          {report.opportunities.length === 0 ? <p>{strings.noRecords}</p> : report.opportunities.map((item) => (
+            <div key={item.id} className="rounded-lg border border-[#DCE7F5] bg-[#F8FBFE] p-4">
+              <div className="font-bold text-[#0B1B33]">{strings.opportunityTitle(item.category, item.title)}</div>
+              <div className="mt-2 text-sm text-[#475569]">{item.recommendedAction}</div>
             </div>
-            <div className="p-3 bg-[#F8FBFE] rounded-xl border border-sky-300">
-              <div className="text-[#0284C7] font-bold">{strings.mobilizeStep}</div>
-              <div className="text-[#475569] mt-1">{strings.mobilizeSub}</div>
-            </div>
-            <div className="p-3 bg-[#F8FBFE] rounded-xl border border-sky-300">
-              <div className="text-[#0284C7] font-bold">{strings.executeStep}</div>
-              <div className="text-[#475569] mt-1">{strings.executeSub}</div>
-            </div>
-          </div>
-          <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl flex justify-between items-center">
-            <div>
-              <div className="text-sm font-bold text-[#0B1B33]">{strings.moveFromDiag}</div>
-              <div className="text-xs text-emerald-800">
-                Rs. {contract.netDirectSavingsCr.toFixed(2)} Cr {strings.directSavingsOpportunity} | Rs. {contract.netDefensiblePipelineCr.toFixed(2)} Cr {strings.netDefensiblePipeline}
-              </div>
-            </div>
-            <div className="text-[#0284C7] text-xs font-semibold">{strings.contactEmail}</div>
-          </div>
+          ))}
         </div>
       );
     default:
-      return <div className="text-[#64748B]">Slide {currentSlide}</div>;
+      return <div>{strings.unknownSlide(currentSlide)}</div>;
   }
 };

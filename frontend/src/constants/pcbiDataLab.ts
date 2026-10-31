@@ -1,0 +1,1 @@
+export const PCBI_FILE_BASE64_CHUNK_SIZE = 0x8000;

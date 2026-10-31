@@ -15,11 +15,13 @@ import {
   computeKpis,
   deriveJobStatus,
   isCustomerVisibleState,
+  pcbiCoverageFromRows,
   readinessInputFromRow
 } from './workerD1OrchestrationDerive';
 import {
   countOpenCorrections,
   listJobRows,
+  listPcbiGapRows,
   listRecentAuditRows,
   listRecentNotificationRows
 } from './workerD1OrchestrationStore';
@@ -59,8 +61,11 @@ export const getJob: OrchestrationHandler = async (context) => {
 
 export const getReadiness: OrchestrationHandler = async (context) => {
   const row = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
-  const openCount = await countOpenCorrections(context.database, row.assessment_id);
-  return dataOk(context, buildReadiness(readinessInputFromRow(row, openCount)));
+  const [openCount, pcbiRows] = await Promise.all([
+    countOpenCorrections(context.database, row.assessment_id),
+    listPcbiGapRows(context.database, row.assessment_id, row.current_version_id)
+  ]);
+  return dataOk(context, buildReadiness(readinessInputFromRow(row, openCount, pcbiCoverageFromRows(pcbiRows))));
 };
 
 export const getAdminKpis: OrchestrationHandler = async (context) => {

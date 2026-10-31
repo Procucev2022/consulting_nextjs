@@ -1,140 +1,217 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { ExecutiveOpportunityBriefView } from '@/components/presentation/ExecutiveOpportunityBriefView';
 import { ExecutiveOpportunityBriefSlideContent } from '@/components/presentation/ExecutiveOpportunityBriefSlideContent';
-import { EXECUTIVE_BRIEF_PRESENTATION_CONTRACT } from '@/constants/executiveBriefPresentationConstants';
 import { UI_STRINGS } from '@/constants/uiStrings';
+import type { ExecutiveOpportunityBriefReportData } from '@/types';
 
-describe('ExecutiveOpportunityBriefView Component', () => {
-  it('renders the Executive Opportunity Brief header and slide 1 content', () => {
-    render(<ExecutiveOpportunityBriefView clientName="UltraTech Cement Limited" />);
+const report: ExecutiveOpportunityBriefReportData = {
+  tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+  generatedAt: '2026-10-30T00:00:00.000Z',
+  scopeDescription: 'Baseline D1 transaction rows, excluding assessment-specific copies.',
+  metrics: {
+    transactionCount: 12, totalSpendCr: 125.5, supplierCount: 4, materialCount: 6,
+    plantCount: 2, purchaseOrderCount: 9, firstTransactionDate: '2024-01-01', lastTransactionDate: '2025-12-31',
+    opportunityCount: 1, estimatedSavingsCr: 10.25, averageConfidence: 0.87
+  },
+  opportunities: [{
+    id: 'O1', category: 'Packaging', title: 'Packaging sourcing', currentSpendCr: 50,
+    estimatedSavingsCr: 10.25, lever: 'Strategic sourcing', recommendedAction: 'Launch a tender',
+    status: 'Identified', riskLevel: 'Medium', confidence: 0.9
+  }],
+  levers: [{ label: 'Strategic sourcing', count: 1, estimatedSavingsCr: 10.25 }],
+  statuses: [{ label: 'Identified', count: 1, estimatedSavingsCr: 10.25 }],
+  risks: [{ label: 'Medium', count: 1, estimatedSavingsCr: 10.25 }]
+};
 
-    expect(screen.getByTestId('executive-opportunity-brief-view')).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(UI_STRINGS.opportunityBrief.title, 'i'))).toBeInTheDocument();
-    expect(screen.getAllByText(new RegExp(UI_STRINGS.opportunityBrief.cfoDiscussionBadge, 'i')).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(new RegExp(UI_STRINGS.opportunityBrief.primaryValueThesis, 'i'))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(`Rs. ${EXECUTIVE_BRIEF_PRESENTATION_CONTRACT.netDirectSavingsCr.toFixed(2)} Cr`))).toBeInTheDocument();
+const successResponse = (): Response => new Response(JSON.stringify({ success: true, data: report }), { status: 200 });
+
+const installFetch = (...responses: Array<Response | Error>): ReturnType<typeof vi.fn> => {
+  const fetchMock = vi.fn();
+  responses.forEach((response) => {
+    if (response instanceof Error) fetchMock.mockRejectedValueOnce(response);
+    else fetchMock.mockResolvedValueOnce(response);
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return fetchMock;
+};
+
+describe('ExecutiveOpportunityBriefView', () => {
+  beforeEach(() => installFetch(successResponse()));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('loads the report from D1 and displays the database-backed enterprise and savings', async () => {
+    const handleBack = vi.fn();
+    render(<ExecutiveOpportunityBriefView clientName="A different client label" onBackToWorkspace={handleBack} />);
+    expect(screen.getByTestId('opportunity-brief-loading')).toHaveTextContent(UI_STRINGS.opportunityBrief.reportLoading);
+    fireEvent.click(screen.getByTestId('back-to-workspace-btn'));
+    expect(handleBack).toHaveBeenCalledOnce();
+    expect(await screen.findByTestId('executive-opportunity-brief-view')).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`D1 Enterprise`))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.currencyCr(125.5))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.currencyCr(10.25))).toBeInTheDocument();
+    expect(screen.queryByText(/UltraTech/i)).not.toBeInTheDocument();
   });
 
-  it('navigates between slides using Next and Previous buttons', () => {
-    render(<ExecutiveOpportunityBriefView clientName="UltraTech Cement Limited" />);
-
-    expect(screen.getByText(/Slide 1 of 10/i)).toBeInTheDocument();
-
-    const nextBtn = screen.getByTestId('brief-next-slide-btn');
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/Slide 2 of 10/i)).toBeInTheDocument();
-    expect(screen.getByText(/81.4%/i)).toBeInTheDocument();
-
-    const prevBtn = screen.getByTestId('brief-prev-slide-btn');
-    fireEvent.click(prevBtn);
-    expect(screen.getByText(/Slide 1 of 10/i)).toBeInTheDocument();
+  it('navigates through all ten D1-backed slides and disables navigation at both ends', async () => {
+    render(<ExecutiveOpportunityBriefView />);
+    await screen.findByTestId('executive-opportunity-brief-view');
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.slideTitles[0])).toBeInTheDocument();
+    expect(screen.getByTestId('brief-prev-slide-btn')).toBeDisabled();
+    const next = screen.getByTestId('brief-next-slide-btn');
+    const expectedSlideContent = [
+      'brief-slide-baseline', 'brief-slide-opportunities', 'brief-slide-levers', 'brief-slide-status',
+      'brief-slide-risk', 'brief-slide-actions', 'brief-slide-footprint', 'brief-slide-scope', 'brief-slide-next-actions'
+    ];
+    for (let index = 0; index < expectedSlideContent.length; index += 1) {
+      fireEvent.click(next);
+      expect(screen.getByTestId(expectedSlideContent[index])).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.opportunityBrief.slideTitles[index + 1])).toBeInTheDocument();
+    }
+    expect(screen.getByTestId('brief-next-slide-btn')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('brief-prev-slide-btn'));
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.slideTitles[8])).toBeInTheDocument();
   });
 
-  it('triggers onDownloadPdf, onDownloadPptx, onBackToWorkspace, and onToggleFullScreen callbacks', () => {
+  it('triggers download, back, and fullscreen callbacks', async () => {
     const handlePdf = vi.fn();
     const handlePptx = vi.fn();
     const handleBack = vi.fn();
     const handleFullscreen = vi.fn();
+    const { unmount } = render(<ExecutiveOpportunityBriefView
+      onDownloadPdf={handlePdf}
+      onDownloadPptx={handlePptx}
+      onBackToWorkspace={handleBack}
+      isFullScreen={false}
+      onToggleFullScreen={handleFullscreen}
+    />);
+    await screen.findByTestId('executive-opportunity-brief-view');
+    fireEvent.click(screen.getByTestId('download-brief-pdf-btn'));
+    fireEvent.click(screen.getByTestId('download-brief-pptx-btn'));
+    fireEvent.click(screen.getByTestId('back-to-workspace-btn'));
+    fireEvent.click(screen.getByTestId('brief-fullscreen-btn'));
+    expect(handlePdf).toHaveBeenCalledOnce();
+    expect(handlePptx).toHaveBeenCalledOnce();
+    expect(handleBack).toHaveBeenCalledOnce();
+    expect(handleFullscreen).toHaveBeenCalledOnce();
 
-    render(
-      <ExecutiveOpportunityBriefView
-        clientName="UltraTech Cement Limited"
-        onDownloadPdf={handlePdf}
-        onDownloadPptx={handlePptx}
-        onBackToWorkspace={handleBack}
-        isFullScreen={false}
-        onToggleFullScreen={handleFullscreen}
-      />
+    unmount();
+    installFetch(successResponse());
+    const handleExitFullscreen = vi.fn();
+    render(<ExecutiveOpportunityBriefView isFullScreen onToggleFullScreen={handleExitFullscreen} />);
+    await screen.findByTestId('executive-opportunity-brief-view');
+    expect(screen.getByTestId('brief-fullscreen-btn')).toHaveTextContent(UI_STRINGS.opportunityBrief.exitFullScreen);
+    fireEvent.click(screen.getByTestId('brief-fullscreen-btn'));
+    expect(handleExitFullscreen).toHaveBeenCalledOnce();
+  });
+
+  it('shows detailed server errors and retries loading the report', async () => {
+    const handleBack = vi.fn();
+    installFetch(
+      new Response('{}', { status: 503, headers: { 'x-request-id': 'req-brief' } }),
+      successResponse()
     );
-
-    const pdfBtn = screen.getByTestId('download-brief-pdf-btn');
-    fireEvent.click(pdfBtn);
-    expect(handlePdf).toHaveBeenCalledTimes(1);
-
-    const pptxBtn = screen.getByTestId('download-brief-pptx-btn');
-    fireEvent.click(pptxBtn);
-    expect(handlePptx).toHaveBeenCalledTimes(1);
-
-    const backBtn = screen.getByTestId('back-to-workspace-btn');
-    fireEvent.click(backBtn);
-    expect(handleBack).toHaveBeenCalledTimes(1);
-
-    const fsBtn = screen.getByTestId('brief-fullscreen-btn');
-    fireEvent.click(fsBtn);
-    expect(handleFullscreen).toHaveBeenCalledTimes(1);
+    render(<ExecutiveOpportunityBriefView onBackToWorkspace={handleBack} />);
+    expect(await screen.findByTestId('opportunity-brief-load-error')).toHaveTextContent(
+      UI_STRINGS.opportunityBrief.reportUnavailable(503, 'req-brief')
+    );
+    fireEvent.click(screen.getByTestId('back-to-workspace-btn'));
+    expect(handleBack).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByTestId('retry-opportunity-brief-btn'));
+    await screen.findByTestId('executive-opportunity-brief-view');
   });
 
-  it('can navigate through all slides 1 to 10 and display each slide content', () => {
-    render(<ExecutiveOpportunityBriefView clientName="UltraTech Cement Limited" isFullScreen={true} />);
-
-    const nextBtn = screen.getByTestId('brief-next-slide-btn');
-    // Slide 2
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/Concentration/i)).toBeInTheDocument();
-    // Slide 3
-    fireEvent.click(nextBtn);
-    expect(screen.getAllByText(new RegExp(UI_STRINGS.opportunityBrief.whereConcentrated, 'i')).length).toBeGreaterThanOrEqual(1);
-    // Slide 4
-    fireEvent.click(nextBtn);
-    expect(screen.getAllByText(new RegExp(UI_STRINGS.opportunityBrief.valueBridgeTitle, 'i')).length).toBeGreaterThanOrEqual(1);
-    // Slide 5
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/80% Defensibility Floor/i)).toBeInTheDocument();
-    // Slide 6
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/Module 1 — AI Diagnostics/i)).toBeInTheDocument();
-    // Slide 7
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/Packaging Bags: Rs. 14.50 Cr/i)).toBeInTheDocument();
-    // Slide 8
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/Days 1–30: Mobilize & Quick Wins/i)).toBeInTheDocument();
-    // Slide 9
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/From transaction data to procurement decision to measurable execution./i)).toBeInTheDocument();
-    // Slide 10
-    fireEvent.click(nextBtn);
-    expect(screen.getByText(/Slide 10 of 10/i)).toBeInTheDocument();
-    expect(screen.getAllByText(new RegExp(UI_STRINGS.opportunityBrief.proposedNextSteps, 'i')).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(new RegExp(UI_STRINGS.opportunityBrief.alignStep, 'i'))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(UI_STRINGS.opportunityBrief.mobilizeStep, 'i'))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(UI_STRINGS.opportunityBrief.executeStep, 'i'))).toBeInTheDocument();
+  it('shows a network-specific actionable error after a fetch failure', async () => {
+    installFetch(new Error('network down'));
+    render(<ExecutiveOpportunityBriefView />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.opportunityBrief.reportUnavailableNetwork);
   });
 
-  it('renders default case for slide content when out of range', () => {
-    render(<ExecutiveOpportunityBriefSlideContent currentSlide={99} />);
-    expect(screen.getByText('Slide 99')).toBeInTheDocument();
+  it('uses the request-id fallback when a server error has no correlation header', async () => {
+    installFetch(new Response('{}', { status: 503 }));
+    render(<ExecutiveOpportunityBriefView />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(UI_STRINGS.opportunityBrief.reportUnavailable(
+      503,
+      UI_STRINGS.opportunityBrief.requestIdNotReturned
+    ));
   });
 
-  it('renders Bronze snapshot teaser view when currentTier is BRONZE', () => {
+  it('falls back to the supplied client name when D1 has no enterprise name', async () => {
+    const blankTenantReport = { ...report, tenant: { ...report.tenant, enterpriseName: '' } };
+    installFetch(new Response(JSON.stringify({ success: true, data: blankTenantReport }), { status: 200 }));
+    render(<ExecutiveOpportunityBriefView clientName="Workspace client" />);
+    expect(await screen.findByText(/Workspace client/)).toBeInTheDocument();
+  });
+
+  it('uses the generic enterprise label when both D1 and the workspace omit the name', async () => {
+    const blankTenantReport = { ...report, tenant: { ...report.tenant, enterpriseName: '' } };
+    installFetch(new Response(JSON.stringify({ success: true, data: blankTenantReport }), { status: 200 }));
+    render(<ExecutiveOpportunityBriefView clientName="" />);
+    expect(await screen.findByRole('heading', {
+      name: `${UI_STRINGS.opportunityBrief.title} — ${UI_STRINGS.opportunityBrief.metricLabels.enterprise}`
+    })).toBeInTheDocument();
+  });
+
+  it('ignores an in-flight report response after the view unmounts', async () => {
+    let resolveResponse: ((response: Response) => void) | undefined;
+    const fetchMock = vi.fn(() => new Promise<Response>((resolve) => {
+      resolveResponse = resolve;
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { unmount } = render(<ExecutiveOpportunityBriefView />);
+    unmount();
+    await act(async () => {
+      resolveResponse?.(successResponse());
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it('uses the configured unknown-slide title when the title list is empty', async () => {
+    const titles = UI_STRINGS.opportunityBrief.slideTitles as unknown as string[];
+    const originalTitles = [...titles];
+    titles.splice(0, titles.length);
+    try {
+      installFetch(successResponse());
+      render(<ExecutiveOpportunityBriefView />);
+      expect(await screen.findByText(UI_STRINGS.opportunityBrief.unknownSlide(1))).toBeInTheDocument();
+    } finally {
+      titles.push(...originalTitles);
+    }
+  });
+
+  it('renders the Bronze teaser with D1 figures and fires the tier and back callbacks', async () => {
     const handleExploreSilver = vi.fn();
     const handleBack = vi.fn();
+    render(<ExecutiveOpportunityBriefView
+      currentTier="BRONZE"
+      onExploreSilver={handleExploreSilver}
+      onBackToWorkspace={handleBack}
+    />);
+    expect(await screen.findByTestId('executive-opportunity-brief-bronze-teaser')).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.currencyCr(125.5))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.countValue(4))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.countValue(6))).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('bronze-explore-silver-btn'));
+    fireEvent.click(screen.getByText(UI_STRINGS.opportunityBrief.backToWorkspace));
+    expect(handleExploreSilver).toHaveBeenCalledOnce();
+    expect(handleBack).toHaveBeenCalledOnce();
+  });
 
-    render(
-      <ExecutiveOpportunityBriefView
-        clientName="UltraTech Cement Limited"
-        currentTier="BRONZE"
-        onExploreSilver={handleExploreSilver}
-        onBackToWorkspace={handleBack}
-      />
-    );
-
-    expect(screen.getByTestId('executive-opportunity-brief-bronze-teaser')).toBeInTheDocument();
-    expect(screen.getByText('Bronze Discover Snapshot')).toBeInTheDocument();
-    expect(screen.getByText('Management Quick Summary is available with Silver.')).toBeInTheDocument();
-    expect(screen.getByText('₹420.00 Cr')).toBeInTheDocument();
-    expect(screen.getByText('974')).toBeInTheDocument();
-    expect(screen.getByText('256')).toBeInTheDocument();
-
-    const exploreBtn = screen.getByTestId('bronze-explore-silver-btn');
-    expect(exploreBtn).toHaveTextContent(UI_STRINGS.subscription.exploreSilver);
-    fireEvent.click(exploreBtn);
-    expect(handleExploreSilver).toHaveBeenCalledTimes(1);
-
-    const backBtn = screen.getByText('Back to Workspace');
-    fireEvent.click(backBtn);
-    expect(handleBack).toHaveBeenCalledTimes(1);
+  it('renders an empty-state section and unknown slide fallback', async () => {
+    const emptyReport = { ...report, opportunities: [], levers: [], statuses: [], risks: [] };
+    installFetch(new Response(JSON.stringify({ success: true, data: emptyReport }), { status: 200 }));
+    render(<ExecutiveOpportunityBriefView />);
+    await screen.findByTestId('executive-opportunity-brief-view');
+    const next = screen.getByTestId('brief-next-slide-btn');
+    for (let slide = 2; slide <= 10; slide += 1) {
+      fireEvent.click(next);
+      expect(screen.getByText(UI_STRINGS.opportunityBrief.slideTitles[slide - 1])).toBeInTheDocument();
+      if ([3, 4, 5, 6, 7, 10].includes(slide)) {
+        expect(screen.getByText(UI_STRINGS.opportunityBrief.noRecords)).toBeInTheDocument();
+      }
+    }
+    render(<ExecutiveOpportunityBriefSlideContent currentSlide={99} report={report} />);
+    expect(screen.getByText(UI_STRINGS.opportunityBrief.unknownSlide(99))).toBeInTheDocument();
   });
 });
