@@ -114014,3 +114014,12 @@ all thing are done getting 404 for this   https://consulting-nextjs-backend.srin
 ## Prompt 589
 
 [Pasted GitHub Actions build & deployment logs showing successful frontend build, D1 remote execution (110 queries + 34 queries), and backend worker deployment to https://consulting-nextjs-backend.srinivas-mukku.workers.dev]
+
+## Prompt 590
+
+consulting-backend@1.0.0 db:push
+> node scripts/db-push.js --remote --seed
+/home/runner/work/consulting_nextjs/consulting_nextjs/backend/scripts/d1-seed-tools.js:167
+    if (actual !== expected) throw new Error("D1 seed checksum mismatch: ");
+                             ^
+Error: D1 seed checksum mismatch: d1-seed.sql
