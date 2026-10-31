@@ -26,10 +26,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: "npm"
@@ -43,7 +43,7 @@ jobs:
         run: npm run build --prefix backend
 
       - name: Run Backend Unit Tests & 90% Coverage Gate
-        run: npm run test:coverage --prefix backend
+        run: npm run test:ci --prefix backend
 
       - name: TypeScript Typecheck
         run: npm run typecheck --prefix backend
@@ -56,10 +56,12 @@ jobs:
 
       - name: Upload Backend Coverage Artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-coverage
-          path: backend/coverage/**
+          path: |
+            backend/coverage/**
+            backend/test-results.json
           if-no-files-found: warn
 
   frontend-gate:
@@ -69,10 +71,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: "npm"
@@ -86,7 +88,7 @@ jobs:
         run: npm run build --prefix frontend
 
       - name: Run Frontend Unit Tests & 90% Coverage Gate
-        run: npm run test:coverage --prefix frontend
+        run: npm run test:ci --prefix frontend
 
       - name: TypeScript Typecheck
         run: npm run typecheck --prefix frontend
@@ -99,10 +101,12 @@ jobs:
 
       - name: Upload Frontend Coverage Artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: frontend-coverage
-          path: frontend/coverage/**
+          path: |
+            frontend/coverage/**
+            frontend/test-results.json
           if-no-files-found: warn
 
   quality-summary:
@@ -118,31 +122,34 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
       - name: Download Backend Coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: backend-coverage
-          path: backend/coverage
+          path: backend
         continue-on-error: true
 
       - name: Download Frontend Coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: frontend-coverage
-          path: frontend/coverage
+          path: frontend
         continue-on-error: true
 
       - name: Post PR Summary Comment
         if: github.event_name == 'pull_request'
         continue-on-error: true
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
+        env:
+          BACKEND_GATE_RESULT: ${{ needs.backend-gate.result }}
+          FRONTEND_GATE_RESULT: ${{ needs.frontend-gate.result }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -157,7 +164,6 @@ jobs:
             } catch (err) {
               summaryMarkdown = '## 🚀 Quality Gate Execution Completed';
             }
-
             try {
               core.summary.addRaw(summaryMarkdown).write();
             } catch (summaryErr) {
@@ -206,10 +212,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
 
