@@ -1,5 +1,5 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
+"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "consulting-nextjs-backend",
 	"main": "src/worker.ts",
 	"compatibility_date": "2026-09-15",
@@ -13,8 +13,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "consulting_dev",
-			"database_id": "cd822525-56bf-4c48-ac0a-666bea7dd631"
+			"database_name": "consulting-db",
+			"database_id": "9286122b-f5e3-413a-9061-a36a84a8787a"
 		}
 	],
 	"r2_buckets": [
@@ -24,7 +24,7 @@
 		}
 	],
 	"vars": {
-		"D1_DATABASE_NAME": "consulting_dev",
+		"D1_DATABASE_NAME": "consulting-db",
 		"R2_BUCKET": "consulting-doc",
 		"APP_OPERATING_MODE": "INTERNAL_ASSESSMENT",
 		"FRONTEND_URL": "http://localhost:3001",
@@ -44,8 +44,8 @@
 			"d1_databases": [
 				{
 					"binding": "DB",
-					"database_name": "consulting_dev",
-					"database_id": "cd822525-56bf-4c48-ac0a-666bea7dd631"
+					"database_name": "consulting-db",
+					"database_id": "9286122b-f5e3-413a-9061-a36a84a8787a"
 				}
 			],
 			"r2_buckets": [
@@ -55,7 +55,7 @@
 				}
 			],
 			"vars": {
-				"D1_DATABASE_NAME": "consulting_dev",
+				"D1_DATABASE_NAME": "consulting-db",
 				"R2_BUCKET": "consulting-doc",
 				"APP_OPERATING_MODE": "INTERNAL_ASSESSMENT",
 				"FRONTEND_URL": "http://localhost:3001",
@@ -76,7 +76,7 @@
 				{
 					"binding": "DB",
 					"database_name": "consulting-db",
-					"database_id": "4e7c2ba7-5cd2-4028-a630-2b5ae88625db"
+					"database_id": "9286122b-f5e3-413a-9061-a36a84a8787a"
 				}
 			],
 			"r2_buckets": [
@@ -107,7 +107,7 @@
 				{
 					"binding": "DB",
 					"database_name": "consulting-db",
-					"database_id": "4e7c2ba7-5cd2-4028-a630-2b5ae88625db"
+					"database_id": "9286122b-f5e3-413a-9061-a36a84a8787a"
 				}
 			],
 			"r2_buckets": [

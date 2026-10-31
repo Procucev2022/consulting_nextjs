@@ -113981,3 +113981,28 @@ POST /api/auth/login 401 Unauthorized - Invalid organization email or password -
 ## Prompt 582
 
 complete
+
+## Prompt 583
+
+Run npm --prefix backend run db:push -- --remote
+
+? [ERROR] A request to the Cloudflare API (/accounts/***/d1/database/cd822525-56bf-4c48-ac0a-666bea7dd631/import) failed.
+Authentication error [code: 10000]
+how to get these credentials and how to solve this issue I have cloud flare access just suggest me steps
+
+## Prompt 584
+
+shall I have to addall these ??
+
+## Prompt 585
+
+I have add shall I re run the job ??
+
+## Prompt 586
+
+? [ERROR] A request to the Cloudflare API (/accounts/***/d1/database/cd822525-56bf-4c48-ac0a-666bea7dd631/import) failed.
+  The database cd822525-56bf-4c48-ac0a-666bea7dd631 could not be found [code: 7404]
+
+## Prompt 587
+
+9286122b-f5e3-413a-9061-a36a84a8787a
