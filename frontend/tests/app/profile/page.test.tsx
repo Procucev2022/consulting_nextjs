@@ -95,6 +95,10 @@ describe('Enterprise Profile Page Component', () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/login');
     });
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(apiClient.getTenant).not.toHaveBeenCalled();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
   });
 
   it('redirects to /admin/dashboard if authenticated user has ADMIN role', async () => {

@@ -125,7 +125,8 @@ describe('ProfilePage coverage', () => {
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/login'));
     expect(apiClient.getTenant).not.toHaveBeenCalled();
-    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 
   it('sends administrators from the stored session to the admin dashboard', async () => {
@@ -166,12 +167,12 @@ describe('ProfilePage coverage', () => {
     );
   });
 
-  it('lists every queued document when the stored user carries no identifier', async () => {
+  it('uses the refreshed buyer id when the cached profile has no identifier', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue({ ...PROFILE_USER, id: '' });
 
     await renderProfile();
 
-    expect(screen.getByText(DOC_OTHER_BUYER.file_name)).toBeInTheDocument();
+    expect(screen.queryByText(DOC_OTHER_BUYER.file_name)).not.toBeInTheDocument();
   });
 
   it('renders the empty repository state when no documents are queued', async () => {
@@ -234,17 +235,17 @@ describe('ProfilePage coverage', () => {
     expect(authApiClient.setStoredSession).not.toHaveBeenCalled();
   });
 
-  it('loads documents with a token alone when the stored user is missing', async () => {
+  it('loads documents with a verified server profile when only a token is stored', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
-    vi.mocked(authApiClient.getMe).mockRejectedValue(new Error('session refresh failed'));
+    vi.mocked(authApiClient.getMe).mockResolvedValue({ user: PROFILE_USER } as never);
 
     render(<ProfilePage />);
 
-    await waitFor(() => expect(apiClient.getIngestionData).toHaveBeenCalledWith(undefined));
+    await waitFor(() => expect(apiClient.getIngestionData).toHaveBeenCalledWith(PROFILE_USER.id));
     expect(mockPush).not.toHaveBeenCalledWith('/login');
   });
 
-  it('does not apply loaded data after the page has unmounted', async () => {
+  it('does not request profile data after the page unmounts during identity verification', async () => {
     const { unmount } = render(<ProfilePage />);
     unmount();
 
@@ -252,7 +253,8 @@ describe('ProfilePage coverage', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(apiClient.getTenant).toHaveBeenCalled();
+    expect(apiClient.getTenant).not.toHaveBeenCalled();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
     expect(authApiClient.setStoredSession).not.toHaveBeenCalled();
   });
 
@@ -300,17 +302,16 @@ describe('ProfilePage coverage', () => {
     });
   });
 
-  it('does not copy anything when the profile has no loaded identifier', async () => {
+  it('does not render a buyer profile or copy control without a loaded identity', async () => {
     const { writeText } = installClipboard();
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
     vi.mocked(authApiClient.getStoredToken).mockReturnValue(null);
-    const { container } = render(<ProfilePage />);
-    await screen.findByRole('heading', { level: 1 });
-    const identifier = container.querySelector('code') as HTMLElement;
+    render(<ProfilePage />);
 
-    fireEvent.click(within(identifier.parentElement as HTMLElement).getByRole('button'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/login'));
 
     expect(writeText).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 
   it('submits a password change and shows the confirmation the service returns', async () => {
@@ -509,8 +510,8 @@ describe('ProfilePage coverage', () => {
     expect(apiClient.deleteIngestionDocument).not.toHaveBeenCalled();
   });
 
-  it('deletes with the stored identifier when the profile could not be refreshed', async () => {
-    vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
+  it('uses the cached buyer identity when the profile refresh is unavailable', async () => {
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(PROFILE_USER);
     vi.mocked(authApiClient.getMe).mockRejectedValue(new Error('session refresh failed'));
     vi.mocked(apiClient.getIngestionData).mockResolvedValue({ queue: [DOC_SHARED] } as never);
     vi.mocked(apiClient.deleteIngestionDocument).mockResolvedValueOnce([] as never);
@@ -519,7 +520,20 @@ describe('ProfilePage coverage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: DELETE_BUTTON_LABEL }));
 
-    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_SHARED.doc_id, undefined));
+    await waitFor(() => expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith(DOC_SHARED.doc_id, PROFILE_USER.id));
+  });
+
+  it('clears an unverified session without requesting profile or ingestion data', async () => {
+    vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
+    vi.mocked(authApiClient.getMe).mockRejectedValue(new Error('session refresh failed'));
+
+    render(<ProfilePage />);
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/login'));
+    expect(authApiClient.clearStoredSession).toHaveBeenCalledTimes(1);
+    expect(apiClient.getTenant).not.toHaveBeenCalled();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 
   it('passes the selected D1 document id to the workspace route', async () => {
