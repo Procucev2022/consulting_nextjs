@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
 import { extractBearerToken, authorizeExecutiveBriefAdmin } from '../src/workerD1ExecutiveBriefAuth';
+import { AUTH_MESSAGES } from '../src/constants/auth';
 import { EXECUTIVE_BRIEF_HTTP_STATUS, EXECUTIVE_BRIEF_MESSAGES } from '../src/constants/executiveBriefRouteConstants';
 import {
   EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
@@ -45,7 +46,8 @@ const regenerate = async (
 
 const regenerationDatabase = (
   tenants: Array<{ tenant_id: string; enterprise_name: string }>,
-  failBriefQuery = false
+  failBriefQuery = false,
+  user: { role?: string; status?: string } = {}
 ): NonNullable<CloudflareEnvironment['DB']> => ({
   prepare: (query: string) => {
     let values: unknown[] = [];
@@ -58,8 +60,8 @@ const regenerationDatabase = (
             id: userId,
             name: 'D1 Admin',
             email: 'admin@example.test',
-            role: userId === 'usr-standard-test' ? 'USER' : 'ADMIN',
-            status: 'ACTIVE'
+            role: user.role ?? (userId === 'usr-standard-test' ? 'USER' : 'ADMIN'),
+            status: user.status ?? 'ACTIVE'
           } as T;
         }
         if (failBriefQuery) throw new Error('D1 report query failed');
@@ -74,6 +76,20 @@ const regenerationDatabase = (
     return statement;
   }
 });
+
+const malformedPayloadToken = async (): Promise<string> => {
+  const header = Buffer.from('{"alg":"HS256","typ":"JWT"}').toString('base64url');
+  const payload = Buffer.from('{').toString('base64url');
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(TEST_AUTH_SECRET),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${header}.${payload}`));
+  return `${header}.${payload}.${Buffer.from(signature).toString('base64url')}`;
+};
 
 describe('executive brief regeneration authorization', () => {
   beforeEach(() => {
@@ -143,6 +159,38 @@ describe('executive brief regeneration authorization', () => {
       testEnvironment()
     );
     expect(outcome).toEqual({ ok: true, userId: 'usr-admin-test' });
+  });
+
+  it('rejects a token when signature verification throws', async () => {
+    const response = await regenerate({ token: await malformedPayloadToken() });
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);
+    expect(((await response.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.tokenInvalid);
+  });
+
+  it('uses the active account lookup result to enforce current admin access', async () => {
+    const response = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: regenerationDatabase([], false, { role: 'USER' }) })
+    });
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
+    expect(((await response.json()) as { message: string }).message).toBe(AUTH_MESSAGES.FORBIDDEN_ADMIN_ONLY);
+  });
+
+  it('maps current-account lookup failures to the token or database response', async () => {
+    const unauthorized = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: regenerationDatabase([], false, { status: 'INACTIVE' }) })
+    });
+    expect(unauthorized.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);
+    expect(((await unauthorized.json()) as { message: string }).message).toBe(EXECUTIVE_BRIEF_MESSAGES.tokenInvalid);
+
+    const unavailable = await regenerate({
+      token: await adminToken(),
+      env: testEnvironment({ DB: { prepare: () => { throw new Error('D1 lookup failed'); } } })
+    });
+    expect(unavailable.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    expect(((await unavailable.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable);
   });
 });
 
