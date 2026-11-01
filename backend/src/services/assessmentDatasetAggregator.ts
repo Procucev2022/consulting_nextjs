@@ -140,3 +140,68 @@ export function buildCurrencyForensicDetails(
     currencyBridges
   };
 }
+
+export interface SpendImpactMetrics {
+  customerProfileSpendInr: number;
+  customerProfileSpendCr: number;
+  fxImpactInr: number;
+  fxImpactCr: number;
+  fxImpactPct: number;
+}
+
+export function calculateSpendImpactMetrics(
+  totalNormalizedInr: number,
+  totalRawInr: number,
+  totalSpendCr: number,
+  isSyntheticTest: boolean
+): SpendImpactMetrics {
+  if (!isSyntheticTest) {
+    return {
+      customerProfileSpendInr: totalNormalizedInr,
+      customerProfileSpendCr: totalSpendCr,
+      fxImpactInr: 0.0,
+      fxImpactCr: 0.0,
+      fxImpactPct: 0.0
+    };
+  }
+  const delta = totalNormalizedInr - totalRawInr;
+  const pct = totalRawInr > 0 ? Number(((delta / totalRawInr) * 100).toFixed(2)) : 0.0;
+  return {
+    customerProfileSpendInr: Number(totalRawInr.toFixed(2)),
+    customerProfileSpendCr: Number((totalRawInr / 10000000).toFixed(4)),
+    fxImpactInr: Number(delta.toFixed(2)),
+    fxImpactCr: Number((delta / 10000000).toFixed(4)),
+    fxImpactPct: pct
+  };
+}
+
+function extractPoNumber(r: Record<string, unknown>): string {
+  const keys = ['Purchasing Document', 'Purch.Doc.', 'Purchase Doc.', 'PO Number', 'PO NO', 'PO', 'Document', 'EBELN'];
+  for (const k of keys) {
+    const val = r[k];
+    if (val !== undefined && val !== null && String(val).trim().length > 0) {
+      return String(val).trim();
+    }
+  }
+  return '';
+}
+
+function extractPoItem(r: Record<string, unknown>): string {
+  const keys = ['Item', 'Line Item', 'Line', 'PO Line', 'EBELP'];
+  for (const k of keys) {
+    const val = r[k];
+    if (val !== undefined && val !== null && String(val).trim().length > 0) {
+      return String(val).trim();
+    }
+  }
+  return '';
+}
+
+export function countSuspectedDuplicates(rawRows: Record<string, unknown>[]): number {
+  const poLineKeyCount = new Map<string, number>();
+  for (const r of rawRows) {
+    const key = `${extractPoNumber(r)}|${extractPoItem(r)}`;
+    poLineKeyCount.set(key, (poLineKeyCount.get(key) ?? 0) + 1);
+  }
+  return [...poLineKeyCount.values()].reduce((sum, cnt) => sum + Math.max(0, cnt - 1), 0);
+}

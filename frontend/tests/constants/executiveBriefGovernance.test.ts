@@ -8,22 +8,20 @@ import {
   EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES_PART2
 } from '../../src/constants';
 
-describe('Executive Brief Governance & Master Register Constants', () => {
-  it('should define all 7 items in EXECUTIVE_BRIEF_ASSUMPTION_REGISTER per Section 19', () => {
-    expect(EXECUTIVE_BRIEF_ASSUMPTION_REGISTER).toHaveLength(7);
+describe('Executive Brief Governance & Master Register Constants (Borosil Ltd AIC-2026-0002)', () => {
+  it('should define all 5 items in EXECUTIVE_BRIEF_ASSUMPTION_REGISTER per Borosil Governance', () => {
+    expect(EXECUTIVE_BRIEF_ASSUMPTION_REGISTER).toHaveLength(5);
     const oppIds = EXECUTIVE_BRIEF_ASSUMPTION_REGISTER.map((item) => item.opportunityId);
     expect(oppIds).toEqual([
-      'OPP-001',
-      'OPP-002',
-      'OPP-003',
-      'OPP-004',
-      'OPP-005',
-      'OPP-006',
-      'OPP-007'
+      'OPP-BOR-L1',
+      'OPP-BOR-L2',
+      'OPP-BOR-L3',
+      'OPP-BOR-M3',
+      'OPP-BOR-M4'
     ]);
 
     EXECUTIVE_BRIEF_ASSUMPTION_REGISTER.forEach((item) => {
-      expect(item.assumptionId).toMatch(/^ASM-\d{3}$/);
+      expect(item.assumptionId).toMatch(/^ASM-BOR-\d{2}$/);
       expect(item.assumption.length).toBeGreaterThan(0);
       expect(item.value.length).toBeGreaterThan(0);
       expect(item.basis.length).toBeGreaterThan(0);
@@ -34,11 +32,11 @@ describe('Executive Brief Governance & Master Register Constants', () => {
     });
   });
 
-  it('should define all 14 validation checklist items per Section 20', () => {
-    expect(EXECUTIVE_BRIEF_VALIDATION_CHECKLIST).toHaveLength(14);
+  it('should define all 6 validation checklist items per Borosil Governance Checklist', () => {
+    expect(EXECUTIVE_BRIEF_VALIDATION_CHECKLIST).toHaveLength(6);
     const itemIds = EXECUTIVE_BRIEF_VALIDATION_CHECKLIST.map((item) => item.itemId);
     expect(itemIds[0]).toBe('VAL-01');
-    expect(itemIds[13]).toBe('VAL-14');
+    expect(itemIds[5]).toBe('VAL-06');
 
     EXECUTIVE_BRIEF_VALIDATION_CHECKLIST.forEach((item) => {
       expect(item.itemId).toMatch(/^VAL-\d{2}$/);
@@ -49,14 +47,14 @@ describe('Executive Brief Governance & Master Register Constants', () => {
     });
   });
 
-  it('should define granular transaction evidence for all 7 opportunities per Section 18', () => {
-    const oppIds = ['OPP-001', 'OPP-002', 'OPP-003', 'OPP-004', 'OPP-005', 'OPP-006', 'OPP-007'];
+  it('should define granular transaction evidence for all 5 Borosil opportunities', () => {
+    const oppIds = ['OPP-BOR-L1', 'OPP-BOR-L2', 'OPP-BOR-L3', 'OPP-BOR-M3', 'OPP-BOR-M4'];
     oppIds.forEach((oppId) => {
       const evidence = EXECUTIVE_BRIEF_TRANSACTION_EVIDENCE[oppId];
       expect(evidence).toBeDefined();
       expect(evidence.transactionId.length).toBeGreaterThan(0);
       expect(evidence.poNumber.length).toBeGreaterThan(0);
-      expect(evidence.poDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(evidence.poDate).toMatch(/^\d{4}-\d{2}-\d{2}|N\/A$/);
       expect(evidence.supplier.length).toBeGreaterThan(0);
       expect(evidence.itemDescription.length).toBeGreaterThan(0);
       expect(evidence.quantity.length).toBeGreaterThan(0);
@@ -71,23 +69,21 @@ describe('Executive Brief Governance & Master Register Constants', () => {
   });
 
   it('should correctly assemble EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES from Part1 and Part2', () => {
-    expect(EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES_PART1).toHaveLength(4);
+    expect(EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES_PART1).toHaveLength(2);
     expect(EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES_PART2).toHaveLength(3);
-    expect(EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES).toHaveLength(7);
+    expect(EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES).toHaveLength(5);
 
     const fullIds = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.map((item) => item.opportunityId);
     expect(fullIds).toEqual([
-      'OPP-001',
-      'OPP-002',
-      'OPP-003',
-      'OPP-004',
-      'OPP-005',
-      'OPP-006',
-      'OPP-007'
+      'OPP-BOR-L1',
+      'OPP-BOR-L2',
+      'OPP-BOR-L3',
+      'OPP-BOR-M3',
+      'OPP-BOR-M4'
     ]);
 
     EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.forEach((item) => {
-      expect(item.opportunityId).toMatch(/^OPP-\d{3}$/);
+      expect(item.opportunityId).toMatch(/^OPP-BOR-/);
       expect(item.module.length).toBeGreaterThan(0);
       expect(item.analysis.length).toBeGreaterThan(0);
       expect(item.category.length).toBeGreaterThan(0);

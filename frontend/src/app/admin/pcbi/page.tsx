@@ -11,11 +11,11 @@ import Link from 'next/link';
 import {
   Shield,
   Users,
-  ExternalLink,
   LogOut,
   Layers,
   FlaskConical,
-  BarChart3
+  BarChart3,
+  ArrowLeft
 } from 'lucide-react';
 import { AICEV_LOGO_SRC, UI_STRINGS } from '../../../constants';
 import { apiClient } from '../../../utils/api';
@@ -148,11 +148,12 @@ export default function AdminPCBIPage(): React.ReactElement {
             </Link>
 
             <Link
-              href="/"
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-[#F8FBFE] text-[#0B1B33] border border-[#DCE7F5] font-semibold flex items-center gap-1.5 transition-all shadow-xs"
+              href="/?tab=module3&assessmentId=AIC-2026-0002"
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white border border-indigo-700 font-bold flex items-center gap-1.5 transition-all shadow-xs"
+              title="Return to Borosil AIC-2026-0002 — Module 3 PCBI Benchmark Readiness"
             >
-              <span>Main Workspace</span>
-              <ExternalLink size={13} />
+              <ArrowLeft size={13} />
+              <span>Return to Buyer Portal — Module 3</span>
             </Link>
 
             <button

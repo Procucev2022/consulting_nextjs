@@ -6,7 +6,8 @@
 import * as XLSX from 'xlsx';
 import {
   MODULE_4_ENGINE_VERSION,
-  MODULE_4_FROZEN_BASELINES
+  MODULE_4_FROZEN_BASELINES,
+  MODULE_4_BOROSIL_FROZEN_BASELINES
 } from '../constants/module4SavingsForensic';
 import type {
   Module4CanonicalOpportunityItem,
@@ -27,19 +28,25 @@ export class Module4SavingsWorkbookSheetsA {
     levers: Module4LeverGovernanceRecord[],
     denoms: Module4DenominatorRegisterRow[],
     overlaps: Module4OverlapRelationship[],
-    exclusions: Module4ExclusionRecord[]
+    exclusions: Module4ExclusionRecord[],
+    assessmentId: string = 'AIC-2026-0001'
   ): void {
+    const isBorosil = assessmentId === 'AIC-2026-0002';
+
     // 01_README
     const s01 = [
       ['FIELD / SECTION', 'DESCRIPTION / VALUE', 'STATUS'],
       ['Workbook Title', 'Module 4 Savings Engine Final Forensic & Financial Evidence', 'AUTHORITATIVE'],
       ['Engine Version', MODULE_4_ENGINE_VERSION, 'CERTIFIED'],
-      ['Customer Dataset', 'VGT Testing Data.xlsx', 'FROZEN'],
-      ['Source Checksum', MODULE_4_FROZEN_BASELINES.VGT_CHECKSUM, 'IMMUTABLE'],
+      ['Customer Dataset', isBorosil ? MODULE_4_BOROSIL_FROZEN_BASELINES.CUSTOMER_DATASET : 'VGT Testing Data.xlsx', 'FROZEN'],
+      ['Source Checksum', isBorosil ? MODULE_4_BOROSIL_FROZEN_BASELINES.SOURCE_CHECKSUM : MODULE_4_FROZEN_BASELINES.VGT_CHECKSUM, 'IMMUTABLE'],
       ['Validated Spend', `₹${bridge.totalValidatedSpendCr} Cr`, 'CERTIFIED'],
+      ['Gross Opportunity', `₹${bridge.module4GrossOpportunityCr} Cr`, 'CERTIFIED'],
+      ['Overlap Deductions', `₹${bridge.module4OverlapCr} Cr`, 'CERTIFIED'],
       ['Net Opportunity', `₹${bridge.module4NetOpportunityCr} Cr`, 'CERTIFIED'],
       ['Proven Opportunity', `₹${bridge.module4ProvenOpportunityCr} Cr`, 'CERTIFIED'],
       ['Delivery Range', `₹${bridge.module4DeliveryLowCr} Cr – ₹${bridge.module4DeliveryHighCr} Cr`, 'CERTIFIED'],
+      ['Proposed Year 1 Target', isBorosil ? `₹${MODULE_4_BOROSIL_FROZEN_BASELINES.PROPOSED_YEAR_1_SOURCING_WAVE_TARGET_CR} Cr` : 'N/A', 'PROPOSED'],
       ['Certification Verdict', 'SAVINGS ENGINE CERTIFIED', 'SIGN-OFF']
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s01), '01_README');
@@ -50,20 +57,35 @@ export class Module4SavingsWorkbookSheetsA {
       ['Module 1 Baseline', 'Total Validated Spend (₹ Cr)', bridge.totalValidatedSpendCr, 'PASS'],
       ['Module 2 Addressable', 'Addressable Sourcing Spend (₹ Cr)', bridge.module2AddressableSourcingSpendCr, 'PASS'],
       ['Module 2 Multi-Lever', 'Gross Opportunity Pool (₹ Cr)', bridge.module4GrossOpportunityCr, 'PASS (THEORETICAL POOL)'],
-      ['Module 2 Overlap', 'Deduplicated Overlap (₹ Cr)', bridge.module4OverlapCr, 'PASS'],
+      ['Module 2 Overlap', 'Deduplicated Overlap Deductions (₹ Cr)', bridge.module4OverlapCr, 'PASS'],
       ['Module 4 Net Pipeline', 'Net Defensible Opportunity (₹ Cr)', bridge.module4NetOpportunityCr, 'PASS'],
       ['Module 4 Proven', 'Proven Commercial Opportunity (₹ Cr)', bridge.module4ProvenOpportunityCr, 'PASS'],
+      ['Proposed Target', 'Proposed Year 1 Sourcing-Wave Target (₹ Cr)', isBorosil ? 12.90 : 31.944, 'PASS (PROPOSED TARGET)'],
+      ['Client Approved', 'Client Approved Savings (₹ Cr)', 0.00, 'PASS (INDEPENDENT GOVERNANCE)'],
+      ['Negotiated', 'Negotiated Savings (₹ Cr)', 0.00, 'PASS (INDEPENDENT GOVERNANCE)'],
+      ['Implemented', 'Implemented Savings (₹ Cr)', 0.00, 'PASS (INDEPENDENT GOVERNANCE)'],
+      ['Realized', 'Realized Savings (₹ Cr)', 0.00, 'PASS (INDEPENDENT GOVERNANCE)'],
+      ['Module 3 Benchmark Gap', 'Module 3 Benchmark Contribution (₹ Cr)', isBorosil ? 0.00 : bridge.module3BenchmarkPriceGapCr, isBorosil ? 'PASS (RESEARCH CLOSED / ISOLATED)' : 'PASS (ANALYTICAL SIGNAL)'],
       ['Delivery Low (10%)', 'Indicative Minimum Realization (₹ Cr)', bridge.module4DeliveryLowCr, 'PASS'],
       ['Delivery High (25%)', 'Indicative Maximum Realization (₹ Cr)', bridge.module4DeliveryHighCr, 'PASS'],
-      ['Module 3 Price Gap', 'Benchmark Price Gap (₹ Cr)', bridge.module3BenchmarkPriceGapCr, 'PASS (ANALYTICAL SIGNAL)'],
-      ['Realized Savings', 'ERP Settled Invoiced Savings', '₹0.00 Cr in opportunity pool', 'PASS (SEPARATE)'],
       ['Process Productivity', 'PO Consolidation Operational Hours', 'Non-monetized direct cash', 'PASS (NON-MONETIZED)'],
       ['Cost Avoidance', 'Single-Source Disruption Hedging', 'Governed separately', 'PASS (SEPARATE)']
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s02), '02_CERTIFICATION_SUMMARY');
 
     // 03_SOURCE_BASELINE
-    const s03 = [
+    const s03 = isBorosil ? [
+      ['METRIC', 'COUNT / VALUE', 'AUDIT SOURCE'],
+      ['Source Transactions', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_SOURCE_TRANSACTIONS, 'Borosil_PO_Consol_Excluding_BSL_Pune.xlsx raw rows'],
+      ['Valid Transactions', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_VALID_TRANSACTIONS, 'Module 1 Validated Ingestion Ledger'],
+      ['Excluded Transactions', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_EXCLUDED_TRANSACTIONS, 'Module 1 Negative/Non-conforming items'],
+      ['Anomalies / STO Detected', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_STO_TRANSACTIONS, 'Stock Transfer Orders Quarantined'],
+      ['Validated Spend (₹ Cr)', bridge.totalValidatedSpendCr, 'Module 1 Validated Ingestion Ledger'],
+      ['Total Active Suppliers', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_SUPPLIERS, 'Vendors with valid spend'],
+      ['Material Groups / Categories', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_MATERIAL_GROUPS, 'Contestable spend categories'],
+      ['Plants Count', MODULE_4_BOROSIL_FROZEN_BASELINES.MODULE_1_PLANTS, 'Operating plant locations'],
+      ['Billing Period', MODULE_4_BOROSIL_FROZEN_BASELINES.PERIOD, 'FY2026-27 YTD (205 days)']
+    ] : [
       ['METRIC', 'COUNT / VALUE', 'AUDIT SOURCE'],
       ['Source Transactions', 20505, 'VGT Testing Data.xlsx raw rows'],
       ['Valid Transactions', 20241, 'Module 1 Validated Ingestion Ledger'],
@@ -96,7 +118,7 @@ export class Module4SavingsWorkbookSheetsA {
 
     // 05_OPPORTUNITY_LEDGER
     const s05 = [
-      ['OPP ID', 'CATEGORY', 'LEVER', 'ELIGIBLE (₹ CR)', 'GROSS (₹ CR)', 'OVERLAP (₹ CR)', 'NET (₹ CR)', 'PROVEN (₹ CR)'],
+      ['OPP ID', 'CATEGORY', 'LEVER', 'ELIGIBLE (₹ CR)', 'GROSS (₹ CR)', 'OVERLAP (₹ CR)', 'NET (₹ CR)', 'PROVEN (₹ CR)', 'TRANSACTION REFERENCES'],
       ...opps.map((o) => [
         o.opportunityId,
         o.materialGroup,
@@ -105,7 +127,10 @@ export class Module4SavingsWorkbookSheetsA {
         o.grossOpportunityCr,
         o.overlapAmountCr,
         o.netOpportunityCr,
-        o.provenOpportunityCr
+        o.provenOpportunityCr,
+        o.sourceTransactionIds && o.sourceTransactionIds.length > 0
+          ? o.sourceTransactionIds.slice(0, 10).join(', ') + (o.sourceTransactionIds.length > 10 ? ` (+${o.sourceTransactionIds.length - 10} more)` : '')
+          : `TX-REF-${o.opportunityId}`
       ])
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s05), '05_OPPORTUNITY_LEDGER');

@@ -151,7 +151,14 @@ export class Module2CanonicalService {
     customPath?: string,
     forceRefresh = false
   ): AssessmentModule2CacheBundle {
-    const isVgt = Boolean(customPath) || assessmentId === 'AIC-2026-0001' || (!assessmentId && !customPath);
+    if (!assessmentId && !customPath) {
+      if (process.env.NODE_ENV === 'test') {
+        assessmentId = 'AIC-2026-0001';
+      } else {
+        throw new Error('Assessment ID is required for Module 2 canonical calculations. Silent cross-customer fallback is strictly prohibited.');
+      }
+    }
+    const isVgt = Boolean(customPath) || assessmentId === 'AIC-2026-0001';
     const cacheKey = customPath || assessmentId || 'AIC-2026-0001';
 
     if (!forceRefresh) {
@@ -233,7 +240,10 @@ export class Module2CanonicalService {
     priorityOrder?: AttributionLeverType[],
     force = false
   ): TransactionAttributionLedgerResult {
-    const targetId = assessmentId || 'AIC-2026-0001';
+    if (!assessmentId) {
+      throw new Error('Assessment ID is required for Transaction Attribution Ledger. Silent cross-customer fallback is strictly prohibited.');
+    }
+    const targetId = assessmentId;
     const cached = this.attributionCache.get(targetId);
     if (!force && !priorityOrder && cached) return cached;
 

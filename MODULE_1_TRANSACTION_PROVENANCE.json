@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-30T18:03:47.566Z",
+  "timestamp": "2026-10-30T14:28:06.836Z",
   "datasetVersion": "MODULE1-2026-V1.0-CERTIFIED",
   "provenanceHierarchy": "EXECUTIVE_KPI -> AGGREGATION -> CATEGORY -> ITEM -> SUPPLIER -> TRANSACTION -> SOURCE_FILE -> SOURCE_SHEET -> SOURCE_ROW",
   "totalProvenanceChains": 36,
@@ -30,7 +30,7 @@
       "sourceSheet": "Sheet1",
       "sourceRow": 2,
       "calculatedSpendInr": 56238210,
-      "displayValue": "₹9.57 Cr",
+      "displayValue": "₹853.26 Cr",
       "status": "PASS"
     },
     {
@@ -44,35 +44,35 @@
       "sourceSheet": "Sheet1",
       "sourceRow": 2,
       "calculatedSpendInr": 56238210,
-      "displayValue": "₹9.57 Cr",
+      "displayValue": "₹3200.44 Cr",
       "status": "PASS"
     },
     {
       "kpiName": "Top Item Spend",
       "aggregationLevel": "ITEM_AGGREGATION",
       "category": "FERRO",
-      "item": "110000001320",
+      "item": "110000000075",
       "supplier": "TRAFIGURA INDIA PRIVATE LIMITED",
       "transactionId": "REC-8800",
       "sourceFile": "2 years data.xlsx",
       "sourceSheet": "Sheet1",
       "sourceRow": 2,
       "calculatedSpendInr": 56238210,
-      "displayValue": "₹8.27 Cr",
+      "displayValue": "₹978.17 Cr",
       "status": "PASS"
     },
     {
       "kpiName": "Pareto 80% Cutoff Spend",
       "aggregationLevel": "PARETO_CUMULATIVE_CUTOFF",
-      "category": "FERRO",
-      "item": "FERRO NICKEL - NI% 10 - 14",
-      "supplier": "TRAFIGURA INDIA PRIVATE LIMITED",
-      "transactionId": "REC-8800",
+      "category": "SCRAP",
+      "item": "STAINLESS STEEL MELTING SCRAP 201",
+      "supplier": "RANAWAT UDYOG",
+      "transactionId": "REC-9327",
       "sourceFile": "2 years data.xlsx",
       "sourceSheet": "Sheet1",
-      "sourceRow": 2,
-      "calculatedSpendInr": 56238210,
-      "displayValue": "₹9.57 Cr (80.27%)",
+      "sourceRow": 529,
+      "calculatedSpendInr": 4200000,
+      "displayValue": "₹4752.54 Cr (80.27%)",
       "status": "PASS"
     },
     {

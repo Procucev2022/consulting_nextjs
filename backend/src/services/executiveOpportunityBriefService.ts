@@ -11,8 +11,11 @@ import { logger } from '../utils/logger';
 import { DEFAULT_CLIENT_PROFILE } from '../constants/executiveBriefConstants';
 import {
   getExecutiveBriefPresentationContract,
-  isCustomerAssessment
+  isCustomerAssessment,
+  isBorosilAssessment
 } from '../constants/executiveBriefPresentationConstants';
+import { AiCevManagementReportPdfBuilder } from './aiCevManagementReportPdfBuilder';
+import { AiCevManagementReportPptxBuilder } from './aiCevManagementReportPptxBuilder';
 import { renderBriefSlide1, renderBriefSlide2, renderBriefSlide3 } from './executiveOpportunityBriefSlides1To3';
 import { renderBriefSlide4, renderBriefSlide5 } from './executiveOpportunityBriefSlides4To5';
 import { renderBriefSlide6, renderBriefSlide7, renderBriefSlide8 } from './executiveOpportunityBriefSlides6To8';
@@ -27,6 +30,9 @@ export class ExecutiveOpportunityBriefService {
    * Resolves the official filename for brief PDF exports.
    */
   public static getPdfFilename(clientName: string): string {
+    if (isBorosilAssessment(clientName)) {
+      return AiCevManagementReportPdfBuilder.OFFICIAL_BRIEF_PDF;
+    }
     if (isCustomerAssessment(clientName)) {
       const sanitized = clientName.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
       return `aiCEV_${sanitized}_Executive_Opportunity_Brief.pdf`;
@@ -38,6 +44,9 @@ export class ExecutiveOpportunityBriefService {
    * Resolves the official filename for brief PPTX exports.
    */
   public static getPptxFilename(clientName: string): string {
+    if (isBorosilAssessment(clientName)) {
+      return AiCevManagementReportPptxBuilder.OFFICIAL_BRIEF_PPTX;
+    }
     if (isCustomerAssessment(clientName)) {
       const sanitized = clientName.replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
       return `aiCEV_${sanitized}_Executive_Opportunity_Brief.pptx`;
@@ -51,6 +60,9 @@ export class ExecutiveOpportunityBriefService {
   public static generatePdfBuffer(
     clientName = DEFAULT_CLIENT_PROFILE.clientName
   ): Buffer {
+    if (isBorosilAssessment(clientName)) {
+      return AiCevManagementReportPdfBuilder.generatePdf();
+    }
     const canvas = new PdfCanvas(960, 540);
     const contract = getExecutiveBriefPresentationContract(clientName);
 

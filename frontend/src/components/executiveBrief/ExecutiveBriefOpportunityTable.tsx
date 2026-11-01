@@ -19,7 +19,8 @@ import { ExecutiveBriefSpecialDisplays } from './ExecutiveBriefSpecialDisplays';
 import { ExecutiveBriefTotalValuePortfolio } from './ExecutiveBriefTotalValuePortfolio';
 
 export const ExecutiveBriefOpportunityTable: React.FC<ExecutiveBriefOpportunityTableProps> = ({
-  onDrillOpportunity
+  onDrillOpportunity,
+  reportData: _reportData
 }) => {
   const strings = EXECUTIVE_BRIEF_EXPORT_STRINGS;
   const oppStrings = strings.opportunityTable;
@@ -146,7 +147,7 @@ export const ExecutiveBriefOpportunityTable: React.FC<ExecutiveBriefOpportunityT
             </p>
           </div>
           <span className="text-[11px] text-[#64748B] font-mono">
-            8 Analytical Levers • Certified Invariants
+            3 Core Sourcing Levers • 106 Sourcing Packages
           </span>
         </div>
 

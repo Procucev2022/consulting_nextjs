@@ -83,7 +83,7 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
         <div className="flex items-center justify-between border-b border-[#DCE7F5] pb-3">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-              SLIDE {String(currentSlide.page).padStart(2, '0')} / 30
+              SLIDE {String(currentSlide.page).padStart(2, '0')} / 15
             </span>
             <span className="text-sm font-extrabold text-[#0B1B33]">{currentSlide.title}</span>
           </div>
@@ -153,7 +153,7 @@ export const ExecutiveBriefSlidePreview: React.FC<ExecutiveBriefSlidePreviewProp
               <ChevronRight className="w-4 h-4" />
             </button>
             <span className="text-[#64748B] font-mono ml-2">
-              Slide {selectedSlideIndex + 1} of {slides.length} Preview Highlights
+              Slide {selectedSlideIndex + 1} of {slides.length} Report Sections
             </span>
           </div>
           <span className="text-[10px] text-[#64748B]">CONFIDENTIAL — CLIENT USE ONLY</span>

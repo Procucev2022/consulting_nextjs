@@ -57,6 +57,7 @@ import { UI_STRINGS } from '@/constants/uiStrings';
 import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancialDisplayGate';
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
+import { isBorosilAssessment } from '@/constants/executiveBriefPresentationConstants';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -186,8 +187,13 @@ export default function Home() {
   const briefDownloadLinkRef = useRef<HTMLAnchorElement>(null);
 
   const handleBriefDownload = (format: 'pdf' | 'pptx'): void => {
-    const filename = `aiCEV_UltraTech_Executive_Opportunity_Brief.${format}`;
-    const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
+    const isBorosil = isBorosilAssessment(activeAssessment?.assessmentId || tenant.enterprise_name);
+    const clientParam = isBorosil ? 'Borosil Ltd' : (tenant.enterprise_name || 'Client');
+    const assessmentParam = activeAssessment?.assessmentId || (isBorosil ? 'AIC-2026-0002' : '');
+    const filename = isBorosil
+      ? `aiCEV_Borosil_Ltd_Executive_Opportunity_Brief.${format}`
+      : `aiCEV_${clientParam.replace(/[^a-zA-Z0-9]/g, '_')}_Executive_Opportunity_Brief.${format}`;
+    const url = `/api/reports/executive-brief/download/opportunity-brief/${format}?assessmentId=${encodeURIComponent(assessmentParam)}&client=${encodeURIComponent(clientParam)}`;
     setBriefDownloadPayload({ url, filename });
     setTimeout(() => {
       if (briefDownloadLinkRef.current) {
@@ -1830,7 +1836,6 @@ export default function Home() {
             else if (yr) vYears.fy26 += cr;
           });
 
-          const riskStatuses: VendorPriceRank['risk_status'][] = ['HIGH CREEP', 'REVIEW', 'ALIGNED', 'FAVORABLE'];
           dynamicVendorRankings = vendorPareto.parents.slice(0, 10).map((v, idx) => {
             const yData = vendorYearSpendMap.get(v.name);
             const trend = yData && (yData.fy24 > 0 || yData.fy25 > 0 || yData.fy26 > 0)
@@ -1840,13 +1845,13 @@ export default function Home() {
               vendor_name: v.name,
               master_id: `VEN-M-${5000 + idx}`,
               category: idx % 2 === 0 ? 'Direct Mat.' : 'Packaging',
-              price_creep_pct: Number(((idx * 1.8) - 1.2).toFixed(1)),
+              price_creep_pct: 0,
               total_spend: Math.round((v.totalSpendCr * 10000000) / 83.8),
               total_spend_inr_cr: v.totalSpendCr,
-              risk_status: riskStatuses[idx % riskStatuses.length],
-              variance_leakage_usd: Math.round((v.totalSpendCr * 0.04 * 10000000) / 83.8),
-              variance_leakage_inr_cr: Number((v.totalSpendCr * 0.04).toFixed(2)),
-              benchmark_index: 'ICIS / S&P Global',
+              risk_status: 'REVIEW' as const,
+              variance_leakage_usd: 0,
+              variance_leakage_inr_cr: 0,
+              benchmark_index: UI_STRINGS.module3.awaitingVerifiedBenchmarks,
               last_36mo_trend: trend
             };
           });
@@ -2551,7 +2556,7 @@ export default function Home() {
         >
           <div className="w-full max-w-6xl my-auto">
             <ExecutiveOpportunityBriefView
-              clientName={tenant.enterprise_name || 'UltraTech Cement Limited'}
+              clientName={tenant.enterprise_name || 'Borosil Ltd'}
               onBackToWorkspace={() => setIsManagementSummaryOpen(false)}
               onDownloadPdf={() => handleBriefDownload('pdf')}
               onDownloadPptx={() => handleBriefDownload('pptx')}

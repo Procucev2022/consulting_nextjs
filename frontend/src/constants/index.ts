@@ -67,3 +67,15 @@ export * from './procurementCategoryMapping';
 export * from './reportingPeriod';
 export * from './module2OpportunityRegister';
 export * from './module2OpportunityValidation';
+export * from './pcbiBorosilRequirements';
+export * from './pcbiMappingMaster';
+export * from './module3CommodityCatalogA';
+export * from './module3CommodityCatalogB';
+export * from './module3CommodityResolver';
+export * from './pcbiWorkbookParser';
+export * from './borosilExecutiveBriefUiConstants';
+export * from './borosilExecutiveBriefSlideGroups';
+
+export * from './borosilCalculationMechanisms';
+export * from './borosilCommercialScenarios';
+export * from './borosilAlternativeSuppliers';

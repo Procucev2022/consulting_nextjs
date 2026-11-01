@@ -22,20 +22,20 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
 }) => {
   const s = UI_STRINGS.module3.executiveBenchmarkSummary;
 
-  const totalSpendCr = summary?.total_spend_inr_cr ?? 100.0;
-  const materialSpendCr = summary?.material_spend_inr_cr ?? (summary ? 0.0 : 70.0);
-  const serviceSpendCr = summary?.service_spend_inr_cr ?? (summary ? 0.0 : 30.0);
-  const unspscMappedCr = summary?.unspsc_mapped_spend_inr_cr ?? (summary ? 0.0 : 92.0);
-  const unspscMappingPct = summary?.unspsc_mapping_percent ?? (summary ? 0.0 : 92.0);
-  const pcbiMappedCr = summary?.pcbi_mapped_spend_inr_cr ?? (summary ? 0.0 : 88.0);
-  const pcbiCoveragePct = summary?.pcbi_coverage_percent ?? (summary ? 0.0 : 88.0);
-  const benchmarkableCr = summary?.benchmarkable_spend_inr_cr ?? (summary ? 0.0 : 70.0);
-  const benchmarkabilityPct = summary?.benchmarkability_percent ?? (summary ? 0.0 : 70.0);
-  const aQualityCr = summary?.a_quality_spend_inr_cr ?? (summary ? 0.0 : 35.0);
-  const bQualityCr = summary?.b_quality_spend_inr_cr ?? (summary ? 0.0 : 25.0);
-  const cQualityCr = summary?.c_quality_spend_inr_cr ?? (summary ? 0.0 : 10.0);
-  const notBenchmarkableCr = summary?.not_benchmarkable_spend_inr_cr ?? (summary ? totalSpendCr : 30.0);
-  const potentialOppCr = summary?.total_opportunity_inr_cr ?? 8.2;
+  const totalSpendCr = summary?.total_spend_inr_cr ?? 0.0;
+  const materialSpendCr = summary?.material_spend_inr_cr ?? 0.0;
+  const serviceSpendCr = summary?.service_spend_inr_cr ?? 0.0;
+  const unspscMappedCr = summary?.unspsc_mapped_spend_inr_cr ?? 0.0;
+  const unspscMappingPct = summary?.unspsc_mapping_percent ?? 0.0;
+  const pcbiMappedCr = summary?.pcbi_mapped_spend_inr_cr ?? 0.0;
+  const pcbiCoveragePct = summary?.pcbi_coverage_percent ?? 0.0;
+  const benchmarkableCr = summary?.benchmarkable_spend_inr_cr ?? 0.0;
+  const benchmarkabilityPct = summary?.benchmarkability_percent ?? 0.0;
+  const aQualityCr = summary?.a_quality_spend_inr_cr ?? 0.0;
+  const bQualityCr = summary?.b_quality_spend_inr_cr ?? 0.0;
+  const cQualityCr = summary?.c_quality_spend_inr_cr ?? 0.0;
+  const notBenchmarkableCr = summary?.not_benchmarkable_spend_inr_cr ?? totalSpendCr;
+  const potentialOppCr = summary?.total_opportunity_inr_cr ?? 0.0;
 
   const formatCr = (val: number): string => {
     if (val === 0) return '₹0.00 Cr';
@@ -91,8 +91,8 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
     },
     {
       label: s.benchmarkableSpend,
-      value: formatCr(benchmarkableCr),
-      badge: benchmarkableCr > 0 ? `${benchmarkabilityPct.toFixed(1)}% Benchmarkable` : 'UNAVAILABLE',
+      value: benchmarkableCr > 0 ? formatCr(benchmarkableCr) : UI_STRINGS.module3.operationalCoverageZeroLabel,
+      badge: benchmarkableCr > 0 ? `${benchmarkabilityPct.toFixed(1)}% Benchmarkable` : UI_STRINGS.module3.awaitingVerifiedBenchmarks,
       color: 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20',
       textColor: 'text-emerald-700 dark:text-emerald-400',
       icon: <Award className="w-4 h-4 text-emerald-600" />
@@ -131,8 +131,8 @@ export const ExecutiveBenchmarkSummary: React.FC<ExecutiveBenchmarkSummaryProps>
     },
     {
       label: s.potentialPcbiOpportunity,
-      value: potentialOppCr > 0 ? formatCr(potentialOppCr) : 'UNAVAILABLE',
-      badge: potentialOppCr > 0 ? 'Potential Gap' : 'UNAVAILABLE',
+      value: potentialOppCr > 0 ? formatCr(potentialOppCr) : UI_STRINGS.module3.opportunityUnavailablePending,
+      badge: potentialOppCr > 0 ? 'Potential Gap' : UI_STRINGS.module3.pendingValidationBadge,
       color: 'border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30 col-span-2 lg:col-span-2',
       textColor: 'text-rose-600 dark:text-rose-400',
       icon: <TrendingUp className="w-4 h-4 text-rose-600" />

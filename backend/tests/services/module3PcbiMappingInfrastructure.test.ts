@@ -370,17 +370,18 @@ describe('Module 3 PCBI Phase 2 — Benchmark Catalog, Source Validation & Mater
       expect(summary.marketVarianceValueCr).toBe(0.0);
     });
 
-    it('strictly guarantees that Module 4 is NOT executed', () => {
+    it('verifies that Module 4 is activated for AIC-2026-0002 upon validation gate clearance', () => {
       const summary = Module3PcbiMappingService.getCoverageSummary('AIC-2026-0002');
-      expect(summary.module4Executed).toBe(false);
+      expect(summary.module4Executed).toBe(true);
     });
 
-    it('keeps unmapped spend (₹423.49 Cr, 76.09%) visible in coverage reporting', () => {
+    it('keeps unmapped spend (₹423.49 Cr, 76.09%) and NR spend (₹133.03 Cr) visible in coverage reporting', () => {
       const summary = Module3PcbiMappingService.getCoverageSummary('AIC-2026-0002');
 
       expect(summary.unmappedSpendCr).toBe(423.4876);
       expect(summary.unmappedSpendPct).toBe(76.09);
-      expect(summary.mappedPendingApprovalSpendCr).toBe(133.0317);
+      expect(summary.mappedPendingApprovalSpendCr).toBe(0.0);
+      expect(summary.nrSpendCr).toBe(133.0317);
     });
   });
 
@@ -475,6 +476,75 @@ describe('Module 3 PCBI Phase 2 — Benchmark Catalog, Source Validation & Mater
       );
     });
 
+    it('handles proposeMaterialMapping: successfully proposes candidate mapping', async () => {
+      const req = {
+        body: {
+          assessmentId: 'AIC-2026-0002',
+          materialCode: '100SSW13FG-L',
+          benchmarkSeriesId: 'PCBI-IND-MIN-SLS-001',
+          benchmarkSeriesName: 'Indian Bureau of Mines (IBM) Silica Sand Mineral Statistics',
+          actionType: 'PROPOSE_CANDIDATE',
+          actor: 'Sriman Auditor',
+          rationale: 'Proposed IBM series for silica sand'
+        }
+      } as unknown as Request;
+      const { res, jsonSpy } = createMockResponse();
+
+      await module3CanonicalController.proposeMaterialMapping(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          mapping: expect.objectContaining({
+            materialCode: '100SSW13FG-L',
+            approvalStatus: 'PENDING',
+            benchmarkSeriesId: 'PCBI-IND-MIN-SLS-001'
+          })
+        })
+      );
+    });
+
+    it('handles proposeMaterialMapping: successfully records NO_SUITABLE_BENCHMARK', async () => {
+      const req = {
+        body: {
+          assessmentId: 'AIC-2026-0002',
+          materialCode: 'STTV2062',
+          actionType: 'NO_SUITABLE_BENCHMARK',
+          actor: 'Sriman Auditor',
+          rationale: 'Proprietary furnace tile'
+        }
+      } as unknown as Request;
+      const { res, jsonSpy } = createMockResponse();
+
+      await module3CanonicalController.proposeMaterialMapping(req, res);
+
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          mapping: expect.objectContaining({
+            materialCode: 'STTV2062',
+            approvalStatus: 'APPROVED',
+            benchmarkSeriesId: 'NONE'
+          })
+        })
+      );
+    });
+
+    it('handles proposeMaterialMapping: rejects missing materialCode or actionType with 400', async () => {
+      const req = { body: { materialCode: '' } } as unknown as Request;
+      const { res, jsonSpy, statusSpy } = createMockResponse();
+
+      await module3CanonicalController.proposeMaterialMapping(req, res);
+
+      expect(statusSpy).toHaveBeenCalledWith(400);
+      expect(jsonSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: 'Material code and action type are required.'
+        })
+      );
+    });
+
     it('handles getCoverageSummary: returns coverage summary for AIC-2026-0002', async () => {
       const req = { query: { assessmentId: 'AIC-2026-0002' } } as unknown as Request;
       const { res, jsonSpy } = createMockResponse();
@@ -489,7 +559,7 @@ describe('Module 3 PCBI Phase 2 — Benchmark Catalog, Source Validation & Mater
             baselineSpendCr: 556.5346,
             certifiedSavingsCr: 0.0,
             realizedSavingsCr: 0.0,
-            module4Executed: false
+            module4Executed: true
           })
         })
       );

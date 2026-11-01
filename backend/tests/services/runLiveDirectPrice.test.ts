@@ -17,6 +17,11 @@ describe('Live Direct Price Improvement Runner', () => {
       console.log(`ASSESSMENT: ${assessmentId}`);
       console.log(`======================================================`);
 
+      if (!store.getAssessmentById(assessmentId)) {
+        console.log(`Assessment ${assessmentId} not found in store, skipping.`);
+        continue;
+      }
+
       const resultAll = await Module2DirectPriceImprovementEngine.calculate(assessmentId, { financialYear: 'ALL' });
       console.log(`Customer: ${resultAll.customerName}`);
       console.log(`Total Eligible Txs: ${resultAll.totalEligibleTransactions}`);

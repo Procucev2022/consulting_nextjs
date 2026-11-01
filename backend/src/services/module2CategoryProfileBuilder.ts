@@ -10,7 +10,7 @@ import { Module2RecurrenceEngine } from './module2RecurrenceEngine';
 import { Module2ComparabilityEngine } from './module2ComparabilityEngine';
 import { Module2PriceEngine } from './module2PriceEngine';
 import { Module2SupplierStructureBuilder } from './module2SupplierStructureBuilder';
-import { Module2OpportunityCalculator } from './module2OpportunityCalculator';
+
 import { Module2ScorecardEngine } from './module2ScorecardEngine';
 import { Module2WaterfallBuilder } from './module2WaterfallBuilder';
 import { Module2ItemAnalysisEngine } from './module2ItemAnalysisEngine';
@@ -56,35 +56,28 @@ export class Module2CategoryProfileBuilder {
     );
 
     const items = Module2ItemAnalysisEngine.analyzeItems(categoryName, transactions, new Set());
-    const volumeBundlingOpp = items.reduce((s, it) => s + (it.volumeBundlingBenefitInr || 0), 0);
-    const specialistOpp = items.reduce((s, it) => s + (it.specialistRealignmentBenefitInr || 0), 0);
+    const rawVolumeBundlingOpp = items.reduce((s, it) => s + (it.volumeBundlingBenefitInr || 0), 0);
+    const rawSpecialistOpp = items.reduce((s, it) => s + (it.specialistRealignmentBenefitInr || 0), 0);
 
-    const eauctionCalc = Module2OpportunityCalculator.calculateEAuctionBenefit(
-      recurrence.isRecurring,
-      suppliers.length,
-      addressableSpendInr,
-      addressableQuantity,
-      dispersion,
-      credibleRef
-    );
-
-    const consolCalc = Module2OpportunityCalculator.calculateConsolidationBenefit(
-      recurrence.isRecurring,
-      suppliers,
-      addressableQuantity,
-      dispersion,
-      totalTxCount,
-      recurrence.activeMonthsCount
-    );
-
-    const netCalc = Module2OpportunityCalculator.calculateNetOpportunity(
-      eauctionCalc.opportunityInr,
-      consolCalc.opportunityInr,
-      dataConfidence !== 'INSUFFICIENT',
-      compTxCount,
-      volumeBundlingOpp,
-      specialistOpp
-    );
+    const { eauctionCalc, consolCalc, netCalc, effectiveVolBundling, effectiveSpecialist } =
+      Module2CategoryProfileHelper.resolveOpportunities({
+        categoryName,
+        transactions,
+        isRecurring: recurrence.isRecurring,
+        suppliers,
+        addressableSpendInr,
+        addressableQuantity,
+        dispersion,
+        credibleRef,
+        totalTxCount,
+        activeMonthsCount: recurrence.activeMonthsCount,
+        compTxCount,
+        dataConfidence,
+        volumeBundlingOpp: rawVolumeBundlingOpp,
+        specialistOpp: rawSpecialistOpp
+      });
+    const volumeBundlingOpp = effectiveVolBundling;
+    const specialistOpp = effectiveSpecialist;
 
     const scenarios = Module2PriceEngine.calculateOpportunityScenarios(addressableQuantity, dispersion, credibleRef);
     const scorecard = Module2ScorecardEngine.evaluateScorecard({

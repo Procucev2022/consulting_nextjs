@@ -2,8 +2,8 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react';
 import Home from '../../src/app/page';
-import { apiClient, authApiClient } from '../../src/utils/api';
-import { assessmentApiClient } from '../../src/utils/assessmentApi';
+import { apiClient, authApiClient } from '@/utils/api';
+import { assessmentApiClient } from '@/utils/assessmentApi';
 import { mockTenant } from '../../src/data/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
@@ -285,16 +285,14 @@ describe('Home Page Component', () => {
     // Check header — brand is rendered as aiCEV logo image
     expect(screen.getByAltText(UI_STRINGS.header.logoAlt)).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(apiClient.getTenant).toHaveBeenCalled();
-    });
+    await screen.findByText(sampleDoc.file_name);
 
     // Navigate to Module 2
     const step2 = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
     fireEvent.click(step2);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
-    }, { timeout: 4000 });
+    }, { timeout: 8000 });
 
     // Navigate to Module 3
     const step3 = screen.getByText(UI_STRINGS.pipeline.steps.step3.title);

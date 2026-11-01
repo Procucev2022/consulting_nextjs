@@ -211,7 +211,7 @@ export interface OpportunityWaterfallStage {
   calculationBasis: string;
 }
 
-export type {
+import type {
   PrimarySourcingLever,
   ItemSupplierPosition,
   ItemLevelSourcingAnalysis,
@@ -219,6 +219,43 @@ export type {
   MultiCategoryVendorAnalysisItem,
   CategoryFiscalYearSpendDenominator
 } from './module2ItemAnalysis';
+
+export type {
+  PrimarySourcingLever,
+  ItemSupplierPosition,
+  ItemLevelSourcingAnalysis,
+  MultiCategoryVendorCategoryItem,
+  MultiCategoryVendorAnalysisItem,
+  CategoryFiscalYearSpendDenominator
+};
+
+export interface ResolvedOpportunitiesResult {
+  eauctionCalc: {
+    suitability: EAuctionSuitability;
+    rationale: string;
+    opportunityInr: number | null;
+    opportunityPct: number | null;
+  };
+  consolCalc: {
+    suitability: ConsolidationSuitability;
+    rationale: string;
+    opportunityInr: number | null;
+    opportunityPct: number | null;
+    evidencePath: 'PATH_A' | 'PATH_B' | 'PATH_C' | 'PATH_D';
+    operational: OperationalConsolidationIndicators;
+  };
+  netCalc: {
+    overlappingInr: number;
+    netInr: number | null;
+    status: SourcingOpportunityStatus;
+    statusLabel: string;
+    isQuantifiable: boolean;
+    displayText: string;
+    primaryLever: PrimarySourcingLever;
+  };
+  effectiveVolBundling: number;
+  effectiveSpecialist: number;
+}
 
 export type {
   CategorySupplierStructureItem,

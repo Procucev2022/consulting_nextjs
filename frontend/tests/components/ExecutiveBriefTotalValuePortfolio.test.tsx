@@ -22,16 +22,16 @@ describe('ExecutiveBriefTotalValuePortfolio', () => {
     expect(screen.getAllByText(p.totalAddressableSpend).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Net Opportunity').length).toBeGreaterThan(0);
     expect(screen.getAllByText(p.netIndicativeOpportunity).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('20% Reduction').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('4 Sole-Sources').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('₹68.00 Cr Cash').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Non-Monetized').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Dual-Sourcing').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(p.hardSavingsCr).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Deductions').length).toBeGreaterThan(0);
     expect(screen.getAllByText(p.overlapDeductionCr).length).toBeGreaterThan(0);
 
     // Badges
     expect(screen.getAllByText('FACTUAL BASELINE').length).toBeGreaterThan(0);
     expect(screen.getAllByText('ESTIMATED').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('ANALYTICAL').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('GOVERNANCE').length).toBeGreaterThan(0);
     expect(screen.getAllByText('VALIDATED').length).toBeGreaterThan(0);
     expect(screen.getAllByText('OVERLAP ZERO').length).toBeGreaterThan(0);
   });
@@ -68,30 +68,30 @@ describe('ExecutiveBriefTotalValuePortfolio', () => {
     fireEvent.click(screen.getAllByText(firstOpp.opportunityId)[0]);
     expect(onSelect).toHaveBeenCalledWith(firstOpp.opportunityId);
 
-    // Open Section 3: check PO consolidation
+    // Open Section 3: check PO consolidation / process productivity
     const sec3Btn = screen.getByText(p.expanders.sec3Title).closest('button');
     fireEvent.click(sec3Btn!);
-    expect(screen.getAllByText(/20% PO Volume Reduction/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/PO Consolidation & Process Productivity Governance/i).length).toBeGreaterThan(0);
 
-    // Open Section 4: category consolidation
+    // Open Section 4: category sourcing diagnostics
     const sec4Btn = screen.getByText(p.expanders.sec4Title).closest('button');
     fireEvent.click(sec4Btn!);
-    expect(screen.getByText(/Category Consolidation & Rationalization/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Category Sourcing Diagnostics/i).length).toBeGreaterThan(0);
 
     // Open Section 5: strategic sourcing
     const sec5Btn = screen.getByText(p.expanders.sec5Title).closest('button');
     fireEvent.click(sec5Btn!);
-    expect(screen.getAllByText(/Strategic Sourcing & Competitive Tendering/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Combined Strategic Sourcing/i).length).toBeGreaterThan(0);
 
-    // Open Section 6: supplier risk
+    // Open Section 6: supplier risk / supply security
     const sec6Btn = screen.getByText(p.expanders.sec6Title).closest('button');
     fireEvent.click(sec6Btn!);
-    expect(screen.getAllByText(/Supplier Risk Mitigation/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Supply Security & Risk Mitigation/i).length).toBeGreaterThan(0);
 
-    // Open Section 7: benchmark opportunities
+    // Open Section 7: benchmark disclosure
     const sec7Btn = screen.getByText(p.expanders.sec7Title).closest('button');
     fireEvent.click(sec7Btn!);
-    expect(screen.getAllByText(/Benchmark Price Gap/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Module 3 Market Benchmark Disclosure/i).length).toBeGreaterThan(0);
 
     // Section 8 is initially open: toggle close and re-open
     const sec8Btn = screen.getByText(p.expanders.sec8Title).closest('button');

@@ -16,17 +16,33 @@ export function calculateCompositeCost(
   P0: number,
   baseDate: string,
   residualPct: number
-): { price: number; breakdowns: PCBIComponentCalculation[] } {
+): { price: number; breakdowns: PCBIComponentCalculation[]; isUnavailable?: boolean } {
   const comps = components.get(benchmarkId) || [];
+  if (comps.length === 0) {
+    return { price: 0, breakdowns: [], isUnavailable: true };
+  }
   let currentCompCostsSum = 0;
   const breakdowns: PCBIComponentCalculation[] = [];
 
   for (const comp of comps) {
     const weight = comp.weight_percent / 100;
     const baseCompCost = P0 * weight;
-    const baseCompIdx = getIndexForDateFn(benchmarkId, baseDate, comp.id)?.indexValue || 100;
-    const currCompIdx = getIndexForDateFn(benchmarkId, tx.po_date, comp.id)?.indexValue || 100;
-    const movementRatio = baseCompIdx > 0 ? currCompIdx / baseCompIdx : 1;
+    const baseCompIdxInfo = getIndexForDateFn(benchmarkId, baseDate, comp.id);
+    const currCompIdxInfo = getIndexForDateFn(benchmarkId, tx.po_date, comp.id);
+
+    if (
+      !baseCompIdxInfo ||
+      !currCompIdxInfo ||
+      baseCompIdxInfo.indexValue <= 0 ||
+      currCompIdxInfo.indexValue <= 0
+    ) {
+      // Missing or unverified observation returns explicit unavailable
+      return { price: 0, breakdowns: [], isUnavailable: true };
+    }
+
+    const baseCompIdx = baseCompIdxInfo.indexValue;
+    const currCompIdx = currCompIdxInfo.indexValue;
+    const movementRatio = currCompIdx / baseCompIdx;
     const currentCompCost = baseCompCost * movementRatio;
     currentCompCostsSum += currentCompCost;
 
@@ -44,5 +60,5 @@ export function calculateCompositeCost(
   }
 
   const residualCost = P0 * (residualPct / 100);
-  return { price: Number((currentCompCostsSum + residualCost).toFixed(2)), breakdowns };
+  return { price: Number((currentCompCostsSum + residualCost).toFixed(2)), breakdowns, isUnavailable: false };
 }

@@ -72,7 +72,7 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Background: </span><span className="text-[#475569]">{item.background}</span></div>
         <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Objective: </span><span className="text-[#475569]">{item.objective}</span></div>
         <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Evidence: </span><span className="text-[#475569]">{item.dataEvidence} <span className="font-mono text-[#0284C7]">[{item.transactionSampleId}]</span></span></div>
-        <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Current State: </span><span className="text-[#475569]">{item.currentState ?? item.whatWeFound}</span></div>
+        <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Current State: </span><span className="text-[#475569]">{item.currentState}</span></div>
         <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Finding: </span><span className="text-[#475569]">{item.finding}</span></div>
         <div><span className="font-bold text-emerald-700 uppercase text-[10px]">Range (L/B/H): </span><span className="text-emerald-700 tabular-nums font-semibold">{item.lowValue} / {item.baseValue} / {item.highValue}</span></div>
         <div><span className="font-bold text-[#64748B] uppercase text-[10px]">Calculation: </span><span className="text-[#0B1B33] tabular-nums font-medium">{item.calculation}</span></div>
@@ -119,17 +119,17 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
           </div>
           <div className="bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl p-2.5 flex flex-col justify-between">
             <span className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wide">Process Effort</span>
-            <div className="text-base font-black text-indigo-700 mt-1">20% Reduction</div>
-            <div className="mt-1">{renderBadge('ANALYTICAL')}</div>
+            <div className="text-base font-black text-indigo-700 mt-1">Non-Monetized</div>
+            <div className="mt-1">{renderBadge('GOVERNANCE')}</div>
           </div>
           <div className="bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl p-2.5 flex flex-col justify-between">
             <span className="text-[10px] font-semibold text-[#0284C7] uppercase tracking-wide">Risk Avoidance</span>
-            <div className="text-base font-black text-[#0284C7] mt-1">4 Sole-Sources</div>
-            <div className="mt-1">{renderBadge('ANALYTICAL')}</div>
+            <div className="text-base font-black text-[#0284C7] mt-1">Dual-Sourcing</div>
+            <div className="mt-1">{renderBadge('GOVERNANCE')}</div>
           </div>
           <div className="bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl p-2.5 flex flex-col justify-between">
-            <span className="text-[10px] font-semibold text-purple-700 uppercase tracking-wide">Validated Run-Rate</span>
-            <div className="text-base font-black text-purple-700 mt-1">₹68.00 Cr Cash</div>
+            <span className="text-[10px] font-semibold text-purple-700 uppercase tracking-wide">Client Review</span>
+            <div className="text-base font-black text-purple-700 mt-1">{p.hardSavingsCr}</div>
             <div className="mt-1">{renderBadge('VALIDATED')}</div>
           </div>
           <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-2.5 flex flex-col justify-between">
@@ -147,8 +147,8 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px]">
             {EXECUTIVE_BRIEF_VALUE_CLASSIFICATIONS.map((c) => (
-              <div key={c.code} className="p-1.5 rounded bg-white border border-[#DCE7F5]">
-                <span className="font-mono font-bold text-[#0284C7] block">{c.code}</span>
+              <div key={c.type} className="p-1.5 rounded bg-white border border-[#DCE7F5]">
+                <span className="font-mono font-bold text-[#0284C7] block">{c.type}</span>
                 <span className="text-[#64748B] leading-tight block mt-0.5">{c.label}</span>
               </div>
             ))}
@@ -167,22 +167,25 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         <ExecutiveBriefExpanderCard title={p.expanders.sec1Title} icon={<Database className="w-4 h-4 text-[#0284C7]" />} isOpen={openSections[1] ?? false} onToggle={() => toggleSection(1)}>
           <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg text-xs text-[#475569] leading-relaxed space-y-1.5">
             <div className="font-bold text-[#0284C7]">Verified Spend Base (Module 1 Diagnostics)</div>
-            <p>Total Customer Evaluated Spend: ₹5,920.35 Cr • Addressable Procurement Base: ₹4,931.00 Cr (83.3%) across 31,671 transactions, 4,120 POs, and 912 tail suppliers. Non-addressable spend (taxes, statutory, inter-company) excluded.</p>
+            <p>Total Customer Evaluated Spend: ₹556.535 Cr • Addressable Sourcing Spend: ₹168.658 Cr across 27,777 canonical transactions, 3 manufacturing plants, and 1,489 suppliers. Lever 2 Vendor Consolidation (₹12.081 Cr spend) is under commercial validation with savings not yet established.</p>
           </div>
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec2Title} icon={<TrendingUp className="w-4 h-4 text-emerald-600" />} isOpen={openSections[2] ?? false} onToggle={() => toggleSection(2)}>
-          {opps.filter((o) => o.analysis === 'Vendor Consolidation').map(renderFinding19)}
+          {opps.filter((o) => o.analysis.includes('Vendor')).map(renderFinding19)}
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec3Title} icon={<Layers className="w-4 h-4 text-indigo-600" />} isOpen={openSections[3] ?? false} onToggle={() => toggleSection(3)}>
-          {opps.filter((o) => o.valueClassification === 'PROCESS_PRODUCTIVITY').map(renderFinding19)}
+          <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg text-xs text-[#475569] leading-relaxed">
+            <span className="font-bold text-indigo-700">PO Consolidation & Process Productivity Governance: </span>
+            Order frequency rationalization and tail PO reduction are tracked as non-monetized operational efficiency measures. Zero synthetic process savings are claimed in the customer brief to protect CFO trust.
+          </div>
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec4Title} icon={<Building2 className="w-4 h-4 text-teal-600" />} isOpen={openSections[4] ?? false} onToggle={() => toggleSection(4)}>
           <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg text-xs text-[#475569] leading-relaxed">
-            <span className="font-bold text-teal-700">Category Consolidation &amp; Rationalization: </span>
-            16 spend categories evaluated. Fragmented MRO, Packaging, and Logistics categories consolidated across standardized specifications.
+            <span className="font-bold text-teal-700">Category Sourcing Diagnostics: </span>
+            133 spend categories evaluated across 106 qualified sourcing packages. Direct Materials, Packaging, and Core Chemicals prioritized for Wave 1–2 commercial execution.
           </div>
         </ExecutiveBriefExpanderCard>
 
@@ -191,11 +194,17 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec6Title} icon={<ShieldCheck className="w-4 h-4 text-amber-600" />} isOpen={openSections[6] ?? false} onToggle={() => toggleSection(6)}>
-          {opps.filter((o) => o.valueClassification === 'COST_AVOIDANCE').map(renderFinding19)}
+          <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg text-xs text-[#475569] leading-relaxed">
+            <span className="font-bold text-amber-700">Supply Security & Risk Mitigation: </span>
+            Dual-sourcing and vendor qualification for sole-source raw materials are handled under governance. No synthetic cost avoidance numbers are monetized.
+          </div>
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec7Title} icon={<BarChart3 className="w-4 h-4 text-[#0284C7]" />} isOpen={openSections[7] ?? false} onToggle={() => toggleSection(7)}>
-          {opps.filter((o) => o.module === 'Module 3').map(renderFinding19)}
+          <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg text-xs text-[#475569] leading-relaxed">
+            <span className="font-bold text-[#0284C7]">Module 3 Market Benchmark Disclosure: </span>
+            Module 3 research is formally closed for this assessment. Benchmark coverage: 0%. Benchmark-derived savings: ₹0. Status: Research Closed — No Operational Benchmark Data Available.
+          </div>
         </ExecutiveBriefExpanderCard>
 
         <ExecutiveBriefExpanderCard title={p.expanders.sec8Title} icon={<CheckCircle2 className="w-4 h-4 text-emerald-600" />} isOpen={openSections[8] ?? false} onToggle={() => toggleSection(8)}>
@@ -237,7 +246,7 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
                       <span className="font-mono text-[#64748B]">{val.itemId}: </span>
                       <span className="text-[#0B1B33]">{val.item}</span>
                     </div>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${val.status === 'VALIDATED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {val.status}
                     </span>
                   </div>
@@ -250,7 +259,7 @@ export const ExecutiveBriefTotalValuePortfolio: React.FC<ExecutiveBriefTotalValu
         <ExecutiveBriefExpanderCard title={p.expanders.sec11Title} icon={<Calendar className="w-4 h-4 text-indigo-600" />} isOpen={openSections[11] ?? false} onToggle={() => toggleSection(11)}>
           <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg text-xs text-[#475569] leading-relaxed space-y-1">
             <span className="font-bold text-indigo-700">Procurement Value Realization Roadmap: </span>
-            <p>Phase 1 (Day 1–30): Index resets &amp; RFP issuance • Phase 2 (Day 31–90): Volume negotiation &amp; dual-source audits • Phase 3 (Day 91–180): Blanket POs &amp; ERP rate enforcement.</p>
+            <p>Wave 1 (Month 1–3): Direct Negotiations on Soda Ash &amp; Core Raw Materials (₹8.50 Cr) • Wave 2 (Month 3–6): Dynamic Reverse E-Auctions on Packaging (₹3.20 Cr) • Wave 3 (Month 6–12): Vendor Consolidation &amp; Framework Agreements (₹1.20 Cr). Proposed Year 1 Sourcing Target: ₹12.90 Cr (Proposed Target, Not Approved or Realized).</p>
           </div>
         </ExecutiveBriefExpanderCard>
       </div>

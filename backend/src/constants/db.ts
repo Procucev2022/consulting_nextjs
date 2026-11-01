@@ -18,3 +18,7 @@ export const CACHE_KEYS = {
   SAVINGS_OPPORTUNITIES: 'savings:opportunities',
   CONVERSION_FUNNEL: 'conversion:funnel'
 } as const;
+
+export const getAssessmentCacheKey = (prefix: string, assessmentId?: string): string =>
+  assessmentId ? `asmt:${assessmentId}:${prefix}` : prefix;
+

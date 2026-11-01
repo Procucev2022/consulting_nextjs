@@ -1,3 +1,4 @@
+import * as path from 'path';
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import type { Request, Response } from 'express';
 import {
@@ -5,6 +6,7 @@ import {
   getErrorMessage
 } from '../../src/controllers/module4Canonical.controller';
 import { Module4SavingsForensicEngine } from '../../src/services/module4SavingsForensicEngine';
+import { Module4SavingsWorkbookBuilder } from '../../src/services/module4SavingsWorkbookBuilder';
 import { VgtModule1Runner } from '../../src/services/vgtModule1Runner';
 
 describe('Module 4 Canonical Controller', () => {
@@ -18,13 +20,14 @@ describe('Module 4 Canonical Controller', () => {
     Module4SavingsForensicEngine.clearCache();
     VgtModule1Runner.processVgtDataset();
     Module4SavingsForensicEngine.getCertificationReport();
-  }, 60000);
+    Module4SavingsForensicEngine.getCertificationReport('PENDING_WORKBOOK_BUILD', 'AIC-2026-0002');
+  }, 90000);
 
   beforeEach(() => {
     jsonMock = vi.fn();
     statusMock = vi.fn().mockReturnThis();
     downloadMock = vi.fn();
-    mockReq = {};
+    mockReq = { query: { assessmentId: 'AIC-2026-0001' } };
     mockRes = {
       json: jsonMock,
       status: statusMock,
@@ -32,7 +35,47 @@ describe('Module 4 Canonical Controller', () => {
     };
   });
 
-  it('getAuditReport should return certification report', async () => {
+  it('rejects endpoints when assessmentId is missing', async () => {
+    mockReq = { query: {} };
+    await module4CanonicalController.getAuditReport(mockReq as Request, mockRes as Response);
+    expect(statusMock).toHaveBeenCalledWith(400);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false, message: expect.stringContaining('Assessment ID is required') })
+    );
+  });
+
+  it('returns STAGED_NOT_ACTIVATED when requested for unactivated assessment (AIC-2026-0003)', async () => {
+    mockReq = { query: { assessmentId: 'AIC-2026-0003' } };
+    await module4CanonicalController.getAuditReport(mockReq as Request, mockRes as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        assessmentId: 'AIC-2026-0003',
+        status: 'STAGED_NOT_ACTIVATED'
+      })
+    );
+
+    await module4CanonicalController.downloadEvidenceWorkbook(mockReq as Request, mockRes as Response);
+    expect(statusMock).toHaveBeenCalledWith(400);
+  });
+
+  it('returns live activated certification report for Borosil (AIC-2026-0002)', async () => {
+    mockReq = { query: { assessmentId: 'AIC-2026-0002' } };
+    await module4CanonicalController.getAuditReport(mockReq as Request, mockRes as Response);
+    expect(jsonMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        report: expect.objectContaining({
+          finalVerdict: 'SAVINGS ENGINE CERTIFIED',
+          netOpportunityCr: 87.1,
+          eligibleSpendCr: 168.658,
+          opportunitiesCount: 105
+        })
+      })
+    );
+  }, 60000);
+
+  it('getAuditReport should return certification report for AIC-2026-0001', async () => {
     await module4CanonicalController.getAuditReport(mockReq as Request, mockRes as Response);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -84,6 +127,10 @@ describe('Module 4 Canonical Controller', () => {
   });
 
   it('downloadEvidenceWorkbook should trigger workbook download', async () => {
+    vi.spyOn(Module4SavingsWorkbookBuilder, 'buildWorkbook').mockReturnValueOnce({
+      filePath: path.resolve(process.cwd(), 'MODULE_4_FINAL_SAVINGS_EVIDENCE.xlsx'),
+      sha256: 'mock_sha256'
+    });
     await module4CanonicalController.downloadEvidenceWorkbook(mockReq as Request, mockRes as Response);
     expect(downloadMock).toHaveBeenCalledWith(
       expect.stringContaining('MODULE_4_FINAL_SAVINGS_EVIDENCE.xlsx'),
@@ -108,7 +155,7 @@ describe('Module 4 Canonical Controller', () => {
   });
 
   it('getTransactionLineage should return lineage rows and metrics', async () => {
-    mockReq = { query: { limit: '50', offset: '0' } };
+    mockReq = { query: { assessmentId: 'AIC-2026-0001', limit: '50', offset: '0' } };
     await module4CanonicalController.getTransactionLineage(mockReq as Request, mockRes as Response);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -120,7 +167,7 @@ describe('Module 4 Canonical Controller', () => {
     );
 
     // Test with all=true
-    mockReq = { query: { all: 'true' } };
+    mockReq = { query: { assessmentId: 'AIC-2026-0001', all: 'true' } };
     await module4CanonicalController.getTransactionLineage(mockReq as Request, mockRes as Response);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -131,7 +178,7 @@ describe('Module 4 Canonical Controller', () => {
   });
 
   it('getTransactionLineageTests should return 25 test gates', async () => {
-    mockReq = {};
+    mockReq = { query: { assessmentId: 'AIC-2026-0001' } };
     await module4CanonicalController.getTransactionLineageTests(mockReq as Request, mockRes as Response);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -146,7 +193,7 @@ describe('Module 4 Canonical Controller', () => {
     vi.spyOn(Module4SavingsForensicEngine, 'getCompleteTransactionLineage').mockImplementationOnce(() => {
       throw new Error('Lineage fetch error');
     });
-    mockReq = { query: {} };
+    mockReq = { query: { assessmentId: 'AIC-2026-0001' } };
     await module4CanonicalController.getTransactionLineage(mockReq as Request, mockRes as Response);
     expect(statusMock).toHaveBeenCalledWith(500);
 
@@ -158,7 +205,7 @@ describe('Module 4 Canonical Controller', () => {
   });
 
   it('getLineageSetReconciliation should return reconciliation summary', async () => {
-    mockReq = {};
+    mockReq = { query: { assessmentId: 'AIC-2026-0001' } };
     await module4CanonicalController.getLineageSetReconciliation(mockReq as Request, mockRes as Response);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -173,7 +220,7 @@ describe('Module 4 Canonical Controller', () => {
   });
 
   it('getLineageContradictionTests should return 12 contradiction closeout tests', async () => {
-    mockReq = {};
+    mockReq = { query: { assessmentId: 'AIC-2026-0001' } };
     await module4CanonicalController.getLineageContradictionTests(mockReq as Request, mockRes as Response);
     expect(jsonMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -188,6 +235,7 @@ describe('Module 4 Canonical Controller', () => {
     vi.spyOn(Module4SavingsForensicEngine, 'getLineageSetReconciliation').mockImplementationOnce(() => {
       throw new Error('Reconciliation error');
     });
+    mockReq = { query: { assessmentId: 'AIC-2026-0001' } };
     await module4CanonicalController.getLineageSetReconciliation(mockReq as Request, mockRes as Response);
     expect(statusMock).toHaveBeenCalledWith(500);
 

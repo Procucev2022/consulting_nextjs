@@ -1,13 +1,16 @@
 'use client';
 
-import React from 'react';
-import { EXECUTIVE_BRIEF_PRESENTATION_CONTRACT } from '@/constants/executiveBriefPresentationConstants';
+import { getExecutiveBriefPresentationContract } from '@/constants/executiveBriefPresentationConstants';
 import { UI_STRINGS } from '@/constants/uiStrings';
 
-export const ExecutiveOpportunityBriefSlideContent: React.FC<{ currentSlide: number }> = ({
-  currentSlide
+export const ExecutiveOpportunityBriefSlideContent: React.FC<{
+  currentSlide: number;
+  clientName?: string;
+}> = ({
+  currentSlide,
+  clientName
 }): React.ReactElement => {
-  const contract = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;
+  const contract = getExecutiveBriefPresentationContract(clientName);
   const strings = UI_STRINGS.opportunityBrief;
 
   switch (currentSlide) {

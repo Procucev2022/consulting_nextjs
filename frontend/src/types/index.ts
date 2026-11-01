@@ -66,4 +66,17 @@ export * from './module2AlternateSourcing';
 export * from './module2SavingsDeduplication';
 export * from './reportingPeriod';
 export * from './module2OpportunityRegister';
+export type {
+  PCBIMissingIndexExplicitStatus,
+  PCBIMissingIndexGapItem,
+  PCBIGapStatusSummaryItem,
+  PCBIMissingIndexGapReport,
+  PCBIMissingIndexGapViewProps,
+  PCBIMissingIndexTableProps,
+  PCBIMaterialAuditModalProps,
+  PCBIMissingIndexStatusCardsProps
+} from './module3GapList';
+export * from './module3PcbiMapping';
+export * from './module3CommodityResolver';
+export * from './pcbiWorkbookParser';
 

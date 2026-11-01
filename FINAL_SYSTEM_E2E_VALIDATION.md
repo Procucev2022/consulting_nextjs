@@ -2,7 +2,7 @@
 **aiCEV / Procucev — MODULES 1 → 4**  
 **VERSION**: `FINAL_PRE_PRODUCTION_SYSTEM_HARDENING_V1.0`  
 **FINAL SYSTEM STATUS**: `FINAL_SYSTEM_STATUS = PRODUCTION_READY`  
-**EVALUATION TIMESTAMP**: `2026-09-30T18:35:32.738Z`
+**EVALUATION TIMESTAMP**: `2026-10-30T14:30:35.967Z`
 
 ---
 
@@ -29,10 +29,10 @@ The architectural boundary across all four modules is formally frozen and verifi
 
 ## Part G to K — Module 2 Strategic Sourcing & Double-Counting Control
 
-- **Gross Identified Opportunity**: ₹323.27 Cr
+- **Gross Identified Opportunity**: ₹173.12 Cr
 - **Mutually Compatible Deduplication**: -₹62.80 Cr
 - **Commercial Risk Exclusions**: -₹16.72 Cr
-- **Net Defensible Opportunity**: **₹243.75 Cr** (Variance: **₹0.00**)
+- **Net Defensible Opportunity**: **₹93.60 Cr** (Variance: **₹0.00**)
 - **Double-Counting Control**: Single transaction contributes to exactly one net defensible allocation.
 - **E-Auction Logic**: Framed strictly as potential competitive range with demonstrated historical price dispersion.
 - **Opportunity Range**: Low Case, Base Case, and High Case formally defined with mathematical basis.
@@ -62,13 +62,14 @@ All **40 / 40 Adversarial Scenarios PASSED** (40 passed, 0 failed):
 
 | Invariant ID | Formula Identity | Left Value | Right Value | Variance | Status |
 |---|---|---|---|---|---|
-| `INV-01` | TOTAL_TRANSACTION_SPEND = SUM_VALID_TRANSACTION_SPEND | ₹59203477681.66 | ₹59203477681.66 | ₹0.00 | **PASS** |
-| `INV-02` | CATEGORY_TOTAL = SUM_CATEGORY_TRANSACTIONS | ₹59203477681.66 | ₹59203477681.66 | ₹0.00 | **PASS** |
-| `INV-03` | SUPPLIER_TOTAL = SUM_SUPPLIER_TRANSACTIONS | ₹59203477681.66 | ₹59203477681.66 | ₹0.00 | **PASS** |
-| `INV-04` | ITEM_TOTAL = SUM_ITEM_TRANSACTIONS | ₹59203477681.66 | ₹59203477681.66 | ₹0.00 | **PASS** |
-| `INV-05` | OPPORTUNITY_TOTAL = SUM_ELIGIBLE_OPPORTUNITY_TRANSACTIONS | ₹323.27 | ₹323.27 | ₹0.00 | **PASS** |
-| `INV-06` | NET_OPPORTUNITY = GROSS - OVERLAPS - EXCLUSIONS | ₹243.75 | ₹243.75 | ₹0.00 | **PASS** |
-| `INV-07` | MODULE_4_HANDOFF_TOTAL = APPROVED_MODULE_2_OPPORTUNITY_TOTAL | ₹47.90 | ₹47.90 | ₹0.00 | **PASS** |
+| `INV-01` | TOTAL_TRANSACTION_SPEND = SUM_VALID_TRANSACTION_SPEND | ₹59,203,477,681.66 | ₹59,203,477,681.66 | ₹0.00 | **PASS** |
+| `INV-02` | CATEGORY_TOTAL = SUM_CATEGORY_TRANSACTIONS | ₹59,203,477,681.66 | ₹59,203,477,681.66 | ₹0.00 | **PASS** |
+| `INV-03` | SUPPLIER_TOTAL = SUM_SUPPLIER_TRANSACTIONS | ₹59,203,477,681.66 | ₹59,203,477,681.66 | ₹0.00 | **PASS** |
+| `INV-04` | ITEM_TOTAL = SUM_ITEM_TRANSACTIONS | ₹59,203,477,681.66 | ₹59,203,477,681.66 | ₹0.00 | **PASS** |
+| `INV-05` | OPPORTUNITY_TOTAL = SUM_ELIGIBLE_OPPORTUNITY_TRANSACTIONS | ₹173.12 Cr | ₹173.12 Cr | ₹0.00 | **PASS** |
+| `INV-06` | NET_OPPORTUNITY = GROSS - OVERLAPS - EXCLUSIONS | ₹93.60 Cr | ₹93.60 Cr | ₹0.00 | **PASS** |
+| `INV-07` | MODULE_4_HANDOFF_TOTAL = APPROVED_MODULE_2_OPPORTUNITY_TOTAL | ₹47.90 Cr | ₹47.90 Cr | ₹0.00 | **PASS** |
+
 
 ---
 

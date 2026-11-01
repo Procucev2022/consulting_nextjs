@@ -19,7 +19,9 @@ import { logger } from '../utils/logger';
 
 import {
   aggregateDatasetRows,
-  buildCurrencyForensicDetails
+  buildCurrencyForensicDetails,
+  calculateSpendImpactMetrics,
+  countSuspectedDuplicates
 } from './assessmentDatasetAggregator';
 
 export interface ParseOptions {
@@ -29,40 +31,6 @@ export interface ParseOptions {
   isTestData?: boolean;
   baseCurrency?: string;
   analystConfirmedCurrency?: string;
-}
-
-interface SpendImpactMetrics {
-  customerProfileSpendInr: number;
-  customerProfileSpendCr: number;
-  fxImpactInr: number;
-  fxImpactCr: number;
-  fxImpactPct: number;
-}
-
-function calculateSpendImpactMetrics(
-  totalNormalizedInr: number,
-  totalRawInr: number,
-  totalSpendCr: number,
-  isSyntheticTest: boolean
-): SpendImpactMetrics {
-  if (!isSyntheticTest) {
-    return {
-      customerProfileSpendInr: totalNormalizedInr,
-      customerProfileSpendCr: totalSpendCr,
-      fxImpactInr: 0.0,
-      fxImpactCr: 0.0,
-      fxImpactPct: 0.0
-    };
-  }
-  const delta = totalNormalizedInr - totalRawInr;
-  const pct = totalRawInr > 0 ? Number(((delta / totalRawInr) * 100).toFixed(2)) : 0.0;
-  return {
-    customerProfileSpendInr: Number(totalRawInr.toFixed(2)),
-    customerProfileSpendCr: Number((totalRawInr / 10000000).toFixed(4)),
-    fxImpactInr: Number(delta.toFixed(2)),
-    fxImpactCr: Number((delta / 10000000).toFixed(4)),
-    fxImpactPct: pct
-  };
 }
 
 function isVgtTarget(options: ParseOptions): boolean {
@@ -91,44 +59,17 @@ function resolveStoreBaseCurrency(options: ParseOptions): void {
   }
 }
 
-function extractPoNumber(r: Record<string, unknown>): string {
-  const keys = ['Purchasing Document', 'Purch.Doc.', 'Purchase Doc.', 'PO Number', 'PO NO', 'PO', 'Document', 'EBELN'];
-  for (const k of keys) {
-    const val = r[k];
-    if (val !== undefined && val !== null && String(val).trim().length > 0) {
-      return String(val).trim();
-    }
-  }
-  return '';
-}
-
-function extractPoItem(r: Record<string, unknown>): string {
-  const keys = ['Item', 'Line Item', 'Line', 'PO Line', 'EBELP'];
-  for (const k of keys) {
-    const val = r[k];
-    if (val !== undefined && val !== null && String(val).trim().length > 0) {
-      return String(val).trim();
-    }
-  }
-  return '';
-}
-
-function countSuspectedDuplicates(rawRows: Record<string, unknown>[]): number {
-  const poLineKeyCount = new Map<string, number>();
-  for (const r of rawRows) {
-    const key = `${extractPoNumber(r)}|${extractPoItem(r)}`;
-    poLineKeyCount.set(key, (poLineKeyCount.get(key) ?? 0) + 1);
-  }
-  return [...poLineKeyCount.values()].reduce((sum, cnt) => sum + Math.max(0, cnt - 1), 0);
-}
-
-function readExcelWorkbook(filePath: string): {
+function readExcelWorkbook(
+  filePath: string,
+  existingBuf?: Buffer,
+  existingSha256?: string
+): {
   rawRows: Record<string, unknown>[];
   fileSha256: string;
   sheetNames: string[];
 } {
-  const fileBuf = fs.readFileSync(filePath);
-  const fileSha256 = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
+  const fileBuf = existingBuf || fs.readFileSync(filePath);
+  const fileSha256 = existingSha256 || crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
   const cachePath = `${filePath}.${fileSha256}.cache.json`;
 
   if (fs.existsSync(cachePath)) {
@@ -176,7 +117,31 @@ export class AssessmentDatasetParser {
 
     resolveStoreBaseCurrency(options);
 
-    const { rawRows, fileSha256, sheetNames } = readExcelWorkbook(filePath);
+    const fileBuf = fs.readFileSync(filePath);
+    const fileSha256 = crypto.createHash('sha256').update(fileBuf).digest('hex').toLowerCase();
+    const optHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify({
+        id: options.assessmentId,
+        cur: options.baseCurrency || options.analystConfirmedCurrency,
+        test: options.isTestData
+      }))
+      .digest('hex');
+    const resultCachePath = `${filePath}.${fileSha256}.${optHash}.parsed_result.json`;
+
+    if (fs.existsSync(resultCachePath)) {
+      try {
+        const cachedResult = JSON.parse(fs.readFileSync(resultCachePath, 'utf8'));
+        if (cachedResult?.validRows?.length > 0 || cachedResult?.data?.anomalyRowCount > 0) {
+          return cachedResult;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    const { rawRows, sheetNames } = readExcelWorkbook(filePath, fileBuf, fileSha256);
+
     const sourceRowCount = rawRows.length;
     const suspectedDuplicateRowCount = countSuspectedDuplicates(rawRows);
 
@@ -234,7 +199,7 @@ export class AssessmentDatasetParser {
       anomalyRowCount
     });
 
-    return {
+    const finalResult: VgtProcessingResult = {
       file: {
         filename: options.fileName || path.basename(filePath),
         sha256: fileSha256,
@@ -322,5 +287,13 @@ export class AssessmentDatasetParser {
       validRows,
       validNormalizedTransactions: validNormalized
     };
+
+    try {
+      fs.writeFileSync(resultCachePath, JSON.stringify(finalResult), 'utf8');
+    } catch {
+      // Non-fatal if disk write fails
+    }
+
+    return finalResult;
   }
 }

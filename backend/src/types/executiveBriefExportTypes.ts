@@ -3,6 +3,17 @@
  */
 
 import type { ExecutiveBriefMetadata, ExecutiveFindingCard } from './executiveBriefTypes';
+import type { AssessmentRecord } from './assessment';
+
+export type { ExecutiveBriefMetadata, ExecutiveFindingCard };
+
+export interface ResolvedExecutiveBriefContext {
+  isBorosil: boolean;
+  assessmentId: string;
+  customerId: string;
+  customerName: string;
+  assessmentRecord: AssessmentRecord;
+}
 
 export type ExportGenerationStatus =
   | 'PREPARING'

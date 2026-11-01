@@ -83,11 +83,17 @@ export class VgtForensicBridgeCalculator {
     const fxImpactByCurr: Record<string, number> = {};
 
     for (const curr of ['INR', 'USD', 'EUR', 'CNY']) {
-      const s = currStats[curr];
+      const s = currStats[curr] || {
+        count: 0,
+        origVal: 0,
+        profileInr: 0,
+        histInr: 0,
+        pRate: profileRates[curr] ?? 1.0
+      };
       customerProfileValidSpendInr += s.profileInr;
       const impactInr = Number((s.histInr - s.profileInr).toFixed(2));
       const impactCr = Number((impactInr / 10000000).toFixed(4));
-      const impactPct = Number(((impactInr / s.profileInr) * 100).toFixed(2));
+      const impactPct = s.profileInr > 0 ? Number(((impactInr / s.profileInr) * 100).toFixed(2)) : 0;
 
       txCountByCurrency[curr] = s.count;
       originalSpendByCurr[curr] = Number(s.origVal.toFixed(2));

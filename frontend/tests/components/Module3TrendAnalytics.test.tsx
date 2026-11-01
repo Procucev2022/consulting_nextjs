@@ -166,6 +166,76 @@ describe('Module3TrendAnalytics Component', () => {
     fireEvent.click(upgradeBtn);
     expect(onUpgrade).toHaveBeenCalledWith('GOLD');
   });
+
+  it('switches between Trend Analytics and Missing-Index Gap Register tabs', () => {
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={sampleVendorPriceRanks}
+        onProceedToSavings={vi.fn()}
+      />
+    );
+
+    // Default view is Trend Analytics
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+
+    // Click Missing-Index Gap List tab
+    const gapListTab = screen.getByRole('button', { name: UI_STRINGS.module3.gapList.tabGapList });
+    fireEvent.click(gapListTab);
+
+    // Now on Gap List view
+    expect(screen.getByRole('button', { name: UI_STRINGS.module3.gapList.tabTrends })).toBeInTheDocument();
+
+    // Switch back to Trend Analytics tab
+    const trendsTab = screen.getByRole('button', { name: UI_STRINGS.module3.gapList.tabTrends });
+    fireEvent.click(trendsTab);
+
+    expect(screen.getByText(UI_STRINGS.module3.heading)).toBeInTheDocument();
+  });
+
+  it('respects initialView="GAP_LIST" prop', () => {
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={sampleVendorPriceRanks}
+        onProceedToSavings={vi.fn()}
+        initialView="GAP_LIST"
+      />
+    );
+
+    // Initial view should be Gap List
+    const trendsTab = screen.getByRole('button', { name: UI_STRINGS.module3.gapList.tabTrends });
+    expect(trendsTab).toBeInTheDocument();
+  });
+
+  it('renders Borosil readiness banner and navigates to Gap List on button click', () => {
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={sampleVendorPriceRanks}
+        onProceedToSavings={vi.fn()}
+        assessmentId="AIC-2026-0002"
+      />
+    );
+
+    expect(screen.getByText(UI_STRINGS.module3.gapList.bannerTitle)).toBeInTheDocument();
+    const viewGapBtn = screen.getByRole('button', { name: UI_STRINGS.module3.gapList.btnViewGapRegister });
+    expect(viewGapBtn).toBeInTheDocument();
+    fireEvent.click(viewGapBtn);
+
+    // Should switch to Gap List view
+    expect(screen.getByRole('button', { name: UI_STRINGS.module3.gapList.tabTrends })).toBeInTheDocument();
+  });
+
+  it('triggers explainability modal via why this benchmark button', () => {
+    render(
+      <Module3TrendAnalytics
+        vendorRankings={sampleVendorPriceRanks}
+        onProceedToSavings={vi.fn()}
+      />
+    );
+
+    const explainButtons = screen.getAllByRole('button', { name: new RegExp(UI_STRINGS.module3.explainability.btnLabel, 'i') });
+    expect(explainButtons.length).toBeGreaterThan(0);
+    fireEvent.click(explainButtons[0]);
+  });
 });
 
 

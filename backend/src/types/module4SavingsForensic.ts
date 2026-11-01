@@ -204,6 +204,10 @@ export interface Module4FinancialBridge {
   module4ExclusionsCr: number;
   module4NetOpportunityCr: number;
   module4ProvenOpportunityCr: number;
+  approvedOpportunityCr?: number;
+  negotiatedOpportunityCr?: number;
+  implementedOpportunityCr?: number;
+  realizedSavingsCr?: number;
   module4DeliveryLowCr: number;
   module4DeliveryHighCr: number;
   realizedSavingsStatus: string;

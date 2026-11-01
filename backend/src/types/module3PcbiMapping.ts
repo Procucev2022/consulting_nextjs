@@ -17,6 +17,8 @@ export type BenchmarkMappingStatus =
   | 'INCOMPATIBLE_SPECIFICATION'
   | 'INCOMPATIBLE_UOM'
   | 'INCOMPATIBLE_CURRENCY'
+  | 'NO_SUITABLE_BENCHMARK_IDENTIFIED'
+  | 'NEW_BENCHMARK_SERIES_REQUIRED'
   | 'UNMAPPED';
 
 export type MappingConfidenceRating = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNMAPPED';
@@ -144,4 +146,7 @@ export interface BorosilBenchmarkCoverageSummary {
   certifiedSavingsCr: number;
   realizedSavingsCr: number;
   module4Executed: boolean;
+  finalStatus?: string;
+  nrSpendCr?: number;
+  researchStatus?: string;
 }

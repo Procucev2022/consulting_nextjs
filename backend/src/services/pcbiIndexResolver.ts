@@ -50,12 +50,17 @@ export function getIndexForDate(
   pcbiId: string,
   dateStr: string,
   componentId?: string
-): { indexValue: number; source: string; quality: PCBIQualityRating } {
+): { indexValue: number; source: string; quality: PCBIQualityRating } | null {
   const monday = getMondayOfWeek(dateStr);
   const key = componentId ? `${pcbiId}:${componentId}:${monday}` : `${pcbiId}:${monday}`;
   const directMatch = weeklyIndices.get(key);
 
-  if (directMatch) {
+  if (
+    directMatch &&
+    typeof directMatch.index_value === 'number' &&
+    !isNaN(directMatch.index_value) &&
+    directMatch.index_value > 0
+  ) {
     return {
       indexValue: directMatch.index_value,
       source: directMatch.source,
@@ -63,22 +68,9 @@ export function getIndexForDate(
     };
   }
 
-  const candidates = Array.from(weeklyIndices.values()).filter((item) => {
-    if (item.pcbi_id !== pcbiId || item.week_start > monday) return false;
-    return componentId ? item.component_id === componentId : !item.component_id;
-  });
-
-  if (candidates.length > 0) {
-    candidates.sort((a, b) => b.week_start.localeCompare(a.week_start));
-    const latestBefore = candidates[0];
-    return {
-      indexValue: latestBefore.index_value,
-      source: `${latestBefore.source} (Forward-Filled from ${latestBefore.week_start})`,
-      quality: 'B'
-    };
-  }
-
-  return { indexValue: 100.0, source: 'Base Baseline (100.0)', quality: 'C' };
+  // Strictly NO blind fallback to 100.0 and NO unsafe forward-filling
+  // Missing or unverified observations return explicit null
+  return null;
 }
 
 export function validateModule2Authority(tx: Partial<PCBIClientPurchaseTransaction> & {

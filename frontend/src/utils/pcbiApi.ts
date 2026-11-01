@@ -159,5 +159,46 @@ export const pcbiApiClient = {
       body: JSON.stringify({ email, code })
     });
     return await res.json();
+  },
+
+  async getPCBIMissingIndexGapList(assessmentId = 'AIC-2026-0002'): Promise<Record<string, unknown>> {
+    frontendLogger.info('Fetching Module 3 PCBI missing-index gap list', { assessmentId });
+    const res = await fetch(`${API_BASE}/api/module3/gap-list?assessmentId=${encodeURIComponent(assessmentId)}`);
+    return await res.json();
+  },
+
+  getPCBIMissingIndexGapListExportUrl(assessmentId = 'AIC-2026-0002'): string {
+    return `${API_BASE}/api/module3/gap-list/export?assessmentId=${encodeURIComponent(assessmentId)}`;
+  },
+
+  async getMaterialMappings(assessmentId = 'AIC-2026-0002'): Promise<Record<string, unknown>> {
+    frontendLogger.info('Fetching Module 3 material benchmark mappings', { assessmentId });
+    const res = await fetch(`${API_BASE}/api/module3/mappings?assessmentId=${encodeURIComponent(assessmentId)}`);
+    return await res.json();
+  },
+
+  async updateMappingApproval(
+    mappingId: string,
+    approvalStatus: 'APPROVED' | 'REJECTED',
+    actor = 'Authorized Reviewer',
+    comment = 'Formal mapping review decision'
+  ): Promise<Record<string, unknown>> {
+    frontendLogger.info('Updating material mapping approval status', { mappingId, approvalStatus, actor });
+    const res = await fetch(`${API_BASE}/api/module3/mappings/approval`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mappingId, approvalStatus, actor, comment })
+    });
+    return await res.json();
+  },
+
+  async proposeMaterialMapping(payload: Record<string, unknown>): Promise<Record<string, unknown>> {
+    frontendLogger.info('Submitting proposed material benchmark mapping', { payload });
+    const res = await fetch(`${API_BASE}/api/module3/mappings/propose`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
   }
 };

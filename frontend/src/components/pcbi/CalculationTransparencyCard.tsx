@@ -51,6 +51,18 @@ export const CalculationTransparencyCard: React.FC<CalculationTransparencyCardPr
         </div>
       </div>
 
+      {/* Prominent Illustrative Example Banner */}
+      <div className="p-3.5 rounded-xl bg-amber-500/10 border-2 border-amber-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center space-x-3">
+          <span className="px-2.5 py-1 rounded-md bg-amber-500 text-slate-950 font-black text-xs font-mono uppercase tracking-wider shrink-0">
+            {cStrings.illustrativeBadge}
+          </span>
+          <span className="text-xs text-amber-900 font-medium">
+            {cStrings.illustrativeNotice}
+          </span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Step-by-Step Mathematical Flow */}
         <div className="lg:col-span-8 p-5 rounded-xl bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 font-mono text-xs space-y-4">

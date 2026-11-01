@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { ExecutiveBriefHeaderNav } from '@/components/executiveBrief/ExecutiveBriefHeaderNav';
 import { ExecutiveBriefSummaryCards } from '@/components/executiveBrief/ExecutiveBriefSummaryCards';
@@ -15,6 +15,10 @@ import { ExecutiveBriefRegenerateConfirmModal } from '@/components/executiveBrie
 import { mockTenant } from '@/data/mockData';
 import { frontendLogger } from '@/utils/logger';
 import { EXECUTIVE_BRIEF_EXPORT_STRINGS } from '@/constants/executiveBriefExportStrings';
+import {
+  BOROSIL_CLIENT_PROFILE,
+  BOROSIL_VALIDATION_CHECKLIST
+} from '@/constants/borosilExecutiveBriefUiConstants';
 import type {
   ExecutiveBriefReportData,
   ExecutiveBriefSummaryCardItem,
@@ -28,6 +32,9 @@ const NOOP = (): void => {};
 
 export default function ExecutiveBriefPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const targetAssessmentId = searchParams?.get('assessmentId') || 'AIC-2026-0002';
+  const targetClient = searchParams?.get('client') || searchParams?.get('tenantName') || 'Borosil Ltd';
   const strings = EXECUTIVE_BRIEF_EXPORT_STRINGS;
 
   const [reportData, setReportData] = useState<ExecutiveBriefReportData | null>(null);
@@ -49,7 +56,8 @@ export default function ExecutiveBriefPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const res = await fetch('/api/reports/executive-brief/report');
+      const query = `?assessmentId=${encodeURIComponent(targetAssessmentId)}&client=${encodeURIComponent(targetClient)}`;
+      const res = await fetch(`/api/reports/executive-brief/report${query}`);
       if (!res.ok) {
         throw new Error(`Failed to fetch executive brief report data (${res.status})`);
       }
@@ -66,7 +74,7 @@ export default function ExecutiveBriefPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [strings.errors.fetchReportFailed]);
+  }, [strings.errors.fetchReportFailed, targetAssessmentId, targetClient]);
 
   useEffect(() => {
     fetchReport();
@@ -84,7 +92,8 @@ export default function ExecutiveBriefPage() {
   const handleDownload = async (format: 'pdf' | 'pptx'): Promise<void> => {
     try {
       setIsGeneratingDownload(true);
-      const res = await fetch(`/api/reports/executive-brief/download/${format}`);
+      const query = `?assessmentId=${encodeURIComponent(targetAssessmentId)}&client=${encodeURIComponent(targetClient)}`;
+      const res = await fetch(`/api/reports/executive-brief/download/${format}${query}`);
       if (!res.ok) {
         throw new Error(`Download failed with status ${res.status}`);
       }
@@ -128,7 +137,10 @@ export default function ExecutiveBriefPage() {
       const res = await fetch('/api/reports/executive-brief/regenerate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client: reportData?.clientProfile.clientName })
+        body: JSON.stringify({
+          assessmentId: targetAssessmentId,
+          client: targetClient || reportData?.clientProfile.clientName
+        })
       });
       if (!res.ok) throw new Error(`Regeneration failed (${res.status})`);
       setIsRegenerateModalOpen(false);
@@ -218,16 +230,16 @@ export default function ExecutiveBriefPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 w-full flex-1">
         <ExecutiveBriefHeaderNav
-          clientProfile={reportData.clientProfile}
-          isReady={reportData.validationChecklist.financialReconciliation}
+          clientProfile={reportData.clientProfile || BOROSIL_CLIENT_PROFILE}
+          isReady={Boolean(reportData.validationChecklist?.financialReconciliation)}
           onNavigateModule={handleNavigateModule}
           activeModuleKey="brief"
         />
 
-        <ExecutiveBriefSummaryCards cards={reportData.summaryCards} onViewEvidence={handleViewEvidence} />
+        <ExecutiveBriefSummaryCards cards={reportData.summaryCards || []} onViewEvidence={handleViewEvidence} />
 
         <ExecutiveBriefFormatCards
-          clientName={reportData.clientProfile.clientName}
+          clientName={reportData.clientProfile?.clientName || BOROSIL_CLIENT_PROFILE.clientName}
           pdfAvailable pptxAvailable isGenerating={isGeneratingDownload}
           onDownload={handleDownload} onOpenRegenerateModal={handleOpenRegenerate}
         />
@@ -237,23 +249,24 @@ export default function ExecutiveBriefPage() {
           onDownloadPdf={handleDownloadPdf} onOpenFullReport={handleOpenFullReport}
         />
 
-        <ExecutiveBriefOpportunityTable />
+        <ExecutiveBriefOpportunityTable reportData={reportData} />
 
         <ExecutiveBriefStructureAccordion
-          sections={reportData.sections} expandedGroupIds={expandedGroupIds}
+          sections={reportData.sections || []} expandedGroupIds={expandedGroupIds}
           onToggleGroup={toggleGroup} expandedDeepDives={expandedDeepDives}
           onToggleDeepDive={toggleDeepDive} onDrillEvidence={handleDrillEvidence}
         />
 
         <ExecutiveBriefAuditValidationPanel
-          checklist={reportData.validationChecklist} artifacts={reportData.artifacts}
+          checklist={reportData.validationChecklist || BOROSIL_VALIDATION_CHECKLIST}
+          artifacts={reportData.artifacts || []}
           onDownloadArtifact={handleDownloadArtifact}
         />
       </main>
 
       <ExecutiveBriefTraceabilityModal
         isOpen={isTraceabilityOpen} onClose={handleCloseTraceability}
-        activeItem={activeTraceItem} items={reportData.traceabilityLineage}
+        activeItem={activeTraceItem} items={reportData.traceabilityLineage || []}
       />
 
       <ExecutiveBriefRegenerateConfirmModal

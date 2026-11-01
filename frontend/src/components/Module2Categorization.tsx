@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Edit3,
   Search,
-  ArrowRight,
   Sparkles,
   FileSpreadsheet,
   Check,
@@ -1315,7 +1314,6 @@ export const Module2Categorization: React.FC<Module2CategorizationProps> = ({
             className="flex items-center justify-center space-x-2 px-6 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 via-teal-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-xl shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 group cursor-pointer"
           >
             <span>{UI_STRINGS.module2.btnProceedToTrend}</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </div>

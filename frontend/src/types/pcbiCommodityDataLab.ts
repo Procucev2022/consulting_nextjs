@@ -60,6 +60,18 @@ export interface CommodityResearchQueueRow {
   researchStatus: string;
   lastUpdated: string;
   action: string;
+  // Assessment context fields
+  assessmentId?: string;
+  customerId?: string;
+  customerName?: string;
+  materialCode?: string;
+  materialDescription?: string;
+  existingGradeSpecification?: string;
+  benchmarkSeriesName?: string | null;
+  benchmarkPublisherSource?: string;
+  gapStatus?: string;
+  gapReason?: string;
+  isMappingRequired?: boolean;
 }
 
 export interface CommodityWorkspaceOverview {

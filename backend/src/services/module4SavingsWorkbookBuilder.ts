@@ -15,19 +15,19 @@ import { MODULE_4_WORKBOOK_FILENAME } from '../constants/module4SavingsForensic'
 import { logger } from '../utils/logger';
 
 export class Module4SavingsWorkbookBuilder {
-  public static buildWorkbook(destinationPath?: string): { filePath: string; sha256: string } {
+  public static buildWorkbook(destinationPath?: string, assessmentId = 'AIC-2026-0001'): { filePath: string; sha256: string } {
     const wb = XLSX.utils.book_new();
 
-    const bridge = Module4SavingsForensicEngine.getFinancialBridge();
-    const opps = Module4SavingsForensicEngine.getCanonicalOpportunityLedger();
-    const traces = Module4SavingsForensicEngine.getTransactionTrace();
-    const levers = Module4SavingsForensicEngine.getLeverGovernance();
-    const denoms = Module4SavingsForensicEngine.getDenominatorRegister();
-    const overlaps = Module4SavingsForensicEngine.getOverlapLedger();
-    const exclusions = Module4SavingsForensicEngine.getExclusions();
-    const recalc = Module4SavingsIndependentCalculator.runIndependentRecalculation();
-    const tests = Module4SavingsForensicEngine.getTestMatrix();
-    const register = Module4SavingsForensicEngine.getCertificationReport();
+    const bridge = Module4SavingsForensicEngine.getFinancialBridge(assessmentId);
+    const opps = Module4SavingsForensicEngine.getCanonicalOpportunityLedger(assessmentId);
+    const traces = Module4SavingsForensicEngine.getTransactionTrace(assessmentId);
+    const levers = Module4SavingsForensicEngine.getLeverGovernance(assessmentId);
+    const denoms = Module4SavingsForensicEngine.getDenominatorRegister(assessmentId);
+    const overlaps = Module4SavingsForensicEngine.getOverlapLedger(assessmentId);
+    const exclusions = Module4SavingsForensicEngine.getExclusions(assessmentId);
+    const recalc = Module4SavingsIndependentCalculator.runIndependentRecalculation(assessmentId);
+    const tests = Module4SavingsForensicEngine.getTestMatrix('PENDING_WORKBOOK_BUILD', assessmentId);
+    const register = Module4SavingsForensicEngine.getCertificationReport('PENDING_WORKBOOK_BUILD', assessmentId);
 
     Module4SavingsWorkbookSheetsA.appendSheets1To13(
       wb,
@@ -37,7 +37,8 @@ export class Module4SavingsWorkbookBuilder {
       levers,
       denoms,
       overlaps,
-      exclusions
+      exclusions,
+      assessmentId
     );
 
     Module4SavingsWorkbookSheetsB.appendSheets14To26(
@@ -45,13 +46,14 @@ export class Module4SavingsWorkbookBuilder {
       bridge,
       recalc,
       tests,
-      register
+      register,
+      assessmentId
     );
 
-    const lineageRows = Module4SavingsForensicEngine.getCompleteTransactionLineage();
+    const lineageRows = Module4SavingsForensicEngine.getCompleteTransactionLineage(assessmentId);
     Module4SavingsWorkbookSheetsB.appendSheet27(wb, lineageRows);
 
-    const lineageSummary = Module4SavingsForensicEngine.getLineageSetReconciliation();
+    const lineageSummary = Module4SavingsForensicEngine.getLineageSetReconciliation(assessmentId);
     Module4SavingsWorkbookSheetsB.appendSheet28(wb, lineageSummary);
 
     const targetPath = destinationPath

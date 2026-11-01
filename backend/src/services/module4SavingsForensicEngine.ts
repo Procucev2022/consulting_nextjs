@@ -11,6 +11,7 @@ import { Module4SavingsTestMatrix } from './module4SavingsTestMatrix';
 import { Module4TransactionLineageTestMatrix } from './module4TransactionLineageTestMatrix';
 import { Module4SavingsIndependentCalculator } from './module4SavingsIndependentCalculator';
 import { Module4LineageSetReconciliationHelper } from './module4LineageSetReconciliationHelper';
+import { Module4BorosilForensicHelper } from './module4BorosilForensicHelper';
 import {
   MODULE_4_ENGINE_VERSION,
   MODULE_4_FROZEN_BASELINES
@@ -32,92 +33,111 @@ import type {
 import { logger } from '../utils/logger';
 
 export class Module4SavingsForensicEngine {
-  private static cachedOpps: Module4CanonicalOpportunityItem[] | null = null;
-  private static cachedTxTrace: Module4TransactionTraceRow[] | null = null;
-  private static cachedLineage: Module4CompleteTransactionLineageRow[] | null = null;
-  private static cachedBridge: Module4FinancialBridge | null = null;
-  private static cachedReport: Module4FinalCertificationRegister | null = null;
-  private static cachedLineageSummary: import('../types/module4LineageReconciliation').Module4LineageSetReconciliationSummary | null = null;
-  private static cachedLineageContradictionTests: import('../types/module4LineageReconciliation').Module4LineageContradictionTestItem[] | null = null;
+  private static oppsCache = new Map<string, Module4CanonicalOpportunityItem[]>();
+  private static txTraceCache = new Map<string, Module4TransactionTraceRow[]>();
+  private static lineageCache = new Map<string, Module4CompleteTransactionLineageRow[]>();
+  private static bridgeCache = new Map<string, Module4FinancialBridge>();
+  private static reportCache = new Map<string, Module4FinalCertificationRegister>();
+  private static cachedReport?: Module4FinalCertificationRegister;
+  private static lineageSummaryCache = new Map<string, import('../types/module4LineageReconciliation').Module4LineageSetReconciliationSummary>();
+  private static lineageContradictionTestsCache = new Map<string, import('../types/module4LineageReconciliation').Module4LineageContradictionTestItem[]>();
 
   public static clearCache(): void {
-    this.cachedOpps = null;
-    this.cachedTxTrace = null;
-    this.cachedLineage = null;
-    this.cachedBridge = null;
-    this.cachedReport = null;
-    this.cachedLineageSummary = null;
-    this.cachedLineageContradictionTests = null;
+    this.oppsCache.clear();
+    this.txTraceCache.clear();
+    this.lineageCache.clear();
+    this.bridgeCache.clear();
+    this.reportCache.clear();
+    this.cachedReport = undefined;
+    this.lineageSummaryCache.clear();
+    this.lineageContradictionTestsCache.clear();
   }
 
-  public static getCanonicalOpportunityLedger(): Module4CanonicalOpportunityItem[] {
-    if (this.cachedOpps) {
-      return this.cachedOpps;
+  private static assertModule4Activated(assessmentId: string): void {
+    if (assessmentId !== 'AIC-2026-0001' && assessmentId !== 'AIC-2026-0002') {
+      throw new Error(`Module 4 is staged and not yet activated for assessment ${assessmentId}. Controlled remediation in progress.`);
     }
-    const txs = Module2CanonicalService.getCanonicalTransactions();
-    const opps = Module4SavingsForensicHelper.buildCanonicalOpportunities(txs);
-    this.cachedOpps = opps;
+  }
+
+  public static getCanonicalOpportunityLedger(assessmentId: string = 'AIC-2026-0001'): Module4CanonicalOpportunityItem[] {
+    this.assertModule4Activated(assessmentId);
+    const cached = this.oppsCache.get(assessmentId);
+    if (cached) {
+      return cached;
+    }
+    const txs = Module2CanonicalService.getCanonicalTransactions(assessmentId);
+    const opps = Module4SavingsForensicHelper.buildCanonicalOpportunities(txs, assessmentId);
+    this.oppsCache.set(assessmentId, opps);
     return opps;
   }
 
-  public static getTransactionTrace(): Module4TransactionTraceRow[] {
-    if (this.cachedTxTrace) {
-      return this.cachedTxTrace;
+  public static getTransactionTrace(assessmentId: string = 'AIC-2026-0001'): Module4TransactionTraceRow[] {
+    this.assertModule4Activated(assessmentId);
+    const cached = this.txTraceCache.get(assessmentId);
+    if (cached) {
+      return cached;
     }
-    const txs = Module2CanonicalService.getCanonicalTransactions();
-    const opps = this.getCanonicalOpportunityLedger();
-    const trace = Module4SavingsForensicHelper.buildTransactionTrace(txs, opps);
-    this.cachedTxTrace = trace;
+    const txs = Module2CanonicalService.getCanonicalTransactions(assessmentId);
+    const opps = this.getCanonicalOpportunityLedger(assessmentId);
+    const trace = Module4SavingsForensicHelper.buildTransactionTrace(txs, opps, assessmentId);
+    this.txTraceCache.set(assessmentId, trace);
     return trace;
   }
 
-  public static getLeverGovernance(): Module4LeverGovernanceRecord[] {
+  public static getLeverGovernance(_assessmentId: string = 'AIC-2026-0001'): Module4LeverGovernanceRecord[] {
     return Module4SavingsForensicHelper.buildLeverGovernance();
   }
 
-  public static getDenominatorRegister(): Module4DenominatorRegisterRow[] {
+  public static getDenominatorRegister(_assessmentId: string = 'AIC-2026-0001'): Module4DenominatorRegisterRow[] {
     return Module4SavingsForensicHelper.buildDenominatorRegister();
   }
 
-  public static getOverlapLedger(): Module4OverlapRelationship[] {
-    const opps = this.getCanonicalOpportunityLedger();
+  public static getOverlapLedger(assessmentId: string = 'AIC-2026-0001'): Module4OverlapRelationship[] {
+    this.assertModule4Activated(assessmentId);
+    const opps = this.getCanonicalOpportunityLedger(assessmentId);
     return Module4SavingsForensicHelper.buildOverlapLedger(opps);
   }
 
-  public static getExclusions(): Module4ExclusionRecord[] {
+  public static getExclusions(_assessmentId: string = 'AIC-2026-0001'): Module4ExclusionRecord[] {
     return Module4SavingsForensicHelper.buildExclusions();
   }
 
-  public static getFinancialBridge(): Module4FinancialBridge {
-    if (this.cachedBridge) {
-      return this.cachedBridge;
+  public static getFinancialBridge(assessmentId: string = 'AIC-2026-0001'): Module4FinancialBridge {
+    this.assertModule4Activated(assessmentId);
+    const cached = this.bridgeCache.get(assessmentId);
+    if (cached) {
+      return cached;
     }
-    const bridge = Module4SavingsForensicHelper.buildFinancialBridge();
-    this.cachedBridge = bridge;
+    const bridge = Module4SavingsForensicHelper.buildFinancialBridge(assessmentId);
+    this.bridgeCache.set(assessmentId, bridge);
     return bridge;
   }
 
-  public static getCompleteTransactionLineage(): Module4CompleteTransactionLineageRow[] {
-    if (this.cachedLineage) {
-      return this.cachedLineage;
+  public static getCompleteTransactionLineage(assessmentId: string = 'AIC-2026-0001'): Module4CompleteTransactionLineageRow[] {
+    this.assertModule4Activated(assessmentId);
+    const cached = this.lineageCache.get(assessmentId);
+    if (cached) {
+      return cached;
     }
-    const txs = Module2CanonicalService.getCanonicalTransactions();
-    const opps = this.getCanonicalOpportunityLedger();
+    const txs = Module2CanonicalService.getCanonicalTransactions(assessmentId);
+    const opps = this.getCanonicalOpportunityLedger(assessmentId);
     const lineage = Module4SavingsForensicHelper.buildCompleteTransactionLineage(txs, opps);
-    this.cachedLineage = lineage;
+    this.lineageCache.set(assessmentId, lineage);
     return lineage;
   }
 
-  public static getLineageCoverageMetrics(): Module4LineageCoverageMetrics {
-    const opps = this.getCanonicalOpportunityLedger();
-    const lineage = this.getCompleteTransactionLineage();
+  public static getLineageCoverageMetrics(assessmentId: string = 'AIC-2026-0001'): Module4LineageCoverageMetrics {
+    this.assertModule4Activated(assessmentId);
+    const opps = this.getCanonicalOpportunityLedger(assessmentId);
+    const lineage = this.getCompleteTransactionLineage(assessmentId);
     return Module4SavingsForensicHelper.calculateLineageCoverageMetrics(opps, lineage);
   }
 
-  public static getTransactionLineageTestMatrix(): Module4TransactionLineageTestItem[] {
-    const opps = this.getCanonicalOpportunityLedger();
-    const lineage = this.getCompleteTransactionLineage();
-    const bridge = this.getFinancialBridge();
+  public static getTransactionLineageTestMatrix(assessmentId: string = 'AIC-2026-0001'): Module4TransactionLineageTestItem[] {
+    this.assertModule4Activated(assessmentId);
+    const opps = this.getCanonicalOpportunityLedger(assessmentId);
+    const lineage = this.getCompleteTransactionLineage(assessmentId);
+    const bridge = this.getFinancialBridge(assessmentId);
     const recalc = Module4SavingsIndependentCalculator.runLineageBasedRecalculation(lineage);
     const vgt = VgtModule1Runner.processVgtDataset();
     return Module4TransactionLineageTestMatrix.buildTestMatrix(
@@ -129,41 +149,50 @@ export class Module4SavingsForensicEngine {
     );
   }
 
-  public static getLineageSetReconciliation(): import(
+  public static getLineageSetReconciliation(assessmentId: string = 'AIC-2026-0001'): import(
     '../types/module4LineageReconciliation'
   ).Module4LineageSetReconciliationSummary {
-    if (this.cachedLineageSummary) {
-      return this.cachedLineageSummary;
+    this.assertModule4Activated(assessmentId);
+    const cached = this.lineageSummaryCache.get(assessmentId);
+    if (cached) {
+      return cached;
     }
-    const opps = this.getCanonicalOpportunityLedger();
-    const lineage = this.getCompleteTransactionLineage();
+    const opps = this.getCanonicalOpportunityLedger(assessmentId);
+    const lineage = this.getCompleteTransactionLineage(assessmentId);
     const summary = Module4LineageSetReconciliationHelper.buildReconciliationSummary(opps, lineage);
-    this.cachedLineageSummary = summary;
+    this.lineageSummaryCache.set(assessmentId, summary);
     return summary;
   }
 
-  public static getLineageContradictionTests(): import(
+  public static getLineageContradictionTests(assessmentId: string = 'AIC-2026-0001'): import(
     '../types/module4LineageReconciliation'
   ).Module4LineageContradictionTestItem[] {
-    if (this.cachedLineageContradictionTests) {
-      return this.cachedLineageContradictionTests;
+    this.assertModule4Activated(assessmentId);
+    const cached = this.lineageContradictionTestsCache.get(assessmentId);
+    if (cached) {
+      return cached;
     }
-    const summary = this.getLineageSetReconciliation();
-    const bridge = this.getFinancialBridge();
+    const summary = this.getLineageSetReconciliation(assessmentId);
+    const bridge = this.getFinancialBridge(assessmentId);
     const tests = Module4LineageSetReconciliationHelper.buildContradictionTestMatrix(summary, bridge);
-    this.cachedLineageContradictionTests = tests;
+    this.lineageContradictionTestsCache.set(assessmentId, tests);
     return tests;
   }
 
-  public static getTestMatrix(wbChecksum = 'PENDING_WORKBOOK_BUILD'): Module4TestMatrixItem[] {
+  public static getTestMatrix(wbChecksum = 'PENDING_WORKBOOK_BUILD', _assessmentId?: string): Module4TestMatrixItem[] {
     const vgt = VgtModule1Runner.processVgtDataset();
     const fxChecksum = FxReferenceService.getInstance().getVerifiedChecksum();
     return Module4SavingsTestMatrix.buildTestMatrix(vgt.file.sha256, fxChecksum, wbChecksum);
   }
 
   public static getCertificationReport(
-    wbChecksum = 'PENDING_WORKBOOK_BUILD'
+    wbChecksum = 'PENDING_WORKBOOK_BUILD',
+    assessmentId?: string
   ): Module4FinalCertificationRegister {
+    const resolvedAssessmentId = assessmentId || (wbChecksum.startsWith('AIC-') ? wbChecksum : undefined);
+    if (resolvedAssessmentId === 'AIC-2026-0002') {
+      return Module4BorosilForensicHelper.buildBorosilCertificationReport(wbChecksum);
+    }
     if (this.cachedReport && wbChecksum === 'PENDING_WORKBOOK_BUILD') {
       return this.cachedReport;
     }

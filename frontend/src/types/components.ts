@@ -139,6 +139,7 @@ export interface Module3TrendAnalyticsProps {
   currentTier?: SubscriptionTier;
   onUpgrade?: (tier: SubscriptionTier) => void;
   assessmentId?: string;
+  initialView?: 'TRENDS' | 'GAP_LIST';
 }
 
 export interface Module4SavingsEngineProps {
@@ -395,6 +396,8 @@ export interface VendorPriceDispersionTableProps {
   calculations?: import('./pcbi').PCBITransactionCalculation[];
   onWhyThisBenchmark?: (item: import('./pcbi').PCBITransactionCalculation) => void;
   className?: string;
+  isSimulatorMode?: boolean;
+  isCustomerView?: boolean;
 }
 
 // Module 4: Consolidated Savings Engine Props (Prompt 100)

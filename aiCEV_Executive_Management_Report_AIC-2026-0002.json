@@ -1,0 +1,942 @@
+{
+  "reportId": "RPT-AICEV-CUST-2026-0002-AIC-2026-0002",
+  "generatedAt": "2026-11-01T14:02:32.348Z",
+  "reportVersion": "1.0.0-FINAL-CERTIFIED",
+  "tenant": {
+    "tenantId": "CUST-2026-0002",
+    "enterpriseName": "Borosil Ltd",
+    "assessmentId": "AIC-2026-0002"
+  },
+  "metadata": {
+    "client": "Borosil Ltd",
+    "reportDate": "2026-10-30",
+    "analysisPeriod": "1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)",
+    "modulesIncluded": [
+      "Module 1",
+      "Module 2",
+      "Module 3",
+      "Module 4"
+    ],
+    "transactionCount": 27777,
+    "totalSpendInr": 5565346000,
+    "addressableSpendInr": 1686580000,
+    "grossOpportunityInr": 1175116632,
+    "netDefensibleOpportunityInr": 870997134,
+    "approvedSavingsInr": 751213739,
+    "realizedSavingsInr": 0,
+    "opportunityCount": 105,
+    "confidenceSummary": {
+      "high": 737693024,
+      "medium": 13520715,
+      "low": 0,
+      "insufficient": 0
+    },
+    "sourceReferences": [
+      {
+        "topic": "Baseline Purchase Orders",
+        "source": "Borosil ERP Canonical PO Extraction (27,777 rows)",
+        "sourceDate": "2026-10-22"
+      },
+      {
+        "topic": "Strategic Sourcing Diagnostic",
+        "source": "Module 2 Strategic Sourcing Engine (AIC-2026-0002)",
+        "sourceDate": "2026-10-30"
+      }
+    ],
+    "reportVersion": "1.0.0-AUDITED"
+  },
+  "clientProfile": {
+    "clientName": "Borosil Ltd",
+    "analysisPeriod": "1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)",
+    "group": "Specialty Glassware & Laboratory Solutions",
+    "reportVersion": "1.0.0-FINAL-CERTIFIED",
+    "confidentiality": "CONFIDENTIAL - BOROSIL LTD USE ONLY",
+    "status": "AUDITED / READY"
+  },
+  "validationChecklist": {
+    "module1Validated": true,
+    "module2Validated": true,
+    "module3Validated": true,
+    "module4Validated": true,
+    "financialReconciliation": true,
+    "transactionTraceability": true,
+    "doubleCountingControls": true,
+    "dataLineage": true,
+    "securityControls": true,
+    "reportGenerationValidation": true
+  },
+  "summaryCards": [
+    {
+      "id": "kpi-total-spend",
+      "label": "Total Evaluated Spend",
+      "valueInr": 5565346000,
+      "formattedValue": "₹556.535 Cr",
+      "module": "Module 1",
+      "evidenceRef": "27,777 canonical PO rows across 3 plants"
+    },
+    {
+      "id": "kpi-addressable-spend",
+      "label": "Addressable Sourcing Spend",
+      "valueInr": 1686580000,
+      "formattedValue": "₹168.658 Cr",
+      "module": "Module 1",
+      "evidenceRef": "133 evaluated categories (₹161.016 Cr in 105 execution packages)"
+    },
+    {
+      "id": "kpi-gross-opp",
+      "label": "Gross Sourcing Opportunity",
+      "valueInr": 1175116632,
+      "formattedValue": "₹117.512 Cr",
+      "module": "Module 2",
+      "evidenceRef": "Identified opportunity across 3 sourcing levers"
+    },
+    {
+      "id": "kpi-net-opp",
+      "label": "Net Modelled Opportunity",
+      "valueInr": 870997134,
+      "formattedValue": "₹87.100 Cr",
+      "module": "Module 2",
+      "evidenceRef": "Overlap deduplicated (₹30.412 Cr deducted)"
+    },
+    {
+      "id": "kpi-approved-savings",
+      "label": "Modelled Opportunity Excluding Lever 2",
+      "valueInr": 751213739,
+      "formattedValue": "₹75.121 Cr",
+      "module": "Module 2 & 4",
+      "evidenceRef": "L1 ₹73.769 Cr + L3 ₹1.352 Cr (Excl. L2 ₹11.978 Cr in governance reserve)"
+    },
+    {
+      "id": "kpi-client-approved",
+      "label": "Client-Approved Savings",
+      "valueInr": 0,
+      "formattedValue": "₹0.00 Cr",
+      "module": "Module 4",
+      "evidenceRef": "Pending formal client commercial sign-off post-review"
+    },
+    {
+      "id": "kpi-vendor-consolidation",
+      "label": "Vendor Consolidation Spend",
+      "valueInr": 120810000,
+      "formattedValue": "₹12.081 Cr",
+      "module": "Module 2",
+      "evidenceRef": "Under Commercial Validation — Savings Not Yet Established"
+    },
+    {
+      "id": "kpi-proposed-target",
+      "label": "Proposed Year 1 Target",
+      "valueInr": 129000000,
+      "formattedValue": "₹12.90 Cr",
+      "module": "Module 4",
+      "evidenceRef": "Proposed operational target across Waves 1–3 (Not approved or realized)"
+    },
+    {
+      "id": "kpi-realized-savings",
+      "label": "Realized Savings",
+      "valueInr": 0,
+      "formattedValue": "₹0.00 Cr",
+      "module": "Module 4",
+      "evidenceRef": "Requires joint Procurement & Finance invoice audit post-contract"
+    },
+    {
+      "id": "kpi-transactions",
+      "label": "Evaluated Transactions",
+      "valueInr": 27777,
+      "formattedValue": "27,777 Invoices",
+      "module": "Module 1",
+      "evidenceRef": "Canonical normalized ERP lines (1 Apr 2026 – 22 Oct 2026)"
+    }
+  ],
+  "sections": [
+    {
+      "groupId": "01",
+      "groupNumber": "01",
+      "title": "Executive Overview & Sourcing Architecture",
+      "slideRange": "Slides 01–03",
+      "summary": "Executive summary of procurement diagnostic, baseline spend, and modelled opportunity identified for commercial validation.",
+      "background": "Specialty glassware manufacturing footprint evaluated across Bharuch (1120) and Jaipur (6101, 8202) units.",
+      "objective": "Establish definitive C-suite alignment on spend baseline, deduplicated opportunity, and governance.",
+      "finding": "Evaluated ₹556.535 Cr spend yields ₹87.100 Cr net opportunity and Modelled Opportunity Excluding Lever 2: ₹75.121 Cr (Client-Approved: ₹0, Realized: ₹0).",
+      "evidence": "27,777 verified PO line items across 1,537 Active SAP Supplier Accounts reconciled with zero variance.",
+      "outcome": "Structured 3-wave implementation roadmap targeting ₹12.90 Cr proposed Year 1 sourcing target.",
+      "recommendedAction": "Convene joint Borosil-Procucev steering committee to authorize Wave 1 execution charter.",
+      "nextStep": "Mobilize category sourcing specialists for direct price harmonization on chemicals and packaging tenders.",
+      "detailCards": []
+    },
+    {
+      "groupId": "02",
+      "groupNumber": "02",
+      "title": "Customer Context & Manufacturing Footprint",
+      "slideRange": "Slides 04–05",
+      "summary": "Borosil enterprise context, evaluated plant operations, and category spend Pareto distribution.",
+      "background": "Operations across 3 key manufacturing facilities with ₹168.658 Cr addressable sourcing spend.",
+      "objective": "Map direct materials, plant consumables, packaging, and spares to specialized sourcing strategies.",
+      "finding": "Dense Soda Ash, Silica Sand, and packaging comprise over 50% of direct addressable spend.",
+      "evidence": "Audited ERP purchase records across FY2026-27 YTD (205 days) with 100% data lineage.",
+      "outcome": "Targeted sourcing levers mapped to qualified supplier panels and regional distribution hubs.",
+      "recommendedAction": "Standardize commercial payment terms to 60 days and establish direct manufacturer agreements.",
+      "nextStep": "Finalize multi-plant master framework agreements for core chemical feedstocks.",
+      "detailCards": []
+    },
+    {
+      "groupId": "03",
+      "groupNumber": "03",
+      "title": "Module 1: Spend Hygiene & Baseline Ingestion",
+      "slideRange": "Slide 06",
+      "summary": "Forensic normalization across 27,777 canonical PO rows and 1,537 Active SAP Supplier Accounts.",
+      "background": "Cleaned transaction ledger reconciled across plant operations under AES-256-GCM encryption.",
+      "objective": "Ensure zero synthetic variance and total line-item lineage back to purchase orders.",
+      "finding": "Certified baseline spend of ₹556.535 Cr across 8,976 catalog items and 133 material groups.",
+      "evidence": "Granular PO-level ex-works unit rates normalized for freight, duties, and plant delivery terms.",
+      "outcome": "Defensible foundation established for cross-plant price harmonization and volume pooling.",
+      "recommendedAction": "Maintain automated baseline hygiene checks for all future invoice feeds.",
+      "nextStep": "Ingest monthly incremental ERP lines under identical validation rules.",
+      "detailCards": []
+    },
+    {
+      "groupId": "04",
+      "groupNumber": "04",
+      "title": "Module 2: Strategic Sourcing Levers (Lever 1)",
+      "slideRange": "Slide 07",
+      "summary": "Cross-plant unit price harmonization and direct manufacturer negotiation (Dense Soda Ash, Silica Sand).",
+      "background": "Price dispersion observed across Bharuch and Jaipur plants for identical chemical grades.",
+      "objective": "Harmonize purchase prices to lowest contracted rates and execute primary producer master contracts.",
+      "finding": "Gross opportunity of ₹104.094 Cr yields ₹73.769 Cr net modelled opportunity across 89 qualified packages.",
+      "evidence": "PO line comparisons between plant receipts and supplier contracted rate cards.",
+      "outcome": "Net modelled opportunity of ₹73.769 Cr identified for commercial validation.",
+      "recommendedAction": "Initiate master supplier negotiations with primary soda ash producers (e.g. GHCL).",
+      "nextStep": "Issue consolidated enterprise RFP tenders across all 3 plant locations.",
+      "detailCards": []
+    },
+    {
+      "groupId": "05",
+      "groupNumber": "05",
+      "title": "Module 2: Vendor Consolidation Safeguard (Lever 2)",
+      "slideRange": "Slide 08",
+      "summary": "Status: Under Commercial Validation — Savings Not Yet Established (Addressable Spend: ₹12.081 Cr).",
+      "background": "Tail supplier fragmentation identified across plant electrical, mechanical, and consumable spares.",
+      "objective": "Conduct rigorous commercial qualification before establishing definitive savings figures.",
+      "finding": "Relevant addressable spend of ₹12.081 Cr evaluated across 4 high-fragmentation categories (₹11.978 Cr modelled opportunity).",
+      "evidence": "1,537 Active SAP Supplier Accounts audited; ₹11.978 Cr modelled opportunity held in governance reserve.",
+      "outcome": "Status: Under Commercial Validation — Savings Not Yet Established (₹0 customer-facing contribution).",
+      "recommendedAction": "Complete plant engineering and technical validation of alternate supplier panels.",
+      "nextStep": "Execute joint commercial market validation to establish confirmed contract savings.",
+      "detailCards": []
+    },
+    {
+      "groupId": "06",
+      "groupNumber": "06",
+      "title": "Module 2: Dynamic E-Auction Bidding (Lever 3)",
+      "slideRange": "Slide 09",
+      "summary": "Competitive multi-round reverse dynamic e-auctions for packaging and indirect materials.",
+      "background": "Standardized corrugated packaging and cartons ready for competitive multi-vendor bidding.",
+      "objective": "Discover real-time market prices without technical specification compromise.",
+      "finding": "Gross opportunity of ₹1.440 Cr yields ₹1.352 Cr net modelled opportunity across 12 qualified categories.",
+      "evidence": "Market vendor density analysis across 12 qualified commodity packaging categories.",
+      "outcome": "Net modelled opportunity of ₹1.352 Cr identified for dynamic reverse e-auction validation.",
+      "recommendedAction": "Schedule Wave 2 multi-round reverse e-auctions for corrugated boxes and cartons.",
+      "nextStep": "Onboard vetted regional packaging converters to the Procucev e-auction portal.",
+      "detailCards": []
+    },
+    {
+      "groupId": "07",
+      "groupNumber": "07",
+      "title": "Module 3: PCBI Independent Market Benchmarks",
+      "slideRange": "Slide 10",
+      "summary": "Status: Research Closed — No Operational Benchmark Data Available (0% coverage, ₹0 savings).",
+      "background": "Commodity indices and trade data evaluated for Borosil specialty chemical SKUs.",
+      "objective": "Protect client trust through empirical pricing integrity and zero synthetic data extrapolation.",
+      "finding": "Module 3 research closed: 0% coverage and ₹0 savings to prevent ungrounded claims.",
+      "evidence": "PCBI data lab audit confirms 0.00% operational coverage for assessment timeline.",
+      "outcome": "Status: Research Closed — No Operational Benchmark Data Available.",
+      "recommendedAction": "Rely strictly on proven internal baseline rate dispersion and e-auction price discovery.",
+      "nextStep": "Maintain research records in the PCBI commodity registry for future monitoring.",
+      "detailCards": []
+    },
+    {
+      "groupId": "08",
+      "groupNumber": "08",
+      "title": "Module 4: Savings Realization Governance & Execution",
+      "slideRange": "Slides 11–15",
+      "summary": "Value governance framework, execution roadmap, and audit provenance attestation.",
+      "background": "Four-stage value governance strictly separating modelled from approved, contracted, and realized savings.",
+      "objective": "Ensure zero unrealized claims and provide CFO-grade audit trail for P&L impact.",
+      "finding": "Modelled Opportunity Excluding Lever 2: ₹75.121 Cr; proposed Year 1 sourcing target of ₹12.90 Cr (Client-Approved: ₹0, Realized: ₹0).",
+      "evidence": "Reconciliation: L1 (₹73.769 Cr) + L3 (₹1.352 Cr) = ₹75.121 Cr modelled opportunity identified for commercial validation (L2 ₹11.978 Cr in governance reserve). Zero variance.",
+      "outcome": "Clear operational roadmap across Wave 1 (Direct), Wave 2 (E-Auction), and Wave 3 (Panels).",
+      "recommendedAction": "Adopt Procucev Value Governance Charter for downstream savings realization tracking.",
+      "nextStep": "Mobilize steering committee and launch Wave 1 commercial RFP tenders.",
+      "detailCards": []
+    }
+  ],
+  "traceabilityLineage": [
+    {
+      "findingId": "FND-BORO-001",
+      "module": "Module 2 — Lever 1",
+      "category": "Chemicals & Raw Materials",
+      "item": "Dense Soda Ash",
+      "supplier": "GHCL Limited",
+      "erpRecord": "PO-2026-BH-10492",
+      "calculation": "Cross-plant unit rate spread ₹28.50/kg vs ₹24.20/kg ex-works",
+      "opportunity": "₹73.769 Cr (Modelled Sourcing Opportunity)",
+      "savings": "Modelled Opportunity Identified for Commercial Validation"
+    },
+    {
+      "findingId": "FND-BORO-002",
+      "module": "Module 2 — Lever 2",
+      "category": "Plant Spares & MRO Consumables",
+      "item": "Electrical & Instrumentation Spares",
+      "supplier": "Fragmented Regional Distributors",
+      "erpRecord": "PO-2026-JP-04182",
+      "calculation": "Tail consolidation across 1,537 Active SAP Supplier Accounts (Under Validation)",
+      "opportunity": "₹11.978 Cr (Modelled Opportunity in Governance Reserve)",
+      "savings": "Savings Not Yet Established (Held in Governance Reserve)"
+    },
+    {
+      "findingId": "FND-BORO-003",
+      "module": "Module 2 — Lever 3",
+      "category": "Corrugated Packaging & Cartons",
+      "item": "Outer Master Cartons 5-Ply",
+      "supplier": "Regional Packaging Converters",
+      "erpRecord": "PO-2026-BH-08831",
+      "calculation": "Dynamic multi-round reverse auction competitive margin",
+      "opportunity": "₹1.352 Cr (Modelled Dynamic Bidding Opportunity)",
+      "savings": "Modelled Opportunity Identified for Commercial Validation"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "Executive Opportunity Brief (PDF)",
+      "filename": "aiCEV_Borosil_Ltd_Executive_Opportunity_Brief.pdf",
+      "description": "Certified 15-page 16:9 executive presentation brief for Borosil Ltd leadership.",
+      "endpoint": "/api/reports/executive-brief/download/pdf?assessmentId=AIC-2026-0002"
+    },
+    {
+      "name": "Executive Opportunity Brief (PPTX)",
+      "filename": "aiCEV_Borosil_Ltd_Executive_Opportunity_Brief.pptx",
+      "description": "Editable 16:9 PowerPoint presentation deck formatted to corporate standards.",
+      "endpoint": "/api/reports/executive-brief/download/pptx?assessmentId=AIC-2026-0002"
+    },
+    {
+      "name": "Authoritative Management Report (JSON)",
+      "filename": "aiCEV_Executive_Management_Report_AIC-2026-0002.json",
+      "description": "Complete 15-section forensic data payload and bridge ledger.",
+      "endpoint": "/api/reports/executive-brief/report?assessmentId=AIC-2026-0002"
+    }
+  ],
+  "section1ProcucevMethodology": {
+    "platform": "Procucev / aiCEV",
+    "methodology": "aiCEV 4-Module Forensic Diagnostics & Value Governance",
+    "modules": [
+      "Module 1: Baseline Spend Hygiene & Ingestion Normalization",
+      "Module 2: Strategic Sourcing Levers & Opportunity Ledger",
+      "Module 3: PCBI Independent Market Benchmarks & Commodity Indices",
+      "Module 4: Savings Realization Governance & Value Execution"
+    ],
+    "governancePrinciple": "100% transaction-level PO lineage; overlap deduplication eliminates double-counting."
+  },
+  "section2CompanyContext": {
+    "customerName": "Borosil Ltd",
+    "customerId": "CUST-2026-0002",
+    "assessmentId": "AIC-2026-0002",
+    "sector": "Specialty Glassware & Laboratory Solutions",
+    "facilityScope": "3 Evaluated Manufacturing Plants (Plant 1120, Plant 6101, Plant 8202)",
+    "assessmentPeriod": "1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)",
+    "dataIntegrity": "100% Audited ERP Transactions under AES-256 Customer Isolation"
+  },
+  "section3ExecutiveSummary": {
+    "totalSpendEvaluatedCr": 556.5346,
+    "addressableSourcingSpendCr": 168.658,
+    "grossSourcingOpportunityCr": 117.512,
+    "overlapDeductionsCr": 30.412,
+    "netModelledOpportunityCr": 87.1,
+    "modelledOpportunityExcludingLever2Cr": 75.121,
+    "modelledOpportunityExcludingLever2Inr": 751213739,
+    "opportunityIdentifiedForCommercialValidationCr": 75.121,
+    "customerFacingApprovedProvenOpportunityCr": 75.121,
+    "provenCommercialOpportunityCr": 75.121,
+    "internalProvenCommercialOpportunityCr": 85.066,
+    "vendorConsolidationSpendUnderValidationCr": 12.081,
+    "vendorConsolidationStatus": "Under Commercial Validation — Savings Not Yet Established",
+    "deliveryConfidenceLowCr": 8.507,
+    "deliveryConfidenceHighCr": 21.266,
+    "proposedYear1TargetCr": 12.9,
+    "clientApprovedOpportunityCr": 0,
+    "underNegotiationCr": 0,
+    "implementedSavingsCr": 0,
+    "auditedRealizedSavingsCr": 0,
+    "module3BenchmarkContributionCr": 0,
+    "module3OperationalCoveragePct": 0,
+    "summaryText": "aiCEV diagnostic completed for Borosil Ltd (1 Apr 2026 – 22 Oct 2026, 205 days, 3 plants, 1,537 Active SAP Supplier Accounts). Identified ₹87.100 Cr in deduplicated net strategic sourcing opportunity with Modelled Opportunity Excluding Lever 2: ₹75.121 Cr. Lever 2 Vendor Consolidation (₹11.978 Cr modelled opportunity across ₹12.081 Cr spend) is held in governance reserve pending commercial validation."
+  },
+  "section4SpendBaseline": {
+    "validatedSpendCr": 556.5346,
+    "canonicalTransactionsCount": 27777,
+    "catalogItemsCount": 8976,
+    "activeSuppliersCount": 1537,
+    "plantsCount": 3,
+    "baselinePeriod": "1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)",
+    "currencyBaseline": "INR",
+    "dataIntegrityScore": "100% Certified Lineage (Zero Synthetic Variance)"
+  },
+  "section5SpendAndCategory": {
+    "taxonomySystem": "UNSPSC v26.0 & Internal Commodity Coding",
+    "topCategories": [
+      {
+        "categoryCode": "CAT-11720",
+        "categoryName": "Precision Tooling & Rollers",
+        "spendCr": 1.735,
+        "percentageOfTotal": 0.31,
+        "supplierCount": 1
+      },
+      {
+        "categoryCode": "CAT-11100",
+        "categoryName": "Chemicals & Raw Materials",
+        "spendCr": 228.401,
+        "percentageOfTotal": 41.04,
+        "supplierCount": 47
+      },
+      {
+        "categoryCode": "CAT-11548",
+        "categoryName": "Hardware & Fasteners",
+        "spendCr": 0.105,
+        "percentageOfTotal": 0.02,
+        "supplierCount": 15
+      },
+      {
+        "categoryCode": "CAT-11524",
+        "categoryName": "Electrical Spares & Cables",
+        "spendCr": 5.863,
+        "percentageOfTotal": 1.05,
+        "supplierCount": 97
+      },
+      {
+        "categoryCode": "CAT-11600",
+        "categoryName": "Capital Equipment & Machinery",
+        "spendCr": 36.884,
+        "percentageOfTotal": 6.63,
+        "supplierCount": 84
+      },
+      {
+        "categoryCode": "CAT-SRRPM",
+        "categoryName": "Electrical Maintenance Services",
+        "spendCr": 1.429,
+        "percentageOfTotal": 0.26,
+        "supplierCount": 27
+      },
+      {
+        "categoryCode": "CAT-11562",
+        "categoryName": "Paints & Coatings",
+        "spendCr": 0.052,
+        "percentageOfTotal": 0.01,
+        "supplierCount": 3
+      },
+      {
+        "categoryCode": "CAT-11MIS",
+        "categoryName": "Administrative & Professional Services",
+        "spendCr": 1.986,
+        "percentageOfTotal": 0.36,
+        "supplierCount": 69
+      }
+    ]
+  },
+  "section6StrategicSourcing": {
+    "leverName": "Lever 1 — Combined Strategic Sourcing",
+    "qualifiedCategoriesCount": 89,
+    "eligibleSpendCr": 127.118,
+    "grossOpportunityCr": 103.729,
+    "overlapDeductionsCr": 29.96,
+    "netOpportunityCr": 73.769,
+    "provenOpportunityCr": 73.769,
+    "modelledOpportunityCr": 73.769,
+    "description": "Cross-plant unit price harmonization and strategic supplier negotiation across direct chemical and raw material categories."
+  },
+  "section7VendorConsolidation": {
+    "leverName": "Lever 2 — Vendor Base Consolidation",
+    "commercialStatus": "Under Commercial Validation — Savings Not Yet Established",
+    "qualifiedCategoriesCount": 4,
+    "relevantAddressableSpendCr": 12.081,
+    "internalModelledGrossOpportunityCr": 12.342,
+    "internalOverlapDeductionsCr": 0.364,
+    "internalNetOpportunityCr": 11.978,
+    "internalModelledProvenOpportunityCr": 11.978,
+    "modelledOpportunityCr": 11.978,
+    "customerFacingProvenSavingsCr": 0,
+    "safeguardNotice": "Status: Under Commercial Validation — Savings Not Yet Established. Savings contribution: ₹0.00 Cr. Relevant addressable spend: ₹12.081 Cr.",
+    "description": "Consolidation of fragmented tail suppliers into preferred contracted vendor panels for volume economies (Under Commercial Validation)."
+  },
+  "section8EAuction": {
+    "leverName": "Lever 3 — E-Auction Dynamic Bidding",
+    "qualifiedCategoriesCount": 12,
+    "eligibleSpendCr": 21.817,
+    "grossOpportunityCr": 1.44,
+    "overlapDeductionsCr": 0.088,
+    "netOpportunityCr": 1.352,
+    "provenOpportunityCr": 1.352,
+    "modelledOpportunityCr": 1.352,
+    "description": "Competitive multi-round reverse dynamic e-auctions for standardized packaging and consumable categories."
+  },
+  "section9OtherSourcingLevers": {
+    "leverName": "Lever 4 — Operational PO Consolidation & Terms Harmonization",
+    "status": "NON_MONETIZED",
+    "description": "PO frequency reduction non-monetized to preserve CFO trust; commercial terms standardized to 60 days."
+  },
+  "section10PcbiBenchmark": {
+    "module3Status": "Research Closed — No Operational Benchmark Data Available",
+    "operationalBenchmarkCoveragePct": 0,
+    "operationalBenchmarkSpendCr": 0,
+    "benchmarkDerivedSavingsCr": 0,
+    "materialClassification": "NR — Not Currently Benchmarkable (Data Unavailable for Assessment Period)",
+    "nrSpendCr": 133.0317,
+    "unmappedSpendCr": 423.4876,
+    "preservationNotice": "Historical research register preserved; commercial verification closed with 0% synthetic variance."
+  },
+  "section11ConsolidatedWaterfall": {
+    "evaluatedBaselineCr": 556.5346,
+    "evaluatedDiagnosticAddressableSpendCr": 168.658,
+    "nonQuantifiableDiagnosticSpendCr": -7.642,
+    "qualifiedExecutionAddressableSpendCr": 161.016,
+    "grossOpportunityCr": 117.512,
+    "overlapDeductionsCr": -30.412,
+    "netModelledOpportunityCr": 87.1,
+    "vendorConsolidationGovernanceReserveCr": -11.978,
+    "modelledOpportunityExcludingLever2Cr": 75.121,
+    "clientApprovedSavingsCr": 0,
+    "auditedRealizedSavingsCr": 0,
+    "reconciliationFormula": "Evaluated Baseline (₹556.535 Cr) → Evaluated Diagnostic Spend (₹168.658 Cr) → Qualified Execution Spend (₹161.016 Cr, excl. ₹7.642 Cr non-quantifiable spend) → Gross Opp (₹117.512 Cr) - Overlaps (₹30.412 Cr) = Net Modelled Opportunity (₹87.100 Cr) → Modelled Opportunity Excluding Lever 2: ₹75.121 Cr = L1 (₹73.769 Cr) + L3 (₹1.352 Cr). Lever 2 (₹11.978 Cr modelled opp across ₹12.081 Cr spend) is held in governance reserve pending commercial validation. Client-Approved Savings: ₹0. Realized Savings: ₹0."
+  },
+  "section12Module4Governance": {
+    "governanceStatus": "Module 4 Activated",
+    "modelledOpportunityExcludingLever2Cr": 75.121,
+    "internalNetOpportunityCr": 87.1,
+    "vendorConsolidationStatus": "Under Commercial Validation — Savings Not Yet Established",
+    "clientApprovedOpportunityCr": 0,
+    "underNegotiationCr": 0,
+    "implementedSavingsCr": 0,
+    "auditedRealizedSavingsCr": 0,
+    "governancePolicy": "Proposed opportunities are strictly distinguished from approved, negotiated, implemented, and realized savings. Modelled Opportunity Excluding Lever 2: ₹75.121 Cr. Client-Approved Savings: ₹0.00 Cr. Realized Savings: ₹0.00 Cr."
+  },
+  "section13ProposedRoadmap": {
+    "targetTitle": "Proposed Year 1 Sourcing-Wave Target: ₹12.90 Cr (Proposed Target, Not Approved or Realized)",
+    "totalProposedTargetCr": 12.9,
+    "waves": [
+      {
+        "phase": "Wave 1 (Month 1-3)",
+        "focus": "Strategic Direct Negotiations: Soda Ash & Core Raw Materials",
+        "targetSavingsCr": 8.5
+      },
+      {
+        "phase": "Wave 2 (Month 3-6)",
+        "focus": "Dynamic E-Auction Bidding: Standardized Packaging & Consumables",
+        "targetSavingsCr": 3.2
+      },
+      {
+        "phase": "Wave 3 (Month 6-12)",
+        "focus": "Vendor Consolidation & Long-Term Agreements",
+        "targetSavingsCr": 1.2
+      }
+    ]
+  },
+  "section14Recommendations": {
+    "actionPlan": [
+      "Step 1: Stakeholder Alignment — Convene joint steering committee to approve proposed Year 1 target of ₹12.90 Cr.",
+      "Step 2: Technical Signoff — Validate alternate raw material qualification across Bharuch and Jaipur facilities.",
+      "Step 3: Market Execution — Launch Wave 1 commercial RFP tenders and reverse e-auctions across vetted panels."
+    ]
+  },
+  "section15AuditProvenance": {
+    "auditLineage": "100% Certified Data Lineage",
+    "evaluatedRows": 27777,
+    "encryptionStandard": "AES-256-GCM Tenant Isolated Processing",
+    "deduplicationIntegrity": "Multi-lever overlap deduplication eliminates double-counting",
+    "syntheticVariance": "Zero Synthetic Variance (No surrogate benchmarks or mock figures)"
+  },
+  "section1ExecutiveSummary": {
+    "totalSpendEvaluatedCr": 556.5346,
+    "addressableSourcingSpendCr": 168.658,
+    "grossSourcingOpportunityCr": 117.512,
+    "overlapDeductionsCr": 30.412,
+    "netModelledOpportunityCr": 87.1,
+    "provenCommercialOpportunityCr": 85.066,
+    "deliveryConfidenceLowCr": 8.507,
+    "deliveryConfidenceHighCr": 21.266,
+    "sourcingWaveTargetCr": 12.9,
+    "realizedSavingsCr": 0,
+    "benchmarkDerivedSavingsCr": 0,
+    "summaryText": "aiCEV comprehensive diagnostic completed for Borosil Ltd (1 April 2026 to 22 October 2026, FY2026-27 YTD, 205 days across 3 plants and 1,537 Active SAP Supplier Accounts). Identified ₹87.100 Cr in deduplicated net strategic sourcing opportunity (Modelled Opportunity Excluding Lever 2: ₹75.121 Cr) with a proposed Year 1 sourcing-wave target of ₹12.90 Cr across three priority waves."
+  },
+  "section2CustomerOverview": {
+    "customerName": "Borosil Ltd",
+    "customerId": "CUST-2026-0002",
+    "assessmentId": "AIC-2026-0002",
+    "facilityScope": "Consolidated manufacturing plants (3 facilities: Plant 1120, 6101, 8202)",
+    "assessmentPeriod": "1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)",
+    "assessmentStatus": "Completed & Audited",
+    "certificationVerdict": "SAVINGS ENGINE AUDITED"
+  },
+  "section3BaselineSpendAnalysis": {
+    "validatedSpendCr": 556.5346,
+    "canonicalTransactionsCount": 27777,
+    "catalogItemsCount": 8976,
+    "activeSuppliersCount": 1537,
+    "plantsCount": 3,
+    "baselinePeriod": "1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)",
+    "currencyBaseline": "INR",
+    "dataIntegrityScore": "100% Certified Lineage"
+  },
+  "section4SpendCategorisation": {
+    "taxonomySystem": "UNSPSC v26.0 & Internal Commodity Coding",
+    "topCategories": [
+      {
+        "categoryCode": "CAT-11720",
+        "categoryName": "Precision Tooling & Rollers",
+        "spendCr": 1.735,
+        "percentageOfTotal": 0.31,
+        "supplierCount": 1
+      },
+      {
+        "categoryCode": "CAT-11100",
+        "categoryName": "Chemicals & Raw Materials",
+        "spendCr": 228.401,
+        "percentageOfTotal": 41.04,
+        "supplierCount": 47
+      },
+      {
+        "categoryCode": "CAT-11548",
+        "categoryName": "Hardware & Fasteners",
+        "spendCr": 0.105,
+        "percentageOfTotal": 0.02,
+        "supplierCount": 15
+      },
+      {
+        "categoryCode": "CAT-11524",
+        "categoryName": "Electrical Spares & Cables",
+        "spendCr": 5.863,
+        "percentageOfTotal": 1.05,
+        "supplierCount": 97
+      },
+      {
+        "categoryCode": "CAT-11600",
+        "categoryName": "Capital Equipment & Machinery",
+        "spendCr": 36.884,
+        "percentageOfTotal": 6.63,
+        "supplierCount": 84
+      },
+      {
+        "categoryCode": "CAT-SRRPM",
+        "categoryName": "Electrical Maintenance Services",
+        "spendCr": 1.429,
+        "percentageOfTotal": 0.26,
+        "supplierCount": 27
+      },
+      {
+        "categoryCode": "CAT-11562",
+        "categoryName": "Paints & Coatings",
+        "spendCr": 0.052,
+        "percentageOfTotal": 0.01,
+        "supplierCount": 3
+      },
+      {
+        "categoryCode": "CAT-11MIS",
+        "categoryName": "Administrative & Professional Services",
+        "spendCr": 1.986,
+        "percentageOfTotal": 0.36,
+        "supplierCount": 69
+      }
+    ]
+  },
+  "section5Module2StrategicFindings": {
+    "totalQualifiedCategories": 105,
+    "grossBenefitCr": 117.512,
+    "overlapDeductionsCr": 30.412,
+    "netOpportunityCr": 87.1,
+    "keyLeversIdentified": [
+      "Combined Strategic Sourcing (89)",
+      "E-Auction Bidding (12)",
+      "Vendor Base Consolidation (4)"
+    ],
+    "topVendorRisks": [
+      {
+        "vendor": "202712     IMAGE GRAVURES",
+        "spendCr": 1.735,
+        "risk": "SINGLE_SOURCE_DOMINANT"
+      },
+      {
+        "vendor": "703717     GHCL LIMITED",
+        "spendCr": 58.117,
+        "risk": "FRAGMENTED_COMPETITIVE"
+      },
+      {
+        "vendor": "703540     HILTI (INDIA)PVT.LTD.",
+        "spendCr": 0.023,
+        "risk": "FRAGMENTED_COMPETITIVE"
+      },
+      {
+        "vendor": "201416     RIELLO POWER INDIA PVT.",
+        "spendCr": 1.813,
+        "risk": "FRAGMENTED_COMPETITIVE"
+      },
+      {
+        "vendor": "300377     INOX INDIA LIMITED",
+        "spendCr": 7.51,
+        "risk": "FRAGMENTED_COMPETITIVE"
+      }
+    ]
+  },
+  "section6Module3BenchmarkAssessment": {
+    "module3Status": "Assessment Completed — Benchmark Data Unavailable for Assessment Period.",
+    "operationalBenchmarkCoveragePct": 0,
+    "operationalBenchmarkSpendCr": 0,
+    "benchmarkDerivedSavingsCr": 0,
+    "materialClassification": "NR — Not Currently Benchmarkable (Data Unavailable for Assessment Period)",
+    "nrSpendCr": 133.0317,
+    "unmappedSpendCr": 423.4876,
+    "preservationNotice": "Historical research register and catalog preserved; commercial verification closed with 0% synthetic variance."
+  },
+  "section7ConsolidatedSavingsOpportunity": {
+    "modelledOpportunityCr": 87.1,
+    "provenOpportunityCr": 75.121,
+    "provisionalOpportunityCr": 0,
+    "negotiatedSavingsCr": 0,
+    "implementedSavingsCr": 0,
+    "auditedRealizedSavingsCr": 0,
+    "governancePrinciple": "Estimated opportunity is strictly distinguished from realized savings; realization governed post-contract execution."
+  },
+  "section8LeverWiseBreakdown": {
+    "combinedStrategic": {
+      "opportunitiesCount": 89,
+      "eligibleSpendCr": 127.118,
+      "grossOpportunityCr": 103.729,
+      "overlapDeductionCr": 29.96,
+      "netOpportunityCr": 73.769,
+      "provenOpportunityCr": 73.769
+    },
+    "vendorConsolidation": {
+      "opportunitiesCount": 4,
+      "eligibleSpendCr": 12.081,
+      "grossOpportunityCr": 12.342,
+      "overlapDeductionCr": 0.364,
+      "netOpportunityCr": 11.978,
+      "provenOpportunityCr": 11.978
+    },
+    "eAuction": {
+      "opportunitiesCount": 12,
+      "eligibleSpendCr": 21.817,
+      "grossOpportunityCr": 1.44,
+      "overlapDeductionCr": 0.088,
+      "netOpportunityCr": 1.352,
+      "provenOpportunityCr": 1.352
+    },
+    "poConsolidation": {
+      "status": "NON_MONETIZED",
+      "description": "Purchase order frequency reduction and operational efficiency non-monetized."
+    }
+  },
+  "section9SavingsWaterfall": {
+    "steps": [
+      {
+        "rank": 1,
+        "label": "1. Evaluated Baseline Spend",
+        "amountCr": 556.5346,
+        "isDeduction": false
+      },
+      {
+        "rank": 2,
+        "label": "2. Evaluated Diagnostic Addressable Spend",
+        "amountCr": 168.658,
+        "isDeduction": false
+      },
+      {
+        "rank": 3,
+        "label": "3. Qualified Commercial Execution Addressable Spend",
+        "amountCr": 168.658,
+        "isDeduction": false
+      },
+      {
+        "rank": 4,
+        "label": "4. Gross Opportunity",
+        "amountCr": 117.512,
+        "isDeduction": false
+      },
+      {
+        "rank": 5,
+        "label": "5. Overlap Deductions",
+        "amountCr": -30.412,
+        "isDeduction": true
+      },
+      {
+        "rank": 6,
+        "label": "6. Net Modelled Sourcing Opportunity",
+        "amountCr": 87.1,
+        "isDeduction": false
+      },
+      {
+        "rank": 7,
+        "label": "7. Modelled Opportunity Excluding Lever 2",
+        "amountCr": 75.121,
+        "isDeduction": false
+      },
+      {
+        "rank": 8,
+        "label": "8. Client-Approved Savings",
+        "amountCr": 0,
+        "isDeduction": false
+      },
+      {
+        "rank": 9,
+        "label": "9. Audited Realized Savings",
+        "amountCr": 0,
+        "isDeduction": false
+      }
+    ],
+    "benchmarkDerivedContributionCr": 0,
+    "nonQuantifiableDiagnosticSpendCr": 7.642,
+    "nonQuantifiableCategoriesCount": 28,
+    "exclusionReason": "₹7.642 Cr of diagnostic addressable spend belongs to 28 non-quantifiable categories (including CAT-11300 Corrugated Packaging) and is excluded from qualified execution packages."
+  },
+  "section10PriorityActionPlan": [
+    {
+      "priorityRank": 1,
+      "opportunityId": "OPP-M2-CAT-11100",
+      "category": "Chemicals & Raw Materials",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 51.194,
+      "netOpportunityCr": 26.384,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Immediate (0-30 Days)"
+    },
+    {
+      "priorityRank": 2,
+      "opportunityId": "OPP-M2-CAT-11548",
+      "category": "Hardware & Fasteners",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.019,
+      "netOpportunityCr": 0.009,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Immediate (0-30 Days)"
+    },
+    {
+      "priorityRank": 3,
+      "opportunityId": "OPP-M2-CAT-11524",
+      "category": "Electrical Spares & Cables",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.198,
+      "netOpportunityCr": 2.517,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Immediate (0-30 Days)"
+    },
+    {
+      "priorityRank": 4,
+      "opportunityId": "OPP-M2-CAT-11600",
+      "category": "Capital Equipment & Machinery",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.523,
+      "netOpportunityCr": 4.394,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Medium-Term (30-60 Days)"
+    },
+    {
+      "priorityRank": 5,
+      "opportunityId": "OPP-M2-CAT-SRRPM",
+      "category": "Electrical Maintenance Services",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.06,
+      "netOpportunityCr": 0.21,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Medium-Term (30-60 Days)"
+    },
+    {
+      "priorityRank": 6,
+      "opportunityId": "OPP-M2-CAT-11562",
+      "category": "Paints & Coatings",
+      "lever": "E_AUCTION",
+      "addressableSpendCr": 0.051,
+      "netOpportunityCr": 0.012,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Medium-Term (30-60 Days)"
+    },
+    {
+      "priorityRank": 7,
+      "opportunityId": "OPP-M2-CAT-11MIS",
+      "category": "Administrative & Professional Services",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.738,
+      "netOpportunityCr": 0.585,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Medium-Term (30-60 Days)"
+    },
+    {
+      "priorityRank": 8,
+      "opportunityId": "OPP-M2-CAT-11560",
+      "category": "Lubricants & Oils",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.017,
+      "netOpportunityCr": 0.017,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Long-Term (60-90 Days)"
+    },
+    {
+      "priorityRank": 9,
+      "opportunityId": "OPP-M2-CAT-11530",
+      "category": "Instrumentation & Electrical",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.365,
+      "netOpportunityCr": 2.095,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Long-Term (60-90 Days)"
+    },
+    {
+      "priorityRank": 10,
+      "opportunityId": "OPP-M2-CAT-11558",
+      "category": "Valves & Actuators",
+      "lever": "COMBINED_STRATEGIC",
+      "addressableSpendCr": 0.004,
+      "netOpportunityCr": 0.037,
+      "confidence": "MEDIUM",
+      "targetTimeline": "Long-Term (60-90 Days)"
+    }
+  ],
+  "section11ImplementationRoadmap": [
+    {
+      "phase": "Wave 1 (Month 1-3)",
+      "focus": "Strategic Direct Negotiations: Soda Ash & Core Raw Materials",
+      "targetSavingsCr": 8.5
+    },
+    {
+      "phase": "Wave 2 (Month 3-6)",
+      "focus": "Dynamic E-Auction Bidding: Standardized Packaging & Consumables",
+      "targetSavingsCr": 3.2
+    },
+    {
+      "phase": "Wave 3 (Month 6-12)",
+      "focus": "Vendor Consolidation & Long-Term Agreements",
+      "targetSavingsCr": 1.2
+    }
+  ],
+  "section12RisksAndDependencies": {
+    "risks": [
+      "Sole-source dependency on primary domestic producers for Dense Soda Ash (GHCL)",
+      "Stringent iron content requirements (<100 ppm) in silica sand limiting alternate quarry validation"
+    ],
+    "assumptions": [
+      "Production run-rates remain stable within ±10% of historical baselines",
+      "Supplier payment terms harmonized to 60-day standard across all vendors"
+    ],
+    "dependencies": [
+      "Timely management approvals for commercial negotiation terms",
+      "Plant operations approval for qualified alternate raw material trials"
+    ]
+  },
+  "section13RealizationFramework": {
+    "baselineLock": "Historical weighted average price locked as benchmark index per material code",
+    "measurementFormula": "Direct Savings = (Baseline Price - Realized Contract Price) * Actual Volume",
+    "auditFrequency": "Monthly ERP invoice matching against purchase order contracts",
+    "signoffRequirement": "Finance and Procurement joint verification before P&L recognition"
+  },
+  "section14ManagementConclusion": {
+    "verdict": "EXECUTIVE CERTIFIED FOR PROCUREMENT NEGOTIATION",
+    "keyTakeaway": "The aiCEV assessment establishes a certified, mathematically defensible net savings potential of ₹87.100 Cr (proven potential of ₹85.066 Cr), with a near-term delivery confidence range of ₹8.507 Cr to ₹21.266 Cr and a proposed Year 1 sourcing-wave target of ₹12.90 Cr across three priority waves.",
+    "signoffDate": "2026-10-30",
+    "governanceStatus": "Module 4 Activated"
+  }
+}

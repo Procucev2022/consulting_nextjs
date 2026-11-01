@@ -1,7 +1,7 @@
 # FINAL ENTERPRISE END-TO-END VALIDATION REPORT
 **aiCEV / Procucev Enterprise Procurement Intelligence Platform**  
 **VERSION**: `FINAL_PRE_PRODUCTION_SYSTEM_HARDENING_V1.0`  
-**EVALUATION TIMESTAMP**: `2026-09-30T18:43:12.935Z`  
+**EVALUATION TIMESTAMP**: `2026-10-30T14:31:37.389Z`  
 **FINAL SYSTEM STATUS**: `PRODUCTION_READY`
 
 ---
@@ -55,8 +55,8 @@ Every executive KPI maintains full audit lineage:
 - **Total Ingested Spend**: ₹59,20,34,77,681.66
 - **Valid Customer Spend**: ₹59,20,34,77,681.66
 - **Reconciliation Variance**: ₹0.00 (Zero unexplained variance)
-- **Gross Strategic Opportunity**: ₹323.27 Cr
-- **Net Defensible Opportunity**: ₹243.75 Cr (Overlap deduction ₹79.52 Cr)
+- **Gross Strategic Opportunity**: ₹173.12 Cr
+- **Net Defensible Opportunity**: ₹93.60 Cr (Overlap deduction ₹62.80 Cr, Exclusions ₹16.72 Cr)
 - **Approved Wave 1 Handoff**: ₹47.90 Cr
 
 ---

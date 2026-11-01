@@ -45,7 +45,7 @@ export const ExecutiveBriefFormatCards: React.FC<ExecutiveBriefFormatCardsProps>
                 <CheckCircle2 className="w-3 h-3 text-sky-600" />
                 {pdfAvailable ? 'Official Artifact Ready' : 'Ready to Render'}
               </span>
-              <span className="text-xs font-mono text-slate-500">30 Pages • PDF</span>
+              <span className="text-xs font-mono text-slate-500">15 Pages • PDF</span>
             </div>
 
             <div className="flex items-start gap-3.5 mt-3">
@@ -89,7 +89,7 @@ export const ExecutiveBriefFormatCards: React.FC<ExecutiveBriefFormatCardsProps>
                 <Sparkles className="w-3 h-3 text-indigo-600" />
                 {pptxAvailable ? 'Editable PPTX Ready' : strings.formats.pptxAvailable}
               </span>
-              <span className="text-xs font-mono text-slate-500">30 Slides • PPTX</span>
+              <span className="text-xs font-mono text-slate-500">15 Slides • PPTX</span>
             </div>
 
             <div className="flex items-start gap-3.5 mt-3">

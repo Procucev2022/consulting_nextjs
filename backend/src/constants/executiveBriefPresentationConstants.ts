@@ -216,10 +216,29 @@ export const DEMO_ARCHETYPE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationCon
 export {
   ABC_TEXTILE_VALUE_CLASSIFICATIONS,
   ABC_TEXTILE_PRESENTATION_CONTRACT,
+  BOROSIL_VALUE_CLASSIFICATIONS,
+  BOROSIL_PRESENTATION_CONTRACT,
   formatPresentationValues,
   type PresentationFormattedValues
 } from './customerBriefPresentationConstants';
-import { ABC_TEXTILE_PRESENTATION_CONTRACT } from './customerBriefPresentationConstants';
+import {
+  ABC_TEXTILE_PRESENTATION_CONTRACT,
+  BOROSIL_PRESENTATION_CONTRACT
+} from './customerBriefPresentationConstants';
+
+/**
+ * Checks whether client name or assessment ID belongs to Borosil customer assessment.
+ */
+export function isBorosilAssessment(clientNameOrAssessmentId?: string): boolean {
+  if (!clientNameOrAssessmentId) return false;
+  const clean = clientNameOrAssessmentId.trim().toLowerCase();
+  return (
+    clean.includes('borosil') ||
+    clean === 'aic-2026-0002' ||
+    clean === 'cust-2026-0002' ||
+    (clean.includes('0002') && !clean.includes('abc') && !clean.includes('textile'))
+  );
+}
 
 /**
  * Checks whether client name or assessment ID belongs to actual customer assessment.
@@ -228,25 +247,41 @@ export function isCustomerAssessment(clientNameOrAssessmentId?: string): boolean
   if (!clientNameOrAssessmentId) return false;
   const clean = clientNameOrAssessmentId.trim().toLowerCase();
   return (
+    isBorosilAssessment(clean) ||
     clean.includes('abc') ||
     clean.includes('textile') ||
-    clean.includes('0002') ||
     clean.startsWith('aic-')
   );
 }
 
 /**
  * Resolves the presentation contract based on client name or assessment ID.
- * Returns ABC_TEXTILE_PRESENTATION_CONTRACT for ABC Textile Ltd / AIC-2026-0002,
- * and DEMO_ARCHETYPE_PRESENTATION_CONTRACT for UltraTech Cement / demonstration archetypes.
+ * Returns BOROSIL_PRESENTATION_CONTRACT for Borosil Ltd / AIC-2026-0002.
+ * Enforces strict isolation: never silently defaults to another customer.
  */
 export function getExecutiveBriefPresentationContract(
   clientNameOrAssessmentId?: string
 ): ExecutiveBriefPresentationContract {
-  if (isCustomerAssessment(clientNameOrAssessmentId)) {
+  if (isBorosilAssessment(clientNameOrAssessmentId)) {
+    return BOROSIL_PRESENTATION_CONTRACT;
+  }
+  if (
+    clientNameOrAssessmentId &&
+    (clientNameOrAssessmentId.toLowerCase().includes('abc') ||
+      clientNameOrAssessmentId.toLowerCase().includes('textile'))
+  ) {
     return ABC_TEXTILE_PRESENTATION_CONTRACT;
   }
-  return DEMO_ARCHETYPE_PRESENTATION_CONTRACT;
+  if (
+    clientNameOrAssessmentId &&
+    (clientNameOrAssessmentId.toLowerCase().includes('ultratech') ||
+      clientNameOrAssessmentId.toLowerCase().includes('demo'))
+  ) {
+    return DEMO_ARCHETYPE_PRESENTATION_CONTRACT;
+  }
+  throw new Error(
+    `Cannot resolve executive presentation contract for unverified assessment/client: '${clientNameOrAssessmentId || 'UNKNOWN'}'. Customer data isolation strictly enforced.`
+  );
 }
 
 export const EXECUTIVE_BRIEF_PRESENTATION_CONSTANTS = EXECUTIVE_BRIEF_PRESENTATION_CONTRACT;

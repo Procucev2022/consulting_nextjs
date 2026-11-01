@@ -7,6 +7,9 @@
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger';
+import { isBorosilAssessment } from '../constants/executiveBriefPresentationConstants';
+import { AiCevManagementReportPdfBuilder } from './aiCevManagementReportPdfBuilder';
+import { AiCevManagementReportPptxBuilder } from './aiCevManagementReportPptxBuilder';
 import { DEFAULT_CLIENT_PROFILE } from '../constants/executiveBriefConstants';
 import { ExecutiveOpportunityBriefService } from './executiveOpportunityBriefService';
 import { ExecutiveOpportunityBriefPptxGenerator } from './executiveOpportunityBriefPptxGenerator';
@@ -28,6 +31,19 @@ export class ExecutiveOpportunityBriefExportService {
     pdfFilename: string;
     pptxFilename: string;
   }> {
+    if (isBorosilAssessment(clientName)) {
+      const pdfRes = AiCevManagementReportPdfBuilder.savePdfArtifacts();
+      const pptxRes = await AiCevManagementReportPptxBuilder.savePptxArtifacts();
+      return {
+        pdfBuffer: pdfRes.buffer,
+        pptxBuffer: pptxRes.buffer,
+        pdfPath: pdfRes.briefPath,
+        pptxPath: pptxRes.briefPath,
+        pdfFilename: AiCevManagementReportPdfBuilder.OFFICIAL_BRIEF_PDF,
+        pptxFilename: AiCevManagementReportPptxBuilder.OFFICIAL_BRIEF_PPTX
+      };
+    }
+
     const cwd = process.cwd();
     const isBackendCwd = path.basename(cwd) === 'backend';
     const backendDir = isBackendCwd ? cwd : path.resolve(cwd, 'backend');

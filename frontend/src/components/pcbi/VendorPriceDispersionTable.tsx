@@ -9,13 +9,21 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
   vendorRankings: _vendorRankings = [],
   calculations = [],
   onWhyThisBenchmark,
-  className = ''
+  className = '',
+  isSimulatorMode: propIsSimulatorMode,
+  isCustomerView = false
 }) => {
   const dStrings = UI_STRINGS.module3.vendorDispersion;
   const headers = dStrings.headers;
+  const [internalSimulatorMode, setInternalSimulatorMode] = React.useState<boolean>(
+    propIsSimulatorMode ?? !isCustomerView
+  );
 
-  // Build items from calculations or vendor rankings with realistic Prompt 100 values
-  const rows = calculations.length > 0
+  const isSimulatorMode = propIsSimulatorMode !== undefined ? propIsSimulatorMode : internalSimulatorMode;
+
+  // Build items from calculations or illustrative simulator rows
+  const isActual = calculations.length > 0;
+  const rows = isActual
     ? calculations.map((c) => ({
         id: c.id,
         vendor: c.vendor || 'Industrial Supplier',
@@ -30,8 +38,9 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
         opportunityCr: Number((c.opportunity_value / 10000000).toFixed(2)),
         rawCalc: c
       }))
-    : [
-        // Realistic fallback matching Prompt 100 dispersion: Vendor A ₹150, Vendor B ₹162, Vendor C ₹175, Benchmark ₹153
+    : isSimulatorMode
+    ? [
+        // Realistic illustrative rows matching Prompt 100 dispersion
         {
           id: 'row-1',
           vendor: 'Vendor C (Supreme Polymers)',
@@ -88,7 +97,8 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
           opportunityCr: 0.21,
           rawCalc: undefined
         }
-      ];
+      ]
+    : [];
 
   return (
     <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
@@ -102,77 +112,125 @@ export const VendorPriceDispersionTable: React.FC<VendorPriceDispersionTableProp
             {dStrings.subtitle}
           </p>
         </div>
-        <div className="text-xs font-mono text-slate-500">
-          Showing vendor price dispersion & benchmark gap
+        <div className="flex items-center space-x-2">
+          {!isActual && (
+            <button
+              type="button"
+              onClick={() => setInternalSimulatorMode(!isSimulatorMode)}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 transition-all cursor-pointer"
+            >
+              {isSimulatorMode ? dStrings.btnToggleCustomerView : dStrings.btnToggleSimulator}
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
-              <tr>
-                <th className="py-3 px-4">{headers.vendor}</th>
-                <th className="py-3 px-4">{headers.item}</th>
-                <th className="py-3 px-4">{headers.spendCr}</th>
-                <th className="py-3 px-4">{headers.quantity}</th>
-                <th className="py-3 px-4">{headers.actualPrice}</th>
-                <th className="py-3 px-4">{headers.benchmarkPrice}</th>
-                <th className="py-3 px-4">{headers.priceGap}</th>
-                <th className="py-3 px-4">{headers.benchmarkability}</th>
-                <th className="py-3 px-4">{headers.opportunityCr}</th>
-                <th className="py-3 px-4 text-right">{headers.explainability}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
-              {rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
-                >
-                  <td className="py-3 px-4 font-sans font-bold text-slate-900 dark:text-white">
-                    {row.vendor}
-                  </td>
-                  <td className="py-3 px-4 font-sans text-slate-600 dark:text-slate-300">
-                    {row.item}
-                  </td>
-                  <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
-                    ₹{row.spendCr.toFixed(2)} Cr
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                    {row.quantity.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-rose-600 dark:text-rose-400 font-bold">
-                    ₹{row.actualPrice.toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-cyan-700 dark:text-cyan-400 font-bold">
-                    ₹{row.benchmarkPrice.toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 font-bold text-rose-600 dark:text-rose-400">
-                    +₹{row.priceGap.toFixed(2)} ({row.priceGapPct > 0 ? `+${row.priceGapPct}%` : `${row.priceGapPct}%`})
-                  </td>
-                  <td className="py-3 px-4 text-emerald-700 dark:text-emerald-400 font-bold">
-                    {row.benchmarkabilityPct}%
-                  </td>
-                  <td className="py-3 px-4 font-black text-rose-600 dark:text-rose-400">
-                    ₹{row.opportunityCr.toFixed(2)} Cr
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onWhyThisBenchmark?.(row.rawCalc as any)}
-                      className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/80 hover:bg-cyan-100 border border-cyan-200 dark:border-cyan-800 rounded-lg transition-all cursor-pointer"
-                    >
-                      <HelpCircle className="w-3 h-3" />
-                      <span>{UI_STRINGS.module3.explainability.btnLabel}</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {!isActual && isSimulatorMode && (
+        <div className="p-4 rounded-xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <span className="font-bold font-mono tracking-wide flex items-center space-x-1.5 text-amber-800 dark:text-amber-300">
+              <span className="px-2 py-0.5 rounded bg-amber-200 text-amber-900 font-black text-[10px]">{dStrings.modeSimulatorBadge}</span>
+              <span>{dStrings.simulatorBannerTitle}</span>
+            </span>
+            <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
+              {dStrings.simulatorBannerDesc}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setInternalSimulatorMode(false)}
+            className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 cursor-pointer"
+          >
+            {dStrings.btnToggleCustomerView}
+          </button>
         </div>
-      </div>
+      )}
+
+      {!isActual && !isSimulatorMode ? (
+        <div className="p-8 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-3 bg-slate-50/50 dark:bg-white/50">
+          <Sliders className="w-8 h-8 text-slate-400 mx-auto" />
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            {dStrings.awaitingDataTitle}
+          </p>
+          <p className="text-[11px] text-slate-500 max-w-lg mx-auto leading-relaxed">
+            {dStrings.awaitingDataDesc}
+          </p>
+          <button
+            type="button"
+            onClick={() => setInternalSimulatorMode(true)}
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-xs transition-all cursor-pointer"
+          >
+            <span>{dStrings.btnToggleSimulator}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-100 dark:bg-[#F8FBFE] text-slate-700 dark:text-slate-400 uppercase text-[10px] font-semibold border-b border-slate-200 dark:border-slate-800">
+                <tr>
+                  <th className="py-3 px-4">{headers.vendor}</th>
+                  <th className="py-3 px-4">{headers.item}</th>
+                  <th className="py-3 px-4">{headers.spendCr}</th>
+                  <th className="py-3 px-4">{headers.quantity}</th>
+                  <th className="py-3 px-4">{headers.actualPrice}</th>
+                  <th className="py-3 px-4">{headers.benchmarkPrice}</th>
+                  <th className="py-3 px-4">{headers.priceGap}</th>
+                  <th className="py-3 px-4">{headers.benchmarkability}</th>
+                  <th className="py-3 px-4">{headers.opportunityCr}</th>
+                  <th className="py-3 px-4 text-right">{headers.explainability}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70 font-mono text-slate-700 dark:text-slate-300">
+                {rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="bg-white dark:bg-white hover:bg-slate-50 dark:hover:bg-[#EEF4FC] transition-colors"
+                  >
+                    <td className="py-3 px-4 font-sans font-bold text-slate-900 dark:text-white">
+                      {row.vendor}
+                    </td>
+                    <td className="py-3 px-4 font-sans text-slate-600 dark:text-slate-300">
+                      {row.item}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
+                      ₹{row.spendCr.toFixed(2)} Cr
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                      {row.quantity.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4 text-rose-600 dark:text-rose-400 font-bold">
+                      ₹{row.actualPrice.toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-cyan-700 dark:text-cyan-400 font-bold">
+                      ₹{row.benchmarkPrice.toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-rose-600 dark:text-rose-400">
+                      +₹{row.priceGap.toFixed(2)} ({row.priceGapPct > 0 ? `+${row.priceGapPct}%` : `${row.priceGapPct}%`})
+                    </td>
+                    <td className="py-3 px-4 text-emerald-700 dark:text-emerald-400 font-bold">
+                      {row.benchmarkabilityPct}%
+                    </td>
+                    <td className="py-3 px-4 font-black text-rose-600 dark:text-rose-400">
+                      ₹{row.opportunityCr.toFixed(2)} Cr
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => onWhyThisBenchmark?.(row.rawCalc as any)}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/80 hover:bg-cyan-100 border border-cyan-200 dark:border-cyan-800 rounded-lg transition-all cursor-pointer"
+                      >
+                        <HelpCircle className="w-3 h-3" />
+                        <span>{UI_STRINGS.module3.explainability.btnLabel}</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -9,7 +9,8 @@ const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush
-  })
+  }),
+  useSearchParams: () => new URLSearchParams()
 }));
 
 describe('ExecutiveBriefPage', () => {
@@ -125,7 +126,7 @@ describe('ExecutiveBriefPage', () => {
 
     fireEvent.click(screen.getByTestId('download-pdf-btn'));
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pdf');
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/reports/executive-brief/download/pdf'));
     });
 
     await waitFor(() => {
@@ -134,7 +135,7 @@ describe('ExecutiveBriefPage', () => {
 
     fireEvent.click(screen.getByTestId('download-pptx-btn'));
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pptx');
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/reports/executive-brief/download/pptx'));
     });
   });
 
@@ -160,7 +161,7 @@ describe('ExecutiveBriefPage', () => {
 
     fireEvent.click(screen.getByTestId('download-pdf-btn'));
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pdf');
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/reports/executive-brief/download/pdf'));
     });
   });
 
@@ -173,7 +174,7 @@ describe('ExecutiveBriefPage', () => {
     fireEvent.click(screen.getByTestId('preview-open-full-btn'));
     fireEvent.click(screen.getByTestId('preview-download-pdf-btn'));
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pdf');
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/reports/executive-brief/download/pdf'));
     });
   });
 
@@ -241,7 +242,7 @@ describe('ExecutiveBriefPage', () => {
 
     fireEvent.click(screen.getByTestId('download-artifact-btn-EXECUTIVE_BRIEF.pdf'));
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pdf');
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/reports/executive-brief/download/pdf'));
     });
 
     // Artifact download failure branch
@@ -331,7 +332,7 @@ describe('ExecutiveBriefPage', () => {
 
     fireEvent.click(screen.getByTestId('download-artifact-btn-EXECUTIVE_BRIEF.pptx'));
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/pptx');
+      expect(fetch).toHaveBeenCalledWith(expect.stringContaining('/api/reports/executive-brief/download/pptx'));
     });
   });
 });

@@ -67,10 +67,11 @@ describe('PCBI Components Suite', () => {
       expect(screen.getByText('₹8.20 Cr')).toBeInTheDocument();
     });
 
-    it('renders fallback defaults when summary is not provided', () => {
+    it('renders clean zero defaults when summary is not provided', () => {
       render(<ExecutiveBenchmarkSummary summary={undefined as unknown as PCBIExecutiveSummary} />);
-      expect(screen.getByText('₹100.00 Cr')).toBeInTheDocument();
-      expect(screen.getByText('₹8.20 Cr')).toBeInTheDocument();
+      expect(screen.getAllByText('₹0.00 Cr').length).toBeGreaterThan(0);
+      expect(screen.getByText(UI_STRINGS.module3.operationalCoverageZeroLabel)).toBeInTheDocument();
+      expect(screen.getAllByText(UI_STRINGS.module3.awaitingVerifiedBenchmarks).length).toBeGreaterThan(0);
     });
   });
 
@@ -117,6 +118,8 @@ describe('PCBI Components Suite', () => {
       render(<SpendCategoryView summary={mockSummary} />);
 
       expect(screen.getByText(UI_STRINGS.module3.spendCategoryView.title)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module3.spendCategoryView.mappingBasisBadge)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module3.spendCategoryView.mappingBasisDesc)).toBeInTheDocument();
       expect(screen.getByText(UI_STRINGS.module3.spendCategoryView.directMaterials)).toBeInTheDocument();
       expect(screen.getByText(UI_STRINGS.module3.spendCategoryView.packingMaterials)).toBeInTheDocument();
       expect(screen.getByText(UI_STRINGS.module3.spendCategoryView.mro)).toBeInTheDocument();
@@ -137,6 +140,8 @@ describe('PCBI Components Suite', () => {
       render(<CalculationTransparencyCard />);
 
       expect(screen.getByText(UI_STRINGS.module3.calculationTransparency.title)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module3.calculationTransparency.illustrativeBadge)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.module3.calculationTransparency.illustrativeNotice)).toBeInTheDocument();
       expect(screen.getByText(/Baseline Price × \(Current Index \/ Baseline Index\)/)).toBeInTheDocument();
       expect(screen.getAllByText(/₹157\.14/)[0]).toBeInTheDocument();
       expect(screen.getAllByText(/₹22\.86/)[0]).toBeInTheDocument();

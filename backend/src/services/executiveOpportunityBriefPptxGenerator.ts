@@ -8,7 +8,9 @@ import path from 'path';
 import PptxGenJS from 'pptxgenjs';
 import { logger } from '../utils/logger';
 import { DEFAULT_CLIENT_PROFILE } from '../constants/executiveBriefConstants';
+import { isBorosilAssessment } from '../constants/executiveBriefPresentationConstants';
 import type { PptxInspectionResult } from '../types/executiveBriefExportTypes';
+import { AiCevManagementReportPptxBuilder } from './aiCevManagementReportPptxBuilder';
 import { renderBriefPptxSlide1 } from './executiveOpportunityBriefPptxSlide1';
 import { renderBriefPptxSlide2, renderBriefPptxSlide3 } from './executiveOpportunityBriefPptxSlides2To3';
 import { renderBriefPptxSlide4 } from './executiveOpportunityBriefPptxSlide4';
@@ -29,6 +31,9 @@ export class ExecutiveOpportunityBriefPptxGenerator {
   public static async createPresentation(
     clientName = DEFAULT_CLIENT_PROFILE.clientName
   ): Promise<{ pptx: PptxGenJS; slideCount: number }> {
+    if (isBorosilAssessment(clientName)) {
+      return AiCevManagementReportPptxBuilder.createPresentation();
+    }
     const pptx = new PptxGenJS();
     pptx.layout = 'LAYOUT_16x9';
     pptx.author = 'Procucev Advisory Services';
@@ -55,6 +60,9 @@ export class ExecutiveOpportunityBriefPptxGenerator {
   public static async generateBuffer(
     clientName = DEFAULT_CLIENT_PROFILE.clientName
   ): Promise<Buffer> {
+    if (isBorosilAssessment(clientName)) {
+      return AiCevManagementReportPptxBuilder.generateBuffer();
+    }
     const { pptx } = await ExecutiveOpportunityBriefPptxGenerator.createPresentation(clientName);
     const buf = (await pptx.write({ outputType: 'nodebuffer' })) as Buffer;
     return buf;

@@ -7,6 +7,7 @@ import { CANONICAL_OPPORTUNITY_REGISTRY } from '../constants/module2FinancialTra
 import { MODULE_4_FROZEN_BASELINES } from '../constants/module4SavingsForensic';
 import { Module4SavingsGovernanceHelper } from './module4SavingsGovernanceHelper';
 import { Module4TransactionLineageHelper } from './module4TransactionLineageHelper';
+import { Module4BorosilForensicHelper } from './module4BorosilForensicHelper';
 import type {
   Module4CanonicalOpportunityItem,
   Module4TransactionTraceRow,
@@ -26,8 +27,12 @@ export class Module4SavingsForensicHelper {
   }
 
   public static buildCanonicalOpportunities(
-    txs: StrategicInputTransaction[]
+    txs: StrategicInputTransaction[],
+    assessmentId?: string
   ): Module4CanonicalOpportunityItem[] {
+    if (assessmentId === 'AIC-2026-0002') {
+      return Module4BorosilForensicHelper.buildBorosilCanonicalOpportunities();
+    }
     const opps: Module4CanonicalOpportunityItem[] = [];
 
     const macroGrossCr = MODULE_4_FROZEN_BASELINES.MODULE_2_GROSS_OPPORTUNITY_CR;
@@ -177,8 +182,12 @@ export class Module4SavingsForensicHelper {
 
   public static buildTransactionTrace(
     txs: StrategicInputTransaction[],
-    opps: Module4CanonicalOpportunityItem[]
+    opps: Module4CanonicalOpportunityItem[],
+    assessmentId?: string
   ): Module4TransactionTraceRow[] {
+    if (assessmentId === 'AIC-2026-0002') {
+      return Module4BorosilForensicHelper.buildBorosilTransactionTrace(txs, opps);
+    }
     const rows: Module4TransactionTraceRow[] = [];
 
     for (let i = 0; i < txs.length; i++) {
@@ -217,7 +226,10 @@ export class Module4SavingsForensicHelper {
     return Module4SavingsGovernanceHelper.buildExclusions();
   }
 
-  public static buildFinancialBridge(): Module4FinancialBridge {
+  public static buildFinancialBridge(assessmentId?: string): Module4FinancialBridge {
+    if (assessmentId === 'AIC-2026-0002') {
+      return Module4BorosilForensicHelper.buildBorosilFinancialBridge();
+    }
     return {
       totalValidatedSpendCr: MODULE_4_FROZEN_BASELINES.MODULE_1_VALIDATED_SPEND_CR,
       module2AddressableSourcingSpendCr: MODULE_4_FROZEN_BASELINES.MODULE_2_ADDRESSABLE_SPEND_CR,

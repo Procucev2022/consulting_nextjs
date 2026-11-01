@@ -171,6 +171,18 @@ export interface ExecutiveBriefReportData {
     approvedSavingsInr: number;
     realizedSavingsInr: number;
     opportunityCount: number;
+    confidenceSummary?: {
+      high: number;
+      medium: number;
+      low: number;
+      insufficient: number;
+    };
+    sourceReferences?: Array<{
+      topic: string;
+      source: string;
+      sourceDate?: string;
+      url?: string;
+    }>;
     reportVersion: string;
   };
   clientProfile: ExecutiveBriefClientProfile;
@@ -180,6 +192,8 @@ export interface ExecutiveBriefReportData {
   validationChecklist: ExecutiveBriefValidationChecklist;
   artifacts: ExecutiveBriefArtifactItem[];
 }
+
+export type ExecutiveBriefMetadata = ExecutiveBriefReportData['metadata'];
 
 export interface ExecutiveBriefHeaderNavProps {
   clientProfile: ExecutiveBriefClientProfile;
@@ -250,6 +264,7 @@ export interface ExecutiveBriefOpportunityTableRow {
 
 export interface ExecutiveBriefOpportunityTableProps {
   onDrillOpportunity?: (analysisKey: string) => void;
+  reportData?: ExecutiveBriefReportData | null;
 }
 
 export interface AssumptionTaxonomyItem {

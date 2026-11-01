@@ -146,8 +146,19 @@ describe('savings.controller', () => {
   });
 
   describe('getConsolidatedSavings', () => {
-    it('should return consolidated savings, waterfall metrics, and action plans', async () => {
-      const req: any = {};
+    it('should reject when assessmentId is missing with 400', async () => {
+      const req: any = { query: {} };
+      const res = mockResponse();
+
+      await getConsolidatedSavings(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+      const body = res.json.mock.calls[0][0];
+      expect(body.success).toBe(false);
+      expect(body.message).toContain('Assessment ID is required');
+    });
+
+    it('should return consolidated savings, waterfall metrics, and action plans for valid assessment', async () => {
+      const req: any = { query: { assessmentId: 'AIC-2026-0001' } };
       const res = mockResponse();
 
       await getConsolidatedSavings(req, res);
@@ -160,7 +171,7 @@ describe('savings.controller', () => {
     });
 
     it('should handle getConsolidatedSavings failure with error message', async () => {
-      const req: any = {};
+      const req: any = { query: { assessmentId: 'AIC-2026-0001' } };
       const res = mockResponse();
       const spy = vi.spyOn(db, 'getConsolidatedSavings').mockImplementationOnce(() => {
         throw new Error('Consolidation calculation crashed');
@@ -173,7 +184,7 @@ describe('savings.controller', () => {
     });
 
     it('should handle getConsolidatedSavings error without message fallback', async () => {
-      const req: any = {};
+      const req: any = { query: { assessmentId: 'AIC-2026-0001' } };
       const res = mockResponse();
       const spy = vi.spyOn(db, 'getConsolidatedSavings').mockImplementationOnce(() => {
         throw {};
@@ -189,7 +200,7 @@ describe('savings.controller', () => {
   describe('updateActionPlan', () => {
     it('should update action plan status, owner, priority and comments', async () => {
       // First ensure consolidated savings is initialized
-      const initReq: any = {};
+      const initReq: any = { query: { assessmentId: 'AIC-2026-0001' } };
       const initRes = mockResponse();
       await getConsolidatedSavings(initReq, initRes);
       const actionPlanId = initRes.json.mock.calls[0][0].data.actionPlans[0].id;
@@ -249,7 +260,7 @@ describe('savings.controller', () => {
 
   describe('updateOpportunityStatus', () => {
     it('should update opportunity status to VALIDATED, APPROVED, or REALIZED', async () => {
-      const initReq: any = {};
+      const initReq: any = { query: { assessmentId: 'AIC-2026-0001' } };
       const initRes = mockResponse();
       await getConsolidatedSavings(initReq, initRes);
       const oppId = initRes.json.mock.calls[0][0].data.opportunities[0].opportunity_id;

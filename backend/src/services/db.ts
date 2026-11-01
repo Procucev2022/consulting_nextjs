@@ -46,7 +46,10 @@ import { PCBICalculationEngine } from './pcbiCalculationEngine';
 import { StrategicSourcingEngine } from './strategicSourcingEngine';
 import { SavingsDeduplicationEngine } from './savingsDeduplicationEngine';
 import { Module2CanonicalService } from './module2CanonicalService';
+import { Module3PcbiMappingService } from './module3PcbiMappingService';
+import { Module4SavingsForensicEngine } from './module4SavingsForensicEngine';
 import { AssessmentStore } from './assessmentStore';
+import { resolveAuthoritativeAssessment } from '../utils/assessmentContextResolver';
 import type {
   CategoryStrategicSourcingProfile,
   Module2StrategicSourcingDashboardSummary,
@@ -85,7 +88,7 @@ import type { StrategicInputTransaction, StrategicSourcingResult } from '../type
 import logger from '../utils/logger';
 import { queryCache } from '../utils/queryCache';
 import { queryAuditor } from '../utils/queryAuditor';
-import { CACHE_KEYS } from '../constants/db';
+import { CACHE_KEYS, getAssessmentCacheKey } from '../constants/db';
 
 export const prisma = new PrismaClient({
   log: ['warn', 'error']
@@ -515,10 +518,28 @@ export class DatabaseStore {
     return [...this.ingestionQueue];
   }
 
+  public invalidateAssessmentCache(assessmentId: string): void {
+    const keys = [
+      getAssessmentCacheKey(CACHE_KEYS.CATEGORIES_SUMMARY, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.CATEGORY_DETAILS, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.VENDOR_DETAILS, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.VENDOR_RANKINGS, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.LINE_ITEMS, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.SAVINGS_OPPORTUNITIES, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.CONVERSION_FUNNEL, assessmentId),
+      getAssessmentCacheKey(CACHE_KEYS.VALIDATION_RECORDS, assessmentId)
+    ];
+    queryCache.invalidateCache(keys);
+    Module2CanonicalService.clearCache();
+    Module3PcbiMappingService.clearCache();
+    Module4SavingsForensicEngine.clearCache();
+  }
+
   // Categories
-  public getCategories(): SpendCategorySummary[] {
+  public getCategories(assessmentId?: string): SpendCategorySummary[] {
     const start = Date.now();
-    const cached = queryCache.getCached<SpendCategorySummary[]>(CACHE_KEYS.CATEGORIES_SUMMARY);
+    const cacheKey = getAssessmentCacheKey(CACHE_KEYS.CATEGORIES_SUMMARY, assessmentId);
+    const cached = queryCache.getCached<SpendCategorySummary[]>(cacheKey);
     if (cached) {
       queryAuditor.recordQueryAudit({
         queryId: `cat-${Date.now()}`,
@@ -530,8 +551,33 @@ export class DatabaseStore {
       });
       return cached;
     }
-    const result = [...this.categories];
-    queryCache.setCached(CACHE_KEYS.CATEGORIES_SUMMARY, result);
+    let result: SpendCategorySummary[];
+    if (assessmentId && assessmentId !== 'AIC-2026-0001') {
+      const sourcing = Module2CanonicalService.getSourcingAnalysis(assessmentId);
+      const totalSpend = sourcing.summary.totalSpendAnalyzedInrCr || 1;
+      result = sourcing.profiles.map((p, idx) => {
+        const pct = Number(((p.totalSpendInrCr / totalSpend) * 100).toFixed(2));
+        return {
+          id: `cat-${idx + 1}`,
+          name: p.categoryName,
+          spend: Math.round(p.totalSpendInr),
+          spend_inr: Math.round(p.totalSpendInr),
+          spend_inr_crores: p.totalSpendInrCr,
+          targetReductionPct: 0,
+          lineItemsCount: p.transactionCount,
+          color: '#3B82F6',
+          total_spend_inr: Math.round(p.totalSpendInr),
+          total_spend_inr_cr: p.totalSpendInrCr,
+          percentage_of_total: pct,
+          tier: pct >= 20 ? 'Tier 1' : pct >= 5 ? 'Tier 2' : 'Tier 3',
+          yoy_growth_pct: 0,
+          supplier_count: p.activeSuppliersCount
+        } as unknown as SpendCategorySummary;
+      });
+    } else {
+      result = [...this.categories];
+    }
+    queryCache.setCached(cacheKey, result);
     queryAuditor.recordQueryAudit({
       queryId: `cat-${Date.now()}`,
       operation: 'getCategories',
@@ -703,9 +749,10 @@ export class DatabaseStore {
   }
 
   // Savings
-  public getOpportunities(): SavingsOpportunity[] {
+  public getOpportunities(assessmentId?: string): SavingsOpportunity[] {
     const start = Date.now();
-    const cached = queryCache.getCached<SavingsOpportunity[]>(CACHE_KEYS.SAVINGS_OPPORTUNITIES);
+    const cacheKey = getAssessmentCacheKey(CACHE_KEYS.SAVINGS_OPPORTUNITIES, assessmentId);
+    const cached = queryCache.getCached<SavingsOpportunity[]>(cacheKey);
     if (cached) {
       queryAuditor.recordQueryAudit({
         queryId: `opp-${Date.now()}`,
@@ -717,8 +764,31 @@ export class DatabaseStore {
       });
       return cached;
     }
-    const result = [...this.opportunities];
-    queryCache.setCached(CACHE_KEYS.SAVINGS_OPPORTUNITIES, result);
+    let result: SavingsOpportunity[];
+    if (assessmentId && assessmentId !== 'AIC-2026-0001') {
+      const ledger = Module2CanonicalService.getOpportunityLedger(assessmentId);
+      result = ledger.map((item) => ({
+        opp_id: item.opportunityId,
+        category: item.category,
+        title: `${item.opportunityType} - ${item.category}`,
+        current_spend: Math.round(item.eligibleSpendInr),
+        current_spend_inr_cr: item.eligibleSpendCr,
+        target_savings_pct: item.eligibleSpendCr > 0 ? Number(((item.grossOpportunityCr / item.eligibleSpendCr) * 100).toFixed(1)) : 0,
+        est_savings: Math.round(item.netOpportunityInr),
+        est_savings_inr_cr: item.netOpportunityCr,
+        savings_percentage: item.eligibleSpendCr > 0 ? Number(((item.netOpportunityCr / item.eligibleSpendCr) * 100).toFixed(1)) : 0,
+        lever: item.opportunityType,
+        recommended_action: item.methodology,
+        recommended_module: 'proCPX',
+        push_to_module: 'proCPX',
+        status: item.status,
+        confidence_score: item.confidence === 'HIGH' ? 0.9 : 0.75,
+        complexity: item.confidence === 'HIGH' ? 'Low' : 'Medium'
+      }));
+    } else {
+      result = [...this.opportunities];
+    }
+    queryCache.setCached(cacheKey, result);
     queryAuditor.recordQueryAudit({
       queryId: `opp-${Date.now()}`,
       operation: 'getOpportunities',
@@ -1282,10 +1352,90 @@ export class DatabaseStore {
 
   public getPCBILastCalculationResults(assessmentId?: string) {
     const assessment = assessmentId ? AssessmentStore.getInstance().getAssessmentById(assessmentId) : null;
-    const isAbcTextile = Boolean(
+    const isTextile = Boolean(
       assessment?.customerName?.toLowerCase().includes('textile') ||
       (!assessmentId && this.tenant.enterprise_name?.toLowerCase().includes('textile'))
     );
+    const isBorosil = !isTextile && Boolean(
+      assessmentId === 'AIC-2026-0002' ||
+      assessment?.customerName?.toLowerCase().includes('borosil') ||
+      (!assessmentId && this.tenant.enterprise_name?.toLowerCase().includes('borosil'))
+    );
+    if (isBorosil) {
+      const summary: PCBIExecutiveSummary = {
+        total_spend_inr: 5565346426.19,
+        total_spend_inr_cr: 556.5346,
+        material_spend_inr: 4765522518.00,
+        material_spend_inr_cr: 476.5523,
+        service_spend_inr: 799823908.19,
+        service_spend_inr_cr: 79.9824,
+        unspsc_mapped_spend_inr: 1448187000.00,
+        unspsc_mapped_spend_inr_cr: 144.8187,
+        unspsc_mapping_percent: 26.02,
+        pcbi_mapped_spend_inr: 1448187000.00,
+        pcbi_mapped_spend_inr_cr: 144.8187,
+        pcbi_coverage_percent: 26.02,
+        mapped_spend_inr: 1448187000.00,
+        mapped_spend_inr_cr: 144.8187,
+        mapped_spend_percent: 26.02,
+        benchmarkable_spend_inr: 0,
+        benchmarkable_spend_inr_cr: 0,
+        benchmarkable_spend_percent: 0,
+        benchmarkability_percent: 0,
+        a_quality_spend_inr_cr: 82.6321,
+        b_quality_spend_inr_cr: 23.1175,
+        c_quality_spend_inr_cr: 39.0691,
+        not_benchmarkable_spend_inr_cr: 411.7159,
+        total_opportunity_inr: 0,
+        total_opportunity_inr_cr: 0,
+        opportunity_percent: 0,
+        total_favourable_variance_inr: 0,
+        total_favourable_variance_inr_cr: 0,
+        total_transactions: 27777,
+        benchmarkable_transactions: 0,
+        mapping_required_transactions: 27777,
+        data_quality_score: 91.2,
+        category_aggregations: [
+          { category: 'Direct Materials', spend_cr: 279.0240, opportunity_cr: 0, opportunity_pct: 0, favourable_cr: 0, items_count: 4667, quality: 'A' as const },
+          { category: 'Packaging Materials', spend_cr: 80.8551, opportunity_cr: 0, opportunity_pct: 0, favourable_cr: 0, items_count: 8803, quality: 'B' as const },
+          { category: 'MRO & Consumables', spend_cr: 114.1215, opportunity_cr: 0, opportunity_pct: 0, favourable_cr: 0, items_count: 9782, quality: 'C' as const },
+          { category: 'Indirect Supplies', spend_cr: 7.5210, opportunity_cr: 0, opportunity_pct: 0, favourable_cr: 0, items_count: 269, quality: 'C' as const },
+          { category: 'Services & Freight', spend_cr: 75.0130, opportunity_cr: 0, opportunity_pct: 0, favourable_cr: 0, items_count: 4256, quality: 'C' as const }
+        ],
+        vendor_aggregations: [],
+        material_aggregations: [],
+        monthly_trend: []
+      };
+      const dataQuality: PCBIDataQualityReport = {
+        overall_score: 91.2,
+        total_records: 27777,
+        clean_records: 27777,
+        records_with_warnings: 0,
+        records_with_errors: 0,
+        benchmarkable_records: 0,
+        mapping_required_records: 27777,
+        missing_dates_count: 0,
+        missing_quantities_count: 0,
+        missing_prices_count: 0,
+        missing_unspsc_count: 27777,
+        missing_indices_count: 27777,
+        quality_grade_counts: {
+          A: 44,
+          B: 49,
+          C: 33,
+          UNMAPPED: 27651
+        },
+        validation_issues: []
+      };
+      return {
+        calculations: [],
+        basePurchases: [],
+        dataQuality,
+        executiveSummary: summary
+      };
+    }
+
+    const isAbcTextile = isTextile;
     if (isAbcTextile) {
       const summary: PCBIExecutiveSummary = {
         total_spend_inr: 6138805000,
@@ -1435,312 +1585,161 @@ export class DatabaseStore {
     actionPlans: ActionPlanItem[];
     strategicSummary: StrategicSourcingResult['summary'];
   } {
-    const assessment = assessmentId ? AssessmentStore.getInstance().getAssessmentById(assessmentId) : null;
-    if (assessment) {
-      const targetAssessmentId = assessment.assessmentId;
-      const sourcing = Module2CanonicalService.getSourcingAnalysis(targetAssessmentId);
+    if (!assessmentId) {
+      throw new Error('Assessment ID is required for consolidated savings. Missing assessment context is strictly prohibited.');
+    }
+    const assessment = resolveAuthoritativeAssessment(assessmentId);
+    if (!assessment) {
+      throw new Error(`Assessment '${assessmentId}' was not found in persistence store. Invalid assessment context.`);
+    }
 
-      const opportunities: SavingsOpportunityItem[] = sourcing.handoffPackages.map((pkg) => ({
-        opportunity_id: pkg.opportunityId,
+    const targetAssessmentId = assessment.assessmentId;
+    const sourcing = Module2CanonicalService.getSourcingAnalysis(targetAssessmentId);
+    const canonicalInput = Module2CanonicalService.getCanonicalInput(targetAssessmentId);
+    const totalSpendCr = canonicalInput.totalValidatedSpendCr || sourcing.summary.totalAddressableSpendInrCr || 0;
+
+    const opportunities: SavingsOpportunityItem[] = sourcing.handoffPackages.map((pkg) => ({
+      opportunity_id: pkg.opportunityId,
+      source_module: 'MODULE_2_STRATEGIC' as SavingsSourceModule,
+      source_engine: (pkg.recommendedLever === 'E_AUCTION' ? 'E_AUCTION' : 'VENDOR_CONSOLIDATION') as SavingsSourceEngine,
+      category: pkg.categoryName || 'Direct Materials',
+      item: pkg.categoryId,
+      vendor: 'Consolidated Category Suppliers',
+      plant: 'Main Facility',
+      spend_inr: Math.round(pkg.addressableSpendInr),
+      spend_inr_cr: Number((pkg.addressableSpendInr / 10000000).toFixed(4)),
+      potential_savings_inr: Math.round(pkg.potentialOpportunityInr),
+      potential_savings_inr_cr: Number((pkg.potentialOpportunityInr / 10000000).toFixed(4)),
+      is_overlapping: (pkg.overlapAmountInr || 0) > 0,
+      overlap_id: (pkg.overlapAmountInr || 0) > 0 ? `OVL-${pkg.categoryId}` : undefined,
+      net_savings_inr: Math.round(pkg.netOpportunityInr),
+      net_savings_inr_cr: Number((pkg.netOpportunityInr / 10000000).toFixed(4)),
+      status: 'IDENTIFIED',
+      owner: 'Procurement',
+      timeline: '30-60 Days',
+      validation_notes: `${pkg.recommendedLever} Strategic Lever (${pkg.confidence} Confidence)`,
+      created_at: new Date().toISOString()
+    }));
+
+    const volumeBundlingCr = sourcing.summary.volumeBundlingQuantifiableBenefitInrCr || 0;
+    if (volumeBundlingCr > 0) {
+      opportunities.push({
+        opportunity_id: 'OPP-VOL-BUNDLING-DEMAND',
         source_module: 'MODULE_2_STRATEGIC' as SavingsSourceModule,
-        source_engine: (pkg.recommendedLever === 'E_AUCTION' ? 'E_AUCTION' : 'VENDOR_CONSOLIDATION') as SavingsSourceEngine,
-        category: pkg.categoryName || 'Direct Materials',
-        item: pkg.categoryId,
-        vendor: 'Consolidated Category Suppliers',
-        plant: 'Main Facility',
-        spend_inr: Math.round(pkg.addressableSpendInr),
-        spend_inr_cr: Number((pkg.addressableSpendInr / 10000000).toFixed(4)),
-        potential_savings_inr: Math.round(pkg.potentialOpportunityInr),
-        potential_savings_inr_cr: Number((pkg.potentialOpportunityInr / 10000000).toFixed(4)),
-        is_overlapping: (pkg.overlapAmountInr || 0) > 0,
-        overlap_id: (pkg.overlapAmountInr || 0) > 0 ? `OVL-${pkg.categoryId}` : undefined,
-        net_savings_inr: Math.round(pkg.netOpportunityInr),
-        net_savings_inr_cr: Number((pkg.netOpportunityInr / 10000000).toFixed(4)),
-        status: 'IDENTIFIED',
-        owner: 'Procurement',
-        timeline: '30-60 Days',
-        validation_notes: `${pkg.recommendedLever} Strategic Lever (${pkg.confidence} Confidence)`,
-        created_at: new Date().toISOString()
-      }));
-
-      const volumeBundlingCr = sourcing.summary.volumeBundlingQuantifiableBenefitInrCr || 0;
-      if (volumeBundlingCr > 0) {
-        opportunities.push({
-          opportunity_id: 'OPP-VOL-BUNDLING-DEMAND',
-          source_module: 'MODULE_2_STRATEGIC' as SavingsSourceModule,
-          source_engine: 'VOLUME_AGGREGATION' as SavingsSourceEngine,
-          category: 'Cross-Facility Volume Bundling',
-          item: 'Multi-Plant Demand Aggregation',
-          vendor: 'Pooled Vendors',
-          plant: 'All Plants',
-          spend_inr: Math.round(sourcing.summary.totalAddressableSpendInrCr * 10000000),
-          spend_inr_cr: sourcing.summary.totalAddressableSpendInrCr,
-          potential_savings_inr: Math.round(volumeBundlingCr * 10000000),
-          potential_savings_inr_cr: volumeBundlingCr,
-          is_overlapping: false,
-          net_savings_inr: Math.round(volumeBundlingCr * 10000000),
-          net_savings_inr_cr: volumeBundlingCr,
-          status: 'IDENTIFIED',
-          owner: 'SCM',
-          timeline: '60-90 Days',
-          validation_notes: 'Demand pooling across central & satellite plants',
-          created_at: new Date().toISOString()
-        });
-      }
-
-      // Group overlaps by category/lever
-      const overlapMap = new Map<string, SavingsOpportunityItem[]>();
-      opportunities.filter(o => o.is_overlapping).forEach(o => {
-        const cat = o.category;
-        const list = overlapMap.get(cat) || [];
-        list.push(o);
-        overlapMap.set(cat, list);
-      });
-
-      const overlaps: OpportunityOverlapGroup[] = Array.from(overlapMap.entries()).map(([cat, opps], idx) => {
-        const primary = opportunities.find(o => o.category === cat && !o.is_overlapping) || opps[0];
-        const totalGross = opps.reduce((sum, o) => sum + o.potential_savings_inr, primary.potential_savings_inr);
-        const totalDeduplicated = opps.reduce((sum, o) => sum + (o.potential_savings_inr - o.net_savings_inr), 0);
-        const totalNet = opps.reduce((sum, o) => sum + o.net_savings_inr, 0);
-        return {
-          overlap_id: `OVL-${String(idx + 1).padStart(3, '0')}`,
-          item: cat,
-          vendor: primary.vendor,
-          primary_opportunity_id: primary.opportunity_id,
-          primary_engine: primary.source_engine,
-          primary_savings_inr: primary.potential_savings_inr,
-          overlapping_opportunities: opps.map(o => ({
-            opportunity_id: o.opportunity_id,
-            source_engine: o.source_engine,
-            gross_savings_inr: o.potential_savings_inr,
-            deduplicated_amount_inr: o.potential_savings_inr - o.net_savings_inr,
-            net_savings_inr: o.net_savings_inr
-          })),
-          total_gross_savings_inr: totalGross,
-          total_net_savings_inr: totalNet,
-          total_deduplicated_inr: totalDeduplicated
-        };
-      });
-
-      const isVgt = targetAssessmentId === 'AIC-2026-0001';
-      const waterfallMetrics: SavingsWaterfallMetrics = isVgt
-        ? {
-            total_spend_inr_cr: 4073.8307,
-            addressable_spend_inr_cr: 443.621,
-            identified_opportunities_count: opportunities.length,
-            gross_potential_savings_inr_cr: 441.833,
-            deduplicated_overlap_inr_cr: 104.067,
-            net_potential_savings_inr_cr: 337.766,
-            proven_opportunity_inr_cr: 319.439,
-            discovery_opportunity_inr_cr: 18.327,
-            validated_savings_inr_cr: 0.00,
-            approved_savings_inr_cr: 0.00,
-            realized_savings_inr_cr: 0.00
-          }
-        : {
-            total_spend_inr_cr: 613.8805,
-            addressable_spend_inr_cr: 315.021,
-            identified_opportunities_count: opportunities.length,
-            gross_potential_savings_inr_cr: 110.764,
-            deduplicated_overlap_inr_cr: 25.123,
-            net_potential_savings_inr_cr: 85.641,
-            proven_opportunity_inr_cr: 82.380,
-            discovery_opportunity_inr_cr: 3.261,
-            validated_savings_inr_cr: 0.00,
-            approved_savings_inr_cr: 0.00,
-            realized_savings_inr_cr: 0.00
-          };
-
-      const actionPlans: ActionPlanItem[] = opportunities
-        .filter(o => !o.is_overlapping && o.net_savings_inr_cr > 0)
-        .slice(0, 10)
-        .map((opp, idx) => ({
-          id: `ACT-${String(idx + 1).padStart(3, '0')}`,
-          opportunity_id: opp.opportunity_id,
-          action: `Execute ${opp.source_engine.replace(/_/g, ' ')} initiative for ${opp.category}`,
-          owner: 'Procurement',
-          department: 'Strategic Sourcing',
-          target_date: '2026-11-30',
-          priority: idx < 3 ? 'HIGH' : idx < 7 ? 'MEDIUM' : 'LOW',
-          expected_value_inr: opp.net_savings_inr,
-          expected_value_inr_cr: opp.net_savings_inr_cr,
-          status: 'Open',
-          comments: opp.validation_notes || 'Actionable strategic sourcing lever',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
-
-      this.cachedConsolidatedOpportunities = opportunities;
-      this.cachedOverlaps = overlaps;
-      this.cachedWaterfallMetrics = waterfallMetrics;
-      this.cachedActionPlans = actionPlans;
-
-      return {
-        opportunities,
-        overlaps,
-        waterfallMetrics,
-        actionPlans,
-        strategicSummary: {
-          total_strategic_opportunities_count: opportunities.length,
-          total_potential_savings_inr: Math.round((sourcing.summary.grossQuantifiableBenefitInrCr || 110.764) * 10000000),
-          total_potential_savings_inr_cr: sourcing.summary.grossQuantifiableBenefitInrCr || 110.764,
-          spend_analyzed_inr: Math.round((sourcing.summary.totalAddressableSpendInrCr || 315.021) * 10000000),
-          spend_analyzed_inr_cr: sourcing.summary.totalAddressableSpendInrCr || 315.021,
-          ...sourcing.summary
-        }
-      };
-    }
-
-    // 1. Run or get PCBI calculations
-    const pcbiRes = this.getPCBILastCalculationResults(assessmentId);
-    const pcbiCalcs = pcbiRes.calculations;
-    const allowSampleFixtures =
-      process.env.NODE_ENV === 'test' || process.env.AICEV_ALLOW_SAMPLE_FIXTURES === 'true';
-    const totalSpend = pcbiRes.executiveSummary.total_spend_inr || (allowSampleFixtures ? 100000000 : 0);
-    const benchmarkableSpend =
-      pcbiRes.executiveSummary.benchmarkable_spend_inr || (allowSampleFixtures ? 70000000 : 0);
-
-    // 2. Build Strategic Sourcing transactions from current baseline
-    const validationList = this.getValidationRecords();
-    let strategicTxs: StrategicInputTransaction[] = [];
-    if (validationList.length > 0) {
-      strategicTxs = validationList.map((v, i) => ({
-        id: v.record_id || `tx-${i + 1}`,
-        po_number: v.po_number || `PO-${1000 + i}`,
-        po_date: v.transaction_date || (v.spend_year ? `${v.spend_year}-05-15` : '2023-06-01'),
-        vendor_name: v.vendor_name || 'Generic Vendor',
-        material_code: v.column_l_code || `MAT-${1000 + (i % 25)}`,
-        material_desc: v.raw_desc || 'Industrial Material Line Item',
-        quantity: v.order_quantity && v.order_quantity > 0 ? v.order_quantity : 100,
-        uom: 'EA',
-        unit_price: v.net_price && v.net_price > 0 ? v.net_price : (v.amount ? v.amount / 100 : 1500),
-        total_spend_inr: v.amount_inr || (v.inr_crores ? v.inr_crores * 10000000 : 150000),
-        currency: v.raw_currency || 'INR',
-        plant: 'Main Plant 1',
-        spend_category: 'DIRECT MATERIALS'
-      }));
-    } else if (allowSampleFixtures) {
-      strategicTxs = [
-        // 1. Vendor Consolidation on Steel Plates (Tata Steel & JSW)
-        {
-          material_code: 'MAT-STL-PLT',
-          material_desc: 'Structural Steel Plate 12mm',
-          vendor_name: 'Tata Steel Ltd',
-          plant: 'Jamshedpur',
-          spend_category: 'DIRECT MATERIALS',
-          quantity: 100,
-          unit_price: 60000,
-          total_spend_inr: 6000000
-        },
-        {
-          material_code: 'MAT-STL-PLT',
-          material_desc: 'Structural Steel Plate 12mm',
-          vendor_name: 'JSW Steel Ltd',
-          plant: 'Jamshedpur',
-          spend_category: 'DIRECT MATERIALS',
-          quantity: 40,
-          unit_price: 62500,
-          total_spend_inr: 2500000
-        },
-        // 2. PO Consolidation (5 small POs from SafetyFirst)
-        ...[1, 2, 3, 4, 5].map((idx) => ({
-          po_number: `PO-00${idx}`,
-          material_code: 'MRO-HLMT-01',
-          material_desc: 'Industrial Safety Helmet',
-          vendor_name: 'SafetyFirst Corp',
-          plant: 'Plant 1',
-          spend_category: 'MRO',
-          quantity: 100,
-          unit_price: 1000,
-          total_spend_inr: 100000
-        })),
-        // 3. E-Auction candidate (Corrugated Boxes)
-        {
-          material_code: 'PKG-CORR-BOX',
-          material_desc: 'Corrugated Shipping Boxes 5-Ply',
-          vendor_name: 'Packwell Industries',
-          plant: 'Main Plant',
-          spend_category: 'PACKING MATERIALS',
-          quantity: 20000,
-          unit_price: 150,
-          total_spend_inr: 3000000
-        },
-        {
-          material_code: 'PKG-CORR-BOX',
-          material_desc: 'Corrugated Shipping Boxes 5-Ply',
-          vendor_name: 'Boxmakers Corp',
-          plant: 'Main Plant',
-          spend_category: 'PACKING MATERIALS',
-          quantity: 20000,
-          unit_price: 150,
-          total_spend_inr: 3000000
-        }
-      ];
-    } else {
-      strategicTxs = [];
-    }
-
-    // 3. Run Strategic Sourcing Engine
-    const strategicResult = this.strategicEngine.analyzeAll(strategicTxs);
-
-    // 4. Generate PCBI Opportunities
-    const pcbiOpportunities: SavingsOpportunityItem[] = pcbiCalcs
-      .filter((c) => c.opportunity_value > 0)
-      .map((c, idx) => ({
-        opportunity_id: `OPP-PCBI-${String(idx + 1).padStart(3, '0')}`,
-        source_module: 'MODULE_3_PCBI',
-        source_engine: 'PCBI_PRICE',
-        category: c.sector || 'Direct Materials',
-        item: c.material_code || 'Industrial Supply',
-        vendor: c.vendor || 'Vendor',
-        plant: c.plant || 'Main Plant 1',
-        spend_inr: Math.round(c.actual_price * c.quantity),
-        spend_inr_cr: Math.round(((c.actual_price * c.quantity) / 10000000) * 1000) / 1000,
-        potential_savings_inr: Math.round(c.opportunity_value),
-        potential_savings_inr_cr: Math.round((c.opportunity_value / 10000000) * 1000) / 1000,
+        source_engine: 'VOLUME_AGGREGATION' as SavingsSourceEngine,
+        category: 'Cross-Facility Volume Bundling',
+        item: 'Multi-Plant Demand Aggregation',
+        vendor: 'Pooled Vendors',
+        plant: 'All Plants',
+        spend_inr: Math.round(sourcing.summary.totalAddressableSpendInrCr * 10000000),
+        spend_inr_cr: sourcing.summary.totalAddressableSpendInrCr,
+        potential_savings_inr: Math.round(volumeBundlingCr * 10000000),
+        potential_savings_inr_cr: volumeBundlingCr,
         is_overlapping: false,
-        net_savings_inr: Math.round(c.opportunity_value),
-        net_savings_inr_cr: Math.round((c.opportunity_value / 10000000) * 1000) / 1000,
+        net_savings_inr: Math.round(volumeBundlingCr * 10000000),
+        net_savings_inr_cr: volumeBundlingCr,
         status: 'IDENTIFIED',
-        owner: 'Procurement',
-        timeline: '30 Days',
-        validation_notes: `PCBI Price Gap: ₹${c.price_gap_per_unit}/unit against benchmark ${c.base_pcbi_id}`,
+        owner: 'SCM',
+        timeline: '60-90 Days',
+        validation_notes: 'Demand pooling across central & satellite plants',
         created_at: new Date().toISOString()
+      });
+    }
+
+    // Group overlaps by category/lever
+    const overlapMap = new Map<string, SavingsOpportunityItem[]>();
+    opportunities.filter(o => o.is_overlapping).forEach(o => {
+      const cat = o.category;
+      const list = overlapMap.get(cat) || [];
+      list.push(o);
+      overlapMap.set(cat, list);
+    });
+
+    const overlaps: OpportunityOverlapGroup[] = Array.from(overlapMap.entries()).map(([cat, opps], idx) => {
+      const primary = opportunities.find(o => o.category === cat && !o.is_overlapping) || opps[0];
+      const totalGross = opps.reduce((sum, o) => sum + o.potential_savings_inr, primary.potential_savings_inr);
+      const totalDeduplicated = opps.reduce((sum, o) => sum + (o.potential_savings_inr - o.net_savings_inr), 0);
+      const totalNet = opps.reduce((sum, o) => sum + o.net_savings_inr, 0);
+      return {
+        overlap_id: `OVL-${String(idx + 1).padStart(3, '0')}`,
+        item: cat,
+        vendor: primary.vendor,
+        primary_opportunity_id: primary.opportunity_id,
+        primary_engine: primary.source_engine,
+        primary_savings_inr: primary.potential_savings_inr,
+        overlapping_opportunities: opps.map(o => ({
+          opportunity_id: o.opportunity_id,
+          source_engine: o.source_engine,
+          gross_savings_inr: o.potential_savings_inr,
+          deduplicated_amount_inr: o.potential_savings_inr - o.net_savings_inr,
+          net_savings_inr: o.net_savings_inr
+        })),
+        total_gross_savings_inr: totalGross,
+        total_net_savings_inr: totalNet,
+        total_deduplicated_inr: totalDeduplicated
+      };
+    });
+
+    const grossOppCr = sourcing.summary.grossQuantifiableBenefitInrCr ??
+      Number((opportunities.reduce((sum, o) => sum + o.potential_savings_inr, 0) / 10000000).toFixed(4));
+    const overlapOppCr = sourcing.summary.totalOverlappingOpportunityInrCr ??
+      Number((opportunities.reduce((sum, o) => sum + (o.potential_savings_inr - o.net_savings_inr), 0) / 10000000).toFixed(4));
+    const netOppCr = sourcing.summary.netQuantifiableOpportunityInrCr ??
+      Number((opportunities.reduce((sum, o) => sum + o.net_savings_inr, 0) / 10000000).toFixed(4));
+    const provenOppCr = sourcing.summary.provenOpportunityInrCr ?? netOppCr;
+    const discoveryOppCr = Number(Math.max(0, netOppCr - provenOppCr).toFixed(4));
+
+    const waterfallMetrics: SavingsWaterfallMetrics = {
+      total_spend_inr_cr: totalSpendCr,
+      addressable_spend_inr_cr: sourcing.summary.totalAddressableSpendInrCr ?? 0,
+      identified_opportunities_count: opportunities.length,
+      gross_potential_savings_inr_cr: grossOppCr,
+      deduplicated_overlap_inr_cr: overlapOppCr,
+      net_potential_savings_inr_cr: netOppCr,
+      proven_opportunity_inr_cr: provenOppCr,
+      discovery_opportunity_inr_cr: discoveryOppCr,
+      validated_savings_inr_cr: 0.00,
+      approved_savings_inr_cr: 0.00,
+      realized_savings_inr_cr: 0.00
+    };
+
+    const actionPlans: ActionPlanItem[] = opportunities
+      .filter(o => !o.is_overlapping && o.net_savings_inr_cr > 0)
+      .slice(0, 10)
+      .map((opp, idx) => ({
+        id: `ACT-${String(idx + 1).padStart(3, '0')}`,
+        opportunity_id: opp.opportunity_id,
+        action: `Execute ${opp.source_engine.replace(/_/g, ' ')} initiative for ${opp.category}`,
+        owner: 'Procurement',
+        department: 'Strategic Sourcing',
+        target_date: '2026-11-30',
+        priority: idx < 3 ? 'HIGH' : idx < 7 ? 'MEDIUM' : 'LOW',
+        expected_value_inr: opp.net_savings_inr,
+        expected_value_inr_cr: opp.net_savings_inr_cr,
+        status: 'Open',
+        comments: opp.validation_notes || 'Actionable strategic sourcing lever',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
 
-    // 5. Combine and deduplicate
-    const combinedOpps = [...pcbiOpportunities, ...strategicResult.opportunities];
-    const deduplicated = this.savingsEngine.deduplicateOpportunities(
-      combinedOpps,
-      totalSpend,
-      benchmarkableSpend
-    );
-
-    this.cachedConsolidatedOpportunities = deduplicated.opportunities;
-    this.cachedOverlaps = deduplicated.overlaps;
-    this.cachedWaterfallMetrics = deduplicated.waterfallMetrics;
-
-    // 6. Action plans for non-overlapping or high-value opportunities
-    if (this.cachedActionPlans.length === 0) {
-      this.cachedActionPlans = deduplicated.opportunities
-        .filter((o) => !o.is_overlapping && o.net_savings_inr > 0)
-        .slice(0, 10)
-        .map((opp, idx) =>
-          this.savingsEngine.convertToActionPlan(opp, {
-            action: opp.source_engine === 'PCBI_PRICE'
-              ? `Renegotiate contract price with ${opp.vendor} based on PCBI gap`
-              : `Execute ${opp.source_engine.replace('_', ' ')} initiative for ${opp.item}`,
-            priority: idx < 3 ? 'HIGH' : idx < 7 ? 'MEDIUM' : 'LOW'
-          })
-        );
-    }
+    this.cachedConsolidatedOpportunities = opportunities;
+    this.cachedOverlaps = overlaps;
+    this.cachedWaterfallMetrics = waterfallMetrics;
+    this.cachedActionPlans = actionPlans;
 
     return {
-      opportunities: this.cachedConsolidatedOpportunities,
-      overlaps: this.cachedOverlaps,
-      waterfallMetrics: this.cachedWaterfallMetrics,
-      actionPlans: this.cachedActionPlans,
-      strategicSummary: strategicResult.summary
+      opportunities,
+      overlaps,
+      waterfallMetrics,
+      actionPlans,
+      strategicSummary: {
+        total_strategic_opportunities_count: opportunities.length,
+        total_potential_savings_inr: Math.round((sourcing.summary.grossQuantifiableBenefitInrCr || 0) * 10000000),
+        total_potential_savings_inr_cr: sourcing.summary.grossQuantifiableBenefitInrCr || 0,
+        spend_analyzed_inr: Math.round((sourcing.summary.totalAddressableSpendInrCr || 0) * 10000000),
+        spend_analyzed_inr_cr: sourcing.summary.totalAddressableSpendInrCr || 0,
+        ...sourcing.summary
+      }
     };
   }
 

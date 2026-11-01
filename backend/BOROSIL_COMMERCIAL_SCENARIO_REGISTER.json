@@ -1,0 +1,485 @@
+{
+  "metadata": {
+    "assessmentId": "AIC-2026-0002",
+    "customerName": "Borosil Ltd",
+    "generatedAt": "2026-11-01T14:02:27.592Z",
+    "canonicalBaselineSpendInr": 5565346426.19,
+    "canonicalBaselineSpendCr": 556.535,
+    "evaluatedDiagnosticSpendInr": 1686578923,
+    "evaluatedDiagnosticSpendCr": 168.658,
+    "qualifiedExecutionSpendInr": 1610158352,
+    "qualifiedExecutionSpendCr": 161.016,
+    "modelledOpportunityExcludingLever2Inr": 751213739,
+    "modelledOpportunityExcludingLever2Cr": 75.121,
+    "disclaimer": "Illustrative Commercial Scenario — Subject to Supplier Quotes and Client Validation. These calculations are commercial sensitivity scenarios and are NOT added to the existing Module 2 authoritative opportunity totals.",
+    "totalScenariosCount": 6
+  },
+  "scenarios": [
+    {
+      "scenarioId": "SCEN-L1-A",
+      "leverNumber": 1,
+      "leverName": "Direct Price Improvement",
+      "scenarioName": "Cross-Plant Price Harmonization (Chemicals)",
+      "scenarioLabel": "Scenario A",
+      "category": "Chemicals & Raw Materials",
+      "eligibleSpendInr": 0,
+      "eligibleSpendCr": 0,
+      "currentSituation": "Material Group 11100 is procured 100% at Plant 1120 (Bharuch); zero chemical POs exist at Jaipur (6101/8202). Cross-plant rate variance premise is factually unsupported.",
+      "proposedSourcingIntervention": "Conduct comprehensive multi-plant audit across non-chemical categories; maintain single-plant volume contracting for Bharuch.",
+      "calculationFormula": "Spend × Harmonization Delta % (Unquantified)",
+      "conservativeCase": {
+        "improvementPct": 0,
+        "financialOutcomeInr": 0,
+        "financialOutcomeCr": 0,
+        "description": "Unquantified: 0 multi-plant chemical purchase orders in SAP master."
+      },
+      "higherAchievementCase": {
+        "improvementPct": 0,
+        "financialOutcomeInr": 0,
+        "financialOutcomeCr": 0,
+        "description": "Unquantified: requires unified inter-plant requisition framework."
+      },
+      "commercialDependencies": [
+        "Plant QA parity sign-off",
+        "Supplier multi-plant delivery capacity"
+      ],
+      "implementationTimeline": "Under Evaluation",
+      "validationRequirements": [
+        "Multi-plant PO audit",
+        "Engineering confirmation"
+      ],
+      "sourceTransactionReferences": [
+        "CAT-11100",
+        "PLANT-1120-EXCLUSIVE"
+      ],
+      "supplierEvidence": "SAP master confirms 100% of chemical spend is booked in Plant 1120",
+      "assumptionStatus": "Unquantified — Single-Plant Requisition Precludes Cross-Plant Harmonization",
+      "validationStatus": "UNQUANTIFIED"
+    },
+    {
+      "scenarioId": "SCEN-L1-B",
+      "leverNumber": 1,
+      "leverName": "Direct Price Improvement",
+      "scenarioName": "Direct Manufacturer Annual Formula-Based Contracting",
+      "scenarioLabel": "Scenario B",
+      "category": "Dense Soda Ash & Primary Feedstocks",
+      "eligibleSpendInr": 740170000,
+      "eligibleSpendCr": 74.017,
+      "currentSituation": "Borosil already buys 100% directly from primary manufacturers GHCL (100SA02G: ₹58.117 Cr, 19,600 MT) and RSPL (100SA01T: ₹15.900 Cr, 6,500 MT) at Plant 1120.",
+      "proposedSourcingIntervention": "Execute unified annual volume allocation contracts with quarterly formula pricing linked to domestic ex-works indices without distributor intermediaries.",
+      "calculationFormula": "Annual Volume Spend × Formula-Based Negotiation %",
+      "conservativeCase": {
+        "improvementPct": 3,
+        "financialOutcomeInr": 22205100,
+        "financialOutcomeCr": 2.221,
+        "description": "Conservative 3.0% negotiation gain via annual volume allocation commitment."
+      },
+      "higherAchievementCase": {
+        "improvementPct": 5,
+        "financialOutcomeInr": 37008500,
+        "financialOutcomeCr": 3.701,
+        "description": "Higher achievement 5.0% with combined GHCL/RSPL multi-quarter index formula."
+      },
+      "commercialDependencies": [
+        "Primary producer quota allocation",
+        "Silo pneumatic intake readiness at Bharuch"
+      ],
+      "implementationTimeline": "Months 1–3 (Wave 1 Execution)",
+      "validationRequirements": [
+        "Formal manufacturer quote receipt",
+        "Furnace melt composition sign-off"
+      ],
+      "sourceTransactionReferences": [
+        "100SA02G-GHCL",
+        "100SA01T-RSPL",
+        "PO-7300000123",
+        "PO-7300000142"
+      ],
+      "supplierEvidence": "SAP PO lines 7300000123/10-30, 7300000142/10 confirm direct manufacturer billing",
+      "assumptionStatus": "Hypothetical Sensitivity Scenario — Excluded from Authoritative Ledger",
+      "validationStatus": "RE_ESTABLISHED_HYPOTHETICAL"
+    },
+    {
+      "scenarioId": "SCEN-L2-A",
+      "leverNumber": 2,
+      "leverName": "Vendor Consolidation",
+      "scenarioName": "Spares & Hardware Consolidation (Governance Reserve)",
+      "scenarioLabel": "Scenario A",
+      "category": "Mechanical & Electrical Spares",
+      "eligibleSpendInr": 2169992,
+      "eligibleSpendCr": 0.217,
+      "currentSituation": "Material Groups 11524 and 11548 represent ₹5.9678 Cr active net category spend (919 active lines). Module 2 qualified package spend is ₹0.2170 Cr across 195 comparable transactions.",
+      "proposedSourcingIntervention": "Consolidate fragmented tail suppliers into preferred authorized distributor panels with standardized rate cards and catalog buying.",
+      "calculationFormula": "Qualified Package Spend × Consolidation Efficiency %",
+      "conservativeCase": {
+        "improvementPct": 4,
+        "financialOutcomeInr": 86800,
+        "financialOutcomeCr": 0.009,
+        "description": "Conservative 4.0% gain across qualified comparable spares lines (₹0.2170 Cr)."
+      },
+      "higherAchievementCase": {
+        "improvementPct": 7.5,
+        "financialOutcomeInr": 162749,
+        "financialOutcomeCr": 0.016,
+        "description": "Higher achievement 7.5% across qualified comparable spares lines."
+      },
+      "commercialDependencies": [
+        "Maintenance engineering approval of distributor brands",
+        "SLA definition"
+      ],
+      "implementationTimeline": "Months 6–12 (Wave 3 Execution)",
+      "validationRequirements": [
+        "Brand compatibility audit",
+        "Store rationalization sign-off"
+      ],
+      "sourceTransactionReferences": [
+        "CAT-11524",
+        "CAT-11548",
+        "BOROSIL_SCEN_L2A_SPARES_REGISTER"
+      ],
+      "supplierEvidence": "195 comparable transactions audited in standalone L2-A register (556 KB)",
+      "assumptionStatus": "100% Quarantined in Governance Reserve — Zero Recognition in Financial Plan",
+      "validationStatus": "HELD_IN_GOVERNANCE_RESERVE"
+    },
+    {
+      "scenarioId": "SCEN-L2-B",
+      "leverNumber": 2,
+      "leverName": "Vendor Consolidation",
+      "scenarioName": "Preferred Supplier Panel (Material Group 11525)",
+      "scenarioLabel": "Scenario B",
+      "category": "Plant Consumables & Lab Supplies",
+      "eligibleSpendInr": 0,
+      "eligibleSpendCr": 0,
+      "currentSituation": "Material Group 11525 contains 0 rows and ₹0 spend in Borosil SAP master. Previous ₹6.871 Cr claim was unverified.",
+      "proposedSourcingIntervention": "Map consumables to active SAP material groups before initiating catalog consolidation.",
+      "calculationFormula": "Spend × Consolidation % (Unquantified)",
+      "conservativeCase": {
+        "improvementPct": 0,
+        "financialOutcomeInr": 0,
+        "financialOutcomeCr": 0,
+        "description": "Unquantified: Material Group 11525 contains 0 records in SAP database."
+      },
+      "higherAchievementCase": {
+        "improvementPct": 0,
+        "financialOutcomeInr": 0,
+        "financialOutcomeCr": 0,
+        "description": "Unquantified: requires re-mapping of indirect consumables."
+      },
+      "commercialDependencies": [
+        "Catalog taxonomy re-classification"
+      ],
+      "implementationTimeline": "Under Evaluation",
+      "validationRequirements": [
+        "SAP material group verification"
+      ],
+      "sourceTransactionReferences": [
+        "CAT-11525-ABSENT"
+      ],
+      "supplierEvidence": "SAP master audit confirms zero transactions in group 11525",
+      "assumptionStatus": "Unquantified — Material Group 11525 Not Found in Database",
+      "validationStatus": "UNQUANTIFIED"
+    },
+    {
+      "scenarioId": "SCEN-L3-A",
+      "leverNumber": 3,
+      "leverName": "Reverse E-Auction",
+      "scenarioName": "Corrugated Packaging Reverse E-Auction Price Discovery",
+      "scenarioLabel": "Scenario A",
+      "category": "Corrugated Packaging & Cartons",
+      "eligibleSpendInr": 21047046,
+      "eligibleSpendCr": 2.105,
+      "currentSituation": "Material Group 11300 has ₹27.1472 Cr active spend. Package CAT-11300 qualified spend is ₹2.1047 Cr (637 lines). Previous ₹4.9718 Cr consolidation marked INVALID_SPEND_BOUNDING (compared timber @ ₹2500 to paper @ ₹79.50).",
+      "proposedSourcingIntervention": "Execute competitive multi-round reverse dynamic e-auctions for standard corrugated cartons and sheets with pre-qualified converters.",
+      "calculationFormula": "Addressable Quantity (233,224) × Price Gap (₹14.74/unit)",
+      "conservativeCase": {
+        "improvementPct": 16.3,
+        "financialOutcomeInr": 3438634,
+        "financialOutcomeCr": 0.344,
+        "description": "Hypothetical e-auction price discovery: ₹14.74/unit gap on 233,224 units (₹0.3439 Cr)."
+      },
+      "higherAchievementCase": {
+        "improvementPct": 20,
+        "financialOutcomeInr": 4209409,
+        "financialOutcomeCr": 0.421,
+        "description": "Higher potential 20.0% with expanded converter participation."
+      },
+      "commercialDependencies": [
+        "Standardized carton specification sheets",
+        "Drop-test qualification by QA"
+      ],
+      "implementationTimeline": "Months 3–6 (Wave 2 Execution)",
+      "validationRequirements": [
+        "Pre-auction supplier quality audit",
+        "E-auction audit trail verification"
+      ],
+      "sourceTransactionReferences": [
+        "CAT-11300",
+        "PO-6400009610",
+        "BOROSIL_SCEN_L3A_PACKAGING_REGISTER"
+      ],
+      "supplierEvidence": "637 comparable transactions audited in standalone L3-A register (537 KB)",
+      "assumptionStatus": "Hypothetical Price-Discovery Model — Excluded from Authoritative Ledger",
+      "validationStatus": "RE_ESTABLISHED_HYPOTHETICAL"
+    },
+    {
+      "scenarioId": "SCEN-L3-B",
+      "leverNumber": 3,
+      "leverName": "Reverse E-Auction",
+      "scenarioName": "Plastic Packaging Aggregation (Material Group 11320)",
+      "scenarioLabel": "Scenario B",
+      "category": "Shrink Film & Plastic Packaging",
+      "eligibleSpendInr": 0,
+      "eligibleSpendCr": 0,
+      "currentSituation": "Material Group 11320 contains 0 rows and ₹0 spend in Borosil SAP master. Previous ₹9.367 Cr claim was unverified.",
+      "proposedSourcingIntervention": "Audit film purchases classified under general packaging before planning lot aggregation.",
+      "calculationFormula": "Spend × Auction % (Unquantified)",
+      "conservativeCase": {
+        "improvementPct": 0,
+        "financialOutcomeInr": 0,
+        "financialOutcomeCr": 0,
+        "description": "Unquantified: Material Group 11320 contains 0 records in SAP database."
+      },
+      "higherAchievementCase": {
+        "improvementPct": 0,
+        "financialOutcomeInr": 0,
+        "financialOutcomeCr": 0,
+        "description": "Unquantified: requires re-mapping of plastic film line items."
+      },
+      "commercialDependencies": [
+        "Polymer specification audit"
+      ],
+      "implementationTimeline": "Under Evaluation",
+      "validationRequirements": [
+        "SAP material group verification"
+      ],
+      "sourceTransactionReferences": [
+        "CAT-11320-ABSENT"
+      ],
+      "supplierEvidence": "SAP master audit confirms zero transactions in group 11320",
+      "assumptionStatus": "Unquantified — Material Group 11320 Not Found in Database",
+      "validationStatus": "UNQUANTIFIED"
+    }
+  ],
+  "alternativeSuppliers": [
+    {
+      "materialCategory": "Dense Soda Ash (Active)",
+      "materialDescription": "Dense Soda Ash (Na2CO3 >= 99.2%) for specialty glass melting furnace",
+      "currentSupplier": "GHCL Limited (Active SAP Vendor 703717)",
+      "potentialAlternative": "GHCL Limited (Sutrapada, Gujarat)",
+      "entityClassification": "PRIMARY_PRODUCER",
+      "qualificationStatus": "EXISTING_APPROVED_HISTORICAL",
+      "qualificationStatusLabel": "Existing Approved Primary Manufacturer",
+      "geographicProximity": "Sutrapada / Dahej, Gujarat (<120 km from Bharuch Plant 1120)",
+      "capacityDeliveryCapability": "High (>1.1M MT/year total capacity; bulk pneumatic tankers)",
+      "qualityCertifications": "ISO 9001:2015, ISO 14001, OHSAS 18001, furnace certified",
+      "indicativeCompetitiveness": "Active direct supplier (6 PO lines, ₹58.117 Cr, 19,600 MT, WAP ₹29,652/MT)",
+      "commercialPaymentTerms": "Existing contract terms; target formula-based pricing pegging",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Retain as core manufacturer; negotiate annual volume contract tied to ex-works index."
+    },
+    {
+      "materialCategory": "Printed Inner Cartons (Active)",
+      "materialDescription": "Inner packaging boxes and protective cartons for consumer glassware",
+      "currentSupplier": "Parksons Packaging Ltd (Active SAP Vendor 1901090)",
+      "potentialAlternative": "Parksons Packaging Ltd (Plant 6101 Supplier)",
+      "entityClassification": "CONVERTER",
+      "qualificationStatus": "EXISTING_APPROVED_HISTORICAL",
+      "qualificationStatusLabel": "Existing Approved Packaging Converter",
+      "geographicProximity": "Regional converting plants with direct supply to Plant 6101",
+      "capacityDeliveryCapability": "High (Automated offset printing & carton folding lines)",
+      "qualityCertifications": "ISO 9001, FSC Certified paperboard chain of custody",
+      "indicativeCompetitiveness": "Active supplier (PO 1005008312, ₹0.027 Cr spend, 28,700 EA)",
+      "commercialPaymentTerms": "Standard 45-day commercial terms",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Active approved vendor; include in competitive dynamic reverse auctions for larger lots."
+    },
+    {
+      "materialCategory": "Dense Soda Ash (Candidate)",
+      "materialDescription": "Dense Soda Ash primary producer alternative for dual-sourcing",
+      "currentSupplier": "GHCL Limited / RSPL Limited (Active Direct Suppliers)",
+      "potentialAlternative": "Tata Chemicals Limited (Mithapur, Gujarat)",
+      "entityClassification": "PRIMARY_PRODUCER",
+      "qualificationStatus": "POTENTIAL_ALTERNATIVE_QUALIFICATION_REQUIRED",
+      "qualificationStatusLabel": "Potential Alternative — Qualification Required",
+      "geographicProximity": "Mithapur, Gujarat (~450 km rail/road to Bharuch)",
+      "capacityDeliveryCapability": "Very High (>1.0M MT/year; dedicated bulk rail siding)",
+      "qualityCertifications": "ISO 9001, ISO 14001, REACH compliant chemical grades",
+      "indicativeCompetitiveness": "Primary domestic producer; 0 records in Borosil SAP master",
+      "commercialPaymentTerms": "Subject to commercial tender and credit evaluation",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Potential alternative requiring qualification; conduct furnace melt trial before tender award."
+    },
+    {
+      "materialCategory": "Dense Soda Ash (Candidate)",
+      "materialDescription": "Dense Soda Ash domestic synthetic manufacturer alternative",
+      "currentSupplier": "GHCL Limited / RSPL Limited (Active Direct Suppliers)",
+      "potentialAlternative": "Nirma Limited (Porbandar / Kalatalav)",
+      "entityClassification": "PRIMARY_PRODUCER",
+      "qualificationStatus": "POTENTIAL_ALTERNATIVE_QUALIFICATION_REQUIRED",
+      "qualificationStatusLabel": "Potential Alternative — Qualification Required",
+      "geographicProximity": "Porbandar / Kalatalav, Gujarat (~380 km to Bharuch)",
+      "capacityDeliveryCapability": "High (>800,000 MT/year synthetic soda ash production)",
+      "qualityCertifications": "ISO 9001:2015, technical grade purity compliance",
+      "indicativeCompetitiveness": "Primary domestic producer; 0 records in Borosil SAP master",
+      "commercialPaymentTerms": "Subject to commercial tender and credit evaluation",
+      "supplyContinuityRisk": "MEDIUM",
+      "evaluationRecommendation": "Potential alternative requiring qualification; assess logistics lead time and physical bulk density."
+    },
+    {
+      "materialCategory": "Industrial MRO & Spares (Candidate)",
+      "materialDescription": "Mechanical spares, power tools, safety gear, and plant consumables",
+      "currentSupplier": "42 Fragmented Local Traders and Stockists",
+      "potentialAlternative": "Moglix (Mogli Labs Pvt Ltd)",
+      "entityClassification": "DISTRIBUTOR",
+      "qualificationStatus": "POTENTIAL_ALTERNATIVE_QUALIFICATION_REQUIRED",
+      "qualificationStatusLabel": "Potential Alternative — Qualification Required",
+      "geographicProximity": "National distribution fulfillment network with Western regional depots",
+      "capacityDeliveryCapability": "High (>500,000 SKUs digital catalog with punch-out ERP integration)",
+      "qualityCertifications": "OEM Authorized distribution certifications",
+      "indicativeCompetitiveness": "National distributor aggregator; 0 records in Borosil SAP master",
+      "commercialPaymentTerms": "Target 60-day monthly consolidated billing",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Potential alternative requiring qualification; audit catalog pricing and delivery SLA adherence."
+    },
+    {
+      "materialCategory": "Industrial Hardware & Tools (Candidate)",
+      "materialDescription": "Fasteners, electrical switches, bearings, and maintenance supplies",
+      "currentSupplier": "Fragmented Regional Hardware Vendors",
+      "potentialAlternative": "Industrybuying (Emart Solutions)",
+      "entityClassification": "DISTRIBUTOR",
+      "qualificationStatus": "POTENTIAL_ALTERNATIVE_QUALIFICATION_REQUIRED",
+      "qualificationStatusLabel": "Potential Alternative — Qualification Required",
+      "geographicProximity": "Multi-hub distribution centers across Western and Northern India",
+      "capacityDeliveryCapability": "Medium-High (Broad industrial MRO product portfolio)",
+      "qualityCertifications": "Manufacturer warranty pass-through compliance",
+      "indicativeCompetitiveness": "E-distributor aggregator; 0 records in Borosil SAP master",
+      "commercialPaymentTerms": "Subject to trade credit agreement",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Potential alternative requiring qualification; evaluate rate cards for high-frequency hardware items."
+    },
+    {
+      "materialCategory": "Flexible Packaging & Films (Candidate)",
+      "materialDescription": "Polyethylene shrink wrap, stretch films, and plastic packaging rolls",
+      "currentSupplier": "Local Converting and Extrusion Vendors",
+      "potentialAlternative": "Uflex Limited (Packaging Division)",
+      "entityClassification": "MANUFACTURER",
+      "qualificationStatus": "POTENTIAL_ALTERNATIVE_QUALIFICATION_REQUIRED",
+      "qualificationStatusLabel": "Potential Alternative — Qualification Required",
+      "geographicProximity": "Major manufacturing units in NCR and Western India corridors",
+      "capacityDeliveryCapability": "Very High (World-scale automated film extrusion plants)",
+      "qualityCertifications": "ISO 9001, ISO 22000, BRC packaging certifications",
+      "indicativeCompetitiveness": "Primary packaging manufacturer; 0 records in Borosil SAP master",
+      "commercialPaymentTerms": "Subject to commercial RFQ negotiation",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Potential alternative requiring qualification; execute drop test and line compatibility trials."
+    },
+    {
+      "materialCategory": "Plant Freight & Logistics (Candidate)",
+      "materialDescription": "Full truckload (FTL) transport corridors between plants and distribution hubs",
+      "currentSupplier": "Fragmented Regional Transporters and Brokers",
+      "potentialAlternative": "V-Trans (India) Limited",
+      "entityClassification": "DISTRIBUTOR",
+      "qualificationStatus": "POTENTIAL_ALTERNATIVE_QUALIFICATION_REQUIRED",
+      "qualificationStatusLabel": "Potential Alternative — Qualification Required",
+      "geographicProximity": "Extensive branch network with dedicated fleet in Gujarat and Maharashtra",
+      "capacityDeliveryCapability": "High (>1,000 GPS-tracked commercial vehicles nationwide)",
+      "qualityCertifications": "IBA Approved, ISO 9001 certified logistics operations",
+      "indicativeCompetitiveness": "National transport carrier; 0 records in Borosil SAP master",
+      "commercialPaymentTerms": "Target 45-day freight credit against audited lorry receipts",
+      "supplyContinuityRisk": "LOW",
+      "evaluationRecommendation": "Potential alternative requiring qualification; conduct fragile glassware handling audit."
+    }
+  ],
+  "transformationLevers": [
+    {
+      "leverIndex": 1,
+      "leverName": "Demand Consolidation",
+      "whatProcucevAnalyzes": "Aggregate annual purchasing quantities across Bharuch and Jaipur plants to eliminate fragmented lot sizes.",
+      "proposedIntervention": "Establish centralized enterprise buying agreements for chemicals, packaging, and indirect consumables.",
+      "expectedBusinessBenefit": "Enhanced volume leverage, maximum tier rebate thresholds, and priority supplier allocation.",
+      "requiredData": "Annual bill of materials (BOM), quarterly plant production plans, and storage capacities.",
+      "financialClassification": "FINANCIAL"
+    },
+    {
+      "leverIndex": 2,
+      "leverName": "Specification Standardization",
+      "whatProcucevAnalyzes": "Identify minor non-functional specification variances (e.g., box grammage, pallet dimensions, film microns).",
+      "proposedIntervention": "Harmonize packaging and consumable specifications across all manufacturing divisions to common SKUs.",
+      "expectedBusinessBenefit": "Consolidated procurement volumes, lower manufacturing setup charges, and reduced SKU complexity.",
+      "requiredData": "Technical product specification sheets, QA tolerance limits, and plant line specifications.",
+      "financialClassification": "FINANCIAL"
+    },
+    {
+      "leverIndex": 3,
+      "leverName": "Make-versus-Buy Analysis",
+      "whatProcucevAnalyzes": "Assess captive vs outsourced services including mold maintenance, wooden pallet fabrication, and internal transport.",
+      "proposedIntervention": "Benchmark internal full-absorption operating costs against specialized third-party turnkey providers.",
+      "expectedBusinessBenefit": "Capex optimization, conversion of fixed maintenance overheads into variable cost per unit.",
+      "requiredData": "Internal labor rates, machine downtime logs, capex depreciation, and vendor benchmark proposals.",
+      "financialClassification": "FINANCIAL"
+    },
+    {
+      "leverIndex": 4,
+      "leverName": "Payment Terms Harmonization",
+      "whatProcucevAnalyzes": "Audit supplier payment terms across active POs (ranging from advance/15 days to 60 days).",
+      "proposedIntervention": "Standardize commercial payment terms to 60 days net across all direct and indirect contracts.",
+      "expectedBusinessBenefit": "Significant working capital expansion (up to ₹8–12 Cr cash flow release) without price escalation.",
+      "requiredData": "Supplier master payment terms, historical accounts payable aging, and vendor credit ratings.",
+      "financialClassification": "WORKING_CAPITAL_PROCESS"
+    },
+    {
+      "leverIndex": 5,
+      "leverName": "Freight and Logistics Optimization",
+      "whatProcucevAnalyzes": "Compare ex-works versus FOR delivered purchase orders for heavy minerals, chemicals, and corrugated boxes.",
+      "proposedIntervention": "Consolidate plant inbound logistics under competitive third-party logistics (3PL) contracts where advantageous.",
+      "expectedBusinessBenefit": "Elimination of hidden supplier freight markups and route optimization for multi-plant pickups.",
+      "requiredData": "Inbound freight manifests, weighbridge slips, vehicle utilization rates, and transit lead times.",
+      "financialClassification": "FINANCIAL"
+    },
+    {
+      "leverIndex": 6,
+      "leverName": "Purchase Order Consolidation",
+      "whatProcucevAnalyzes": "Analyze high PO transaction frequency with small invoice values (<₹25,000) across maintenance and consumables.",
+      "proposedIntervention": "Transition from ad-hoc spot POs to blanket purchase orders and scheduled monthly delivery releases.",
+      "expectedBusinessBenefit": "Up to 35% reduction in procurement administrative processing costs and improved delivery adherence.",
+      "requiredData": "ERP PO generation frequency, line item counts, administrative approval workflow records.",
+      "financialClassification": "NON_FINANCIAL"
+    },
+    {
+      "leverIndex": 7,
+      "leverName": "Inventory and Procurement Planning",
+      "whatProcucevAnalyzes": "Assess plant safety stock buffers, reorder triggers, and dead inventory across engineering and raw material stores.",
+      "proposedIntervention": "Implement Vendor Managed Inventory (VMI) and consignment stock agreements for critical spare parts.",
+      "expectedBusinessBenefit": "Working capital reduction, elimination of production stock-outs, and reduced warehouse footprint.",
+      "requiredData": "Monthly consumption trends, lead times, minimum order quantities (MOQ), and holding costs.",
+      "financialClassification": "WORKING_CAPITAL_PROCESS"
+    },
+    {
+      "leverIndex": 8,
+      "leverName": "Contract & Rate-Card Management",
+      "whatProcucevAnalyzes": "Identify spend occurring off-contract on spot purchase orders without formal master framework agreements.",
+      "proposedIntervention": "Implement mandatory digital master rate cards in SAP with automated tolerance lock mechanisms.",
+      "expectedBusinessBenefit": "Zero maverick spend leakage, guaranteed contract compliance, and automated price verification.",
+      "requiredData": "Current active vendor agreements, ERP pricing condition records, and spot invoice audit trails.",
+      "financialClassification": "FINANCIAL"
+    },
+    {
+      "leverIndex": 9,
+      "leverName": "Supplier Performance Management",
+      "whatProcucevAnalyzes": "Track vendor delivery reliability (OTIF), rejection rates, invoice dispute frequency, and technical support.",
+      "proposedIntervention": "Deploy quarterly supplier scorecards with structured reward/remedy mechanisms linked to tender allocation.",
+      "expectedBusinessBenefit": "Direct reduction in plant rejection downtime, superior delivery punctuality, and strategic supplier alignment.",
+      "requiredData": "Goods receipt inspection logs, delivery date vs promise date timestamps, and credit note history.",
+      "financialClassification": "NON_FINANCIAL"
+    },
+    {
+      "leverIndex": 10,
+      "leverName": "Tail-Spend Management",
+      "whatProcucevAnalyzes": "Evaluate the long-tail vendor base (bottom 20% of spend dispersed across >1,000 ad-hoc suppliers).",
+      "proposedIntervention": "Implement digital tail-spend management platform / curated marketplace with pre-negotiated catalogs.",
+      "expectedBusinessBenefit": "Drastic supplier base reduction (from 1,537 to <600 active accounts) and lower vendor master maintenance cost.",
+      "requiredData": "Vendor master active status, one-time vendor transactions, and indirect catalog categories.",
+      "financialClassification": "NON_FINANCIAL"
+    }
+  ]
+}

@@ -61,6 +61,12 @@ export const deployOpportunity = async (req: Request, res: Response): Promise<Re
 export const getConsolidatedSavings = async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const assessmentId = (req.query?.assessmentId as string) || (req.headers?.['x-assessment-id'] as string) || undefined;
+    if (!assessmentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Assessment ID is required for consolidated savings'
+      });
+    }
     const consolidated = db.getConsolidatedSavings(assessmentId);
     logger.info('Fetched consolidated savings with overlap de-duplication', {
       opportunitiesCount: consolidated.opportunities.length,

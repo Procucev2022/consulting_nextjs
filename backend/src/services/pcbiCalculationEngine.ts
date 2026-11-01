@@ -187,6 +187,32 @@ export class PCBICalculationEngine {
         unmappedReason: `Benchmark series '${mapping.pcbiId}' is not found in master data (UNAVAILABLE)`
       };
     }
+    if (benchmark.benchmark_type === 'COMPOSITE') {
+      const comps = this.components.get(benchmark.pcbi_id) || [];
+      const hasMissingConstituent = comps.length === 0 || comps.some((c) => {
+        const info = this.getIndexForDate(benchmark.pcbi_id, tx.po_date, c.id);
+        return !info || info.indexValue <= 0;
+      });
+      if (hasMissingConstituent) {
+        return {
+          benchmark,
+          quality: mapping.quality,
+          currentIndex: 0,
+          benchmarkability: 0,
+          residualPct: 100,
+          isUnmapped: true,
+          unmappedReason: `Missing constituent benchmark observations for composite '${benchmark.pcbi_id}' on date '${tx.po_date}' (UNAVAILABLE)`
+        };
+      }
+      const benchmarkability = benchmark.benchmarkability_percent !== undefined
+        ? benchmark.benchmarkability_percent
+        : 70;
+      const residualPct = benchmark.residual_percent !== undefined
+        ? benchmark.residual_percent
+        : Math.max(0, 100 - benchmarkability);
+      return { benchmark, quality: mapping.quality, currentIndex: 100.0, benchmarkability, residualPct };
+    }
+
     const indexInfo = this.getIndexForDate(benchmark.pcbi_id, tx.po_date);
     if (!indexInfo) {
       return {
@@ -326,7 +352,9 @@ export class PCBICalculationEngine {
         opportunity_value: 0,
         favourable_variance: 0,
         benchmark_quality: info.quality,
-        calculation_method: 'SINGLE_BENCHMARK',
+        calculation_method: info.benchmark?.benchmark_type === 'COMPOSITE'
+          ? 'COMPOSITE_BENCHMARK'
+          : 'SINGLE_BENCHMARK',
         calculation_status: 'UNMAPPED_BENCHMARK_SIGNAL',
         unmappedReason: info.unmappedReason || 'Explicit UNMAPPED_BENCHMARK_SIGNAL: No certified benchmark series exists',
         created_at: new Date().toISOString()
@@ -347,7 +375,7 @@ export class PCBICalculationEngine {
     let componentBreakdowns: PCBIComponentCalculation[] | undefined;
 
     if (info.benchmark?.benchmark_type === 'COMPOSITE') {
-      const { price, breakdowns } = calculateCompositeCost(
+      const compResult = calculateCompositeCost(
         info.benchmark.pcbi_id,
         this.components,
         (pid, d, cid) => this.getIndexForDate(pid, d, cid),
@@ -356,8 +384,47 @@ export class PCBICalculationEngine {
         baseRec.base_date,
         currentResidualPct
       );
-      expectedPrice = price;
-      componentBreakdowns = breakdowns;
+      if (compResult.isUnavailable || compResult.price <= 0) {
+        return {
+          id: `calc-${tx.id}`,
+          transaction_id: tx.id,
+          po_number: tx.po_number,
+          po_date: tx.po_date,
+          material_code: tx.material_code,
+          short_text: tx.short_text,
+          vendor: tx.vendor || 'Generic Vendor',
+          plant: tx.plant || 'Main Plant',
+          sector: tx.sector || 'Industrial',
+          comparable_key: compKey,
+          base_transaction_id: baseRec.transaction_id,
+          base_po_number: baseRec.po_number,
+          base_date: baseRec.base_date,
+          base_price: baseRec.base_price,
+          base_pcbi_id: baseRec.base_pcbi_id,
+          base_pcbi_index: baseRec.base_pcbi_index,
+          current_date: tx.po_date,
+          current_pcbi_index: 0,
+          benchmarkability_percent: 0,
+          residual_percent: 100,
+          expected_price: 0,
+          actual_price: Number(actualPrice.toFixed(2)),
+          price_gap_per_unit: 0,
+          price_gap_pct: 0,
+          gross_opportunity: 0,
+          marketVarianceValue: 0,
+          benchmarkable_spend: 0,
+          quantity: tx.quantity,
+          opportunity_value: 0,
+          favourable_variance: 0,
+          benchmark_quality: info.quality || 'C',
+          calculation_method: 'COMPOSITE_BENCHMARK',
+          calculation_status: 'UNMAPPED_BENCHMARK_SIGNAL',
+          unmappedReason: `Composite constituent observation unavailable for '${info.benchmark.pcbi_id}'`,
+          created_at: new Date().toISOString()
+        };
+      }
+      expectedPrice = compResult.price;
+      componentBreakdowns = compResult.breakdowns;
     } else {
       expectedPrice = Number((P0 * (I1 / I0)).toFixed(2));
     }

@@ -115582,3 +115582,4198 @@ Return:
 
 Stop after forensic verification. Do not build or publish the PCBI index, recalculate savings, execute Module 4 or certify savings.
 
+## Prompt 553
+
+# EXECUTION: BOROSIL MODULE 3 — PCBI READINESS AND MISSING-INDEX GAP LIST
+
+Customer: Borosil Ltd
+Assessment ID: AIC-2026-0002
+Customer ID: CUST-2026-0002
+Current Phase 3A verification commit: aba34aa
+Existing PCBI master: PCBI_GLOBAL_MASTER_V1_2020_2026.xlsx
+
+## OBJECTIVE
+
+Verify whether Module 3 is ready to process Borosil's data and demonstrate the missing-PCBI-index items through the existing application UI.
+
+Follow the already-agreed workflow:
+
+1. Application identifies items requiring PCBI benchmarks.
+2. Application displays the missing-index list with relevant customer spend and material details.
+3. We export/review the list and conduct research outside Antigravity.
+4. We prepare and validate the missing benchmark data and updated PCBI Master Excel file separately.
+5. We upload the approved master through the application.
+6. We validate coverage and conclude Module 3.
+
+Do not change this workflow.
+
+## STEP 1 — READ-ONLY READINESS AUDIT
+
+Inspect the current Git branch, working-tree status, latest commit, existing PCBI master integration, Module 3 routes, backend services, frontend components and Borosil assessment integration.
+
+Determine whether the application currently:
+
+* Reads the actual Borosil assessment rather than a demo/VGT dataset.
+* Uses the actual customer spend and existing material/category mappings.
+* Reads the configured PCBI Master and identifies benchmark series that exist or are missing.
+* Distinguishes an existing benchmark definition from verified, usable market observations.
+* Identifies stale, unverified, unmapped and unavailable benchmark series without treating them as valid data.
+* Provides a usable UI and export for missing PCBI items.
+
+Do not assume these features work merely because tests pass. Verify the actual implementation and live UI.
+
+## STEP 2 — RUN THE EXISTING APPLICATION
+
+Start the existing application using the project's normal development procedures.
+
+Open the Borosil assessment and Module 3 in the browser.
+
+Do not create another module or redesign the architecture.
+
+If the existing UI supports gap identification, execute it for AIC-2026-0002 and show the results.
+
+If it does not, identify the smallest necessary change to expose the missing-index list within the existing Module 3 UI. Implement only that gap-list capability, preserving the current architecture and existing safeguards.
+
+## STEP 3 — REQUIRED MISSING-INDEX SCREEN
+
+The screen must show one row per distinct material/benchmark requirement, with fields available from the actual data:
+
+* Customer material/item description
+* Material or commodity classification
+* UNSPSC code, if available
+* Existing material/grade/specification
+* Customer spend and transaction count
+* PCBI series ID, if mapped
+* Benchmark source/status
+* Observation coverage and latest observation date, where available
+* Gap status and reason
+* Next action required
+
+Use explicit statuses such as:
+
+* VERIFIED OBSERVATIONS AVAILABLE
+* BENCHMARK DEFINED — OBSERVATIONS MISSING
+* SOURCE IDENTIFIED — DATA NOT ACQUIRED
+* LICENSE REQUIRED
+* MAPPING / SPECIFICATION REVIEW REQUIRED
+* STALE DATA
+* UNMAPPED — RESEARCH REQUIRED
+* NO SUITABLE BENCHMARK IDENTIFIED
+
+Use the existing status model where possible. Do not introduce conflicting duplicate status definitions.
+
+Provide a clear total count and spend summary for each status, with drill-down to the affected customer items. Provide export to Excel/CSV if the existing application architecture supports it.
+
+Do not count an item as covered merely because its PCBI series ID exists. Coverage requires usable observations and an approved, specification-compatible mapping.
+
+## STEP 4 — DATA AND SAFETY CONTROLS
+
+Preserve the authoritative Borosil baseline:
+₹556.5346426 Cr across 27,777 transactions.
+
+Do not change Modules 1 or 2, transaction eligibility, the baseline, currency assumptions or customer source data.
+
+Keep all 14 previously identified unverified fuel observations quarantined.
+
+Do not invent prices, observations, sources, source hashes or missing periods. Do not substitute mismatched material grades. Do not generate synthetic trends or fill gaps with assumed values.
+
+Do not conduct commodity research or acquire market data in this task. Research and Excel preparation will be done separately outside Antigravity.
+
+Do not calculate or publish a PCBI index while the required observations and mappings remain unapproved.
+
+Do not calculate or recalculate savings. Do not execute Module 4.
+
+## STEP 5 — VERIFY AND REPORT
+
+Run the relevant backend/frontend tests, type checks and lint checks. Test the actual Borosil UI in the browser.
+
+Return:
+
+1. Module 3 readiness verdict.
+2. Current branch and commit.
+3. Whether the actual PCBI Master is loaded and how it is identified.
+4. Whether the missing-index screen works in the browser.
+5. The total distinct material/benchmark requirements identified.
+6. A status-wise count and spend reconciliation.
+7. An exported missing-index file, if supported.
+8. Screenshots or browser evidence of the application results.
+9. Any remaining blocker, with the exact reason.
+10. Tests executed and their results.
+
+Clearly distinguish features verified in the live application from features only present in code or tests.
+
+Do not start another implementation phase or research exercise. Complete this readiness and gap-list task, then stop for review.
+
+
+---
+
+## Prompt 554
+Update the existing Module 2 completion button and its navigation label only.
+
+**Current label:** Proceed to 36-Month Volatility Analytics
+
+**Replace with:** Proceed to PCBI Benchmark Coverage & Gap Analysis →
+
+**On click:**
+
+1. Navigate to the existing Module 3.
+2. Preserve the current customer assessment, baseline spend, transaction data, and confirmed Module 1 and Module 2 results without modification.
+3. Open the existing PCBI Benchmark Coverage & Gap Analysis interface, where users can review benchmark availability, identify missing observations, inspect mapping/specification gaps, and export the missing-index gap list.
+4. Do not automatically calculate savings, generate benchmark prices, fabricate observations, or publish unapproved benchmark data.
+5. Do not change Module 3 architecture, redesign other screens, or introduce new workflows. Keep the change limited to the button label and its existing navigation behavior.
+
+After implementation, verify that the button opens the correct Module 3 screen and that the existing assessment data remains unchanged.
+
+
+---
+
+## Prompt 555
+Continue the existing Procucev PCBI Module 3 implementation. Do not redesign the application or introduce a new workflow.
+
+**A. Reconcile the gap register**
+
+1. Investigate the exported CSV against the authoritative Borosil baseline of ₹556.5346426 Cr and 27,777 transactions.
+2. Identify the exact cause of the ₹0.0153 Cr discrepancy and the inconsistent status-level transaction counts.
+3. Reconcile the reported 8,956 unmapped requirements with the consolidated MRO row representing 8,955 items.
+4. Exclude governance-summary/audit rows from material-requirement counts.
+5. Correct the underlying aggregation or export logic only after identifying the cause. Do not force totals to match by inserting, deleting, or fabricating transactions or spend.
+6. Preserve the authoritative baseline, customer transactions, existing Module 1 and Module 2 results, and all source records.
+
+**B. Verify the agreed item-wise benchmark upload workflow**
+
+1. Locate the existing dedicated PCBI screen, popup, or component intended for uploading approved item-wise benchmark index data.
+2. Determine whether it is present but inaccessible, hidden by navigation, or missing from the current Module 3 interface.
+3. Restore access to the existing workflow if it is present. If it is genuinely missing, report the specific missing component before proposing any implementation.
+4. The workflow must allow the user to associate approved benchmark observations with the appropriate PCBI series/material requirements and validate the file before import.
+5. Preserve source provenance, observation dates, specification/grade, units, currency, source status, and approval controls.
+6. Do not invent observations, automatically approve data, publish unapproved benchmarks, or execute savings calculations.
+
+
+**C. Verification**
+Test the gap-register totals, CSV export, and access to the item-wise benchmark upload workflow. Report the root cause, files changed, tests executed, and any remaining blocker.
+
+Do not proceed to Module 4. Do not alter the agreed PCBI workflow or customer baseline.
+
+---
+
+## Prompt 556
+resume
+
+---
+
+## Prompt 557
+Fix the existing CommodityPCBIUploadWorkflowModal so that it correctly supports Borosil's missing benchmark requirements. Do not create a new wizard or redesign Module 3.
+
+CONTEXT
+
+* Customer: Borosil Ltd
+* Assessment ID: AIC-2026-0002
+* Customer ID: CUST-2026-0002
+* Authoritative baseline: ₹556.5346426 Cr
+* Included transactions: 27,777
+* The Module 3 gap register contains 22 requirement rows representing 8,976 unique materials.
+* The upload wizard currently opens with Ferro Molybdenum 65%, COM-MET-FMO, series SER-IND-FEMO-65-M, a pre-filled PDF filename, pre-filled source details and 18 extracted observations. The user confirms Ferro Molybdenum is not in Borosil's data.
+
+A. FIND THE ROOT CAUSE
+
+1. Trace the Module 3 gap-register button, item-specific drill-down action, pcbiGapUploadHelper.ts, CommodityPCBIUploadWorkflowModal.tsx, and any shared PCBI Admin upload-state/store logic.
+2. Identify exactly why the wizard opens with Ferro Molybdenum instead of the selected Borosil requirement.
+3. Check for hard-coded demo values, fallback commodity IDs, stale modal state, shared global selection state, cached file metadata, or default extraction results.
+4. Report the root cause and correct it without changing unrelated functionality.
+
+B. MAKE THE WIZARD ASSESSMENT-DRIVEN
+
+1. When opened from a Borosil requirement, initialize the wizard from that exact selected requirement and assessment context.
+2. Pass and preserve the assessment ID, customer ID, material code, material description, customer spend, transaction count, specification/grade, gap status, and any existing PCBI series mapping.
+3. Resolve the PCBI series from the approved master and existing mapping rules. Never substitute Ferro Molybdenum or another unrelated series as a fallback.
+4. If the selected requirement has no valid series mapping, show an explicit "Mapping Required" state and route it for mapping review.
+5. If opened without a selected requirement from the general upload button, require the user to select the intended commodity/material before proceeding.
+6. Reset previous item selections, filenames, extraction results, source metadata, validation results and staged observations when switching requirements or starting a new upload.
+
+C. REMOVE MISLEADING PRE-FILLED SOURCE DATA
+
+1. Do not display a sample PDF, source name, publisher, URL, observation count or extraction confidence as though it belongs to the selected requirement.
+2. Require the user to select the actual source file.
+3. Populate extraction results only after processing the actual uploaded file.
+4. Source identity fields may be suggested only from verifiable document metadata or an explicitly identified source record. Mark suggestions as unverified until confirmed.
+5. Validate commodity/specification compatibility, source provenance, observation dates, units, currency, price basis, frequency, licensing/use rights and extraction quality.
+6. Never fabricate observations, silently interpolate missing periods, or treat missing observations as zero.
+
+D. PRESERVE THE GOVERNED 10-STEP WORKFLOW
+Keep the existing workflow:
+Select → Series → Upload → Identity → Extract → Quality → Preview → Validate → Approve → Activate.
+
+* Maintain the existing approval gate and audit trail.
+* Do not allow approval or activation before required validation succeeds.
+* Do not activate or publish data automatically after upload.
+* Preserve quarantined observations and licensing restrictions.
+* Ensure a selected material's upload cannot silently update a different material or series.
+
+E. TEST THE ACTUAL BOROSIL FLOW
+Add or update tests to prove:
+
+1. Selecting Soda Ash Dense – GHCL opens the wizard with that requirement, not Ferro Molybdenum.
+2. Selecting a different requirement loads its own correct context.
+3. The general upload button requires an explicit commodity/material selection.
+4. No unrelated sample file, source metadata or observation count appears before upload.
+5. Switching items clears all stale staged data.
+6. Missing or ambiguous series mappings block progression until resolved.
+7. Approval and activation remain gated by validation and authorization.
+8. The Borosil baseline remains ₹556.5346426 Cr and the transaction count remains 27,777.
+
+Run the relevant frontend tests, backend tests where applicable, typecheck and lint.
+
+Do not change Modules 1 or 2, do not execute Module 4, and do not modify the authoritative baseline. Do not research or invent commodity prices as part of this task.
+
+Report the root cause, files changed, test results and any remaining blockers.
+
+---
+
+## Prompt 558
+run locally on chrome
+
+
+---
+
+## Prompt 559
+run locally on chrome
+
+
+---
+
+## Prompt 560
+Fix the existing PCBI mapping-review workflow. Do not redesign Module 3 or introduce a new architecture.
+
+CONTEXT
+
+* Customer: Borosil Ltd
+* Assessment ID: AIC-2026-0002
+* Customer ID: CUST-2026-0002
+* Module 3: PCBI Benchmark Readiness & Missing-Index Gap Register
+* The 10-step Commodity PCBI upload wizard correctly blocks requirements that have no approved PCBI series mapping.
+* Clicking "Route for Mapping Review" currently produces no visible navigation or action.
+* Multiple Borosil requirements need mapping review.
+
+A. TRACE AND FIX THE EXISTING ACTION
+
+1. Trace the "Route for Mapping Review" button in CommodityPCBIUploadWorkflowModal.tsx through its callback, parent component, route configuration, and existing PCBI Master Mapping Review interface.
+2. Identify why the button does nothing.
+3. Connect it to the existing mapping-review screen or route. Do not create a duplicate mapping screen.
+4. Ensure the action works for every requirement flagged as mapping-required, not only one specific material.
+5. Preserve the selected assessment ID, customer ID, material code, description, specification, spend, transaction count, and current mapping status.
+6. If mapping review is a tab or panel rather than a separate route, open that existing interface and visibly identify the selected requirement.
+7. If navigation cannot be completed, display a clear error message rather than silently doing nothing.
+
+B. MAKE MAPPING REVIEW ACTIONABLE
+
+1. Display the selected material and its relevant specification and classification.
+2. Show candidate PCBI series only when supported by the existing master catalogue and mapping data.
+3. Allow the authorized reviewer to select or propose a mapping according to the existing governance rules.
+4. If no suitable series exists, allow the reviewer to record "No suitable benchmark identified" or "New benchmark series required" with a reason.
+5. Do not silently map a material to an unrelated series or promote a proxy to a direct benchmark.
+6. Preserve the distinction between Category and Benchmark Family.
+7. Require review/approval before a proposed mapping becomes an approved mapping.
+
+C. RETURN TO THE UPLOAD WORKFLOW
+
+1. After mapping review, provide a clear way to return to the same Borosil requirement and upload workflow.
+2. Refresh the mapping status from the authoritative source after a mapping is approved.
+3. Permit the upload wizard to proceed beyond Step 2 only if the mapping is valid and approved.
+4. Do not automatically upload, approve, activate, or publish benchmark observations.`nD. TESTING
+Add or update tests to verify:
+
+* The button opens the intended mapping-review interface.
+* The selected Borosil requirement remains in context.
+* Different unmapped requirements open their own correct review context.
+* Navigation failures are visible to the user.
+* Proposed mappings require approval.
+* An approved mapping allows the wizard to continue only after the authoritative mapping state is refreshed.
+* No unrelated series is selected as a fallback.
+* The Borosil baseline remains ?556.5346426 Cr across 27,777 transactions.
+
+Run relevant frontend tests, typecheck and lint. Verify the route or callback in the running application if possible.
+
+Do not change Modules 1 or 2, modify the authoritative baseline, fabricate benchmark data, or execute Module 4.
+
+Report the root cause, files changed, test results, and any remaining blockers.
+
+---
+
+## Prompt 561
+Modify the existing Module 3 PCBI Benchmark Readiness & Missing-Index Gap Register. Improve the material-level audit experience without redesigning the module or changing existing business logic.
+
+### 1. Make Every Material Row Actionable
+
+* Make the customer material name clickable.
+* Add a small, clearly visible audit/details icon at the beginning of every material row.
+* Clicking either the material name or its icon must open the material's audit popup immediately.
+* Use the selected row's actual material and requirement data. Do not hardcode Ferro Molybdenum or any other specific material.
+* Provide a visual hover state and pointer cursor for clickable rows.
+
+### 2. Move the Existing Material Audit into a Popup
+
+The current expanded section titled "MATERIAL REQUIREMENT FORENSIC AUDIT" appears below the table and requires excessive scrolling.
+
+Move or reuse this existing audit interface inside a modal/popup. Do not duplicate the audit component or its business logic.
+
+The popup should display:
+
+* Customer material/item name and material code.
+* Specification, grade and classification.
+* Customer spend and transaction count.
+* Existing PCBI series mapping, if available.
+* Current gap status and reason.
+* Benchmark source and observation coverage.
+* Recommended next action.
+
+Include the existing "Upload Benchmark for Requirement" action where applicable, plus a clearly visible Close button.
+
+### 3. Preserve Existing Actions and Navigation
+
+Within the popup:
+
+* "Upload Benchmark for Requirement" must open the existing 10-step Commodity PCBI upload workflow for the selected requirement.
+* If an approved PCBI series mapping is missing, retain the existing "Route for Mapping Review" functionality.
+* Mapping review must preserve the selected material and Borosil assessment context.
+* Closing the popup must return the user to the same table, preserving scroll position, filters and pagination.
+* Opening another material must show that material's own details, never stale details from the previous selection.
+
+### 4. Borosil Assessment Integrity
+
+Use the actual Borosil assessment:
+
+* Assessment ID: AIC-2026-0002
+* Customer ID: CUST-2026-0002
+* Authoritative baseline: ₹556.5346426 Cr
+* Included transactions: 27,777
+
+Do not introduce materials that are absent from the actual assessment requirements.
+
+### 5. Acceptance Tests
+
+Add or update tests to verify:
+
+1. Every material row has an audit icon.
+2. Clicking a material name opens the correct popup.
+3. Clicking the audit icon opens the same popup.
+4. Different rows display their own correct material details.
+5. Upload and mapping-review actions retain the selected requirement.
+6. Closing the popup preserves table position and filters.
+7. Keyboard-accessible controls and visible error handling work correctly.
+
+Run relevant frontend tests, TypeScript checks and lint.
+
+Do not change Modules 1 or 2, the authoritative customer baseline, benchmark observations, PCBI approval rules or Module 4. Do not fabricate data, approve mappings, or activate benchmark observations.
+
+Report the files changed, test results and any remaining blockers.
+
+---
+
+## Prompt 562
+**OBJECTIVE: Restore the original Module 3 PCBI customer experience, preserve all existing working linkages, and prepare the Borosil Ltd report for submission today.**
+
+Project: `consulting_nextjs`
+Customer: Borosil Ltd
+Customer ID: `CUST-2026-0002`
+Assessment ID: `AIC-2026-0002`
+Original reported baseline: ₹556.5346426 Cr across 27,777 transactions
+Known Module 3 branch: `pcbi-phase3a-forensic-verification`
+Known checkpoint: `aba34aa89617255152fe177d6118b62c76a911a3`
+
+### PHASE 1 — SAFETY CHECKPOINT AND BASELINE INSPECTION
+
+1. Inspect the current Git branch, working-tree status, recent commits and uncommitted changes.
+2. Identify the original September Module 3 implementation and compare it with the current implementation.
+3. Locate the original trend-analysis UI, calculation engine, API endpoints, data contracts and navigation.
+4. Identify all changes introduced for the missing-index gap list, status cards, drill-down, CSV export and benchmark-upload workflow.
+5. Establish a recoverable checkpoint before modifying files. Do not discard uncommitted work.
+6. Do not execute a blind `git reset`, `git clean`, broad revert or destructive checkout.
+
+If the original implementation cannot be positively identified, stop before changing the UI and report the evidence needed to resolve the ambiguity.
+
+### PHASE 2 — RESTORE THE ORIGINAL MODULE 3 EXPERIENCE
+
+Restore the original Module 3 design and customer-facing trend-analysis experience as the primary interface.
+
+Retain compatible improvements from the recent implementation:
+
+* Missing-index status cards.
+* Filterable material-level gap list.
+* Requirement-level drill-down and audit details.
+* CSV export.
+* Approved benchmark-data upload workflow.
+* Benchmark source, quality, frequency and coverage information.
+
+Integrate these features without duplicating navigation, replacing the original trend-analysis experience or breaking existing customer workflows.
+
+Do not rebuild Module 3 from scratch. Preserve the established architecture, styling, component conventions and API contracts wherever possible.
+
+### PHASE 3 — VERIFY EVERY LINKAGE
+
+Trace and verify the following end-to-end:
+
+1. Assessment selection → correct assessment ID.
+2. Module 2 canonical output → Module 3 input.
+3. Customer material and UNSPSC/category mapping → approved PCBI series mapping.
+4. PCBI master workbook → ingestion service → validated observations.
+5. Index resolver → correct series and valid observation dates.
+6. Calculation engine → expected-price and potential-opportunity calculations.
+7. Backend controllers and routes → frontend API client.
+8. Original trend-analysis screen → correct API responses and charts/tables.
+9. Missing-index view → accurate status cards, filters and drill-down.
+10. Gap-list export → reconciled CSV.
+11. Approved benchmark upload → validation, quarantine controls and correct series association.
+12. Navigation between Module 3 views → no broken links or stale assessment context.
+
+Do not substitute generic, demonstration or steel indices for unmapped customer materials. Preserve the existing classification authority and quarantine rules.
+
+### PHASE 4 — PROTECT THE BOROSIL BASELINE AND CALCULATION INTEGRITY
+
+Verify, rather than assume, the current authoritative values:
+
+* Baseline spend: ₹556.5346426 Cr.
+* Transactions: 27,777.
+* Realized/certified savings: ₹0.00 Cr unless supported by a separate, audited source.
+
+Module 3 must not change the authoritative baseline, Module 1/2 results or realized savings.
+
+Use the approved benchmark formula and existing calculation conventions. Calculate potential opportunity only where the material mapping, usable index observations, dates, units, price basis and benchmarkability are valid.
+
+Missing or quarantined observations must not be treated as zero, fabricated, silently interpolated or substituted with unrelated series.
+
+Distinguish:
+
+* Verified benchmark coverage.
+* Missing or unacquired data.
+* Provisional research candidates.
+* Quarantined observations.
+* Potential opportunity.
+* Audited/realized savings.
+
+Do not represent potential opportunity as realized savings.
+
+### PHASE 5 — REGRESSION AND QUALITY CHECKS
+
+Run the relevant existing Module 3 tests, including:
+
+* Canonical controller and API tests.
+* PCBI calculation-engine tests.
+* Index-resolution and data-safety tests.
+* Forensic certification tests.
+* Gap-list and export tests.
+* Frontend Module 3 component tests.
+* Typecheck and lint.
+
+Add or update targeted tests where necessary.
+
+Verify that:
+
+* Original trend-analysis functionality still works.
+* The gap-list and upload workflows remain accessible.
+* Assessment IDs and data linkages remain correct.
+* The Borosil baseline has zero reconciliation variance.
+* No benchmark fallback or quarantine leak is introduced.
+* Modules 1, 2 and 4 remain unchanged.
+
+Do not run Module 4 or trigger savings generation.
+
+### PHASE 6 — SUBMISSION-READY BOROSIL REPORT
+
+Generate a report using actual, freshly verified application results.
+
+Include:
+
+1. Executive summary and Module 3 readiness verdict.
+2. Reconciled Borosil baseline and transaction count.
+3. Verified benchmark coverage and explicit coverage gaps.
+4. Benchmark source and quality status.
+5. Potential opportunity only where supported by valid calculations.
+6. Missing-index summary and remediation priorities.
+7. Validation and test results.
+8. Known limitations and next actions.
+9. Evidence supporting every reported figure.
+
+Do not invent test results, observations, coverage, savings or successful linkages. Clearly label any unverified figures.
+
+### REQUIRED COMPLETION SUMMARY
+
+Return:
+
+* Starting branch and commit.
+* Recovery checkpoint.
+* Files changed and why.
+* Original functionality restored.
+* New features retained.
+* API and data-linkage verification results.
+* Test results with pass/fail counts.
+* Baseline reconciliation.
+* Any remaining blockers.
+* Exact path to the generated Borosil report.
+
+**Priority:** Safe restoration, intact linkages and a truthful Borosil submission today. Make the smallest changes necessary. Do not expand scope into other modules or unrelated refactoring.
+
+
+
+## Prompt 563
+
+Act as the lead engineer and procurement benchmarking analyst for Procucev PCBI.
+
+OBJECTIVE
+Restore and execute the existing Module 3 Trend Analysis for Borosil Ltd, assessment AIC-2026-0002, customer CUST-2026-0002. Correct the zero-value dashboard, establish defensible A/B/C benchmark coverage, prepare an auditable PCBI output and establish a controlled handoff for the eventual Module 4 final report.
+
+Do not rebuild the product from scratch. Inspect the existing implementation, identify the root causes and make the smallest safe changes that preserve the current design.
+
+A. PROTECT THE EXISTING ARCHITECTURE
+
+1. Preserve Module 1, Module 2 and the existing Module 3 Trend Analysis layout.
+2. Keep “Market vs Invoiced Trend Analysis” as the primary/default view.
+3. Retain “Missing-Index Gap List & Readiness” as the secondary tab.
+4. Retain the existing A/B/C/NR dashboard, coverage waterfall, spend category view, trend chart, creep detector, vendor dispersion, calculation transparency and simulator.
+5. Do not change Module 1 baseline calculations or Module 2 sourcing logic.
+6. Do not connect Module 3 automatically to Module 4, execute the savings engine, or generate certified/realized savings. Module 4 must remain gated pending explicit benchmark approval.
+
+B. FIX BOROSIL ASSESSMENT AND DATA BINDING
+
+1. Trace every API request, selector, query, cache key and frontend component that supplies Module 3.
+2. Ensure the selected assessment is AIC-2026-0002 and customer is CUST-2026-0002 across every Module 3 component.
+3. Investigate why the screen displays “No Valid Textile Index” while the warning banner identifies Borosil.
+4. Remove unintended fallbacks to Textile, empty assessments, demo fixtures or unrelated customer records.
+5. Confirm that the existing backend canonical transaction source can supply Borosil's approved purchase data. Reuse it read-only.
+6. Never substitute an empty result with ₹0.00 and label it as a genuine customer metric. Distinguish genuine zero from missing data, unavailable calculations and failed data loading.
+7. Preserve the verified baseline: ₹556.5346426 Cr, 27,777 transactions and 8,976 unique material items. Reconcile to a variance of ₹0.00.
+8. If the backend cannot retrieve the authoritative baseline, expose the exact failure and do not manufacture a replacement dataset.
+
+C. REMOVE MISLEADING DEMO DATA FROM CUSTOMER RESULTS
+
+1. Identify all illustrative data for Industrial Lubricant Oil, polyethylene resin, bearings, structural steel, vendor names, benchmark values, price creep and opportunities.
+2. Keep these examples only in a clearly labelled simulator/demo mode.
+3. Do not display demo values as Borosil findings, vendor rankings, leakage, benchmark prices or savings.
+4. For missing Borosil evidence, display “Awaiting validated data”, “Not calculated” or “Source evidence pending” as appropriate.
+5. Correct the spend category table: calculate category spend and percentages from actual customer transactions. Do not use hardcoded category percentages.
+6. Services must be excluded from material PCBI calculations while remaining reconciled in the total baseline if present.
+7. Ensure the coverage waterfall uses actual amounts at each stage and never implies that 100% of spend is benchmark-covered merely because it is mapped to a taxonomy.
+
+D. USE THE EXISTING BOROSIL A/B/C/NR REVIEW
+Use the existing file Borosil_PCBI_Category_Review_A_B_C_NR_2026-10-29.xlsx if accessible, along with the existing 22-requirement gap register and the canonical Borosil transaction data.
+
+The research-priority totals are:
+A = ₹82.6321 Cr
+B = ₹23.1175 Cr
+C = ₹39.0538 Cr
+A+B+C = ₹144.8034 Cr, approximately 26.02% of baseline
+NR = ₹411.7312 Cr, approximately 73.98% of baseline
+Total = ₹556.5346 Cr
+
+Treat these as review-register totals. Reconcile the underlying rows before using them in the UI. Do not force totals to match by changing source transactions or classifications.
+
+Keep two separate concepts:
+
+* Research priority grade: A/B/C/NR.
+* Approved operational benchmark quality and coverage.
+
+A research-priority A, B or C must not automatically become an approved benchmark-quality classification or count as covered spend.
+
+E. BENCHMARK THE HIGHEST-PRIORITY ITEMS
+Start with the following research priorities:
+
+1. Soda Ash Dense and Local: ₹74.017 Cr.
+
+   * Keep dense and local requirements separate.
+   * Investigate GHCL/Tata published observations and the identified Chemical Weekly route.
+   * Preserve date, grade, supplier/location, currency, unit and price basis.
+   * Do not map Soda Ash to Caustic Soda.
+   * Do not treat sparse historical observations as a complete weekly series.
+
+2. Silica Sand and Quartz Sand: ₹39.0219 Cr.
+
+   * Distinguish solar-glass grade, 100 ppm grade and furnace-grade quartz.
+   * Use generic mineral series only as proxies if a defensible relationship is documented and approved.
+   * Do not represent an unvalidated generic mineral price as a direct benchmark.
+
+3. LSHS: ₹15.3722 Cr.
+
+   * Validate the proposed IOCL ex-Koyali source and every quarantined observation.
+   * Verify provenance, date, unit and price basis before release.
+
+4. Kraft Paper 45 GSM: ₹6.9585 Cr.
+
+   * Identify the relevant WPI paper series and acquire the missing observations.
+   * Preserve monthly frequency if that is the original source frequency.
+
+5. Polymer packaging: ₹4.2376 Cr.
+
+   * Keep PP caps/closures, PP strapping, LDPE film/tubing and PE cover/shrink film distinguishable.
+   * Confirm licensed-source access and compatible benchmark families.
+
+6. Bulk LPG: ₹3.2629 Cr.
+
+   * Acquire and validate relevant commercial OMC price notifications.
+
+7. Diesel: ₹1.6566 Cr.
+
+   * Distinguish bulk/depot diesel from equipment-fuel purchases and use the appropriate price basis.
+
+For each item:
+
+* Search existing local files, approved source catalogues, configured connectors and source records first.
+* Use actual historical observations only when source evidence is available.
+* Record the source, observation date, publication date if available, geography, grade/specification, currency, unit, price basis, frequency, access/licensing status and transformation history.
+* Mark monthly-to-weekly mapping as frequency conversion/step mapping, never as a direct weekly market quote.
+* Do not fabricate source URLs, source hashes, dates, prices, weekly values or grade matches.
+* Do not interpolate missing observations unless an explicitly approved method exists and the output is clearly labelled.
+* Where observations cannot be obtained, record the exact gap and retain the spend as uncovered.
+
+F. INVESTIGATE THE ₹404.2212 CR MRO AGGREGATE
+This is the largest unresolved component and must not be ignored.
+
+1. Inspect the existing backend, database models, APIs, canonical transactions, assessment records and available cached/uploaded data to find the item-level records that contribute to the MRO aggregate.
+2. Do not ask the user to upload another portal export as the first response.
+3. Use only records already accessible in the application or project files.
+4. If records are available, derive a read-only MRO drilldown by material description, UNSPSC, vendor, quantity, value, unit and transaction count where present.
+5. Reconcile the MRO drilldown to ₹404.2212 Cr and the relevant canonical transaction count. Explain any difference.
+6. Do not infer a material family from a vague description without retaining a review flag.
+7. If item-level data is not available, state exactly which source/table/API is missing and retain the unresolved spend in NR. Do not fabricate an item breakdown.
+
+G. IMPLEMENT THE BENCHMARK CALCULATION CORRECTLY
+For an approved mapping with valid observations, use the established method:
+
+Expected price = Reference purchase price × [(1 − B) + B × (Current index / Reference index)]
+
+Where B is the approved benchmarkability fraction from 0 to 1.
+
+Calculate positive price variance as:
+MAX(0, actual purchase price − expected price)
+
+Potential opportunity = positive unit price variance × actual quantity.
+
+Rules:
+
+* Use a compatible reference and current observation.
+* Do not calculate if either required index is missing or invalid.
+* Apply benchmarkability weighting only once.
+* Avoid double-counting overlapping material, vendor and category opportunities.
+* Keep negative price variances separately visible.
+* Do not call calculated potential opportunity “realized savings” or “certified savings”.
+* The simulator must clearly identify its inputs as illustrative when it is not using real Borosil data.
+
+H. RESTORE THE ORIGINAL DASHBOARD
+
+1. Executive summary: display the verified Borosil baseline and the real values that can be calculated.
+2. A/B/C/NR dashboard: show spend, percentage, transaction count and unique item count where those figures are supported by reconciled records.
+3. Coverage waterfall: show total baseline, material spend, UNSPSC-mapped spend, approved PCBI-mapped spend, benchmarkable spend, spend with a positive price gap and potential opportunity. Clearly explain each exclusion.
+4. Spend category view: use actual calculated Direct Materials, Packing Materials, MRO, Indirect Materials, Services and Unmapped spend. Never hardcode percentages.
+5. Trend chart: plot only valid observations and compatible purchase-price history. Clearly label gaps and source frequency.
+6. Creep detector and vendor dispersion: calculate only from genuine Borosil data with valid benchmark matches. Otherwise show an explicit unavailable state.
+7. Benchmark selector: filter to valid benchmark families for the selected assessment and clearly show when no usable observations exist.
+8. Gap tab: retain the 22-requirement register, with status, spend, priority grade, approved quality grade, missing evidence, owner/action and next validation step.
+
+I. DATA AND VALIDATION CONTROLS
+
+1. Preserve source data and audit history.
+2. Make the smallest safe schema/API/UI changes needed.
+3. Do not silently modify existing baseline or historical transaction values.
+4. Add tests for assessment isolation, baseline reconciliation, A/B/C/NR totals, empty-state behaviour, demo-data isolation, observation validation, grade/specification mismatch, frequency mapping, benchmark calculations and duplicate-opportunity prevention.
+5. Run the existing frontend/backend test suites, typecheck and lint.
+6. Do not claim a test passed unless it was actually run and its result was observed.
+
+J. DELIVERABLES
+Return a concise implementation report containing:
+
+* Root cause of the zero-value Borosil dashboard and Textile selector.
+* Files changed and why.
+* Borosil baseline reconciliation.
+* A/B/C/NR spend reconciliation against the existing review register.
+* Actual spend and item counts mapped to usable benchmark series.
+* Coverage percentages based only on approved mappings and usable observations.
+* A list of newly acquired and validated observations, with provenance.
+* A list of outstanding gaps and their spend values.
+* MRO drilldown result or the exact technical blocker preventing it.
+* Test commands and actual results.
+* Screenshots or a clear description of the restored Borosil dashboard.
+* Explicit confirmation that Module 1 and Module 2 were not altered and Module 4/savings was not executed.
+
+COMPLETION CRITERION
+Module 3 must show the real Borosil baseline and the research-priority A/B/C/NR breakdown even if benchmark coverage remains incomplete. It must calculate trends and potential opportunity only for approved mappings with valid observations. Do not report the ₹144.8034 Cr research pool as benchmark-covered unless the evidence supports it.
+
+Stop after Module 3 validation. Do not activate Module 4 automatically.
+
+
+---
+
+## Prompt 564
+Conduct a comprehensive validation-only audit of Module 3 (PCBI Trend Analytics) for Borosil Ltd, Assessment ID AIC-2026-0002.
+
+IMPORTANT: Do not modify application code, database records, benchmark master files, calculations, or customer data during this validation pass. First inspect the existing implementation and report the findings. Do not run Module 4 or trigger any savings calculations.
+
+### 1. Customer and Baseline Validation
+
+* Confirm Borosil is correctly identified and does not fall into ABC Textile-specific logic.
+* Reconcile the canonical baseline against the authoritative transaction data:
+
+  * Total spend: ₹556.5346426 Cr
+  * Transactions: 27,777
+  * Unique materials: 8,976
+  * Reconciliation variance: ₹0.00
+* Verify the reported material/services split against the canonical data rather than assuming it is correct.
+
+### 2. A/B/C/NR Allocation Validation
+
+Verify the following reported research-priority allocations against the underlying material-level records:
+
+* A: ₹82.6321 Cr
+* B: ₹23.1175 Cr
+* C: ₹39.0538 Cr
+* NR: ₹411.7312 Cr
+
+Confirm that the allocations reconcile to the baseline. Check for duplicate materials, incorrect transaction counts, conflicting spend values, and inconsistent classifications.
+
+These are research-priority allocations, not proof of operational benchmark coverage.
+
+### 3. MRO Reconciliation
+
+The reported MRO aggregate is ₹404.2212 Cr across 27,649 transactions.
+
+The displayed category breakdown reportedly totals ₹404.02 Cr, leaving ₹0.2012 Cr unexplained.
+
+Recalculate the breakdown directly from canonical records. Identify the exact source of any discrepancy and report the affected category or transaction IDs. Do not force the categories to reconcile through rounding or manual adjustments.
+
+### 4. Operational Benchmark Coverage
+
+Inspect the actual benchmark master and index observations used by Module 3.
+
+The current master reportedly contains 95,700 weekly records across 290 benchmark definitions, but the Index Value field is unpopulated and records are marked SOURCE_PENDING.
+
+Confirm whether this remains true. If so:
+
+* Operational benchmark coverage must remain 0%.
+* Do not present candidate benchmark families or research-priority spend as operationally covered spend.
+* Do not generate benchmark-based opportunity values or imply validated price trends.
+* Clearly distinguish available research candidates from approved, usable index series.
+
+### 5. Trend Calculation and Data Integrity
+
+Check:
+
+* Reference purchase date and first-valid-purchase logic.
+* Grade, specification, geography, unit, currency and price-basis compatibility.
+* Index availability at reference and comparison dates.
+* Missing observations and frequency mismatches.
+* Any interpolation, carry-forward or fallback logic.
+* Whether unsupported observations can accidentally produce a trend or opportunity calculation.
+
+No fabricated data, silent substitutions, or unapproved interpolation is permitted.
+
+### 6. UI and Regression Validation
+
+Verify the Borosil-specific views and selectors in Module 3:
+
+* Executive Benchmark Summary
+* Spend Category View
+* Vendor Price Dispersion Table
+* Benchmark Quality Dashboard
+* Trend Analytics
+
+Confirm that displayed values match the backend and canonical data.
+
+Run the relevant existing automated tests, type-check and lint checks. Verify Modules 1 and 2 remain unaffected.
+
+### 7. Module Isolation
+
+Confirm Module 3 remains disconnected from Module 4. Do not invoke Module 4, calculate savings through it, or alter its data or code.
+
+### Required Output
+
+Return a validation report containing:
+
+1. PASS / FAIL / BLOCKED for each validation area.
+2. Exact evidence, test results and relevant file/function references.
+3. Every numerical discrepancy identified.
+4. Critical issues that must be fixed before customer presentation.
+5. Recommended code changes, listed separately and not implemented.
+6. A clear final decision: READY FOR RESEARCH, READY FOR INTERNAL DEMONSTRATION, or NOT READY.
+
+Do not mark the module ready merely because automated tests pass. Data reconciliation and benchmark integrity are mandatory acceptance criteria.
+
+---
+
+## Prompt 565
+Implement the five critical corrections identified in the Module 3 validation report for Borosil Ltd, Assessment ID AIC-2026-0002.
+
+Scope is strictly limited to Module 3 and its supporting calculations.
+
+1. Remove the blind index fallback of 100.0 and unsafe forward-filling. Missing or invalid observations must return an explicit unavailable status and must not produce benchmark-based calculations.
+
+2. Remove synthetic supplier price-creep percentages, the assumed 4% leakage calculation, and any unsupported supplier risk classifications. When validated observations are unavailable, display "Awaiting Verified Benchmarks."
+
+3. Replace hardcoded spend-category aggregations with calculations from the canonical transaction ledger. Define and document category rules, avoid double counting, and reconcile all category totals and transaction counts to the authoritative baseline.
+
+4. Regenerate the Borosil A/B/C/NR material-level register using authentic SAP material codes and canonical transaction data. Correct spend values, transaction counts, and classifications. Preserve the distinction between research priority and approved operational benchmark coverage.
+
+5. Remove synthetic historical market and invoiced-price trend curves. Plot only data supported by verified observations. When data is unavailable, show an explicit empty state.
+
+Additional mandatory requirements:
+
+* Resolve the MRO breakdown discrepancy and reconcile the category views with the canonical ledger.
+* Do not fabricate or interpolate benchmark observations.
+* Preserve the Borosil-specific selectors and existing Module 1 and Module 2 behavior.
+* Keep operational benchmark coverage at 0% until usable benchmark series are validated and approved.
+* Keep benchmark-based opportunity, certified savings and realized savings at ₹0.00 Cr while no approved observations support their calculation.
+* Do not execute Module 4 or change its implementation or financial data.
+* Do not modify the source transaction dataset to force reconciliation.
+
+After implementation:
+A. Run type-check, lint, Module 3 backend and frontend tests, and Module 1/2 regression tests.
+B. Reconcile baseline spend, category spend, transaction counts and material-level allocations.
+C. Provide a list of changed files and a concise explanation of each change.
+D. Report PASS/FAIL for every acceptance criterion, with actual test results and reconciliation figures.
+E. Identify any unresolved issue rather than masking it with a fallback or mock value.
+
+Do not declare Module 3 customer-ready solely because tests pass. Stop after revalidation and provide the report for review. Do not proceed to Module 4.
+
+
+---
+
+## Prompt 566
+Conduct a final reconciliation-only audit of the latest Module 3 changes for Borosil Ltd, Assessment ID AIC-2026-0002.
+
+Do not modify code, source transactions, benchmark observations, or Module 4.
+
+1. Recalculate all A/B/C/NR research-priority spend and transaction counts directly from canonical transaction records. Verify every material code, classification, and total. Do not retain previously reported figures unless independently confirmed.
+
+2. Explain the difference between the ₹108.7178 Cr MRO spend-category total and the ₹404.2212 Cr consolidated MRO gap-register total. Define the scope of each figure and demonstrate that category totals reconcile to the baseline without double counting.
+
+3. Ensure missing benchmark observations are represented as unavailable, not as verified zero price creep. Confirm that no synthetic supplier leakage, risk scores, or historical trends are presented as actual findings.
+
+4. Reconcile the five spend categories to ₹556.5346426 Cr and 27,777 transactions. Report exact values and rounding differences.
+
+5. Confirm that operational benchmark coverage remains 0%, benchmark-based opportunity remains ₹0.00 Cr, and Module 4 remains untouched.
+
+6. Rerun the relevant tests and provide PASS/FAIL results with evidence.
+
+Return a discrepancy table, corrected canonical figures, and a final recommendation on internal demonstration readiness. Do not implement additional changes unless a specific defect is demonstrated.
+
+
+---
+
+## Prompt 567
+run locally on chrome
+
+
+---
+
+## Prompt 568
+Conduct a targeted forensic audit and correction of Module 3 — PCBI Benchmark & Trend Analysis for Borosil Ltd, assessment ID AIC-2026-0002.
+
+PROBLEM OBSERVED:
+The benchmark dropdown displays options such as Soda Ash Dense & Local, Silica Sand & Quartz, LSHS Fuel Oil, Kraft Paper 45 GSM, Polymer Packaging, Bulk LPG, and High Speed Diesel. However, the dashboard shows ₹0.00 Cr for UNSPSC Mapped Spend, PCBI Mapped Spend and Benchmarkable Spend. The trend chart remains empty, and no usable material-level benchmark results appear. The A/B/C and residual spend cards also display figures that do not match the latest reconciliation report.
+
+OBJECTIVE:
+Make Module 3 correctly resolve each selected benchmark to its PCBI definition, Borosil SAP/material codes, customer transactions and approved benchmark observations. Display defensible results where the required evidence exists and explicit, actionable missing-data states everywhere else.
+
+STRICT BOUNDARIES:
+
+* Work only on Module 3 and its directly required data integration.
+* Do not modify Module 4, the Savings Engine, or its calculations.
+* Do not change Module 1 or Module 2 behaviour.
+* Preserve the existing Module 3 design and navigation.
+* Do not invent, interpolate, fabricate or silently substitute benchmark observations.
+* Do not replace missing index values with 100, zero, or an unverified fallback.
+* Do not use illustrative simulator rows as actual Borosil findings.
+* Do not represent research-priority A/B/C classifications as operational benchmark coverage.
+* Do not report potential opportunity as realized or certified savings.
+* Preserve source provenance, observation date, effective date, grade/specification, geography, unit, currency, price basis, frequency, access/license status and validation status.
+
+PHASE 1 — TRACE THE COMPLETE DATA FLOW
+
+Trace and document the flow from:
+
+1. Benchmark dropdown selection.
+2. Selected benchmark ID and master-register record.
+3. PCBI observation store/database and observation validation status.
+4. Borosil SAP/material codes and canonical transaction records.
+5. Material/category spend aggregation.
+6. Expected benchmark price and opportunity calculation.
+7. Dashboard cards, trend chart, creep detector and vendor dispersion views.
+
+Identify the exact reason why the dropdown has options while mapped spend and benchmark results remain zero or unavailable.
+
+Check whether the issue is caused by missing observations, incorrect benchmark IDs, missing material mappings, failed API queries, assessment/customer ID mismatches, filters, stale cached data, null handling, or frontend binding. Do not assume the cause; provide evidence.
+
+PHASE 2 — VALIDATE DROPDOWN OPTIONS
+
+For each dropdown option, show:
+
+* Display label.
+* Canonical PCBI benchmark ID.
+* Benchmark family and constituent/material definition.
+* Linked Borosil SAP/material codes.
+* Matching canonical transaction count.
+* Matching customer spend in ₹ Cr.
+* Available observations and their validation status.
+* Source, unit, currency, grade, geography and price basis.
+* Whether the benchmark is currently operational, research-only or awaiting evidence.
+
+Ensure every option resolves to a real benchmark-register entry. Remove or disable invalid orphan options, but do not remove legitimate research candidates merely because observations are not yet approved.
+
+Keep distinct materials and market bases separate. In particular:
+
+* Soda Ash Dense (SAP 100SA02G) and Soda Ash Local/Spot (SAP 100SA01T) must remain separate benchmark mappings.
+* Do not map laboratory sodium carbonate to industrial soda ash.
+* Keep solar-grade silica sand separate from generic silica sand and quartz.
+* Do not treat an unverified constituent or generic index as a validated direct benchmark.
+* Keep bulk/depot diesel separate from equipment-fuel transactions where the price basis differs.
+* Keep industrial/bulk LPG separate from bottled LPG.
+* Treat LNG satellite storage system SAP 600LNG01 as one-off CAPEX, not recurring commodity spend.
+
+Use the canonical Borosil dataset and existing audit artifacts. Do not infer SAP mappings from display names alone.
+
+PHASE 3 — CORRECT MAPPING AND OBSERVATION LOGIC
+
+Implement the minimum safe fixes required so that:
+
+* Dropdown selection resolves the correct benchmark ID.
+* Material mapping is retrieved from the authoritative mapping table/register.
+* Customer spend is calculated from canonical, eligible transactions without double-counting.
+* Observation queries are filtered using the correct benchmark ID and approved status.
+* Date ranges and units are handled consistently.
+* The UI distinguishes operational coverage, research candidates and pending observations.
+* Missing observations return an explicit unavailable/null state with a reason.
+* API failures and mapping failures are surfaced clearly instead of silently returning misleading zeroes.
+
+A valid material mapping may exist even when approved observations are absent. Display mapped spend separately from benchmarkable spend so that these concepts are not conflated.
+
+Do not mark spend operationally benchmarkable until the necessary approved observations and material/specification matching requirements are satisfied.
+
+PHASE 4 — CORRECT STALE RECONCILIATION VALUES
+
+Use the latest canonical reconciliation report as the source of truth for the spend classification cards.
+
+Expected reconciled figures:
+
+* Total purchase spend: ₹556.5346426 Cr.
+* Grade A research-priority spend: ₹82.6321 Cr.
+* Grade B research-priority spend: ₹23.1175 Cr.
+* Grade C research-priority spend: ₹39.0691 Cr.
+* Consolidated residual baseline, unbenchmarked across spend categories: ₹404.2059 Cr.
+* LNG satellite storage system CAPEX: ₹7.5100 Cr, classified separately from recurring commodity benchmarks.
+* Operational benchmark coverage: 0% until approved, usable observations are actually ingested.
+* Benchmark-derived opportunity: ₹0 until defensible calculations can be performed.
+* Certified/realized savings: ₹0.
+
+Important: A/B/C are research-priority classifications, not proof of operational benchmark coverage. The residual is not synonymous with the functional MRO category.
+
+Reconcile exact values to the canonical source data and ensure that the cards, tables and API responses use the same figures. Preserve full precision internally and round only for display.
+
+PHASE 5 — EMPTY STATES AND DATA INTEGRITY
+
+When a selected benchmark has a valid material mapping but no approved observations, display:
+
+* Mapped customer spend.
+* Matching transaction count.
+* Observation status.
+* Missing evidence required to activate the benchmark.
+* Clear message: "Awaiting Verified Benchmarks."
+
+When mapping itself is absent, display:
+
+* "Material Mapping Required."
+* The unmapped SAP/material identifier, if available.
+* The missing mapping step.
+
+When observations exist but fail validation, display:
+
+* "Observations Pending Validation."
+* The relevant validation failure.
+
+Do not display 0.0% price creep as a verified finding when the analysis cannot be calculated. Return null/unavailable where appropriate and show "Awaiting Verified Benchmarks."
+
+Ensure the chart never generates synthetic market trends. Keep the illustrative simulator data clearly separated from the customer dataset.
+
+PHASE 6 — TESTING AND ACCEPTANCE CRITERIA
+
+Add or update tests for:
+
+1. Every dropdown option resolving to its canonical PCBI benchmark ID.
+2. Correct SAP/material-code mapping.
+3. Correct customer spend and transaction counts.
+4. No double-counting across benchmark families.
+5. Approved observations loading correctly.
+6. Missing observations producing explicit unavailable states.
+7. Unverified observations never entering operational calculations.
+8. Null index values never being replaced by 100.
+9. No synthetic trends appearing in the customer view.
+10. Creep detector distinguishing unavailable from verified zero.
+11. Spend classification cards reconciling to the canonical baseline.
+12. Existing Module 1/2 regressions remaining unaffected.
+13. Module 4 remaining unchanged and disconnected.
+
+Run the relevant typecheck, lint, backend tests, frontend tests and regression tests. Report actual command results rather than assumed success.
+
+FINAL DELIVERABLE:
+Return a concise forensic report containing:
+
+* Root cause(s) supported by code/API/data evidence.
+* Files and functions changed.
+* Dropdown option → benchmark ID → SAP codes → spend → transaction count mapping table.
+* Approved observation counts and data gaps for every benchmark.
+* Before/after dashboard values.
+* Tests executed and their actual results.
+* Any remaining blockers.
+
+Do not claim Module 3 is production-ready if approved market observations are still missing. Do not proceed to Module 4.
+
+---
+
+## Prompt 569
+Perform a live UI acceptance test of the latest Module 3 PCBI changes for Borosil Ltd (AIC-2026-0002). Do not make further code changes unless a reproducible defect is found.
+
+1. Restart the backend and frontend if required, and open the actual running application.
+2. Select each benchmark option, starting with Soda Ash Dense & Local.
+3. Confirm that the selected benchmark detail card updates with the correct benchmark ID, SAP codes, spend, transaction count, observation count and status.
+4. Verify that Dense Soda Ash (100SA02G, ₹58.1170 Cr, 6 transactions) and Local/Spot Soda Ash (100SA01T, ₹15.9000 Cr, 5 transactions) remain distinct, even if the dropdown also offers an aggregate view.
+5. Verify that mapped spend is displayed separately from operational benchmarkable spend.
+6. Confirm that the trend chart remains in the verified-observations empty state because approved observations are still unavailable.
+7. Confirm that price creep and supplier counts display “Awaiting Verified Benchmarks,” not verified zero findings.
+8. Inspect the A/B/C and residual cards against the latest canonical reconciliation. Explain the ₹404.2059 Cr versus ₹411.7159 Cr classification difference and reconcile the figures without double-counting LNG CAPEX or laboratory reagent spend.
+9. Validate the silica sand, bottled LPG and refractory mappings against canonical source transactions.
+10. Confirm that Module 1 and Module 2 remain unaffected and Module 4 remains untouched and disconnected.
+
+Return the actual live UI results, screenshots if available, any console/API errors, and the reconciliation outcome. Clearly distinguish code-level test success from live application verification. Do not fabricate observations or mark Module 3 production-ready.
+
+---
+
+## Prompt 570
+Review the latest live screenshots of Module 3 PCBI Trend Analysis for Borosil Ltd, assessment AIC-2026-0002.
+
+The dropdown-to-material connection is now substantially working. The Soda Ash detail card displays ₹74.0170 Cr, 11 transactions, the two SAP codes, the two PCBI series and zero approved observations.
+
+Do not rebuild Module 3. Make only the following targeted corrections.
+
+1. BENCHMARKABLE SPEND STATUS
+   The dashboard displays ₹0.00 Cr but labels benchmarkable spend as UNAVAILABLE.
+   Because operational coverage is explicitly known to be zero until observations are approved, show:
+   "₹0.00 Cr — 0% Operational Coverage"
+   with the explanatory status:
+   "Awaiting Verified Benchmarks."
+   Do not confuse a known zero with a missing or failed calculation.
+
+2. SPEND CATEGORY RECONCILIATION
+   The current spend-category table displays approximately:
+
+* Direct Materials: ₹279.02 Cr
+* Packaging Materials: ₹80.86 Cr
+* MRO & Consumables: ₹114.12 Cr
+* Indirect Supplies: ₹7.52 Cr
+* Services & Freight: ₹75.01 Cr
+
+These differ from the earlier canonical category breakdown. Trace the current figures to the canonical Borosil transaction-level source and document the category mapping rules.
+
+Ensure:
+
+* Every eligible transaction is assigned according to the approved categorisation rules.
+* No transaction is counted twice.
+* All categories reconcile to the exact ₹556.5346426 Cr baseline.
+* Service spend is clearly separated from material spend.
+* The dashboard, category table, API and reconciliation audit use the same authoritative categorisation basis.
+
+Do not hard-code the earlier category values or silently change classifications to force agreement. If the current table uses a different valid classification, document that basis and make it clear in the UI.
+
+3. ILLUSTRATIVE CALCULATION SIMULATOR
+   The dynamic calculation transparency panel currently shows Industrial Lubricant Oil, ABC Vendor and an illustrative ₹1,60,020 potential opportunity.
+
+Keep the simulator if it is useful for demonstrating the calculation method, but display a prominent label:
+"ILLUSTRATIVE EXAMPLE — NOT BOROSIL DATA."
+
+Ensure that the example cannot be mistaken for a live customer benchmark result or actual savings.
+
+4. PRICE CREEP AND LEAKAGE
+   The page currently displays ₹0.00 Cr identified unjustified price creep leakage while also saying that verified benchmarks are awaited.
+
+When approved observations are absent, show:
+
+* Identified price leakage: Not yet quantifiable.
+* Supplier price creep: Awaiting verified benchmarks.
+* Benchmark-derived opportunity: Unavailable pending validated observations.
+
+Do not present a technical zero as a verified finding. Do not generate synthetic market trends or customer savings.
+
+5. FINAL VERIFICATION
+   Run typecheck, lint, relevant Module 3 frontend/backend tests, and Module 1/2 regression tests.
+
+Inspect the actual running UI after changes. Report:
+
+* Root cause of the category discrepancy.
+* Exact reconciled category figures and transaction counts.
+* Confirmation that the Soda Ash detail card remains dynamic.
+* Confirmation that the simulator is clearly illustrative.
+* Confirmation that unverified leakage and savings are not represented as actual findings.
+* Actual test results.
+
+Keep Module 4 untouched and disconnected. Do not claim production readiness while approved benchmark observations remain unavailable.
+
+---
+
+## Prompt 571
+Diagnose the governed 10-step Commodity PCBI upload workflow for Borosil Ltd, assessment AIC-2026-0002.
+
+The uploaded single-sheet workbook contains 43 weekly records for Soda Ash Dense, mapped to the existing series ID PCBI-IND-CHM-SDA-001. However, Step 5 consistently reports 24 extracted observations with 98.4% confidence.
+
+Inspect the actual uploaded file, selected worksheet, parser logic, column mapping, and extraction-count calculation. Determine whether the parser is reading the uploaded workbook or retrieving observations from another source or cached state.
+
+Do not modify production data, approve or activate a benchmark, create new PCBI IDs, or execute Module 4. Report the root cause and propose the smallest defect-only fix with a regression test proving that all 43 uploaded observations are correctly extracted.
+
+## Prompt 572
+
+Inspect the governed 10-step Commodity PCBI upload workflow at Step 6 for the Borosil Soda Ash Dense upload.
+
+The uploaded file contains 43 weekly index observations with Monday-start dates, using the column `Index Value` and a base of 100 on 1 January 2026. The underlying supplier prices are INR/MT, but the uploaded Index Value is dimensionless.
+
+Step 6 currently reports:
+
+* Missing dates: 0
+* Duplicate dates: 0
+* Unit consistency: Uniform (INR/MT)
+* Frequency continuity: Validated (MONTHLY)
+
+Determine why the workflow labels the series MONTHLY and INR/MT. Inspect the actual extracted records, selected benchmark-series frequency, unit metadata, and quality-check logic.
+
+Correct the defect so:
+
+1. Weekly dates are validated as WEEKLY.
+2. Index values are identified as INDEX_POINTS, not INR/MT.
+3. Underlying price units remain INR/MT in the source-observation metadata.
+4. Missing-date and duplicate-date checks use the intended weekly calendar.
+5. Regression tests verify all 43 weekly observations.
+
+Do not change Borosil transactions, create new PCBI IDs, approve or activate the benchmark, or run Module 4. Report the root cause and tests before proceeding.
+
+## Prompt 573
+
+Proceed with implementing the Step 6 and Step 7 quality-validation fix described in the diagnostic report.
+
+Requirements:
+
+1. Detect the actual observation frequency from uploaded dates and validate the required frequency against the existing Borosil series.
+2. Identify `Index Value` as `INDEX_POINTS`, not INR/MT.
+3. Preserve the underlying supplier-price unit as INR/MT in separate source metadata.
+4. Calculate missing periods and duplicate dates from the actual observations; remove hardcoded quality indicators.
+5. Display index values as index points in Step 7, never as rupees per MT.
+6. Preserve the existing series ID `PCBI-IND-CHM-SDA-001`. Do not create duplicate IDs or change Borosil purchase transactions.
+7. Add and run regression tests for all 43 weekly observations, including the date range, seven-day cadence, index units, missing periods, and duplicates.
+8. Run relevant component tests, parser tests, typecheck, and lint.
+
+Important controls:
+
+* Do not approve or activate the benchmark.
+* Do not execute Module 4 or calculate savings.
+* Do not silently alter the index values or source observations.
+* If the required frequency conflicts with the existing series specification, report the conflict rather than automatically overriding it.
+
+Return the changed files, test results, and any unresolved issues. Stop before approval or activation.
+
+## Prompt 574
+
+Investigate Step 8 — Governance Standards Audit for Borosil Ltd, assessment AIC-2026-0002, existing series PCBI-IND-CHM-SDA-001.
+
+The current screen reports:
+
+* Zero Synthetic Data Rule: Compliant
+* Specification: Dense Soda Ash, Na2CO3 >= 99.2%, bulk density 1.0–1.1 g/cm3, Ex-Works Gujarat
+* Provenance Hash: sha256:60a9e9437verified
+
+Verify the following without modifying production data:
+
+1. Confirm the benchmark specification and Gujarat price basis against the actual Borosil material mapping and uploaded supplier circulars. If this cannot be established, mark the specification as pending verification.
+2. Inspect the provenance-hash implementation. Confirm whether it computes SHA-256 from the actual uploaded file or source artifact. A valid SHA-256 digest must contain 64 hexadecimal characters.
+3. Verify the no-interpolation rule against the actual 43 uploaded observations and confirm the April and June step changes are present.
+4. Add regression tests for the hash and specification checks if necessary.
+5. Do not approve or activate the benchmark, change existing PCBI IDs, modify Borosil transactions, or run Module 4.
+
+Return the findings and test results. Stop before approval or activation.
+
+## Prompt 575
+
+Continue the Step 8 audit for Borosil Ltd, assessment AIC-2026-0002, existing series PCBI-IND-CHM-SDA-001.
+
+The investigation report states that 43 observations use Monday-start weekly dates from 2026-01-05 to 2026-10-26. However, the step-change audit reports 2026-04-05 and 2026-05-31, both Sundays.
+
+1. Inspect the actual uploaded workbook and parsed observation dates.
+2. Verify that the April supplier-price revision effective 2026-04-01 is reflected in the weekly observation dated 2026-04-06.
+3. Verify that the June revision effective 2026-06-01 is reflected in the weekly observation dated 2026-06-01.
+4. Preserve supplier-circular effective dates separately from weekly observation dates. Do not shift dates or index values merely to make the audit pass.
+5. Recalculate and test the SHA-256 hash from the actual uploaded file.
+6. Keep the specification status PENDING VERIFICATION until Tata Chemicals' proxy prices are formally confirmed as comparable with Borosil's GHCL purchases.
+7. Run the relevant regression tests, typecheck, and lint.
+
+Do not approve or activate the series, modify Borosil purchase transactions, create new PCBI IDs, or run Module 4. Report the verified dates and results.
+
+## Prompt 576
+
+Technical validation of the 43 weekly Soda Ash Dense observations has passed. However, the benchmark remains pending commercial verification.
+
+Before approval, please:
+
+1. Confirm that Tata Chemicals' published prices are commercially comparable with Borosil's GHCL purchases under series PCBI-IND-CHM-SDA-001.
+2. Verify the product grade, delivery location, ex-works basis, freight, packing, taxes, and other applicable charges.
+3. Preserve the source circulars, effective dates, weekly observation dates, and provenance hash.
+4. Keep the specification status as PENDING VERIFICATION until the comparison is formally supported.
+
+Do not activate this benchmark or permit Module 4 savings calculations until the outstanding commercial verification is completed. Do not create duplicate PCBI series or modify Borosil purchase transactions.
+
+## Prompt 577
+
+Do not execute Step 10 activation for Borosil assessment AIC-2026-0002.
+
+The Soda Ash Dense series PCBI-IND-CHM-SDA-001 has passed technical validation, but commercial validation of the Tata Chemicals price-movement proxy for Borosil's GHCL purchases remains outstanding.
+
+Keep the dataset staged and non-operational. Do not:
+
+* Generate a production-ready catalog version.
+* Change platform coverage to PRODUCTION_READY.
+* Trigger customer purchase-line reprocessing.
+* Enable Module 4 or calculate savings.
+
+Confirm the current staged status, whether Step 9 approval has been recorded, and whether any production changes have already occurred. Provide a safe route to retain the validated dataset for further testing without activating it.
+
+## Prompt 578
+
+PROJECT: aiCEV — Tech Enabled Strategic Sourcing Suite
+
+OBJECTIVE:
+Before activating Module 4 or generating the final management report, conduct a complete forensic audit of the application's data architecture, database, APIs, customer isolation, assessment isolation and end-to-end module integration.
+
+This is a READ-ONLY AUDIT FIRST.
+
+Do not begin Module 4 implementation during this exercise.
+
+CORE REQUIREMENT:
+
+Every customer assessment must operate as an independent data environment logically isolated by customer ID and assessment ID.
+
+Data must flow correctly:
+
+Module 1 → Module 2 → Module 3 → Module 4 → Final Management Report.
+
+No module may consume stale data, unrelated customer data, previous assessment results, illustrative datasets or globally shared calculation outputs.
+
+PART 1 — DATABASE FORENSIC AUDIT
+
+Inspect the complete database schema and identify:
+
+1. All customer tables.
+2. All assessment tables.
+3. Uploaded source-file records.
+4. Canonical transaction records.
+5. Categorisation and UNSPSC mappings.
+6. Module 2 sourcing opportunity records.
+7. PCBI benchmark master and observations.
+8. Module 4 savings records.
+9. Report-generation records.
+10. Test, demo and illustrative records.
+
+For every table, document:
+
+* Primary key.
+* Customer ID relationship.
+* Assessment ID relationship.
+* Foreign keys.
+* Unique constraints.
+* Data ownership.
+* Creation and update timestamps.
+* Whether records are assessment-specific or intentionally shared reference data.
+
+Identify:
+
+* Orphan records.
+* Duplicate records.
+* Missing customer/assessment references.
+* Global records accidentally used as customer-specific records.
+* Historical data that may be incorrectly reused.
+* Stale calculation outputs.
+* Test and demo records that could affect live assessments.
+
+Do not delete or modify any records during this audit.
+
+PART 2 — CUSTOMER AND ASSESSMENT ISOLATION
+
+Perform a detailed isolation audit.
+
+Verify that:
+
+* Each customer has a unique customer identity.
+* Each assessment belongs to the correct customer.
+* Every module API receives and validates the assessment ID.
+* The assessment ID resolves to its owning customer ID.
+* Database queries filter by the correct customer and assessment.
+* No query silently falls back to a default, previous or global assessment.
+* No customer-specific results are loaded using only a material ID or category ID where assessment scoping is required.
+* Switching between customers cannot retain the previous customer's results.
+* Cached queries use customer and assessment identity in their cache keys.
+* Background jobs and report-generation tasks retain the correct assessment context.
+
+Test cross-customer and cross-assessment access.
+
+A request for one assessment must never return another customer's transaction, supplier, sourcing opportunity, PCBI mapping or savings data.
+
+PART 3 — MODULE 1 AUDIT
+
+Verify that Module 1:
+
+* Imports the correct customer source file.
+* Preserves source-row lineage.
+* Applies approved inclusion/exclusion rules.
+* Creates the correct canonical transaction population.
+* Prevents duplicate ingestion.
+* Maintains exact spend reconciliation.
+* Stores the correct customer and assessment identifiers.
+
+For Borosil, use the existing canonical baseline as the reference:
+
+* ₹556.5346426 Cr.
+* 27,777 canonical transactions.
+* 8,976 material catalogue items.
+
+Verify the complete reconciliation against the actual source and database.
+
+Do not hard-code these values into application logic.
+
+PART 4 — MODULE 2 AUDIT
+
+Verify that all Module 2 results derive exclusively from the selected assessment's canonical Module 1 transactions.
+
+Check:
+
+* AI categorisation lineage.
+* UNSPSC mappings.
+* Spend-family calculations.
+* Vendor consolidation.
+* Volume consolidation.
+* Strategic sourcing opportunities.
+* Opportunity calculation logic.
+* Overlap deductions.
+* Source transaction references.
+
+Identify any hard-coded or stale sourcing opportunity values.
+
+Verify that rerunning Module 2 for one assessment does not overwrite another assessment's outputs.
+
+PART 5 — MODULE 3 AUDIT
+
+Verify that Module 3 consumes the correct assessment-specific material mappings and PCBI definitions.
+
+For Borosil:
+
+* Preserve A/B/C research classifications.
+* Classify materials without sufficient comparable market data in the current assessment period as NR — Not Currently Benchmarkable.
+* Operational benchmark coverage remains 0%.
+* Benchmark-derived opportunity remains unquantified.
+* No fabricated or interpolated observations.
+* No cross-customer benchmark mappings.
+* No unverified benchmark observations entering operational calculations.
+
+Do not initiate further market-data research.
+
+PART 6 — MODULE 4 READINESS AUDIT
+
+Do not activate Module 4 yet.
+
+Inspect its current architecture and determine:
+
+* Whether it consumes Module 2 outputs directly.
+* Whether it consumes approved Module 3 outputs safely.
+* Whether sourcing opportunities are uniquely identified.
+* Whether duplicate opportunities can be detected.
+* Whether overlap deductions are applied correctly.
+* Whether calculations are assessment-specific.
+* Whether estimated, approved, negotiated, implemented and realized savings are separate states.
+* Whether savings calculations can be reproduced from source records.
+* Whether report generation uses the same authoritative calculation outputs.
+
+Prepare an integration design showing exactly how Module 4 should consume Modules 2 and 3.
+
+PART 7 — API, FRONTEND AND CACHE AUDIT
+
+Trace the complete data flow across:
+
+* Backend routes.
+* Controllers.
+* Services.
+* Database queries.
+* API response structures.
+* Frontend state management.
+* Query caching.
+* Assessment selection.
+* Report generation.
+
+Identify:
+
+* Missing assessment filters.
+* Incorrect customer filters.
+* Stale cache risks.
+* Incorrect default selections.
+* API fallbacks to previous results.
+* Hard-coded demo values.
+* Unhandled null values.
+* Incorrect aggregation or double-counting.
+
+Verify that the selected customer and assessment context is preserved throughout the application.
+
+PART 8 — END-TO-END ISOLATION TESTS
+
+Create tests for:
+
+1. Customer A data cannot appear in Customer B.
+2. Assessment A data cannot appear in Assessment B.
+3. Module 2 uses only its own assessment's Module 1 data.
+4. Module 3 uses only its own assessment's material mappings.
+5. Module 4 can only consume its own assessment's approved outputs.
+6. Switching assessments refreshes every module.
+7. Cached responses cannot expose previous customer data.
+8. Rerunning one assessment does not modify another assessment.
+9. Duplicate ingestion is prevented.
+10. Orphaned records are detected.
+11. Report generation uses the correct customer and assessment.
+12. Illustrative simulator data cannot enter actual customer calculations.
+13. Missing benchmark observations cannot generate synthetic opportunities.
+14. All module outputs reconcile to their source data.
+
+Run relevant tests, typecheck and lint.
+
+PART 9 — FINAL AUDIT REPORT
+
+Provide:
+
+A. Database architecture and relationship diagram.
+
+B. Customer and assessment isolation findings.
+
+C. Table-wise record counts and ownership analysis.
+
+D. Module 1 → Module 2 → Module 3 data lineage.
+
+E. Module 4 readiness assessment.
+
+F. API and frontend isolation findings.
+
+G. Old, stale, demo and test data inventory.
+
+H. Data integrity issues classified as:
+
+* Critical.
+* High.
+* Medium.
+* Low.
+
+I. Required corrections with exact files, functions and database tables affected.
+
+J. Test results with actual pass/fail counts.
+
+K. Recommended remediation sequence.
+
+L. Final go/no-go recommendation for Module 4 activation.
+
+STRICT RESTRICTIONS:
+
+* READ-ONLY AUDIT FIRST.
+* Do not delete database records.
+* Do not truncate tables.
+* Do not reset the database.
+* Do not run destructive migrations.
+* Do not overwrite customer data.
+* Do not modify existing assessments.
+* Do not activate Module 4.
+* Do not modify Module 1, 2 or 3 during the initial audit.
+* Do not generate the final management report.
+* Do not hard-code customer or assessment-specific values.
+* Do not claim customer isolation based solely on passing unit tests.
+
+If a defect is identified, document it and propose the smallest safe correction. Wait for approval before making changes.
+
+FINAL OBJECTIVE:
+
+Establish that aiCEV is a reliable multi-customer, multi-assessment procurement analytics platform with complete data lineage, strict customer isolation and reproducible calculations before proceeding to Module 4.
+
+
+## Prompt 579
+
+PROJECT: aiCEV — Enterprise Procurement Intelligence Platform
+
+REFERENCE ASSESSMENT:
+Customer: Borosil Ltd
+Customer ID: CUST-2026-0002
+Assessment ID: AIC-2026-0002
+
+OBJECTIVE:
+
+Implement the critical and high-priority corrections identified in the forensic audit.
+
+The objective is to establish a reliable, assessment-specific data pipeline before activating Module 4.
+
+IMPORTANT: This is a controlled remediation exercise. Do not activate Module 4 yet.
+
+PHASE 1 — CUSTOMER AND ASSESSMENT ISOLATION
+
+1. Ensure every assessment-specific database operation requires a valid assessment ID.
+2. Resolve the assessment ID to its owning customer ID.
+3. Reject invalid, missing or mismatched assessment contexts.
+4. Remove silent fallbacks to AIC-2026-0001.
+5. Ensure no module can retrieve another assessment's transactions or results.
+6. Ensure customer and assessment context is preserved across backend services and API calls.
+7. Verify assessment ID uniqueness requirements for future shared production databases.
+
+PHASE 2 — CACHE ISOLATION
+
+Correct all global cache keys.
+
+Implement assessment-specific cache keys wherever the cached information depends on customer or assessment data.
+
+Examples:
+
+asmt:AIC-2026-0002:categories:summary
+asmt:AIC-2026-0002:savings:opportunities
+
+Ensure cache invalidation occurs when an assessment is reprocessed or its underlying data changes.
+
+Do not unnecessarily partition genuinely global reference data such as UNSPSC definitions.
+
+PHASE 3 — REMOVE HARDCODED SAVINGS VALUES
+
+Inspect backend/src/services/db.ts.
+
+Remove the hardcoded fallback values:
+
+₹613.8805 Cr total spend
+₹110.764 Cr gross opportunity
+₹25.123 Cr overlap deduction
+₹85.641 Cr net opportunity
+
+Replace them with dynamic calculations derived from the selected assessment's validated Module 2 outputs.
+
+Do not replace one set of hardcoded figures with another.
+
+Missing data must return an explicit unavailable state, not synthetic figures.
+
+PHASE 4 — MODULE 4 ENGINE PARAMETERIZATION
+
+Correct:
+
+backend/src/controllers/module4Canonical.controller.ts
+
+backend/src/services/module4SavingsForensicEngine.ts
+
+Require assessmentId in all assessment-specific Module 4 endpoints.
+
+Pass the validated assessmentId through every service and database call.
+
+Ensure Module 4 consumes only the selected assessment's Module 2 sourcing opportunities.
+
+Remove all singleton/default customer assumptions.
+
+Do not activate the user-facing Module 4 workflow yet.
+
+PHASE 5 — MODULE 3 HANDLING
+
+Remove the silent Varroc fallback in Module 3.
+
+For the Borosil assessment:
+
+* Classify materials without defensible benchmark data in the required timeframe as NR — Not Currently Benchmarkable.
+* Preserve the historical research register separately.
+* Do not continue market-data research.
+* Do not promote pending or unverified observations into operational calculations.
+* Maintain operational benchmark coverage at 0%.
+* Keep benchmark-derived opportunity unavailable.
+
+Module 3 must not manufacture estimated savings from unavailable market observations.
+
+PHASE 6 — REPORT GENERATION
+
+Correct:
+
+backend/src/controllers/report.controller.ts
+
+The management report must:
+
+1. Require the selected assessment ID.
+2. Resolve its customer identity.
+3. Retrieve the correct Module 1 baseline.
+4. Retrieve the correct Module 2 sourcing opportunity outputs.
+5. Retrieve approved Module 3 benchmark outputs, if any.
+6. Retrieve Module 4 calculations only for that assessment.
+7. Generate the report from these authoritative results.
+
+Remove dependencies on global mock tenant, category and opportunity data.
+
+Do not use illustrative simulator data in actual customer reports.
+
+PHASE 7 — LEGACY DATA CONTAINMENT
+
+Inspect:
+
+MODULE_1_CERTIFIED_HANDOFF.json
+backend/src/data/rawCustomerLedgerCache.json
+backend/src/data/mockData.ts
+Other legacy prototype and demo datasets.
+
+Do not delete these files or truncate database tables.
+
+Identify every live code path that can consume them.
+
+Ensure legacy and illustrative data cannot enter actual customer assessments or management reports.
+
+Keep shared reference data available where genuinely required.
+
+PHASE 8 — DATA RECONCILIATION
+
+Reconcile Borosil:
+
+Baseline spend: ₹556.5346426 Cr
+Canonical transactions: 27,777
+Material catalogue items: 8,976
+
+Investigate and explain the difference between the ₹133.0317 Cr and ₹144.8187 Cr Module 3 mapped-spend figures in the audit and dashboard.
+
+Produce a reconciled spend bridge.
+
+No hardcoding of these customer figures into application logic.
+
+PHASE 9 — AUTOMATED VALIDATION
+
+Create or update tests to establish:
+
+1. Borosil cannot retrieve Varroc transactions.
+2. Borosil cannot retrieve ABC Textile results.
+3. An assessment cannot retrieve another assessment's Module 2 opportunities.
+4. Module 3 cannot default to another assessment.
+5. Module 4 requires an assessment ID.
+6. Module 4 calculations use the selected assessment's Module 2 outputs.
+7. Hardcoded waterfall values are eliminated.
+8. Cache keys are assessment-specific.
+9. Report generation uses the selected customer's data.
+10. Legacy demo data cannot contaminate actual reports.
+11. Missing benchmark observations do not produce synthetic savings.
+12. Reprocessing one assessment cannot alter another assessment.
+
+Run all relevant backend and frontend tests, typecheck and lint.
+
+PHASE 10 — FINAL REMEDIATION REPORT
+
+Provide:
+
+A. Files modified.
+B. Exact defects corrected.
+C. Database and API changes.
+D. Customer isolation test results.
+E. Assessment isolation test results.
+F. Module 1 → Module 2 → Module 3 data lineage.
+G. Module 4 integration readiness.
+H. Report-generation validation.
+I. Remaining risks.
+J. Actual test counts and results.
+
+STRICT RESTRICTIONS:
+
+* Do not activate Module 4.
+* Do not execute Module 4 savings calculations for Borosil yet.
+* Do not modify the Module 1 canonical baseline.
+* Do not alter validated Module 2 source calculations without identifying the defect.
+* Do not initiate further PCBI market research.
+* Do not delete old data or reset the database.
+* Do not use mock or illustrative data in customer calculations.
+* Do not fabricate missing savings or benchmark observations.
+* Do not generate the final customer management report yet.
+
+FINAL ACCEPTANCE CONDITION:
+
+The application must demonstrate that a selected customer's assessment can flow through Modules 1, 2 and 3 without cross-customer contamination, and that Module 4 and report generation are correctly parameterized for that assessment.
+
+Stop after remediation and validation.
+
+Present the results for approval before Module 4 activation.
+
+
+## Prompt 580
+
+PROJECT: aiCEV — Borosil Ltd
+Customer ID: CUST-2026-0002
+Assessment ID: AIC-2026-0002
+
+OBJECTIVE:
+Complete the final financial validation and activate Module 4 for the Borosil assessment so that the final aiCEV management report can be generated.
+
+The previous remediation has addressed customer isolation, assessment scoping, cache partitioning, hardcoded waterfall values and report-generation isolation.
+
+Do not repeat or redesign those changes unnecessarily.
+
+PHASE 1 — CERTIFY MODULE 2 OPPORTUNITY FIGURES
+
+The latest remediation report states:
+
+* Addressable sourcing spend: ₹125.10 Cr.
+* Net sourcing opportunity: ₹92.07 Cr.
+
+Earlier Borosil work referenced approximately ₹53.44 Cr of modelled opportunity.
+
+Investigate this difference.
+
+Retrieve the authoritative Module 2 opportunity register and calculate:
+
+1. Total addressable sourcing spend.
+2. Gross opportunity by sourcing lever.
+3. Direct price harmonisation opportunity.
+4. Vendor consolidation opportunity.
+5. PO consolidation opportunity.
+6. E-auction opportunity.
+7. Volume consolidation opportunity.
+8. Other identified sourcing opportunities.
+9. Duplicate and overlapping opportunity deductions.
+10. Final net modelled sourcing opportunity.
+
+For every opportunity, preserve:
+
+* Unique opportunity ID.
+* Assessment ID.
+* Source transaction references.
+* Material/category.
+* Supplier or supplier group where available.
+* Eligible spend.
+* Calculation methodology.
+* Gross opportunity.
+* Overlap deduction.
+* Net opportunity.
+* Assumptions and validation status.
+
+Determine whether ₹53.44 Cr and ₹92.07 Cr represent different calculation layers, different versions, or an actual inconsistency.
+
+Do not hard-code either figure.
+
+Do not add opportunities that are already represented by another sourcing lever.
+
+Produce a reconciled Module 2 opportunity statement and use only that authoritative output downstream.
+
+PHASE 2 — FORMALLY CLOSE MODULE 3 RESEARCH
+
+For the current Borosil assessment, we are not proceeding with additional PCBI market-data research.
+
+Classify materials without sufficient comparable market observations during the assessment timeframe as:
+
+NR — Not Currently Benchmarkable (Data Unavailable for Assessment Period).
+
+Requirements:
+
+* Close the current assessment's PCBI research exercise.
+* Preserve the historical research register and evidence.
+* Do not delete benchmark definitions or historical observations.
+* Do not continue Soda Ash commercial verification for this assessment.
+* Do not treat pending commercial approval as an active workflow.
+* Keep operational benchmark coverage at 0%.
+* Keep benchmark-derived opportunity unquantified.
+* Exclude NR materials from benchmark-derived savings calculations.
+* Preserve A/B/C classifications as research-priority information only.
+* Clearly distinguish NR spend from the functional MRO category.
+
+The Module 3 final status should be:
+"Assessment Completed — Benchmark Data Unavailable for Assessment Period."
+
+PHASE 3 — FINAL MODULE 4 INPUT VALIDATION
+
+Before activation, verify that Module 4 receives only:
+
+A. Validated Module 1 baseline:
+
+* ₹556.5346426 Cr.
+* 27,777 canonical transactions.
+* 8,976 material catalogue items.
+
+B. Reconciled Module 2 sourcing opportunities:
+
+* Use the certified figures from Phase 1.
+* Include the underlying opportunity register.
+* Preserve all overlap deductions.
+
+C. Module 3:
+
+* Operational benchmark coverage: 0%.
+* Benchmark-derived opportunity: Not quantified.
+* NR materials excluded from benchmark calculations.
+
+Ensure that all three inputs belong to AIC-2026-0002 and CUST-2026-0002.
+
+Reject missing, stale or mismatched assessment context.
+
+PHASE 4 — ACTIVATE MODULE 4 FOR BOROSIL
+
+After Phases 1–3 pass their validation gates, remove the Borosil-specific STAGED_NOT_ACTIVATED guard.
+
+Activate Module 4 for AIC-2026-0002 only.
+
+Do not globally activate Module 4 for every assessment without separate validation.
+
+Ensure the activation does not affect Varroc, ABC Textile, PQR Cement or other customers.
+
+PHASE 5 — BUILD THE CONSOLIDATED SAVINGS WATERFALL
+
+Calculate dynamically:
+
+1. Evaluated baseline spend.
+2. Addressable sourcing spend.
+3. Gross Module 2 sourcing opportunity.
+4. Overlap deductions.
+5. Net modelled sourcing opportunity.
+6. Confidence-adjusted opportunity, only where explicitly supported.
+7. Opportunity approved for negotiation.
+8. Opportunity under negotiation.
+9. Implemented savings.
+10. Audited realized savings.
+
+Module 3 must contribute no benchmark-derived savings for this assessment.
+
+Do not equate estimated opportunity with realized savings.
+
+Do not assume negotiations, implementation or savings realization have occurred.
+
+PHASE 6 — FINAL aiCEV MANAGEMENT REPORT
+
+Generate the Borosil management report using the authoritative assessment-specific data.
+
+Include:
+
+1. Executive Summary.
+2. Customer and Assessment Overview.
+3. Baseline Spend Analysis.
+4. Spend Categorisation and UNSPSC Coverage.
+5. Module 2 Strategic Sourcing Findings.
+6. Module 3 Benchmark Assessment and NR Classification.
+7. Consolidated Savings Opportunity.
+8. Sourcing Lever-wise Opportunity Breakdown.
+9. Overlap Deductions and Savings Waterfall.
+10. Priority Procurement Action Plan.
+11. Implementation Roadmap.
+12. Risks, Assumptions and Dependencies.
+13. Savings Measurement and Realization Framework.
+14. Management Conclusion.
+
+Clearly distinguish modelled, provisional, negotiated, implemented and realized savings.
+
+PHASE 7 — FINAL VALIDATION
+
+Verify:
+
+* Borosil data only.
+* Correct assessment ID.
+* No Varroc or ABC Textile data.
+* No global mock data.
+* No hardcoded financial figures.
+* No duplicate savings opportunities.
+* Exact baseline reconciliation.
+* Module 3 remains at 0% operational benchmark coverage.
+* Module 4 calculations are reproducible.
+* Final report uses the same figures as the Module 4 dashboard and API.
+
+Run all relevant backend, frontend, Module 4 integration, assessment-isolation and report-generation tests.
+
+FINAL DELIVERABLES:
+
+1. Reconciled Module 2 opportunity report.
+2. Module 3 closure and NR classification report.
+3. Module 4 activation confirmation.
+4. Consolidated savings waterfall.
+5. Final aiCEV executive management report.
+6. PDF export, if supported.
+7. Actual test results and remaining limitations.
+
+Do not fabricate or overstate savings.
+
+If any financial reconciliation or data-integrity gate fails, stop activation and report the defect rather than generating a misleading final report.
+
+
+## Prompt 581
+
+The latest report claims that Borosil's Module 2, Module 3 and Module 4 are complete and that the executive report and PDF are ready.
+
+Before we accept this as the final client deliverable, conduct one final READ-ONLY forensic validation of assessment AIC-2026-0002.
+
+Do not modify business logic, calculation methodology, database records or existing outputs during this audit.
+
+Validate the following:
+
+1. Module 2:
+
+* Trace every one of the 106 opportunity packages to its underlying canonical transactions.
+* Verify the ₹123.244 Cr gross opportunity and ₹31.172 Cr overlap deductions.
+* Reconcile the ₹92.072 Cr net opportunity and ₹90.038 Cr proven commercial opportunity.
+* Investigate why L03 reports ₹1.185 Cr net opportunity but ₹1.224 Cr proven commercial opportunity.
+* Confirm that the ₹53.4474 Cr direct price variance is not counted again in the consolidated opportunity.
+* Verify that no sourcing lever is double-counted.
+
+2. Module 3:
+
+* Confirm research status CLOSED.
+* Confirm NR classification of ₹133.0317 Cr.
+* Confirm operational benchmark coverage and benchmark-derived savings are both zero.
+* Confirm no pending commercial workflow remains active.
+* Confirm that no historical or unverified benchmark observations enter Module 4.
+
+3. Module 4:
+
+* Call the actual assessment-specific APIs using AIC-2026-0002.
+* Verify all ten waterfall values against the underlying calculation records.
+* Verify that estimated, proven commercial, approved, negotiated, implemented and audited realized savings are separately represented.
+* Confirm that realized savings remain zero.
+* Verify customer and assessment isolation against Varroc, ABC Textile and PQR Cement.
+* Confirm that no hardcoded figures, fallback values, mock records or stale caches are used.
+
+4. Executive report:
+
+* Reconcile the category-wise spend figures against the authoritative Module 1 register.
+* Verify supplier count, plant count, transaction count and material catalogue count.
+* State the exact purchase-order baseline start and end dates.
+* Reconcile the ₹12.9 Cr combined sourcing-wave targets against the stated ₹15–22 Cr management conclusion.
+* Ensure the report does not describe modelled opportunity as realized savings.
+* Verify that the PDF and Excel workbook are actually generated and contain the same figures as the live APIs.
+
+5. Final evidence:
+
+* Produce a discrepancy register with severity, affected metric, evidence and recommended correction.
+* Provide actual API responses, database/query evidence and transaction-level reconciliation references.
+* Confirm that all five target test suites still pass.
+* Do not change any data or code during this audit.
+
+Final output must clearly state one of:
+A. READY FOR CLIENT DELIVERY
+B. READY AFTER SPECIFIC CORRECTIONS
+C. NOT READY FOR CLIENT DELIVERY
+
+Do not declare certification solely on the basis of passing automated tests.
+
+---
+
+## Prompt 582
+We have reviewed the Final Read-Only Forensic Validation Audit for Borosil Ltd, AIC-2026-0002.
+
+The audit verdict is B — READY AFTER SPECIFIC CORRECTIONS.
+
+Proceed with the following corrections only. Do not redesign any module, change the sourcing methodology, modify the frozen Module 1 baseline, or reopen PCBI research.
+
+1. MODULE 2 LEDGER TRACEABILITY
+
+* Correct the category-key mismatch in buildOpportunityLedger.
+* Ensure all 106 opportunity ledger records expose their correct sourceTransactionIds.
+* Verify every transaction ID against the canonical Module 1 transaction register.
+* Confirm category spend and opportunity values remain unchanged after this correction.
+* Retain the existing handoff package evidence arrays.
+
+2. MODULE 2 PRESENTATION CORRECTION
+
+* Correct L03 E-Auction figures in the written report:
+  Gross: ₹1.439 Cr.
+  Overlap deduction: ₹0.088 Cr.
+  Net: ₹1.351 Cr.
+  Proven: ₹1.224 Cr.
+* Confirm all lever-wise figures reconcile with the authoritative calculation engine.
+* Keep the ₹53.4474 Cr DPI analysis separate and non-additive.
+
+3. MODULE 3 ZERO-VALUE GOVERNANCE
+
+* Keep Borosil research status CLOSED.
+* Retain NR classification of ₹133.0317 Cr.
+* Keep benchmark coverage at 0%.
+* Keep benchmark-derived savings at ₹0.
+* Remove the hardcoded `const m3Gap = 0.0000` implementation.
+* Derive benchmark contribution dynamically from the assessment lifecycle status and approved benchmark observation records.
+* Do not introduce historical or unverified observations.
+* Do not reactivate any commercial approval workflow.
+
+4. MODULE 4 APPROVAL GOVERNANCE
+
+* Review `approvedOpportunityCr`.
+* Proven Commercial Opportunity of ₹90.038 Cr must not automatically become Client Approved Opportunity.
+* Unless a formal client approval record exists for AIC-2026-0002, keep:
+  Proven Commercial Opportunity: ₹90.038 Cr.
+  Client Approved Opportunity: ₹0.
+  Negotiated Opportunity: ₹0.
+  Implemented Savings: ₹0.
+  Audited Realized Savings: ₹0.
+* Client approval must be driven by an explicit, auditable approval record, not inferred from the existence of a modelled opportunity.
+* Preserve assessment-specific isolation.
+
+5. EXECUTIVE MANAGEMENT REPORT
+   Correct the report metadata:
+
+* Active normalized suppliers: 1,537.
+* Manufacturing plants: 3.
+* Baseline period: 1 April 2026 to 22 October 2026.
+* Describe the period as FY2026-27 YTD, covering 205 days.
+* Reconcile the ₹12.9 Cr sourcing-wave target against the ₹15–22 Cr management conclusion.
+* Do not invent an annualized or full-run-rate explanation without a supporting calculation.
+* If the difference cannot be substantiated, remove the unsupported ₹15–22 Cr claim and retain only the defensible sourcing-wave target and confidence-adjusted range.
+
+6. FINAL VALIDATION
+
+* Regenerate the Excel evidence workbook, executive report and PDF.
+* Confirm that all three contain identical financial figures.
+* Validate the live APIs for AIC-2026-0002.
+* Verify all 106 opportunity ledger records have transaction-level references.
+* Confirm Module 3 contributes zero savings.
+* Confirm client-approved, negotiated, implemented and realized values are independently governed.
+* Verify Varroc, ABC Textile and PQR Cement remain isolated.
+* Run all five existing test suites, typecheck and lint.
+
+Do not declare client readiness until every correction is verified.
+
+Final output must include:
+A. Corrected discrepancy register.
+B. Updated financial waterfall.
+C. Final executive report.
+D. Final Excel evidence workbook.
+E. Final PDF.
+F. Test results.
+
+Conclude with one of:
+READY FOR CLIENT DELIVERY
+or
+NOT READY FOR CLIENT DELIVERY.
+
+---
+
+## Prompt 583
+The final Borosil remediation report is positive, and we are not reopening any completed modules.
+
+Before we release the client deliverables, perform one final targeted verification covering only these three points:
+
+1. FINANCIAL WATERFALL RECONCILIATION
+
+* Reconcile the displayed lever-wise gross opportunity figures against the ₹123.244 Cr consolidated gross opportunity.
+* Reconcile the overlap deductions against ₹31.172 Cr.
+* Show full-precision figures before rounding.
+* Ensure that the displayed lever-wise figures mathematically reconcile with the consolidated net opportunity of ₹92.072 Cr.
+* Do not change calculation methodology or force figures to match through manual adjustments.
+
+2. SOURCING-WAVE TARGET GOVERNANCE
+
+* Replace the expression "committed Year 1 sourcing-wave realization target" with "proposed Year 1 sourcing-wave target".
+* Client approval, negotiation, implementation and audited realized savings must remain independently governed.
+* Keep all four values at zero unless supported by actual auditable records.
+* Ensure the same terminology appears in the executive report, Excel workbook and PDF.
+
+3. VARROC ASSESSMENT ISOLATION
+
+* Investigate the difference between the previously reported Varroc assessment spend of ₹842.110 Cr and the latest reported ₹4,073.831 Cr.
+* Identify the authoritative assessment baseline and explain the difference using actual assessment-specific transaction records.
+* Confirm that the Borosil report and calculations do not consume Varroc data.
+* Do not modify Varroc or Borosil data to force reconciliation.
+
+After these checks, regenerate the affected deliverables only if corrections are required.
+
+Return the exact reconciliation evidence and a final verdict.
+
+Do not introduce new features, redesign modules, reopen PCBI research or modify the frozen Borosil Module 1 baseline.
+
+
+---
+
+## Prompt 584
+Final Borosil assessment verification:
+
+The latest audit has resolved the financial reconciliation, sourcing-wave terminology and Varroc isolation issues.
+
+Do not modify any business logic or calculations.
+
+Please verify the final Excel evidence workbook for AIC-2026-0002:
+
+1. Confirm the workbook exists at its final output location.
+2. Confirm it was generated after the latest corrections.
+3. Confirm all 106 opportunity ledger records contain transaction references.
+4. Confirm the workbook reflects:
+
+   * Baseline: ₹556.535 Cr
+   * Gross opportunity: ₹123.244 Cr
+   * Overlap deductions: ₹31.172 Cr
+   * Net opportunity: ₹92.072 Cr
+   * Proven commercial opportunity: ₹90.038 Cr
+   * Client approved: ₹0
+   * Negotiated: ₹0
+   * Implemented: ₹0
+   * Realized: ₹0
+   * Module 3 benchmark contribution: ₹0
+5. Confirm the proposed ₹12.90 Cr Year 1 sourcing-wave target is described consistently.
+6. Provide the final workbook filename, exact path, file size and SHA-256 checksum.
+
+If all checks pass, confirm that the Excel workbook, executive JSON report and PDF are the final client versions.
+
+Do not regenerate or modify anything unless a discrepancy is found.
+
+---
+
+## Prompt 585
+Execute Module 4 for the following assessment:
+
+Customer: Borosil Ltd.
+Customer ID: CUST-2026-0002
+Assessment ID: AIC-2026-0002
+
+OBJECTIVE:
+Generate the final customer-facing aiCEV Management Report, ready for submission to Borosil.
+
+INSTRUCTIONS:
+
+1. Execute Module 4 using the existing, validated assessment data and current production report builders.
+
+2. Fetch all information using the exact customer ID and assessment ID. Do not use cached, mock, demo or other customer data.
+
+3. Generate the final management report covering:
+
+   * Executive summary
+   * Customer spend baseline
+   * Spend and category analysis
+   * Strategic sourcing opportunities
+   * Vendor consolidation opportunities
+   * E-auction opportunities
+   * Gross opportunity and overlap deductions
+   * Net modelled opportunity
+   * Proven commercial opportunity
+   * Proposed Year 1 sourcing-wave target
+   * Implementation roadmap and recommendations
+   * Management conclusions
+
+4. Preserve the approved financial figures:
+
+   * Baseline: ₹556.535 Cr
+   * Gross opportunity: ₹123.244 Cr
+   * Overlap deductions: ₹31.172 Cr
+   * Net opportunity: ₹92.072 Cr
+   * Proven commercial opportunity: ₹90.038 Cr
+   * Proposed Year 1 sourcing-wave target: ₹12.90 Cr
+   * Client approved, negotiated, implemented and realized savings: ₹0
+   * Module 3 benchmark contribution: ₹0
+
+5. Clearly distinguish modelled opportunities from proven commercial opportunities and actual realized savings.
+
+6. Module 3 is closed for this assessment. Do not introduce benchmark estimates or unsupported savings.
+
+7. Generate:
+   A. Final executive management report in PDF.
+   B. Supporting Excel evidence workbook.
+   C. Executive JSON report.
+
+8. Verify that all three outputs relate exclusively to AIC-2026-0002 and reconcile with the approved financial figures.
+
+9. Provide the exact output paths, file sizes and generation timestamps.
+
+IMPORTANT:
+Do not change business logic, calculations, existing validated data or the report architecture. Do not modify the assessment baseline. This is a report execution and export task only.
+
+Final status should be reported as either SUCCESSFULLY GENERATED or BLOCKED, with the reason.
+
+---
+
+## Prompt 586
+Perform a final read-only reconciliation of the Borosil Module 4 customer report.
+
+Assessment ID: AIC-2026-0002.
+
+The report shows:
+
+* Lever 1 proven opportunity: ₹77.004 Cr
+* Lever 2 proven opportunity: ₹11.714 Cr
+* Lever 3 proven opportunity: ₹1.224 Cr
+* Consolidated proven commercial opportunity: ₹90.038 Cr
+
+The three displayed lever values total ₹89.942 Cr, leaving a difference of ₹0.096 Cr.
+
+Please:
+
+1. Retrieve the full-precision proven opportunity values directly from the authoritative opportunity ledger.
+2. Identify the source of the ₹0.096 Cr difference.
+3. Verify whether any proven opportunity is excluded from the lever-wise presentation or counted separately.
+4. Confirm that the consolidated figure and lever-wise figures reconcile at full precision.
+5. If there is a reporting-only omission, correct the report presentation without changing business logic or financial calculations.
+6. Regenerate the PDF only if a correction is necessary.
+
+Do not modify the baseline, opportunity calculations, or approved figures without identifying and explaining the underlying issue.
+
+Return the reconciliation evidence and final PDF status.
+
+## Prompt 587
+
+CRITICAL TASK: FIX EXECUTIVE BRIEF GENERATION FOR BOROSIL
+DO NOT MODIFY SAVINGS CALCULATION LOGIC.
+
+Customer: Borosil Ltd
+Customer ID: CUST-2026-0002
+Assessment ID: AIC-2026-0002
+
+The current Generate Executive Brief workflow is producing an
+UltraTech Cement report with unrelated demonstration data.
+
+This is a critical customer-data and report-integrity defect.
+
+PHASE 1 — TRACE THE REPORT GENERATION FLOW
+
+Trace the complete workflow from:
+1. Executive Brief UI button.
+2. Frontend report-generation handler.
+3. API/controller.
+4. Assessment/customer context resolution.
+5. Executive report builder.
+6. PDF generation.
+7. Editable PPTX generation.
+
+Identify exactly where the UltraTech demonstration data,
+static fixtures, stale report objects or default assessment
+references are entering the report.
+
+Do not assume the report builder is the only source of the issue.
+
+PHASE 2 — ENFORCE ASSESSMENT IDENTITY
+
+The report must use the currently selected customerId and
+assessmentId throughout the entire generation workflow.
+
+For this generation:
+customerId = CUST-2026-0002
+assessmentId = AIC-2026-0002
+
+Retrieve all report metrics from the authoritative Borosil
+assessment data and existing certified Module 1, 2, 3 and 4
+services.
+
+Do not use:
+- UltraTech demonstration data.
+- Hardcoded sample metrics.
+- Static executive report JSON.
+- Default assessment IDs.
+- Cached report objects from another customer.
+- Fallback customer data.
+- Synthetic opportunities or savings.
+
+If the selected assessment cannot be resolved, STOP generation
+and display a clear error. Never generate a report using another
+customer's data.
+
+PHASE 3 — PRESERVE AUTHORITATIVE BOROSIL FIGURES
+
+Use these figures as reconciliation checks, not as hardcoded
+report values:
+
+Evaluated Baseline: ₹556.535 Cr
+Canonical Transactions: 27,777
+Active Suppliers: 1,537
+Manufacturing Plants: 3
+
+Gross Sourcing Opportunity: ₹123.244 Cr
+Overlap Deductions: ₹31.172 Cr
+Net Modelled Opportunity: ₹92.072 Cr
+Proven Commercial Opportunity: ₹90.038 Cr
+
+Module 3 Benchmark Contribution: ₹0.00 Cr
+Module 3 Operational Coverage: 0%
+
+Client Approved Opportunity: ₹0.00 Cr
+Under Negotiation: ₹0.00 Cr
+Implemented Savings: ₹0.00 Cr
+Audited Realized Savings: ₹0.00 Cr
+
+Proposed Year 1 Sourcing-Wave Target: ₹12.90 Cr.
+Clearly label this as a proposed target, not approved or
+realized savings.
+
+Use the existing authoritative assessment services to
+populate the report. Do not hardcode these figures into
+the report-generation implementation.
+
+PHASE 4 — REPORT CONTENT AND PRESENTATION
+
+Generate a professional customer-specific executive
+procurement presentation for Borosil.
+
+The report must contain:
+1. Procucev introduction and methodology.
+2. Borosil company and procurement context based only on
+   verified assessment information.
+3. Executive summary.
+4. Customer spend baseline.
+5. Spend and category analysis.
+6. Strategic sourcing opportunity analysis.
+7. Vendor consolidation opportunity.
+8. E-auction opportunity.
+9. Other sourcing levers.
+10. PCBI benchmark status and data limitations.
+11. Consolidated opportunity and overlap reconciliation.
+12. Module 4 savings realization governance.
+13. Proposed sourcing roadmap.
+14. Recommendations and next steps.
+15. Audit methodology and data provenance.
+
+Do not invent Borosil operating statistics, plant counts,
+market shares, commodity benchmarks, supplier facts or
+sourcing achievements.
+
+Clearly distinguish:
+- Modelled opportunity.
+- Proven commercial opportunity.
+- Proposed execution target.
+- Client-approved opportunity.
+- Implemented savings.
+- Audited realized savings.
+
+Do not describe proposed opportunities as validated,
+approved, contracted or realized.
+
+Module 3 must clearly show that benchmark contribution
+is currently zero and benchmark research is closed for
+this assessment.
+
+PHASE 5 — OUTPUTS
+
+Regenerate:
+1. Executive PDF.
+2. Editable PowerPoint PPTX.
+3. Executive JSON report.
+
+All three must use the same assessment context and
+authoritative report data.
+
+Use a professional 16:9 executive presentation format.
+Remove all UltraTech names, statistics, logos, examples,
+demonstration labels and unrelated content.
+
+PHASE 6 — QUALITY GATES
+
+Before declaring completion, independently verify:
+
+- Customer name and ID.
+- Assessment ID.
+- Baseline spend.
+- Transaction count.
+- Supplier count.
+- All consolidated opportunity figures.
+- All three sourcing lever figures.
+- Module 3 benchmark contribution.
+- Approved, negotiated, implemented and realized values.
+- Consistency across PDF, PPTX and JSON.
+
+Add a report-generation test that deliberately selects
+a different assessment and verifies that no customer
+data can leak into the Borosil report.
+
+Search the generated PDF and PPTX content for:
+"UltraTech", "5,920.35", "31,671", "974 Suppliers",
+"₹68.00 Cr" and other demonstration-specific figures.
+
+Any unrelated customer reference or unexplained
+financial figure must fail the report-generation gate.
+
+Provide:
+- Root cause.
+- Files changed.
+- Tests executed and results.
+- Final PDF path.
+- Final PPTX path.
+- Final JSON path.
+- SHA-256 hashes of all three files.
+
+IMPORTANT:
+Do not modify Module 1 baseline.
+Do not modify Module 2 savings calculations.
+Do not modify the opportunity ledger.
+Do not change vendor consolidation assumptions.
+Do not modify Module 3 or Module 4 business logic.
+
+This task is strictly to correct report context,
+report content and report generation.
+
+
+---
+
+## Prompt 588
+The Executive Brief customer-context correction is complete.
+
+Now apply a reporting-only safeguard to Borosil assessment AIC-2026-0002.
+
+IMPORTANT: Do not change Module 2 calculations or the opportunity ledger in this task.
+
+The Vendor Consolidation opportunity of ₹11.714 Cr is not yet independently validated by us.
+
+For the customer-facing Executive Brief:
+
+1. Do not present ₹11.714 Cr as proven or established savings.
+2. Do not show the previous 30% saving assumption or any savings derived from it.
+3. Show the relevant addressable spend separately from savings.
+4. Label the opportunity:
+   "Under Commercial Validation — Savings Not Yet Established."
+5. Exclude this amount from customer-facing proven savings totals until independently validated.
+6. Clearly disclose that the consolidated opportunity figures are subject to the pending vendor consolidation validation.
+7. Do not silently alter the authoritative internal ledger or Module 2 calculations.
+
+Regenerate the PDF and editable PPTX.
+
+Verify that the customer name is Borosil Ltd and that no UltraTech/demo data appears.
+
+Return the final report and reconciliation showing which figures are internal analytical values and which are approved for customer presentation.
+
+---
+
+## Prompt 589
+resolve this issue
+
+---
+
+## Prompt 590
+## OBJECTIVE
+
+Complete the final customer-facing Executive Brief for Borosil Ltd.
+
+Assessment ID: AIC-2026-0002
+Customer ID: CUST-2026-0002
+
+The latest screenshots show that the top-level dashboard is correctly resolving Borosil, but several lower report sections still contain inconsistent or unrelated opportunity data.
+
+This is a critical customer-delivery issue.
+
+### 1. FREEZE AUTHORITATIVE BOROSIL FIGURES
+
+Use the following figures as the authoritative Borosil assessment values:
+
+Evaluated Baseline: ₹556.535 Cr
+Addressable Sourcing Spend: ₹168.658 Cr
+Gross Sourcing Opportunity: ₹123.244 Cr
+Overlap Deductions: ₹31.172 Cr
+Net Modelled Opportunity: ₹92.072 Cr
+Lever 1 Proven Commercial Opportunity: ₹77.004 Cr
+Lever 2 Vendor Consolidation: ₹0 customer-facing savings pending validation
+Lever 2 Relevant Addressable Spend: ₹12.081 Cr
+Lever 3 Proven Commercial Opportunity: ₹1.320 Cr
+Validated Commercial Opportunity Presented for Client Review: ₹78.324 Cr
+Proposed Year 1 Sourcing Target: ₹12.90 Cr
+Client-Approved Savings: ₹0
+Realized Savings: ₹0
+Module 3 Benchmark Coverage: 0%
+Module 3 Benchmark-Derived Savings: ₹0
+
+Do not change the authoritative Module 1 baseline or Module 2 opportunity ledger.
+
+### 2. REMOVE ALL INCONSISTENT OR FOREIGN OPPORTUNITY DATA
+
+The current Executive Brief contains the following suspicious values:
+
+* OPP-001: ₹154.20 Cr vendor consolidation spend and ₹4.63–7.71 Cr savings.
+* OPP-003: ₹1,284.50 Cr benchmark spend and ₹169.38 Cr opportunity.
+* OPP-007: ₹68 Cr realized savings.
+* Generic gross opportunity ₹173.12 Cr.
+* Generic overlap deduction ₹62.80 Cr.
+* Generic net opportunity ₹93.60 Cr.
+* Generic addressable spend ₹4,931 Cr.
+* Generic process productivity, supplier risk and logistics opportunity records that do not reconcile to the Borosil assessment.
+
+Trace the source of each record.
+
+Do not merely hide these values in one component. Fix the report data binding and ensure every report section receives the correct customerId and assessmentId.
+
+If a record cannot be verified against the Borosil opportunity ledger, exclude it from the Borosil customer-facing report.
+
+Do not substitute another demo record.
+
+### 3. VENDOR CONSOLIDATION PRESENTATION
+
+Show:
+
+Addressable spend: ₹12.081 Cr.
+
+Status:
+"Under Commercial Validation — Savings Not Yet Established."
+
+Savings contribution to customer-facing validated opportunity: ₹0.
+
+Remove all 30%, 5%, ₹154.20 Cr and ₹7.71 Cr assumptions from the Borosil presentation unless they are independently verified against the Borosil ledger.
+
+Do not change the internal analytical ledger.
+
+### 4. MODULE 3 BENCHMARK DISCLOSURE
+
+Module 3 research is formally closed for this assessment.
+
+Show:
+
+* Benchmark coverage: 0%.
+* Benchmark-derived savings: ₹0.
+* Status: Research Closed — No Operational Benchmark Data Available.
+
+Remove benchmark opportunity records and market-price comparisons that are not supported by approved Borosil benchmark observations.
+
+### 5. SAVINGS TERMINOLOGY
+
+Replace "Customer Proven Savings", "Approved Proven Savings" and "Customer Approved Savings" wherever they incorrectly refer to ₹78.324 Cr.
+
+Use:
+
+"Validated Commercial Opportunity Presented for Client Review: ₹78.324 Cr."
+
+Client-approved savings must remain ₹0.
+
+Realized savings must remain ₹0.
+
+The ₹12.90 Cr Year 1 figure must remain a proposed sourcing target, not a commitment or realized saving.
+
+### 6. RECONCILE EVERY REPORT SECTION
+
+Verify all of the following:
+
+* Executive summary.
+* All financial KPI cards.
+* Every opportunity register record.
+* Analysis-wise value creation summary.
+* Gross-to-net waterfall.
+* Savings assumptions and methodology.
+* Lever-wise analysis.
+* Module 3 benchmark section.
+* Module 4 governance section.
+* Execution roadmap.
+* Management recommendations.
+* PDF output.
+* Editable PPTX output.
+* JSON report.
+
+All financial totals must reconcile to the authoritative Borosil figures.
+
+### 7. REPORT STRUCTURE AND ARTIFACT CONSISTENCY
+
+Resolve the discrepancy between:
+
+* 30 pages/slides advertised in the UI.
+* 15-section audit artifacts.
+* 24 preview highlights.
+
+Report the actual number of PDF pages and PPTX slides.
+
+Ensure PDF, PPTX and JSON are generated from the same assessment-specific report payload and have identical financial figures.
+
+### 8. TESTING REQUIREMENTS
+
+Add regression tests that explicitly assert:
+
+* Borosil assessment ID is preserved end-to-end.
+* No UltraTech or other customer demo data appears.
+* No ₹4,931 Cr addressable spend appears.
+* No ₹68 Cr realized savings appears.
+* No ₹169.38 Cr benchmark opportunity appears.
+* No ₹173.12 Cr gross opportunity appears.
+* Vendor consolidation savings are excluded from customer-facing validated opportunity.
+* Module 3 contribution remains zero.
+* Client-approved savings remain zero.
+* Realized savings remain zero.
+* All report totals reconcile.
+
+Run frontend/backend typecheck, lint, report-generation tests and customer-isolation tests.
+
+### 9. FINAL DELIVERY GATE
+
+Regenerate the PDF, editable PPTX and JSON only after all checks pass.
+
+Provide:
+
+1. Exact filenames and paths.
+2. Actual PDF page count.
+3. Actual PPTX slide count.
+4. Financial reconciliation.
+5. Test results.
+6. SHA-256 checksums.
+7. A list of all excluded or quarantined records.
+
+Do not declare the report certified or ready for customer submission until the complete report passes these checks.
+
+IMPORTANT:
+This is a report integrity correction. Do not redesign the application, change Module 1, change the Module 2 authoritative ledger, reopen PCBI research or introduce new savings assumptions.
+
+
+---
+
+## Prompt 591
+The latest certification report still contains a financial reconciliation error.
+
+The three lever-wise addressable spends are:
+
+Lever 1: ₹129.223 Cr
+Lever 2: ₹12.081 Cr
+Lever 3: ₹21.817 Cr
+
+Their sum is ₹163.121 Cr, not ₹168.658 Cr.
+
+The difference is ₹5.537 Cr.
+
+Do not force the figures to match by changing a total or inserting an adjustment.
+
+Perform a forensic reconciliation of all 106 qualified opportunity packages against the authoritative Module 2 opportunity ledger.
+
+1. Identify the exact source of the ₹5.537 Cr difference.
+2. Determine whether any packages are omitted, duplicated, excluded or incorrectly allocated.
+3. Verify whether ₹168.658 Cr represents a different definition of addressable sourcing spend.
+4. If the definitions differ, disclose the distinction explicitly.
+5. Reconcile the 90 Lever 1, 4 Lever 2 and 12 Lever 3 packages.
+6. Confirm that the gross opportunity, overlap deductions and net opportunity remain mathematically consistent.
+7. Reconcile the supplier count of 1,489 versus the earlier reported 1,537.
+8. Do not modify the Module 1 baseline or authoritative Module 2 ledger without identifying the source of the discrepancy.
+
+Return the transaction/package-level reconciliation, not just a statement that the figures match.
+
+Do not regenerate the PDF or PPTX until this reconciliation is complete.
+
+---
+
+## Prompt 592
+The forensic explanation for the ₹5.537 Cr difference is accepted in principle.
+
+Adopt the following reporting definitions:
+
+1. Evaluated Diagnostic Addressable Spend: ₹168.658 Cr across 133 evaluated categories.
+2. Qualified Commercial Execution Addressable Spend: ₹163.121 Cr across 106 qualified packages.
+3. Unquantified Diagnostic Addressable Spend: ₹5.537 Cr across 27 non-quantifiable categories.
+4. Canonical Active Suppliers: 1,537.
+5. Raw ERP Vendor Strings: 1,561.
+6. Suppliers in Qualified Opportunity Categories: 1,232.
+
+However, do not regenerate the customer-facing exports yet.
+
+Resolve these remaining issues:
+
+A. FINANCIAL RECONCILIATION
+
+The reported lever-wise gross values total ₹123.236 Cr, while consolidated gross is ₹123.244 Cr.
+
+Lever-wise overlap deductions total ₹31.167 Cr, while consolidated overlap is ₹31.172 Cr.
+
+Lever-wise net values total ₹92.072 Cr.
+
+Retrieve the exact integer-INR values from the authoritative Module 2 opportunity ledger. Reconcile gross, overlap and net at:
+
+* Individual package level
+* Lever level
+* Consolidated level
+
+Do not adjust or force any values. Identify the exact source of every difference.
+
+B. ADDRESSABLE SPEND
+
+Reconcile the different displayed values for Lever 1 (₹129.221 Cr versus ₹129.223 Cr) and Lever 3 (₹21.818 Cr versus ₹21.817 Cr).
+
+Use exact integer INR totals and apply rounding only at the final display layer.
+
+C. PACKAGE-LEVEL AUDIT EVIDENCE
+
+Produce the complete 106-package reconciliation register containing:
+
+* Opportunity ID
+* Category ID and category name
+* Sourcing lever
+* Eligible spend in INR
+* Gross opportunity in INR
+* Overlap deduction in INR
+* Net opportunity in INR
+* Customer-facing opportunity in INR
+* Source transaction count
+* Source transaction references
+* Qualification status
+
+Confirm no omissions, duplicate packages or duplicate transaction allocation across levers.
+
+D. SUPPLIER COUNT
+
+Confirm the 1,537 count directly against the canonical Module 1 supplier register. Document the normalization and deduplication methodology. Do not assume that trimming and lowercasing names alone proves unique legal entities.
+
+E. GOVERNANCE
+
+Preserve:
+
+* Lever 2 customer-facing opportunity at ₹0 pending commercial validation.
+* Client-approved savings at ₹0.
+* Audited realized savings at ₹0.
+* Module 3 benchmark contribution at ₹0.
+* Proposed Year 1 sourcing target at ₹12.90 Cr, clearly identified as a proposal, not approved or realized savings.
+
+Do not modify the frozen Module 1 baseline or authoritative Module 2 ledger.
+
+Return the exact reconciliation and validation evidence. Do not regenerate PDF, PPTX or JSON until all checks pass.
+
+---
+
+## Prompt 593
+Continue the Borosil AIC-2026-0002 forensic reconciliation. Do not modify the frozen Module 1 baseline or authoritative Module 2 opportunity ledger. Do not regenerate customer-facing deliverables until all checks below pass.
+
+### 1. Resolve the customer-facing opportunity discrepancy
+
+The current report contains two conflicting totals:
+
+A. Integer-INR lever table:
+
+* Lever 1: ₹78.7412308 Cr
+* Lever 2: ₹0
+* Lever 3: ₹1.3519875 Cr
+* Total: ₹80.0932183 Cr
+
+B. Commercial governance disclosure:
+
+* Lever 1: ₹77.004 Cr
+* Lever 2: ₹0
+* Lever 3: ₹1.320 Cr
+* Total: ₹78.324 Cr
+
+Trace the difference to the underlying 106-package ledger and supporting evidence.
+
+For every package, establish:
+
+* Exact modelled net opportunity in INR.
+* Exact customer-facing opportunity in INR.
+* Whether it is eligible for customer-facing commercial validation.
+* Any exclusion, reduction or adjustment.
+* Evidence supporting the adjustment.
+* Approval/validation status.
+
+Produce an exact integer-INR reconciliation showing how the customer-facing total is derived.
+
+Do not assume ₹78.324 Cr is correct merely because it appears in the governance note. Do not assume ₹80.093 Cr is customer-facing merely because it appears in the ledger table.
+
+If ₹78.324 Cr cannot be supported by package-level evidence, flag the figure as unreconciled and retain the deliverable hold.
+
+### 2. Surface the complete 106-package register
+
+Export the complete 106-package reconciliation register into an accessible project output, not only an Antigravity scratch directory.
+
+Include:
+
+* Opportunity ID
+* Category ID and category name
+* Sourcing lever
+* Eligible spend (INR)
+* Gross opportunity (INR)
+* Overlap deduction (INR)
+* Net opportunity (INR)
+* Customer-facing opportunity (INR)
+* Source transaction count
+* Source transaction IDs
+* Commercial validation status
+* Exclusion/adjustment reason, where applicable
+
+Verify:
+
+* 106 unique opportunity IDs.
+* 106 distinct category keys, if that remains the intended design.
+* No duplicated transaction allocation across packages or levers.
+* Package sums reconcile exactly to the authoritative Module 2 ledger.
+
+### 3. Supplier terminology
+
+Retain the count of 1,537 only as "Active SAP Supplier Accounts" unless legal-entity-level deduplication is independently evidenced.
+
+Keep the reconciliation:
+1,561 raw ERP supplier accounts less 24 excluded accounts = 1,537 active SAP supplier accounts.
+
+Do not claim 1,537 unique legal entities without evidence.
+
+### 4. Preserve established governance
+
+* Module 1 baseline: ₹556.535 Cr; 27,777 canonical transactions.
+* Evaluated diagnostic addressable spend: ₹168.658 Cr across 133 categories.
+* Qualified commercial execution addressable spend: ₹163.121 Cr across 106 packages.
+* Unquantified diagnostic addressable spend: ₹5.537 Cr across 27 categories.
+* Module 3 benchmark contribution: ₹0.
+* Lever 2 customer-facing opportunity: ₹0 pending commercial validation.
+* Client-approved savings: ₹0.
+* Audited realized savings: ₹0.
+* Proposed Year 1 sourcing target: ₹12.90 Cr, clearly labelled as an indicative proposal only.
+
+Do not introduce generic savings assumptions, demo records, unsupported opportunity figures or manual overrides.
+
+### 5. Final gate
+
+Run exact integer-INR reconciliation, package-level integrity checks, assessment-isolation tests, typecheck and lint.
+
+Return a concise audit report with:
+
+* The resolved customer-facing opportunity total and its exact calculation, or an explicit unresolved status.
+* Full 106-package register location.
+* Supplier count terminology.
+* Test results.
+* Confirmation that Module 1 and Module 2 authoritative data remain unchanged.
+
+Keep PDF, PPTX and JSON generation on HOLD until all financial and package-level checks pass.
+
+---
+
+## Prompt 594
+Proceed with the Borosil AIC-2026-0002 Executive Brief using the bottom-up integer-INR reconciliation.
+
+Do not use the historical ₹78.324 Cr governance disclosure. The forensic audit confirms that it was generated through a top-down macro scaling haircut without package-level evidence.
+
+Adopt the following classifications:
+
+1. Net Modelled Sourcing Opportunity: ₹92.072 Cr.
+2. Lever 1 Modelled Opportunity: ₹78.741 Cr.
+3. Lever 2 Modelled Opportunity: ₹11.978 Cr — held in governance reserve, excluded from customer-facing actionable opportunity pending commercial validation.
+4. Lever 3 Modelled Opportunity: ₹1.352 Cr.
+5. Modelled Opportunity Excluding Lever 2: ₹80.093 Cr.
+6. Client-Approved Savings: ₹0.
+7. Audited Realized Savings: ₹0.
+8. Module 3 Benchmark Contribution: ₹0.
+9. Proposed Year 1 Sourcing Target: ₹12.90 Cr — indicative consulting proposal only.
+
+IMPORTANT TERMINOLOGY:
+
+The ₹80.093 Cr must be called "Modelled Opportunity Excluding Lever 2" or "Opportunity Identified for Commercial Validation."
+
+Do not call it:
+
+* Proven Savings
+* Validated Commercial Savings
+* Approved Savings
+* Realized Savings
+
+Preserve the distinction between modelled opportunity and actual commercial realization.
+
+### Executive Brief presentation
+
+Show the following waterfall:
+
+* Evaluated Baseline: ₹556.535 Cr.
+* Evaluated Diagnostic Addressable Spend: ₹168.658 Cr.
+* Qualified Commercial Execution Addressable Spend: ₹163.121 Cr.
+* Gross Opportunity: ₹123.244 Cr.
+* Overlap Deductions: ₹31.172 Cr.
+* Net Modelled Opportunity: ₹92.072 Cr.
+* Modelled Opportunity Excluding Lever 2: ₹80.093 Cr.
+* Client-Approved Savings: ₹0.
+* Audited Realized Savings: ₹0.
+
+Clearly explain that ₹5.537 Cr of diagnostic addressable spend belongs to 27 non-quantifiable categories and is excluded from qualified execution packages.
+
+Retain 1,537 Active SAP Supplier Accounts as the supplier terminology.
+
+Do not modify the frozen Module 1 baseline or authoritative Module 2 ledger.
+
+### Before releasing deliverables
+
+1. Update all UI screens, PDF, PPTX and JSON consistently.
+2. Remove every occurrence of ₹78.324 Cr and the unsupported historical macro scaling haircut.
+3. Ensure no generic demo data or unsupported savings assumptions remain.
+4. Verify exact integer-INR reconciliation.
+5. Run backend/frontend typecheck, lint, assessment-isolation tests and report/export tests.
+6. Confirm that the browser Executive Brief and all generated files show identical figures.
+
+Only regenerate and release the final customer deliverables after these checks pass.
+
+---
+
+## Prompt 595
+The Prompt 594 reporting changes are directionally accepted. However, the latest report contains changes in exact INR figures compared with the previous forensic reconciliation.
+
+Do not modify the Module 1 baseline, Module 2 ledger, or generated deliverables until this investigation is complete.
+
+Investigate the following differences:
+
+Previous versus latest exact figures:
+
+1. Module 1 baseline:
+   Previous: 5,565,346,426.19 INR
+   Latest: 5,565,345,984.77 INR
+
+2. Evaluated diagnostic addressable spend:
+   Previous: 1,686,578,923 INR
+   Latest: 1,686,583,439 INR
+
+3. Qualified execution addressable spend:
+   Previous: 1,631,205,398 INR
+   Latest: 1,631,211,818 INR
+
+4. Gross opportunity:
+   Previous: 1,232,438,118 INR
+   Latest: 1,232,440,303 INR
+
+5. Overlap deductions:
+   Previous: 311,722,540 INR
+   Latest: 311,724,725 INR
+
+6. Net modelled opportunity:
+   Previous and latest: 920,715,578 INR
+
+For each difference:
+
+* Identify the exact source file, database record, calculation and code path.
+* Establish whether the previous or latest figure is authoritative.
+* Explain why the net opportunity remains unchanged despite changes in gross and overlap.
+* Confirm whether any transactions, categories or package records were added, removed, filtered or recalculated.
+* Verify the SHA-256 of the original uploaded PO file.
+* Confirm the Module 1 canonical transaction count remains 27,777.
+* Confirm the Module 2 register remains 106 packages.
+* Confirm that no manual overrides or rounding adjustments were introduced.
+
+Produce a reconciliation table showing previous value, latest value, exact variance, root cause, and authoritative value.
+
+IMPORTANT:
+Do not update any baseline or ledger figures merely to make the report reconcile.
+Do not regenerate the PDF, PPTX or JSON.
+Do not declare the report final until the source-of-truth discrepancies are explained and independently reconciled.
+
+Retain the approved classifications:
+
+* ₹92.072 Cr Net Modelled Sourcing Opportunity.
+* ₹80.093 Cr Modelled Opportunity Excluding Lever 2, subject to final source verification.
+* ₹11.978 Cr Lever 2 Governance Reserve.
+* ₹0 Client-Approved Savings.
+* ₹0 Audited Realized Savings.
+* ₹0 Module 3 Benchmark Contribution.
+* ₹12.90 Cr Indicative Year 1 Sourcing Proposal.
+
+---
+
+## Prompt 596
+Execute the final enhancement of the Borosil Ltd Executive Opportunity Brief (AIC-2026-0002).
+
+The objective is to transform the current presentation into a comprehensive, commercially actionable procurement strategy presentation for Borosil management.
+
+The presentation must explain:
+
+1. What procurement opportunities have been identified.
+2. How Procucev calculates opportunities against each sourcing lever.
+3. Two practical commercial scenarios for each lever.
+4. Alternative suppliers and sourcing options.
+5. Additional procurement transformation levers.
+6. How Procucev proposes to execute and realize the opportunities.
+7. What decisions and support are required from Borosil management.
+
+This is a presentation and supporting scenario-model enhancement. Do not change the frozen Module 1 baseline or Module 2 authoritative opportunity ledger.
+
+# PART 1 — PRESERVE AUTHORITATIVE FINANCIAL FIGURES
+
+Use the following exact authoritative figures:
+
+| Metric                                    |      Amount |
+| ----------------------------------------- | ----------: |
+| Evaluated baseline spend                  | ₹556.535 Cr |
+| Canonical transactions                    |      27,777 |
+| Evaluated diagnostic addressable spend    | ₹168.658 Cr |
+| Evaluated diagnostic categories           |         133 |
+| Qualified commercial execution spend      | ₹163.121 Cr |
+| Qualified opportunity packages            |         106 |
+| Unquantified diagnostic addressable spend |   ₹5.537 Cr |
+| Gross modelled opportunity                | ₹123.244 Cr |
+| Overlap deductions                        |  ₹31.172 Cr |
+| Net modelled sourcing opportunity         |  ₹92.072 Cr |
+| Lever 1 net opportunity                   |  ₹78.741 Cr |
+| Lever 2 net opportunity                   |  ₹11.978 Cr |
+| Lever 3 net opportunity                   |   ₹1.352 Cr |
+| Modelled opportunity excluding Lever 2    |  ₹80.093 Cr |
+| Client-approved savings                   |          ₹0 |
+| Audited realized savings                  |          ₹0 |
+| Module 3 benchmark contribution           |          ₹0 |
+| Proposed Year 1 sourcing target           |   ₹12.90 Cr |
+
+Terminology:
+
+* ₹92.072 Cr: Net Modelled Sourcing Opportunity.
+* ₹80.093 Cr: Modelled Opportunity Excluding Lever 2 / Opportunity Identified for Commercial Validation.
+* ₹11.978 Cr: Lever 2 Governance Reserve.
+* ₹0: Client-Approved Savings.
+* ₹0: Audited Realized Savings.
+
+Never describe modelled opportunity as approved, proven, guaranteed or realized savings.
+
+Retain 1,537 Active SAP Supplier Accounts.
+
+# PART 2 — SHOW PROCUCEV'S CALCULATION MECHANISM AGAINST EACH LEVER
+
+This is a mandatory new section.
+
+For each of the three sourcing levers, add a concise visual explanation titled:
+
+"How Procucev Calculates the Opportunity"
+
+The calculation mechanism should be presented in a simple flow diagram or calculation table. Management should understand the logic in 20–30 seconds.
+
+## LEVER 1 — DIRECT PRICE IMPROVEMENT AND STRATEGIC SOURCING
+
+Existing modelled net opportunity: ₹78.741 Cr.
+
+Explain Procucev's calculation mechanism:
+
+Step 1 — Transaction Normalization
+
+* Normalize purchase transactions by material, grade, specification, plant, supplier, quantity, unit and purchase price.
+* Eliminate duplicate and invalid transactions.
+
+Step 2 — Price Comparison
+
+* Compare prices for equivalent materials across Borosil plants and suppliers.
+* Normalize differences in units, freight, taxes and commercial terms wherever data permits.
+* Do not compare non-equivalent grades or specifications.
+
+Step 3 — Reference Price Identification
+
+* Identify the appropriate comparable purchase price using defensible internal transaction evidence.
+* Use the lowest comparable price only where specification, timing, volume and commercial conditions are genuinely comparable.
+* Otherwise use an explicitly justified reference-price methodology.
+
+Step 4 — Opportunity Calculation
+
+* Calculate the difference between the current eligible purchase price and the selected reference price.
+* Multiply the positive price difference by the eligible purchase quantity.
+
+Formula:
+
+Potential Price Opportunity =
+MAX(0, Actual Comparable Purchase Price − Reference Price)
+× Eligible Purchase Quantity
+
+Step 5 — Volume and Commercial Adjustment
+
+* Evaluate consolidated plant demand.
+* Consider volume commitments, supplier capacity, logistics, credit terms and landed cost.
+* Deduct overlapping opportunities with other sourcing levers.
+
+Step 6 — Final Net Opportunity
+
+* Aggregate package-level opportunities.
+* Deduct cross-lever overlap.
+* Preserve exact INR calculations and round only for presentation.
+
+Show a visual flow:
+
+Purchase Transactions
+→ Material / Grade Normalization
+→ Cross-Plant and Supplier Price Comparison
+→ Reference Price Identification
+→ Quantity-Weighted Opportunity
+→ Overlap Deduction
+→ Net Modelled Opportunity.
+
+## LEVER 2 — VENDOR CONSOLIDATION AND SUPPLIER RATIONALIZATION
+
+Existing modelled net opportunity: ₹11.978 Cr.
+
+This lever remains in the governance reserve pending commercial validation.
+
+Explain Procucev's calculation mechanism:
+
+Step 1 — Supplier Fragmentation Analysis
+
+* Identify the number of suppliers per category.
+* Examine plant-wise supplier distribution.
+* Identify fragmented purchases and overlapping supplier capabilities.
+
+Step 2 — Spend and Volume Aggregation
+
+* Consolidate eligible purchase quantities across plants.
+* Identify categories where suppliers can service larger combined demand.
+
+Step 3 — Supplier Capability Assessment
+
+* Assess quality, capacity, geography, delivery, financial stability and specification compatibility.
+* Identify suppliers capable of absorbing additional volume.
+
+Step 4 — Consolidated Commercial Benchmark
+
+* Compare current weighted-average purchase prices with available comparable supplier quotations or negotiated commercial proposals.
+* Account for freight, payment terms, rebates, logistics and transition costs.
+
+Step 5 — Opportunity Calculation
+
+Illustrative Consolidation Opportunity =
+Eligible Consolidated Spend
+× Commercial Improvement Assumption %
+
+Where actual quotations are available, calculate the opportunity from the difference between normalized current landed cost and proposed landed cost.
+
+Step 6 — Governance and Validation
+
+* Validate the supplier consolidation feasibility.
+* Confirm quality and supply continuity.
+* Obtain commercial proposals and client approval.
+* Release the opportunity from governance reserve only after validation.
+
+Show a visual flow:
+
+Supplier Fragmentation
+→ Category Spend Analysis
+→ Volume Consolidation
+→ Supplier Qualification
+→ Commercial Negotiation
+→ Landed Cost Comparison
+→ Validated Opportunity.
+
+Clearly show the existing ₹11.978 Cr as governance reserve, not approved savings.
+
+## LEVER 3 — REVERSE E-AUCTION AND DYNAMIC BIDDING
+
+Existing modelled net opportunity: ₹1.352 Cr.
+
+Explain Procucev's calculation mechanism:
+
+Step 1 — Auction Suitability
+
+* Identify categories with standardized specifications and comparable supplier offerings.
+* Exclude technically non-comparable or highly specialized requirements.
+
+Step 2 — RFQ Standardization
+
+* Normalize quantity, specification, delivery location, taxes, freight and payment terms.
+* Create a common commercial bidding template.
+
+Step 3 — Supplier Qualification
+
+* Invite eligible existing and alternative suppliers.
+* Confirm capacity, technical compliance and commercial eligibility.
+
+Step 4 — Competitive Bidding
+
+* Conduct multi-round reverse auctions.
+* Record opening bids, successive bids and final bids.
+* Maintain transparent bid audit trails.
+
+Step 5 — Opportunity Calculation
+
+Auction Opportunity =
+MAX(0, Normalized Existing Purchase Price − Final Qualified Bid)
+× Eligible Auction Quantity
+
+Step 6 — Overlap Deduction
+
+* Identify categories and transactions already counted under Lever 1.
+* Deduct overlaps.
+* Aggregate only incremental net opportunity.
+
+Show a visual flow:
+
+Auction-Eligible Spend
+→ Specification Standardization
+→ Qualified Supplier Panel
+→ RFQ
+→ Multi-Round Reverse Auction
+→ Final Qualified Bid
+→ Quantity-Weighted Opportunity
+→ Overlap Deduction.
+
+# PART 3 — TWO COMMERCIAL SCENARIOS FOR EACH LEVER
+
+Create two practical scenarios for each lever.
+
+For each scenario, show:
+
+* Eligible spend.
+* Current situation.
+* Proposed sourcing intervention.
+* Conservative case.
+* Higher-achievement case.
+* Calculation formula.
+* Financial outcome in INR and ₹ Cr.
+* Commercial dependencies.
+* Implementation timeline.
+* Validation requirements.
+
+### Lever 1 scenarios
+
+Scenario A: Cross-Plant Price Harmonization.
+Scenario B: Direct Manufacturer Engagement and Strategic Sourcing.
+
+### Lever 2 scenarios
+
+Scenario A: Vendor Consolidation.
+Scenario B: Preferred Supplier Panel and Tier-Based Commercial Agreements.
+
+### Lever 3 scenarios
+
+Scenario A: Competitive Reverse Auctions.
+Scenario B: Multi-Plant Demand Aggregation and Auction Bundling.
+
+IMPORTANT:
+Use actual eligible spend from the Borosil assessment.
+
+Use illustrative commercial improvement percentages only when no validated quotation or transaction-specific calculation exists.
+
+For illustration, conservative and higher-achievement assumptions may be displayed as clearly editable scenario inputs, not market facts or forecasts.
+
+Do not add the scenario calculations to the existing Module 2 opportunity totals.
+
+Clearly label them:
+"Illustrative Commercial Scenario — Subject to Supplier Quotes and Client Validation."
+
+Prevent double-counting between levers.
+
+# PART 4 — ALTERNATIVE SUPPLIER STRATEGY
+
+Add a detailed but concise alternative supplier evaluation section.
+
+Start with Borosil's existing supplier base and historical PO data.
+
+Evaluate potential alternatives for:
+
+* Dense Soda Ash.
+* Silica Sand.
+* Corrugated Packaging.
+* Plastic Packaging.
+* Industrial Gases.
+* Fuel and Energy.
+* MRO and Engineering Spares.
+* Other material categories representing significant spend.
+
+Supplier comparison should include:
+
+* Current supplier.
+* Potential alternative suppliers.
+* Manufacturer / distributor classification.
+* Product and specification compatibility.
+* Geographic proximity to Borosil plants.
+* Capacity and delivery capability.
+* Quality certifications.
+* Indicative commercial competitiveness.
+* Payment terms.
+* Supply continuity risk.
+* Qualification status.
+
+Use three classifications:
+
+1. Existing Approved / Historical Supplier.
+2. Potential Alternative — Qualification Required.
+3. Strategic Manufacturer Candidate — Verification Required.
+
+Verify any recommendation involving GHCL for Dense Soda Ash before including it.
+
+Do not invent supplier names, prices, capacity, certifications or commercial relationships.
+
+Where external market research is required, identify the source and date.
+
+Where evidence is insufficient, clearly mark the supplier discovery as pending.
+
+# PART 5 — OTHER PROCUREMENT TRANSFORMATION LEVERS
+
+Add a section explaining additional opportunities beyond the three financial levers.
+
+Cover:
+
+1. Demand Consolidation.
+2. Specification Standardization.
+3. Make-versus-Buy Analysis.
+4. Payment Terms Harmonization.
+5. Freight and Logistics Optimization.
+6. Purchase Order Consolidation.
+7. Inventory and Procurement Planning.
+8. Contract and Rate-Card Management.
+9. Supplier Performance Management.
+10. Tail-Spend Management.
+
+For each, briefly explain:
+
+* What Procucev will analyze.
+* What intervention is proposed.
+* Expected business benefit.
+* Required data.
+* Financial or non-financial classification.
+
+Do not assign unsupported financial savings.
+
+Keep these opportunities separate from the existing Module 2 financial model.
+
+# PART 6 — CORRECT THE EXISTING PRESENTATION CONTENT
+
+Apply these corrections:
+
+Page 1:
+Module 3 description must state:
+"Benchmark research completed and formally closed; no operational benchmark observations available."
+
+Page 5:
+Clearly distinguish 133 evaluated categories from 106 qualified packages.
+
+Page 6:
+Verify GHCL / Dense Soda Ash supplier claims. If unsupported, present direct manufacturer engagement as a strategy to evaluate.
+
+Page 9:
+Replace any wording implying that ₹92.072 Cr represents audited savings with:
+"The ₹92.072 Cr represents modelled sourcing opportunity after overlap deductions. Savings will only be recognized after commercial approval, implementation and audit verification."
+
+Page 13:
+Retain the ₹9.004–₹22.509 Cr delivery confidence range only if its methodology is documented and independently traceable. Otherwise remove it.
+
+Page 15:
+Replace the certification statement with:
+"Procurement Diagnostic Completed — Opportunity Identified for Commercial Validation."
+
+# PART 7 — FINAL PRESENTATION STRUCTURE
+
+Create approximately 20 slides:
+
+1. Executive Cover.
+2. Borosil Business and Procurement Context.
+3. Executive Summary and Financial Opportunity.
+4. Spend Baseline and Procurement Diagnostic.
+5. Category-Wise Spend Analysis.
+6. Sourcing Strategy and Opportunity Architecture.
+7. Lever 1 — Strategic Sourcing Opportunity.
+8. Lever 1 — Procucev Calculation Mechanism and Scenarios.
+9. Lever 1 — Alternative Supplier and Direct Sourcing Strategy.
+10. Lever 2 — Vendor Consolidation Opportunity.
+11. Lever 2 — Procucev Calculation Mechanism and Scenarios.
+12. Lever 2 — Preferred Supplier Strategy.
+13. Lever 3 — Reverse E-Auction Opportunity.
+14. Lever 3 — Procucev Calculation Mechanism and Scenarios.
+15. Additional Procurement Transformation Levers.
+16. Alternative Vendor Evaluation Framework.
+17. Module 3 PCBI Status and Future Benchmarking Roadmap.
+18. Consolidated Financial Waterfall and Governance.
+19. Proposed Year 1 Execution Roadmap.
+20. Management Recommendations and Decisions Required.
+
+Use the existing professional dark corporate design.
+
+Avoid clutter. Each slide must communicate one clear message.
+
+Use visual calculation flows, simple equations, charts, comparison matrices and scenario tables.
+
+# PART 8 — SCENARIO CALCULATION REGISTER
+
+Create a supporting Excel or JSON register containing:
+
+* Lever.
+* Scenario.
+* Category.
+* Eligible spend.
+* Current reference price or weighted-average price, where available.
+* Assumed improvement percentage.
+* Proposed target price, where applicable.
+* Quantity.
+* Gross illustrative opportunity.
+* Overlap deduction.
+* Net illustrative opportunity.
+* Implementation costs, if measurable.
+* Source transaction references.
+* Supplier evidence.
+* Assumption status.
+* Validation status.
+
+All formulas must be traceable.
+
+Do not use fabricated source prices or quantities.
+
+If the data required for a calculation is unavailable, show the missing input and leave the result unquantified rather than inventing a figure.
+
+# PART 9 — FINAL QUALITY ASSURANCE AND OUTPUTS
+
+Generate:
+
+1. Final 20-slide editable PPTX.
+2. Final PDF Executive Brief.
+3. Management Report JSON.
+4. Updated browser Executive Brief.
+5. Supporting scenario calculation register.
+
+Verify:
+
+* All authoritative financial figures remain unchanged.
+* 133 diagnostic categories and 106 qualified packages are correctly distinguished.
+* No ₹78.324 Cr reference remains.
+* No generic/demo data remains.
+* No unsupported supplier claims remain.
+* No scenario results are added to the existing ledger.
+* No cross-lever double-counting occurs.
+* Module 3 remains closed with zero operational benchmark contribution.
+* Approved and realized savings remain zero.
+
+Run backend/frontend typecheck, lint, relevant tests, assessment isolation tests, calculation tests and export validation.
+
+Inspect the actual generated PDF and PPTX pages, not just the generation logs.
+
+At completion, provide:
+
+* Slide-by-slide summary.
+* Procucev calculation mechanism for each lever.
+* Six commercial scenarios and their assumptions.
+* Alternative supplier evaluation results.
+* Additional procurement levers.
+* Scenario calculation register.
+* Final deliverable paths and checksums.
+* Quality assurance results.
+
+The final presentation must demonstrate Procucev's procurement intelligence, calculation methodology, sourcing strategy and execution capability—not merely display savings numbers.
+
+
+---
+
+## Prompt 597
+resume
+
+
+---
+
+## Prompt 598
+resume 
+
+
+---
+
+## Prompt 599
+The latest response is NOT an execution of Prompt 599.
+
+It substantially repeats the previous Prompt 598 delivery report. The same scenario figures, P25 benchmark methodology, supplier claims, category figures and revised Year 1 allocation remain unchanged.
+
+Do not generate another executive presentation or repeat the previous completion report.
+
+I require actual execution of Prompt 599.
+
+### 1. Investigate the six scenarios
+
+Open the actual Borosil Module 1 canonical transaction data and Module 2 opportunity register.
+
+For each of the six scenarios, produce a source-backed calculation table containing:
+
+* Scenario ID.
+* SAP material/category codes.
+* Source transaction IDs.
+* Eligible spend in exact INR.
+* Eligible quantity.
+* Unit of measurement.
+* Current weighted-average price.
+* Proposed reference price or editable assumption.
+* Improvement percentage.
+* Formula.
+* Calculated conservative outcome.
+* Calculated higher-achievement outcome.
+* Overlap deduction.
+* Validation status.
+
+Do not copy the previous scenario results into this report.
+
+If eligible spend cannot be established, mark the scenario UNQUANTIFIED.
+
+### 2. Reconcile Soda Ash
+
+Investigate the difference between:
+
+* Previously recorded Soda Ash Dense spend: ₹58.117 Cr.
+* Newly presented Soda Ash Dense spend: ₹38.42 Cr.
+
+Identify the exact SAP codes, transaction IDs, plants, dates and spend included in both figures.
+
+Provide a numerical reconciliation.
+
+Do not select either figure without explaining the difference.
+
+### 3. Correct Lever 1 methodology
+
+Module 3 is formally closed with zero operational benchmark coverage.
+
+Remove any unsupported claim that a P25 market benchmark has been established.
+
+Separate:
+
+* Internal purchase-price comparison.
+* Actual supplier quotation.
+* External licensed market benchmark.
+
+Use only evidence that exists in the assessment.
+
+### 4. Supplier validation
+
+Produce a supplier evidence register for all eight previously mentioned suppliers.
+
+For each, show:
+
+* Official supplier name.
+* Product/category capability.
+* Manufacturer/distributor classification.
+* Evidence source.
+* Verification date.
+* Technical qualification status.
+* Commercial quotation status.
+* Borosil approved supplier status.
+
+If a claim cannot be verified, remove it from the factual presentation and classify the company as a potential alternative requiring qualification.
+
+### 5. Restore the Year 1 allocation
+
+Unless a formally approved revised plan exists, restore:
+
+* Wave 1: ₹8.50 Cr.
+* Wave 2: ₹3.20 Cr.
+* Wave 3: ₹1.20 Cr.
+* Total: ₹12.90 Cr.
+
+### 6. Investigate failed quality gates
+
+Find the actual errors behind:
+
+* npm run quality:fast
+* Financial figure verification.
+* Targeted coverage commands.
+
+Show command output, root cause, corrective action and rerun result.
+
+A failed command must not be reported as passed.
+
+### 7. Execution discipline
+
+Do not:
+
+* Modify Module 1.
+* Modify the authoritative Module 2 ledger.
+* Change established financial totals.
+* Generate new scenario values without source evidence.
+* Regenerate PDF, PPTX or JSON yet.
+
+### 8. Required response
+
+Return only the forensic findings and corrected evidence registers.
+
+Explicitly mark each requirement:
+PASS, FAIL or UNQUANTIFIED.
+
+Do not claim Prompt 599 is completed until the requested work has actually been performed.
+
+We will authorize final presentation regeneration only after reviewing these results.
+
+
+---
+
+## Prompt 600
+The Prompt 599 forensic investigation is substantially complete. Before authorizing any changes to the Borosil Executive Management Report, complete the following final validation.
+
+1. SCENARIO TRANSACTION EVIDENCE
+
+* Produce the exact transaction-level evidence register for SCEN-L2-A and SCEN-L3-A.
+* Include transaction ID, SAP material code, PO number, supplier, plant, quantity, UOM, unit price and net spend.
+* Reconcile the 952 and 919 line-item counts against the canonical Module 1 transaction master.
+* Reconcile each scenario's eligible spend against the corresponding Module 2 qualified package.
+* Do not treat broad row ranges as transaction-level proof.
+
+2. COMMERCIAL ASSUMPTIONS
+
+* Retain all assumed improvement percentages as hypothetical scenarios only.
+* Clearly distinguish internal historical price dispersion from achievable negotiated savings.
+* No supplier quotation, market benchmark or confirmed commercial saving may be claimed without supporting evidence.
+* Ensure no scenario is added again to the existing Module 2 opportunity ledger.
+
+3. SUPPLIER EVIDENCE
+
+* Preserve GHCL and Parksons as suppliers with SAP transaction evidence.
+* Classify all other six suppliers as potential alternatives requiring technical and commercial qualification.
+* Do not infer manufacturer status, production capacity, technical suitability or commercial competitiveness without independent evidence.
+
+4. QUALITY GATES
+
+* Investigate the remaining 17 failing test files and 35 failing tests.
+* Separate legacy failures from regressions introduced by the current work.
+* Do not suppress, skip or rewrite tests merely to achieve a passing result.
+* Report line, function and branch coverage separately.
+* Do not describe the entire test suite as passing while quality:fast remains unsuccessful.
+
+5. FINANCIAL AND DATA PRESERVATION
+
+* Preserve Module 1 baseline: ₹556.535 Cr.
+* Preserve Module 2 net opportunity: ₹92.072 Cr.
+* Preserve Lever 1: ₹78.741 Cr.
+* Preserve Lever 2 Governance Reserve: ₹11.978 Cr.
+* Preserve Lever 3: ₹1.352 Cr.
+* Preserve overlap deductions: ₹31.172 Cr.
+* Preserve Module 3 benchmark contribution: ₹0.
+* Preserve client-approved and audited realized savings: ₹0.
+
+6. EXECUTION DISCIPLINE
+
+* Do not modify Module 1 or Module 2.
+* Do not regenerate PDF, PPTX, JSON or presentation files.
+* Do not change any authoritative financial figure.
+* Return only the final validation findings, unresolved issues and PASS/FAIL status.
+
+The objective is to close the forensic audit without introducing new assumptions or disturbing the existing authoritative assessment.
+
+
+---
+
+## Prompt 601
+The Prompt 600 audit is accepted substantially. Before presentation regeneration, perform one final financial integrity check.
+
+1. L2-A SPARES
+
+* Confirm the exact ₹0.217 Cr qualified spend against the 195 comparable transactions.
+* Confirm that the ₹5.9678 Cr active category spend and ₹0.217 Cr qualified package spend are clearly distinguished.
+* Confirm that no previous ₹5.21 Cr or ₹6.077 Cr figure is presented as actionable spend or savings opportunity.
+
+2. L3-A CORRUGATED PACKAGING
+
+* Investigate the apparent inconsistency:
+  Qualified package spend: ₹2.1047 Cr.
+  Gross modelled opportunity: ₹5.7321 Cr.
+  Net modelled opportunity: ₹4.9718 Cr.
+* Recalculate using the actual Module 2 transaction-level calculation methodology.
+* Identify the exact source of gross opportunity and overlap deductions.
+* An opportunity cannot exceed its eligible spend under a conventional spend-based savings calculation without a separately documented methodology.
+* Do not force the calculation to fit. If the figures cannot be reconciled, mark them INVALID and retain the authoritative Module 2 ledger unchanged.
+
+3. EVIDENCE FILES
+
+* Retain complete transaction-level registers for L2-A and L3-A as separate audit files.
+* Include all eligible transaction IDs and the reconciliation summary.
+* Do not rely only on sample rows in the report.
+
+4. FINAL CONTROL
+
+* Do not change Module 1 or Module 2.
+* Do not modify authoritative financial figures.
+* Do not regenerate any PDF, PPTX or JSON deliverables.
+* Return only the reconciliation findings and PASS/FAIL status.
+
+Once this check is complete, stop and await authorization.
+
+
+---
+
+## Prompt 602
+We have completed the forensic validation under Prompts 599, 600 and 601.
+
+I hereby authorize the final update of the existing Borosil Executive Management Report for assessment AIC-2026-0002.
+
+OBJECTIVE:
+Produce a clear, professional, client-facing 20-slide executive presentation, supporting PDF report and JSON management report using the audited source data and findings.
+
+1. FINANCIAL FIGURES — PRESERVE
+
+* Module 1 Baseline: ₹556.535 Cr.
+* Diagnostic Addressable Spend: ₹168.658 Cr across 133 categories.
+* Qualified Execution Spend: ₹163.121 Cr across 106 packages.
+* Gross Modelled Opportunity: ₹123.244 Cr.
+* Overlap Deductions: ₹31.172 Cr.
+* Module 2 Net Modelled Opportunity: ₹92.072 Cr.
+* Lever 1: ₹78.741 Cr.
+* Lever 2: ₹11.978 Cr, entirely in Governance Reserve.
+* Lever 3: ₹1.352 Cr.
+* Opportunity excluding Lever 2: ₹80.093 Cr.
+* Module 3 Benchmark Contribution: ₹0.
+* Client-Approved Savings: ₹0.
+* Audited Realized Savings: ₹0.
+
+Do not modify the authoritative financial ledger.
+
+2. L3-A PACKAGING CORRECTION
+
+* Remove the invalid ₹4.9718 Cr cross-material consolidation calculation from all customer-facing savings narratives.
+* Clearly disclose that the previous calculation compared unrelated materials and was marked INVALID_SPEND_BOUNDING.
+* Use ₹0.3439 Cr only as a re-established, hypothetical e-auction price-discovery opportunity, subject to RFQ, supplier participation and commercial validation.
+* Do not add ₹0.3439 Cr to the Module 2 ledger.
+* Do not describe it as achieved or confirmed savings.
+
+3. L2-A SPARES CORRECTION
+
+* Show ₹5.9678 Cr as active net category spend.
+* Show ₹0.2170 Cr as comparable qualified package spend.
+* Show 195 comparable transactions.
+* Clearly identify the entire ₹0.2170 Cr as Governance Reserve.
+* Do not use ₹5.21 Cr or ₹6.0773 Cr as actionable opportunity.
+
+4. SODA ASH SOURCING STRATEGY
+
+* Soda Ash Dense GHCL: ₹58.117 Cr.
+* Soda Ash Local RSPL: ₹15.900 Cr.
+* Total Soda Ash: ₹74.017 Cr.
+* Borosil already purchases directly from these primary manufacturers.
+* Present volume consolidation, annual contracting and formula-based price negotiation as the proposed strategy.
+* Do not claim distributor elimination savings.
+
+5. SUPPLIER CLASSIFICATION
+
+* GHCL and Parksons: Existing suppliers with SAP transaction evidence.
+* Tata Chemicals, Nirma, Moglix, Industrybuying, Uflex and V-Trans: Potential alternatives requiring qualification.
+* Do not imply that potential alternatives are approved or technically qualified.
+
+6. YEAR 1 IMPLEMENTATION PLAN
+   Restore the approved allocation:
+
+* Wave 1: ₹8.50 Cr.
+* Wave 2: ₹3.20 Cr.
+* Wave 3: ₹1.20 Cr.
+* Total proposed Year 1 sourcing target: ₹12.90 Cr.
+
+Clearly distinguish proposed targets from approved, negotiated, implemented and realized savings.
+
+7. PRESENTATION STRUCTURE
+   Retain the existing 20-slide executive presentation structure wherever appropriate.
+
+The opening slides should establish:
+
+* Assessment scope and baseline.
+* Executive findings.
+* Addressable and qualified spend.
+* Opportunity summary and financial governance.
+
+Subsequent slides should explain:
+
+* Lever 1 strategic sourcing.
+* Lever 2 vendor consolidation.
+* Lever 3 reverse e-auctions.
+* Category-specific opportunities.
+* Soda Ash strategy.
+* Supplier qualification.
+* Implementation waves.
+* Governance, risks and next steps.
+
+Keep slides simple, visual and executive-friendly. Avoid excessive text and technical explanations.
+
+8. TECHNICAL AND DATA CONTROLS
+
+* Use the complete L2-A and L3-A transaction evidence registers.
+* Preserve all Module 1 and Module 2 source data.
+* Do not reactivate Module 3 or fabricate benchmark values.
+* Remove outdated and unsupported claims from all report outputs.
+* Ensure PDF, PPTX, JSON and browser presentation display consistent figures.
+* Run relevant tests and report any outstanding legacy test failures honestly.
+
+9. FINAL QUALITY REVIEW
+   Before delivery:
+
+* Reconcile all headline figures against the frozen authoritative registers.
+* Check every slide for unsupported savings claims.
+* Verify the L3-A correction across all output formats.
+* Verify Year 1 allocation.
+* Check totals, units, labels and rounding.
+* Confirm that no foreign customer or demo data appears.
+
+Deliver the final PPTX, PDF and JSON management report, along with a concise quality-control report.
+
+Do not alter the authoritative Module 1 or Module 2 financial ledgers.
+
+
+## Prompt 603
+
+The Prompt 602 deliverables have been generated. Before final client release, perform the following controlled validation.
+
+Do not regenerate the presentation until these checks are complete.
+
+1. MODULE 2 LEDGER RECONCILIATION — CRITICAL
+
+The L3-A CAT-11300 investigation identified an invalid ₹4.9718 Cr cross-material consolidation calculation.
+
+Trace this calculation through:
+
+* Module2OpportunityCalculator
+* Module2CanonicalCalculators
+* Module2BundleBuilder
+* Module2StrategicSourcingEngine
+* BOROSIL_106_PACKAGE_RECONCILIATION_REGISTER.json
+* Consolidated Module 2 opportunity ledger.
+
+Establish:
+
+* Exact amount of invalid CAT-11300 opportunity included in the authoritative ledger.
+* Which lever and package contain the amount.
+* Whether the ₹92.072 Cr consolidated total includes this invalid calculation.
+* Whether overlap deductions also depend on the invalid calculation.
+* Exact effect on gross, overlap and net opportunity.
+
+Do not assume that preserving ₹92.072 Cr proves its correctness.
+
+Do not modify Module 1 or Module 2 without explicit authorization.
+
+If the invalid calculation affects the ₹92.072 Cr total, report the corrected financial position separately as a proposed reconciliation. Do not silently change the authoritative ledger.
+
+2. YEAR 1 TIMELINE RESTORATION
+
+Restore the previously established implementation schedule:
+
+* Wave 1: Months 1–3 — ₹8.50 Cr.
+* Wave 2: Months 3–6 — ₹3.20 Cr.
+* Wave 3: Months 6–12 — ₹1.20 Cr.
+* Total: ₹12.90 Cr.
+
+The latest Months 1–4 and Months 3–8 schedule was not authorized.
+
+Apply the correction consistently to PDF, PPTX, JSON and browser presentation when regeneration is authorized.
+
+3. QUALITY GATE RECONCILIATION
+
+Compare the latest quality:fast failures against the previous execution.
+
+Previously: 17 failing files and 35 failing tests.
+Latest: 18 failing files and 36 failing tests.
+
+Identify the additional failing file and test.
+
+Establish whether this is:
+
+* A new regression;
+* A changed legacy failure;
+* Or an execution/environment difference.
+
+Do not suppress or skip tests.
+
+Typecheck and lint may remain recorded as PASS, but quality:fast must be reported as FAIL until it genuinely passes.
+
+4. DELIVERY CONSISTENCY
+
+Check the existing generated PPTX, PDF and JSON for:
+
+* Correct financial figures.
+* Correct L3-A disclosure.
+* Correct Year 1 timelines.
+* No unsupported savings claims.
+* No unrelated customer/demo information.
+* Consistent figures across all formats.
+
+Do not regenerate files during this validation.
+
+5. FINAL RESPONSE
+
+Return:
+
+* Module 2 financial reconciliation.
+* Exact impact of invalid CAT-11300 calculation.
+* Corrected Year 1 timeline status.
+* Quality gate comparison.
+* Deliverable consistency findings.
+* PASS/FAIL status.
+
+Stop and await authorization before any further file generation or financial ledger modification.
+
+
+## Prompt 604
+
+Proceed with **Option C — CAT-11300 marked Unquantified**, adopting the proposed reconciled Module 2 position of ₹87.100 Cr net modelled opportunity.
+
+1. Remove CAT-11300's invalid ₹4.9718 Cr consolidation opportunity and associated ₹5.7321 Cr gross opportunity from the qualified opportunity ledger.
+2. Do not include the hypothetical ₹0.3439 Cr e-auction figure in the qualified ledger. Retain it separately as an unqualified discovery opportunity for future validation.
+3. Apply the reconciled figures:
+
+   * Qualified execution spend: ₹161.016 Cr
+   * Gross opportunity: ₹117.512 Cr
+   * Overlap deductions: ₹30.412 Cr
+   * Net modelled opportunity: ₹87.100 Cr
+   * Lever 1: ₹73.769 Cr
+   * Lever 2 governance reserve: ₹11.978 Cr
+   * Lever 3: ₹1.352 Cr
+   * Opportunity excluding Lever 2: ₹75.121 Cr
+   * Client-approved and realized savings: ₹0.
+4. Preserve Module 1 baseline of ₹556.535 Cr without modification.
+5. Restore the Year 1 timeline:
+
+   * Wave 1: Months 1–3, ₹8.50 Cr
+   * Wave 2: Months 3–6, ₹3.20 Cr
+   * Wave 3: Months 6–12, ₹1.20 Cr
+   * Total proposed sourcing target: ₹12.90 Cr.
+6. Recalculate and reconcile every affected package, lever, consolidated total, waterfall, JSON section and presentation figure. Do not merely replace displayed headline values.
+7. Preserve all audit trails and transaction evidence. Ensure the revised execution spend and opportunity totals reconcile exactly in INR.
+8. Do not claim full monorepo QA certification while `quality:fast` is failing. Retain the failure disclosure.
+9. Remove unsupported security certification claims unless separately evidenced.
+10. Regenerate PPTX, PDF and JSON only after the revised ledger passes reconciliation and targeted tests.
+
+Return the revised financial reconciliation, test results, deliverable paths, hashes and a final consistency report. Do not mark the work certified if any financial reconciliation remains unresolved.
+
+
+## Prompt 605
+
+Perform a final independent release verification for Borosil Assessment AIC-2026-0002.
+
+IMPORTANT: This is a READ-ONLY audit. Do not modify source code, financial calculations, test files, assessment records, or generated deliverables. Do not regenerate any files.
+
+1. FINANCIAL RECONCILIATION
+   Verify the actual assessment database/ledger and all five generated deliverables against these exact figures:
+
+* Baseline: ₹556.535 Cr
+* Diagnostic spend: ₹168.658 Cr
+* Qualified execution spend: ₹161.016 Cr
+* Non-quantifiable spend: ₹7.642 Cr
+* Gross opportunity: ₹117.512 Cr
+* Overlap: ₹30.412 Cr
+* Net opportunity: ₹87.100 Cr
+* Lever 1: ₹73.769 Cr
+* Lever 2: ₹11.978 Cr
+* Lever 3: ₹1.352 Cr
+* Excluding Lever 2: ₹75.121 Cr
+* Approved and realized savings: ₹0.
+
+Reconcile exact INR, not rounded crore values.
+
+2. CAT-11300
+   Confirm that CAT-11300 is absent from the qualified opportunity calculation and is included only in the non-quantifiable diagnostic category.
+   Confirm that ₹4.9718 Cr is excluded from all totals.
+   Confirm that ₹0.3439 Cr is shown only as an unqualified discovery opportunity, not as a saving or qualified opportunity.
+
+3. SHARED ENGINE AND CUSTOMER ISOLATION
+   Review every modified shared Module 2 calculation file.
+   Confirm that the new comparability and qualification logic is assessment/customer-safe and does not unintentionally alter other customers' calculations.
+   Check other assessment snapshots and confirm no unintended changes to their baselines, ledgers, or opportunities.
+
+4. TEST INTEGRITY
+   Review the Git diff for every modified test file.
+   Identify assertions that were changed, removed, weakened, skipped, or replaced.
+   Confirm that test changes reflect the approved Option C business rule rather than merely changing expected results to make tests pass.
+   Show the original and revised assertions for material financial tests.
+   Do not change any tests.
+
+5. QUALITY GATES
+   Provide actual command outputs and exit codes for the latest typecheck and lint runs.
+   For the 18 failing files in quality:fast, provide the exact test names and failure reasons.
+   Compare the failures against the pre-Option-C baseline.
+   Do not call them pre-existing unless supported by baseline evidence.
+
+6. PRESENTATION VERIFICATION
+   Inspect the actual PPTX, PDF and JSON outputs.
+   Verify all financial figures, CAT-11300 disclosures, Year 1 timeline, proposed target classification, supplier names and zero realized savings.
+   Check for any old figures, unsupported claims, foreign customer data, blank slides, clipping, or layout problems.
+   Verify the actual SHA-256 hashes against the release register.
+
+7. FINAL RESULT
+   Return a PASS / FAIL / NOT VERIFIED table for each area.
+   List any remaining risks.
+   Do not claim full certification if any area remains unverified.
+   Stop after the audit and await my instructions.
+
+8. RUN THE APPLICATION LOCALLY IN CHROME
+
+After completing the read-only code and financial audit:
+
+* Start the backend and frontend using the existing project configuration.
+* Use the correct local development environment and assessment context.
+* Open the application in Google Chrome.
+* Navigate to Borosil Ltd — Assessment AIC-2026-0002.
+* Open the aiCEV Executive Management Report and all relevant Module 1, Module 2, Module 3 and Module 4 screens.
+* Verify that the application loads successfully and displays the reconciled Option C figures.
+
+Verify the following in the actual browser:
+
+1. Module 1 baseline: ₹556.535 Cr.
+2. Module 2 net opportunity: ₹87.100 Cr.
+3. Lever 1: ₹73.769 Cr.
+4. Lever 2 governance reserve: ₹11.978 Cr.
+5. Lever 3: ₹1.352 Cr.
+6. Opportunity excluding Lever 2: ₹75.121 Cr.
+7. Module 3 benchmark contribution: ₹0.
+8. Approved and realized savings: ₹0.
+9. CAT-11300 appears as non-quantifiable, not as a qualified savings opportunity.
+10. Year 1 proposed sourcing target: ₹12.90 Cr, with the correct three-wave timeline.
+
+Also verify:
+
+* No foreign customer or demo data appears.
+* No stale figures from the previous ₹92.072 Cr ledger remain.
+* No blank sections, broken charts, overlapping text, clipped cards or console errors.
+* No API failures, incorrect assessment switching or stale cached data.
+* The browser is showing data from AIC-2026-0002, not another assessment.
+
+Check the browser's developer console and network requests for errors.
+
+If the application cannot start, identify the exact error and fix only environment/startup issues necessary to run it. Do not change financial business logic during this audit.
+
+Capture screenshots of:
+
+* Executive Management dashboard.
+* Module 2 opportunity summary.
+* Module 4 savings waterfall.
+* Final executive report.
+
+Return:
+
+* Local frontend and backend URLs.
+* Confirmation that the application is running in Chrome.
+* Browser verification results.
+* Screenshots or their saved file paths.
+* Console/network error summary.
+* Any remaining issues.
+
+Keep the application running locally in Chrome when the audit is complete, so I can inspect it myself.
+
+Do not claim successful browser verification unless the actual application has been opened and inspected in Chrome.
+
+
+## Prompt 606
+
+Perform the final remediation and verification for Borosil AIC-2026-0002.
+
+1. Fix the backend TypeScript compilation error:
+   `PrimarySourcingLever` cannot be found in `module2StrategicSourcing.ts` at line 245.
+   Correct the type import or declaration without changing financial business logic.
+
+2. Re-run:
+
+   * Backend typecheck
+   * Frontend typecheck
+   * Backend lint
+   * Frontend lint
+   * Relevant Borosil targeted tests
+
+3. Investigate the ₹426.19 baseline difference:
+
+   * Authoritative baseline: ₹5,565,346,426.19.
+   * Frontend test constant: ₹5,565,346,000.
+     Establish whether this is intentional rounding or an incorrect constant. Preserve exact INR in financial records.
+
+4. Keep the approved Option C financial position unchanged:
+
+   * Net opportunity: ₹87.100 Cr.
+   * Opportunity excluding Lever 2: ₹75.121 Cr.
+   * Realized savings: ₹0.
+
+5. Keep the backend and frontend servers running locally.
+
+6. In Google Chrome, inspect these individual screens for AIC-2026-0002:
+
+   * Module 1: Baseline and spend analysis.
+   * Module 2: Qualified opportunity and lever summaries.
+   * Module 3: Closed benchmark status and zero benchmark contribution.
+   * Module 4: Savings waterfall and governance status.
+   * Executive Management Report.
+
+7. Check that all screens show the same Option C financial figures, with no stale data, foreign customer data, broken charts, console errors or failed API requests.
+
+8. Capture screenshots of each screen and report their saved locations.
+
+Do not change the financial model, customer baseline, approved timeline or package register. Do not regenerate PPTX/PDF unless a genuine inconsistency is discovered.
+
+Return actual command outputs, exit codes, browser inspection results and remaining issues. Do not claim full certification unless backend typecheck and the relevant targeted tests pass.
+
+
+## Prompt 607
+
+We have completed a detailed review of the 20-page PDF:
+
+aiCEV_Borosil_Ltd_Executive_Opportunity_Brief.pdf
+
+Make a focused presentation-only correction pass. Do not modify the frozen Module 1 baseline, authoritative Module 2 financial ledger, Module 3 closure status, or Module 4 financial calculations.
+
+CUSTOMER:
+Borosil Ltd
+Assessment ID: AIC-2026-0002
+
+1. FINANCIAL FIGURES — LOCKED
+
+Preserve these exact agreed values:
+
+* Evaluated baseline: ₹556.535 Cr
+* Diagnostic addressable spend: ₹168.658 Cr
+* Qualified execution spend: ₹161.016 Cr
+* Gross opportunity: ₹117.512 Cr
+* Overlap deductions: ₹30.412 Cr
+* Net modelled opportunity: ₹87.100 Cr
+* Lever 1: ₹73.769 Cr
+* Lever 2 governance reserve: ₹11.978 Cr
+* Lever 3: ₹1.352 Cr
+* Opportunity excluding Lever 2: ₹75.121 Cr
+* Client-approved savings: ₹0
+* Realized savings: ₹0
+* Proposed Year 1 sourcing target: ₹12.90 Cr
+
+Do not change these values or introduce new opportunity calculations.
+
+2. LEVER 2 — CRITICAL GOVERNANCE DISCLOSURE
+
+Retain ₹11.978 Cr only as an unvalidated governance reserve for financial reconciliation.
+
+Clearly state:
+
+* Not commercially validated.
+* Excluded from customer-facing actionable opportunity.
+* Zero customer-facing savings contribution.
+* Further package-level commercial validation required.
+
+Do not use the ₹0.217 Cr scenario or its ₹0.009–₹0.016 Cr sensitivity to justify the ₹11.978 Cr reserve.
+
+Do not portray the reserve as a substantiated commercial saving.
+
+3. LEVER 1 — CORRECT THE NARRATIVE
+
+The ₹73.769 Cr is the consolidated internal transaction-based modelled opportunity across 89 packages.
+
+The Dense Soda Ash scenario of ₹2.221–₹3.701 Cr is a separate hypothetical sensitivity and is excluded from the authoritative ledger.
+
+Clearly distinguish these two.
+
+Remove cross-plant chemical price harmonisation as an identified opportunity because the report itself establishes that the required inter-plant chemical POs do not exist.
+
+Present direct manufacturer negotiations as a proposed commercial strategy subject to validation.
+
+4. SUPPLIER ALTERNATIVES — PAGE 9
+
+Correct duplicate supplier references.
+
+* GHCL is an existing approved supplier, not its own alternative.
+* Tata Chemicals and Nirma are potential alternatives subject to qualification.
+* Parksons Packaging is an existing approved supplier, not its own alternative.
+
+Clearly distinguish existing suppliers from potential new suppliers.
+
+Do not invent new supplier qualification evidence.
+
+5. CORRUGATED PACKAGING — PAGE 14
+
+Retain the disclosure that:
+
+* Total category spend is ₹27.1472 Cr.
+* Comparable subset is ₹2.1047 Cr.
+* Previous ₹4.9718 Cr consolidation claim was invalid due to comparison of unlike materials.
+* ₹0.3439 Cr and ₹0.421 Cr are hypothetical sensitivities, excluded from the authoritative ledger.
+
+Clarify that the ₹2.1047 Cr comparable subset is not the entire Lever 3 portfolio.
+
+6. MODULE 3 — PAGE 17
+
+Preserve:
+
+* Operational benchmark coverage: 0%.
+* Benchmark-derived savings: ₹0.
+* NR spend: ₹133.0317 Cr.
+* No synthetic observations.
+
+Investigate the reconciliation:
+
+₹133.0317 Cr + ₹423.4876 Cr = ₹556.5193 Cr.
+
+This differs from the baseline of ₹556.5346426 Cr.
+
+Do not change either value to force a match. Trace the difference to the source classifications and report the exact reconciled position. If it cannot be resolved, explicitly flag the classification reconciliation as pending.
+
+7. BASELINE LANGUAGE — PAGES 2 AND 4
+
+Use:
+"Reconciled Procurement Baseline"
+
+Avoid unsupported independent audit or external certification claims.
+
+Use "27,777 canonical purchase transactions" consistently.
+
+Do not describe the source as independently audited unless supporting evidence exists.
+
+8. OTHER PRESENTATION CORRECTIONS
+
+* Page 2: Replace cross-plant chemical price harmonisation with direct manufacturer commercial review at Bharuch, subject to validation.
+* Page 2: Present 60-day payment terms as a proposed commercial objective.
+* Page 12: Label supplier-tier spend percentages as illustrative unless verified from actual supplier spend.
+* Page 15: Remove the ₹8–12 Cr working-capital release claim unless a documented calculation exists.
+* Page 16: Label Moglix, Industrybuying, Uflex and V-Trans as potential market-screening candidates subject to qualification.
+* Page 19: Remove the ₹9.004–₹22.509 Cr delivery confidence range unless its calculation base is verified. Do not substitute a new estimate without approval.
+* Retain ₹12.90 Cr as a proposed, indicative Year 1 sourcing target, not committed or realized savings.
+
+9. VISUAL AND QUALITY REQUIREMENTS
+
+Preserve the existing 20-slide structure, dark theme, typography and overall design.
+
+Improve only where required for:
+* Readability.
+* Consistent currency formatting.
+* Supplier card alignment.
+* Clear distinction between modelled, hypothetical, reserved, approved and realized values.
+* Executive-friendly wording.
+
+No new slides unless absolutely necessary.
+
+10. FINAL VALIDATION
+
+Before delivering the revised PDF and PPTX:
+
+* Extract and compare all financial figures against the locked values above.
+* Check every slide for contradictions.
+* Check that no hypothetical sensitivity is presented as authoritative opportunity.
+* Check that Lever 2 remains excluded from actionable opportunity.
+* Check that client-approved and realized savings remain zero.
+* Check the final PDF and PPTX visually, page by page.
+
+Deliver:
+
+1. Revised PPTX.
+2. Revised PDF.
+3. A short correction log identifying every changed slide.
+4. A financial reconciliation confirmation.
+
+Do not claim that the presentation is certified or fully reconciled if any unresolved issue remains.

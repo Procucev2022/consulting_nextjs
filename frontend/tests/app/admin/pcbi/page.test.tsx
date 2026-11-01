@@ -40,6 +40,21 @@ describe('AdminPCBIPage Component (/admin/pcbi)', () => {
     });
   });
 
+  it('renders "Return to Buyer Portal \u2014 Module 3" link pointing to correct Borosil assessment URL', async () => {
+    render(<AdminPCBIPage />);
+
+    await waitFor(() => {
+      const returnLink = screen.getByRole('link', {
+        name: /Return to Buyer Portal/i
+      });
+      expect(returnLink).toBeInTheDocument();
+      expect(returnLink).toHaveAttribute(
+        'href',
+        '/?tab=module3&assessmentId=AIC-2026-0002'
+      );
+    });
+  });
+
   it('handles logout button click and navigates to admin login', async () => {
     render(<AdminPCBIPage />);
 

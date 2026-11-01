@@ -8,6 +8,7 @@ import type {
   PCBIDataLibrarySubTab,
   PCBIEnterpriseStatus
 } from './pcbiCommodityDataLab';
+import type { PCBIMissingIndexGapItem } from './module3GapList';
 
 export interface PCBIStatusBadgeProps {
   status: PCBIEnterpriseStatus | string;
@@ -37,8 +38,13 @@ export interface PCBIModuleWarningBannerProps {
 export interface CommodityPCBIUploadWorkflowModalProps {
   isOpen: boolean;
   initialCommodity?: CommodityResearchQueueRow | null;
+  assessmentId?: string;
+  customerId?: string;
+  customerName?: string;
+  availableRequirements?: PCBIMissingIndexGapItem[];
   onClose: () => void;
   onComplete?: (result: { commodityId: string; pcbiId: string; versionId: string }) => void;
+  onNavigateToMappingReview?: (materialCode: string) => void;
 }
 
 export interface PCBISourceComparisonViewProps {

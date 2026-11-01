@@ -16,6 +16,14 @@ import type {
 import { Module2EvidenceChainEngine } from './module2EvidenceChainEngine';
 import { Module2EvidenceStatisticsHelper } from './module2EvidenceStatisticsHelper';
 import { resolveHumanReadableCategory } from '../utils/procurementCategoryResolver';
+import { Module2OpportunityCalculator } from './module2OpportunityCalculator';
+import type {
+  PriceDispersionMetrics,
+  CrediblePriceReferenceResult,
+  CategorySupplierStructureItem,
+  SourcingDataConfidence,
+  ResolvedOpportunitiesResult
+} from '../types/module2StrategicSourcing';
 
 export class Module2CategoryProfileHelper {
   public static toCr(inr: number | null | undefined): number {
@@ -118,6 +126,102 @@ export class Module2CategoryProfileHelper {
       pairwisePriceProofs: pairwiseProofs,
       evidenceChain,
       completeCalculationTrace: completeTrace
+    };
+  }
+
+  public static isUnquantifiableCategory(categoryName: string, firstTx?: StrategicInputTransaction): boolean {
+    const norm = categoryName.trim().toUpperCase();
+    const spendCat = firstTx?.spend_category?.trim().toUpperCase();
+    return norm === '11300' || norm === 'CAT-11300' || spendCat === '11300';
+  }
+
+  public static resolveOpportunities(params: {
+    categoryName: string;
+    transactions: StrategicInputTransaction[];
+    isRecurring: boolean;
+    suppliers: CategorySupplierStructureItem[];
+    addressableSpendInr: number;
+    addressableQuantity: number;
+    dispersion: PriceDispersionMetrics | null;
+    credibleRef: CrediblePriceReferenceResult;
+    totalTxCount: number;
+    activeMonthsCount: number;
+    compTxCount: number;
+    dataConfidence: SourcingDataConfidence;
+    volumeBundlingOpp: number;
+    specialistOpp: number;
+  }): ResolvedOpportunitiesResult {
+    if (this.isUnquantifiableCategory(params.categoryName, params.transactions[0])) {
+      return {
+        eauctionCalc: {
+          suitability: 'NOT_SUITABLE' as const,
+          rationale: 'Unqualified discovery opportunity — excluded from qualified ledger pending validation',
+          opportunityInr: 0,
+          opportunityPct: 0
+        },
+        consolCalc: {
+          suitability: 'NOT_SUITABLE' as const,
+          rationale: 'Marked INVALID_SPEND_BOUNDING: heterogeneous packaging materials compared under single group',
+          opportunityInr: 0,
+          opportunityPct: 0,
+          evidencePath: 'PATH_D' as const,
+          operational: {
+            suppliersPotentiallyAffected: 0,
+            poCountAffected: 0,
+            transactionsAffected: 0,
+            activeMonthsAffected: 0,
+            smallOrderCount: 0,
+            estimatedTouchpointReductionCount: 0,
+            explanation: 'Unquantifiable category — operational consolidation indicators zeroed.'
+          }
+        },
+        netCalc: {
+          overlappingInr: 0,
+          netInr: 0,
+          status: 'IDENTIFIED_NOT_QUANTIFIABLE' as const,
+          statusLabel: 'Opportunity Identified — Benefit Not Yet Quantifiable',
+          isQuantifiable: false,
+          displayText: 'Opportunity Identified — Benefit Not Yet Quantifiable',
+          primaryLever: 'NO_QUANTIFIABLE_BENEFIT' as const
+        },
+        effectiveVolBundling: 0,
+        effectiveSpecialist: 0
+      };
+    }
+
+    const eauctionCalc = Module2OpportunityCalculator.calculateEAuctionBenefit(
+      params.isRecurring,
+      params.suppliers.length,
+      params.addressableSpendInr,
+      params.addressableQuantity,
+      params.dispersion,
+      params.credibleRef
+    );
+
+    const consolCalc = Module2OpportunityCalculator.calculateConsolidationBenefit(
+      params.isRecurring,
+      params.suppliers,
+      params.addressableQuantity,
+      params.dispersion,
+      params.totalTxCount,
+      params.activeMonthsCount
+    );
+
+    const netCalc = Module2OpportunityCalculator.calculateNetOpportunity(
+      eauctionCalc.opportunityInr,
+      consolCalc.opportunityInr,
+      params.dataConfidence !== 'INSUFFICIENT',
+      params.compTxCount,
+      params.volumeBundlingOpp,
+      params.specialistOpp
+    );
+
+    return {
+      eauctionCalc,
+      consolCalc,
+      netCalc,
+      effectiveVolBundling: params.volumeBundlingOpp,
+      effectiveSpecialist: params.specialistOpp
     };
   }
 }

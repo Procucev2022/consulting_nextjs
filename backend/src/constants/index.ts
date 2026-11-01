@@ -70,4 +70,10 @@ export * from './module2OpportunityRegister';
 export * from './module2OpportunityValidation';
 export * from './module3PcbiBorosilCatalog';
 export * from './module3PcbiObservationProvenance';
+export * from './module3PcbiGapList';
+export * from './borosilExecutiveBriefUiConstants';
+export * from './borosilExecutiveBriefSlideGroups';
 
+export * from './borosilCalculationMechanisms';
+export * from './borosilCommercialScenarios';
+export * from './borosilAlternativeSuppliers';

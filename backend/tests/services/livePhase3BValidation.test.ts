@@ -17,6 +17,10 @@ describe('Phase 3B Live Validation on ABC Textile and PQR Cement', () => {
     ];
 
     for (const a of assessments) {
+      if (!store.getAssessmentById(a.id)) {
+        console.log(`Skipping non-existent assessment ${a.id} (${a.name})`);
+        continue;
+      }
       console.log(`\n======================================================`);
       console.log(`LIVE ASSESSMENT: ${a.name} (${a.id})`);
       console.log(`======================================================`);

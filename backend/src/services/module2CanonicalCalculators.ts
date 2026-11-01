@@ -51,6 +51,26 @@ const resolveConfidence = (conf: string): 'HIGH' | 'MEDIUM' | 'LOW' => {
   return 'LOW';
 };
 
+function resolveCategoryTransactionIds(
+  p: CategoryStrategicSourcingProfile,
+  txs: StrategicInputTransaction[]
+): string[] {
+  const rawCatCode = p.categoryId.replace(/^CAT-/, '');
+  const categoryTxs = txs.filter(
+    (t) =>
+      t.spend_category === p.categoryName ||
+      t.spend_category === rawCatCode ||
+      t.spend_category === p.categoryId
+  );
+  if (categoryTxs.length > 0) {
+    return categoryTxs
+      .slice(0, 10)
+      .map((t) => t.id)
+      .filter((id): id is string => Boolean(id));
+  }
+  return (p.evidenceTransactionIds || []).slice(0, 10);
+}
+
 export class Module2CanonicalCalculators {
   public static buildOpportunityLedger(
     profiles: CategoryStrategicSourcingProfile[],
@@ -67,11 +87,7 @@ export class Module2CanonicalCalculators {
         continue;
       }
 
-      const categoryTxs = txs.filter((t) => t.spend_category === p.categoryName);
-      const sampleTxIds = categoryTxs
-        .slice(0, 10)
-        .map((t) => t.id)
-        .filter((id): id is string => Boolean(id));
+      const sampleTxIds = resolveCategoryTransactionIds(p, txs);
       const supplierIds = p.suppliers
         .slice(0, 5)
         .map((s) => s.supplierName)

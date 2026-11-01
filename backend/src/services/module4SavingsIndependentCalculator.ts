@@ -8,10 +8,10 @@ import { Module4SavingsForensicEngine } from './module4SavingsForensicEngine';
 import type { Module4IndependentRecalculation } from '../types/module4SavingsForensic';
 
 export class Module4SavingsIndependentCalculator {
-  public static runIndependentRecalculation(): Module4IndependentRecalculation {
-    const prodBridge = Module4SavingsForensicEngine.getFinancialBridge();
-    const prodOpps = Module4SavingsForensicEngine.getCanonicalOpportunityLedger();
-    const txs = Module2CanonicalService.getCanonicalTransactions();
+  public static runIndependentRecalculation(assessmentId = 'AIC-2026-0001'): Module4IndependentRecalculation {
+    const prodBridge = Module4SavingsForensicEngine.getFinancialBridge(assessmentId);
+    const prodOpps = Module4SavingsForensicEngine.getCanonicalOpportunityLedger(assessmentId);
+    const txs = Module2CanonicalService.getCanonicalTransactions(assessmentId);
 
     // 1. Independent addressable / eligible spend
     const catSpends = new Map<string, number>();

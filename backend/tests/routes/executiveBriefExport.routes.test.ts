@@ -4,14 +4,14 @@ import app from '../../src/app';
 
 describe('Executive Brief Export Routes', () => {
   it('GET /api/reports/executive-brief/status should return status', async () => {
-    const res = await request(app).get('/api/reports/executive-brief/status');
+    const res = await request(app).get('/api/reports/executive-brief/status?assessmentId=AIC-2026-0002');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty('status');
   });
 
   it('GET /api/reports/executive-brief/report should return full report data', async () => {
-    const res = await request(app).get('/api/reports/executive-brief/report');
+    const res = await request(app).get('/api/reports/executive-brief/report?assessmentId=AIC-2026-0002');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty('summaryCards');
@@ -19,7 +19,9 @@ describe('Executive Brief Export Routes', () => {
   });
 
   it('POST /api/reports/executive-brief/regenerate should regenerate report', async () => {
-    const res = await request(app).post('/api/reports/executive-brief/regenerate').send({});
+    const res = await request(app)
+      .post('/api/reports/executive-brief/regenerate')
+      .send({ assessmentId: 'AIC-2026-0002', client: 'Borosil Ltd' });
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty('reportData');
@@ -33,7 +35,7 @@ describe('Executive Brief Export Routes', () => {
   });
 
   it('GET /api/reports/executive-brief/audit should return audit record', async () => {
-    const res = await request(app).get('/api/reports/executive-brief/audit');
+    const res = await request(app).get('/api/reports/executive-brief/audit?assessmentId=AIC-2026-0002');
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data).toHaveProperty('exportStatus');

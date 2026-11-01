@@ -17,7 +17,8 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
       'COST_AVOIDANCE',
       'STRATEGIC_VALUE',
       'VALIDATED_SAVING',
-      'REALIZED_SAVING'
+      'REALIZED_SAVING',
+      'BENCHMARK_SAVING'
     ];
     EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.forEach((opp) => {
       expect(validClassifications).toContain(opp.valueClassification);
@@ -34,7 +35,7 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
   });
 
   it('3. Every assumption is explicitly labelled and classified', () => {
-    expect(EXECUTIVE_BRIEF_ASSUMPTION_REGISTER).toHaveLength(7);
+    expect(EXECUTIVE_BRIEF_ASSUMPTION_REGISTER).toHaveLength(5);
     EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.forEach((opp) => {
       expect(opp.assumption).toBeDefined();
       expect(opp.assumption.length).toBeGreaterThan(0);
@@ -51,45 +52,43 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
     });
   });
 
-  it('5. No process productivity is included in direct savings', () => {
-    const poOpp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-002');
-    expect(poOpp).toBeDefined();
-    expect(poOpp?.valueClassification).toBe('PROCESS_PRODUCTIVITY');
-    expect(poOpp?.calculationMethod).toContain('Direct spend: ₹0 / NOT MONETIZED');
+  it('5. Lever 2 vendor consolidation savings are strictly excluded pending validation', () => {
+    const l2Opp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-BOR-L2');
+    expect(l2Opp).toBeDefined();
+    expect(l2Opp?.exclusionStatus).toContain('Commercial Validation Pending');
+    expect(l2Opp?.indicativeOpportunity).toContain('₹0.00 Cr (Under Commercial Validation)');
   });
 
-  it('6. No risk avoidance is included in direct savings', () => {
-    const riskOpp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-005');
-    expect(riskOpp).toBeDefined();
-    expect(riskOpp?.valueClassification).toBe('COST_AVOIDANCE');
-    expect(riskOpp?.calculationMethod).toContain('Cost Avoidance');
-    expect(riskOpp?.indicativeOpportunity).toContain('Direct Spend: ₹0.00 Cr / Cost Avoidance');
+  it('6. Module 3 research is formally closed with zero benchmark savings', () => {
+    const m3Opp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-BOR-M3');
+    expect(m3Opp).toBeDefined();
+    expect(m3Opp?.finding).toContain('Research Closed — No Operational Benchmark Data Available');
+    expect(m3Opp?.indicativeOpportunity).toContain('0% Coverage');
   });
 
-  it('7. Strategic market value is kept strictly separate', () => {
-    const marketOpp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-006');
-    expect(marketOpp).toBeDefined();
-    expect(marketOpp?.valueClassification).toBe('STRATEGIC_VALUE');
-    expect(marketOpp?.exclusionStatus).toBe('Subject to Joint Commercial Committee Review');
+  it('7. Lever 1 strategic sourcing yields proven commercial savings', () => {
+    const l1Opp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-BOR-L1');
+    expect(l1Opp).toBeDefined();
+    expect(l1Opp?.valueClassification).toBe('DIRECT_SAVING');
+    expect(l1Opp?.indicativeOpportunity).toContain('₹73.769 Cr');
   });
 
-  it('8. Validated savings are kept strictly separate from unvalidated opportunities', () => {
-    const opp007 = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-007');
-    expect(opp007).toBeDefined();
-    expect(opp007?.confidence).toContain('Verified (General Ledger Audited Actuals)');
-    expect(opp007?.indicativeOpportunity).toContain('₹68.00 Cr Realized (₹143.00 Cr In-Flight Run-Rate)');
+  it('8. Validated savings are presented for client review and client approved is zero', () => {
+    const m4Opp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-BOR-M4');
+    expect(m4Opp).toBeDefined();
+    expect(m4Opp?.valueOpportunity).toContain('Client-Approved Savings: ₹0.00 Cr');
+    expect(m4Opp?.indicativeOpportunity).toContain('Proposed Target: ₹12.90 Cr');
+    expect(m4Opp?.assumption).toContain('not a commitment or realized saving');
   });
 
-  it('9. Realized savings are evidenced by General Ledger and invoice audits', () => {
-    const opp007 = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-007');
-    expect(opp007?.valueClassification).toBe('REALIZED_SAVING');
-    expect(opp007?.transactionProof?.source).toContain('SAP Invoiced Payment Voucher');
+  it('9. Realized savings are zero pending billing and contract execution', () => {
+    const m4Opp = EXECUTIVE_BRIEF_MASTER_OPPORTUNITIES.find((o) => o.opportunityId === 'OPP-BOR-M4');
+    expect(m4Opp?.indicativeOpportunity).toContain('₹0.00 Cr Realized');
   });
 
   it('10. E-auction is not presented as the exclusive savings source', () => {
     const note = EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.eauctionShareNote;
-    expect(note).toContain('E-auction is strictly one execution mechanism under Strategic Sourcing');
-    expect(note).toContain('14.8% of portfolio execution');
+    expect(note).toContain('E-auction is Lever 3 execution mechanism');
   });
 
   it('11. No duplicate opportunity IDs exist in the Master Opportunity Register', () => {
@@ -100,16 +99,16 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
 
   it('12. No overlap group produces double counting with mathematical reconciliation', () => {
     const wb = EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN;
-    expect(wb.grossIdentifiedCr).toBe('₹173.12 Cr');
-    expect(wb.overlapAdjustmentCr).toBe('-₹62.80 Cr');
-    expect(wb.exclusionsCr).toBe('-₹16.72 Cr');
-    expect(wb.netDefensibleCr).toBe('₹93.60 Cr');
+    expect(wb.grossIdentifiedCr).toBe('₹117.512 Cr');
+    expect(wb.overlapAdjustmentCr).toBe('-₹30.412 Cr');
+    expect(wb.exclusionsCr).toBe('₹0.00 Cr');
+    expect(wb.netDefensibleCr).toBe('₹87.100 Cr');
 
-    const gross = 173.12;
-    const overlap = 62.80;
-    const exclusions = 16.72;
+    const gross = 117.512;
+    const overlap = 30.412;
+    const exclusions = 0.00;
     const net = gross - overlap - exclusions;
-    expect(net).toBeCloseTo(93.60, 2);
+    expect(net).toBeCloseTo(87.100, 3);
   });
 
   it('13. Module 1 → Module 2 → Module 3 → Module 4 lineage remains intact', () => {
@@ -117,19 +116,19 @@ describe('Prompt 276 Section 18: Final Data Integrity Test Suite', () => {
     expect(modules.has('Module 2')).toBe(true);
     expect(modules.has('Module 3')).toBe(true);
     expect(modules.has('Module 4')).toBe(true);
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.totalAddressableSpend).toBe('₹4,931.00 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.totalAddressableSpend).toBe('₹168.658 Cr');
   });
 
   it('14. UI values match governed portfolio constants', () => {
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.totalAddressableSpend).toBe('₹4,931.00 Cr');
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.netIndicativeOpportunity).toBe('₹93.60 Cr');
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.hardSavingsCr).toBe('₹78.72 Cr');
-    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.costAvoidanceCr).toBe('₹14.88 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.totalAddressableSpend).toBe('₹168.658 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.netIndicativeOpportunity).toBe('₹87.100 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.hardSavingsCr).toBe('₹75.121 Cr');
+    expect(EXECUTIVE_BRIEF_PORTFOLIO_SECTIONS.costAvoidanceCr).toBe('₹0.00 Cr');
   });
 
   it('15. Governance registers and checklist items are fully populated and valid', () => {
     expect(EXECUTIVE_BRIEF_VALUE_CLASSIFICATIONS).toHaveLength(6);
-    expect(EXECUTIVE_BRIEF_VALIDATION_CHECKLIST).toHaveLength(14);
+    expect(EXECUTIVE_BRIEF_VALIDATION_CHECKLIST).toHaveLength(6);
     const validStatuses = ['PENDING', 'IN_REVIEW', 'VALIDATED', 'NOT_APPLICABLE'];
     EXECUTIVE_BRIEF_VALIDATION_CHECKLIST.forEach((val) => {
       expect(validStatuses).toContain(val.status);

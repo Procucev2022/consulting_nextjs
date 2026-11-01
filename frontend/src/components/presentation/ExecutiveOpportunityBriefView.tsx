@@ -25,7 +25,7 @@ const SLIDE_TITLES = [
 ];
 
 export const ExecutiveOpportunityBriefView: React.FC<ExecutiveOpportunityBriefViewProps> = ({
-  clientName = 'UltraTech Cement Limited',
+  clientName = 'Borosil Ltd',
   onDownloadPdf,
   onDownloadPptx,
   onBackToWorkspace,
@@ -192,7 +192,7 @@ export const ExecutiveOpportunityBriefView: React.FC<ExecutiveOpportunityBriefVi
       </div>
 
       <div className="my-5 p-5 rounded-xl bg-white border border-[#DCE7F5] shadow-xs min-h-[340px] flex flex-col justify-between">
-        <ExecutiveOpportunityBriefSlideContent currentSlide={currentSlide} />
+        <ExecutiveOpportunityBriefSlideContent currentSlide={currentSlide} clientName={clientName} />
 
         <div className="pt-4 border-t border-[#DCE7F5] flex items-center justify-between text-[11px] text-[#64748B]">
           <span>{strings.confidentialFooter}</span>

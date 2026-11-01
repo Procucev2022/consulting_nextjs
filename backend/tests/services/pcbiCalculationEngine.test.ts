@@ -475,14 +475,19 @@ describe('PCBI Calculation Engine - Master Product Specification Tests (Prompt 1
     expect(unspscEngine.resolvePCBIMapping({ unspsc: '30263601' } as any).method).toBe('UNSPSC_COMMODITY');
     expect(unspscEngine.resolvePCBIMapping({ unspsc: '30263605' } as any).method).toBe('UNSPSC_CLASS');
 
-    // 3. Index forward fill & neutral fallback
-    const ffResult = engine.getIndexForDate('PCBI-TEST-001', '2023-10-15');
-    expect(ffResult).not.toBeNull();
-    expect(ffResult.quality).toBe('B'); // Forward filled receives Quality B
+    // 3. Verified Observation Matching & Explicit Null on Missing Observations
+    const validMatch = engine.getIndexForDate('PCBI-TEST-001', '2023-07-12');
+    expect(validMatch).not.toBeNull();
+    expect(validMatch?.indexValue).toBe(105.0);
+    expect(validMatch?.quality).toBe('A');
 
-    const neutralResult = engine.getIndexForDate('PCBI-UNKNOWN', '2020-01-01');
-    expect(neutralResult.indexValue).toBe(100.0);
-    expect(neutralResult.quality).toBe('C');
+    // Missing observation date returns null (no unsafe forward fill)
+    const missingDateResult = engine.getIndexForDate('PCBI-TEST-001', '2023-10-15');
+    expect(missingDateResult).toBeNull();
+
+    // Unknown benchmark series returns null (no blind 100.0 fallback)
+    const unknownResult = engine.getIndexForDate('PCBI-UNKNOWN', '2020-01-01');
+    expect(unknownResult).toBeNull();
   });
 
   it('handles data quality validation issues, missing dates/prices/quantities, and comparable keys', () => {

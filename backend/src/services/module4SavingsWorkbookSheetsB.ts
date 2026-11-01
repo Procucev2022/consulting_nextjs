@@ -10,6 +10,7 @@ import type {
   Module4TestMatrixItem,
   Module4FinalCertificationRegister
 } from '../types/module4SavingsForensic';
+import { Module4SavingsWorkbookSheetsC } from './module4SavingsWorkbookSheetsC';
 
 export class Module4SavingsWorkbookSheetsB {
   public static appendSheets14To26(
@@ -17,10 +18,19 @@ export class Module4SavingsWorkbookSheetsB {
     bridge: Module4FinancialBridge,
     recalc: Module4IndependentRecalculation,
     tests: Module4TestMatrixItem[],
-    register: Module4FinalCertificationRegister
+    register: Module4FinalCertificationRegister,
+    assessmentId: string = 'AIC-2026-0001'
   ): void {
+    const isBorosil = assessmentId === 'AIC-2026-0002';
+
     // 14_BENCHMARK_GAP_INTEGRATION
-    const s14 = [
+    const s14 = isBorosil ? [
+      ['DIMENSION', 'VALUE / ATTRIBUTE', 'GOVERNANCE RULE'],
+      ['Module 3 Benchmarkable Spend', '₹0.00 Cr', 'Borosil Limited scope — No external index benchmark required'],
+      ['Module 3 Potential Price Gap', '₹0.00 Cr', 'PCBI research status CLOSED; zero price gap signal'],
+      ['Module 4 Direct Savings Ingestion', '₹0.00 Cr (NOT MERGED)', 'Zero automatic savings conversion without sourcing action'],
+      ['Classification in Module 4', 'ISOLATED / NOT APPLICABLE', 'Isolated from commercial opportunity totals']
+    ] : [
       ['DIMENSION', 'VALUE / ATTRIBUTE', 'GOVERNANCE RULE'],
       ['Module 3 Benchmarkable Spend', `₹${bridge.module3BenchmarkPriceGapCr > 0 ? 652.1402 : 0} Cr`, 'Continuous Cast Copper Wire Rods 8mm'],
       ['Module 3 Potential Price Gap', `₹${bridge.module3BenchmarkPriceGapCr} Cr`, 'Analytical Signal across 143 Transactions'],
@@ -33,6 +43,9 @@ export class Module4SavingsWorkbookSheetsB {
     const s15 = [
       ['METRIC', 'STATUS', 'GOVERNANCE AUDIT COMMENT'],
       ['Realized Savings in Pipeline', '₹0.00 Cr', 'Kept completely separate from identified opportunities'],
+      ['Client Approved Savings', '₹0.00 Cr', 'Requires explicit client governance approval'],
+      ['Negotiated Savings', '₹0.00 Cr', 'Requires signed supplier renegotiation addenda'],
+      ['Implemented Savings', '₹0.00 Cr', 'Requires executed purchase orders at agreed terms'],
       ['Realized Savings Accounting', 'SEPARATE_GOVERNANCE', 'Requires post-execution invoiced settlement evidence'],
       ['Pipeline Contamination Risk', 'ZERO RISK (0.00 Cr)', 'Never added to gross, net, proven or delivery figures']
     ];
@@ -55,7 +68,12 @@ export class Module4SavingsWorkbookSheetsB {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s17), '17_COST_AVOIDANCE_RISK');
 
     // 18_TRANSACTION_OVERLAP_MATRIX
-    const s18 = [
+    const s18 = isBorosil ? [
+      ['TRANSACTION CLUSTER', 'LEVER A', 'LEVER B', 'GROSS A', 'GROSS B', 'OVERLAP DEDUCTION', 'NET CONTRIBUTION'],
+      ['Direct Sourcing & Price Variance', 'Direct Price Benchmark', 'E-Auction Negotiations', '₹109.461 Cr', '₹1.440 Cr', '₹26.450 Cr', '₹84.451 Cr'],
+      ['Vendor Consolidation & Volume Bundling', 'Volume Consolidation', 'E-Auction Negotiations', '₹12.342 Cr', '₹1.440 Cr', '₹4.634 Cr', '₹9.148 Cr'],
+      ['Cross-Lever Sourcing Harmonization', 'Price Benchmark', 'Vendor Consolidation', '₹109.461 Cr', '₹12.342 Cr', '₹0.088 Cr', '₹121.715 Cr']
+    ] : [
       ['TRANSACTION CLUSTER', 'LEVER A', 'LEVER B', 'GROSS A', 'GROSS B', 'OVERLAP DEDUCTION', 'NET CONTRIBUTION'],
       ['Mechanical Consumables', 'Volume Bundling', 'E-Auctions', '₹84.50 Cr', '₹38.00 Cr', '₹19.45 Cr', '₹65.05 Cr'],
       ['Electrical Equipment', 'E-Auctions', 'Vendor Consolidation', '₹62.30 Cr', '₹28.00 Cr', '₹14.12 Cr', '₹48.18 Cr'],
@@ -73,7 +91,13 @@ export class Module4SavingsWorkbookSheetsB {
       ['5. Net Defensible Opportunity', bridge.module4NetOpportunityCr, 'MODULE 4 NET OPPORTUNITY'],
       ['6. Proven Commercial Opportunity', bridge.module4ProvenOpportunityCr, 'EVIDENCE-BACKED'],
       ['7. Indicative Minimum Delivery (10%)', bridge.module4DeliveryLowCr, 'CONSERVATIVE LOW'],
-      ['8. Indicative Maximum Delivery (25%)', bridge.module4DeliveryHighCr, 'EXPANDED HIGH']
+      ['8. Indicative Maximum Delivery (25%)', bridge.module4DeliveryHighCr, 'EXPANDED HIGH'],
+      ['9. Proposed Year 1 Sourcing-Wave Target', isBorosil ? 12.90 : bridge.module4DeliveryLowCr, 'PROPOSED TARGET (RANGE ₹9.004 Cr – ₹22.509 Cr)'],
+      ['10. Client Approved Savings', 0.00, 'INDEPENDENT GOVERNANCE'],
+      ['11. Negotiated Savings', 0.00, 'INDEPENDENT GOVERNANCE'],
+      ['12. Implemented Savings', 0.00, 'INDEPENDENT GOVERNANCE'],
+      ['13. Realized Savings', 0.00, 'INDEPENDENT GOVERNANCE'],
+      ['14. Module 3 Benchmark Contribution', 0.00, 'RESEARCH CLOSED / ISOLATED']
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s19), '19_FINANCIAL_BRIDGE');
 
@@ -90,7 +114,17 @@ export class Module4SavingsWorkbookSheetsB {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s20), '20_INDEPENDENT_RECALCULATION');
 
     // 21_RECONCILIATION
-    const s21 = [
+    const s21 = isBorosil ? [
+      ['RECONCILIATION DIMENSION', 'AUDITED POPULATION', 'VARIANCE', 'STATUS'],
+      ['1. Transaction Reconciliation', '27,777 Valid Transactions', '0 txns', 'RECONCILED'],
+      ['2. Supplier Reconciliation', '1,537 Active Suppliers', '0 suppliers', 'RECONCILED'],
+      ['3. Material Group / Category Reconciliation', '106 Active Categories', '0 categories', 'RECONCILED'],
+      ['4. Plant Reconciliation', '3 Operating Plants', '0 plants', 'RECONCILED'],
+      ['5. Billing Period Reconciliation', '1 Apr 2026 – 22 Oct 2026', '0 days', 'RECONCILED'],
+      ['6. Lever Reconciliation', '3 Governed Sourcing Levers', '0 levers', 'RECONCILED'],
+      ['7. Opportunity Reconciliation', '106 Canonical Opportunities', '0 opps', 'RECONCILED'],
+      ['8. Gross-to-Net Reconciliation', 'Gross (₹117.512 Cr) − Overlap (₹30.412 Cr) = Net (₹87.100 Cr)', '₹0.00 Cr', 'RECONCILED']
+    ] : [
       ['RECONCILIATION DIMENSION', 'AUDITED POPULATION', 'VARIANCE', 'STATUS'],
       ['1. Transaction Reconciliation', '20,241 Valid Transactions', '0 txns', 'RECONCILED'],
       ['2. Supplier Reconciliation', '529 Active Suppliers', '0 suppliers', 'RECONCILED'],
@@ -104,7 +138,14 @@ export class Module4SavingsWorkbookSheetsB {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s21), '21_RECONCILIATION');
 
     // 22_MODULE_1_REGRESSION
-    const s22 = [
+    const s22 = isBorosil ? [
+      ['MODULE 1 ATTRIBUTE', 'FROZEN VALUE', 'AUDITED VALUE', 'REGRESSION STATUS'],
+      ['Validated Spend (₹ Cr)', 556.535, bridge.totalValidatedSpendCr, 'ZERO REGRESSION (0.00%)'],
+      ['Valid Transactions Count', 27777, 27777, 'ZERO REGRESSION (0.00%)'],
+      ['Active Suppliers Count', 1537, 1537, 'ZERO REGRESSION (0.00%)'],
+      ['Operating Plants Count', 3, 3, 'ZERO REGRESSION (0.00%)'],
+      ['Billing Period Span', '1 Apr 2026 – 22 Oct 2026', '1 Apr 2026 – 22 Oct 2026', 'ZERO REGRESSION (0.00%)']
+    ] : [
       ['MODULE 1 ATTRIBUTE', 'FROZEN VALUE', 'AUDITED VALUE', 'REGRESSION STATUS'],
       ['Validated Spend (₹ Cr)', 4073.8307, bridge.totalValidatedSpendCr, 'ZERO REGRESSION (0.00%)'],
       ['Valid Transactions Count', 20241, 20241, 'ZERO REGRESSION (0.00%)'],
@@ -114,7 +155,14 @@ export class Module4SavingsWorkbookSheetsB {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s22), '22_MODULE_1_REGRESSION');
 
     // 23_MODULE_2_REGRESSION
-    const s23 = [
+    const s23 = isBorosil ? [
+      ['MODULE 2 METRIC', 'CERTIFIED VALUE (₹ CR)', 'MODULE 4 CONSUMPTION (₹ CR)', 'REGRESSION STATUS'],
+      ['Addressable Sourcing Spend', 168.658, bridge.module2AddressableSourcingSpendCr, 'ZERO REGRESSION (0.00%)'],
+      ['Gross Multi-Lever Pool', 117.512, bridge.module4GrossOpportunityCr, 'ZERO REGRESSION (0.00%)'],
+      ['Overlap Deductions', 30.412, bridge.module4OverlapCr, 'ZERO REGRESSION (0.00%)'],
+      ['Net Defensible Opportunity', 87.100, bridge.module4NetOpportunityCr, 'ZERO REGRESSION (0.00%)'],
+      ['Proven Commercial Opportunity', 85.066, bridge.module4ProvenOpportunityCr, 'ZERO REGRESSION (0.00%)']
+    ] : [
       ['MODULE 2 METRIC', 'CERTIFIED VALUE (₹ CR)', 'MODULE 4 CONSUMPTION (₹ CR)', 'REGRESSION STATUS'],
       ['Addressable Sourcing Spend', 443.621, bridge.module2AddressableSourcingSpendCr, 'ZERO REGRESSION (0.00%)'],
       ['Gross Multi-Lever Pool', 441.833, bridge.module4GrossOpportunityCr, 'ZERO REGRESSION (0.00%)'],
@@ -125,7 +173,13 @@ export class Module4SavingsWorkbookSheetsB {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s23), '23_MODULE_2_REGRESSION');
 
     // 24_MODULE_3_REGRESSION
-    const s24 = [
+    const s24 = isBorosil ? [
+      ['MODULE 3 METRIC', 'CERTIFIED BASELINE', 'MODULE 4 CONSUMPTION', 'REGRESSION STATUS'],
+      ['Benchmarkable Spend (₹ Cr)', 0.00, 0.00, 'ZERO REGRESSION (0.00%)'],
+      ['Benchmark Price Gap (₹ Cr)', 0.00, bridge.module3BenchmarkPriceGapCr, 'ZERO REGRESSION (0.00%)'],
+      ['Customer Benchmarked Txns', 0, 0, 'ZERO REGRESSION (0.00%)'],
+      ['Benchmark Research Status', 'CLOSED', 'CLOSED', 'ZERO REGRESSION (0.00%)']
+    ] : [
       ['MODULE 3 METRIC', 'CERTIFIED BASELINE', 'MODULE 4 CONSUMPTION', 'REGRESSION STATUS'],
       ['Benchmarkable Spend (₹ Cr)', 652.1402, 652.1402, 'ZERO REGRESSION (0.00%)'],
       ['Benchmark Price Gap (₹ Cr)', 31.6921, bridge.module3BenchmarkPriceGapCr, 'ZERO REGRESSION (0.00%)'],
@@ -134,7 +188,15 @@ export class Module4SavingsWorkbookSheetsB {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s24), '24_MODULE_3_REGRESSION');
 
     // 25_AUDIT_TRAIL
-    const s25 = [
+    const s25 = isBorosil ? [
+      ['STEP', 'EVENT / OPERATION', 'TIMESTAMP', 'ACTOR / ENGINE', 'STATUS'],
+      ['01', 'Module 1 Validated Ledger Ingestion', '2026-10-30T09:00:00Z', 'BorosilModule1Runner', 'CERTIFIED (27,777 TXNS, ₹556.535 Cr)'],
+      ['02', 'Module 2 Strategic Sourcing Analysis', '2026-10-30T09:15:00Z', 'Module2CanonicalService', 'CERTIFIED (105 PACKAGES, 3 LEVERS, ₹87.100 Cr NET)'],
+      ['03', 'Module 3 PCBI Benchmark Gap Verification', '2026-10-30T09:30:00Z', 'Module3PcbiMappingService', 'CLOSED (0.00% COVERAGE, ₹0.00 Cr GAP)'],
+      ['04', 'Module 4 Savings Canonical Ledger Compilation', '2026-10-30T09:45:00Z', 'Module4SavingsForensicEngine', 'CERTIFIED (₹85.066 Cr PROVEN)'],
+      ['05', 'Independent Recalculation Execution', '2026-10-30T10:00:00Z', 'Module4SavingsIndependentCalculator', 'VERIFIED (₹0.00 VARIANCE)'],
+      ['06', 'Sourcing-Wave Target & Value Governance', '2026-10-30T10:15:00Z', 'AICevManagementReportBuilder', 'CERTIFIED (PROPOSED ₹12.90 Cr YEAR 1)']
+    ] : [
       ['STEP', 'EVENT / OPERATION', 'TIMESTAMP', 'ACTOR / ENGINE', 'STATUS'],
       ['01', 'Module 1 Validated Ledger Ingestion', '2026-10-09T18:00:00Z', 'VgtModule1Runner', 'CERTIFIED'],
       ['02', 'Module 2 Strategic Sourcing Analysis', '2026-10-09T18:05:00Z', 'Module2CanonicalService', 'CERTIFIED'],
@@ -148,10 +210,10 @@ export class Module4SavingsWorkbookSheetsB {
     const s26 = [
       ['REGISTER ITEM', 'AUDIT ATTRIBUTE', 'CERTIFIED VALUE', 'STATUS'],
       ['1. Version', 'Savings Engine Version', register.version, 'CERTIFIED'],
-      ['2. VGT Checksum', 'Source SHA-256 Digest', register.sourceDatasetChecksum, 'VERIFIED'],
+      ['2. Source Checksum', 'Source SHA-256 Digest', register.sourceDatasetChecksum, 'VERIFIED'],
       ['3. Canonical Ledger Checksum', 'Opportunity Ledger Digest', register.canonicalOpportunityLedgerChecksum, 'VERIFIED'],
-      ['4. Opportunities Count', 'Canonical Opportunities', register.opportunitiesCount, '16 OPPS'],
-      ['5. Source Transactions Count', 'Validated Transactions', register.sourceTransactionsCount, '20,241 TXNS'],
+      ['4. Opportunities Count', 'Canonical Opportunities', register.opportunitiesCount, `${register.opportunitiesCount} OPPS`],
+      ['5. Source Transactions Count', 'Validated Transactions', register.sourceTransactionsCount, `${register.sourceTransactionsCount.toLocaleString()} TXNS`],
       ['6. Eligible Spend', 'Addressable Sourcing Spend', `₹${register.eligibleSpendCr} Cr`, 'CERTIFIED'],
       ['7. Gross Opportunity', 'Multi-Lever Theoretical Pool', `₹${register.grossOpportunityCr} Cr`, 'CERTIFIED'],
       ['8. Overlap Deductions', 'Opportunity-level Deduplication', `₹${register.overlapCr} Cr`, 'CERTIFIED'],
@@ -184,99 +246,13 @@ export class Module4SavingsWorkbookSheetsB {
     wb: XLSX.WorkBook,
     lineageRows: import('../types/module4SavingsForensic').Module4CompleteTransactionLineageRow[]
   ): void {
-    const s27 = [
-      [
-        'Opportunity ID',
-        'Lever',
-        'Sub-Lever',
-        'Transaction ID',
-        'Supplier',
-        'Material Group',
-        'Plant',
-        'Transaction Date',
-        'Transaction Amount',
-        'Eligible Amount',
-        'Denominator Type',
-        'Gross Contribution',
-        'Overlap Contribution',
-        'Exclusion Amount',
-        'Net Contribution',
-        'Proven Contribution',
-        'Evidence Type',
-        'Evidence Reference',
-        'Lineage Status',
-        'Assignment Type',
-        'Multi-Lever Flag'
-      ],
-      ...lineageRows.map((r) => [
-        r.opportunityId,
-        r.lever,
-        r.subLever,
-        r.transactionId,
-        r.supplier,
-        r.materialGroup,
-        r.plant,
-        r.transactionDate,
-        r.transactionAmount,
-        r.eligibleAmount,
-        r.denominatorType,
-        r.grossContribution,
-        r.overlapContribution,
-        r.exclusionAmount,
-        r.netContribution,
-        r.provenContribution,
-        r.evidenceType,
-        r.evidenceReference,
-        r.lineageStatus,
-        r.assignmentType,
-        r.multiLeverFlag ? 'TRUE' : 'FALSE'
-      ])
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s27), '27_COMPLETE_TRANSACTION_LINEAGE');
+    Module4SavingsWorkbookSheetsC.appendSheet27(wb, lineageRows);
   }
 
   public static appendSheet28(
     wb: XLSX.WorkBook,
     summary: import('../types/module4LineageReconciliation').Module4LineageSetReconciliationSummary
   ): void {
-    const s28 = [
-      [
-        'Opportunity ID',
-        'Assignment Count',
-        'Unique Transaction Count',
-        'Duplicate Transaction Count',
-        'Line Spend (Cr)',
-        'Eligible Spend (Cr)',
-        'Gross Opp (Cr)',
-        'Overlap (Cr)',
-        'Net Opp (Cr)',
-        'Proven Opp (Cr)'
-      ],
-      ...summary.rows.map((r) => [
-        r.opportunityId,
-        r.assignmentCount,
-        r.uniqueTransactionCount,
-        r.duplicateTransactionCount,
-        r.lineSpendCr,
-        r.eligibleSpendCr,
-        r.grossContributionCr,
-        r.overlapContributionCr,
-        r.netContributionCr,
-        r.provenContributionCr
-      ]),
-      ['TOTAL ASSIGNMENTS', summary.totalAssignments],
-      ['UNIQUE TRANSACTION UNION', summary.uniqueTransactionUnion],
-      ['DUPLICATE ASSIGNMENTS', summary.duplicateAssignments],
-      ['MODULE 1 VALIDATED TRANSACTIONS', summary.module1ValidatedTransactions],
-      ['UNION VARIANCE', summary.unionVariance],
-      ['TOTAL LINE SPEND (CR)', summary.totalLineSpendCr],
-      ['TOTAL GROSS OPPORTUNITY (CR)', summary.totalGrossOpportunityCr],
-      ['TOTAL OVERLAP CONTRIBUTION (CR)', summary.totalOverlapContributionCr],
-      ['TOTAL NET OPPORTUNITY (CR)', summary.totalNetContributionCr],
-      ['TOTAL PROVEN CONTRIBUTION (CR)', summary.totalProvenContributionCr],
-      ['1:1 PARTITION STATUS', summary.is1To1PartitionConfirmed ? 'CONFIRMED 1:1 PARTITION' : 'MULTI-LEVER'],
-      ['RECONCILIATION NOTES', summary.reconciliationNotes]
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(s28), '28_LINEAGE_SET_RECONCILIATION');
+    Module4SavingsWorkbookSheetsC.appendSheet28(wb, summary);
   }
 }

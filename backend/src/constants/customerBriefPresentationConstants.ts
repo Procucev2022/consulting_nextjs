@@ -101,6 +101,99 @@ export const ABC_TEXTILE_PRESENTATION_CONTRACT: ExecutiveBriefPresentationContra
   classifications: ABC_TEXTILE_VALUE_CLASSIFICATIONS
 };
 
+export const BOROSIL_VALUE_CLASSIFICATIONS: readonly ExecutiveBriefValueClassification[] = [
+  {
+    type: 'DIRECT_SAVINGS',
+    label: 'Direct Net Sourcing Opportunity',
+    valueFormatted: '₹87.100 Cr',
+    numericCr: 87.100,
+    isDirectSaving: true,
+    monetizationStatus: 'MONETIZED_DIRECT',
+    description: 'Deduplicated net opportunity across Strategic Sourcing (₹73.769 Cr), Vendor Consolidation (₹11.978 Cr), and E-Auction (₹1.352 Cr).'
+  },
+  {
+    type: 'STRATEGIC_VALUE',
+    label: 'Strategic Market Value',
+    valueFormatted: '₹0.00 Cr',
+    numericCr: 0.0,
+    isDirectSaving: false,
+    monetizationStatus: 'STRATEGIC_MARKET',
+    description: 'Market commodity index contracting not activated; Module 3 benchmark contribution closed at ₹0.00 Cr.'
+  },
+  {
+    type: 'PROCESS_PRODUCTIVITY',
+    label: 'Process Productivity',
+    valueFormatted: 'PO Frequency Reduction',
+    numericCr: null,
+    isDirectSaving: false,
+    monetizationStatus: 'NOT_MONETIZED',
+    description: 'Purchase order consolidation and frequency reduction; strictly non-monetized.'
+  },
+  {
+    type: 'COST_AVOIDANCE',
+    label: 'Cost Avoidance / Risk',
+    valueFormatted: 'Dual-Source Qualification',
+    numericCr: null,
+    isDirectSaving: false,
+    monetizationStatus: 'NOT_MONETIZED',
+    description: 'Sole-source risk mitigation on Soda Ash and Precision Tooling; non-monetized.'
+  },
+  {
+    type: 'VALIDATED_SAVINGS',
+    label: 'Modelled Opportunity Excluding Lever 2',
+    valueFormatted: '₹75.121 Cr',
+    numericCr: 75.121,
+    isDirectSaving: false,
+    monetizationStatus: 'MONETIZED_DIRECT',
+    description: 'Empirically evidenced sourcing opportunity across verified Levers 1 & 3. Excludes ₹11.978 Cr Vendor Consolidation held in governance reserve pending commercial validation.'
+  },
+  {
+    type: 'REALIZED_SAVINGS',
+    label: 'Realized Savings',
+    valueFormatted: '₹0.00 Cr',
+    numericCr: 0.0,
+    isDirectSaving: false,
+    monetizationStatus: 'MONETIZED_DIRECT',
+    description: 'Realized savings zero until contract deployment, supplier negotiations, and audited billing execution.'
+  }
+];
+
+export const BOROSIL_PRESENTATION_CONTRACT: ExecutiveBriefPresentationContract = {
+  totalCustomerSpendCr: 556.535,
+  totalCustomerSpendInr: 5565346000,
+  addressableSpendCr: 168.658,
+  addressableSpendInr: 1686580000,
+  analysisPeriod: '1 April 2026 to 22 October 2026 (FY2026-27 YTD, 205 days)',
+  analysisPeriodMonths: 7,
+  grossOpportunityCr: 117.512,
+  grossOpportunityInr: 1175116632,
+  overlapDeductionsCr: 30.412,
+  overlapDeductionsInr: 304119498,
+  exclusionsCr: 0.0,
+  exclusionsInr: 0,
+  netDefensiblePipelineCr: 87.100,
+  netDefensiblePipelineInr: 870997134,
+  netDirectSavingsCr: 87.100,
+  netDirectSavingsInr: 870997134,
+  strategicMarketValueCr: 0.0,
+  strategicMarketValueInr: 0,
+  processProductivityPct: 0.0,
+  lowValuePOsCount: 0,
+  directProcessSavingCr: 0.0,
+  spendDeRiskedCr: 0.0,
+  dualSourceProgramsCount: 0,
+  validatedSavingsCr: 75.121,
+  validatedSavingsInr: 751213739,
+  realizedSavingsCr: 0.0,
+  realizedSavingsInr: 0,
+  baselineTransactions: 27777,
+  baselineSuppliers: 1537,
+  baselineMaterialGroups: 133,
+  baselinePlants: 3,
+  baselineTotalPOs: 27777,
+  classifications: BOROSIL_VALUE_CLASSIFICATIONS
+};
+
 export interface PresentationFormattedValues {
   evaluatedSpendFormatted: string;
   grossOpportunityFormatted: string;

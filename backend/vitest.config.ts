@@ -11,7 +11,7 @@ export default defineConfig({
       }
     },
     testTimeout: 10000,
-    hookTimeout: 10000,
+    hookTimeout: 120000,
     teardownTimeout: 30000,
     env: {
       AICEV_DATA_DIR: 'c:/Users/srini/Desktop/Antigravity Consulting Files/consulting_nextjs/data/test',

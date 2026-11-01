@@ -64,6 +64,34 @@ export const ULTRATECH_WEBSITE_PROFILE: CustomerWebsiteProfile = {
   retrievedAt: '2026-10-22T20:00:00.000Z'
 };
 
+export const BOROSIL_WEBSITE_PROFILE: CustomerWebsiteProfile = {
+  companyWebsite: 'https://www.borosil.com',
+  businessDescription:
+    'Borosil Ltd is a leading Indian glassware manufacturer specializing in laboratory glassware, scientific instruments, consumer houseware, and specialty industrial products.',
+  sector: 'Specialty Glassware & Laboratory Solutions',
+  mainProducts: [
+    'Laboratory Glassware & Scientific Apparatus',
+    'Consumer Glassware & Microwaveable Kitchenware',
+    'Pharmaceutical Packaging & Tubing',
+    'Specialty Industrial Glass Components'
+  ],
+  operatingFootprint:
+    '3 evaluated manufacturing plants (Plant 1120, Plant 6101, Plant 8202) across Bharuch and Jaipur facilities.',
+  revenueOrProfit:
+    '₹556.535 Cr Evaluated Spend Baseline / 27,777 Canonical Transactions [AIC-2026-0002 Audited Baseline]',
+  businessPriorities: [
+    'Direct chemical and raw material price harmonization across manufacturing plants',
+    'Packaging supplier rationalization and volume consolidation',
+    'Logistics freight route optimization and e-auction dynamic bidding'
+  ],
+  sourceUrls: [
+    'https://www.borosil.com/about-us',
+    'https://www.borosil.com/investor-relations'
+  ],
+  reportingPeriod: 'FY 2024-25 Assessment Scope (AIC-2026-0002)',
+  retrievedAt: '2026-10-30T00:00:00.000Z'
+};
+
 export class CustomerWebsiteService {
   private static instance: CustomerWebsiteService;
   private profileCache: Map<string, CustomerWebsiteProfile> = new Map();
@@ -74,6 +102,11 @@ export class CustomerWebsiteService {
     this.profileCache.set('ultratech', ULTRATECH_WEBSITE_PROFILE);
     this.profileCache.set('ultratech cement', ULTRATECH_WEBSITE_PROFILE);
     this.profileCache.set('demo', ULTRATECH_WEBSITE_PROFILE);
+    this.profileCache.set('borosil', BOROSIL_WEBSITE_PROFILE);
+    this.profileCache.set('borosil ltd', BOROSIL_WEBSITE_PROFILE);
+    this.profileCache.set('borosil limited', BOROSIL_WEBSITE_PROFILE);
+    this.profileCache.set('aic-2026-0002', BOROSIL_WEBSITE_PROFILE);
+    this.profileCache.set('cust-2026-0002', BOROSIL_WEBSITE_PROFILE);
   }
 
   public static getInstance(): CustomerWebsiteService {
