@@ -5,7 +5,7 @@
 
 const JOB_SELECT = `
 SELECT
-  a.assessment_id, a.customer_id, a.customer_name, a.assessment_owner,
+  a.assessment_id, a.customer_id, a.customer_name, c.contact_email AS customer_contact_email, a.assessment_owner,
   a.assessment_period_start, a.assessment_period_end, a.total_spend_cr AS record_spend_cr,
   a.created_at, a.updated_at,
   cur.data_version_id AS current_version_id, cur.uploaded_by AS current_uploaded_by,
@@ -21,6 +21,7 @@ SELECT
     WHERE qc.report_version_id = rpt.report_version_id
     ORDER BY qc.created_at DESC, qc.checklist_id DESC LIMIT 1) AS checklist_complete
 FROM AssessmentRecord a
+LEFT JOIN CustomerRecord c ON c.customer_id = a.customer_id
 LEFT JOIN AssessmentDataVersion cur ON cur.data_version_id = (
   SELECT d.data_version_id FROM AssessmentDataVersion d WHERE d.assessment_id = a.assessment_id
   ORDER BY d.version_number DESC, d.uploaded_at DESC, d.data_version_id DESC LIMIT 1)
@@ -60,10 +61,13 @@ ORDER BY a.created_at DESC, a.assessment_id ASC`;
 export const SQL_JOB_BY_ID = `${JOB_SELECT} WHERE a.assessment_id = ?1`;
 
 export const SQL_VERSIONS_FOR_JOB = `
-SELECT data_version_id, assessment_id, version_number, file_name, file_size, checksum, uploaded_by,
-  uploaded_at, record_count, notes
-FROM AssessmentDataVersion WHERE assessment_id = ?1
-ORDER BY version_number ASC, uploaded_at ASC, data_version_id ASC`;
+SELECT dv.data_version_id, dv.assessment_id, dv.version_number, dv.file_name, dv.file_size, dv.checksum,
+  dv.uploaded_by, dv.uploaded_at, dv.record_count, dv.notes,
+  correction.parent_version_id AS parent_data_version_id, correction.correction_reason
+FROM AssessmentDataVersion dv
+LEFT JOIN OrchestrationDatasetCorrection correction ON correction.data_version_id = dv.data_version_id
+WHERE dv.assessment_id = ?1
+ORDER BY dv.version_number ASC, dv.uploaded_at ASC, dv.data_version_id ASC`;
 
 /** Per-version procurement statistics. Scans ProcurementTransaction by assessment_id (no index yet). */
 export const SQL_PROCUREMENT_STATS_FOR_JOB = `
@@ -74,6 +78,53 @@ SELECT source_document_id,
   COALESCE(SUM(total_in_cr_raw), 0) AS spend_cr
 FROM ProcurementTransaction WHERE assessment_id = ?1
 GROUP BY source_document_id`;
+
+export const SQL_PCBI_GAPS_FOR_JOB = `
+SELECT
+  COALESCE(NULLIF(TRIM(tx.material_group), ''), NULLIF(TRIM(tx.short_text), ''),
+    NULLIF(TRIM(tx.material_code), ''), 'Unclassified') AS category_key,
+  COALESCE(NULLIF(TRIM(tx.material_group), ''), NULLIF(TRIM(tx.short_text), ''),
+    NULLIF(TRIM(tx.material_code), ''), 'Unclassified') AS item_category,
+  COALESCE(MAX(NULLIF(TRIM(tx.short_text), '')), MAX(NULLIF(TRIM(tx.material_code), '')),
+    COALESCE(NULLIF(TRIM(tx.material_group), ''), 'Unclassified')) AS relevant_classification,
+  COALESCE(SUM(CASE WHEN COALESCE(tx.total_in_cr_raw, 0) > 0 THEN tx.total_in_cr_raw ELSE 0 END), 0) AS spend_cr,
+  COUNT(*) AS transaction_count,
+  COUNT(DISTINCT NULLIF(TRIM(tx.supplier_name), '')) AS supplier_count,
+  COUNT(DISTINCT NULLIF(TRIM(tx.plant), '')) AS plant_count,
+  resolution.action, resolution.target_pcbi_series,
+  benchmark.benchmark_source, benchmark.quality_rating,
+  resolution.exclusion_reason, resolution.exclusion_notes, resolution.research_notes,
+  resolution.resolved_by, resolution.resolved_at
+FROM ProcurementTransaction tx
+LEFT JOIN OrchestrationPCBIGapResolution resolution
+  ON resolution.assessment_id = tx.assessment_id
+  AND resolution.data_version_id = ?2
+  AND resolution.category_key = COALESCE(NULLIF(TRIM(tx.material_group), ''), NULLIF(TRIM(tx.short_text), ''),
+    NULLIF(TRIM(tx.material_code), ''), 'Unclassified')
+LEFT JOIN PCBIBenchmarkMaster benchmark
+  ON benchmark.pcbi_id = resolution.target_pcbi_series AND benchmark.active = 1
+WHERE tx.assessment_id = ?1
+  AND tx.source_document_id IN (?2, ?3)
+  AND COALESCE(UPPER(TRIM(tx.deletion_indicator)), '') <> 'L'
+GROUP BY category_key, resolution.action, resolution.target_pcbi_series,
+  benchmark.benchmark_source, benchmark.quality_rating, resolution.exclusion_reason,
+  resolution.exclusion_notes, resolution.research_notes, resolution.resolved_by, resolution.resolved_at
+ORDER BY category_key ASC`;
+
+export const SQL_ACTIVE_PCBI_SERIES = `
+SELECT pcbi_id, benchmark_source, quality_rating
+FROM PCBIBenchmarkMaster WHERE pcbi_id = ?1 AND active = 1 LIMIT 1`;
+
+export const SQL_UPSERT_PCBI_GAP_RESOLUTION = `
+INSERT INTO OrchestrationPCBIGapResolution (
+  assessment_id, data_version_id, category_key, action, target_pcbi_series, exclusion_reason,
+  exclusion_notes, research_notes, resolved_by, resolved_at
+) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+ON CONFLICT (assessment_id, data_version_id, category_key) DO UPDATE SET
+  action = excluded.action, target_pcbi_series = excluded.target_pcbi_series,
+  exclusion_reason = excluded.exclusion_reason, exclusion_notes = excluded.exclusion_notes,
+  research_notes = excluded.research_notes, resolved_by = excluded.resolved_by,
+  resolved_at = excluded.resolved_at`;
 
 export const SQL_REPORTS_FOR_JOB = `
 SELECT ${REPORT_COLUMNS} FROM OrchestrationReportVersion WHERE assessment_id = ?1 ORDER BY sequence_number ASC`;
@@ -163,6 +214,11 @@ INSERT INTO OrchestrationNotification (
   notification_id, recipient_type, tenant_id, assessment_id, report_version_id, title, message, severity,
   read_flag, email_status, email_last_error, email_retry_count, created_at
 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 0, ?9, ?10, 0, ?11)`;
+
+export const SQL_UPDATE_NOTIFICATION_EMAIL = `
+UPDATE OrchestrationNotification
+SET email_status = ?1, email_last_error = ?2, email_retry_count = email_retry_count + ?3
+WHERE notification_id = ?4`;
 
 export const SQL_INSERT_AUDIT_EVENT = `
 INSERT INTO OrchestrationAuditEvent (

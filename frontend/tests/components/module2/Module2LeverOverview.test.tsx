@@ -38,7 +38,7 @@ describe('Module2LeverOverview Component', () => {
     expect(screen.getAllByText(vendorStatusLabel).length).toBeGreaterThan(0);
 
     const openBtns = screen.getAllByText(UI_STRINGS.module2LeversOverview.btnOpenAnalysis);
-    expect(openBtns).toHaveLength(9);
+    expect(openBtns).toHaveLength(10);
 
     // Open Lever 1
     fireEvent.click(openBtns[0]);
@@ -64,26 +64,24 @@ describe('Module2LeverOverview Component', () => {
     fireEvent.click(openBtns[5]);
     expect(handleSelectLever).toHaveBeenCalledWith('categorySpecialisation');
 
-    // Open Lever 8
+    // Open Lever 7
     fireEvent.click(openBtns[6]);
+    expect(handleSelectLever).toHaveBeenCalledWith('logisticsPackaging');
+
+    // Open Lever 8
+    fireEvent.click(openBtns[7]);
     expect(handleSelectLever).toHaveBeenCalledWith('specificationRationalisation');
 
     // Open Lever 9
-    fireEvent.click(openBtns[7]);
+    fireEvent.click(openBtns[8]);
     expect(handleSelectLever).toHaveBeenCalledWith('procurementCompliance');
 
     // Open Lever 10
-    fireEvent.click(openBtns[8]);
+    fireEvent.click(openBtns[9]);
     expect(handleSelectLever).toHaveBeenCalledWith('alternateSourcing');
 
-    // Lever 7: Coming Soon
-    expect(screen.getByText('Logistics & Packaging Specifications')).toBeInTheDocument();
-    const comingSoonBadges = screen.getAllByText(UI_STRINGS.module2LeversOverview.statusComingSoon);
-    expect(comingSoonBadges.length).toBeGreaterThanOrEqual(1);
-
-    const comingSoonBtn = screen.getByTestId('lever-coming-soon-btn-7');
-    expect(comingSoonBtn).toBeInTheDocument();
-    expect(comingSoonBtn).toBeDisabled();
+    expect(screen.getAllByText(UI_STRINGS.module2Logistics.title).length).toBeGreaterThan(0);
+    expect(screen.getByTestId('lever-open-btn-7')).toBeEnabled();
   });
 
   it('toggles collapsible technical diagnostics and methodology', () => {

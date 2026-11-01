@@ -7,10 +7,10 @@ import { EXECUTIVE_BRIEF_CLIENT_NAME_MAX_LENGTH } from './executiveBriefRouteCon
 
 const clientNameSchema = z.string().trim().min(1).max(EXECUTIVE_BRIEF_CLIENT_NAME_MAX_LENGTH);
 
-export const executiveBriefClientQuerySchema = z.object({
-  client: clientNameSchema.optional()
-});
-
 export const executiveBriefRegenerateBodySchema = z.object({
   client: clientNameSchema.optional()
 });
+
+export const executiveBriefEmailBodySchema = z.object({
+  buyerEmail: z.string().trim().email().max(254)
+}).strict();

@@ -14,12 +14,13 @@ import type { Module5ConversionMatrixProps } from '../types';
 import { TierMaskOverlay } from './TierMaskOverlay';
 import {
   UI_STRINGS,
-  DEFAULT_SAVINGS_TARGET_PCT,
-  DEFAULT_SAAS_FEE_RATE,
-  conversionInputsSchema
+  conversionInputsSchema,
+  EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT
 } from '../constants';
 import { validateInput } from '../utils/validation';
 import { authApiClient } from '../utils/authApi';
+import { getApiBaseUrl } from '../utils/apiBase';
+import frontendLogger from '../utils/logger';
 import confetti from 'canvas-confetti';
 
 export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = ({
@@ -34,8 +35,8 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
 }) => {
   // ROI Interactive Calculator State in INR in Crores (₹ Cr)
   const [annualSpendCr, setAnnualSpendCr] = useState<number>(() => tenant?.total_spend_evaluated_inr || 0);
-  const [savingsRate, setSavingsRate] = useState<number>(DEFAULT_SAVINGS_TARGET_PCT); // 16.4%
-  const [saasFeeRate, setSaasFeeRate] = useState<number>(DEFAULT_SAAS_FEE_RATE); // 0.85% of spend or platform fee
+  const [savingsRate, setSavingsRate] = useState<number>(0);
+  const [saasFeeRate, setSaasFeeRate] = useState<number>(0);
 
   // Buyer Email Dispatch State
   const [buyerEmail] = useState<string>(() => {
@@ -51,9 +52,7 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
       if (opportunities && opportunities.length > 0) {
         const totalOppSavings = opportunities.reduce((s, o) => s + (o.estimated_savings_inr_cr || 0), 0);
         const derivedRate = Number(((totalOppSavings / tenant.total_spend_evaluated_inr) * 100).toFixed(1));
-        if (derivedRate > 0) {
-          setSavingsRate(Math.min(25, Math.max(8, derivedRate)));
-        }
+        setSavingsRate(Math.min(100, Math.max(0, derivedRate)));
       }
     }
   }, [tenant?.total_spend_evaluated_inr, opportunities]);
@@ -61,8 +60,10 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
   const calculatedGrossSavingsCr = (annualSpendCr * savingsRate) / 100;
   const calculatedPlatformFeeCr = (annualSpendCr * saasFeeRate) / 100;
   const netClientBenefitCr = calculatedGrossSavingsCr - calculatedPlatformFeeCr;
-  const roiMultiple = calculatedGrossSavingsCr / (calculatedPlatformFeeCr || 1);
-  const paybackMonths = Number((12 / roiMultiple).toFixed(1));
+  const roiMultiple = annualSpendCr > 0 && calculatedPlatformFeeCr > 0 && calculatedGrossSavingsCr > 0
+    ? calculatedGrossSavingsCr / calculatedPlatformFeeCr
+    : null;
+  const paybackMonths = roiMultiple && roiMultiple > 0 ? 12 / roiMultiple : null;
 
   const handleSimulateLockIn = async () => {
     const validation = validateInput(conversionInputsSchema, {
@@ -77,45 +78,30 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
 
     const user = authApiClient.getStoredUser();
     const recipientEmail = user?.email || buyerEmail || '';
+    const token = authApiClient.getStoredToken();
 
     try {
-      const res = await fetch('/api/email/executive-brief', {
+      const backendUrl = getApiBaseUrl();
+      if (!backendUrl) {
+        setEmailStatus({ success: false, message: UI_STRINGS.module5.emailBackendUnavailable });
+        return;
+      }
+      if (!token) {
+        setEmailStatus({ success: false, message: UI_STRINGS.errors.auth.sessionExpired });
+        return;
+      }
+      const res = await fetch(`${backendUrl}${EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          buyerEmail: recipientEmail,
-          tenantName: tenant.enterprise_name || 'Enterprise Client',
-          totalSpendInrCr: annualSpendCr,
-          totalSavingsInrCr: calculatedGrossSavingsCr,
-          cleanLineItemsCount: cleanRecordsCount,
-          categories: categories.map((c) => ({
-            name: c.name,
-            spend_inr_crores: c.spend_inr_crores || c.spend,
-            lineItemsCount: c.lineItemsCount
-          })),
-          opportunities: opportunities.map((o) => ({
-            category: o.category,
-            current_spend_inr_cr: o.current_spend_inr_cr,
-            est_savings_inr_cr: o.est_savings_inr_cr,
-            target_savings_pct: o.target_savings_pct
-          })),
-          commercialMetrics: {
-            annualSpendCr,
-            grossSavingsCr: calculatedGrossSavingsCr,
-            platformFeeCr: calculatedPlatformFeeCr,
-            netClientBenefitCr,
-            roiMultiple,
-            savingsRate,
-            saasFeeRate,
-            paybackMonths
-          }
+          buyerEmail: recipientEmail
         })
       });
-      const data = await res.json();
+      const data = await res.json() as { success?: boolean; message?: string; messageId?: string };
       if (res.ok && data.success) {
         setEmailStatus({
           success: true,
-          message: `Multi-Year Terms Locked In! Management Presentation Deck successfully emailed to ${recipientEmail}`,
+          message: UI_STRINGS.module5.emailSent(recipientEmail),
           messageId: data.messageId
         });
         confetti({
@@ -126,13 +112,17 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
       } else {
         setEmailStatus({
           success: false,
-          message: data.message || 'Commercial terms saved locally. Failed to dispatch email.'
+          message: data.message || UI_STRINGS.module5.emailError
         });
       }
     } catch (err: any) {
+      frontendLogger.error('Failed to send D1-backed executive brief', {
+        action: 'module5.email',
+        recipient: recipientEmail
+      }, err);
       setEmailStatus({
         success: false,
-        message: err?.message || 'Network error while dispatching Management Presentation Deck.'
+        message: err?.message || UI_STRINGS.module5.emailNetworkError
       });
     } finally {
       setIsSendingEmail(false);
@@ -324,8 +314,8 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
             </div>
             <input
               type="range"
-              min={8.0}
-              max={25.0}
+              min={0}
+              max={100}
               step={0.5}
               value={savingsRate}
               onChange={(e) => setSavingsRate(Number(e.target.value))}
@@ -385,13 +375,13 @@ export const Module5ConversionMatrix: React.FC<Module5ConversionMatrixProps> = (
               <div>
                 <span className="text-xs text-purple-900 font-semibold">{UI_STRINGS.module5.clientRoiMultiple}</span>
                 <p className="text-3xl font-black font-mono text-purple-950 mt-0.5">
-                  {UI_STRINGS.module5.roiMultipleVal(roiMultiple)}
+                  {roiMultiple == null ? UI_STRINGS.common.notAvailable : UI_STRINGS.module5.roiMultipleVal(roiMultiple)}
                 </p>
               </div>
               <div className="text-right">
                 <span className="text-xs text-purple-900 font-semibold">{UI_STRINGS.module5.estimatedPayback}</span>
                 <p className="text-lg font-bold font-mono text-emerald-700 mt-0.5">
-                  {UI_STRINGS.module5.paybackMonthsVal(12 / roiMultiple)}
+                  {paybackMonths == null ? UI_STRINGS.common.notAvailable : UI_STRINGS.module5.paybackMonthsVal(paybackMonths)}
                 </p>
               </div>
             </div>

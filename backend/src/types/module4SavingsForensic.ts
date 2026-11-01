@@ -3,7 +3,7 @@
  * Authoritative types for transaction-level opportunity ledger, classification, reconciliation, and audit.
  */
 
-import type { ConfidenceLevel } from './savingsOpportunityRegister';
+export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export type Module4LeverClassification =
   | 'DIRECT_SAVINGS'

@@ -345,10 +345,32 @@ export const seedStandardFixtures = (sqlite: SqliteDatabaseLike): void => {
     id: 'TX-3', assessmentId: 'AIC-A1', sourceDocumentId: 'AIC-A1:DV-A1',
     supplier: 'Supplier One', plant: null, materialGroup: 'MG2', spendCr: 0.25
   });
+  sqlite.prepare(
+    'INSERT INTO PCBIBenchmarkMaster (id, pcbi_id, sector, category, sub_category, benchmark_name, '
+      + 'benchmark_source, source_series, benchmark_unit, currency, geography, active, quality_rating) '
+      + 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)'
+  ).run('BENCH-PCBI-TEST', 'PCBI-TEST', 'TEST', 'Test category', 'Test subcategory', 'Test benchmark',
+    'Test benchmark source', 'TEST-SERIES', 'INR/unit', 'INR', 'India', 'A');
+  sqlite.prepare(
+    'INSERT INTO OrchestrationPCBIGapResolution (assessment_id, data_version_id, category_key, action, '
+      + 'target_pcbi_series, resolved_by, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run('AIC-A1', 'DV-A1', 'MG1', 'MAP_EXISTING', 'PCBI-TEST', ADMIN_ID, '2026-02-04T00:00:00.000Z');
+  sqlite.prepare(
+    'INSERT INTO OrchestrationPCBIGapResolution (assessment_id, data_version_id, category_key, action, '
+      + 'target_pcbi_series, resolved_by, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run('AIC-A1', 'DV-A1', 'MG2', 'MAP_EXISTING', 'PCBI-TEST', ADMIN_ID, '2026-02-04T00:00:00.000Z');
 
   seedAssessment(sqlite, { id: 'AIC-A2', customerId: CUSTOMER_A_ID, customerName: 'Alpha Textile' });
   seedVersion(sqlite, { id: 'DV-A2', assessmentId: 'AIC-A2' });
   seedRun(sqlite, { id: 'RUN-A2', assessmentId: 'AIC-A2', versionId: 'DV-A2' });
+  seedTransaction(sqlite, {
+    id: 'TX-A2', assessmentId: 'AIC-A2', sourceDocumentId: 'AIC-A2:DV-A2',
+    supplier: 'Supplier Two', plant: 'P2', materialGroup: 'MG-A2', spendCr: 1
+  });
+  sqlite.prepare(
+    'INSERT INTO OrchestrationPCBIGapResolution (assessment_id, data_version_id, category_key, action, '
+      + 'target_pcbi_series, resolved_by, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run('AIC-A2', 'DV-A2', 'MG-A2', 'MAP_EXISTING', 'PCBI-TEST', ADMIN_ID, '2026-02-04T00:00:00.000Z');
 
   seedAssessment(sqlite, { id: 'AIC-B1', customerId: CUSTOMER_B_ID, customerName: 'Beta Cement' });
   seedVersion(sqlite, { id: 'DV-B1', assessmentId: 'AIC-B1' });

@@ -9,6 +9,7 @@ const expectTextWithFragments = (text: string, fragments: string[]): void => {
 };
 
 const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
+  ['databaseData.opportunityHandoffFailed', () => UI_STRINGS.databaseData.opportunityHandoffFailed(503), ['503', 'D1', 'Retry']],
   ['module4.actionPlan.activeCount', () => UI_STRINGS.module4.actionPlan.activeCount(3), ['3', 'action plans']],
   ['taxonomyData.loadFailed', () => UI_STRINGS.taxonomyData.loadFailed('catalog offline', 'req-7'), ['catalog offline', 'req-7']],
   ['taxonomyData.httpFailure', () => UI_STRINGS.taxonomyData.httpFailure(503), ['503']],
@@ -28,6 +29,13 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module1.viewBalanceSuppliers', () => UI_STRINGS.module1.viewBalanceSuppliers(8), ['8']],
   ['module1.hideBalanceSuppliers', () => UI_STRINGS.module1.hideBalanceSuppliers(9), ['9']],
   ['module1.processingStatus', () => UI_STRINGS.module1.processingStatus(87), ['87']],
+  ['module1.fileSizeMb', () => UI_STRINGS.module1.fileSizeMb(1.25), ['1.25']],
+  ['module1.uploadMetadata', () => UI_STRINGS.module1.uploadMetadata('CSV', '2 MB', '2026-10-31'), ['CSV', '2 MB', '2026-10-31']],
+  ['module1.uploadProgress', () => UI_STRINGS.module1.uploadProgress(85, 'Parsing'), ['85', 'Parsing']],
+  ['module1.recordCount', () => UI_STRINGS.module1.recordCount(1250), ['1,250', 'Records']],
+  ['module1.spendFromFile (present)', () => UI_STRINGS.module1.spendFromFile(2.5), ['2.50', 'Cr']],
+  ['module1.evaluatedSpend (present)', () => UI_STRINGS.module1.evaluatedSpend(2.5), ['2.50']],
+  ['module1.evaluatedSpend (missing)', () => UI_STRINGS.module1.evaluatedSpend(), ['unavailable']],
 
   ['module1.paretoHierarchy.showingSummary', () => UI_STRINGS.module1.paretoHierarchy.showingSummary(10, 50, 80), ['10', '80']],
   ['module1.paretoHierarchy.cumulativeLabel', () => UI_STRINGS.module1.paretoHierarchy.cumulativeLabel('12.34'), ['12.34']],
@@ -37,7 +45,7 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module1.paretoHierarchy.childVendorsCount (plural)', () => UI_STRINGS.module1.paretoHierarchy.childVendorsCount(4), ['4']],
 
   ['documentSummary.subheading', () => UI_STRINGS.documentSummary.subheading('sales.xlsx', 250), ['sales.xlsx', '250']],
-  ['documentSummary.subheading (no file name)', () => UI_STRINGS.documentSummary.subheading('', 0), ['0']],
+  ['documentSummary.subheading (no file name or count)', () => UI_STRINGS.documentSummary.subheading('', undefined), ['N/A']],
   ['documentSummary.suspectedDuplicatesNote', () => UI_STRINGS.documentSummary.suspectedDuplicatesNote(340), ['340']],
   ['documentSummary.distinctMaterialsCount', () => UI_STRINGS.documentSummary.distinctMaterialsCount(980), ['980']],
   ['documentSummary.distinctSuppliersCount', () => UI_STRINGS.documentSummary.distinctSuppliersCount(45), ['45']],
@@ -100,6 +108,7 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['module2.breakdown.hideBalanceSuppliers', () => UI_STRINGS.module2.breakdown.hideBalanceSuppliers(8), ['8']],
   ['module2.breakdown.viewBalanceSuppliers', () => UI_STRINGS.module2.breakdown.viewBalanceSuppliers(9), ['9']],
   ['module2.totalEvaluated', () => UI_STRINGS.module2.totalEvaluated(1234.5), ['1234.50']],
+  ['savingsInitiativesSummary.spendEligibilityExplanation', () => UI_STRINGS.savingsInitiativesSummary.spendEligibilityExplanation(315.02, 25.12), ['315.02', '25.12']],
   ['module2.vendorSupply.itemsModalTitle', () => UI_STRINGS.module2.vendorSupply.itemsModalTitle('Acme Corp'), ['Acme Corp']],
   ['module2.vendorSupply.itemCountBadge', () => UI_STRINGS.module2.vendorSupply.itemCountBadge(12), ['12']],
   ['module2.colLPrefix', () => UI_STRINGS.module2.colLPrefix('C-41'), ['C-41']],
@@ -133,7 +142,7 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['modals.clientSetup.industrySector.packagingSplit', () => UI_STRINGS.modals.clientSetup.industrySector.packagingSplit(20), ['20']],
   ['modals.clientSetup.industrySector.logisticsSplit', () => UI_STRINGS.modals.clientSetup.industrySector.logisticsSplit(10), ['10']],
   ['modals.clientSetup.industrySector.mroSplit', () => UI_STRINGS.modals.clientSetup.industrySector.mroSplit(7), ['7']],
-  ['modals.fixCurrency.asOnDateViaYahooFinance', () => UI_STRINGS.modals.fixCurrency.asOnDateViaYahooFinance('2025-04-01', 'USDINR=X'), ['2025-04-01', 'USDINR=X']],
+  ['modals.fixCurrency.asOnDateFromD1', () => UI_STRINGS.modals.fixCurrency.asOnDateFromD1('2025-04-01'), ['2025-04-01']],
   ['modals.reassign.vendorLabel', () => UI_STRINGS.modals.reassign.vendorLabel('Tata Steel'), ['Tata Steel']],
   ['modals.reassign.spendLabel', () => UI_STRINGS.modals.reassign.spendLabel('12.5 Cr'), ['12.5 Cr']],
   ['modals.reassign.hierarchyPath', () => UI_STRINGS.modals.reassign.hierarchyPath('Direct', 'Steel', 'Flat Products'), ['Direct', 'Steel', 'Flat Products']],
@@ -158,15 +167,15 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['modals.topItems.showingCategoryItems', () => UI_STRINGS.modals.topItems.showingCategoryItems(5, 20, 'Packaging'), ['5', '20', 'Packaging']],
   ['modals.topItems.showingVendorItems', () => UI_STRINGS.modals.topItems.showingVendorItems(5, 20, 'Amcor'), ['5', '20', 'Amcor']],
 
-  ['modals.proCPX.deployedDesc', () => UI_STRINGS.modals.proCPX.deployedDesc('OPP-77', 6, 'SAVINGS-TEXT'), ['OPP-77', '6', 'SAVINGS-TEXT']],
+  ['modals.proCPX.deployedDesc', () => UI_STRINGS.modals.proCPX.deployedDesc, ['D1', 'No sourcing event', 'no suppliers']],
   ['modals.proCPX.supplierCohortLabel', () => UI_STRINGS.modals.proCPX.supplierCohortLabel(8), ['8']],
-  ['modals.dpsNXT.deployedDesc', () => UI_STRINGS.modals.dpsNXT.deployedDesc('Steel Coils', 'AMOUNT-TEXT'), ['Steel Coils', 'AMOUNT-TEXT']],
+  ['modals.dpsNXT.deployedDesc', () => UI_STRINGS.modals.dpsNXT.deployedDesc, ['D1', 'not active', 'contract']],
   ['modals.report.totalAnalyzedSpendVal', () => UI_STRINGS.modals.report.totalAnalyzedSpendVal(5920.35), ['5920.35']],
   ['modals.report.totalSavingsVal', () => UI_STRINGS.modals.report.totalSavingsVal(78.72), ['78.72']],
   ['modals.report.savingsTargetVal', () => UI_STRINGS.modals.report.savingsTargetVal(14.2), ['14.20']],
 
-  ['toasts.pushedToProCPX', () => UI_STRINGS.toasts.pushedToProCPX('OPP-12'), ['OPP-12']],
-  ['toasts.deployedToDPSNXT', () => UI_STRINGS.toasts.deployedToDPSNXT('OPP-12'), ['OPP-12']],
+  ['toasts.pushedToProCPX', () => UI_STRINGS.toasts.pushedToProCPX('OPP-12'), ['OPP-12', 'D1', 'No external event']],
+  ['toasts.deployedToDPSNXT', () => UI_STRINGS.toasts.deployedToDPSNXT('OPP-12'), ['OPP-12', 'D1', 'No rate rules']],
   ['toasts.recordNormalized', () => UI_STRINGS.toasts.recordNormalized('REC-1', 'USD'), ['REC-1', 'USD']],
   ['toasts.recordMapped', () => UI_STRINGS.toasts.recordMapped('REC-2', 'MST-5'), ['REC-2', 'MST-5']],
   ['toasts.recordItemMerged', () => UI_STRINGS.toasts.recordItemMerged('REC-3', 'ITM-9'), ['REC-3', 'ITM-9']],
@@ -253,6 +262,11 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['orchestration.errorApproveReport', () => UI_STRINGS.orchestration.errorApproveReport('not confirmed'), ['not confirmed']],
   ['orchestration.errorResendNotification', () => UI_STRINGS.orchestration.errorResendNotification('rate limit'), ['rate limit']],
   ['orchestration.errorSupersedeReport', () => UI_STRINGS.orchestration.errorSupersedeReport('no reason'), ['no reason']],
+  ['orchestration.datasetDownloadStarted', () => UI_STRINGS.orchestration.datasetDownloadStarted('Spend_Data.xlsx'), ['Spend_Data.xlsx']],
+  ['orchestration.datasetDownloadHttpFailure', () => UI_STRINGS.orchestration.datasetDownloadHttpFailure('Spend_Data.xlsx', 503, 'R2 unavailable', 'req-12'), ['Spend_Data.xlsx', '503', 'R2 unavailable', 'req-12']],
+  ['orchestration.datasetDownloadNetworkFailure', () => UI_STRINGS.orchestration.datasetDownloadNetworkFailure('Spend_Data.xlsx', 'offline'), ['Spend_Data.xlsx', 'offline']],
+  ['orchestration.datasetDownloadResponseFailure', () => UI_STRINGS.orchestration.datasetDownloadResponseFailure('Spend_Data.xlsx'), ['Spend_Data.xlsx']],
+  ['orchestration.errorDownloadDataset', () => UI_STRINGS.orchestration.errorDownloadDataset('R2 unavailable'), ['R2 unavailable']],
 
   ['evidence.savingsTypes.canonicalTypesCount', () => UI_STRINGS.evidence.savingsTypes.canonicalTypesCount(4), ['4']],
   ['evidence.savingsTypes.sheetCount', () => UI_STRINGS.evidence.savingsTypes.sheetCount(3), ['3']],
@@ -363,7 +377,7 @@ const FORMATTER_CASES: Array<[string, () => string, string[]]> = [
   ['reportingPeriod.disclosure.insufficientHistoryBody', () => UI_STRINGS.reportingPeriod.disclosure.insufficientHistoryBody(12, 8, 4), ['12', '8', '4']],
   ['reportingPeriod.disclosure.partialFyBody', () => UI_STRINGS.reportingPeriod.disclosure.partialFyBody('FY2024-25', 9, 'Apr-Dec'), ['FY2024-25', '9', 'Apr']],
 
-  ['documentSummary.subheading (missing record count)', () => UI_STRINGS.documentSummary.subheading('report.xlsx', undefined), ['report.xlsx', '0']],
+  ['documentSummary.subheading (missing record count)', () => UI_STRINGS.documentSummary.subheading('report.xlsx', undefined), ['report.xlsx', 'N/A']],
   ['documentSummary.distinctMaterialsCount (missing count)', () => UI_STRINGS.documentSummary.distinctMaterialsCount(undefined), ['0']],
   ['documentSummary.distinctSuppliersCount (missing count)', () => UI_STRINGS.documentSummary.distinctSuppliersCount(undefined), ['0']],
   ['documentSummary.dateRangeValue (label without month count)', () => UI_STRINGS.documentSummary.dateRangeValue(undefined, 'Ingestion Timeframe'), ['Ingestion Timeframe', '0']],
@@ -445,12 +459,9 @@ describe('UI_STRINGS branch-specific helpers', () => {
     expect(withoutRequestId).toContain('Server error');
   });
 
-  it('defaults the processing percentage to 100 when none is supplied', () => {
-    expect(UI_STRINGS.module1.processingStatus(undefined)).toContain('100');
-  });
-
-  it('treats a missing evaluated-spend total as zero', () => {
-    expect(UI_STRINGS.module2.totalEvaluated(undefined)).toContain('0.00');
+  it('shows evaluated-spend data as unavailable when the value is missing or zero', () => {
+    expect(UI_STRINGS.module2.totalEvaluated(undefined)).toBe(UI_STRINGS.module2.totalEvaluatedUnavailable);
+    expect(UI_STRINGS.module2.totalEvaluated(0)).toBe(UI_STRINGS.module2.totalEvaluatedUnavailable);
   });
 
   it('explains that development sign-in uses registered database accounts', () => {

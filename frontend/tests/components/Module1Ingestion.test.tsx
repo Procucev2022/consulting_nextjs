@@ -1,9 +1,31 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { Module1Ingestion } from '../../src/components/Module1Ingestion';
 import { mockTenant, initialIngestionQueue, initialValidationRecords } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
+
+vi.mock('../../src/utils/industryApi', () => ({
+  loadIndustryCatalog: vi.fn().mockResolvedValue({
+    success: true,
+    profiles: [{
+      majorSector: 'Chemical & Petrochemicals',
+      minorSector: 'Specialty Chemicals',
+      sectorCode: 'CHEM-SPEC',
+      tagline: 'Chemical materials profile',
+      description: 'Test-only D1 catalog profile',
+      typicalDirectMaterials: ['Catalysts'],
+      typicalPackagingMaterials: ['Drums'],
+      typicalLogisticsCategories: ['Freight'],
+      typicalMroCategories: ['Pumps'],
+      characteristicUNSPSCPrefixes: ['12', '14'],
+      benchmarkSpendSplit: { directPct: 56, packagingPct: 18, logisticsPct: 14, mroPct: 12 },
+      categorizationGuidance: 'Review matching materials.',
+      keyKeywords: ['catalyst']
+    }],
+    presets: []
+  })
+}));
 
 const sampleIngestionQueue = [
   {
@@ -139,6 +161,15 @@ const sampleValidationRecords = [
 ];
 
 describe('Module1Ingestion Component', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
   const defaultProps = {
     tenant: mockTenant,
     onUpdateTenant: vi.fn(),
@@ -303,8 +334,7 @@ describe('Module1Ingestion Component', () => {
     fireEvent.click(inrBtn);
   });
 
-  it('handles client setup modal opening, closing, and confirmation with timer', () => {
-    vi.useFakeTimers();
+  it('handles client setup modal opening, closing, and confirmation with timer', async () => {
     const onUpdateTenant = vi.fn();
     render(<Module1Ingestion {...defaultProps} onUpdateTenant={onUpdateTenant} />);
 
@@ -313,6 +343,9 @@ describe('Module1Ingestion Component', () => {
     fireEvent.click(setupBtn);
 
     expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', {
+      name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i')
+    })).toBeEnabled());
 
     // Close setup modal
     const cancelBtn = screen.getByRole('button', { name: UI_STRINGS.common.cancel });
@@ -321,6 +354,8 @@ describe('Module1Ingestion Component', () => {
     // Reopen and confirm setup
     fireEvent.click(setupBtn);
     const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    await waitFor(() => expect(confirmBtn).toBeEnabled());
+    vi.useFakeTimers();
     fireEvent.click(confirmBtn);
 
     expect(onUpdateTenant).toHaveBeenCalled();
@@ -410,8 +445,7 @@ describe('Module1Ingestion Component', () => {
     expect(screen.getByText(new RegExp(UI_STRINGS.module1.processingStatus(45), 'i'))).toBeInTheDocument();
   });
 
-  it('handles Select File, Setup Details, Change Details, and dataset types with timer', () => {
-    vi.useFakeTimers();
+  it('handles Select File, Setup Details, Change Details, and dataset types with timer', async () => {
     const onUpdateTenant = vi.fn();
     render(
       <Module1Ingestion
@@ -423,17 +457,21 @@ describe('Module1Ingestion Component', () => {
     // Click Setup Details button in dropzone
     const setupDetailsBtn = screen.getByRole('button', { name: UI_STRINGS.module1.setupDetails });
     fireEvent.click(setupDetailsBtn);
+    let confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    await waitFor(() => expect(confirmBtn).toBeEnabled());
     expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
 
     // Change dataset to Invoice Data in setup modal by clicking option card
     const invoiceDataCard = screen.getByText(UI_STRINGS.modals.clientSetup.datasetOptions.invoiceData.badge);
     fireEvent.click(invoiceDataCard);
 
-    const confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    vi.useFakeTimers();
     fireEvent.click(confirmBtn);
 
     // Fast-forward the 250ms timer in handleConfirmSetup
     vi.advanceTimersByTime(300);
+    vi.useRealTimers();
     expect(onUpdateTenant).toHaveBeenCalled();
 
     // Click Select File button
@@ -443,12 +481,15 @@ describe('Module1Ingestion Component', () => {
     // Click Change Details button
     const changeDetailsBtn = screen.getByRole('button', { name: UI_STRINGS.module1.changeDetails });
     fireEvent.click(changeDetailsBtn);
+    confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    await waitFor(() => expect(confirmBtn).toBeEnabled());
 
     // Change dataset to Trial Balance
     const trialBalanceCard = screen.getByText(UI_STRINGS.modals.clientSetup.datasetOptions.trialBalance.badge);
     fireEvent.click(trialBalanceCard);
-    const confirmBtn2 = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
-    fireEvent.click(confirmBtn2);
+    confirmBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.clientSetup.submitBtn, 'i') });
+    vi.useFakeTimers();
+    fireEvent.click(confirmBtn);
     vi.advanceTimersByTime(300);
 
     vi.useRealTimers();
@@ -570,17 +611,15 @@ describe('Module1Ingestion Component', () => {
     expect(screen.getByText('Chemical & Petrochemicals - Specialty Chemicals')).toBeInTheDocument();
   });
 
-  it('loads and displays live FX rates when fetch succeeds', async () => {
+  it('loads and displays D1 FX reference rates without calling an external feed', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        rates: {
-          INR: 83.8,
-          EUR: 0.92,
-          GBP: 0.79,
-          AED: 3.67,
-          JPY: 155,
-          SGD: 1.34
+        success: true,
+        data: {
+          USD: { currencyCode: 'USD', currentRate: 83.8, name: 'US Dollar' },
+          EUR: { currencyCode: 'EUR', currentRate: 91.4, name: 'Euro' },
+          GBP: { currencyCode: 'GBP', currentRate: 106.5, name: 'British Pound' }
         }
       })
     });
@@ -589,7 +628,34 @@ describe('Module1Ingestion Component', () => {
     render(<Module1Ingestion {...defaultProps} />);
 
     expect(await screen.findByText(/USD\/INR:/i)).toBeInTheDocument();
-    vi.unstubAllGlobals();
+    expect(screen.getByText(UI_STRINGS.module1.liveFxRatesLabel)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith('/api/currency');
+  });
+
+  it('reports that D1 rates are unavailable without querying a secondary source', async () => {
+    const mockFetch = vi.fn().mockRejectedValue(new Error('D1 unavailable'));
+    vi.stubGlobal('fetch', mockFetch);
+
+    render(<Module1Ingestion {...defaultProps} />);
+
+    expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith('/api/currency');
+  });
+
+  it.each([
+    ['an HTTP error', { ok: false, status: 503, json: vi.fn() }],
+    ['a malformed response body', { ok: true, json: async () => ({ data: [] }) }]
+  ])('shows D1 rate unavailability after %s', async (_description, response) => {
+    const mockFetch = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal('fetch', mockFetch);
+
+    render(<Module1Ingestion {...defaultProps} />);
+
+    expect(await screen.findByText(UI_STRINGS.module1.fxReferenceUnavailable)).toBeInTheDocument();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith('/api/currency');
   });
 
   it('renders actual coverage from monthWiseSummaries when canonicalViewModel is absent', () => {

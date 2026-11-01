@@ -5,6 +5,8 @@ import {
 } from './constants/auth';
 import type { AuthRouteResult, CloudflareEnvironment } from './types/cloudflare';
 import type { WorkerAuthCheckResult } from './types/auth';
+import { handlePcbiAdminRoute } from './workerD1PcbiAdmin';
+import { handlePcbiDataLabRoute } from './workerD1PcbiDataLab';
 
 const encodeBase64Url = (bytes: Uint8Array): string => {
   let binary = '';
@@ -40,26 +42,20 @@ const hashPassword = async (password: string): Promise<string> => {
 };
 
 const verifyPassword = async (password: string, storedHash: string): Promise<boolean> => {
-  const candidateHashes = storedHash.split(';');
-  for (const singleHash of candidateHashes) {
-    const parts = singleHash.split(':');
-    if (parts.length !== 2) continue;
-    const [encodedSalt, encodedHash] = parts;
-    if (!encodedSalt || !encodedHash) continue;
-    const legacy = AUTH_LEGACY_PASSWORD_PATTERN.test(singleHash);
-    // Express used the hexadecimal salt string itself as PBKDF2 input, not decoded salt bytes.
-    const salt = legacy ? new TextEncoder().encode(encodedSalt) : tryDecodeBase64Url(encodedSalt);
-    const expected = legacy
-      ? Uint8Array.from(encodedHash.matchAll(AUTH_HEX_BYTE_PATTERN), ([byte]) => Number.parseInt(byte, 16))
-      : tryDecodeBase64Url(encodedHash);
-    if (!salt || !expected) continue;
-    const actual = await derivePasswordHash(password, salt);
-    if (actual.length !== expected.length) continue;
-    if (actual.reduce((result, byte, index) => result | (byte ^ expected[index]), 0) === 0) {
-      return true;
-    }
-  }
-  return false;
+  const parts = storedHash.split(':');
+  if (parts.length !== 2) return false;
+  const [encodedSalt, encodedHash] = parts;
+  if (!encodedSalt || !encodedHash) return false;
+  const legacy = AUTH_LEGACY_PASSWORD_PATTERN.test(storedHash);
+  // Express used the hexadecimal salt string itself as PBKDF2 input, not decoded salt bytes.
+  const salt = legacy ? new TextEncoder().encode(encodedSalt) : tryDecodeBase64Url(encodedSalt);
+  const expected = legacy
+    ? Uint8Array.from(encodedHash.matchAll(AUTH_HEX_BYTE_PATTERN), ([byte]) => Number.parseInt(byte, 16))
+    : tryDecodeBase64Url(encodedHash);
+  if (!salt || !expected) return false;
+  const actual = await derivePasswordHash(password, salt);
+  if (actual.length !== expected.length) return false;
+  return actual.reduce((result, byte, index) => result | (byte ^ expected[index]), 0) === 0;
 };
 
 export const createWorkerAuthToken = async (user: Record<string, unknown>, secret: string): Promise<string> => {
@@ -317,6 +313,23 @@ export const handleAdminRoute = async (
       success: false,
       message: 'Access denied: Administrator privileges required'
     }, 403);
+  }
+
+  if (url.pathname.startsWith('/api/admin/pcbi/data-lab')) {
+    const actorName = typeof payload.email === 'string' ? payload.email : typeof payload.userId === 'string' ? payload.userId : 'Administrator';
+    const dataLabResult = await handlePcbiDataLabRoute(environment, request, url, actorName);
+    return {
+      body: dataLabResult.data as Record<string, unknown>,
+      status: dataLabResult.status || 200
+    };
+  }
+
+  if (url.pathname === '/api/admin/pcbi' || url.pathname.startsWith('/api/admin/pcbi/')) {
+    const adminResult = await handlePcbiAdminRoute(environment.DB, request, url);
+    return {
+      body: adminResult.data as Record<string, unknown>,
+      status: adminResult.status || 200
+    };
   }
 
   // GET /api/admin/users

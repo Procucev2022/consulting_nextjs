@@ -12,8 +12,10 @@ import {
 import {
   handleExecutiveBriefAudit,
   handleExecutiveBriefDownload,
+  handleExecutiveBriefEmail,
   handleExecutiveBriefReport,
-  handleOpportunityBriefGap
+  handleOpportunityBriefDownload,
+  handleOpportunityBriefReport
 } from './workerD1ExecutiveBriefHandlers';
 import { handleExecutiveBriefRegenerate } from './workerD1ExecutiveBriefRegenerate';
 import { methodNotAllowedResponse, resolveExecutiveBriefRequestId } from './workerD1ExecutiveBriefResponses';
@@ -36,22 +38,25 @@ const findRoute = (pathname: string): ExecutiveBriefRouteDefinition | undefined 
 const dispatchRoute = (
   key: ExecutiveBriefRouteKey,
   request: Request,
-  environment: CloudflareEnvironment,
-  url: URL
+  environment: CloudflareEnvironment
 ): Promise<Response> => {
   switch (key) {
     case 'report':
-      return Promise.resolve(handleExecutiveBriefReport(request, url));
+      return handleExecutiveBriefReport(request, environment);
     case 'audit':
-      return Promise.resolve(handleExecutiveBriefAudit(request, url));
+      return handleExecutiveBriefAudit(request, environment);
     case 'downloadPdf':
-      return handleExecutiveBriefDownload(request, url, 'pdf');
+      return handleExecutiveBriefDownload(request, environment, 'pdf');
     case 'downloadPptx':
-      return handleExecutiveBriefDownload(request, url, 'pptx');
+      return handleExecutiveBriefDownload(request, environment, 'pptx');
     case 'opportunityBriefPdf':
-      return Promise.resolve(handleOpportunityBriefGap(request, 'pdf'));
+      return handleOpportunityBriefDownload(request, environment, 'pdf');
     case 'opportunityBriefPptx':
-      return Promise.resolve(handleOpportunityBriefGap(request, 'pptx'));
+      return handleOpportunityBriefDownload(request, environment, 'pptx');
+    case 'opportunityBriefReport':
+      return handleOpportunityBriefReport(request, environment);
+    case 'email':
+      return handleExecutiveBriefEmail(request, environment);
     case 'regenerate':
       return handleExecutiveBriefRegenerate(request, environment);
   }
@@ -69,5 +74,5 @@ export const handleExecutiveBriefRoute = async (
   if (route.method !== request.method) {
     return methodNotAllowedResponse(request, resolveExecutiveBriefRequestId(request), route.method);
   }
-  return dispatchRoute(route.key, request, environment, url);
+  return dispatchRoute(route.key, request, environment);
 };

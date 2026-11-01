@@ -32,11 +32,12 @@ export const runStatements = async (
 export const readAssessmentSnapshot = async (
   db: AssessmentDatasetActionContext['db'],
   entryType: string,
-  assessmentId: string
+  assessmentId: string,
+  entryId: string = assessmentId
 ): Promise<D1Record> => {
   const row = await queryFirst<StoredSnapshotRow>(db,
     'SELECT payload_json FROM AssessmentStoreEntry WHERE entry_type = ? AND assessment_id = ? AND entry_id = ?',
-    [entryType, assessmentId, assessmentId]);
+    [entryType, assessmentId, entryId]);
   if (!row) return {};
   try {
     const parsed: unknown = JSON.parse(row.payload_json);

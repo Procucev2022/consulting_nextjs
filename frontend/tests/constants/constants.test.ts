@@ -5,15 +5,15 @@ import * as CurrencyConstants from '../../src/constants/currency';
 import * as LoggerConstants from '../../src/constants/logger';
 import * as PipelineConstants from '../../src/constants/pipeline';
 import * as ModalsConstants from '../../src/constants/modals';
+import { VENDOR_CONSOLIDATION_UI_CONFIG } from '../../src/constants/module2VendorConsolidation';
 
 describe('Frontend Constants Modules', () => {
   describe('App Constants', () => {
     it('should define correct default application metrics and tenant name', () => {
-      expect(AppConstants.DEFAULT_SPEND_BASELINE_INR_CR).toBe(732.41);
-      expect(AppConstants.DEFAULT_SAVINGS_TARGET_INR_CR).toBe(119.67);
-      expect(AppConstants.DEFAULT_SAVINGS_TARGET_PCT).toBe(16.4);
-      expect(AppConstants.DEFAULT_SAAS_FEE_RATE).toBe(0.85);
       expect(AppConstants.DEFAULT_TENANT_ENTERPRISE_NAME).toBe('Enterprise Client');
+      expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT).toBe('/api/reports/executive-brief/opportunity-brief/report');
+      expect(AppConstants.EXECUTIVE_OPPORTUNITY_BRIEF_REQUEST_ID_HEADER).toBe('x-request-id');
+      expect(AppConstants.EXECUTIVE_BRIEF_ATTACHMENT_FILENAME_PATTERN.exec('attachment; filename="brief.pdf"')?.[1]).toBe('brief.pdf');
       expect(AppConstants.AICEV_LOGO_SRC).toBe('/images/aicev-logo.png');
       expect(AppConstants.AICEV_LOGO_WHITE_SRC).toBe('/images/aicev-logo-white.png');
     });
@@ -24,16 +24,13 @@ describe('Frontend Constants Modules', () => {
       expect(CurrencyConstants.DEFAULT_BASE_CURRENCY).toBe('INR');
       expect(CurrencyConstants.INR_CRORES_DIVISOR).toBe(10000000);
       expect(CurrencyConstants.SUPPORTED_HEADER_CURRENCIES).toEqual(['INR', 'USD', 'EUR', 'GBP']);
-      expect(CurrencyConstants.yahooFinanceFXRates).toBeDefined();
-      expect(CurrencyConstants.yahooFinanceFXRates.USD.ticker).toBe('USDINR=X');
-      expect(CurrencyConstants.yahooFinanceFXRates.EUR.currencyCode).toBe('EUR');
-      expect(CurrencyConstants.yahooFinanceFXRates.GBP.currencyCode).toBe('GBP');
-      expect(CurrencyConstants.yahooFinanceFXRates.AED.currencyCode).toBe('AED');
-      expect(CurrencyConstants.yahooFinanceFXRates.JPY.currencyCode).toBe('JPY');
-      expect(CurrencyConstants.yahooFinanceFXRates.SGD.currencyCode).toBe('SGD');
-      expect(CurrencyConstants.yahooFinanceFXRates.INR.currencyCode).toBe('INR');
-      expect(CurrencyConstants.yahooFinanceFXRates.INR.rate2023).toBe(1.0);
     });
+  });
+
+  it('defines the bounded D1 material mapping mutation contract', () => {
+    expect(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BULK_UPDATE_ENDPOINT).toBe('/api/module2/sourcing/vendor-consolidation/mappings/bulk-update');
+    expect(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_BATCH_LIMIT).toBe(100);
+    expect(VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_SUGGESTION_AUDIT_NOTE).toContain('analyst review');
   });
 
   describe('Logger Constants', () => {
@@ -112,7 +109,6 @@ describe('Frontend Constants Modules', () => {
 
   describe('Unified Constants Barrel Export', () => {
     it('should re-export all constants across modules including UI_STRINGS and presentation', () => {
-      expect(ConstantsIndex.DEFAULT_SPEND_BASELINE_INR_CR).toBe(AppConstants.DEFAULT_SPEND_BASELINE_INR_CR);
       expect(ConstantsIndex.DEFAULT_BASE_CURRENCY).toBe(CurrencyConstants.DEFAULT_BASE_CURRENCY);
       expect(ConstantsIndex.INR_CRORES_DIVISOR).toBe(CurrencyConstants.INR_CRORES_DIVISOR);
       expect(ConstantsIndex.SUPPORTED_HEADER_CURRENCIES).toBe(CurrencyConstants.SUPPORTED_HEADER_CURRENCIES);

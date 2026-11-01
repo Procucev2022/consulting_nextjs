@@ -1,152 +1,255 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleExecutiveBriefRoute } from '../src/workerD1ExecutiveBrief';
-import { EXECUTIVE_BRIEF_HTTP_STATUS, EXECUTIVE_BRIEF_MESSAGES } from '../src/constants/executiveBriefRouteConstants';
-import { renderExecutiveBriefArtifact, publishExecutiveBriefArtifacts } from '../src/services/executiveBriefArtifactService';
-import { assembleExecutiveBriefReport } from '../src/services/executiveBriefReportService';
-import { formatExecutiveBriefAuditMarkdown } from '../src/services/executiveBriefMarkdown';
+import { EXECUTIVE_BRIEF_HTTP_STATUS } from '../src/constants/executiveBriefRouteConstants';
 import {
-  reconcileExecutiveBrief,
-  verifyFinancialConsistency
-} from '../src/services/executiveBriefMetadataService';
-import { adminToken, briefRequest, briefUrl, bucketDouble, certifiedReport, testEnvironment } from './executiveBriefTestHelpers';
+  EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES,
+  EXECUTIVE_OPPORTUNITY_BRIEF_SQL
+} from '../src/constants/executiveOpportunityBriefConstants';
+import type { CloudflareEnvironment } from '../src/types/cloudflare';
+import { adminToken, briefRequest, briefUrl, testEnvironment } from './executiveBriefTestHelpers';
+import * as workerAuth from '../src/workerAuth';
+
+const mocked = vi.hoisted(() => ({ failAudit: false, failPdf: false }));
 
 vi.mock('../src/utils/logger', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-vi.mock('../src/services/executiveBriefReportService', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/services/executiveBriefReportService')>();
-  return { ...actual, assembleExecutiveBriefReport: vi.fn(actual.assembleExecutiveBriefReport) };
-});
-
-vi.mock('../src/services/executiveBriefMetadataService', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/services/executiveBriefMetadataService')>();
-  return { ...actual, reconcileExecutiveBrief: vi.fn(actual.reconcileExecutiveBrief) };
-});
-
-vi.mock('../src/services/executiveBriefArtifactService', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/services/executiveBriefArtifactService')>();
+vi.mock('../src/services/executiveOpportunityBriefExport', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/services/executiveOpportunityBriefExport')>();
   return {
     ...actual,
-    renderExecutiveBriefArtifact: vi.fn(actual.renderExecutiveBriefArtifact),
-    publishExecutiveBriefArtifacts: vi.fn(actual.publishExecutiveBriefArtifacts)
+    formatExecutiveOpportunityBriefAuditMarkdown: vi.fn((...args: Parameters<typeof actual.formatExecutiveOpportunityBriefAuditMarkdown>) => {
+      if (mocked.failAudit) throw new Error('markdown rendering failed');
+      return actual.formatExecutiveOpportunityBriefAuditMarkdown(...args);
+    }),
+    generateExecutiveOpportunityBriefPdf: vi.fn((...args: Parameters<typeof actual.generateExecutiveOpportunityBriefPdf>) => {
+      if (mocked.failPdf) throw new Error('PDF rendering failed');
+      return actual.generateExecutiveOpportunityBriefPdf(...args);
+    })
   };
 });
 
-vi.mock('../src/services/executiveBriefMarkdown', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../src/services/executiveBriefMarkdown')>();
-  return { ...actual, formatExecutiveBriefAuditMarkdown: vi.fn(actual.formatExecutiveBriefAuditMarkdown) };
-});
-
-const blockedReconciliation = () => ({
-  consistency: verifyFinancialConsistency(certifiedReport().metadata),
-  waterfallValid: true,
-  netCompositionValid: true,
-  isReconciled: false
-});
-
-const getRoute = async (path: string): Promise<Response> => {
-  const response = await handleExecutiveBriefRoute(briefRequest('GET', path), testEnvironment(), briefUrl(path));
-  if (response === null) {
-    throw new Error('Expected the executive brief route to answer');
-  }
+const route = async (path: string, env: CloudflareEnvironment = testEnvironment()): Promise<Response> => {
+  const token = await adminToken();
+  const response = await handleExecutiveBriefRoute(
+    briefRequest('GET', path, { headers: { Authorization: 'Bearer ' + token } }),
+    env,
+    briefUrl(path)
+  );
+  if (response === null) throw new Error('Expected the executive brief route to answer');
   return response;
 };
 
-const messageOf = async (response: Response): Promise<string> => ((await response.json()) as { message: string }).message;
-
-describe('executive brief failure responses', () => {
+describe('D1 executive brief error handling', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date('2026-10-24T09:00:00Z'));
+    mocked.failAudit = false;
+    mocked.failPdf = false;
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     vi.clearAllMocks();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
-  it('answers 500 with the request ID when the report cannot be assembled', async () => {
-    vi.mocked(assembleExecutiveBriefReport).mockImplementationOnce(() => {
-      throw new Error('report data unavailable');
+  it('returns a request-correlated error when D1 queries fail', async () => {
+    const environment = testEnvironment({
+      DB: {
+        prepare: (query: string) => {
+          if (query.includes('FROM User WHERE id = ?')) {
+            const statement = {
+              bind: () => statement,
+              first: async <T>() => ({
+                id: 'usr-admin-test',
+                name: 'D1 Test Admin',
+                email: 'admin@procucev.test',
+                role: 'ADMIN',
+                status: 'ACTIVE'
+              } as T)
+            };
+            return statement;
+          }
+          throw new Error('D1 query failed');
+        }
+      } as unknown as CloudflareEnvironment['DB']
     });
-    const response = await getRoute('/report');
+    const response = await route('/report', environment);
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
     const requestId = response.headers.get('X-Request-Id') ?? '';
-    expect(await messageOf(response)).toBe(EXECUTIVE_BRIEF_MESSAGES.renderFailed('report data', requestId));
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.reportFailed(requestId));
   });
 
-  it('answers 500 when the audit cannot be rendered', async () => {
-    vi.mocked(formatExecutiveBriefAuditMarkdown).mockImplementationOnce(() => {
-      throw new Error('markdown failed');
-    });
-    const response = await getRoute('/audit');
+  it('returns an actionable failure when D1-backed audit formatting fails', async () => {
+    mocked.failAudit = true;
+    const response = await route('/audit');
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
-    expect(await messageOf(response)).toContain('executive brief audit could not be rendered');
+    const requestId = response.headers.get('X-Request-Id') ?? '';
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed('audit', requestId));
   });
 
-  it('answers 500 naming the format when the PDF or PPTX render fails', async () => {
-    vi.mocked(renderExecutiveBriefArtifact).mockRejectedValueOnce(new Error('pdf failed'));
-    const pdf = await getRoute('/download/pdf');
-    expect(pdf.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
-    expect(await messageOf(pdf)).toContain('executive brief PDF could not be rendered');
-
-    vi.mocked(renderExecutiveBriefArtifact).mockRejectedValueOnce(new Error('pptx failed'));
-    const pptx = await getRoute('/download/pptx');
-    expect(pptx.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
-    expect(await messageOf(pptx)).toContain('executive brief PPTX could not be rendered');
+  it('returns an actionable failure when a D1-backed PDF cannot render', async () => {
+    mocked.failPdf = true;
+    const response = await route('/download/pdf');
+    expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
+    const requestId = response.headers.get('X-Request-Id') ?? '';
+    expect(((await response.json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed('pdf', requestId));
   });
 
-  it('blocks the PDF and PPTX with 409 when the financial reconciliation fails', async () => {
-    vi.mocked(reconcileExecutiveBrief).mockReturnValueOnce(blockedReconciliation());
-    const pdf = await getRoute('/download/pdf');
-    expect(pdf.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
-    expect(await messageOf(pdf)).toBe(EXECUTIVE_BRIEF_MESSAGES.blocked);
-
-    vi.mocked(reconcileExecutiveBrief).mockReturnValueOnce(blockedReconciliation());
-    const pptx = await getRoute('/download/pptx');
-    expect(pptx.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
-  });
-
-  it('still serves the report JSON and audit when the reconciliation fails, so the variance stays visible', async () => {
-    vi.mocked(reconcileExecutiveBrief).mockReturnValueOnce(blockedReconciliation());
-    const report = await getRoute('/report');
-    expect(report.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
-    const body = (await report.json()) as { data: { validationChecklist: { financialReconciliation: boolean } } };
-    expect(body.data.validationChecklist.financialReconciliation).toBe(false);
-
-    vi.mocked(reconcileExecutiveBrief).mockReturnValueOnce(blockedReconciliation());
-    const audit = await getRoute('/audit');
-    expect(audit.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
-  });
-
-  it('blocks regeneration with 409 and writes nothing to R2 when the reconciliation fails', async () => {
-    vi.mocked(reconcileExecutiveBrief).mockReturnValueOnce(blockedReconciliation());
-    const bucket = bucketDouble();
+  it('emails a report assembled from D1 to an authenticated recipient', async () => {
+    let emailText = '';
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      emailText = (JSON.parse(String(init?.body)) as { text: string }).text;
+      return new Response(JSON.stringify({ id: 'email-1' }), { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const token = await adminToken();
     const response = await handleExecutiveBriefRoute(
-      briefRequest('POST', '/regenerate', {
-        headers: { Authorization: `Bearer ${await adminToken()}` },
-        body: '{}'
+      briefRequest('POST', '/email', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
       }),
-      testEnvironment({ OBJECTS: bucket }),
-      briefUrl('/regenerate')
+      testEnvironment({ RESEND_API_KEY: 'test-key', RESEND_FROM: 'reports@example.test' }),
+      briefUrl('/email')
     );
-    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT);
-    expect(bucket.put).not.toHaveBeenCalled();
+    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.OK);
+    expect(((await (response as Response).json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailSent);
+    expect(emailText).toContain('D1 Enterprise');
+    expect(emailText).toContain('DEMO_ONLY');
+    expect(emailText).not.toContain('commercialMetrics');
   });
 
-  it('answers 500 with the request ID when publishing fails before any object is written', async () => {
-    vi.mocked(publishExecutiveBriefArtifacts).mockRejectedValueOnce(new Error('publish failed'));
-    const response = await handleExecutiveBriefRoute(
-      briefRequest('POST', '/regenerate', {
-        headers: { Authorization: `Bearer ${await adminToken()}` },
-        body: '{}'
-      }),
+  it('validates recipients and rejects unauthenticated email requests', async () => {
+    const invalid = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', { body: JSON.stringify({ buyerEmail: 'bad', inventedMetrics: 100 }) }),
       testEnvironment(),
-      briefUrl('/regenerate')
+      briefUrl('/email')
     );
+    expect(invalid?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST);
+
+    const unauthenticated = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', { body: JSON.stringify({ buyerEmail: 'buyer@example.test' }) }),
+      testEnvironment(),
+      briefUrl('/email')
+    );
+    expect(unauthenticated?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);
+  });
+
+  it('rejects malformed JSON before authenticating an email request', async () => {
+    const response = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', { body: '{"buyerEmail":' }),
+      testEnvironment(),
+      briefUrl('/email')
+    );
+
+    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST);
+    const body = (await (response as Response).json()) as { errors: Array<{ message: string }> };
+    expect(body.errors[0].message).toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.invalidEmailRequest);
+  });
+
+  it('uses the fallback email error when authentication omits its message', async () => {
+    vi.spyOn(workerAuth, 'authenticateWorkerUser').mockResolvedValueOnce({ status: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE });
+    const response = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', { body: JSON.stringify({ buyerEmail: 'buyer@example.test' }) }),
+      testEnvironment(),
+      briefUrl('/email')
+    );
+
+    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    const requestId = (response as Response).headers.get('X-Request-Id') ?? '';
+    expect(((await (response as Response).json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed(requestId));
+  });
+
+  it('returns a D1 report-loading failure after authenticating the email recipient', async () => {
+    const token = await adminToken();
+    const database = {
+      prepare: (query: string) => {
+        let values: unknown[] = [];
+        const statement = {
+          bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
+          first: async <T>() => query.includes('FROM User')
+            ? {
+              id: values[0],
+              name: 'D1 Test Admin',
+              email: 'admin@procucev.test',
+              role: 'ADMIN',
+              status: 'ACTIVE'
+            } as T
+            : null,
+          all: async <T>() => ({
+            results: query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants ? [] as T[] : [] as T[]
+          }),
+          run: async () => ({ success: true })
+        };
+        return statement;
+      }
+    } as unknown as CloudflareEnvironment['DB'];
+    const response = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
+      }),
+      testEnvironment({ DB: database }),
+      briefUrl('/email')
+    );
+
+    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND);
+    expect(((await (response as Response).json()) as { reason: string }).reason).toBe('no-tenant');
+  });
+
+  it('uses the request-correlated fallback when a development email provider has no configuration', async () => {
+    const token = await adminToken();
+    const response = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
+      }),
+      testEnvironment({ ENVIRONMENT: 'DEVELOPMENT' }),
+      briefUrl('/email')
+    );
+
+    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    const requestId = (response as Response).headers.get('X-Request-Id') ?? '';
+    expect(((await (response as Response).json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed(requestId));
+  });
+
+  it('returns a correlated error when the email provider throws', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('provider connection failed'); }));
+    const token = await adminToken();
+    const response = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
+      }),
+      testEnvironment({ RESEND_API_KEY: 'test-key', RESEND_FROM: 'reports@example.test' }),
+      briefUrl('/email')
+    );
+
     expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
-    const requestId = response?.headers.get('X-Request-Id') ?? '';
-    expect(await messageOf(response as Response)).toBe(EXECUTIVE_BRIEF_MESSAGES.publishFailed(requestId));
+    const requestId = (response as Response).headers.get('X-Request-Id') ?? '';
+    expect(((await (response as Response).json()) as { message: string }).message)
+      .toBe(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed(requestId));
+  });
+
+  it('returns a provider error when D1 report email delivery is unavailable', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ message: 'provider unavailable' }), { status: 503 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const token = await adminToken();
+    const response = await handleExecutiveBriefRoute(
+      briefRequest('POST', '/email', {
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ buyerEmail: 'buyer@example.test' })
+      }),
+      testEnvironment({ RESEND_API_KEY: 'test-key', RESEND_FROM: 'reports@example.test' }),
+      briefUrl('/email')
+    );
+    expect(response?.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE);
+    expect(((await (response as Response).json()) as { message: string }).message).toBe('provider unavailable');
   });
 });

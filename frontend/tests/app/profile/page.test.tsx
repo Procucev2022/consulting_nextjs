@@ -95,6 +95,10 @@ describe('Enterprise Profile Page Component', () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith('/login');
     });
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(apiClient.getTenant).not.toHaveBeenCalled();
+    expect(apiClient.getIngestionData).not.toHaveBeenCalled();
   });
 
   it('redirects to /admin/dashboard if authenticated user has ADMIN role', async () => {
@@ -152,7 +156,7 @@ describe('Enterprise Profile Page Component', () => {
     expect(screen.queryByText('Procurement Dataset & Workspace Status')).not.toBeInTheDocument();
   });
 
-  it('handles "Use this Document" button click to autofill and navigate to dashboard', async () => {
+  it('selects a D1 document by id and navigates to the dashboard', async () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(mockUser);
     vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('mock-token');
     vi.spyOn(apiClient, 'getIngestionData').mockResolvedValue({
@@ -169,9 +173,7 @@ describe('Enterprise Profile Page Component', () => {
     const useDocBtn = screen.getByRole('button', { name: /Use this Document/i });
     fireEvent.click(useDocBtn);
 
-    expect(mockPush).toHaveBeenCalledWith('/');
-    const savedDataset = sessionStorage.getItem('procucev_uploaded_dataset');
-    expect(savedDataset).toContain('FY25_Purchase_Data.xlsx');
+    expect(mockPush).toHaveBeenCalledWith('/?documentId=DOC-1001');
   });
 
   it('handles password change submission', async () => {

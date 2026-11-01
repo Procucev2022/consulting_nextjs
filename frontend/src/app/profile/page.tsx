@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { authApiClient } from '../../utils/authApi';
 import { apiClient } from '../../utils/api';
+import frontendLogger from '../../utils/logger';
 import type { UserProfile, TenantMaster, RawDocumentIngestion } from '../../types';
 import { AICEV_LOGO_SRC, UI_STRINGS } from '../../constants';
 
@@ -115,28 +116,36 @@ export default function ProfilePage(): React.ReactElement {
           return;
         }
 
-        if (storedUser && isMounted) {
-          setUser(storedUser);
+        const meRes = storedToken ? await authApiClient.getMe(storedToken).catch(() => null) : null;
+
+        if (!isMounted) return;
+
+        const activeUser = meRes?.user || storedUser;
+        if (!activeUser) {
+          frontendLogger.warn('Profile access redirected because no verified buyer profile was available', {
+            action: 'profile.auth',
+            hadStoredToken: Boolean(storedToken)
+          });
+          authApiClient.clearStoredSession();
+          router.push('/login');
+          return;
         }
 
-        const activeBuyerId = storedUser?.id;
+        if (activeUser.role === 'ADMIN') {
+          router.push('/admin/dashboard');
+          return;
+        }
 
-        const [meRes, tRes, ingRes] = await Promise.all([
-          storedToken ? authApiClient.getMe(storedToken).catch(() => null) : Promise.resolve(null),
+        setUser(activeUser);
+        if (meRes?.user && storedToken) authApiClient.setStoredSession(storedToken, meRes.user);
+
+        const activeBuyerId = activeUser.id;
+        const [tRes, ingRes] = await Promise.all([
           apiClient.getTenant().catch(() => null),
           apiClient.getIngestionData(activeBuyerId).catch(() => null)
         ]);
 
         if (!isMounted) return;
-
-        if (meRes?.user) {
-          if (meRes.user.role === 'ADMIN') {
-            router.push('/admin/dashboard');
-            return;
-          }
-          setUser(meRes.user);
-          if (storedToken) authApiClient.setStoredSession(storedToken, meRes.user);
-        }
 
         if (tRes) {
           setTenant(tRes);
@@ -145,7 +154,7 @@ export default function ProfilePage(): React.ReactElement {
         if (ingRes?.queue) {
           const buyerDocs = activeBuyerId
             ? ingRes.queue.filter(
-                (doc) => !doc.tenant_id || doc.tenant_id === activeBuyerId || doc.tenant_id === storedUser?.email
+                (doc) => !doc.tenant_id || doc.tenant_id === activeBuyerId || doc.tenant_id === activeUser.email
               )
             : ingRes.queue;
           setIngestionQueue(buyerDocs);
@@ -231,13 +240,10 @@ export default function ProfilePage(): React.ReactElement {
   };
 
   const handleUseDocument = (item: RawDocumentIngestion) => {
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: item }));
-    }
-    router.push('/');
+    router.push(`/?documentId=${encodeURIComponent(item.doc_id)}`);
   };
 
-  if (loading || user?.role === 'ADMIN') {
+  if (loading || user?.role === 'ADMIN' || !user) {
     return (
       <div className="min-h-screen bg-[#EEF7FF] text-[#0B1B33] flex items-center justify-center p-4">
         <div className="flex flex-col items-center space-y-3">
@@ -250,18 +256,7 @@ export default function ProfilePage(): React.ReactElement {
     );
   }
 
-  const activeUser = user || {
-    id: 'BUYER-DEMO-001',
-    name: 'Enterprise Buyer',
-    email: 'buyer@organization.com',
-    mobile_number: '+91 98765 43210',
-    company_name: tenant?.enterprise_name || 'Industrial Dynamics Corp',
-    company_address: 'Enterprise Towers, Procurement Block, Peenya Industrial Area, Bengaluru',
-    role: 'USER' as const,
-    status: 'ACTIVE' as const,
-    subscription_tier: 'ENTERPRISE_PRO',
-    created_at: new Date().toISOString()
-  };
+  const activeUser = user;
 
   const initials = activeUser.name
     ? activeUser.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()

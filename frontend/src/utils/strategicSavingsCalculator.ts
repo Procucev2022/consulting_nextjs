@@ -66,10 +66,7 @@ const updateCategorySavings = (
   const spend = Number(
     items
       .reduce((acc, opp) => {
-        const rawSpend = opp.current_spend_inr_cr
-          || (opp.current_spend ? (opp.current_spend * 83.8) / 10000000 : 0)
-          || opp.baseline_spend_inr_cr
-          || 0;
+        const rawSpend = opp.current_spend_inr_cr ?? opp.baseline_spend_inr_cr ?? 0;
         return acc + rawSpend;
       }, 0)
       .toFixed(2)
@@ -77,10 +74,7 @@ const updateCategorySavings = (
   const savings = Number(
     items
       .reduce((acc, opp) => {
-        const rawSavings = opp.est_savings_inr_cr
-          || (opp.est_savings ? (opp.est_savings * 83.8) / 10000000 : 0)
-          || opp.estimated_savings_inr_cr
-          || 0;
+        const rawSavings = opp.est_savings_inr_cr ?? opp.estimated_savings_inr_cr ?? 0;
         return acc + rawSavings;
       }, 0)
       .toFixed(2)
@@ -189,10 +183,10 @@ const extractWaterfallBreakdown = (
     netModelled: Number((waterfall.net_potential_savings_inr_cr ?? fallbackSavings).toFixed(2)),
     gross: Number((waterfall.gross_potential_savings_inr_cr ?? fallbackSavings).toFixed(2)),
     overlap: Number((waterfall.deduplicated_overlap_inr_cr ?? 0).toFixed(2)),
-    proven: Number((waterfall.proven_opportunity_inr_cr ?? 82.38).toFixed(2)),
-    discovery: Number((waterfall.discovery_opportunity_inr_cr ?? 3.261).toFixed(3)),
+    proven: Number((waterfall.proven_opportunity_inr_cr ?? 0).toFixed(2)),
+    discovery: Number((waterfall.discovery_opportunity_inr_cr ?? 0).toFixed(3)),
     realized: Number((waterfall.realized_savings_inr_cr ?? 0).toFixed(2)),
-    addressable: Number((waterfall.addressable_spend_inr_cr ?? 315.02).toFixed(2))
+    addressable: Number((waterfall.addressable_spend_inr_cr ?? 0).toFixed(2))
   };
 };
 

@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CommodityWorkspaceModal } from '../../../src/components/admin/pcbi/CommodityWorkspaceModal';
 import { pcbiCommodityDataLabApi } from '../../../src/utils/pcbiCommodityDataLabApi';
 import { COMMODITY_DATA_UPLOAD_BANNER } from '../../../src/constants/pcbiCommodityDataLab';
+import { UI_STRINGS } from '../../../src/constants';
 
 describe('CommodityWorkspaceModal Unit Tests', () => {
   const mockWorkspace = {
@@ -26,6 +27,8 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
       requiredGeography: 'INDIA_DOMESTIC',
       availableHistory: '18 observations (Under Review)',
       priority: 'P1 — Critical Coverage Gap',
+      priorityScore: 100,
+      priorityReason: 'RANKED_BY_CUSTOMER_SPEND',
       researchStatus: 'IN_PROGRESS',
       lastUpdated: '2026-09-28T18:00:00.000Z'
     },
@@ -218,7 +221,9 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
 
     // Tab 2: Research Queue
     fireEvent.click(screen.getByText('2. Research Queue'));
-    expect(screen.getByText(/Research Backlog Priority/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(UI_STRINGS.pcbiCommodityDataLab.workspacePriorityLabel))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreLabel(100))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem)).toBeInTheDocument();
 
     // Tab 5: Extracted Observations
     fireEvent.click(screen.getByText('5. Extracted Observations'));
@@ -248,6 +253,50 @@ describe('CommodityWorkspaceModal Unit Tests', () => {
     // Tab 12: PCBI History
     fireEvent.click(screen.getByText('12. PCBI History'));
     expect(screen.getByText(/Historical Index Trajectory/i)).toBeInTheDocument();
+  });
+
+  it('marks unlinked workspace spend as unscored and removes its high-impact designation', async () => {
+    const workspaceWithoutSpend = {
+      ...mockWorkspace,
+      overview: {
+        ...mockWorkspace.overview,
+        customerSpendInr: 0,
+        priority: 'PENDING — Spend Link Required',
+        priorityScore: 0,
+        priorityReason: 'SPEND_LINK_REQUIRED' as const
+      }
+    };
+    vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockResolvedValue({
+      success: true,
+      workspace: workspaceWithoutSpend as any
+    });
+    render(<CommodityWorkspaceModal isOpen={true} pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
+    await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
+    fireEvent.click(screen.getByText('2. Research Queue'));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreNotScored)).toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem)).not.toBeInTheDocument();
+  });
+
+  it('does not label a resolved high-spend commodity as an active high-impact gap', async () => {
+    const resolvedHighSpendWorkspace = {
+      ...mockWorkspace,
+      overview: {
+        ...mockWorkspace.overview,
+        currentStatus: 'PRODUCTION_READY',
+        priority: 'P4 — Low Coverage Gap',
+        priorityScore: 0,
+        priorityReason: 'GAP_RESOLVED' as const
+      }
+    };
+    vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockResolvedValue({
+      success: true,
+      workspace: resolvedHighSpendWorkspace as any
+    });
+    render(<CommodityWorkspaceModal isOpen={true} pcbiId="PCBI-FEMO-65-001" onClose={vi.fn()} />);
+    await screen.findByRole('heading', { level: 2, name: /Ferro Molybdenum 65%/i });
+    fireEvent.click(screen.getByText('2. Research Queue'));
+    expect(screen.getByText(UI_STRINGS.pcbiCommodityDataLab.priorityScoreResolved)).toBeInTheDocument();
+    expect(screen.queryByText(UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem)).not.toBeInTheDocument();
   });
 
   it('handles file upload selection, domain detection, and staging successfully', async () => {

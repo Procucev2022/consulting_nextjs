@@ -1,14 +1,10 @@
-/**
- * POST /api/reports/executive-brief/regenerate. Requires an ADMIN bearer token. The handler renders PDF, PPTX, JSON,
- * and audit Markdown from the certified report and publishes them to R2 under executive-brief/<client>/<filename>.
- */
+/** POST regeneration reads the current D1 report and publishes fresh artifacts to R2. */
 import logger from './utils/logger';
-import { DEFAULT_CLIENT_PROFILE } from './constants/executiveBriefConstants';
 import { EXECUTIVE_BRIEF_HTTP_STATUS, EXECUTIVE_BRIEF_MESSAGES } from './constants/executiveBriefRouteConstants';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from './constants/executiveOpportunityBriefConstants';
 import { executiveBriefRegenerateBodySchema } from './constants/executiveBriefValidation';
+import { loadExecutiveOpportunityBriefFromD1 } from './services/executiveOpportunityBriefD1';
 import { publishExecutiveBriefArtifacts } from './services/executiveBriefArtifactService';
-import { resolveCertifiedClientName, toReportDate } from './services/executiveBriefMetadataService';
-import { assembleExecutiveBriefReport } from './services/executiveBriefReportService';
 import { authorizeExecutiveBriefAdmin } from './workerD1ExecutiveBriefAuth';
 import {
   executiveBriefErrorResponse,
@@ -20,14 +16,13 @@ import {
 import type { CloudflareEnvironment } from './types/cloudflare';
 import type { ExecutiveBriefParseResult } from './types/executiveBriefRoutes';
 import type { ExecutiveBriefRegenerateBody } from './types/executiveBriefValidation';
+import type { ExecutiveOpportunityBriefReport } from './types/executiveOpportunityBrief';
 
 const parseRegenerateBody = async (
   request: Request
 ): Promise<ExecutiveBriefParseResult<ExecutiveBriefRegenerateBody>> => {
   const raw = await request.text();
-  if (raw.trim().length === 0) {
-    return { ok: true, data: {} };
-  }
+  if (raw.trim().length === 0) return { ok: true, data: {} };
   let json: unknown;
   try {
     json = JSON.parse(raw);
@@ -40,6 +35,20 @@ const parseRegenerateBody = async (
     : { ok: false, issues: toValidationIssues(parsed.error.issues) };
 };
 
+const dataLoadFailure = (
+  request: Request,
+  requestId: string,
+  reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions'
+): Response => {
+  const status = reason === 'ambiguous-tenant' ? EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT : EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND;
+  const message = {
+    'no-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTenant,
+    'ambiguous-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.ambiguousTenant,
+    'no-transactions': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTransactions
+  }[reason];
+  return executiveBriefErrorResponse(request, requestId, status, message, { reason });
+};
+
 export const handleExecutiveBriefRegenerate = async (
   request: Request,
   environment: CloudflareEnvironment
@@ -48,7 +57,7 @@ export const handleExecutiveBriefRegenerate = async (
   const startedAt = Date.now();
   const auth = await authorizeExecutiveBriefAdmin(request, environment);
   if (!auth.ok) {
-    logger.warn('Rejected executive brief regeneration', {
+    logger.warn('Rejected D1 executive brief regeneration', {
       requestId,
       action: 'regenerate',
       statusCode: auth.status
@@ -57,7 +66,7 @@ export const handleExecutiveBriefRegenerate = async (
   }
   const parsed = await parseRegenerateBody(request);
   if (!parsed.ok) {
-    logger.warn('Rejected executive brief regeneration body', {
+    logger.warn('Rejected D1 executive brief regeneration body', {
       requestId,
       action: 'regenerate',
       statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST,
@@ -65,59 +74,59 @@ export const handleExecutiveBriefRegenerate = async (
     });
     return executiveBriefValidationResponse(request, requestId, parsed.issues);
   }
-  const requested = parsed.data.client ?? DEFAULT_CLIENT_PROFILE.clientName;
-  const clientName = resolveCertifiedClientName(requested);
-  if (clientName === null) {
-    logger.warn('Regeneration requested for a client without a certified brief', {
-      requestId,
-      action: 'regenerate',
-      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND,
-      client: requested
-    });
-    return executiveBriefErrorResponse(
-      request,
-      requestId,
-      EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND,
-      EXECUTIVE_BRIEF_MESSAGES.clientNotCertified(requested, DEFAULT_CLIENT_PROFILE.clientName)
-    );
-  }
-  const bucket = environment.OBJECTS;
-  if (bucket === undefined) {
-    logger.error('Executive brief regeneration blocked: OBJECTS binding is missing', {
-      requestId,
-      action: 'regenerate',
-      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE
-    });
+  if (environment.DB === undefined) {
     return executiveBriefErrorResponse(
       request,
       requestId,
       EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
-      EXECUTIVE_BRIEF_MESSAGES.r2Missing
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
     );
   }
+  let report: ExecutiveOpportunityBriefReport;
   try {
-    const reportDate = toReportDate(new Date());
-    const report = assembleExecutiveBriefReport(clientName, reportDate);
-    if (!report.validationChecklist.financialReconciliation) {
-      logger.warn('Blocked executive brief regeneration by financial reconciliation', {
-        requestId,
-        action: 'regenerate',
-        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT,
-        client: clientName
-      });
-      return executiveBriefErrorResponse(
-        request,
-        requestId,
-        EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT,
-        EXECUTIVE_BRIEF_MESSAGES.blocked
-      );
-    }
+    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB);
+    if (!loaded.ok) return dataLoadFailure(request, requestId, loaded.reason);
+    report = loaded.report;
+  } catch (error: unknown) {
+    logger.error(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.queryFailed, {
+      requestId,
+      action: 'regenerate.loadD1',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      durationMs: Date.now() - startedAt
+    }, error);
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.reportFailed(requestId)
+    );
+  }
+  if (parsed.data.client !== undefined
+    && parsed.data.client.toLocaleLowerCase() !== report.tenant.enterpriseName.toLocaleLowerCase()) {
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.tenantMismatch(parsed.data.client, report.tenant.enterpriseName)
+    );
+  }
+  const bucket = environment.OBJECTS;
+  if (bucket === undefined) {
+    logger.error('D1 executive brief regeneration blocked because the R2 binding is missing', {
+      requestId,
+      action: 'regenerate',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE
+    });
+    return executiveBriefErrorResponse(request, requestId, EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE, EXECUTIVE_BRIEF_MESSAGES.r2Missing);
+  }
+  try {
     const artifacts = await publishExecutiveBriefArtifacts(bucket, report);
-    logger.info('Published regenerated executive brief artifacts to R2', {
+    const reportDate = report.generatedAt.slice(0, 10);
+    logger.info('Published D1-backed executive brief artifacts to R2', {
       requestId,
       action: 'regenerate',
       statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
-      client: clientName,
+      tenantId: report.tenant.tenantId,
       artifactCount: artifacts.length,
       adminUserId: auth.userId,
       durationMs: Date.now() - startedAt
@@ -125,10 +134,10 @@ export const handleExecutiveBriefRegenerate = async (
     return executiveBriefJsonResponse(request, requestId, EXECUTIVE_BRIEF_HTTP_STATUS.OK, {
       success: true,
       message: EXECUTIVE_BRIEF_MESSAGES.regenerated,
-      data: { client: clientName, reportDate, artifacts }
+      data: { tenantId: report.tenant.tenantId, enterpriseName: report.tenant.enterpriseName, reportDate, artifacts }
     });
   } catch (error: unknown) {
-    logger.error('Failed to publish regenerated executive brief artifacts', {
+    logger.error('Failed to publish D1-backed executive brief artifacts', {
       requestId,
       action: 'regenerate',
       statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
@@ -138,7 +147,7 @@ export const handleExecutiveBriefRegenerate = async (
       request,
       requestId,
       EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
-      EXECUTIVE_BRIEF_MESSAGES.publishFailed(requestId)
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.publishFailed(requestId)
     );
   }
 };

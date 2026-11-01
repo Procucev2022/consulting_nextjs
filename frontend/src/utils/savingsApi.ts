@@ -6,9 +6,11 @@ import type {
   SavingsOpportunityStatus,
   SavingsApiResponse
 } from '../types/savings';
+import type { SavingsOpportunity } from '../types';
 import frontendLogger from './logger';
 import { validateInput } from './validation';
 import {
+  apiDeployOpportunityPayloadSchema,
   updateActionPlanSchema,
   updateOpportunityStatusSchema
 } from '../constants/validation';
@@ -29,7 +31,51 @@ async function readSavingsResponse<T>(response: Response, operation: string): Pr
   return payload.data;
 }
 
+const readOpportunityHandoffBody = async (response: Response): Promise<unknown> => {
+  try {
+    return await response.json();
+  } catch {
+    if (!response.ok) throw new Error(UI_STRINGS.databaseData.opportunityHandoffFailed(response.status));
+    throw new Error(UI_STRINGS.databaseData.invalidOpportunityHandoff);
+  }
+};
+
+const readOpportunityHandoff = (
+  response: Response,
+  json: unknown,
+  opportunityId: string
+): SavingsOpportunity => {
+  const payload = typeof json === 'object' && json !== null
+    ? json as { data?: unknown; message?: unknown }
+    : {};
+  if (!response.ok) {
+    const message = typeof payload.message === 'string' && payload.message.trim()
+      ? payload.message
+      : UI_STRINGS.databaseData.opportunityHandoffFailed(response.status);
+    throw new Error(message);
+  }
+  if (typeof payload.data !== 'object' || payload.data === null ||
+      (payload.data as { opp_id?: unknown }).opp_id !== opportunityId) {
+    throw new Error(UI_STRINGS.databaseData.invalidOpportunityHandoff);
+  }
+  return payload.data as SavingsOpportunity;
+};
+
 export const savingsApiClient = {
+  async deployOpportunity(opp_id: string, targetModule: 'proCPX' | 'DPS NXT'): Promise<SavingsOpportunity> {
+    frontendLogger.info('Deploying opportunity to module', { opp_id, targetModule });
+    const validation = validateInput(apiDeployOpportunityPayloadSchema, { opp_id, targetModule });
+    if (!validation.success) {
+      throw new Error(`Invalid deploy payload: ${JSON.stringify(validation.errors)}`);
+    }
+    const response = await fetch(`${API_BASE}/api/savings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validation.data)
+    });
+    return readOpportunityHandoff(response, await readOpportunityHandoffBody(response), opp_id);
+  },
+
   async getConsolidatedSavings(assessmentId?: string): Promise<ConsolidatedSavingsData> {
     frontendLogger.debug('Fetching consolidated savings with overlap de-duplication', { assessmentId });
     const query = assessmentId ? `?assessmentId=${encodeURIComponent(assessmentId)}` : '';

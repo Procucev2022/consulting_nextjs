@@ -11,6 +11,7 @@ import { UI_STRINGS } from '@/constants/uiStrings';
 import { mockTenant, conversionFunnelStages } from '../fixtures/mockData';
 import { EMPTY_TENANT } from '@/constants/app';
 import type { AssessmentRecord, CustomerRecord, OperatingModeConfig } from '@/types/assessment';
+import type { MaterialMappingEntry } from '../../src/types/module2MaterialMapping';
 import type {
   AnalysisJob,
   LineItemMapping,
@@ -40,6 +41,7 @@ const mocks = vi.hoisted(() => {
   return {
     props,
     harness,
+    saveModule2MaterialMappings: vi.fn(),
     routerPush: vi.fn(),
     useRouter: vi.fn(),
     logger: {
@@ -66,6 +68,8 @@ vi.mock('@/utils/api', () => ({
     getConversionStages: vi.fn(),
     getTenant: vi.fn(),
     updateTenant: vi.fn(),
+    getCurrencyRates: vi.fn(),
+    getCurrencyConversion: vi.fn(),
     getCategories: vi.fn(),
     getVendors: vi.fn(),
     getSavingsOpportunities: vi.fn(),
@@ -89,6 +93,10 @@ vi.mock('@/utils/api', () => ({
     getStoredToken: vi.fn(),
     clearStoredSession: vi.fn()
   }
+}));
+
+vi.mock('@/utils/module2MappingApi', () => ({
+  saveModule2MaterialMappings: mocks.saveModule2MaterialMappings
 }));
 
 vi.mock('@/utils/assessmentApi', () => ({
@@ -373,6 +381,7 @@ const buildLineItem = (mappingId: string, rawDesc: string, overrides: Partial<Li
   amount_inr: 4190000,
   spend_year: 2024,
   status: 'Pending',
+  material_code: `MAT-${mappingId}`,
   ...overrides
 } as LineItemMapping);
 
@@ -669,9 +678,9 @@ async function attachAssessment(assessment: AssessmentRecord): Promise<void> {
   await settle();
 }
 
-async function seedModule2(): Promise<void> {
+async function seedModule2(items: LineItemMapping[] = defaultLineItems()): Promise<void> {
   await renderPage();
-  vi.mocked(apiClient.getModule2CanonicalLineItems).mockResolvedValue(defaultLineItems());
+  vi.mocked(apiClient.getModule2CanonicalLineItems).mockResolvedValue(items);
   await attachAssessment(buildAssessment({ assessmentId: 'ASM-M2', activeDataVersionId: 'DV-M2' }));
   await switchTab('module2', 'module2');
 }
@@ -753,6 +762,17 @@ function applyDefaultMocks(): void {
     total_spend_evaluated_inr: 254.8,
     total_spend_evaluated: 2548000000
   });
+  vi.mocked(apiClient.getCurrencyConversion).mockResolvedValue({
+    amount: 25000,
+    fromCurrency: 'EUR',
+    amountINR: 4200,
+    exchangeRate: 0.168,
+    rateDate: null
+  });
+  vi.mocked(apiClient.getCurrencyRates).mockResolvedValue({
+    USD: { currencyCode: 'USD', name: 'US Dollar', currentRate: 83.25, lastUpdated: '2026-10-31' },
+    EUR: { currencyCode: 'EUR', name: 'Euro', currentRate: 90.5, lastUpdated: '2026-10-31' }
+  });
   vi.mocked(apiClient.updateTenant).mockResolvedValue(mockTenant);
   vi.mocked(apiClient.getIngestionData).mockResolvedValue(defaultIngestion());
   vi.mocked(apiClient.getCategories).mockResolvedValue({ categories: [buildCategory()], categoryDetails: [] });
@@ -774,6 +794,28 @@ function applyDefaultMocks(): void {
     asUploadResponse({ success: true, ingestion: buildDocument(), validationCount: 3 })
   );
   vi.mocked(apiClient.mergeVendor).mockResolvedValue({ success: true });
+  vi.mocked(mocks.saveModule2MaterialMappings).mockImplementation(async (_assessmentId, mappings) => mappings.map((mapping) => ({
+    sourceMaterialId: mapping.sourceMaterialId,
+    sourceDescription: mapping.sourceMaterialId,
+    sourceCategory: 'Test category',
+    assignedUnspscCode: mapping.unspscCode,
+    assignedUnspscTitle: `UNSPSC ${mapping.unspscCode}`,
+    unspscSegment: '12',
+    unspscFamily: '1234',
+    unspscClass: '123456',
+    unspscCommodity: mapping.unspscCode,
+    taxonomyVersion: 'test',
+    mappingMethod: mapping.mappingMethod || 'MANUAL_REVIEW_REQUIRED',
+    confidenceScore: mapping.confidenceScore ?? 1,
+    evidence: 'Persisted to D1 for test',
+    reviewStatus: mapping.reviewStatus,
+    mappingDate: '2026-10-31T00:00:00.000Z',
+    totalSpendInr: 0,
+    totalSpendCr: 0,
+    transactionCount: 0,
+    qualifyingSuppliersCount: 0,
+    coreBucket: 'Direct Materials'
+  } as MaterialMappingEntry)));
   vi.mocked(apiClient.deployOpportunity).mockResolvedValue(buildOpportunity('OPP-PAGE-001'));
   vi.mocked(aiApiClient.categorizeItems).mockResolvedValue(asCategorizeResult({ success: false, mappings: [] }));
   vi.mocked(assessmentApiClient.getOperatingMode).mockResolvedValue(SAAS_MODE);
@@ -848,7 +890,7 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
     expect(mocks.routerPush).not.toHaveBeenCalled();
   });
 
-  it('hydrates without a buyer profile and fills missing document fields with defaults', async () => {
+  it('does not invent a D1 document when required database identifiers are missing', async () => {
     vi.mocked(authApiClient.getStoredUser).mockReturnValue(null);
     vi.mocked(apiClient.getStoredUser).mockReturnValue(null);
     vi.mocked(apiClient.getIngestionData).mockResolvedValue(
@@ -860,18 +902,21 @@ describe('Home page: session bootstrap, routing, and hydration', () => {
 
     await renderPage();
 
-    const [doc] = readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue');
-    expect(doc).toMatchObject({
-      doc_id: 'DOC-INGEST-8800',
-      tenant_id: 'TNT-GLOBAL-8902',
-      file_name: 'Uploaded_Document.xlsx',
-      file_type: 'XLSX',
-      ocr_status: 'Completed',
-      progress: 100,
-      records_count: 0,
-      detected_currencies: ['INR']
-    });
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
     expect(readProp<TenantMaster>('header', 'tenant').enterprise_name).toBe(mockTenant.enterprise_name);
+  });
+
+  it('prioritizes the requested D1 document from the documentId query parameter', async () => {
+    const selectedDocument = buildDocument({ doc_id: 'DOC-SELECTED' });
+    const otherDocument = buildDocument({ doc_id: 'DOC-OTHER-AVAILABLE' });
+    vi.mocked(apiClient.getIngestionData).mockResolvedValue(
+      asIngestion({ queue: [otherDocument, selectedDocument], validationRecords: [] })
+    );
+    window.history.replaceState(null, '', '/?documentId=DOC-SELECTED');
+
+    await renderPage();
+
+    expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([selectedDocument]);
   });
 
   it('drops ingestion documents that belong to another tenant', async () => {
@@ -1095,7 +1140,7 @@ describe('Home page: operating mode and assessment restoration', () => {
 });
 
 describe('Home page: Module 1 data actions', () => {
-  it('applies a currency fix and falls back to the first record for an unknown id', async () => {
+  it('persists currency fixes and rejects unknown record ids without changing another record', async () => {
     await renderPage();
     const [record] = readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords');
 
@@ -1115,11 +1160,15 @@ describe('Home page: Module 1 data actions', () => {
     expect(screen.getByText(UI_STRINGS.toasts.recordNormalized(record.record_id, 'EUR'))).toBeInTheDocument();
 
     vi.mocked(apiClient.updateValidationRecord).mockRejectedValueOnce(new Error('Sync rejected'));
-    await runProp('fixCurrency', 'onFix', 'UNKNOWN-RECORD', 'GBP', 10);
+    await runProp('fixCurrency', 'onFix', record.record_id, 'GBP', 4200);
     await waitFor(() => {
       expect(mocks.logger.warn).toHaveBeenCalled();
     });
     expect(screen.getByText(/Sync rejected/)).toBeInTheDocument();
+
+    await runProp('fixCurrency', 'onFix', 'UNKNOWN-RECORD', 'GBP', 4200);
+    expect(screen.getByText(UI_STRINGS.module1.currencyRecordNotFound('UNKNOWN-RECORD'))).toBeInTheDocument();
+    expect(apiClient.updateValidationRecord).toHaveBeenCalledTimes(2);
   });
 
   it('confirms the dataset base currency for records whose currency is unresolved', async () => {
@@ -1189,6 +1238,27 @@ describe('Home page: Module 1 data actions', () => {
     await runProp('mergeItem', 'onIgnore', record.record_id);
     expect(screen.getByText(UI_STRINGS.toasts.issueIgnored(record.record_id))).toBeInTheDocument();
   });
+
+  it('shows the safe persistence message when D1 rejects Module 1 corrections with non-Error values', async () => {
+    const fallbackMessage = UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails);
+    await renderPage();
+    const [record] = readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords');
+
+    vi.mocked(apiClient.getCurrencyConversion).mockRejectedValueOnce('currency service unavailable');
+    await runProp('module1', 'onFixCurrency', record);
+    await runProp('fixCurrency', 'onFix', record.record_id, 'EUR', 100);
+    expect(screen.getByText(fallbackMessage)).toBeInTheDocument();
+
+    vi.mocked(apiClient.updateValidationRecord).mockRejectedValueOnce('supplier update unavailable');
+    await runProp('module1', 'onMergeVendor', record);
+    await runProp('mergeVendor', 'onMerge', record.record_id, 'VND-9', 'Master Supplier');
+    expect(screen.getByText(fallbackMessage)).toBeInTheDocument();
+
+    vi.mocked(apiClient.updateValidationRecord).mockRejectedValueOnce('item update unavailable');
+    await runProp('module1', 'onMergeItem', record);
+    await runProp('mergeItem', 'onMerge', record.record_id, 'ITM-9', 'Master Item');
+    expect(screen.getByText(fallbackMessage)).toBeInTheDocument();
+  });
 });
 
 describe('Home page: Module 1 remediation, refresh, and deletion', () => {
@@ -1233,7 +1303,20 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
     expect(screen.getByText(UI_STRINGS.toasts.validationReset)).toBeInTheDocument();
   });
 
-  it('refreshes with fixes, persists the session copy, and scrolls to the summary section', async () => {
+  it('shows safe messages when D1 reset and delete operations reject with non-Error values', async () => {
+    const fallbackMessage = UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails);
+    await renderPage();
+
+    vi.mocked(apiClient.resetValidationRecords).mockRejectedValueOnce('reset unavailable');
+    await runProp('module1', 'onResetValidationRecords');
+    expect(screen.getByText(fallbackMessage)).toBeInTheDocument();
+
+    vi.mocked(apiClient.deleteIngestionDocument).mockRejectedValueOnce('delete unavailable');
+    await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
+    expect(screen.getByText(fallbackMessage)).toBeInTheDocument();
+  });
+
+  it('refreshes D1 validation records and scrolls to the summary section without a browser data copy', async () => {
     vi.mocked(apiClient.getIngestionData).mockResolvedValue(
       asIngestion({
         queue: [buildDocument()],
@@ -1242,7 +1325,6 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
         )
       })
     );
-    window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: buildDocument() }));
     await renderPage();
 
     await runProp('module1', 'onRefreshWithFixes');
@@ -1250,22 +1332,17 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
     const records = readProp<ValidationPreCheckRecord[]>('module1', 'validationRecords');
     expect(records[3]).toMatchObject({ issue_flag: 'Tax Discrepancy', action_status: 'Reviewed', resolved: false });
     expect(records[0].issue_flag).toBe('Passed Clean');
-    const saved = JSON.parse(window.sessionStorage.getItem('procucev_uploaded_dataset') ?? '{}') as {
-      isDataRefreshed?: boolean;
-    };
-    expect(saved.isDataRefreshed).toBe(true);
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     expect(screen.getByText(UI_STRINGS.toasts.refreshedFinalNumbers)).toBeInTheDocument();
   });
 
-  it('keeps unresolved records and tolerates unreadable session data on refresh', async () => {
+  it('keeps unresolved D1 records on refresh without browser storage', async () => {
     vi.mocked(apiClient.getIngestionData).mockResolvedValue(
       asIngestion({
         queue: [buildDocument({ records_count: 0 })],
         validationRecords: [buildRecord('REC-OPEN', { resolved: false, issue_flag: 'Missing Currency' })]
       })
     );
-    window.sessionStorage.setItem('procucev_uploaded_dataset', '{not json');
     await renderPage();
 
     await runProp('module1', 'onRefreshWithFixes');
@@ -1280,13 +1357,11 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
   });
 
   it('deletes the uploaded document and resets derived Module 1 state', async () => {
-    window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: buildDocument() }));
     await renderPage();
 
     await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
 
     expect(apiClient.deleteIngestionDocument).toHaveBeenCalledWith('DOC-PAGE-001');
-    expect(window.sessionStorage.getItem('procucev_uploaded_dataset')).toBeNull();
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')).toEqual([]);
     expect(readProp<TenantMaster>('header', 'tenant').total_spend_evaluated_inr).toBe(0);
     expect(readProp<number | undefined>('module1', 'uniqueItemsCount')).toBeUndefined();
@@ -1299,7 +1374,7 @@ describe('Home page: Module 1 remediation, refresh, and deletion', () => {
     await runProp('header', 'onStartAnalysis');
 
     expect(readProp<{ totalRecords: number }>('analyzingLoader', 'metrics').totalRecords).toBe(0);
-    expect(readProp<{ confidenceScore: number }>('analyzingLoader', 'metrics').confidenceScore).toBe(99.4);
+    expect(readProp<{ confidenceScore?: number }>('analyzingLoader', 'metrics').confidenceScore).toBeUndefined();
   });
 });
 
@@ -1545,6 +1620,11 @@ describe('Home page: Module 2 categorization', () => {
 
     await runProp('module2', 'onConfirmMapping', first.mapping_id);
     expect(readProp<LineItemMapping[]>('module2', 'lineItems')[0].status).toBe('Confirmed');
+    expect(mocks.saveModule2MaterialMappings).toHaveBeenLastCalledWith('ASM-M2', [expect.objectContaining({
+      sourceMaterialId: first.material_code,
+      unspscCode: first.unspsc_code,
+      reviewStatus: 'CLIENT_APPROVED'
+    })]);
     expect(screen.getByText(UI_STRINGS.toasts.unspscConfirmed(first.mapping_id))).toBeInTheDocument();
 
     await runProp('module2', 'onReassignMapping', second);
@@ -1553,10 +1633,15 @@ describe('Home page: Module 2 categorization', () => {
     await runProp('reassign', 'onSave', second.mapping_id, '31161500', 'Bolts', 'Indirect & MRO');
     expect(readProp<LineItemMapping[]>('module2', 'lineItems')[1]).toMatchObject({
       unspsc_code: '31161500',
-      core_bucket: 'Indirect & MRO',
+      core_bucket: 'Direct Materials',
       status: 'Confirmed'
     });
-    expect(screen.getByText(UI_STRINGS.toasts.taxonomyReassigned('31161500', 'Indirect & MRO'))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.toasts.taxonomyReassigned('31161500', 'Direct Materials'))).toBeInTheDocument();
+    expect(mocks.saveModule2MaterialMappings).toHaveBeenLastCalledWith('ASM-M2', [expect.objectContaining({
+      sourceMaterialId: second.material_code,
+      unspscCode: '31161500',
+      reviewStatus: 'CLIENT_APPROVED'
+    })]);
 
     await runProp('reassign', 'onClose');
     expect(readProp<LineItemMapping | null>('reassign', 'item')).toBeNull();
@@ -1584,9 +1669,12 @@ describe('Home page: Module 2 categorization', () => {
     await runProp('module2', 'onStartAICategorization');
 
     const items = readProp<LineItemMapping[]>('module2', 'lineItems');
-    expect(items[0]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 97, status: 'Confirmed', core_bucket: 'Indirect & MRO' });
-    expect(items[1]).toMatchObject({ ai_confidence: 99.2, status: 'Confirmed' });
-    expect(items[2].status).toBe('Confirmed');
+    expect(mocks.saveModule2MaterialMappings).toHaveBeenLastCalledWith('ASM-M2', expect.arrayContaining([
+      expect.objectContaining({ sourceMaterialId: 'MAT-MAP-1', reviewStatus: 'PROVISIONAL' })
+    ]));
+    expect(items[0]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 97, status: 'Pending Review', core_bucket: 'Direct Materials' });
+    expect(items[1]).toMatchObject({ ai_confidence: 99.4, status: 'Pending Review' });
+    expect(items[2].status).toBe('Pending Review');
 
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(
       asCategorizeResult({
@@ -1600,17 +1688,36 @@ describe('Home page: Module 2 categorization', () => {
     expect(readProp<LineItemMapping[]>('module2', 'lineItems')[2].ai_confidence).toBe(91);
   });
 
+  it('does not apply a mapping when the source material has no stable D1 identifier', async () => {
+    await seedModule2([buildLineItem('MAP-NO-MATERIAL', 'Steel Bolt M8', { material_code: undefined })]);
+    const [item] = readProp<LineItemMapping[]>('module2', 'lineItems');
+    await runProp('module2', 'onConfirmMapping', item.mapping_id);
+    expect(screen.getByText(UI_STRINGS.toasts.module2MaterialCodeRequired)).toBeInTheDocument();
+    expect(mocks.saveModule2MaterialMappings).not.toHaveBeenCalled();
+  });
+
+  it('keeps the previous D1 mapping visible when saving a decision fails', async () => {
+    await seedModule2();
+    const [item] = readProp<LineItemMapping[]>('module2', 'lineItems');
+    vi.mocked(mocks.saveModule2MaterialMappings).mockRejectedValueOnce(
+      new Error(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(503)))
+    );
+    await runProp('module2', 'onConfirmMapping', item.mapping_id);
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems')[0].status).toBe('Pending');
+    expect(screen.getByText(UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.toasts.mappingServerRejected(503)))).toBeInTheDocument();
+  });
+
   it('falls back to catalog matching when the AI response has no mappings or the call fails', async () => {
     await seedModule2();
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(asCategorizeResult({ success: false, mappings: [] }));
 
     await runProp('module2', 'onStartAICategorization');
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems').every((item) => item.status === 'Confirmed')).toBe(true);
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems').every((item) => item.status === 'Pending Review')).toBe(true);
 
     vi.mocked(aiApiClient.categorizeItems).mockRejectedValueOnce(new Error('AI gateway timeout'));
     await runProp('module2', 'onStartAICategorization');
     expect(frontendLogger.error).toHaveBeenCalled();
-    expect(readProp<LineItemMapping[]>('module2', 'lineItems').every((item) => item.status === 'Confirmed')).toBe(true);
+    expect(readProp<LineItemMapping[]>('module2', 'lineItems').every((item) => item.status === 'Pending Review')).toBe(true);
   });
 
   it('stops AI categorization and shows the catalog error when the taxonomy cannot load', async () => {
@@ -1626,6 +1733,8 @@ describe('Home page: Module 2 categorization', () => {
 
   it('starts AI categorization from Module 1 and opens Module 2', async () => {
     await renderPage();
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-AI-START', activeDataVersionId: 'DV-AI-START' }));
+    await switchTab('module1', 'module1');
 
     await runProp('module1', 'onRunAICategorization');
 
@@ -1667,13 +1776,11 @@ describe('Home page: Modules 4 and 5, pipeline navigation', () => {
     await runProp('proCPX', 'onClose');
 
     await runProp('module4', 'onOpenDPSNXT', dpsOpportunity);
-    vi.mocked(apiClient.deployOpportunity).mockRejectedValueOnce(new Error('DPS sync failed'));
-    await runProp('dpsNXT', 'onSuccess', dpsOpportunity.opp_id);
+    const deploymentError = new Error('DPS sync failed');
+    vi.mocked(apiClient.deployOpportunity).mockRejectedValueOnce(deploymentError);
+    await expect(runProp('dpsNXT', 'onSuccess', dpsOpportunity.opp_id)).rejects.toBe(deploymentError);
     expect(apiClient.deployOpportunity).toHaveBeenLastCalledWith(dpsOpportunity.opp_id, 'DPS NXT');
-    expect(screen.getByText(UI_STRINGS.toasts.deployedToDPSNXT(dpsOpportunity.opp_id))).toBeInTheDocument();
-    await waitFor(() => {
-      expect(mocks.logger.warn).toHaveBeenCalled();
-    });
+    expect(screen.queryByText(UI_STRINGS.toasts.deployedToDPSNXT(dpsOpportunity.opp_id))).not.toBeInTheDocument();
     await runProp('dpsNXT', 'onClose');
   });
 
@@ -1766,7 +1873,7 @@ describe('Home page: header and shell actions', () => {
     expect(readProp<TenantMaster>('header', 'tenant')).toMatchObject({
       enterprise_name: 'Northwind Metals',
       base_currency: 'EUR',
-      total_spend_evaluated_inr: 8380
+      total_spend_evaluated_inr: 100
     });
     expect(readProp<{ isOpen: boolean }>('clientSetup', 'isOpen')).toBe(false);
   });
@@ -1939,8 +2046,16 @@ describe('Home page: executive brief downloads', () => {
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.opportunityBrief.downloadNetworkFailed('PDF'))).toBeInTheDocument();
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/reports/executive-brief/download/opportunity-brief/pdf');
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/reports/executive-brief/download/opportunity-brief/pptx');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/reports/executive-brief/download/opportunity-brief/pdf',
+      { headers: { Authorization: 'Bearer ' + 'token-123' } }
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/reports/executive-brief/download/opportunity-brief/pptx',
+      { headers: { Authorization: 'Bearer ' + 'token-123' } }
+    );
     // Unmount while the URL stubs still exist, so the payload cleanup can revoke the object URL.
     cleanup();
   });
@@ -2256,7 +2371,7 @@ describe('Home page: modal closers, sync failures, and storage fallbacks', () =>
     const syncError = new Error('sync offline');
 
     vi.mocked(apiClient.updateValidationRecord).mockRejectedValueOnce(syncError);
-    await runProp('fixCurrency', 'onFix', record.record_id, 'EUR', 10);
+    await runProp('fixCurrency', 'onFix', record.record_id, 'EUR', 4200);
     vi.mocked(apiClient.updateValidationRecord).mockRejectedValueOnce(syncError);
     await runProp('mergeVendor', 'onMerge', record.record_id, 'VND-1', 'Master');
     vi.mocked(apiClient.updateValidationRecord).mockRejectedValueOnce(syncError);
@@ -2270,14 +2385,14 @@ describe('Home page: modal closers, sync failures, and storage fallbacks', () =>
     vi.mocked(apiClient.deleteIngestionDocument).mockRejectedValueOnce(syncError);
     await runProp('module1', 'onDeleteDocument', 'DOC-PAGE-001');
     vi.mocked(apiClient.deployOpportunity).mockRejectedValueOnce(syncError);
-    await runProp('proCPX', 'onSuccess', 'OPP-PAGE-001');
+    await expect(runProp('proCPX', 'onSuccess', 'OPP-PAGE-001')).rejects.toBe(syncError);
     vi.mocked(apiClient.updateTenant).mockRejectedValueOnce(syncError);
     await runProp('header', 'onSelectCurrency', 'GBP');
     vi.mocked(apiClient.updateTenant).mockRejectedValueOnce(syncError);
     await runProp('clientSetup', 'onConfirmAndUpload', { clientName: 'Sync Co', estimatedSpend: 0 });
 
     await waitFor(() => {
-      expect(mocks.logger.warn).toHaveBeenCalledTimes(10);
+      expect(mocks.logger.warn).toHaveBeenCalledTimes(9);
     });
   });
 
@@ -2342,7 +2457,7 @@ describe('Home page: hydration defaults and optional payload fields', () => {
 
     expect(readProp<RawDocumentIngestion[]>('module1', 'ingestionQueue')[0]).toMatchObject({
       doc_id: 'DOC-NO-TENANT',
-      tenant_id: BUYER_USER.id
+      tenant_id: ''
     });
     expect(readProp<TenantMaster>('header', 'tenant').enterprise_name).toBe(EMPTY_TENANT.enterprise_name);
   });
@@ -2412,6 +2527,8 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
       asIngestion({ queue: [buildDocument({ records_count: 0 })], validationRecords: [] })
     );
     await renderPage();
+    await attachAssessment(buildAssessment({ assessmentId: 'ASM-METRICS', activeDataVersionId: 'DV-METRICS' }));
+    await switchTab('module1', 'module1');
 
     await runProp('header', 'onStartAnalysis');
     await runProp('analyzingLoader', 'onCancel');
@@ -2492,8 +2609,8 @@ describe('Home page: analysis metrics, upload variants, and AI fallbacks', () =>
     );
     await runProp('module2', 'onStartAICategorization');
     const afterSuccess = readProp<LineItemMapping[]>('module2', 'lineItems');
-    expect(afterSuccess[1]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 99.2, status: 'Confirmed' });
-    expect(afterSuccess[0].status).toBe('Confirmed');
+    expect(afterSuccess[1]).toMatchObject({ unspsc_code: '31161500', ai_confidence: 99.4, status: 'Pending Review' });
+    expect(afterSuccess[0].status).toBe('Pending Review');
 
     vi.mocked(aiApiClient.categorizeItems).mockResolvedValueOnce(asCategorizeResult({ success: false, mappings: [] }));
     await runProp('module2', 'onStartAICategorization');

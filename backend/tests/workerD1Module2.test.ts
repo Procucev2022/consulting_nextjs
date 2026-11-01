@@ -296,6 +296,60 @@ describe('workerD1Module2 handler', () => {
     }
   });
 
+  it('bulk-saves provisional material suggestions and overlays them on D1 line-item reads', async () => {
+    const fixture = createWorkerDatabase();
+    try {
+      fixture.d1.batch = async (statements) => Promise.all(statements.map((statement) => statement.run()));
+      fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+        transaction_id, tenant_id, assessment_id, supplier_name, short_text, material_group, material_code,
+        order_quantity, order_unit, net_price, currency, total_inr_raw, raw_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run('BULK-MAP-TX-1', 'T1', 'A-BULK', 'Supplier A', 'Resin grade 1', 'Chemicals', 'MAT-BULK', 2, 'KG', 50, 'INR', 100, '{}');
+      fixture.db.prepare(`INSERT INTO UNSPSCCommodity (
+        commodity_code, commodity_title, class_code, class_title, family_code, family_title,
+        segment_code, segment_title, core_bucket, taxonomy_version
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run('12345678', 'Resins', '123456', 'Chemical Products', '1234', 'Materials', '12', 'Chemicals',
+          'Direct Materials', 'v1');
+      fixture.db.prepare(`INSERT INTO User (
+        id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .run('usr-bulk-mapper', 'Bulk Reviewer', '+910000000013', 'bulk@example.test', 'Example', 'Pune',
+          'unused-test-hash', 'USER', 'ACTIVE', 'GOLD');
+      const token = await issueEvidenceToken({ userId: 'usr-bulk-mapper' }, WORKER_CORE_SECRET);
+      const update = req('/sourcing/vendor-consolidation/mappings/bulk-update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A-BULK', mappings: [{ sourceMaterialId: 'MAT-BULK',
+          unspscCode: '12345678', reviewStatus: 'PROVISIONAL', confidenceScore: 0.87,
+          mappingMethod: 'CONTEXTUAL_HEURISTIC', auditNotes: 'Suggested by the classifier; requires review.' }] })
+      });
+      const saved = await handleModule2Route(fixture.d1, '/sourcing/vendor-consolidation/mappings/bulk-update', update,
+        new URL(update.url), WORKER_CORE_SECRET);
+      expect(saved.data).toMatchObject({ success: true, mappings: [expect.objectContaining({
+        sourceMaterialId: 'MAT-BULK', reviewStatus: 'PROVISIONAL', confidenceScore: 0.87,
+        coreBucket: 'Direct Materials'
+      })] });
+
+      const read = req('/sourcing/line-items?assessmentId=A-BULK&tenantId=T1');
+      const result = await handleModule2Route(fixture.d1, '/sourcing/line-items', read, new URL(read.url));
+      expect(result.data).toMatchObject({ lineItems: [expect.objectContaining({
+        material_code: 'MAT-BULK', unspsc_code: '12345678', core_bucket: 'Direct Materials', status: 'Pending Review'
+      })] });
+
+      const duplicate = req('/sourcing/vendor-consolidation/mappings/bulk-update', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ assessmentId: 'A-BULK', mappings: [
+          { sourceMaterialId: 'MAT-BULK', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' },
+          { sourceMaterialId: 'MAT-BULK', unspscCode: '12345678', reviewStatus: 'PROVISIONAL' }
+        ] })
+      });
+      expect(await handleModule2Route(fixture.d1, '/sourcing/vendor-consolidation/mappings/bulk-update', duplicate,
+        new URL(duplicate.url), WORKER_CORE_SECRET)).toMatchObject({ status: 400 });
+    } finally {
+      fixture.close();
+    }
+  });
+
   it('loads, reviews, and exports procurement compliance exclusively from assessment D1 evidence', async () => {
     const fixture = createWorkerDatabase();
     try {

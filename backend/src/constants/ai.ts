@@ -79,6 +79,16 @@ Return a SINGLE JSON object with EXACTLY this shape:
   ]
 }`;
 
+export const PCBI_RESEARCH_PDF_EXTRACTION_PROMPT = `You extract commodity benchmark observations from research PDFs for a procurement data platform.
+Extract ONLY historical commodity price or benchmark index rows explicitly shown in the attached PDF. Do not extract customer purchase orders, invoices, procurement spend, forecasts, targets, or narrative estimates. Do not infer missing dates or values. Ignore charts unless the PDF prints exact data labels that can be read unambiguously. Return an empty observations array when no explicit historical rows are available.
+
+Return a SINGLE JSON object with EXACTLY this shape:
+{
+  "observations": [
+    { "observationDate": "YYYY-MM-DD or source date text", "value": 123.45, "unit": "source unit or null", "currency": "ISO currency or null", "geography": "source region or null" }
+  ]
+}`;
+
 export const CATEGORIZATION_SYSTEM_PROMPT = `You are an enterprise procurement categorization specialist.
 Given a list of purchased procurement items and their descriptions, vendor names, and spend amounts:
 1. Map each line item to the most appropriate UNSPSC (United Nations Standard Products and Services Code) 8-digit code, title, and major category.

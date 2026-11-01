@@ -13,7 +13,9 @@ vi.mock('../../../src/utils/assessmentApi', () => ({
     updateDataStatus: vi.fn(),
     runAnalysis: vi.fn(),
     approveAssessment: vi.fn(),
-    generateDeliveryPackage: vi.fn()
+    generateDeliveryPackage: vi.fn(),
+    getReviewGates: vi.fn(),
+    saveReviewGate: vi.fn()
   }
 }));
 
@@ -53,6 +55,7 @@ describe('AssessmentDetailWorkflow', () => {
     vi.clearAllMocks();
     (assessmentApiClient.getAssessmentById as ReturnType<typeof vi.fn>).mockResolvedValue(mockAssessment);
     (assessmentApiClient.getAuditLogs as ReturnType<typeof vi.fn>).mockResolvedValue(mockAuditLogs);
+    (assessmentApiClient.getReviewGates as ReturnType<typeof vi.fn>).mockResolvedValue([]);
   });
 
   it('renders assessment details and tabs', async () => {

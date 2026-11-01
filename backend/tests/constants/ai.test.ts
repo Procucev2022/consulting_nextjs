@@ -9,6 +9,7 @@ import {
   AI_MAX_CATEGORIES_IN_PROMPT,
   AI_TAXONOMY_LOOKUP_UNAVAILABLE,
   EXTRACTION_SYSTEM_PROMPT,
+  PCBI_RESEARCH_PDF_EXTRACTION_PROMPT,
   CATEGORIZATION_SYSTEM_PROMPT,
   EXECUTIVE_REPORT_SYSTEM_PROMPT,
   ANOMALY_DETECTION_SYSTEM_PROMPT,
@@ -46,6 +47,8 @@ describe('AI Constants and Prompts', () => {
     expect(AI_MAX_LINE_ITEMS_IN_PROMPT).toBe(150);
     expect(AI_MAX_CATEGORIES_IN_PROMPT).toBe(80);
     expect(EXTRACTION_SYSTEM_PROMPT).toContain('enterprise procurement & PO data extraction engine');
+    expect(PCBI_RESEARCH_PDF_EXTRACTION_PROMPT).toContain('commodity benchmark observations');
+    expect(PCBI_RESEARCH_PDF_EXTRACTION_PROMPT).toContain('Do not infer missing dates or values');
     expect(CATEGORIZATION_SYSTEM_PROMPT).toContain('UNSPSC');
     expect(EXECUTIVE_REPORT_SYSTEM_PROMPT).toContain('Chief Procurement Officer');
     expect(ANOMALY_DETECTION_SYSTEM_PROMPT).toContain('anomaly detection engine');

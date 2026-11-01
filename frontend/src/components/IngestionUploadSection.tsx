@@ -105,12 +105,12 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
               <FileCheck className="w-4 h-4 text-emerald-600" />
               <span>{UI_STRINGS.module1.uploadedFileDetails}</span>
             </h3>
-            <p className="text-xs text-slate-500">
-              Verified dataset with record count strictly excluding header row
+              <p className="text-xs text-slate-500">
+              {UI_STRINGS.module1.uploadedFileDescription}
             </p>
           </div>
           <span className="text-xs font-mono text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 font-bold">
-            ₹{totalEvaluatedSpendInrCr.toFixed(2)} Cr Evaluated
+            {UI_STRINGS.module1.evaluatedSpend(totalEvaluatedSpendInrCr)}
           </span>
         </div>
 
@@ -132,10 +132,16 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                     </div>
                     <div>
                       <span className="font-mono font-bold text-slate-900 text-sm block">
-                        {doc.file_name}
+                        {doc.file_name || UI_STRINGS.module1.fileNameUnavailable}
                       </span>
                       <span className="text-[10px] text-slate-500 font-mono">
-                        Format: {doc.file_type || 'XLSX'} • Size: {doc.file_size_mb || 1.0} MB • Uploaded: {doc.uploaded_at || 'Just now'}
+                        {UI_STRINGS.module1.uploadMetadata(
+                          doc.file_type || UI_STRINGS.module1.fileTypeUnavailable,
+                          doc.file_size_mb !== undefined && doc.file_size_mb > 0
+                            ? UI_STRINGS.module1.fileSizeMb(doc.file_size_mb)
+                            : UI_STRINGS.module1.fileSizeUnavailable,
+                          doc.uploaded_at || UI_STRINGS.module1.uploadTimeUnavailable
+                        )}
                       </span>
                     </div>
                   </div>
@@ -143,14 +149,19 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                   <div className="flex items-center space-x-2 shrink-0">
                     <span
                       className={`text-xs font-bold font-mono px-2.5 py-1 rounded-full ${
-                        (doc.ocr_status || 'Completed') === 'Completed'
+                        doc.ocr_status === 'Completed'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                          : doc.ocr_status
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                            : 'bg-slate-100 text-slate-700 border border-slate-300'
                       }`}
                     >
-                      {(doc.ocr_status || 'Completed') === 'Completed'
-                        ? `${doc.progress ?? 100}% ${doc.ocr_status || 'Completed'}`
-                        : UI_STRINGS.module1.processingStatus(doc.progress ?? 100)}
+                      {doc.progress !== undefined && doc.progress !== null
+                        ? UI_STRINGS.module1.uploadProgress(
+                            doc.progress,
+                            doc.ocr_status || UI_STRINGS.module1.processingStatusUnavailable
+                          )
+                        : doc.ocr_status || UI_STRINGS.module1.processingStatusUnavailable}
                     </span>
                     {onDeleteDocument && (
                       <button
@@ -172,17 +183,21 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                 {/* Highlighted Total Records & Formula Calculation Box */}
                 <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-2.5 text-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
+                  <div>
                       <span className="text-[10px] text-slate-400 font-medium uppercase font-mono block">
                         Total Ingested Records (Data Rows):
                       </span>
                       <div className="flex items-baseline space-x-2">
                         <span className="text-xl font-black font-mono text-emerald-700">
-                          {(doc.records_count ?? 0).toLocaleString()} Records
+                          {doc.records_count !== undefined && doc.records_count !== null
+                            ? UI_STRINGS.module1.recordCount(doc.records_count)
+                            : UI_STRINGS.module1.recordCountUnavailable}
                         </span>
-                        <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                          Excluding Header Row
-                        </span>
+                        {doc.records_count !== undefined && doc.records_count !== null && (
+                          <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            Excluding Header Row
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -191,7 +206,7 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                         Calculated Total Spend from File:
                       </span>
                       <span className="font-mono font-black text-emerald-700 text-lg">
-                        ₹{(doc.converted_inr_crores != null ? doc.converted_inr_crores : 0).toFixed(2)} Cr
+                        {UI_STRINGS.module1.spendFromFile(doc.converted_inr_crores)}
                       </span>
                     </div>
                   </div>
@@ -206,27 +221,31 @@ export const IngestionUploadSection: React.FC<IngestionUploadSectionProps> = ({
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300/50">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      (doc.progress ?? 100) === 100
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                        : 'bg-gradient-to-r from-cyan-500 to-blue-500 animate-pulse'
-                    }`}
-                    style={{ width: `${Math.min(100, Math.max(0, doc.progress ?? 100))}%` }}
-                  />
-                </div>
+                {doc.progress !== undefined && doc.progress !== null && (
+                  <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300/50">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        doc.progress === 100
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                          : 'bg-gradient-to-r from-cyan-500 to-blue-500 animate-pulse'
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, doc.progress))}%` }}
+                    />
+                  </div>
+                )}
 
                 <div className="flex justify-between items-center text-[11px] text-slate-500 font-mono pt-0.5">
                   <div className="flex items-center space-x-1.5">
-                    <span>Detected Currencies:</span>
-                    {(doc.detected_currencies || ['USD', 'EUR', 'INR']).map((c, cIdx) => (
-                      <span key={`${c}-${cIdx}`} className="px-1.5 py-0.2 rounded bg-slate-200 text-[10px] text-cyan-800 font-bold">
-                        {c}
-                      </span>
-                    ))}
+                    <span>{UI_STRINGS.module1.detectedCurrenciesLabel}</span>
+                    {doc.detected_currencies?.length
+                      ? doc.detected_currencies.map((currency, currencyIndex) => (
+                        <span key={`${currency}-${currencyIndex}`} className="px-1.5 py-0.2 rounded bg-slate-200 text-[10px] text-cyan-800 font-bold">
+                          {currency}
+                        </span>
+                      ))
+                      : <span>{UI_STRINGS.module1.detectedCurrenciesUnavailable}</span>}
                   </div>
-                  <span>ID: {doc.doc_id || `DOC-INGEST-${idx + 1}`}</span>
+                  <span>{UI_STRINGS.module1.documentIdLabel} {doc.doc_id || UI_STRINGS.module1.documentIdUnavailable}</span>
                 </div>
               </div>
             ))

@@ -234,7 +234,7 @@ export const StrategicSavingsSummaryBanner: React.FC<StrategicSavingsSummaryBann
         <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-600 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <span className="font-bold">Spend Eligibility Architecture: </span>
-          {strings.spendEligibilityExplanation}
+          {strings.spendEligibilityExplanation(metrics.addressableSpendInrCr, metrics.overlapDeductionsInrCr)}
         </div>
       </div>
 

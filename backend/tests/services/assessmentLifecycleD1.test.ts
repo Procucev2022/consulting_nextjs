@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { handleAssessmentRoute } from '../../src/workerD1Assessment';
 import { createWorkerDatabase } from '../helpers/workerCoreFixtures';
+import { ASSESSMENT_REVIEW_GATE_KEYS } from '../../src/constants/assessmentD1';
+import type { CloudflareEnvironment } from '../../src/types/cloudflare';
+
+const createArtifactEnvironment = () => {
+  const stored = new Map<string, Uint8Array>();
+  const environment: CloudflareEnvironment = {
+    APP_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef',
+    OBJECTS: {
+      put: async (key, value) => { stored.set(key, new Uint8Array(value as Uint8Array)); },
+      get: async (key) => {
+        const bytes = stored.get(key);
+        return bytes ? { body: new Response(bytes).body as ReadableStream } : null;
+      },
+      delete: async (key) => { stored.delete(key); }
+    }
+  };
+  return { environment, stored };
+};
 
 const seedAssessment = (fixture: ReturnType<typeof createWorkerDatabase>, options: Record<string, unknown> = {}): void => {
   const assessmentId = String(options.assessmentId || 'A-LIFECYCLE');
@@ -35,12 +53,20 @@ const seedAssessment = (fixture: ReturnType<typeof createWorkerDatabase>, option
   fixture.db.prepare(`INSERT INTO AssessmentStoreEntry (
     entry_type, assessment_id, entry_id, payload_json, source_checksum
   ) VALUES ('assessment', ?, ?, ?, 'fixture')`).run(assessmentId, assessmentId, JSON.stringify(snapshot));
+  if (!options.skipReviewGates) {
+    for (const gateKey of ASSESSMENT_REVIEW_GATE_KEYS) {
+      fixture.db.prepare(`INSERT INTO AssessmentReviewGate (
+        assessment_id, gate_key, status, evidence_reference, review_note, reviewed_by, reviewed_at
+      ) VALUES (?, ?, 'PASSED', ?, ?, ?, CURRENT_TIMESTAMP)`)
+        .run(assessmentId, gateKey, `D1 test evidence: ${gateKey}`, 'Reviewed by lifecycle fixture', 'analyst@example.test');
+    }
+  }
 };
 
 const invoke = async (
   fixture: ReturnType<typeof createWorkerDatabase>,
   action: string,
-  options: { method?: string; body?: unknown; headers?: Record<string, string>; assessmentId?: string } = {}
+  options: { method?: string; body?: unknown; headers?: Record<string, string>; assessmentId?: string; environment?: CloudflareEnvironment } = {}
 ) => {
   const assessmentId = options.assessmentId || 'A-LIFECYCLE';
   const path = `/${assessmentId}/${action}`;
@@ -50,7 +76,7 @@ const invoke = async (
     headers,
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) })
   });
-  return handleAssessmentRoute(fixture.d1, path, request, new URL(request.url));
+  return handleAssessmentRoute(fixture.d1, path, request, new URL(request.url), options.environment || createArtifactEnvironment().environment);
 };
 
 const expectStatus = async (
@@ -74,16 +100,33 @@ describe('D1 assessment lifecycle actions', () => {
   it('approves a passed analysis, persists a D1 package manifest, delivers, accepts, and closes', async () => {
     const fixture = createWorkerDatabase();
     seedAssessment(fixture);
+    fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+      transaction_id, tenant_id, assessment_id, source_document_id, source_row_number, supplier_name,
+      currency, total_inr_raw, total_in_cr_raw, raw_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run('TX-LIFECYCLE', 'C-LIFECYCLE', 'A-LIFECYCLE', 'DV-LIFECYCLE', 1, 'D1 Demo Supplier', 'INR', 100000, 0.001, '{}');
+    fixture.db.prepare(`INSERT INTO ValidationPreCheckRecord (
+      record_id, po_number, vendor_name, raw_desc, amount, amount_inr, raw_currency
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .run('REC-DV-LIFECYCLE-ROW-1', 'PO-1', 'D1 Demo Supplier', 'D1 sourced item', 100000, 100000, 'INR');
+    const artifactEnvironment = createArtifactEnvironment();
     try {
       const approval = await invoke(fixture, 'approve', { body: { approvalComment: 'Reviewed and approved' } });
       expect(approval.data).toMatchObject({ status: 'APPROVED', approvedBy: 'analyst@procucev.com' });
       expect(fixture.db.prepare('SELECT is_approved FROM AssessmentAnalysisRun WHERE analysis_run_id = ?')
         .get('RUN-LIFECYCLE').is_approved).toBe(1);
+      fixture.db.prepare(`INSERT INTO FxMasterVersion (
+        version_id, workbook_name, created_date, sha256_checksum, validation_status
+      ) VALUES (?, ?, ?, ?, ?)`).run('FX-V1', 'demo-fx.xlsx', '2026-10-01', 'd1-fx-checksum', 'VALIDATED');
 
-      const packaged = await invoke(fixture, 'delivery-package', { body: {} });
+      const packaged = await invoke(fixture, 'delivery-package', { body: {}, environment: artifactEnvironment.environment });
       expect((packaged.data as any).items).toHaveLength(10);
-      expect((packaged.data as any).checksums.vgtDataset).toBe('dataset-checksum');
-      const packagedAgain = await invoke(fixture, 'delivery-package', { method: 'GET' });
+      expect((packaged.data as any).checksums.sourceDataset).toBe('dataset-checksum');
+      expect((packaged.data as any).checksums.fxMaster).toBe('d1-fx-checksum');
+      expect((packaged.data as any).checksums).not.toHaveProperty('evidenceWorkbook');
+      expect((packaged.data as any).items.every((item: { artifactStatus: string }) => item.artifactStatus === 'GENERATED')).toBe(true);
+      expect(artifactEnvironment.stored.size).toBe(10);
+      const packagedAgain = await invoke(fixture, 'delivery-package', { method: 'GET', environment: artifactEnvironment.environment });
       expect((packagedAgain.data as any).assessmentPeriod).toBe('2025-04-01 – 2026-03-31');
       expect(fixture.db.prepare("SELECT COUNT(*) AS count FROM AssessmentStoreEntry WHERE entry_type = 'delivery_package'")
         .get().count).toBe(1);
@@ -105,6 +148,188 @@ describe('D1 assessment lifecycle actions', () => {
       expect((closed.data as any).status).toBe('CLOSED');
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentAuditLog WHERE assessment_id = ?')
         .get('A-LIFECYCLE').count).toBe(6);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('downloads a generated PDF from R2 and rejects missing, unknown, or unreadable artifacts', async () => {
+    const fixture = createWorkerDatabase();
+    seedAssessment(fixture, { status: 'APPROVED', runApproved: 1 });
+    fixture.db.prepare(`INSERT INTO ProcurementTransaction (
+      transaction_id, tenant_id, assessment_id, source_document_id, source_row_number, supplier_name,
+      currency, total_inr_raw, total_in_cr_raw, raw_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run('TX-LIFECYCLE-DOWNLOAD', 'C-LIFECYCLE', 'A-LIFECYCLE', 'DV-LIFECYCLE', 1, 'D1 Demo Supplier', 'INR', 100000, 0.001, '{}');
+    const artifactEnvironment = createArtifactEnvironment();
+    try {
+      const packaged = await invoke(fixture, 'delivery-package', { body: {}, environment: artifactEnvironment.environment });
+      expect((packaged.data as any).items[0].encryptionIv).toBeTruthy();
+      const download = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: artifactEnvironment.environment, headers: { 'x-request-id': 'req-delivery-1' }
+      });
+      expect(download.response?.status).toBe(200);
+      expect(download.response?.headers.get('content-type')).toBe('application/pdf');
+      expect(download.response?.headers.get('x-request-id')).toBe('req-delivery-1');
+      const pdfBytes = new Uint8Array(await download.response?.arrayBuffer() as ArrayBuffer);
+      const pdfText = new TextDecoder().decode(pdfBytes);
+      expect(pdfText.slice(0, 5)).toBe('%PDF-');
+      expect(pdfText).toContain('Source transaction rows: 1');
+      const noRequestId = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: artifactEnvironment.environment
+      });
+      expect(noRequestId.response?.headers.get('x-request-id')).toBeNull();
+      const noR2 = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: { APP_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef' }
+      });
+      expect(noR2.status).toBe(503);
+      const missing = await invoke(fixture, 'delivery-package/UNKNOWN_ARTIFACT', { method: 'GET', environment: artifactEnvironment.environment });
+      expect(missing.status).toBe(404);
+      const unsupportedMethod = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'POST', body: {}, environment: artifactEnvironment.environment
+      });
+      expect(unsupportedMethod.status).toBe(405);
+      const corruptKey = { ...artifactEnvironment.environment, APP_ENCRYPTION_KEY: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' };
+      const corrupt = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', { method: 'GET', environment: corruptKey });
+      expect(corrupt.status).toBe(500);
+      const missingKey = { ...artifactEnvironment.environment };
+      delete missingKey.APP_ENCRYPTION_KEY;
+      const keyUnavailable = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: missingKey
+      });
+      expect(keyUnavailable.status).toBe(503);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('handles missing assessments, invalid manifests, and missing R2 objects on artifact downloads', async () => {
+    const fixture = createWorkerDatabase();
+    seedAssessment(fixture, { status: 'APPROVED', runApproved: 1 });
+    const artifactEnvironment = createArtifactEnvironment();
+    try {
+      const absentAssessment = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', assessmentId: 'A-MISSING', environment: artifactEnvironment.environment
+      });
+      expect(absentAssessment.status).toBe(404);
+
+      const packaged = await invoke(fixture, 'delivery-package', {
+        body: {}, environment: artifactEnvironment.environment
+      });
+      const manifest = packaged.data as { analysisRunId: string; items: Array<{ id: string; storageKey: string }> };
+      fixture.db.prepare(`UPDATE AssessmentStoreEntry SET payload_json = ?
+        WHERE entry_type = 'delivery_package' AND assessment_id = ? AND entry_id = ?`)
+        .run(JSON.stringify({ items: 'invalid' }), 'A-LIFECYCLE', manifest.analysisRunId);
+      const invalidManifest = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: artifactEnvironment.environment
+      });
+      expect(invalidManifest.status).toBe(404);
+
+      fixture.db.prepare(`UPDATE AssessmentStoreEntry SET payload_json = ?
+        WHERE entry_type = 'delivery_package' AND assessment_id = ? AND entry_id = ?`)
+        .run(JSON.stringify(manifest), 'A-LIFECYCLE', manifest.analysisRunId);
+      const [artifact] = manifest.items;
+      artifactEnvironment.stored.delete(artifact.storageKey);
+      const missingObject = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: artifactEnvironment.environment
+      });
+      expect(missingObject.status).toBe(404);
+
+      const bucket = artifactEnvironment.environment.OBJECTS;
+      if (!bucket) throw new Error('Test R2 bucket is unavailable');
+      bucket.get = async () => ({
+        body: new ReadableStream({ start(controller) { controller.error('stream read failed'); } })
+      });
+      const streamFailure = await invoke(fixture, 'delivery-package/EXECUTIVE_OPPORTUNITY_BRIEF', {
+        method: 'GET', environment: artifactEnvironment.environment
+      });
+      expect(streamFailure.status).toBe(500);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('removes encrypted R2 objects if the D1 delivery manifest cannot be committed', async () => {
+    const fixture = createWorkerDatabase();
+    seedAssessment(fixture, { status: 'APPROVED', runApproved: 1 });
+    const artifactEnvironment = createArtifactEnvironment();
+    const prepare = fixture.d1.prepare.bind(fixture.d1);
+    fixture.d1.prepare = (sql) => {
+      const statement = prepare(sql);
+      if (!sql.includes('INSERT INTO AssessmentStoreEntry')) return statement;
+      return {
+        ...statement,
+        bind: (...values: unknown[]) => ({
+          ...statement.bind(...values),
+          run: async (): Promise<unknown> => { throw new Error('D1 manifest write failed'); }
+        })
+      };
+    };
+    try {
+      const result = await invoke(fixture, 'delivery-package', {
+        body: {}, environment: artifactEnvironment.environment
+      });
+      expect(result.status).toBe(503);
+      expect(artifactEnvironment.stored.size).toBe(0);
+    } finally {
+      fixture.close();
+    }
+  });
+
+  it('fails package generation when R2 or the AES-256-GCM key is unavailable and cleans up partial writes', async () => {
+    const fixture = createWorkerDatabase();
+    seedAssessment(fixture, { status: 'APPROVED', runApproved: 1 });
+    try {
+      const missingR2 = await invoke(fixture, 'delivery-package', {
+        body: {}, environment: { APP_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef' }
+      });
+      expect(missingR2.status).toBe(503);
+      const invalidKey = createArtifactEnvironment();
+      invalidKey.environment.APP_ENCRYPTION_KEY = 'short';
+      const keyFailure = await invoke(fixture, 'delivery-package', { body: {}, environment: invalidKey.environment });
+      expect(keyFailure.status).toBe(503);
+      expect(invalidKey.stored.size).toBe(0);
+      const partial = createArtifactEnvironment();
+      const put = partial.environment.OBJECTS?.put;
+      let calls = 0;
+      if (partial.environment.OBJECTS && put) {
+        partial.environment.OBJECTS.put = async (key, value, options) => {
+          calls += 1;
+          if (calls === 2) throw new Error('R2 unavailable');
+          await put(key, value, options);
+        };
+      }
+      const r2Failure = await invoke(fixture, 'delivery-package', { body: {}, environment: partial.environment });
+      expect(r2Failure.status).toBe(503);
+      expect(partial.stored.size).toBe(0);
+
+      const missingKey = createArtifactEnvironment();
+      delete missingKey.environment.APP_ENCRYPTION_KEY;
+      const missingEncryptionKey = await invoke(fixture, 'delivery-package', {
+        body: {}, environment: missingKey.environment
+      });
+      expect(missingEncryptionKey.status).toBe(503);
+      expect(missingKey.stored.size).toBe(0);
+
+      const cleanupFailure = createArtifactEnvironment();
+      let storedAttempts = 0;
+      const cleanupBucket = cleanupFailure.environment.OBJECTS;
+      if (!cleanupBucket) throw new Error('Test R2 bucket is unavailable');
+      const originalPut = cleanupBucket.put;
+      cleanupBucket.put = async (key, value, options) => {
+        storedAttempts += 1;
+        if (storedAttempts === 2) throw 'R2 rejected the object';
+        await originalPut(key, value, options);
+      };
+      cleanupBucket.delete = async (key) => {
+        cleanupFailure.stored.delete(key);
+        throw 'R2 cleanup failed';
+      };
+      const cleanupResult = await invoke(fixture, 'delivery-package', {
+        body: {}, environment: cleanupFailure.environment
+      });
+      expect(cleanupResult.status).toBe(503);
+      expect(cleanupFailure.stored.size).toBe(0);
     } finally {
       fixture.close();
     }
@@ -149,6 +374,12 @@ describe('D1 assessment lifecycle actions', () => {
     } finally {
       fixture.close();
     }
+  });
+
+  it('requires every evidence-backed assessment review gate before analyst approval', async () => {
+    await expectStatus('approve', 400, { skipReviewGates: true }, {
+      body: { approvalComment: 'Reviewed and approved' }
+    });
   });
 
   it('rejects package generation unless actor, assessment, active run, approval, and source version are valid', async () => {

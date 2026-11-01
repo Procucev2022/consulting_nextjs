@@ -1,15 +1,14 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Send, CheckCircle2, Shield, X, Layers } from 'lucide-react';
-import type { ProCPXModalProps, ProCPXEventType } from '../../types';
-import confetti from 'canvas-confetti';
+import type { ProCPXModalProps, ProCPXEventType, VendorPriceRank } from '../../types';
 import {
   UI_STRINGS,
-  DEFAULT_INVITED_SUPPLIERS,
-  DEFAULT_PROCPX_BASELINE,
   proCPXFormSchema
 } from '../../constants';
 import { validateInput } from '../../utils/validation';
+import { apiClient } from '../../utils/api';
+import frontendLogger from '../../utils/logger';
 
 export const ProCPXModal: React.FC<ProCPXModalProps> = ({
   opportunity,
@@ -19,25 +18,54 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
 }) => {
   const [eventType, setEventType] = useState<ProCPXEventType>('Multi-Stage RFP');
   const [targetBaseline, setTargetBaseline] = useState<number>(
-    (opportunity && opportunity.est_savings > 0)
-      ? opportunity.est_savings
-      : (DEFAULT_PROCPX_BASELINE > 0 ? DEFAULT_PROCPX_BASELINE : (opportunity?.current_spend || 1850000))
+    opportunity?.current_spend_inr_cr ?? opportunity?.baseline_spend_inr_cr ?? 0
   );
-  const [invitedSuppliers] = useState<string[]>(() => {
-    if (opportunity?.category) {
-      return [`${opportunity.category} Qualified Suppliers`];
-    }
-    return DEFAULT_INVITED_SUPPLIERS.length > 0 ? [...DEFAULT_INVITED_SUPPLIERS] : ['Enterprise Qualified Suppliers'];
-  });
+  const [supplierCandidates, setSupplierCandidates] = useState<VendorPriceRank[]>([]);
+  const [invitedSuppliers, setInvitedSuppliers] = useState<string[]>([]);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
+  const [supplierLoadFailed, setSupplierLoadFailed] = useState(false);
 
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedSuccess, setDeployedSuccess] = useState(false);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !opportunity) return;
+    let isCurrent = true;
+    setTargetBaseline(opportunity.current_spend_inr_cr ?? opportunity.baseline_spend_inr_cr ?? 0);
+    setInvitedSuppliers([]);
+    setSupplierCandidates([]);
+    setSupplierLoadFailed(false);
+    setIsLoadingSuppliers(true);
+    apiClient.getVendors().then((result) => {
+      if (isCurrent) {
+        const uniqueVendors = new Map<string, VendorPriceRank>();
+        result.vendorRankings.forEach((vendor) => {
+          const name = vendor.vendor_name.trim();
+          if (name) uniqueVendors.set(name, vendor);
+        });
+        setSupplierCandidates([...uniqueVendors.values()]);
+      }
+    }).catch((error: unknown) => {
+      if (isCurrent) {
+        setSupplierLoadFailed(true);
+        frontendLogger.warn('D1 vendor records could not be loaded for sourcing event selection.', {
+          opportunityId: opportunity.opp_id,
+          error
+        });
+      }
+    }).finally(() => {
+      if (isCurrent) setIsLoadingSuppliers(false);
+    });
+    return () => { isCurrent = false; };
+  }, [isOpen, opportunity]);
 
   if (!isOpen || !opportunity) return null;
 
-  const identifiedSavings = opportunity.est_savings ?? ((opportunity.est_savings_inr_cr || 0) * 10000000 / 83.8);
+  const identifiedSavingsCr = opportunity.est_savings_inr_cr ?? opportunity.estimated_savings_inr_cr ?? 0;
+  const identifiedSavings = UI_STRINGS.common.croreAmount(identifiedSavingsCr.toFixed(2));
 
-  const handleLaunch = (): void => {
+  const handleLaunch = async (): Promise<void> => {
     const validation = validateInput(proCPXFormSchema, {
       oppId: opportunity.opp_id,
       eventType,
@@ -49,20 +77,21 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
     if (!validation.success) return;
 
     setIsDeploying(true);
-    setTimeout(() => {
-      setIsDeploying(false);
+    setHandoffError(null);
+    try {
+      await onSuccess(opportunity.opp_id);
       setDeployedSuccess(true);
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
+    } catch (error: unknown) {
+      setHandoffError(error instanceof Error && error.message.trim()
+        ? error.message
+        : UI_STRINGS.modals.proCPX.handoffFailed);
+      frontendLogger.error('Could not save proCPX planning handoff in D1.', {
+        opportunityId: opportunity.opp_id,
+        error
       });
-      setTimeout(() => {
-        onSuccess(opportunity.opp_id);
-        setDeployedSuccess(false);
-        onClose();
-      }, 1800);
-    }, 1200);
+    } finally {
+      setIsDeploying(false);
+    }
   };
 
   return (
@@ -103,7 +132,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">{UI_STRINGS.modals.proCPX.deployedSuccess}</h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                {UI_STRINGS.modals.proCPX.deployedDesc(opportunity.opp_id, invitedSuppliers.length, `$${identifiedSavings.toLocaleString()}`)}
+                {UI_STRINGS.modals.proCPX.deployedDesc}
               </p>
             </div>
           ) : (
@@ -122,7 +151,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
                   <div className="text-right">
                     <span className="text-xs text-slate-500 dark:text-slate-400">{UI_STRINGS.modals.proCPX.identifiedSavings}</span>
                     <p className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                      ${identifiedSavings.toLocaleString()}
+                      {identifiedSavings}
                     </p>
                   </div>
                 </div>
@@ -165,17 +194,34 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex justify-between">
                   <span>{UI_STRINGS.modals.proCPX.supplierCohortLabel(invitedSuppliers.length)}</span>
-                  <span className="text-cyan-600 dark:text-cyan-400 text-[11px] cursor-pointer hover:underline font-semibold">{UI_STRINGS.modals.proCPX.addSupplier}</span>
                 </label>
                 <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                  {invitedSuppliers.map((supplier, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
-                      <span className="font-medium text-slate-900 dark:text-white">{supplier}</span>
-                      <span className="text-[10px] text-cyan-800 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-300 dark:border-cyan-800/40">{UI_STRINGS.modals.proCPX.verifiedVendor}</span>
-                    </div>
+                  {isLoadingSuppliers ? (
+                    <p className="px-3 py-2 text-xs text-slate-500">{UI_STRINGS.modals.proCPX.loadingSuppliers}</p>
+                  ) : supplierLoadFailed ? (
+                    <p role="alert" className="px-3 py-2 text-xs text-rose-700">{UI_STRINGS.modals.proCPX.supplierLoadFailed}</p>
+                  ) : supplierCandidates.length === 0 ? (
+                    <p className="px-3 py-2 text-xs text-slate-500">{UI_STRINGS.modals.proCPX.noSuppliersAvailable}</p>
+                  ) : supplierCandidates.map((vendor) => (
+                    <label key={vendor.vendor_id || vendor.master_id || vendor.vendor_name} className="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={vendor.vendor_name}
+                          checked={invitedSuppliers.includes(vendor.vendor_name)}
+                          onChange={(event) => setInvitedSuppliers((current) => event.target.checked
+                            ? [...current, vendor.vendor_name]
+                            : current.filter((name) => name !== vendor.vendor_name))}
+                        />
+                        <span className="font-medium text-slate-900 dark:text-white">{vendor.vendor_name}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500">{vendor.category}</span>
+                    </label>
                   ))}
                 </div>
               </div>
+
+              {handoffError && <p role="alert" className="text-xs text-rose-700">{handoffError}</p>}
 
               {/* Footer Note */}
               <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-[#F8FBFE] p-3 rounded-lg border border-slate-200 dark:border-slate-800">
@@ -199,7 +245,7 @@ export const ProCPXModal: React.FC<ProCPXModalProps> = ({
             </button>
             <button
               onClick={handleLaunch}
-              disabled={isDeploying}
+              disabled={isDeploying || isLoadingSuppliers || targetBaseline <= 0 || invitedSuppliers.length === 0}
               className="flex items-center space-x-2 px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 rounded-lg shadow-md shadow-cyan-600/20 transition-all transform active:scale-95 disabled:opacity-50"
             >
               {isDeploying ? (

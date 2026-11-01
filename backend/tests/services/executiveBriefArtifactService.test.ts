@@ -1,69 +1,71 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   publishExecutiveBriefArtifacts,
   renderExecutiveBriefArtifact
 } from '../../src/services/executiveBriefArtifactService';
-import { EXECUTIVE_BRIEF_ARTIFACT_FILENAMES, EXECUTIVE_BRIEF_CONTENT_TYPES } from '../../src/constants/executiveBriefExportConstants';
-import { DEFAULT_CLIENT_PROFILE } from '../../src/constants/executiveBriefConstants';
-import { TEST_REPORT_DATE, bucketDouble, certifiedReport } from '../executiveBriefTestHelpers';
+import { buildExecutiveBriefStorageKey } from '../../src/services/executiveBriefFilenames';
+import { d1OpportunityBriefReport, bucketDouble } from '../executiveBriefTestHelpers';
 
-const latin1 = (bytes: Uint8Array): string => Buffer.from(bytes).toString('latin1');
+const pptxMock = vi.hoisted(() => ({ writeResult: new Uint8Array([80, 75, 3, 4]) }));
 
-describe('renderExecutiveBriefArtifact', () => {
-  it('renders the PDF with its stable name and a dated official download name', async () => {
-    const artifact = await renderExecutiveBriefArtifact('pdf', certifiedReport());
-    expect(artifact.format).toBe('pdf');
-    expect(artifact.filename).toBe(EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.PDF);
-    expect(artifact.downloadFilename.endsWith(`_${TEST_REPORT_DATE}.pdf`)).toBe(true);
-    expect(artifact.contentType).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.PDF);
-    expect(latin1(artifact.body).startsWith('%PDF-1.4')).toBe(true);
+vi.mock('pptxgenjs', () => ({
+  default: class MockPptx {
+    public layout = '';
+    public author = '';
+    public company = '';
+    public title = '';
+    public addSlide(): { background: { color: string }; addText: () => void } {
+      return { background: { color: '' }, addText: () => undefined };
+    }
+    public async write(): Promise<Uint8Array | ArrayBuffer> {
+      return pptxMock.writeResult;
+    }
+  }
+}));
+
+describe('D1 executive brief artifacts', () => {
+  it('uses a safe fallback tenant segment when the tenant name contains no usable characters', () => {
+    expect(buildExecutiveBriefStorageKey('***', 'report.pdf')).toBe('executive-brief/Tenant/report.pdf');
   });
 
-  it('renders the PPTX as a zip with its official download name', async () => {
-    const artifact = await renderExecutiveBriefArtifact('pptx', certifiedReport());
-    expect(artifact.filename).toBe(EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.PPTX);
-    expect(artifact.downloadFilename.endsWith(`_${TEST_REPORT_DATE}.pptx`)).toBe(true);
-    expect(artifact.contentType).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.PPTX);
-    expect(latin1(artifact.body).slice(0, 2)).toBe('PK');
+  it('renders the report, audit, PDF, and PPTX from the D1 payload', async () => {
+    const report = d1OpportunityBriefReport();
+    const pdf = await renderExecutiveBriefArtifact('pdf', report);
+    const pptx = await renderExecutiveBriefArtifact('pptx', report);
+    const json = await renderExecutiveBriefArtifact('json', report);
+    const markdown = await renderExecutiveBriefArtifact('markdown', report);
+
+    expect(pdf.contentType).toBe('application/pdf');
+    expect(Buffer.from(pdf.body.slice(0, 8)).toString('latin1')).toBe('%PDF-1.4');
+    expect(pdf.downloadFilename).toContain('D1_Enterprise_2026-10-24.pdf');
+    expect(Buffer.from(pptx.body.slice(0, 2)).toString('latin1')).toBe('PK');
+    expect(pptx.downloadFilename).toContain('D1_Enterprise_2026-10-24.pptx');
+    expect(JSON.parse(new TextDecoder().decode(json.body)).tenant.enterpriseName).toBe('D1 Enterprise');
+    expect(new TextDecoder().decode(markdown.body)).toContain('D1 Enterprise');
   });
 
-  it('serialises the report as JSON with a trailing newline', async () => {
-    const artifact = await renderExecutiveBriefArtifact('json', certifiedReport());
-    const parsed = JSON.parse(latin1(artifact.body)) as { metadata: { client: string } };
-    expect(parsed.metadata.client).toBe(DEFAULT_CLIENT_PROFILE.clientName);
-    expect(latin1(artifact.body).endsWith('}\n')).toBe(true);
-    expect(artifact.filename).toBe(EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.JSON);
-    expect(artifact.downloadFilename).toBe(EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.JSON);
-    expect(artifact.contentType).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.JSON);
-  });
-
-  it('renders the audit as Markdown', async () => {
-    const artifact = await renderExecutiveBriefArtifact('markdown', certifiedReport());
-    expect(latin1(artifact.body).startsWith('# ')).toBe(true);
-    expect(artifact.filename).toBe(EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.AUDIT);
-    expect(artifact.contentType).toBe(EXECUTIVE_BRIEF_CONTENT_TYPES.MARKDOWN);
-  });
-});
-
-describe('publishExecutiveBriefArtifacts', () => {
-  it('stores the four artifacts under executive-brief/<client>/<filename> with their content types', async () => {
+  it('publishes four dated artifacts under a tenant-scoped R2 key', async () => {
     const bucket = bucketDouble();
-    const stored = await publishExecutiveBriefArtifacts(bucket, certifiedReport());
-    const keys = bucket.put.mock.calls.map((call) => call[0]);
-    expect(keys).toEqual([
-      'executive-brief/UltraTech_Cement_Limited/EXECUTIVE_BRIEF.pdf',
-      'executive-brief/UltraTech_Cement_Limited/EXECUTIVE_BRIEF.pptx',
-      'executive-brief/UltraTech_Cement_Limited/EXECUTIVE_BRIEF_REPORT.json',
-      'executive-brief/UltraTech_Cement_Limited/EXECUTIVE_BRIEF_AUDIT.md'
-    ]);
-    expect(bucket.put.mock.calls[0][2]).toEqual({ httpMetadata: { contentType: EXECUTIVE_BRIEF_CONTENT_TYPES.PDF } });
-    expect(stored.map((artifact) => artifact.bytes > 0)).toEqual([true, true, true, true]);
+    const stored = await publishExecutiveBriefArtifacts(bucket, d1OpportunityBriefReport());
+    expect(stored).toHaveLength(4);
+    expect(bucket.put).toHaveBeenCalledTimes(4);
+    expect(stored.map((artifact) => artifact.key)).toEqual(bucket.put.mock.calls.map((call) => call[0]));
+    expect(stored[0].key).toContain('executive-brief/D1_Enterprise/Executive_Opportunity_Brief_D1_Enterprise_2026-10-24.pdf');
+    expect(stored.every((artifact) => artifact.bytes > 0)).toBe(true);
   });
 
-  it('stops at the first failed write and reports the error', async () => {
+  it('stops and surfaces the R2 write error', async () => {
     const bucket = bucketDouble();
-    bucket.put.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('R2 write failed'));
-    await expect(publishExecutiveBriefArtifacts(bucket, certifiedReport())).rejects.toThrow('R2 write failed');
-    expect(bucket.put).toHaveBeenCalledTimes(2);
+    bucket.put.mockRejectedValueOnce(new Error('R2 write failed'));
+    await expect(publishExecutiveBriefArtifacts(bucket, d1OpportunityBriefReport())).rejects.toThrow('R2 write failed');
+    expect(bucket.put).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects invalid PowerPoint output from the renderer', async () => {
+    pptxMock.writeResult = new ArrayBuffer(2) as unknown as Uint8Array;
+    await expect(renderExecutiveBriefArtifact('pptx', d1OpportunityBriefReport())).rejects.toThrow(
+      'PowerPoint generation did not return a byte array.'
+    );
+    pptxMock.writeResult = new Uint8Array([80, 75, 3, 4]);
   });
 });

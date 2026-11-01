@@ -148,54 +148,42 @@ export const DELIVERY_PACKAGE_ITEMS_SPEC = [
   { id: 'RECOMMENDED_WAVE_1_ACTIONS', title: 'Recommended Wave 1 actions', format: 'PDF', fileSuffix: '_Recommended_Wave_1_Actions.pdf' }
 ] as const;
 
-export const VGT_INVARIANT_FIGURES = {
-  SOURCE_ROWS: 20505,
-  VALID_ROWS: 20241,
-  EXCLUDED_ROWS: 252,
-  ANOMALY_ROWS: 12,
-  VALID_FX_NORMALIZED_SPEND_CR: 4073.8307,
-  BASELINE_PROFILE_SPEND_CR: 3920.3277,
-  FX_METHODOLOGY_IMPACT_CR: 153.5029,
-  SUPPLIER_COUNT: 529,
-  MATERIAL_GROUP_COUNT: 57,
-  OPERATING_PLANT_COUNT: 19,
-  BILLING_MONTHS_COUNT: 10
-} as const;
-
-export const VGT_CERTIFIED_OPPORTUNITY_FIGURES = Object.freeze({
-  VALIDATED_SPEND_CR: 4073.8307,
-  BASELINE_SPEND_CR: 3920.3277,
-  FX_IMPACT_CR: 153.5029,
-  ADDRESSABLE_SPEND_CR: 443.621,
-  GROSS_OPPORTUNITY_CR: 441.833,
-  OVERLAP_DEDUCTIONS_CR: 104.067,
-  NET_DEFENSIBLE_OPPORTUNITY_CR: 337.766,
-  PROVEN_OPPORTUNITY_CR: 319.439,
-  DELIVERY_RANGE_MIN_CR: 31.944,
-  DELIVERY_RANGE_MAX_CR: 79.860,
-  PCBI_BENCHMARK_PRICE_GAP_CR: 31.6921,
-  POTENTIAL_SAVINGS_CR: 378.4,
-  SAVINGS_PCT: 9.29
+export const ASSESSMENT_DELIVERY_CONTENT_TYPES = Object.freeze({
+  PDF: 'application/pdf',
+  PPTX: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  XLSX: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 });
 
+export const ASSESSMENT_DELIVERY_ARTIFACT_LAYOUT = Object.freeze({
+  PAGE_WIDTH: 960,
+  PAGE_HEIGHT: 540,
+  LEFT: 48,
+  TITLE_Y: 66,
+  CONTENT_Y: 116,
+  LINE_GAP: 20,
+  BOTTOM: 492,
+  PDF_FONT_SIZE: 11,
+  PPTX_MAX_LINES: 18
+});
+
+export const ASSESSMENT_DELIVERY_ARTIFACT_LABELS = Object.freeze({
+  provenance: 'Source: approved analysis snapshot and evidence rows stored in Cloudflare D1.',
+  noMetrics: 'No persisted analytical metrics are available for this module on the selected analysis run.',
+  noRecommendations: 'No D1-backed Wave 1 recommendations are attached to this approved analysis run.',
+  emptyEvidence: 'No source rows were returned from D1 for this approved data version.',
+  emptyValidation: 'No validation observations were returned from D1 for this approved data version.',
+  generatedBy: 'Generated from the approved D1 analysis run; unavailable metrics are left unreported.'
+});
+export const ASSESSMENT_DELIVERY_MODULE_METRIC_KEYS: Readonly<Record<string, string>> = Object.freeze({
+  MODULE_1_REPORT: 'module1Metrics',
+  MODULE_2_REPORT: 'module2Metrics',
+  PCBI_REPORT: 'pcbiMetrics',
+  MODULE_4_REPORT: 'module4Metrics'
+});
+export const ASSESSMENT_DELIVERY_STORAGE_PREFIX = 'assessment-deliveries';
+
 export const SYSTEM_BUILD_IDENTITY = Object.freeze({
-  APP_VERSION: '1.0.2',
-  BUILD_NUMBER: 'E2E-003-CERTIFIED',
-  GIT_COMMIT: '2378cd054fdcd528ec2815362a44a6461c72fa8e',
-  BUILD_TIMESTAMP: '2026-10-11T12:00:00.000Z',
-  OPERATING_MODE: APP_OPERATING_MODES.INTERNAL_ASSESSMENT,
-  CERTIFICATION_STATUS: 'CERTIFIED',
-  E2E_CERTIFICATION_ID: 'E2E-GOLD-003',
-  FX_MASTER_VERSION: 'v2.0',
-  FX_MASTER_CHECKSUM: '7b88719dbd11e89e2ecffb68fe7398166c248ec77998c4fa9e9c6ec4f2c3f40f',
-  PCBI_MASTER_VERSION: 'v2.0',
-  PCBI_MASTER_CHECKSUM: 'df4299ffa183cb21c59d80f66e258604f5c376615d83a7a7d075dd53787e1411',
-  VGT_DATASET_CHECKSUM: '59625f2f91c303ef492b679511077a0882dab2d9760bce8b3f7edaca82d81def',
-  EVIDENCE_WORKBOOK_CHECKSUM: '0984faff14fa89db97a228da9a36b41d7990f9b3017c2ac263c872e163948be3',
-  MODULE_1_VERSION: 'v1.0.2',
-  MODULE_2_VERSION: 'v1.0.2',
-  MODULE_3_VERSION: 'v1.0.2',
-  MODULE_4_VERSION: 'v1.0.2'
+  APP_VERSION: '1.0.2'
 });
 
 export const PERSISTENCE_ENVIRONMENTS = Object.freeze({

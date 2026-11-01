@@ -142,6 +142,26 @@ describe('apiClient coverage', () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('rejects unsuccessful, malformed, or mismatched D1 opportunity handoff responses', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ message: 'Opportunity was not found.' }, 404));
+      await expect(apiClient.deployOpportunity('OPP-404', 'proCPX')).rejects.toThrow('Opportunity was not found.');
+
+      fetchMock.mockResolvedValueOnce(new Response('{}', { status: 503 }));
+      await expect(apiClient.deployOpportunity('OPP-503', 'DPS NXT')).rejects.toThrow(
+        UI_STRINGS.databaseData.opportunityHandoffFailed(503)
+      );
+
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: { opp_id: 'OTHER' } }));
+      await expect(apiClient.deployOpportunity('OPP-1', 'proCPX')).rejects.toThrow(
+        UI_STRINGS.databaseData.invalidOpportunityHandoff
+      );
+
+      fetchMock.mockResolvedValueOnce(new Response('invalid json', { status: 200 }));
+      await expect(apiClient.deployOpportunity('OPP-1', 'proCPX')).rejects.toThrow(
+        UI_STRINGS.databaseData.invalidOpportunityHandoff
+      );
+    });
+
     it('loads the PCBI explainability audit for an encoded opportunity id', async () => {
       const audit = { transaction_id: 'TX 1', material_code: 'MAT-01' };
       fetchMock.mockResolvedValueOnce(jsonResponse({ audit }));
@@ -239,13 +259,13 @@ describe('apiClient coverage', () => {
     });
 
     it('converts currency with and without a reference date', async () => {
-      const converted = { from: 'USD', amount: 100, converted: 8300 };
-      fetchMock.mockResolvedValueOnce(jsonResponse({ data: converted }));
+      const converted = { amount: 100, fromCurrency: 'USD', amountINR: 8300, exchangeRate: 83, rateDate: '2024-12-31' };
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: converted }));
 
       await expect(apiClient.getCurrencyConversion('USD', 100, 2024)).resolves.toEqual(converted);
       expect(fetchMock).toHaveBeenCalledWith('/api/currency?from=USD&amount=100&date=2024');
 
-      fetchMock.mockResolvedValueOnce(jsonResponse({ data: converted }));
+      fetchMock.mockResolvedValueOnce(jsonResponse({ success: true, data: converted }));
 
       await expect(apiClient.getCurrencyConversion('USD', 100)).resolves.toEqual(converted);
       expect(fetchMock).toHaveBeenLastCalledWith('/api/currency?from=USD&amount=100');

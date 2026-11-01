@@ -21,6 +21,7 @@ import {
   findLatestChecklistRow,
   findReportRow,
   listCorrectionRows,
+  listPcbiGapRows,
   listProcurementStats,
   listReportRows,
   listVersionRows
@@ -32,6 +33,7 @@ import {
   mapChecklist,
   mapCorrectionRequest,
   mapDatasetVersions,
+  mapPcbiGap,
   mapReport,
   parseStoredChecklist
 } from './workerD1OrchestrationMapper';
@@ -40,6 +42,7 @@ import {
   deriveJobStatus,
   isActiveReportState,
   isCustomerVisibleState,
+  pcbiCoverageFromRows,
   readinessInputFromRow
 } from './workerD1OrchestrationDerive';
 
@@ -82,16 +85,18 @@ export const buildJobDetail = async (
   actor: OrchestrationActor
 ): Promise<AnalysisJobDetailPayload> => {
   const assessmentId = row.assessment_id;
-  const [versionRows, statsRows, reportRows, correctionRows, openCount] = await Promise.all([
+  const [versionRows, statsRows, reportRows, correctionRows, openCount, pcbiRows] = await Promise.all([
     listVersionRows(database, assessmentId),
     listProcurementStats(database, assessmentId),
     listReportRows(database, assessmentId),
     listCorrectionRows(database, assessmentId),
-    countOpenCorrections(database, assessmentId)
+    countOpenCorrections(database, assessmentId),
+    listPcbiGapRows(database, assessmentId, row.current_version_id)
   ]);
   const isAdmin = actor.role === 'ADMIN';
   const activeReport = reportRows.find((report) => isActiveReportState(report.workflow_state)) ?? null;
   const activeVisible = activeReport !== null && isCustomerVisibleState(activeReport.workflow_state);
+  const pcbiGaps = await Promise.all(pcbiRows.map((gap) => mapPcbiGap(gap, row.customer_id)));
   const [checklist, acknowledgement] = await Promise.all([
     loadChecklist(database, isAdmin ? activeReport : null),
     loadAcknowledgement(database, activeReport)
@@ -105,8 +110,8 @@ export const buildJobDetail = async (
       latestRunGatesPassed: row.run_gates_passed === 1,
       statsByDocument: buildStatsByDocument(statsRows)
     }),
-    pcbiGaps: [],
-    readiness: buildReadiness(readinessInputFromRow(row, openCount)),
+    pcbiGaps: isAdmin ? pcbiGaps : [],
+    readiness: buildReadiness(readinessInputFromRow(row, openCount, pcbiCoverageFromRows(pcbiRows))),
     reports: reportRows
       .filter((report) => isAdmin || isCustomerVisibleState(report.workflow_state))
       .map(mapReport),

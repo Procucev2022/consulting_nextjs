@@ -1,5 +1,7 @@
 import type { PCBIDataFrequency } from './pcbiCommodityCoverage';
 
+export type PCBIResearchPriorityReason = 'RANKED_BY_CUSTOMER_SPEND' | 'SPEND_LINK_REQUIRED' | 'GAP_RESOLVED';
+
 export type PCBIDomainType =
   | 'CUSTOMER_PURCHASE_HISTORY'
   | 'PCBI_MASTER_SYSTEM_DATA'
@@ -53,13 +55,32 @@ export interface CommodityResearchQueueRow {
   requiredHistory: string;
   availableHistory: string;
   requiredFrequency: PCBIDataFrequency;
+  requiredUnit?: string;
+  requiredCurrency?: string;
+  requiredGeography?: string;
   availableFrequency: PCBIDataFrequency | 'NONE';
   sourceStatus: string;
   methodologyStatus: string;
   priority: string;
+  priorityScore: number;
+  priorityReason: PCBIResearchPriorityReason;
   researchStatus: string;
+  assignedTo?: string | null;
+  assignedAt?: string | null;
+  workflowStatus: PCBIResearchWorkflowStatus;
+  workflowDueDate: string | null;
+  workflowNotes: string;
   lastUpdated: string;
   action: string;
+}
+
+export type PCBIResearchWorkflowStatus = 'QUEUED' | 'RESEARCHING' | 'BLOCKED' | 'READY_FOR_REVIEW' | 'COMPLETED';
+
+export interface PCBIResearchWorkflowUpdate {
+  assignee: string | null;
+  status: PCBIResearchWorkflowStatus;
+  dueDate: string | null;
+  notes: string;
 }
 
 export interface CommodityWorkspaceOverview {
@@ -81,6 +102,8 @@ export interface CommodityWorkspaceOverview {
   requiredGeography: string;
   availableHistory: string;
   priority: string;
+  priorityScore: number;
+  priorityReason: PCBIResearchPriorityReason;
   researchStatus: string;
   lastUpdated: string;
 }
@@ -156,6 +179,25 @@ export interface PCBIResearchDashboardMetrics {
     p3Medium: number;
     p4Low: number;
   };
+}
+
+export interface PCBICommodityResearchQueueTableProps {
+  queue: CommodityResearchQueueRow[];
+  onOpenWorkspace: (pcbiId: string) => void;
+  onUploadSource?: (commodity: CommodityResearchQueueRow) => void;
+  onAssignResearcher?: (pcbiId: string, update: PCBIResearchWorkflowUpdate) => Promise<void>;
+}
+
+export interface PCBICommodityPromotionHistory {
+  promotion_id: string;
+  catalog_version_id: string;
+  source_id: string;
+  commodity_id: string;
+  pcbi_id: string;
+  approver_name: string;
+  comments: string | null;
+  promoted_at: string;
+  observation_count: number;
 }
 
 export type PCBIAdminTopNavigationTab =

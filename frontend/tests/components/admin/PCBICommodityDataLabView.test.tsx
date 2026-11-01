@@ -95,6 +95,8 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
       total: 2,
       queue: mockQueue as any
     });
+    vi.spyOn(pcbiCommodityDataLabApi, 'getSources').mockResolvedValue({ success: true, total: 0, sources: [] });
+    vi.spyOn(pcbiCommodityDataLabApi, 'getVersionHistory').mockResolvedValue({ success: true, total: 0, versions: [] });
     vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockResolvedValue({
       success: true,
       workspace: {
@@ -225,6 +227,70 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
     });
   });
 
+  it('finishes a D1 source approval workflow and reloads the data lab after activation', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'uploadCommoditySource').mockResolvedValueOnce({
+      success: true,
+      source: {
+        sourceId: 'SRC-APPROVED',
+        documentName: 'source.csv',
+        extractionStatus: 'EXTRACTED',
+        validationStatus: 'VALIDATED',
+        checksum: 'abc123',
+        extractedObservationsCount: 1
+      } as any,
+      banner: 'SOURCE_STAGED',
+      message: 'Staged'
+    });
+    vi.spyOn(pcbiCommodityDataLabApi, 'getCommodityWorkspace').mockResolvedValueOnce({
+      success: true,
+      workspace: {
+        validationSummary: { validObservations: 1, criticalErrorsCount: 0 },
+        overview: { availableHistory: '2026-10-01' },
+        extractedObservations: [],
+        methodologyDetails: { status: 'REVIEWED' }
+      } as any
+    });
+    vi.spyOn(pcbiCommodityDataLabApi, 'approveCommodityData').mockResolvedValueOnce({
+      success: true,
+      result: { catalogVersionId: 'V2' }
+    } as any);
+
+    render(<PCBICommodityDataLabView />);
+    await waitFor(() => expect(pcbiCommodityDataLabApi.getDashboard).toHaveBeenCalledTimes(1));
+    fireEvent.click(screen.getAllByRole('button', { name: /Upload Commodity PCBI Source Data/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    fireEvent.change(document.getElementById('source-file-input') as HTMLInputElement, {
+      target: { files: [new File(['source'], 'approval.csv', { type: 'text/csv' })] }
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    const sourceInputs = screen.getAllByRole('textbox').slice(-3);
+    fireEvent.change(sourceInputs[0], { target: { value: 'Market source' } });
+    fireEvent.change(sourceInputs[1], { target: { value: 'Publisher' } });
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    expect(await screen.findByText('Step 5 of 10')).toBeInTheDocument();
+    for (let step = 6; step <= 10; step += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Execute Activation' }));
+
+    await waitFor(() => {
+      expect(pcbiCommodityDataLabApi.approveCommodityData).toHaveBeenCalled();
+      expect(pcbiCommodityDataLabApi.getDashboard).toHaveBeenCalledTimes(2);
+      expect(pcbiCommodityDataLabApi.getQueue).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it('reports non-Error D1 load failures without leaving the loading state active', async () => {
+    vi.spyOn(pcbiCommodityDataLabApi, 'getDashboard').mockRejectedValueOnce('D1 binding unavailable');
+    render(<PCBICommodityDataLabView />);
+
+    await waitFor(() => {
+      expect(pcbiCommodityDataLabApi.getDashboard).toHaveBeenCalled();
+      expect(screen.getByText('PCBI Data Library — Commodity Research Workspace')).toBeInTheDocument();
+    });
+  });
+
   it('switches between all 9 Part C sub-tabs smoothly', async () => {
     render(<PCBICommodityDataLabView />);
 
@@ -310,20 +376,8 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
     });
   });
 
-  it('triggers upload modal from Source Library tab and refreshes data on completion', async () => {
-    vi.spyOn(pcbiCommodityDataLabApi, 'approveCommodityData').mockResolvedValueOnce({
-      success: true,
-      result: {
-        success: true,
-        commodityId: 'COM-MET-FMO',
-        pcbiId: 'PCBI-FEMO-65-001',
-        approvalStatus: 'ADMIN_APPROVED',
-        catalogVersionCreated: true,
-        catalogVersionId: 'V1.9',
-        message: 'Approved'
-      }
-    } as any);
-
+  it('opens upload from the Source Library and requires a real evidence file before approval', async () => {
+    const approvalSpy = vi.spyOn(pcbiCommodityDataLabApi, 'approveCommodityData');
     render(<PCBICommodityDataLabView />);
 
     await waitFor(() => {
@@ -342,18 +396,16 @@ describe('PCBICommodityDataLabView Unit Tests (Part C, D, F, I)', () => {
       expect(screen.getByText('GOVERNED 10-STEP COMMODITY PCBI PIPELINE')).toBeInTheDocument();
     });
 
-    // Step to Step 10
-    for (let i = 2; i <= 10; i++) {
+    // Move to source staging, which must have real evidence before the workflow proceeds.
+    for (let i = 2; i <= 4; i++) {
       fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
     }
-
-    // Click Execute Activation
-    const activateBtn = screen.getByRole('button', { name: 'Execute Activation' });
-    fireEvent.click(activateBtn);
+    fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
 
     await waitFor(() => {
-      expect(pcbiCommodityDataLabApi.approveCommodityData).toHaveBeenCalled();
+      expect(screen.getByText('Select an evidence file before continuing.')).toBeInTheDocument();
     });
+    expect(approvalSpy).not.toHaveBeenCalled();
   });
 });
 

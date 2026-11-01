@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AssessmentDetailWorkflow } from '../../../src/components/assessment/AssessmentDetailWorkflow';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+import { MODULE_GATES_LIST } from '../../../src/constants/assessment';
 import { assessmentApiClient } from '../../../src/utils/assessmentApi';
 import frontendLogger from '../../../src/utils/logger';
 import type { FrontendLogEntry, LogLevel } from '../../../src/types/logger';
@@ -23,7 +24,9 @@ vi.mock('../../../src/utils/assessmentApi', () => ({
     updateDataStatus: vi.fn(),
     runAnalysis: vi.fn(),
     approveAssessment: vi.fn(),
-    generateDeliveryPackage: vi.fn()
+    generateDeliveryPackage: vi.fn(),
+    getReviewGates: vi.fn(),
+    saveReviewGate: vi.fn()
   }
 }));
 
@@ -156,6 +159,7 @@ describe('AssessmentDetailWorkflow', () => {
   const onUpdate = vi.fn();
   const getAssessmentById = vi.mocked(assessmentApiClient.getAssessmentById);
   const getAuditLogs = vi.mocked(assessmentApiClient.getAuditLogs);
+  const saveReviewGate = vi.mocked(assessmentApiClient.saveReviewGate);
 
   const renderWorkflow = (): ReturnType<typeof render> =>
     render(<AssessmentDetailWorkflow assessmentId={ASSESSMENT_ID} onBack={onBack} onUpdate={onUpdate} />);
@@ -174,6 +178,8 @@ describe('AssessmentDetailWorkflow', () => {
     silenceLogger();
     getAssessmentById.mockResolvedValue(baseAssessment);
     getAuditLogs.mockResolvedValue([makeAuditLog('log-1')]);
+    vi.mocked(assessmentApiClient.getReviewGates).mockResolvedValue([]);
+    saveReviewGate.mockResolvedValue([]);
   });
 
   describe('loading and data normalization', () => {
@@ -319,6 +325,26 @@ describe('AssessmentDetailWorkflow', () => {
       fireEvent.click(tabButton(UI_STRINGS.ASSESSMENT.detail.tabs.upload));
       fireEvent.click(screen.getByRole('button', { name: 'stub upload cancel' }));
       expect(onBack).toHaveBeenCalledTimes(2);
+    });
+
+    it('persists checklist evidence and surfaces D1 review errors', async () => {
+      renderWorkflow();
+      await heading();
+      fireEvent.click(tabButton(UI_STRINGS.ASSESSMENT.detail.tabs.reviewChecklist));
+      fireEvent.change(screen.getByLabelText(`${MODULE_GATES_LIST[0].name}: ${UI_STRINGS.assessmentChecklist.evidenceReferenceLabel}`), {
+        target: { value: 'D1:AssessmentDataVersion/DV-1' }
+      });
+      fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.assessmentChecklist.markPassed })[0]);
+      await waitFor(() => expect(saveReviewGate).toHaveBeenCalledWith(ASSESSMENT_ID, expect.objectContaining({
+        gateKey: MODULE_GATES_LIST[0].key, status: 'PASSED', evidenceReference: 'D1:AssessmentDataVersion/DV-1'
+      })));
+
+      saveReviewGate.mockRejectedValueOnce(new Error('D1 review write failed'));
+      fireEvent.change(screen.getByLabelText(`${MODULE_GATES_LIST[1].name}: ${UI_STRINGS.assessmentChecklist.reviewNoteLabel}`), {
+        target: { value: 'Awaiting source evidence' }
+      });
+      fireEvent.click(screen.getAllByRole('button', { name: UI_STRINGS.assessmentChecklist.markBlocked })[1]);
+      expect(await screen.findByText('D1 review write failed')).toBeInTheDocument();
     });
 
     it('refreshes runs and audit logs after an upload and moves to the pipeline', async () => {

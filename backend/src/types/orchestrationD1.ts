@@ -2,8 +2,17 @@
  * Worker-side types for the Analysis Orchestration API (D1 rows, routing, request context).
  * Shared API payload types live in ./analysisOrchestration.ts.
  */
-import type { CloudflareD1Database, CloudflareD1PreparedStatement, CloudflareR2Bucket } from './cloudflare';
-import type { AnalysisJobStatus, ReportWorkflowState } from './analysisOrchestration';
+import type {
+  CloudflareD1Database,
+  CloudflareD1PreparedStatement,
+  CloudflareEnvironment,
+  CloudflareR2Bucket
+} from './cloudflare';
+import type {
+  AnalysisJobStatus,
+  ReportWorkflowState
+} from './analysisOrchestration';
+import type { PCBIGapCoverageInput } from './orchestrationPcbi';
 
 export type ActiveReportState = Exclude<ReportWorkflowState, 'SUPERSEDED'>;
 
@@ -74,7 +83,9 @@ export interface OrchestrationRequestContext {
   request: Request;
   url: URL;
   database: OrchestrationDatabase;
+  environment: CloudflareEnvironment;
   objects?: CloudflareR2Bucket;
+  bucketName?: string;
   actor: OrchestrationActor;
   params: Readonly<Record<string, string>>;
   runtime: OrchestrationRuntime;
@@ -99,6 +110,7 @@ export interface AssessmentJobRow {
   assessment_id: string;
   customer_id: string;
   customer_name: string;
+  customer_contact_email?: string | null;
   assessment_owner: string;
   assessment_period_start: string | null;
   assessment_period_end: string | null;
@@ -136,6 +148,8 @@ export interface DataVersionRow {
   uploaded_at: string;
   record_count: number;
   notes: string | null;
+  parent_data_version_id?: string | null;
+  correction_reason?: string | null;
 }
 
 export interface ProcurementStatsRow {
@@ -291,6 +305,7 @@ export interface ReadinessInput {
   run: RunReadinessInput | null;
   latestVersionId: string | null;
   openCorrectionCount: number;
+  pcbi: PCBIGapCoverageInput;
 }
 
 export interface KpiJobInput {

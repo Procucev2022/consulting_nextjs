@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { assessmentApi, assessmentApiClient } from '../../src/utils/assessmentApi';
+import { authApiClient } from '../../src/utils/authApi';
 
 describe('assessmentApi', () => {
   const originalFetch = global.fetch;
@@ -529,6 +530,57 @@ describe('assessmentApi', () => {
     const res = await assessmentApi.runModule1('AIC-2026-0001', 'DV-001');
     expect(res.assessment).toBeDefined();
     expect(res.assessment.validatedSpendCr).toBe(100.5);
+  });
+
+  it('fetches D1 review gates and returns an empty list for malformed collection data', async () => {
+    const gates = [{ assessmentId: 'AIC-2026-0001', gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PENDING' }];
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: gates }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: null }) });
+
+    await expect(assessmentApi.getReviewGates('AIC-2026-0001')).resolves.toEqual(gates);
+    await expect(assessmentApi.getReviewGates('AIC-2026-0001')).resolves.toEqual([]);
+  });
+
+  it('saves an assessment review gate with a PUT request', async () => {
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('reviewer-session-token');
+    const gates = [{ assessmentId: 'AIC-2026-0001', gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED' }];
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: gates })
+    });
+    const payload = {
+      gateKey: 'M1_INPUT_ROW_RECONCILIATION',
+      status: 'PASSED' as const,
+      evidenceReference: 'D1:DV-1'
+    };
+
+    await expect(assessmentApi.saveReviewGate('AIC-2026-0001', payload)).resolves.toEqual(gates);
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/AIC-2026-0001/review-gates'), expect.objectContaining({
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: ['Bearer', 'reviewer-session-token'].join(' ')
+      },
+      body: JSON.stringify(payload)
+    }));
+  });
+
+  it('does not send an authorization header when no session token is available', async () => {
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(null);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: [] })
+    });
+
+    await assessmentApi.saveReviewGate('AIC-2026-0001', {
+      gateKey: 'M1_INPUT_ROW_RECONCILIATION',
+      status: 'PENDING'
+    });
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/AIC-2026-0001/review-gates'),
+      expect.objectContaining({ headers: { 'Content-Type': 'application/json' } })
+    );
   });
 
   it('verifies default export matches named export', () => {

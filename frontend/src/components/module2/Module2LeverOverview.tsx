@@ -21,6 +21,7 @@ const LEVER_TAB_MAP: Record<number, string> = {
   4: 'volumeAggregation',
   5: 'paymentTerms',
   6: 'categorySpecialisation',
+  7: 'logisticsPackaging',
   8: 'specificationRationalisation',
   9: 'procurementCompliance',
   10: 'alternateSourcing'

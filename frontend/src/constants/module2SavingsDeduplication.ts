@@ -54,7 +54,7 @@ export const LEVER_SAFEGUARD_RULES = {
   LEVER_04: 'Volume aggregation benefits must be validated and checked for overlap with price improvement.',
   LEVER_05: 'Keep annual financing benefit and working capital released separate. Never sum them. Do not count financing benefits as purchase-price savings.',
   LEVER_06: 'Preserve canonical heads A-J and existing overlap controls; Head F defaults to exclusion against Lever 2.',
-  LEVER_07: 'Status COMING_SOON; strictly no calculation or savings invention (₹0.00 Cr).',
+  LEVER_07: 'D1-backed logistics and packaging input view is available; no savings calculation or commercial claim is enabled (₹0.00 Cr).',
   LEVER_08: 'Phase 1 discovery only; no commercial savings until Phase 2 is approved (₹0.00 Cr).',
   LEVER_09: 'Include only validated, measurable financial benefits; exposure under review is not validated savings.',
   LEVER_10: 'Vendor counts and alternate sourcing discovery produce no savings estimate by themselves (₹0.00 Cr).'

@@ -10,87 +10,40 @@ import type {
   IndustryMaterialProfile,
   SectorCategorizationResult
 } from '../types/industry';
-import { INDUSTRY_SECTORS_PART1 } from './industrySectorsPart1';
-import { INDUSTRY_SECTORS_PART2 } from './industrySectorsPart2';
-import { INDUSTRY_SECTORS_SERVICES_PART1 } from './industrySectorsServicesPart1';
-import { INDUSTRY_SECTORS_SERVICES_PART2 } from './industrySectorsServicesPart2';
 
 export const DEFAULT_INDUSTRY_MAJOR_SECTOR: IndustryMajorSector = 'Chemical & Petrochemicals';
 export const DEFAULT_INDUSTRY_MINOR_SECTOR = 'Specialty Chemicals';
 
-export const INDUSTRY_MAJOR_SECTORS: IndustryMaterialProfile[] = [
-  ...INDUSTRY_SECTORS_PART1,
-  ...INDUSTRY_SECTORS_PART2,
-  ...INDUSTRY_SECTORS_SERVICES_PART1,
-  ...INDUSTRY_SECTORS_SERVICES_PART2
-];
-
-export const ENTERPRISE_INDUSTRY_PRESETS: Record<string, { major: IndustryMajorSector; minor: string }> = {
-  'Apex Industrial Dynamics': {
-    major: 'Chemical & Petrochemicals',
-    minor: 'Specialty Chemicals'
-  },
-  'Apex Industrial Dynamics (Fortune 500)': {
-    major: 'Chemical & Petrochemicals',
-    minor: 'Specialty Chemicals'
-  },
-  'Vanguard Eurocorp AG': {
-    major: 'Automotive & Transportation',
-    minor: 'Auto Components & Tier-1 Assemblies'
-  },
-  'Global Packaging Holdings': {
-    major: 'Consumer Packaged Goods (CPG)',
-    minor: 'Packaging & Paperboard'
-  },
-  'Starlight Precision LLC': {
-    major: 'Manufacturing & Industrial',
-    minor: 'Precision Engineering & Tooling'
-  },
-  'Quantum Cloud Systems': {
-    major: 'IT, Software & Cloud Services',
-    minor: 'Enterprise Software & SaaS Subscriptions'
-  },
-  'Horizon Financial Advisory': {
-    major: 'Banking, Financial Services & Insurance (BFSI)',
-    minor: 'Payment Processing & Merchant Gateways'
-  },
-  'Pinnacle Global Logistics': {
-    major: 'Logistics, 3PL & Supply Chain Services',
-    minor: '3PL Contract Logistics & Warehousing'
-  }
-};
-
 /**
  * Returns all distinct Major Industry Sectors
  */
-export function getDistinctMajorSectors(): IndustryMajorSector[] {
+export function getDistinctMajorSectors(profiles: IndustryMaterialProfile[]): IndustryMajorSector[] {
   const seen = new Set<IndustryMajorSector>();
-  INDUSTRY_MAJOR_SECTORS.forEach((item) => seen.add(item.majorSector));
+  profiles.forEach((item) => seen.add(item.majorSector));
   return Array.from(seen);
 }
 
 /**
  * Returns all Minor Sectors for a given Major Sector
  */
-export function getMinorSectorsForMajor(majorSector: string): string[] {
-  const matching = INDUSTRY_MAJOR_SECTORS.filter((item) => item.majorSector === majorSector);
-  if (matching.length === 0) {
-    return [DEFAULT_INDUSTRY_MINOR_SECTOR];
-  }
+export function getMinorSectorsForMajor(profiles: IndustryMaterialProfile[], majorSector: string): string[] {
+  const matching = profiles.filter((item) => item.majorSector === majorSector);
   return matching.map((m) => m.minorSector);
 }
 
 /**
  * Finds the material profile for a specific Major and Minor Sector
  */
-export function getIndustryMaterialProfile(majorSector: string, minorSector?: string): IndustryMaterialProfile {
-  const match = INDUSTRY_MAJOR_SECTORS.find((item) => {
+export function getIndustryMaterialProfile(
+  profiles: IndustryMaterialProfile[],
+  majorSector: string,
+  minorSector?: string
+): IndustryMaterialProfile | undefined {
+  return profiles.find((item) => {
     if (item.majorSector !== majorSector) return false;
     if (minorSector && item.minorSector !== minorSector) return false;
     return true;
   });
-
-  return match || INDUSTRY_MAJOR_SECTORS[0];
 }
 
 const PACKAGING_TERMS = [
@@ -107,7 +60,7 @@ const LOGISTICS_PREFIXES = ['78'];
 
 const DIRECT_PREFIXES = ['10', '11', '12', '13', '20', '25', '30', '32', '50', '51', '43', '72', '76', '80', '81', '82', '84', '86'];
 
-const MRO_TERMS = ['pump', 'valve', 'bearing', 'gasket', 'tool', 'gear', 'lubricant'];
+const MRO_TERMS = ['pump', 'valve', 'bearing', 'gasket', 'tool', 'gear', 'lubricant', 'maintenance'];
 const MRO_PREFIXES = ['31', '40', '39'];
 
 function isPackagingItem(desc: string, prefix: string): boolean {
@@ -153,10 +106,16 @@ function classifyLogistics(profile: IndustryMaterialProfile, matchesKeyword: boo
 export function categorizeMaterialWithIndustryContext(
   itemDesc: string,
   unspscCode: string,
-  majorSector: string = DEFAULT_INDUSTRY_MAJOR_SECTOR,
-  minorSector: string = DEFAULT_INDUSTRY_MINOR_SECTOR
+  profile?: IndustryMaterialProfile
 ): SectorCategorizationResult {
-  const profile = getIndustryMaterialProfile(majorSector, minorSector);
+  if (!profile) {
+    return {
+      coreBucket: 'Indirect & MRO',
+      sectorRelevance: 'CROSS_DOMAIN',
+      confidenceBoost: 0,
+      explanation: 'Industry profile data is unavailable from D1; sector-specific classification was not applied.'
+    };
+  }
   const descLower = itemDesc.toLowerCase();
   const prefix2 = unspscCode ? unspscCode.slice(0, 2) : '';
 

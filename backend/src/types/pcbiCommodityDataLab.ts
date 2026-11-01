@@ -11,6 +11,9 @@ import type {
   PCBIDataFrequency
 } from './pcbiCommodityCoverage';
 
+export type PCBIResearchPriorityReason = 'RANKED_BY_CUSTOMER_SPEND' | 'SPEND_LINK_REQUIRED' | 'GAP_RESOLVED';
+export type PCBICommodityResearchWorkflowStatus = 'QUEUED' | 'RESEARCHING' | 'BLOCKED' | 'READY_FOR_REVIEW' | 'COMPLETED';
+
 export type PCBIDomainType =
   | 'CUSTOMER_PURCHASE_HISTORY'
   | 'PCBI_MASTER_SYSTEM_DATA'
@@ -64,11 +67,21 @@ export interface CommodityResearchQueueRow {
   requiredHistory: string;
   availableHistory: string;
   requiredFrequency: PCBIDataFrequency;
+  requiredUnit?: string;
+  requiredCurrency?: string;
+  requiredGeography?: string;
   availableFrequency: PCBIDataFrequency | 'NONE';
   sourceStatus: string;
   methodologyStatus: string;
   priority: PCBIResearchPriority;
+  priorityScore: number;
+  priorityReason: PCBIResearchPriorityReason;
   researchStatus: PCBIResearchStatus;
+  assignedTo: string | null;
+  assignedAt: string | null;
+  workflowStatus: PCBICommodityResearchWorkflowStatus;
+  workflowDueDate: string | null;
+  workflowNotes: string;
   lastUpdated: string;
   action: string;
 }
@@ -92,6 +105,8 @@ export interface CommodityWorkspaceOverview {
   requiredGeography: string;
   availableHistory: string;
   priority: PCBIResearchPriority;
+  priorityScore: number;
+  priorityReason: PCBIResearchPriorityReason;
   researchStatus: PCBIResearchStatus;
   lastUpdated: string;
 }

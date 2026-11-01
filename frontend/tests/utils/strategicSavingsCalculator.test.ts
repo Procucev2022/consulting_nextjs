@@ -200,7 +200,7 @@ describe('strategicSavingsCalculator', () => {
         opp_id: 'OPP-2',
         category: 'Direct Materials',
         title: 'Chemical Pegging',
-        current_spend: 1000000, // fallback calculation when current_spend_inr_cr is undefined
+        current_spend: 1000000, // Unnormalized source amount is not treated as INR crores.
         target_savings_pct: 10.0,
         est_savings: 100000,
         recommended_action: 'Action',
@@ -217,8 +217,8 @@ describe('strategicSavingsCalculator', () => {
 
     const init = getInitiativeByKey(result.initiatives, 'CATEGORY_SAVINGS_PIPELINE');
     expect(init).toBeDefined();
-    expect(init?.spendInrCr).toBeGreaterThan(50.0);
-    expect(init?.savingsInrCr).toBeGreaterThan(10.0);
+    expect(init?.spendInrCr).toBe(50.0);
+    expect(init?.savingsInrCr).toBe(10.0);
   });
 
   it('handles edge case of 0 spend or empty arrays', () => {
@@ -275,10 +275,10 @@ describe('strategicSavingsCalculator', () => {
       {
         opp_id: 'OPP-BASELINE-1',
         category: 'Indirect Materials',
-        current_spend_inr_cr: 0,
+        current_spend_inr_cr: undefined,
         current_spend: 0,
         baseline_spend_inr_cr: 5.0,    // hits line 75 third branch
-        est_savings_inr_cr: 0,
+        est_savings_inr_cr: undefined,
         est_savings: 0,
         estimated_savings_inr_cr: 0.9,  // hits line 86 third branch
         target_savings_pct: 18,
@@ -444,6 +444,9 @@ describe('strategicSavingsCalculator', () => {
     expect(result.netModelledOpportunityInrCr).toBe(0);
     expect(result.grossOpportunityInrCr).toBe(0);
     expect(result.overlapDeductionsInrCr).toBe(0);
+    expect(result.provenOpportunityInrCr).toBe(0);
+    expect(result.discoveryOpportunityInrCr).toBe(0);
+    expect(result.addressableSpendInrCr).toBe(0);
   });
 
   it('hits the || 0 final fallback when all spend and savings fields on an opportunity are falsy', () => {

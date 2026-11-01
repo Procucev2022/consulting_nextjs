@@ -24,7 +24,12 @@ describe('PCBISourceLibraryView Component (Part I)', () => {
       sourceStatus: 'SOURCE_UNVERIFIED',
       methodologyStatus: 'METHODOLOGY_PENDING',
       priority: 'P1',
+      priorityScore: 100,
+      priorityReason: 'RANKED_BY_CUSTOMER_SPEND',
       researchStatus: 'NOT_STARTED',
+      workflowStatus: 'QUEUED',
+      workflowDueDate: null,
+      workflowNotes: '',
       lastUpdated: '2026-09-28',
       action: 'OPEN WORKSPACE'
     }

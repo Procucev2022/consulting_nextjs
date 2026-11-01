@@ -2,7 +2,7 @@
  * Analysis Orchestration constants (Worker API, Prompt 302).
  * Status vocabularies, report workflow rules, limits, patterns and HTTP codes.
  */
-import type { AnalysisJobStatus, ReportVersion, ReportWorkflowState } from '../types/analysisOrchestration';
+import type { AnalysisJobStatus, ReanalysisReason, ReportVersion, ReportWorkflowState } from '../types/analysisOrchestration';
 import type { ActiveReportState } from '../types/orchestrationD1';
 
 export const ORCHESTRATION_PATH_PREFIX = '/api/orchestration';
@@ -71,6 +71,28 @@ export const NOTIFICATION_RECIPIENT_VALUES = ['ADMIN', 'CUSTOMER'] as const;
 
 export const EMAIL_STATUS_VALUES = ['NOT_SENT', 'QUEUED', 'SENT', 'DELIVERED', 'FAILED'] as const;
 
+export const REANALYSIS_REASON_VALUES = [
+  'INCORRECT_CATEGORY_MAPPING',
+  'MISSING_TRANSACTIONS',
+  'DUPLICATE_TRANSACTIONS',
+  'INCORRECT_SUPPLIER_MAPPING',
+  'INCORRECT_PLANT_MAPPING',
+  'INCORRECT_QUANTITY_VALUE',
+  'INCORRECT_MATERIAL_DESCRIPTION',
+  'CUSTOMER_CLARIFICATION',
+  'PCBI_MAPPING_CORRECTION',
+  'OTHER'
+] as const satisfies readonly ReanalysisReason[];
+
+export const PCBI_GAP_ACTION_VALUES = [
+  'ADD_MAP_PCBI', 'MAP_EXISTING', 'EXCLUDE', 'MARK_NOT_BENCHMARKABLE', 'MARK_SERVICE', 'REQUEST_RESEARCH'
+] as const;
+
+export const PCBI_GAP_EXCLUSION_REASON_VALUES = [
+  'NOT_BENCHMARKABLE', 'CUSTOM_ENGINEERED_ITEM', 'SERVICE', 'NO_RELIABLE_MARKET_BENCHMARK',
+  'INSUFFICIENT_MARKET_DATA', 'CUSTOMER_SPECIFIC_SPECIFICATION', 'BELOW_MATERIALITY_THRESHOLD', 'OTHER'
+] as const;
+
 export const AUDIT_ACTOR_ROLE_VALUES = ['CUSTOMER', 'ADMIN', 'SYSTEM'] as const;
 
 /** Job statuses grouped into the admin KPI buckets (matches the Express KPI definitions). */
@@ -103,7 +125,7 @@ export const ORCHESTRATION_NUMERIC = {
   bytesPerMegabyte: 1024 * 1024,
   fileSizeDecimals: 2,
   minSpendCoveragePct: 85,
-  coveragePctWithoutRecordedGaps: 100
+  pcbiGapIdHashLength: 64
 } as const;
 
 export const ORCHESTRATION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
@@ -137,7 +159,8 @@ export const ORCHESTRATION_ID_PREFIX = {
   ACKNOWLEDGEMENT: 'ack',
   CORRECTION: 'corr',
   NOTIFICATION: 'notif',
-  AUDIT: 'aud'
+  AUDIT: 'aud',
+  PCBI_GAP: 'PCBI-GAP-'
 } as const;
 
 export const ORCHESTRATION_EVENT_TYPES = {
@@ -148,7 +171,9 @@ export const ORCHESTRATION_EVENT_TYPES = {
   REPORT_ACKNOWLEDGED: 'REPORT_ACKNOWLEDGED',
   REPORT_SUPERSEDED: 'REPORT_SUPERSEDED',
   NOTIFICATION_RESEND_ATTEMPTED: 'NOTIFICATION_RESEND_ATTEMPTED',
-  CORRECTION_REQUESTED: 'CORRECTION_REQUESTED'
+  CORRECTION_REQUESTED: 'CORRECTION_REQUESTED',
+  DATASET_CORRECTED: 'DATASET_CORRECTED',
+  PCBI_GAP_RESOLVED: 'PCBI_GAP_RESOLVED'
 } as const;
 
 export const ORCHESTRATION_ENTITY_TYPES = {
@@ -157,11 +182,15 @@ export const ORCHESTRATION_ENTITY_TYPES = {
   QUALITY_CHECKLIST: 'AdminQualityGateChecklist',
   ACKNOWLEDGEMENT: 'ReportAcknowledgement',
   CORRECTION_REQUEST: 'CustomerCorrectionRequest',
-  NOTIFICATION: 'OrchestrationNotification'
+  NOTIFICATION: 'OrchestrationNotification',
+  DATASET_VERSION: 'AssessmentDataVersion',
+  PCBI_GAP_RESOLUTION: 'OrchestrationPCBIGapResolution'
 } as const;
 
 export const ORCHESTRATION_EMAIL_STATUS = {
-  NOT_SENT: 'NOT_SENT'
+  NOT_SENT: 'NOT_SENT',
+  SENT: 'SENT',
+  FAILED: 'FAILED'
 } as const;
 
 export const ORCHESTRATION_NOTIFICATION_SEVERITY = {
@@ -185,4 +214,13 @@ export const ORCHESTRATION_DEFAULTS = {
   periodSeparator: ' - ',
   reportIdPrefix: 'RPT-',
   reportVersionInfix: '-v'
+} as const;
+
+export const EMPTY_PCBI_GAP_COVERAGE = {
+  hasEvidence: false,
+  totalCategories: 0,
+  resolvedCategories: 0,
+  totalItems: 0,
+  resolvedItems: 0,
+  excludedItems: 0
 } as const;

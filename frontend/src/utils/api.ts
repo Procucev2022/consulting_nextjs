@@ -22,7 +22,6 @@ import { validateInput } from './validation';
 import {
   apiUpdateTenantPayloadSchema,
   apiMergeVendorPayloadSchema,
-  apiDeployOpportunityPayloadSchema,
   apiCalculateConversionPayloadSchema,
   conversionStagesResponseSchema,
   procurementCategoryMappingsResponseSchema
@@ -31,6 +30,7 @@ import { PROCUREMENT_CATEGORY_MAPPINGS_API_PATH } from '../constants/procurement
 import { setProcurementCategoryMappings } from './procurementCategoryResolver';
 import { fetchDashboardOverview } from './graphqlClient';
 import { UI_STRINGS } from '../constants/uiStrings';
+import { currencyApiClient } from './currencyApi';
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -188,21 +188,7 @@ export const apiClient = {
     return json.data;
   },
 
-  async deployOpportunity(opp_id: string, targetModule: 'proCPX' | 'DPS NXT'): Promise<SavingsOpportunity> {
-    frontendLogger.info('Deploying opportunity to module', { opp_id, targetModule });
-    const validation = validateInput(apiDeployOpportunityPayloadSchema, { opp_id, targetModule });
-    if (!validation.success) {
-      throw new Error(`Invalid deploy payload: ${JSON.stringify(validation.errors)}`);
-    }
-
-    const res = await fetch(`${API_BASE}/api/savings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(validation.data)
-    });
-    const json = await res.json();
-    return json.data;
-  },
+  deployOpportunity: savingsApiClient.deployOpportunity.bind(savingsApiClient),
 
   // PCBI Benchmark Intelligence (Module 3 - Prompt 100)
   getPCBIDashboard: pcbiApiClient.getPCBIDashboard.bind(pcbiApiClient),
@@ -264,17 +250,8 @@ export const apiClient = {
   },
 
   // Currency
-  async getCurrencyConversion(from: string, amount: number, dateOrYear?: string | number) {
-    frontendLogger.debug('Calling currency conversion API', { from, amount, dateOrYear });
-    const query = new URLSearchParams({
-      from,
-      amount: String(amount),
-      ...(dateOrYear ? { date: String(dateOrYear) } : {})
-    });
-    const res = await fetch(`${API_BASE}/api/currency?${query.toString()}`);
-    const json = await res.json();
-    return json.data;
-  },
+  getCurrencyRates: currencyApiClient.getCurrencyRates.bind(currencyApiClient),
+  getCurrencyConversion: currencyApiClient.getCurrencyConversion.bind(currencyApiClient),
 
   // Auth & Admin Delegations
   register: authApiClient.register.bind(authApiClient),

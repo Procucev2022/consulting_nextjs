@@ -121,6 +121,45 @@ export interface GeminiEnvironmentValues {
   GEMINI_MAX_DOCUMENT_TEXT_CHARS?: string | number;
 }
 
+export interface GeminiRequestDocumentInput {
+  documentText?: string;
+  inlineData?: string;
+  mimeType?: string;
+  fileName?: string;
+}
+
+export interface GeminiStructuredRequestInput extends GeminiRequestDocumentInput {
+  promptText: string;
+}
+
+export interface GeminiInputValidationResult {
+  isValid: boolean;
+  errorStatus?: ExtractionStatus;
+  errorMessage?: string;
+}
+
+export interface GeminiJsonGenerationInput extends GeminiRequestDocumentInput {
+  prompt: string;
+  label?: string;
+}
+
+export interface GeminiJsonGenerationResult<T> {
+  status: ExtractionStatus;
+  data: T | null;
+  model: string | null;
+  error: string | null;
+}
+
+export interface GeminiJsonGenerationDependencies {
+  config: GeminiConfig;
+  isConfigured: () => boolean;
+  resolveModelChain: () => string[];
+  resolveKeyChain: () => string[];
+  buildRequestBody: (input: GeminiStructuredRequestInput) => unknown;
+  validateExtractionInput: (input: GeminiRequestDocumentInput) => GeminiInputValidationResult;
+  callModel: <T>(model: string, requestBody: unknown, timeoutMs: number, apiKey: string) => Promise<T>;
+}
+
 import type { UNSPSCCommodityRecord } from './taxonomy';
 export type TaxonomyLookup = (query: string) => Promise<UNSPSCCommodityRecord | undefined>;
 

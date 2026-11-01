@@ -4,6 +4,7 @@ import {
   DATA_STATUSES,
   ASSESSMENT_STATUSES
 } from './assessment';
+import { ASSESSMENT_REVIEW_GATE_KEYS, ASSESSMENT_REVIEW_GATE_STATUSES } from './assessmentD1';
 
 export const createCustomerSchema = z.object({
   customerName: z.string().min(2, 'Customer name must be at least 2 characters'),
@@ -108,6 +109,7 @@ export const validateAssessmentDatasetSchema = z.object({
 });
 
 export const ASSESSMENT_DATA_VERSION_MAX_BYTES = 100 * 1024 * 1024;
+export const ASSESSMENT_DATA_VERSION_MAX_BASE64_LENGTH = Math.ceil(ASSESSMENT_DATA_VERSION_MAX_BYTES / 3) * 4;
 export const ASSESSMENT_DATA_VERSION_ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'] as const;
 
 export const analystApprovalSchema = z.object({
@@ -137,4 +139,18 @@ export const assessmentDeliverySchema = z.object({
 export const assessmentAcceptanceSchema = z.object({
   acceptanceComment: z.string().max(2000).optional(),
   acceptedBy: z.string().email().optional()
+});
+
+export const assessmentReviewGateUpdateSchema = z.object({
+  gateKey: z.string().refine((key) => ASSESSMENT_REVIEW_GATE_KEYS.includes(key as (typeof ASSESSMENT_REVIEW_GATE_KEYS)[number]), 'Select a supported assessment review gate'),
+  status: z.enum(ASSESSMENT_REVIEW_GATE_STATUSES),
+  evidenceReference: z.string().trim().max(512).optional().default(''),
+  reviewNote: z.string().trim().max(2000).optional().default('')
+}).superRefine((input, context) => {
+  if (input.status === 'PASSED' && input.evidenceReference.length === 0) {
+    context.addIssue({ code: 'custom', path: ['evidenceReference'], message: 'Evidence reference is required to pass a gate' });
+  }
+  if (input.status === 'BLOCKED' && input.reviewNote.length === 0) {
+    context.addIssue({ code: 'custom', path: ['reviewNote'], message: 'A review note is required to block a gate' });
+  }
 });

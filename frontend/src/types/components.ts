@@ -15,6 +15,7 @@ import type {
   VendorYearDetail,
   MaterialGroupSummary,
   PlantSummary,
+  LegacyPlantSummaryRecord,
   MonthWiseSummary,
   DocumentSpendCurrency,
   MonthGraphViewMode
@@ -25,6 +26,7 @@ import type { ParetoSpendData } from './pareto';
 import type { SubscriptionTier, UserProfile } from './auth';
 import type { Module1CanonicalViewModel, VgtPeriodMetadata } from './module1Canonical';
 import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from './assessment';
+import type { ExecutiveOpportunityBriefReportData } from './validation';
 
 // Main View & Navigation Props
 export interface HeaderProps {
@@ -172,7 +174,7 @@ export interface DocumentSummaryViewProps {
   tenant?: TenantMaster;
   ingestionQueue?: RawDocumentIngestion[];
   materialGroupSummaries?: MaterialGroupSummary[];
-  plantSummaries?: PlantSummary[];
+  plantSummaries?: Array<PlantSummary | LegacyPlantSummaryRecord>;
   monthWiseSummaries?: MonthWiseSummary[];
   uniqueItemsCount?: number;
   uniqueVendorsCount?: number;
@@ -264,7 +266,7 @@ export interface CategoryTopItemsModalProps {
   category: CategoryYearDetail | null;
   isOpen: boolean;
   onClose: () => void;
-  totalEvaluatedSpendInrCr: number;
+  totalEvaluatedSpendInrCr?: number;
 }
 
 export interface VendorTopItemsModalProps {
@@ -311,14 +313,14 @@ export interface ProCPXModalProps {
   opportunity: SavingsOpportunity | null;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (oppId: string) => void;
+  onSuccess: (oppId: string) => Promise<void> | void;
 }
 
 export interface DPSNXTModalProps {
   opportunity: SavingsOpportunity | null;
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (oppId: string) => void;
+  onSuccess: (oppId: string) => Promise<void> | void;
 }
 
 export interface ExecutiveReportModalProps {
@@ -399,7 +401,7 @@ export interface VendorPriceDispersionTableProps {
 
 // Module 4: Consolidated Savings Engine Props (Prompt 100)
 export interface SavingsWaterfallSectionProps {
-  waterfallMetrics: import('./savings').SavingsWaterfallMetrics;
+  waterfallMetrics?: import('./savings').SavingsWaterfallMetrics;
   className?: string;
 }
 
@@ -573,6 +575,11 @@ export interface ExecutiveOpportunityBriefViewProps {
   readonly onToggleFullScreen?: () => void;
   readonly currentTier?: SubscriptionTier;
   readonly onExploreSilver?: () => void;
+}
+
+export interface ExecutiveOpportunityBriefSlideContentProps {
+  readonly currentSlide: number;
+  readonly report: ExecutiveOpportunityBriefReportData;
 }
 
 export interface AuthCardProps {

@@ -21,6 +21,7 @@ import type {
   SequenceRow,
   UserRow
 } from './types/orchestrationD1';
+import type { PCBIGapSourceRow, PCBISeriesRow } from './types/orchestrationPcbi';
 import { ORCHESTRATION_ID_PREFIX } from './constants/orchestration';
 import {
   SQL_ACKNOWLEDGEMENT_FOR_REPORT,
@@ -34,6 +35,7 @@ import {
   SQL_INSERT_CHECKLIST,
   SQL_INSERT_CORRECTION,
   SQL_INSERT_NOTIFICATION,
+  SQL_UPDATE_NOTIFICATION_EMAIL,
   SQL_INSERT_REPORT,
   SQL_JOB_BY_ID,
   SQL_JOBS_ALL,
@@ -43,11 +45,14 @@ import {
   SQL_OPEN_CORRECTIONS_ALL,
   SQL_OPEN_CORRECTIONS_FOR_JOB,
   SQL_PROCUREMENT_STATS_FOR_JOB,
+  SQL_PCBI_GAPS_FOR_JOB,
+  SQL_ACTIVE_PCBI_SERIES,
   SQL_RECENT_AUDIT_EVENTS,
   SQL_RECENT_NOTIFICATIONS,
   SQL_REPORT_BY_ID,
   SQL_REPORTS_FOR_JOB,
   SQL_USER_BY_ID,
+  SQL_UPSERT_PCBI_GAP_RESOLUTION,
   SQL_VERSIONS_FOR_JOB
 } from './constants/orchestrationSql';
 
@@ -70,6 +75,23 @@ export const listVersionRows = (db: OrchestrationDatabase, assessmentId: string)
 
 export const listProcurementStats = (db: OrchestrationDatabase, assessmentId: string): Promise<ProcurementStatsRow[]> =>
   allRows<ProcurementStatsRow>(db.prepare(SQL_PROCUREMENT_STATS_FOR_JOB).bind(assessmentId));
+
+export const listPcbiGapRows = (
+  db: OrchestrationDatabase,
+  assessmentId: string,
+  dataVersionId: string | null
+): Promise<PCBIGapSourceRow[]> => dataVersionId === null
+  ? Promise.resolve([])
+  : allRows<PCBIGapSourceRow>(db.prepare(SQL_PCBI_GAPS_FOR_JOB)
+    .bind(assessmentId, dataVersionId, `${assessmentId}:${dataVersionId}`));
+
+export const findActivePcbiSeries = (db: OrchestrationDatabase, seriesId: string): Promise<PCBISeriesRow | null> =>
+  db.prepare(SQL_ACTIVE_PCBI_SERIES).bind(seriesId).first<PCBISeriesRow>();
+
+export const upsertPcbiGapResolutionStatement = (
+  db: OrchestrationDatabase,
+  values: readonly [string, string, string, string, string | null, string | null, string | null, string | null, string, string]
+): CloudflareD1PreparedStatement => db.prepare(SQL_UPSERT_PCBI_GAP_RESOLUTION).bind(...values);
 
 export const listReportRows = (db: OrchestrationDatabase, assessmentId: string): Promise<ReportRow[]> =>
   allRows<ReportRow>(db.prepare(SQL_REPORTS_FOR_JOB).bind(assessmentId));
@@ -257,6 +279,19 @@ export const insertNotificationStatement = (
     row.email_last_error,
     row.created_at
   );
+
+export const updateNotificationEmailStatement = (
+  db: OrchestrationDatabase,
+  notificationId: string,
+  status: string,
+  lastError: string | null,
+  incrementRetry: boolean
+): CloudflareD1PreparedStatement => db.prepare(SQL_UPDATE_NOTIFICATION_EMAIL).bind(
+  status,
+  lastError,
+  incrementRetry ? 1 : 0,
+  notificationId
+);
 
 /** Adds the event id and timestamp to an audit draft. */
 export const buildAuditEvent = (

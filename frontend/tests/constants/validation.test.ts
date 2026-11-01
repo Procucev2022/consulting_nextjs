@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   headerTenantSchema,
   headerCurrencySchema,
+  d1CurrencyRatesResponseSchema,
+  d1CurrencyConversionResponseSchema,
   clientIngestionSetupFormSchema,
   fixCurrencyFormSchema,
   mergeVendorFormSchema,
@@ -23,10 +25,78 @@ import {
   changePasswordFormSchema,
   pcbiBenchmarkResponseSchema,
   pcbiWeeklyIndexResponseSchema,
-  procurementCategoryMappingsResponseSchema
+  procurementCategoryMappingsResponseSchema,
+  executiveOpportunityBriefResponseSchema,
+  executiveBriefEmailRequestSchema
 } from '../../src/constants/validation';
+import { pcbiGapResolutionRequestSchema } from '../../src/constants/orchestrationValidation';
 
 describe('Frontend Validation Schemas (constants/validation.ts)', () => {
+  it('validates D1 FX catalogs and historical conversion responses', () => {
+    const rates = {
+      success: true,
+      data: { JPY: { currencyCode: 'JPY', name: 'Japanese Yen', currentRate: 0.58, lastUpdated: '2026-10-30' } }
+    };
+    const conversion = {
+      success: true,
+      data: { amount: 500, fromCurrency: 'JPY', amountINR: 290, exchangeRate: 0.58, rateDate: '2026-10-30' }
+    };
+    expect(d1CurrencyRatesResponseSchema.safeParse(rates).success).toBe(true);
+    expect(d1CurrencyRatesResponseSchema.safeParse({ ...rates, data: { JPY: { ...rates.data.JPY, currentRate: '0.58' } } }).success).toBe(false);
+    expect(d1CurrencyConversionResponseSchema.safeParse(conversion).success).toBe(true);
+    expect(d1CurrencyConversionResponseSchema.safeParse({ ...conversion, data: { ...conversion.data, exchangeRate: 0 } }).success).toBe(false);
+  });
+  it('validates D1-backed executive opportunity brief report payloads', () => {
+    const valid = {
+      success: true,
+      data: {
+        tenant: { tenantId: 'T1', enterpriseName: 'D1 Enterprise' },
+        dataClassification: 'CUSTOMER_DATA',
+        generatedAt: '2026-10-30T00:00:00.000Z',
+        scopeDescription: 'D1 report scope',
+        metrics: {
+          transactionCount: 1, totalSpendCr: 2, supplierCount: 1, materialCount: 1, plantCount: 1,
+          purchaseOrderCount: 1, firstTransactionDate: null, lastTransactionDate: null,
+          opportunityCount: 0, estimatedSavingsCr: 0, averageConfidence: 0
+        },
+        opportunities: [], levers: [], statuses: [], risks: []
+      }
+    };
+    expect(executiveOpportunityBriefResponseSchema.safeParse(valid).success).toBe(true);
+    expect(executiveOpportunityBriefResponseSchema.safeParse({ ...valid, success: false }).success).toBe(false);
+    expect(executiveOpportunityBriefResponseSchema.safeParse({
+      ...valid,
+      data: { ...valid.data, dataClassification: 'UNREVIEWED' }
+    }).success).toBe(false);
+    expect(executiveOpportunityBriefResponseSchema.safeParse({
+      ...valid,
+      data: { ...valid.data, metrics: { ...valid.data.metrics, totalSpendCr: '2' } }
+    }).success).toBe(false);
+  });
+
+  it('validates mapped, excluded, research, and classification-only PCBI resolutions', () => {
+    const validRequests = [
+      { action: 'MAP_EXISTING', targetPcbiSeries: 'PCBI-1' },
+      { action: 'ADD_MAP_PCBI', targetPcbiSeries: 'PCBI-1' },
+      { action: 'EXCLUDE', exclusionReason: 'OTHER', exclusionNotes: 'No reliable benchmark data' },
+      { action: 'MARK_NOT_BENCHMARKABLE' },
+      { action: 'MARK_SERVICE' },
+      { action: 'REQUEST_RESEARCH', researchNotes: 'Confirm local benchmark series' }
+    ];
+    for (const request of validRequests) expect(pcbiGapResolutionRequestSchema.safeParse(request).success).toBe(true);
+  });
+
+  it('rejects incomplete PCBI mapping or exclusions, unsupported actions, and oversized notes', () => {
+    const invalidRequests = [
+      { action: 'MAP_EXISTING' },
+      { action: 'EXCLUDE' },
+      { action: 'EXCLUDE', exclusionReason: 'OTHER' },
+      { action: 'REQUEST_RESEARCH', researchNotes: 'x'.repeat(2001) },
+      { action: 'UNKNOWN' }
+    ];
+    for (const request of invalidRequests) expect(pcbiGapResolutionRequestSchema.safeParse(request).success).toBe(false);
+  });
+
   it('validates persisted PCBI benchmark and weekly index API records', () => {
     expect(pcbiBenchmarkResponseSchema.safeParse([{
       pcbi_id: 'PCBI-TEST', benchmark_name: 'Benchmark', benchmark_unit: 'MT', currency: 'INR'
@@ -136,11 +206,13 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
         convertedAmountINR: 838000
       };
       expect(fixCurrencyFormSchema.safeParse(valid).success).toBe(true);
+      expect(fixCurrencyFormSchema.safeParse({ ...valid, selectedCurrency: 'JPY' }).success).toBe(true);
     });
 
     it('should reject empty recordId or non-positive amount', () => {
       expect(fixCurrencyFormSchema.safeParse({ recordId: '', selectedCurrency: 'USD', convertedAmountINR: 100 }).success).toBe(false);
       expect(fixCurrencyFormSchema.safeParse({ recordId: 'REC-1', selectedCurrency: 'USD', convertedAmountINR: 0 }).success).toBe(false);
+      expect(fixCurrencyFormSchema.safeParse({ recordId: 'REC-1', selectedCurrency: 'EURO', convertedAmountINR: 100 }).success).toBe(false);
     });
   });
 
@@ -261,6 +333,15 @@ describe('Frontend Validation Schemas (constants/validation.ts)', () => {
         saasFeeRate: 0.85
       }).success).toBe(false);
     });
+  });
+
+  it('validates the email-only request contract so business figures stay on the D1 Worker', () => {
+    expect(executiveBriefEmailRequestSchema.safeParse({ buyerEmail: 'buyer@example.test' }).success).toBe(true);
+    expect(executiveBriefEmailRequestSchema.safeParse({ buyerEmail: 'invalid' }).success).toBe(false);
+    expect(executiveBriefEmailRequestSchema.safeParse({
+      buyerEmail: 'buyer@example.test',
+      totalSpendInrCr: 123
+    }).success).toBe(false);
   });
 
   describe('API Outgoing Schemas', () => {

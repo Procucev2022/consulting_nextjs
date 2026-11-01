@@ -32,6 +32,7 @@ export interface MaterialMappingEntry {
   confidenceScore: number;
   evidence: string;
   reviewStatus: MappingReviewStatus;
+  coreBucket?: string;
   mappingDate: string;
   totalSpendInr: number;
   totalSpendCr: number;

@@ -25,6 +25,34 @@ export type AssessmentStatus =
 
 export type AssessmentRole = 'INTERNAL_ADMIN' | 'ANALYST' | 'CONSULTANT';
 
+export type AssessmentModule = 'Module 1' | 'Module 2' | 'Module 3' | 'Module 4';
+
+export interface AssessmentModuleGate {
+  key: string;
+  module: AssessmentModule;
+  name: string;
+  standard: string;
+}
+
+export type AssessmentReviewGateStatus = 'PENDING' | 'PASSED' | 'BLOCKED';
+
+export interface AssessmentReviewGateRecord {
+  assessmentId: string;
+  gateKey: string;
+  status: AssessmentReviewGateStatus;
+  evidenceReference: string | null;
+  reviewNote: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+}
+
+export interface AssessmentReviewGateUpdate {
+  gateKey: string;
+  status: AssessmentReviewGateStatus;
+  evidenceReference?: string;
+  reviewNote?: string;
+}
+
 export type ReviewGate =
   | 'INPUT_VALIDATION_CLEAN'
   | 'MODULE_1_RECONCILED'
@@ -295,6 +323,7 @@ export interface DeliveryPackageItem {
   id: string;
   title: string;
   format: 'PDF' | 'PPTX' | 'XLSX';
+  artifactStatus?: 'NOT_GENERATED' | 'GENERATED';
   analysisRunId: string;
   dataVersionId: string;
   generatedAt: string;
@@ -313,10 +342,8 @@ export interface DeliveryPackageResult {
   approvedBy: string;
   approvedAt: string;
   checksums?: {
-    vgtDataset?: string;
+    sourceDataset?: string;
     fxMaster?: string;
-    pcbiMaster?: string;
-    evidenceWorkbook?: string;
     [key: string]: string | undefined;
   };
   items: DeliveryPackageItem[];
@@ -408,6 +435,9 @@ export interface AssessmentPipelineTabProps {
 
 export interface AssessmentChecklistTabProps {
   assessment: AssessmentRecord;
+  gates: AssessmentReviewGateRecord[];
+  savingGateKey: string | null;
+  onSaveGate: (update: AssessmentReviewGateUpdate) => Promise<boolean>;
 }
 
 export interface AssessmentDeliveryTabProps {

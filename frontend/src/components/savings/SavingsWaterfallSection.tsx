@@ -12,22 +12,34 @@ export const SavingsWaterfallSection: React.FC<SavingsWaterfallSectionProps> = (
   const sStrings = UI_STRINGS.module4.savingsWaterfall;
   const steps = sStrings.steps;
 
-  const totalSpendCr = waterfallMetrics?.total_spend_inr_cr ?? 0.0;
-  const addressableSpendCr = waterfallMetrics?.addressable_spend_inr_cr ?? 0.0;
-  const identifiedOppsCr = waterfallMetrics?.gross_potential_savings_inr_cr ?? 0.0;
-  const dedupOverlapCr = waterfallMetrics?.deduplicated_overlap_inr_cr ?? 0.0;
-  const netPotentialSavingsCr = waterfallMetrics?.net_potential_savings_inr_cr ?? 0.0;
-  const provenOppCr = waterfallMetrics?.proven_opportunity_inr_cr ?? 82.380;
-  const discoveryOppCr = waterfallMetrics?.discovery_opportunity_inr_cr ?? 3.261;
-  const validatedSavingsCr = waterfallMetrics?.validated_savings_inr_cr ?? 0.0;
-  const approvedSavingsCr = waterfallMetrics?.approved_savings_inr_cr ?? 0.0;
-  const realizedSavingsCr = waterfallMetrics?.realized_savings_inr_cr ?? 0.0;
+  if (!waterfallMetrics) {
+    return (
+      <div className={`p-6 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 glass-panel space-y-4 ${className}`}>
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+          {sStrings.title}
+        </h3>
+        <p role="status" className="text-xs text-slate-500 dark:text-slate-400">
+          {sStrings.dataUnavailable}
+        </p>
+      </div>
+    );
+  }
+
+  const totalSpendCr = waterfallMetrics.total_spend_inr_cr ?? 0.0;
+  const addressableSpendCr = waterfallMetrics.addressable_spend_inr_cr ?? 0.0;
+  const identifiedOppsCr = waterfallMetrics.gross_potential_savings_inr_cr ?? 0.0;
+  const dedupOverlapCr = waterfallMetrics.deduplicated_overlap_inr_cr ?? 0.0;
+  const netPotentialSavingsCr = waterfallMetrics.net_potential_savings_inr_cr ?? 0.0;
+  const provenOppCr = waterfallMetrics.proven_opportunity_inr_cr ?? 0;
+  const discoveryOppCr = waterfallMetrics.discovery_opportunity_inr_cr ?? 0;
+  const validatedSavingsCr = waterfallMetrics.validated_savings_inr_cr ?? 0.0;
+  const approvedSavingsCr = waterfallMetrics.approved_savings_inr_cr ?? 0.0;
+  const realizedSavingsCr = waterfallMetrics.realized_savings_inr_cr ?? 0.0;
 
   const formatStageCr = (val: number): string => {
-    if (val === 0) return '₹0.00 Cr';
     const str = val.toString();
     const decimals = str.includes('.') ? str.split('.')[1].length : 2;
-    return `₹${val.toFixed(Math.min(4, Math.max(2, decimals)))} Cr`;
+    return UI_STRINGS.common.croreAmount(val.toFixed(Math.min(4, Math.max(2, decimals))));
   };
 
   const waterfallStages = [

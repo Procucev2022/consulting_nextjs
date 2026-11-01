@@ -15,16 +15,16 @@ export interface TenantMaster {
 }
 
 export interface RawDocumentIngestion {
-  doc_id: string;
+  doc_id?: string | null;
   tenant_id?: string;
-  file_name: string;
-  file_type: 'PDF' | 'XLSX' | 'CSV' | 'XML' | 'ZIP' | string;
-  file_size_mb: number;
-  ocr_status: 'Completed' | 'Parsing OCR' | 'Pending' | 'Error' | string;
-  progress?: number;
-  uploaded_at: string;
-  records_count: number;
-  detected_currencies?: string[];
+  file_name?: string | null;
+  file_type?: 'PDF' | 'XLSX' | 'CSV' | 'XML' | 'ZIP' | string | null;
+  file_size_mb?: number | null;
+  ocr_status?: 'Completed' | 'Parsing OCR' | 'Pending' | 'Error' | string | null;
+  progress?: number | null;
+  uploaded_at?: string | null;
+  records_count?: number | null;
+  detected_currencies?: string[] | null;
   converted_inr_crores?: number;
   unique_items_count?: number;
   unique_vendors_count?: number;
@@ -334,6 +334,31 @@ export interface PlantSummary {
   spend_inr_cr: number;
   spend_usd_m?: number;
   share_pct: number;
+  active_vendors_count?: number;
+  unique_items_count?: number;
+  unique_vendors_count?: number;
+  primary_material_group?: string;
+  top_material_group?: string;
+}
+
+export interface LegacyPlantSummaryRecord {
+  plant?: string;
+  totalSpendINR?: number;
+  totalSpendCr?: number;
+  count?: number;
+}
+
+export interface DocumentSummaryPlantRecord {
+  plant_code?: string;
+  plant_name?: string;
+  region?: string;
+  location?: string;
+  po_count?: number;
+  total_po_count?: number;
+  records_count?: number;
+  spend_inr_cr?: number;
+  spend_usd_m?: number;
+  share_pct?: number;
   active_vendors_count?: number;
   unique_items_count?: number;
   unique_vendors_count?: number;

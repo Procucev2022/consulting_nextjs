@@ -57,4 +57,20 @@ describe('ExecutiveBriefFormatCards', () => {
       screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.formats.pptxGenerateAction)
     ).toBeInTheDocument();
   });
+
+  it('disables both downloads and regeneration while the brief is generating', () => {
+    render(
+      <ExecutiveBriefFormatCards
+        {...defaultProps}
+        pdfAvailable={false}
+        pptxAvailable={false}
+        isGenerating
+      />
+    );
+
+    expect(screen.getByTestId('download-pdf-btn')).toBeDisabled();
+    expect(screen.getByTestId('download-pptx-btn')).toBeDisabled();
+    expect(screen.getByTestId('admin-regenerate-brief-btn')).toBeDisabled();
+    expect(screen.getByText(EXECUTIVE_BRIEF_EXPORT_STRINGS.formats.pptxGenerateAction)).toBeInTheDocument();
+  });
 });

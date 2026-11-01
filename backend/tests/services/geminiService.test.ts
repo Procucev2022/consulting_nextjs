@@ -501,6 +501,36 @@ describe('GeminiService configured behaviour', () => {
       });
     });
 
+    it('should send inline PDF data and file name with a structured extraction prompt', async () => {
+      fetchMock.mockResolvedValueOnce(geminiOkResponse('{"observations":[{"observationDate":"2026-10-01","value":25}]}'));
+
+      const result = await configuredService().generateJson({
+        prompt: 'Extract dated commodity prices',
+        label: 'research-pdf',
+        inlineData: 'JVBERi0xLjQ=',
+        mimeType: 'application/pdf',
+        fileName: 'steel-index.pdf'
+      });
+
+      expect(result).toMatchObject({ status: EXTRACTION_STATUS.SUCCESS, model: 'model-primary' });
+      expect(requestParts(0)).toEqual([
+        { text: 'Extract dated commodity prices' },
+        { text: '\nDOCUMENT FILE NAME: steel-index.pdf' },
+        { inline_data: { mime_type: 'application/pdf', data: 'JVBERi0xLjQ=' } }
+      ]);
+    });
+
+    it('should reject unsupported inline types and oversized inline data before calling the model', async () => {
+      const service = configuredService();
+
+      const unsupported = await service.generateJson({ prompt: 'Extract', inlineData: 'YQ==', mimeType: 'application/octet-stream' });
+      const oversized = await service.generateJson({ prompt: 'Extract', inlineData: 'A'.repeat(1335), mimeType: 'application/pdf' });
+
+      expect(unsupported).toMatchObject({ status: EXTRACTION_STATUS.UNSUPPORTED_TYPE, data: null });
+      expect(oversized).toMatchObject({ status: EXTRACTION_STATUS.DOCUMENT_TOO_LARGE, data: null });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('should stop without calling the model when the total budget is already spent', async () => {
       const result = await configuredService({ GEMINI_TOTAL_BUDGET_MS: '0' }).generateJson({ prompt: 'Summarize' });
 

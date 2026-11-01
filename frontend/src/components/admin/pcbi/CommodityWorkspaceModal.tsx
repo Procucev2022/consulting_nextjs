@@ -17,13 +17,24 @@ import {
 } from 'lucide-react';
 import { UI_STRINGS } from '../../../constants';
 import { COMMODITY_WORKSPACE_TABS, COMMODITY_DATA_UPLOAD_BANNER } from '../../../constants/pcbiCommodityDataLab';
+import { HIGH_IMPACT_SPEND_THRESHOLD } from '../../../constants/pcbiProductionPilot';
 import { pcbiCommodityDataLabApi } from '../../../utils/pcbiCommodityDataLabApi';
+import { encodePCBIFileBase64 } from '../../../utils/pcbiSourceFile';
 import frontendLogger from '../../../utils/logger';
 import type { CommodityWorkspaceModalProps } from '../../../types/components';
 import type {
   CommodityWorkspaceDetail,
   CommodityWorkspaceTabKey
 } from '../../../types/pcbiCommodityDataLab';
+
+const priorityScoreDescription = (workspace: CommodityWorkspaceDetail): string => {
+  if (workspace.overview.priorityReason === 'RANKED_BY_CUSTOMER_SPEND') {
+    return UI_STRINGS.pcbiCommodityDataLab.priorityScoreLabel(workspace.overview.priorityScore);
+  }
+  return workspace.overview.priorityReason === 'GAP_RESOLVED'
+    ? UI_STRINGS.pcbiCommodityDataLab.priorityScoreResolved
+    : UI_STRINGS.pcbiCommodityDataLab.priorityScoreNotScored;
+};
 
 export const CommodityWorkspaceModal: React.FC<CommodityWorkspaceModalProps> = ({
   isOpen,
@@ -138,6 +149,7 @@ export const CommodityWorkspaceModal: React.FC<CommodityWorkspaceModalProps> = (
         sourceName: `${workspace.overview.commodityName} Primary Evidence Pack`,
         publisher: 'Staged Commodity Research Source',
         documentName: selectedFile.name,
+        fileBase64: await encodePCBIFileBase64(selectedFile),
         fileType,
         geography: workspace.overview.requiredGeography,
         unit: workspace.overview.requiredUnit,
@@ -304,6 +316,9 @@ export const CommodityWorkspaceModal: React.FC<CommodityWorkspaceModalProps> = (
                       <div className="text-[10px] text-[#64748B] uppercase font-mono">Current Status</div>
                       <div className="text-xs font-bold mt-1 text-amber-700">{workspace.overview.currentStatus}</div>
                       <div className="text-[10px] text-[#64748B] font-mono mt-0.5">{workspace.overview.priority}</div>
+                      <div className="text-[10px] text-[#64748B] font-mono mt-0.5">
+                        {priorityScoreDescription(workspace)}
+                      </div>
                     </div>
                   </div>
 
@@ -324,12 +339,20 @@ export const CommodityWorkspaceModal: React.FC<CommodityWorkspaceModalProps> = (
                 <div className="space-y-4">
                   <div className="p-4 bg-white border border-[#DCE7F5] rounded-xl flex items-center justify-between shadow-xs">
                     <div>
-                      <div className="text-[#0B1B33] font-bold">Research Backlog Priority: {workspace.overview.priority}</div>
+                      <div className="text-[#0B1B33] font-bold">
+                        {UI_STRINGS.pcbiCommodityDataLab.workspacePriorityLabel}: {workspace.overview.priority}
+                      </div>
+                      <div className="text-[#64748B] text-[11px] mt-0.5">
+                        {priorityScoreDescription(workspace)}
+                      </div>
                       <div className="text-[#64748B] text-[11px] mt-0.5">Status: {workspace.overview.researchStatus} | Last Updated: {workspace.overview.lastUpdated}</div>
                     </div>
-                    <span className="px-3 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[11px] font-semibold">
-                      HIGH IMPACT QUEUE ITEM
-                    </span>
+                    {workspace.overview.priorityReason !== 'GAP_RESOLVED' &&
+                      workspace.overview.customerSpendInr >= HIGH_IMPACT_SPEND_THRESHOLD && (
+                      <span className="px-3 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 font-mono text-[11px] font-semibold">
+                        {UI_STRINGS.pcbiCommodityDataLab.highImpactQueueItem}
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

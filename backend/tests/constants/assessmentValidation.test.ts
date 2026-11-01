@@ -14,7 +14,8 @@ import {
   analystApprovalSchema,
   deliverPackageSchema,
   assessmentDeliverySchema,
-  assessmentAcceptanceSchema
+  assessmentAcceptanceSchema,
+  assessmentReviewGateUpdateSchema
 } from '../../src/constants/assessmentValidation';
 
 const issueMessages = (error: ZodError): string[] => error.issues.map((issue) => issue.message);
@@ -248,6 +249,32 @@ describe('Assessment Validation Schemas (constants/assessmentValidation.ts)', ()
     it('rejects invalid customer email and overlong acknowledgement comments', () => {
       expect(assessmentAcceptanceSchema.safeParse({ acceptedBy: 'invalid' }).success).toBe(false);
       expect(assessmentAcceptanceSchema.safeParse({ acceptanceComment: 'x'.repeat(2001) }).success).toBe(false);
+    });
+  });
+
+  describe('assessmentReviewGateUpdateSchema', () => {
+    it('accepts pending, passed-with-evidence, and blocked-with-reason reviews', () => {
+      expect(assessmentReviewGateUpdateSchema.safeParse({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PENDING' }).success)
+        .toBe(true);
+      expect(assessmentReviewGateUpdateSchema.safeParse({
+        gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED', evidenceReference: 'D1:DV-1'
+      }).success).toBe(true);
+      expect(assessmentReviewGateUpdateSchema.safeParse({
+        gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'BLOCKED', reviewNote: 'Source data needs review'
+      }).success).toBe(true);
+    });
+
+    it('rejects unknown gates, unsupported status, missing evidence, missing blocker note, and oversized fields', () => {
+      expect(assessmentReviewGateUpdateSchema.safeParse({ gateKey: 'UNKNOWN', status: 'PENDING' }).success).toBe(false);
+      expect(assessmentReviewGateUpdateSchema.safeParse({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'DONE' }).success)
+        .toBe(false);
+      expect(assessmentReviewGateUpdateSchema.safeParse({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED' }).success)
+        .toBe(false);
+      expect(assessmentReviewGateUpdateSchema.safeParse({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'BLOCKED' }).success)
+        .toBe(false);
+      expect(assessmentReviewGateUpdateSchema.safeParse({
+        gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED', evidenceReference: 'x'.repeat(513)
+      }).success).toBe(false);
     });
   });
 });

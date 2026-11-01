@@ -7,6 +7,21 @@ import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { unspscOfficialDictionary } from '../../src/data/unspscTaxonomy';
 import { taxonomyRecords } from '../fixtures/taxonomy';
 
+vi.mock('../../src/utils/industryApi', () => ({
+  loadIndustryCatalog: vi.fn().mockResolvedValue({
+    success: true,
+    profiles: [{
+      majorSector: 'Chemical & Petrochemicals', minorSector: 'Specialty Chemicals', sectorCode: 'CHEM-SPEC',
+      tagline: 'D1 chemical profile', description: 'Test fixture', typicalDirectMaterials: ['Catalyst'],
+      typicalPackagingMaterials: ['Drum'], typicalLogisticsCategories: ['Freight'], typicalMroCategories: ['Pump'],
+      characteristicUNSPSCPrefixes: ['12', '14'],
+      benchmarkSpendSplit: { directPct: 56, packagingPct: 18, logisticsPct: 14, mroPct: 12 },
+      categorizationGuidance: 'Test guidance', keyKeywords: ['catalyst']
+    }],
+    presets: []
+  })
+}));
+
 // tests/setup.ts seeds the shared catalog. Replace it so every fixture record appears exactly once.
 beforeAll(() => { unspscOfficialDictionary.splice(0, unspscOfficialDictionary.length, ...taxonomyRecords); });
 

@@ -11,6 +11,7 @@ import type {
   DatasetVersion,
   OrchestrationEmailDelivery,
   OrchestrationNotification,
+  PCBIGapCategory,
   ReportVersion
 } from './types/analysisOrchestration';
 import type {
@@ -25,6 +26,7 @@ import type {
   ReportRow,
   VersionMappingContext
 } from './types/orchestrationD1';
+import type { PCBIGapSourceRow } from './types/orchestrationPcbi';
 import type { QualityGateChecklistBody } from './types/orchestrationValidation';
 import {
   CORRECTION_REQUEST_STATUS_VALUES,
@@ -33,10 +35,12 @@ import {
   NOTIFICATION_RECIPIENT_VALUES,
   NOTIFICATION_SEVERITY_VALUES,
   ORCHESTRATION_DEFAULTS,
+  ORCHESTRATION_ID_PREFIX,
   ORCHESTRATION_NUMERIC,
   AUDIT_ACTOR_ROLE_VALUES,
   REPORT_API_STATUS
 } from './constants/orchestration';
+import { ORCHESTRATION_MESSAGES } from './constants/orchestrationMessages';
 import { qualityGateChecklistSchema } from './constants/orchestrationValidation';
 import {
   formatAnalysisPeriod,
@@ -107,7 +111,7 @@ const mapDatasetVersion = (
   const analysed = context.latestRunVersionId === row.data_version_id;
   return {
     versionId: row.data_version_id,
-    parentVersionId,
+    parentVersionId: row.parent_data_version_id ?? parentVersionId,
     tenantId: context.customerId,
     uploadedBy: row.uploaded_by,
     uploaderRole: ORCHESTRATION_DEFAULTS.datasetUploaderRole,
@@ -120,6 +124,7 @@ const mapDatasetVersion = (
       ? ORCHESTRATION_DEFAULTS.originalVersionSource
       : ORCHESTRATION_DEFAULTS.correctionVersionSource,
     notes: row.notes ?? undefined,
+    correctionReason: row.correction_reason as DatasetVersion['correctionReason'],
     processingStatus: analysed ? ORCHESTRATION_DEFAULTS.processedStatus : ORCHESTRATION_DEFAULTS.pendingStatus,
     validationStatus: validationStatusFor(analysed, context.latestRunGatesPassed),
     // Transaction count is the count recorded at upload. The other counts come from ProcurementTransaction rows.
@@ -136,6 +141,80 @@ export const mapDatasetVersions = (rows: readonly DataVersionRow[], context: Ver
   rows.map((row, index) =>
     mapDatasetVersion(row, index === 0 ? undefined : rows[index - 1].data_version_id, context)
   );
+
+const pcbiGapState = (row: PCBIGapSourceRow): Pick<
+  PCBIGapCategory,
+  'status' | 'resolutionStatus' | 'reasonForReview'
+> => {
+  if (row.action === 'MAP_EXISTING' || row.action === 'ADD_MAP_PCBI') {
+    if (!row.benchmark_source?.trim()) {
+      return {
+        status: 'PCBI_REQUIRED', resolutionStatus: 'PENDING',
+        reasonForReview: ORCHESTRATION_MESSAGES.pcbiSeriesBecameUnavailable(row.target_pcbi_series ?? '')
+      };
+    }
+    return {
+      status: 'PCBI_COVERED', resolutionStatus: 'MAPPED',
+      reasonForReview: ORCHESTRATION_MESSAGES.pcbiMapped(row.target_pcbi_series ?? '')
+    };
+  }
+  if (row.action === 'EXCLUDE') {
+    return {
+      status: 'EXCLUDED_MANUAL_REVIEW', resolutionStatus: 'EXCLUDED',
+      reasonForReview: ORCHESTRATION_MESSAGES.pcbiExcluded(row.exclusion_reason ?? 'OTHER')
+    };
+  }
+  if (row.action === 'MARK_NOT_BENCHMARKABLE') {
+    return {
+      status: 'NOT_BENCHMARKABLE', resolutionStatus: 'EXCLUDED',
+      reasonForReview: ORCHESTRATION_MESSAGES.pcbiExcluded(row.exclusion_notes ?? 'Not benchmarkable')
+    };
+  }
+  if (row.action === 'MARK_SERVICE') {
+    return {
+      status: 'SERVICE_NON_COMMODITY', resolutionStatus: 'EXCLUDED',
+      reasonForReview: ORCHESTRATION_MESSAGES.pcbiExcluded(row.exclusion_notes ?? 'Service or non-commodity')
+    };
+  }
+  if (row.action === 'REQUEST_RESEARCH') {
+    return {
+      status: 'PCBI_REQUIRED', resolutionStatus: 'RESEARCH_REQUESTED',
+      reasonForReview: row.research_notes || ORCHESTRATION_MESSAGES.pcbiResearchRequested
+    };
+  }
+  return {
+    status: 'PCBI_REQUIRED', resolutionStatus: 'PENDING',
+    reasonForReview: ORCHESTRATION_MESSAGES.pcbiNeedsReview
+  };
+};
+
+export const mapPcbiGap = async (row: PCBIGapSourceRow, tenantId: string): Promise<PCBIGapCategory> => {
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(row.category_key));
+  const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+    .slice(0, ORCHESTRATION_NUMERIC.pcbiGapIdHashLength);
+  const state = pcbiGapState(row);
+  return {
+    gapId: `${ORCHESTRATION_ID_PREFIX.PCBI_GAP}${hash}`,
+    tenantId,
+    itemCategory: row.item_category,
+    relevantClassification: row.relevant_classification,
+    customerSpendInrCr: roundTo(Number(row.spend_cr) || 0, ORCHESTRATION_NUMERIC.spendCrDecimals),
+    transactionCount: Number(row.transaction_count) || 0,
+    supplierCount: Number(row.supplier_count) || 0,
+    plantCount: Number(row.plant_count) || 0,
+    existingPcbiMapping: row.target_pcbi_series ?? undefined,
+    benchmarkSource: row.benchmark_source ?? undefined,
+    pcbiQualityRating: row.quality_rating ?? undefined,
+    status: state.status,
+    reasonForReview: state.reasonForReview,
+    estimatedSpendImpactCr: roundTo(Number(row.spend_cr) || 0, ORCHESTRATION_NUMERIC.spendCrDecimals),
+    resolutionStatus: state.resolutionStatus,
+    exclusionReason: row.exclusion_reason ?? undefined,
+    exclusionNotes: row.exclusion_notes ?? undefined,
+    resolvedBy: row.resolved_by ?? undefined,
+    resolvedAt: row.resolved_at ?? undefined
+  };
+};
 
 export const buildStatsByDocument = (rows: readonly ProcurementStatsRow[]): ReadonlyMap<string, ProcurementStatsRow> =>
   new Map(rows.map((row) => [row.source_document_id, row] as const));

@@ -5,7 +5,7 @@
  * Admin-only operations hub for PCBI Quality Gates, Data Correction & Report Approvals
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Layers,
   Search,
@@ -26,10 +26,13 @@ import {
   X,
   Ban
 } from 'lucide-react';
-import { UI_STRINGS } from '../../../constants';
+import { ASSESSMENT_UPLOAD_ACCEPT, ASSESSMENT_UPLOAD_MAX_MB, UI_STRINGS } from '../../../constants';
 import { orchestrationApi } from '../../../utils/orchestrationApi';
+import { prepareCorrectedDatasetFile } from '../../../utils/correctedDatasetFile';
 import { frontendLogger } from '../../../utils/logger';
+import { EVIDENCE_DOWNLOAD_CONSTANTS } from '../../../constants/evidenceDownload';
 import { EvidenceWorkbooksPanel } from './EvidenceWorkbooksPanel';
+import type { DeclarativeDownloadPayload } from '../../../types/components';
 import type {
   AnalysisJob,
   AnalysisJobDetailPayload,
@@ -42,7 +45,8 @@ import type {
   AnalysisStatusBadge,
   AdminQualityGateChecklist,
   AdminOrchestrationKPIs,
-  DataVersionDiffSummary
+  DataVersionDiffSummary,
+  DatasetVersion
 } from '../../../types/analysisOrchestration';
 import { EXCLUSION_REASONS, REANALYSIS_REASONS } from '../../../constants/analysisOrchestration';
 
@@ -119,11 +123,14 @@ export function AnalysisControlCenter(): React.ReactElement {
 
   // Data Correction Modal
   const [isCorrectionModalOpen, setIsCorrectionModalOpen] = useState(false);
-  const [correctedFileName, setCorrectedFileName] = useState('');
+  const [correctedDatasetFile, setCorrectedDatasetFile] = useState<File | null>(null);
   const [reanalysisReason, setReanalysisReason] = useState<ReanalysisReason>('INCORRECT_CATEGORY_MAPPING');
   const [reanalysisNotes, setReanalysisNotes] = useState('');
   const [lastDiff, setLastDiff] = useState<DataVersionDiffSummary | null>(null);
   const [submittingUpload, setSubmittingUpload] = useState(false);
+  const [downloadingVersionId, setDownloadingVersionId] = useState<string | null>(null);
+  const [downloadPayload, setDownloadPayload] = useState<DeclarativeDownloadPayload | null>(null);
+  const downloadLinkRef = useRef<HTMLAnchorElement>(null);
 
   // Quality Gate Checklist State
   const [checklist, setChecklist] = useState<AdminQualityGateChecklist>({
@@ -136,6 +143,20 @@ export function AnalysisControlCenter(): React.ReactElement {
   const [submittingApproval, setSubmittingApproval] = useState(false);
 
   const activeReport = getActiveReport(jobDetails?.reports ?? []);
+  const activeDatasetVersion = jobDetails?.versions.find(
+    (version) => version.versionId === jobDetails.job.currentDataVersionId
+  );
+
+  useEffect(() => {
+    if (!downloadPayload) return undefined;
+    downloadLinkRef.current?.click();
+    const href = downloadPayload.href;
+    const timeoutId = window.setTimeout(() => URL.revokeObjectURL(href), EVIDENCE_DOWNLOAD_CONSTANTS.REVOKE_DELAY_MS);
+    return () => {
+      window.clearTimeout(timeoutId);
+      URL.revokeObjectURL(href);
+    };
+  }, [downloadPayload]);
 
   // Load KPI & Job Directory
   const loadData = useCallback(async () => {
@@ -179,6 +200,22 @@ export function AnalysisControlCenter(): React.ReactElement {
     }
   }, []);
 
+  const handleDownloadDataset = async (version: DatasetVersion): Promise<void> => {
+    if (!selectedJobId) return;
+    setDownloadingVersionId(version.versionId);
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      const blob = await orchestrationApi.downloadDataset(selectedJobId, version.versionId, version.fileName);
+      setDownloadPayload({ href: URL.createObjectURL(blob), filename: version.fileName });
+      setActionSuccess(UI_STRINGS.orchestration.datasetDownloadStarted(version.fileName));
+    } catch (error: unknown) {
+      setActionError(describeActionFailure('downloadDataset', error, UI_STRINGS.orchestration.errorDownloadDataset));
+    } finally {
+      setDownloadingVersionId(null);
+    }
+  };
+
   const handleSelectJob = (jobId: string): void => {
     setSelectedJobId(jobId);
     loadJobWorkspace(jobId);
@@ -218,12 +255,17 @@ export function AnalysisControlCenter(): React.ReactElement {
   const handleUploadCorrectedData = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!selectedJobId) return;
+    if (!correctedDatasetFile) {
+      setActionError(UI_STRINGS.orchestration.correctedDatasetFileRequired);
+      return;
+    }
 
     try {
       setSubmittingUpload(true);
       setActionError(null);
+      const filePayload = await prepareCorrectedDatasetFile(correctedDatasetFile);
       const res = await orchestrationApi.uploadCorrectedDataset(selectedJobId, {
-        fileName: correctedFileName || UI_STRINGS.orchestration.defaultCorrectedFileName,
+        ...filePayload,
         reason: reanalysisReason,
         notes: reanalysisNotes || undefined
       });
@@ -232,7 +274,7 @@ export function AnalysisControlCenter(): React.ReactElement {
         setActionSuccess(res.message);
         if (res.diff) setLastDiff(res.diff);
         setIsCorrectionModalOpen(false);
-        setCorrectedFileName('');
+        setCorrectedDatasetFile(null);
         setReanalysisNotes('');
         await loadJobWorkspace(selectedJobId);
         await loadData();
@@ -370,6 +412,11 @@ export function AnalysisControlCenter(): React.ReactElement {
 
   return (
     <div data-testid="analysis-control-center" className="space-y-6">
+      {downloadPayload && (
+        <a ref={downloadLinkRef} href={downloadPayload.href} download={downloadPayload.filename} className="sr-only">
+          {UI_STRINGS.orchestration.datasetDownloadLink}
+        </a>
+      )}
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DCE7F5] pb-5">
         <div>
@@ -801,12 +848,14 @@ export function AnalysisControlCenter(): React.ReactElement {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    disabled
-                    aria-describedby="dataset-download-unavailable"
+                    onClick={() => activeDatasetVersion && void handleDownloadDataset(activeDatasetVersion)}
+                    disabled={!activeDatasetVersion || downloadingVersionId !== null}
+                    aria-describedby="dataset-download-help"
                     className="px-3.5 py-2 rounded-lg border border-[#DCE7F5] bg-white text-[#0B1B33] text-xs font-bold flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Download size={14} className="text-[#0284C7]" />
-                    <span>{orchestrationStrings.btnDownloadForCorrection}</span>
+                    <span>{downloadingVersionId === activeDatasetVersion?.versionId
+                      ? orchestrationStrings.downloadingDataset : orchestrationStrings.btnDownloadForCorrection}</span>
                   </button>
 
                   <button
@@ -820,8 +869,8 @@ export function AnalysisControlCenter(): React.ReactElement {
                 </div>
               </div>
 
-              <p id="dataset-download-unavailable" className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                {orchestrationStrings.datasetDownloadUnavailable}
+              <p id="dataset-download-help" className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                {orchestrationStrings.datasetDownloadHelp}
               </p>
 
               {lastDiff && (
@@ -1198,14 +1247,18 @@ export function AnalysisControlCenter(): React.ReactElement {
 
             <form onSubmit={handleUploadCorrectedData} className="p-5 space-y-4">
               <div>
-                <label className="block font-bold mb-1">{orchestrationStrings.fieldFileName}</label>
-                <input
-                  type="text"
-                  value={correctedFileName}
-                  onChange={(e) => setCorrectedFileName(e.target.value)}
-                  placeholder={orchestrationStrings.placeholderFileName}
-                  className="w-full px-3 py-2 border rounded-lg font-mono"
-                />
+                <label className="block font-bold mb-1">
+                  {orchestrationStrings.fieldFileName}
+                  <input
+                    type="file"
+                    accept={ASSESSMENT_UPLOAD_ACCEPT}
+                    onChange={(event) => setCorrectedDatasetFile(event.target.files?.[0] || null)}
+                    className="mt-1 w-full px-3 py-2 border rounded-lg font-mono"
+                  />
+                </label>
+                <p className="mt-1 text-slate-500">
+                  {orchestrationStrings.correctedDatasetFileHint(ASSESSMENT_UPLOAD_MAX_MB)}
+                </p>
               </div>
 
               <div>

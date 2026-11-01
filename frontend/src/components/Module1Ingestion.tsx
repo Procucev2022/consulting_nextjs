@@ -18,6 +18,8 @@ import { ValidationPreCheckSection } from './ValidationPreCheckSection';
 import { IngestionUploadSection } from './IngestionUploadSection';
 import { PCBIModuleWarningBanner } from './admin/pcbi/PCBIModuleWarningBanner';
 import { UI_STRINGS } from '../constants';
+import frontendLogger from '../utils/logger';
+import { apiClient } from '../utils/api';
 
 export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   tenant,
@@ -55,44 +57,21 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   const [activeDatasetType, setActiveDatasetType] = useState<DatasetType>('Purchase History');
   const [spendPeriod, setSpendPeriod] = useState<string>('All Available Transaction Data');
 
-  // Live Real-Time Financial Exchange Rates
+  // Informational exchange rates come from the D1 reference endpoint only.
   const [liveFXRates, setLiveFXRates] = useState<Record<string, { currentRate: number; name?: string }> | null>(null);
   const [isLoadingFX, setIsLoadingFX] = useState<boolean>(true);
+  const availableFXRateEntries = Object.entries(liveFXRates ?? {}).filter(([currency]) => currency !== 'INR');
 
   React.useEffect(() => {
     let isMounted = true;
     async function loadLiveRates() {
       try {
-        const res = await fetch('/api/currency');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.data && isMounted) {
-            setLiveFXRates(json.data);
-            setIsLoadingFX(false);
-            return;
-          }
-        }
-      } catch {
-        // Fallback to direct financial market API query
-      }
-      try {
-        const openRes = await fetch('https://open.er-api.com/v6/latest/USD');
-        if (openRes.ok) {
-          const openData = await openRes.json();
-          const inrPerUsd = openData.rates?.INR || 83.8;
-          if (isMounted) {
-            setLiveFXRates({
-              USD: { currentRate: Number(inrPerUsd.toFixed(2)), name: 'US Dollar' },
-              EUR: { currentRate: Number((inrPerUsd / (openData.rates?.EUR || 1)).toFixed(2)), name: 'Euro' },
-              GBP: { currentRate: Number((inrPerUsd / (openData.rates?.GBP || 1)).toFixed(2)), name: 'British Pound' },
-              AED: { currentRate: Number((inrPerUsd / (openData.rates?.AED || 3.6725)).toFixed(2)), name: 'UAE Dirham' },
-              JPY: { currentRate: Number((inrPerUsd / (openData.rates?.JPY || 150)).toFixed(2)), name: 'Japanese Yen' },
-              SGD: { currentRate: Number((inrPerUsd / (openData.rates?.SGD || 1.35)).toFixed(2)), name: 'Singapore Dollar' }
-            });
-            setIsLoadingFX(false);
-          }
-        }
-      } catch {
+        const rates = await apiClient.getCurrencyRates();
+        if (isMounted) setLiveFXRates(rates);
+      } catch (error: unknown) {
+        frontendLogger.warn('Unable to load D1 currency reference rates', { action: 'module1.loadCurrencyRates' }, error);
+        if (isMounted) setLiveFXRates(null);
+      } finally {
         if (isMounted) setIsLoadingFX(false);
       }
     }
@@ -103,7 +82,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
   }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores ?? (tenant.total_spend_evaluated_inr ?? 0);
+  const totalEvaluatedSpendInrCr = ingestionQueue?.[0]?.converted_inr_crores ?? tenant.total_spend_evaluated_inr;
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -150,7 +129,7 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
       base_currency: config.currency,
       region: config.region,
       total_spend_evaluated: config.estimatedSpend,
-      total_spend_evaluated_inr: Number(((config.estimatedSpend * 83.8) / 10000000).toFixed(2)),
+      total_spend_evaluated_inr: Number((config.estimatedSpend / 10000000).toFixed(2)),
       major_sector: config.majorSector || tenant.major_sector,
       minor_sector: config.minorSector || tenant.minor_sector
     });
@@ -210,33 +189,31 @@ export const Module1Ingestion: React.FC<Module1IngestionProps> = ({
       <div className="p-3.5 rounded-2xl bg-white dark:bg-white border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-300 shrink-0">
           <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxRatesLabel}</span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1">
+          <span className="font-bold text-slate-900 dark:text-white">{UI_STRINGS.module1.liveFxHeading}</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-semibold flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-            Reference Market Rates — Informational Only
+              {UI_STRINGS.module1.liveFxRatesLabel}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] overflow-x-auto">
           {isLoadingFX ? (
             <span className="text-slate-400 font-mono text-[11px] flex items-center space-x-1.5">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping inline-block" />
-              <span>Connecting live market feed...</span>
+              <span>{UI_STRINGS.module1.fxReferenceLoading}</span>
             </span>
-          ) : liveFXRates ? (
-            Object.entries(liveFXRates)
-              .filter(([k]) => k !== 'INR')
-              .map(([curr, fx]) => (
+            ) : availableFXRateEntries.length > 0 ? (
+              availableFXRateEntries.map(([curr, fx]) => (
                 <span
                   key={curr}
                   className="px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-[#F8FBFE] border border-slate-200 dark:border-slate-800 flex items-center space-x-1.5"
-                  title={`${fx.name || curr} live rate to INR`}
+                  title={UI_STRINGS.module1.fxReferenceTooltip(fx.name || curr)}
                 >
                   <span className="font-bold text-cyan-700 dark:text-cyan-400">{curr}/INR:</span>
                   <span className="font-black text-slate-900 dark:text-white">₹{fx.currentRate.toFixed(2)}</span>
                 </span>
               ))
           ) : (
-            <span className="text-slate-400 font-mono text-[11px]">Live feed unavailable</span>
+            <span className="text-slate-400 font-mono text-[11px]">{UI_STRINGS.module1.fxReferenceUnavailable}</span>
           )}
         </div>
       </div>

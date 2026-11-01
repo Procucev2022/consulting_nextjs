@@ -1,20 +1,17 @@
-/**
- * GET handlers for the Executive Brief: report JSON, audit Markdown, PDF and PPTX downloads, and the 501 responses for
- * the Opportunity Brief downloads. These routes are public because the executive brief page sends no token.
- */
+/** D1-backed Executive Brief report, audit, and export handlers. */
 import logger from './utils/logger';
-import { DEFAULT_CLIENT_PROFILE } from './constants/executiveBriefConstants';
 import { EXECUTIVE_BRIEF_ARTIFACT_FILENAMES, EXECUTIVE_BRIEF_CONTENT_TYPES } from './constants/executiveBriefExportConstants';
+import { EXECUTIVE_BRIEF_HTTP_STATUS } from './constants/executiveBriefRouteConstants';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT, EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from './constants/executiveOpportunityBriefConstants';
+import { executiveBriefEmailBodySchema } from './constants/executiveBriefValidation';
 import {
-  EXECUTIVE_BRIEF_HTTP_STATUS,
-  EXECUTIVE_BRIEF_MESSAGES
-} from './constants/executiveBriefRouteConstants';
-import { executiveBriefClientQuerySchema } from './constants/executiveBriefValidation';
-import { EXECUTIVE_OPPORTUNITY_BRIEF_GAP } from './constants/executiveOpportunityBriefConstants';
-import { renderExecutiveBriefArtifact } from './services/executiveBriefArtifactService';
-import { formatExecutiveBriefAuditMarkdown } from './services/executiveBriefMarkdown';
-import { resolveCertifiedClientName, toReportDate } from './services/executiveBriefMetadataService';
-import { assembleExecutiveBriefReport } from './services/executiveBriefReportService';
+  executiveOpportunityBriefContentType,
+  executiveOpportunityBriefFilename,
+  formatExecutiveOpportunityBriefAuditMarkdown,
+  generateExecutiveOpportunityBriefPdf,
+  generateExecutiveOpportunityBriefPptx
+} from './services/executiveOpportunityBriefExport';
+import { loadExecutiveOpportunityBriefFromD1 } from './services/executiveOpportunityBriefD1';
 import {
   executiveBriefErrorResponse,
   executiveBriefFileResponse,
@@ -23,193 +20,296 @@ import {
   resolveExecutiveBriefRequestId,
   toValidationIssues
 } from './workerD1ExecutiveBriefResponses';
-import type { ExecutiveBriefDownloadFormat, ExecutiveBriefScopeResult } from './types/executiveBriefRoutes';
+import type { ExecutiveBriefDownloadFormat } from './types/executiveBriefRoutes';
+import type { ExecutiveOpportunityBriefRequestLoad } from './types/executiveOpportunityBrief';
+import type { CloudflareEnvironment } from './types/cloudflare';
+import { authenticateWorkerUser } from './workerAuth';
+import { sendCommercialEmail } from './services/workerCommercialShared';
+import { authorizeExecutiveBriefAdmin } from './workerD1ExecutiveBriefAuth';
 
 const encoder = new TextEncoder();
 
-/**
- * Validates the optional client query parameter and resolves the certified client and the report date.
- * An omitted client resolves to the certified client. Any other client returns 404.
- */
-const resolveScope = (request: Request, url: URL, requestId: string): ExecutiveBriefScopeResult => {
-  const parsed = executiveBriefClientQuerySchema.safeParse(Object.fromEntries(url.searchParams));
-  if (!parsed.success) {
-    logger.warn('Rejected executive brief query', {
+const failureForMissingData = (
+  request: Request,
+  requestId: string,
+  reason: 'no-tenant' | 'ambiguous-tenant' | 'no-transactions'
+): Response => {
+  const status = reason === 'ambiguous-tenant'
+    ? EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT
+    : EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND;
+  const messages = {
+    'no-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTenant,
+    'ambiguous-tenant': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.ambiguousTenant,
+    'no-transactions': EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.noTransactions
+  };
+  return executiveBriefErrorResponse(request, requestId, status, messages[reason], { reason });
+};
+
+const loadReport = async (
+  request: Request,
+  environment: CloudflareEnvironment,
+  action: string
+): Promise<ExecutiveOpportunityBriefRequestLoad> => {
+  const requestId = resolveExecutiveBriefRequestId(request);
+  const startedAt = Date.now();
+  const authorization = await authorizeExecutiveBriefAdmin(request, environment);
+  if (!authorization.ok) {
+    logger.warn('Rejected executive brief report request without administrator access', {
       requestId,
-      action: 'query',
-      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST,
-      issueCount: parsed.error.issues.length
-    });
-    return {
-      ok: false,
-      response: executiveBriefValidationResponse(request, requestId, toValidationIssues(parsed.error.issues))
-    };
-  }
-  const requested = parsed.data.client ?? DEFAULT_CLIENT_PROFILE.clientName;
-  const clientName = resolveCertifiedClientName(requested);
-  if (clientName === null) {
-    logger.warn('Requested client has no certified executive brief', {
-      requestId,
-      action: 'query',
-      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND,
-      client: requested
+      action,
+      statusCode: authorization.status
     });
     return {
       ok: false,
       response: executiveBriefErrorResponse(
         request,
         requestId,
-        EXECUTIVE_BRIEF_HTTP_STATUS.NOT_FOUND,
-        EXECUTIVE_BRIEF_MESSAGES.clientNotCertified(requested, DEFAULT_CLIENT_PROFILE.clientName)
+        authorization.status,
+        authorization.message
       )
     };
   }
-  return { ok: true, scope: { clientName, reportDate: toReportDate(new Date()) } };
-};
-
-const renderFailure = (
-  request: Request,
-  requestId: string,
-  label: string,
-  action: string,
-  error: unknown,
-  startedAt: number
-): Response => {
-  logger.error('Failed to render executive brief', {
-    requestId,
-    action,
-    statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
-    durationMs: Date.now() - startedAt
-  }, error);
-  return executiveBriefErrorResponse(
-    request,
-    requestId,
-    EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
-    EXECUTIVE_BRIEF_MESSAGES.renderFailed(label, requestId)
-  );
-};
-
-export const handleExecutiveBriefReport = (request: Request, url: URL): Response => {
-  const requestId = resolveExecutiveBriefRequestId(request);
-  const startedAt = Date.now();
-  const scopeResult = resolveScope(request, url, requestId);
-  if (!scopeResult.ok) {
-    return scopeResult.response;
-  }
-  try {
-    const report = assembleExecutiveBriefReport(scopeResult.scope.clientName, scopeResult.scope.reportDate);
-    logger.info('Served executive brief report', {
+  if (environment.DB === undefined) {
+    logger.warn(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable, {
       requestId,
-      action: 'report',
-      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
-      client: report.clientProfile.clientName,
-      reconciled: report.validationChecklist.financialReconciliation,
-      durationMs: Date.now() - startedAt
+      action,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE
     });
-    return executiveBriefJsonResponse(request, requestId, EXECUTIVE_BRIEF_HTTP_STATUS.OK, { success: true, data: report });
+    return {
+      ok: false,
+      response: executiveBriefErrorResponse(
+        request,
+        requestId,
+        EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+        EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
+      )
+    };
+  }
+  try {
+    const loaded = await loadExecutiveOpportunityBriefFromD1(environment.DB);
+    if (!loaded.ok) {
+      return { ok: false, response: failureForMissingData(request, requestId, loaded.reason) };
+    }
+    return { ok: true, report: loaded.report, requestId, startedAt };
   } catch (error: unknown) {
-    return renderFailure(request, requestId, 'report data', 'report', error, startedAt);
+    logger.error(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.queryFailed, {
+      requestId,
+      action,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      durationMs: Date.now() - startedAt
+    }, error);
+    return {
+      ok: false,
+      response: executiveBriefErrorResponse(
+        request,
+        requestId,
+        EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+        EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.reportFailed(requestId)
+      )
+    };
   }
 };
 
-export const handleExecutiveBriefAudit = (request: Request, url: URL): Response => {
-  const requestId = resolveExecutiveBriefRequestId(request);
-  const startedAt = Date.now();
-  const scopeResult = resolveScope(request, url, requestId);
-  if (!scopeResult.ok) {
-    return scopeResult.response;
-  }
+export const handleExecutiveBriefReport = async (
+  request: Request,
+  environment: CloudflareEnvironment
+): Promise<Response> => {
+  const loaded = await loadReport(request, environment, 'executiveBrief.report');
+  if (!loaded.ok) return loaded.response;
+  logger.info(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.servedReport, {
+    requestId: loaded.requestId,
+    action: 'executiveBrief.report',
+    statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
+    tenantId: loaded.report.tenant.tenantId,
+    transactionCount: loaded.report.metrics.transactionCount,
+    opportunityCount: loaded.report.metrics.opportunityCount,
+    durationMs: Date.now() - loaded.startedAt
+  });
+  return executiveBriefJsonResponse(request, loaded.requestId, EXECUTIVE_BRIEF_HTTP_STATUS.OK, {
+    success: true,
+    data: loaded.report
+  });
+};
+
+export const handleExecutiveBriefAudit = async (
+  request: Request,
+  environment: CloudflareEnvironment
+): Promise<Response> => {
+  const loaded = await loadReport(request, environment, 'executiveBrief.audit');
+  if (!loaded.ok) return loaded.response;
   try {
-    const report = assembleExecutiveBriefReport(scopeResult.scope.clientName, scopeResult.scope.reportDate);
-    const markdown = formatExecutiveBriefAuditMarkdown(report);
-    logger.info('Served executive brief audit', {
-      requestId,
-      action: 'audit',
+    const audit = formatExecutiveOpportunityBriefAuditMarkdown(loaded.report);
+    logger.info('Served D1-backed executive brief audit', {
+      requestId: loaded.requestId,
+      action: 'executiveBrief.audit',
       statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
-      client: report.clientProfile.clientName,
-      durationMs: Date.now() - startedAt
+      tenantId: loaded.report.tenant.tenantId,
+      durationMs: Date.now() - loaded.startedAt
     });
     return executiveBriefFileResponse(
       request,
-      requestId,
-      encoder.encode(markdown),
+      loaded.requestId,
+      encoder.encode(audit),
       EXECUTIVE_BRIEF_CONTENT_TYPES.MARKDOWN,
       EXECUTIVE_BRIEF_ARTIFACT_FILENAMES.AUDIT
     );
   } catch (error: unknown) {
-    return renderFailure(request, requestId, 'audit', 'audit', error, startedAt);
+    logger.error(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.queryFailed, {
+      requestId: loaded.requestId,
+      action: 'executiveBrief.audit',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      durationMs: Date.now() - loaded.startedAt
+    }, error);
+    return executiveBriefErrorResponse(
+      request,
+      loaded.requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed('audit', loaded.requestId)
+    );
   }
 };
 
-/**
- * Serves the PDF or PPTX. Export is blocked (409) when the financial reconciliation fails, so a file that disagrees
- * with the certified figures is never served.
- */
-export const handleExecutiveBriefDownload = async (
+export const handleExecutiveBriefDownload = (
   request: Request,
-  url: URL,
+  environment: CloudflareEnvironment,
   format: ExecutiveBriefDownloadFormat
+): Promise<Response> => handleOpportunityBriefDownload(request, environment, format);
+
+export const handleOpportunityBriefReport = handleExecutiveBriefReport;
+
+export const handleExecutiveBriefEmail = async (
+  request: Request,
+  environment: CloudflareEnvironment
 ): Promise<Response> => {
   const requestId = resolveExecutiveBriefRequestId(request);
   const startedAt = Date.now();
-  const action = `download.${format}`;
-  const scopeResult = resolveScope(request, url, requestId);
-  if (!scopeResult.ok) {
-    return scopeResult.response;
-  }
+  let body: unknown;
   try {
-    const report = assembleExecutiveBriefReport(scopeResult.scope.clientName, scopeResult.scope.reportDate);
-    if (!report.validationChecklist.financialReconciliation) {
-      logger.warn('Blocked executive brief export by financial reconciliation', {
+    body = await request.json();
+  } catch {
+    return executiveBriefValidationResponse(request, requestId, [{
+      path: 'body',
+      message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.invalidEmailRequest
+    }]);
+  }
+  const parsed = executiveBriefEmailBodySchema.safeParse(body);
+  if (!parsed.success) {
+    logger.warn('Rejected invalid executive brief email request', {
+      requestId,
+      action: 'executiveBrief.email',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.BAD_REQUEST,
+      issueCount: parsed.error.issues.length
+    });
+    return executiveBriefValidationResponse(request, requestId, toValidationIssues(parsed.error.issues));
+  }
+  const auth = await authenticateWorkerUser(request, environment);
+  if (!auth.user) {
+    logger.warn('Rejected executive brief email request without an active account', {
+      requestId,
+      action: 'executiveBrief.email',
+      statusCode: auth.status
+    });
+    return executiveBriefErrorResponse(
+      request,
+      requestId,
+      auth.status,
+      auth.message ?? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed(requestId)
+    );
+  }
+  const loaded = await loadReport(request, environment, 'executiveBrief.email');
+  if (!loaded.ok) return loaded.response;
+  try {
+    const subject = `${EXECUTIVE_OPPORTUNITY_BRIEF_ARTIFACT.PPTX_TITLE} - ${loaded.report.tenant.enterpriseName}`;
+    const content = JSON.stringify(loaded.report, null, 2);
+    const delivery = await sendCommercialEmail(environment, parsed.data.buyerEmail, subject, content);
+    if (!delivery.sent) {
+      logger.error('Executive brief email delivery is unavailable', {
         requestId,
-        action,
-        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT
+        action: 'executiveBrief.email',
+        statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+        tenantId: loaded.report.tenant.tenantId,
+        durationMs: Date.now() - startedAt
       });
       return executiveBriefErrorResponse(
         request,
         requestId,
-        EXECUTIVE_BRIEF_HTTP_STATUS.CONFLICT,
-        EXECUTIVE_BRIEF_MESSAGES.blocked
+        EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+        delivery.message ?? EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed(requestId)
       );
     }
-    const artifact = await renderExecutiveBriefArtifact(format, report);
-    logger.info('Served executive brief download', {
+    logger.info('Sent D1-backed executive brief by email', {
       requestId,
-      action,
+      action: 'executiveBrief.email',
       statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
-      format,
-      client: report.clientProfile.clientName,
-      bytes: artifact.body.byteLength,
+      tenantId: loaded.report.tenant.tenantId,
+      recipient: parsed.data.buyerEmail,
+      userId: auth.user.id,
       durationMs: Date.now() - startedAt
     });
-    return executiveBriefFileResponse(
+    return executiveBriefJsonResponse(request, requestId, EXECUTIVE_BRIEF_HTTP_STATUS.OK, {
+      success: true,
+      message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailSent
+    });
+  } catch (error: unknown) {
+    logger.error('Failed to email D1-backed executive brief', {
+      requestId,
+      action: 'executiveBrief.email',
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      tenantId: loaded.report.tenant.tenantId,
+      durationMs: Date.now() - startedAt
+    }, error);
+    return executiveBriefErrorResponse(
       request,
       requestId,
-      artifact.body,
-      artifact.contentType,
-      artifact.downloadFilename
+      EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.emailFailed(requestId)
     );
-  } catch (error: unknown) {
-    return renderFailure(request, requestId, format.toUpperCase(), action, error, startedAt);
   }
 };
 
-/**
- * The Opportunity Brief generator is not ported. The route answers 501 with the gap instead of a placeholder file.
- */
-export const handleOpportunityBriefGap = (request: Request, format: ExecutiveBriefDownloadFormat): Response => {
-  const requestId = resolveExecutiveBriefRequestId(request);
-  logger.warn('Executive Opportunity Brief requested but not ported to the Worker', {
-    requestId,
-    action: `opportunityBrief.${format}`,
-    statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.NOT_IMPLEMENTED,
-    format
-  });
-  return executiveBriefErrorResponse(
-    request,
-    requestId,
-    EXECUTIVE_BRIEF_HTTP_STATUS.NOT_IMPLEMENTED,
-    EXECUTIVE_OPPORTUNITY_BRIEF_GAP.message,
-    { format, gap: EXECUTIVE_OPPORTUNITY_BRIEF_GAP }
-  );
+export const handleOpportunityBriefDownload = async (
+  request: Request,
+  environment: CloudflareEnvironment,
+  format: ExecutiveBriefDownloadFormat
+): Promise<Response> => {
+  const loaded = await loadReport(request, environment, `opportunityBrief.${format}`);
+  if (!loaded.ok) return loaded.response;
+  try {
+    const artifact = format === 'pdf'
+      ? generateExecutiveOpportunityBriefPdf(loaded.report)
+      : await generateExecutiveOpportunityBriefPptx(loaded.report);
+    const reportDate = loaded.report.generatedAt.slice(0, 10);
+    const filename = executiveOpportunityBriefFilename(loaded.report.tenant.enterpriseName, format, reportDate);
+    logger.info(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.servedDownload, {
+      requestId: loaded.requestId,
+      action: `opportunityBrief.${format}`,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.OK,
+      tenantId: loaded.report.tenant.tenantId,
+      format,
+      bytes: artifact.byteLength,
+      durationMs: Date.now() - loaded.startedAt
+    });
+    return executiveBriefFileResponse(
+      request,
+      loaded.requestId,
+      artifact,
+      executiveOpportunityBriefContentType(format),
+      filename
+    );
+  } catch (error: unknown) {
+    logger.error(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.queryFailed, {
+      requestId: loaded.requestId,
+      action: `opportunityBrief.${format}`,
+      statusCode: EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      format,
+      durationMs: Date.now() - loaded.startedAt
+    }, error);
+    return executiveBriefErrorResponse(
+      request,
+      loaded.requestId,
+      EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR,
+      EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.exportFailed(format, loaded.requestId),
+      { format }
+    );
+  }
 };

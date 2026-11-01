@@ -21,9 +21,11 @@ import {
 } from 'lucide-react';
 import { PCBIStatusBadge } from './PCBIStatusBadge';
 import { pcbiCommodityDataLabApi } from '../../../utils/pcbiCommodityDataLabApi';
+import { encodePCBIFileBase64 } from '../../../utils/pcbiSourceFile';
 import frontendLogger from '../../../utils/logger';
+import { UI_STRINGS } from '../../../constants/uiStrings';
 import type { CommodityPCBIUploadWorkflowModalProps } from '../../../types/pcbiDataLibraryComponents';
-import type { CommodityResearchQueueRow } from '../../../types/pcbiCommodityDataLab';
+import type { CommodityResearchQueueRow, CommoditySourceEvidenceObject, CommodityWorkspaceDetail } from '../../../types/pcbiCommodityDataLab';
 
 export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkflowModalProps> = ({
   isOpen,
@@ -32,48 +34,61 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
   onComplete
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [commodity] = useState<CommodityResearchQueueRow | null>(initialCommodity || null);
+  const [source, setSource] = useState<CommoditySourceEvidenceObject | null>(null);
+  const [workspace, setWorkspace] = useState<CommodityWorkspaceDetail | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [sourceName, setSourceName] = useState<string>('Minerals & Metals Review Weekly Assessment');
-  const [publisher, setPublisher] = useState<string>('Binani Commercial Co. / MMR');
-  const [url, setUrl] = useState<string>('https://www.mmronline.com/archives');
+  const [sourceName, setSourceName] = useState<string>('');
+  const [publisher, setPublisher] = useState<string>('');
+  const [url, setUrl] = useState<string>('');
   const [fileType, setFileType] = useState<'XLSX' | 'XLS' | 'CSV' | 'PDF' | 'JSON' | 'TXT'>('PDF');
   const [approvalAction, setApprovalAction] = useState<'APPROVE' | 'REJECT' | 'REQUEST_CORRECTION'>('APPROVE');
-  const [comments, setComments] = useState<string>('Governance checks verified.');
+  const [comments, setComments] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  if (!isOpen || !initialCommodity) return null;
+  const activeCommodity: CommodityResearchQueueRow = initialCommodity;
 
-  const activeCommodity: CommodityResearchQueueRow = commodity || {
-    commodity: 'Ferro Molybdenum 65%',
-    commodityId: 'COM-MET-FMO',
-    module2Classification: 'METALS_AND_ALLOYS',
-    unspsc: '30102900',
-    customerSpend: 12500000,
-    customerSpendCr: '₹1.25 Cr',
-    transactionCount: 65,
-    pcbiId: 'PCBI-FEMO-65-001',
-    seriesId: 'SER-IND-FEMO-65-M',
-    currentStatus: 'PARTIAL_HISTORY',
-    requiredHistory: '75 months (2020-04 to 2026-06)',
-    availableHistory: '18 observations / 32 months (Under Review)',
-    requiredFrequency: 'WEEKLY',
-    availableFrequency: 'MONTHLY',
-    sourceStatus: 'SOURCE_UNVERIFIED',
-    methodologyStatus: 'METHODOLOGY_PENDING',
-    priority: 'P1 — Critical Coverage Gap',
-    researchStatus: 'IN_PROGRESS',
-    lastUpdated: new Date().toISOString(),
-    action: 'OPEN WORKSPACE'
-  };
-
-  const handleNext = (): void => {
+  const handleNext = async (): Promise<void> => {
     setErrorMessage(null);
-    if (currentStep === 3 && !uploadedFile) {
-      // Mock staged file for workflow demo
-      const mockFile = new File(['mock content'], 'MMR_FeMo60_Historical_2021_2024.pdf', { type: 'application/pdf' });
-      setUploadedFile(mockFile);
+    if (currentStep === 4 && !source) {
+      if (!uploadedFile) {
+        setErrorMessage(UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.evidenceFileRequired);
+        return;
+      }
+      if (!sourceName.trim() || !publisher.trim()) {
+        setErrorMessage(UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceMetadataRequired);
+        return;
+      }
+      setIsUploading(true);
+      try {
+        const uploadResult = await pcbiCommodityDataLabApi.uploadCommoditySource({
+          commodityId: activeCommodity.commodityId,
+          pcbiId: activeCommodity.pcbiId,
+          seriesId: activeCommodity.seriesId,
+          sourceName: sourceName.trim(),
+          publisher: publisher.trim(),
+          url: url.trim() || undefined,
+          documentName: uploadedFile.name,
+          fileType,
+          fileBase64: await encodePCBIFileBase64(uploadedFile),
+          geography: activeCommodity.requiredGeography,
+          unit: activeCommodity.requiredUnit,
+          currency: activeCommodity.requiredCurrency,
+          frequency: activeCommodity.requiredFrequency
+        });
+        setSource(uploadResult.source);
+        const workspaceResult = await pcbiCommodityDataLabApi.getCommodityWorkspace(activeCommodity.pcbiId, 'VALIDATION');
+        setWorkspace(workspaceResult.workspace);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        frontendLogger.error('Commodity evidence staging failed', { pcbiId: activeCommodity.pcbiId, error: message });
+        setErrorMessage(message);
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
     }
     setCurrentStep((prev) => Math.min(prev + 1, 10));
   };
@@ -87,6 +102,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
     setIsSubmitting(true);
     setErrorMessage(null);
     try {
+      if (!source) throw new Error(UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceApprovalRequiresStagedEvidence);
       if (approvalAction === 'APPROVE') {
         const res = await pcbiCommodityDataLabApi.approveCommodityData({
           commodityId: activeCommodity.commodityId,
@@ -99,7 +115,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
           onComplete({
             commodityId: activeCommodity.commodityId,
             pcbiId: activeCommodity.pcbiId,
-            versionId: res.result?.catalogVersionId || 'V1.8'
+            versionId: res.result?.catalogVersionId || ''
           });
         }
       }
@@ -243,7 +259,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                 </div>
                 <div>
                   <span className="text-[10px] text-[#64748B] font-mono">Required Frequency / Unit</span>
-                  <p className="text-[#475569]">{activeCommodity.requiredFrequency} / INR/MT</p>
+                  <p className="text-[#475569]">{activeCommodity.requiredFrequency} / {activeCommodity.requiredCurrency || '—'} / {activeCommodity.requiredUnit || '—'}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-[#64748B] font-mono">Research Priority</span>
@@ -279,7 +295,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#475569] font-bold">Target Currency / Unit:</span>
-                  <span className="text-[#0B1B33] font-medium">INR / Metric Tonne (INR/MT)</span>
+                  <span className="text-[#0B1B33] font-medium">{activeCommodity.requiredCurrency || '—'} / {activeCommodity.requiredUnit || '—'} · {activeCommodity.requiredGeography || 'Geography not set'}</span>
                 </div>
               </div>
             </div>
@@ -298,7 +314,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                   {uploadedFile ? uploadedFile.name : 'Drag & drop research file here, or click to browse'}
                 </p>
                 <p className="text-[11px] text-[#64748B]">
-                  Supported formats: XLSX, XLS, CSV, PDF, JSON, TXT (Max 50MB)
+                  Supported formats: XLSX, XLS, CSV, PDF, JSON, TXT (Max 10MB)
                 </p>
                 <input
                   type="file"
@@ -307,7 +323,14 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                   id="source-file-input"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
-                      setUploadedFile(e.target.files[0]);
+                      const file = e.target.files[0];
+                      setUploadedFile(file);
+                      setSource(null);
+                      setWorkspace(null);
+                      const extension = file.name.split('.').pop()?.toUpperCase();
+                      if (extension && ['XLSX', 'XLS', 'CSV', 'PDF', 'JSON', 'TXT'].includes(extension)) {
+                        setFileType(extension as typeof fileType);
+                      }
                     }
                   }}
                 />
@@ -363,6 +386,7 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                     onChange={(e) => setFileType(e.target.value as any)}
                     className="w-full bg-white border border-[#DCE7F5] rounded-lg p-2 text-[#0B1B33] font-medium focus:outline-none focus:ring-2 focus:ring-[#0284C7]/20 focus:border-[#0284C7]"
                   >
+                    <option value="XLS">XLS (Spreadsheet)</option>
                     <option value="PDF">PDF (Document / Circular)</option>
                     <option value="XLSX">XLSX (Spreadsheet)</option>
                     <option value="CSV">CSV (Delimited)</option>
@@ -382,22 +406,12 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                 <span>Step 5 — Automated Parser Extraction & Column Mapping</span>
               </h3>
               <div className="p-4 bg-[#F8FBFE] rounded-xl border border-[#DCE7F5] space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-[#DCE7F5]">
-                  <span className="text-[#475569]">Date Column:</span>
-                  <span className="text-emerald-700 font-semibold">Auto-detected (YYYY-MM-DD)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#DCE7F5]">
-                  <span className="text-[#475569]">Price / Value Column:</span>
-                  <span className="text-emerald-700 font-semibold">Auto-detected (Numeric INR/KG)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#DCE7F5]">
-                  <span className="text-[#475569]">Extracted Observations:</span>
-                  <span className="text-[#0284C7] font-semibold tabular-nums">18 records parsed</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-[#475569]">Extraction Confidence:</span>
-                  <span className="text-emerald-700 font-semibold tabular-nums">98.4% (Standard Parsed Table)</span>
-                </div>
+                <p className="font-semibold text-[#0B1B33]">{source?.documentName || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.noStagedSource}</p>
+                <p>{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.extractionStatusLabel} {source?.extractionStatus || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.pendingExtractionStatus}</p>
+                <p>{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.savedObservationCount(source?.extractedObservationsCount ?? 0)}</p>
+                <p>{source?.validationStatus === 'VALIDATED'
+                  ? UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceRowsValidated
+                  : UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceRowsNeedReview}</p>
               </div>
             </div>
           )}
@@ -411,20 +425,20 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
               </h3>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg">
-                  <span className="text-[#64748B]">Missing Dates:</span>
-                  <p className="font-semibold text-amber-700 mt-1 tabular-nums">42 Periods Missing</p>
+                  <span className="text-[#64748B]">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceValidationLabel}</span>
+                  <p className="font-semibold mt-1">{source?.validationStatus || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.pendingSourceValidationStatus}</p>
                 </div>
                 <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg">
-                  <span className="text-[#64748B]">Duplicate Dates:</span>
-                  <p className="font-semibold text-emerald-700 mt-1 tabular-nums">0 Duplicates</p>
+                  <span className="text-[#64748B]">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.verifiedObservationsLabel}</span>
+                  <p className="font-semibold mt-1">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.verifiedObservationCount(workspace?.validationSummary.validObservations ?? 0)}</p>
                 </div>
                 <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg">
-                  <span className="text-[#64748B]">Unit Consistency:</span>
-                  <p className="font-semibold text-emerald-700 mt-1">Uniform (INR/kg)</p>
+                  <span className="text-[#64748B]">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.observationsNeedingReviewLabel}</span>
+                  <p className="font-semibold mt-1">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.observationReviewCount(workspace?.validationSummary.criticalErrorsCount ?? 0)}</p>
                 </div>
                 <div className="p-3 bg-[#F8FBFE] border border-[#DCE7F5] rounded-lg">
-                  <span className="text-[#64748B]">Frequency Continuity:</span>
-                  <p className="font-semibold text-amber-700 mt-1">Gaps Detected (Apr-Dec 2020)</p>
+                  <span className="text-[#64748B]">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.dateCoverageLabel}</span>
+                  <p className="font-semibold mt-1">{workspace?.overview.availableHistory || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.dateCoverageUnavailable}</p>
                 </div>
               </div>
             </div>
@@ -437,25 +451,16 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                 <Sparkles size={15} className="text-[#0284C7]" />
                 <span>Step 7 — PCBI Standardization Preview (Zero Writes to Production)</span>
               </h3>
-              <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-[#0284C7]">
-                Preview of normalized values converted from raw INR/KG to official PCBI benchmark unit INR/MT.
-              </div>
+              <p className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs text-[#0284C7]">Values are not converted. The source must match the D1 benchmark unit and currency.</p>
               <div className="p-4 bg-white rounded-xl border border-[#DCE7F5] text-xs space-y-1">
-                <div className="flex justify-between text-[#64748B] border-b border-[#DCE7F5] pb-1 font-semibold">
-                  <span>Date</span>
-                  <span>Raw Value</span>
-                  <span>Normalized Value (INR/MT)</span>
-                </div>
-                <div className="flex justify-between py-1 text-[#0B1B33]">
-                  <span className="font-mono text-xs text-[#475569]">2024-04-01</span>
-                  <span className="tabular-nums">₹3,250/kg</span>
-                  <span className="text-emerald-700 font-semibold tabular-nums">₹32,50,000 / MT</span>
-                </div>
-                <div className="flex justify-between py-1 text-[#0B1B33]">
-                  <span className="font-mono text-xs text-[#475569]">2024-05-01</span>
-                  <span className="tabular-nums">₹3,300/kg</span>
-                  <span className="text-emerald-700 font-semibold tabular-nums">₹33,00,000 / MT</span>
-                </div>
+                {(workspace?.extractedObservations || []).slice(0, 10).map((observation) => (
+                  <div key={observation.observationId} className="flex justify-between py-1 text-[#0B1B33]">
+                    <span className="font-mono text-xs text-[#475569]">{observation.sourceDate}</span>
+                    <span>{observation.rawValue} {observation.rawUnit} {observation.rawCurrency}</span>
+                    <span>{observation.normalizedValue} {observation.normalizedUnit} {observation.normalizedCurrency}</span>
+                  </div>
+                ))}
+                {(!workspace || workspace.extractedObservations.length === 0) && <p>{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.noObservationsAvailable}</p>}
               </div>
             </div>
           )}
@@ -468,18 +473,9 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                 <span>Step 8 — Governance Standards Audit</span>
               </h3>
               <div className="p-4 bg-[#F8FBFE] rounded-xl border border-[#DCE7F5] space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-[#DCE7F5]">
-                  <span className="text-[#475569]">Zero Synthetic Data Rule:</span>
-                  <span className="text-emerald-700 font-semibold">COMPLIANT (No interpolation)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-[#DCE7F5]">
-                  <span className="text-[#475569]">Specification Validation:</span>
-                  <span className="text-amber-700 font-semibold">FeMo 60% vs 65% Target</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-[#475569]">Provenance Hash:</span>
-                  <span className="font-mono text-[11px] text-[#0284C7] font-semibold break-all">sha256:8b7fa120e64cd46820200306mmr60</span>
-                </div>
+                <p>{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceIdentityCheckLabel} {source?.validationStatus || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.sourceIdentityCheckNotRun}</p>
+                <p>{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.methodologyReviewLabel} {workspace?.methodologyDetails.status || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.pendingMethodologyReview}</p>
+                <p className="font-mono break-all">{UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.checksumLabel} {source?.checksum || UI_STRINGS.pcbiCommodityDataLab.uploadWorkflow.checksumUnavailable}</p>
               </div>
             </div>
           )}
@@ -553,14 +549,10 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
                 <span>Step 10 — Production Activation & Customer Reprocessing</span>
               </h3>
               <div className="p-4 bg-[#F8FBFE] rounded-xl border border-[#DCE7F5] space-y-3 text-xs">
-                <p className="text-[#475569]">
-                  Upon confirmation, the following production actions will execute atomically:
-                </p>
+                <p className="text-[#475569]">Promotion writes the validated weekly observations and an audit record to the D1 PCBI catalog.</p>
                 <ul className="list-disc list-inside space-y-1 text-[#475569]">
-                  <li>Generate updated Dynamic PCBI Catalog Version</li>
-                  <li>Record immutable audit log entry in Master Provenance Register</li>
-                  <li>Update Platform Coverage Metric from PARTIAL_HISTORY to PRODUCTION_READY</li>
-                  <li>Trigger targeted customer reprocessing for affected customer purchase lines</li>
+                  <li>Store the explicit administrator decision with its source and observation count.</li>
+                  <li>Expose approved weekly observations through the D1 PCBI series endpoint.</li>
                 </ul>
               </div>
             </div>
@@ -582,10 +574,11 @@ export const CommodityPCBIUploadWorkflowModal: React.FC<CommodityPCBIUploadWorkf
           {currentStep < 10 ? (
             <button
               type="button"
-              onClick={handleNext}
+              onClick={() => { void handleNext(); }}
+              disabled={isUploading}
               className="px-5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-white font-bold flex items-center gap-1.5 shadow-sm transition-all text-xs"
             >
-              <span>Next Step</span>
+              <span>{isUploading ? 'Staging Evidence…' : 'Next Step'}</span>
               <ArrowRight size={14} />
             </button>
           ) : (

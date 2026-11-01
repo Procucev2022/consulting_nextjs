@@ -137,25 +137,24 @@ describe('DocumentSummaryView coverage', () => {
     );
 
     expect(screen.getAllByText('1,000').length).toBeGreaterThan(0);
-    // Derived unique items (30%) and unique vendors (8%) of 1,000 records.
-    expect(screen.getAllByText('300').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('80').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(documentSummary.uniqueItems).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(documentSummary.uniqueVendors).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThan(0);
     expect(screen.getByText(documentSummary.dynamicGroupsCount(5))).toBeInTheDocument();
     expect(screen.getByText(documentSummary.dynamicFacilitiesCount(3))).toBeInTheDocument();
-    expect(screen.getAllByText(/₹0\.00/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/₹0\.00/)).not.toBeInTheDocument();
   });
 
-  it('uses zero derived counts for an empty ingestion record and defaults when no queue is supplied', () => {
+  it('preserves database zero counts and shows unavailable counts when no dataset is selected', () => {
     const { unmount } = render(
       <DocumentSummaryView ingestionQueue={[buildIngestion({ records_count: 0 })]} materialGroupSummaries={[]} />
     );
-    expect(screen.getByText(documentSummary.dynamicGroupsCount(0))).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThan(0);
     expect(screen.getAllByText('0').length).toBeGreaterThan(0);
     unmount();
 
     render(<DocumentSummaryView />);
-    expect(screen.getByText(documentSummary.dynamicGroupsCount(0))).toBeInTheDocument();
-    expect(screen.getByText(documentSummary.dynamicFacilitiesCount(0))).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThan(0);
   });
 
   it('shows the ERP-converted spend labels and the not-calculated FX status', () => {
@@ -238,7 +237,7 @@ describe('DocumentSummaryView coverage', () => {
     expect(screen.getByText('Ferro Alloys')).toBeInTheDocument();
   });
 
-  it('shows the single-year coverage header with the first fiscal year or the FY22 default', () => {
+  it('shows a single-year coverage header from database period metadata only', () => {
     const { unmount } = render(
       <DocumentSummaryView
         materialGroupSummaries={[buildMaterialGroup()]}
@@ -254,14 +253,14 @@ describe('DocumentSummaryView coverage', () => {
         periodMetadata={buildPeriod({ actualFiscalYears: [] })}
       />
     );
-    expect(screen.getByText(documentSummary.materialGroup.headers.trendSingleFy('FY22'))).toBeInTheDocument();
+    expect(screen.getByText(documentSummary.materialGroup.headers.trendSingleFy(UI_STRINGS.common.notAvailable))).toBeInTheDocument();
     unmountEmpty();
 
     render(<DocumentSummaryView materialGroupSummaries={[buildMaterialGroup()]} />);
-    expect(screen.getByText(documentSummary.materialGroup.headers.trendSingleFy('FY22'))).toBeInTheDocument();
+    expect(screen.getByText(documentSummary.materialGroup.headers.trendSingleFy(UI_STRINGS.common.notAvailable))).toBeInTheDocument();
   });
 
-  it('generates labels for material groups that arrive without codes, names, or sample items', () => {
+  it('uses unavailable labels when material groups arrive without codes, names, or sample items', () => {
     render(
       <DocumentSummaryView
         materialGroupSummaries={[
@@ -280,11 +279,10 @@ describe('DocumentSummaryView coverage', () => {
       />
     );
 
-    expect(screen.getAllByText(/MG-1/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/MG-1 Materials/)).toBeInTheDocument();
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThan(0);
   });
 
-  it('falls back to generated plant codes and zero counts for plants without identifiers or record totals', () => {
+  it('uses unavailable plant identifiers and counts when D1 omits them', () => {
     render(
       <DocumentSummaryView
         plantSummaries={[
@@ -303,7 +301,7 @@ describe('DocumentSummaryView coverage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: documentSummary.dimensionTabs.plant }));
 
-    expect(screen.getAllByText(/PLANT-1/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(UI_STRINGS.common.notAvailable).length).toBeGreaterThan(0);
   });
 
   it('filters the month table by fiscal year and falls back to line item counts', () => {

@@ -9,6 +9,7 @@ import {
   isActiveReportState,
   isCustomerVisibleState,
   isOneOf,
+  pcbiCoverageFromRows,
   readinessInputFromRow,
   requireOneOf,
   requireReportWorkflowState,
@@ -17,6 +18,7 @@ import {
 } from '../../src/workerD1OrchestrationDerive';
 import type { AdminQualityGateChecklist } from '../../src/types/analysisOrchestration';
 import type { AssessmentJobRow, ReadinessInput } from '../../src/types/orchestrationD1';
+import type { PCBIGapSourceRow } from '../../src/types/orchestrationPcbi';
 
 const jobRow = (overrides: Partial<AssessmentJobRow> = {}): AssessmentJobRow => ({
   assessment_id: 'AIC-1',
@@ -60,6 +62,14 @@ const readyInput = (overrides: Partial<ReadinessInput> = {}): ReadinessInput => 
   },
   latestVersionId: 'DV-1',
   openCorrectionCount: 0,
+  pcbi: {
+    hasEvidence: true,
+    totalCategories: 1,
+    resolvedCategories: 1,
+    totalItems: 1,
+    resolvedItems: 1,
+    excludedItems: 0
+  },
   ...overrides
 });
 
@@ -179,10 +189,81 @@ describe('buildReadiness', () => {
         gatesPassed: true
       },
       latestVersionId: 'DV-1',
-      openCorrectionCount: 2
+      openCorrectionCount: 2,
+      pcbi: {
+        hasEvidence: false,
+        totalCategories: 0,
+        resolvedCategories: 0,
+        totalItems: 0,
+        resolvedItems: 0,
+        excludedItems: 0
+      }
     });
     expect(readinessInputFromRow(jobRow({ run_id: null, run_version_id: null }), 0).run).toBeNull();
     expect(readinessInputFromRow(jobRow({ run_spend_cr: null }), 0).run?.spendCr).toBe(0);
+  });
+
+  it('calculates PCBI category and item coverage while counting excluded items separately', () => {
+    expect(pcbiCoverageFromRows([
+      {
+        category_key: 'mapped', item_category: 'mapped', relevant_classification: 'mapped', spend_cr: 3,
+        transaction_count: 2, supplier_count: 1, plant_count: 1, action: 'MAP_EXISTING',
+        target_pcbi_series: 'PCBI-1', benchmark_source: 'Benchmark source', quality_rating: null,
+        exclusion_reason: null, exclusion_notes: null, research_notes: null, resolved_by: 'admin', resolved_at: 'now'
+      },
+      {
+        category_key: 'excluded', item_category: 'excluded', relevant_classification: 'excluded', spend_cr: 1,
+        transaction_count: 1, supplier_count: 1, plant_count: 1, action: 'EXCLUDE',
+        target_pcbi_series: null, benchmark_source: null, quality_rating: null,
+        exclusion_reason: 'OTHER', exclusion_notes: 'Reason', research_notes: null,
+        resolved_by: 'admin', resolved_at: 'now'
+      },
+      {
+        category_key: 'research', item_category: 'research', relevant_classification: 'research', spend_cr: 2,
+        transaction_count: 3, supplier_count: 1, plant_count: 1, action: 'REQUEST_RESEARCH',
+        target_pcbi_series: null, benchmark_source: null, quality_rating: null,
+        exclusion_reason: null, exclusion_notes: null, research_notes: null, resolved_by: 'admin', resolved_at: 'now'
+      }
+    ])).toEqual({
+      hasEvidence: true,
+      totalCategories: 3,
+      resolvedCategories: 2,
+      totalItems: 6,
+      resolvedItems: 3,
+      excludedItems: 1
+    });
+  });
+
+  it('blocks report readiness when categories have not been reviewed or source rows are absent', () => {
+    const pending = buildReadiness(readyInput({
+      pcbi: { hasEvidence: true, totalCategories: 3, resolvedCategories: 2, totalItems: 5, resolvedItems: 4, excludedItems: 1 }
+    }));
+    expect(pending.categoryCoveragePct).toBe(66.7);
+    expect(pending.itemCoveragePct).toBe(80);
+    expect(pending.categoriesRequiringReview).toBe(1);
+    expect(pending.itemsExcluded).toBe(1);
+    expect(pending.blockingReasons).toEqual([ORCHESTRATION_MESSAGES.readinessPcbiReviewPending(1)]);
+
+    const missing = buildReadiness(readyInput({ pcbi: {
+      hasEvidence: false, totalCategories: 0, resolvedCategories: 0, totalItems: 0, resolvedItems: 0, excludedItems: 0
+    } }));
+    expect(missing.blockingReasons).toEqual([ORCHESTRATION_MESSAGES.readinessPcbiEvidenceUnavailable]);
+  });
+
+  it('does not count a mapping to an inactive PCBI series as resolved', () => {
+    expect(pcbiCoverageFromRows([{
+      category_key: 'retired', item_category: 'retired', relevant_classification: 'retired', spend_cr: 5,
+      transaction_count: 2, supplier_count: 1, plant_count: 1, action: 'MAP_EXISTING',
+      target_pcbi_series: 'PCBI-RETIRED', benchmark_source: null, quality_rating: null,
+      exclusion_reason: null, exclusion_notes: null, research_notes: null, resolved_by: 'admin', resolved_at: 'now'
+    }])).toEqual({
+      hasEvidence: true,
+      totalCategories: 1,
+      resolvedCategories: 0,
+      totalItems: 2,
+      resolvedItems: 0,
+      excludedItems: 0
+    });
   });
 });
 

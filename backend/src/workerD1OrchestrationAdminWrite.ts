@@ -25,6 +25,7 @@ import {
   buildReadiness,
   countUnconfirmedItems,
   isActiveReportState,
+  pcbiCoverageFromRows,
   readinessInputFromRow
 } from './workerD1OrchestrationDerive';
 import {
@@ -34,6 +35,7 @@ import {
   insertAuditStatement,
   insertChecklistStatement,
   insertReportStatement,
+  listPcbiGapRows,
   nextReportSequence,
   runAtomically,
   supersedeReportStatement
@@ -125,8 +127,11 @@ const buildGeneratedReport = (
 export const generateReport: OrchestrationHandler = async (context) => {
   parseWithSchema(emptyBodySchema, await readJsonBody(context.request));
   const job = await loadAccessibleJob(context.database, context.actor, context.params.jobId);
-  const openCount = await countOpenCorrections(context.database, job.assessment_id);
-  const readiness = buildReadiness(readinessInputFromRow(job, openCount));
+  const [openCount, pcbiRows] = await Promise.all([
+    countOpenCorrections(context.database, job.assessment_id),
+    listPcbiGapRows(context.database, job.assessment_id, job.current_version_id)
+  ]);
+  const readiness = buildReadiness(readinessInputFromRow(job, openCount, pcbiCoverageFromRows(pcbiRows)));
   if (readiness.overallReadiness !== 'READY_TO_GENERATE' || job.run_id === null || job.run_version_id === null) {
     throw conflictError(ORCHESTRATION_MESSAGES.reportNotReady(readiness.blockingReasons), {
       blockingReasons: readiness.blockingReasons

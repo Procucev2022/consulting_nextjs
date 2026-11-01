@@ -2,57 +2,11 @@
  * Currency Types and Interfaces Module (Frontend)
  */
 
-export interface YahooFinanceFXRate {
-  ticker: string;
-  currencyPair: string;
-  currencyCode: string;
-  name: string;
-  rate2023: number;
-  rate2024: number;
-  rate2025: number;
-  rate2026: number;
-  currentRate: number;
-  lastUpdated: string;
-}
-
-export type SupportedCurrency = 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED' | 'JPY' | 'SGD';
+export type SupportedCurrency = string;
 export type HeaderCurrency = 'INR' | 'USD' | 'EUR' | 'GBP';
 
-export interface CurrencyConversionResult {
-  amountINR: number;
-  inrCrores: number;
-  croresStr: string;
-  fxRateUsed: number;
-  yahooTicker: string;
-  transactionDate?: string;
-  effectiveDate?: string;
-}
-
-export interface LineItemSpendResult {
-  orderQuantity: number;
-  netPrice: number;
-  subtotalRaw: number;
-  currency: string;
-  fxRateToINR: number;
-  amountINR: number;
-  inrCrores: number;
-  formattedCrores: string;
-  transactionDate?: string;
-  effectiveDate?: string;
-}
-
-export interface SpendLineItemInput {
-  order_quantity?: number;
-  net_price?: number;
-  raw_currency?: string;
-  amount?: number;
-  spend_year?: number;
-  transaction_date?: string;
-}
-
-export interface TotalSpendResult {
-  totalSpendINR: number;
-  totalSpendCrores: number;
-  formattedTotalSpendCrores: string;
-  lineItemCount: number;
+export interface ParsedDateInfo {
+  year?: number;
+  monthKey?: string;
+  formattedDate?: string;
 }

@@ -4,9 +4,10 @@ import {
   MIN_SPEND_COVERAGE_FOR_REPORT_PCT,
   ANALYSIS_JOB_STATUSES,
   EXCLUSION_REASONS,
+  PCBI_EXCLUSION_REASON_CODES,
+  PCBI_RESOLUTION_ACTIONS,
   REANALYSIS_REASONS,
-  DEFAULT_QUALITY_GATE_CHECKLIST,
-  INITIAL_PCBI_BENCHMARK_SERIES
+  DEFAULT_QUALITY_GATE_CHECKLIST
 } from '../../src/constants/analysisOrchestration';
 
 describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
@@ -31,6 +32,13 @@ describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
     expect(service?.requiresExplanation).toBe(false);
   });
 
+  it('exports every PCBI resolution action and exclusion reason for request validation', () => {
+    expect(PCBI_RESOLUTION_ACTIONS).toContain('REQUEST_RESEARCH');
+    expect(PCBI_RESOLUTION_ACTIONS).toHaveLength(6);
+    expect(PCBI_EXCLUSION_REASON_CODES).toContain('OTHER');
+    expect(PCBI_EXCLUSION_REASON_CODES).toHaveLength(EXCLUSION_REASONS.length);
+  });
+
   it('should export reanalysis reasons with explanation requirements', () => {
     expect(REANALYSIS_REASONS.length).toBeGreaterThanOrEqual(10);
     const other = REANALYSIS_REASONS.find(r => r.code === 'OTHER');
@@ -42,11 +50,5 @@ describe('Frontend Analysis Orchestration Constants Unit Tests', () => {
     expect(DEFAULT_QUALITY_GATE_CHECKLIST.pcbi.requiredPcbiCategoriesResolved).toBe(false);
     expect(DEFAULT_QUALITY_GATE_CHECKLIST.financial.savingsCalculationsValidated).toBe(false);
     expect(DEFAULT_QUALITY_GATE_CHECKLIST.report.module1Reviewed).toBe(false);
-  });
-
-  it('should export initial PCBI benchmark series', () => {
-    expect(INITIAL_PCBI_BENCHMARK_SERIES.length).toBeGreaterThanOrEqual(5);
-    expect(INITIAL_PCBI_BENCHMARK_SERIES[0].seriesId).toBeDefined();
-    expect(INITIAL_PCBI_BENCHMARK_SERIES[0].quality).toBeDefined();
   });
 });

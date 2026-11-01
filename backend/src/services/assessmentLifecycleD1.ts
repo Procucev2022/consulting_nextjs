@@ -3,8 +3,11 @@ import {
   assessmentDeliverySchema,
   analystApprovalSchema
 } from '../constants/assessmentValidation';
-import { ASSESSMENT_D1_MESSAGES as LIFECYCLE_MESSAGES } from '../constants/assessmentD1';
-import { ASSESSMENT_STATUSES, AUDIT_ACTIONS, DELIVERY_PACKAGE_ITEMS_SPEC, SYSTEM_BUILD_IDENTITY } from '../constants/assessment';
+import {
+  ASSESSMENT_D1_MESSAGES as LIFECYCLE_MESSAGES,
+  ASSESSMENT_REVIEW_GATE_KEYS
+} from '../constants/assessmentD1';
+import { ASSESSMENT_STATUSES, AUDIT_ACTIONS } from '../constants/assessment';
 import { D1_TABLES } from '../constants/d1';
 import type {
   AssessmentAuditStatement,
@@ -13,7 +16,7 @@ import type {
   AssessmentRunLoadedResult,
   AssessmentRow
 } from '../types/assessmentDataVersionD1';
-import type { AssessmentRecord, DeliveryPackageResult } from '../types/assessment';
+import type { AssessmentRecord } from '../types/assessment';
 import type { D1Record, WorkerD1Result } from '../types/d1';
 import {
   ASSESSMENT_SNAPSHOT_TYPE,
@@ -24,6 +27,7 @@ import {
 } from './assessmentDataVersionD1Helpers';
 import { loadAssessmentSnapshots, mapD1AnalysisRun, mapD1Assessment } from './assessmentD1Mappers';
 import logger from '../utils/logger';
+import { downloadAssessmentDeliveryArtifact, generateAssessmentDeliveryPackage } from './assessmentDeliveryPackageD1';
 
 const LIFECYCLE_CHECKSUM = 'assessment-lifecycle';
 const resultError = (status: number, message: string, errors?: unknown): WorkerD1Result => ({
@@ -68,6 +72,36 @@ const loadAnalysisRun = async (
   return { ok: true as const, row, run: mapD1AnalysisRun(row, snapshots.get(analysisRunId)) };
 };
 
+const validateReviewGates = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result | null> => {
+  const rows = await context.db.prepare(`
+    SELECT gate_key FROM ${D1_TABLES.assessmentReviewGates}
+    WHERE assessment_id = ? AND status = 'PASSED'
+      AND length(trim(COALESCE(evidence_reference, ''))) > 0
+  `).bind(context.assessmentId).all<{ gate_key: string }>();
+  const passedKeys = new Set((rows.results || []).map((gate) => gate.gate_key));
+  const pendingCount = ASSESSMENT_REVIEW_GATE_KEYS.filter((key) => !passedKeys.has(key)).length;
+  return pendingCount > 0 ? resultError(400, LIFECYCLE_MESSAGES.reviewGatesPending(pendingCount)) : null;
+};
+
+const loadApprovalAnalysisRun = async (
+  context: AssessmentLifecycleActionContext,
+  analysisRunId: string,
+  expectedDataVersionId?: string
+): Promise<AssessmentRunLoadedResult> => {
+  const loaded = await loadAnalysisRun(context, analysisRunId);
+  if (!loaded.ok) return loaded;
+  if (loaded.run.isSuperseded) {
+    return { ok: false, result: resultError(400, LIFECYCLE_MESSAGES.runSuperseded) };
+  }
+  if (!loaded.run.allGatesPassed) {
+    return { ok: false, result: resultError(400, LIFECYCLE_MESSAGES.gatesNotPassed) };
+  }
+  if (expectedDataVersionId && loaded.run.dataVersionId !== expectedDataVersionId) {
+    return { ok: false, result: resultError(400, LIFECYCLE_MESSAGES.runVersionMismatch) };
+  }
+  return loaded;
+};
+
 const persistAssessment = async (
   context: AssessmentLifecycleActionContext,
   row: AssessmentRow,
@@ -97,16 +131,13 @@ const approveAssessment = async (context: AssessmentLifecycleActionContext): Pro
   const loaded = await loadAssessment(context);
   if (!loaded.ok) return loaded.result;
   const { assessment, row, snapshot } = loaded;
+  const gateError = await validateReviewGates(context);
+  if (gateError) return gateError;
   const runId = parsed.data.analysisRunId || assessment.activeAnalysisRunId;
   if (!runId) return resultError(400, LIFECYCLE_MESSAGES.missingRun);
-  const loadedRun = await loadAnalysisRun(context, runId);
+  const loadedRun = await loadApprovalAnalysisRun(context, runId, parsed.data.dataVersionId);
   if (!loadedRun.ok) return loadedRun.result;
   const { row: runRow, run } = loadedRun;
-  if (run.isSuperseded) return resultError(400, LIFECYCLE_MESSAGES.runSuperseded);
-  if (!run.allGatesPassed) return resultError(400, LIFECYCLE_MESSAGES.gatesNotPassed);
-  if (parsed.data.dataVersionId && run.dataVersionId !== parsed.data.dataVersionId) {
-    return resultError(400, LIFECYCLE_MESSAGES.runVersionMismatch);
-  }
   const now = new Date().toISOString();
   const approved = await persistAssessment(context, row, snapshot, {
     approvedBy: context.actorEmail, approvedAt: now, approvalComment: parsed.data.approvalComment
@@ -119,70 +150,6 @@ const approveAssessment = async (context: AssessmentLifecycleActionContext): Pro
     assessmentId: context.assessmentId, approvedBy: context.actorEmail, requestId: context.requestId
   });
   return { data: approved };
-};
-
-const generateDeliveryPackage = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result> => {
-  if (!['INTERNAL_ADMIN', 'ANALYST'].includes(context.actorRole)) {
-    return resultError(403, LIFECYCLE_MESSAGES.permissionDenied);
-  }
-  const loaded = await loadAssessment(context);
-  if (!loaded.ok) return loaded.result;
-  const { assessment } = loaded;
-  const allowedStatuses = [ASSESSMENT_STATUSES.APPROVED, ASSESSMENT_STATUSES.DELIVERED] as string[];
-  if (!allowedStatuses.includes(assessment.status)) {
-    return resultError(400, LIFECYCLE_MESSAGES.deliveryStatus(assessment.status));
-  }
-  if (!assessment.activeAnalysisRunId) return resultError(400, LIFECYCLE_MESSAGES.activeRunMissing);
-  const loadedRun = await loadAnalysisRun(context, assessment.activeAnalysisRunId);
-  if (!loadedRun.ok) return loadedRun.result;
-  const { run } = loadedRun;
-  if (!run.isApproved) return resultError(400, LIFECYCLE_MESSAGES.unapprovedRun);
-  if (run.isSuperseded) return resultError(400, LIFECYCLE_MESSAGES.supersededRun);
-  const version = await queryFirst<D1Record>(context.db,
-    `SELECT * FROM ${D1_TABLES.dataVersions} WHERE assessment_id = ? AND data_version_id = ?`,
-    [context.assessmentId, run.dataVersionId]);
-  if (!version) return resultError(404, LIFECYCLE_MESSAGES.dataVersionMissing(run.dataVersionId));
-  const generatedAt = new Date().toISOString();
-  const items = DELIVERY_PACKAGE_ITEMS_SPEC.map((spec) => ({
-    id: spec.id,
-    title: spec.title,
-    format: spec.format,
-    analysisRunId: run.analysisRunId,
-    dataVersionId: run.dataVersionId,
-    generatedAt,
-    fileName: `${context.assessmentId}${spec.fileSuffix}`
-  }));
-  const deliveryPackage: DeliveryPackageResult = {
-    assessmentId: context.assessmentId,
-    analysisRunId: run.analysisRunId,
-    dataVersionId: run.dataVersionId,
-    customerName: assessment.customerName,
-    assessmentPeriod: [assessment.assessmentPeriodStart, assessment.assessmentPeriodEnd].filter(Boolean).join(' – '),
-    packageTitle: `Delivery Package — ${assessment.customerName} (${context.assessmentId})`,
-    generatedAt,
-    approvedBy: assessment.approvedBy || context.actorEmail,
-    approvedAt: assessment.approvedAt || generatedAt,
-    releaseVersion: SYSTEM_BUILD_IDENTITY.APP_VERSION,
-    checksums: {
-      vgtDataset: String(version.checksum),
-      fxMaster: SYSTEM_BUILD_IDENTITY.FX_MASTER_CHECKSUM,
-      pcbiMaster: SYSTEM_BUILD_IDENTITY.PCBI_MASTER_CHECKSUM,
-      evidenceWorkbook: SYSTEM_BUILD_IDENTITY.EVIDENCE_WORKBOOK_CHECKSUM
-    },
-    items
-  };
-  await runStatements(context.db, [
-    assessmentSnapshotWrite(context.db, 'delivery_package', context.assessmentId,
-      deliveryPackage as unknown as D1Record, String(version.checksum), run.analysisRunId),
-    auditStatement(context, AUDIT_ACTIONS.DELIVERY_PACKAGE_GENERATED, {
-      itemsCount: items.length, analysisRunId: run.analysisRunId
-    })
-  ]);
-  logger.info('Generated delivery package manifest from D1', {
-    assessmentId: context.assessmentId, analysisRunId: run.analysisRunId, itemsCount: items.length,
-    requestId: context.requestId
-  });
-  return { data: deliveryPackage };
 };
 
 const deliverAssessment = async (context: AssessmentLifecycleActionContext): Promise<WorkerD1Result> => {
@@ -254,11 +221,14 @@ const closeAssessment = async (context: AssessmentLifecycleActionContext): Promi
 };
 
 export const handleAssessmentLifecycleAction = (
-  context: AssessmentLifecycleActionContext
+  context: AssessmentLifecycleActionContext,
+  artifactId?: string
 ): Promise<WorkerD1Result> => {
   switch (context.action) {
     case 'approve': return approveAssessment(context);
-    case 'delivery-package': return generateDeliveryPackage(context);
+    case 'delivery-package': return artifactId
+      ? downloadAssessmentDeliveryArtifact(context, artifactId)
+      : generateAssessmentDeliveryPackage(context);
     case 'deliver': return deliverAssessment(context);
     case 'accept': return acceptAssessment(context);
     case 'close': return closeAssessment(context);

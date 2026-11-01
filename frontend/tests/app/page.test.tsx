@@ -231,15 +231,7 @@ describe('Home Page Component', () => {
       mappings: { P11: 'Packing' }, categories: ['Packing']
     });
     vi.spyOn(apiClient, 'getConversionStages').mockResolvedValue(conversionFunnelStages);
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({
-        doc: sampleDoc,
-        validationRecords: [sampleValidationRecord, sampleValidationRecord2, sampleValidationRecord3],
-        categories: [sampleCategory],
-        lineItems: [sampleLineItem],
-        vendorRankings: [sampleVendorRanking],
-        opportunities: [sampleOpportunity, sampleOpportunity2]
-      }));
+    if (typeof window !== 'undefined') {
       window.location.hash = '#module1';
     }
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue({
@@ -271,6 +263,16 @@ describe('Home Page Component', () => {
       vendorRankings: [sampleVendorRanking],
       vendorDetails: []
     });
+    vi.spyOn(apiClient, 'getCurrencyRates').mockResolvedValue({
+      USD: { currencyCode: 'USD', name: 'US Dollar', currentRate: 84, lastUpdated: '2026-10-30' }
+    });
+    vi.spyOn(apiClient, 'getCurrencyConversion').mockResolvedValue({
+      amount: sampleValidationRecord.amount,
+      fromCurrency: 'USD',
+      amountINR: 4_200_000,
+      exchangeRate: 84,
+      rateDate: '2025-01-15'
+    });
     vi.spyOn(apiClient, 'getSavingsOpportunities').mockResolvedValue({
       opportunities: [sampleOpportunity, sampleOpportunity2],
       totalPotentialSavingsCr: 119.67
@@ -281,6 +283,8 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'resetValidationRecords').mockResolvedValue([sampleValidationRecord]);
     vi.spyOn(apiClient, 'addIngestionFile').mockResolvedValue([sampleDoc]);
     vi.spyOn(apiClient, 'uploadDocumentToObjectStore').mockResolvedValue({
+      success: true,
+      data: { docId: 'DOC-UPLOAD-TEST', importedCount: 1, totalInrCrores: 0.1 },
       objectMeta: { key: 'test-key' },
       ingestionQueue: [sampleDoc]
     });
@@ -420,6 +424,7 @@ describe('Home Page Component', () => {
     const fixBtns = await screen.findAllByRole('button', { name: UI_STRINGS.module1.fixInr });
     fireEvent.click(fixBtns[0]);
     const applyFxBtn = screen.getByRole('button', { name: new RegExp(UI_STRINGS.modals.fixCurrency.applyConversion, 'i') });
+    await waitFor(() => expect(applyFxBtn).toBeEnabled());
     fireEvent.click(applyFxBtn);
     await waitFor(() => {
       expect(apiClient.updateValidationRecord).toHaveBeenCalled();
@@ -477,9 +482,9 @@ describe('Home Page Component', () => {
       expect(apiClient.getTenant).toHaveBeenCalled();
     });
 
-    // Module 1 -> Module 2
-    const proceedToCat = await screen.findByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
-    fireEvent.click(proceedToCat);
+    // Navigate to Module 2; classification itself requires an active D1 assessment.
+    const module2Step = screen.getByText(UI_STRINGS.pipeline.steps.step2.title);
+    fireEvent.click(module2Step);
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.module2.heading)).toBeInTheDocument();
     });
@@ -615,9 +620,11 @@ describe('Home Page Component', () => {
     fireEvent.click(summaryBtn);
     const summaryModal = screen.getByTestId('management-quick-summary-modal');
     expect(summaryModal).toBeInTheDocument();
-    const backBtn = await screen.findByTestId('back-to-workspace-btn');
-    fireEvent.click(backBtn);
-    expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument();
+    await screen.findByTestId('back-to-workspace-btn');
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('back-to-workspace-btn'));
+    });
+    await waitFor(() => expect(screen.queryByTestId('management-quick-summary-modal')).not.toBeInTheDocument());
     // Trigger onSelectTenant via tenant badge (rejection path)
     vi.spyOn(apiClient, 'updateTenant').mockRejectedValueOnce(new Error('Tenant update fail'));
     const tenantBadge = screen.getByTestId('tenant-badge');
@@ -655,9 +662,6 @@ describe('Home Page Component', () => {
     fireEvent.click(step4);
     await screen.findByText(UI_STRINGS.module4.pipelineTitle);
 
-    // Enable fake timers for countdowns
-    vi.useFakeTimers();
-
     // Click ProCPX button in table
     const proCPXBtns = screen.getAllByRole('button', { name: UI_STRINGS.module4.pushToProCPX });
     fireEvent.click(proCPXBtns[0]);
@@ -665,13 +669,14 @@ describe('Home Page Component', () => {
     // Find modal heading and submit button inside the modal
     const modalHeading = screen.getByRole('heading', { name: UI_STRINGS.modals.proCPX.heading });
     const modal = modalHeading.closest('div.relative');
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    fireEvent.click(within(modal as HTMLElement).getByRole('checkbox', { name: sampleVendorRanking.vendor_name }));
     const modalLaunchBtn = within(modal as HTMLElement).getByRole('button', { name: UI_STRINGS.modals.proCPX.launchButton });
     fireEvent.click(modalLaunchBtn);
-
-    // Fast-forward countdown and completion timers (1200ms + 1800ms = 3000ms)
-    act(() => {
-      vi.advanceTimersByTime(3500);
-    });
+    await within(modal as HTMLElement).findByRole('alert');
 
     // ProCPX deploy API was called and handled rejection
     expect(apiClient.deployOpportunity).toHaveBeenCalledWith(expect.any(String), 'proCPX');
@@ -685,20 +690,10 @@ describe('Home Page Component', () => {
     const dpsModal = dpsHeading.closest('div.relative');
     const modalDpsBtn = within(dpsModal as HTMLElement).getByRole('button', { name: UI_STRINGS.modals.dpsNXT.pushButton });
     fireEvent.click(modalDpsBtn);
-
-    // Fast-forward countdown and completion timers (1200ms + 1800ms = 3000ms)
-    act(() => {
-      vi.advanceTimersByTime(3500);
-    });
+    await within(dpsModal as HTMLElement).findByRole('alert');
 
     expect(apiClient.deployOpportunity).toHaveBeenCalledWith(expect.any(String), 'DPS NXT');
 
-    // Fast-forward toast timer (4000ms)
-    act(() => {
-      vi.advanceTimersByTime(4000);
-    });
-
-    vi.useRealTimers();
   });
 
   it('handles API rejection during currency fix, vendor merge, blanket fix, and reset', async () => {
@@ -1018,10 +1013,10 @@ describe('Home Page Component', () => {
     vi.spyOn(apiClient, 'getIngestionData').mockResolvedValueOnce({
       queue: [
         {
+          doc_id: 'DOC-MINIMAL',
           file_name: 'minimal_file.csv',
           file_type: undefined,
           file_size_mb: undefined,
-          doc_id: undefined,
           ocr_status: undefined,
           progress: undefined,
           uploaded_at: undefined,
@@ -1037,6 +1032,12 @@ describe('Home Page Component', () => {
     await waitFor(() => {
       expect(screen.getByText('minimal_file.csv')).toBeInTheDocument();
     });
+    expect(screen.getByText(UI_STRINGS.module1.uploadMetadata(
+      UI_STRINGS.module1.fileTypeUnavailable,
+      UI_STRINGS.module1.fileSizeUnavailable,
+      UI_STRINGS.module1.uploadTimeUnavailable
+    ))).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.module1.processingStatusUnavailable)).toBeInTheDocument();
   });
 
   it('handles sessionStorage quota exceeded during file upload without failing the upload', async () => {
@@ -1077,10 +1078,6 @@ describe('Home Page Component', () => {
     const scrollMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollMock;
 
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify({ doc: sampleDoc, validationRecords: [sampleValidationRecord] }));
-    }
-
     await renderHome();
     await waitFor(() => {
       expect(apiClient.getTenant).toHaveBeenCalled();
@@ -1115,7 +1112,7 @@ describe('Home Page Component', () => {
     }
   });
 
-  it('triggers onStartAICategorization toast in Module2', async () => {
+  it('requires an active assessment before starting persistent Module 2 categorization', async () => {
     vi.spyOn(apiClient, 'getTenant').mockResolvedValue({ ...mockTenant, total_spend_evaluated_inr: 50 });
     await renderHome();
     await waitFor(() => {
@@ -1126,10 +1123,11 @@ describe('Home Page Component', () => {
     const runAiBtn = await screen.findByRole('button', { name: UI_STRINGS.module1.runAiCategorization });
     fireEvent.click(runAiBtn);
 
-    // Verify toast is triggered
+    // Categorization decisions are keyed to a D1 assessment and must not run as local-only state.
     await waitFor(() => {
-      expect(screen.getByText(UI_STRINGS.toasts.runningAiCat)).toBeInTheDocument();
+      expect(screen.getByText(UI_STRINGS.toasts.module2AssessmentRequired)).toBeInTheDocument();
     });
+    expect(aiApiClient.categorizeItems).not.toHaveBeenCalled();
   });
 
   it('renders masked overlay for Bronze tier and shows upgrade trigger', async () => {

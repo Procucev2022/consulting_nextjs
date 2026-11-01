@@ -54,7 +54,7 @@ describe('Module2LeverOverview coverage', () => {
     render(<Module2LeverOverview assessmentId="AIC-2026-0002" onSelectLever={undefined} />);
 
     const pendingLabels = screen.getAllByText(strings.btnPending);
-    expect(pendingLabels).toHaveLength(9);
+    expect(pendingLabels).toHaveLength(TEN_LEVERS_OVERVIEW_CONFIG.length);
     // No banner action precedes the lever cards, so the first button is lever 1's disabled pending control.
     expect(screen.getAllByRole('button')[0]).toBeDisabled();
   });

@@ -46,7 +46,7 @@ const AssessmentWorkspace = dynamic(
   { ssr: false }
 );
 
-import { getYahooFinanceRateToINR, parseDateOrYear } from '@/utils/currencyConverter';
+import { parseDateOrYear } from '@/utils/currencyConverter';
 import { apiClient, aiApiClient, authApiClient } from '@/utils/api';
 import { assessmentApiClient } from '@/utils/assessmentApi';
 import type { OperatingModeConfig, AssessmentRecord, CustomerRecord } from '@/types/assessment';
@@ -61,6 +61,8 @@ import { isAssessmentFinancialDisplayEligible } from '@/utils/assessmentFinancia
 import { UNLOCKED_DEV_PIPELINE_STAGES } from '@/constants/pipeline';
 import { resolveHumanReadableCategory } from '@/utils/procurementCategoryResolver';
 import { EMPTY_TENANT } from '@/constants/app';
+import { saveModule2MaterialMappings } from '@/utils/module2MappingApi';
+import { VENDOR_CONSOLIDATION_UI_CONFIG } from '@/constants/module2VendorConsolidation';
 
 // Modals (Dynamically loaded on demand)
 const ProCPXModal = dynamic(
@@ -204,7 +206,10 @@ export default function Home() {
     const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
     const formatLabel = format.toUpperCase();
     try {
-      const response = await fetch(url);
+      const token = authApiClient.getStoredToken();
+      const response = await fetch(url, {
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      });
       if (!response.ok) {
         const requestId = response.headers.get('x-request-id') ?? UI_STRINGS.opportunityBrief.requestIdNotReturned;
         frontendLogger.error('Opportunity brief download was rejected by the server', {
@@ -246,7 +251,7 @@ export default function Home() {
     setTenant((prev) => ({
       ...prev,
       total_spend_evaluated_inr: canonical.validFxNormalizedSpendCr,
-      total_spend_evaluated: Math.round((canonical.validFxNormalizedSpendCr * 10000000) / 83.8)
+      total_spend_evaluated: Math.round(canonical.validFxNormalizedSpendCr * 10000000)
     }));
 
     const canonicalDoc: RawDocumentIngestion = {
@@ -419,7 +424,7 @@ export default function Home() {
         ...prev,
         enterprise_name: assessment.customerName,
         total_spend_evaluated_inr: isEligible ? (assessment.validatedSpendCr ?? 0) : 0,
-        total_spend_evaluated: isEligible ? Math.round(((assessment.validatedSpendCr ?? 0) * 10000000) / 83.8) : 0
+        total_spend_evaluated: isEligible ? Math.round((assessment.validatedSpendCr ?? 0) * 10000000) : 0
       }));
 
       if (isM1Complete && assessment.canonicalModule1) {
@@ -802,24 +807,23 @@ export default function Home() {
                 total_spend_evaluated: 0
               }));
             } else {
-              const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate.map((doc: any, idx: number) => ({
-                doc_id: doc.doc_id || `DOC-INGEST-${8800 + idx}`,
-                tenant_id: doc.tenant_id || storedUser?.id || 'TNT-GLOBAL-8902',
-                file_name: doc.file_name || 'Uploaded_Document.xlsx',
-                file_type: doc.file_type || 'XLSX',
-                file_size_mb: doc.file_size_mb || 1.0,
-                ocr_status: doc.ocr_status || 'Completed',
-                progress: doc.progress ?? 100,
-                uploaded_at: doc.uploaded_at || new Date().toISOString().replace('T', ' ').slice(0, 19),
-                records_count: doc.records_count ?? 0,
-                detected_currencies: Array.isArray(doc.detected_currencies) && doc.detected_currencies.length > 0 ? doc.detected_currencies : ['INR'],
-                converted_inr_crores: doc.converted_inr_crores ?? 0,
-                unique_items_count: doc.unique_items_count,
-                unique_vendors_count: doc.unique_vendors_count,
-                material_groups_count: doc.material_groups_count,
-                plants_count: doc.plants_count
-              }));
-              setIngestionQueue(sanitizedQueue.slice(0, 1));
+              const sanitizedQueue: RawDocumentIngestion[] = queueToHydrate
+                .filter((doc: any) => typeof doc.doc_id === 'string' && doc.doc_id.trim().length > 0
+                  && typeof doc.file_name === 'string' && doc.file_name.trim().length > 0)
+                .map((doc: any) => doc as RawDocumentIngestion);
+              const requestedDocumentId = typeof window !== 'undefined'
+                ? new URLSearchParams(window.location.search).get('documentId')
+                : null;
+              const requestedDocument = requestedDocumentId
+                ? sanitizedQueue.find((document) => document.doc_id === requestedDocumentId)
+                : undefined;
+              if (requestedDocumentId && !requestedDocument) {
+                setToastMessage(UI_STRINGS.documentSummary.selectedDocumentUnavailable);
+              }
+              const documentsInRequestedOrder = requestedDocument
+                ? [requestedDocument, ...sanitizedQueue.filter((document) => document.doc_id !== requestedDocumentId)]
+                : sanitizedQueue;
+              setIngestionQueue(documentsInRequestedOrder.slice(0, 1));
               if (ingestionData.value.validationRecords) {
                 setValidationRecords(ingestionData.value.validationRecords);
               }
@@ -1004,29 +1008,45 @@ export default function Home() {
   };
 
   const handleApplyCurrencyFix = async (recordId: string, selectedCurrency: string, convertedAmount: number) => {
-    const record = validationRecords.find((r) => r.record_id === recordId) || validationRecords[0];
-    const fxRate = getYahooFinanceRateToINR(selectedCurrency, record.transaction_date || record.spend_year);
-    const inrCrores = Number((convertedAmount / INR_CRORES_DIVISOR).toFixed(4));
+    const record = validationRecords.find((r) => r.record_id === recordId);
+    if (!record) {
+      showToast(UI_STRINGS.module1.currencyRecordNotFound(recordId));
+      return;
+    }
+    let authoritativeAmountINR = 0;
+    let fxRate = 0;
+    let inrCrores = 0;
 
     try {
+      const conversion = await apiClient.getCurrencyConversion(
+        selectedCurrency,
+        Number(record.amount || 0),
+        record.transaction_date || record.spend_year
+      );
+      authoritativeAmountINR = conversion.amountINR;
+      fxRate = conversion.exchangeRate;
+      inrCrores = Number((authoritativeAmountINR / INR_CRORES_DIVISOR).toFixed(4));
+      if (Math.abs(convertedAmount - authoritativeAmountINR) > 0.01) {
+        frontendLogger.warn('Currency preview differed from the D1 conversion result', { recordId, selectedCurrency });
+      }
       await apiClient.updateValidationRecord(recordId, {
         raw_currency: selectedCurrency,
         issue_flag: 'Passed Clean',
         action_status: 'Ready',
         resolved: true,
         amount: record.amount,
-        amount_inr: convertedAmount,
+        amount_inr: authoritativeAmountINR,
         fx_rate_applied: fxRate,
         inr_crores: inrCrores
       });
     } catch (error: unknown) {
-      frontendLogger.warn('Currency correction was not persisted', { recordId, error });
+      frontendLogger.warn('D1 currency correction was not persisted', { recordId, error });
       showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
       return;
     }
 
     setValidationRecords((prev) => prev.map((r) => r.record_id === recordId
-      ? { ...r, raw_currency: selectedCurrency, currency_provenance: 'ANALYST_CONFIRMED', issue_flag: 'Passed Clean', action_status: 'Ready', resolved: true, amount_inr: convertedAmount, fx_rate_applied: fxRate, inr_crores: inrCrores }
+      ? { ...r, raw_currency: selectedCurrency, currency_provenance: 'ANALYST_CONFIRMED', issue_flag: 'Passed Clean', action_status: 'Ready', resolved: true, amount_inr: authoritativeAmountINR, fx_rate_applied: fxRate, inr_crores: inrCrores }
       : r));
 
     setIsDataRefreshed(true);
@@ -1199,20 +1219,6 @@ export default function Home() {
       return prev;
     });
 
-    try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        const saved = window.sessionStorage.getItem('procucev_uploaded_dataset');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          parsed.isDataRefreshed = true;
-          parsed.validationRecords = validationRecords;
-          window.sessionStorage.setItem('procucev_uploaded_dataset', JSON.stringify(parsed));
-        }
-      }
-    } catch {
-      // Fallback if sessionStorage unavailable
-    }
-
     // Scroll smoothly to Document Summary View to display final numbers
     if (typeof document !== 'undefined') {
       const docSummaryEl = document.getElementById('document-summary-section');
@@ -1232,7 +1238,9 @@ export default function Home() {
         spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
         uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
         categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-        confidenceScore: 99.4
+        confidenceScore: lineItems.length > 0
+          ? Number((lineItems.reduce((total, item) => total + item.ai_confidence, 0) / lineItems.length).toFixed(1))
+          : undefined
       },
       onComplete: () => {
         setAnalyzingLoaderState(null);
@@ -1264,13 +1272,6 @@ export default function Home() {
       frontendLogger.warn('Document deletion was not persisted', { docId, error });
       showToast(error instanceof Error ? error.message : UI_STRINGS.module4.saveFailed(UI_STRINGS.module4.apiNoDetails));
       return;
-    }
-    try {
-      if (typeof window !== 'undefined' && window.sessionStorage) {
-        window.sessionStorage.removeItem('procucev_uploaded_dataset');
-      }
-    } catch {
-      // Safe fallback
     }
     setIngestionQueue(remainingDocuments);
     setValidationRecords([]);
@@ -1446,6 +1447,20 @@ export default function Home() {
           const plantKey = keys.find((k) => /plnt|plant|werks|facility|site/i.test(k));
           const dateKey = keys.find((k) => /doc.*date|document.*date|posting.*date|date/i.test(k));
 
+          const foreignCurrencies = new Set(rows.map((row) => {
+            const code = currKey && row[currKey] != null ? String(row[currKey]).trim().toUpperCase() : 'INR';
+            return code;
+          }).filter((code) => code && code !== 'INR'));
+          const currencyRates = foreignCurrencies.size > 0 ? await apiClient.getCurrencyRates() : {};
+          const getFxRate = (code: string): number => {
+            if (!code || code === 'INR') return 1;
+            const rate = currencyRates[code]?.currentRate;
+            if (typeof rate !== 'number' || !Number.isFinite(rate) || rate <= 0) {
+              throw new Error(UI_STRINGS.module1.fxReferenceResponseInvalid);
+            }
+            return rate;
+          };
+
           let cumulativeFileTotalINR = 0;
           parsedValidationItems.length = 0;
 
@@ -1467,7 +1482,7 @@ export default function Home() {
             const rawDateVal = dateKey ? r[dateKey] : null;
             const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || new Date().getFullYear());
             const rawYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
-            const fxRate = getYahooFinanceRateToINR(rawCurr || 'INR', rawDateVal || rawYear);
+            const fxRate = getFxRate(rawCurr || 'INR');
 
             // Ground truth check: Use Total In Crs or Total INR if present, otherwise Qty * Price * FX
             const rawCr = totalCrKey && r[totalCrKey] != null ? Number(r[totalCrKey]) : NaN;
@@ -1753,7 +1768,7 @@ export default function Home() {
             const rawDateVal = dateKey ? r[dateKey] : null;
             const parsedDateInfo = parseDateOrYear(rawDateVal as string | number || (yearKey ? r[yearKey] : null) || 2024);
             const rowYear = (yearKey && Number(String(r[yearKey]).match(/\d{4}/)?.[0])) || parsedDateInfo.year || 2024;
-            const fxRate = getYahooFinanceRateToINR(rawCurr, rowYear);
+            const fxRate = getFxRate(rawCurr);
             const rawCr = totalCrKey && !isNaN(Number(r[totalCrKey])) ? Number(r[totalCrKey]) : NaN;
             const lineCr = !isNaN(rawCr) ? rawCr : (rawQty * rawPrice * fxRate) / 10000000;
 
@@ -1991,55 +2006,118 @@ export default function Home() {
   };
 
   // Handlers for Module 2
-  const handleConfirmMapping = (mappingId: string) => {
-    setLineItems((prev) =>
-      prev.map((item) =>
-        item.mapping_id === mappingId ? { ...item, status: 'Confirmed' } : item
-      )
-    );
-    showToast(UI_STRINGS.toasts.unspscConfirmed(mappingId));
+  const persistD1MappingDecisions = async (
+    items: LineItemMapping[],
+    reviewStatus: 'PROVISIONAL' | 'CLIENT_APPROVED',
+    auditNotes: string
+  ) => {
+    const assessmentId = activeAssessment?.assessmentId;
+    if (!assessmentId) {
+      showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+      return null;
+    }
+
+    const seenMaterialIds = new Set<string>();
+    const payloads = items.flatMap((item) => {
+      const sourceMaterialId = item.material_code?.trim();
+      if (!sourceMaterialId || seenMaterialIds.has(sourceMaterialId)) return [];
+      seenMaterialIds.add(sourceMaterialId);
+      return [{
+        sourceMaterialId,
+        unspscCode: item.unspsc_code,
+        reviewStatus,
+        confidenceScore: reviewStatus === 'PROVISIONAL' ? Math.max(0, Math.min(1, item.ai_confidence / 100)) : 1,
+        mappingMethod: reviewStatus === 'PROVISIONAL' ? 'CONTEXTUAL_HEURISTIC' as const : 'MANUAL_REVIEW_REQUIRED' as const,
+        auditNotes
+      }];
+    });
+
+    if (payloads.length === 0) {
+      showToast(UI_STRINGS.toasts.noTaxonomySuggestionsSaved);
+      return null;
+    }
+
+    try {
+      const savedMappings = await saveModule2MaterialMappings(assessmentId, payloads);
+      const savedByMaterialId = new Map(savedMappings.map((mapping) => [mapping.sourceMaterialId, mapping]));
+      setLineItems((previous) => previous.map((item) => {
+        const saved = item.material_code ? savedByMaterialId.get(item.material_code) : undefined;
+        if (!saved) return item;
+        return {
+          ...item,
+          unspsc_code: saved.assignedUnspscCode,
+          unspsc_commodity_title: saved.assignedUnspscTitle,
+          unspsc_category_name: saved.assignedUnspscTitle,
+          core_bucket: saved.coreBucket || item.core_bucket,
+          ai_confidence: saved.confidenceScore * 100,
+          status: saved.reviewStatus === 'PROVISIONAL' ? 'Pending Review' : 'Confirmed'
+        };
+      }));
+      return savedMappings;
+    } catch (error) {
+      showToast(error instanceof Error
+        ? error.message
+        : UI_STRINGS.toasts.module2MappingFailed(UI_STRINGS.errors.server.databaseUnavailable));
+      return null;
+    }
   };
 
-  const handleSaveReassign = (mappingId: string, newCode: string, newName: string, bucket: any) => {
-    setLineItems((prev) =>
-      prev.map((item) =>
-        item.mapping_id === mappingId
-          ? {
-              ...item,
-              unspsc_code: newCode,
-              unspsc_category_name: newName,
-              core_bucket: bucket,
-              status: 'Confirmed',
-              ai_confidence: 99.1
-            }
-          : item
-      )
+  const handleConfirmMapping = async (mappingId: string) => {
+    const item = lineItems.find((lineItem) => lineItem.mapping_id === mappingId);
+    if (!item?.material_code?.trim()) {
+      showToast(UI_STRINGS.toasts.module2MaterialCodeRequired);
+      return;
+    }
+    const saved = await persistD1MappingDecisions(
+      [item],
+      'CLIENT_APPROVED',
+      VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_AUDIT_NOTE
     );
-    showToast(UI_STRINGS.toasts.taxonomyReassigned(newCode, bucket));
+    if (saved?.length) showToast(UI_STRINGS.toasts.unspscConfirmed(mappingId));
+  };
+
+  const handleSaveReassign = async (mappingId: string, newCode: string, _newName: string, _bucket: LineItemMapping['core_bucket']) => {
+    const item = lineItems.find((lineItem) => lineItem.mapping_id === mappingId);
+    if (!item?.material_code?.trim()) {
+      showToast(UI_STRINGS.toasts.module2MaterialCodeRequired);
+      return;
+    }
+    const saved = await persistD1MappingDecisions(
+      [{ ...item, unspsc_code: newCode, ai_confidence: 100 }],
+      'CLIENT_APPROVED',
+      VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_APPROVAL_AUDIT_NOTE
+    );
+    if (saved?.length) {
+      setSelectedItemForReassign(null);
+      showToast(UI_STRINGS.toasts.taxonomyReassigned(
+        saved[0].assignedUnspscCode,
+        saved[0].coreBucket || item.core_bucket
+      ));
+    }
   };
 
   // Handlers for Module 4 Suite Integration
-  const handleProCPXSuccess = (oppId: string) => {
-    setOpportunities((prev) =>
-      prev.map((o) => (o.opp_id === oppId ? { ...o, status: 'Pushed to proCPX' } : o))
-    );
-    apiClient.deployOpportunity(oppId, 'proCPX').catch((e) => {
-      frontendLogger.warn('Backend sync warning for proCPX deployment', { error: e });
-    });
+  const handleProCPXSuccess = async (oppId: string): Promise<void> => {
+    const saved = await apiClient.deployOpportunity(oppId, 'proCPX');
+    setOpportunities((prev) => prev.map((opportunity) =>
+      opportunity.opp_id === oppId ? { ...opportunity, ...saved } : opportunity
+    ));
     showToast(UI_STRINGS.toasts.pushedToProCPX(oppId));
   };
 
-  const handleDPSNXTSuccess = (oppId: string) => {
-    setOpportunities((prev) =>
-      prev.map((o) => (o.opp_id === oppId ? { ...o, status: 'Pushed to DPS NXT' } : o))
-    );
-    apiClient.deployOpportunity(oppId, 'DPS NXT').catch((e) => {
-      frontendLogger.warn('Backend sync warning for DPS NXT deployment', { error: e });
-    });
+  const handleDPSNXTSuccess = async (oppId: string): Promise<void> => {
+    const saved = await apiClient.deployOpportunity(oppId, 'DPS NXT');
+    setOpportunities((prev) => prev.map((opportunity) =>
+      opportunity.opp_id === oppId ? { ...opportunity, ...saved } : opportunity
+    ));
     showToast(UI_STRINGS.toasts.deployedToDPSNXT(oppId));
   };
 
   const handleStartAICategorization = async () => {
+    if (!activeAssessment?.assessmentId) {
+      showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+      return;
+    }
     try {
       await loadUNSPSCTaxonomy();
     } catch {
@@ -2064,92 +2142,51 @@ export default function Home() {
       }
     });
 
-    try {
-      const itemsToCategorize = lineItems.map((item) => ({
+    const itemsToCategorize = lineItems.map((item) => ({
         rawLineText: item.raw_desc,
         vendorIdentified: item.vendor_identified,
         amount: item.inr_crores || item.total_spend
       }));
 
-      const res = await aiApiClient.categorizeItems(itemsToCategorize);
-      if (res?.success && Array.isArray(res.mappings) && res.mappings.length > 0) {
-        const mappingMap = new Map(
-          res.mappings.map((m) => [String(m.rawLineText || '').toLowerCase().trim(), m])
-        );
-
-        setLineItems((prev) =>
-          prev.map((item) => {
-            const match = mappingMap.get(item.raw_desc.toLowerCase().trim());
-            if (match) {
-              const details = lookupUNSPSCDetails(match.unspscTitle || item.raw_desc, (match.suggestedBucket as any) || item.core_bucket);
-              return {
-                ...item,
-                unspsc_code: match.mappedUnspscCode || item.unspsc_code,
-                unspsc_commodity_title: match.unspscTitle || details.commodityTitle || item.unspsc_commodity_title,
-                unspsc_class_title: details.classTitle || item.unspsc_class_title,
-                unspsc_category_name: match.unspscTitle || details.commodityTitle || item.unspsc_category_name,
-                core_bucket: (match.suggestedBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-                ai_confidence: typeof match.confidenceScore === 'number' ? match.confidenceScore : 99.2,
-                status: 'Confirmed'
-              };
-            }
-            const fallbackMatch = lookupUNSPSCByDescription(item.raw_desc);
-            const fallbackDetails = fallbackMatch || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-            return {
-              ...item,
-              unspsc_code: fallbackDetails.commodityCode || item.unspsc_code,
-              unspsc_commodity_title: fallbackDetails.commodityTitle || item.unspsc_commodity_title,
-              unspsc_class_title: fallbackDetails.classTitle || item.unspsc_class_title,
-              unspsc_category_name: fallbackDetails.commodityTitle || item.unspsc_category_name,
-              core_bucket: (fallbackDetails.coreBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-              ai_confidence: 99.4,
-              status: 'Confirmed'
-            };
-          })
-        );
-        setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
-        showToast(`AI Categorization completed via ${res.model || 'Google Gemini'}`);
-      } else {
-        // High-precision taxonomy matching via official UNSPSC dictionary
-        setLineItems((prev) =>
-          prev.map((item) => {
-            const match = lookupUNSPSCByDescription(item.raw_desc);
-            const details = match || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-            return {
-              ...item,
-              unspsc_code: details.commodityCode || item.unspsc_code,
-              unspsc_commodity_title: details.commodityTitle || item.unspsc_commodity_title,
-              unspsc_class_title: details.classTitle || item.unspsc_class_title,
-              unspsc_category_name: details.commodityTitle || item.unspsc_category_name,
-              core_bucket: (details.coreBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-              ai_confidence: 99.4,
-              status: 'Confirmed'
-            };
-          })
-        );
-        setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
-        showToast('UNSPSC AI Categorization applied across all line items');
+    const getAIClassification = async () => {
+      try {
+        return await aiApiClient.categorizeItems(itemsToCategorize);
+      } catch (error) {
+        frontendLogger.error('AI categorization failed; using D1 taxonomy suggestions', {}, error as Error);
+        return null;
       }
-    } catch (err) {
-      frontendLogger.error('Error in AI categorization, applying official UNSPSC dictionary matching', {}, err as Error);
-      setLineItems((prev) =>
-        prev.map((item) => {
-          const match = lookupUNSPSCByDescription(item.raw_desc);
-          const details = match || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
-          return {
-            ...item,
-            unspsc_code: details.commodityCode || item.unspsc_code,
-            unspsc_commodity_title: details.commodityTitle || item.unspsc_commodity_title,
-            unspsc_class_title: details.classTitle || item.unspsc_class_title,
-            unspsc_category_name: details.commodityTitle || item.unspsc_category_name,
-            core_bucket: (details.coreBucket as LineItemMapping['core_bucket']) || item.core_bucket,
-            ai_confidence: 99.4,
-            status: 'Confirmed'
-          };
-        })
+    };
+
+    try {
+      const result = await getAIClassification();
+      const aiMappings = result?.success && Array.isArray(result.mappings) ? result.mappings : [];
+      const mappingMap = new Map(aiMappings.map((mapping) => [
+        String(mapping.rawLineText || '').toLowerCase().trim(), mapping
+      ]));
+      const suggestedItems = lineItems.map((item) => {
+        const aiMapping = mappingMap.get(item.raw_desc.toLowerCase().trim());
+        const taxonomyMatch = lookupUNSPSCByDescription(item.raw_desc);
+        const details = aiMapping
+          ? lookupUNSPSCDetails(aiMapping.unspscTitle || item.raw_desc, aiMapping.suggestedBucket || item.core_bucket)
+          : taxonomyMatch || lookupUNSPSCDetails(item.raw_desc, item.core_bucket);
+        return {
+          ...item,
+          unspsc_code: aiMapping?.mappedUnspscCode || details.commodityCode || item.unspsc_code,
+          unspsc_commodity_title: aiMapping?.unspscTitle || details.commodityTitle || item.unspsc_commodity_title,
+          unspsc_class_title: details.classTitle || item.unspsc_class_title,
+          unspsc_category_name: aiMapping?.unspscTitle || details.commodityTitle || item.unspsc_category_name,
+          core_bucket: (aiMapping?.suggestedBucket || details.coreBucket || item.core_bucket) as LineItemMapping['core_bucket'],
+          ai_confidence: typeof aiMapping?.confidenceScore === 'number' ? aiMapping.confidenceScore : 99.4
+        };
+      });
+      const saved = await persistD1MappingDecisions(
+        suggestedItems,
+        'PROVISIONAL',
+        VENDOR_CONSOLIDATION_UI_CONFIG.MAPPING_SUGGESTION_AUDIT_NOTE
       );
-      setCompletedSteps((prev) => ({ ...prev, step1: true, step2: true }));
-      showToast('UNSPSC AI Categorization completed');
+      if (!saved?.length) return;
+      setCompletedSteps((previous) => ({ ...previous, step1: true, step2: true }));
+      showToast(UI_STRINGS.toasts.taxonomySuggestionsSaved(saved.length));
     } finally {
       if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
         setAnalyzingLoaderState(null);
@@ -2220,7 +2257,9 @@ export default function Home() {
               spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
               uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
               categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-              confidenceScore: 99.4
+              confidenceScore: lineItems.length > 0
+                ? Number((lineItems.reduce((total, item) => total + item.ai_confidence, 0) / lineItems.length).toFixed(1))
+                : undefined
             },
             onComplete: () => {
               setAnalyzingLoaderState(null);
@@ -2305,6 +2344,10 @@ export default function Home() {
             onApplyBlanketFixes={handleApplyBlanketFixes}
             onResetValidationRecords={handleResetValidationRecords}
             onRunAICategorization={async () => {
+              if (!activeAssessment?.assessmentId) {
+                showToast(UI_STRINGS.toasts.module2AssessmentRequired);
+                return;
+              }
               setCompletedSteps((prev) => ({ ...prev, step1: true }));
               setActiveTab('module2');
               await handleStartAICategorization();
@@ -2478,7 +2521,7 @@ export default function Home() {
             region: updatedConfig.region || tenant.region,
             major_sector: updatedConfig.majorSector || tenant.major_sector,
             minor_sector: updatedConfig.minorSector || tenant.minor_sector,
-            total_spend_evaluated_inr: (updatedConfig.estimatedSpend * 83.8) / 10000000 || tenant.total_spend_evaluated_inr
+            total_spend_evaluated_inr: updatedConfig.estimatedSpend / 10000000 || tenant.total_spend_evaluated_inr
           };
           setTenant(updatedTenant);
           setIsClientSetupModalOpen(false);
@@ -2501,7 +2544,9 @@ export default function Home() {
             spendCrores: Number((tenant.total_spend_evaluated_inr ?? 0).toFixed(2)),
             uniqueVendors: uploadedUniqueVendors ?? (ingestionQueue[0]?.unique_vendors_count || vendorRankings.length || 0),
             categoriesIdentified: uploadedMaterialGroups?.length ?? (ingestionQueue[0]?.material_groups_count || categories.length || 0),
-            confidenceScore: 99.4
+            confidenceScore: lineItems.length > 0
+              ? Number((lineItems.reduce((total, item) => total + item.ai_confidence, 0) / lineItems.length).toFixed(1))
+              : undefined
           }}
           onComplete={analyzingLoaderState.onComplete}
           onCancel={() => setAnalyzingLoaderState(null)}

@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import { ORCHESTRATION_MESSAGES } from '../../src/constants/orchestrationMessages';
+import * as assessmentDataVersionD1 from '../../src/services/assessmentDataVersionD1';
+import * as assessmentAnalysisD1 from '../../src/services/assessmentAnalysisD1';
+import * as orchestrationStore from '../../src/workerD1OrchestrationStore';
 import { handleOrchestrationRoute } from '../../src/workerD1Orchestration';
 import {
   ADMIN_ID,
@@ -84,6 +89,21 @@ const submitReport = async (jobId = 'AIC-A1'): Promise<string> => {
 const jobIds = (result: CallResult): string[] =>
   (result.body.data as Array<{ analysisJobId: string }>).map((job) => job.analysisJobId).sort();
 
+const correctedUploadFor = (csv: string, fileName = 'Corrected_Spend.csv') => {
+  const bytes = Buffer.from(csv, 'utf8');
+  return {
+    fileName,
+    fileSize: bytes.byteLength,
+    checksum: createHash('sha256').update(bytes).digest('hex'),
+    fileBase64: bytes.toString('base64'),
+    reason: 'INCORRECT_CATEGORY_MAPPING'
+  };
+};
+const correctedCsv = 'PO Number,Supplier Name,Description,Quantity,Net Price,Currency,Total INR,Transaction Date,Material Group,Plant\n' +
+  'PO-CORR-1,Acme Supplies,Packaging,2,5,INR,10,2026-01-01,Packaging,Plant 1';
+const correctedFileBytes = Buffer.from(correctedCsv, 'utf8');
+const correctedUploadBody = correctedUploadFor(correctedCsv);
+
 beforeEach(async () => {
   raceHook = undefined;
   harness = createHarness({ beforeStatement });
@@ -94,6 +114,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   harness.close();
 });
 
@@ -295,10 +316,19 @@ describe('job detail and readiness', () => {
       categoryCount: 2,
       spendInrCr: 2.25
     });
-    expect(data.pcbiGaps).toEqual([]);
+    expect(data.pcbiGaps).toHaveLength(2);
+    expect(data.pcbiGaps[0]).toMatchObject({
+      itemCategory: 'MG1',
+      customerSpendInrCr: 2,
+      transactionCount: 2,
+      existingPcbiMapping: 'PCBI-TEST',
+      status: 'PCBI_COVERED',
+      resolutionStatus: 'MAPPED'
+    });
     expect(data.reports).toEqual([]);
     expect(data.correctionRequests).toEqual([]);
     expect(data.readiness.overallReadiness).toBe('READY_TO_GENERATE');
+    expect(data.readiness.categoryCoveragePct).toBe(100);
     expect(data.checklist).toBeUndefined();
     expect(data.acknowledgement).toBeUndefined();
   });
@@ -375,6 +405,13 @@ describe('job detail and readiness', () => {
     const result = await adminCall({ path: '/jobs/AIC-D1/readiness' });
     expect(result.body.data.categoryCoveragePct).toBe(0);
     expect(result.body.data.blockingReasons).toEqual([ORCHESTRATION_MESSAGES.readinessNoRun]);
+  });
+
+  it('blocks readiness when an approved run has no D1 procurement rows to review', async () => {
+    harness.sqlite.prepare('DELETE FROM ProcurementTransaction WHERE assessment_id = ?').run('AIC-A2');
+    const result = await adminCall({ path: '/jobs/AIC-A2/readiness' });
+    expect(result.body.data.overallReadiness).toBe('ACTION_REQUIRED');
+    expect(result.body.data.blockingReasons).toEqual([ORCHESTRATION_MESSAGES.readinessPcbiEvidenceUnavailable]);
   });
 
   it('lets the owning customer read readiness but not another customer', async () => {
@@ -614,6 +651,30 @@ describe('approval and submission', () => {
     });
     expect(result.status).toBe(200);
     expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.reportSubmitted);
+  });
+
+  it('reports email delivery after approval when the provider accepts the notification', async () => {
+    const generated = await generateReport();
+    await confirmChecklist();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'email-123' }), { status: 200 }));
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/approve-and-submit',
+      body: { reportVersionId: generated.body.report.reportVersionId }
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({
+      success: true,
+      emailStatus: 'SENT',
+      message: ORCHESTRATION_MESSAGES.reportSubmittedEmailSent
+    });
   });
 
   it('refuses to approve a report that is no longer awaiting review', async () => {
@@ -959,6 +1020,123 @@ describe('resending notifications', () => {
       .toContain('NOTIFICATION_RESEND_ATTEMPTED');
   });
 
+  it('sends the report email and persists the SENT status when provider credentials and customer email exist', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: 'email-123' }), { status: 200 })
+    );
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ success: true, message: ORCHESTRATION_MESSAGES.notificationEmailSent });
+    expect(result.body.notification.emailDelivery).toMatchObject({ status: 'SENT', retryCount: 1 });
+    expect(harness.sqlite.prepare(
+      'SELECT email_status, email_retry_count FROM OrchestrationNotification ORDER BY created_at DESC LIMIT 1'
+    ).get()).toEqual({ email_status: 'SENT', email_retry_count: 1 });
+    expect(fetch).toHaveBeenCalledWith('https://api.resend.com/emails', expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer resend-test-token' })
+    }));
+    const requestBody = JSON.parse(String(fetch.mock.calls[0]?.[1]?.body)) as { to: string[] };
+    expect(requestBody.to).toEqual(['finance@example.test']);
+  });
+
+  it('records a failed provider response and returns actionable resend guidance', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Provider rate limit' }), { status: 429 })
+    );
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.notificationProviderFailed('Provider rate limit'));
+    expect(result.body.notification.emailDelivery).toMatchObject({
+      status: 'FAILED',
+      retryCount: 1,
+      lastError: 'Provider rate limit'
+    });
+  });
+
+  it('records a provider network exception as FAILED and allows a later retry', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network unavailable'));
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.notificationProviderFailed('Network unavailable'));
+    expect(result.body.notification.emailDelivery).toMatchObject({ status: 'FAILED', lastError: 'Network unavailable' });
+  });
+
+  it('returns a server error if the email delivery result cannot be persisted', async () => {
+    const reportId = await submitReport();
+    harness.sqlite.prepare(
+      'INSERT INTO CustomerRecord (customer_id, customer_name, industry, contact_email) VALUES (?1, ?2, ?3, ?4)'
+    ).run(CUSTOMER_A_ID, 'Alpha Textile', 'Textiles', 'finance@example.test');
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'email-123' }), { status: 200 }));
+    raceHook = (sql, sqlite) => {
+      if (sql.includes('UPDATE OrchestrationNotification')) {
+        sqlite.prepare('DELETE FROM OrchestrationNotification').run();
+      }
+    };
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(500);
+  });
+
+  it('does not call the provider when the customer record has no contact email', async () => {
+    const reportId = await submitReport();
+    harness.environment.RESEND_API_KEY = 'resend-test-token';
+    harness.environment.RESEND_FROM = 'Reports <reports@example.test>';
+    const fetch = vi.spyOn(globalThis, 'fetch');
+
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/resend-notification',
+      body: { reportVersionId: reportId }
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.notificationRecipientMissing);
+    expect(result.body.notification.emailDelivery.status).toBe('NOT_SENT');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('refuses to resend for a report that has not been submitted', async () => {
     const generated = await generateReport();
     const result = await adminCall({
@@ -975,18 +1153,268 @@ describe('resending notifications', () => {
   });
 });
 
-describe('endpoints not implemented on the Worker', () => {
-  it('answers 501 for PCBI gap resolution and names the missing piece', async () => {
-    const result = await adminCall({ method: 'POST', path: '/jobs/AIC-A1/pcbi-gap/GAP-1/resolve', body: {} });
-    expect(result.status).toBe(501);
-    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.pcbiGapNotImplemented);
-    expect(result.body.success).toBe(false);
+describe('PCBI gap resolution and corrected dataset workflows', () => {
+  it('lists category gaps from current-version transactions and saves an audited mapping', async () => {
+    harness.sqlite.prepare(
+      'DELETE FROM OrchestrationPCBIGapResolution WHERE assessment_id = ? AND category_key = ?'
+    ).run('AIC-A1', 'MG1');
+    const detail = await adminCall({ path: '/jobs/AIC-A1' });
+    const gap = detail.body.data.pcbiGaps.find((entry: { itemCategory: string }) => entry.itemCategory === 'MG1');
+    expect(gap).toMatchObject({
+      customerSpendInrCr: 2,
+      transactionCount: 2,
+      supplierCount: 2,
+      plantCount: 2,
+      status: 'PCBI_REQUIRED',
+      resolutionStatus: 'PENDING'
+    });
+    expect(detail.body.data.readiness).toMatchObject({
+      categoryCoveragePct: 50,
+      categoriesRequiringReview: 1,
+      overallReadiness: 'ACTION_REQUIRED'
+    });
+
+    const result = await adminCall({
+      method: 'POST',
+      path: `/jobs/AIC-A1/pcbi-gap/${gap.gapId}/resolve`,
+      body: { action: 'MAP_EXISTING', targetPcbiSeries: 'PCBI-TEST' }
+    });
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({
+      success: true,
+      message: ORCHESTRATION_MESSAGES.pcbiGapResolved,
+      gap: { status: 'PCBI_COVERED', resolutionStatus: 'MAPPED', existingPcbiMapping: 'PCBI-TEST' }
+    });
+    expect(harness.sqlite.prepare(
+      'SELECT action, target_pcbi_series FROM OrchestrationPCBIGapResolution WHERE assessment_id = ? AND category_key = ?'
+    ).get('AIC-A1', 'MG1')).toEqual({ action: 'MAP_EXISTING', target_pcbi_series: 'PCBI-TEST' });
+    expect(harness.sqlite.prepare(
+      'SELECT event_type, entity_type FROM OrchestrationAuditEvent WHERE assessment_id = ? ORDER BY created_at DESC LIMIT 1'
+    ).get('AIC-A1')).toEqual({ event_type: 'PCBI_GAP_RESOLVED', entity_type: 'OrchestrationPCBIGapResolution' });
   });
 
-  it('answers 501 for corrected dataset upload', async () => {
-    const upload = await adminCall({ method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: {} });
-    expect(upload.status).toBe(501);
-    expect(upload.body.message).toBe(ORCHESTRATION_MESSAGES.uploadCorrectedNotImplemented);
+  it('validates active benchmark series and rejects unknown categories', async () => {
+    harness.sqlite.prepare(
+      'DELETE FROM OrchestrationPCBIGapResolution WHERE assessment_id = ? AND category_key = ?'
+    ).run('AIC-A1', 'MG1');
+    const detail = await adminCall({ path: '/jobs/AIC-A1' });
+    const gap = detail.body.data.pcbiGaps.find((entry: { itemCategory: string }) => entry.itemCategory === 'MG1');
+    const missingSeries = await adminCall({
+      method: 'POST', path: `/jobs/AIC-A1/pcbi-gap/${gap.gapId}/resolve`,
+      body: { action: 'MAP_EXISTING', targetPcbiSeries: 'PCBI-MISSING' }
+    });
+    expect(missingSeries.status).toBe(404);
+    expect(missingSeries.body.message).toBe(ORCHESTRATION_MESSAGES.pcbiSeriesNotFound('PCBI-MISSING'));
+
+    const missingTarget = await adminCall({
+      method: 'POST', path: `/jobs/AIC-A1/pcbi-gap/${gap.gapId}/resolve`, body: { action: 'MAP_EXISTING' }
+    });
+    expect(missingTarget.status).toBe(400);
+
+    const unknownGap = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/pcbi-gap/PCBI-GAP-unknown/resolve',
+      body: { action: 'REQUEST_RESEARCH' }
+    });
+    expect(unknownGap.status).toBe(404);
+    expect(unknownGap.body.message).toBe(ORCHESTRATION_MESSAGES.pcbiGapNotFound('PCBI-GAP-unknown'));
+  });
+
+  it('requires a current data version before resolving a PCBI category', async () => {
+    const result = await adminCall({
+      method: 'POST', path: '/jobs/AIC-C1/pcbi-gap/PCBI-GAP-unknown/resolve',
+      body: { action: 'REQUEST_RESEARCH' }
+    });
+    expect(result.status).toBe(409);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.readinessPcbiEvidenceUnavailable);
+  });
+
+  it('persists exclusion, service, non-benchmarkable, research, and add-map decisions', async () => {
+    harness.sqlite.prepare(
+      'DELETE FROM OrchestrationPCBIGapResolution WHERE assessment_id = ? AND category_key = ?'
+    ).run('AIC-A1', 'MG1');
+    const detail = await adminCall({ path: '/jobs/AIC-A1' });
+    const gap = detail.body.data.pcbiGaps.find((entry: { itemCategory: string }) => entry.itemCategory === 'MG1');
+    const cases = [
+      { body: { action: 'EXCLUDE', exclusionReason: 'OTHER', exclusionNotes: 'No benchmark evidence' }, status: 'EXCLUDED' },
+      { body: { action: 'MARK_NOT_BENCHMARKABLE' }, status: 'EXCLUDED' },
+      { body: { action: 'MARK_SERVICE' }, status: 'EXCLUDED' },
+      { body: { action: 'REQUEST_RESEARCH' }, status: 'RESEARCH_REQUESTED' },
+      { body: { action: 'ADD_MAP_PCBI', targetPcbiSeries: 'PCBI-TEST' }, status: 'MAPPED' }
+    ];
+    for (const { body, status } of cases) {
+      const result = await adminCall({
+        method: 'POST', path: `/jobs/AIC-A1/pcbi-gap/${gap.gapId}/resolve`, body
+      });
+      expect(result.status).toBe(200);
+      expect(result.body.gap.resolutionStatus).toBe(status);
+    }
+    expect(harness.sqlite.prepare(
+      'SELECT action FROM OrchestrationPCBIGapResolution WHERE assessment_id = ? AND category_key = ?'
+    ).get('AIC-A1', 'MG1')).toEqual({ action: 'ADD_MAP_PCBI' });
+  });
+
+  it('keeps PCBI gaps private to customer accounts and refuses to report with an unresolved category', async () => {
+    harness.sqlite.prepare(
+      'DELETE FROM OrchestrationPCBIGapResolution WHERE assessment_id = ? AND category_key = ?'
+    ).run('AIC-A1', 'MG1');
+    const customerDetail = await customerCall({ path: '/jobs/AIC-A1' });
+    expect(customerDetail.body.data.pcbiGaps).toEqual([]);
+    const report = await generateReport();
+    expect(report.status).toBe(409);
+    expect(report.body.blockingReasons).toContain(ORCHESTRATION_MESSAGES.readinessPcbiReviewPending(1));
+  });
+
+  it('stores a corrected dataset in R2 and D1, reruns Module 1, and records its lineage', async () => {
+    const storedObjects = new Map<string, Uint8Array>();
+    harness.environment.R2_BUCKET = 'test-assessments';
+    harness.environment.OBJECTS = {
+      put: vi.fn(async (key, value) => {
+        storedObjects.set(key, value instanceof Uint8Array ? value : new Uint8Array(value as ArrayBuffer));
+      }),
+      get: vi.fn(async () => null),
+      delete: vi.fn(async (key) => { storedObjects.delete(key); })
+    };
+    const upload = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: correctedUploadBody
+    });
+    expect(upload.status).toBe(200);
+    expect(upload.body).toMatchObject({
+      success: true,
+      analysisStatus: 'COMPLETED',
+      newVersion: {
+        parentVersionId: 'DV-A1',
+        correctionReason: 'INCORRECT_CATEGORY_MAPPING',
+        fileName: correctedUploadBody.fileName,
+        uploadedBy: 'System Administrator',
+        processingStatus: 'PROCESSED'
+      }
+    });
+    expect(storedObjects.size).toBe(1);
+    expect([...Array.from(storedObjects.values())[0]]).toEqual([...correctedFileBytes]);
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM ProcurementTransaction WHERE source_document_id = ?')
+      .get(upload.body.newVersion.versionId).count).toBe(1);
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM AssessmentAnalysisRun WHERE assessment_id = ? AND data_version_id = ?')
+      .get('AIC-A1', upload.body.newVersion.versionId).count).toBe(1);
+    expect(harness.sqlite.prepare('SELECT event_type, entity_id FROM OrchestrationAuditEvent WHERE assessment_id = ?')
+      .all('AIC-A1')).toContainEqual({ event_type: 'DATASET_CORRECTED', entity_id: upload.body.newVersion.versionId });
+    const details = await adminCall({ path: '/jobs/AIC-A1' });
+    const versions = details.body.data.versions as Array<Record<string, unknown>>;
+    expect(versions[versions.length - 1]).toMatchObject({
+      versionId: upload.body.newVersion.versionId,
+      parentVersionId: 'DV-A1',
+      correctionReason: 'INCORRECT_CATEGORY_MAPPING'
+    });
+  });
+
+  it('returns a service error when the dataset upload does not return a version ID', async () => {
+    harness.environment.OBJECTS = {
+      put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: vi.fn(async () => undefined)
+    };
+    vi.spyOn(assessmentDataVersionD1, 'uploadAssessmentDataVersion')
+      .mockResolvedValueOnce({ data: { success: true } } as never);
+
+    const result = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: correctedUploadBody
+    });
+
+    expect(result.status).toBe(503);
+    expect(result.body.message).toBe(ORCHESTRATION_MESSAGES.correctedDatasetVersionMissing);
+  });
+
+  it('returns a descriptive fallback when reanalysis returns a failure without a message', async () => {
+    harness.environment.OBJECTS = {
+      put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: vi.fn(async () => undefined)
+    };
+    vi.spyOn(assessmentAnalysisD1, 'runAssessmentAnalysisFromD1')
+      .mockResolvedValueOnce({ status: 500, data: { success: false } } as never);
+
+    const result = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: correctedUploadBody
+    });
+
+    expect(result.status).toBe(202);
+    expect(result.body).toMatchObject({ success: true, analysisStatus: 'FAILED' });
+    expect(result.body.message).toContain(ORCHESTRATION_MESSAGES.analysisCouldNotRun);
+  });
+
+  it('uses the previously loaded job if it disappears after the corrected upload', async () => {
+    harness.environment.OBJECTS = {
+      put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: vi.fn(async () => undefined)
+    };
+    vi.spyOn(assessmentAnalysisD1, 'runAssessmentAnalysisFromD1')
+      .mockResolvedValueOnce({ data: { success: true } } as never);
+    const findJobRow = orchestrationStore.findJobRow;
+    vi.spyOn(orchestrationStore, 'findJobRow')
+      .mockImplementationOnce((database, assessmentId) => findJobRow(database, assessmentId))
+      .mockResolvedValueOnce(null);
+
+    const result = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: correctedUploadBody
+    });
+
+    expect(result.status).toBe(200);
+    expect(result.body.success).toBe(true);
+  });
+
+  it('validates corrected dataset content and reports missing R2 configuration', async () => {
+    const invalid = await adminCall({ method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: {} });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.errorCategory).toBe('VALIDATION_ERROR');
+    expect(harness.environment.OBJECTS).toBeUndefined();
+
+    const noStorage = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: correctedUploadBody
+    });
+    expect(noStorage.status).toBe(503);
+    expect(noStorage.body.message).toBe(ORCHESTRATION_MESSAGES.datasetStorageNotConfigured);
+
+    harness.environment.OBJECTS = {
+      put: vi.fn(), get: vi.fn(async () => null), delete: vi.fn(async () => undefined)
+    };
+    const badChecksum = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/upload-corrected-dataset',
+      body: { ...correctedUploadBody, checksum: '0'.repeat(64) }
+    });
+    expect(badChecksum.status).toBe(400);
+    expect(harness.environment.OBJECTS.put).not.toHaveBeenCalled();
+  });
+
+  it('keeps a corrected version pending when the file has no transaction rows', async () => {
+    const storedObjects = new Map<string, Uint8Array>();
+    harness.environment.OBJECTS = {
+      put: vi.fn(async (key, value) => {
+        storedObjects.set(key, value instanceof Uint8Array ? value : new Uint8Array(value as ArrayBuffer));
+      }),
+      get: vi.fn(async () => null),
+      delete: vi.fn(async (key) => { storedObjects.delete(key); })
+    };
+    const result = await adminCall({
+      method: 'POST',
+      path: '/jobs/AIC-A1/upload-corrected-dataset',
+      body: correctedUploadFor('PO Number,Supplier Name,Description,Quantity,Net Price,Currency')
+    });
+    expect(result.status).toBe(202);
+    expect(result.body).toMatchObject({ success: true, analysisStatus: 'PENDING', newVersion: { processingStatus: 'PENDING' } });
+    expect(result.body.message).toContain('has no imported D1 transaction');
+    expect(storedObjects.size).toBe(1);
+  });
+
+  it('preserves the uploaded version and reports a failed Module 1 retry with the request id', async () => {
+    harness.environment.OBJECTS = {
+      put: vi.fn(async () => undefined), get: vi.fn(async () => null), delete: vi.fn(async () => undefined)
+    };
+    raceHook = (sql) => {
+      if (sql.includes('INSERT INTO AssessmentAnalysisRun')) throw new Error('analysis storage unavailable');
+    };
+    const result = await adminCall({
+      method: 'POST', path: '/jobs/AIC-A1/upload-corrected-dataset', body: correctedUploadBody, requestId: 'correction-req-9'
+    });
+    expect(result.status).toBe(202);
+    expect(result.body).toMatchObject({ success: true, analysisStatus: 'FAILED' });
+    expect(result.body.message).toContain('Module 1 could not finish');
+    expect(harness.sqlite.prepare('SELECT COUNT(*) AS count FROM AssessmentDataVersion WHERE assessment_id = ?')
+      .get('AIC-A1').count).toBe(2);
   });
 
   it('denies the admin-only corrected dataset upload endpoint to customers', async () => {
@@ -1109,6 +1537,16 @@ describe('R2-backed source dataset download', () => {
     expect(result.headers.get('Content-Disposition')).toBe("attachment; filename*=UTF-8''Spend.xlsx");
     expect(result.headers.get('Content-Length')).toBeNull();
     expect(result.headers.get('ETag')).toBeNull();
+  });
+
+  it('uses the binary content type when both D1 and R2 omit a content type', async () => {
+    seedStoredDataset({ contentType: '' });
+    installObjectStore({ body: new Response(fileContents).body! });
+
+    const result = await adminCall({ path: '/jobs/AIC-A1/download-dataset/DV-A1' });
+
+    expect(result.status).toBe(200);
+    expect(result.headers.get('Content-Type')).toBe('application/octet-stream');
   });
 });
 

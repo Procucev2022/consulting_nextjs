@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { OrchestrationApiClient } from '../../src/utils/orchestrationApi';
 import { apiClient } from '../../src/utils/api';
 import { DEFAULT_QUALITY_GATE_CHECKLIST } from '../../src/constants/analysisOrchestration';
+import { UI_STRINGS } from '../../src/constants/uiStrings';
+import { frontendLogger } from '../../src/utils/logger';
 
 describe('OrchestrationApiClient Unit Tests', () => {
   let client: OrchestrationApiClient;
@@ -9,6 +11,7 @@ describe('OrchestrationApiClient Unit Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    global.fetch = vi.fn();
     client = new OrchestrationApiClient();
     vi.spyOn(apiClient, 'getStoredToken').mockReturnValue('mock-jwt-token');
     vi.spyOn(apiClient, 'getStoredUser').mockReturnValue({
@@ -68,12 +71,87 @@ describe('OrchestrationApiClient Unit Tests', () => {
 
     const downloadUrl = client.getDownloadDatasetUrl('job-1', 'v1');
     expect(downloadUrl).toBe('/api/orchestration/jobs/job-1/download-dataset/v1');
+    expect(client.getDownloadDatasetUrl('job/1', 'v 2')).toBe('/api/orchestration/jobs/job%2F1/download-dataset/v%202');
+  });
+
+  describe('dataset downloads', () => {
+    it('downloads the selected version with authenticated request headers', async () => {
+      const workbook = new Blob(['workbook-bytes']);
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, blob: vi.fn().mockResolvedValue(workbook) });
+
+      await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx')).resolves.toBe(workbook);
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/orchestration/jobs/job-1/download-dataset/v1',
+        expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer mock-jwt-token' }) })
+      );
+    });
+
+    it('reports connection failures with actionable context and logs the failure', async () => {
+      const networkError = new Error('offline');
+      global.fetch = vi.fn().mockRejectedValue(networkError);
+      vi.spyOn(frontendLogger, 'error').mockImplementation(() => ({}) as never);
+
+      await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx'))
+        .rejects.toThrow(UI_STRINGS.orchestration.datasetDownloadNetworkFailure('Spend_Data.xlsx', 'offline'));
+      expect(frontendLogger.error).toHaveBeenCalledWith(
+        'Source dataset download request failed',
+        expect.objectContaining({ jobId: 'job-1', versionId: 'v1', fileName: 'Spend_Data.xlsx' }),
+        networkError
+      );
+
+      global.fetch = vi.fn().mockRejectedValue('connection reset');
+      await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx'))
+        .rejects.toThrow(UI_STRINGS.orchestration.datasetDownloadNetworkFailure('Spend_Data.xlsx', 'connection reset'));
+    });
+
+    it('uses server details and request ID for HTTP failures, with a fallback when the response is not JSON', async () => {
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({
+          ok: false, status: 403, headers: new Headers({ 'x-request-id': 'req-1' }),
+          json: vi.fn().mockResolvedValue({ message: 'Version access denied' })
+        })
+        .mockResolvedValueOnce({
+          ok: false, status: 503, headers: new Headers(),
+          json: vi.fn().mockRejectedValue(new Error('invalid JSON'))
+        });
+      vi.spyOn(frontendLogger, 'error').mockImplementation(() => ({}) as never);
+
+      await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx'))
+        .rejects.toThrow(UI_STRINGS.orchestration.datasetDownloadHttpFailure('Spend_Data.xlsx', 403, 'Version access denied', 'req-1'));
+      await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx'))
+        .rejects.toThrow(UI_STRINGS.orchestration.datasetDownloadHttpFailure(
+          'Spend_Data.xlsx', 503, UI_STRINGS.orchestration.datasetDownloadResponseFailure('Spend_Data.xlsx'), UI_STRINGS.common.notAvailable
+        ));
+      expect(frontendLogger.error).toHaveBeenCalledTimes(2);
+    });
+
+    it('reports and logs a response body read failure', async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, blob: vi.fn().mockRejectedValue(new Error('stream interrupted')) });
+      vi.spyOn(frontendLogger, 'error').mockImplementation(() => ({}) as never);
+
+      await expect(client.downloadDataset('job-1', 'v1', 'Spend_Data.xlsx'))
+        .rejects.toThrow(UI_STRINGS.orchestration.datasetDownloadResponseFailure('Spend_Data.xlsx'));
+      expect(frontendLogger.error).toHaveBeenCalledWith(
+        'Source dataset response body could not be read',
+        expect.objectContaining({ jobId: 'job-1', versionId: 'v1', fileName: 'Spend_Data.xlsx' }),
+        expect.any(Error)
+      );
+    });
+  });
+
+  it('validates PCBI resolutions before making a network request', async () => {
+    await expect(client.resolvePCBIGap('job-1', 'gap-1', { action: 'MAP_EXISTING' }))
+      .rejects.toThrow(UI_STRINGS.orchestration.pcbiResolutionMissingSeries);
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it('should upload corrected dataset', async () => {
     mockFetchResponse({ success: true, message: 'Version v2 created' });
     const result = await client.uploadCorrectedDataset('job-1', {
       fileName: 'corrected.xlsx',
+      fileSize: 5,
+      checksum: 'a'.repeat(64),
+      fileBase64: 'd29ya2I=',
       reason: 'INCORRECT_CATEGORY_MAPPING'
     });
     expect(result.success).toBe(true);

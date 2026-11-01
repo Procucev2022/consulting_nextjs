@@ -7,6 +7,8 @@ import type {
   AssessmentDetailWorkflowProps,
   DeliveryPackageResult,
   AssessmentAuditLog,
+  AssessmentReviewGateRecord,
+  AssessmentReviewGateUpdate,
   NdaStatus,
   DataStatus
 } from '../../types';
@@ -31,10 +33,12 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
   const [activeTab, setActiveTab] = useState<'upload' | 'pipeline' | 'checklist' | 'delivery' | 'audit'>('pipeline');
   const [deliveryPackage, setDeliveryPackage] = useState<DeliveryPackageResult | null>(null);
   const [auditLogs, setAuditLogs] = useState<AssessmentAuditLog[]>([]);
+  const [reviewGates, setReviewGates] = useState<AssessmentReviewGateRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [savingGateKey, setSavingGateKey] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -53,6 +57,9 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
 
         const logs = rawData?.auditLogs || (await assessmentApiClient.getAuditLogs(assessmentId));
         if (isMounted) setAuditLogs(logs);
+
+        const gateRecords = await assessmentApiClient.getReviewGates(assessmentId);
+        if (isMounted) setReviewGates(gateRecords);
 
         if (record && (record.status === 'APPROVED' || record.status === 'DELIVERED')) {
           const pkg = await assessmentApiClient.generateDeliveryPackage(assessmentId);
@@ -106,6 +113,21 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
       setActionError(err instanceof Error ? err.message : 'Failed to update Data Status');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleReviewGateSave = async (update: AssessmentReviewGateUpdate): Promise<boolean> => {
+    try {
+      setSavingGateKey(update.gateKey);
+      const updated = await assessmentApiClient.saveReviewGate(assessmentId, update);
+      setReviewGates(updated);
+      setActionError(null);
+      return true;
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : UI_STRINGS.assessmentChecklist.saveFailed);
+      return false;
+    } finally {
+      setSavingGateKey(null);
     }
   };
 
@@ -304,7 +326,14 @@ export const AssessmentDetailWorkflow: React.FC<AssessmentDetailWorkflowProps> =
         />
       )}
 
-      {activeTab === 'checklist' && <AssessmentChecklistTab assessment={assessment} />}
+      {activeTab === 'checklist' && (
+        <AssessmentChecklistTab
+          assessment={assessment}
+          gates={reviewGates}
+          savingGateKey={savingGateKey}
+          onSaveGate={handleReviewGateSave}
+        />
+      )}
       {activeTab === 'delivery' && <AssessmentDeliveryTab deliveryPackage={deliveryPackage} />}
       {activeTab === 'audit' && <AssessmentAuditTab auditLogs={auditLogs} />}
 

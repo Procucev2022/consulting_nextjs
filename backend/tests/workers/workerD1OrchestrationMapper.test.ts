@@ -8,6 +8,7 @@ import {
   mapChecklist,
   mapCorrectionRequest,
   mapDatasetVersions,
+  mapPcbiGap,
   mapNotification,
   mapReport,
   parseMetadata,
@@ -24,6 +25,7 @@ import type {
   ProcurementStatsRow,
   ReportRow
 } from '../../src/types/orchestrationD1';
+import type { PCBIGapSourceRow } from '../../src/types/orchestrationPcbi';
 
 vi.mock('../../src/utils/logger', () => ({
   default: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -218,6 +220,104 @@ describe('mapDatasetVersions and buildStatsByDocument', () => {
 
   it('indexes procurement statistics by source document', () => {
     expect(buildStatsByDocument(stats).get('AIC-1:DV-2')?.supplier_count).toBe(3);
+  });
+});
+
+describe('mapPcbiGap', () => {
+  const gapRow = (overrides: Partial<PCBIGapSourceRow> = {}): PCBIGapSourceRow => ({
+    category_key: 'MG-1',
+    item_category: 'MG-1',
+    relevant_classification: 'MG-1',
+    spend_cr: 1.25,
+    transaction_count: 4,
+    supplier_count: 2,
+    plant_count: 3,
+    action: null,
+    target_pcbi_series: null,
+    benchmark_source: null,
+    quality_rating: null,
+    exclusion_reason: null,
+    exclusion_notes: null,
+    research_notes: null,
+    resolved_by: null,
+    resolved_at: null,
+    ...overrides
+  });
+
+  it('maps pending gaps with a stable safe ID and preserves their D1 metrics', async () => {
+    const first = await mapPcbiGap(gapRow(), 'tenant-1');
+    const second = await mapPcbiGap(gapRow(), 'tenant-1');
+    expect(first).toMatchObject({
+      gapId: expect.stringMatching(/^PCBI-GAP-[a-f0-9]{64}$/u),
+      tenantId: 'tenant-1',
+      itemCategory: 'MG-1',
+      relevantClassification: 'MG-1',
+      customerSpendInrCr: 1.25,
+      transactionCount: 4,
+      supplierCount: 2,
+      plantCount: 3,
+      status: 'PCBI_REQUIRED',
+      resolutionStatus: 'PENDING'
+    });
+    expect(second.gapId).toBe(first.gapId);
+  });
+
+  it.each([
+    ['MAP_EXISTING', 'MAPPED', 'PCBI_COVERED'],
+    ['ADD_MAP_PCBI', 'MAPPED', 'PCBI_COVERED'],
+    ['EXCLUDE', 'EXCLUDED', 'EXCLUDED_MANUAL_REVIEW'],
+    ['MARK_NOT_BENCHMARKABLE', 'EXCLUDED', 'NOT_BENCHMARKABLE'],
+    ['MARK_SERVICE', 'EXCLUDED', 'SERVICE_NON_COMMODITY'],
+    ['REQUEST_RESEARCH', 'RESEARCH_REQUESTED', 'PCBI_REQUIRED']
+  ] as const)('maps the %s resolution to API state', async (action, resolutionStatus, status) => {
+    const mapped = await mapPcbiGap(gapRow({
+      action,
+      target_pcbi_series: action === 'MAP_EXISTING' || action === 'ADD_MAP_PCBI' ? 'PCBI-1' : null,
+      benchmark_source: action === 'MAP_EXISTING' || action === 'ADD_MAP_PCBI' ? 'Benchmark source' : null,
+      exclusion_reason: action === 'EXCLUDE' ? 'OTHER' : null,
+      exclusion_notes: 'Reviewed',
+      research_notes: 'Research this category',
+      resolved_by: 'admin-1',
+      resolved_at: '2026-01-01T00:00:00.000Z'
+    }), 'tenant-1');
+    expect(mapped).toMatchObject({ resolutionStatus, status, resolvedBy: 'admin-1' });
+    if (action === 'MAP_EXISTING' || action === 'ADD_MAP_PCBI') expect(mapped.reasonForReview).toContain('PCBI-1');
+    if (action === 'EXCLUDE') expect(mapped.exclusionReason).toBe('OTHER');
+    if (action === 'REQUEST_RESEARCH') expect(mapped.reasonForReview).toBe('Research this category');
+  });
+
+  it('uses safe numeric fallbacks when malformed values reach the mapper', async () => {
+    const mapped = await mapPcbiGap(gapRow({
+      spend_cr: Number.NaN,
+      transaction_count: Number.NaN,
+      supplier_count: Number.NaN,
+      plant_count: Number.NaN
+    }), 'tenant-1');
+    expect(mapped).toMatchObject({
+      customerSpendInrCr: 0,
+      estimatedSpendImpactCr: 0,
+      transactionCount: 0,
+      supplierCount: 0,
+      plantCount: 0
+    });
+  });
+
+  it('marks a resolution pending again if its benchmark series has since been deactivated', async () => {
+    const mapped = await mapPcbiGap(gapRow({
+      action: 'MAP_EXISTING', target_pcbi_series: 'PCBI-RETIRED', benchmark_source: null
+    }), 'tenant-1');
+    expect(mapped).toMatchObject({
+      status: 'PCBI_REQUIRED',
+      resolutionStatus: 'PENDING',
+      reasonForReview: 'PCBI series PCBI-RETIRED is no longer active in D1. Select another active series before generating the report.'
+    });
+  });
+
+  it('uses descriptive fallbacks for incomplete legacy resolution records', async () => {
+    const exclusion = await mapPcbiGap(gapRow({ action: 'EXCLUDE', exclusion_reason: null }), 'tenant-1');
+    const research = await mapPcbiGap(gapRow({ action: 'REQUEST_RESEARCH', research_notes: null }), 'tenant-1');
+    expect(exclusion.reasonForReview).toContain('OTHER');
+    expect(research.reasonForReview).toBe('PCBI research has been requested for this category.');
   });
 });
 

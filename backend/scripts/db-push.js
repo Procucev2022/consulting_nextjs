@@ -1,15 +1,15 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const { splitSeedParts, verifySeedManifest } = require('./d1-seed-tools');
+const { splitSeedParts, verifySeedManifest, shouldSeedDatabase } = require('./d1-seed-tools');
 
 const backendRoot = path.resolve(__dirname, '..');
 require('dotenv').config({ path: path.join(backendRoot, '.env') });
 const environmentName = process.env.D1_ENV || 'dev';
 const databaseName = process.env.D1_DATABASE_NAME || (environmentName === 'dev' ? 'consulting_dev' : 'consulting-db');
 const isRemote = process.argv.includes('--remote');
-const shouldSeed = process.argv.includes('--seed');
 const shouldSeedAll = process.argv.includes('--seed-all');
+const shouldSeed = shouldSeedDatabase(process.argv);
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const seedPartLimitBytes = 900000;
 const spawnOptions = { cwd: backendRoot, stdio: 'inherit', shell: false, env: { ...process.env, CI: process.env.CI || '1' } };

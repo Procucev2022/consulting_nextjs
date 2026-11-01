@@ -24,6 +24,11 @@ vi.mock('../../../../src/components/admin/orchestration/EvidenceWorkbooksPanel',
 
 const ORCH = UI_STRINGS.orchestration;
 const SEARCH_PLACEHOLDER = ORCH.searchPlaceholder;
+const selectCorrectedDataset = (): File => {
+  const file = new File(['po,amount\n1,2'], 'Corrected_Spend.csv', { type: 'text/csv' });
+  fireEvent.change(screen.getByLabelText(ORCH.fieldFileName), { target: { files: [file] } });
+  return file;
+};
 
 const mockJob: AnalysisJob = {
   analysisJobId: 'JOB-SRIMAN-001',
@@ -177,6 +182,7 @@ describe('AnalysisControlCenter Component Tests', () => {
     vi.spyOn(orchestrationApi, 'getJobs').mockResolvedValue([mockJob]);
     vi.spyOn(orchestrationApi, 'getAdminKPIs').mockResolvedValue(mockKpis);
     vi.spyOn(orchestrationApi, 'getJobDetails').mockResolvedValue(buildDetails());
+    vi.spyOn(orchestrationApi, 'downloadDataset').mockResolvedValue(new Blob(['source-workbook']));
     vi.spyOn(orchestrationApi, 'resolvePCBIGap').mockResolvedValue({ success: true, message: 'Resolved' });
     vi.spyOn(orchestrationApi, 'uploadCorrectedDataset').mockResolvedValue({
       success: true,
@@ -200,6 +206,7 @@ describe('AnalysisControlCenter Component Tests', () => {
     });
     vi.useRealTimers();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe('job directory', () => {
@@ -612,7 +619,7 @@ describe('AnalysisControlCenter Component Tests', () => {
   });
 
   describe('data versioning and correction', () => {
-    it('shows the dataset download as unavailable, not as a link, and renders version history', async () => {
+    it('downloads the active dataset version and renders version history', async () => {
       vi.spyOn(orchestrationApi, 'getJobDetails').mockResolvedValue(buildDetails({
         versions: [
           mockVersion,
@@ -623,23 +630,34 @@ describe('AnalysisControlCenter Component Tests', () => {
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       const downloadButton = screen.getByRole('button', { name: ORCH.btnDownloadForCorrection });
-      expect(downloadButton).toBeDisabled();
-      expect(screen.queryByRole('link', { name: ORCH.btnDownloadForCorrection })).toBeNull();
-      expect(screen.getByText(ORCH.datasetDownloadUnavailable)).toBeInTheDocument();
+      expect(downloadButton).toBeEnabled();
+      expect(screen.getByText(ORCH.datasetDownloadHelp)).toBeInTheDocument();
       expect(screen.getByText(ORCH.originalBaselineUpload)).toBeInTheDocument();
       expect(screen.getByText('MISSING_TRANSACTIONS')).toBeInTheDocument();
       expect(screen.getByText(ORCH.dataCorrectionTitle)).toBeInTheDocument();
+
+      const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+      const createObjectURL = vi.fn(() => 'blob:source-dataset');
+      const revokeObjectURL = vi.fn();
+      URL.createObjectURL = createObjectURL;
+      URL.revokeObjectURL = revokeObjectURL;
+      fireEvent.click(downloadButton);
+
+      await waitFor(() => expect(orchestrationApi.downloadDataset).toHaveBeenCalledWith('JOB-SRIMAN-001', 'v1', 'Spend_Data.xlsx'));
+      expect(await screen.findByRole('link', { name: ORCH.datasetDownloadLink })).toHaveAttribute('download', 'Spend_Data.xlsx');
+      expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
+      expect(anchorClick).toHaveBeenCalled();
+      expect(await screen.findByText(ORCH.datasetDownloadStarted('Spend_Data.xlsx'))).toBeInTheDocument();
     });
 
-    it('uploads a corrected dataset with the entered file name and notes, then shows the version change', async () => {
+    it('uploads the selected corrected dataset bytes with notes, then shows the version change', async () => {
       render(<AnalysisControlCenter />);
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       fireEvent.click(screen.getByText(ORCH.btnUploadCorrectedData));
       expect(await screen.findByText(ORCH.uploadCorrectedModalSubtitle)).toBeInTheDocument();
 
-      const fileInput = screen.getByPlaceholderText(ORCH.placeholderFileName);
-      fireEvent.change(fileInput, { target: { value: 'Corrected_Spend.xlsx' } });
+      const file = selectCorrectedDataset();
 
       const notesInput = screen.getByPlaceholderText(ORCH.placeholderCorrectionNotes);
       fireEvent.change(notesInput, { target: { value: 'Updated Caustic Soda classifications' } });
@@ -650,7 +668,10 @@ describe('AnalysisControlCenter Component Tests', () => {
         expect(orchestrationApi.uploadCorrectedDataset).toHaveBeenCalledWith(
           'JOB-SRIMAN-001',
           expect.objectContaining({
-            fileName: 'Corrected_Spend.xlsx',
+            fileName: file.name,
+            fileSize: file.size,
+            fileBase64: btoa('po,amount\n1,2'),
+            checksum: expect.stringMatching(/^[a-f0-9]{64}$/u),
             notes: 'Updated Caustic Soda classifications'
           })
         );
@@ -660,20 +681,15 @@ describe('AnalysisControlCenter Component Tests', () => {
       expect(screen.queryByText(ORCH.uploadCorrectedModalSubtitle)).toBeNull();
     });
 
-    it('uses the default file name and omits notes when the upload form is submitted empty', async () => {
+    it('requires an actual corrected dataset before calling the upload API', async () => {
       render(<AnalysisControlCenter />);
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       fireEvent.click(screen.getByText(ORCH.btnUploadCorrectedData));
       fireEvent.click(await screen.findByText(ORCH.btnGenerateNewVersion));
 
-      await waitFor(() => {
-        expect(orchestrationApi.uploadCorrectedDataset).toHaveBeenCalledWith('JOB-SRIMAN-001', {
-          fileName: ORCH.defaultCorrectedFileName,
-          reason: 'INCORRECT_CATEGORY_MAPPING',
-          notes: undefined
-        });
-      });
+      expect(await screen.findByRole('alert')).toHaveTextContent(ORCH.correctedDatasetFileRequired);
+      expect(orchestrationApi.uploadCorrectedDataset).not.toHaveBeenCalled();
     });
 
     it('sends the chosen reanalysis reason', async () => {
@@ -681,6 +697,7 @@ describe('AnalysisControlCenter Component Tests', () => {
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       fireEvent.click(screen.getByText(ORCH.btnUploadCorrectedData));
+      selectCorrectedDataset();
       fireEvent.change(await screen.findByRole('combobox'), { target: { value: 'PCBI_MAPPING_CORRECTION' } });
       fireEvent.click(screen.getByText(ORCH.btnGenerateNewVersion));
 
@@ -702,6 +719,7 @@ describe('AnalysisControlCenter Component Tests', () => {
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       fireEvent.click(screen.getByText(ORCH.btnUploadCorrectedData));
+      selectCorrectedDataset();
       fireEvent.click(await screen.findByText(ORCH.btnGenerateNewVersion));
 
       expect(await screen.findByText(ORCH.dataVersionChangeTitle('undefined', 'undefined'))).toBeInTheDocument();
@@ -714,6 +732,7 @@ describe('AnalysisControlCenter Component Tests', () => {
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       fireEvent.click(screen.getByText(ORCH.btnUploadCorrectedData));
+      selectCorrectedDataset();
       fireEvent.click(await screen.findByText(ORCH.btnGenerateNewVersion));
 
       expect(await screen.findByRole('alert')).toHaveTextContent('File is locked by another upload');
@@ -725,6 +744,7 @@ describe('AnalysisControlCenter Component Tests', () => {
       await openWorkspaceAndTab(ORCH.tabDataCorrection);
 
       fireEvent.click(screen.getByText(ORCH.btnUploadCorrectedData));
+      selectCorrectedDataset();
       fireEvent.click(await screen.findByText(ORCH.btnGenerateNewVersion));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(ORCH.errorUploadCorrected('Payload too large'));

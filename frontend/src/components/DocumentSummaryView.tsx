@@ -16,9 +16,12 @@ import type {
   DocumentSummaryDimension,
   DocumentSpendCurrency,
   MonthGraphViewMode,
-  SummaryScopeMode
+  SummaryScopeMode,
+  DocumentSummaryPlantRecord,
+  PlantSummary,
+  LegacyPlantSummaryRecord
 } from '../types';
-import { UI_STRINGS } from '../constants';
+import { INR_CRORES_DIVISOR, UI_STRINGS } from '../constants';
 import { MonthWiseTrendChart } from './MonthWiseTrendChart';
 
 export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
@@ -42,34 +45,45 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
   const [plantScope, setPlantScope] = useState<SummaryScopeMode>('TOP_10');
   const [mgScope, setMgScope] = useState<SummaryScopeMode>('TOP_10');
 
-  const activeDoc = ingestionQueue?.[0] || {
-    file_name: 'Uploaded Dataset',
-    records_count: 0,
-    converted_inr_crores: 0,
-    unique_items_count: 0,
-    unique_vendors_count: 0,
-    material_groups_count: 0,
-    plants_count: 0,
-    detected_currencies: ['INR']
-  };
-
-  const resolvedRecordsCount = activeDoc.records_count ?? 0;
-  const resolvedFileName = activeDoc.file_name || 'Uploaded Dataset';
-  const resolvedSpendCr = activeDoc.converted_inr_crores != null ? activeDoc.converted_inr_crores : 0;
+  const activeDoc = ingestionQueue?.[0];
+  const resolvedRecordsCount = activeDoc?.records_count ?? canonicalViewModel?.sourceRowCount ?? null;
+  const resolvedFileName = activeDoc?.file_name || canonicalViewModel?.sourceFileName || UI_STRINGS.common.notAvailable;
+  const resolvedSpendCr = activeDoc?.converted_inr_crores ?? canonicalViewModel?.validFxNormalizedSpendCr ?? null;
 
   const materialGroups = materialGroupSummaries ?? [];
-  const plants = plantSummaries ?? [];
+  const plants: DocumentSummaryPlantRecord[] = (plantSummaries ?? []).map((plant) => {
+    const row = plant as Partial<PlantSummary> & LegacyPlantSummaryRecord;
+    return {
+      plant_code: row.plant_code ?? row.plant,
+      plant_name: row.plant_name ?? row.plant,
+      region: row.region,
+      location: row.location,
+      po_count: row.po_count,
+      total_po_count: row.total_po_count,
+      records_count: row.records_count ?? row.count,
+      spend_inr_cr: row.spend_inr_cr ?? row.totalSpendCr ?? (row.totalSpendINR != null ? row.totalSpendINR / INR_CRORES_DIVISOR : undefined),
+      spend_usd_m: row.spend_usd_m,
+      share_pct: row.share_pct,
+      active_vendors_count: row.active_vendors_count,
+      unique_items_count: row.unique_items_count,
+      unique_vendors_count: row.unique_vendors_count,
+      primary_material_group: row.primary_material_group,
+      top_material_group: row.top_material_group
+    };
+  });
   const months = monthWiseSummaries ?? [];
 
-  const resolvedUniqueItems = uniqueItemsCount ?? activeDoc.unique_items_count ?? (activeDoc.records_count ? Math.round(activeDoc.records_count * 0.3) : 0);
-  const resolvedUniqueVendors = uniqueVendorsCount ?? activeDoc.unique_vendors_count ?? (activeDoc.records_count ? Math.round(activeDoc.records_count * 0.08) : 0);
-  const resolvedMaterialGroupsCount = materialGroups.length || (activeDoc.material_groups_count ?? 0);
-  const resolvedPlantsCount = plants.length || (activeDoc.plants_count ?? 0);
+  const resolvedUniqueItems = uniqueItemsCount ?? activeDoc?.unique_items_count ?? canonicalViewModel?.uniqueItems;
+  const resolvedUniqueVendors = uniqueVendorsCount ?? activeDoc?.unique_vendors_count ?? canonicalViewModel?.uniqueVendors;
+  const resolvedMaterialGroupsCount = materialGroups.length > 0 ? materialGroups.length : activeDoc?.material_groups_count ?? canonicalViewModel?.materialGroups ?? null;
+  const resolvedPlantsCount = plants.length > 0 ? plants.length : activeDoc?.plants_count ?? canonicalViewModel?.operatingPlants ?? null;
 
-  const totalSpendFormatted =
-    spendCurrency === 'INR'
-      ? `₹${resolvedSpendCr.toFixed(2)} Cr`
-      : `$${((resolvedSpendCr * 10) / 83.8).toFixed(2)} M`;
+  const totalSpendUsdM = materialGroups.length > 0 && materialGroups.every((group) => group.spend_usd_m != null)
+    ? materialGroups.reduce((total, group) => total + (group.spend_usd_m ?? 0), 0)
+    : null;
+  const totalSpendFormatted = spendCurrency === 'INR'
+    ? resolvedSpendCr == null ? UI_STRINGS.common.notAvailable : `₹${resolvedSpendCr.toFixed(2)} Cr`
+    : totalSpendUsdM != null ? `$${totalSpendUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable;
 
   // Filtered Material Groups
   const filteredMaterialGroups = materialGroups.filter((mg) => {
@@ -88,10 +102,10 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      p.plant_code.toLowerCase().includes(q) ||
-      p.plant_name.toLowerCase().includes(q) ||
-      p.location.toLowerCase().includes(q) ||
-      p.region.toLowerCase().includes(q)
+      p.plant_code?.toLowerCase().includes(q) ||
+      p.plant_name?.toLowerCase().includes(q) ||
+      p.location?.toLowerCase().includes(q) ||
+      p.region?.toLowerCase().includes(q)
     );
   });
 
@@ -109,38 +123,84 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
 
   // Plant Calculations & Reconciliation
   const sortedPlants = [...filteredPlants].sort((a, b) => {
-    const aSpend = a.spend_inr_cr ?? (a as any).totalSpendCr ?? 0;
-    const bSpend = b.spend_inr_cr ?? (b as any).totalSpendCr ?? 0;
+    const aSpend = a.spend_inr_cr ?? 0;
+    const bSpend = b.spend_inr_cr ?? 0;
     return bSpend - aSpend;
   });
   const top10Plants = sortedPlants.slice(0, 10);
   const displayedPlants = plantScope === 'TOP_10' && !searchQuery ? top10Plants : sortedPlants;
 
-  const totalPlantsSpendInrCr = sortedPlants.reduce((acc, p) => acc + (p.spend_inr_cr ?? (p as any).totalSpendCr ?? 0), 0);
-  const top10PlantsSpendInrCr = top10Plants.reduce((acc, p) => acc + (p.spend_inr_cr ?? (p as any).totalSpendCr ?? 0), 0);
+  const totalPlantsSpendInrCr = sortedPlants.length > 0 && sortedPlants.every((plant) => plant.spend_inr_cr != null)
+    ? sortedPlants.reduce((acc, plant) => acc + plant.spend_inr_cr, 0)
+    : null;
+  const top10PlantsSpendInrCr = top10Plants.length > 0 && top10Plants.every((plant) => plant.spend_inr_cr != null)
+    ? top10Plants.reduce((acc, plant) => acc + plant.spend_inr_cr, 0)
+    : null;
+  const totalPlantsUsdM = sortedPlants.length > 0 && sortedPlants.every((plant) => plant.spend_usd_m != null)
+    ? sortedPlants.reduce((total, plant) => total + (plant.spend_usd_m ?? 0), 0)
+    : null;
+  const top10PlantsUsdM = top10Plants.length > 0 && top10Plants.every((plant) => plant.spend_usd_m != null)
+    ? top10Plants.reduce((total, plant) => total + (plant.spend_usd_m ?? 0), 0)
+    : null;
   const balancePlantsCount = Math.max(0, sortedPlants.length - 10);
-  const balancePlantsSpendInrCr = Math.max(0, Number((totalPlantsSpendInrCr - top10PlantsSpendInrCr).toFixed(2)));
-  const balancePlantsSharePct = totalPlantsSpendInrCr > 0 ? Number(((balancePlantsSpendInrCr / totalPlantsSpendInrCr) * 100).toFixed(1)) : 0;
-  const top10PlantsSharePct = totalPlantsSpendInrCr > 0 ? Number(((top10PlantsSpendInrCr / totalPlantsSpendInrCr) * 100).toFixed(1)) : 0;
-  const plantDeviationCr = Math.abs(Number((resolvedSpendCr - totalPlantsSpendInrCr).toFixed(2)));
+  const balancePlantsUsdM = totalPlantsUsdM != null && top10PlantsUsdM != null ? totalPlantsUsdM - top10PlantsUsdM : null;
+  const balancePlantsSpendInrCr = totalPlantsSpendInrCr != null && top10PlantsSpendInrCr != null
+    ? Math.max(0, Number((totalPlantsSpendInrCr - top10PlantsSpendInrCr).toFixed(2)))
+    : null;
+  const balancePlantsSharePct = totalPlantsSpendInrCr != null && totalPlantsSpendInrCr > 0 && balancePlantsSpendInrCr != null
+    ? Number(((balancePlantsSpendInrCr / totalPlantsSpendInrCr) * 100).toFixed(1))
+    : null;
+  const top10PlantsSharePct = totalPlantsSpendInrCr != null && totalPlantsSpendInrCr > 0 && top10PlantsSpendInrCr != null
+    ? Number(((top10PlantsSpendInrCr / totalPlantsSpendInrCr) * 100).toFixed(1))
+    : null;
+  const plantDeviationCr = resolvedSpendCr != null && totalPlantsSpendInrCr != null
+    ? Math.abs(Number((resolvedSpendCr - totalPlantsSpendInrCr).toFixed(2)))
+    : null;
+  const plantDeviationPct = plantDeviationCr != null && resolvedSpendCr != null && resolvedSpendCr > 0
+    ? Number(((plantDeviationCr / resolvedSpendCr) * 100).toFixed(2))
+    : null;
+  const plantsReconciled = plantDeviationCr != null && plantDeviationCr < 0.01;
 
   // Material Group Calculations & Reconciliation
   const sortedMgs = [...filteredMaterialGroups].sort((a, b) => {
-    const aSpend = a.spend_inr_cr ?? (a as any).totalSpendCr ?? 0;
-    const bSpend = b.spend_inr_cr ?? (b as any).totalSpendCr ?? 0;
+    const aSpend = a.spend_inr_cr ?? 0;
+    const bSpend = b.spend_inr_cr ?? 0;
     return bSpend - aSpend;
   });
   const top10Mgs = sortedMgs.slice(0, 10);
   const displayedMgs = mgScope === 'TOP_10' && !searchQuery ? top10Mgs : sortedMgs;
 
-  const totalMgsSpendInrCr = sortedMgs.reduce((acc, mg) => acc + (mg.spend_inr_cr ?? (mg as any).totalSpendCr ?? 0), 0);
-  const effectiveTotalMgSpend = resolvedSpendCr > 0 ? resolvedSpendCr : totalMgsSpendInrCr;
-  const top10MgsSpendInrCr = top10Mgs.reduce((acc, mg) => acc + (mg.spend_inr_cr ?? (mg as any).totalSpendCr ?? 0), 0);
+  const totalMgsSpendInrCr = sortedMgs.length > 0 && sortedMgs.every((group) => group.spend_inr_cr != null)
+    ? sortedMgs.reduce((acc, group) => acc + group.spend_inr_cr, 0)
+    : null;
+  const effectiveTotalMgSpend = resolvedSpendCr ?? totalMgsSpendInrCr;
+  const top10MgsSpendInrCr = top10Mgs.length > 0 && top10Mgs.every((group) => group.spend_inr_cr != null)
+    ? top10Mgs.reduce((acc, group) => acc + group.spend_inr_cr, 0)
+    : null;
+  const totalMgsUsdM = sortedMgs.length > 0 && sortedMgs.every((group) => group.spend_usd_m != null)
+    ? sortedMgs.reduce((total, group) => total + (group.spend_usd_m ?? 0), 0)
+    : null;
+  const top10MgsUsdM = top10Mgs.length > 0 && top10Mgs.every((group) => group.spend_usd_m != null)
+    ? top10Mgs.reduce((total, group) => total + (group.spend_usd_m ?? 0), 0)
+    : null;
   const balanceMgsCount = Math.max(0, sortedMgs.length - 10);
-  const balanceMgsSpendInrCr = Math.max(0, Number((effectiveTotalMgSpend - top10MgsSpendInrCr).toFixed(2)));
-  const balanceMgsSharePct = effectiveTotalMgSpend > 0 ? Number(((balanceMgsSpendInrCr / effectiveTotalMgSpend) * 100).toFixed(1)) : 0;
-  const top10MgsSharePct = effectiveTotalMgSpend > 0 ? Number(((top10MgsSpendInrCr / effectiveTotalMgSpend) * 100).toFixed(1)) : 0;
-  const mgDeviationCr = Math.abs(Number((resolvedSpendCr - effectiveTotalMgSpend).toFixed(2)));
+  const balanceMgsUsdM = totalMgsUsdM != null && top10MgsUsdM != null ? totalMgsUsdM - top10MgsUsdM : null;
+  const balanceMgsSpendInrCr = effectiveTotalMgSpend != null && top10MgsSpendInrCr != null
+    ? Math.max(0, Number((effectiveTotalMgSpend - top10MgsSpendInrCr).toFixed(2)))
+    : null;
+  const balanceMgsSharePct = effectiveTotalMgSpend != null && effectiveTotalMgSpend > 0 && balanceMgsSpendInrCr != null
+    ? Number(((balanceMgsSpendInrCr / effectiveTotalMgSpend) * 100).toFixed(1))
+    : null;
+  const top10MgsSharePct = effectiveTotalMgSpend != null && effectiveTotalMgSpend > 0 && top10MgsSpendInrCr != null
+    ? Number(((top10MgsSpendInrCr / effectiveTotalMgSpend) * 100).toFixed(1))
+    : null;
+  const mgDeviationCr = resolvedSpendCr != null && totalMgsSpendInrCr != null
+    ? Math.abs(Number((resolvedSpendCr - totalMgsSpendInrCr).toFixed(2)))
+    : null;
+  const mgDeviationPct = mgDeviationCr != null && resolvedSpendCr != null && resolvedSpendCr > 0
+    ? Number(((mgDeviationCr / resolvedSpendCr) * 100).toFixed(2))
+    : null;
+  const materialGroupsReconciled = mgDeviationCr != null && mgDeviationCr < 0.01;
 
   return (
     <div
@@ -216,7 +276,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             {totalSpendFormatted}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
-            {spendCurrency === 'INR' ? 'Base INR in Crores' : 'Valued at 83.80 INR/USD FX'}
+            {spendCurrency === 'INR' ? UI_STRINGS.documentSummary.baseInrCrores : UI_STRINGS.documentSummary.usdDatabaseValue}
           </span>
         </div>
 
@@ -226,7 +286,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             {UI_STRINGS.documentSummary.evaluatedRecords}
           </span>
           <p className="text-xl sm:text-2xl font-black font-mono text-slate-900">
-            {resolvedRecordsCount.toLocaleString()}
+            {resolvedRecordsCount?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
             {months.length > 0 ? UI_STRINGS.documentSummary.acrossBillingMonths(months.length) : UI_STRINGS.documentSummary.acrossBillingCycle}
@@ -242,7 +302,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             <Package className="w-3.5 h-3.5 text-cyan-600 opacity-80" />
           </div>
           <p className="text-xl sm:text-2xl font-black font-mono text-cyan-600">
-            {resolvedUniqueItems.toLocaleString()}
+            {resolvedUniqueItems?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
             {UI_STRINGS.documentSummary.distinctSkusSubtitle}
@@ -258,7 +318,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             <Users className="w-3.5 h-3.5 text-indigo-600 opacity-80" />
           </div>
           <p className="text-xl sm:text-2xl font-black font-mono text-indigo-600">
-            {resolvedUniqueVendors.toLocaleString()}
+            {resolvedUniqueVendors?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
             {UI_STRINGS.documentSummary.activeSuppliersSubtitle}
@@ -271,7 +331,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             {UI_STRINGS.documentSummary.materialGroupsCount}
           </span>
           <p className="text-xl sm:text-2xl font-black font-mono text-slate-900">
-            {UI_STRINGS.documentSummary.dynamicGroupsCount(resolvedMaterialGroupsCount)}
+            {resolvedMaterialGroupsCount == null ? UI_STRINGS.common.notAvailable : UI_STRINGS.documentSummary.dynamicGroupsCount(resolvedMaterialGroupsCount)}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
             {UI_STRINGS.documentSummary.directConsumablesSubtitle}
@@ -284,7 +344,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
             {UI_STRINGS.documentSummary.operatingPlants}
           </span>
           <p className="text-xl sm:text-2xl font-black font-mono text-slate-900">
-            {UI_STRINGS.documentSummary.dynamicFacilitiesCount(resolvedPlantsCount)}
+            {resolvedPlantsCount == null ? UI_STRINGS.common.notAvailable : UI_STRINGS.documentSummary.dynamicFacilitiesCount(resolvedPlantsCount)}
           </p>
           <span className="text-[10px] text-slate-400 font-mono">
             {UI_STRINGS.documentSummary.acrossHubsSubtitle}
@@ -457,7 +517,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   <span>{UI_STRINGS.documentSummary.reconciliation.mgScopeHeading}</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
+                  {materialGroupsReconciled ? UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge : UI_STRINGS.common.notAvailable}
                 </span>
               </div>
 
@@ -497,20 +557,20 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                 {mgScope === 'TOP_10'
                   ? UI_STRINGS.documentSummary.reconciliation.top10MgNote(
                       top10Mgs.length,
-                      activeDoc.material_groups_count || sortedMgs.length,
-                      spendCurrency === 'INR' ? `₹${top10MgsSpendInrCr.toFixed(2)} Cr` : `$${(top10MgsSpendInrCr / 0.838).toFixed(2)} M`,
-                      spendCurrency === 'INR' ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : `$${(effectiveTotalMgSpend / 0.838).toFixed(2)} M`,
-                      top10MgsSharePct.toFixed(1)
+                      activeDoc?.material_groups_count || sortedMgs.length,
+                      spendCurrency === 'INR' ? top10MgsSpendInrCr != null ? `₹${top10MgsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : top10MgsUsdM != null ? `$${top10MgsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable,
+                      spendCurrency === 'INR' ? effectiveTotalMgSpend != null ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : totalMgsUsdM != null ? `$${totalMgsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable,
+                      top10MgsSharePct?.toFixed(1) ?? UI_STRINGS.common.notAvailable
                     )
                   : UI_STRINGS.documentSummary.reconciliation.allMgNote(
                       sortedMgs.length,
-                      spendCurrency === 'INR' ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : `$${(effectiveTotalMgSpend / 0.838).toFixed(2)} M`
+                      spendCurrency === 'INR' ? effectiveTotalMgSpend != null ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : totalMgsUsdM != null ? `$${totalMgsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable
                     )}
               </div>
               <div className="text-slate-600 leading-relaxed flex items-center md:justify-end space-x-1.5">
                 <span className="font-bold text-emerald-700">Deviation / Gap: </span>
-                <span className="font-bold text-slate-900">₹{mgDeviationCr.toFixed(2)} Cr (0.00%)</span>
-                <span className="text-[11px] text-slate-400">— 100% spend accounted for</span>
+                <span className="font-bold text-slate-900">{mgDeviationCr != null && mgDeviationPct != null ? `₹${mgDeviationCr.toFixed(2)} Cr (${mgDeviationPct.toFixed(2)}%)` : UI_STRINGS.common.notAvailable}</span>
+                <span className="text-[11px] text-slate-400">{materialGroupsReconciled ? UI_STRINGS.documentSummary.reconciliation.zeroDeviationText : UI_STRINGS.common.notAvailable}</span>
               </div>
             </div>
           </div>
@@ -533,7 +593,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     {periodMetadata?.hasMultiYearComparison
                       ? UI_STRINGS.documentSummary.materialGroup.headers.trend
                       : UI_STRINGS.documentSummary.materialGroup.headers.trendSingleFy(
-                          periodMetadata?.actualFiscalYears?.[0] || 'FY22'
+                          periodMetadata?.actualFiscalYears?.[0] || UI_STRINGS.common.notAvailable
                         )}
                   </th>
                 </tr>
@@ -547,21 +607,21 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   </tr>
                 ) : (
                   displayedMgs.map((mg, mgIdx) => {
-                    const groupCode = mg.group_code || `MG-${mgIdx + 1}`;
-                    const groupName = mg.group_name || `${groupCode} Materials`;
+                    const groupCode = mg.group_code || UI_STRINGS.common.notAvailable;
+                    const groupName = mg.group_name || UI_STRINGS.common.notAvailable;
                     const spendInrCr = mg.spend_inr_cr ?? 0;
-                    const spendUsdM = mg.spend_usd_m ?? Number((spendInrCr / 0.838).toFixed(2));
+                    const spendUsdM = mg.spend_usd_m;
                     const spendVal =
                       spendCurrency === 'INR'
                         ? `₹${spendInrCr.toFixed(2)} Cr`
-                        : `$${spendUsdM.toFixed(2)} M`;
-                    const sharePct = mg.share_pct ?? 0;
-                    const fy24 = mg.fy24_spend_inr_cr ?? Number((spendInrCr * 0.3).toFixed(1));
-                    const fy25 = mg.fy25_spend_inr_cr ?? Number((spendInrCr * 0.35).toFixed(1));
-                    const fy26 = mg.fy26_spend_inr_cr ?? Number((spendInrCr * 0.35).toFixed(1));
-                    const recordsCount = mg.records_count ?? 0;
-                    const uniqueItems = mg.unique_items_count ?? recordsCount;
-                    const uniqueVendors = mg.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.05));
+                        : spendUsdM != null ? `$${spendUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable;
+                    const sharePct = mg.share_pct;
+                    const fy24 = mg.fy24_spend_inr_cr;
+                    const fy25 = mg.fy25_spend_inr_cr;
+                    const fy26 = mg.fy26_spend_inr_cr;
+                    const recordsCount = mg.records_count;
+                    const uniqueItems = mg.unique_items_count;
+                    const uniqueVendors = mg.unique_vendors_count;
 
                     return (
                       <tr key={`mg-${groupCode}-${mgIdx}`} className="bg-white hover:bg-slate-50 transition-colors">
@@ -572,25 +632,25 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                           {groupName}
                         </td>
                         <td className="py-3 px-3.5 text-slate-500 text-[11px] truncate max-w-xs" title={mg.sample_item || mg.primary_segment}>
-                          {mg.sample_item || mg.primary_segment || `${groupCode} Item`}
+                          {mg.sample_item || mg.primary_segment || UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-cyan-700">
-                          {uniqueItems.toLocaleString()}
+                          {uniqueItems?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-indigo-700">
-                          {uniqueVendors.toLocaleString()}
+                          {uniqueVendors?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3 text-right font-sans">
-                          {recordsCount.toLocaleString()}
+                          {recordsCount?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3.5 text-right font-black text-slate-900 whitespace-nowrap">
                           {spendVal}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-slate-700">
-                          {sharePct.toFixed(1)}%
+                          {sharePct != null ? `${sharePct.toFixed(1)}%` : UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3.5 w-44">
-                          {periodMetadata?.hasMultiYearComparison ? (
+                          {periodMetadata?.hasMultiYearComparison && fy24 != null && fy25 != null && fy26 != null ? (
                             <div className="space-y-1">
                               <div className="flex justify-between text-[9px] text-slate-400">
                                 <span>FY24: ₹{fy24.toFixed(1)}</span>
@@ -600,28 +660,28 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                               <div className="w-full bg-slate-100 rounded-full h-1.5 flex overflow-hidden">
                                 <div
                                   className="bg-sky-400 h-full"
-                                  style={{ width: `${spendInrCr > 0 ? (fy24 / spendInrCr) * 100 : 33}%` }}
+                                  style={{ width: `${spendInrCr > 0 ? (fy24 / spendInrCr) * 100 : 0}%` }}
                                 />
                                 <div
                                   className="bg-blue-500 h-full"
-                                  style={{ width: `${spendInrCr > 0 ? (fy25 / spendInrCr) * 100 : 33}%` }}
+                                  style={{ width: `${spendInrCr > 0 ? (fy25 / spendInrCr) * 100 : 0}%` }}
                                 />
                                 <div
                                   className="bg-indigo-600 h-full"
-                                  style={{ width: `${spendInrCr > 0 ? (fy26 / spendInrCr) * 100 : 34}%` }}
+                                  style={{ width: `${spendInrCr > 0 ? (fy26 / spendInrCr) * 100 : 0}%` }}
                                 />
                               </div>
                             </div>
                           ) : (
                             <div className="space-y-1">
                               <div className="flex justify-between text-[9px] font-mono text-slate-500">
-                                <span>{periodMetadata?.actualFiscalYears?.[0] || 'FY22'}: ₹{spendInrCr.toFixed(1)} Cr</span>
-                                <span className="text-cyan-700 font-bold">{sharePct.toFixed(1)}%</span>
+                                <span>{periodMetadata?.actualFiscalYears?.[0] || UI_STRINGS.common.notAvailable}: ₹{spendInrCr.toFixed(1)} Cr</span>
+                                <span className="text-cyan-700 font-bold">{sharePct != null ? `${sharePct.toFixed(1)}%` : UI_STRINGS.common.notAvailable}</span>
                               </div>
                               <div className="w-full bg-slate-100 rounded-full h-1.5 flex overflow-hidden">
                                 <div
                                   className="bg-cyan-500 h-full"
-                                  style={{ width: `${Math.min(100, Math.max(5, sharePct * 2))}%` }}
+                                  style={{ width: `${sharePct != null ? Math.min(100, Math.max(0, sharePct * 2)) : 0}%` }}
                                 />
                               </div>
                             </div>
@@ -655,10 +715,10 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                       —
                     </td>
                     <td className="py-2.5 px-3.5 text-right font-black text-slate-800 whitespace-nowrap">
-                      {spendCurrency === 'INR' ? `₹${balanceMgsSpendInrCr.toFixed(2)} Cr` : `$${(balanceMgsSpendInrCr / 0.838).toFixed(2)} M`}
+                      {spendCurrency === 'INR' ? balanceMgsSpendInrCr != null ? `₹${balanceMgsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : balanceMgsUsdM != null ? `$${balanceMgsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable}
                     </td>
                     <td className="py-2.5 px-3 text-right font-bold text-slate-700">
-                      {balanceMgsSharePct.toFixed(1)}%
+                      {balanceMgsSharePct == null ? UI_STRINGS.common.notAvailable : `${balanceMgsSharePct.toFixed(1)}%`}
                     </td>
                     <td className="py-2.5 px-3.5 text-[10px] text-slate-400">
                       Balance Commodity Categories
@@ -675,22 +735,22 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     {UI_STRINGS.documentSummary.reconciliation.grandTotalMgDesc(sortedMgs.length)}
                   </td>
                   <td className="py-3 px-3 text-right font-black text-cyan-700">
-                    {resolvedUniqueItems.toLocaleString()}
+                    {resolvedUniqueItems?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3 text-right font-black text-indigo-700">
-                    {resolvedUniqueVendors.toLocaleString()}
+                    {resolvedUniqueVendors?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3 text-right font-sans font-black">
-                    {resolvedRecordsCount.toLocaleString()}
+                    {resolvedRecordsCount?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3.5 text-right font-black text-emerald-700 whitespace-nowrap text-sm">
-                    {spendCurrency === 'INR' ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : `$${(effectiveTotalMgSpend / 0.838).toFixed(2)} M`}
+                    {spendCurrency === 'INR' ? effectiveTotalMgSpend != null ? `₹${effectiveTotalMgSpend.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : totalMgsUsdM != null ? `$${totalMgsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3 text-right font-black text-slate-900">
-                    100.0%
+                    {materialGroupsReconciled ? '100.0%' : UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3.5 text-[10px] font-bold text-emerald-600">
-                    {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
+                    {materialGroupsReconciled ? UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge : UI_STRINGS.common.notAvailable}
                   </td>
                 </tr>
               </tfoot>
@@ -711,7 +771,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   <span>{UI_STRINGS.documentSummary.reconciliation.plantScopeHeading}</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
+                  {plantsReconciled ? UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge : UI_STRINGS.common.notAvailable}
                 </span>
               </div>
 
@@ -752,22 +812,22 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   ? UI_STRINGS.documentSummary.reconciliation.top10PlantNote(
                       top10Plants.length,
                       sortedPlants.length,
-                      spendCurrency === 'INR' ? `₹${top10PlantsSpendInrCr.toFixed(2)} Cr` : `$${(top10PlantsSpendInrCr / 0.838).toFixed(2)} M`,
-                      spendCurrency === 'INR' ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : `$${(totalPlantsSpendInrCr / 0.838).toFixed(2)} M`,
-                      top10PlantsSharePct.toFixed(1),
+                      spendCurrency === 'INR' ? top10PlantsSpendInrCr != null ? `₹${top10PlantsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : top10PlantsUsdM != null ? `$${top10PlantsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable,
+                      spendCurrency === 'INR' ? totalPlantsSpendInrCr != null ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : totalPlantsUsdM != null ? `$${totalPlantsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable,
+                      top10PlantsSharePct?.toFixed(1) ?? UI_STRINGS.common.notAvailable,
                       balancePlantsCount,
-                      spendCurrency === 'INR' ? `₹${balancePlantsSpendInrCr.toFixed(2)} Cr` : `$${(balancePlantsSpendInrCr / 0.838).toFixed(2)} M`,
-                      balancePlantsSharePct.toFixed(1)
+                      spendCurrency === 'INR' ? balancePlantsSpendInrCr != null ? `₹${balancePlantsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : balancePlantsUsdM != null ? `$${balancePlantsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable,
+                      balancePlantsSharePct?.toFixed(1) ?? UI_STRINGS.common.notAvailable
                     )
                   : UI_STRINGS.documentSummary.reconciliation.allPlantNote(
                       sortedPlants.length,
-                      spendCurrency === 'INR' ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : `$${(totalPlantsSpendInrCr / 0.838).toFixed(2)} M`
+                      spendCurrency === 'INR' ? totalPlantsSpendInrCr != null ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : totalPlantsUsdM != null ? `$${totalPlantsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable
                     )}
               </div>
               <div className="text-slate-600 leading-relaxed flex items-center md:justify-end space-x-1.5">
                 <span className="font-bold text-emerald-700">Deviation / Gap: </span>
-                <span className="font-bold text-slate-900">₹{plantDeviationCr.toFixed(2)} Cr (0.00%)</span>
-                <span className="text-[11px] text-slate-400">— 100% spend reconciled perfectly</span>
+                <span className="font-bold text-slate-900">{plantDeviationCr != null && plantDeviationPct != null ? `₹${plantDeviationCr.toFixed(2)} Cr (${plantDeviationPct.toFixed(2)}%)` : UI_STRINGS.common.notAvailable}</span>
+                <span className="text-[11px] text-slate-400">{plantsReconciled ? UI_STRINGS.documentSummary.reconciliation.zeroDeviationText : UI_STRINGS.common.notAvailable}</span>
               </div>
             </div>
           </div>
@@ -799,18 +859,17 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   </tr>
                 ) : (
                   displayedPlants.map((p, pIdx) => {
-                    const plantCode = p.plant_code || (p as any).plant || `PLANT-${pIdx + 1}`;
-                    const plantName = p.plant_name || `Plant ${plantCode} Production Facility`;
-                    const spendInrCr = p.spend_inr_cr ?? (p as any).totalSpendCr ?? 0;
-                    const spendUsdM = p.spend_usd_m ?? Number((spendInrCr / 0.838).toFixed(2));
+                    const plantCode = p.plant_code || UI_STRINGS.common.notAvailable;
+                    const plantName = p.plant_name || UI_STRINGS.common.notAvailable;
+                    const spendInrCr = p.spend_inr_cr;
+                    const spendUsdM = p.spend_usd_m;
                     const spendVal =
                       spendCurrency === 'INR'
-                        ? `₹${spendInrCr.toFixed(2)} Cr`
-                        : `$${spendUsdM.toFixed(2)} M`;
-                    const sharePct = p.share_pct ?? 0;
-                    const recordsCount = p.records_count ?? (p as any).total_po_count ?? 0;
-                    const uniqueItems = p.unique_items_count ?? recordsCount ?? 0;
-                    const uniqueVendors = p.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.05));
+                        ? spendInrCr != null ? `₹${spendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable
+                        : spendUsdM != null ? `$${spendUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable;
+                    const recordsCount = p.records_count ?? p.total_po_count;
+                    const uniqueItems = p.unique_items_count;
+                    const uniqueVendors = p.unique_vendors_count;
 
                     return (
                       <tr key={`plant-${plantCode}-${pIdx}`} className="bg-white hover:bg-slate-50 transition-colors">
@@ -822,30 +881,30 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                         </td>
                         <td className="py-3 px-3">
                           <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold">
-                            {p.region || 'West'}
+                            {p.region || UI_STRINGS.common.notAvailable}
                           </span>
                         </td>
-                        <td className="py-3 px-3.5 text-slate-500 text-[11px] truncate max-w-xs" title={p.location}>
-                          {p.location || `Hub ${plantCode}`}
+                        <td className="py-3 px-3.5 text-slate-500 text-[11px] truncate max-w-xs" title={p.location || UI_STRINGS.common.notAvailable}>
+                          {p.location || UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-cyan-700">
-                          {uniqueItems.toLocaleString()}
+                          {uniqueItems?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-indigo-700">
-                          {uniqueVendors.toLocaleString()}
+                          {uniqueVendors?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3 text-right font-sans">
-                          {recordsCount.toLocaleString()}
+                          {recordsCount?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3.5 text-right font-black text-slate-900 whitespace-nowrap">
                           {spendVal}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-slate-700">
-                          {sharePct.toFixed(1)}%
+                          {p.share_pct != null ? `${p.share_pct.toFixed(1)}%` : UI_STRINGS.common.notAvailable}
                         </td>
                         <td className="py-3 px-3.5">
                           <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
-                            {p.primary_material_group || 'General Procurement'}
+                            {p.primary_material_group || UI_STRINGS.common.notAvailable}
                           </span>
                         </td>
                       </tr>
@@ -881,10 +940,10 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                       —
                     </td>
                     <td className="py-2.5 px-3.5 text-right font-black text-slate-800 whitespace-nowrap">
-                      {spendCurrency === 'INR' ? `₹${balancePlantsSpendInrCr.toFixed(2)} Cr` : `$${(balancePlantsSpendInrCr / 0.838).toFixed(2)} M`}
+                    {spendCurrency === 'INR' ? balancePlantsSpendInrCr != null ? `₹${balancePlantsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : balancePlantsUsdM != null ? `$${balancePlantsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable}
                     </td>
                     <td className="py-2.5 px-3 text-right font-bold text-slate-700">
-                      {balancePlantsSharePct.toFixed(1)}%
+                      {balancePlantsSharePct == null ? UI_STRINGS.common.notAvailable : `${balancePlantsSharePct.toFixed(1)}%`}
                     </td>
                     <td className="py-2.5 px-3.5 text-[10px] text-slate-400">
                       Balance Secondary Hubs
@@ -901,22 +960,22 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                     {UI_STRINGS.documentSummary.reconciliation.grandTotalDesc(sortedPlants.length)}
                   </td>
                   <td className="py-3 px-3 text-right font-black text-cyan-700">
-                    {resolvedUniqueItems.toLocaleString()}
+                    {resolvedUniqueItems?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3 text-right font-black text-indigo-700">
-                    {resolvedUniqueVendors.toLocaleString()}
+                    {resolvedUniqueVendors?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3 text-right font-sans font-black">
-                    {resolvedRecordsCount.toLocaleString()}
+                    {resolvedRecordsCount?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3.5 text-right font-black text-emerald-700 whitespace-nowrap text-sm">
-                    {spendCurrency === 'INR' ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : `$${(totalPlantsSpendInrCr / 0.838).toFixed(2)} M`}
+                    {spendCurrency === 'INR' ? totalPlantsSpendInrCr != null ? `₹${totalPlantsSpendInrCr.toFixed(2)} Cr` : UI_STRINGS.common.notAvailable : totalPlantsUsdM != null ? `$${totalPlantsUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3 text-right font-black text-slate-900">
-                    100.0%
+                    {plantsReconciled ? '100.0%' : UI_STRINGS.common.notAvailable}
                   </td>
                   <td className="py-3 px-3.5 text-[10px] font-bold text-emerald-600">
-                    {UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge}
+                    {plantsReconciled ? UI_STRINGS.documentSummary.reconciliation.zeroDeviationBadge : UI_STRINGS.common.notAvailable}
                   </td>
                 </tr>
               </tfoot>
@@ -969,18 +1028,18 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                   ) : (
                     filteredMonths.map((m, mIdx) => {
                       const spendInrCr = m.spend_inr_cr ?? 0;
-                      const spendUsdM = m.spend_usd_m ?? ((spendInrCr * 10) / 83.8);
+                      const spendUsdM = m.spend_usd_m;
                       const spendVal =
                         spendCurrency === 'INR'
                           ? `₹${spendInrCr.toFixed(2)} Cr`
-                          : `$${spendUsdM.toFixed(2)} M`;
+                          : spendUsdM != null ? `$${spendUsdM.toFixed(2)} M` : UI_STRINGS.common.notAvailable;
 
-                      const momChange = m.mom_change_pct ?? 0;
-                      const isPositive = momChange > 0;
+                      const momChange = m.mom_change_pct;
+                      const isPositive = momChange != null && momChange > 0;
                       const isZero = momChange === 0;
-                      const recordsCount = m.records_count ?? m.line_items_count ?? 0;
-                      const uniqueItems = m.unique_items_count ?? recordsCount ?? 0;
-                      const uniqueVendors = m.unique_vendors_count ?? Math.max(1, Math.round(recordsCount * 0.15));
+                      const recordsCount = m.records_count ?? m.line_items_count;
+                      const uniqueItems = m.unique_items_count;
+                      const uniqueVendors = m.unique_vendors_count;
 
                       return (
                         <tr key={`month-${m.month_key}-${mIdx}`} className="bg-white hover:bg-slate-50 transition-colors">
@@ -996,13 +1055,13 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                             {spendVal}
                           </td>
                           <td className="py-2.5 px-3 text-right font-bold text-cyan-700">
-                            {uniqueItems.toLocaleString()}
+                            {uniqueItems?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                           </td>
                           <td className="py-2.5 px-3 text-right font-bold text-indigo-700">
-                            {uniqueVendors.toLocaleString()}
+                            {uniqueVendors?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                           </td>
                           <td className="py-2.5 px-3 text-right font-sans">
-                            {recordsCount.toLocaleString()}
+                            {recordsCount?.toLocaleString() ?? UI_STRINGS.common.notAvailable}
                           </td>
                           <td className="py-2.5 px-3.5">
                             <span className="px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-bold">
@@ -1024,7 +1083,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
                                   : 'bg-emerald-100 text-emerald-800'
                               }`}
                             >
-                              {isPositive ? `+${momChange.toFixed(1)}%` : `${momChange.toFixed(1)}%`}
+                              {momChange == null ? UI_STRINGS.common.notAvailable : isPositive ? `+${momChange.toFixed(1)}%` : `${momChange.toFixed(1)}%`}
                             </span>
                           </td>
                         </tr>
@@ -1043,7 +1102,7 @@ export const DocumentSummaryView: React.FC<DocumentSummaryViewProps> = ({
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100">
           <div className="flex items-center space-x-2 text-xs text-slate-500">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>{UI_STRINGS.documentSummary.footerValidation(activeDoc.records_count)}</span>
+            <span>{UI_STRINGS.documentSummary.footerValidation(activeDoc?.records_count ?? resolvedRecordsCount ?? UI_STRINGS.common.notAvailable)}</span>
           </div>
         </div>
       )}

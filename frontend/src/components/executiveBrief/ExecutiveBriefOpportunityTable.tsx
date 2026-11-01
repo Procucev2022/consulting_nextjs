@@ -1,226 +1,201 @@
 'use client';
 
-import React from 'react';
-import {
-  Layers,
-  ShieldCheck,
-  Scale,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react';
-import type { ExecutiveBriefOpportunityTableProps } from '../../types';
-import {
-  EXECUTIVE_BRIEF_EXPORT_STRINGS,
-  EXECUTIVE_BRIEF_OPPORTUNITY_ROWS,
-  EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN
-} from '../../constants';
-import { ExecutiveBriefAssumptionsPanel } from './ExecutiveBriefAssumptionsPanel';
-import { ExecutiveBriefSpecialDisplays } from './ExecutiveBriefSpecialDisplays';
-import { ExecutiveBriefTotalValuePortfolio } from './ExecutiveBriefTotalValuePortfolio';
+import React, { useCallback, useEffect, useState } from 'react';
+import type {
+  ExecutiveBriefOpportunityTableProps,
+  ExecutiveOpportunityBriefFetchResult,
+  ExecutiveOpportunityBriefLoadState,
+  ExecutiveOpportunityBriefReportData
+} from '../../types';
+import { UI_STRINGS } from '../../constants/uiStrings';
+import { fetchExecutiveOpportunityBriefReport } from '../../utils/executiveOpportunityBriefApi';
+import { logger as frontendLogger } from '../../utils/logger';
+
+const renderGroupSection = (
+  title: string,
+  groups: readonly ExecutiveOpportunityBriefReportData['levers'][number][],
+  testId: string
+): React.ReactElement => (
+  <section className="rounded-xl border border-[#DCE7F5] bg-white p-4" data-testid={testId}>
+    <h3 className="text-xs font-bold uppercase tracking-wide text-[#0B1B33]">{title}</h3>
+    {groups.length === 0 ? (
+      <p className="mt-3 text-xs text-[#64748B]">{UI_STRINGS.opportunityBrief.noGroups}</p>
+    ) : (
+      <ul className="mt-3 space-y-2">
+        {groups.map((group) => (
+          <li key={group.label} className="flex items-center justify-between gap-3 text-xs">
+            <span className="min-w-0 truncate font-medium text-[#334155]">{group.label}</span>
+            <span className="shrink-0 text-right text-[#64748B]">
+              {UI_STRINGS.opportunityBrief.countValue(group.count)} {UI_STRINGS.opportunityBrief.countLabel}
+              {' · '}{UI_STRINGS.opportunityBrief.currencyCr(group.estimatedSavingsCr)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+);
 
 export const ExecutiveBriefOpportunityTable: React.FC<ExecutiveBriefOpportunityTableProps> = ({
   onDrillOpportunity
 }) => {
-  const strings = EXECUTIVE_BRIEF_EXPORT_STRINGS;
-  const oppStrings = strings.opportunityTable;
-  const dblStrings = strings.doubleCountingControl;
+  const [loadState, setLoadState] = useState<ExecutiveOpportunityBriefLoadState>({ status: 'loading' });
+  const [attempt, setAttempt] = useState<number>(0);
+  const strings = UI_STRINGS.opportunityBrief;
 
+  const loadReport = useCallback(async (): Promise<ExecutiveOpportunityBriefFetchResult> => {
+    try {
+      return await fetchExecutiveOpportunityBriefReport();
+    } catch (error: unknown) {
+      frontendLogger.error('Executive brief opportunity panel request failed', {
+        action: 'executiveBrief.opportunityPanel'
+      }, error);
+      return { ok: false, statusCode: 0, requestId: null };
+    }
+  }, []);
+
+  useEffect(() => {
+    let isCurrent = true;
+    setLoadState({ status: 'loading' });
+    void loadReport().then((result) => {
+      if (!isCurrent) return;
+      if (result.ok === true) {
+        setLoadState({ status: 'ready', report: result.data });
+        return;
+      }
+      frontendLogger.error('Executive brief opportunity panel could not load D1 data', {
+        action: 'executiveBrief.opportunityPanel',
+        statusCode: result.statusCode,
+        requestId: result.requestId
+      });
+      setLoadState({ status: 'failed', statusCode: result.statusCode, requestId: result.requestId });
+    });
+    return () => {
+      isCurrent = false;
+    };
+  }, [attempt, loadReport]);
+
+  if (loadState.status === 'loading') {
+    return (
+      <section className="rounded-2xl border border-[#DCE7F5] bg-white p-6 text-sm text-[#475569]" role="status" data-testid="executive-brief-opportunities-loading">
+        {strings.reportLoading}
+      </section>
+    );
+  }
+
+  if (loadState.status === 'failed') {
+    const message = loadState.statusCode === 0
+      ? strings.reportUnavailableNetwork
+      : strings.reportUnavailable(loadState.statusCode, loadState.requestId ?? strings.requestIdNotReturned);
+    return (
+      <section className="rounded-2xl border border-rose-200 bg-white p-6" data-testid="executive-brief-opportunities-error">
+        <p className="text-sm text-rose-800" role="alert">{message}</p>
+        <button type="button" className="mt-4 rounded-lg bg-[#0284C7] px-4 py-2 text-xs font-bold text-white" onClick={() => setAttempt((current) => current + 1)}>
+          {strings.retryPanel}
+        </button>
+      </section>
+    );
+  }
+
+  const report = loadState.report;
   return (
-    <section aria-labelledby="executive-opportunity-heading" className="space-y-6">
-      {/* Section 15: Total Value Opportunity Portfolio with 7 Expandable Levers */}
-      <ExecutiveBriefTotalValuePortfolio onSelectOpportunity={onDrillOpportunity} />
-
-      {/* Section 13: How We Prevent Double Counting */}
-      <div className="bg-white border border-[#DCE7F5] rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DCE7F5] pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-sky-50 border border-sky-200 text-[#0284C7]">
-              <Scale className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 id="executive-opportunity-heading" className="text-sm font-black uppercase tracking-wider text-[#0B1B33]">
-                {dblStrings.sectionTitle}
-              </h2>
-              <p className="text-xs text-[#475569] font-medium">
-                {dblStrings.subtitle}
-              </p>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-mono font-semibold self-start sm:self-auto">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Zero Overlap Invariant
-          </span>
-        </div>
-
-        {/* Waterfall Metrics Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-          {/* Gross Identified */}
-          <div className="bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl p-3.5 flex flex-col justify-between">
-            <span className="text-[11px] font-semibold text-[#475569] uppercase tracking-wide">
-              {dblStrings.grossTitle}
-            </span>
-            <div className="text-xl font-black text-[#0B1B33] mt-1">
-              {EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.grossIdentifiedCr}
-            </div>
-            <span className="text-[10px] text-[#64748B] mt-1">
-              {dblStrings.grossDesc}
-            </span>
-          </div>
-
-          {/* Overlap Adjustment */}
-          <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-3.5 flex flex-col justify-between">
-            <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wide">
-              {dblStrings.overlapTitle}
-            </span>
-            <div className="text-xl font-black text-amber-700 mt-1">
-              {EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.overlapAdjustmentCr}
-            </div>
-            <span className="text-[10px] text-[#64748B] mt-1">
-              {dblStrings.overlapDesc}
-            </span>
-          </div>
-
-          {/* Exclusions */}
-          <div className="bg-[#F8FBFE] border border-[#DCE7F5] rounded-xl p-3.5 flex flex-col justify-between">
-            <span className="text-[11px] font-semibold text-[#475569] uppercase tracking-wide">
-              {dblStrings.exclusionTitle}
-            </span>
-            <div className="text-xl font-black text-[#64748B] mt-1">
-              {EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.exclusionsCr}
-            </div>
-            <span className="text-[10px] text-[#64748B] mt-1">
-              {dblStrings.exclusionDesc}
-            </span>
-          </div>
-
-          {/* Net Defensible Opportunity */}
-          <div className="bg-emerald-50/70 border border-emerald-300 rounded-xl p-3.5 flex flex-col justify-between shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wide">
-                {dblStrings.netTitle}
-              </span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            </div>
-            <div className="text-2xl font-black text-emerald-800 mt-1">
-              {EXECUTIVE_BRIEF_WATERFALL_BREAKDOWN.netDefensibleCr}
-            </div>
-            <span className="text-[10px] text-emerald-700 font-medium mt-1">
-              {dblStrings.netDesc}
-            </span>
-          </div>
-        </div>
-
-        {/* Secondary Benefit Pillars (Productivity & Risk) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FBFE] border border-indigo-100">
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div className="text-xs">
-              <div className="font-bold text-indigo-900">{dblStrings.productivityTitle}</div>
-              <div className="text-[#475569] text-[11px]">{dblStrings.productivityDesc}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F8FBFE] border border-sky-100">
-            <div className="p-2 rounded-lg bg-sky-50 text-[#0284C7]">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <div className="text-xs">
-              <div className="font-bold text-[#0B1B33]">{dblStrings.strategicRiskTitle}</div>
-              <div className="text-[#475569] text-[11px]">{dblStrings.strategicRiskDesc}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Section 14: Analysis-Wise Executive Table */}
-      <div className="bg-white border border-[#DCE7F5] rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DCE7F5] pb-3">
+    <section className="space-y-4" aria-labelledby="executive-brief-opportunity-panel-title" data-testid="executive-brief-opportunity-panel">
+      <header className="rounded-2xl border border-[#DCE7F5] bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-sm font-black uppercase tracking-wider text-[#0B1B33]">
-              {oppStrings.sectionTitle}
-            </h3>
-            <p className="text-xs text-[#475569] font-medium">
-              {oppStrings.subtitle}
-            </p>
+            <h2 id="executive-brief-opportunity-panel-title" className="text-sm font-black uppercase tracking-wider text-[#0B1B33]">
+              {strings.reportPanelTitle}
+            </h2>
+            <p className="mt-1 text-xs text-[#475569]">{report.tenant.enterpriseName}</p>
+            <p className="mt-2 text-xs text-[#64748B]">{strings.reportPanelDescription}</p>
           </div>
-          <span className="text-[11px] text-[#64748B] font-mono">
-            8 Analytical Levers • Certified Invariants
+          <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-800" data-testid="executive-brief-data-classification">
+            {strings.classificationLabel}: {strings.classificationValues[report.dataClassification]}
           </span>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#DCE7F5] text-[#0B1B33] uppercase text-[10px] tracking-wider bg-[#F8FBFE]">
-                <th className="py-3 px-3 font-semibold">{oppStrings.colAnalysis}</th>
-                <th className="py-3 px-3 font-semibold">{oppStrings.colAddressableSpend}</th>
-                <th className="py-3 px-3 font-semibold">{oppStrings.colAssumptionMethod}</th>
-                <th className="py-3 px-3 font-semibold text-right">{oppStrings.colIndicativeOpportunity}</th>
-                <th className="py-3 px-3 font-semibold">{oppStrings.colBenefitType}</th>
-                <th className="py-3 px-3 font-semibold">{oppStrings.colConfidence}</th>
-                <th className="py-3 px-3 font-semibold">{oppStrings.colPrimaryAction}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#DCE7F5] text-[#0B1B33]">
-              {EXECUTIVE_BRIEF_OPPORTUNITY_ROWS.map((row) => {
-                const isSoftOrRisk = row.benefitType.includes('Productivity') || row.benefitType.includes('Risk');
-                return (
-                  <tr
-                    key={row.analysis}
-                    className="hover:bg-[#EEF7FF] transition-colors cursor-pointer group bg-white"
-                    onClick={() => onDrillOpportunity?.(row.analysis)}
-                  >
-                    <td className="py-3 px-3 font-semibold text-[#0B1B33] group-hover:text-[#0284C7] transition-colors">
-                      {row.analysis}
-                    </td>
-                    <td className="py-3 px-3 tabular-nums font-semibold text-[#0B1B33]">{row.addressableSpend}</td>
-                    <td className="py-3 px-3 text-[#475569] text-[11px]">{row.assumptionMethod}</td>
-                    <td className={`py-3 px-3 tabular-nums font-bold text-right ${
-                      isSoftOrRisk ? 'text-indigo-700' : 'text-emerald-700'
-                    }`}>
-                      {row.indicativeOpportunity}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        isSoftOrRisk
-                          ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                          : row.benefitType.includes('Cost Avoidance')
-                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      }`}>
-                        {row.benefitType}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className="font-mono text-[11px] text-[#475569]">{row.confidence}</span>
-                    </td>
-                    <td className="py-3 px-3 text-[#475569] text-[11px] max-w-xs truncate" title={row.primaryAction}>
-                      {row.primaryAction}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <p className="mt-3 rounded-lg bg-[#F8FBFE] p-3 text-xs leading-relaxed text-[#475569]">{report.scopeDescription}</p>
+        <p className="mt-2 text-[10px] text-[#64748B]">{strings.reportAsOf(report.generatedAt)}</p>
+        <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
+          <article className="rounded-lg border border-[#DCE7F5] bg-[#F8FBFE] p-3">
+            <h3 className="text-[10px] font-semibold uppercase text-[#64748B]">{strings.metricLabels.baselineSpend}</h3>
+            <p className="mt-1 text-sm font-bold text-[#0B1B33]">{strings.currencyCr(report.metrics.totalSpendCr)}</p>
+          </article>
+          <article className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+            <h3 className="text-[10px] font-semibold uppercase text-emerald-800">{strings.metricLabels.estimatedSavings}</h3>
+            <p className="mt-1 text-sm font-bold text-emerald-800">{strings.currencyCr(report.metrics.estimatedSavingsCr)}</p>
+          </article>
+          <article className="rounded-lg border border-[#DCE7F5] bg-[#F8FBFE] p-3">
+            <h3 className="text-[10px] font-semibold uppercase text-[#64748B]">{strings.metricLabels.opportunityCount}</h3>
+            <p className="mt-1 text-sm font-bold text-[#0B1B33]">{strings.countValue(report.metrics.opportunityCount)}</p>
+          </article>
+          <article className="rounded-lg border border-[#DCE7F5] bg-[#F8FBFE] p-3">
+            <h3 className="text-[10px] font-semibold uppercase text-[#64748B]">{strings.metricLabels.transactionCount}</h3>
+            <p className="mt-1 text-sm font-bold text-[#0B1B33]">{strings.countValue(report.metrics.transactionCount)}</p>
+          </article>
+          <article className="rounded-lg border border-[#DCE7F5] bg-[#F8FBFE] p-3">
+            <h3 className="text-[10px] font-semibold uppercase text-[#64748B]">{strings.metricLabels.supplierCount}</h3>
+            <p className="mt-1 text-sm font-bold text-[#0B1B33]">{strings.countValue(report.metrics.supplierCount)}</p>
+          </article>
+          <article className="rounded-lg border border-[#DCE7F5] bg-[#F8FBFE] p-3">
+            <h3 className="text-[10px] font-semibold uppercase text-[#64748B]">{strings.confidenceLabel}</h3>
+            <p className="mt-1 text-sm font-bold text-[#0B1B33]">{strings.confidenceValue(report.metrics.averageConfidence)}</p>
+          </article>
         </div>
+      </header>
 
-        {/* Section 16: CFO / CEO Mandatory Disclaimer */}
-        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#F8FBFE] border border-[#DCE7F5] text-[11px] text-[#475569]">
-          <AlertCircle className="w-4 h-4 text-[#0284C7] shrink-0 mt-0.5" />
-          <p className="leading-relaxed">
-            <span className="font-bold text-[#0B1B33]">CFO Governance Note: </span>
-            {oppStrings.cfoNote}
-          </p>
-        </div>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        {renderGroupSection(strings.leverBreakdownTitle, report.levers, 'executive-brief-lever-breakdown')}
+        {renderGroupSection(strings.statusBreakdownTitle, report.statuses, 'executive-brief-status-breakdown')}
+        {renderGroupSection(strings.riskBreakdownTitle, report.risks, 'executive-brief-risk-breakdown')}
       </div>
 
-      {/* Section 8: Savings Assumptions & Methodology Taxonomy */}
-      <ExecutiveBriefAssumptionsPanel />
-
-      {/* Sections 12-15: PO, Vendor, Benchmark, and Roadmap Special Displays */}
-      <ExecutiveBriefSpecialDisplays onSelectLever={onDrillOpportunity} />
+      <section className="overflow-hidden rounded-2xl border border-[#DCE7F5] bg-white shadow-sm" aria-labelledby="executive-brief-d1-register-title">
+        <div className="border-b border-[#DCE7F5] p-4">
+          <h3 id="executive-brief-d1-register-title" className="text-sm font-bold text-[#0B1B33]">{strings.registerTitle}</h3>
+        </div>
+        {report.opportunities.length === 0 ? (
+          <p className="p-5 text-xs text-[#64748B]">{strings.noOpportunities}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[960px] text-left text-xs">
+              <thead className="bg-[#F8FBFE] text-[10px] uppercase tracking-wide text-[#475569]">
+                <tr>
+                  <th className="p-3">{strings.opportunityIdLabel}</th>
+                  <th className="p-3">{strings.categoryLabel}</th>
+                  <th className="p-3">{strings.currentSpendLabel}</th>
+                  <th className="p-3">{strings.estimatedSavingsLabel}</th>
+                  <th className="p-3">{strings.leverLabel}</th>
+                  <th className="p-3">{strings.statusLabel}</th>
+                  <th className="p-3">{strings.riskLabel}</th>
+                  <th className="p-3">{strings.confidenceLabel}</th>
+                  <th className="p-3">{strings.actionLabel}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#DCE7F5]">
+                {report.opportunities.map((opportunity) => (
+                  <tr key={opportunity.id} className="align-top text-[#334155]">
+                    <td className="p-3 font-mono font-bold text-[#0284C7]">
+                      {onDrillOpportunity ? (
+                        <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => onDrillOpportunity(opportunity.id)}>
+                          {opportunity.id}
+                        </button>
+                      ) : <span>{opportunity.id}</span>}
+                    </td>
+                    <td className="p-3"><span className="font-semibold text-[#0B1B33]">{opportunity.category}</span><span className="mt-1 block">{opportunity.title}</span></td>
+                    <td className="whitespace-nowrap p-3 tabular-nums">{strings.currencyCr(opportunity.currentSpendCr)}</td>
+                    <td className="whitespace-nowrap p-3 font-semibold tabular-nums text-emerald-800">{strings.currencyCr(opportunity.estimatedSavingsCr)}</td>
+                    <td className="p-3">{opportunity.lever}</td>
+                    <td className="p-3">{opportunity.status}</td>
+                    <td className="p-3">{opportunity.riskLevel}</td>
+                    <td className="p-3 tabular-nums">{strings.confidenceValue(opportunity.confidence)}</td>
+                    <td className="min-w-56 p-3">{opportunity.recommendedAction}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </section>
   );
 };

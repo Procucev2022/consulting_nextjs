@@ -3,9 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import confetti from 'canvas-confetti';
 import { Module5ConversionMatrix } from '../../src/components/Module5ConversionMatrix';
-import { DEFAULT_SAVINGS_TARGET_PCT, DEFAULT_TENANT_ENTERPRISE_NAME } from '../../src/constants';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT, UI_STRINGS } from '../../src/constants';
 import { mockTenant } from '../fixtures/mockData';
-import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { authApiClient } from '../../src/utils/authApi';
 import type {
   ConversionFunnelPhase,
@@ -15,8 +14,10 @@ import type {
   UserProfile
 } from '../../src/types';
 
+vi.mock('../../src/utils/apiBase', () => ({ getApiBaseUrl: () => 'https://backend.example.test' }));
+
 const module5 = UI_STRINGS.module5;
-const EMAIL_ROUTE = '/api/email/executive-brief';
+const EMAIL_ROUTE = `https://backend.example.test${EXECUTIVE_OPPORTUNITY_BRIEF_EMAIL_ENDPOINT}`;
 
 type DispatchResponse = { ok: boolean; json: () => Promise<unknown> };
 
@@ -96,10 +97,12 @@ const renderMatrix = (overrides: Partial<React.ComponentProps<typeof Module5Conv
 describe('Module5ConversionMatrix coverage', () => {
   beforeEach(() => {
     vi.mocked(confetti).mockClear();
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('user-token');
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
 
@@ -111,11 +114,14 @@ describe('Module5ConversionMatrix coverage', () => {
     renderMatrix();
     fireEvent.click(lockInButton());
 
-    expect(await screen.findByText(/Multi-Year Terms Locked In/)).toBeInTheDocument();
+    expect(await screen.findByText(module5.emailSent('buyer@example.com'))).toBeInTheDocument();
     expect(screen.getAllByText(/buyer@example\.com/).length).toBeGreaterThan(0);
     expect(screen.getByText(/msg-m5-42/)).toBeInTheDocument();
     expect(confetti).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(EMAIL_ROUTE, expect.objectContaining({ method: 'POST' }));
+    expect(fetchMock).toHaveBeenCalledWith(EMAIL_ROUTE, expect.objectContaining({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer user-token' }
+    }));
     expect(sentPayload(fetchMock)).toMatchObject({ buyerEmail: 'buyer@example.com' });
   });
 
@@ -126,7 +132,7 @@ describe('Module5ConversionMatrix coverage', () => {
     renderMatrix();
     fireEvent.click(lockInButton());
 
-    expect(await screen.findByText(/Multi-Year Terms Locked In/)).toBeInTheDocument();
+    expect(await screen.findByText(module5.emailSent('buyer@example.com'))).toBeInTheDocument();
     expect(screen.queryByText(/Gateway Message ID/)).not.toBeInTheDocument();
   });
 
@@ -148,7 +154,7 @@ describe('Module5ConversionMatrix coverage', () => {
     renderMatrix();
     fireEvent.click(lockInButton());
 
-    expect(await screen.findByText(/Failed to dispatch email/)).toBeInTheDocument();
+    expect(await screen.findByText(module5.emailError)).toBeInTheDocument();
   });
 
   it('shows the error message when the dispatch request throws an Error', async () => {
@@ -168,26 +174,23 @@ describe('Module5ConversionMatrix coverage', () => {
     renderMatrix();
     fireEvent.click(lockInButton());
 
-    expect(await screen.findByText(/Network error while dispatching/)).toBeInTheDocument();
+    expect(await screen.findByText(module5.emailNetworkError)).toBeInTheDocument();
   });
 
-  it('sends an empty buyer email and the default tenant name when no user or tenant name is available', async () => {
+  it('requires a signed-in token before dispatching the report', async () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(null);
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(null);
     const fetchMock = recordingFetch({ success: true, messageId: 'msg-m5-0' });
     vi.stubGlobal('fetch', fetchMock);
-    const tenantWithoutName: TenantMaster = { ...SPEND_TENANT, enterprise_name: '' };
 
-    renderMatrix({ tenant: tenantWithoutName });
+    renderMatrix();
     fireEvent.click(lockInButton());
 
-    expect(await screen.findByText(/Multi-Year Terms Locked In/)).toBeInTheDocument();
-    expect(sentPayload(fetchMock)).toMatchObject({
-      buyerEmail: '',
-      tenantName: DEFAULT_TENANT_ENTERPRISE_NAME
-    });
+    expect(await screen.findByText(UI_STRINGS.errors.auth.sessionExpired)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('sends category spend from the alternate field when the primary spend is absent', async () => {
+  it('keeps the email payload limited to a validated recipient and leaves report data to D1', async () => {
     vi.spyOn(authApiClient, 'getStoredUser').mockReturnValue(buildUser());
     const fetchMock = recordingFetch({ success: true });
     vi.stubGlobal('fetch', fetchMock);
@@ -199,14 +202,11 @@ describe('Module5ConversionMatrix coverage', () => {
     });
     fireEvent.click(lockInButton());
 
-    expect(await screen.findByText(/Multi-Year Terms Locked In/)).toBeInTheDocument();
-    expect(sentPayload(fetchMock)).toMatchObject({
-      cleanLineItemsCount: 1200,
-      categories: [{ name: 'Packaging', spend_inr_crores: 18, lineItemsCount: 120 }]
-    });
+    expect(await screen.findByText(module5.emailSent('buyer@example.com'))).toBeInTheDocument();
+    expect(sentPayload(fetchMock)).toEqual({ buyerEmail: 'buyer@example.com' });
   });
 
-  it('derives the savings rate from opportunities and clamps it to the permitted band', () => {
+  it('derives the savings rate from D1 opportunities without applying a benchmark floor', () => {
     const tenant = { ...mockTenant, total_spend_evaluated_inr: 100 };
     const { unmount } = render(
       <Module5ConversionMatrix
@@ -216,7 +216,7 @@ describe('Module5ConversionMatrix coverage', () => {
         opportunities={[buildOpportunity({ estimated_savings_inr_cr: 5 })]}
       />
     );
-    expect(screen.getAllByRole('slider')[1]).toHaveValue('8');
+    expect(screen.getAllByRole('slider')[1]).toHaveValue('5');
     unmount();
 
     const { unmount: unmountHigh } = render(
@@ -227,7 +227,7 @@ describe('Module5ConversionMatrix coverage', () => {
         opportunities={[buildOpportunity({ estimated_savings_inr_cr: 50 })]}
       />
     );
-    expect(screen.getAllByRole('slider')[1]).toHaveValue('25');
+    expect(screen.getAllByRole('slider')[1]).toHaveValue('50');
     unmountHigh();
 
     render(
@@ -238,7 +238,7 @@ describe('Module5ConversionMatrix coverage', () => {
         opportunities={[buildOpportunity({ estimated_savings_inr_cr: 0 })]}
       />
     );
-    expect(screen.getAllByRole('slider')[1]).toHaveValue(String(DEFAULT_SAVINGS_TARGET_PCT));
+    expect(screen.getAllByRole('slider')[1]).toHaveValue('0');
   });
 
   it('shows the phase metrics from live spend, categories, and clean record counts', () => {
@@ -283,7 +283,7 @@ describe('Module5ConversionMatrix coverage', () => {
 
     resolveDispatch({ ok: true, json: () => Promise.resolve({ success: true }) });
     await waitFor(() => {
-      expect(screen.getByText(/Multi-Year Terms Locked In/)).toBeInTheDocument();
+      expect(screen.getByText(module5.emailSent('buyer@example.com'))).toBeInTheDocument();
     });
   });
 });

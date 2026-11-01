@@ -1,9 +1,20 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ClientIngestionSetupModal } from '../../../src/components/modals/ClientIngestionSetupModal';
 import { mockTenant } from '../../fixtures/mockData';
 import { UI_STRINGS } from '../../../src/constants/uiStrings';
+
+vi.mock('../../../src/utils/industryApi', () => ({
+  loadIndustryCatalog: vi.fn().mockResolvedValue({
+    success: true,
+    profiles: [
+      { majorSector: 'Chemical & Petrochemicals', minorSector: 'Specialty Chemicals', sectorCode: 'CHEM-SPEC', tagline: 'Chemical profile', typicalDirectMaterials: ['Catalysts'], typicalPackagingMaterials: ['Drums'], typicalLogisticsCategories: ['Freight'], typicalMroCategories: ['Pumps'], characteristicUNSPSCPrefixes: ['12', '14'], benchmarkSpendSplit: { directPct: 56, packagingPct: 18, logisticsPct: 14, mroPct: 12 }, categorizationGuidance: 'Review chemicals.', keyKeywords: ['catalyst'] },
+      { majorSector: 'Manufacturing & Industrial', minorSector: 'Precision Engineering & Tooling', sectorCode: 'MFG-PREC', tagline: 'Manufacturing profile', typicalDirectMaterials: ['Tools'], typicalPackagingMaterials: ['Boxes'], typicalLogisticsCategories: ['Freight'], typicalMroCategories: ['Pumps'], characteristicUNSPSCPrefixes: ['30'], benchmarkSpendSplit: { directPct: 54, packagingPct: 8, logisticsPct: 14, mroPct: 24 }, categorizationGuidance: 'Review precision materials.', keyKeywords: ['carbide'] }
+    ],
+    presets: [{ clientName: 'Vanguard Eurocorp AG', majorSector: 'Manufacturing & Industrial', minorSector: 'Precision Engineering & Tooling' }]
+  })
+}));
 
 describe('ClientIngestionSetupModal Component', () => {
   it('renders null when isOpen is false', () => {
@@ -18,7 +29,7 @@ describe('ClientIngestionSetupModal Component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders form and updates input values', () => {
+  it('renders form and updates input values', async () => {
     const onConfirmAndUpload = vi.fn();
     const onClose = vi.fn();
 
@@ -30,6 +41,7 @@ describe('ClientIngestionSetupModal Component', () => {
         onConfirmAndUpload={onConfirmAndUpload}
       />
     );
+    await waitFor(() => expect(screen.getByRole('button', { name: UI_STRINGS.modals.clientSetup.submitBtn })).toBeEnabled());
 
     // Check header
     expect(screen.getByText(UI_STRINGS.modals.clientSetup.title)).toBeInTheDocument();
@@ -131,7 +143,7 @@ describe('ClientIngestionSetupModal Component', () => {
     }
   });
 
-  it('handles Industry Major and Minor sector selection and preset synchronization', () => {
+  it('handles Industry Major and Minor sector selection and preset synchronization', async () => {
     const onConfirmAndUpload = vi.fn();
     const onClose = vi.fn();
 
@@ -143,6 +155,7 @@ describe('ClientIngestionSetupModal Component', () => {
         onConfirmAndUpload={onConfirmAndUpload}
       />
     );
+    await waitFor(() => expect(screen.getByLabelText(UI_STRINGS.modals.clientSetup.industrySector.majorSectorLabel)).toBeEnabled());
 
     // Verify Industry Sector section is rendered
     expect(screen.getByText(UI_STRINGS.modals.clientSetup.industrySector.title)).toBeInTheDocument();

@@ -5,7 +5,6 @@ import { Header } from '../../src/components/Header';
 import { mockTenant } from '../fixtures/mockData';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 
-import { DEFAULT_SPEND_BASELINE_INR_CR } from '../../src/constants/app';
 import type { OperatingModeConfig } from '../../src/types';
 
 describe('Header Component', () => {
@@ -31,10 +30,10 @@ describe('Header Component', () => {
     expect(screen.getByText(`₹${mockTenant.total_spend_evaluated_inr} Cr`)).toBeInTheDocument();
   });
 
-  it('renders fallback spend if total_spend_evaluated_inr is undefined', () => {
+  it('shows unavailable spend when D1 has no evaluated spend value', () => {
     const tenantWithoutINR = { ...mockTenant, total_spend_evaluated_inr: undefined as any };
     render(<Header {...defaultProps} tenant={tenantWithoutINR} />);
-    expect(screen.getByText(`₹${DEFAULT_SPEND_BASELINE_INR_CR} Cr`)).toBeInTheDocument();
+    expect(screen.getByText(UI_STRINGS.header.spendUnavailable)).toBeInTheDocument();
   });
 
   it('handles theme switching between light and dark', () => {

@@ -8,6 +8,8 @@ export type ExecutiveBriefRouteKey =
   | 'downloadPptx'
   | 'opportunityBriefPdf'
   | 'opportunityBriefPptx'
+  | 'opportunityBriefReport'
+  | 'email'
   | 'regenerate';
 
 export type ExecutiveBriefHttpMethod = 'GET' | 'POST';
@@ -46,12 +48,3 @@ export interface ExecutiveBriefIssueInput {
 export type ExecutiveBriefParseResult<TData> =
   | { ok: true; data: TData }
   | { ok: false; issues: ExecutiveBriefValidationIssue[] };
-
-export interface ExecutiveBriefRequestScope {
-  clientName: string;
-  reportDate: string;
-}
-
-export type ExecutiveBriefScopeResult =
-  | { ok: true; scope: ExecutiveBriefRequestScope }
-  | { ok: false; response: Response };

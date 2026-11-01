@@ -13,20 +13,14 @@ export const VENDOR_SUPPLY_THRESHOLDS = {
 export const VENDOR_SUPPLY_TIERS = {
   TIER_1_HIGH: {
     id: 'TIER_1_HIGH',
-    name: 'Tier 1: High Spend',
-    label: '> ₹15 Cr Spend',
     minSpendCr: 15.0
   },
   TIER_2_MID: {
     id: 'TIER_2_MID',
-    name: 'Tier 2: Mid Spend',
-    label: '₹5 Cr – ₹15 Cr Spend',
     minSpendCr: 5.0
   },
   TIER_3_BASE: {
     id: 'TIER_3_BASE',
-    name: 'Tier 3: Base / Tail Spend',
-    label: '< ₹5 Cr Spend',
     minSpendCr: 0.0
   }
 } as const;
