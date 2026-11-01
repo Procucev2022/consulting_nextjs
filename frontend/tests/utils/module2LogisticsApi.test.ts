@@ -23,6 +23,16 @@ describe('loadModule2LogisticsCandidates', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it('rejects null response envelopes and null nested data', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ ok: true, json: async () => null } as Response)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true, data: null }) } as Response);
+    await expect(loadModule2LogisticsCandidates('A1'))
+      .rejects.toThrow(UI_STRINGS.module2Logistics.requestFailed);
+    await expect(loadModule2LogisticsCandidates('A1'))
+      .rejects.toThrow(UI_STRINGS.module2Logistics.requestFailed);
+  });
+
   it('reports HTTP, malformed payload, and network errors', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: false, status: 503 } as Response);
     await expect(loadModule2LogisticsCandidates('A1')).rejects.toThrow(UI_STRINGS.module2Logistics.loadFailed(503));
