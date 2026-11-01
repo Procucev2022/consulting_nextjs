@@ -6,7 +6,7 @@ import {
   EXECUTIVE_OPPORTUNITY_BRIEF_SQL
 } from '../src/constants/executiveOpportunityBriefConstants';
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
-import { briefRequest, briefUrl, testEnvironment, userToken } from './executiveBriefTestHelpers';
+import { adminToken, briefRequest, briefUrl, testEnvironment } from './executiveBriefTestHelpers';
 import * as workerAuth from '../src/workerAuth';
 
 const mocked = vi.hoisted(() => ({ failAudit: false, failPdf: false }));
@@ -31,7 +31,12 @@ vi.mock('../src/services/executiveOpportunityBriefExport', async (importOriginal
 });
 
 const route = async (path: string, env: CloudflareEnvironment = testEnvironment()): Promise<Response> => {
-  const response = await handleExecutiveBriefRoute(briefRequest('GET', path), env, briefUrl(path));
+  const token = await adminToken();
+  const response = await handleExecutiveBriefRoute(
+    briefRequest('GET', path, { headers: { Authorization: 'Bearer ' + token } }),
+    env,
+    briefUrl(path)
+  );
   if (response === null) throw new Error('Expected the executive brief route to answer');
   return response;
 };
@@ -50,7 +55,24 @@ describe('D1 executive brief error handling', () => {
 
   it('returns a request-correlated error when D1 queries fail', async () => {
     const environment = testEnvironment({
-      DB: { prepare: () => { throw new Error('D1 query failed'); } } as unknown as CloudflareEnvironment['DB']
+      DB: {
+        prepare: (query: string) => {
+          if (query.includes('FROM User WHERE id = ?')) {
+            const statement = {
+              bind: () => statement,
+              first: async <T>() => ({
+                id: 'usr-admin-test',
+                name: 'D1 Test Admin',
+                email: 'admin@procucev.test',
+                role: 'ADMIN',
+                status: 'ACTIVE'
+              } as T)
+            };
+            return statement;
+          }
+          throw new Error('D1 query failed');
+        }
+      } as unknown as CloudflareEnvironment['DB']
     });
     const response = await route('/report', environment);
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.INTERNAL_ERROR);
@@ -84,7 +106,7 @@ describe('D1 executive brief error handling', () => {
       return new Response(JSON.stringify({ id: 'email-1' }), { status: 200 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const token = await userToken();
+    const token = await adminToken();
     const response = await handleExecutiveBriefRoute(
       briefRequest('POST', '/email', {
         headers: { Authorization: `Bearer ${token}` },
@@ -144,13 +166,20 @@ describe('D1 executive brief error handling', () => {
   });
 
   it('returns a D1 report-loading failure after authenticating the email recipient', async () => {
-    const token = await userToken();
+    const token = await adminToken();
     const database = {
       prepare: (query: string) => {
+        let values: unknown[] = [];
         const statement = {
-          bind: () => statement,
+          bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
           first: async <T>() => query.includes('FROM User')
-            ? { id: 'usr-user-test', name: 'D1 Test User', email: 'buyer@example.test', role: 'USER', status: 'ACTIVE' } as T
+            ? {
+              id: values[0],
+              name: 'D1 Test Admin',
+              email: 'admin@procucev.test',
+              role: 'ADMIN',
+              status: 'ACTIVE'
+            } as T
             : null,
           all: async <T>() => ({
             results: query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.tenants ? [] as T[] : [] as T[]
@@ -174,7 +203,7 @@ describe('D1 executive brief error handling', () => {
   });
 
   it('uses the request-correlated fallback when a development email provider has no configuration', async () => {
-    const token = await userToken();
+    const token = await adminToken();
     const response = await handleExecutiveBriefRoute(
       briefRequest('POST', '/email', {
         headers: { Authorization: `Bearer ${token}` },
@@ -192,7 +221,7 @@ describe('D1 executive brief error handling', () => {
 
   it('returns a correlated error when the email provider throws', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('provider connection failed'); }));
-    const token = await userToken();
+    const token = await adminToken();
     const response = await handleExecutiveBriefRoute(
       briefRequest('POST', '/email', {
         headers: { Authorization: `Bearer ${token}` },
@@ -211,7 +240,7 @@ describe('D1 executive brief error handling', () => {
   it('returns a provider error when D1 report email delivery is unavailable', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ message: 'provider unavailable' }), { status: 503 }));
     vi.stubGlobal('fetch', fetchMock);
-    const token = await userToken();
+    const token = await adminToken();
     const response = await handleExecutiveBriefRoute(
       briefRequest('POST', '/email', {
         headers: { Authorization: `Bearer ${token}` },
