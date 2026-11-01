@@ -35,8 +35,9 @@ const conversionFor = (fromCurrency: string, amount: number) => ({
 
 describe('FixCurrencyModal Component', () => {
   beforeEach(() => {
-    vi.mocked(apiClient.getCurrencyRates).mockResolvedValue(currencyCatalog);
-    vi.mocked(apiClient.getCurrencyConversion).mockImplementation(async (currency, amount) => conversionFor(currency, amount));
+    vi.mocked(apiClient.getCurrencyRates).mockReset().mockResolvedValue(currencyCatalog);
+    vi.mocked(apiClient.getCurrencyConversion).mockReset()
+      .mockImplementation(async (currency, amount) => conversionFor(currency, amount));
   });
 
   it('renders null when the modal is closed or has no record', () => {
@@ -75,7 +76,7 @@ describe('FixCurrencyModal Component', () => {
     const minimalRecord = { record_id: 'MIN-1', po_number: 'PO-MIN', vendor_name: 'Min Vendor', amount: 1000 } as never;
     render(<FixCurrencyModal record={minimalRecord} isOpen onClose={onClose} onFix={vi.fn()} />);
     expect(await screen.findByRole('button', { name: 'INR' })).toBeInTheDocument();
-    expect(apiClient.getCurrencyConversion).toHaveBeenCalledWith('INR', 1000, undefined);
+    await waitFor(() => expect(apiClient.getCurrencyConversion).toHaveBeenCalledWith('INR', 1000, undefined));
     fireEvent.click(screen.getByRole('button', { name: UI_STRINGS.common.cancel }));
     expect(onClose).toHaveBeenCalledOnce();
   });

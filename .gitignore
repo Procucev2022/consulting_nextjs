@@ -60,7 +60,8 @@ datasets/
 uploads/
 **/uploads/
 data/dev/
-data/
+# Ignore root datasets without hiding source modules or tests named data.
+/data/
 **/data/dev/
 Procucev_Procurement_Value_Savings_Diagnostic_*
 **/Procucev_Procurement_Value_Savings_Diagnostic_*

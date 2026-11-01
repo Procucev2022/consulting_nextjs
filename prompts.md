@@ -114052,3 +114052,14 @@ Please resolve all PR checks issues, files conflict issues: [https://github.com/
 &
 
 Please do a detailed analysis, what all features are pending or missing, & then continue adding the remaining missing features & functionalities & tell apart from these what else is pending. Also don't forget to seed mock data in database for this.
+
+
+## Prompt 601
+
+Still PR checks are failing, please check & fix.&#x20;
+
+[https://github.com/Procucev2022/consulting_nextjs/pull/26](https://github.com/Procucev2022/consulting_nextjs/pull/26)
+
+## Prompt 602
+
+resume
