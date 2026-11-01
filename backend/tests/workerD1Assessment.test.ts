@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { handleAssessmentRoute } from '../src/workerD1Assessment';
 import type { CloudflareD1Database } from '../src/types/cloudflare';
 import { ASSESSMENT_D1_MESSAGES } from '../src/constants/assessmentD1';
-import { createWorkerDatabase } from './helpers/workerCoreFixtures';
+import { createWorkerAuthToken } from '../src/workerAuth';
+import { createWorkerDatabase, runtimeEnvironment, WORKER_CORE_SECRET } from './helpers/workerCoreFixtures';
 
 const mockDb = (records: {
   customers?: any[];
@@ -393,6 +394,25 @@ describe('workerD1Assessment handler', () => {
     fixture.db.prepare(`INSERT INTO AssessmentRecord (
       assessment_id, customer_id, customer_name, industry, assessment_owner, status
     ) VALUES (?, ?, ?, ?, ?, ?)`).run('A-GATES', 'C-GATES', 'Gate Demo', 'Manufacturing', 'analyst@example.test', 'ANALYST_REVIEW');
+    fixture.db.prepare(`INSERT INTO User (
+      id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      'review-admin', 'Review Admin', '+10000000000', 'review-admin@example.test', 'Internal', 'Address',
+      'unused', 'ADMIN', 'ACTIVE', 'GOLD'
+    );
+    fixture.db.prepare(`INSERT INTO User (
+      id, name, mobile_number, email, company_name, company_address, password_hash, role, status, subscription_tier
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      'review-user', 'Review User', '+10000000001', 'review-user@example.test', 'Customer', 'Address',
+      'unused', 'USER', 'ACTIVE', 'BRONZE'
+    );
+    const adminToken = await createWorkerAuthToken({
+      id: 'review-admin', email: 'review-admin@example.test', role: 'ADMIN'
+    }, WORKER_CORE_SECRET);
+    const userToken = await createWorkerAuthToken({
+      id: 'review-user', email: 'review-user@example.test', role: 'USER'
+    }, WORKER_CORE_SECRET);
+    const environment = runtimeEnvironment({ DB: fixture.d1 });
     const url = new URL('https://consulting.edge/api/assessment/A-GATES/review-gates');
     try {
       const getRequest = new Request(url, { method: 'GET' });
@@ -402,47 +422,60 @@ describe('workerD1Assessment handler', () => {
 
       const updateRequest = new Request(url, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-user-role': 'ANALYST', 'x-user-email': 'reviewer@example.test' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: ['Bearer', adminToken].join(' '),
+          'x-user-role': 'ANALYST',
+          'x-user-email': 'spoofed@example.test'
+        },
         body: JSON.stringify({
           gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED',
           evidenceReference: 'D1:AssessmentDataVersion/DV-1', reviewNote: 'Rows reconciled'
         })
       });
-      const updated = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', updateRequest, url);
+      const updated = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', updateRequest, url, environment);
       expect((updated.data as Array<{ gateKey: string; status: string; reviewedBy: string | null }>)
         .find((gate) => gate.gateKey === 'M1_INPUT_ROW_RECONCILIATION'))
-        .toMatchObject({ status: 'PASSED', reviewedBy: 'reviewer@example.test' });
+        .toMatchObject({ status: 'PASSED', reviewedBy: 'review-admin@example.test' });
+      expect(fixture.db.prepare('SELECT actor_email, actor_role FROM AssessmentAuditLog').get())
+        .toEqual({ actor_email: 'review-admin@example.test', actor_role: 'ADMIN' });
 
       const blockedRequest = new Request(url, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: ['Bearer', adminToken].join(' ') },
         body: JSON.stringify({ gateKey: 'M1_CURRENCY_NORMALIZATION', status: 'BLOCKED', reviewNote: 'FX evidence is incomplete' })
       });
-      const blocked = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', blockedRequest, url);
+      const blocked = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', blockedRequest, url, environment);
       expect((blocked.data as Array<{ gateKey: string; status: string; reviewedBy: string | null }>)
         .find((gate) => gate.gateKey === 'M1_CURRENCY_NORMALIZATION'))
-        .toMatchObject({ status: 'BLOCKED', reviewedBy: 'analyst@procucev.com' });
+        .toMatchObject({ status: 'BLOCKED', reviewedBy: 'review-admin@example.test' });
 
       const resetRequest = new Request(url, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: ['Bearer', adminToken].join(' ') },
         body: JSON.stringify({ gateKey: 'M1_CURRENCY_NORMALIZATION', status: 'PENDING' })
       });
-      const reset = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', resetRequest, url);
+      const reset = await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', resetRequest, url, environment);
       expect((reset.data as Array<{ gateKey: string; status: string; reviewedBy: string | null }>)
         .find((gate) => gate.gateKey === 'M1_CURRENCY_NORMALIZATION'))
         .toMatchObject({ status: 'PENDING', reviewedBy: null });
       expect(fixture.db.prepare('SELECT COUNT(*) AS count FROM AssessmentAuditLog').get().count).toBe(3);
 
       const invalidRequest = new Request(url, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: ['Bearer', adminToken].join(' ') },
         body: JSON.stringify({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PASSED' })
       });
-      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', invalidRequest, url)).status).toBe(400);
+      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', invalidRequest, url, environment)).status).toBe(400);
 
       const forbiddenRequest = new Request(url, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-user-role': 'CUSTOMER' },
+        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: ['Bearer', userToken].join(' ') },
         body: JSON.stringify({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PENDING' })
       });
-      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', forbiddenRequest, url)).status).toBe(403);
+      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', forbiddenRequest, url, environment)).status).toBe(403);
+      const anonymousRequest = new Request(url, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-user-role': 'INTERNAL_ADMIN' },
+        body: JSON.stringify({ gateKey: 'M1_INPUT_ROW_RECONCILIATION', status: 'PENDING' })
+      });
+      expect((await handleAssessmentRoute(fixture.d1, '/A-GATES/review-gates', anonymousRequest, url, environment)).status)
+        .toBe(401);
 
       const missingRequest = new Request('https://consulting.edge/api/assessment/UNKNOWN/review-gates', { method: 'GET' });
       expect((await handleAssessmentRoute(fixture.d1, '/UNKNOWN/review-gates', missingRequest, new URL(missingRequest.url))).status).toBe(404);

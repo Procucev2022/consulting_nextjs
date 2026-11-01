@@ -22,6 +22,7 @@ import type {
 } from '../types/assessment';
 import frontendLogger from './logger';
 import { API_BASE, getJson, postJson } from './assessmentApiHelpers';
+import { authApiClient } from './authApi';
 
 export const assessmentApiClient = {
   async getCustomers(status?: string): Promise<CustomerRecord[]> {
@@ -168,11 +169,13 @@ export const assessmentApiClient = {
 
   async saveReviewGate(id: string, payload: AssessmentReviewGateUpdate): Promise<AssessmentReviewGateRecord[]> {
     frontendLogger.info('Saving assessment review gate', { id, gateKey: payload.gateKey, status: payload.status });
+    const token = authApiClient.getStoredToken();
     return postJson(
       `${API_BASE}/api/assessment/${encodeURIComponent(id)}/review-gates`,
       payload,
       'Failed to save assessment review gate',
-      'PUT'
+      'PUT',
+      token ? { Authorization: ['Bearer', token].join(' ') } : {}
     );
   },
 

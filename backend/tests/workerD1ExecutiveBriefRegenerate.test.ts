@@ -161,6 +161,15 @@ describe('executive brief regeneration authorization', () => {
     expect(outcome).toEqual({ ok: true, userId: 'usr-admin-test' });
   });
 
+  it('accepts a bearer token after repeated header whitespace is normalized', async () => {
+    const token = await adminToken();
+    const outcome = await authorizeExecutiveBriefAdmin(
+      briefRequest('POST', REGENERATE_PATH, { headers: { Authorization: ['Bearer', '', token].join(' ') } }),
+      testEnvironment()
+    );
+    expect(outcome).toEqual({ ok: true, userId: 'usr-admin-test' });
+  });
+
   it('rejects a token when signature verification throws', async () => {
     const response = await regenerate({ token: await malformedPayloadToken() });
     expect(response.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);

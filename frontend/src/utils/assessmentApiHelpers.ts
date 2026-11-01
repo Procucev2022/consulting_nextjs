@@ -17,11 +17,12 @@ export async function postJson<T>(
   url: string,
   body: unknown,
   errorPrefix: string,
-  method: 'POST' | 'PATCH' | 'PUT' = 'POST'
+  method: 'POST' | 'PATCH' | 'PUT' = 'POST',
+  headers: Record<string, string> = {}
 ): Promise<T> {
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body)
   });
   const json = await res.json();

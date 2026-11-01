@@ -18,6 +18,7 @@ import { runAssessmentAnalysisFromD1 } from './services/assessmentAnalysisD1';
 import { runStatements } from './services/assessmentDataVersionD1Helpers';
 import { readJson } from './workerHttp';
 import logger from './utils/logger';
+import { authenticateWorkerUser } from './workerAuth';
 
 const queryAll = async <T = D1Record>(db: CloudflareD1Database, sql: string, values: unknown[] = []): Promise<T[]> => {
   const statement = db.prepare(sql);
@@ -55,23 +56,32 @@ const loadReviewGates = async (db: CloudflareD1Database, assessmentId: string): 
 const handleReviewGates = async (
   db: CloudflareD1Database,
   assessmentId: string,
-  request: Request
+  request: Request,
+  environment: CloudflareEnvironment
 ): Promise<WorkerD1Result> => {
+  const authentication = request.method === 'GET'
+    ? null
+    : await authenticateWorkerUser(request, environment, true);
+  if (authentication !== null && !authentication.user) {
+    return {
+      status: authentication.status,
+      data: { success: false, message: authentication.message || ASSESSMENT_D1_MESSAGES.reviewGatePermissionDenied }
+    };
+  }
   const assessment = await queryFirst<D1Record>(db,
     `SELECT assessment_id FROM ${D1_TABLES.assessments} WHERE assessment_id = ?`, [assessmentId]);
   if (!assessment) return { status: 404, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGateNotFound(assessmentId) } };
   if (request.method === 'GET') return { data: await loadReviewGates(db, assessmentId) };
 
-  const actorRole = request.headers.get('x-user-role') || ASSESSMENT_D1_DEFAULT_ACTORS.analystRole;
-  if (!['ANALYST', 'INTERNAL_ADMIN'].includes(actorRole)) {
-    return { status: 403, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGatePermissionDenied } };
-  }
+  const reviewer = authentication?.user;
+  if (!reviewer) return { status: 401, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGatePermissionDenied } };
   const body: unknown = await readJson(request);
   const parsed = assessmentReviewGateUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return { status: 400, data: { success: false, message: ASSESSMENT_D1_MESSAGES.reviewGateValidation, errors: parsed.error.issues } };
   }
-  const actorEmail = request.headers.get('x-user-email') || ASSESSMENT_D1_DEFAULT_ACTORS.analystEmail;
+  const actorEmail = reviewer.email;
+  const actorRole = reviewer.role;
   const now = new Date().toISOString();
   const { gateKey, status, evidenceReference, reviewNote } = parsed.data;
   const reviewedAt = status === 'PENDING' ? null : now;
@@ -202,7 +212,7 @@ const handleAssessmentAction = async (
       requestId: request.headers.get('x-request-id') || undefined
     }, action === 'run-module1' ? 'module1' : 'full');
   }
-  if (action === 'review-gates') return handleReviewGates(db, assessmentId, request);
+  if (action === 'review-gates') return handleReviewGates(db, assessmentId, request, environment);
   if (action === 'upload' || action === 'validate') {
     const body: unknown = await request.json();
     const context = {

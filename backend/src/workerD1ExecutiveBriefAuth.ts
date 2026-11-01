@@ -61,7 +61,13 @@ export const authorizeExecutiveBriefAdmin = async (
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN, message: EXECUTIVE_BRIEF_MESSAGES.adminRequired };
   }
   try {
-    const authentication = await authenticateWorkerUser(request, environment, true);
+    const normalizedHeaders = new Headers(request.headers);
+    normalizedHeaders.set(EXECUTIVE_BRIEF_HEADER_NAMES.AUTHORIZATION, ['Bearer', token].join(' '));
+    const normalizedRequest = new Request(request.url, {
+      method: request.method,
+      headers: normalizedHeaders
+    });
+    const authentication = await authenticateWorkerUser(normalizedRequest, environment, true);
     if (!authentication.user) {
       return {
         ok: false,
