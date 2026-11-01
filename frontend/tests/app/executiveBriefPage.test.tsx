@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ExecutiveOpportunityBriefViewProps } from '../../src/types';
 import { UI_STRINGS } from '../../src/constants/uiStrings';
 import { frontendLogger } from '../../src/utils/logger';
+import { authApiClient } from '../../src/utils/authApi';
 import ExecutiveBriefPage from '../../src/app/executive-brief/page';
 
 const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn() }));
@@ -41,6 +42,7 @@ describe('ExecutiveBriefPage', () => {
     window.URL.createObjectURL = vi.fn().mockReturnValue('blob:executive-brief');
     window.URL.revokeObjectURL = vi.fn();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createDownloadResponse()));
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue(null);
   });
 
   afterEach(() => {
@@ -49,11 +51,15 @@ describe('ExecutiveBriefPage', () => {
   });
 
   it('downloads the D1-backed PDF and releases its object URL on unmount', async () => {
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('session-token');
     const { unmount } = render(<ExecutiveBriefPage />);
     fireEvent.click(screen.getByTestId('download-pdf'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/opportunity-brief/pdf');
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/reports/executive-brief/download/opportunity-brief/pdf',
+        { headers: { Authorization: 'Bearer ' + 'session-token' } }
+      );
       expect(window.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
       expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
     });
@@ -71,7 +77,10 @@ describe('ExecutiveBriefPage', () => {
     fireEvent.click(screen.getByTestId('download-pptx'));
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/reports/executive-brief/download/opportunity-brief/pptx');
+      expect(fetch).toHaveBeenCalledWith(
+        '/api/reports/executive-brief/download/opportunity-brief/pptx',
+        { headers: {} }
+      );
       expect(window.URL.createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
       expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledOnce();
     });

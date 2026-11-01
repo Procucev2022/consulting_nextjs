@@ -206,7 +206,10 @@ export default function Home() {
     const url = `/api/reports/executive-brief/download/opportunity-brief/${format}`;
     const formatLabel = format.toUpperCase();
     try {
-      const response = await fetch(url);
+      const token = authApiClient.getStoredToken();
+      const response = await fetch(url, {
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      });
       if (!response.ok) {
         const requestId = response.headers.get('x-request-id') ?? UI_STRINGS.opportunityBrief.requestIdNotReturned;
         frontendLogger.error('Opportunity brief download was rejected by the server', {

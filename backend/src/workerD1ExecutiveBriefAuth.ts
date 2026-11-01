@@ -3,7 +3,7 @@
  * ADMIN tokens. When AUTH_SECRET is missing, every request fails with 503, because an empty HMAC key would accept
  * tokens that anyone can forge.
  */
-import { verifyToken } from './workerAuth';
+import { authenticateWorkerUser, verifyToken } from './workerAuth';
 import { AUTH_ROLES } from './constants/auth';
 import {
   EXECUTIVE_BRIEF_BEARER_PATTERN,
@@ -13,6 +13,7 @@ import {
 } from './constants/executiveBriefRouteConstants';
 import type { CloudflareEnvironment } from './types/cloudflare';
 import type { ExecutiveBriefAuthOutcome } from './types/executiveBriefRoutes';
+import { EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES } from './constants/executiveOpportunityBriefConstants';
 
 
 export const extractBearerToken = (request: Request): string | null => {
@@ -41,6 +42,13 @@ export const authorizeExecutiveBriefAdmin = async (
       message: EXECUTIVE_BRIEF_MESSAGES.authSecretMissing
     };
   }
+  if (environment.DB === undefined) {
+    return {
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
+    };
+  }
   const token = extractBearerToken(request);
   if (token === null) {
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED, message: EXECUTIVE_BRIEF_MESSAGES.authRequired };
@@ -52,5 +60,23 @@ export const authorizeExecutiveBriefAdmin = async (
   if (payload.role !== AUTH_ROLES.ADMIN) {
     return { ok: false, status: EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN, message: EXECUTIVE_BRIEF_MESSAGES.adminRequired };
   }
-  return { ok: true, userId: payload.userId };
+  try {
+    const authentication = await authenticateWorkerUser(request, environment, true);
+    if (!authentication.user) {
+      return {
+        ok: false,
+        status: authentication.status,
+        message: authentication.status === EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED
+          ? EXECUTIVE_BRIEF_MESSAGES.tokenInvalid
+          : authentication.message ?? EXECUTIVE_BRIEF_MESSAGES.adminRequired
+      };
+    }
+    return { ok: true, userId: authentication.user.id };
+  } catch {
+    return {
+      ok: false,
+      status: EXECUTIVE_BRIEF_HTTP_STATUS.SERVICE_UNAVAILABLE,
+      message: EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable
+    };
+  }
 };

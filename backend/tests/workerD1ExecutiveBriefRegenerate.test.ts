@@ -48,11 +48,19 @@ const regenerationDatabase = (
   failBriefQuery = false
 ): NonNullable<CloudflareEnvironment['DB']> => ({
   prepare: (query: string) => {
+    let values: unknown[] = [];
     const statement = {
-      bind: () => statement,
+      bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
       first: async <T>() => {
         if (query.includes('FROM User')) {
-          return { id: 'usr-admin-test', name: 'D1 Admin', email: 'admin@example.test', role: 'ADMIN', status: 'ACTIVE' } as T;
+          const userId = String(values[0]);
+          return {
+            id: userId,
+            name: 'D1 Admin',
+            email: 'admin@example.test',
+            role: userId === 'usr-standard-test' ? 'USER' : 'ADMIN',
+            status: 'ACTIVE'
+          } as T;
         }
         if (failBriefQuery) throw new Error('D1 report query failed');
         return null;

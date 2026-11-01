@@ -4,6 +4,7 @@ import {
 } from '../constants/app';
 import { executiveOpportunityBriefResponseSchema } from '../constants/validation';
 import type { ExecutiveOpportunityBriefFetchResult } from '../types';
+import { authApiClient } from './authApi';
 
 const failed = (statusCode: number, requestId: string | null): ExecutiveOpportunityBriefFetchResult => ({
   ok: false,
@@ -16,7 +17,10 @@ export const fetchExecutiveOpportunityBriefReport = async (
 ): Promise<ExecutiveOpportunityBriefFetchResult> => {
   let response: Response;
   try {
-    response = await fetcher(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT);
+    const token = authApiClient.getStoredToken();
+    response = await fetcher(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT, {
+      headers: token ? { Authorization: 'Bearer ' + token } : {}
+    });
   } catch {
     return failed(0, null);
   }

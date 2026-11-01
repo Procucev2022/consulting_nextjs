@@ -6,9 +6,9 @@ describe('loadIndustryCatalog', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('returns only catalog rows received from the D1 API', async () => {
-    const payload = { success: true, profiles: [], presets: [] };
+    const payload = { success: true, data: { success: true, profiles: [], presets: [] }, timestamp: '2026-11-01' };
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({ ok: true, json: async () => payload } as Response);
-    await expect(loadIndustryCatalog()).resolves.toEqual(payload);
+    await expect(loadIndustryCatalog()).resolves.toEqual(payload.data);
   });
 
   it('rejects unsuccessful HTTP responses with the catalog message', async () => {
@@ -27,7 +27,7 @@ describe('loadIndustryCatalog', () => {
   it('rejects a successful response when either D1 catalog collection is missing', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, profiles: [], presets: null })
+      json: async () => ({ success: true, data: { success: true, profiles: [], presets: null } })
     } as Response);
 
     await expect(loadIndustryCatalog()).rejects.toThrow(UI_STRINGS.module2.industryContext.profileLoadFailed);

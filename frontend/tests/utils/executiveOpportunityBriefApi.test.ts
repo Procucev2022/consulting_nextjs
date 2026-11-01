@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT } from '../../src/constants/app';
 import { fetchExecutiveOpportunityBriefReport } from '../../src/utils/executiveOpportunityBriefApi';
+import { authApiClient } from '../../src/utils/authApi';
 
 const validPayload = {
   success: true,
@@ -22,8 +23,17 @@ describe('fetchExecutiveOpportunityBriefReport', () => {
   it('fetches and validates the D1 report response', async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify(validPayload), { status: 200 }));
     const result = await fetchExecutiveOpportunityBriefReport(fetcher);
-    expect(fetcher).toHaveBeenCalledWith(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT);
+    expect(fetcher).toHaveBeenCalledWith(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT, { headers: {} });
     expect(result).toMatchObject({ ok: true, data: { tenant: { enterpriseName: 'D1 Enterprise' } } });
+  });
+
+  it('sends the active session token with report requests', async () => {
+    vi.spyOn(authApiClient, 'getStoredToken').mockReturnValue('session-token');
+    const fetcher = vi.fn(async () => new Response(JSON.stringify(validPayload), { status: 200 }));
+    await fetchExecutiveOpportunityBriefReport(fetcher);
+    expect(fetcher).toHaveBeenCalledWith(EXECUTIVE_OPPORTUNITY_BRIEF_REPORT_ENDPOINT, {
+      headers: { Authorization: 'Bearer ' + 'session-token' }
+    });
   });
 
   it('allows a blank D1 enterprise name so the view can use its workspace fallback', async () => {

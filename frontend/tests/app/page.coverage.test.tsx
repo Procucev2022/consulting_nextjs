@@ -2046,8 +2046,16 @@ describe('Home page: executive brief downloads', () => {
     await waitFor(() => {
       expect(screen.getByText(UI_STRINGS.opportunityBrief.downloadNetworkFailed('PDF'))).toBeInTheDocument();
     });
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/reports/executive-brief/download/opportunity-brief/pdf');
-    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/reports/executive-brief/download/opportunity-brief/pptx');
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/reports/executive-brief/download/opportunity-brief/pdf',
+      { headers: { Authorization: 'Bearer ' + 'token-123' } }
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      '/api/reports/executive-brief/download/opportunity-brief/pptx',
+      { headers: { Authorization: 'Bearer ' + 'token-123' } }
+    );
     // Unmount while the URL stubs still exist, so the payload cleanup can revoke the object URL.
     cleanup();
   });

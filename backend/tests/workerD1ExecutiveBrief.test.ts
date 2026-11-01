@@ -10,7 +10,7 @@ import {
   EXECUTIVE_BRIEF_CONTENT_TYPES
 } from '../src/constants/executiveBriefExportConstants';
 import type { CloudflareEnvironment } from '../src/types/cloudflare';
-import { briefRequest, briefUrl, testEnvironment, TEST_REPORT_DATE } from './executiveBriefTestHelpers';
+import { adminToken, briefRequest, briefUrl, testEnvironment, TEST_REPORT_DATE, userToken } from './executiveBriefTestHelpers';
 
 vi.mock('../src/utils/logger', () => ({
   default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
@@ -25,7 +25,9 @@ const callRoute = async (
   path: string,
   options: { query?: string; headers?: Record<string, string>; env?: CloudflareEnvironment } = {}
 ): Promise<Response | null> => {
-  const request = briefRequest(method, path, { query: options.query, headers: options.headers });
+  const token = await adminToken();
+  const headers = { Authorization: 'Bearer ' + token, ...options.headers };
+  const request = briefRequest(method, path, { query: options.query, headers });
   return handleExecutiveBriefRoute(request, options.env ?? testEnvironment(), briefUrl(path, options.query ?? ''));
 };
 
@@ -41,9 +43,19 @@ const d1OpportunityDb = (options: {
   fail?: boolean;
 } = {}): CloudflareEnvironment['DB'] => ({
   prepare: (query: string) => {
+    let values: unknown[] = [];
     const statement = {
-      bind: (..._values: unknown[]) => statement,
+      bind: (...boundValues: unknown[]) => { values = boundValues; return statement; },
       first: async <T>() => {
+        if (query.includes('FROM User WHERE id = ?')) {
+          return {
+            id: values[0],
+            name: 'D1 Test Admin',
+            email: 'admin@example.test',
+            role: 'ADMIN',
+            status: 'ACTIVE'
+          } as T;
+        }
         if (options.fail) throw new Error('D1 query failed');
         if (query === EXECUTIVE_OPPORTUNITY_BRIEF_SQL.transactionMetrics) {
           return {
@@ -130,6 +142,27 @@ describe('executive brief routing', () => {
     expect((body.data.tenant as { enterpriseName: string }).enterpriseName).toBe('D1 Enterprise');
     expect((body.data.metrics as { totalSpendCr: number }).totalSpendCr).toBe(125.5);
     expect(body.data.dataClassification).toBe('DEMO_ONLY');
+  });
+
+  it('requires an authenticated administrator before serving report, audit, or download data', async () => {
+    const paths = [
+      '/report',
+      '/audit',
+      '/download/pdf',
+      '/download/pptx',
+      '/opportunity-brief/report',
+      '/download/opportunity-brief/pdf',
+      '/download/opportunity-brief/pptx'
+    ];
+    const standardUserToken = await userToken();
+    for (const path of paths) {
+      const anonymous = expectResponse(await callRoute('GET', path, { headers: { Authorization: '' } }));
+      expect(anonymous.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.UNAUTHORIZED);
+      const standardUser = expectResponse(await callRoute('GET', path, {
+        headers: { Authorization: 'Bearer ' + standardUserToken }
+      }));
+      expect(standardUser.status).toBe(EXECUTIVE_BRIEF_HTTP_STATUS.FORBIDDEN);
+    }
   });
 
   it('returns actionable D1 availability errors from each legacy report route', async () => {

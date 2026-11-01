@@ -6,6 +6,7 @@ import { ExecutiveOpportunityBriefView } from '@/components/presentation/Executi
 import { UI_STRINGS } from '@/constants/uiStrings';
 import type { ExecutiveOpportunityBriefDownloadPayload } from '@/types';
 import { logger as frontendLogger } from '@/utils/logger';
+import { authApiClient } from '@/utils/authApi';
 
 export default function ExecutiveBriefPage(): React.ReactElement {
   const router = useRouter();
@@ -25,7 +26,10 @@ export default function ExecutiveBriefPage(): React.ReactElement {
     const formatLabel = format.toUpperCase();
     setDownloadError(null);
     try {
-      const response = await fetch(url);
+      const token = authApiClient.getStoredToken();
+      const response = await fetch(url, {
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      });
       if (!response.ok) {
         const requestId = response.headers.get('x-request-id') ?? strings.requestIdNotReturned;
         setDownloadError(strings.downloadFailed(formatLabel, response.status, requestId));

@@ -25,6 +25,7 @@ import type { ExecutiveOpportunityBriefRequestLoad } from './types/executiveOppo
 import type { CloudflareEnvironment } from './types/cloudflare';
 import { authenticateWorkerUser } from './workerAuth';
 import { sendCommercialEmail } from './services/workerCommercialShared';
+import { authorizeExecutiveBriefAdmin } from './workerD1ExecutiveBriefAuth';
 
 const encoder = new TextEncoder();
 
@@ -51,6 +52,23 @@ const loadReport = async (
 ): Promise<ExecutiveOpportunityBriefRequestLoad> => {
   const requestId = resolveExecutiveBriefRequestId(request);
   const startedAt = Date.now();
+  const authorization = await authorizeExecutiveBriefAdmin(request, environment);
+  if (!authorization.ok) {
+    logger.warn('Rejected executive brief report request without administrator access', {
+      requestId,
+      action,
+      statusCode: authorization.status
+    });
+    return {
+      ok: false,
+      response: executiveBriefErrorResponse(
+        request,
+        requestId,
+        authorization.status,
+        authorization.message
+      )
+    };
+  }
   if (environment.DB === undefined) {
     logger.warn(EXECUTIVE_OPPORTUNITY_BRIEF_MESSAGES.d1Unavailable, {
       requestId,

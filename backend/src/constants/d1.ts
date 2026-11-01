@@ -119,6 +119,9 @@ export const D1_ROUTE_MESSAGES = {
   missingBinding: 'Cloudflare D1 binding DB is not configured',
   module2LogisticsMethod: 'Module 2 logistics and packaging data supports GET requests only.',
   module2LogisticsInvalid: 'Module 2 logistics query is invalid. Select an assessment ID and retry.',
+  module2LogisticsAuthFailed: 'Authentication required. Sign in with an active account and retry.',
+  module2LogisticsAssessmentNotFound: 'The requested logistics assessment was not found.',
+  module2LogisticsAccessDenied: 'You do not have access to logistics data for this assessment.',
   industryProfileMethod: 'Industry profiles support GET requests only.',
   industryProfileInvalid: 'Industry profile query is invalid. Correct the listed fields and retry.',
   industryProfileCorrupt: 'Industry profiles could not be read because a D1 catalog record is invalid. Ask an administrator to repair the catalog.',
@@ -160,4 +163,3 @@ export const D1_TAXONOMY_DEFAULT_LIMIT = 50;
 export const D1_TAXONOMY_MAX_LIMIT = 1000;
 export const D1_SCHEMA_TABLES_QUERY = "SELECT name, sql FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT LIKE 'd1_%' ORDER BY name";
 export const D1_SCHEMA_COLUMNS_QUERY = 'SELECT name FROM pragma_table_info(?) ORDER BY cid';
-

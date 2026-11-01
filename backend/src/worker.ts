@@ -787,7 +787,7 @@ const handleDataRoute = async (request: Request, environment: CloudflareEnvironm
     return apiData(canonicalData, request);
   }
   if (url.pathname === `${CLOUDFLARE_API_PREFIX}/module2/logistics-packaging`) {
-    const result = await handleModule2LogisticsPackagingRoute(environment.DB, request, url);
+    const result = await handleModule2LogisticsPackagingRoute(environment, request, url);
     return result.status
       ? jsonResponse(result.data as Record<string, unknown>, result.status, request)
       : apiData(result.data, request);
