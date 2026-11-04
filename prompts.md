@@ -114071,3 +114071,7 @@ PR_TITLE and PR_BODY are injected via shell args into the JSON payload. If a mal
 The object lookup used in `sort_by` assumes the severity will always be one of the four exact keys. If Gemini returns an unexpected string, the lookup will evaluate to null, causing jq to fail with a type error and break the workflow.
 
 fix both issues
+
+## Prompt 604
+
+Bad JSON in --slurpfile schema schema.json: Expected separator between values at line 17, column 17
