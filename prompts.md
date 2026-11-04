@@ -114063,3 +114063,11 @@ Still PR checks are failing, please check & fix.&#x20;
 ## Prompt 602
 
 resume
+
+## Prompt 603
+
+PR_TITLE and PR_BODY are injected via shell args into the JSON payload. If a malicious PR contains crafted quotes or control characters, it can corrupt the JSON structure or lead to prompt injection vulnerabilities allowing arbitrary instruction override.
+
+The object lookup used in `sort_by` assumes the severity will always be one of the four exact keys. If Gemini returns an unexpected string, the lookup will evaluate to null, causing jq to fail with a type error and break the workflow.
+
+fix both issues
