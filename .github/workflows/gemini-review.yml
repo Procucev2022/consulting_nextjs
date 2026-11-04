@@ -107,21 +107,21 @@ jobs:
 
           cat > schema.json <<'EOF'
           {
-            "type": "OBJECT",
+            "type": "object",
             "properties": {
-              "summary": {"type": "STRING"},
-              "risk_level": {"type": "STRING", "enum": ["low", "medium", "high"]},
-              "changes_overview": {"type": "ARRAY", "items": {"type": "STRING"}},
+              "summary": {"type": "string"},
+              "risk_level": {"type": "string", "enum": ["low", "medium", "high"]},
+              "changes_overview": {"type": "array", "items": {"type": "string"}},
               "findings": {
-                "type": "ARRAY",
+                "type": "array",
                 "items": {
-                  "type": "OBJECT",
+                  "type": "object",
                   "properties": {
-                    "file": {"type": "STRING"},
-                    "line": {"type": "INTEGER"},
-                    "severity": {"type": "STRING", "enum": ["critical", "high", "medium", "low"]},
-                    "category": {"type": "STRING", "enum": ["bug", "security", "performance", "api", "tests", "maintainability"]},
-                    "confidence": {"type": "STRING", "enum": ["high", "medium", "low"]},
+                    "file": {"type": "string"},
+                    "line": {"type": "integer"},
+                    "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+                    "category": {"type": "string", "enum": ["bug", "security", "performance", "api", "tests", "maintainability"]},
+                    "confidence": {"type": "string", "enum": ["high", "medium", "low"]}
                     "title": {"type": "STRING"},
                     "explanation": {"type": "STRING"},
                     "suggestion": {"type": "STRING"}
